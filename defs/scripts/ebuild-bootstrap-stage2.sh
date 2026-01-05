@@ -28,6 +28,16 @@
 #   - Strict cross-compilation mode
 #
 # This script is SOURCED by the wrapper, not executed directly.
+
+# =============================================================================
+# Mount Namespace Setup for Sysroot
+# =============================================================================
+# The cross-compiler is configured to look for sysroot at /tools/x86_64-buckos-linux-gnu/sys-root
+# But during the build, the toolchain is in buck-out, not /tools.
+# We use a mount namespace to bind-mount the cross-gcc-pass2 output to /tools
+# so the compiler can find its sysroot at the expected absolute path.
+#
+# Mount namespace function has been removed as we're using direct paths now
 # Changes to this script invalidate packages that use ebuild_package with bootstrap_stage="stage2".
 #
 # Environment variables (set by wrapper):
@@ -207,9 +217,12 @@ done
 if [ -n "$MISSING_TOOLS" ]; then
     echo "NOTE: Missing essential build tools:$MISSING_TOOLS"
     echo "      Adding host /usr/bin and /bin to PATH for bootstrap"
+    # Use the cross-compiler paths directly
     export PATH="$TOOLCHAIN_PATH:$DEP_PATH:/usr/bin:/bin"
     echo "PATH (with host fallback): $PATH"
 else
+    # Use cross-compiler paths only, no host fallback
+    export PATH="$TOOLCHAIN_PATH:$DEP_PATH"
     echo "PATH (STRICT, no host fallback needed): $PATH"
 fi
 
@@ -272,35 +285,96 @@ fi
 
 echo "Cross-compiler found at: $(command -v ${BUCKOS_TARGET}-gcc)"
 
-# Set cross-compilation toolchain
-export CC="${BUCKOS_TARGET}-gcc"
-export CXX="${BUCKOS_TARGET}-g++"
-export CPP="${BUCKOS_TARGET}-gcc -E"
-export AR="${BUCKOS_TARGET}-ar"
-export AS="${BUCKOS_TARGET}-as"
-export LD="${BUCKOS_TARGET}-ld"
-export NM="${BUCKOS_TARGET}-nm"
-export RANLIB="${BUCKOS_TARGET}-ranlib"
-export STRIP="${BUCKOS_TARGET}-strip"
-export OBJCOPY="${BUCKOS_TARGET}-objcopy"
-export OBJDUMP="${BUCKOS_TARGET}-objdump"
-export READELF="${BUCKOS_TARGET}-readelf"
-
-# Stage 2: Set up compilation flags without sysroot
-# We use explicit -I and -L paths instead of --sysroot because libraries
-# and headers are spread across multiple dependencies (cross-gcc, cross-glibc).
-export CFLAGS="-O2"
-export CXXFLAGS="-O2"
-export LDFLAGS=""
-
-# Add include paths from dependencies
-if [ -n "$TOOLCHAIN_INCLUDE" ]; then
-    for inc_dir in ${TOOLCHAIN_INCLUDE//:/ }; do
-        if [ -d "$inc_dir/usr/include" ]; then
-            export CFLAGS="$CFLAGS -I$inc_dir/usr/include"
-            export CXXFLAGS="$CXXFLAGS -I$inc_dir/usr/include"
+# Check if we have cross-compiler directories passed from the wrapper
+# Use them directly without mount namespace
+if [ -n "$BOOTSTRAP_CROSS_GCC_DIR" ] && [ -n "$BOOTSTRAP_CROSS_BINUTILS_DIR" ]; then
+    # Convert to absolute paths if they're relative
+    if [[ "$BOOTSTRAP_CROSS_GCC_DIR" != /* ]]; then
+        # Get project root (everything before /buck-out/)
+        PROJECT_ROOT="${PWD%/buck-out/*}"
+        if [ "$PROJECT_ROOT" = "$PWD" ]; then
+            # If we're not in buck-out, use current directory as root
+            PROJECT_ROOT="$(pwd)"
         fi
-    done
+        BOOTSTRAP_CROSS_GCC_DIR="$PROJECT_ROOT/$BOOTSTRAP_CROSS_GCC_DIR"
+    fi
+    if [[ "$BOOTSTRAP_CROSS_BINUTILS_DIR" != /* ]]; then
+        # Get project root (everything before /buck-out/)
+        PROJECT_ROOT="${PWD%/buck-out/*}"
+        if [ "$PROJECT_ROOT" = "$PWD" ]; then
+            # If we're not in buck-out, use current directory as root
+            PROJECT_ROOT="$(pwd)"
+        fi
+        BOOTSTRAP_CROSS_BINUTILS_DIR="$PROJECT_ROOT/$BOOTSTRAP_CROSS_BINUTILS_DIR"
+    fi
+
+    echo "Using cross-compiler from direct paths:"
+    echo "  GCC: $BOOTSTRAP_CROSS_GCC_DIR"
+    echo "  Binutils: $BOOTSTRAP_CROSS_BINUTILS_DIR"
+
+    # Use absolute paths to the cross-compiler tools
+    # GCC can find its sysroot relative to its installation
+    export CC="$BOOTSTRAP_CROSS_GCC_DIR/bin/${BUCKOS_TARGET}-gcc"
+    export CXX="$BOOTSTRAP_CROSS_GCC_DIR/bin/${BUCKOS_TARGET}-g++"
+    export CPP="$BOOTSTRAP_CROSS_GCC_DIR/bin/${BUCKOS_TARGET}-gcc -E"
+    export AR="$BOOTSTRAP_CROSS_BINUTILS_DIR/bin/${BUCKOS_TARGET}-ar"
+    export AS="$BOOTSTRAP_CROSS_BINUTILS_DIR/bin/${BUCKOS_TARGET}-as"
+    export LD="$BOOTSTRAP_CROSS_BINUTILS_DIR/bin/${BUCKOS_TARGET}-ld"
+    export NM="$BOOTSTRAP_CROSS_BINUTILS_DIR/bin/${BUCKOS_TARGET}-nm"
+    export RANLIB="$BOOTSTRAP_CROSS_BINUTILS_DIR/bin/${BUCKOS_TARGET}-ranlib"
+    export STRIP="$BOOTSTRAP_CROSS_BINUTILS_DIR/bin/${BUCKOS_TARGET}-strip"
+    export OBJCOPY="$BOOTSTRAP_CROSS_BINUTILS_DIR/bin/${BUCKOS_TARGET}-objcopy"
+    export OBJDUMP="$BOOTSTRAP_CROSS_BINUTILS_DIR/bin/${BUCKOS_TARGET}-objdump"
+    export READELF="$BOOTSTRAP_CROSS_BINUTILS_DIR/bin/${BUCKOS_TARGET}-readelf"
+
+    # GCC should find its sysroot automatically
+    export CFLAGS="-O2"
+    export CXXFLAGS="-O2"
+    export LDFLAGS=""
+else
+    # Fallback - use tools from buck-out with explicit sysroot
+    echo "Using tools with explicit sysroot"
+    # Find the cross-GCC sysroot from dependencies
+    CROSS_GCC_SYSROOT=""
+    if [ -n "$DEP_BASE_DIRS" ]; then
+        IFS=':' read -ra DEP_DIRS <<< "$DEP_BASE_DIRS"
+        for dep_dir in "${DEP_DIRS[@]}"; do
+            if [ -d "$dep_dir/tools/${BUCKOS_TARGET}/sys-root/usr/lib" ]; then
+                CROSS_GCC_SYSROOT="$dep_dir/tools/${BUCKOS_TARGET}/sys-root"
+                echo "Found cross-GCC sysroot at: $CROSS_GCC_SYSROOT"
+                break
+            fi
+        done
+    fi
+
+    if [ -z "$CROSS_GCC_SYSROOT" ]; then
+        echo "WARNING: Could not find cross-GCC sysroot in dependencies"
+        echo "DEP_BASE_DIRS=$DEP_BASE_DIRS"
+    fi
+
+    SYSROOT_FLAG=""
+    LDFLAGS_SYSROOT=""
+    if [ -n "$CROSS_GCC_SYSROOT" ]; then
+        SYSROOT_FLAG="--sysroot=$CROSS_GCC_SYSROOT"
+        LDFLAGS_SYSROOT="-Wl,--sysroot=$CROSS_GCC_SYSROOT"
+    fi
+
+    export CC="${BUCKOS_TARGET}-gcc $SYSROOT_FLAG"
+    export CXX="${BUCKOS_TARGET}-g++ $SYSROOT_FLAG"
+    export CPP="${BUCKOS_TARGET}-gcc $SYSROOT_FLAG -E"
+    export AR="${BUCKOS_TARGET}-ar"
+    export AS="${BUCKOS_TARGET}-as"
+    export LD="${BUCKOS_TARGET}-ld"
+    export NM="${BUCKOS_TARGET}-nm"
+    export RANLIB="${BUCKOS_TARGET}-ranlib"
+    export STRIP="${BUCKOS_TARGET}-strip"
+    export OBJCOPY="${BUCKOS_TARGET}-objcopy"
+    export OBJDUMP="${BUCKOS_TARGET}-objdump"
+    export READELF="${BUCKOS_TARGET}-readelf"
+
+    export CFLAGS="-O2"
+    export CXXFLAGS="-O2"
+    export LDFLAGS="$LDFLAGS_SYSROOT"
 fi
 
 echo "CC=$CC"
@@ -357,6 +431,28 @@ for dep_dir_raw in "${DEP_DIRS_ARRAY[@]}"; do
         dep_dir="$(cd "$dep_dir_raw" 2>/dev/null && pwd)" || dep_dir="$(pwd)/$dep_dir_raw"
     fi
 
+    # Skip cross-compilation toolchain packages - they're handled by sysroot
+    # Only collect paths from bootstrap-* stage2 packages
+    if [[ "$dep_dir" == */__cross-gcc* ]] || \
+       [[ "$dep_dir" == */__cross-binutils* ]] || \
+       [[ "$dep_dir" == */__cross-glibc* ]]; then
+        # Skip library paths for cross-compilation toolchain (sysroot handles these)
+        # But still collect pkg-config paths
+        if [ -d "$dep_dir/tools/lib/pkgconfig" ]; then
+            DEP_PKG_CONFIG_PATH="${DEP_PKG_CONFIG_PATH:+$DEP_PKG_CONFIG_PATH:}$dep_dir/tools/lib/pkgconfig"
+        fi
+        if [ -d "$dep_dir/usr/lib64/pkgconfig" ]; then
+            DEP_PKG_CONFIG_PATH="${DEP_PKG_CONFIG_PATH:+$DEP_PKG_CONFIG_PATH:}$dep_dir/usr/lib64/pkgconfig"
+        fi
+        if [ -d "$dep_dir/usr/lib/pkgconfig" ]; then
+            DEP_PKG_CONFIG_PATH="${DEP_PKG_CONFIG_PATH:+$DEP_PKG_CONFIG_PATH:}$dep_dir/usr/lib/pkgconfig"
+        fi
+        if [ -d "$dep_dir/usr/share/pkgconfig" ]; then
+            DEP_PKG_CONFIG_PATH="${DEP_PKG_CONFIG_PATH:+$DEP_PKG_CONFIG_PATH:}$dep_dir/usr/share/pkgconfig"
+        fi
+        continue
+    fi
+
     # Collect library paths (priority: tools/lib, lib64, lib)
     if [ -d "$dep_dir/tools/lib64" ]; then
         DEP_LIBPATH="${DEP_LIBPATH:+$DEP_LIBPATH:}$dep_dir/tools/lib64"
@@ -393,6 +489,8 @@ for dep_dir_raw in "${DEP_DIRS_ARRAY[@]}"; do
 done
 
 # Add library paths to LDFLAGS (in addition to sysroot)
+# Include dependency library paths even in namespace mode
+# The sysroot only contains base system libraries, not stage2 dependencies
 if [ -n "$DEP_LIBPATH" ]; then
     for lib_dir in ${DEP_LIBPATH//:/ }; do
         export LDFLAGS="$LDFLAGS -L$lib_dir"

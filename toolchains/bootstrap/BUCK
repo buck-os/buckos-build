@@ -974,6 +974,12 @@ mkdir -p build && cd build
 # GCC's configure must bake these into Makefile so subdirectories inherit the correct values
 # Use cross-binutils' ar/ranlib instead of host tools to avoid LTO plugin auto-detection issues
 # The host's ar auto-detects with --plugin flag, causing subdirectory configure failures
+#
+# SYSROOT CONFIGURATION:
+# We use --with-build-sysroot (build-time sysroot) pointing to the merged sysroot for building GCC
+# We configure --with-sysroot without a path, which makes GCC use a relocatable sysroot
+# The compiler will look for sysroot at $(prefix)/$target/sysroot (i.e., /tools/x86_64-buckos-linux-gnu/sysroot)
+# We'll install glibc+headers there in src_install
 AR_FOR_BUILD="$CROSS_AR" \
 RANLIB_FOR_BUILD="$CROSS_RANLIB" \
 CFLAGS_FOR_BUILD="-std=gnu11 -O2 -Wno-error=implicit-function-declaration -fcf-protection=none -D_GNU_SOURCE -include /usr/include/sys/types.h -include /usr/include/limits.h" \
@@ -983,7 +989,7 @@ stage1_ldflags="" poststage1_ldflags="" BOOT_LDFLAGS="" CET_FLAGS="-fcf-protecti
     --prefix=/tools \
     --target=$BUCKOS_TARGET \
     --build=$(../config.guess) \
-    --with-sysroot="$BUILD_SYSROOT" \
+    --with-sysroot \
     --with-build-sysroot="$BUILD_SYSROOT" \
     --with-native-system-header-dir=/usr/include \
     --enable-languages=c,c++ \
@@ -1082,6 +1088,75 @@ ln -sfv "${BUCKOS_TARGET}-cpp" cpp
 
 echo "Created symlinks for cross-compiler tools:"
 ls -la gcc g++ cc c++ cpp
+
+# Create the sysroot directory structure that the cross-compiler expects
+# The compiler is configured with --with-sysroot (relocatable)
+# This makes GCC look for sysroot at $(prefix)/$target/sys-root (note: GCC adds "sys-root" with dash)
+# i.e., /tools/x86_64-buckos-linux-gnu/sys-root
+echo ""
+echo "=== Creating cross-compiler sysroot at /tools/${BUCKOS_TARGET}/sys-root ==="
+cd "$DESTDIR"
+mkdir -p "tools/${BUCKOS_TARGET}/sys-root"
+
+# Find glibc dependency
+GLIBC_DIR=""
+if [ -n "$DEP_BASE_DIRS" ]; then
+    IFS=':' read -ra DEP_DIRS <<< "$DEP_BASE_DIRS"
+    for dep_dir in "${DEP_DIRS[@]}"; do
+        # Look for cross-glibc output (has usr/lib64/libc.so.6)
+        if [ -f "$dep_dir/usr/lib64/libc.so.6" ]; then
+            GLIBC_DIR="$dep_dir"
+            echo "Found cross-glibc at: $GLIBC_DIR"
+            break
+        fi
+    done
+fi
+
+if [ -z "$GLIBC_DIR" ]; then
+    echo "ERROR: Could not find cross-glibc in dependencies" >&2
+    echo "DEP_BASE_DIRS=$DEP_BASE_DIRS" >&2
+    exit 1
+fi
+
+# Find linux-headers dependency
+LINUX_HEADERS_DIR=""
+if [ -n "$DEP_BASE_DIRS" ]; then
+    IFS=':' read -ra DEP_DIRS <<< "$DEP_BASE_DIRS"
+    for dep_dir in "${DEP_DIRS[@]}"; do
+        # Look for linux-headers output (has usr/include with asm/ and linux/ subdirs)
+        if [ -d "$dep_dir/usr/include/linux" ] && [ -d "$dep_dir/usr/include/asm" ]; then
+            LINUX_HEADERS_DIR="$dep_dir"
+            echo "Found linux-headers at: $LINUX_HEADERS_DIR"
+            break
+        fi
+    done
+fi
+
+if [ -z "$LINUX_HEADERS_DIR" ]; then
+    echo "ERROR: Could not find linux-headers in dependencies" >&2
+    exit 1
+fi
+
+# Copy glibc to sysroot
+echo "Copying glibc to sysroot..."
+cp -a "$GLIBC_DIR/"* "tools/${BUCKOS_TARGET}/sys-root/" || {
+    echo "ERROR: Failed to copy glibc to sysroot" >&2
+    exit 1
+}
+
+# Copy linux-headers to sysroot (this will merge with glibc's usr/include)
+echo "Copying linux-headers to sysroot..."
+cp -a "$LINUX_HEADERS_DIR/"* "tools/${BUCKOS_TARGET}/sys-root/" || {
+    echo "ERROR: Failed to copy linux-headers to sysroot" >&2
+    exit 1
+}
+
+echo "Sysroot created successfully at: $DESTDIR/tools/${BUCKOS_TARGET}/sys-root"
+echo "Sysroot contains:"
+ls -la "tools/${BUCKOS_TARGET}/sys-root/"
+echo ""
+echo "Sysroot usr/lib64 contents:"
+ls -la "tools/${BUCKOS_TARGET}/sys-root/usr/lib64/" | head -20
 ''',
 
     bdepend = [
@@ -1231,6 +1306,30 @@ ebuild_package(
 
     src_configure = '''
 BUCKOS_TARGET="x86_64-buckos-linux-gnu"
+
+# Find ncurses and readline libraries from dependencies
+NCURSES_LIB=""
+READLINE_LIB=""
+for dep_dir in ${DEP_BASE_DIRS//:/ }; do
+    if [ -d "$dep_dir/tools/lib" ] && [ -f "$dep_dir/tools/lib/libncursesw.so" ]; then
+        NCURSES_LIB="$dep_dir/tools/lib"
+    fi
+    if [ -d "$dep_dir/tools/lib" ] && [ -f "$dep_dir/tools/lib/libreadline.so" ]; then
+        READLINE_LIB="$dep_dir/tools/lib"
+    fi
+done
+
+# Add RPATH to ensure bash finds the right libraries at runtime
+if [ -n "$NCURSES_LIB" ]; then
+    export LDFLAGS="$LDFLAGS -Wl,-rpath,$NCURSES_LIB"
+fi
+if [ -n "$READLINE_LIB" ] && [ "$READLINE_LIB" != "$NCURSES_LIB" ]; then
+    export LDFLAGS="$LDFLAGS -Wl,-rpath,$READLINE_LIB"
+fi
+
+# Also add -rpath-link to help linker find transitive dependencies
+export LDFLAGS="$LDFLAGS -Wl,-rpath-link,$NCURSES_LIB -Wl,-rpath-link,$READLINE_LIB"
+
 ./configure \
     --prefix=/tools \
     --host=$BUCKOS_TARGET \

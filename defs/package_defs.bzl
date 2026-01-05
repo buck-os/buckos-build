@@ -2657,12 +2657,19 @@ def _ebuild_package_impl(ctx: AnalysisContext) -> list[Provider]:
         '''#!/bin/bash
 set -e
 
+# Ensure basic PATH is set for utilities like readlink
+export PATH="${{PATH:-/usr/bin:/bin:/usr/local/bin}}"
+
+# CRITICAL: Save all original arguments for potential re-execution in mount namespace
+ORIGINAL_ARGS=("$@")
+
 # Arguments: DESTDIR, SRC_DIR, PKG_CONFIG_WRAPPER, FRAMEWORK_SCRIPT, PATCH_COUNT, patches..., dep_dirs...
 # Save these before shifting
-export _EBUILD_DESTDIR="$1"
-export _EBUILD_SRCDIR="$2"
-export _EBUILD_PKG_CONFIG_WRAPPER="$3"
-FRAMEWORK_SCRIPT="$4"
+# Convert paths to absolute to work in mount namespace
+export _EBUILD_DESTDIR="$(readlink -f "$1")"
+export _EBUILD_SRCDIR="$(readlink -f "$2")"
+export _EBUILD_PKG_CONFIG_WRAPPER="$(readlink -f "$3")"
+FRAMEWORK_SCRIPT="$(readlink -f "$4")"
 PATCH_COUNT="$5"
 shift 5
 
@@ -2904,6 +2911,47 @@ fi
 PHASES_EOF
 export PHASES_CONTENT
 
+# For bootstrap stage2, we need to set up a mount namespace to bind-mount
+# the cross-gcc toolchain to /tools so the compiler can find its sysroot
+if [ "{bootstrap_stage}" = "stage2" ] && [ -z "$BOOTSTRAP_NAMESPACE_ACTIVE" ]; then
+    echo "=== Setting up mount namespace for stage2 bootstrap ==="
+
+    # Find cross-gcc-pass2 and cross-binutils directories
+    CROSS_GCC_DIR=""
+    CROSS_BINUTILS_DIR=""
+    for dep_dir in $_EBUILD_DEP_DIRS; do
+        if [ -d "$dep_dir/tools/bin" ] && [ -f "$dep_dir/tools/bin/x86_64-buckos-linux-gnu-gcc" ]; then
+            CROSS_GCC_DIR="$dep_dir/tools"
+            echo "Found cross-gcc toolchain: $CROSS_GCC_DIR"
+        fi
+        if [ -d "$dep_dir/tools/bin" ] && [ -f "$dep_dir/tools/bin/x86_64-buckos-linux-gnu-ld" ]; then
+            CROSS_BINUTILS_DIR="$dep_dir/tools"
+            echo "Found cross-binutils toolchain: $CROSS_BINUTILS_DIR"
+        fi
+    done
+
+    if [ -n "$CROSS_GCC_DIR" ] && [ -n "$CROSS_BINUTILS_DIR" ]; then
+        # Export the cross-compiler paths for stage2 to use directly
+        echo "Found cross-toolchain directories:"
+        echo "  GCC: $CROSS_GCC_DIR"
+        echo "  Binutils: $CROSS_BINUTILS_DIR"
+
+        export BOOTSTRAP_CROSS_GCC_DIR="$CROSS_GCC_DIR"
+        export BOOTSTRAP_CROSS_BINUTILS_DIR="$CROSS_BINUTILS_DIR"
+
+        # Add both cross-compiler bin directories to PATH
+        # GCC's bin needs to come first since it has the main compiler
+        export PATH="$CROSS_GCC_DIR/bin:$CROSS_BINUTILS_DIR/bin:$PATH"
+
+        # Unset LD_LIBRARY_PATH to avoid GLIBC version conflicts
+        unset LD_LIBRARY_PATH
+
+        echo "Updated PATH with cross-compiler directories"
+    else
+        echo "WARNING: Could not find cross-gcc toolchain"
+    fi
+fi
+
 # Source the external framework (provides PATH setup, dependency handling, etc.)
 source "$FRAMEWORK_SCRIPT"
 '''.format(
@@ -2915,6 +2963,7 @@ source "$FRAMEWORK_SCRIPT"
             use_bootstrap = "true" if use_bootstrap else "false",
             use_host = "true" if use_host_toolchain else "false",
             bootstrap_sysroot = bootstrap_sysroot,
+            bootstrap_stage = bootstrap_stage,
             build_threads = build_threads,
             env = env_str,
             src_unpack = src_unpack,
