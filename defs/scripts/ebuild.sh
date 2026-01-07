@@ -89,11 +89,15 @@ done
 export TOOLCHAIN_INCLUDE  # For --with-headers etc
 export TOOLCHAIN_ROOT     # For copying toolchain files
 
-# Toolchain path goes first, then dependency paths, then host PATH
-if [ -n "$TOOLCHAIN_PATH" ]; then
-    export PATH="$TOOLCHAIN_PATH:$DEP_PATH:$PATH"
+# For regular packages: prioritize host tools, but include toolchain at the end
+# This way: host utilities (bash, make, etc.) are used first (avoiding GLIBC conflicts)
+# But GCC can still find its internal programs (cc1, etc.) from TOOLCHAIN_PATH
+if [ -n "$DEP_PATH" ] && [ -n "$TOOLCHAIN_PATH" ]; then
+    export PATH="$DEP_PATH:$PATH:$TOOLCHAIN_PATH"
 elif [ -n "$DEP_PATH" ]; then
     export PATH="$DEP_PATH:$PATH"
+elif [ -n "$TOOLCHAIN_PATH" ]; then
+    export PATH="$PATH:$TOOLCHAIN_PATH"
 fi
 
 # Set up PYTHONPATH for Python-based build tools (meson, etc)
@@ -147,7 +151,7 @@ if [ "$USE_HOST_TOOLCHAIN" = "true" ]; then
     # Standard tools (AR, AS, etc.) are in PATH and will be auto-detected
 elif [ "$USE_BOOTSTRAP" = "true" ]; then
     # Verify the cross-compiler actually exists
-    if [ -n "$TOOLCHAIN_PATH" ] && command -v ${BUCKOS_TARGET}-gcc >/dev/null 2>&1; then
+    if [ -n "$TOOLCHAIN_PATH" ] && [ -x "$TOOLCHAIN_PATH/${BUCKOS_TARGET}-gcc" ]; then
         CROSS_COMPILING="true"
         echo "=== Using Bootstrap Toolchain ==="
         echo "Target: $BUCKOS_TARGET"
@@ -155,6 +159,8 @@ elif [ "$USE_BOOTSTRAP" = "true" ]; then
         echo "Toolchain PATH: $TOOLCHAIN_PATH"
 
         # Set cross-compilation environment variables
+        # Use binary names (not absolute paths) so GCC can find its internal programs
+        # The cross-compiler will be found via TOOLCHAIN_PATH at end of PATH
         export CC="${BUCKOS_TARGET}-gcc"
         export CXX="${BUCKOS_TARGET}-g++"
         export CPP="${BUCKOS_TARGET}-gcc -E"
@@ -393,34 +399,33 @@ fi
 # Run the phases (from PHASES_CONTENT environment variable set by wrapper)
 if [ -n "$PHASES_CONTENT" ]; then
     # Write phases to temp file for execution
-    echo "$PHASES_CONTENT" > "$T/phases.sh"
+    # IMPORTANT: Prepend PATH export to ensure it's available in unshare environment
+    {
+        echo "#!/bin/bash"
+        echo "# Explicitly set PATH to ensure toolchain binaries are found"
+        echo "export PATH=\"$PATH\""
+        [ -n "$TOOLCHAIN_PATH" ] && echo "export TOOLCHAIN_PATH=\"$TOOLCHAIN_PATH\""
+        [ -n "$DEP_PATH" ] && echo "export DEP_PATH=\"$DEP_PATH\""
+        echo ""
+        echo "$PHASES_CONTENT"
+    } > "$T/phases.sh"
     chmod +x "$T/phases.sh"
 
-    # If bootstrap toolchain is available, set LD_LIBRARY_PATH to include its libraries
-    # so that the bootstrap bash and other tools can find their dependencies.
-    # This is set just before running phases so it doesn't affect the host ebuild.sh execution.
-    if [ -n "$TOOLCHAIN_LIBPATH" ]; then
-        export LD_LIBRARY_PATH="${TOOLCHAIN_LIBPATH}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-    fi
+    # NOTE: We do NOT set LD_LIBRARY_PATH to bootstrap toolchain libraries here
+    # because we use host bash to run build scripts (see below). Setting LD_LIBRARY_PATH
+    # to bootstrap libraries would cause host bash to try loading incompatible libraries,
+    # resulting in segmentation faults. The bootstrap cross-compiler finds its libraries
+    # through --sysroot and -rpath-link flags set in CFLAGS/LDFLAGS.
 
-    # Determine which bash to use for phases - prefer bootstrap bash if available
-    # We need to explicitly invoke bash rather than rely on shebang because
-    # the shebang invokes /bin/bash before LD_LIBRARY_PATH is available
+    # Determine which bash to use for phases
+    # NOTE: We use host bash even when bootstrap toolchain is available because
+    # bootstrap bash has the host's dynamic linker hardcoded (/lib64/ld-linux-x86-64.so.2)
+    # which causes GLIBC version conflicts. The build phases just need a working bash;
+    # what matters is that the *compiler* uses the bootstrap toolchain.
     PHASES_BASH="bash"
-    if [ -n "$TOOLCHAIN_PATH" ]; then
-        # Try to find bootstrap bash in the toolchain path
-        IFS=':' read -ra TOOLCHAIN_PATH_PARTS <<< "$TOOLCHAIN_PATH"
-        for toolpath in "${TOOLCHAIN_PATH_PARTS[@]}"; do
-            if [ -x "$toolpath/bash" ]; then
-                PHASES_BASH="$toolpath/bash"
-                echo "🔧 Using bootstrap bash: $PHASES_BASH"
-                break
-            fi
-        done
-    fi
 
     # Skip unshare for bootstrap builds and use host bash to avoid GLIBC issues
-    if [[ "$PHASES_BASH" == *"bootstrap-bash"* ]] || [[ "$PKG_NAME" == *"bootstrap"* ]]; then
+    if [[ "$PHASES_BASH" == *"bootstrap-bash"* ]] || [[ "$PN" == *"bootstrap"* ]]; then
         echo "⚠ Bootstrap build detected, using host bash and tools to avoid compatibility issues"
 
         # Use env -i to start with clean environment, only keep essential variables
@@ -438,7 +443,44 @@ if [ -n "$PHASES_CONTENT" ]; then
             /bin/bash --norc --noprofile "$T/phases.sh"
     elif command -v unshare >/dev/null 2>&1 && unshare --net true 2>/dev/null; then
         echo "🔒 Running build phases in network-isolated environment (no internet access)"
-        unshare --net -- "$PHASES_BASH" "$T/phases.sh"
+        # Explicitly preserve all environment variables and use --norc --noprofile to prevent
+        # bash from sourcing profile files that might reset PATH
+        # IMPORTANT: Also preserve TOOLCHAIN_PATH and DEP_PATH for PATH reconstruction
+        unshare --net -- env \
+            PATH="$PATH" \
+            TOOLCHAIN_PATH="$TOOLCHAIN_PATH" \
+            DEP_PATH="$DEP_PATH" \
+            CC="$CC" \
+            CXX="$CXX" \
+            CPP="$CPP" \
+            AR="$AR" \
+            AS="$AS" \
+            LD="$LD" \
+            NM="$NM" \
+            RANLIB="$RANLIB" \
+            STRIP="$STRIP" \
+            OBJCOPY="$OBJCOPY" \
+            OBJDUMP="$OBJDUMP" \
+            READELF="$READELF" \
+            CFLAGS="$CFLAGS" \
+            CXXFLAGS="$CXXFLAGS" \
+            LDFLAGS="$LDFLAGS" \
+            CPPFLAGS="$CPPFLAGS" \
+            PKG_CONFIG_PATH="$PKG_CONFIG_PATH" \
+            PKG_CONFIG_LIBDIR="$PKG_CONFIG_LIBDIR" \
+            ACLOCAL_PATH="$ACLOCAL_PATH" \
+            HOME="$HOME" \
+            S="$S" \
+            T="$T" \
+            DESTDIR="$DESTDIR" \
+            PN="$PN" \
+            PV="$PV" \
+            USE="$USE" \
+            DEP_BASE_DIRS="$DEP_BASE_DIRS" \
+            CROSS_COMPILING="$CROSS_COMPILING" \
+            BUCKOS_TARGET="$BUCKOS_TARGET" \
+            BOOTSTRAP_SYSROOT="$BOOTSTRAP_SYSROOT" \
+            /bin/bash --norc --noprofile "$T/phases.sh"
     else
         echo "⚠ Warning: unshare not available or insufficient permissions, building without network isolation"
         "$PHASES_BASH" "$T/phases.sh"

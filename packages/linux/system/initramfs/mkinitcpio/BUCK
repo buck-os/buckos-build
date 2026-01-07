@@ -66,29 +66,7 @@ mkdir -p $OUT/etc/mkinitcpio.d
         "//packages/linux/system/apps/coreutils:coreutils",
         "//packages/linux/core/util-linux:util-linux",
         "//packages/linux/core/xz:xz",
+        "//packages/linux/core/cpio:cpio",
     ],
-    visibility = ["PUBLIC"],
-)
-
-# mkinitcpio-busybox - Busybox for use in initramfs
-autotools_package(
-    name = "mkinitcpio-busybox",
-    source = "//packages/linux/core/busybox:busybox-src",
-    version = "1.36.1",
-    description = "Busybox configured for mkinitcpio initramfs",
-    homepage = "https://busybox.net/",
-    license = "GPL-2.0",
-    pre_configure = """
-# Use minimal config for initramfs
-make defconfig
-# Enable static linking
-sed -i 's/# CONFIG_STATIC is not set/CONFIG_STATIC=y/' .config
-""",
-    configure_args = [],
-    make_args = [],
-    post_install = """
-mkdir -p $OUT/usr/lib/initcpio
-install -m755 busybox $OUT/usr/lib/initcpio/busybox
-""",
     visibility = ["PUBLIC"],
 )

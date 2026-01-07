@@ -153,7 +153,7 @@ filegroup(
     name = "core-packages",
     srcs = [
         "//packages/linux/core/musl:musl",
-        "//packages/linux/core/busybox:busybox",
+        "//packages/linux/core/cpio:cpio",
         "//packages/linux/core/util-linux:util-linux",
         "//packages/linux/core/zlib:zlib",
     ],

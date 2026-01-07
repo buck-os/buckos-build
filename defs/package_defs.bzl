@@ -3607,7 +3607,19 @@ def autotools_package(
 
     # Merge eclass bdepend with any existing bdepend
     bdepend = list(kwargs.pop("bdepend", []))
+
+    # Check if host toolchain is enabled
+    use_host_toolchain = read_config("buckos", "use_host_toolchain", "false").lower() in ["true", "1", "yes"]
+
     for dep in eclass_config["bdepend"]:
+        # Skip autoconf/automake/libtool when using host toolchain (they'll be available from the host)
+        if use_host_toolchain:
+            dep_str = str(dep)
+            skip = False
+            if "autoconf" in dep_str or "automake" in dep_str or "libtool" in dep_str:
+                skip = True
+            if skip:
+                continue
         if dep not in bdepend:
             bdepend.append(dep)
 

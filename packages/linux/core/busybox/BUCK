@@ -19,20 +19,28 @@ autotools_package(
     homepage = "https://busybox.net/",
     license = "GPL-2.0",
     pre_configure = """
-# Start with minimal config, then enable only what we need
-make allnoconfig
+# Generate minimal busybox configuration with only cpio enabled
+# For end user builds, they can provide their own .config file
+export KCONFIG_NOTIMESTAMP=1
 
-# Enable cpio (needed for dracut)
-sed -i 's/# CONFIG_CPIO is not set/CONFIG_CPIO=y/' .config
+# Start with allnoconfig (all options disabled)
+make allnoconfig > /dev/null 2>&1
 
-# Enable features cpio needs
-sed -i 's/# CONFIG_FEATURE_CPIO_O is not set/CONFIG_FEATURE_CPIO_O=y/' .config
-sed -i 's/# CONFIG_FEATURE_CPIO_P is not set/CONFIG_FEATURE_CPIO_P=y/' .config
+# Enable only the cpio applet which is needed for dracut
+cat >> .config << 'EOF'
+CONFIG_CPIO=y
+CONFIG_FEATURE_CPIO_O=y
+CONFIG_FEATURE_CPIO_P=y
+EOF
 
-# Note: Static linking disabled - requires glibc-static or musl
+# Run oldconfig to ensure config is valid and complete
+yes "" | make oldconfig > /dev/null 2>&1
 
-# Ensure we have the install applet to create busybox symlink
-sed -i 's/# CONFIG_INSTALL is not set/CONFIG_INSTALL=y/' .config
+echo "Generated minimal busybox config with cpio enabled"
+""",
+    src_configure = """
+# Busybox uses Kconfig, not autotools - skip configure step
+echo "Busybox configuration already done in pre_configure"
 """,
     make_args = [
         "CONFIG_PREFIX=$DESTDIR",

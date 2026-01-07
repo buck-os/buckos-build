@@ -22,7 +22,54 @@ ebuild_package(
     homepage = "https://www.gnu.org/software/automake/",
     license = "GPL-2+",
 
+    pre_configure = '''
+# Create custom autom4te.cfg with correct paths for Buck build environment
+for dep_dir in $(echo $DEP_BASE_DIRS | tr ':' ' '); do
+    if [ -d "$dep_dir/usr/share/autoconf" ] && [ -f "$dep_dir/usr/share/autoconf/autom4te.cfg" ]; then
+        echo "Found autoconf in: $dep_dir"
+
+        # Create custom autom4te.cfg with Buck-specific paths
+        mkdir -p "$T/autoconf-config"
+        sed "s|--prepend-include '/usr/share/autoconf'|--prepend-include '$dep_dir/usr/share/autoconf'|g" \
+            "$dep_dir/usr/share/autoconf/autom4te.cfg" > "$T/autoconf-config/autom4te.cfg"
+
+        # Export environment variables for autoconf tools
+        export AUTOM4TE="$dep_dir/usr/bin/autom4te"
+        export AUTOM4TE_CFG="$T/autoconf-config/autom4te.cfg"
+        export PERL5LIB="$dep_dir/usr/share/autoconf:${PERL5LIB:-}"
+        export AC_MACRODIR="$dep_dir/usr/share/autoconf"
+        export M4PATH="$dep_dir/usr/share/autoconf"
+        export PATH="$dep_dir/usr/bin:$PATH"
+
+        echo "Created custom autom4te.cfg at: $T/autoconf-config/autom4te.cfg"
+        echo "Testing autoconf:"
+        which autoconf
+        autoconf --version 2>&1 | head -1 || echo "autoconf test failed"
+        echo "AUTOM4TE_CFG=$AUTOM4TE_CFG"
+        break
+    fi
+done
+''',
+
     src_configure = '''
+# Re-export environment variables (they don't persist from pre_configure)
+for dep_dir in $(echo $DEP_BASE_DIRS | tr ':' ' '); do
+    if [ -f "$T/autoconf-config/autom4te.cfg" ]; then
+        export AUTOM4TE_CFG="$T/autoconf-config/autom4te.cfg"
+        export PERL5LIB="$dep_dir/usr/share/autoconf:${PERL5LIB:-}"
+        export AC_MACRODIR="$dep_dir/usr/share/autoconf"
+        export M4PATH="$dep_dir/usr/share/autoconf"
+        export autom4te_perllibdir="$dep_dir/usr/share/autoconf"
+        export trailer_m4="$dep_dir/usr/share/autoconf/autoconf/trailer.m4"
+        echo "src_configure: Re-exported environment variables"
+        break
+    fi
+done
+echo "src_configure: AUTOM4TE_CFG=$AUTOM4TE_CFG"
+echo "src_configure: trailer_m4=$trailer_m4"
+echo "src_configure: PATH=$PATH"
+which autoconf
+autoconf --version 2>&1 | head -1 || echo "autoconf not working"
 ./configure \\
     --prefix=/usr \\
     --build=$(gcc -dumpmachine) \\
@@ -44,7 +91,7 @@ make -j$(nproc)
 make DESTDIR="$DESTDIR" install
 ''',
 
-    depend = [
+    bdepend = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
     ],
     visibility = ["PUBLIC"],

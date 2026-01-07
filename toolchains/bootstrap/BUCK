@@ -2143,6 +2143,82 @@ for dep_dir in "${DEP_ARRAY[@]}"; do
         mkdir -p "$DESTDIR/tools/share"
         cp -a "$dep_dir/tools/share/"* "$DESTDIR/tools/share/" 2>/dev/null || true
     fi
+    # Copy libexec directory (GCC internal programs like cc1, cc1plus, etc.)
+    if [ -d "$dep_dir/tools/libexec" ]; then
+        mkdir -p "$DESTDIR/tools/libexec"
+        cp -a "$dep_dir/tools/libexec/"* "$DESTDIR/tools/libexec/" 2>/dev/null || true
+    fi
+    # Copy target-specific libraries (e.g., tools/x86_64-buckos-linux-gnu/lib64/libgcc_s.so)
+    for target_dir in "$dep_dir/tools/"*-*-*-*/; do
+        if [ -d "$target_dir" ]; then
+            if [ -d "$target_dir/lib" ]; then
+                cp -a "$target_dir/lib/"* "$DESTDIR/tools/lib/" 2>/dev/null || true
+            fi
+            if [ -d "$target_dir/lib64" ]; then
+                cp -a "$target_dir/lib64/"* "$DESTDIR/tools/lib/" 2>/dev/null || true
+            fi
+        fi
+    done
+done
+
+# Special handling for cross-glibc which uses FHS layout (usr/lib, etc.) instead of tools/
+# Find cross-glibc by checking for libc.so.6
+for dep_dir in "${DEP_ARRAY[@]}"; do
+    if [ -f "$dep_dir/usr/lib64/libc.so.6" ]; then
+        echo "Found cross-glibc at: $dep_dir"
+        # Copy libraries from usr/lib and usr/lib64 to tools/lib
+        # Use -L to follow symlinks and copy actual files instead of broken symlinks
+        if [ -d "$dep_dir/usr/lib" ]; then
+            cp -rL "$dep_dir/usr/lib/"* "$DESTDIR/tools/lib/" 2>/dev/null || true
+        fi
+        if [ -d "$dep_dir/usr/lib64" ]; then
+            cp -rL "$dep_dir/usr/lib64/"* "$DESTDIR/tools/lib/" 2>/dev/null || true
+        fi
+        # Copy headers from usr/include to tools/include
+        if [ -d "$dep_dir/usr/include" ]; then
+            cp -a "$dep_dir/usr/include/"* "$DESTDIR/tools/include/" 2>/dev/null || true
+        fi
+
+        # Fix libc.so linker script - rewrite paths to use /lib/ (will be prefixed with sysroot)
+        if [ -f "$DESTDIR/tools/lib/libc.so" ]; then
+            echo "Rewriting libc.so linker script to use /lib/ paths..."
+            sed -i 's|/usr/lib64/|/lib/|g; s|/usr/lib/|/lib/|g' "$DESTDIR/tools/lib/libc.so"
+        fi
+
+        # ALSO copy libraries to /tools/usr/lib64/ for sysroot compatibility
+        # The cross-compiler is configured with --with-sysroot=/tools, so when linker
+        # scripts reference absolute paths like /usr/lib64/libm.so.6, the linker looks
+        # for /tools/usr/lib64/libm.so.6. We need to create this structure.
+        echo "Creating /tools/usr/lib64/ directory structure for sysroot compatibility..."
+        mkdir -p "$DESTDIR/tools/usr/lib64"
+        if [ -d "$dep_dir/usr/lib64" ]; then
+            cp -rL "$dep_dir/usr/lib64/"* "$DESTDIR/tools/usr/lib64/" 2>/dev/null || true
+            echo "Copied libraries to /tools/usr/lib64/ for absolute path references"
+        fi
+        # Also copy to usr/lib if it exists
+        if [ -d "$dep_dir/usr/lib" ]; then
+            mkdir -p "$DESTDIR/tools/usr/lib"
+            cp -rL "$dep_dir/usr/lib/"* "$DESTDIR/tools/usr/lib/" 2>/dev/null || true
+        fi
+
+        echo "Copied cross-glibc files to tools directory (both /tools/lib and /tools/usr/lib64)"
+        break
+    fi
+done
+
+# Special handling for linux-headers which uses FHS layout (usr/include) instead of tools/
+# Find linux-headers by checking for linux/limits.h
+for dep_dir in "${DEP_ARRAY[@]}"; do
+    if [ -f "$dep_dir/usr/include/linux/limits.h" ]; then
+        echo "Found linux-headers at: $dep_dir"
+        # Copy headers from usr/include to tools/include
+        if [ -d "$dep_dir/usr/include" ]; then
+            cp -a "$dep_dir/usr/include/"* "$DESTDIR/tools/include/" 2>/dev/null || true
+        fi
+
+        echo "Copied linux-headers files to tools directory"
+        break
+    fi
 done
 
 # Create symlinks for cross-compiler tools so they can be used as native tools

@@ -1,0 +1,41 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "cpio",
+    version = "2.15",
+    src_uri = "https://ftp.gnu.org/gnu/cpio/cpio-2.15.tar.bz2",
+    sha256 = "937610b97c329a1ec9268553fb780037bcfff0dcffe9725ebc4fd9c1aa9075db",
+    signature_required = False,
+    description = "GNU cpio - copies files into or out of a cpio or tar archive",
+    homepage = "https://www.gnu.org/software/cpio/",
+    license = "GPL-3.0",
+
+    configure_args = [
+        "--bindir=/bin",
+        "--with-rmt=/usr/sbin/rmt",
+        "--enable-mt",
+        "--disable-nls",  # Disable internationalization for minimal build
+    ],
+
+    # Add -std=gnu17 to CFLAGS as required by upstream (Savannah bug #66297)
+    env = {
+        "CFLAGS": "$CFLAGS -std=gnu17",
+    },
+
+    post_install = """
+# Verify that cpio was installed
+if [ -f "$DESTDIR/bin/cpio" ]; then
+    echo "✓ cpio installed successfully at $DESTDIR/bin/cpio"
+    # Create symlink in /usr/bin for compatibility
+    mkdir -p "$DESTDIR/usr/bin"
+    ln -sf ../../bin/cpio "$DESTDIR/usr/bin/cpio"
+else
+    echo "✗ Warning: cpio not found at $DESTDIR/bin/cpio"
+    echo "  Checking alternate locations..."
+    find "$DESTDIR" -name "cpio" -type f 2>/dev/null || echo "  cpio not found anywhere in package"
+    exit 1
+fi
+""",
+
+    visibility = ["PUBLIC"],
+)
