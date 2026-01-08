@@ -33,6 +33,18 @@ autotools_package(
 
     deps = [],
 
+    src_prepare = """
+# Fix function conflicts with glibc
+# Modern glibc provides setns, name_to_handle_at, and open_by_handle_at
+# so we need to prevent iproute2 from redefining them
+
+# Patch lib/fs.c to remove conflicting definitions
+sed -i '/#ifndef HAVE_HANDLE_AT/,/#endif/d' lib/fs.c || true
+
+# Patch include/namespace.h to remove setns redefinition
+sed -i '/^static inline int setns/,/^}/d' include/namespace.h || true
+""",
+
     pre_configure = """
 # iproute2 uses a different build system
 ./configure

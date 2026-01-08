@@ -123,7 +123,6 @@ rpm_extract = rule(
     attrs = {
         "rpm_file": attrs.dep(providers = [DefaultInfo]),
         "target_layout": attrs.string(default = "buckos"),
-        "name": attrs.string(),
         "iuse": attrs.list(attrs.string(), default = []),
         "use_defaults": attrs.list(attrs.string(), default = []),
     },
@@ -182,7 +181,6 @@ def rpm_package(
     rpm_extract(
         name = extract_target,
         rpm_file = ":{}".format(download_target),
-        name = name,
         iuse = ["fedora"],  # RPM packages imply Fedora USE flag
         use_defaults = ["fedora"],
         visibility = ["//{}:".format(native.package_name())],
@@ -194,10 +192,12 @@ def rpm_package(
         all_deps.append(buck_target)
 
     # Create main target (filegroup of extracted contents)
+    # NOTE: Buck2's filegroup doesn't support deps parameter.
+    # Dependencies from all_deps need to be handled differently.
+    # TODO: Implement proper dependency handling for RPM packages
     native.filegroup(
         name = name,
         srcs = [":{}".format(extract_target)],
-        deps = all_deps,
         visibility = visibility or ["PUBLIC"],
         metadata = {
             "type": "rpm_package",

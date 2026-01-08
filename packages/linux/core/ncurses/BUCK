@@ -25,7 +25,7 @@ autotools_package(
     ],
 
     # Default USE flags
-    use_defaults = ["unicode", "cxx"],
+    use_defaults = ["unicode"],  # cxx disabled due to deprecated C++ headers
 
     # Conditional configure arguments
     use_configure = {
@@ -68,6 +68,21 @@ ln -sf libncursesw.so libcurses.so
 ln -sf libncursesw.so libtinfo.so
 ln -sf libncursesw.so libtinfow.so
 
+# Create pkg-config symlinks for non-wide versions
+if [ -d "$DESTDIR/usr/lib/pkgconfig" ]; then
+    cd "$DESTDIR/usr/lib/pkgconfig"
+    for lib in ncurses form panel menu; do
+        if [ -f "${lib}w.pc" ]; then
+            ln -sf ${lib}w.pc ${lib}.pc
+        fi
+    done
+    # Create tinfo.pc symlink pointing to ncurses (since we don't use --with-termlib)
+    if [ -f "ncursesw.pc" ]; then
+        ln -sf ncursesw.pc tinfo.pc
+        ln -sf ncursesw.pc tinfow.pc
+    fi
+fi
+
 # Also create symlinks in lib64 if it exists
 if [ -d "$DESTDIR/usr/lib64" ]; then
     cd "$DESTDIR/usr/lib64"
@@ -89,6 +104,20 @@ if [ -d "$DESTDIR/usr/lib64" ]; then
     ln -sf libncursesw.so libtinfow.so
     [ -f libncursesw.so.6 ] && ln -sf libncursesw.so.6 libtinfo.so.6
     [ -f libncursesw.so.6 ] && ln -sf libncursesw.so.6 libtinfow.so.6
+
+    # Create pkg-config symlinks in lib64/pkgconfig if it exists
+    if [ -d pkgconfig ]; then
+        cd pkgconfig
+        for lib in ncurses form panel menu; do
+            if [ -f "${lib}w.pc" ]; then
+                ln -sf ${lib}w.pc ${lib}.pc
+            fi
+        done
+        if [ -f "ncursesw.pc" ]; then
+            ln -sf ncursesw.pc tinfo.pc
+            ln -sf ncursesw.pc tinfow.pc
+        fi
+    fi
 fi
 """,
     visibility = ["PUBLIC"],

@@ -35,6 +35,8 @@ autotools_package(
     no-weak-ssl-ciphers
 """,
 
+    src_configure = "true",  # OpenSSL configures in pre_configure, skip standard configure
+
     post_install = """
 # Create symlinks for compatibility
 ln -sf /usr/lib/libssl.so.3 "$DESTDIR/usr/lib/libssl.so" || true
