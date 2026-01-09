@@ -251,17 +251,23 @@ def expand_src_uri(src_uri):
 
     return []
 
-def generate_fetch_script(src_uris, output_dir = "."):
+def generate_fetch_script(src_uris, output_dir = ".", proxy = ""):
     """
     Generate script to fetch sources with mirror fallback.
 
     Args:
         src_uris: Expanded SRC_URI list
         output_dir: Directory to save files
+        proxy: HTTP proxy URL (optional)
 
     Returns:
         Shell script string
     """
+    # Build wget proxy args
+    wget_proxy = ""
+    if proxy:
+        wget_proxy = "-e http_proxy={} -e https_proxy={} ".format(proxy, proxy)
+
     script = '''#!/bin/sh
 # Fetch sources with mirror fallback
 
@@ -285,13 +291,13 @@ OUTPUT_DIR="{}"
 
         for i, uri in enumerate(uris):
             if i == 0:
-                script += '''if wget -O "$OUTPUT_DIR/{}" "{}"; then
+                script += '''if wget {}-O "$OUTPUT_DIR/{}" "{}"; then
     echo "Downloaded {}"
-'''.format(filename, uri, filename)
+'''.format(wget_proxy, filename, uri, filename)
             else:
-                script += '''elif wget -O "$OUTPUT_DIR/{}" "{}"; then
+                script += '''elif wget {}-O "$OUTPUT_DIR/{}" "{}"; then
     echo "Downloaded {} from mirror"
-'''.format(filename, uri, filename)
+'''.format(wget_proxy, filename, uri, filename)
 
         script += '''else
     echo "Failed to download {}"

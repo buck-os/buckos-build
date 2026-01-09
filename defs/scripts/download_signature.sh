@@ -12,6 +12,13 @@ set -e
 OUT_FILE="$1"
 BASE_URL="$2"
 EXPECTED_SHA256="$3"
+PROXY="$4"
+
+# Build curl proxy args if proxy is set
+CURL_PROXY_ARGS=""
+if [ -n "$PROXY" ]; then
+    CURL_PROXY_ARGS="--proxy $PROXY"
+fi
 
 # Extensions to try (in order of preference)
 EXTENSIONS=(".sig" ".asc" ".sign")
@@ -21,7 +28,7 @@ for ext in "${EXTENSIONS[@]}"; do
     echo "Trying: $SIG_URL"
 
     # Try to download
-    if curl -fsSL --retry 3 --retry-delay 2 -o "$OUT_FILE" "$SIG_URL" 2>/dev/null; then
+    if curl $CURL_PROXY_ARGS -fsSL --retry 3 --retry-delay 2 -o "$OUT_FILE" "$SIG_URL" 2>/dev/null; then
         # Verify SHA256
         ACTUAL_SHA256=$(sha256sum "$OUT_FILE" | cut -d' ' -f1)
 

@@ -16,10 +16,19 @@ set -e
 mkdir -p "$1"
 cd "$1"
 
+# Proxy can be passed as argument $11
+PROXY="${11:-}"
+
+# Build curl proxy args if proxy is set
+CURL_PROXY_ARGS=""
+if [ -n "$PROXY" ]; then
+    CURL_PROXY_ARGS="--proxy $PROXY"
+fi
+
 # Download with original filename
 URL="$2"
 FILENAME="${URL##*/}"
-curl -L -o "$FILENAME" "$URL"
+curl -L $CURL_PROXY_ARGS -o "$FILENAME" "$URL"
 
 # Strip components setting (passed as $9)
 STRIP_COMPONENTS="${9:-1}"
@@ -65,7 +74,7 @@ verify_signature() {
     local SIG_FILENAME="${SIG_URL##*/}"
 
     # Try to download signature file
-    if curl -L -f -o "$SIG_FILENAME" "$SIG_URL" 2>/dev/null; then
+    if curl -L $CURL_PROXY_ARGS -f -o "$SIG_FILENAME" "$SIG_URL" 2>/dev/null; then
         echo "Found signature file: $SIG_URL"
 
         # Check if the downloaded file is actually a GPG signature

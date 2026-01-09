@@ -78,16 +78,17 @@ make DESTDIR="$DESTDIR" install-binutils install-gas install-ld MAKEINFO=true
 # Also install target libraries that were built
 make DESTDIR="$DESTDIR" install-bfd install-libiberty install-libsframe MAKEINFO=true || true
 
-# CRITICAL: Remove unprefixed tools from /tools/bin
+# Replace unprefixed tools with symlinks to prefixed versions
 # Cross-binutils installs both prefixed (x86_64-buckos-linux-gnu-as) and unprefixed (as) tools.
-# The unprefixed tools would shadow host tools when added to PATH, causing build failures
-# when the host compiler tries to use the cross-assembler (which is an older version).
-# Only keep the prefixed versions for cross-compilation.
+# The unprefixed tools are for the build host, but we want glibc's configure to find our
+# newer cross-ld (2.44) instead of host ld (2.35.2). Creating symlinks ensures that when
+# cross-glibc configure checks for "ld", it finds our version.
 cd "$DESTDIR/tools/bin"
 for tool in addr2line ar as c++filt elfedit gprof ld ld.bfd nm objcopy objdump ranlib readelf size strings strip; do
-    if [ -f "$tool" ] && [ -f "${BUCKOS_TARGET}-${tool}" ]; then
-        echo "Removing unprefixed $tool (keeping ${BUCKOS_TARGET}-${tool})"
+    if [ -f "${BUCKOS_TARGET}-${tool}" ]; then
+        echo "Creating symlink: $tool -> ${BUCKOS_TARGET}-${tool}"
         rm -f "$tool"
+        ln -sf "${BUCKOS_TARGET}-${tool}" "$tool"
     fi
 done
 ''',
@@ -624,6 +625,20 @@ if [ -z "$HEADERS_PATH" ] || [ ! -d "$HEADERS_PATH" ]; then
 fi
 echo "Using kernel headers from: $HEADERS_PATH"
 
+# Find cross-binutils tools in PATH
+CROSS_LD=$(which ${BUCKOS_TARGET}-ld 2>/dev/null || echo "")
+CROSS_AR=$(which ${BUCKOS_TARGET}-ar 2>/dev/null || echo "")
+CROSS_AS=$(which ${BUCKOS_TARGET}-as 2>/dev/null || echo "")
+CROSS_NM=$(which ${BUCKOS_TARGET}-nm 2>/dev/null || echo "")
+CROSS_RANLIB=$(which ${BUCKOS_TARGET}-ranlib 2>/dev/null || echo "")
+CROSS_OBJCOPY=$(which ${BUCKOS_TARGET}-objcopy 2>/dev/null || echo "")
+CROSS_OBJDUMP=$(which ${BUCKOS_TARGET}-objdump 2>/dev/null || echo "")
+CROSS_STRIP=$(which ${BUCKOS_TARGET}-strip 2>/dev/null || echo "")
+
+echo "Cross tools found:"
+echo "  LD=$CROSS_LD"
+echo "  AR=$CROSS_AR"
+
 # Set cache variables to bypass tests that require linking (cross-gcc-pass1 can't link without libc)
 # These tell configure to skip certain compile/link tests that would fail
 # libc_cv_pde: PDE (Position Dependent Executable) test - can't link without libc
@@ -636,6 +651,14 @@ echo "Using kernel headers from: $HEADERS_PATH"
     --with-headers="$HEADERS_PATH" \
     --disable-nscd \
     --disable-werror \
+    LD="$CROSS_LD" \
+    AR="$CROSS_AR" \
+    AS="$CROSS_AS" \
+    NM="$CROSS_NM" \
+    RANLIB="$CROSS_RANLIB" \
+    OBJCOPY="$CROSS_OBJCOPY" \
+    OBJDUMP="$CROSS_OBJDUMP" \
+    STRIP="$CROSS_STRIP" \
     libc_cv_slibdir=/usr/lib64 \
     libc_cv_forced_unwind=yes \
     libc_cv_c_cleanup=yes \

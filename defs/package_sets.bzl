@@ -38,6 +38,32 @@ Example usage:
 load("//defs:use_flags.bzl", "USE_PROFILES")
 
 # =============================================================================
+# SET OPERATION HELPERS (Starlark doesn't have native sets)
+# =============================================================================
+
+def _make_set(items):
+    """Create a dict-based set from a list."""
+    return {item: True for item in items}
+
+def _set_to_list(s):
+    """Convert a dict-based set to a sorted list."""
+    return sorted(s.keys())
+
+def _set_intersection(set1, set2):
+    """Return intersection of two dict-based sets."""
+    return {k: True for k in set1 if k in set2}
+
+def _set_difference(set1, set2):
+    """Return difference of two dict-based sets (set1 - set2)."""
+    return {k: True for k in set1 if k not in set2}
+
+def _set_union(set1, set2):
+    """Return union of two dict-based sets."""
+    result = dict(set1)
+    result.update(set2)
+    return result
+
+# =============================================================================
 # CORE SYSTEM PACKAGES (@system equivalent)
 # =============================================================================
 
@@ -733,13 +759,13 @@ def intersection_sets(*set_names):
         return []
 
     # Start with first set
-    result_set = set(get_set_packages(set_names[0]))
+    result_set = _make_set(get_set_packages(set_names[0]))
 
     # Intersect with remaining sets
     for name in set_names[1:]:
-        result_set = result_set & set(get_set_packages(name))
+        result_set = _set_intersection(result_set, _make_set(get_set_packages(name)))
 
-    return sorted(list(result_set))
+    return _set_to_list(result_set)
 
 def difference_sets(base_set, *remove_sets):
     """Compute difference (base - others) of package sets.
@@ -751,12 +777,12 @@ def difference_sets(base_set, *remove_sets):
     Returns:
         List of package targets in base but not in remove sets
     """
-    result_set = set(get_set_packages(base_set))
+    result_set = _make_set(get_set_packages(base_set))
 
     for name in remove_sets:
-        result_set = result_set - set(get_set_packages(name))
+        result_set = _set_difference(result_set, _make_set(get_set_packages(name)))
 
-    return sorted(list(result_set))
+    return _set_to_list(result_set)
 
 # =============================================================================
 # PACKAGE SET MACROS
@@ -852,7 +878,7 @@ def system_set(
 
     # Remove unwanted packages
     if removals:
-        removal_set = set(removals)
+        removal_set = _make_set(removals)
         packages = [p for p in packages if p not in removal_set]
 
     # Add additional packages
@@ -902,7 +928,7 @@ def combined_set(
 
     # Remove unwanted packages
     if removals:
-        removal_set = set(removals)
+        removal_set = _make_set(removals)
         packages = [p for p in packages if p not in removal_set]
 
     # Add additional packages
@@ -955,7 +981,7 @@ def task_set(
 
     # Remove unwanted packages
     if removals:
-        removal_set = set(removals)
+        removal_set = _make_set(removals)
         packages = [p for p in packages if p not in removal_set]
 
     # Add additional packages
@@ -1008,7 +1034,7 @@ def desktop_set(
 
     # Remove unwanted packages
     if removals:
-        removal_set = set(removals)
+        removal_set = _make_set(removals)
         packages = [p for p in packages if p not in removal_set]
 
     # Add additional packages
@@ -1061,7 +1087,7 @@ def language_set(
 
     # Remove unwanted packages
     if removals:
-        removal_set = set(removals)
+        removal_set = _make_set(removals)
         packages = [p for p in packages if p not in removal_set]
 
     # Add additional packages
@@ -1109,13 +1135,13 @@ def compare_sets(set1, set2):
     Returns:
         Dict with 'only_in_first', 'only_in_second', 'common'
     """
-    packages1 = set(get_set_packages(set1))
-    packages2 = set(get_set_packages(set2))
+    packages1 = _make_set(get_set_packages(set1))
+    packages2 = _make_set(get_set_packages(set2))
 
     return {
-        "only_in_first": sorted(list(packages1 - packages2)),
-        "only_in_second": sorted(list(packages2 - packages1)),
-        "common": sorted(list(packages1 & packages2)),
+        "only_in_first": _set_to_list(_set_difference(packages1, packages2)),
+        "only_in_second": _set_to_list(_set_difference(packages2, packages1)),
+        "common": _set_to_list(_set_intersection(packages1, packages2)),
     }
 
 def set_stats():

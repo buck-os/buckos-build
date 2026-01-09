@@ -29,6 +29,24 @@ Example usage:
 """
 
 # =============================================================================
+# SET OPERATION HELPERS (Starlark doesn't have native sets)
+# =============================================================================
+
+def _make_set(items = None):
+    """Create a dict-based set from a list."""
+    if items == None:
+        return {}
+    return {item: True for item in items}
+
+def _set_add(s, item):
+    """Add an item to a dict-based set."""
+    s[item] = True
+
+def _set_difference(set1, set2):
+    """Return difference of two dict-based sets (set1 - set2)."""
+    return {k: True for k in set1 if k not in set2}
+
+# =============================================================================
 # VDB STORAGE STRUCTURE
 # =============================================================================
 
@@ -702,21 +720,21 @@ def vdb_get_preserved_libs(vdb_entries, old_entry, new_entry):
     Returns:
         List of library paths that need preservation
     """
-    old_libs = set()
-    new_libs = set()
+    old_libs = _make_set()
+    new_libs = _make_set()
 
     # Find .so files in old package
     for content in old_entry.get("contents", []):
         if content["type"] == CONTENT_TYPE_OBJ and ".so" in content["path"]:
-            old_libs.add(content["path"])
+            _set_add(old_libs, content["path"])
 
     # Find .so files in new package
     for content in new_entry.get("contents", []):
         if content["type"] == CONTENT_TYPE_OBJ and ".so" in content["path"]:
-            new_libs.add(content["path"])
+            _set_add(new_libs, content["path"])
 
     # Libraries in old but not in new need preservation
-    removed_libs = old_libs - new_libs
+    removed_libs = _set_difference(old_libs, new_libs)
 
     # Check if any other package depends on these
     preserved = []

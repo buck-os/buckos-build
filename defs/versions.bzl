@@ -760,13 +760,13 @@ def check_slot_conflicts(deps):
             slot_or_constraint = "default"
 
         if path not in seen:
-            seen[path] = set()
+            seen[path] = {}
 
         # Check for duplicate slots
         if slot_or_constraint in seen[path]:
             conflicts.append("Duplicate slot {} for package {}".format(slot_or_constraint, path))
 
-        seen[path].add(slot_or_constraint)
+        seen[path][slot_or_constraint] = True
 
     return conflicts
 

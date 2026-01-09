@@ -44,6 +44,13 @@ def _should_use_host_toolchain():
     use_host = read_config("buckos", "use_host_toolchain", "false")
     return use_host.lower() in ["true", "1", "yes"]
 
+def _get_download_proxy():
+    """
+    Get the HTTP proxy for downloading sources.
+    Reads from download.proxy config in .buckconfig.
+    """
+    return read_config("download", "proxy", "")
+
 # Platform constraint values for target_compatible_with
 # Only macOS packages need constraints to prevent building on Linux
 # Linux packages don't need constraints since we're building on Linux
@@ -91,6 +98,69 @@ PackageInfo = provider(fields = [
 # Signature Download Rule (tries .sig, .asc, .sign extensions)
 # -----------------------------------------------------------------------------
 
+def _http_file_with_proxy_impl(ctx: AnalysisContext) -> list[Provider]:
+    """Download a file using curl with proxy support."""
+    out_file = ctx.actions.declare_output(ctx.attrs.out)
+
+    # Build curl command with proxy
+    proxy = ctx.attrs.proxy
+    proxy_args = "--proxy {}".format(proxy) if proxy else ""
+
+    # Create download script inline
+    script_content = """#!/bin/bash
+set -e
+OUT_FILE="$1"
+URL="$2"
+EXPECTED_SHA256="$3"
+PROXY_ARGS="$4"
+
+# Download with curl
+curl -fsSL --retry 3 --retry-delay 2 $PROXY_ARGS -o "$OUT_FILE" "$URL"
+
+# Verify SHA256 if provided
+if [ -n "$EXPECTED_SHA256" ]; then
+    ACTUAL_SHA256=$(sha256sum "$OUT_FILE" | cut -d' ' -f1)
+    if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
+        echo "SHA256 mismatch!" >&2
+        echo "  Expected: $EXPECTED_SHA256" >&2
+        echo "  Actual:   $ACTUAL_SHA256" >&2
+        rm -f "$OUT_FILE"
+        exit 1
+    fi
+    echo "SHA256 verified: $ACTUAL_SHA256"
+fi
+"""
+
+    script = ctx.actions.write("download.sh", script_content, is_executable = True)
+
+    cmd = cmd_args([
+        "bash",
+        script,
+        out_file.as_output(),
+        ctx.attrs.urls[0],  # Use first URL
+        ctx.attrs.sha256,
+        proxy_args,
+    ])
+
+    ctx.actions.run(
+        cmd,
+        category = "http_file",
+        identifier = ctx.attrs.name,
+        local_only = True,  # Network access needed
+    )
+
+    return [DefaultInfo(default_output = out_file)]
+
+_http_file_with_proxy = rule(
+    impl = _http_file_with_proxy_impl,
+    attrs = {
+        "urls": attrs.list(attrs.string(), doc = "URLs to download from"),
+        "sha256": attrs.string(doc = "Expected SHA256 checksum"),
+        "out": attrs.string(doc = "Output filename"),
+        "proxy": attrs.string(default = "", doc = "HTTP proxy URL"),
+    },
+)
+
 def _download_signature_impl(ctx: AnalysisContext) -> list[Provider]:
     """Download GPG signature, trying multiple extensions."""
     out_file = ctx.actions.declare_output(ctx.attrs.out)
@@ -103,6 +173,7 @@ def _download_signature_impl(ctx: AnalysisContext) -> list[Provider]:
         out_file.as_output(),
         ctx.attrs.src_uri,
         ctx.attrs.sha256,
+        ctx.attrs.proxy,
     ])
 
     ctx.actions.run(
@@ -120,6 +191,7 @@ _download_signature = rule(
         "src_uri": attrs.string(doc = "Base URL of the source archive (extension will be appended)"),
         "sha256": attrs.string(doc = "Expected SHA256 of the signature file"),
         "out": attrs.string(doc = "Output filename"),
+        "proxy": attrs.string(default = "", doc = "HTTP proxy URL for downloads"),
         "_download_script": attrs.dep(default = "//defs/scripts:download-signature"),
     },
 )
@@ -259,14 +331,14 @@ def download_source(
             ext = ".zip"
         archive_filename = name + ext
 
-    # Create http_file for the main archive
+    # Create http_file for the main archive (using custom rule with proxy support)
     archive_target = name + "-archive"
-    native.http_file(
+    _http_file_with_proxy(
         name = archive_target,
         urls = [src_uri],
         sha256 = sha256,
-        out = archive_filename,  # Preserve original filename with extension
-        visibility = ["PUBLIC"],
+        out = archive_filename,
+        proxy = _get_download_proxy(),
     )
 
     # Create signature download rule if signature_required and signature_sha256 provided
@@ -281,6 +353,7 @@ def download_source(
             src_uri = src_uri,
             sha256 = signature_sha256,
             out = archive_filename + ".sig",
+            proxy = _get_download_proxy(),
         )
 
     # Create extraction rule
@@ -2679,6 +2752,13 @@ shift 5
 # Example: export BUCKOS_BINARY_MIRROR=file:///tmp/buckos-mirror
 # Example: export BUCKOS_BINARY_MIRROR=https://mirror.buckos.org
 # Set BUCKOS_PREFER_BINARIES=false to disable binary downloads
+BUCKOS_PROXY="{proxy}"
+CURL_PROXY_ARGS=""
+WGET_PROXY_ARGS=""
+if [ -n "$BUCKOS_PROXY" ]; then
+    CURL_PROXY_ARGS="--proxy $BUCKOS_PROXY"
+    WGET_PROXY_ARGS="-e http_proxy=$BUCKOS_PROXY -e https_proxy=$BUCKOS_PROXY"
+fi
 if [ -n "$BUCKOS_BINARY_MIRROR" ] && [ "${{BUCKOS_PREFER_BINARIES:-true}}" = "true" ]; then
     echo "Checking binary mirror ($BUCKOS_BINARY_MIRROR) for {name}-{version}..."
 
@@ -2686,7 +2766,7 @@ if [ -n "$BUCKOS_BINARY_MIRROR" ] && [ "${{BUCKOS_PREFER_BINARIES:-true}}" = "tr
     # Query index.json and find matching package by name/version
     INDEX_URL="$BUCKOS_BINARY_MIRROR/index.json"
 
-    if curl -f -s "$INDEX_URL" -o /tmp/mirror-index-$$.json 2>/dev/null || wget -q "$INDEX_URL" -O /tmp/mirror-index-$$.json 2>/dev/null; then
+    if curl $CURL_PROXY_ARGS -f -s "$INDEX_URL" -o /tmp/mirror-index-$$.json 2>/dev/null || wget $WGET_PROXY_ARGS -q "$INDEX_URL" -O /tmp/mirror-index-$$.json 2>/dev/null; then
         # Find package in index using python3 or fallback to grep
         if command -v python3 &>/dev/null; then
             PACKAGE_INFO=$(python3 -c "
@@ -2716,8 +2796,8 @@ except: pass
                     echo "Downloading binary: $FILENAME..."
 
                     # Download package and hash
-                    if (curl -f -s "$PACKAGE_URL" -o /tmp/pkg-$$.tar.gz && curl -f -s "$HASH_URL" -o /tmp/pkg-$$.tar.gz.sha256) || \
-                       (wget -q "$PACKAGE_URL" -O /tmp/pkg-$$.tar.gz && wget -q "$HASH_URL" -O /tmp/pkg-$$.tar.gz.sha256); then
+                    if (curl $CURL_PROXY_ARGS -f -s "$PACKAGE_URL" -o /tmp/pkg-$$.tar.gz && curl $CURL_PROXY_ARGS -f -s "$HASH_URL" -o /tmp/pkg-$$.tar.gz.sha256) || \
+                       (wget $WGET_PROXY_ARGS -q "$PACKAGE_URL" -O /tmp/pkg-$$.tar.gz && wget $WGET_PROXY_ARGS -q "$HASH_URL" -O /tmp/pkg-$$.tar.gz.sha256); then
 
                         # Verify SHA256
                         EXPECTED_HASH=$(head -1 /tmp/pkg-$$.tar.gz.sha256 | awk '{{print $1}}')
@@ -2803,9 +2883,13 @@ fi
 if [ -d "$_EBUILD_SRCDIR" ]; then
     echo "Copying source to isolated build directory..."
     BUILD_SRCDIR="$_EBUILD_DESTDIR/../source"
+    # Ensure destination is writable before removing (Buck cached artifacts may be read-only)
+    chmod -R u+w "$BUILD_SRCDIR" 2>/dev/null || true
     rm -rf "$BUILD_SRCDIR"
     mkdir -p "$(dirname "$BUILD_SRCDIR")"
     cp -a "$_EBUILD_SRCDIR" "$BUILD_SRCDIR"
+    # Make the copy writable (source archives from Buck are often read-only)
+    chmod -R u+w "$BUILD_SRCDIR"
     # Update _EBUILD_SRCDIR to point to the isolated copy
     export _EBUILD_SRCDIR="$BUILD_SRCDIR"
     echo "Source copied to: $BUILD_SRCDIR"
@@ -2974,6 +3058,7 @@ source "$FRAMEWORK_SCRIPT"
             src_test = src_test,
             src_install = src_install,
             run_tests = "yes" if ctx.attrs.run_tests else "",
+            proxy = _get_download_proxy(),
         ),
         is_executable = True,
     )
@@ -4089,7 +4174,7 @@ def python_package(
         resolved_deps.extend(use_dep(use_deps, effective_use))
 
         # Collect Python extras based on USE flags
-        enabled_set = set(effective_use)
+        enabled_set = {f: True for f in effective_use}
         for flag, extra_name in use_extras.items():
             if flag in enabled_set:
                 if isinstance(extra_name, list):
@@ -4438,4 +4523,5 @@ def bootstrap_package(
         maintainers = maintainers,
         **kwargs
     )
+
 

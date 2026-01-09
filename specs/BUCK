@@ -25,7 +25,7 @@ filegroup(
 genrule(
     name = "index",
     out = "INDEX.md",
-    cmd = "python3 $(location //scripts:generate-spec-index) --format markdown --output $OUT --specs-dir $(location :specs-root)",
+    cmd = "/usr/bin/python3 $(location //scripts:generate-spec-index) --format markdown --output $OUT --specs-dir $(location :specs-root)",
     srcs = glob(["**/*.md"]),
     visibility = ["PUBLIC"],
 )
@@ -34,7 +34,7 @@ genrule(
 genrule(
     name = "registry",
     out = "REGISTRY.json",
-    cmd = "python3 $(location //scripts:generate-spec-index) --format json --output $OUT --specs-dir $(location :specs-root)",
+    cmd = "/usr/bin/python3 $(location //scripts:generate-spec-index) --format json --output $OUT --specs-dir $(location :specs-root)",
     srcs = glob(["**/*.md"]),
     visibility = ["PUBLIC"],
 )
@@ -64,13 +64,7 @@ filegroup(
 genrule(
     name = "validate-specs",
     out = "validation-report.txt",
-    cmd = """
-        python3 $(location //scripts:validate-spec) $(location :specs-files) > $OUT
-        if [ $? -ne 0 ]; then
-            echo "Spec validation failed!" >&2
-            exit 1
-        fi
-    """,
-    srcs = [":specs-files"],
+    cmd = "/usr/bin/python3 $(location //scripts:validate-spec) --all --specs-dir $(location :specs-root) > $OUT 2>&1 || (cat $OUT >&2 && exit 1)",
+    srcs = [":specs-root"],
     visibility = ["PUBLIC"],
 )

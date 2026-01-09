@@ -34,6 +34,10 @@ load("//defs:distro_constraints.bzl",
      "get_distro_constraints")
 load("//defs:use_flags.bzl", "get_effective_use")
 
+def _get_download_proxy():
+    """Get the HTTP proxy for downloading sources from .buckconfig."""
+    return read_config("download", "proxy", "")
+
 # =============================================================================
 # RPM DOWNLOAD AND VERIFICATION
 # =============================================================================
@@ -45,13 +49,17 @@ def _rpm_download_impl(ctx):
     # Download RPM
     rpm_file = ctx.actions.declare_output("package.rpm")
 
+    # Build proxy args for curl
+    proxy = ctx.attrs.proxy
+    proxy_arg = "--proxy {}".format(proxy) if proxy else ""
+
     ctx.actions.run(
         [
             "sh", "-c",
             """
             set -e
             mkdir -p $(dirname {output})
-            curl -L -o {output} {uri}
+            curl -L {proxy_arg} -o {output} {uri}
 
             # Verify checksum if provided
             if [ -n "{sha256}" ]; then
@@ -61,6 +69,7 @@ def _rpm_download_impl(ctx):
                 output = rpm_file.as_output(),
                 uri = ctx.attrs.rpm_uri,
                 sha256 = ctx.attrs.sha256 or "",
+                proxy_arg = proxy_arg,
             ),
         ],
         category = "rpm_download",
@@ -73,6 +82,7 @@ rpm_download = rule(
     attrs = {
         "rpm_uri": attrs.string(doc = "URL to RPM package"),
         "sha256": attrs.string(default = "", doc = "Expected SHA256 checksum"),
+        "proxy": attrs.string(default = "", doc = "HTTP proxy URL for downloads"),
     },
 )
 
@@ -173,6 +183,7 @@ def rpm_package(
         name = download_target,
         rpm_uri = rpm_uri,
         sha256 = sha256 or "",
+        proxy = _get_download_proxy(),
         visibility = ["//{}:".format(native.package_name())],
     )
 

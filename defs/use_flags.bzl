@@ -390,28 +390,28 @@ def get_effective_use(package_name, iuse, use_defaults, global_use = None, packa
     Returns:
         List of enabled USE flags for this package
     """
-    # Start with package defaults
-    effective = set(use_defaults) if use_defaults else set()
+    # Start with package defaults (use dict as set)
+    effective = {flag: True for flag in use_defaults} if use_defaults else {}
 
     # Apply global USE settings
     if global_use:
         for flag in global_use.get("enabled", []):
             if flag in iuse:
-                effective.add(flag)
+                effective[flag] = True
         for flag in global_use.get("disabled", []):
             if flag in effective:
-                effective.remove(flag)
+                effective.pop(flag)
 
     # Apply package-specific overrides
     if package_overrides:
         for flag in package_overrides.get("enabled", []):
             if flag in iuse:
-                effective.add(flag)
+                effective[flag] = True
         for flag in package_overrides.get("disabled", []):
             if flag in effective:
-                effective.remove(flag)
+                effective.pop(flag)
 
-    return sorted(list(effective))
+    return sorted(effective.keys())
 
 # =============================================================================
 # USE FLAG CONDITIONAL HELPERS
@@ -483,7 +483,7 @@ def use_dep(deps_map, enabled_flags):
         List of resolved dependencies
     """
     result = []
-    enabled_set = set(enabled_flags)
+    enabled_set = {f: True for f in enabled_flags}
 
     for flag, deps in deps_map.items():
         if flag in enabled_set:
@@ -508,7 +508,7 @@ def use_required_deps(deps_map, enabled_flags):
         List of dependency targets with USE requirements
     """
     result = []
-    enabled_set = set(enabled_flags)
+    enabled_set = {f: True for f in enabled_flags}
 
     for dep, required_flags in deps_map.items():
         # Check if all required flags are enabled
@@ -543,7 +543,7 @@ def use_configure_args(use_configure, enabled_flags):
         List of configure arguments
     """
     result = []
-    enabled_set = set(enabled_flags)
+    enabled_set = {f: True for f in enabled_flags}
 
     for flag, arg in use_configure.items():
         if flag.startswith("-"):
@@ -606,7 +606,7 @@ def use_cargo_features(use_features, enabled_flags):
         List of Cargo features to enable
     """
     features = []
-    enabled_set = set(enabled_flags)
+    enabled_set = {f: True for f in enabled_flags}
 
     for flag, cargo_features in use_features.items():
         if flag in enabled_set:
@@ -655,7 +655,7 @@ def use_cmake_options(use_options, enabled_flags):
         List of CMake options (-DENABLE_SSL=ON, etc.)
     """
     options = []
-    enabled_set = set(enabled_flags)
+    enabled_set = {f: True for f in enabled_flags}
 
     for flag, cmake_opt in use_options.items():
         if isinstance(cmake_opt, list):
@@ -688,7 +688,7 @@ def use_meson_options(use_options, enabled_flags):
         List of Meson options (-Dssl=enabled, etc.)
     """
     options = []
-    enabled_set = set(enabled_flags)
+    enabled_set = {f: True for f in enabled_flags}
 
     for flag, meson_opt in use_options.items():
         if isinstance(meson_opt, list):
@@ -721,7 +721,7 @@ def use_go_tags(use_tags, enabled_flags):
         List of Go build tags
     """
     tags = []
-    enabled_set = set(enabled_flags)
+    enabled_set = {f: True for f in enabled_flags}
 
     for flag, go_tags_value in use_tags.items():
         if flag in enabled_set:
@@ -770,7 +770,7 @@ def validate_use_flags(iuse, requested_flags):
         List of warning messages for unknown flags
     """
     warnings = []
-    iuse_set = set(iuse)
+    iuse_set = {f: True for f in iuse}
 
     for flag in requested_flags:
         actual_flag = flag[1:] if flag.startswith("-") else flag
@@ -796,7 +796,7 @@ def required_use_check(required_use, enabled_flags):
     Returns:
         True if constraints satisfied, error message otherwise
     """
-    enabled_set = set(enabled_flags)
+    enabled_set = {f: True for f in enabled_flags}
 
     # Simple implementation - parse basic patterns
     # Full implementation would need a proper parser
@@ -876,7 +876,7 @@ def format_use_string(iuse, enabled_flags):
     Returns:
         Formatted string like "ssl http2 -debug -ldap"
     """
-    enabled_set = set(enabled_flags)
+    enabled_set = {f: True for f in enabled_flags}
     parts = []
 
     for flag in sorted(iuse):
