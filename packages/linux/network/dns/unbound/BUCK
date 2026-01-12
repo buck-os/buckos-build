@@ -1,0 +1,27 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# Unbound - Validating, recursive, caching DNS resolver
+
+autotools_package(
+    name = "unbound",
+    version = "1.19.1",
+    src_uri = "https://nlnetlabs.nl/downloads/unbound/unbound-1.19.1.tar.gz",
+    sha256 = "bc1d576f3dd846a0739adc41ffaa702404c6767d2b6082deb9f2f97cbb24a3a9",
+    description = "Validating, recursive, caching DNS resolver",
+    homepage = "https://nlnetlabs.nl/projects/unbound/",
+    license = "BSD-3-Clause",
+    iuse = ["dnscrypt", "dnstap", "ecdsa"],
+    use_defaults = ["ecdsa"],
+    deps = [
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/dev-libs/misc/libevent:libevent",
+    ],
+    configure_args = [
+        "--prefix=${PREFIX}",
+        "--with-ssl",
+        "--with-libevent",
+        "--enable-tfo-client",
+        "--enable-tfo-server",
+    ],
+    visibility = ["PUBLIC"],
+)

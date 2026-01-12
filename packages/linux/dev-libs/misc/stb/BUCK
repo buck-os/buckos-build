@@ -1,0 +1,19 @@
+load("//defs:package_defs.bzl", "simple_package")
+
+# stb - Single-file public domain libraries for C/C++
+
+simple_package(
+    name = "stb",
+    version = "2024.01",
+    src_uri = "https://github.com/nothings/stb/archive/refs/heads/master.tar.gz",
+    sha256 = "TODO",
+    description = "Single-file public domain libraries for C/C++",
+    homepage = "https://github.com/nothings/stb",
+    license = "MIT",
+    deps = [],
+    build_commands = [
+        "mkdir -p ${PREFIX}/include/stb",
+        "cp *.h ${PREFIX}/include/stb/",
+    ],
+    visibility = ["PUBLIC"],
+)

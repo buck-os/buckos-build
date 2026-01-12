@@ -1,0 +1,20 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# magic_enum - Static reflection for enums in modern C++
+
+cmake_package(
+    name = "magic_enum",
+    version = "0.9.5",
+    src_uri = "https://github.com/Neargye/magic_enum/archive/refs/tags/v0.9.5.tar.gz",
+    sha256 = "44ad80db5a72f5047e01d90e18315751d9ac90c0ab42cbea7a6f9ec66a4cd679",
+    description = "Static reflection for enums in modern C++",
+    homepage = "https://github.com/Neargye/magic_enum",
+    license = "MIT",
+    deps = [],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DMAGIC_ENUM_OPT_BUILD_EXAMPLES=OFF",
+        "-DMAGIC_ENUM_OPT_BUILD_TESTS=OFF",
+    ],
+    visibility = ["PUBLIC"],
+)

@@ -1,32 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-autotools_package(
+# FIXME: pkgs.tailscale.com returns 403 - needs working URL
+genrule(
     name = "tailscale",
-    version = "1.56.1",
-    src_uri = "https://pkgs.tailscale.com/stable/tailscale_1.56.1_amd64.tgz",
-    sha256 = "2434ec69d8a7a0372b37a1c9f0ac2f499c0614e483ff096eb4481cfb873445f9",
-    signature_required = False,
-
-    iuse = [],
-    use_defaults = [],
-
-    pre_configure = "true",
-    make_args = [],
-
-    post_install = """
-mkdir -p "$DESTDIR/usr/bin"
-mkdir -p "$DESTDIR/usr/sbin"
-mkdir -p "$DESTDIR/var/lib/tailscale"
-mkdir -p "$DESTDIR/var/run/tailscale"
-cp tailscale "$DESTDIR/usr/bin/"
-cp tailscaled "$DESTDIR/usr/sbin/"
-chmod 755 "$DESTDIR/usr/bin/tailscale"
-chmod 755 "$DESTDIR/usr/sbin/tailscaled"
-""",
-
-    description = "Tailscale mesh VPN based on WireGuard",
-    homepage = "https://tailscale.com/",
-    license = "BSD-3-Clause",
+    out = "tailscale-disabled.txt",
+    cmd = "echo 'Package disabled: upstream URL returns 403' > $OUT",
     visibility = ["PUBLIC"],
 )

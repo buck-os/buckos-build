@@ -28,11 +28,21 @@ filegroup(
 )
 
 filegroup(
+    name = "synthesis-tools",
+    srcs = [
+        "//packages/linux/audio/utilities/espeak-ng:espeak-ng",
+    ],
+    default_target_platform = "//platforms:linux-target",
+    visibility = ["PUBLIC"],
+)
+
+filegroup(
     name = "all-utilities",
     srcs = [
         ":conversion-tools",
         ":info-tools",
         ":control-tools",
+        ":synthesis-tools",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],

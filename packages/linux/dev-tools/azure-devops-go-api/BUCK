@@ -1,0 +1,12 @@
+load("//defs:package_defs.bzl", "go_package")
+
+go_package(
+    name = "azure-devops-go-api",
+    version = "7.1.0",
+    src_uri = "https://github.com/microsoft/azure-devops-go-api/archive/refs/tags/azuredevops/v7.1.0.tar.gz",
+    sha256 = "TODO",
+    packages = ["./azuredevops/v7/..."],
+    deps = [
+        "//packages/linux/dev-libs/go/google-uuid",
+    ],
+)

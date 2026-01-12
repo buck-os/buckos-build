@@ -1,0 +1,14 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "libyuv",
+    version = "1891",
+    src_uri = "https://chromium.googlesource.com/libyuv/libyuv/+archive/refs/heads/main.tar.gz",
+    sha256 = "892260ec2dc7cc534f7e255a2eeb0b517ccf5dd4d10455aa2d9cb7d915f85ee7",
+    deps = [],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+    ],
+    visibility = ["PUBLIC"],
+)

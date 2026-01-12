@@ -1,0 +1,19 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "tarsier",
+    version = "2024.10",
+    src_uri = "https://github.com/bytedance/tarsier/archive/refs/tags/v2024.10.tar.gz",
+    sha256 = "TODO",
+    deps = [
+        "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
+        "//packages/linux/ai/vision/torchvision:torchvision",
+        "//packages/linux/dev-libs/python/omegaconf:omegaconf",
+        "//packages/linux/dev-libs/python/pillow:pillow",
+        "//packages/linux/dev-libs/python/requests:requests",
+        "//packages/linux/dev-libs/python/safetensors:safetensors",
+        "//packages/linux/dev-libs/python/scipy:scipy",
+        "//packages/linux/dev-libs/python/transformers:transformers",
+    ],
+    maintainers = ["sg_scene_ai"],
+)

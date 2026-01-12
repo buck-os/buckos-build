@@ -1,0 +1,25 @@
+load("//defs:package_defs.bzl", "download_source", "binary_package")
+
+download_source(
+    name = "redfish-schema-src",
+    src_uri = "https://github.com/DMTF/Redfish-Publications/archive/refs/tags/2025.1.tar.gz",
+    sha256 = "e98ab25de27356022733cf7f51c8455888ea332fb172f1356efe3ae11894b47c",
+    signature_required = False,
+)
+
+binary_package(
+    name = "redfish-schema",
+    srcs = [":redfish-schema-src"],
+    version = "2025.1",
+    description = "DMTF Redfish JSON Schema files",
+    homepage = "https://www.dmtf.org/standards/redfish",
+    license = "BSD-3-Clause",
+    install_script = """
+        mkdir -p "$OUT/usr/share/redfish-schema"
+        cp -r "$SRCS/json-schema" "$OUT/usr/share/redfish-schema/"
+        cp -r "$SRCS/csdl" "$OUT/usr/share/redfish-schema/"
+        cp -r "$SRCS/registries" "$OUT/usr/share/redfish-schema/"
+        cp -r "$SRCS/dictionaries" "$OUT/usr/share/redfish-schema/"
+    """,
+    visibility = ["PUBLIC"],
+)

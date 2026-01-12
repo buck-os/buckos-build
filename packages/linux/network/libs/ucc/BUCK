@@ -1,0 +1,17 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "ucc",
+    version = "1.1.0",
+    src_uri = "https://github.com/openucx/ucc/archive/refs/tags/v1.1.0.tar.gz",
+    sha256 = "TODO",
+    configure_args = [
+        "--with-ucx=$DEP_DIR/ucx",
+        "--without-cuda",
+        "--without-rocm",
+        "--without-nccl",
+    ],
+    deps = [
+        "//packages/linux/network/libs/ucx",
+    ],
+)

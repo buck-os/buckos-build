@@ -1,0 +1,50 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "electric-fence",
+    version = "2.2.6",
+    src_uri = "https://github.com/cheggeng/electric-fence/archive/refs/heads/master.tar.gz",
+    sha256 = "TODO",
+    description = "Memory debugger for detecting buffer overruns and use-after-free",
+    homepage = "https://github.com/cheggeng/electric-fence",
+    license = "GPL-2.0",
+    pre_configure = """
+# electric-fence doesn't have a configure script
+# Skip configure step entirely
+""",
+    configure_args = [],
+    make_args = [],
+    post_install = """
+cd "$SRCDIR"
+
+# Clean any stale object files
+rm -f *.o *.a libefence.so*
+
+# Build object files with PIC for shared library
+cc -c -fPIC -O2 -g -o efence.o efence.c
+cc -c -fPIC -O2 -g -o page.o page.c
+cc -c -fPIC -O2 -g -o print.o print.c
+
+# Build static library
+ar crv libefence.a efence.o page.o print.o
+
+# Build shared library
+cc -shared -o libefence.so.0.0 efence.o page.o print.o -lpthread
+
+# Install libraries
+mkdir -p "$DESTDIR/usr/lib"
+cp -f libefence.a "$DESTDIR/usr/lib/"
+cp -f libefence.so.0.0 "$DESTDIR/usr/lib/"
+ln -sf libefence.so.0.0 "$DESTDIR/usr/lib/libefence.so.0"
+ln -sf libefence.so.0.0 "$DESTDIR/usr/lib/libefence.so"
+
+# Install headers
+mkdir -p "$DESTDIR/usr/include"
+cp -f efence.h "$DESTDIR/usr/include/"
+
+# Install man pages
+mkdir -p "$DESTDIR/usr/share/man/man3"
+cp -f libefence.3 "$DESTDIR/usr/share/man/man3/"
+""",
+    visibility = ["PUBLIC"],
+)

@@ -1,0 +1,25 @@
+load("//defs:package_defs.bzl", "binary_package")
+
+# bitmap - A platform-independent bitmap image reader/writer library
+# Header-only C++ library for reading/writing 24-bit BMP files
+
+binary_package(
+    name = "bitmap",
+    srcs = [],
+    version = "1.0",
+    description = "Platform Independent Bitmap Image Reader Writer Library",
+    homepage = "http://partow.net/programming/bitmap/index.html",
+    license = "MIT",
+    install_script = """
+        mkdir -p "$OUT/usr/include"
+        FBSOURCE_DIR="/home/hodgesd/fbsource/third-party/bitmap"
+        if [ -f "$FBSOURCE_DIR/bitmap_image.hpp" ]; then
+            install -D -m644 "$FBSOURCE_DIR/bitmap_image.hpp" "$OUT/usr/include/bitmap_image.hpp"
+        else
+            echo "Error: Cannot find bitmap_image.hpp at $FBSOURCE_DIR"
+            exit 1
+        fi
+    """,
+    deps = [],
+    visibility = ["PUBLIC"],
+)

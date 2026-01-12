@@ -1,0 +1,20 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "insightface",
+    version = "0.7.3",
+    src_uri = "https://github.com/deepinsight/insightface/archive/refs/tags/v0.7.3.tar.gz",
+    sha256 = "TODO",
+    deps = [
+        "//packages/linux/dev-libs/python/numpy",
+        "//packages/linux/dev-libs/python/pillow",
+        "//packages/linux/dev-libs/python/scipy",
+        "//packages/linux/dev-libs/python/matplotlib",
+        "//packages/linux/dev-libs/python/scikit-learn",
+        "//packages/linux/dev-libs/python/scikit-image",
+        "//packages/linux/dev-libs/python/tqdm",
+        "//packages/linux/dev-libs/python/requests",
+        "//packages/linux/dev-libs/python/cython",
+        "//packages/linux/ai/inference/onnxruntime",
+    ],
+)

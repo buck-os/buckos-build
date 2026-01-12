@@ -1,0 +1,30 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# efsw - Entropia File System Watcher
+# A C++ cross-platform file system watcher and notifier
+
+cmake_package(
+    name = "efsw",
+    version = "1.3.1",
+    source = "~/fbsource/third-party/efsw",
+    description = "A C++ cross-platform file system watcher and notifier",
+    homepage = "https://github.com/SpartanJ/efsw",
+    license = "MIT",
+    iuse = ["static-libs", "test"],
+    use_defaults = [],
+    deps = [],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DEFSW_INSTALL=ON",
+        "-DBUILD_TEST_APP=OFF",
+    ],
+    use_cmake = {
+        "static-libs": "-DBUILD_SHARED_LIBS=OFF",
+        "-static-libs": "-DBUILD_SHARED_LIBS=ON",
+        "test": "-DBUILD_TEST_APP=ON",
+        "-test": "-DBUILD_TEST_APP=OFF",
+    },
+    maintainers = ["ar_engine_graphics"],
+    visibility = ["PUBLIC"],
+)

@@ -1,0 +1,22 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# pybind11 - Seamless C++/Python interoperability
+
+cmake_package(
+    name = "pybind11",
+    version = "2.12.0",
+    src_uri = "https://github.com/pybind/pybind11/archive/refs/tags/v2.12.0.tar.gz",
+    sha256 = "bf8f242abd1abcd375d516a7067490fb71abd79519a282d22b6e4d19282185a7",
+    description = "Seamless operability between C++11 and Python",
+    homepage = "https://pybind11.readthedocs.io/",
+    license = "BSD-3-Clause",
+    deps = [
+        "//packages/linux/lang/python:python",
+    ],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DPYBIND11_TEST=OFF",
+        "-DPYBIND11_INSTALL=ON",
+    ],
+    visibility = ["PUBLIC"],
+)

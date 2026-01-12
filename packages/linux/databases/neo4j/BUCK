@@ -1,10 +1,6 @@
 load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 
-# neo4j - Graph database
-#
-# USE flags:
-#   java     - Java runtime (always required)
-
+# neo4j - Graph database (prebuilt Java app)
 download_source(
     name = "neo4j-src",
     src_uri = "https://dist.neo4j.org/neo4j-community-5.17.0-unix.tar.gz",
@@ -19,15 +15,14 @@ ebuild_package(
     description = "High-performance graph database",
     homepage = "https://neo4j.com",
     license = "GPL-3",
+    src_configure = "true",
+    src_compile = "true",
     src_install = """
-        mkdir -p ${DESTDIR}/usr/share/neo4j
-        cp -r * ${DESTDIR}/usr/share/neo4j/
-        mkdir -p ${DESTDIR}/usr/bin
-        ln -s /usr/share/neo4j/bin/neo4j ${DESTDIR}/usr/bin/neo4j
-    """,
-    rdepend = [
-        # TODO: Add Java dependency when openjdk package is available
-        # "//packages/linux/lang/openjdk:openjdk",
-    ],
+mkdir -p ${DESTDIR}/usr/share/neo4j
+cp -r * ${DESTDIR}/usr/share/neo4j/
+mkdir -p ${DESTDIR}/usr/bin
+ln -s /usr/share/neo4j/bin/neo4j ${DESTDIR}/usr/bin/neo4j
+""",
+    rdepend = [],
     visibility = ["PUBLIC"],
 )

@@ -1,0 +1,25 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "ns3",
+    version = "3.44",
+    src_uri = "https://gitlab.com/nsnam/ns-3-dev/-/archive/ns-3.44/ns-3-dev-ns-3.44.tar.gz",
+    sha256 = "TODO",
+    cmake_args = [
+        "-DNS3_EXAMPLES=OFF",
+        "-DNS3_TESTS=OFF",
+        "-DNS3_LOG=OFF",
+        "-DNS3_ASSERT=OFF",
+        "-DNS3_PYTHON_BINDINGS=OFF",
+        "-DNS3_VISUALIZER=OFF",
+        "-DNS3_GTK3=OFF",
+        "-DNS3_GSL=OFF",
+        "-DNS3_MPI=OFF",
+        "-DNS3_SQLITE=ON",
+        "-DNS3_NATIVE_OPTIMIZATIONS=OFF",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/libxml2",
+        "//packages/linux/databases/sqlite",
+    ],
+)

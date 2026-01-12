@@ -1,0 +1,22 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "liblcvm",
+    version = "0.24",
+    src_uri = "https://github.com/chemag/liblcvm/archive/v0.24.tar.gz",
+    sha256 = "359b63cb988180ef2d3fae348e9f1a8397111b970209d5f246c5b78602e24033",
+    signature_required = False,
+    description = "Library for Codec and Video Media analysis",
+    homepage = "https://github.com/chemag/liblcvm",
+    license = "BSD-3-Clause",
+    cmake_args = [
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DBUILD_PYBINDINGS=OFF",
+        "-DADD_POLICY=OFF",
+        "-DADD_C_INTERFACE=OFF",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/google/abseil-cpp:abseil-cpp",
+    ],
+    visibility = ["PUBLIC"],
+)

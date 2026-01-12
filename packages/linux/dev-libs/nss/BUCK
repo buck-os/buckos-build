@@ -30,15 +30,49 @@ ebuild_package(
     """,
     src_compile = """
         cd nss
+
+        # CRITICAL: NSS Makefiles cannot handle colon-separated paths in environment
+        # variables. Colons are interpreted as make rule separators causing
+        # "multiple target patterns" errors. Unset ALL problematic variables.
+        unset CPATH
+        unset C_INCLUDE_PATH
+        unset CPLUS_INCLUDE_PATH
+        unset LIBRARY_PATH
+        unset CFLAGS
+        unset CXXFLAGS
+        unset LDFLAGS
+        unset CPPFLAGS
+
         export BUILD_OPT=1
         export NSS_ENABLE_WERROR=0
         export NSS_USE_SYSTEM_SQLITE=1
         export NSDISTMODE=copy
         export NSS_DISABLE_GTESTS=1
         export USE_64=1
+
+        # Find NSPR from dependencies and set paths directly
+        NSPR_INC=""
+        NSPR_LIB=""
+        for dep_dir in $(echo $DEP_BASE_DIRS | tr ':' ' '); do
+            if [ -d "$dep_dir/usr/include/nspr" ]; then
+                NSPR_INC="$dep_dir/usr/include/nspr"
+                NSPR_LIB="$dep_dir/usr/lib"
+                echo "Found NSPR at: $dep_dir"
+                break
+            fi
+        done
+
+        # Pass NSPR paths via direct make variables (not environment)
+        export NSPR_INCLUDE_DIR="$NSPR_INC"
+        export NSPR_LIB_DIR="$NSPR_LIB"
+
+        # Set compiler flags without colons
+        export CC=gcc
+        export CXX=g++
+
         make -C coreconf
         make -C lib/dbm
-        make -j$(nproc)
+        make -j$(nproc) NSPRINCLUDE="-I$NSPR_INC" CC=gcc CXX=g++
     """,
     src_install = """
         cd nss

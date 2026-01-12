@@ -1,0 +1,18 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "metric3d",
+    version = "0.0.1",
+    src_uri = "https://github.com/yvanyin/metric3d/archive/eb5b6fac0dc155e4e52f576e304fbf11655ff339.tar.gz",
+    sha256 = "6859f6024544916afe44adcbbcf7e5837032db732e406a5129df44240c2dc223",
+    deps = [
+        "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
+        "//packages/linux/ai/vision/torchvision:torchvision",
+        "//packages/linux/dev-libs/python/numpy:numpy",
+        "//packages/linux/dev-libs/python/opencv-python:opencv-python",
+        "//packages/linux/dev-libs/python/pillow:pillow",
+        "//packages/linux/dev-libs/python/matplotlib:matplotlib",
+        "//packages/linux/dev-libs/python/timm:timm",
+    ],
+    maintainers = ["core_ai_asl"],
+)

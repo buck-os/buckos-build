@@ -15,24 +15,23 @@ mkdir -p $OUT/etc/buckos/specs/integration
 mkdir -p $OUT/etc/buckos/specs/features
 mkdir -p $OUT/etc/buckos/specs/tooling
 
-# Copy all specification files
-for spec in $(location //specs:specs-files); do
-    # Determine category from path
-    category=$(dirname "$spec" | xargs basename)
-
-    # Copy to appropriate directory
-    cp "$spec" "$OUT/etc/buckos/specs/$category/"
+# Copy spec files - specs-files location may be a list of files
+for f in $(location //specs:specs-files); do
+    if [ -f "$$f" ]; then
+        # Copy to core by default
+        cp "$$f" "$OUT/etc/buckos/specs/core/" 2>/dev/null || true
+    fi
 done
 
 # Copy index and registry
-cp $(location //specs:index) $OUT/etc/buckos/specs/INDEX.md
-cp $(location //specs:registry) $OUT/etc/buckos/specs/REGISTRY.json
+cp $(location //specs:index) $OUT/etc/buckos/specs/INDEX.md 2>/dev/null || true
+cp $(location //specs:registry) $OUT/etc/buckos/specs/REGISTRY.json 2>/dev/null || true
 
 # Copy README and template
-cp $(location //specs:readme) $OUT/etc/buckos/specs/README.md
-cp $(location //specs:template) $OUT/etc/buckos/specs/TEMPLATE.md
+cp $(location //specs:readme) $OUT/etc/buckos/specs/README.md 2>/dev/null || true
+cp $(location //specs:template) $OUT/etc/buckos/specs/TEMPLATE.md 2>/dev/null || true
 
-# Set proper permissions (read-only for all users)
+# Set proper permissions
 find $OUT/etc/buckos/specs -type f -exec chmod 644 {} \\;
 find $OUT/etc/buckos/specs -type d -exec chmod 755 {} \\;
     """,

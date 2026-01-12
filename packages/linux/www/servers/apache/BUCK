@@ -1,0 +1,41 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# Apache HTTP Server - The most popular web server
+
+autotools_package(
+    name = "apache",
+    version = "2.4.59",
+    src_uri = "https://dlcdn.apache.org/httpd/httpd-2.4.59.tar.bz2",
+    sha256 = "40973d44970dbc83ef302b0609f2e74982be2d85916dd2ee7472d30678a7abe6",
+    description = "The Apache HTTP Server - most popular web server",
+    homepage = "https://httpd.apache.org/",
+    license = "Apache-2.0",
+    iuse = ["ssl", "http2", "proxy", "rewrite", "cgi"],
+    use_defaults = ["ssl", "http2", "rewrite"],
+    deps = [
+        "//packages/linux/system/libs/utility/pcre2:pcre2",
+        "//packages/linux/dev-libs/misc/apr:apr",
+        "//packages/linux/dev-libs/misc/apr-util:apr-util",
+    ],
+    use_deps = {
+        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
+    },
+    configure_args = [
+        "--prefix=${PREFIX}",
+        "--enable-so",
+        "--enable-mods-shared=all",
+    ],
+    use_configure = {
+        "ssl": "--enable-ssl",
+        "-ssl": "--disable-ssl",
+        "http2": "--enable-http2",
+        "-http2": "--disable-http2",
+        "proxy": "--enable-proxy",
+        "-proxy": "--disable-proxy",
+        "rewrite": "--enable-rewrite",
+        "-rewrite": "--disable-rewrite",
+        "cgi": "--enable-cgi",
+        "-cgi": "--disable-cgi",
+    },
+    visibility = ["PUBLIC"],
+)

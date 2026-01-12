@@ -1,0 +1,23 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "libigl-python",
+    version = "2.2.1",
+    src_uri = "https://github.com/libigl/libigl-python-bindings/archive/refs/tags/v2.2.1.tar.gz",
+    sha256 = "TODO",
+    description = "Python bindings for libigl geometry processing library",
+    homepage = "https://libigl.github.io/libigl-python-bindings/",
+    license = "MIT",
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DPY_IGL_PYTHON_TESTS=OFF",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/3d/libigl:libigl",
+        "//packages/linux/dev-libs/eigen:eigen",
+        "//packages/linux/dev-libs/python/numpyeigen:numpyeigen",
+        "//packages/linux/dev-libs/python/pybind11:pybind11",
+        "//packages/linux/lang/python:python",
+    ],
+    visibility = ["PUBLIC"],
+)

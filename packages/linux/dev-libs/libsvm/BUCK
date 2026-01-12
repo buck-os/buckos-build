@@ -1,0 +1,51 @@
+load("//defs:package_defs.bzl", "ebuild_package")
+
+ebuild_package(
+    name = "libsvm",
+    version = "3.24",
+    src_uri = "https://github.com/cjlin1/libsvm/archive/refs/tags/v324.tar.gz",
+    sha256 = "TODO",
+    description = "A Library for Support Vector Machines",
+    homepage = "https://github.com/cjlin1/libsvm",
+    license = "BSD-3-Clause",
+
+    src_compile = """
+        # Build library and utilities using Makefile
+        make lib
+        make svm-train svm-predict svm-scale
+    """,
+
+    src_install = """
+        # Install shared library
+        mkdir -p "$DESTDIR/usr/lib64"
+        cp libsvm.so.2 "$DESTDIR/usr/lib64/"
+        ln -sf libsvm.so.2 "$DESTDIR/usr/lib64/libsvm.so"
+
+        # Install binaries
+        mkdir -p "$DESTDIR/usr/bin"
+        cp svm-train "$DESTDIR/usr/bin/"
+        cp svm-predict "$DESTDIR/usr/bin/"
+        cp svm-scale "$DESTDIR/usr/bin/"
+
+        # Install header
+        mkdir -p "$DESTDIR/usr/include"
+        cp svm.h "$DESTDIR/usr/include/"
+
+        # Create pkg-config file
+        mkdir -p "$DESTDIR/usr/lib64/pkgconfig"
+        cat > "$DESTDIR/usr/lib64/pkgconfig/libsvm.pc" << 'EOF'
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib64
+includedir=${prefix}/include
+
+Name: libsvm
+Description: A Library for Support Vector Machines
+Version: 3.24
+Cflags: -I${includedir}
+Libs: -L${libdir} -lsvm
+EOF
+    """,
+
+    visibility = ["PUBLIC"],
+)

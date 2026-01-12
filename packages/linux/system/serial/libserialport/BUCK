@@ -1,0 +1,25 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# libserialport - Cross-platform library for accessing serial ports
+autotools_package(
+    name = "libserialport",
+    version = "0.1.1",
+    src_uri = "https://sigrok.org/download/source/libserialport/libserialport-0.1.1.tar.gz",
+    sha256 = "4a2af9d9c3ff488e92fb75b4ba38b35bcf9b8a66df04773eba2a7bbf1fa7529d",
+    signature_required = False,
+    description = "Cross-platform library for accessing serial ports",
+    homepage = "https://sigrok.org/wiki/Libserialport",
+    license = "LGPL-3.0",
+    iuse = ["static-libs"],
+    use_defaults = [],
+    use_configure = {
+        "static-libs": "--enable-static",
+        "-static-libs": "--disable-static",
+    },
+    use_deps = {},
+    configure_args = [
+        "--enable-shared",
+    ],
+    deps = [],
+    visibility = ["PUBLIC"],
+)

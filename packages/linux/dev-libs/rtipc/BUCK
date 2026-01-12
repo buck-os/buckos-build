@@ -1,0 +1,16 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "rtipc",
+    version = "1.0.1",
+    src_uri = "https://gitlab.com/etherlab.org/rtipc/-/archive/v{version}/rtipc-v{version}.tar.gz",
+    sha256 = "TODO",
+    cmake_args = [
+        "-DDEBUG=OFF",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/serialization/libyaml:libyaml",
+        "//packages/linux/dev-libs/crypto/mhash:mhash",
+    ],
+    maintainers = ["rl_robotics_system_oncall"],
+)

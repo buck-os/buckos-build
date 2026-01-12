@@ -1,0 +1,17 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "sam2",
+    version = "1.0",
+    src_uri = "https://github.com/facebookresearch/segment-anything-2/archive/refs/tags/v1.0.tar.gz",
+    sha256 = "c760bf626e0e467b9344b380d9ba59d95c5214d561326ffa2be79ac5ddcd8983",
+    deps = [
+        "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
+        "//packages/linux/ai/vision/torchvision:torchvision",
+        "//packages/linux/dev-libs/python/numpy:numpy",
+        "//packages/linux/dev-libs/python/tqdm:tqdm",
+        "//packages/linux/dev-libs/python/hydra-core:hydra-core",
+        "//packages/linux/dev-libs/python/pillow:pillow",
+    ],
+    maintainers = ["sg_scene_ai"],
+)

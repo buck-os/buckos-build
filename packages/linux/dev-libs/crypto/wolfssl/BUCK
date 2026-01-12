@@ -1,0 +1,37 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# wolfSSL - Embedded TLS Library
+
+autotools_package(
+    name = "wolfssl",
+    version = "5.6.6",
+    src_uri = "https://github.com/wolfSSL/wolfssl/archive/refs/tags/v5.6.6-stable.tar.gz",
+    sha256 = "3d2ca672d41c2c2fa667885a80d6fa03c3e91f0f4f72f87aef2bc947e8c87237",
+    description = "Embedded TLS Library - Lightweight SSL/TLS library",
+    homepage = "https://www.wolfssl.com/",
+    license = "GPL-2.0",
+    iuse = ["aes-ni", "asm", "sha512", "curve25519", "ed25519"],
+    use_defaults = ["aes-ni", "sha512"],
+    deps = [],
+    configure_args = [
+        "--enable-tls13",
+        "--enable-harden",
+        "--enable-sni",
+        "--enable-alpn",
+        "--enable-session-ticket",
+        "--disable-examples",
+    ],
+    use_configure = {
+        "aes-ni": "--enable-aesni",
+        "-aes-ni": "--disable-aesni",
+        "asm": "--enable-asm",
+        "-asm": "--disable-asm",
+        "sha512": "--enable-sha512",
+        "-sha512": "--disable-sha512",
+        "curve25519": "--enable-curve25519",
+        "-curve25519": "--disable-curve25519",
+        "ed25519": "--enable-ed25519",
+        "-ed25519": "--disable-ed25519",
+    },
+    visibility = ["PUBLIC"],
+)

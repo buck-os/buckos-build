@@ -1,0 +1,21 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "iverilog",
+    version = "12.0",
+    src_uri = "https://github.com/steveicarus/iverilog/archive/refs/tags/v12_0.tar.gz",
+    sha256 = "a68cb1ef7c017ef090ebedb2bc3e39ef90ecc70a3400afb4aa94303bc3beaa7d",
+    configure_args = [
+        "--prefix=/usr",
+        "--enable-shared",
+    ],
+    deps = [
+        "//packages/linux/system/libs/compression/zlib:zlib",
+        "//packages/linux/system/libs/compression/bzip2:bzip2",
+        "//packages/linux/system/libs/readline:readline",
+        "//packages/linux/dev-tools/parsers/flex:flex",
+        "//packages/linux/dev-tools/parsers/bison:bison",
+        "//packages/linux/dev-tools/dev-utils/gperf:gperf",
+    ],
+    maintainers = ["ai4hw_logging_oncall"],
+)

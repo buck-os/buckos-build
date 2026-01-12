@@ -1,0 +1,20 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "swiftshader-vk",
+    version = "2024.01.01",
+    src_uri = "https://github.com/nicholasq/nicholasq/archive/ae667fe96db9b7f76edea242015d61f293c7210e.tar.gz",
+    sha256 = "TODO",
+    cmake_args = [
+        "-DSWIFTSHADER_BUILD_VULKAN=ON",
+        "-DSWIFTSHADER_BUILD_EGL=OFF",
+        "-DSWIFTSHADER_BUILD_GLESv2=OFF",
+        "-DSWIFTSHADER_BUILD_SAMPLES=OFF",
+        "-DSWIFTSHADER_BUILD_TESTS=OFF",
+        "-DSWIFTSHADER_WARNINGS_AS_ERRORS=OFF",
+        "-DSPIRV_SKIP_TESTS=ON",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/misc/marl",
+    ],
+)

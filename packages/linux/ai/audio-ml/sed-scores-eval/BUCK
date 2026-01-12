@@ -1,0 +1,18 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "sed-scores-eval",
+    version = "0.0.4",
+    src_uri = "https://github.com/fgnt/sed_scores_eval/archive/refs/heads/main.tar.gz",
+    sha256 = "e2f779ff2c08401b994f403c7b75d0ce495ae5894f93e92097de02270166cbec",
+    description = "Threshold-Independent Evaluation of Sound Event Detection Scores",
+    homepage = "https://github.com/fgnt/sed_scores_eval",
+    license = "MIT",
+    deps = [
+        "//packages/linux/dev-libs/python/numpy:numpy",
+        "//packages/linux/dev-libs/python/scipy:scipy",
+        "//packages/linux/dev-libs/python/cython:cython",
+        "//packages/linux/dev-libs/python/einops:einops",
+    ],
+    visibility = ["PUBLIC"],
+)

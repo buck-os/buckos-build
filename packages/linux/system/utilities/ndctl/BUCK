@@ -1,0 +1,19 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "ndctl",
+    version = "79",
+    src_uri = "https://github.com/pmem/ndctl/archive/refs/tags/v79.tar.gz",
+    sha256 = "TODO",
+    configure_args = [
+        "--disable-docs",
+        "--disable-asciidoctor",
+        "--without-bash",
+    ],
+    deps = [
+        "//packages/linux/system/libs/kmod",
+        "//packages/linux/core/util-linux",
+        "//packages/linux/dev-libs/json/json-c",
+        "//packages/linux/system/init/eudev",
+    ],
+)

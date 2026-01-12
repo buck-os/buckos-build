@@ -1,0 +1,21 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "luajit",
+    version = "2.1.1720049189",
+    src_uri = "https://github.com/LuaJIT/LuaJIT/archive/refs/tags/v2.1.1720049189.tar.gz",
+    sha256 = "TODO",
+    signature_required = False,
+    description = "Just-In-Time Compiler for Lua",
+    homepage = "https://luajit.org/",
+    license = "MIT",
+    src_configure = "true",
+    src_compile = """
+make -j$(nproc) PREFIX=/usr INSTALL_LIB=/usr/lib amalg
+""",
+    src_install = """
+make install DESTDIR="$DESTDIR" PREFIX=/usr INSTALL_LIB=/usr/lib
+ln -sf luajit-2.1 "$DESTDIR/usr/bin/luajit"
+""",
+    visibility = ["PUBLIC"],
+)

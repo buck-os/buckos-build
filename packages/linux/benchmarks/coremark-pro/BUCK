@@ -1,0 +1,23 @@
+load("//defs:package_defs.bzl", "download_source", "binary_package")
+
+download_source(
+    name = "coremark-pro-src",
+    src_uri = "https://github.com/eembc/coremark-pro/archive/refs/tags/v1.0.tar.gz",
+    sha256 = "TODO",
+)
+
+binary_package(
+    name = "coremark-pro",
+    srcs = [":coremark-pro-src"],
+    version = "1.0",
+    description = "CoreMark-PRO comprehensive processor benchmark suite from EEMBC",
+    homepage = "https://github.com/eembc/coremark-pro",
+    license = ["eembc", "Apache-2.0"],
+    install_script = """
+        cd $SRCS
+        make TARGET=linux64 build
+        mkdir -p $OUT/usr/bin
+        cp -r builds/linux64/*/bin/* $OUT/usr/bin/
+    """,
+    visibility = ["PUBLIC"],
+)

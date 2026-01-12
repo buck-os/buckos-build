@@ -1,0 +1,18 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "tips",
+    version = "1.0.0",
+    src_uri = "https://github.com/google-deepmind/tips/archive/refs/heads/main.tar.gz",
+    sha256 = "7a13dcce3981e04eaa2c59d60184e0bee948e495d6268b761925d00769e6e799",
+    description = "Text-Image Pretraining with Spatial awareness (TIPS)",
+    homepage = "https://github.com/google-deepmind/tips",
+    license = "Apache-2.0",
+    deps = [
+        "//packages/linux/lang/python:python",
+        "//packages/linux/dev-libs/python/numpy:numpy",
+        "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
+        "//packages/linux/ai/vision/torchvision:torchvision",
+    ],
+    visibility = ["PUBLIC"],
+)

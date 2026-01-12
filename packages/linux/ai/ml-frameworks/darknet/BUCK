@@ -1,0 +1,56 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# Darknet - Open Source Neural Networks in C
+#
+# Darknet is an open source neural network framework written in C and CUDA.
+# It is fast, easy to install, and supports CPU and GPU computation.
+# It's the original implementation of YOLO (You Only Look Once) object detection.
+#
+# USE flags:
+#   cuda      - Enable NVIDIA CUDA support for GPU acceleration
+#   cudnn     - Enable cuDNN for optimized deep learning operations
+#   opencv    - Enable OpenCV integration for image/video processing
+#   openmp    - Enable OpenMP for CPU parallelization
+#
+# Note: CUDA support requires proprietary NVIDIA drivers and toolkit
+# which are not included in BuckOS. For CUDA builds, install CUDA
+# toolkit separately and set CUDA_HOME.
+
+cmake_package(
+    name = "darknet",
+    version = "0.2.5.4",
+    src_uri = "https://github.com/AlexeyAB/darknet/archive/8a0bf84c19e38214219dbd3345f04ce778426c57.tar.gz",
+    sha256 = "TODO",
+    description = "Open Source Neural Networks in C - YOLO object detection framework",
+    homepage = "https://github.com/AlexeyAB/darknet",
+    license = "YOLO",
+    iuse = ["cuda", "cudnn", "opencv", "openmp"],
+    use_defaults = ["opencv", "openmp"],
+    deps = [
+        "//packages/linux/dev-libs/misc/stb:stb",
+    ],
+    use_deps = {
+        "opencv": ["//packages/linux/ai/vision/opencv:opencv"],
+    },
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DUSE_CMAKE_LIBS=ON",
+        "-DENABLE_CUDA=OFF",
+        "-DENABLE_CUDNN=OFF",
+        "-DENABLE_OPENCV=OFF",
+        "-DENABLE_VCPKG_INTEGRATION=OFF",
+        "-DENABLE_ZED_CAMERA=OFF",
+        "-DBUILD_USELIB_TRACK=OFF",
+        "-DENABLE_CSHARP_WRAPPER=OFF",
+    ],
+    use_cmake = {
+        "cuda": "-DENABLE_CUDA=ON",
+        "-cuda": "-DENABLE_CUDA=OFF",
+        "cudnn": "-DENABLE_CUDNN=ON",
+        "-cudnn": "-DENABLE_CUDNN=OFF",
+        "opencv": "-DENABLE_OPENCV=ON",
+        "-opencv": "-DENABLE_OPENCV=OFF",
+    },
+    visibility = ["PUBLIC"],
+)

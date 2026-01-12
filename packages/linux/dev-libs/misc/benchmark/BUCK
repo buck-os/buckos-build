@@ -1,0 +1,21 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# Google Benchmark - A microbenchmark support library
+
+cmake_package(
+    name = "benchmark",
+    version = "1.8.3",
+    src_uri = "https://github.com/google/benchmark/archive/refs/tags/v1.8.3.tar.gz",
+    sha256 = "6bc180a57d23d4d9515519f92b0c83d61b05b5bab188961f36ac7b06b0d9e9ce",
+    description = "A microbenchmark support library from Google",
+    homepage = "https://github.com/google/benchmark",
+    license = "Apache-2.0",
+    deps = [],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DBENCHMARK_ENABLE_TESTING=OFF",
+        "-DBENCHMARK_ENABLE_GTEST_TESTS=OFF",
+    ],
+    visibility = ["PUBLIC"],
+)

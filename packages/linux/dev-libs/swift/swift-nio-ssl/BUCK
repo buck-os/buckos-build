@@ -1,0 +1,15 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "swift-nio-ssl",
+    version = "2.17.1",
+    src_uri = "https://github.com/apple/swift-nio-ssl/archive/refs/tags/2.17.1.tar.gz",
+    sha256 = "TODO",
+    cmake_args = [
+        "-DBUILD_TESTING=OFF",
+    ],
+    deps = [
+        "//packages/linux/lang/swift",
+    ],
+    visibility = ["PUBLIC"],
+)

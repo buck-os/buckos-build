@@ -1,0 +1,17 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "mapanything",
+    version = "1.0",
+    src_uri = "https://github.com/facebookresearch/map-anything/archive/refs/heads/main.tar.gz",
+    sha256 = "b7a1dfec216dd6921869dc3687791b9bf5596cd7e1dc88fe8c35f4b037df5a8f",
+    description = "Universal Feed-Forward Metric 3D Reconstruction",
+    homepage = "https://github.com/facebookresearch/map-anything",
+    license = "Apache-2.0",
+    deps = [
+        "//packages/linux/lang/python:python",
+        "//packages/linux/dev-libs/python/numpy:numpy",
+        "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
+    ],
+    visibility = ["PUBLIC"],
+)

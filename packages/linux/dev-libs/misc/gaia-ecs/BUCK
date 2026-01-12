@@ -1,0 +1,23 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# Gaia-ECS - High-performance Entity Component System framework
+
+cmake_package(
+    name = "gaia-ecs",
+    version = "0.8.7",
+    source = "//third-party/gaia-ecs:gaia-ecs",
+    description = "High-performance Entity Component System (ECS) framework for modern C++17",
+    homepage = "https://github.com/richardbiely/gaia-ecs",
+    license = "MIT",
+    deps = [],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DGAIA_BUILD_UNITTEST=OFF",
+        "-DGAIA_BUILD_BENCHMARK=OFF",
+        "-DGAIA_BUILD_EXAMPLES=OFF",
+        "-DGAIA_DEVMODE=OFF",
+        "-DGAIA_ECS_CHUNK_ALLOCATOR=ON",
+        "-DGAIA_DISABLE_ASSERTS=OFF",
+    ],
+    visibility = ["PUBLIC"],
+)

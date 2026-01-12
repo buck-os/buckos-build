@@ -1,0 +1,50 @@
+load("//defs:package_defs.bzl", "download_source", "binary_package")
+
+download_source(
+    name = "vlfeat-src",
+    src_uri = "https://github.com/vlfeat/vlfeat/releases/download/v0.9.21/vlfeat-0.9.21.tar.gz",
+    sha256 = "892260ec2dc7cc534f7e255a2eeb0b517ccf5dd4d10455aa2d9cb7d915f85ee7",
+    signature_required = False,
+)
+
+binary_package(
+    name = "vlfeat",
+    srcs = [":vlfeat-src"],
+    version = "0.9.21",
+    description = "Computer vision library for feature detection and extraction (SIFT, MSER, k-means, etc)",
+    homepage = "https://www.vlfeat.org/",
+    license = "BSD-2-Clause",
+    install_script = """
+        cd $SRCS
+
+        # Build the library
+        # VLFeat uses a Makefile build system
+        # Disable SSE2/AVX for portability (matching fbsource BUCK)
+        make CFLAGS="-O3 -fPIC -DVL_DISABLE_SSE2 -DVL_DISABLE_AVX -DFB_VL_DISABLE_VERSIONED_SYMBOLS"
+
+        # Install headers
+        mkdir -p $OUT/usr/include
+        cp -r vl $OUT/usr/include/
+
+        # Install library
+        mkdir -p $OUT/usr/lib64
+        cp bin/*/libvl.a $OUT/usr/lib64/
+
+        # Install pkgconfig file
+        mkdir -p $OUT/usr/lib64/pkgconfig
+        cat > $OUT/usr/lib64/pkgconfig/vlfeat.pc << 'EOF'
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib64
+includedir=${prefix}/include
+
+Name: VLFeat
+Description: Computer vision library for feature detection and extraction
+Version: 0.9.21
+Libs: -L${libdir} -lvl -lpthread
+Cflags: -I${includedir}
+EOF
+    """,
+    deps = [],
+    visibility = ["PUBLIC"],
+)

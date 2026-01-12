@@ -1,0 +1,17 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "mesh_surface_floodfill",
+    version = "1.0.0",
+    src_uri = "https://github.com/skanti/generate-watertight-meshes-and-sdf-grids/archive/refs/heads/master.tar.gz",
+    sha256 = "d5dbd39e86026a4ce74cd514817af5dd04a5aa4cd89961e782ecbc868094653d",
+    cmake_args = [
+        "-DCMAKE_CUDA_ARCHITECTURES=all",
+        "-DCMAKE_CXX_STANDARD=17",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/eigen:eigen",
+        "//packages/linux/dev-libs/math/glm:glm",
+        "//packages/linux/system/gpu/libraries/cuda-toolkit:cuda-toolkit",
+    ],
+)

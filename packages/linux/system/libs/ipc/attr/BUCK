@@ -43,6 +43,10 @@ make -j$(nproc)
 make DESTDIR="$DESTDIR" install
 ''',
 
+    bdepend = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+    ],
     depend = [],
     visibility = ["PUBLIC"],
 )

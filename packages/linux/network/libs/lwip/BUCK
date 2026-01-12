@@ -1,0 +1,23 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "lwip-2.2",
+    version = "2.2.0",
+    src_uri = "https://git.savannah.nongnu.org/cgit/lwip.git/snapshot/lwip-STABLE-2_2_0_RELEASE.tar.gz",
+    sha256 = "TODO",
+
+    cmake_args = [
+        "-DBUILD_SHARED_LIBS=ON",
+    ],
+
+    pre_configure = """
+cd contrib/ports/unix/lib
+""",
+
+    deps = [],
+
+    description = "Lightweight TCP/IP stack",
+    homepage = "https://savannah.nongnu.org/projects/lwip/",
+    license = "BSD-3-Clause",
+    visibility = ["PUBLIC"],
+)

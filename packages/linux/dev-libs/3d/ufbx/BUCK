@@ -1,0 +1,20 @@
+load("//defs:package_defs.bzl", "simple_package")
+
+simple_package(
+    name = "ufbx",
+    version = "0.21.2",
+    src_uri = "https://github.com/ufbx/ufbx/archive/refs/tags/v0.21.2.tar.gz",
+    sha256 = "TODO",
+    description = "Single-file FBX loader library",
+    homepage = "https://github.com/ufbx/ufbx",
+    license = "MIT",
+    deps = [],
+    build_commands = [
+        "mkdir -p ${PREFIX}/include",
+        "cp ufbx.h ${PREFIX}/include/",
+        "mkdir -p ${PREFIX}/lib",
+        "${CC} -c -O2 -fPIC ufbx.c -o ufbx.o",
+        "${AR} rcs ${PREFIX}/lib/libufbx.a ufbx.o",
+    ],
+    visibility = ["PUBLIC"],
+)

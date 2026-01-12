@@ -1,0 +1,54 @@
+# =============================================================================
+# FDK-AAC - Fraunhofer FDK AAC Codec Library
+# =============================================================================
+#
+# The Fraunhofer FDK AAC Codec Library for Android (FDK AAC Codec) is software
+# that implements the MPEG Advanced Audio Coding (AAC) encoding and decoding
+# scheme for digital audio. This library is intended to be used on a wide
+# variety of devices and platforms.
+#
+# AAC's HE-AAC and HE-AAC v2 versions are regarded as today's most efficient
+# general perceptual audio codecs. AAC-ELD is considered the best-performing
+# full-bandwidth communications codec by independent studies and is widely
+# deployed. AAC has been standardized by ISO and IEC as part of the MPEG
+# specifications.
+#
+# Key features:
+# - High-quality AAC encoding and decoding
+# - Support for AAC-LC (Low Complexity)
+# - Support for HE-AAC (High Efficiency AAC) v1 and v2
+# - Support for AAC-ELD (Enhanced Low Delay)
+# - Optimized for mobile and embedded devices
+# - Floating-point and fixed-point implementations
+# - Low latency encoding/decoding
+# - Excellent audio quality at low bitrates
+#
+# Note: This library requires patent licenses for commercial use.
+# Most device manufacturers already license these patents through Via Licensing
+# or directly from patent owners.
+#
+# =============================================================================
+
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "fdk-aac",
+    version = "2.0.3",
+    src_uri = "https://github.com/mstorsjo/fdk-aac/archive/refs/tags/v2.0.3.tar.gz",
+    sha256 = "e25671cd96b10bad896aa42ab91a695a9e573395262baed4e4a2ff178d6a3a78",
+    description = "Fraunhofer FDK AAC Codec Library - High quality AAC encoder and decoder",
+    homepage = "https://github.com/mstorsjo/fdk-aac",
+    license = "FDK-AAC",  # Custom Fraunhofer license, compatible with redistribution
+    iuse = ["example"],
+    use_defaults = [],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DBUILD_PROGRAMS=OFF",
+    ],
+    use_options = {
+        "example": "BUILD_PROGRAMS",
+    },
+    deps = [],
+    visibility = ["PUBLIC"],
+)

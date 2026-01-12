@@ -1,0 +1,51 @@
+# =============================================================================
+# Vorbis - Open source lossy audio codec
+# =============================================================================
+#
+# Ogg Vorbis is a fully open, non-proprietary, patent-and-royalty-free,
+# general-purpose compressed audio format for mid to high quality
+# (8kHz-48.0kHz, 16+ bit, polyphonic) audio and music at fixed and variable
+# bitrates from 16 to 128 kbps/channel.
+#
+# Vorbis is most commonly used in conjunction with the Ogg container format
+# and it is therefore often referred to as Ogg Vorbis.
+#
+# Key features:
+# - Variable bitrate (VBR), average bitrate (ABR), and constant bitrate (CBR)
+# - Multichannel support (up to 255 channels)
+# - Sample rates from 8 kHz to 192 kHz
+# - Good quality at low bitrates
+# - Fully open and free of patent restrictions
+# - Streaming capability
+#
+# =============================================================================
+
+load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:use_flags.bzl", "set_use_flags")
+
+autotools_package(
+    name = "vorbis",
+    version = "1.3.7",
+    src_uri = "https://downloads.xiph.org/releases/vorbis/libvorbis-1.3.7.tar.xz",
+    sha256 = "b33cc4934322bcbf6efcbacf49e3ca01aadbea4114ec9589d1b1e9d20f72954b",
+    signature_required = False,
+    description = "Ogg Vorbis audio codec library - open source lossy audio compression",
+    homepage = "https://xiph.org/vorbis/",
+    license = "BSD-3-Clause",
+    iuse = ["static-libs", "doc"],
+    use_defaults = [],
+    configure_args = [
+        "--prefix=/usr",
+        "--disable-static",
+    ],
+    use_configure = {
+        "static-libs": "--enable-static",
+        "-static-libs": "--disable-static",
+        "doc": "--enable-docs",
+        "-doc": "--disable-docs",
+    },
+    deps = [
+        "//packages/linux/media/audio/ogg:ogg",
+    ],
+    visibility = ["PUBLIC"],
+)

@@ -1,0 +1,35 @@
+load("//defs:package_defs.bzl", "download_source", "binary_package")
+
+download_source(
+    name = "skcms-src",
+    src_uri = "https://skia.googlesource.com/skcms/+archive/42030a771244ba67f86b1c1c76a6493f873c5f91.tar.gz",
+    sha256 = "211839c76f785f2a5835ee924aa7d95371af92b9b3e4c8e7a6e9038a3030b808",
+)
+
+binary_package(
+    name = "skcms",
+    srcs = [":skcms-src"],
+    version = "0.0.1",
+    description = "skcms is a color management library",
+    homepage = "https://skia.googlesource.com/skcms/",
+    license = "BSD-3-Clause",
+    install_script = """
+        cd $SRCS
+        $CXX -c -fPIC -fvisibility=hidden \
+            -DSKCMS_API='__attribute__((visibility("default")))' \
+            -fomit-frame-pointer -ffast-math \
+            -Wno-incompatible-pointer-types \
+            -o skcms.o skcms.cc
+        $CXX -shared -fPIC -o libskcms.so skcms.o
+        $AR rcs libskcms.a skcms.o
+
+        mkdir -p $OUT/usr/lib
+        mkdir -p $OUT/usr/include/skcms
+        cp libskcms.so $OUT/usr/lib/
+        cp libskcms.a $OUT/usr/lib/
+        cp skcms.h $OUT/usr/include/
+        cp skcms.h skcms_internal.h $OUT/usr/include/skcms/
+    """,
+    deps = [],
+    visibility = ["PUBLIC"],
+)

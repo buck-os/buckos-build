@@ -1,0 +1,18 @@
+load("//defs:package_defs.bzl", "simple_package")
+
+# Greatest - Unit testing framework for C (single-header)
+
+simple_package(
+    name = "greatest",
+    version = "1.5.0",
+    src_uri = "https://github.com/silentbicycle/greatest/archive/refs/tags/v1.5.0.tar.gz",
+    sha256 = "TODO",
+    description = "A C testing library in 1 file. No dependencies, no dynamic allocation",
+    homepage = "https://github.com/silentbicycle/greatest",
+    license = "ISC",
+    deps = [],
+    build_commands = [
+        "install -Dm644 greatest.h ${PREFIX}/include/greatest.h",
+    ],
+    visibility = ["PUBLIC"],
+)

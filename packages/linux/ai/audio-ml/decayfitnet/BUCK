@@ -1,0 +1,19 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "decayfitnet",
+    version = "1.0.0",
+    src_uri = "https://github.com/georg-goetz/DecayFitNet/archive/refs/heads/master.tar.gz",
+    sha256 = "TODO",
+    deps = [
+        "//packages/linux/ai/ml-frameworks/pytorch",
+        "//packages/linux/dev-libs/python/numpy",
+        "//packages/linux/dev-libs/python/scipy",
+        "//packages/linux/dev-libs/python/h5py",
+        "//packages/linux/dev-libs/python/matplotlib",
+    ],
+    description = "Neural network for multi-exponential sound energy decay analysis",
+    homepage = "https://github.com/georg-goetz/DecayFitNet",
+    license = "MIT",
+    visibility = ["PUBLIC"],
+)

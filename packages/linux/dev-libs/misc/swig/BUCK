@@ -1,0 +1,20 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# SWIG - Simplified Wrapper and Interface Generator
+
+autotools_package(
+    name = "swig",
+    version = "4.2.0",
+    src_uri = "https://github.com/swig/swig/archive/refs/tags/v4.2.0.tar.gz",
+    sha256 = "93e8242d0dcb5216f9ddd314d668db8f22ff2a40575b1ee69ea2627113e839cc",
+    description = "Simplified Wrapper and Interface Generator",
+    homepage = "https://www.swig.org/",
+    license = "GPL-3.0",
+    deps = [
+        "//packages/linux/system/libs/utility/pcre2:pcre2",
+    ],
+    configure_args = [
+        "--prefix=${PREFIX}",
+    ],
+    visibility = ["PUBLIC"],
+)

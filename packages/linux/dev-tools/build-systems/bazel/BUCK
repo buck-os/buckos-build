@@ -1,0 +1,18 @@
+load("//defs:package_defs.bzl", "simple_package")
+
+# Bazel - Build and test tool
+
+simple_package(
+    name = "bazel",
+    version = "7.0.2",
+    src_uri = "https://github.com/bazelbuild/bazel/releases/download/7.0.2/bazel-7.0.2-linux-x86_64",
+    sha256 = "TODO",
+    description = "Fast, scalable, multi-language and extensible build system",
+    homepage = "https://bazel.build/",
+    license = "Apache-2.0",
+    deps = [],
+    build_commands = [
+        "install -Dm755 bazel-7.0.2-linux-x86_64 ${PREFIX}/bin/bazel",
+    ],
+    visibility = ["PUBLIC"],
+)

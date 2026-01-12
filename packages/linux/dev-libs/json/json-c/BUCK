@@ -1,0 +1,15 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "json-c",
+    version = "0.17",
+    src_uri = "https://github.com/json-c/json-c/archive/refs/tags/json-c-0.17-20230812.tar.gz",
+    sha256 = "024d302a3aadcbf9f78735320a6d5aedf8b77876c8ac8bbb95081ca55054c7eb",
+    deps = [],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DBUILD_STATIC_LIBS=OFF",
+    ],
+    visibility = ["PUBLIC"],
+)

@@ -1,0 +1,15 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "suricata-update",
+    version = "1.3.0",
+    src_uri = "https://github.com/OISF/suricata-update/archive/refs/tags/1.3.0.tar.gz",
+    sha256 = "0f281477904692da2a3b7a784ffe7a79e536068293a39a91c93db78aa931dfd8",
+    deps = [
+        "//packages/linux/dev-libs/python/pyyaml:pyyaml",
+    ],
+    description = "Suricata rule update tool",
+    homepage = "https://github.com/OISF/suricata-update",
+    license = "GPL-2",
+    visibility = ["PUBLIC"],
+)

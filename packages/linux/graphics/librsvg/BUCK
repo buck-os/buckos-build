@@ -1,0 +1,36 @@
+load("//defs:package_defs.bzl", "meson_package")
+
+meson_package(
+    name = "librsvg",
+    version = "2.60.0",
+    src_uri = "https://download.gnome.org/sources/librsvg/2.60/librsvg-2.60.0.tar.xz",
+    sha256 = "TODO",
+    description = "SVG rendering library written in Rust",
+    homepage = "https://wiki.gnome.org/Projects/LibRsvg",
+    license = "LGPL-2.1",
+    deps = [
+        "//packages/linux/graphics/cairo:cairo",
+        "//packages/linux/dev-libs/glib:glib",
+        "//packages/linux/graphics/harfbuzz:harfbuzz",
+        "//packages/linux/system/libs/data/libxml2:libxml2",
+        "//packages/linux/graphics/pango:pango",
+        "//packages/linux/desktop/gdk-pixbuf:gdk-pixbuf",
+        "//packages/linux/graphics/freetype:freetype",
+        "//packages/linux/graphics/fontconfig:fontconfig",
+    ],
+    iuse = ["introspection", "pixbuf-loader", "vala"],
+    use_defaults = [],
+    meson_args = [
+        "-Ddocs=disabled",
+        "-Dtests=false",
+    ],
+    use_meson = {
+        "introspection": "-Dintrospection=enabled",
+        "-introspection": "-Dintrospection=disabled",
+        "pixbuf-loader": "-Dpixbuf-loader=enabled",
+        "-pixbuf-loader": "-Dpixbuf-loader=disabled",
+        "vala": "-Dvala=enabled",
+        "-vala": "-Dvala=disabled",
+    },
+    visibility = ["PUBLIC"],
+)

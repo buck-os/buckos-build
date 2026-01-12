@@ -1,0 +1,25 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "table_transformer",
+    version = "1.0.0",
+    src_uri = "https://github.com/microsoft/table-transformer/archive/refs/heads/main.tar.gz",
+    sha256 = "162f78b71c0a511952ee5a3510a1c131744e6ed51eb832d853687af5f44c068f",
+    description = "Table detection and structure recognition using transformers",
+    homepage = "https://github.com/microsoft/table-transformer",
+    license = "MIT",
+    deps = [
+        "//packages/linux/lang/python:python",
+        "//packages/linux/dev-libs/python/numpy:numpy",
+        "//packages/linux/dev-libs/python/scipy:scipy",
+        "//packages/linux/dev-libs/python/pandas:pandas",
+        "//packages/linux/dev-libs/python/opencv-python:opencv-python",
+        "//packages/linux/dev-libs/python/scikit-image:scikit-image",
+        "//packages/linux/dev-libs/python/scikit-learn:scikit-learn",
+        "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
+        "//packages/linux/ai/vision/torchvision:torchvision",
+        "//packages/linux/dev-libs/python/tqdm:tqdm",
+        "//packages/linux/dev-libs/python/pycocotools:pycocotools",
+    ],
+    visibility = ["PUBLIC"],
+)

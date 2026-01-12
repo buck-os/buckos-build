@@ -1,0 +1,26 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# libXt - X Toolkit Intrinsics library
+autotools_package(
+    name = "libXt",
+    version = "1.3.0",
+    src_uri = "https://xorg.freedesktop.org/archive/individual/lib/libXt-1.3.0.tar.xz",
+    sha256 = "52820b3cdb827d08dc90bdfd1b0022a3ad8919b57a39808b12591973b331bf91",
+    description = "X Toolkit Intrinsics library",
+    homepage = "https://xorg.freedesktop.org/",
+    license = "MIT",
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--libdir=/usr/lib64",
+        "--disable-specs",
+        "--with-appdefaultdir=/etc/X11/app-defaults",
+    ],
+    deps = [
+        "//packages/linux/graphics/xorg/libX11:libX11",
+        "//packages/linux/graphics/xorg/libSM:libSM",
+        "//packages/linux/graphics/xorg/libICE:libICE",
+        "//packages/linux/graphics/xorg/xorgproto:xorgproto",
+    ],
+    visibility = ["PUBLIC"],
+)

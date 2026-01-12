@@ -1,0 +1,32 @@
+load("//defs:package_defs.bzl", "binary_package")
+
+# exprtk - C++ Mathematical Expression Toolkit Library
+# A header-only mathematical expression parsing and evaluation library for C++
+#
+# Note: The exprtk.hpp header file is copied from ~/fbsource/third-party/exprtk/trunk/src/
+#       and checked into this package directory at src/exprtk.hpp
+
+binary_package(
+    name = "exprtk",
+    srcs = [],  # No external sources needed - we use the local file checked into the repo
+    version = "2.7182818284",
+    description = "C++ Mathematical Expression Toolkit - header-only library for parsing and evaluating mathematical expressions",
+    homepage = "http://www.partow.net/programming/exprtk/index.html",
+    license = "MIT",
+    install_script = """
+        # Create include directory
+        mkdir -p "$OUT/usr/include"
+
+        # Copy the exprtk.hpp from the package source directory
+        PACKAGE_DIR="/home/hodgesd/buckos-build/packages/linux/dev-libs/math/exprtk"
+
+        if [ -f "$PACKAGE_DIR/src/exprtk.hpp" ]; then
+            install -D -m644 "$PACKAGE_DIR/src/exprtk.hpp" "$OUT/usr/include/exprtk.hpp"
+        else
+            echo "Error: Cannot find exprtk.hpp at $PACKAGE_DIR/src/exprtk.hpp"
+            exit 1
+        fi
+    """,
+    deps = [],
+    visibility = ["PUBLIC"],
+)

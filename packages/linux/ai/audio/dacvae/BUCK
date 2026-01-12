@@ -1,0 +1,18 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "dacvae",
+    version = "1.0.0",
+    src_uri = "https://github.com/facebookresearch/dacvae/archive/refs/tags/v1.0.0.tar.gz",
+    sha256 = "TODO",
+    deps = [
+        "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
+        "//packages/linux/ai/audio/descript-audiotools:descript-audiotools",
+        "//packages/linux/dev-libs/python/argbind:argbind",
+        "//packages/linux/dev-libs/python/einops:einops",
+        "//packages/linux/dev-libs/python/huggingface-hub:huggingface-hub",
+        "//packages/linux/dev-libs/python/numpy:numpy",
+        "//packages/linux/dev-libs/python/tqdm:tqdm",
+    ],
+    maintainers = ["audiobox"],
+)

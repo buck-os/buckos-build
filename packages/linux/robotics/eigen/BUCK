@@ -1,0 +1,19 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# eigen - Package from third-party
+
+cmake_package(
+    name = "eigen",
+    version = "3.2.4",
+    src_uri = "# TODO: Add source URI for eigen v3.2.4",
+    sha256 = "1b1597f0aa5452b971a94ab13d8de3b59cce17d9c43c8081aa62f42b3376df96",
+    description = "eigen package",
+    homepage = "https://bitbucket.org/eigen/eigen",
+    license = "MPL",
+    deps = [],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+    ],
+    visibility = ["PUBLIC"],
+)

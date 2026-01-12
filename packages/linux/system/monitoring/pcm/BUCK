@@ -1,0 +1,16 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "pcm",
+    version = "202312",
+    src_uri = "https://github.com/intel/pcm/archive/refs/tags/202312.tar.gz",
+    sha256 = "TODO",
+    description = "Intel Performance Counter Monitor",
+    homepage = "https://github.com/intel/pcm",
+    license = "BSD-3-Clause",
+    cmake_args = [
+        "-DNO_ASAN=1",
+        "-DCMAKE_BUILD_TYPE=Release",
+    ],
+    visibility = ["PUBLIC"],
+)

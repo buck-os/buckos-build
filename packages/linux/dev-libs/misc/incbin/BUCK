@@ -1,0 +1,23 @@
+load("//defs:package_defs.bzl", "download_source", "binary_package")
+
+download_source(
+    name = "incbin-src",
+    src_uri = "https://github.com/graphitemaster/incbin/archive/6e576cae5ab5810f25e2631f2e0b80cbe7dc8cbf.tar.gz",
+    sha256 = "d23582689c46604cad116495dbd8aceb1974b46164114a231e8c8144ae12b230",
+)
+
+binary_package(
+    name = "incbin",
+    srcs = [":incbin-src"],
+    version = "20231001",
+    description = "Include binary and textual files in C/C++ applications",
+    homepage = "https://github.com/graphitemaster/incbin",
+    license = "Unlicense",
+    install_script = """
+        mkdir -p $OUT/usr/include/incbin
+        cp $SRCS/incbin.h $OUT/usr/include/incbin/
+        cp $SRCS/incbin.h $OUT/usr/include/
+    """,
+    deps = [],
+    visibility = ["PUBLIC"],
+)

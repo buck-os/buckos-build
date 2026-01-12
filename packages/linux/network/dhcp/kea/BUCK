@@ -1,0 +1,41 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "kea",
+    version = "2.6.1",
+    src_uri = "https://ftp.isc.org/isc/kea/2.6.1/kea-2.6.1.tar.gz",
+    sha256 = "d2ce14a91c2e248ad2876e29152d647bcc5e433bc68dafad0ee96ec166fcfad1",
+
+    iuse = ["mysql", "postgresql", "openssl"],
+    use_defaults = ["openssl"],
+
+    use_deps = {
+        "openssl": ["//packages/linux/network/openssl:openssl"],
+        "mysql": ["//packages/linux/databases/mysql:mysql"],
+        "postgresql": ["//packages/linux/databases/postgresql:postgresql"],
+    },
+
+    use_configure = {
+        "openssl": "--with-openssl",
+        "-openssl": "--without-openssl",
+        "mysql": "--with-mysql",
+        "-mysql": "--without-mysql",
+        "postgresql": "--with-pgsql",
+        "-postgresql": "--without-pgsql",
+    },
+
+    configure_args = [
+        "--enable-shell",
+        "--disable-static",
+    ],
+
+    deps = [
+        "//packages/linux/dev-libs/boost:boost",
+        "//packages/linux/system/libs/logging/log4cplus:log4cplus",
+    ],
+
+    description = "Modern, open source DHCPv4 and DHCPv6 server",
+    homepage = "https://kea.isc.org/",
+    license = "MPL-2.0",
+    visibility = ["PUBLIC"],
+)

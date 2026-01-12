@@ -1,0 +1,16 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "conda",
+    version = "23.9.0",
+    src_uri = "https://github.com/conda/conda/archive/refs/tags/23.9.0.tar.gz",
+    sha256 = "TODO",
+    description = "OS-agnostic, system-level binary package manager",
+    homepage = "https://docs.conda.io/",
+    license = "BSD-3-Clause",
+    deps = [
+        "//packages/linux/lang/python:python",
+    ],
+    build_backend = "hatchling",
+    visibility = ["PUBLIC"],
+)

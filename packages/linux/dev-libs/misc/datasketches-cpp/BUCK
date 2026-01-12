@@ -1,0 +1,19 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# Apache DataSketches - Streaming algorithms for approximate statistics
+
+cmake_package(
+    name = "datasketches-cpp",
+    version = "5.3.0",
+    src_uri = "https://github.com/apache/datasketches-cpp/archive/refs/tags/5.3.0.tar.gz",
+    sha256 = "TODO",
+    description = "Apache DataSketches - Streaming algorithms for approximate statistics (header-only C++ library)",
+    homepage = "https://datasketches.apache.org",
+    license = "Apache-2.0",
+    deps = [],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_TESTS=OFF",
+    ],
+    visibility = ["PUBLIC"],
+)

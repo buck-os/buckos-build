@@ -1,0 +1,15 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "auks",
+    version = "0.5.3",
+    src_uri = "https://github.com/hautreux/auks/archive/refs/tags/0.5.3.tar.gz",
+    sha256 = "2bcf8f10e3db2cc1bff47798279d15bb5234a38ac41be76cb5c90f7b59eba78a",
+    configure_args = [
+        "--enable-tirpc",
+    ],
+    deps = [
+        "//packages/linux/system/libs/ipc/libtirpc:libtirpc",
+    ],
+    maintainers = ["ai_super_clusters"],
+)

@@ -1,0 +1,34 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# GLFW - Multi-platform library for OpenGL, window and input
+
+cmake_package(
+    name = "glfw",
+    version = "3.4",
+    src_uri = "https://github.com/glfw/glfw/releases/download/3.4/glfw-3.4.zip",
+    sha256 = "b5ec004b2712fd08e8861dc271428f048775200a2df719ccf575143ba749a3e9",
+    description = "Multi-platform library for OpenGL, OpenGL ES, Vulkan, window and input",
+    homepage = "https://www.glfw.org/",
+    license = "Zlib",
+    iuse = ["wayland", "x11"],
+    use_defaults = ["x11"],
+    deps = [],
+    use_deps = {
+        "wayland": ["//packages/linux/desktop/wayland:wayland"],
+        "x11": ["//packages/linux/desktop/xorg/x11:libx11"],
+    },
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DGLFW_BUILD_EXAMPLES=OFF",
+        "-DGLFW_BUILD_TESTS=OFF",
+        "-DGLFW_BUILD_DOCS=OFF",
+    ],
+    use_cmake = {
+        "wayland": "-DGLFW_BUILD_WAYLAND=ON",
+        "-wayland": "-DGLFW_BUILD_WAYLAND=OFF",
+        "x11": "-DGLFW_BUILD_X11=ON",
+        "-x11": "-DGLFW_BUILD_X11=OFF",
+    },
+    visibility = ["PUBLIC"],
+)

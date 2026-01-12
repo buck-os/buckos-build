@@ -1,0 +1,37 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# JACK2 - JACK Audio Connection Kit
+
+autotools_package(
+    name = "jack2",
+    version = "1.9.22",
+    src_uri = "https://github.com/jackaudio/jack2/releases/download/v1.9.22/v1.9.22.tar.gz",
+    sha256 = "TODO",
+    description = "JACK Audio Connection Kit - professional sound server daemon",
+    homepage = "https://jackaudio.org/",
+    license = "GPLv2",
+    iuse = ["shared", "static", "dbus", "alsa", "opus", "samplerate", "readline"],
+    use_defaults = ["shared", "alsa"],
+    deps = [
+        "//packages/linux/system/libs/pthreads:pthreads",
+    ],
+    use_deps = {
+        "dbus": ["//packages/linux/system/dbus:dbus"],
+        "alsa": ["//packages/linux/media/audio/alsa-lib:alsa-lib"],
+        "opus": ["//packages/linux/media/audio/opus:opus"],
+        "samplerate": ["//packages/linux/media/audio/libsamplerate:libsamplerate"],
+        "readline": ["//packages/linux/system/libs/readline:readline"],
+    },
+    configure_args = [
+        "--prefix=${PREFIX}",
+        "--classic",
+    ],
+    use_configure = {
+        "dbus": "--dbus",
+        "alsa": "--alsa",
+        "opus": "--opus",
+        "samplerate": "--samplerate",
+        "readline": "--readline",
+    },
+    visibility = ["PUBLIC"],
+)

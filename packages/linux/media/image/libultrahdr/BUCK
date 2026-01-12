@@ -1,0 +1,23 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "libultrahdr",
+    version = "1.4.0",
+    src_uri = "https://github.com/google/libultrahdr/archive/refs/tags/v1.4.0.tar.gz",
+    sha256 = "e7e1252e2c44d8ed6b99ee0f67a3caf2d8a61c43834b13b1c3cd485574c03ab9",
+    description = "Library for encoding and decoding Ultra HDR images",
+    homepage = "https://github.com/google/libultrahdr",
+    license = "Apache-2.0",
+    cmake_args = [
+        "-DUHDR_BUILD_EXAMPLES=OFF",
+        "-DUHDR_BUILD_TESTS=OFF",
+        "-DUHDR_BUILD_BENCHMARK=OFF",
+        "-DUHDR_BUILD_FUZZERS=OFF",
+        "-DUHDR_ENABLE_LOGS=OFF",
+        "-DCMAKE_CXX_FLAGS=-DUHDR_WRITE_XMP -DUHDR_WRITE_ISO",
+    ],
+    deps = [
+        "//packages/linux/system/libs/image/libjpeg-turbo:libjpeg-turbo",
+    ],
+    visibility = ["PUBLIC"],
+)

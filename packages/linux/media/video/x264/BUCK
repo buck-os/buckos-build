@@ -1,0 +1,48 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# x264 - H.264/MPEG-4 AVC encoder
+
+autotools_package(
+    name = "x264",
+    version = "0.164.3108",
+    src_uri = "https://code.videolan.org/videolan/x264/-/archive/stable/x264-stable.tar.bz2",
+    sha256 = "740126cb48549ca4e2f09b4ae13beed592d5b54744044e38f28662fd96d0ba56",
+    description = "H.264/MPEG-4 AVC encoder",
+    homepage = "https://www.videolan.org/developers/x264.html",
+    license = "GPL-2",
+    iuse = ["cli", "shared", "static", "asm", "opencl", "avs", "lavf", "ffms", "gpac", "lsmash"],
+    use_defaults = ["cli", "shared", "asm"],
+    deps = [],
+    use_deps = {
+        "opencl": ["//packages/linux/dev-libs/opencl:opencl"],
+        "lavf": ["//packages/linux/media/video/ffmpeg:ffmpeg"],
+    },
+    configure_args = [
+        "--prefix=${PREFIX}",
+        "--enable-pic",
+        "--disable-swscale",
+    ],
+    use_configure = {
+        "cli": "--enable-cli",
+        "-cli": "--disable-cli",
+        "shared": "--enable-shared",
+        "-shared": "--disable-shared",
+        "static": "--enable-static",
+        "-static": "--disable-static",
+        "asm": "--enable-asm",
+        "-asm": "--disable-asm",
+        "opencl": "--enable-opencl",
+        "-opencl": "--disable-opencl",
+        "avs": "--enable-avs",
+        "-avs": "--disable-avs",
+        "lavf": "--enable-lavf",
+        "-lavf": "--disable-lavf",
+        "ffms": "--enable-ffms",
+        "-ffms": "--disable-ffms",
+        "gpac": "--enable-gpac",
+        "-gpac": "--disable-gpac",
+        "lsmash": "--enable-lsmash",
+        "-lsmash": "--disable-lsmash",
+    },
+    visibility = ["PUBLIC"],
+)

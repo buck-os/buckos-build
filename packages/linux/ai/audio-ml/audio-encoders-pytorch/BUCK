@@ -1,0 +1,15 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "audio-encoders-pytorch",
+    version = "0.0.22",
+    src_uri = "https://github.com/archinetai/audio-encoders-pytorch/archive/refs/tags/v0.0.22.tar.gz",
+    sha256 = "3232af1cfea952c83b4b05007abdf9da915f44344754a9fda6e104cf04ad7590",
+    deps = [
+        "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
+        "//packages/linux/ai/audio/torchaudio:torchaudio",
+        "//packages/linux/dev-libs/python/einops:einops",
+    ],
+    maintainers = ["fast_ai_assistant"],
+    visibility = ["PUBLIC"],
+)

@@ -1,0 +1,44 @@
+# =============================================================================
+# FAAD2 - Freeware Advanced Audio Decoder
+# =============================================================================
+#
+# FAAD2 is a HE, LC, MAIN and LTP profile, MPEG2 and MPEG-4 AAC decoder.
+# FAAD2 includes code for SBR (HE AAC) decoding.
+#
+# FAAD2 (Freeware Advanced Audio Decoder) is a software library and command-line
+# tool for decoding AAC (Advanced Audio Coding) audio files. AAC is a lossy audio
+# compression format that is the successor to MP3 and is widely used in various
+# applications including streaming media, digital broadcasting, and mobile devices.
+#
+# Key features:
+# - Supports MPEG-2 and MPEG-4 AAC decoding
+# - LC (Low Complexity) profile support
+# - Main profile support
+# - LTP (Long Term Prediction) profile support
+# - HE-AAC (High Efficiency AAC) with SBR (Spectral Band Replication)
+# - Multiple library variants (standard, DRM, fixed-point)
+# - Command-line frontend for decoding AAC files
+# - Licensed under GPL-2.0
+#
+# Note: The use of this software may require patent royalty payments.
+# Users are solely responsible for determining patent licensing requirements.
+#
+# =============================================================================
+
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "faad2",
+    version = "2.11.1",
+    src_uri = "https://github.com/knik0/faad2/archive/refs/tags/2.11.1.tar.gz",
+    sha256 = "72dbc0494de9ee38d240f670eccf2b10ef715fd0508c305532ca3def3225bb06",
+    description = "Freeware Advanced Audio (AAC) Decoder including SBR decoding",
+    homepage = "https://github.com/knik0/faad2",
+    license = "GPL-2.0",
+    deps = [],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+    ],
+    visibility = ["PUBLIC"],
+)

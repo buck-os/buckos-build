@@ -1,0 +1,22 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# xcb-util-image - XCB image convenience library
+autotools_package(
+    name = "xcb-util-image",
+    version = "0.4.1",
+    src_uri = "https://xcb.freedesktop.org/dist/xcb-util-image-0.4.1.tar.xz",
+    sha256 = "ccad8ee5dadb1271fd4727ad14d9bd77a64e505608766c4e98267d9aede40d3d",
+    description = "XCB image convenience library",
+    homepage = "https://xcb.freedesktop.org/",
+    license = "MIT",
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--libdir=/usr/lib64",
+    ],
+    deps = [
+        "//packages/linux/graphics/xorg/libxcb:libxcb",
+        "//packages/linux/graphics/xorg/xcb-util:xcb-util",
+    ],
+    visibility = ["PUBLIC"],
+)

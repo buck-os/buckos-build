@@ -1,0 +1,20 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "websocketpp",
+    version = "0.8.2",
+    src_uri = "https://github.com/zaphoyd/websocketpp/archive/refs/tags/0.8.2.tar.gz",
+    sha256 = "6ce889d85ecdc2d8fa07408d6787e7352510750daa66b5ad44aacb47bea76755",
+    description = "C++ WebSocket library",
+    homepage = "https://github.com/zaphoyd/websocketpp",
+    license = "BSD-3-Clause",
+    deps = [
+        "//packages/linux/dev-libs/boost:boost",
+    ],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_TESTS=OFF",
+        "-DBUILD_EXAMPLES=OFF",
+    ],
+    visibility = ["PUBLIC"],
+)

@@ -1,0 +1,43 @@
+load("//defs:package_defs.bzl", "download_source", "binary_package")
+
+download_source(
+    name = "raddebugger-src",
+    src_uri = "https://github.com/EpicGames/raddebugger/archive/refs/heads/master.tar.gz",
+    sha256 = "9e3ec922f018f549f024ab5e9dfe45da1f9457816c5086a6f8364e53395acbb0",
+    signature_required = False,
+)
+
+binary_package(
+    name = "raddebugger",
+    srcs = [":raddebugger-src"],
+    version = "master",
+    description = "RAD Debugger - native debugger for Windows and Linux",
+    homepage = "https://github.com/EpicGames/raddebugger",
+    license = "MIT",
+    install_script = """
+        cd "$SRCS"
+
+        # Build metagen first
+        mkdir -p build local
+        cd build
+
+        CC=${CC:-clang}
+        CFLAGS="-I../src/ -I../local/ -g -O2 -DBUILD_DEBUG=0 -DBUILD_GIT_HASH=\\\"unknown\\\" -DBUILD_GIT_HASH_FULL=\\\"unknown\\\" -Wall -Wno-missing-braces -Wno-unused-function -Wno-unused-value -Wno-unused-variable -D_USE_MATH_DEFINES"
+        LDFLAGS="-lpthread -lm -lrt -ldl"
+
+        # Build metagen
+        $CC $CFLAGS ../src/metagen/metagen_main.c $LDFLAGS -o metagen
+        ./metagen
+
+        # Build main tools
+        $CC $CFLAGS ../src/rdi_from_dwarf/rdi_from_dwarf.c $LDFLAGS -o rdi_from_dwarf
+        $CC $CFLAGS ../src/rdi_dump/rdi_dump_main.c $LDFLAGS -o rdi_dump
+        $CC $CFLAGS ../src/linker/lnk.c $LDFLAGS -o radlink
+
+        # Install binaries
+        mkdir -p "$OUT/usr/bin"
+        cp rdi_from_dwarf rdi_dump radlink "$OUT/usr/bin/"
+    """,
+    deps = [],
+    visibility = ["PUBLIC"],
+)

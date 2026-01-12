@@ -1,0 +1,84 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# Dr.Jit-Core - A tracing GPU/CPU Just-In-Time-Compiler
+# JIT compiler designed to vectorize and parallelize computation,
+# primarily for differentiable Monte Carlo rendering
+
+cmake_package(
+    name = "drjit-core",
+    version = "0.0.0+git5cf6d37",
+    src_uri = "https://github.com/mitsuba-renderer/drjit-core/archive/5cf6d3730ebc931863c89071e16979153e802d09.tar.gz",
+    sha256 = "86c687d42d7af8f969c20ce3a6af7d920d64ef391767b9f3f9ee20b51e6eb8a1",  # TODO: Calculate with: wget -qO- <URL> | sha256sum
+    signature_required = False,
+    description = "Dr.Jit-Core - A tracing GPU/CPU Just-In-Time-Compiler for parallel computation",
+    homepage = "https://github.com/mitsuba-renderer/drjit-core",
+    license = "BSD-3-Clause",
+
+    # Dr.Jit has git submodules (nanothread, robin-map)
+    # GitHub archive tarballs don't include submodules, so we need to fetch them manually
+    pre_configure = """
+# Fetch and initialize submodules if missing
+if [ ! -d "ext/nanothread/include" ]; then
+    echo "Fetching nanothread submodule..."
+    mkdir -p ext/nanothread
+    cd ext/nanothread
+    wget -q https://github.com/mitsuba-renderer/nanothread/archive/refs/heads/master.tar.gz -O nanothread.tar.gz
+    tar --strip-components=1 -xf nanothread.tar.gz
+    rm nanothread.tar.gz
+
+    # nanothread also has a submodule: cmake-defaults
+    if [ ! -d "ext/cmake-defaults" ]; then
+        mkdir -p ext/cmake-defaults
+        cd ext/cmake-defaults
+        wget -q https://github.com/mitsuba-renderer/cmake-defaults/archive/refs/heads/master.tar.gz -O cmake-defaults.tar.gz
+        tar --strip-components=1 -xf cmake-defaults.tar.gz
+        rm cmake-defaults.tar.gz
+        cd ../..
+    fi
+    cd ../..
+fi
+
+if [ ! -d "ext/robin_map/include" ]; then
+    echo "Fetching robin-map submodule..."
+    mkdir -p ext/robin_map
+    cd ext/robin_map
+    wget -q https://github.com/Tessil/robin-map/archive/refs/heads/master.tar.gz -O robin-map.tar.gz
+    tar --strip-components=1 -xf robin-map.tar.gz
+    rm robin-map.tar.gz
+    cd ../..
+fi
+
+# Verify submodules are present
+if [ ! -d "ext/nanothread/ext/cmake-defaults" ] || [ ! -d "ext/robin_map/include" ]; then
+    echo "ERROR: Failed to initialize Dr.Jit-Core submodules"
+    exit 1
+fi
+""",
+
+    cmake_args = [
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DCMAKE_BUILD_TYPE=Release",
+
+        # Enable dynamic LLVM loading (no LLVM dependency at build time)
+        "-DDRJIT_DYNAMIC_LLVM=ON",
+
+        # Enable dynamic CUDA loading (no CUDA dependency at build time)
+        "-DDRJIT_DYNAMIC_CUDA=ON",
+
+        # Disable OptiX support (requires NVIDIA OptiX SDK)
+        "-DDRJIT_ENABLE_OPTIX=OFF",
+
+        # Disable tests
+        "-DDRJIT_CORE_ENABLE_TESTS=OFF",
+    ],
+
+    deps = [
+        # LZ4 compression library (used for compressed PTX kernels)
+        "//packages/linux/system/libs/compression/lz4:lz4",
+
+        # Note: nanothread and robin-map are included as vendored submodules
+        # and built as part of the drjit-core build process
+    ],
+
+    visibility = ["PUBLIC"],
+)

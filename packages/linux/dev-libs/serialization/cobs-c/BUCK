@@ -1,0 +1,25 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# cobs-c - Consistent Overhead Byte Stuffing (COBS) encoding library
+# COBS is a method of encoding a packet of bytes into a form that contains no zero bytes.
+# Useful for packet framing in communication protocols.
+
+cmake_package(
+    name = "cobs-c",
+    version = "1.0.0",
+    source = "~/fbsource/third-party/cobs-c",
+    description = "Consistent Overhead Byte Stuffing (COBS) encoding library",
+    homepage = "https://github.com/ctrl-labs/cobs-c",
+    license = "MIT",
+    maintainers = [],
+    patches = [
+        "patches/add-cmake-build.patch",
+    ],
+    deps = [],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DBUILD_TESTS=OFF",
+    ],
+    visibility = ["PUBLIC"],
+)

@@ -1,0 +1,34 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# Funchook - API Hook Library
+#
+# Funchook is a hook library that allows you to hook function calls at runtime.
+# It supports x86_64, x86, and arm64 architectures and uses disassemblers like
+# capstone, distorm, or zydis to analyze and modify function prologues.
+#
+# NOTE: This is strictly for internal/debugging tool use. Do not distribute to
+# production or link against it in production code.
+#
+# The library is licensed under GPLv2 or later with a GPL linking exception,
+# allowing use in any software without affecting code outside of funchook.
+
+cmake_package(
+    name = "funchook",
+    version = "2.0.0",
+    source = "fbsource//third-party/funchook",
+    description = "API hook library for runtime function hooking and interception",
+    homepage = "https://github.com/kubo/funchook",
+    license = "GPL-2.0-or-later WITH GPL-CC-1.0",
+    deps = [
+        "//packages/linux/system/security/capstone:capstone",
+    ],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DFUNCHOOK_BUILD_SHARED=ON",
+        "-DFUNCHOOK_BUILD_STATIC=ON",
+        "-DFUNCHOOK_BUILD_TESTS=OFF",
+        "-DFUNCHOOK_INSTALL=ON",
+        "-DFUNCHOOK_DISASM=capstone",
+    ],
+    visibility = ["PUBLIC"],
+)

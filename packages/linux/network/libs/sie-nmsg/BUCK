@@ -1,0 +1,14 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "sie-nmsg",
+    version = "1.3.0",
+    src_uri = "https://github.com/farsightsec/sie-nmsg/archive/refs/tags/v1.3.0.tar.gz",
+    sha256 = "TODO",
+    configure_args = [],
+    deps = [
+        "//packages/linux/network/libs/nmsg:nmsg",
+        # TODO: Add wdns dependency when available: //packages/linux/network/libs/wdns:wdns
+        # TODO: Add protobuf-c dependency when available: //packages/linux/dev-libs/serialization/protobuf-c:protobuf-c
+    ],
+)

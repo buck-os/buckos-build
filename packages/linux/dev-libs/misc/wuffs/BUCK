@@ -1,0 +1,17 @@
+load("//defs:package_defs.bzl", "simple_package")
+
+simple_package(
+    name = "wuffs",
+    version = "0.3.0",
+    src_uri = "https://github.com/nicholasbishop/wuffs-mirror/releases/download/v0.3/wuffs-mirror-release-c-0.3.tar.gz",
+    sha256 = "TODO",
+    description = "Wrangling Untrusted File Formats Safely - safe media codec library",
+    homepage = "https://github.com/nicholasbishop/wuffs-mirror",
+    license = "Apache-2.0",
+    deps = [],
+    build_commands = [
+        "mkdir -p ${PREFIX}/include/wuffs",
+        "cp release/c/*.h ${PREFIX}/include/wuffs/ 2>/dev/null || cp release/c/*.c ${PREFIX}/include/wuffs/ 2>/dev/null || cp *.c ${PREFIX}/include/wuffs/ || cp src/*.c ${PREFIX}/include/wuffs/",
+    ],
+    visibility = ["PUBLIC"],
+)

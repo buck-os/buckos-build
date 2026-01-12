@@ -1,0 +1,48 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# =============================================================================
+# cpr - C++ Requests: Curl for People
+# =============================================================================
+# A modern C++ wrapper around libcurl for easy HTTP requests.
+# Provides a simple, intuitive API similar to Python's requests library.
+
+cmake_package(
+    name = "cpr",
+    version = "1.10.5",
+    src_uri = "https://github.com/libcpr/cpr/archive/refs/tags/1.10.5.tar.gz",
+    sha256 = "c8590568996cea918d7cf7ec6845d954b9b95ab2c4980b365f582a665dea08d8",
+
+    description = "C++ Requests: Curl for People, a simple wrapper around libcurl",
+    homepage = "https://docs.libcpr.org/",
+    license = "MIT",
+
+    iuse = ["ssl", "static-libs"],
+    use_defaults = ["ssl"],
+
+    deps = [
+        "//packages/linux/network/curl:curl",
+    ],
+
+    use_deps = {
+        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
+    },
+
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCPR_USE_SYSTEM_CURL=ON",
+        "-DCPR_BUILD_TESTS=OFF",
+        "-DCPR_BUILD_TESTS_SSL=OFF",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DCPR_ENABLE_LINTING=OFF",
+        "-DCPR_ENABLE_CPPCHECK=OFF",
+    ],
+
+    use_cmake = {
+        "ssl": ["-DCPR_ENABLE_SSL=ON", "-DCPR_FORCE_OPENSSL_BACKEND=ON"],
+        "-ssl": "-DCPR_ENABLE_SSL=OFF",
+        "static-libs": "-DBUILD_SHARED_LIBS=OFF",
+        "-static-libs": "-DBUILD_SHARED_LIBS=ON",
+    },
+
+    visibility = ["PUBLIC"],
+)

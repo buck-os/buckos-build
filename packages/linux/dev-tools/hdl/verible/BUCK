@@ -1,0 +1,22 @@
+load("//defs:package_defs.bzl", "simple_binary_package")
+
+simple_binary_package(
+    name = "verible",
+    version = "0.0-3318-g8d25416",
+    src_uri = "https://github.com/chipsalliance/verible/releases/download/v0.0-3318-g8d25416/verible-v0.0-3318-g8d25416-linux-static-x86_64.tar.gz",
+    sha256 = "TODO",
+    bins = [
+        "bin/verible-patch-tool",
+        "bin/verible-verilog-diff",
+        "bin/verible-verilog-format",
+        "bin/verible-verilog-kythe-extractor",
+        "bin/verible-verilog-kythe-kzip-writer",
+        "bin/verible-verilog-lint",
+        "bin/verible-verilog-ls",
+        "bin/verible-verilog-obfuscate",
+        "bin/verible-verilog-preprocessor",
+        "bin/verible-verilog-project",
+        "bin/verible-verilog-syntax",
+    ],
+    visibility = ["PUBLIC"],
+)

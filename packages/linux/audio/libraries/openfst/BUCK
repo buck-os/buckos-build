@@ -1,0 +1,14 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "openfst",
+    version = "1.8.0",
+    src_uri = "http://www.openfst.org/twiki/pub/FST/FstDownload/openfst-1.8.0.tar.gz",
+    sha256 = "9730f1934f60f1320e46af44826e954bc6f7a695946548005ac33c1821745440",
+    configure_args = [
+        "--enable-static",
+        "--enable-shared",
+    ],
+    maintainers = ["speech_tts"],
+    visibility = ["PUBLIC"],
+)

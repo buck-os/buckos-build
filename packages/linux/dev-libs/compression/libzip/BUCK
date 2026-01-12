@@ -1,0 +1,19 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "libzip",
+    version = "1.5.1",
+    src_uri = "https://github.com/nih-at/libzip/archive/refs/tags/v1.5.1.tar.gz",
+    sha256 = "7c260a5294412aed429df1da2f8afd3bd07b7cba3fec772fba15a613a6d5c638",
+    deps = [
+        "//packages/linux/dev-libs/compression:zlib",
+    ],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DENABLE_COMMONCRYPTO=OFF",
+        "-DENABLE_GNUTLS=OFF",
+        "-DENABLE_MBEDTLS=OFF",
+        "-DENABLE_OPENSSL=OFF",
+    ],
+    visibility = ["PUBLIC"],
+)

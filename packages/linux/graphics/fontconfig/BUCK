@@ -1,0 +1,23 @@
+load("//defs:package_defs.bzl", "meson_package")
+
+# Fontconfig - Font configuration and customization library
+
+meson_package(
+    name = "fontconfig",
+    version = "2.15.0",
+    src_uri = "https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.15.0.tar.xz",
+    sha256 = "63a0658d0e06e0fa886106452b58ef04f21f58202ea02a94c39de0d3335d7c0e",
+    description = "Library for configuring and customizing font access",
+    homepage = "https://www.freedesktop.org/wiki/Software/fontconfig/",
+    license = "MIT",
+    deps = [
+        "//packages/linux/graphics/freetype:freetype",
+        "//packages/linux/dev-libs/misc/expat:expat",
+        "//packages/linux/core/glib:glib",
+    ],
+    meson_args = [
+        "-Ddoc=disabled",
+        "-Dtests=disabled",
+    ],
+    visibility = ["PUBLIC"],
+)

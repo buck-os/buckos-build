@@ -1,0 +1,11 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "fuzzywuzzy",
+    version = "0.0.1",
+    src_uri = "https://github.com/tmplt/fuzzywuzzy/archive/b62013235a15c484203b6ff6c369c813a284cf6e.tar.gz",
+    sha256 = "ffd652e7e38c67ae581de1029b0e0db62eb5287990244bf25cb4e265959f864d",
+    cmake_args = [
+        "-DFUZZ_TEST=OFF",
+    ],
+)

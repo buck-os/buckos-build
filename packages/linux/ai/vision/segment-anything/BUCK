@@ -1,0 +1,13 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "segment-anything",
+    version = "1.0",
+    src_uri = "https://github.com/facebookresearch/segment-anything/archive/refs/tags/v1.0.tar.gz",
+    sha256 = "TODO",
+    deps = [
+        "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
+        "//packages/linux/ai/vision/opencv:opencv",
+    ],
+    maintainers = ["worldai_ml"],
+)

@@ -1,0 +1,44 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# Apache Thrift - Scalable cross-language services framework
+
+cmake_package(
+    name = "thrift",
+    version = "0.20.0",
+    src_uri = "https://github.com/apache/thrift/archive/refs/tags/v0.20.0.tar.gz",
+    sha256 = "TODO",
+    description = "Scalable cross-language services framework for RPC",
+    homepage = "https://thrift.apache.org/",
+    license = "Apache-2.0",
+    iuse = ["cpp", "python", "java", "ssl", "libevent"],
+    use_defaults = ["cpp", "ssl", "libevent"],
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/dev-libs/boost:boost",
+    ],
+    use_deps = {
+        "ssl": ["//packages/linux/network/openssl:openssl"],
+        "libevent": ["//packages/linux/dev-libs/misc/libevent:libevent"],
+        "python": ["//packages/linux/lang/python:python"],
+    },
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DBUILD_TESTING=OFF",
+        "-DBUILD_EXAMPLES=OFF",
+        "-DBUILD_TUTORIALS=OFF",
+    ],
+    use_cmake = {
+        "cpp": "-DWITH_CPP=ON",
+        "-cpp": "-DWITH_CPP=OFF",
+        "python": "-DWITH_PYTHON=ON",
+        "-python": "-DWITH_PYTHON=OFF",
+        "java": "-DWITH_JAVA=ON",
+        "-java": "-DWITH_JAVA=OFF",
+        "ssl": "-DWITH_OPENSSL=ON",
+        "-ssl": "-DWITH_OPENSSL=OFF",
+        "libevent": "-DWITH_LIBEVENT=ON",
+        "-libevent": "-DWITH_LIBEVENT=OFF",
+    },
+    visibility = ["PUBLIC"],
+)

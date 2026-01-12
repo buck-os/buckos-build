@@ -1,0 +1,29 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "google-cloud-cpp",
+    version = "2.43.0-rc",
+    src_uri = "https://github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.43.0-rc.tar.gz",
+    sha256 = "TODO",
+    description = "C++ client libraries for Google Cloud Platform APIs",
+    homepage = "https://github.com/googleapis/google-cloud-cpp",
+    license = "Apache-2.0",
+    deps = [
+        "//packages/linux/dev-libs/rpc/abseil-cpp:abseil-cpp",
+        "//packages/linux/dev-libs/crc32c:crc32c",
+        "//packages/linux/network/curl:curl",
+        "//packages/linux/dev-libs/rpc/grpc:grpc",
+        "//packages/linux/network/openssl:openssl",
+        "//packages/linux/dev-libs/serialization/protobuf:protobuf",
+        "//packages/linux/dev-libs/json/nlohmann-json:nlohmann-json",
+    ],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DBUILD_TESTING=OFF",
+        "-DGOOGLE_CLOUD_CPP_ENABLE_EXAMPLES=OFF",
+        "-DGOOGLE_CLOUD_CPP_ENABLE_CCACHE=OFF",
+        "-DGOOGLE_CLOUD_CPP_GENERATE_DOXYGEN=OFF",
+    ],
+    visibility = ["PUBLIC"],
+)

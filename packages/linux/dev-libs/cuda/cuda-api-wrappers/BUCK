@@ -1,0 +1,131 @@
+# =============================================================================
+# cuda-api-wrappers - Thin C++-flavored wrappers for the CUDA APIs
+# =============================================================================
+# This is a header-only library providing modern C++ wrappers for:
+# - CUDA Driver API
+# - CUDA Runtime API
+# - NVRTC (dynamic CUDA code compilation)
+# - NVTX (NVIDIA profiler API)
+
+load("//defs:package_defs.bzl", "download_source", "binary_package")
+
+download_source(
+    name = "cuda-api-wrappers-src",
+    src_uri = "https://github.com/eyalroz/cuda-api-wrappers/archive/refs/tags/v0.5.6.tar.gz",
+    # TODO: Verify SHA256 hash by running:
+    # curl -sL "https://github.com/eyalroz/cuda-api-wrappers/archive/refs/tags/v0.5.6.tar.gz" | sha256sum
+    sha256 = "6119c11108955d71be8f19b40ec97ee244ef6f8b0f1d6f1a24cc3b1463df5f3a",
+    signature_required = False,
+)
+
+binary_package(
+    name = "cuda-api-wrappers",
+    srcs = [":cuda-api-wrappers-src"],
+    version = "0.5.6",
+    description = "Thin C++-flavored wrappers for the CUDA Runtime, Driver, NVRTC and NVTX APIs",
+    homepage = "https://github.com/eyalroz/cuda-api-wrappers",
+    license = "BSD-3-Clause",
+    install_script = """
+cd $SRCS
+
+# Find the source directory
+if [ -d cuda-api-wrappers-0.5.6 ]; then
+    cd cuda-api-wrappers-0.5.6
+elif [ -d src ]; then
+    # Already in the right directory
+    echo "Found src directory"
+else
+    # Try to find the directory
+    SRC_DIR=$(find . -maxdepth 2 -name "src" -type d | head -1 | xargs dirname)
+    if [ -n "$SRC_DIR" ]; then
+        echo "Found source in: $SRC_DIR"
+        cd "$SRC_DIR"
+    else
+        echo "Cannot find source directory"
+        exit 1
+    fi
+fi
+
+# This is a header-only library, so we just need to install the headers
+mkdir -p "$OUT/usr/include"
+cp -r src/cuda "$OUT/usr/include/"
+
+# Install CMake config files for find_package() support
+mkdir -p "$OUT/usr/lib/cmake/cuda-api-wrappers"
+
+cat > "$OUT/usr/lib/cmake/cuda-api-wrappers/cuda-api-wrappers-config.cmake" << 'EOF'
+# cuda-api-wrappers CMake configuration file
+
+if(NOT TARGET cuda-api-wrappers::runtime-and-driver)
+    add_library(cuda-api-wrappers::runtime-and-driver INTERFACE IMPORTED)
+    set_target_properties(cuda-api-wrappers::runtime-and-driver PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_LIST_DIR}/../../../include"
+        INTERFACE_COMPILE_FEATURES cxx_std_11
+    )
+    if(TARGET CUDA::cudart)
+        target_link_libraries(cuda-api-wrappers::runtime-and-driver INTERFACE CUDA::cudart CUDA::cuda_driver)
+    endif()
+endif()
+
+if(NOT TARGET cuda-api-wrappers::nvrtc)
+    add_library(cuda-api-wrappers::nvrtc INTERFACE IMPORTED)
+    set_target_properties(cuda-api-wrappers::nvrtc PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_LIST_DIR}/../../../include"
+        INTERFACE_COMPILE_FEATURES cxx_std_11
+    )
+    target_link_libraries(cuda-api-wrappers::nvrtc INTERFACE cuda-api-wrappers::runtime-and-driver)
+    if(TARGET CUDA::nvrtc)
+        target_link_libraries(cuda-api-wrappers::nvrtc INTERFACE CUDA::nvrtc)
+    endif()
+endif()
+
+if(NOT TARGET cuda-api-wrappers::nvtx)
+    add_library(cuda-api-wrappers::nvtx INTERFACE IMPORTED)
+    set_target_properties(cuda-api-wrappers::nvtx PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_LIST_DIR}/../../../include"
+        INTERFACE_COMPILE_FEATURES cxx_std_11
+    )
+    target_link_libraries(cuda-api-wrappers::nvtx INTERFACE cuda-api-wrappers::runtime-and-driver)
+    if(TARGET CUDA::nvToolsExt)
+        target_link_libraries(cuda-api-wrappers::nvtx INTERFACE CUDA::nvToolsExt)
+    endif()
+    find_package(Threads QUIET)
+    if(TARGET Threads::Threads)
+        target_link_libraries(cuda-api-wrappers::nvtx INTERFACE Threads::Threads)
+    endif()
+endif()
+EOF
+
+cat > "$OUT/usr/lib/cmake/cuda-api-wrappers/cuda-api-wrappers-config-version.cmake" << 'EOF'
+set(PACKAGE_VERSION "0.5.6")
+
+if(PACKAGE_VERSION VERSION_LESS PACKAGE_FIND_VERSION)
+    set(PACKAGE_VERSION_COMPATIBLE FALSE)
+else()
+    set(PACKAGE_VERSION_COMPATIBLE TRUE)
+    if(PACKAGE_FIND_VERSION STREQUAL PACKAGE_VERSION)
+        set(PACKAGE_VERSION_EXACT TRUE)
+    endif()
+endif()
+EOF
+
+# Install pkg-config file
+mkdir -p "$OUT/usr/lib/pkgconfig"
+cat > "$OUT/usr/lib/pkgconfig/cuda-api-wrappers.pc" << 'EOF'
+prefix=/usr
+includedir=${prefix}/include
+
+Name: cuda-api-wrappers
+Description: Thin C++-flavored wrappers for the CUDA APIs
+Version: 0.5.6
+Requires: cuda
+Cflags: -I${includedir}
+EOF
+
+echo "cuda-api-wrappers headers installed successfully"
+""",
+    deps = [
+        "//packages/linux/system/gpu/libraries/cuda-toolkit:cuda-toolkit",
+    ],
+    visibility = ["PUBLIC"],
+)

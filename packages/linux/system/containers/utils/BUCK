@@ -170,13 +170,14 @@ ebuild_package(
     homepage = "https://github.com/docker/docker-credential-helpers",
     license = "MIT",
     src_compile = """
+# Build only 'pass' backend directly - Makefile's pass target also builds secretservice
+# secretservice requires CGO and libsecret which we don't have
 export CGO_ENABLED=0
-make pass secretservice
+go build -trimpath -ldflags="-s -w" -o docker-credential-pass ./pass/cmd/
 """,
     src_install = """
 mkdir -p "$DESTDIR/usr/bin"
-install -m 755 bin/build/docker-credential-pass "$DESTDIR/usr/bin/" || true
-install -m 755 bin/build/docker-credential-secretservice "$DESTDIR/usr/bin/" || true
+install -m 755 docker-credential-pass "$DESTDIR/usr/bin/"
 """,
     bdepend = [
         "//packages/linux/lang/go:go",

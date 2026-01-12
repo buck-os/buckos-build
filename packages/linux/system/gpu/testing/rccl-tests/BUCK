@@ -1,0 +1,17 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "rccl-tests",
+    version = "2.12.10",
+    src_uri = "https://github.com/ROCm/rccl-tests/archive/refs/tags/v2.12.10.tar.gz",
+    sha256 = "TODO",
+    cmake_args = [
+        "-DNO_MPI=ON",
+        "-DBUILD_TESTING=OFF",
+    ],
+    deps = [
+        "//packages/linux/system/gpu/libraries/rocm:rocm-cmake",
+        "//packages/linux/system/gpu/libraries/rocm:rccl",
+        "//packages/linux/system/gpu/libraries/rocm:hip",
+    ],
+)

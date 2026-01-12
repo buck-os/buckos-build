@@ -1,0 +1,16 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "geo_calib",
+    version = "1.0",
+    src_uri = "https://github.com/cvg/GeoCalib/archive/refs/heads/main.tar.gz",
+    sha256 = "ca1f94d321a618fc7d2a76ae1bbb5b580643848aac542acb3928b2388eecef1f",
+    deps = [
+        "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
+        "//packages/linux/ai/ml-frameworks/torchvision:torchvision",
+        "//packages/linux/dev-libs/python/kornia:kornia",
+        "//packages/linux/dev-libs/python/matplotlib:matplotlib",
+        "//packages/linux/dev-libs/python/numpy:numpy",
+        "//packages/linux/ai/vision/opencv:opencv",
+    ],
+)

@@ -1,0 +1,19 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "oidn",
+    version = "2.2.2",
+    src_uri = "https://github.com/OpenImageDenoise/oidn/releases/download/v2.2.2/oidn-2.2.2.src.tar.gz",
+    sha256 = "TODO",
+    cmake_args = [
+        "-DOIDN_DEVICE_CPU=ON",
+        "-DOIDN_DEVICE_CUDA=OFF",
+        "-DOIDN_DEVICE_HIP=OFF",
+        "-DOIDN_DEVICE_SYCL=OFF",
+        "-DOIDN_APPS=OFF",
+        "-DBUILD_SHARED_LIBS=ON",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/misc/tbb",
+    ],
+)

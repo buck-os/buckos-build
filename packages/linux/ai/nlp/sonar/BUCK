@@ -1,0 +1,16 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "sonar",
+    version = "0.2.0",
+    src_uri = "https://github.com/facebookresearch/SONAR/archive/refs/tags/v0.2.0.tar.gz",
+    sha256 = "TODO",
+    deps = [
+        "//packages/linux/ai/ml-frameworks/fairseq2",
+        "//packages/linux/lang/python/numpy",
+        "//packages/linux/ai/ml-frameworks/pytorch",
+        "//packages/linux/ai/audio-ml/torchaudio",
+        "//packages/linux/audio/utilities/sox",
+        "//packages/linux/audio/utilities/soundfile",
+    ],
+)

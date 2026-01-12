@@ -1,0 +1,27 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# libXaw - X Athena Widgets library
+autotools_package(
+    name = "libXaw",
+    version = "1.0.16",
+    src_uri = "https://xorg.freedesktop.org/archive/individual/lib/libXaw-1.0.16.tar.xz",
+    sha256 = "731d572b54c708f81e197a6afa8016918e2e06dfd3025e066ca642a5b8c39c8f",
+    description = "X Athena Widgets library",
+    homepage = "https://xorg.freedesktop.org/",
+    license = "MIT",
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--libdir=/usr/lib64",
+        "--disable-specs",
+    ],
+    deps = [
+        "//packages/linux/graphics/xorg/libX11:libX11",
+        "//packages/linux/graphics/xorg/libXext:libXext",
+        "//packages/linux/graphics/xorg/libXt:libXt",
+        "//packages/linux/graphics/xorg/libXmu:libXmu",
+        "//packages/linux/graphics/xorg/libXpm:libXpm",
+        "//packages/linux/graphics/xorg/xorgproto:xorgproto",
+    ],
+    visibility = ["PUBLIC"],
+)

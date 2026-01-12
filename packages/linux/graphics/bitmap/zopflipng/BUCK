@@ -1,0 +1,26 @@
+load("//defs:package_defs.bzl", "simple_package")
+
+simple_package(
+    name = "zopflipng",
+    version = "1.0.3",
+    src_uri = "https://github.com/google/zopfli/archive/refs/tags/zopfli-1.0.3.tar.gz",
+    sha256 = "TODO",
+    description = "Zopfli PNG optimizer using Zopfli compression",
+    homepage = "https://github.com/google/zopfli",
+    license = "Apache-2.0",
+    deps = [
+        "//packages/linux/dev-libs/compression/zopfli",
+        "//packages/linux/graphics/bitmap/lodepng",
+    ],
+    build_commands = [
+        "cd src/zopflipng",
+        "g++ -O2 -W -Wall -Wextra -Wno-unused-function -ansi -pedantic -c zopflipng_lib.cc -I../zopfli -I${PREFIX}/include/lodepng -o zopflipng_lib.o",
+        "g++ -O2 -W -Wall -Wextra -Wno-unused-function -ansi -pedantic -c zopflipng_bin.cc -I../zopfli -I${PREFIX}/include/lodepng -o zopflipng_bin.o",
+        "g++ zopflipng_lib.o zopflipng_bin.o -L${PREFIX}/lib -lzopfli -lpng -lz -o zopflipng",
+        "mkdir -p ${PREFIX}/bin",
+        "mkdir -p ${PREFIX}/include/zopflipng",
+        "cp zopflipng ${PREFIX}/bin/",
+        "cp zopflipng_lib.h ${PREFIX}/include/zopflipng/",
+    ],
+    visibility = ["PUBLIC"],
+)

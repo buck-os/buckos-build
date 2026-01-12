@@ -1,0 +1,79 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# PostgreSQL - Advanced open source relational database
+#
+# USE flags:
+#   ssl       - Enable SSL/TLS support with OpenSSL
+#   readline  - Enable command-line editing in psql
+#   zlib      - Enable compression support
+#   xml       - Enable XML support
+#   python    - Enable PL/Python stored procedures
+#   perl      - Enable PL/Perl stored procedures
+#   tcl       - Enable PL/Tcl stored procedures
+#   uuid      - Enable UUID support
+#   ldap      - Enable LDAP authentication
+#   pam       - Enable PAM authentication
+#   systemd   - Enable systemd integration
+
+autotools_package(
+    name = "postgresql",
+    version = "16.4",
+    src_uri = "https://ftp.postgresql.org/pub/source/v16.4/postgresql-16.4.tar.bz2",
+    sha256 = "971766d645aa73e93b9ef4e3be44201b4f45b5477095b049125403f9f3386d6f",
+    description = "Advanced open source relational database",
+    homepage = "https://www.postgresql.org/",
+    license = "PostgreSQL",
+    iuse = ["ssl", "readline", "zlib", "xml", "python", "perl", "tcl", "uuid", "ldap", "pam", "systemd"],
+    use_defaults = ["ssl", "readline", "zlib", "uuid"],
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/core/readline:readline",
+    ],
+    use_deps = {
+        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
+        "xml": ["//packages/linux/dev-libs/libxml2:libxml2"],
+    },
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc/postgresql",
+        "--localstatedir=/var",
+        "--enable-thread-safety",
+        "--with-system-tzdata=/usr/share/zoneinfo",
+    ],
+    use_configure = {
+        "ssl": "--with-ssl=openssl",
+        "-ssl": "--without-ssl",
+        "readline": "--with-readline",
+        "-readline": "--without-readline",
+        "zlib": "--with-zlib",
+        "-zlib": "--without-zlib",
+        "xml": "--with-libxml",
+        "-xml": "--without-libxml",
+        "python": "--with-python",
+        "-python": "--without-python",
+        "perl": "--with-perl",
+        "-perl": "--without-perl",
+        "tcl": "--with-tcl",
+        "-tcl": "--without-tcl",
+        "uuid": "--with-uuid=e2fs",
+        "-uuid": "--without-uuid",
+        "ldap": "--with-ldap",
+        "-ldap": "--without-ldap",
+        "pam": "--with-pam",
+        "-pam": "--without-pam",
+        "systemd": "--with-systemd",
+        "-systemd": "--without-systemd",
+    },
+    post_install = """
+# Create data directory
+mkdir -p "$DESTDIR/var/lib/postgresql/data"
+chmod 700 "$DESTDIR/var/lib/postgresql/data"
+
+# Create log directory
+mkdir -p "$DESTDIR/var/log/postgresql"
+
+# Create run directory
+mkdir -p "$DESTDIR/run/postgresql"
+""",
+    visibility = ["PUBLIC"],
+)

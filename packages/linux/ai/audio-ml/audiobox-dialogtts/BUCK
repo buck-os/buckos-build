@@ -1,0 +1,25 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "audiobox_dialogtts",
+    version = "0.0.1",
+    src_uri = "https://github.com/facebookresearch/audiobox/archive/refs/tags/v0.0.1.tar.gz",
+    sha256 = "TODO",
+    deps = [
+        "//packages/linux/lang/python",
+        "//packages/linux/ai/ml-frameworks/pytorch",
+        "//packages/linux/ai/ml-frameworks/torchaudio",
+        "//packages/linux/dev-libs/python/numpy",
+        "//packages/linux/dev-libs/python/pandas",
+        "//packages/linux/dev-libs/python/matplotlib",
+        "//packages/linux/dev-libs/python/scipy",
+        "//packages/linux/dev-libs/python/tqdm",
+        "//packages/linux/dev-libs/python/einops",
+        "//packages/linux/dev-libs/python/hydra-core",
+        "//packages/linux/dev-libs/python/pytorch-lightning",
+        "//packages/linux/dev-libs/python/transformers",
+        "//packages/linux/dev-libs/python/librosa",
+        "//packages/linux/dev-libs/python/soundfile",
+        "//packages/linux/dev-libs/serialization/msgpack",
+    ],
+)

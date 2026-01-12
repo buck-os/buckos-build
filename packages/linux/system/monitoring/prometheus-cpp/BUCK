@@ -1,0 +1,30 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# prometheus-cpp - Prometheus Client Library for C++
+
+cmake_package(
+    name = "prometheus-cpp",
+    version = "1.2.4",
+    src_uri = "https://github.com/jupp0r/prometheus-cpp/releases/download/v1.2.4/prometheus-cpp-with-submodules.tar.gz",
+    sha256 = "TODO",
+    description = "Prometheus Client Library for Modern C++",
+    homepage = "https://github.com/jupp0r/prometheus-cpp",
+    license = "MIT",
+    iuse = ["push", "pull"],
+    use_defaults = ["pull"],
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+    ],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DENABLE_TESTING=OFF",
+        "-DENABLE_PUSH=OFF",
+        "-DENABLE_COMPRESSION=ON",
+    ],
+    use_cmake = {
+        "push": "-DENABLE_PUSH=ON",
+        "-push": "-DENABLE_PUSH=OFF",
+    },
+    visibility = ["PUBLIC"],
+)

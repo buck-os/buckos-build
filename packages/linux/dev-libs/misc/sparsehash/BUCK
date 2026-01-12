@@ -1,0 +1,19 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# sparsehash - Memory-efficient hash maps and hash sets
+
+autotools_package(
+    name = "sparsehash",
+    version = "2.0.4",
+    src_uri = "https://github.com/sparsehash/sparsehash/archive/refs/tags/sparsehash-2.0.4.tar.gz",
+    sha256 = "8cd1a95827dfd8270927894eb77f62b4087735cbede953884647f16c521c7e58",
+    description = "Memory-efficient hash_map and hash_set implementation",
+    homepage = "https://github.com/sparsehash/sparsehash",
+    license = "BSD-3-Clause",
+    configure_args = [
+        "--prefix=${PREFIX}",
+        "--enable-shared",
+        "--disable-static",
+    ],
+    visibility = ["PUBLIC"],
+)

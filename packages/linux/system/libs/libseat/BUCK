@@ -1,0 +1,16 @@
+load("//defs:package_defs.bzl", "meson_package")
+
+meson_package(
+    name = "libseat",
+    version = "0.7.0",
+    src_uri = "https://github.com/kennylevinsen/seatd/archive/refs/tags/0.7.0.tar.gz",
+    sha256 = "210ddf8efa1149cde4dd35908bef8e9e63c2edaa0cdb5435f2e6db277fafff3c",
+    meson_args = [
+        "-Dlibseat-builtin=enabled",
+        "-Dlibseat-seatd=enabled",
+        "-Dserver=enabled",
+        "-Dexamples=disabled",
+        "-Dman-pages=disabled",
+    ],
+    deps = [],
+)

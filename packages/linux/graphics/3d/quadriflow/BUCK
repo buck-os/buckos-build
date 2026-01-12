@@ -1,0 +1,18 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "quadriflow",
+    version = "810b7a0",
+    src_uri = "https://github.com/hjwdzh/quadriflow/archive/810b7a0967c35b0dc85b4464e3835e26a756c967.tar.gz",
+    sha256 = "TODO",
+    cmake_args = [
+        "-DBUILD_OPENMP=ON",
+        "-DBUILD_FREE_LICENSE=ON",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/math/eigen",
+        "//packages/linux/dev-libs/misc/boost",
+        "//packages/linux/dev-libs/math/glm",
+        "//packages/linux/dev-libs/compression/zlib",
+    ],
+)

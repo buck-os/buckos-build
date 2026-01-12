@@ -1,0 +1,27 @@
+--- /dev/null
++++ b/CMakeLists.txt
+@@ -0,0 +1,29 @@
++cmake_minimum_required(VERSION 3.10)
++project(ctrl-c VERSION 1.0.0)
++
++set(CMAKE_CXX_STANDARD 11)
++set(CMAKE_CXX_STANDARD_REQUIRED ON)
++
++add_library(ctrl-c STATIC
++    src/ctrl-c.cpp
++)
++
++target_include_directories(ctrl-c
++    PUBLIC
++        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
++        $<INSTALL_INTERFACE:include>
++)
++
++install(TARGETS ctrl-c
++    ARCHIVE DESTINATION lib
++    LIBRARY DESTINATION lib
++)
++
++install(FILES src/ctrl-c.h
++    DESTINATION include
++)

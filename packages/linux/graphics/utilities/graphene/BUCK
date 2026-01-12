@@ -1,0 +1,29 @@
+load("//defs:package_defs.bzl", "meson_package")
+
+meson_package(
+    name = "graphene",
+    version = "1.10.8",
+    src_uri = "https://github.com/ebassi/graphene/releases/download/1.10.8/graphene-1.10.8.tar.xz",
+    sha256 = "TODO",
+    description = "Thin layer of types for graphic libraries",
+    homepage = "https://github.com/ebassi/graphene",
+    license = "MIT",
+    iuse = ["gobject", "introspection"],
+    use_defaults = ["gobject"],
+    deps = [],
+    use_deps = {
+        "gobject": ["//packages/linux/dev-libs/glib:gobject"],
+    },
+    meson_args = [
+        "-Dtests=false",
+        "-Dgtk_doc=false",
+        "-Dinstalled_tests=false",
+    ],
+    use_meson = {
+        "gobject": "-Dgobject_types=true",
+        "-gobject": "-Dgobject_types=false",
+        "introspection": "-Dintrospection=enabled",
+        "-introspection": "-Dintrospection=disabled",
+    },
+    visibility = ["PUBLIC"],
+)

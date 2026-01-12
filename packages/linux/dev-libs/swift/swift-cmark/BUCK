@@ -1,0 +1,18 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "swift-cmark",
+    version = "0.29.0.gfm.6",
+    src_uri = "https://github.com/apple/swift-cmark/archive/refs/tags/gfm-0.29.0.gfm.6.tar.gz",
+    sha256 = "8f1486962f093f28a2f79f01c1fd82f144ef640ceabe555536d43362212ceb7c",
+    signature_required = False,
+    description = "CommonMark parsing and rendering library with GitHub Flavored Markdown extensions",
+    homepage = "https://github.com/apple/swift-cmark",
+    license = "BSD-2-Clause",
+    cmake_args = [
+        "-DCMARK_TESTS=OFF",
+        "-DCMARK_STATIC=ON",
+        "-DCMARK_SHARED=ON",
+    ],
+    visibility = ["PUBLIC"],
+)

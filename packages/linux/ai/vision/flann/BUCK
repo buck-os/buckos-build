@@ -1,0 +1,80 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# FLANN - Fast Library for Approximate Nearest Neighbors
+# A library for performing fast approximate nearest neighbor searches in high dimensional spaces
+
+cmake_package(
+    name = "flann",
+    version = "1.9.1",
+    source = "~/fbsource/third-party/flann",
+    description = "Fast Library for Approximate Nearest Neighbors",
+    homepage = "https://github.com/mariusmuja/flann",
+    license = "BSD-3-Clause",
+    maintainers = ["body_tracking"],
+    iuse = ["openmp", "mpi", "hdf5", "cuda", "examples", "tests", "doc"],
+    use_defaults = ["openmp"],
+    deps = [],
+    use_deps = {
+        "openmp": [],
+        "hdf5": [
+            # HDF5 dependency would go here when available
+            # "//packages/linux/dev-libs/hdf5:hdf5",
+        ],
+        "mpi": [
+            # MPI and Boost dependencies would go here when available
+            # "//packages/linux/dev-libs/boost:boost",
+        ],
+        "cuda": [
+            # CUDA dependency would go here when available
+            # "//packages/linux/dev-libs/cuda:cuda",
+        ],
+        "tests": [
+            # GTest dependency would go here when available
+            # "//packages/linux/dev-libs/testing/gtest:gtest",
+        ],
+    },
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DBUILD_C_BINDINGS=ON",
+        "-DBUILD_PYTHON_BINDINGS=OFF",
+        "-DBUILD_MATLAB_BINDINGS=OFF",
+        "-DBUILD_EXAMPLES=OFF",
+        "-DBUILD_TESTS=OFF",
+        "-DBUILD_DOC=OFF",
+        "-DBUILD_CUDA_LIB=OFF",
+        "-DUSE_OPENMP=OFF",
+        "-DUSE_MPI=OFF",
+    ],
+    use_options = {
+        "openmp": {
+            "enabled": ["-DUSE_OPENMP=ON"],
+            "disabled": ["-DUSE_OPENMP=OFF"],
+        },
+        "mpi": {
+            "enabled": ["-DUSE_MPI=ON"],
+            "disabled": ["-DUSE_MPI=OFF"],
+        },
+        "hdf5": {
+            "enabled": [],
+            "disabled": [],
+        },
+        "cuda": {
+            "enabled": ["-DBUILD_CUDA_LIB=ON"],
+            "disabled": ["-DBUILD_CUDA_LIB=OFF"],
+        },
+        "examples": {
+            "enabled": ["-DBUILD_EXAMPLES=ON"],
+            "disabled": ["-DBUILD_EXAMPLES=OFF"],
+        },
+        "tests": {
+            "enabled": ["-DBUILD_TESTS=ON"],
+            "disabled": ["-DBUILD_TESTS=OFF"],
+        },
+        "doc": {
+            "enabled": ["-DBUILD_DOC=ON"],
+            "disabled": ["-DBUILD_DOC=OFF"],
+        },
+    },
+    visibility = ["PUBLIC"],
+)

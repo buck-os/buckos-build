@@ -1,0 +1,24 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# FastCGI - Fast Common Gateway Interface library
+#
+# FastCGI is a language-independent, scalable extension to CGI that provides
+# high performance without the limitations of server-specific APIs.
+#
+# This library provides support for writing FastCGI applications in C/C++.
+
+autotools_package(
+    name = "fcgi",
+    version = "2.4.2",
+    src_uri = "https://github.com/FastCGI-Archives/fcgi2/archive/refs/tags/2.4.2.tar.gz",
+    sha256 = "1fe83501edfc3a7ec96bb1e69db3fd5ea1730135bd73ab152186fd0b437013bc",
+    description = "Fast Common Gateway Interface library",
+    homepage = "https://github.com/FastCGI-Archives/fcgi2",
+    license = "Open-Market",
+    configure_args = [
+        "--prefix=${PREFIX}",
+        "--enable-shared",
+        "--enable-static",
+    ],
+    visibility = ["PUBLIC"],
+)

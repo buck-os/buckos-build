@@ -1,0 +1,23 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "rocshmem",
+    version = "3.1.0",
+    src_uri = "https://github.com/ROCm/rocSHMEM/archive/refs/tags/v3.1.0.tar.gz",
+    sha256 = "TODO",
+    cmake_args = [
+        "-DCMAKE_CXX_STANDARD=20",
+        "-DBUILD_EXAMPLES=OFF",
+        "-DBUILD_FUNCTIONAL_TESTS=OFF",
+        "-DBUILD_UNIT_TESTS=OFF",
+        "-DBUILD_TOOLS=ON",
+        "-DUSE_IPC=ON",
+        "-DUSE_GDA=OFF",
+        "-DUSE_SINGLE_NODE=ON",
+        "-DUSE_ALLOC_DLMALLOC=ON",
+        "-DUSE_HEAP_DEVICE_FINEGRAIN=ON",
+    ],
+    deps = [
+        "//packages/linux/system/gpu/libraries/rocm:rocm",
+    ],
+)

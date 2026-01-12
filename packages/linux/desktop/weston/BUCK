@@ -1,0 +1,33 @@
+load("//defs:package_defs.bzl", "meson_package")
+
+meson_package(
+    name = "weston",
+    version = "14.0.1",
+    src_uri = "https://gitlab.freedesktop.org/wayland/weston/-/archive/14.0.1/weston-14.0.1.tar.gz",
+    sha256 = "0cd789cf0a2a4db43733078bc69d99c296cf79c7cbed439af8593359e3a97678",
+    description = "Wayland reference compositor",
+    homepage = "https://gitlab.freedesktop.org/wayland/weston",
+    license = "MIT",
+    deps = [
+        "//packages/linux/desktop/wayland:wayland",
+        "//packages/linux/graphics/utilities/pixman:pixman",
+        "//packages/linux/dev-libs/misc/xkbcommon:xkbcommon",
+        "//packages/linux/dev-libs/libinput:libinput",
+        "//packages/linux/dev-libs/libevdev:libevdev",
+        "//packages/linux/system/libs/drm:libdrm",
+        "//packages/linux/graphics/mesa:mesa",
+        "//packages/linux/graphics/libraries/lcms2:lcms2",
+    ],
+    meson_args = [
+        "-Dbackend-drm=true",
+        "-Dbackend-headless=true",
+        "-Dbackend-wayland=true",
+        "-Dbackend-x11=false",
+        "-Drenderer-gl=true",
+        "-Dtests=false",
+        "-Ddoc=false",
+        "-Dsimple-clients=[]",
+        "-Ddemo-clients=false",
+    ],
+    visibility = ["PUBLIC"],
+)

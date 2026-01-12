@@ -1,0 +1,28 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "certificate-transparency",
+    version = "0.9",
+    src_uri = "https://github.com/google/certificate-transparency/archive/refs/tags/v0.9.tar.gz",
+    sha256 = "TODO",
+
+    configure_args = [
+        "--prefix=/usr",
+        "--without-tcmalloc",
+        "--disable-hardening",
+    ],
+
+    deps = [
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/dev-libs/google/glog:glog",
+        "//packages/linux/dev-libs/google/gflags:gflags",
+        "//packages/linux/dev-libs/misc/libevent:libevent",
+        "//packages/linux/dev-libs/json/json-c:json-c",
+        "//packages/linux/dev-libs/serialization/protobuf:protobuf",
+    ],
+
+    description = "Certificate Transparency implementation",
+    homepage = "https://github.com/google/certificate-transparency",
+    license = "Apache-2.0",
+    visibility = ["PUBLIC"],
+)

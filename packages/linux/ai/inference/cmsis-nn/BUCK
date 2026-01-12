@@ -1,0 +1,76 @@
+load("//defs:package_defs.bzl", "download_source", "binary_package")
+
+# ARM CMSIS-NN - Neural Network library for Cortex-M processors
+# Optimized kernels for neural network operations on embedded devices
+
+download_source(
+    name = "cmsis-nn-src",
+    src_uri = "https://github.com/ARM-software/CMSIS-NN/archive/refs/tags/v5.1.0.tar.gz",
+    sha256 = "TODO",
+    signature_required = False,
+)
+
+binary_package(
+    name = "cmsis-nn",
+    srcs = [":cmsis-nn-src"],
+    version = "5.1.0",
+    description = "CMSIS Neural Network Library - optimized NN kernels for Cortex-M",
+    homepage = "https://github.com/ARM-software/CMSIS-NN",
+    license = "Apache-2.0",
+    install_script = """
+        # CMSIS-NN requires CMSIS headers for Core and DSP
+        # For now, we'll use the bundled headers from the source
+        cd "$SRCS"
+
+        # Create a minimal CMSIS structure for headers
+        # In production, this should depend on a proper CMSIS-Core package
+        mkdir -p cmsis_temp/CMSIS/Core/Include
+        mkdir -p cmsis_temp/CMSIS/DSP/Include
+
+        # Build the library
+        mkdir -p build && cd build
+        cmake .. \
+            -DCMAKE_INSTALL_PREFIX=/usr \
+            -DCMAKE_INSTALL_LIBDIR=lib64 \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMSIS_PATH="$SRCS/cmsis_temp" \
+            -DCONCATENATION=ON \
+            -DFULLYCONNECTED=ON \
+            -DCONVOLUTION=ON \
+            -DACTIVATION=ON \
+            -DPOOLING=ON \
+            -DSOFTMAX=ON \
+            -DBASICMATHSNN=ON \
+            -DRESHAPE=ON \
+            -DSVDF=ON \
+            -DLSTM=ON \
+            -DNNSUPPORT=ON
+
+        make -j$(nproc)
+
+        # Install the library
+        mkdir -p "$OUT/usr/lib64"
+        cp libcmsis-nn.a "$OUT/usr/lib64/"
+
+        # Install headers
+        mkdir -p "$OUT/usr/include/cmsis-nn"
+        cp -r ../Include/* "$OUT/usr/include/cmsis-nn/"
+
+        # Create pkg-config file
+        mkdir -p "$OUT/usr/lib64/pkgconfig"
+        cat > "$OUT/usr/lib64/pkgconfig/cmsis-nn.pc" << 'EOF'
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib64
+includedir=${prefix}/include/cmsis-nn
+
+Name: CMSIS-NN
+Description: CMSIS Neural Network Library
+Version: 5.1.0
+Libs: -L${libdir} -lcmsis-nn
+Cflags: -I${includedir}
+EOF
+    """,
+    deps = [],
+    visibility = ["PUBLIC"],
+)

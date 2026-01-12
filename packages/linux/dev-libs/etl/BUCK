@@ -1,0 +1,27 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# etl - Embedded Template Library
+# A C++ template library tailored for embedded systems.
+# Header-only library with STL-like containers and utilities
+# for resource-constrained environments.
+
+# Use symlinked source from fbsource/third-party/etl -> src/
+export_file(
+    name = "etl-src",
+    src = "src",
+    visibility = [],
+)
+
+cmake_package(
+    name = "etl",
+    version = "20.39.4",
+    source = ":etl-src",
+    description = "Embedded Template Library - C++ template library for embedded systems",
+    homepage = "https://www.etlcpp.com/",
+    license = "MIT",
+    cmake_args = [
+        "-DBUILD_TESTS=OFF",
+    ],
+    deps = [],
+    visibility = ["PUBLIC"],
+)

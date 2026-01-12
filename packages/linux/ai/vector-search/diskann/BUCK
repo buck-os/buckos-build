@@ -1,0 +1,71 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# DiskANN - Fast and accurate approximate nearest neighbor search for large-scale datasets
+# A suite of scalable, accurate and cost-effective approximate nearest neighbor search algorithms
+
+cmake_package(
+    name = "diskann",
+    version = "0.7.0",
+    source = "~/fbsource/third-party/DiskANN",
+    description = "Fast approximate nearest neighbor search for large-scale datasets",
+    homepage = "https://github.com/microsoft/DiskANN",
+    license = "MIT",
+    maintainers = ["search_topaggr"],
+    iuse = ["openmp", "tcmalloc", "mkl", "openblas", "restapi", "unit-test"],
+    use_defaults = ["openmp", "openblas"],
+    deps = [
+        "//packages/linux/dev-libs/boost:boost",
+    ],
+    use_deps = {
+        "tcmalloc": ["//packages/linux/dev-tools/profiling/gperftools:gperftools"],
+        "mkl": [
+            # Intel MKL would go here when available
+            # "//packages/linux/dev-libs/math/mkl:mkl",
+        ],
+        "openblas": ["//packages/linux/dev-libs/math/openblas:openblas"],
+    },
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_STANDARD=17",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DPYBIND=OFF",
+        "-DPORTABLE=ON",
+        "-DUNIT_TEST=OFF",
+        "-DRESTAPI=OFF",
+    ],
+    use_options = {
+        "openmp": {
+            "enabled": [],
+            "disabled": [],
+        },
+        "tcmalloc": {
+            "enabled": [],
+            "disabled": [],
+        },
+        "mkl": {
+            "enabled": [],
+            "disabled": [],
+        },
+        "openblas": {
+            "enabled": [],
+            "disabled": [],
+        },
+        "restapi": {
+            "enabled": ["-DRESTAPI=ON"],
+            "disabled": ["-DRESTAPI=OFF"],
+        },
+        "unit-test": {
+            "enabled": ["-DUNIT_TEST=ON"],
+            "disabled": ["-DUNIT_TEST=OFF"],
+        },
+    },
+    # DiskANN's CMakeLists.txt is in the src subdirectory
+    pre_configure = """
+        if [ -d "$SRCS/main/src" ]; then
+            cd "$SRCS/main/src"
+        elif [ -d "$SRCS/src" ]; then
+            cd "$SRCS/src"
+        fi
+    """,
+    visibility = ["PUBLIC"],
+)

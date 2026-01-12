@@ -1,0 +1,34 @@
+load("//defs:package_defs.bzl", "download_source", "binary_package")
+
+download_source(
+    name = "google-java-format-src",
+    src_uri = "https://github.com/google/google-java-format/releases/download/v1.23.0/google-java-format-1.23.0-all-deps.jar",
+    sha256 = "7c6375ac24b4825be6bbe61900e8b58b1a3e8944a1367a8363210f9ed2d08570",
+    signature_required = False,
+)
+
+binary_package(
+    name = "google-java-format",
+    srcs = [":google-java-format-src"],
+    version = "1.23.0",
+    description = "Java source code formatter that follows Google Java Style",
+    homepage = "https://github.com/google/google-java-format",
+    license = "Apache-2.0",
+    install_script = """
+        mkdir -p $OUT/usr/share/java
+        mkdir -p $OUT/usr/bin
+        find $SRCS -name "*.jar" -exec cp {} $OUT/usr/share/java/google-java-format.jar \;
+        cat > $OUT/usr/bin/google-java-format << 'EOF'
+#!/bin/sh
+exec java --add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED \
+    --add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED \
+    --add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED \
+    --add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED \
+    --add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED \
+    --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED \
+    -jar /usr/share/java/google-java-format.jar "$@"
+EOF
+        chmod +x $OUT/usr/bin/google-java-format
+    """,
+    visibility = ["PUBLIC"],
+)

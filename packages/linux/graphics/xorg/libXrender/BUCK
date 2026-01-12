@@ -1,0 +1,22 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# libXrender - X Render extension library
+autotools_package(
+    name = "libXrender",
+    version = "0.9.11",
+    src_uri = "https://xorg.freedesktop.org/archive/individual/lib/libXrender-0.9.11.tar.xz",
+    sha256 = "bc53759a3a83d1ff702fb59641b3d2f7c56e05051fa0cfa93501166fa782dc24",
+    description = "X Render extension library",
+    homepage = "https://xorg.freedesktop.org/",
+    license = "MIT",
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--libdir=/usr/lib64",
+    ],
+    deps = [
+        "//packages/linux/graphics/xorg/libX11:libX11",
+        "//packages/linux/graphics/xorg/xorgproto:xorgproto",
+    ],
+    visibility = ["PUBLIC"],
+)

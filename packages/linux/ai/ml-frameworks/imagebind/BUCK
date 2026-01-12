@@ -1,0 +1,18 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "imagebind-0.1.0",
+    version = "0.1.0",
+    src_uri = "https://github.com/facebookresearch/ImageBind/archive/refs/tags/v0.1.0.tar.gz",
+    sha256 = "TODO",
+    deps = [
+        "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
+        "//packages/linux/dev-libs/python/numpy:numpy",
+        "//packages/linux/dev-libs/python/regex:regex",
+        "//packages/linux/dev-libs/python/ftfy:ftfy",
+        "//packages/linux/dev-libs/python/einops:einops",
+        "//packages/linux/dev-libs/python/timm:timm",
+        "//packages/linux/dev-libs/python/matplotlib:matplotlib",
+    ],
+    visibility = ["PUBLIC"],
+)

@@ -1,0 +1,33 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# etc2comp - ETC1/ETC2 texture compression library from Google
+# Implements the ETC1 and ETC2 texture compression standards
+
+cmake_package(
+    name = "etc2comp",
+    version = "0.9.0",
+    source = "~/fbsource/third-party/etc2comp",
+    description = "ETC1/ETC2 texture compression library",
+    homepage = "https://github.com/google/etc2comp",
+    license = "Apache-2.0",
+    maintainers = ["arstudio"],
+    patches = [
+        "patches/add-root-cmake.patch",
+        "patches/fix-etctool-cmake.patch",
+    ],
+    iuse = ["tool"],
+    use_defaults = ["tool"],
+    deps = [],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DBUILD_TOOL=OFF",
+    ],
+    use_options = {
+        "tool": {
+            "enabled": ["-DBUILD_TOOL=ON"],
+            "disabled": ["-DBUILD_TOOL=OFF"],
+        },
+    },
+    visibility = ["PUBLIC"],
+)

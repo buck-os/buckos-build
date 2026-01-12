@@ -1,0 +1,23 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "textdeformer",
+    version = "main",
+    src_uri = "https://github.com/threedle/textdeformer/archive/refs/heads/main.tar.gz",
+    sha256 = "a877a647bed7500f9218288381785212ffa1d5a8f8c8c6cb2e8be445dbc592ab",
+    deps = [
+        "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
+        "//packages/linux/ai/vision/torchvision:torchvision",
+        "//packages/linux/dev-libs/python/pillow:pillow",
+        "//packages/linux/dev-libs/python/numpy:numpy",
+        "//packages/linux/dev-libs/python/scipy:scipy",
+        "//packages/linux/dev-libs/python/tqdm:tqdm",
+        "//packages/linux/dev-libs/python/pyyaml:pyyaml",
+        "//packages/linux/dev-libs/python/matplotlib:matplotlib",
+        "//packages/linux/dev-libs/python/trimesh:trimesh",
+        "//packages/linux/dev-libs/python/tensorboard:tensorboard",
+        "//packages/linux/dev-libs/python/imageio:imageio",
+        "//packages/linux/dev-libs/python/fire:fire",
+    ],
+    maintainers = ["meta_wand"],
+)

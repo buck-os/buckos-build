@@ -1,0 +1,21 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# Kaldi is a speech recognition toolkit using a custom configure script.
+# It requires special handling for the build process (cd src && ./configure && make).
+autotools_package(
+    name = "kaldi",
+    version = "5.5.0",
+    src_uri = "https://github.com/kaldi-asr/kaldi/archive/refs/tags/5.5.tar.gz",
+    sha256 = "TODO",
+    configure_args = [
+        "--shared",
+        "--mathlib=OPENBLAS",
+    ],
+    deps = [
+        "//packages/linux/audio/libraries/openfst-kaldi:openfst-kaldi",
+        "//packages/linux/dev-libs/math/openblas:openblas",
+        "//packages/linux/dev-libs/math/lapack:lapack",
+    ],
+    maintainers = ["speech_tts"],
+    visibility = ["PUBLIC"],
+)

@@ -1,0 +1,36 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# nghttp2 - HTTP/2 C Library
+
+cmake_package(
+    name = "nghttp2",
+    version = "1.59.0",
+    src_uri = "https://github.com/nghttp2/nghttp2/releases/download/v1.59.0/nghttp2-1.59.0.tar.gz",
+    sha256 = "TODO",
+    description = "HTTP/2 C Library and tools",
+    homepage = "https://nghttp2.org/",
+    license = "MIT",
+    iuse = ["python", "app", "asio"],
+    use_defaults = ["app"],
+    deps = [
+        "//packages/linux/network/openssl:openssl",
+        "//packages/linux/core/zlib:zlib",
+    ],
+    use_deps = {
+        "python": ["//packages/linux/lang/python:python"],
+        "asio": ["//packages/linux/dev-libs/boost:boost"],
+    },
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DENABLE_LIB_ONLY=OFF",
+    ],
+    use_cmake = {
+        "app": "-DENABLE_APP=ON",
+        "-app": "-DENABLE_APP=OFF",
+        "python": "-DENABLE_PYTHON_BINDINGS=ON",
+        "-python": "-DENABLE_PYTHON_BINDINGS=OFF",
+        "asio": "-DENABLE_ASIO_LIB=ON",
+        "-asio": "-DENABLE_ASIO_LIB=OFF",
+    },
+    visibility = ["PUBLIC"],
+)

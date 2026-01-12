@@ -1,0 +1,18 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "raylib",
+    version = "5.5",
+    src_uri = "https://github.com/raysan5/raylib/archive/refs/tags/5.5.tar.gz",
+    sha256 = "TODO",
+    cmake_args = [
+        "-DPLATFORM=Desktop",
+        "-DOPENGL_VERSION=3.3",
+        "-DBUILD_EXAMPLES=OFF",
+        "-DBUILD_SHARED_LIBS=OFF",
+        "-DUSE_EXTERNAL_GLFW=ON",
+    ],
+    deps = [
+        "//packages/linux/graphics/rendering/glfw",
+    ],
+)

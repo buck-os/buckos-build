@@ -1,0 +1,21 @@
+# Serial Port Libraries
+# Collection of libraries for serial port communication
+
+# Cross-platform serial port library
+load("//packages/linux/system/serial/libserialport:BUCK", libserialport = "libserialport")
+
+# Rust serial port library
+load("//packages/linux/system/serial/serialport-rs:BUCK", serialport_rs = "serialport-rs")
+
+# Boost.Asio serial port extension
+load("//packages/linux/system/serial/boost-asio-serial:BUCK", boost_asio_serial = "boost-asio-serial")
+
+# C++ termios wrapper
+load("//packages/linux/system/serial/termios-cpp:BUCK", termios_cpp = "termios-cpp")
+
+# Export all serial libraries
+filegroup(
+    name = "serial",
+    srcs = [],
+    visibility = ["PUBLIC"],
+)

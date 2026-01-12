@@ -1,0 +1,23 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# Nettle - Low-level cryptographic library
+
+autotools_package(
+    name = "nettle",
+    version = "3.9.1",
+    src_uri = "https://ftp.gnu.org/gnu/nettle/nettle-3.9.1.tar.gz",
+    sha256 = "ccfeff981b0ca71bbd6fbcb054f407c60ffb644389a5be80d6716d5b550c6ce3",
+    description = "Low-level cryptographic library",
+    homepage = "https://www.lysator.liu.se/~nisse/nettle/",
+    license = "LGPL-3.0",
+    deps = [
+        "//packages/linux/system/libs/utility/gmp:gmp",
+    ],
+    configure_args = [
+        "--prefix=${PREFIX}",
+        "--enable-shared",
+        "--disable-static",
+        "--enable-mini-gmp=no",
+    ],
+    visibility = ["PUBLIC"],
+)

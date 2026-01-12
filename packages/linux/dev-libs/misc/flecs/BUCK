@@ -1,0 +1,22 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# Flecs - Fast and lightweight Entity Component System (ECS)
+
+cmake_package(
+    name = "flecs",
+    version = "3.2.12",
+    source = "//third-party/flecs:flecs-3.2.12",
+    description = "Fast and lightweight Entity Component System for building games and simulations",
+    homepage = "https://github.com/SanderMertens/flecs",
+    license = "MIT",
+    deps = [],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DFLECS_STATIC=ON",
+        "-DFLECS_SHARED=ON",
+        "-DFLECS_PIC=ON",
+        "-DFLECS_TESTS=OFF",
+    ],
+    visibility = ["PUBLIC"],
+)

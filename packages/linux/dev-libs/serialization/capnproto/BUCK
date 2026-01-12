@@ -1,21 +1,31 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
+load("//defs:package_defs.bzl", "cmake_package")
+
+# Cap'n Proto - Insanely fast data interchange format
 
 cmake_package(
     name = "capnproto",
     version = "1.0.2",
-    src_uri = "https://capnproto.org/capnproto-c++-1.0.2.tar.gz",
-    sha256 = "9057dbc0223366b74bbeca33a05de164a229b0377927f1b7ef3828cdd8cb1d7e",
-    signature_required = False,
-    description = "Fast data interchange format and capability-based RPC system",
+    src_uri = "https://github.com/capnproto/capnproto/archive/refs/tags/v1.0.2.tar.gz",
+    sha256 = "TODO",
+    description = "Insanely fast data interchange format and RPC system",
     homepage = "https://capnproto.org/",
     license = "MIT",
-    cmake_args = [
-        "-DBUILD_TESTING=OFF",
-    ],
+    iuse = ["tls", "http"],
+    use_defaults = ["tls"],
     deps = [
-        "//packages/linux/system/libs/crypto/openssl:openssl",
         "//packages/linux/core/zlib:zlib",
     ],
+    use_deps = {
+        "tls": ["//packages/linux/network/openssl:openssl"],
+    },
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DBUILD_TESTING=OFF",
+    ],
+    use_cmake = {
+        "tls": "-DWITH_OPENSSL=ON",
+        "-tls": "-DWITH_OPENSSL=OFF",
+    },
     visibility = ["PUBLIC"],
 )

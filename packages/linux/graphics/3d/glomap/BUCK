@@ -1,0 +1,27 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "glomap",
+    version = "1.0.0",
+    src_uri = "https://github.com/colmap/glomap/archive/refs/tags/v1.0.0.tar.gz",
+    sha256 = "TODO",
+    description = "Global Structure-from-Motion pipeline",
+    homepage = "https://github.com/colmap/glomap",
+    license = "BSD-3-Clause",
+    deps = [
+        "//packages/linux/dev-libs/math/eigen:eigen",
+        "//packages/linux/dev-libs/misc/ceres-solver:ceres-solver",
+        "//packages/linux/dev-libs/misc/glog:glog",
+        "//packages/linux/dev-libs/misc/boost:boost",
+    ],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DFETCH_COLMAP=ON",
+        "-DFETCH_POSELIB=ON",
+        "-DTESTS_ENABLED=OFF",
+        "-DASAN_ENABLED=OFF",
+        "-DCCACHE_ENABLED=OFF",
+    ],
+    visibility = ["PUBLIC"],
+)

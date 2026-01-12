@@ -1,0 +1,30 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# OpenBLAS - Optimized BLAS library
+
+cmake_package(
+    name = "openblas",
+    version = "0.3.27",
+    src_uri = "https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.27/OpenBLAS-0.3.27.tar.gz",
+    sha256 = "TODO",
+    description = "Optimized BLAS library based on GotoBLAS2 1.13 BSD version",
+    homepage = "https://www.openblas.net/",
+    license = "BSD-3-Clause",
+    iuse = ["openmp", "pthread", "lapack"],
+    use_defaults = ["openmp", "lapack"],
+    deps = [],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DBUILD_TESTING=OFF",
+        "-DUSE_THREAD=ON",
+    ],
+    use_cmake = {
+        "openmp": "-DUSE_OPENMP=ON",
+        "-openmp": "-DUSE_OPENMP=OFF",
+        "pthread": "-DUSE_PTHREAD=ON",
+        "lapack": "-DBUILD_LAPACK=ON",
+        "-lapack": "-DBUILD_LAPACK=OFF",
+    },
+    visibility = ["PUBLIC"],
+)

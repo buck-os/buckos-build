@@ -1,0 +1,25 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# libXft - X FreeType library
+autotools_package(
+    name = "libXft",
+    version = "2.3.8",
+    src_uri = "https://xorg.freedesktop.org/archive/individual/lib/libXft-2.3.8.tar.xz",
+    sha256 = "5e8c3c4bc2d4c0a40aef6b4b38ed2fb74301640da29f6528154b5009b1c6dd49",
+    description = "X FreeType library for font rendering",
+    homepage = "https://xorg.freedesktop.org/",
+    license = "MIT",
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--libdir=/usr/lib64",
+    ],
+    deps = [
+        "//packages/linux/graphics/xorg/libX11:libX11",
+        "//packages/linux/graphics/xorg/libXrender:libXrender",
+        "//packages/linux/graphics/xorg/xorgproto:xorgproto",
+        "//packages/linux/graphics/freetype:freetype",
+        "//packages/linux/graphics/fontconfig:fontconfig",
+    ],
+    visibility = ["PUBLIC"],
+)

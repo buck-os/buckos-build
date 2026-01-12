@@ -1,0 +1,50 @@
+load("//defs:package_defs.bzl", "ebuild_package")
+
+ebuild_package(
+    name = "liblinear",
+    version = "1.94",
+    src_uri = "https://github.com/cjlin1/liblinear/archive/refs/tags/v194.tar.gz",
+    sha256 = "TODO",
+    description = "A Library for Large Linear Classification",
+    homepage = "https://github.com/cjlin1/liblinear",
+    license = "BSD-3-Clause",
+
+    src_compile = """
+        # Build library and utilities using Makefile
+        make lib
+        make train predict
+    """,
+
+    src_install = """
+        # Install shared library
+        mkdir -p "$DESTDIR/usr/lib64"
+        cp liblinear.so.5 "$DESTDIR/usr/lib64/"
+        ln -sf liblinear.so.5 "$DESTDIR/usr/lib64/liblinear.so"
+
+        # Install binaries
+        mkdir -p "$DESTDIR/usr/bin"
+        cp train "$DESTDIR/usr/bin/liblinear-train"
+        cp predict "$DESTDIR/usr/bin/liblinear-predict"
+
+        # Install header
+        mkdir -p "$DESTDIR/usr/include"
+        cp linear.h "$DESTDIR/usr/include/"
+
+        # Create pkg-config file
+        mkdir -p "$DESTDIR/usr/lib64/pkgconfig"
+        cat > "$DESTDIR/usr/lib64/pkgconfig/liblinear.pc" << 'EOF'
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib64
+includedir=${prefix}/include
+
+Name: liblinear
+Description: A Library for Large Linear Classification
+Version: 1.94
+Cflags: -I${includedir}
+Libs: -L${libdir} -llinear
+EOF
+    """,
+
+    visibility = ["PUBLIC"],
+)

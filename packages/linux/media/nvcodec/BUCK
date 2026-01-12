@@ -1,0 +1,73 @@
+# =============================================================================
+# nvcodec - NVIDIA Video Codec SDK
+# =============================================================================
+# Provides header-only interface to NVIDIA's hardware video encode/decode APIs
+# This SDK includes:
+# - Video Decoder API (CUVID)
+# - Video Encoder API (NVENC)
+
+load("//defs:package_defs.bzl", "download_source", "binary_package")
+
+download_source(
+    name = "nvcodec-src",
+    src_uri = "https://github.com/FFmpeg/nv-codec-headers/releases/download/n12.2.72.0/nv-codec-headers-12.2.72.0.tar.gz",
+    sha256 = "c295a2ba8a06434d4bdc5c2208f8a825285210d71d91d572329b2c51fd0d4d03",
+    signature_required = False,
+)
+
+binary_package(
+    name = "nvcodec",
+    srcs = [":nvcodec-src"],
+    version = "12.2.72",
+    description = "NVIDIA Video Codec SDK headers for hardware video encode/decode",
+    homepage = "https://developer.nvidia.com/video-codec-sdk",
+    license = "NVIDIA",
+    install_script = """
+cd $SRCS
+
+# Find the source directory
+if [ -d nv-codec-headers-12.2.72.0 ]; then
+    cd nv-codec-headers-12.2.72.0
+elif [ -d include ]; then
+    echo "Found include directory"
+else
+    SRC_DIR=$(find . -maxdepth 2 -name "include" -type d | head -1 | xargs dirname)
+    if [ -n "$SRC_DIR" ]; then
+        echo "Found source in: $SRC_DIR"
+        cd "$SRC_DIR"
+    else
+        echo "Cannot find source directory"
+        exit 1
+    fi
+fi
+
+# Install headers
+mkdir -p "$OUT/usr/include"
+
+# Copy all header files
+if [ -d include ]; then
+    cp -r include/* "$OUT/usr/include/"
+elif [ -d Interface ]; then
+    # Original SDK structure
+    cp -r Interface/*.h "$OUT/usr/include/"
+else
+    # Fallback: copy any .h files we find
+    find . -name "*.h" -exec cp {} "$OUT/usr/include/" \;
+fi
+
+# Install pkg-config file
+mkdir -p "$OUT/usr/lib/pkgconfig"
+cat > "$OUT/usr/lib/pkgconfig/nvcodec.pc" << 'EOF'
+prefix=/usr
+includedir=${prefix}/include
+
+Name: nvcodec
+Description: NVIDIA Video Codec SDK
+Version: 12.2.72
+Cflags: -I${includedir}
+EOF
+
+echo "nvcodec headers installed successfully"
+""",
+    visibility = ["PUBLIC"],
+)

@@ -1,0 +1,68 @@
+load("//defs:package_defs.bzl", "download_source", "binary_package")
+
+# SMF - State Machine Framework from Zephyr RTOS
+# A hierarchical state machine library originally from Zephyr OS
+
+download_source(
+    name = "smf-src",
+    src_uri = "https://github.com/zephyrproject-rtos/zephyr/archive/refs/tags/v3.3.0.tar.gz",
+    sha256 = "4370d2348a4d1092fa6f0be8a8146ea26fc740b7d3e07d587d178061bf566222",
+    signature_required = False,
+)
+
+binary_package(
+    name = "smf",
+    srcs = [":smf-src"],
+    version = "3.3.0",
+    description = "State Machine Framework - hierarchical state machine library from Zephyr RTOS",
+    homepage = "https://docs.zephyrproject.org/latest/services/smf/index.html",
+    license = "Apache-2.0",
+    install_script = """
+        cd "$SRCS"
+
+        # Install header
+        mkdir -p "$OUT/usr/include/smf"
+        cp lib/smf/smf.h "$OUT/usr/include/smf/"
+
+        # Build and install both flat (FSM) and hierarchical (HSM) static libraries
+        mkdir -p "$OUT/usr/lib64"
+
+        # Build flat state machine library (smf_fsm)
+        ${CC:-gcc} -c -O2 -fPIC -I lib/smf lib/smf/smf.c -o smf_fsm.o
+        ar rcs "$OUT/usr/lib64/libsmf_fsm.a" smf_fsm.o
+
+        # Build hierarchical state machine library (smf_hsm) with ancestor support
+        ${CC:-gcc} -c -O2 -fPIC -DCONFIG_SMF_ANCESTOR_SUPPORT -I lib/smf lib/smf/smf.c -o smf_hsm.o
+        ar rcs "$OUT/usr/lib64/libsmf_hsm.a" smf_hsm.o
+
+        # Create pkg-config file
+        mkdir -p "$OUT/usr/lib64/pkgconfig"
+        cat > "$OUT/usr/lib64/pkgconfig/smf.pc" << 'EOF'
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib64
+includedir=${prefix}/include/smf
+
+Name: SMF
+Description: State Machine Framework from Zephyr RTOS
+Version: 3.3.0
+Libs: -L${libdir} -lsmf_fsm
+Cflags: -I${includedir}
+EOF
+
+        cat > "$OUT/usr/lib64/pkgconfig/smf-hsm.pc" << 'EOF'
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib64
+includedir=${prefix}/include/smf
+
+Name: SMF-HSM
+Description: State Machine Framework with Hierarchical State Machine support
+Version: 3.3.0
+Libs: -L${libdir} -lsmf_hsm
+Cflags: -I${includedir} -DCONFIG_SMF_ANCESTOR_SUPPORT
+EOF
+    """,
+    deps = [],
+    visibility = ["PUBLIC"],
+)

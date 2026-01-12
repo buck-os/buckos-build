@@ -1,0 +1,20 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "dreamo",
+    version = "0.0.0",
+    src_uri = "https://github.com/bytedance/DreamO/archive/1ec6e680975655bfcdf833f17b28affc3fde921d.tar.gz",
+    sha256 = "TODO",
+    deps = [
+        "//packages/linux/ai/ml-frameworks/pytorch",
+        "//packages/linux/ai/ml-frameworks/torchvision",
+        "//packages/linux/dev-libs/python/diffusers",
+        "//packages/linux/dev-libs/python/transformers",
+        "//packages/linux/dev-libs/python/sentencepiece",
+        "//packages/linux/dev-libs/python/einops",
+        "//packages/linux/dev-libs/python/timm",
+        "//packages/linux/dev-libs/python/accelerate",
+        "//packages/linux/dev-libs/python/peft",
+        "//packages/linux/dev-libs/python/huggingface-hub",
+    ],
+)

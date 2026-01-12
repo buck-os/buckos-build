@@ -1,0 +1,26 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "orion-fhe",
+    version = "1.0.2",
+    src_uri = "https://github.com/baahl-nyu/orion/archive/refs/heads/main.tar.gz",
+    sha256 = "TODO",
+    description = "A Fully Homomorphic Encryption Framework for Deep Learning",
+    homepage = "https://github.com/baahl-nyu/orion",
+    license = "MIT",
+    deps = [
+        "//packages/linux/lang/python:python",
+        "//packages/linux/lang/go:go",
+        "//packages/linux/dev-libs/python/numpy:numpy",
+        "//packages/linux/dev-libs/python/scipy:scipy",
+    ],
+    build_backend = "poetry",
+    build_env = {
+        "CGO_ENABLED": "1",
+    },
+    install_cmd = """
+cd orion/backend/lattigo && go build -buildmode=c-shared -buildvcs=false -o lattigo-linux.so . && cd ../../..
+pip install --no-deps --prefix="$DESTDIR/usr" .
+""",
+    visibility = ["PUBLIC"],
+)

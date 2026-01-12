@@ -1,0 +1,28 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "ipxe",
+    version = "1.21.1",
+    src_uri = "https://github.com/ipxe/ipxe/archive/refs/tags/v1.21.1.tar.gz",
+    sha256 = "16e8d51c48d8a120332cf0dc32b473acc5d179e3975ced208eb21caf3b6528dc",
+    description = "Open source network boot firmware (PXE)",
+    homepage = "https://ipxe.org/",
+    license = "GPL-2.0",
+    src_configure = "true",
+    src_compile = """
+cd src
+make -j$(nproc) bin-x86_64-efi/ipxe.efi bin-x86_64-efi/snponly.efi
+make -j$(nproc) bin/ipxe.iso bin/ipxe.usb bin/undionly.kpxe
+""",
+    src_install = """
+mkdir -p "$DESTDIR/usr/share/ipxe"
+cp -v src/bin-x86_64-efi/*.efi "$DESTDIR/usr/share/ipxe/" 2>/dev/null || true
+cp -v src/bin/*.iso "$DESTDIR/usr/share/ipxe/" 2>/dev/null || true
+cp -v src/bin/*.usb "$DESTDIR/usr/share/ipxe/" 2>/dev/null || true
+cp -v src/bin/*.kpxe "$DESTDIR/usr/share/ipxe/" 2>/dev/null || true
+mkdir -p "$DESTDIR/usr/share/doc/ipxe"
+cp -v README COPYING* "$DESTDIR/usr/share/doc/ipxe/" 2>/dev/null || true
+""",
+    deps = [],
+    visibility = ["PUBLIC"],
+)

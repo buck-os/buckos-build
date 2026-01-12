@@ -1,0 +1,64 @@
+load("//defs:package_defs.bzl", "ebuild_package")
+
+genrule(
+    name = "pffft-src",
+    srcs = glob(["src/*"]),
+    out = "pffft-source",
+    cmd = """
+        mkdir -p $OUT
+        cp $SRCS $OUT/
+    """,
+)
+
+ebuild_package(
+    name = "pffft",
+    source = ":pffft-src",
+    version = "1",
+    description = "Pretty Fast FFT - a small, fast FFT library with SIMD support",
+    homepage = "https://bitbucket.org/jpommier/pffft",
+    license = "BSD-2-Clause",
+
+    src_compile = """
+        # PFFFT is a simple single-file library
+        # Compile with SIMD optimizations enabled
+        ${CC:-gcc} ${CFLAGS:--O3} -fPIC -c pffft.c -o pffft.o
+
+        # Create static library
+        ar rcs libpffft.a pffft.o
+
+        # Create shared library
+        ${CC:-gcc} -shared -o libpffft.so.0.0.0 pffft.o -lm
+        ln -sf libpffft.so.0.0.0 libpffft.so.0
+        ln -sf libpffft.so.0 libpffft.so
+    """,
+
+    src_install = """
+        # Install libraries
+        mkdir -p "$DESTDIR/usr/lib64"
+        cp libpffft.a "$DESTDIR/usr/lib64/"
+        cp libpffft.so.0.0.0 "$DESTDIR/usr/lib64/"
+        ln -sf libpffft.so.0.0.0 "$DESTDIR/usr/lib64/libpffft.so.0"
+        ln -sf libpffft.so.0 "$DESTDIR/usr/lib64/libpffft.so"
+
+        # Install headers
+        mkdir -p "$DESTDIR/usr/include"
+        cp pffft.h "$DESTDIR/usr/include/"
+
+        # Create pkg-config file
+        mkdir -p "$DESTDIR/usr/lib64/pkgconfig"
+        cat > "$DESTDIR/usr/lib64/pkgconfig/pffft.pc" << 'EOF'
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib64
+includedir=${prefix}/include
+
+Name: pffft
+Description: Pretty Fast FFT - a small, fast FFT library with SIMD support
+Version: 1
+Cflags: -I${includedir}
+Libs: -L${libdir} -lpffft -lm
+EOF
+    """,
+
+    visibility = ["PUBLIC"],
+)

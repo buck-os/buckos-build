@@ -1,0 +1,13 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "systemc",
+    version = "3.0.1",
+    src_uri = "https://github.com/accellera-official/systemc/archive/refs/tags/3.0.1.tar.gz",
+    sha256 = "d07765d0d2ffd6c01767880d0c6aaf53cd9487975f898c593ffffd713258fcbb",
+    configure_args = [
+        "--enable-debug",
+        "--disable-optimize",
+        "CXXFLAGS=-std=c++20 -gdwarf-4 -Wno-unknown-warning-option",
+    ],
+)

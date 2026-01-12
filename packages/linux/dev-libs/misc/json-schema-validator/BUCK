@@ -1,0 +1,23 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# json-schema-validator - JSON schema validation library
+
+cmake_package(
+    name = "json-schema-validator",
+    version = "2.3.0",
+    src_uri = "https://github.com/pboettch/json-schema-validator/archive/refs/tags/2.3.0.tar.gz",
+    sha256 = "2c00b50023c7d557cdaa71c0777f5bcff996c4efd7a539e58beaa4219fa2a5e1",
+    description = "JSON schema validation library using nlohmann/json",
+    homepage = "https://github.com/pboettch/json-schema-validator",
+    license = "MIT",
+    deps = [
+        "//packages/linux/dev-libs/json/nlohmann-json:nlohmann-json",
+    ],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DJSON_VALIDATOR_BUILD_EXAMPLES=OFF",
+        "-DJSON_VALIDATOR_BUILD_TESTS=OFF",
+    ],
+    visibility = ["PUBLIC"],
+)

@@ -1,0 +1,18 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "xvid",
+    version = "1.3.5",
+    src_uri = "https://downloads.xvid.com/downloads/xvidcore-1.3.5.tar.gz",
+    sha256 = "TODO",
+    description = "High performance MPEG-4 video codec library",
+    homepage = "https://www.xvid.com/",
+    license = "GPL-2.0",
+    configure_args = [
+        "--prefix=/usr",
+    ],
+    subdir = "xvidcore/build/generic",
+    deps = [
+    ],
+    visibility = ["PUBLIC"],
+)

@@ -1,0 +1,22 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# libXfixes - X Fixes extension library
+autotools_package(
+    name = "libXfixes",
+    version = "6.0.1",
+    src_uri = "https://xorg.freedesktop.org/archive/individual/lib/libXfixes-6.0.1.tar.xz",
+    sha256 = "b695f93cd2499421ab02d22744458e650ccc88c1d4c8130d60200213abc02d58",
+    description = "X Fixes extension library",
+    homepage = "https://xorg.freedesktop.org/",
+    license = "MIT",
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--libdir=/usr/lib64",
+    ],
+    deps = [
+        "//packages/linux/graphics/xorg/libX11:libX11",
+        "//packages/linux/graphics/xorg/xorgproto:xorgproto",
+    ],
+    visibility = ["PUBLIC"],
+)

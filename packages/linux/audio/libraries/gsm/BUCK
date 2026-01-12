@@ -1,0 +1,32 @@
+load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+
+download_source(
+    name = "gsm-src",
+    src_uri = "https://www.quut.com/gsm/gsm-1.0.22.tar.gz",
+    sha256 = "f0072e91f6bb85a878b2f6dbf4a0b7c850c4deb8049d554c65340b3bf69df0ac",
+    signature_required = False,
+)
+
+ebuild_package(
+    name = "gsm",
+    source = ":gsm-src",
+    version = "1.0.22",
+    description = "GSM 06.10 audio codec library",
+    homepage = "https://www.quut.com/gsm/",
+    license = "BSD",
+    src_compile = """
+        make CCFLAGS="-c -O2 -fPIC -DNeedFunctionPrototypes=1" all
+    """,
+    src_install = """
+        mkdir -p "$DESTDIR/usr/lib" "$DESTDIR/usr/include/gsm" "$DESTDIR/usr/bin"
+        cp lib/libgsm.a "$DESTDIR/usr/lib/"
+        cp inc/gsm.h "$DESTDIR/usr/include/gsm/"
+        cp bin/toast bin/tcat bin/untoast "$DESTDIR/usr/bin/" 2>/dev/null || true
+        # Create shared library
+        cd src
+        $CC -shared -fPIC -Wl,-soname,libgsm.so.1 -o "$DESTDIR/usr/lib/libgsm.so.1.0.22" *.o
+        ln -sf libgsm.so.1.0.22 "$DESTDIR/usr/lib/libgsm.so.1"
+        ln -sf libgsm.so.1 "$DESTDIR/usr/lib/libgsm.so"
+    """,
+    visibility = ["PUBLIC"],
+)

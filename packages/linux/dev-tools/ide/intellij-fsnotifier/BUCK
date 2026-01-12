@@ -1,0 +1,23 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "intellij-fsnotifier",
+    version = "193.6911.18",
+    src_uri = "https://github.com/nickhudkins/fsnotifier-linux/archive/refs/tags/1.6.tar.gz",
+    sha256 = "TODO",
+    signature_required = False,
+    description = "Native filesystem watcher for IntelliJ IDEA",
+    homepage = "https://github.com/JetBrains/intellij-community",
+    license = "Apache-2.0",
+    src_configure = "true",
+    src_compile = """
+cd fsnotifier-linux-*
+cc -O2 -Wall -Wextra -Wpedantic -std=c11 -D_DEFAULT_SOURCE \
+    -o fsnotifier main.c inotify.c util.c
+""",
+    src_install = """
+cd fsnotifier-linux-*
+install -Dm755 fsnotifier "$DESTDIR/usr/bin/fsnotifier"
+""",
+    visibility = ["PUBLIC"],
+)

@@ -1,0 +1,102 @@
+# =============================================================================
+# FreeRDP - Remote Desktop Protocol Implementation
+# =============================================================================
+#
+# FreeRDP is a free implementation of the Remote Desktop Protocol (RDP),
+# released under the Apache license. It provides both client and server
+# implementations for connecting to Windows Remote Desktop services and
+# other RDP-compatible servers.
+#
+# Features include:
+# - Full RDP protocol implementation
+# - Support for RemoteFX codec
+# - Network Level Authentication (NLA)
+# - TLS security
+# - Smartcard redirection
+# - Audio and video redirection
+# - Clipboard sharing
+# - Printer redirection
+# - USB redirection
+# - Multi-monitor support
+#
+# Provides command-line tools including:
+#   xfreerdp     - X11-based RDP client
+#   wlfreerdp    - Wayland-based RDP client
+#   freerdp-server - RDP server implementation
+#
+# =============================================================================
+
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "freerdp",
+    version = "3.12.0",
+    source = "fbsource//third-party/freerdp:srcs",
+    description = "Free implementation of the Remote Desktop Protocol (RDP)",
+    homepage = "https://www.freerdp.com/",
+    license = "Apache-2.0",
+
+    iuse = [
+        "x11",
+        "wayland",
+        "server",
+        "cups",
+        "alsa",
+        "pulseaudio",
+        "ffmpeg",
+        "openh264",
+        "aad",
+        "smartcard",
+        "usb",
+    ],
+
+    use_defaults = [
+        "x11",
+        "server",
+        "cups",
+        "alsa",
+        "ffmpeg",
+    ],
+
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DWITH_SMARTCARD_EMULATE=ON",
+        "-DWITH_FREERDP_DEPRECATED=OFF",
+        "-DWITH_FREERDP_DEPRECATED_COMMANDLINE=OFF",
+    ],
+
+    use_options = {
+        "x11": "WITH_X11",
+        "wayland": "WITH_WAYLAND",
+        "server": "WITH_SERVER",
+        "cups": "WITH_CUPS",
+        "alsa": "WITH_ALSA",
+        "pulseaudio": "WITH_PULSE",
+        "ffmpeg": "WITH_FFMPEG",
+        "openh264": "WITH_OPENH264",
+        "aad": "WITH_AAD",
+        "smartcard": "WITH_SMARTCARD",
+        "usb": "WITH_LIBUSB",
+    },
+
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+    ],
+
+    use_deps = {
+        "cups": ["//packages/linux/system/printing/cups:cups"],
+        # Additional dependencies can be added as they become available in buckos
+        # "x11": ["//packages/linux/graphics/x11/libX11:libX11"],
+        # "wayland": ["//packages/linux/graphics/wayland:wayland"],
+        # "alsa": ["//packages/linux/media/sound/alsa-lib:alsa-lib"],
+        # "pulseaudio": ["//packages/linux/media/sound/pulseaudio:pulseaudio"],
+        # "ffmpeg": ["//packages/linux/media/video/ffmpeg:ffmpeg"],
+        # "usb": ["//packages/linux/system/libs/libusb:libusb"],
+    },
+
+    maintainers = ["xr_cloud_platform"],
+
+    visibility = ["PUBLIC"],
+)

@@ -1,0 +1,106 @@
+From: BuckOS Build System
+Subject: Fix GCC 11+ std::data() conflict
+
+GCC 11 introduced std::data() in <algorithm>. When using namespace std,
+the variable name 'data' conflicts with std::data(). Rename to 'csv_data'.
+
+--- a/bon_csv2html.cpp
++++ b/bon_csv2html.cpp
+@@ -42,7 +42,7 @@ void usage()
+ int main(int argc, char *argv[])
+ {
+   STR_VEC row;
+-  vector<STR_VEC> data;
++  vector<STR_VEC> csv_data;
+
+   int c;
+   const char *headerfile = NULL, *footerfile = NULL;
+@@ -85,12 +85,12 @@ int main(int argc, char *argv[])
+     {
+       if(row.size() > 1)
+       {
+-        data.push_back(row);
++        csv_data.push_back(row);
+       }
+       row.erase(row.begin(), row.end());
+     }
+   }
+-  if(data.size() == 0)
++  if(csv_data.size() == 0)
+   {
+     fprintf(stderr, "No data\n");
+     return 1;
+@@ -167,12 +167,12 @@ int main(int argc, char *argv[])
+   printf("  <TR>");
+   print_item(header[0], NULL, NULL, true);
+   unsigned int i;
+-  for(i = 1; i < data.size(); i++)
++  for(i = 1; i < csv_data.size(); i++)
+   {
+-    print_item(data[i][0], NULL, NULL, true);
++    print_item(csv_data[i][0], NULL, NULL, true);
+   }
+   printf("</TR>\n");
+-  for(i = 1; i < data[0].size(); i++)
++  for(i = 1; i < csv_data[0].size(); i++)
+   {
+     printf("  <TR>");
+     if(header[i].size())
+@@ -180,12 +180,12 @@ int main(int argc, char *argv[])
+     else
+       print_item("", NULL, NULL, true);
+     unsigned int j;
+-    for(j = 1; j < data.size(); j++)
++    for(j = 1; j < csv_data.size(); j++)
+     {
+-      if(data[j].size() > i)
+-        print_item(data[j][i], &data[0][i], &i, false);
++      if(csv_data[j].size() > i)
++        print_item(csv_data[j][i], &csv_data[0][i], &i, false);
+       else
+-        print_item("", &data[0][i], &i, false);
++        print_item("", &csv_data[0][i], &i, false);
+     }
+     printf("</TR>\n");
+   }
+--- a/bon_csv2txt.cpp
++++ b/bon_csv2txt.cpp
+@@ -23,7 +23,7 @@ void usage()
+ int main(int argc, char *argv[])
+ {
+   STR_VEC row;
+-  vector<STR_VEC> data;
++  vector<STR_VEC> csv_data;
+
+   int c;
+   while(-1 != (c = getopt(argc, argv, "-")) )
+@@ -48,23 +48,23 @@ int main(int argc, char *argv[])
+     {
+       if(row.size() > 1)
+       {
+-        data.push_back(row);
++        csv_data.push_back(row);
+       }
+       row.erase(row.begin(), row.end());
+     }
+   }
+-  if(data.size() == 0)
++  if(csv_data.size() == 0)
+   {
+     fprintf(stderr, "No data\n");
+     return 1;
+   }
+   unsigned int max = 0;
+-  for(unsigned int i = 0; i < data.size(); i++)
++  for(unsigned int i = 0; i < csv_data.size(); i++)
+   {
+-    if(data[i].size() > max)
+-      max = data[i].size();
++    if(csv_data[i].size() > max)
++      max = csv_data[i].size();
+   }
+-  printData(data, max);
++  printData(csv_data, max);
+
+   return 0;
+ }

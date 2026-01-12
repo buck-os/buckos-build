@@ -1,0 +1,21 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "libfabric",
+    version = "2.2.0",
+    src_uri = "https://github.com/ofiwg/libfabric/releases/download/v2.2.0/libfabric-2.2.0.tar.bz2",
+    sha256 = "TODO",
+    configure_args = [
+        "--enable-tcp",
+        "--enable-udp",
+        "--enable-sockets",
+        "--enable-shm",
+        "--enable-rxm",
+        "--enable-rxd",
+        "--enable-mrail",
+        "--enable-verbs",
+    ],
+    deps = [
+        "//packages/linux/network/libs/rdma-core",
+    ],
+)

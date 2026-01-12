@@ -1,0 +1,33 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# FFTW - Fastest Fourier Transform in the West
+
+autotools_package(
+    name = "fftw",
+    version = "3.3.10",
+    src_uri = "https://www.fftw.org/fftw-3.3.10.tar.gz",
+    sha256 = "56c932549852cddcfafdab3820b0200c7742675be92179e59e6215b340e26467",
+    description = "Fastest Fourier Transform in the West - a C library for computing DFTs",
+    homepage = "https://www.fftw.org/",
+    license = "GPL-2.0",
+    iuse = ["openmp", "threads", "mpi", "avx", "avx2"],
+    use_defaults = ["threads", "avx2"],
+    deps = [],
+    use_deps = {
+        "mpi": ["//packages/linux/network/mpi/openmpi:openmpi"],
+    },
+    configure_args = [
+        "--prefix=${PREFIX}",
+        "--enable-shared",
+        "--enable-single",
+        "--enable-double",
+    ],
+    use_configure = {
+        "openmp": "--enable-openmp",
+        "threads": "--enable-threads",
+        "mpi": "--enable-mpi",
+        "avx": "--enable-avx",
+        "avx2": "--enable-avx2",
+    },
+    visibility = ["PUBLIC"],
+)

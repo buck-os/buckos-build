@@ -1,0 +1,47 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# GNU Radio - Free & open-source software development toolkit for SDR
+# Provides signal processing blocks for software-defined radios
+cmake_package(
+    name = "gnuradio",
+    version = "3.10.9.2",
+    src_uri = "https://github.com/gnuradio/gnuradio/archive/refs/tags/v3.10.9.2.tar.gz",
+    sha256 = "7fa154c423d01494cfa4c739faabad70b97f605238cd3fea8907b345b421fea1",
+    cmake_args = [
+        "-DENABLE_TESTING=OFF",
+        "-DENABLE_DOXYGEN=OFF",
+        "-DENABLE_SPHINX=OFF",
+    ],
+    iuse = ["python", "uhd", "audio", "qtgui", "grc", "zeromq"],
+    use_defaults = ["python"],
+    use_options = {
+        "python": "ENABLE_PYTHON",
+        "uhd": "ENABLE_GR_UHD",
+        "audio": "ENABLE_GR_AUDIO",
+        "qtgui": "ENABLE_GR_QTGUI",
+        "grc": "ENABLE_GRC",
+        "zeromq": "ENABLE_GR_ZEROMQ",
+    },
+    use_deps = {
+        "python": [
+            "//packages/linux/lang/python:python3",
+        ],
+        "audio": [
+            "//packages/linux/media/sound/alsa-lib:alsa-lib",
+        ],
+        "zeromq": [
+            "//packages/linux/network/messaging/zeromq:zeromq",
+        ],
+    },
+    deps = [
+        "//packages/linux/dev-libs/boost:boost",
+        "//packages/linux/dev-libs/fftw:fftw",
+        "//packages/linux/core/gmp:gmp",
+        "//packages/linux/dev-libs/mpfr:mpfr",
+    ],
+    description = "GNU Radio software-defined radio toolkit",
+    homepage = "https://www.gnuradio.org/",
+    license = "GPL-3.0-or-later",
+    maintainers = ["buckos"],
+    visibility = ["PUBLIC"],
+)

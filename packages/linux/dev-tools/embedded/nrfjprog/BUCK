@@ -1,0 +1,23 @@
+load("//defs:package_defs.bzl", "simple_binary_package")
+
+simple_binary_package(
+    name = "nrfjprog",
+    version = "10.24.1",
+    src_uri = "https://nsscprodmedia.blob.core.windows.net/prod/software-and-other-downloads/desktop-software/nrf-command-line-tools/sw/versions-10-x-x/10-24-1/nrf-command-line-tools-10.24.1_linux-amd64.tar.gz",
+    sha256 = "764592e87da331021777e89fefe5f799894c01eb27aaca59f2368b0d3ee90a19",
+    bins = [
+        "nrfjprog",
+        "mergehex",
+    ],
+    libs = [
+        "libhighlevelnrfjprog.so",
+        "libjlinkarm_nrf51_nrfjprogdll.so",
+        "libjlinkarm_nrf52_nrfjprogdll.so",
+        "libjlinkarm_nrf53_nrfjprogdll.so",
+        "libjlinkarm_nrf91_nrfjprogdll.so",
+        "libjlinkarm_unknown_nrfjprogdll.so",
+        "libnrfdfu.so",
+        "libnrfjprogdll.so",
+    ],
+    visibility = ["PUBLIC"],
+)

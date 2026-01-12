@@ -1,0 +1,21 @@
+load("//defs:package_defs.bzl", "meson_package")
+
+meson_package(
+    name = "libnice",
+    version = "0.1.19",
+    src_uri = "https://libnice.freedesktop.org/releases/libnice-0.1.19.tar.gz",
+    sha256 = "TODO",
+    meson_args = [
+        "-Dgstreamer=disabled",
+        "-Dgupnp=disabled",
+        "-Dgtk_doc=disabled",
+        "-Dintrospection=disabled",
+        "-Dtests=disabled",
+        "-Dexamples=disabled",
+        "-Dcrypto-library=openssl",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/glib",
+        "//packages/linux/system/libs/crypto/openssl",
+    ],
+)

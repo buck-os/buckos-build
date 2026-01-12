@@ -1,0 +1,28 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "zbar",
+    version = "0.23.93",
+    src_uri = "https://github.com/mchehab/zbar/archive/a549566ea11eb03622bd4458a1728ffe3f589163.tar.gz",
+    sha256 = "86817215aac09dafa7eda6495f8db1a9b8ce026f0a7a9d8af8b650db1dca999c",
+    configure_args = [
+        "--enable-pthread",
+        "--enable-codes=ean,code128,code39,code93,i25,codabar,databar,pdf417,qrcode,sqcode",
+        "--disable-video",
+        "--without-jpeg",
+        "--without-imagemagick",
+        "--without-gtk",
+        "--without-qt",
+        "--without-qt5",
+        "--without-x",
+        "--without-dbus",
+        "--without-java",
+        "--without-npapi",
+        "--without-python",
+        "--disable-doc",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/iconv:iconv",
+    ],
+    maintainers = ["i3_core_platform_security"],
+)

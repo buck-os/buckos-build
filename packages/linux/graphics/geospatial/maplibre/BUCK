@@ -1,0 +1,39 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "maplibre",
+    version = "5.4.0",
+    src_uri = "https://github.com/maplibre/maplibre-native/archive/refs/tags/v5.4.0.tar.gz",
+    sha256 = "TODO",
+    description = "Open-source map rendering engine for native platforms",
+    homepage = "https://maplibre.org/",
+    license = "BSD-2-Clause",
+    iuse = ["vulkan", "qt"],
+    use_defaults = [],
+    deps = [
+        "//packages/linux/databases/sqlite:sqlite",
+        "//packages/linux/dev-libs/misc/libuv:libuv",
+        "//packages/linux/dev-libs/json/rapidjson:rapidjson",
+    ],
+    use_deps = {
+        "qt": ["//packages/linux/graphics/qt:qt"],
+    },
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DMLN_WITH_CORE_ONLY=ON",
+        "-DMLN_WITH_GLFW=OFF",
+        "-DMLN_WITH_NODE=OFF",
+        "-DMLN_WITH_QT=OFF",
+        "-DMLN_WITH_OPENGL=ON",
+        "-DMLN_WITH_VULKAN=OFF",
+        "-DMLN_WITH_WERROR=OFF",
+    ],
+    use_cmake = {
+        "vulkan": "-DMLN_WITH_VULKAN=ON",
+        "-vulkan": "-DMLN_WITH_VULKAN=OFF",
+        "qt": "-DMLN_WITH_QT=ON",
+        "-qt": "-DMLN_WITH_QT=OFF",
+    },
+    visibility = ["PUBLIC"],
+)

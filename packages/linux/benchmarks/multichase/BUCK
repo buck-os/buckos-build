@@ -1,0 +1,25 @@
+load("//defs:package_defs.bzl", "download_source", "binary_package")
+
+download_source(
+    name = "multichase-src",
+    src_uri = "https://github.com/google/multichase/archive/6e10f1c09eeee8a9dcb8807282eadd9eca39b710.tar.gz",
+    sha256 = "e15ad2f6b36dd252496d27e1e86dfa4e240fff062f1dae5be12b35a3a75c3e79",
+    signature_required = False,
+)
+
+binary_package(
+    name = "multichase",
+    srcs = [":multichase-src"],
+    version = "0.0.1",
+    description = "Memory latency and bandwidth benchmark tools from Google",
+    homepage = "https://github.com/google/multichase",
+    license = "Apache-2.0",
+    install_script = """
+        cd $SRCS
+        ./gen_expand 200 > expand.h
+        make -j$(nproc)
+        mkdir -p $OUT/usr/bin
+        cp multichase multiload fairness pingpong $OUT/usr/bin/
+    """,
+    visibility = ["PUBLIC"],
+)

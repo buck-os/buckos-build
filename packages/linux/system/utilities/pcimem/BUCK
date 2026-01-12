@@ -1,0 +1,29 @@
+load("//defs:package_defs.bzl", "autotools_package", "download_source")
+
+download_source(
+    name = "pcimem-src",
+    src_uri = "https://github.com/billfarrow/pcimem/archive/refs/heads/master.tar.gz",
+    sha256 = "1fc59ca26f0f1f967059f1f0ad7e58c68580cad2480176d41ab4e9b03ae0ec6f",
+    signature_required = False,
+)
+
+autotools_package(
+    name = "pcimem",
+    version = "1.0.0",
+    source = ":pcimem-src",
+    description = "PCI memory access tool for reading/writing PCI BAR regions from userspace",
+    homepage = "https://github.com/billfarrow/pcimem",
+    license = "GPL-2.0",
+
+    pre_configure = "true",
+
+    make_args = [
+        "CFLAGS=-O2 -Wall",
+    ],
+
+    post_install = """
+install -Dm755 pcimem "$OUT/usr/bin/pcimem"
+""",
+
+    visibility = ["PUBLIC"],
+)

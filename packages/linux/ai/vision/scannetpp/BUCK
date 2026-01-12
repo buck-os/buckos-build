@@ -1,0 +1,24 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "scannetpp",
+    version = "0.0.1_git20240107",
+    src_uri = "https://github.com/scannetpp/scannetpp/archive/a92f57db2430c6faa4aee7dbe9a2a6f2199e9324.tar.gz",
+    sha256 = "TODO",
+    deps = [
+        "//packages/linux/dev-libs/python/munch",
+        "//packages/linux/dev-libs/python/tqdm",
+        "//packages/linux/dev-libs/python/pyyaml",
+        "//packages/linux/dev-libs/python/numpy",
+        "//packages/linux/dev-libs/python/imageio",
+        "//packages/linux/dev-libs/python/lz4",
+        "//packages/linux/dev-libs/python/opencv-python",
+        "//packages/linux/dev-libs/python/pillow",
+        "//packages/linux/dev-libs/python/scipy",
+        "//packages/linux/dev-libs/python/open3d",
+        "//packages/linux/ai/ml-frameworks/pytorch",
+        "//packages/linux/ai/ml-frameworks/torchvision",
+        "//packages/linux/ai/ml-frameworks/torchmetrics",
+    ],
+    maintainers = ["core_ai_asl"],
+)

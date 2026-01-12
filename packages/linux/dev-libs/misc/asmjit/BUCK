@@ -1,0 +1,31 @@
+load("//defs:package_defs.bzl", "download_source", "binary_package")
+
+download_source(
+    name = "asmjit-src",
+    src_uri = "https://github.com/asmjit/asmjit/archive/refs/heads/master.zip",
+    sha256 = "c0e93e8ad526207b72080ff657ae0188d361c1df9e0b52beda2ed8ff6c1ade96",
+    signature_required = False,
+)
+
+binary_package(
+    name = "asmjit",
+    srcs = [":asmjit-src"],
+    version = "0.0.0",
+    description = "Machine code generation for C++",
+    homepage = "https://asmjit.com/",
+    license = "Zlib",
+    install_script = """
+        cd "$SRCS"
+        mkdir -p build && cd build
+        cmake .. \
+            -DCMAKE_INSTALL_PREFIX=/usr \
+            -DCMAKE_INSTALL_LIBDIR=lib64 \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_SHARED_LIBS=ON \
+            -DASMJIT_TEST=OFF
+        make -j$(nproc)
+        make install DESTDIR="$OUT"
+    """,
+    deps = [],
+    visibility = ["PUBLIC"],
+)

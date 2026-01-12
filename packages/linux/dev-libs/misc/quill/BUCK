@@ -1,0 +1,23 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# quill - Asynchronous Low Latency C++ Logging Library
+
+cmake_package(
+    name = "quill",
+    version = "3.6.0",
+    src_uri = "https://github.com/odygrd/quill/archive/refs/tags/v3.6.0.tar.gz",
+    sha256 = "ba9dc3df262f2e65c57904580cc8407eba9a462001340c17bab7ae1dccddb4bd",
+    description = "Asynchronous Low Latency C++ Logging Library",
+    homepage = "https://github.com/odygrd/quill",
+    license = "MIT",
+    deps = [
+        "//packages/linux/dev-libs/misc/fmt:fmt",
+    ],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DQUILL_BUILD_TESTS=OFF",
+        "-DQUILL_BUILD_EXAMPLES=OFF",
+        "-DQUILL_BUILD_BENCHMARKS=OFF",
+    ],
+    visibility = ["PUBLIC"],
+)

@@ -1,0 +1,51 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "implot3d",
+    version = "0.1",
+    src_uri = "https://github.com/brenocq/implot3d/archive/refs/heads/main.tar.gz",
+    sha256 = "16d9a7bfec81c4ee28b051e21435dab7f1cbc8fc9cc4cd23b7cd4fe4ad340cb1",
+    description = "3D plotting extension for Dear ImGui",
+    homepage = "https://github.com/brenocq/implot3d",
+    license = "MIT",
+    deps = [
+        "//packages/linux/graphics/rendering/imgui:imgui",
+    ],
+    pre_configure = """
+cat > CMakeLists.txt << 'EOF'
+cmake_minimum_required(VERSION 3.14)
+project(implot3d LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+find_package(imgui REQUIRED)
+
+add_library(implot3d STATIC
+    implot3d.cpp
+    implot3d_items.cpp
+    implot3d_meshes.cpp
+)
+
+target_include_directories(implot3d PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:include>
+)
+
+target_link_libraries(implot3d PUBLIC imgui::imgui)
+
+install(TARGETS implot3d
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+)
+
+install(FILES implot3d.h implot3d_internal.h
+    DESTINATION include
+)
+EOF
+""",
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+    ],
+    visibility = ["PUBLIC"],
+)

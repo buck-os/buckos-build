@@ -1,0 +1,33 @@
+load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:use_flags.bzl", "set_use_flags")
+
+# Mbed TLS - Lightweight cryptography and SSL/TLS library
+
+cmake_package(
+    name = "mbedtls",
+    version = "3.6.2",
+    src_uri = "https://github.com/Mbed-TLS/mbedtls/releases/download/v3.6.2/mbedtls-3.6.2.tar.bz2",
+    sha256 = "6c1a23a2fe9229a882622378126d4482ae67328a5ca8ef660f14034401711764",
+    description = "Lightweight cryptography and SSL/TLS library",
+    homepage = "https://www.trustedfirmware.org/projects/mbed-tls/",
+    license = "Apache-2.0",
+    iuse = ["static-libs", "programs", "tests", "zlib"],
+    use_defaults = ["programs"],
+    use_options = {
+        "static-libs": "BUILD_STATIC_LIBS",
+        "programs": "ENABLE_PROGRAMS",
+        "tests": "ENABLE_TESTING",
+        "zlib": "ENABLE_ZLIB_SUPPORT",
+    },
+    use_deps = {
+        "zlib": ["//packages/linux/core/zlib:zlib"],
+    },
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DUSE_SHARED_MBEDTLS_LIBRARY=ON",
+        "-DUSE_STATIC_MBEDTLS_LIBRARY=OFF",
+    ],
+    deps = [],
+    visibility = ["PUBLIC"],
+)

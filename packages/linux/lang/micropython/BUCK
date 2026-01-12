@@ -1,0 +1,32 @@
+load("//defs:package_defs.bzl", "download_source", "binary_package")
+
+download_source(
+    name = "micropython-src",
+    src_uri = "https://github.com/micropython/micropython/releases/download/v1.18/micropython-1.18.tar.xz",
+    sha256 = "96fc71b42ed331c64e1adc5a830ec4f29f2975c23e8751109c03f32b80fa3eb4",
+    signature_required = False,
+)
+
+binary_package(
+    name = "micropython",
+    srcs = [":micropython-src"],
+    version = "1.18",
+    description = "MicroPython - Python for microcontrollers and constrained environments",
+    homepage = "https://micropython.org/",
+    license = "MIT",
+    install_script = """
+        cd $SRCS
+
+        # Build mpy-cross first (needed for frozen modules)
+        make -C mpy-cross
+
+        # Build unix port
+        make -C ports/unix
+
+        # Install binaries
+        mkdir -p $OUT/usr/bin
+        cp ports/unix/build-standard/micropython $OUT/usr/bin/micropython
+        cp mpy-cross/build/mpy-cross $OUT/usr/bin/mpy-cross
+    """,
+    visibility = ["PUBLIC"],
+)

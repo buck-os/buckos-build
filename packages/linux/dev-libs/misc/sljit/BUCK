@@ -1,0 +1,49 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "sljit",
+    version = "0.0.20250107",
+    src_uri = "https://github.com/zherczeg/sljit/archive/7779da89dc7e00a540712fcb859b762d4eca2a26.tar.gz",
+    sha256 = "9e86bb4c12e00f37383a391e8f2614adc4c092fcb7f45753b9c548669b310586",
+    description = "Platform-independent low-level JIT compiler",
+    homepage = "https://zherczeg.github.io/sljit/",
+    license = "BSD-2-Clause",
+    cmake_args = [
+        "-DBUILD_SHARED_LIBS=OFF",
+    ],
+    pre_configure = """
+# sljit's CMakeLists.txt only builds tests, create a proper library CMakeLists.txt
+cat > CMakeLists.txt << 'EOF'
+cmake_minimum_required(VERSION 3.12)
+project(sljit C)
+
+add_library(sljit STATIC sljit_src/sljitLir.c)
+target_include_directories(sljit PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/sljit_src>
+    $<INSTALL_INTERFACE:include/sljit>
+)
+target_compile_definitions(sljit PUBLIC
+    SLJIT_CONFIG_AUTO=1
+    SLJIT_EXECUTABLE_ALLOCATOR=1
+    SLJIT_UTIL_STACK=1
+)
+
+find_package(Threads REQUIRED)
+target_link_libraries(sljit PUBLIC Threads::Threads m)
+
+install(TARGETS sljit
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
+)
+install(FILES
+    sljit_src/sljitLir.h
+    sljit_src/sljitConfig.h
+    sljit_src/sljitConfigCPU.h
+    sljit_src/sljitConfigInternal.h
+    DESTINATION include/sljit
+)
+EOF
+""",
+    deps = [],
+    visibility = ["PUBLIC"],
+)

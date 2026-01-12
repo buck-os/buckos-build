@@ -1,0 +1,52 @@
+# =============================================================================
+# libebur128 - EBU R 128 loudness normalization library
+# =============================================================================
+#
+# libebur128 is a library that implements the EBU R 128 standard for loudness
+# normalisation. EBU R 128 is a recommendation for loudness normalisation and
+# permitted maximum level of audio signals. It is primarily targeted at
+# broadcasters and audio production facilities to ensure consistent loudness
+# across different programs and platforms.
+#
+# Key features:
+# - Portable ANSI C code
+# - Implements M, S and I modes (Momentary, Short-term, and Integrated loudness)
+# - Implements loudness range measurement (EBU - TECH 3342)
+# - True peak scanning
+# - Supports all sample rates by recalculation of the filter coefficients
+# - No external dependencies (uses internal queue.h implementation)
+#
+# The library is used for:
+# - Audio loudness normalization in broadcast and streaming
+# - Ensuring compliance with EBU R 128 standard
+# - Loudness measurement and analysis
+# - True peak detection
+#
+# =============================================================================
+
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "ebur128",
+    version = "1.2.6",
+    src_uri = "https://github.com/jiixyj/libebur128/archive/v1.2.6.tar.gz",
+    sha256 = "baa7fc293a3d4651e244d8022ad03ab797ca3c2ad8442c43199afe8059faa613",
+    signature_required = False,
+    description = "Library implementing the EBU R 128 standard for loudness normalisation",
+    homepage = "https://github.com/jiixyj/libebur128",
+    license = "MIT",
+    iuse = ["static-libs"],
+    use_defaults = [],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DENABLE_INTERNAL_QUEUE_H=ON",
+        "-DENABLE_TESTS=OFF",
+    ],
+    use_cmake = {
+        "static-libs": "-DBUILD_STATIC_LIBS=ON",
+        "-static-libs": "-DBUILD_STATIC_LIBS=OFF",
+    },
+    deps = [],
+    visibility = ["PUBLIC"],
+)

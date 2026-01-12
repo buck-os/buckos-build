@@ -1,0 +1,43 @@
+load("//defs:package_defs.bzl", "autotools_package", "download_source")
+load("//defs:use_flags.bzl", "set_use_flags")
+
+# bsdiff - Binary diff/patch utility for efficient delta compression
+# Uses the autotools_package macro with custom build steps since it has a simple Makefile
+# Original by Colin Percival: http://www.daemonology.net/bsdiff/
+
+download_source(
+    name = "bsdiff-src",
+    src_uri = "http://www.daemonology.net/bsdiff/bsdiff-4.3.tar.gz",
+    sha256 = "18821afe9bbe3d4f8d84a8d9d2936c664a1e5b08f17f34e6d91eea342e01e6a7",
+    signature_required = False,
+)
+
+autotools_package(
+    name = "bsdiff",
+    version = "4.3",
+    source = ":bsdiff-src",
+    description = "Binary diff/patch utility for efficient delta compression",
+    homepage = "http://www.daemonology.net/bsdiff/",
+    license = "BSD-2-Clause",
+
+    # Skip configure since bsdiff uses a simple Makefile
+    pre_configure = "true",
+
+    # bsdiff builds both bsdiff and bspatch
+    make_args = [
+        "CFLAGS=-O3",
+    ],
+
+    # Custom install since there's no 'make install' target
+    post_install = """
+# Install binaries
+install -Dm755 bsdiff "$OUT/usr/bin/bsdiff"
+install -Dm755 bspatch "$OUT/usr/bin/bspatch"
+""",
+
+    deps = [
+        "//packages/linux/system/libs/compression/bzip2:bzip2",
+    ],
+
+    visibility = ["PUBLIC"],
+)

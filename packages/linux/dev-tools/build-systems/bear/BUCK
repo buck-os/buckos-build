@@ -1,0 +1,34 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# =============================================================================
+# Bear - Build EAR (compilation database generator)
+# =============================================================================
+# Bear is a tool that generates a compilation database for clang tooling.
+# It intercepts build commands to create compile_commands.json files.
+
+cmake_package(
+    name = "bear",
+    version = "3.1.2",
+    src_uri = "https://github.com/rizsotto/Bear/archive/refs/tags/3.1.2.tar.gz",
+    sha256 = "5f94e98480bd8576a64cd1d59649f34b09b4e02a81f1d983c92af1113e061fc3",
+    signature_required = False,
+    description = "Tool to generate compilation database for clang tooling",
+    homepage = "https://github.com/rizsotto/Bear",
+    license = "GPL-3.0",
+
+    deps = [
+        "//packages/linux/dev-libs/json/nlohmann-json:nlohmann-json",
+        "//packages/linux/dev-libs/logging/fmt:fmt",
+        "//packages/linux/dev-libs/logging/spdlog:spdlog",
+        "//packages/linux/dev-libs/rpc/grpc:grpc",
+    ],
+
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DENABLE_UNIT_TESTS=OFF",
+        "-DENABLE_FUNC_TESTS=OFF",
+        "-DENABLE_MULTILIB=OFF",
+    ],
+
+    visibility = ["PUBLIC"],
+)

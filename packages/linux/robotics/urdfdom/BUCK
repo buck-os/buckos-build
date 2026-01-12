@@ -1,0 +1,17 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "urdfdom",
+    version = "5.0.0",
+    src_uri = "https://github.com/ros/urdfdom/archive/refs/tags/5.0.0.tar.gz",
+    sha256 = "31ce32c68312df5c344c5b5a5d4337ca5068aa405634bd2c5ec43be4486b831b",
+    cmake_args = [
+        "-DBUILD_TESTING=OFF",
+        "-DAPPEND_PROJECT_NAME_TO_INCLUDEDIR=OFF",
+    ],
+    deps = [
+        "//packages/linux/robotics/urdfdom_headers:urdfdom_headers",
+        "//packages/linux/system/terminal/console_bridge:console_bridge",
+        "//packages/linux/dev-libs/json/tinyxml2:tinyxml2",
+    ],
+)

@@ -1,0 +1,26 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# Chrony - Versatile NTP implementation
+
+autotools_package(
+    name = "chrony",
+    version = "4.5",
+    src_uri = "https://download.tuxfamily.org/chrony/chrony-4.5.tar.gz",
+    sha256 = "6bf624390c31483751de61ed858a2769464fc949721688c34bd0cfce0e2ce2df",
+    description = "Versatile NTP implementation",
+    homepage = "https://chrony.tuxfamily.org/",
+    license = "GPL-2.0",
+    iuse = ["nts", "cmdmon", "ntp", "refclock", "rtc"],
+    use_defaults = ["nts", "cmdmon", "ntp"],
+    deps = [
+        "//packages/linux/system/libs/ipc/libcap:libcap",
+    ],
+    use_deps = {
+        "nts": ["//packages/linux/dev-libs/misc/nettle:nettle"],
+    },
+    configure_args = [
+        "--prefix=${PREFIX}",
+        "--with-user=chrony",
+    ],
+    visibility = ["PUBLIC"],
+)

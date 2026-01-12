@@ -1,0 +1,18 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "zxing",
+    version = "2.1.0",
+    src_uri = "https://github.com/zxing-cpp/zxing-cpp/archive/refs/tags/v2.1.0.tar.gz",
+    sha256 = "6d54e403592ec7a143791c6526c1baafddf4c0897bb49b1af72b70a0f0c4a3fe",
+    cmake_args = [
+        "-DBUILD_WRITERS=ON",
+        "-DBUILD_READERS=ON",
+        "-DBUILD_EXAMPLES=OFF",
+        "-DBUILD_BLACKBOX_TESTS=OFF",
+        "-DBUILD_UNIT_TESTS=OFF",
+        "-DBUILD_PYTHON_MODULE=OFF",
+        "-DBUILD_C_API=OFF",
+        "-DBUILD_SHARED_LIBS=ON",
+    ],
+)

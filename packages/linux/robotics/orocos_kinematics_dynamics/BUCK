@@ -1,0 +1,20 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "orocos_kinematics_dynamics",
+    version = "1.5.1",
+    src_uri = "https://github.com/orocos/orocos_kinematics_dynamics/archive/v1.5.1.tar.gz",
+    sha256 = "5acb90acd82b10971717aca6c17874390762ecdaa3a8e4db04984ea1d4a2af9b",
+    description = "Orocos Kinematics and Dynamics C++ library",
+    homepage = "https://github.com/orocos/orocos_kinematics_dynamics",
+    license = "LGPL-2.1",
+    cmake_args = [
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DENABLE_TESTS=OFF",
+        "-DENABLE_EXAMPLES=OFF",
+    ],
+    deps = [
+        "//packages/linux/robotics/eigen3:eigen3",
+    ],
+    visibility = ["PUBLIC"],
+)

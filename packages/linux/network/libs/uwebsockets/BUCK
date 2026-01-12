@@ -1,0 +1,35 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "uwebsockets",
+    version = "0.14",
+    src_uri = "https://github.com/uNetworking/uWebSockets/archive/v0.14.8.tar.gz",
+    sha256 = "663a22b521c8258e215e34e01c7fcdbbd500296aab2c31d36857228424bb7675",
+    description = "Simple, secure and standards compliant WebSocket client/server library",
+    homepage = "https://github.com/uNetworking/uWebSockets",
+    license = "Apache-2.0",
+    signature_required = False,
+    deps = [
+        "//packages/linux/dev-libs/misc/libuv:libuv",
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/network/openssl:openssl",
+    ],
+    pre_configure = """
+# uWebSockets doesn't have a configure script
+""",
+    post_install = """
+cd "$SRCDIR"
+
+# Build shared library
+make Linux CC="${CC:-cc}" CXX="${CXX:-c++}"
+
+# Install shared library
+mkdir -p "$DESTDIR/usr/lib"
+cp -a libuWS.so "$DESTDIR/usr/lib/"
+
+# Install headers
+mkdir -p "$DESTDIR/usr/include/uWS"
+cp -a src/*.h "$DESTDIR/usr/include/uWS/"
+""",
+    visibility = ["PUBLIC"],
+)

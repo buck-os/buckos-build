@@ -1,0 +1,27 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# mvfst - Facebook's QUIC implementation
+
+cmake_package(
+    name = "mvfst",
+    version = "2024.01.01.00",
+    src_uri = "https://github.com/facebook/mvfst/archive/refs/tags/v2024.01.01.00.tar.gz",
+    sha256 = "70479dd7758ce0933f60ddfdd1dfa5645818a9016184582024c0c62c46ad49bc",
+    description = "Facebook's QUIC implementation",
+    homepage = "https://github.com/facebook/mvfst",
+    license = "MIT",
+    deps = [
+        "//packages/linux/dev-libs/misc/folly:folly",
+        "//packages/linux/dev-libs/misc/fizz:fizz",
+        "//packages/linux/dev-libs/boost:boost",
+        "//packages/linux/dev-libs/google/glog:glog",
+        "//packages/linux/dev-libs/google/gflags:gflags",
+        "//packages/linux/dev-libs/misc/libevent:libevent",
+    ],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DBUILD_TESTS=OFF",
+    ],
+    visibility = ["PUBLIC"],
+)

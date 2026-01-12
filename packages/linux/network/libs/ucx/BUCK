@@ -1,0 +1,19 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "ucx",
+    version = "1.18.0",
+    src_uri = "https://github.com/openucx/ucx/releases/download/v1.18.0/ucx-1.18.0.tar.gz",
+    sha256 = "TODO",
+    configure_args = [
+        "--enable-mt",
+        "--with-verbs",
+        "--with-rdmacm",
+        "--with-cuda=no",
+        "--with-rocm=no",
+    ],
+    deps = [
+        "//packages/linux/network/libs/rdma-core",
+        "//packages/linux/system/libs/numactl",
+    ],
+)

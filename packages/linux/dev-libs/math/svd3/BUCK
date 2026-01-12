@@ -1,0 +1,17 @@
+load("//defs:package_defs.bzl", "simple_package")
+
+simple_package(
+    name = "svd3",
+    version = "2014.04",
+    src_uri = "https://github.com/ericjang/svd3/archive/refs/heads/master.tar.gz",
+    sha256 = "TODO",
+    description = "Fast 3x3 SVD (Singular Value Decomposition) for CUDA",
+    homepage = "https://github.com/ericjang/svd3",
+    license = "MIT",
+    deps = [],
+    build_commands = [
+        "mkdir -p ${PREFIX}/include/svd3",
+        "cp *.h ${PREFIX}/include/svd3/",
+    ],
+    visibility = ["PUBLIC"],
+)

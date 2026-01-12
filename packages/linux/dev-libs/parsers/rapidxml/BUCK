@@ -1,0 +1,17 @@
+load("//defs:package_defs.bzl", "simple_package")
+
+simple_package(
+    name = "rapidxml",
+    version = "1.13",
+    src_uri = "https://downloads.sourceforge.net/project/rapidxml/rapidxml/rapidxml%201.13/rapidxml-1.13.zip",
+    sha256 = "TODO",
+    description = "Fast XML parser for C++",
+    homepage = "http://rapidxml.sourceforge.net/",
+    license = "BSL-1.0",
+    deps = [],
+    build_commands = [
+        "mkdir -p ${PREFIX}/include/rapidxml",
+        "cp *.hpp ${PREFIX}/include/rapidxml/",
+    ],
+    visibility = ["PUBLIC"],
+)

@@ -1,0 +1,20 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "kenlm",
+    version = "20240101",
+    src_uri = "https://github.com/kpu/kenlm/archive/5239f2ece2656544976f612a5b57b796d9dd0fc5.tar.gz",
+    sha256 = "926df2666ebd52c880681fbc41cae35ea68752f503e6f9694fd07afb083eddf9",
+    description = "Faster and Smaller Language Model Queries",
+    homepage = "https://kheafield.com/code/kenlm/",
+    license = "LGPL-2.1",
+    deps = [
+        "//packages/linux/dev-libs/boost:boost",
+    ],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DKENLM_MAX_ORDER=6",
+        "-DCOMPILE_TESTS=OFF",
+    ],
+    visibility = ["PUBLIC"],
+)

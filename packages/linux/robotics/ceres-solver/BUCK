@@ -1,0 +1,19 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# ceres-solver - Package from third-party
+
+cmake_package(
+    name = "ceres-solver",
+    version = "1.14.0",
+    src_uri = "https://github.com/ceres-solver/ceres-solver/archive/refs/tags/v1.14.0.tar.gz",
+    sha256 = "91967ee7e52f05be293c96653255119bb2adca00e50f19d962b8a5ae3fefec85",
+    description = "ceres-solver package",
+    homepage = "https://github.com/ceres-solver/ceres-solver.git",
+    license = "BSD-3-Clause",
+    deps = [],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+    ],
+    visibility = ["PUBLIC"],
+)

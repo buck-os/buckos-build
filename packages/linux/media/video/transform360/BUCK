@@ -1,0 +1,15 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "transform360",
+    version = "0.1",
+    src_uri = "https://github.com/facebook/transform360/archive/refs/tags/v0.1.tar.gz",
+    sha256 = "744112daf4492e0d146cd0902cd903adcf30090ff7706920690403f9b2ad880b",
+    cmake_args = [
+        "-DBUILD_SHARED_LIBS=OFF",
+    ],
+    deps = [
+        "//packages/linux/ai/vision/opencv3:opencv3",
+    ],
+    maintainers = ["video_playback_quality"],
+)

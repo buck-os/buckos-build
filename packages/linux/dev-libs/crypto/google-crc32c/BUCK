@@ -1,0 +1,33 @@
+load("//defs:package_defs.bzl", "download_source", "binary_package")
+
+download_source(
+    name = "google-crc32c-src",
+    src_uri = "https://github.com/google/crc32c/archive/refs/tags/1.1.2.tar.gz",
+    sha256 = "ac07840513072b7fcebda6e821068aa04889018f24e10e46181068fb214d7e56",
+    signature_required = False,
+)
+
+binary_package(
+    name = "google-crc32c",
+    srcs = [":google-crc32c-src"],
+    version = "1.1.2",
+    description = "CRC32C implementation with hardware acceleration",
+    homepage = "https://github.com/google/crc32c",
+    license = "BSD-3-Clause",
+    install_script = """
+        cd "$SRCS"
+        mkdir -p build && cd build
+        cmake .. \
+            -DCMAKE_INSTALL_PREFIX=/usr \
+            -DCMAKE_INSTALL_LIBDIR=lib64 \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_SHARED_LIBS=ON \
+            -DCRC32C_BUILD_TESTS=OFF \
+            -DCRC32C_BUILD_BENCHMARKS=OFF \
+            -DCRC32C_USE_GLOG=OFF
+        make -j$(nproc)
+        make install DESTDIR="$OUT"
+    """,
+    deps = [],
+    visibility = ["PUBLIC"],
+)

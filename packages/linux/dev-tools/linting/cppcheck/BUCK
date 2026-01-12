@@ -1,0 +1,26 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# Cppcheck - Static analysis tool for C/C++
+
+cmake_package(
+    name = "cppcheck",
+    version = "2.13.0",
+    src_uri = "https://github.com/danmar/cppcheck/archive/refs/tags/2.13.0.tar.gz",
+    sha256 = "8229afe1dddc3ed893248b8a723b428dc221ea014fbc76e6289840857c03d450",
+    description = "Static analysis tool for C/C++ code",
+    homepage = "https://cppcheck.sourceforge.io/",
+    license = "GPL-3.0",
+    iuse = ["rules", "htmlreport"],
+    use_defaults = ["htmlreport"],
+    deps = [
+        "//packages/linux/system/libs/utility/pcre2:pcre2",
+    ],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DHAVE_RULES=ON",
+        "-DBUILD_GUI=OFF",
+        "-DBUILD_TESTS=OFF",
+    ],
+    visibility = ["PUBLIC"],
+)

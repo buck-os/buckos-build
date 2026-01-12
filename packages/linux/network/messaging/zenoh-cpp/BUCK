@@ -1,0 +1,18 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "zenoh-cpp",
+    version = "1.5.0",
+    src_uri = "https://github.com/eclipse-zenoh/zenoh-cpp/archive/refs/tags/1.5.0.tar.gz",
+    sha256 = "aad21519b995a33a7e26db3234ae8d8af5ddd6a6fcd206a23c62cac179c419d8",
+    cmake_args = [
+        "-DZENOHCXX_ZENOHC=ON",
+        "-DZENOHCXX_ZENOHPICO=OFF",
+        "-DZENOHCXX_ENABLE_TESTS=OFF",
+        "-DZENOHCXX_ENABLE_EXAMPLES=OFF",
+        "-DZENOHCXX_EXAMPLES_PROTOBUF=OFF",
+    ],
+    deps = [
+        "//packages/linux/network/messaging/zenoh-c:zenoh-c",
+    ],
+)

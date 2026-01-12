@@ -1,0 +1,18 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "ode",
+    version = "0.16.5",
+    src_uri = "https://bitbucket.org/odedevs/ode/downloads/ode-0.16.5.tar.gz",
+    sha256 = "TODO",
+    cmake_args = [
+        "-DODE_WITH_LIBCCD=ON",
+        "-DODE_WITH_LIBCCD_SYSTEM=ON",
+        "-DODE_DOUBLE_PRECISION=ON",
+        "-DODE_WITH_DEMOS=OFF",
+        "-DODE_WITH_TESTS=OFF",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/physics/libccd",
+    ],
+)

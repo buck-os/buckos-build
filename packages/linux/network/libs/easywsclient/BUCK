@@ -1,0 +1,29 @@
+load("//defs:package_defs.bzl", "simple_package")
+
+# easywsclient - Easy to use WebSocket client library for C++
+
+simple_package(
+    name = "easywsclient",
+    version = "0.1.0",
+    src_uri = "https://github.com/dhbaird/easywsclient/archive/9b87dc488048900a8cd684f51ddc98143682dbc3.tar.gz",
+    sha256 = "TODO",
+    description = "Easy and powerful WebSocket client library for C++",
+    homepage = "https://github.com/dhbaird/easywsclient",
+    license = "MIT",
+    deps = [],
+    patches = [
+        "patches/ignore_easywsclient_warnings.patch",
+    ],
+    build_commands = [
+        # Compile the library (files are in root of extracted archive)
+        "${CXX} ${CXXFLAGS} -fPIC -c easywsclient.cpp -o easywsclient.o",
+        "ar rcs libeasywsclient.a easywsclient.o",
+        "${CXX} ${CXXFLAGS} ${LDFLAGS} -shared -fPIC easywsclient.cpp -o libeasywsclient.so",
+        # Install headers
+        "install -Dm644 easywsclient.hpp ${PREFIX}/include/easywsclient.hpp",
+        # Install libraries
+        "install -Dm644 libeasywsclient.a ${PREFIX}/lib/libeasywsclient.a",
+        "install -Dm755 libeasywsclient.so ${PREFIX}/lib/libeasywsclient.so",
+    ],
+    visibility = ["PUBLIC"],
+)

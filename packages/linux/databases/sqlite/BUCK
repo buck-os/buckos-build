@@ -1,0 +1,32 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# SQLite - Self-contained SQL database engine
+
+autotools_package(
+    name = "sqlite",
+    version = "3.45.1",
+    src_uri = "https://www.sqlite.org/2024/sqlite-autoconf-3450100.tar.gz",
+    sha256 = "TODO",
+    description = "Self-contained, serverless SQL database engine",
+    homepage = "https://www.sqlite.org/",
+    license = "public-domain",
+    iuse = ["fts5", "json1", "rtree", "session", "secure-delete"],
+    use_defaults = ["fts5", "json1", "rtree"],
+    deps = [
+        "//packages/linux/core/readline:readline",
+        "//packages/linux/core/zlib:zlib",
+    ],
+    configure_args = [
+        "--prefix=${PREFIX}",
+        "--enable-shared",
+        "--disable-static",
+        "--enable-readline",
+    ],
+    cflags = [
+        "-DSQLITE_ENABLE_FTS5",
+        "-DSQLITE_ENABLE_JSON1",
+        "-DSQLITE_ENABLE_RTREE",
+        "-DSQLITE_ENABLE_COLUMN_METADATA",
+    ],
+    visibility = ["PUBLIC"],
+)

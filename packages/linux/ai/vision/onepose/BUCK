@@ -1,0 +1,15 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "onepose",
+    version = "1.0",
+    src_uri = "https://github.com/developer0hye/onepose/archive/refs/heads/main.tar.gz",
+    sha256 = "d828a7be09f93f7a8ca663e3fe2ff13adb80177abafab32d1385c03414ac385e",
+    deps = [
+        "//packages/linux/dev-libs/python/opencv-python:opencv-python",
+        "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
+        "//packages/linux/ai/ml-frameworks/torchvision:torchvision",
+        "//packages/linux/dev-libs/python/tqdm:tqdm",
+        "//packages/linux/dev-libs/python/numpy:numpy",
+    ],
+)

@@ -1,0 +1,22 @@
+load("//defs:package_defs.bzl", "meson_package")
+
+meson_package(
+    name = "aravis",
+    version = "0.8.30",
+    src_uri = "https://github.com/AravisProject/aravis/releases/download/{version}/aravis-{version}.tar.xz",
+    sha256 = "TODO",
+    deps = [
+        "//packages/linux/dev-libs/glib",
+        "//packages/linux/system/libs/libusb",
+        "//packages/linux/system/libs/data/libxml2",
+        "//packages/linux/core/zlib",
+    ],
+    meson_args = [
+        "-Dviewer=disabled",
+        "-Dgst-plugin=disabled",
+        "-Ddocumentation=disabled",
+        "-Dintrospection=disabled",
+        "-Dusb=enabled",
+        "-Dpacket-socket=enabled",
+    ],
+)

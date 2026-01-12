@@ -1,0 +1,26 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# BIND - Berkeley Internet Name Domain DNS server
+
+autotools_package(
+    name = "bind",
+    version = "9.18.24",
+    src_uri = "https://downloads.isc.org/isc/bind9/9.18.24/bind-9.18.24.tar.xz",
+    sha256 = "709d73023c9115ddad3bab65b6c8c79a590196d0d114f5d0ca2533dbd52ddf66",
+    description = "Berkeley Internet Name Domain DNS server",
+    homepage = "https://www.isc.org/bind/",
+    license = "MPL-2.0",
+    iuse = ["dnssec", "geoip", "json"],
+    use_defaults = ["dnssec"],
+    deps = [
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/dev-libs/misc/libuv:libuv",
+    ],
+    configure_args = [
+        "--prefix=${PREFIX}",
+        "--with-openssl",
+        "--enable-shared",
+        "--disable-static",
+    ],
+    visibility = ["PUBLIC"],
+)

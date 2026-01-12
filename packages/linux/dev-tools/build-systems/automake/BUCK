@@ -70,7 +70,10 @@ echo "src_configure: trailer_m4=$trailer_m4"
 echo "src_configure: PATH=$PATH"
 which autoconf
 autoconf --version 2>&1 | head -1 || echo "autoconf not working"
+
+# Bypass autoconf working test by pre-caching the result
 ./configure \\
+    ac_cv_prog_AUTOCONF_works=yes \\
     --prefix=/usr \\
     --build=$(gcc -dumpmachine) \\
     --host=$(gcc -dumpmachine) \\

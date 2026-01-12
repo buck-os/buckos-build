@@ -1,0 +1,32 @@
+load("//defs:package_defs.bzl", "download_source", "binary_package")
+
+download_source(
+    name = "antlr4-cpp-src",
+    src_uri = "https://github.com/antlr/antlr4/archive/refs/tags/4.13.2.tar.gz",
+    sha256 = "9f18272a9b32b622835a3365f850dd1063d60f5045fb1e12ce475ae6e18a35bb",
+    signature_required = False,
+)
+
+binary_package(
+    name = "antlr4-cpp",
+    srcs = [":antlr4-cpp-src"],
+    version = "4.13.2",
+    description = "ANTLR4 C++ Runtime",
+    homepage = "https://www.antlr.org/",
+    license = "BSD-3-Clause",
+    install_script = """
+        cd "$SRCS/runtime/Cpp"
+        mkdir -p build && cd build
+        cmake .. \
+            -DCMAKE_INSTALL_PREFIX=/usr \
+            -DCMAKE_INSTALL_LIBDIR=lib64 \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_SHARED_LIBS=ON \
+            -DANTLR4_INSTALL=ON \
+            -DWITH_DEMO=OFF
+        make -j$(nproc)
+        make install DESTDIR="$OUT"
+    """,
+    deps = [],
+    visibility = ["PUBLIC"],
+)

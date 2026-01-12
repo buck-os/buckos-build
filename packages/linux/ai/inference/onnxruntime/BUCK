@@ -1,0 +1,32 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# ONNX Runtime - Cross-platform inference engine for ONNX models
+
+cmake_package(
+    name = "onnxruntime",
+    version = "1.17.1",
+    src_uri = "https://github.com/microsoft/onnxruntime/archive/refs/tags/v1.17.1.tar.gz",
+    sha256 = "TODO",
+    description = "Cross-platform, high performance ML inferencing and training accelerator",
+    homepage = "https://onnxruntime.ai/",
+    license = "MIT",
+    iuse = ["cuda", "tensorrt", "openvino"],
+    use_defaults = [],
+    deps = [
+        "//packages/linux/dev-libs/serialization/protobuf:protobuf",
+        "//packages/linux/core/zlib:zlib",
+    ],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-Donnxruntime_BUILD_UNIT_TESTS=OFF",
+        "-Donnxruntime_USE_CUDA=OFF",
+        "-Donnxruntime_USE_TENSORRT=OFF",
+        "-Donnxruntime_USE_OPENVINO=OFF",
+    ],
+    use_cmake = {
+        "cuda": "-Donnxruntime_USE_CUDA=ON",
+        "-cuda": "-Donnxruntime_USE_CUDA=OFF",
+    },
+    visibility = ["PUBLIC"],
+)

@@ -1,0 +1,25 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "t2v_metrics",
+    version = "1.2",
+    src_uri = "https://github.com/linzhiqiu/t2v_metrics/archive/refs/tags/v1.2.tar.gz",
+    sha256 = "TODO",
+    description = "Evaluating Text-to-Visual Generation with Image-to-Text Generation",
+    homepage = "https://github.com/linzhiqiu/t2v_metrics",
+    license = "Apache-2.0",
+    deps = [
+        "//packages/linux/lang/python:python",
+        "//packages/linux/dev-libs/python/numpy:numpy",
+        "//packages/linux/dev-libs/python/scipy:scipy",
+        "//packages/linux/dev-libs/python/pandas:pandas",
+        "//packages/linux/dev-libs/python/opencv-python:opencv-python",
+        "//packages/linux/dev-libs/python/transformers:transformers",
+        "//packages/linux/dev-libs/python/tqdm:tqdm",
+        "//packages/linux/dev-libs/python/ftfy:ftfy",
+        "//packages/linux/dev-libs/python/omegaconf:omegaconf",
+        "//packages/linux/dev-libs/python/sentencepiece:sentencepiece",
+        "//packages/linux/dev-libs/python/tiktoken:tiktoken",
+    ],
+    visibility = ["PUBLIC"],
+)

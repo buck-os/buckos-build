@@ -1,0 +1,37 @@
+load("//defs:package_defs.bzl", "autotools_package", "download_source")
+
+download_source(
+    name = "proton-wine-src",
+    src_uri = "https://github.com/ValveSoftware/wine/archive/refs/tags/proton-wine-9.0-3.tar.gz",
+    sha256 = "df33e623a864cfd9a48a51dd2979d5dc25a03266729faa35f09388be2fb61523",
+)
+
+autotools_package(
+    name = "proton-wine",
+    source = ":proton-wine-src",
+    version = "9.0-3",
+    description = "Valve's Wine fork for Steam Proton compatibility layer",
+    homepage = "https://github.com/ValveSoftware/wine",
+    license = "LGPL-2.1-or-later",
+    configure_args = [
+        "--prefix=/usr",
+        "--libdir=/usr/lib",
+        "--with-x",
+        "--with-wayland",
+        "--with-vulkan",
+        "--with-pthread",
+        "--with-freetype",
+        "--with-fontconfig",
+        "--with-opengl",
+        "--without-oss",
+        "--disable-tests",
+    ],
+    env = {
+        "CFLAGS": "-O2 -march=x86-64 -pipe",
+        "LDFLAGS": "-Wl,-O1,--as-needed",
+    },
+    deps = [
+        "//packages/linux/core/glibc:glibc",
+    ],
+    visibility = ["PUBLIC"],
+)

@@ -1,0 +1,26 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "cyclonedds",
+    version = "0.10.5",
+    src_uri = "https://github.com/eclipse-cyclonedds/cyclonedds/archive/refs/tags/0.10.5.tar.gz",
+    sha256 = "ec3ec898c52b02f939a969cd1a276e219420e5e8419b21cea276db35b4821848",
+    cmake_args = [
+        "-DENABLE_SHM=OFF",
+        "-DBUILD_TESTING=OFF",
+        "-DBUILD_DDSPERF=OFF",
+        "-DENABLE_SSL=ON",
+        "-DENABLE_SECURITY=ON",
+        "-DENABLE_LIFESPAN=ON",
+        "-DENABLE_DEADLINE_MISSED=ON",
+        "-DENABLE_TYPE_DISCOVERY=ON",
+        "-DENABLE_TOPIC_DISCOVERY=ON",
+        "-DENABLE_SOURCE_SPECIFIC_MULTICAST=ON",
+        "-DENABLE_IPV6=ON",
+        "-DBUILD_IDLC=OFF",
+        "-DBUILD_EXAMPLES=OFF",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/crypto/openssl:openssl",
+    ],
+)

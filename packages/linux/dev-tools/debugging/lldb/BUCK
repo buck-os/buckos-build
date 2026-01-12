@@ -1,0 +1,32 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# LLDB - LLVM debugger
+
+cmake_package(
+    name = "lldb",
+    version = "19.1.0",
+    src_uri = "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.0/llvm-project-19.1.0.src.tar.xz",
+    sha256 = "TODO",
+    description = "Next generation, high-performance debugger",
+    homepage = "https://lldb.llvm.org/",
+    license = "Apache-2.0",
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/libxml2:libxml2",
+        "//packages/linux/lang/python:python",
+        "//packages/linux/system/libs/ncurses:ncurses",
+        "//packages/linux/dev-libs/libffi:libffi",
+    ],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DLLVM_ENABLE_PROJECTS=clang;lldb",
+        "-DLLVM_TARGETS_TO_BUILD=X86;AArch64;ARM",
+        "-DLLVM_INCLUDE_EXAMPLES=OFF",
+        "-DLLVM_INCLUDE_TESTS=OFF",
+        "-DLLVM_INCLUDE_BENCHMARKS=OFF",
+        "-DLLDB_ENABLE_PYTHON=ON",
+        "-DBUILD_SHARED_LIBS=ON",
+    ],
+    cmake_source_dir = "llvm",
+    visibility = ["PUBLIC"],
+)

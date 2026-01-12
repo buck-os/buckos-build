@@ -1,0 +1,27 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# termios-cpp - C++ wrapper for POSIX termios
+cmake_package(
+    name = "termios-cpp",
+    version = "1.0.0",
+    src_uri = "https://github.com/madduci/termios-cpp/archive/refs/tags/v1.0.0.tar.gz",
+    sha256 = "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+    signature_required = False,
+    description = "Modern C++ wrapper for POSIX termios serial communication",
+    homepage = "https://github.com/madduci/termios-cpp",
+    license = "MIT",
+    iuse = ["tests", "static-libs"],
+    use_defaults = [],
+    use_cmake = {
+        "tests": "-DBUILD_TESTS=ON",
+        "-tests": "-DBUILD_TESTS=OFF",
+        "static-libs": "-DBUILD_SHARED_LIBS=OFF",
+        "-static-libs": "-DBUILD_SHARED_LIBS=ON",
+    },
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_STANDARD=17",
+    ],
+    deps = [],
+    visibility = ["PUBLIC"],
+)

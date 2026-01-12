@@ -1,0 +1,35 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# libass - Portable subtitle renderer
+
+autotools_package(
+    name = "libass",
+    version = "0.17.1",
+    src_uri = "https://github.com/libass/libass/releases/download/0.17.1/libass-0.17.1.tar.xz",
+    sha256 = "f0da0bbfba476c16ae3e1cfd862256d30915911f7abaa1b16ce62ee653192784",
+    description = "Portable subtitle renderer for the ASS/SSA subtitle format",
+    homepage = "https://github.com/libass/libass",
+    license = "ISC",
+    iuse = ["fontconfig", "asm"],
+    use_defaults = ["fontconfig", "asm"],
+    deps = [
+        "//packages/linux/graphics/freetype:freetype",
+        "//packages/linux/dev-libs/misc/fribidi:fribidi",
+        "//packages/linux/graphics/harfbuzz:harfbuzz",
+    ],
+    use_deps = {
+        "fontconfig": ["//packages/linux/graphics/fontconfig:fontconfig"],
+    },
+    configure_args = [
+        "--prefix=${PREFIX}",
+        "--enable-shared",
+        "--disable-static",
+    ],
+    use_configure = {
+        "fontconfig": "--enable-fontconfig",
+        "-fontconfig": "--disable-fontconfig",
+        "asm": "--enable-asm",
+        "-asm": "--disable-asm",
+    },
+    visibility = ["PUBLIC"],
+)

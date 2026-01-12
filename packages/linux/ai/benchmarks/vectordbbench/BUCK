@@ -1,0 +1,21 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "vectordbbench",
+    version = "0.1.0",
+    src_uri = "https://github.com/zilliztech/VectorDBBench/archive/refs/heads/main.tar.gz",
+    sha256 = "2e7a0c3f9fc36d921e70a81295c0fdf3196d1550eba8361aad301147bfc0c263",
+    description = "Benchmark tool for comparing performance of mainstream vector databases and cloud services",
+    homepage = "https://github.com/zilliztech/VectorDBBench",
+    license = "MIT",
+    deps = [
+        "//packages/linux/lang/python:python",
+        "//packages/linux/dev-libs/python/numpy:numpy",
+        "//packages/linux/dev-libs/python/pandas:pandas",
+        "//packages/linux/dev-libs/python/pydantic:pydantic",
+        "//packages/linux/dev-libs/python/tqdm:tqdm",
+        "//packages/linux/dev-libs/python/click:click",
+        "//packages/linux/dev-libs/python/psutil:psutil",
+    ],
+    visibility = ["PUBLIC"],
+)

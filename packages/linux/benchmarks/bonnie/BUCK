@@ -1,9 +1,6 @@
 load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 
 # bonnie++ - Filesystem and disk I/O benchmark
-#
-# bonnie++ has a non-standard Makefile that requires explicit DESTDIR handling
-
 download_source(
     name = "bonnie-src",
     src_uri = "https://www.coker.com.au/bonnie++/bonnie++-2.00a.tgz",
@@ -20,6 +17,8 @@ ebuild_package(
     homepage = "https://www.coker.com.au/bonnie++/",
     license = "GPL-2.0",
 
+    patches = ["patches/fix-gcc11-std-data.patch"],
+
     src_configure = '''
 ./configure --prefix=/usr
 ''',
@@ -29,7 +28,6 @@ make -j$(nproc)
 ''',
 
     src_install = '''
-# bonnie++ install target doesn't support DESTDIR well, install manually
 mkdir -p "$DESTDIR/usr/bin"
 mkdir -p "$DESTDIR/usr/sbin"
 mkdir -p "$DESTDIR/usr/share/man/man1"

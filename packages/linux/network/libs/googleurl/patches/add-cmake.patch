@@ -1,0 +1,162 @@
+--- /dev/null
++++ b/CMakeLists.txt
+@@ -0,0 +1,165 @@
++cmake_minimum_required(VERSION 3.15)
++project(googleurl VERSION 1.0.0 LANGUAGES CXX)
++
++set(CMAKE_CXX_STANDARD 20)
++set(CMAKE_CXX_STANDARD_REQUIRED ON)
++set(CMAKE_CXX_EXTENSIONS OFF)
++
++# Required: -fno-strict-aliasing
++add_compile_options(-fno-strict-aliasing)
++
++include(GNUInstallDirs)
++
++# Find dependencies
++find_package(ICU REQUIRED COMPONENTS uc i18n)
++
++# Base library sources (minimal set needed for URL parsing)
++set(BASE_SOURCES
++    base/debug/crash_logging.cc
++    base/strings/string_util.cc
++    base/strings/string_util_constants.cc
++    base/strings/utf_ostream_operators.cc
++    base/strings/utf_string_conversion_utils.cc
++    base/strings/utf_string_conversions.cc
++)
++
++# URL library sources
++set(URL_SOURCES
++    url/gurl.cc
++    url/origin.cc
++    url/scheme_host_port.cc
++    url/third_party/mozilla/url_parse.cc
++    url/url_canon.cc
++    url/url_canon_etc.cc
++    url/url_canon_filesystemurl.cc
++    url/url_canon_fileurl.cc
++    url/url_canon_host.cc
++    url/url_canon_icu.cc
++    url/url_canon_internal.cc
++    url/url_canon_ip.cc
++    url/url_canon_mailtourl.cc
++    url/url_canon_path.cc
++    url/url_canon_pathurl.cc
++    url/url_canon_query.cc
++    url/url_canon_relative.cc
++    url/url_canon_stdstring.cc
++    url/url_canon_stdurl.cc
++    url/url_constants.cc
++    url/url_features.cc
++    url/url_parse_file.cc
++    url/url_util.cc
++)
++
++# Create base library
++add_library(googleurl_base STATIC ${BASE_SOURCES})
++target_include_directories(googleurl_base PUBLIC
++    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
++    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/polyfills>
++    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
++)
++
++# Create URL library
++add_library(googleurl ${URL_SOURCES})
++target_include_directories(googleurl PUBLIC
++    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
++    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/polyfills>
++    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
++)
++target_link_libraries(googleurl
++    PUBLIC
++        googleurl_base
++        ICU::uc
++        ICU::i18n
++)
++
++# Set library properties
++set_target_properties(googleurl PROPERTIES
++    VERSION ${PROJECT_VERSION}
++    SOVERSION 1
++    PUBLIC_HEADER "url/gurl.h;url/url_canon.h;url/url_util.h;url/url_constants.h"
++)
++
++# Install targets
++install(TARGETS googleurl googleurl_base
++    EXPORT googleurlTargets
++    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
++    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
++    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
++    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/url
++)
++
++# Install headers
++install(DIRECTORY url/
++    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/url
++    FILES_MATCHING PATTERN "*.h"
++    PATTERN "*test*" EXCLUDE
++    PATTERN "*perftest*" EXCLUDE
++)
++
++install(DIRECTORY base/
++    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/base
++    FILES_MATCHING PATTERN "*.h"
++    PATTERN "*test*" EXCLUDE
++)
++
++install(DIRECTORY polyfills/base/
++    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/base
++    FILES_MATCHING PATTERN "*.h"
++)
++
++install(DIRECTORY polyfills/third_party/
++    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/third_party
++    FILES_MATCHING PATTERN "*.h"
++)
++
++install(FILES build/build_config.h
++    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/build
++)
++
++install(FILES build/buildflag.h
++    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/build
++)
++
++# Install export configuration
++install(EXPORT googleurlTargets
++    FILE googleurlTargets.cmake
++    NAMESPACE googleurl::
++    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/googleurl
++)
++
++# Create config file
++include(CMakePackageConfigHelpers)
++configure_package_config_file(
++    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/googleurlConfig.cmake.in
++    ${CMAKE_CURRENT_BINARY_DIR}/googleurlConfig.cmake
++    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/googleurl
++)
++
++write_basic_package_version_file(
++    ${CMAKE_CURRENT_BINARY_DIR}/googleurlConfigVersion.cmake
++    VERSION ${PROJECT_VERSION}
++    COMPATIBILITY SameMajorVersion
++)
++
++install(FILES
++    ${CMAKE_CURRENT_BINARY_DIR}/googleurlConfig.cmake
++    ${CMAKE_CURRENT_BINARY_DIR}/googleurlConfigVersion.cmake
++    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/googleurl
++)
+--- /dev/null
++++ b/cmake/googleurlConfig.cmake.in
+@@ -0,0 +1,8 @@
++@PACKAGE_INIT@
++
++include(CMakeFindDependencyMacro)
++find_dependency(ICU COMPONENTS uc i18n)
++
++include("${CMAKE_CURRENT_LIST_DIR}/googleurlTargets.cmake")
++
++check_required_components(googleurl)

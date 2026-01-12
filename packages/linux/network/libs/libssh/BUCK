@@ -1,0 +1,24 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "libssh",
+    version = "0.9.8",
+    src_uri = "https://www.libssh.org/files/0.9/libssh-0.9.8.tar.xz",
+    sha256 = "9f834b732341d428d67bbe835b7d10ae97ccf25d6f5bd0288fa51ae683f2e7cd",
+
+    cmake_args = [
+        "-DWITH_ZLIB=ON",
+        "-DWITH_SFTP=ON",
+        "-DWITH_SERVER=ON",
+        "-DWITH_EXAMPLES=OFF",
+        "-DUNIT_TESTING=OFF",
+        "-DBUILD_SHARED_LIBS=ON",
+    ],
+
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/network/openssl:openssl",
+    ],
+
+    visibility = ["PUBLIC"],
+)

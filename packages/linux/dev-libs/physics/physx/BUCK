@@ -1,0 +1,24 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "physx",
+    version = "4.1.2",
+    src_uri = "https://github.com/NVIDIAGameWorks/PhysX/archive/refs/tags/4.1.2.29882248.tar.gz",
+    sha256 = "TODO",
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DPX_BUILDSNIPPETS=OFF",
+        "-DPX_BUILDPUBLICSAMPLES=OFF",
+        "-DPX_CMAKE_SUPPRESS_REGENERATION=ON",
+        "-DPHYSX_ROOT_DIR=../physx",
+        "-DTARGET_BUILD_PLATFORM=linux",
+        "-DPX_PHYSX_STATIC_LIB=ON",
+        "-DDISABLE_CUDA_PHYSX=ON",
+    ],
+    pre_configure = """
+        # PhysX CMake expects to be run from physx/compiler/public
+        export PHYSX_ROOT_DIR="${PWD}/physx"
+    """,
+    deps = [],
+    visibility = ["PUBLIC"],
+)

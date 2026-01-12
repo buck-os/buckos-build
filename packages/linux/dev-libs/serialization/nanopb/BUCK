@@ -1,0 +1,20 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "nanopb",
+    version = "0.4.9.1",
+    src_uri = "https://github.com/nanopb/nanopb/archive/refs/tags/0.4.9.1.tar.gz",
+    sha256 = "4575944a468718ef25f05eb01d994364650b581563089a9841986bb1e460eac3",
+    description = "Protocol Buffers for embedded systems",
+    homepage = "https://jpa.kapsi.fi/nanopb/",
+    license = "Zlib",
+    deps = [],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DBUILD_STATIC_LIBS=ON",
+        "-Dnanopb_BUILD_RUNTIME=ON",
+        "-Dnanopb_BUILD_GENERATOR=OFF",
+    ],
+    visibility = ["PUBLIC"],
+)

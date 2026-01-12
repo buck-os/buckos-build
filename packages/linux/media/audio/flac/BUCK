@@ -1,0 +1,28 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# FLAC - Free Lossless Audio Codec
+
+cmake_package(
+    name = "flac",
+    version = "1.4.3",
+    src_uri = "https://github.com/xiph/flac/releases/download/1.4.3/flac-1.4.3.tar.xz",
+    sha256 = "6c58e69cd22348f441b861092b825e591d0b822e106de6eb0ee4d05d27205b70",
+    description = "Free Lossless Audio Codec",
+    homepage = "https://xiph.org/flac/",
+    license = "BSD-3-Clause",
+    iuse = ["ogg"],
+    use_defaults = ["ogg"],
+    deps = [],
+    use_deps = {
+        "ogg": ["//packages/linux/system/libs/audio/libogg:libogg"],
+    },
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DBUILD_PROGRAMS=ON",
+        "-DBUILD_EXAMPLES=OFF",
+        "-DBUILD_TESTING=OFF",
+        "-DBUILD_DOCS=OFF",
+    ],
+    visibility = ["PUBLIC"],
+)

@@ -1,0 +1,20 @@
+load("//defs:package_defs.bzl", "simple_package")
+
+simple_package(
+    name = "lodepng",
+    version = "20240101",
+    src_uri = "https://github.com/lvandeve/lodepng/archive/18964554bc769255401942e0e6dfd09f2fab2093.tar.gz",
+    sha256 = "TODO",
+    description = "PNG encoder and decoder in C and C++",
+    homepage = "https://lodev.org/lodepng/",
+    license = "Zlib",
+    deps = [],
+    build_commands = [
+        "mkdir -p ${PREFIX}/include/lodepng",
+        "cp lodepng.h ${PREFIX}/include/lodepng/",
+        "cp lodepng_util.h ${PREFIX}/include/lodepng/",
+        "cp lodepng.cpp ${PREFIX}/include/lodepng/",
+        "cp lodepng_util.cpp ${PREFIX}/include/lodepng/",
+    ],
+    visibility = ["PUBLIC"],
+)

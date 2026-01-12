@@ -1,0 +1,45 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# LLVM - Compiler infrastructure
+
+cmake_package(
+    name = "llvm",
+    version = "19.1.0",
+    src_uri = "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.0/llvm-project-19.1.0.src.tar.xz",
+    sha256 = "TODO",
+    description = "The LLVM Compiler Infrastructure",
+    homepage = "https://llvm.org/",
+    license = "Apache-2.0",
+    iuse = ["clang", "lld", "lldb", "polly"],
+    use_defaults = ["clang", "lld"],
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/libxml2:libxml2",
+        "//packages/linux/dev-libs/libffi:libffi",
+    ],
+    use_deps = {
+        "lldb": [
+            "//packages/linux/lang/python:python",
+            "//packages/linux/system/libs/ncurses:ncurses",
+        ],
+    },
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DLLVM_TARGETS_TO_BUILD=X86;AArch64;ARM;WebAssembly",
+        "-DLLVM_INCLUDE_EXAMPLES=OFF",
+        "-DLLVM_INCLUDE_TESTS=OFF",
+        "-DLLVM_INCLUDE_BENCHMARKS=OFF",
+        "-DLLVM_BUILD_TOOLS=ON",
+        "-DLLVM_ENABLE_FFI=ON",
+        "-DLLVM_ENABLE_RTTI=ON",
+        "-DBUILD_SHARED_LIBS=ON",
+    ],
+    use_cmake = {
+        "clang": "-DLLVM_ENABLE_PROJECTS=clang",
+        "lld": "-DLLVM_ENABLE_PROJECTS=lld",
+        "lldb": "-DLLVM_ENABLE_PROJECTS=lldb",
+        "polly": "-DLLVM_ENABLE_PROJECTS=polly",
+    },
+    cmake_source_dir = "llvm",
+    visibility = ["PUBLIC"],
+)

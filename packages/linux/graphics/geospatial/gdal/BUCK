@@ -1,0 +1,102 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# GDAL - Geospatial Data Abstraction Library
+# A translator library for raster and vector geospatial data formats
+
+autotools_package(
+    name = "gdal",
+    version = "3.4.1",
+    src_uri = "https://github.com/OSGeo/gdal/releases/download/v3.4.1/gdal-3.4.1.tar.xz",
+    sha256 = "332f053516ca45101ef0f7fa96309b64242688a8024780a5d93be0230d621933",
+    description = "Geospatial Data Abstraction Library for raster and vector formats",
+    homepage = "https://gdal.org",
+    license = "MIT",
+
+    # USE flags this package supports
+    iuse = [
+        "curl",
+        "expat",
+        "geos",
+        "hdf5",
+        "jpeg",
+        "png",
+        "proj",
+        "sqlite",
+        "tiff",
+        "xml2",
+        "zlib",
+    ],
+
+    # Default USE flags - enable common format support
+    use_defaults = [
+        "curl",
+        "expat",
+        "jpeg",
+        "png",
+        "sqlite",
+        "tiff",
+        "xml2",
+        "zlib",
+    ],
+
+    # Base dependencies (always required)
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+    ],
+
+    # Conditional dependencies based on USE flags
+    use_deps = {
+        "curl": ["//packages/linux/network/curl:curl"],
+        "expat": ["//packages/linux/core/expat:expat"],
+        # "geos": ["//packages/linux/graphics/geospatial/geos:geos"],  # Not yet available
+        "hdf5": ["//packages/linux/dev-libs/misc/hdf5:hdf5"],
+        "jpeg": ["//packages/linux/system/libs/image/libjpeg-turbo:libjpeg-turbo"],
+        "png": ["//packages/linux/media/image/libpng:libpng"],
+        # "proj": ["//packages/linux/graphics/geospatial/proj:proj"],  # Not yet available
+        "sqlite": ["//packages/linux/databases/sqlite:sqlite"],
+        "tiff": ["//packages/linux/media/image/libtiff:libtiff"],
+        "xml2": ["//packages/linux/core/libxml2:libxml2"],
+    },
+
+    # Conditional configure arguments based on USE flags
+    use_configure = {
+        "curl": "--with-curl",
+        "-curl": "--without-curl",
+        "expat": "--with-expat",
+        "-expat": "--without-expat",
+        "geos": "--with-geos",
+        "-geos": "--without-geos",
+        "hdf5": "--with-hdf5",
+        "-hdf5": "--without-hdf5",
+        "jpeg": "--with-jpeg",
+        "-jpeg": "--without-jpeg",
+        "png": "--with-png",
+        "-png": "--without-png",
+        "proj": "--with-proj",
+        "-proj": "--without-proj",
+        "sqlite": "--with-sqlite3",
+        "-sqlite": "--without-sqlite3",
+        "tiff": "--with-libtiff=internal",
+        "-tiff": "--without-libtiff",
+        "xml2": "--with-libxml2",
+        "-xml2": "--without-libxml2",
+    },
+
+    # Base configure arguments
+    configure_args = [
+        "--with-threads",
+        "--with-hide-internal-symbols",
+        # Disable formats we don't have dependencies for yet
+        "--without-geos",
+        "--without-proj",
+        "--without-geotiff",
+        "--without-gif",
+        "--without-webp",
+        "--without-pcre",
+        "--without-pcre2",
+        # Python bindings handled separately
+        "--without-python",
+    ],
+
+    visibility = ["PUBLIC"],
+)

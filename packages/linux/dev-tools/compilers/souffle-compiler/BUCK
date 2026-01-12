@@ -1,0 +1,31 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "souffle-compiler",
+    version = "2.4.1",
+    src_uri = "https://github.com/souffle-lang/souffle/archive/refs/tags/2.4.1.tar.gz",
+    sha256 = "08d9b19cb4a8f570ac75dea73016b6a326d87ac28fccd4afeba217ace2071587",
+    signature_required = False,
+    description = "A Datalog Compiler for static program analysis",
+    homepage = "https://souffle-lang.github.io/",
+    license = "UPL-1.0",
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DSOUFFLE_DOMAIN_64BIT=ON",
+        "-DSOUFFLE_USE_CURSES=OFF",
+        "-DSOUFFLE_USE_ZLIB=ON",
+        "-DSOUFFLE_USE_SQLITE=OFF",
+        "-DSOUFFLE_USE_OPENMP=ON",
+        "-DSOUFFLE_USE_LIBFFI=ON",
+        "-DSOUFFLE_ENABLE_TESTING=OFF",
+        "-DSOUFFLE_SWIG=OFF",
+        "-DSOUFFLE_GIT=OFF",
+    ],
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/dev-libs/libffi:libffi",
+        "//packages/linux/dev-tools/build-systems/bison:bison",
+        "//packages/linux/dev-tools/build-systems/flex:flex",
+    ],
+    visibility = ["PUBLIC"],
+)

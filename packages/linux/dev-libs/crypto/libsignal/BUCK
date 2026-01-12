@@ -1,0 +1,18 @@
+load("//defs:package_defs.bzl", "cargo_package")
+
+cargo_package(
+    name = "libsignal-0.23.1",
+    version = "0.23.1",
+    src_uri = "https://github.com/signalapp/libsignal/archive/refs/tags/v0.23.1.tar.gz",
+    sha256 = "36eff4a90b13bbc769c4af118dbe9686aa1e38dcf9ad4b09dca8e8274bc6c8ee",
+    signature_required = False,
+    description = "Signal Protocol cryptographic library",
+    homepage = "https://github.com/signalapp/libsignal",
+    license = "AGPL-3.0-only",
+    cargo_args = [
+        "--manifest-path=rust/bridge/ffi/Cargo.toml",
+        "--lib",
+    ],
+    deps = [],
+    visibility = ["PUBLIC"],
+)

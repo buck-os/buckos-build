@@ -1,0 +1,41 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# MySQL Shell - Interactive command-line client for MySQL
+#
+# MySQL Shell is an advanced client and code editor for MySQL.
+# It provides scripting capabilities for JavaScript and Python.
+#
+# USE flags:
+#   python    - Enable Python scripting support
+#   ssl       - Enable SSL/TLS support
+
+cmake_package(
+    name = "mysql-shell",
+    version = "8.0.33",
+    src_uri = "https://github.com/mysql/mysql-shell/archive/refs/tags/8.0.33.tar.gz",
+    sha256 = "TODO",
+    description = "Interactive command-line client for MySQL with scripting capabilities",
+    homepage = "https://dev.mysql.com/doc/mysql-shell/8.0/en/",
+    license = "GPL-2.0",
+    iuse = ["python", "ssl"],
+    use_defaults = ["ssl"],
+    deps = [
+        "//packages/linux/databases/mysql:mysql",
+        "//packages/linux/dev-libs/misc/protobuf:protobuf",
+        "//packages/linux/core/zlib:zlib",
+    ],
+    use_deps = {
+        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
+        "python": ["//packages/linux/lang/python:python"],
+    },
+    cmake_args = [
+        "-DMYSQL_SOURCE_DIR=/usr",
+        "-DMYSQL_BUILD_DIR=/usr",
+        "-DHAVE_V8=0",
+    ],
+    use_cmake = {
+        "python": "-DHAVE_PYTHON=1",
+        "-python": "-DHAVE_PYTHON=0",
+    },
+    visibility = ["PUBLIC"],
+)

@@ -1,0 +1,38 @@
+load("//defs:package_defs.bzl", "download_source", "binary_package")
+
+download_source(
+    name = "dto-src",
+    src_uri = "https://github.com/intel/dto/archive/refs/heads/main.tar.gz",
+    sha256 = "b41f5d599ffe8f516bcc593af4b76e3534d9f197e0199d49840e785d99d528d3",
+    signature_required = False,
+)
+
+binary_package(
+    name = "dto",
+    srcs = [":dto-src"],
+    version = "1.0",
+    description = "Intel Data Transfer Optimizer library for DSA acceleration",
+    homepage = "https://github.com/intel/dto",
+    license = "MIT",
+    install_script = """
+        cd $SRCS
+
+        # Build the shared library
+        gcc -shared -fPIC -Wl,-soname,libdto.so \
+            dto.c \
+            -D_GNU_SOURCE \
+            -DDTO_STATS_SUPPORT \
+            -o libdto.so.1.0 \
+            -laccel-config -ldl -lnuma
+
+        # Install library
+        mkdir -p $OUT/usr/lib64
+        cp libdto.so.1.0 $OUT/usr/lib64/
+        ln -sf libdto.so.1.0 $OUT/usr/lib64/libdto.so.1
+        ln -sf libdto.so.1.0 $OUT/usr/lib64/libdto.so
+    """,
+    deps = [
+        "//packages/linux/system/libs/numactl:numactl",
+    ],
+    visibility = ["PUBLIC"],
+)

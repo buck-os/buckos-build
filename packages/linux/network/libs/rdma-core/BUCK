@@ -1,0 +1,15 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "rdma-core",
+    version = "60.0",
+    src_uri = "https://github.com/linux-rdma/rdma-core/releases/download/v60.0/rdma-core-60.0.tar.gz",
+    sha256 = "TODO",
+    cmake_args = [
+        "-DNO_PYVERBS=1",
+        "-DENABLE_STATIC=1",
+    ],
+    deps = [
+        "//packages/linux/network/libs/libnl",
+    ],
+)

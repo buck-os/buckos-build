@@ -1,0 +1,28 @@
+load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:use_flags.bzl", "set_use_flags")
+
+# LibreSSL - OpenSSL fork from the OpenBSD project
+
+autotools_package(
+    name = "libressl",
+    version = "4.0.0",
+    src_uri = "https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-4.0.0.tar.gz",
+    sha256 = "4d841955f0acc3dfc71d0e3dd35f283af461222350e26843fea9731c0246a1e4",
+    description = "OpenSSL fork from the OpenBSD project",
+    homepage = "https://www.libressl.org/",
+    license = "OpenSSL ISC",
+    iuse = ["static-libs", "asm"],
+    use_defaults = ["asm"],
+    use_configure = {
+        "static-libs": "--enable-static",
+        "-static-libs": "--disable-static",
+        "asm": "--enable-asm",
+        "-asm": "--disable-asm",
+    },
+    use_deps = {},
+    configure_args = [
+        "--enable-shared",
+    ],
+    deps = [],
+    visibility = ["PUBLIC"],
+)

@@ -1,0 +1,22 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "rocm_composable_kernel",
+    version = "1.1.0",
+    src_uri = "https://github.com/ROCmSoftwarePlatform/composable_kernel/archive/refs/tags/v1.1.0.tar.gz",
+    sha256 = "TODO",
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_INSTALL_PREFIX=/opt/rocm",
+        "-DCK_ENABLE_INT8=ON",
+        "-DCK_ENABLE_FP8=ON",
+        "-DCK_ENABLE_BF8=ON",
+        "-DCK_ENABLE_FP16=ON",
+        "-DCK_ENABLE_FP32=ON",
+        "-DCK_ENABLE_FP64=ON",
+        "-DCK_ENABLE_BF16=ON",
+        "-DBUILD_TESTING=OFF",
+    ],
+    deps = [],
+    maintainers = ["amdgpu_fbcode_enablement"],
+)

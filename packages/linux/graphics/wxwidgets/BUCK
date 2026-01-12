@@ -1,0 +1,22 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "wxwidgets",
+    version = "3.0.4",
+    src_uri = "https://github.com/wxWidgets/wxWidgets/releases/download/v3.0.4/wxWidgets-3.0.4.tar.bz2",
+    sha256 = "96157f988d261b7368e5340afa1a0cad943768f35929c22841f62c25b17bf7f0",
+    configure_args = [
+        "--enable-unicode",
+        "--enable-shared",
+        "--with-gtk=3",
+        "--with-opengl",
+        "--enable-graphics_ctx",
+        "--disable-webview",
+        "--disable-mediactrl",
+    ],
+    deps = [
+        "//packages/linux/graphics/gtk3:gtk3",
+        "//packages/linux/dev-libs/glew:glew",
+    ],
+    visibility = ["PUBLIC"],
+)

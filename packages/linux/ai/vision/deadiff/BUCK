@@ -1,0 +1,14 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "deadiff",
+    version = "0.0.1",
+    src_uri = "https://github.com/bytedance/DEADiff/archive/refs/heads/main.tar.gz",
+    sha256 = "8bf3af2ff1442b7ac4a6284141699309dd159aad60f099b9c84a506f09b85894",
+    deps = [
+        "//packages/linux/dev-libs/python/pytorch:pytorch",
+        "//packages/linux/dev-libs/python/numpy:numpy",
+        "//packages/linux/dev-libs/python/tqdm:tqdm",
+        "//packages/linux/ai/ml-frameworks/transformers:transformers",
+    ],
+)

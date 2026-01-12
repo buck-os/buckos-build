@@ -1,0 +1,14 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "ethos-u-ml-embedded-evaluation-kit",
+    version = "24.11",
+    src_uri = "https://review.mlplatform.org/plugins/gitiles/ml/ethos-u/ml-embedded-evaluation-kit/+archive/refs/tags/24.11.tar.gz",
+    sha256 = "04e5e09335f5fa265e0d2b154a99213dc77e80975583ad5c832d1ebdeaa5a4ef",
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_C_STANDARD=11",
+        "-DCMAKE_CXX_STANDARD=17",
+    ],
+    deps = [],
+)

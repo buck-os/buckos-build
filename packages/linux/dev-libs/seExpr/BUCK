@@ -1,0 +1,24 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "seExpr",
+    version = "2.0",
+    src_uri = "https://github.com/wdas/SeExpr/archive/refs/heads/main.tar.gz",
+    sha256 = "a6ac43e9d51668272922ee95de20ffbd076bbab299532aa674e3e80fbbff5343",
+    description = "SeExpr - An expression language for shading and animation",
+    homepage = "https://github.com/wdas/SeExpr",
+    license = "Apache-2.0",
+    deps = [],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DENABLE_LLVM_BACKEND=OFF",
+        "-DENABLE_QT5=OFF",
+        "-DUSE_PYTHON=OFF",
+        "-DBUILD_UTILS=OFF",
+        "-DBUILD_DEMOS=OFF",
+        "-DBUILD_DOC=OFF",
+        "-DBUILD_TESTS=OFF",
+    ],
+    visibility = ["PUBLIC"],
+)

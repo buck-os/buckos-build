@@ -1,0 +1,39 @@
+load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+
+download_source(
+    name = "wasi-libc-src",
+    src_uri = "https://github.com/WebAssembly/wasi-libc/archive/refs/tags/wasi-sdk-24.tar.gz",
+    sha256 = "2e62e94a196644a9cd48eca2a26ab979f6965c971f04f1dfdf76ae67c487fd1b",
+)
+
+ebuild_package(
+    name = "wasi-libc",
+    source = ":wasi-libc-src",
+    version = "24",
+    category = "dev-libs",
+    description = "WASI libc implementation for WebAssembly",
+    homepage = "https://github.com/WebAssembly/wasi-libc",
+    license = "CC0-1.0 BSD-2-Clause MIT",
+
+    src_configure = """
+# wasi-libc uses a Makefile, no configure step needed
+""",
+
+    src_compile = """
+# Build wasi-libc using the Makefile
+# Requires wasm32-wasi-clang toolchain
+make -j$(nproc) \
+    WASM_CC="${WASM_CC:-clang}" \
+    WASM_AR="${WASM_AR:-llvm-ar}" \
+    WASM_NM="${WASM_NM:-llvm-nm}" \
+    SYSROOT="$PWD/sysroot"
+""",
+
+    src_install = """
+# Install the sysroot
+mkdir -p "$DESTDIR/usr/share/wasi-sysroot"
+cp -r sysroot/* "$DESTDIR/usr/share/wasi-sysroot/"
+""",
+
+    visibility = ["PUBLIC"],
+)

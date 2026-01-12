@@ -1,0 +1,42 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# x265 - HEVC/H.265 encoder
+
+cmake_package(
+    name = "x265",
+    version = "3.5",
+    src_uri = "https://bitbucket.org/multicoreware/x265_git/downloads/x265_3.5.tar.gz",
+    sha256 = "TODO",
+    description = "HEVC/H.265 encoder",
+    homepage = "https://www.videolan.org/developers/x265.html",
+    license = "GPL-2",
+    iuse = ["cli", "shared", "static", "asm", "pic", "numa", "10bit", "12bit"],
+    use_defaults = ["cli", "shared", "asm", "pic"],
+    deps = [],
+    use_deps = {
+        "numa": ["//packages/linux/system/libs/numa:numactl"],
+    },
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DENABLE_TESTS=OFF",
+    ],
+    use_cmake = {
+        "cli": "-DENABLE_CLI=ON",
+        "-cli": "-DENABLE_CLI=OFF",
+        "shared": "-DENABLE_SHARED=ON",
+        "-shared": "-DENABLE_SHARED=OFF",
+        "static": "-DSTATIC_LINK_CRT=ON",
+        "-static": "-DSTATIC_LINK_CRT=OFF",
+        "asm": "-DENABLE_ASSEMBLY=ON",
+        "-asm": "-DENABLE_ASSEMBLY=OFF",
+        "pic": "-DENABLE_PIC=ON",
+        "-pic": "-DENABLE_PIC=OFF",
+        "numa": "-DENABLE_LIBNUMA=ON",
+        "-numa": "-DENABLE_LIBNUMA=OFF",
+        "10bit": "-DHIGH_BIT_DEPTH=ON",
+        "-10bit": "-DHIGH_BIT_DEPTH=OFF",
+    },
+    # x265 source is in a subdirectory
+    source_subdir = "source",
+    visibility = ["PUBLIC"],
+)

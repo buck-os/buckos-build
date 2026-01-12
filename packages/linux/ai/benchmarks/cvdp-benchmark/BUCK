@@ -1,0 +1,19 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "cvdp_benchmark",
+    version = "0.1.0",
+    src_uri = "https://github.com/NVlabs/cvdp_benchmark/archive/refs/heads/main.tar.gz",
+    sha256 = "ab4de87781fddc476a6e8b051d946ca7e45733892af515a470bf3af4e6532d69",
+    description = "Computer Vision Data Processing Benchmark for AI/ML evaluation",
+    homepage = "https://github.com/NVlabs/cvdp_benchmark",
+    license = "Apache-2.0",
+    deps = [
+        "//packages/linux/lang/python:python",
+        "//packages/linux/dev-libs/python/numpy:numpy",
+        "//packages/linux/dev-libs/python/pyyaml:pyyaml",
+        "//packages/linux/dev-libs/python/requests:requests",
+        "//packages/linux/dev-libs/python/pydantic:pydantic",
+    ],
+    visibility = ["PUBLIC"],
+)

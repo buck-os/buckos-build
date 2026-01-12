@@ -1,0 +1,14 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "madrona",
+    version = "0.0.1.a03101c",
+    src_uri = "https://github.com/shacklettbp/madrona/archive/a03101cd5bdee7876c862be1fb47f04111963445.tar.gz",
+    sha256 = "TODO",
+    deps = [
+        "//packages/linux/dev-libs/math/eigen",
+    ],
+    cmake_args = [
+        "-DMADRONA_ENABLE_TESTS=OFF",
+    ],
+)

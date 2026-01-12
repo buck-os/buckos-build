@@ -1,0 +1,29 @@
+load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+
+download_source(
+    name = "appworld-src",
+    src_uri = "https://github.com/stonybrooknlp/appworld/archive/refs/tags/v0.2.0.tar.gz",
+    sha256 = "TODO",
+    signature_required = False,
+)
+
+ebuild_package(
+    name = "appworld",
+    source = ":appworld-src",
+    version = "0.2.0",
+    description = "A Controllable World of Apps and People for Benchmarking Function Calling and Interactive Coding Agents",
+    homepage = "https://appworld.dev/",
+    license = "Apache-2.0",
+    src_compile = """
+        cd src
+        python3 -m pip install --no-deps --target="$S/install" .
+    """,
+    src_install = """
+        mkdir -p "$DESTDIR/usr/lib/python3.12/site-packages"
+        cp -r "$S/install"/* "$DESTDIR/usr/lib/python3.12/site-packages/"
+    """,
+    bdepend = [
+        "//packages/linux/lang/python:python",
+    ],
+    visibility = ["PUBLIC"],
+)

@@ -1,0 +1,27 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "libphonenumber",
+    version = "8.13.33",
+    src_uri = "https://github.com/google/libphonenumber/archive/v8.13.33.tar.gz",
+    sha256 = "656c080c0fd713b9bed61efda4b006846d40914b5412d6d7082a5397653e2fef",
+    signature_required = False,
+    description = "Google's common library for parsing, formatting, and validating international phone numbers",
+    homepage = "https://github.com/google/libphonenumber",
+    license = "Apache-2.0",
+    cmake_args = [
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DUSE_BOOST=ON",
+        "-DUSE_ICU_REGEXP=ON",
+        "-DUSE_ALTERNATE_FORMATS=ON",
+        "-DBUILD_TESTING=OFF",
+        "-DBUILD_GEOCODER=OFF",
+        "-DUSE_STDMUTEX=ON",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/text/icu:icu",
+        "//packages/linux/dev-libs/serialization/protobuf:protobuf",
+        "//packages/linux/dev-libs/boost:boost",
+    ],
+    visibility = ["PUBLIC"],
+)

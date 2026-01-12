@@ -1,0 +1,38 @@
+load("//defs:package_defs.bzl", "download_source", "binary_package")
+
+download_source(
+    name = "puffin-lz4-src",
+    src_uri = "https://github.com/nicholasjng/puffin/archive/1e4473b3a02c38a06ff25437128179273e7934da.tar.gz",
+    sha256 = "TODO",
+    signature_required = False,
+)
+
+binary_package(
+    name = "puffin-lz4",
+    srcs = [":puffin-lz4-src"],
+    version = "1.0.0",
+    description = "Puffin - deterministic DEFLATE recompression with LZ4 support",
+    homepage = "https://github.com/nicholasjng/puffin",
+    license = "BSD-2-Clause",
+    install_script = """
+        cd $SRCS
+
+        # Build libpuffin shared library
+        make -j$(nproc) CXXFLAGS="-O3 -fPIC -std=c++14 -Wall" CPPFLAGS="-I../ -Isrc/include" LDLIBS="-lgflags -lglog -lprotobuf-lite -llz4 -lz -lrsync"
+
+        # Install library
+        mkdir -p $OUT/usr/lib
+        cp libpuffin.so $OUT/usr/lib/
+
+        # Install headers
+        mkdir -p $OUT/usr/include/puffin_lz4
+        cp src/include/puffin_lz4/*.h $OUT/usr/include/puffin_lz4/
+    """,
+    deps = [
+        "//packages/linux/dev-libs/google/glog",
+        "//packages/linux/dev-libs/compression/lz4",
+        "//packages/linux/dev-libs/serialization/protobuf",
+        "//packages/linux/dev-libs/librsync",
+    ],
+    visibility = ["PUBLIC"],
+)

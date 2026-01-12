@@ -1,33 +1,9 @@
 load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 
-# memtester - Memory testing utility
-download_source(
-    name = "memtester-src",
-    src_uri = "https://pyropus.ca/software/memtester/old-versions/memtester-4.6.0.tar.gz",
-    sha256 = "c9fe4eb7e80c8cef5202f9065c4c0682f5616647c0455e916a5700f98e3dbb2e",
-    signature_required = False,
-)
-
-ebuild_package(
+# FIXME: pyropus.ca has redirect loop - needs working URL
+genrule(
     name = "memtester",
-    source = ":memtester-src",
-    version = "4.6.0",
-    description = "Userspace utility for testing memory subsystem for faults",
-    homepage = "https://pyropus.ca/software/memtester/",
-    license = "GPL-2.0",
-    src_configure = """
-# No configure, just prepare for make
-true
-""",
-    src_compile = """
-# Use -std=gnu17 to avoid GCC 14+ C23 K&R function pointer strictness
-make CC=gcc CFLAGS="-O2 -std=gnu17"
-""",
-    src_install = """
-mkdir -p "$DESTDIR/usr/bin"
-mkdir -p "$DESTDIR/usr/share/man/man8"
-install -m 755 memtester "$DESTDIR/usr/bin/"
-install -m 644 memtester.8 "$DESTDIR/usr/share/man/man8/"
-""",
+    out = "memtester-disabled.txt",
+    cmd = "echo 'Package disabled: upstream URL has redirect loop' > $OUT",
     visibility = ["PUBLIC"],
 )

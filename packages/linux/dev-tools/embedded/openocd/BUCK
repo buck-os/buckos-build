@@ -1,0 +1,20 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "openocd",
+    version = "0.12.0",
+    src_uri = "https://downloads.sourceforge.net/project/openocd/openocd/0.12.0/openocd-0.12.0.tar.gz",
+    sha256 = "bb367fd19ab96a65ee5b269b60326d9f36bca1c64d9865cc36985d3651aba563",
+    description = "Open On-Chip Debugger - JTAG/SWD debugger for embedded systems",
+    homepage = "https://openocd.org/",
+    license = "GPL-2.0",
+    configure_args = [
+        "--prefix=/usr",
+        "--disable-werror",
+    ],
+    deps = [
+        "//packages/linux/system/libs/libusb:libusb",
+        "//packages/linux/system/libs/libftdi:libftdi",
+    ],
+    visibility = ["PUBLIC"],
+)

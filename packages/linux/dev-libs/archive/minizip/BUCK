@@ -1,0 +1,41 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# minizip - Zip file manipulation library
+
+cmake_package(
+    name = "minizip",
+    version = "4.0.4",
+    src_uri = "https://github.com/zlib-ng/minizip-ng/archive/refs/tags/4.0.4.tar.gz",
+    sha256 = "TODO",
+    description = "Zip file manipulation library from minizip-ng project",
+    homepage = "https://github.com/zlib-ng/minizip-ng",
+    license = "Zlib",
+    iuse = ["bzip2", "lzma", "zlib", "zstd", "openssl", "libbsd"],
+    use_defaults = ["zlib", "zstd"],
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/dev-libs/compression/bzip2:bzip2",
+        "//packages/linux/dev-libs/compression/zstd:zstd",
+    ],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DMZ_BUILD_TESTS=OFF",
+        "-DMZ_BUILD_UNIT_TESTS=OFF",
+    ],
+    use_cmake = {
+        "bzip2": "-DMZ_BZIP2=ON",
+        "-bzip2": "-DMZ_BZIP2=OFF",
+        "lzma": "-DMZ_LZMA=ON",
+        "-lzma": "-DMZ_LZMA=OFF",
+        "zlib": "-DMZ_ZLIB=ON",
+        "-zlib": "-DMZ_ZLIB=OFF",
+        "zstd": "-DMZ_ZSTD=ON",
+        "-zstd": "-DMZ_ZSTD=OFF",
+        "openssl": "-DMZ_OPENSSL=ON",
+        "-openssl": "-DMZ_OPENSSL=OFF",
+        "libbsd": "-DMZ_LIBBSD=ON",
+        "-libbsd": "-DMZ_LIBBSD=OFF",
+    },
+    visibility = ["PUBLIC"],
+)

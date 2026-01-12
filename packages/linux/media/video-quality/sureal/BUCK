@@ -1,0 +1,19 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "sureal",
+    version = "0.5.3",
+    src_uri = "https://github.com/Netflix/sureal/archive/refs/tags/v0.5.3.tar.gz",
+    sha256 = "TODO",
+    description = "Subjective Recovery Analysis toolbox for video quality assessment",
+    homepage = "https://github.com/Netflix/sureal",
+    license = "Apache-2.0",
+    deps = [
+        "//packages/linux/lang/python:python",
+        "//packages/linux/dev-libs/python/numpy:numpy",
+        "//packages/linux/dev-libs/python/scipy:scipy",
+        "//packages/linux/dev-libs/python/matplotlib:matplotlib",
+        "//packages/linux/dev-libs/python/pandas:pandas",
+    ],
+    visibility = ["PUBLIC"],
+)

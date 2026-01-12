@@ -1,0 +1,17 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "qwen-image",
+    version = "0.35.0.dev0",
+    src_uri = "https://github.com/huggingface/diffusers/archive/ba2ba9019f76fd96c532240ed07d3f98343e4041.tar.gz",
+    sha256 = "TODO",
+    deps = [
+        "//packages/linux/dev-libs/python/filelock",
+        "//packages/linux/dev-libs/python/huggingface-hub",
+        "//packages/linux/dev-libs/python/numpy",
+        "//packages/linux/dev-libs/python/pillow",
+        "//packages/linux/dev-libs/python/regex",
+        "//packages/linux/dev-libs/python/requests",
+        "//packages/linux/dev-libs/python/safetensors",
+    ],
+)

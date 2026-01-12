@@ -1,0 +1,18 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "supersonic",
+    version = "0.9.4",
+    src_uri = "https://github.com/plumonito/supersonic/archive/v0.9.4.tar.gz",
+    sha256 = "TODO",
+    configure_args = [
+        "--with-re2",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/boost",
+        "//packages/linux/dev-libs/google/gflags",
+        "//packages/linux/dev-libs/google/glog",
+        "//packages/linux/dev-libs/serialization/protobuf",
+        "//packages/linux/dev-libs/text/re2",
+    ],
+)

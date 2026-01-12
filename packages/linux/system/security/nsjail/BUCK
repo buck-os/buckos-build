@@ -1,0 +1,36 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "nsjail",
+    version = "3.0",
+    src_uri = "https://github.com/google/nsjail/archive/refs/tags/3.0.tar.gz",
+    sha256 = "cfa66d3ed136b2e221752287b95e544915e8a6760aa866f023b604d14a374919",
+    description = "A light-weight process isolation tool using Linux namespaces and seccomp-bpf",
+    homepage = "https://github.com/google/nsjail",
+    license = "Apache-2.0",
+    deps = [
+        "//packages/linux/core/libnl:libnl",
+        "//packages/linux/dev-libs/serialization/protobuf:protobuf",
+    ],
+    pre_configure = """
+# Initialize kafel submodule (it's bundled in the source)
+if [ ! -f kafel/Makefile ]; then
+    echo "Error: kafel submodule not found in source"
+    exit 1
+fi
+# Build kafel first
+make -C kafel
+""",
+    src_configure = "true",
+    src_compile = """
+# Generate protobuf files
+protoc --cpp_out=. config.proto
+# Compile nsjail
+make -j$(nproc) CXXFLAGS="-O2 -c -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -fPIE -std=c++11 -fno-exceptions -I$(pkg-config --cflags protobuf | tr ' ' '\n' | grep -E '^-I' | sed 's/-I//') -Ikafel/include" LDFLAGS="-pie -Wl,-z,noexecstack -lpthread $(pkg-config --libs protobuf) $(pkg-config --libs libnl-route-3.0)"
+""",
+    src_install = """
+install -Dm755 nsjail "$DESTDIR/usr/bin/nsjail"
+install -Dm644 nsjail.1 "$DESTDIR/usr/share/man/man1/nsjail.1"
+""",
+    visibility = ["PUBLIC"],
+)

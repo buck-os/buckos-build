@@ -1,0 +1,25 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# cnpy - Library to read/write .npy and .npz files in C++
+
+cmake_package(
+    name = "cnpy",
+    version = "1.0.0",
+    source = "//third-party/cnpy:cnpy",
+    description = "Library to read/write .npy and .npz files in C++",
+    homepage = "https://github.com/rogersce/cnpy",
+    license = "MIT",
+    iuse = ["static"],
+    use_defaults = [],
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+    ],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+    ],
+    use_options = {
+        "static": "-DENABLE_STATIC=ON",
+    },
+    visibility = ["PUBLIC"],
+)

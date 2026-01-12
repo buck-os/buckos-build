@@ -1,0 +1,37 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# MySQL - The world's most popular open source database
+
+cmake_package(
+    name = "mysql",
+    version = "8.3.0",
+    src_uri = "https://dev.mysql.com/get/Downloads/MySQL-8.3/mysql-8.3.0.tar.gz",
+    sha256 = "TODO",
+    description = "The world's most popular open source database",
+    homepage = "https://www.mysql.com/",
+    license = "GPL-2.0",
+    iuse = ["server", "embedded", "archive", "blackhole", "federated", "partition"],
+    use_defaults = ["server"],
+    deps = [
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/core/ncurses:ncurses",
+    ],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DWITH_UNIT_TESTS=OFF",
+        "-DWITH_BOOST=bundled",
+        "-DDOWNLOAD_BOOST=ON",
+        "-DWITH_SSL=system",
+        "-DWITH_ZLIB=system",
+        "-DWITH_EDITLINE=bundled",
+    ],
+    use_cmake = {
+        "server": "-DWITH_SERVER=ON",
+        "-server": "-DWITH_SERVER=OFF",
+        "embedded": "-DWITH_EMBEDDED_SERVER=ON",
+        "-embedded": "-DWITH_EMBEDDED_SERVER=OFF",
+    },
+    visibility = ["PUBLIC"],
+)

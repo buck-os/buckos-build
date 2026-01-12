@@ -1,0 +1,37 @@
+load("//defs:package_defs.bzl", "download_source", "binary_package")
+
+download_source(
+    name = "cpp-date-src",
+    src_uri = "https://github.com/HowardHinnant/date/archive/refs/tags/v3.0.1.tar.gz",
+    sha256 = "7a390f200f0ccd207e8cff6757e04817c1a0aec3e327b006b7eb451c57ee3538",
+    signature_required = False,
+)
+
+binary_package(
+    name = "cpp-date",
+    srcs = [":cpp-date-src"],
+    version = "3.0.1",
+    description = "Howard Hinnant's date and time library based on C++11/14/17 <chrono>",
+    homepage = "https://github.com/HowardHinnant/date",
+    license = "MIT",
+    install_script = """
+        cd "$SRCS"
+        mkdir -p build && cd build
+        cmake .. \
+            -DCMAKE_INSTALL_PREFIX=/usr \
+            -DCMAKE_INSTALL_LIBDIR=lib64 \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_SHARED_LIBS=ON \
+            -DBUILD_TZ_LIB=ON \
+            -DUSE_SYSTEM_TZ_DB=ON \
+            -DENABLE_DATE_TESTING=OFF \
+            -DDISABLE_STRING_VIEW=OFF \
+            -DCOMPILE_WITH_C_LOCALE=OFF
+        make -j$(nproc)
+        make install DESTDIR="$OUT"
+    """,
+    deps = [
+        "//packages/linux/core/libcurl:curl",
+    ],
+    visibility = ["PUBLIC"],
+)

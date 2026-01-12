@@ -1,0 +1,14 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "hstk",
+    version = "4.6.6.1",
+    src_uri = "https://github.com/hammer-space/hstk/archive/refs/tags/v4.6.6.1.tar.gz",
+    sha256 = "211839c76f785f2a5835ee924aa7d95371af92b9b3e4c8e7a6e9038a3030b808",
+    deps = [
+        "//packages/linux/lang/python:python",
+        "//packages/linux/dev-libs/python/click:click",
+        "//packages/linux/dev-libs/python/six:six",
+    ],
+    visibility = ["PUBLIC"],
+)

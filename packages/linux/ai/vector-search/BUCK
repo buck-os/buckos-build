@@ -1,0 +1,29 @@
+# =============================================================================
+# Vector Search - Fast similarity search and approximate nearest neighbor libraries
+# =============================================================================
+#
+# This category contains libraries for vector similarity search and approximate
+# nearest neighbor (ANN) search, commonly used in:
+# - Recommendation systems
+# - Semantic search
+# - Image and video retrieval
+# - Large-scale machine learning applications
+#
+# =============================================================================
+
+# All vector search packages
+filegroup(
+    name = "vector-search",
+    srcs = [
+        "//packages/linux/ai/vector-search/diskann:diskann",
+    ],
+    default_target_platform = "//platforms:linux-target",
+    visibility = ["PUBLIC"],
+)
+
+# Convenience alias
+alias(
+    name = "diskann",
+    actual = "//packages/linux/ai/vector-search/diskann:diskann",
+    visibility = ["PUBLIC"],
+)

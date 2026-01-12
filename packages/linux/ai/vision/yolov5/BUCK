@@ -1,0 +1,15 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "yolov5",
+    version = "7.0.11",
+    src_uri = "https://github.com/fcakyon/yolov5-pip/archive/refs/tags/v7.0.11.tar.gz",
+    sha256 = "TODO",
+    deps = [
+        "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
+        "//packages/linux/ai/vision/opencv:opencv",
+        "//packages/linux/dev-libs/python/numpy:numpy",
+        "//packages/linux/dev-libs/python/scipy:scipy",
+    ],
+    maintainers = ["frl_conductor"],
+)

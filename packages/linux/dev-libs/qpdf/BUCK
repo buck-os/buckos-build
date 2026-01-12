@@ -1,0 +1,13 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "qpdf",
+    version = "10.6.2",
+    src_uri = "https://github.com/qpdf/qpdf/releases/download/v10.6.2/qpdf-10.6.2.tar.gz",
+    sha256 = "TODO",
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/media/image/libjpeg-turbo:libjpeg-turbo",
+    ],
+    visibility = ["PUBLIC"],
+)

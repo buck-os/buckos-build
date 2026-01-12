@@ -1,0 +1,19 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "FovVideoVDP",
+    version = "1.2.2",
+    src_uri = "https://github.com/gfxdisp/FovVideoVDP/archive/v1.2.2.tar.gz",
+    sha256 = "TODO",
+    deps = [
+        "//packages/linux/dev-python/numpy",
+        "//packages/linux/dev-python/scipy",
+        "//packages/linux/dev-python/ffmpeg-python",
+        "//packages/linux/ai/ml-frameworks/pytorch",
+        "//packages/linux/media/video/ffmpeg",
+        "//packages/linux/dev-python/imageio",
+        "//packages/linux/dev-python/matplotlib",
+        "//packages/linux/dev-python/PyEXR",
+    ],
+    visibility = ["PUBLIC"],
+)

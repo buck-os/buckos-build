@@ -1,0 +1,27 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# libtar - C library for manipulating POSIX tar files
+
+autotools_package(
+    name = "libtar",
+    version = "1.2.20",
+    src_uri = "https://repo.or.cz/libtar.git/snapshot/v1.2.20.tar.gz",
+    sha256 = "5890e3acbe7da72017dd9b4116e9e76ed39d0b9b37690c5fd5289daf5026650d",
+    description = "C library for manipulating POSIX tar files",
+    homepage = "https://repo.or.cz/libtar.git",
+    license = "BSD-3-Clause",
+    iuse = ["zlib"],
+    use_defaults = ["zlib"],
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+    ],
+    configure_args = [
+        "--enable-shared",
+        "--disable-static",
+    ],
+    use_configure = {
+        "zlib": "--with-zlib",
+        "-zlib": "--without-zlib",
+    },
+    visibility = ["PUBLIC"],
+)

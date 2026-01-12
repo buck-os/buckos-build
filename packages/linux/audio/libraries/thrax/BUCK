@@ -1,0 +1,17 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "thrax",
+    version = "1.2.9",
+    src_uri = "https://www.openfst.org/twiki/pub/GRM/ThraxDownload/thrax-1.2.9.tar.gz",
+    sha256 = "3cfbc003609d208d50d98659166086d4a6dd341ce6697e16370f5f7ae414f2b0",
+    configure_args = [
+        "--enable-static",
+        "--enable-shared",
+    ],
+    deps = [
+        "//packages/linux/audio/libraries/openfst-kaldi:openfst-kaldi",
+    ],
+    maintainers = ["speech_model_infra"],
+    visibility = ["PUBLIC"],
+)

@@ -1,0 +1,26 @@
+load("//defs:package_defs.bzl", "simple_package")
+
+# HAProxy - The Reliable, High Performance TCP/HTTP Load Balancer
+
+simple_package(
+    name = "haproxy",
+    version = "2.9.6",
+    src_uri = "https://www.haproxy.org/download/2.9/src/haproxy-2.9.6.tar.gz",
+    sha256 = "TODO",
+    description = "The Reliable, High Performance TCP/HTTP Load Balancer",
+    homepage = "https://www.haproxy.org/",
+    license = "GPL-2.0",
+    iuse = ["ssl", "lua", "prometheus", "pcre2", "zlib"],
+    use_defaults = ["ssl", "pcre2", "zlib"],
+    deps = [],
+    use_deps = {
+        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
+        "pcre2": ["//packages/linux/system/libs/utility/pcre2:pcre2"],
+        "zlib": ["//packages/linux/core/zlib:zlib"],
+    },
+    build_commands = [
+        "make TARGET=linux-glibc USE_OPENSSL=1 USE_ZLIB=1 USE_PCRE2=1 PREFIX=${PREFIX}",
+        "make install PREFIX=${PREFIX}",
+    ],
+    visibility = ["PUBLIC"],
+)

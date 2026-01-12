@@ -1,0 +1,22 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+new file mode 100644
+index 0000000..1234567
+--- /dev/null
++++ b/CMakeLists.txt
+@@ -0,0 +1,16 @@
++cmake_minimum_required(VERSION 3.10)
++project(half VERSION 2.2.0 LANGUAGES CXX)
++
++add_library(half INTERFACE)
++target_include_directories(half INTERFACE
++    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
++    $<INSTALL_INTERFACE:include>
++)
++
++include(GNUInstallDirs)
++install(TARGETS half EXPORT halfTargets)
++install(EXPORT halfTargets DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/half)
++install(DIRECTORY half/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/half)
++install(FILES half/half.hpp DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
++
++message(STATUS "half ${PROJECT_VERSION} configured as header-only library")

@@ -1,0 +1,274 @@
+# =============================================================================
+# X.Org / X11 Libraries for BuckOs Linux
+# =============================================================================
+# This provides the complete X11 client libraries needed for X11 applications.
+# Individual libraries are in their own subdirectories.
+
+# =============================================================================
+# CONVENIENCE GROUPS
+# =============================================================================
+
+# Protocol headers and transport - foundation layer
+filegroup(
+    name = "x11-proto",
+    srcs = [
+        "//packages/linux/graphics/xorg/xorgproto:xorgproto",
+        "//packages/linux/graphics/xorg/xtrans:xtrans",
+    ],
+    default_target_platform = "//platforms:linux-target",
+    visibility = ["PUBLIC"],
+)
+
+# Authentication and connection - required for any X11 app
+filegroup(
+    name = "x11-auth",
+    srcs = [
+        ":x11-proto",
+        "//packages/linux/graphics/xorg/libXau:libXau",
+        "//packages/linux/graphics/xorg/libXdmcp:libXdmcp",
+    ],
+    default_target_platform = "//platforms:linux-target",
+    visibility = ["PUBLIC"],
+)
+
+# XCB layer - modern X11 protocol binding
+filegroup(
+    name = "xcb-core",
+    srcs = [
+        ":x11-auth",
+        "//packages/linux/graphics/xorg/libxcb:libxcb",
+    ],
+    default_target_platform = "//platforms:linux-target",
+    visibility = ["PUBLIC"],
+)
+
+# XCB utilities - convenience libraries on top of XCB
+filegroup(
+    name = "xcb-utils",
+    srcs = [
+        ":xcb-core",
+        "//packages/linux/graphics/xorg/xcb-util:xcb-util",
+        "//packages/linux/graphics/xorg/xcb-util-wm:xcb-util-wm",
+        "//packages/linux/graphics/xorg/xcb-util-image:xcb-util-image",
+        "//packages/linux/graphics/xorg/xcb-util-keysyms:xcb-util-keysyms",
+        "//packages/linux/graphics/xorg/xcb-util-renderutil:xcb-util-renderutil",
+        "//packages/linux/graphics/xorg/xcb-util-cursor:xcb-util-cursor",
+    ],
+    default_target_platform = "//platforms:linux-target",
+    visibility = ["PUBLIC"],
+)
+
+# Core X11 libraries - minimum needed for most X11 apps
+filegroup(
+    name = "x11-core",
+    srcs = [
+        ":xcb-core",
+        "//packages/linux/graphics/xorg/libX11:libX11",
+        "//packages/linux/graphics/xorg/libXext:libXext",
+    ],
+    default_target_platform = "//platforms:linux-target",
+    visibility = ["PUBLIC"],
+)
+
+# Session management - for apps that need session support
+filegroup(
+    name = "x11-session",
+    srcs = [
+        ":x11-core",
+        "//packages/linux/graphics/xorg/libICE:libICE",
+        "//packages/linux/graphics/xorg/libSM:libSM",
+    ],
+    default_target_platform = "//platforms:linux-target",
+    visibility = ["PUBLIC"],
+)
+
+# Toolkit libraries - X Toolkit Intrinsics and related
+filegroup(
+    name = "x11-toolkit",
+    srcs = [
+        ":x11-session",
+        "//packages/linux/graphics/xorg/libXt:libXt",
+        "//packages/linux/graphics/xorg/libXmu:libXmu",
+        "//packages/linux/graphics/xorg/libXpm:libXpm",
+        "//packages/linux/graphics/xorg/libXaw:libXaw",
+    ],
+    default_target_platform = "//platforms:linux-target",
+    visibility = ["PUBLIC"],
+)
+
+# Rendering extensions - for compositing, antialiasing, etc.
+filegroup(
+    name = "x11-render",
+    srcs = [
+        ":x11-core",
+        "//packages/linux/graphics/xorg/libXrender:libXrender",
+        "//packages/linux/graphics/xorg/libXfixes:libXfixes",
+        "//packages/linux/graphics/xorg/libXdamage:libXdamage",
+        "//packages/linux/graphics/xorg/libXcomposite:libXcomposite",
+    ],
+    default_target_platform = "//platforms:linux-target",
+    visibility = ["PUBLIC"],
+)
+
+# Input extensions - for advanced input handling
+filegroup(
+    name = "x11-input",
+    srcs = [
+        ":x11-core",
+        "//packages/linux/graphics/xorg/libXi:libXi",
+        "//packages/linux/graphics/xorg/libXtst:libXtst",
+    ],
+    default_target_platform = "//platforms:linux-target",
+    visibility = ["PUBLIC"],
+)
+
+# Display extensions - for multi-monitor, video modes
+filegroup(
+    name = "x11-display",
+    srcs = [
+        ":x11-core",
+        "//packages/linux/graphics/xorg/libXrandr:libXrandr",
+        "//packages/linux/graphics/xorg/libXinerama:libXinerama",
+        "//packages/linux/graphics/xorg/libXxf86vm:libXxf86vm",
+        "//packages/linux/graphics/xorg/libXScrnSaver:libXScrnSaver",
+    ],
+    default_target_platform = "//platforms:linux-target",
+    visibility = ["PUBLIC"],
+)
+
+# Video extensions
+filegroup(
+    name = "x11-video",
+    srcs = [
+        ":x11-core",
+        "//packages/linux/graphics/xorg/libXv:libXv",
+    ],
+    default_target_platform = "//platforms:linux-target",
+    visibility = ["PUBLIC"],
+)
+
+# Cursor handling
+filegroup(
+    name = "x11-cursor",
+    srcs = [
+        ":x11-render",
+        "//packages/linux/graphics/xorg/libXcursor:libXcursor",
+    ],
+    default_target_platform = "//platforms:linux-target",
+    visibility = ["PUBLIC"],
+)
+
+# Font rendering - Xft and dependencies
+filegroup(
+    name = "x11-fonts",
+    srcs = [
+        ":x11-render",
+        "//packages/linux/graphics/xorg/libXft:libXft",
+    ],
+    default_target_platform = "//platforms:linux-target",
+    visibility = ["PUBLIC"],
+)
+
+# Keyboard configuration
+filegroup(
+    name = "x11-keyboard",
+    srcs = [
+        ":x11-core",
+        "//packages/linux/graphics/xorg/xkeyboard-config:xkeyboard-config",
+        "//packages/linux/graphics/xorg/libxkbfile:libxkbfile",
+        "//packages/linux/graphics/xorg/libxkbcommon:libxkbcommon",
+    ],
+    default_target_platform = "//platforms:linux-target",
+    visibility = ["PUBLIC"],
+)
+
+# Extended X11 libraries - commonly needed extensions
+filegroup(
+    name = "x11-extended",
+    srcs = [
+        ":x11-core",
+        ":x11-render",
+        ":x11-input",
+        ":x11-cursor",
+    ],
+    default_target_platform = "//platforms:linux-target",
+    visibility = ["PUBLIC"],
+)
+
+# Full X11 libraries - all client libraries
+filegroup(
+    name = "x11-full",
+    srcs = [
+        ":x11-extended",
+        ":x11-session",
+        ":x11-toolkit",
+        ":x11-display",
+        ":x11-video",
+        ":x11-fonts",
+        ":x11-keyboard",
+        ":xcb-utils",
+    ],
+    default_target_platform = "//platforms:linux-target",
+    visibility = ["PUBLIC"],
+)
+
+# Alias for backwards compatibility
+alias(
+    name = "xorg-libs",
+    actual = ":x11-full",
+    visibility = ["PUBLIC"],
+)
+
+# =============================================================================
+# COMMON USE-CASE BUNDLES
+# =============================================================================
+
+# GTK3/4 dependencies - what GTK apps typically need
+filegroup(
+    name = "gtk-deps",
+    srcs = [
+        ":x11-extended",
+        ":x11-display",
+        ":x11-keyboard",
+        ":x11-fonts",
+    ],
+    default_target_platform = "//platforms:linux-target",
+    visibility = ["PUBLIC"],
+)
+
+# Qt dependencies - what Qt apps typically need
+filegroup(
+    name = "qt-deps",
+    srcs = [
+        ":x11-extended",
+        ":x11-display",
+        ":x11-keyboard",
+        ":x11-fonts",
+        ":xcb-utils",
+    ],
+    default_target_platform = "//platforms:linux-target",
+    visibility = ["PUBLIC"],
+)
+
+# SDL2 dependencies - what SDL2 apps typically need
+filegroup(
+    name = "sdl2-deps",
+    srcs = [
+        ":x11-extended",
+        ":x11-display",
+        ":x11-video",
+    ],
+    default_target_platform = "//platforms:linux-target",
+    visibility = ["PUBLIC"],
+)
+
+# OpenGL/GLX dependencies - for OpenGL apps
+filegroup(
+    name = "glx-deps",
+    srcs = [
+        ":x11-core",
+        ":x11-display",
+    ],
+    default_target_platform = "//platforms:linux-target",
+    visibility = ["PUBLIC"],
+)

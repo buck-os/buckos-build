@@ -1,0 +1,24 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "nvshmem",
+    version = "3.4.5",
+    src_uri = "https://github.com/NVIDIA/nvshmem/archive/refs/tags/v3.4.5-0.tar.gz",
+    sha256 = "TODO",
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DCMAKE_CUDA_ARCHITECTURES=70;75;80;86;89;90",
+        "-DNVSHMEM_USE_NCCL=ON",
+        "-DNVSHMEM_MPI_SUPPORT=OFF",
+        "-DNVSHMEM_IBRC_SUPPORT=ON",
+        "-DNVSHMEM_IBDEVX_SUPPORT=ON",
+        "-DNVSHMEM_UCX_SUPPORT=OFF",
+        "-DNVSHMEM_BUILD_PYTHON_LIB=OFF",
+    ],
+    deps = [
+        "//packages/linux/system/gpu/libraries/nccl",
+        "//packages/linux/network/libs/rdma-core",
+    ],
+    visibility = ["PUBLIC"],
+)

@@ -1,0 +1,20 @@
+load("//defs:package_defs.bzl", "simple_package")
+
+# linenoise - A small self-contained alternative to readline
+
+simple_package(
+    name = "linenoise",
+    version = "1.0",
+    src_uri = "https://github.com/antirez/linenoise/archive/refs/heads/master.tar.gz",
+    sha256 = "TODO",
+    description = "A small self-contained alternative to readline and libedit",
+    homepage = "https://github.com/antirez/linenoise",
+    license = "BSD-2-Clause",
+    deps = [],
+    build_commands = [
+        "make",
+        "install -Dm755 linenoise.h ${PREFIX}/include/linenoise.h",
+        "install -Dm755 linenoise.c ${PREFIX}/src/linenoise.c",
+    ],
+    visibility = ["PUBLIC"],
+)

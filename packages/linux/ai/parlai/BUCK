@@ -1,0 +1,27 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "parlai",
+    version = "1.7.1",
+    src_uri = "https://github.com/facebookresearch/ParlAI/archive/refs/tags/v1.7.1.tar.gz",
+    sha256 = "TODO",
+    deps = [
+        "//packages/linux/dev-libs/python/coloredlogs",
+        "//packages/linux/ai/nlp/datasets",
+        "//packages/linux/dev-libs/python/emoji",
+        "//packages/linux/dev-libs/python/fuzzywuzzy",
+        "//packages/linux/dev-libs/python/nltk",
+        "//packages/linux/dev-libs/python/numpy",
+        "//packages/linux/dev-libs/python/pandas",
+        "//packages/linux/dev-libs/python/pillow",
+        "//packages/linux/dev-libs/python/pyyaml",
+        "//packages/linux/dev-libs/python/regex",
+        "//packages/linux/dev-libs/python/requests",
+        "//packages/linux/dev-libs/python/scikit-learn",
+        "//packages/linux/dev-libs/python/scipy",
+        "//packages/linux/dev-libs/python/tokenizers",
+        "//packages/linux/ai/ml-frameworks/pytorch",
+        "//packages/linux/dev-libs/python/tqdm",
+    ],
+    maintainers = ["hodgesd"],
+)

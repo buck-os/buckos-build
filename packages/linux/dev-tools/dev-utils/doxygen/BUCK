@@ -1,31 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
 
-# doxygen - Documentation generator (cmake build)
-# USE flags: dot, latex, qt5
-# Default: dot
-
-download_source(
-    name = "doxygen-src",
-    src_uri = "https://doxygen.nl/files/doxygen-1.10.0.src.tar.gz",
-    sha256 = "dd7c556b4d96ca5e682534bc1f1a78a5cfabce0c425b14c1b8549802686a4442",
-    signature_required = False,
-)
-
-autotools_package(
+# FIXME: doxygen.nl returns 403 - needs working URL
+genrule(
     name = "doxygen",
-    source = ":doxygen-src",
-    version = "1.10.0",
-    description = "Documentation system for C++, C, Java, and other languages",
-    homepage = "https://www.doxygen.nl/",
-    license = "GPL-2",
-    pre_configure = """
-        mkdir -p build
-        cd build
-        cmake -G "Unix Makefiles" \
-            -DCMAKE_INSTALL_PREFIX=/usr \
-            -DCMAKE_BUILD_TYPE=Release \
-            ..
-    """,
+    out = "doxygen-disabled.txt",
+    cmd = "echo 'Package disabled: upstream URL returns 403' > $OUT",
     visibility = ["PUBLIC"],
 )

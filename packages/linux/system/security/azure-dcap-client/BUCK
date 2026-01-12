@@ -1,0 +1,14 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "azure-dcap-client",
+    version = "1.12.3",
+    src_uri = "https://github.com/microsoft/Azure-DCAP-Client/archive/refs/tags/v1.12.3.tar.gz",
+    sha256 = "TODO",
+    configure_args = [],
+    deps = [
+        "//packages/linux/network/libs/curl:curl",
+        "//packages/linux/dev-libs/json/nlohmann-json:nlohmann-json",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+    ],
+)

@@ -1,0 +1,52 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "spz",
+    version = "bf30541",
+    src_uri = "https://github.com/nianticlabs/spz/archive/bf305418722bb0663a3074f3828699df44b8c1d2.tar.gz",
+    sha256 = "TODO",
+    description = "Compressed 3D Gaussian splat file format library",
+    homepage = "https://github.com/nianticlabs/spz",
+    license = "MIT",
+    deps = [
+        "//packages/linux/core/zlib",
+    ],
+    pre_configure = """
+# Create CMakeLists.txt for spz library
+cat > CMakeLists.txt << 'EOF'
+cmake_minimum_required(VERSION 3.10)
+project(spz CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+find_package(ZLIB REQUIRED)
+
+add_library(spz SHARED
+    src/cc/load-spz.cc
+    src/cc/splat-types.cc
+    src/cc/splat-c-types.cc
+)
+
+target_include_directories(spz PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/cc>
+    $<INSTALL_INTERFACE:include/spz>
+)
+
+target_link_libraries(spz PRIVATE ZLIB::ZLIB)
+
+install(TARGETS spz LIBRARY DESTINATION lib)
+install(FILES
+    src/cc/load-spz.h
+    src/cc/splat-types.h
+    src/cc/splat-c-types.h
+    DESTINATION include/spz
+)
+EOF
+""",
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+    ],
+    visibility = ["PUBLIC"],
+)

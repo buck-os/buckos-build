@@ -1,0 +1,20 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "genarm",
+    version = "main",
+    src_uri = "https://github.com/yuancheng-xu/genarm/archive/refs/heads/main.tar.gz",
+    sha256 = "4dc303b46bbf0e66d23667026828c6ab49b522b6f2d36a7055e3472bd96e33cd",
+    description = "GenARM: Generative AI for Reinforcement Learning with Model-based Arithmetic",
+    homepage = "https://github.com/yuancheng-xu/genarm",
+    license = "MIT",
+    deps = [
+        "//packages/linux/lang/python:python",
+        "//packages/linux/dev-libs/python/numpy:numpy",
+        "//packages/linux/dev-libs/python/pandas:pandas",
+        "//packages/linux/dev-libs/python/pyyaml:pyyaml",
+        "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
+        "//packages/linux/ai/ml-frameworks/transformers:transformers",
+    ],
+    visibility = ["PUBLIC"],
+)

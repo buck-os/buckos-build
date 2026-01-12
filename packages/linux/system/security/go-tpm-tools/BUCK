@@ -1,0 +1,19 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# go-tpm-tools - Package from third-party
+
+cmake_package(
+    name = "go-tpm-tools",
+    version = "main",
+    src_uri = "https://github.com/google/go-tpm-tools/archive/refs/tags/vmain.tar.gz",
+    sha256 = "4b44d4f2b38a370a2d98a78329fefc56a0cf93d1c1be70029217baae6628feea",
+    description = "go-tpm-tools package",
+    homepage = "https://github.com/google/go-tpm-tools.git",
+    license = "Apache-2.0",
+    deps = [],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+    ],
+    visibility = ["PUBLIC"],
+)

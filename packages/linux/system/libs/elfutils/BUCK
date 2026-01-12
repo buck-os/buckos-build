@@ -1,0 +1,39 @@
+load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:use_flags.bzl", "set_use_flags")
+
+autotools_package(
+    name = "elfutils",
+    version = "0.191",
+    src_uri = "https://sourceware.org/elfutils/ftp/0.191/elfutils-0.191.tar.bz2",
+    sha256 = "df76db71366d1d708365fc7a6c60ca48398f14367eb2b8954efc8897147ad871",
+    signature_required = False,
+    description = "Collection of utilities and libraries for handling ELF files and DWARF data",
+    homepage = "https://sourceware.org/elfutils/",
+    license = "GPL-3.0-or-later LGPL-3.0-or-later",
+    iuse = ["static-libs", "nls", "threads", "valgrind"],
+    use_defaults = ["nls", "threads"],
+    use_configure = {
+        "static-libs": "--enable-static",
+        "-static-libs": "--disable-static",
+        "nls": "--enable-nls",
+        "-nls": "--disable-nls",
+        "threads": "--enable-thread-safety",
+        "-threads": "--disable-thread-safety",
+        "valgrind": "--enable-valgrind",
+        "-valgrind": "--disable-valgrind",
+    },
+    use_deps = {
+        "valgrind": ["//packages/linux/dev-tools/profilers/valgrind:valgrind"],
+    },
+    configure_args = [
+        "--prefix=/usr",
+        "--disable-debuginfod",
+        "--enable-libdebuginfod=dummy",
+    ],
+    deps = [
+        "//packages/linux/system/libs/compression/zlib:zlib",
+        "//packages/linux/system/libs/compression/bzip2:bzip2",
+        "//packages/linux/system/libs/compression/xz:xz",
+    ],
+    visibility = ["PUBLIC"],
+)

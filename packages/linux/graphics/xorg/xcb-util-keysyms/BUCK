@@ -1,0 +1,21 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# xcb-util-keysyms - XCB keysym utilities
+autotools_package(
+    name = "xcb-util-keysyms",
+    version = "0.4.1",
+    src_uri = "https://xcb.freedesktop.org/dist/xcb-util-keysyms-0.4.1.tar.xz",
+    sha256 = "7c260a5294412aed429df1da2f8afd3bd07b7cba3fec772fba15a613a6d5c638",
+    description = "XCB keysym utilities",
+    homepage = "https://xcb.freedesktop.org/",
+    license = "MIT",
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--libdir=/usr/lib64",
+    ],
+    deps = [
+        "//packages/linux/graphics/xorg/libxcb:libxcb",
+    ],
+    visibility = ["PUBLIC"],
+)

@@ -1,0 +1,33 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# libde265 - Open H.265 HEVC decoder
+
+cmake_package(
+    name = "libde265",
+    version = "1.0.15",
+    src_uri = "https://github.com/strukturag/libde265/releases/download/v1.0.15/libde265-1.0.15.tar.gz",
+    sha256 = "TODO",
+    description = "Open H.265 HEVC decoder",
+    homepage = "https://www.libde265.org/",
+    license = "LGPL-3",
+    iuse = ["sse", "sse4", "tools", "dec265", "sherlock265"],
+    use_defaults = ["sse", "sse4", "tools"],
+    deps = [],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+    ],
+    use_cmake = {
+        "sse": "-DENABLE_SSE=ON",
+        "-sse": "-DENABLE_SSE=OFF",
+        "sse4": "-DENABLE_SSE4_1=ON",
+        "-sse4": "-DENABLE_SSE4_1=OFF",
+        "tools": "-DBUILD_PROGRAMS=ON",
+        "-tools": "-DBUILD_PROGRAMS=OFF",
+        "dec265": "-DBUILD_DEC265=ON",
+        "-dec265": "-DBUILD_DEC265=OFF",
+        "sherlock265": "-DBUILD_SHERLOCK265=ON",
+        "-sherlock265": "-DBUILD_SHERLOCK265=OFF",
+    },
+    visibility = ["PUBLIC"],
+)

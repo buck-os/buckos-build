@@ -1,0 +1,20 @@
+load("//defs:package_defs.bzl", "simple_package")
+
+# runc - CLI tool for spawning and running containers according to the OCI specification
+
+simple_package(
+    name = "runc",
+    version = "1.1.12",
+    src_uri = "https://github.com/opencontainers/runc/releases/download/v1.1.12/runc.amd64",
+    sha256 = "TODO",
+    description = "CLI tool for spawning and running containers according to the OCI specification",
+    homepage = "https://github.com/opencontainers/runc",
+    license = "Apache-2.0",
+    deps = [
+        "//packages/linux/system/libs/ipc/libseccomp:libseccomp",
+    ],
+    install_cmds = [
+        "install -Dm755 runc.amd64 ${PREFIX}/bin/runc",
+    ],
+    visibility = ["PUBLIC"],
+)

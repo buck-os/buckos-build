@@ -1,0 +1,23 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# log4cxx - Apache logging framework for C++
+
+cmake_package(
+    name = "log4cxx",
+    version = "1.2.0",
+    src_uri = "https://dlcdn.apache.org/logging/log4cxx/1.2.0/apache-log4cxx-1.2.0.tar.gz",
+    sha256 = "ae910e38610b04817fcab897796fddf0bcdbfb3ececc90ffeb7d94a96f2327cb",
+    description = "Apache logging framework for C++",
+    homepage = "https://logging.apache.org/log4cxx/",
+    license = "Apache-2.0",
+    deps = [
+        "//packages/linux/dev-libs/misc/apr:apr",
+        "//packages/linux/dev-libs/misc/apr-util:apr-util",
+    ],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DBUILD_TESTING=OFF",
+    ],
+    visibility = ["PUBLIC"],
+)

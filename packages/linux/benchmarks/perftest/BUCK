@@ -1,0 +1,11 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "perftest",
+    version = "25.07.0",
+    src_uri = "https://github.com/linux-rdma/perftest/releases/download/v25.07.0/perftest-25.07.0.tar.gz",
+    sha256 = "TODO",
+    deps = [
+        "//packages/linux/network/libs/rdma-core:rdma-core",
+    ],
+)

@@ -1,0 +1,20 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# GSL - GNU Scientific Library
+
+autotools_package(
+    name = "gsl",
+    version = "2.8",
+    src_uri = "https://ftp.gnu.org/gnu/gsl/gsl-2.8.tar.gz",
+    sha256 = "6a99eeed15632c6354895b1dd542ed5a855c0f15d9ad1326c6fe2b2c9e423190",
+    description = "GNU Scientific Library - numerical library for C and C++ programmers",
+    homepage = "https://www.gnu.org/software/gsl/",
+    license = "GPL-3.0",
+    deps = [],
+    configure_args = [
+        "--prefix=${PREFIX}",
+        "--enable-shared",
+        "--disable-static",
+    ],
+    visibility = ["PUBLIC"],
+)

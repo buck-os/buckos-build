@@ -1,0 +1,30 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "sctk",
+    version = "2.4.12",
+    src_uri = "https://github.com/usnistgov/SCTK/archive/refs/tags/v2.4.12.tar.gz",
+    sha256 = "43bd2bfe60e0ad04a563ddef025e84fca4c073f8f7c02f056b59fb8e2ec4f022",
+    signature_required = False,
+
+    deps = [],
+
+    src_configure = """
+# SCTK uses custom make config instead of autotools
+cd $WORKDIR
+make config PREFIX=$DESTDIR/usr
+""",
+
+    src_compile = """
+cd $WORKDIR
+make all
+""",
+
+    src_install = """
+cd $WORKDIR
+mkdir -p $DESTDIR/usr/bin
+make install PREFIX=$DESTDIR/usr
+""",
+
+    visibility = ["PUBLIC"],
+)

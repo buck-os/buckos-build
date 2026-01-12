@@ -1,0 +1,23 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "ulfius",
+    version = "2.7.12",
+    src_uri = "https://github.com/babelouest/ulfius/archive/v2.7.12.tar.gz",
+    sha256 = "20a359eeb30f1807ef68e4b6329fca5a06167eef1f0faaae3d2e0e8e4406bd70",
+    cmake_args = [
+        "-DU_DISABLE_GNUTLS=ON",
+        "-DU_DISABLE_JANSSON=ON",
+        "-DU_DISABLE_WEBSOCKET=ON",
+        "-DU_DISABLE_YDER=ON",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DBUILD_STATIC_LIBS=OFF",
+        "-DBUILD_TESTING=OFF",
+    ],
+    deps = [
+        "//packages/linux/network:curl",
+        "//packages/linux/dev-libs/misc/libmicrohttpd:libmicrohttpd",
+        "//packages/linux/dev-libs/orcania:orcania",
+    ],
+    visibility = ["PUBLIC"],
+)

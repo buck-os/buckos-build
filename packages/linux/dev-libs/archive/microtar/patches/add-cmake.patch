@@ -1,0 +1,24 @@
+--- /dev/null
++++ b/CMakeLists.txt
+@@ -0,0 +1,25 @@
++cmake_minimum_required(VERSION 3.10)
++project(microtar VERSION 0.1.0 LANGUAGES C)
++
++add_library(microtar
++    src/microtar.c
++)
++
++target_include_directories(microtar
++    PUBLIC
++        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
++        $<INSTALL_INTERFACE:include>
++)
++
++install(TARGETS microtar
++    ARCHIVE DESTINATION lib
++    LIBRARY DESTINATION lib
++)
++
++install(FILES src/microtar.h
++    DESTINATION include
++)

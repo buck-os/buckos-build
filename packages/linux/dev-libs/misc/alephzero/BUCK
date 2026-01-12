@@ -1,0 +1,38 @@
+load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+
+download_source(
+    name = "alephzero-src",
+    src_uri = "https://github.com/alephzero/alephzero/archive/refs/heads/master.tar.gz",
+    sha256 = "e2d950cc25f14dc7719687279d485eaffaa3c8c5168d5dc5359df42ecb923e76",
+    signature_required = False,
+)
+
+ebuild_package(
+    name = "alephzero",
+    source = ":alephzero-src",
+    version = "0_git",
+    category = "dev-libs/misc",
+    slot = "0",
+    description = "Simple, Robust, Fast IPC library",
+    homepage = "https://github.com/alephzero/alephzero",
+    license = "Unlicense",
+
+    src_prepare = '''
+# Initialize yyjson submodule from source
+mkdir -p third_party/yyjson/src
+curl -sL https://raw.githubusercontent.com/ibireme/yyjson/master/src/yyjson.c -o third_party/yyjson/src/yyjson.c
+curl -sL https://raw.githubusercontent.com/ibireme/yyjson/master/src/yyjson.h -o third_party/yyjson/src/yyjson.h
+''',
+
+    src_compile = '''
+make -j$(nproc) lib/libalephzero.a lib/libalephzero.so
+''',
+
+    src_install = '''
+make DESTDIR="$DESTDIR" PREFIX=/usr install
+''',
+
+    bdepend = [],
+    depend = [],
+    visibility = ["PUBLIC"],
+)

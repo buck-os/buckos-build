@@ -1,0 +1,33 @@
+load("//defs:package_defs.bzl", "download_source", "binary_package")
+
+download_source(
+    name = "croaring-src",
+    src_uri = "https://github.com/RoaringBitmap/CRoaring/archive/refs/tags/v0.7.0.tar.gz",
+    sha256 = "a2a9033eb44fb958dd19887e69a5934e59ebc56370f5853d3a22f8c64a9da268",
+    signature_required = False,
+)
+
+binary_package(
+    name = "croaring",
+    srcs = [":croaring-src"],
+    version = "0.7.0",
+    description = "Roaring bitmaps in C (and C++)",
+    homepage = "https://github.com/RoaringBitmap/CRoaring",
+    license = "Apache-2.0",
+    install_script = """
+        cd "$SRCS"
+        mkdir -p build && cd build
+        cmake .. \
+            -DCMAKE_INSTALL_PREFIX=/usr \
+            -DCMAKE_INSTALL_LIBDIR=lib64 \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_SHARED_LIBS=ON \
+            -DROARING_BUILD_STATIC=OFF \
+            -DENABLE_ROARING_TESTS=OFF \
+            -DROARING_EXCEPTIONS=ON
+        make -j$(nproc)
+        make install DESTDIR="$OUT"
+    """,
+    deps = [],
+    visibility = ["PUBLIC"],
+)

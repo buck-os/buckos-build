@@ -1,0 +1,20 @@
+load("//defs:package_defs.bzl", "simple_package")
+
+# containerd - An industry-standard container runtime
+
+simple_package(
+    name = "containerd",
+    version = "1.7.13",
+    src_uri = "https://github.com/containerd/containerd/releases/download/v1.7.13/containerd-1.7.13-linux-amd64.tar.gz",
+    sha256 = "TODO",
+    description = "An open and reliable container runtime",
+    homepage = "https://containerd.io/",
+    license = "Apache-2.0",
+    deps = [
+        "//packages/linux/system/containers/runc:runc",
+    ],
+    install_cmds = [
+        "cp -r bin/* ${PREFIX}/bin/",
+    ],
+    visibility = ["PUBLIC"],
+)

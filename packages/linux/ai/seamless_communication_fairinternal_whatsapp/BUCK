@@ -1,0 +1,29 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "seamless_communication_fairinternal_whatsapp",
+    version = "unity.cpp_wa_release_0124",
+    src_uri = "https://github.com/fairinternal/seamless_communication/archive/9ac1753aea49cf948745b7821cf89929703f2515.tar.gz",
+    sha256 = "TODO",
+    description = "Multilingual and multimodal machine translation library with speech-to-speech and text-to-speech translation capabilities",
+    homepage = "https://github.com/fairinternal/seamless_communication",
+    license = "MIT",
+    pre_configure = "cd ggml",
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DGGML_BUILD_TESTS=OFF",
+        "-DGGML_BUILD_EXAMPLES=ON",
+        "-DGGML_OPENBLAS=OFF",
+        "-DGGML_CUBLAS=OFF",
+        "-DGGML_METAL=OFF",
+        "-DGGML_AVX=ON",
+        "-DGGML_AVX2=ON",
+        "-DGGML_F16C=ON",
+        "-DGGML_FMA=ON",
+    ],
+    deps = [
+        "//packages/linux/media/audio/libsndfile:libsndfile",
+    ],
+    visibility = ["PUBLIC"],
+)

@@ -1,0 +1,15 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "volk",
+    version = "1.4.304",
+    src_uri = "https://github.com/zeux/volk/archive/refs/tags/vulkan-sdk-1.4.304.0.tar.gz",
+    sha256 = "2a563c9dd926c804d91d7b84c59516678ccb32d039038049fc20eb22547c88fb",
+    cmake_args = [
+        "-DVOLK_INSTALL=ON",
+        "-DVOLK_PULL_IN_VULKAN=OFF",
+    ],
+    deps = [
+        "//packages/linux/graphics/vulkan/vulkan-headers:vulkan-headers",
+    ],
+)

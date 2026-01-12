@@ -1,0 +1,29 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "opensubdiv",
+    version = "3.4.4",
+    src_uri = "https://github.com/PixarAnimationStudios/OpenSubdiv/archive/refs/tags/v3_4_4.tar.gz",
+    sha256 = "20d49f80a2b778ad4d01f091ad88d8c2f91cf6c7363940c6213241ce6f1048fb",
+    description = "High performance subdivision surface (subdiv) evaluation",
+    homepage = "https://graphics.pixar.com/opensubdiv/",
+    license = "Apache-2.0",
+    deps = [
+        "//packages/linux/dev-libs/glew:glew",
+    ],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DNO_EXAMPLES=ON",
+        "-DNO_TUTORIALS=ON",
+        "-DNO_REGRESSION=ON",
+        "-DNO_DOC=ON",
+        "-DNO_OMP=OFF",
+        "-DNO_TBB=ON",
+        "-DNO_CUDA=ON",
+        "-DNO_OPENCL=ON",
+        "-DNO_CLEW=ON",
+        "-DNO_PTEX=ON",
+    ],
+    visibility = ["PUBLIC"],
+)

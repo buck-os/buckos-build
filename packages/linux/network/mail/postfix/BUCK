@@ -1,0 +1,28 @@
+load("//defs:package_defs.bzl", "simple_package")
+
+# Postfix - Fast, easy to administer, secure mail server
+
+simple_package(
+    name = "postfix",
+    version = "3.8.5",
+    src_uri = "https://de.postfix.org/ftpmirror/official/postfix-3.8.5.tar.gz",
+    sha256 = "TODO",
+    description = "Fast, easy to administer, secure mail server",
+    homepage = "https://www.postfix.org/",
+    license = "IPL-1.0",
+    iuse = ["ssl", "sasl", "ldap", "mysql", "pgsql"],
+    use_defaults = ["ssl"],
+    deps = [],
+    use_deps = {
+        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
+        "ldap": ["//packages/linux/network/ldap/openldap:openldap"],
+        "mysql": ["//packages/linux/databases/mysql:mysql"],
+        "pgsql": ["//packages/linux/databases/postgresql:postgresql"],
+    },
+    build_commands = [
+        "make makefiles CCARGS='-DUSE_TLS -DUSE_SASL_AUTH' AUXLIBS='-lssl -lcrypto'",
+        "make",
+        "sh postfix-install -non-interactive install_root=${DESTDIR}",
+    ],
+    visibility = ["PUBLIC"],
+)

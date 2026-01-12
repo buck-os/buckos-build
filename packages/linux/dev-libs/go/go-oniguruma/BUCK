@@ -1,0 +1,16 @@
+load("//defs:package_defs.bzl", "go_package")
+
+go_package(
+    name = "go-oniguruma",
+    version = "1.2.1",
+    src_uri = "https://github.com/go-enry/go-oniguruma/archive/v1.2.1.tar.gz",
+    sha256 = "e3c2389e61b5c1c7ee137560d645e2d82e5a119349930de35d81b91b92da81ed",
+    signature_required = False,
+    description = "Go bindings for Oniguruma regex library",
+    homepage = "https://github.com/go-enry/go-oniguruma",
+    license = "MIT",
+    deps = [
+        "//packages/linux/dev-libs/text/oniguruma:oniguruma",
+    ],
+    visibility = ["PUBLIC"],
+)

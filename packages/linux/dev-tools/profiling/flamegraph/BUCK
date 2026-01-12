@@ -1,0 +1,38 @@
+load("//defs:package_defs.bzl", "download_source", "binary_package")
+
+download_source(
+    name = "flamegraph-src",
+    src_uri = "https://github.com/brendangregg/FlameGraph/archive/41fee1f99f9276008b7cd112fca19dc3ea84ac32.tar.gz",
+    sha256 = "b1ba3aaaf296ab72ced4dca84514377a4b2c8122831d743f726c106d3d339c2a",
+)
+
+binary_package(
+    name = "flamegraph",
+    version = "1.0",
+    description = "Stack trace visualizer for performance profiling",
+    homepage = "https://github.com/brendangregg/FlameGraph",
+    license = "CDDL",
+    srcs = [":flamegraph-src"],
+    install_script = """
+mkdir -p "$DESTDIR/usr/bin"
+mkdir -p "$DESTDIR/usr/share/flamegraph"
+
+# Install main flamegraph script
+install -m 755 flamegraph.pl "$DESTDIR/usr/bin/flamegraph.pl"
+
+# Install stackcollapse scripts
+for script in stackcollapse*.pl stackcollapse*.awk; do
+    if [ -f "$script" ]; then
+        install -m 755 "$script" "$DESTDIR/usr/bin/"
+    fi
+done
+
+# Install other utility scripts
+for script in difffolded.pl files.pl jmaps; do
+    if [ -f "$script" ]; then
+        install -m 755 "$script" "$DESTDIR/usr/bin/"
+    fi
+done
+""",
+    visibility = ["PUBLIC"],
+)

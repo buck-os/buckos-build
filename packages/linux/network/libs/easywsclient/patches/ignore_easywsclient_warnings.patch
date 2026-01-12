@@ -1,0 +1,37 @@
+--- a/easywsclient.cpp
++++ b/easywsclient.cpp
+@@ -70,6 +70,10 @@
+     #define SOCKET_EWOULDBLOCK EWOULDBLOCK
+ #endif
+
++#pragma clang diagnostic push
++#pragma clang diagnostic ignored "-Wnon-virtual-dtor"
++#pragma clang diagnostic ignored "-Wshadow"
++
+ #include <vector>
+ #include <string>
+
+@@ -553,3 +557,4 @@
+
+
+ } // namespace easywsclient
++#pragma clang diagnostic pop
+--- a/easywsclient.hpp
++++ b/easywsclient.hpp
+@@ -8,6 +8,10 @@
+ // wget https://raw.github.com/dhbaird/easywsclient/master/easywsclient.hpp
+ // wget https://raw.github.com/dhbaird/easywsclient/master/easywsclient.cpp
+
++#pragma clang diagnostic push
++#pragma clang diagnostic ignored "-Wnon-virtual-dtor"
++#pragma clang diagnostic ignored "-Wshadow"
++
+ #include <string>
+ #include <vector>
+
+@@ -69,4 +73,5 @@
+
+ } // namespace easywsclient
+
++#pragma clang diagnostic pop
+ #endif /* EASYWSCLIENT_HPP_20120819_MIOFVASDTNUASZDQPLFD */

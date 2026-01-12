@@ -1,0 +1,33 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# ZeroMQ - High-performance asynchronous messaging library
+
+cmake_package(
+    name = "zeromq",
+    version = "4.3.5",
+    src_uri = "https://github.com/zeromq/libzmq/releases/download/v4.3.5/zeromq-4.3.5.tar.gz",
+    sha256 = "6653ef5910f17954861fe72332e68b03ca6e4d9c7160eb3a8de5a5a913bfab43",
+    description = "High-performance asynchronous messaging library",
+    homepage = "https://zeromq.org/",
+    license = "LGPL-3.0",
+    iuse = ["sodium", "curve"],
+    use_defaults = ["sodium", "curve"],
+    deps = [],
+    use_deps = {
+        "sodium": ["//packages/linux/dev-libs/misc/libsodium:libsodium"],
+    },
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED=ON",
+        "-DBUILD_STATIC=OFF",
+        "-DBUILD_TESTS=OFF",
+        "-DENABLE_DRAFTS=OFF",
+    ],
+    use_cmake = {
+        "sodium": "-DWITH_LIBSODIUM=ON",
+        "-sodium": "-DWITH_LIBSODIUM=OFF",
+        "curve": "-DENABLE_CURVE=ON",
+        "-curve": "-DENABLE_CURVE=OFF",
+    },
+    visibility = ["PUBLIC"],
+)

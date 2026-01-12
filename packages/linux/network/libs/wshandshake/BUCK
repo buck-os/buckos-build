@@ -1,0 +1,18 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "wshandshake",
+    version = "1.0.0",
+    source = "~/fbsource/third-party/wshandshake",
+    description = "Header-only WebSocket RFC6455 handshake implementation",
+    homepage = "https://github.com/uNetworking/libwshandshake",
+    license = "Zlib",
+    patches = [
+        "CMakeLists.txt",
+    ],
+    deps = [],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+    ],
+    visibility = ["PUBLIC"],
+)

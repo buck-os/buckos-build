@@ -1,0 +1,24 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "latent_nerf",
+    version = "0.0.1",
+    src_uri = "https://github.com/eladrich/latent-nerf/archive/refs/heads/main.tar.gz",
+    sha256 = "fded0686386377faeda41c74464d6b452167446eb0c7175915beea75c268360c",
+    deps = [
+        "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
+        "//packages/linux/ai/vision/torchvision:torchvision",
+        "//packages/linux/ai/ml-frameworks/diffusers:diffusers",
+        "//packages/linux/dev-libs/python/transformers:transformers",
+        "//packages/linux/dev-libs/python/accelerate:accelerate",
+        "//packages/linux/dev-libs/python/huggingface-hub:huggingface-hub",
+        "//packages/linux/dev-libs/python/ninja:ninja",
+        "//packages/linux/dev-libs/python/xatlas:xatlas",
+        "//packages/linux/dev-libs/python/imageio:imageio",
+        "//packages/linux/dev-libs/python/matplotlib:matplotlib",
+        "//packages/linux/dev-libs/python/pyrallis:pyrallis",
+        "//packages/linux/dev-libs/python/loguru:loguru",
+        "//packages/linux/dev-libs/python/tqdm:tqdm",
+    ],
+    maintainers = ["ar_commerce_tech"],
+)

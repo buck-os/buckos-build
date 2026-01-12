@@ -1,0 +1,19 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# pcl - Package from third-party
+
+cmake_package(
+    name = "pcl",
+    version = "1.10.1",
+    src_uri = "https://github.com/PointCloudLibrary/pcl/archive/refs/tags/v1.10.1.tar.gz",
+    sha256 = "3e15d4f0e22d8ddbfbb9f5d77db43eacd7a304029bf25a6166cc63caa96d04ba",
+    description = "pcl package",
+    homepage = "https://github.com/PointCloudLibrary/pcl.git",
+    license = "BSD-3-Clause",
+    deps = [],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+    ],
+    visibility = ["PUBLIC"],
+)

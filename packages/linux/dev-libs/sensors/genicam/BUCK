@@ -1,0 +1,19 @@
+load("//defs:package_defs.bzl", "simple_binary_package")
+
+simple_binary_package(
+    name = "genicam",
+    version = "3.4.0",
+    src_uri = "https://www.genicam.org/GenICam_Package/GenICam_V3_4_0_Linux64.tgz",
+    sha256 = "TODO",
+    libs = [
+        "Linux64/Runtime/bin/Linux64_x64/libGCBase_gcc48_v3_4.so",
+        "Linux64/Runtime/bin/Linux64_x64/libGenApi_gcc48_v3_4.so",
+        "Linux64/Runtime/bin/Linux64_x64/libGenApiC_v3.so",
+        "Linux64/Runtime/bin/Linux64_x64/libLog_gcc48_v3_4.so",
+        "Linux64/Runtime/bin/Linux64_x64/liblog4cpp_gcc48_v3_4.so",
+        "Linux64/Runtime/bin/Linux64_x64/libMathParser_gcc48_v3_4.so",
+        "Linux64/Runtime/bin/Linux64_x64/libNodeMapData_gcc48_v3_4.so",
+        "Linux64/Runtime/bin/Linux64_x64/libXmlParser_gcc48_v3_4.so",
+    ],
+    visibility = ["PUBLIC"],
+)

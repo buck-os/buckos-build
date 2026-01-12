@@ -1,0 +1,21 @@
+load("//defs:package_defs.bzl", "make_package")
+
+# Tree-sitter - Parser generator tool and incremental parsing library
+
+make_package(
+    name = "tree-sitter",
+    version = "0.25.8",
+    src_uri = "https://github.com/tree-sitter/tree-sitter/archive/refs/tags/v0.25.8.tar.gz",
+    sha256 = "TODO",
+    description = "An incremental parsing system for programming tools",
+    homepage = "https://tree-sitter.github.io/tree-sitter/",
+    license = "MIT",
+    deps = [],
+    make_args = [
+        "PREFIX=${PREFIX}",
+    ],
+    make_install_args = [
+        "PREFIX=${PREFIX}",
+    ],
+    visibility = ["PUBLIC"],
+)

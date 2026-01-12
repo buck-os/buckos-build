@@ -1,0 +1,18 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "munge",
+    version = "0.5.16",
+    src_uri = "https://github.com/dun/munge/releases/download/munge-0.5.16/munge-0.5.16.tar.xz",
+    sha256 = "6fa6f14de41064c2b56422592df7ad1de2af483912c54460863db2827e6a2861",
+    configure_args = [
+        "--disable-static",
+        "--with-crypto-lib=libgcrypt",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/crypto/libgcrypt:libgcrypt",
+        "//packages/linux/dev-libs/crypto/libgpg-error:libgpg-error",
+        "//packages/linux/system/compression/bzip2:bzip2",
+        "//packages/linux/system/compression/zlib:zlib",
+    ],
+)

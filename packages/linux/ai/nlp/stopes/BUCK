@@ -1,0 +1,16 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "stopes",
+    version = "2.2.0",
+    src_uri = "https://github.com/facebookresearch/stopes/archive/refs/tags/v2.2.0.tar.gz",
+    sha256 = "2bbc6645d50c238cc3a4ec945d8b3abb3b2f4c8e64f001dfa01f7b2b5903ddb7",
+    deps = [
+        "//packages/linux/dev-tools/build-systems/python/hydra-core:hydra-core",
+        "//packages/linux/dev-tools/build-systems/python/submitit:submitit",
+        "//packages/linux/dev-libs/python/joblib:joblib",
+        "//packages/linux/dev-libs/python/tqdm:tqdm",
+        "//packages/linux/dev-libs/python/posix-ipc:posix-ipc",
+        "//packages/linux/dev-libs/data/pyarrow:pyarrow",
+    ],
+)

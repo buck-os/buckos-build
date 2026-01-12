@@ -1,0 +1,18 @@
+load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:use_flags.bzl", "set_use_flags")
+
+# dlpack - Open In Memory Tensor Structure for sharing tensors among frameworks
+cmake_package(
+    name = "dlpack",
+    version = "1.2",
+    source = "~/fbsource/third-party/dlpack/v1.2/src",
+    description = "Open in-memory tensor structure for sharing tensors among ML frameworks",
+    homepage = "https://github.com/dmlc/dlpack",
+    license = "Apache-2.0",
+    cmake_args = [
+        "-DBUILD_MOCK=OFF",
+        "-DBUILD_DOCS=OFF",
+    ],
+    deps = [],
+    visibility = ["PUBLIC"],
+)

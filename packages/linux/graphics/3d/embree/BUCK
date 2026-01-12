@@ -1,0 +1,31 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# Embree - High Performance Ray Tracing Kernels from Intel
+
+cmake_package(
+    name = "embree",
+    version = "4.3.1",
+    src_uri = "https://github.com/embree/embree/archive/refs/tags/v4.3.1.tar.gz",
+    sha256 = "TODO",
+    description = "High Performance Ray Tracing Kernels",
+    homepage = "https://www.embree.org/",
+    license = "Apache-2.0",
+    iuse = ["tbb", "ispc"],
+    use_defaults = ["tbb"],
+    deps = [],
+    use_deps = {
+        "tbb": ["//packages/linux/dev-libs/misc/tbb:tbb"],
+    },
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DEMBREE_TUTORIALS=OFF",
+        "-DEMBREE_ISPC_SUPPORT=OFF",
+        "-DEMBREE_TASKING_SYSTEM=TBB",
+    ],
+    use_cmake = {
+        "ispc": "-DEMBREE_ISPC_SUPPORT=ON",
+        "-ispc": "-DEMBREE_ISPC_SUPPORT=OFF",
+    },
+    visibility = ["PUBLIC"],
+)

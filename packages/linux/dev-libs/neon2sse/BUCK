@@ -1,0 +1,17 @@
+load("//defs:package_defs.bzl", "simple_package")
+
+simple_package(
+    name = "neon2sse",
+    version = "2020.10",
+    src_uri = "https://github.com/intel/ARM_NEON_2_x86_SSE/archive/refs/heads/master.tar.gz",
+    sha256 = "TODO",
+    description = "Header-only library to translate ARM NEON intrinsics to x86 SSE",
+    homepage = "https://github.com/intel/ARM_NEON_2_x86_SSE",
+    license = "BSD-2-Clause",
+    deps = [],
+    build_commands = [
+        "mkdir -p ${PREFIX}/include",
+        "cp NEON_2_SSE.h ${PREFIX}/include/",
+    ],
+    visibility = ["PUBLIC"],
+)

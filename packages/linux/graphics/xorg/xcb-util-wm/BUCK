@@ -1,0 +1,21 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# xcb-util-wm - XCB window manager utilities
+autotools_package(
+    name = "xcb-util-wm",
+    version = "0.4.2",
+    src_uri = "https://xcb.freedesktop.org/dist/xcb-util-wm-0.4.2.tar.xz",
+    sha256 = "62c34e21d06264687faea7edbf63632c9f04d55e72114aa4a57bb95e4f888a0b",
+    description = "XCB window manager utilities",
+    homepage = "https://xcb.freedesktop.org/",
+    license = "MIT",
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--libdir=/usr/lib64",
+    ],
+    deps = [
+        "//packages/linux/graphics/xorg/libxcb:libxcb",
+    ],
+    visibility = ["PUBLIC"],
+)

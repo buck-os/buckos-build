@@ -1,0 +1,29 @@
+load("//defs:package_defs.bzl", "download_source", "autotools_package")
+
+download_source(
+    name = "libcaca-src",
+    src_uri = "https://github.com/cacalabs/libcaca/releases/download/v0.99.beta19/libcaca-0.99.beta19.tar.gz",
+    sha256 = "TODO",
+    signature_required = False,
+)
+
+autotools_package(
+    name = "libcaca",
+    source = ":libcaca-src",
+    version = "0.99.beta19",
+    description = "Color ASCII Art library",
+    homepage = "http://caca.zoy.org/wiki/libcaca",
+    license = "WTFPL",
+    configure_args = [
+        "--prefix=/usr",
+        "--disable-doc",
+        "--disable-csharp",
+        "--disable-java",
+        "--disable-python",
+        "--disable-ruby",
+    ],
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+    ],
+    visibility = ["PUBLIC"],
+)

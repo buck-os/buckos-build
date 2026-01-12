@@ -1,0 +1,30 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "robocasa",
+    version = "0.2.0",
+    src_uri = "https://github.com/robocasa/robocasa/archive/refs/tags/v0.2.0.tar.gz",
+    sha256 = "TODO",
+    deps = [
+        "//packages/linux/dev-libs/python/h5py",
+        "//packages/linux/dev-libs/python/hidapi",
+        "//packages/linux/dev-libs/python/imageio",
+        "//packages/linux/dev-libs/text/lxml",
+        "//packages/linux/ai/physics/mujoco",
+        "//packages/linux/dev-libs/python/numba",
+        "//packages/linux/dev-libs/python/numpy",
+        "//packages/linux/graphics/opencv",
+        "//packages/linux/dev-libs/python/pillow",
+        "//packages/linux/dev-libs/python/pygame",
+        "//packages/linux/dev-libs/python/pynput",
+        "//packages/linux/dev-libs/python/pyyaml",
+        "//packages/linux/ai/robotics/robosuite",
+        "//packages/linux/ai/robotics/robosuite-models",
+        "//packages/linux/dev-libs/python/scipy",
+        "//packages/linux/dev-libs/python/termcolor",
+        "//packages/linux/ai/ml-frameworks/tianshou",
+        "//packages/linux/dev-libs/python/tqdm",
+        "//packages/linux/ai/robotics/robomimic",
+    ],
+    maintainers = ["rl_robotics_ml_oncall"],
+)

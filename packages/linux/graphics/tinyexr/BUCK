@@ -1,0 +1,15 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "tinyexr",
+    version = "1.0.8",
+    src_uri = "https://github.com/syoyo/tinyexr/archive/refs/tags/v1.0.8.tar.gz",
+    sha256 = "TODO",
+    cmake_args = [
+        "-DTINYEXR_BUILD_SAMPLE=OFF",
+        "-DTINYEXR_USE_MINIZ=OFF",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/compression/zlib",
+    ],
+)

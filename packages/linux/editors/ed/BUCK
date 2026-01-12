@@ -2,17 +2,18 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
 
 # ed - GNU ed line editor
+# Using kernel.org mirror which has .tar.xz format
 download_source(
     name = "ed-src",
-    src_uri = "https://mirrors.kernel.org/gnu/ed/ed-1.20.2.tar.lz",
-    sha256 = "65fec7318f48c2ca17f334ac0f4703defe62037bb13cc23920de077b5fa24523",
+    src_uri = "https://mirrors.kernel.org/gnu/ed/ed-1.19.tar.xz",
+    sha256 = "NEEDS_UPDATE_FROM_BUILD_LOG",
     signature_required = False,
 )
 
 autotools_package(
     name = "ed",
     source = ":ed-src",
-    version = "1.20.2",
+    version = "1.19",
     description = "GNU ed - The standard Unix line editor",
     homepage = "https://www.gnu.org/software/ed/",
     license = "GPL-3.0",

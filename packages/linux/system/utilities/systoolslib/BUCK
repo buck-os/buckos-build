@@ -1,0 +1,24 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "systoolslib",
+    version = "1.22",
+    src_uri = "https://github.com/jflarvoire/SysToolsLib/archive/refs/tags/v1.22.tar.gz",
+    sha256 = "TODO",
+    description = "Collection of Unix/Windows system tools and utilities",
+    homepage = "https://github.com/jflarvoire/SysToolsLib",
+    license = "Apache-2.0",
+    pre_configure = """
+# No configure step needed - uses plain Makefile
+true
+""",
+    configure_args = [],
+    make_args = [
+        "prefix=/usr",
+    ],
+    post_install = """
+cd C/SRC
+make prefix=/usr DESTDIR="$DESTDIR" install || true
+""",
+    visibility = ["PUBLIC"],
+)

@@ -1,0 +1,55 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# Filament - Real-time physically based rendering engine from Google
+
+cmake_package(
+    name = "filament",
+    version = "1.54.3",
+    source = "~/fbsource/third-party/filament",
+    description = "Real-time physically based rendering engine for Android, iOS, Linux, macOS, Windows, and WebGL",
+    homepage = "https://github.com/google/filament",
+    license = "Apache-2.0",
+    maintainers = ["avatar_rendering"],
+    iuse = ["opengl", "vulkan", "samples", "lto"],
+    use_defaults = ["opengl", "vulkan"],
+    deps = [
+        "//packages/linux/graphics/xorg/lib/libxi:libxi",
+        "//packages/linux/graphics/xorg/lib/libxcomposite:libxcomposite",
+        "//packages/linux/graphics/xorg/lib/libxxf86vm:libxxf86vm",
+    ],
+    use_deps = {},
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DFILAMENT_SKIP_SAMPLES=ON",
+        "-DFILAMENT_SUPPORTS_XCB=ON",
+        "-DFILAMENT_SUPPORTS_XLIB=ON",
+        "-DFILAMENT_SUPPORTS_EGL_ON_LINUX=OFF",
+        "-DFILAMENT_SUPPORTS_WAYLAND=OFF",
+        "-DFILAMENT_SKIP_SDL2=OFF",
+        "-DFILAMENT_ENABLE_LTO=OFF",
+        "-DFILAMENT_ENABLE_FEATURE_LEVEL_0=ON",
+        "-DFILAMENT_SUPPORTS_OPENGL=ON",
+        "-DFILAMENT_SUPPORTS_VULKAN=ON",
+        "-DFILAMENT_BUILD_FILAMAT=ON",
+    ],
+    use_options = {
+        "opengl": {
+            "enabled": ["-DFILAMENT_SUPPORTS_OPENGL=ON"],
+            "disabled": ["-DFILAMENT_SUPPORTS_OPENGL=OFF"],
+        },
+        "vulkan": {
+            "enabled": ["-DFILAMENT_SUPPORTS_VULKAN=ON"],
+            "disabled": ["-DFILAMENT_SUPPORTS_VULKAN=OFF"],
+        },
+        "samples": {
+            "enabled": ["-DFILAMENT_SKIP_SAMPLES=OFF"],
+            "disabled": ["-DFILAMENT_SKIP_SAMPLES=ON"],
+        },
+        "lto": {
+            "enabled": ["-DFILAMENT_ENABLE_LTO=ON"],
+            "disabled": ["-DFILAMENT_ENABLE_LTO=OFF"],
+        },
+    },
+    visibility = ["PUBLIC"],
+)

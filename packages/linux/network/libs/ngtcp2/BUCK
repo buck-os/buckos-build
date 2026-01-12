@@ -1,0 +1,36 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# ngtcp2 - QUIC protocol library
+
+cmake_package(
+    name = "ngtcp2",
+    version = "1.10.0",
+    src_uri = "https://github.com/ngtcp2/ngtcp2/releases/download/v1.10.0/ngtcp2-1.10.0.tar.xz",
+    sha256 = "TODO",
+    description = "Implementation of IETF QUIC protocol",
+    homepage = "https://github.com/ngtcp2/ngtcp2",
+    license = "MIT",
+    iuse = ["ssl", "gnutls", "static-libs", "examples"],
+    use_defaults = ["ssl"],
+    deps = [],
+    use_deps = {
+        "ssl": ["//packages/linux/network/openssl:openssl"],
+        "gnutls": ["//packages/linux/dev-libs/crypto/gnutls:gnutls"],
+    },
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DENABLE_WERROR=OFF",
+    ],
+    use_cmake = {
+        "static-libs": "-DBUILD_STATIC_LIBS=ON",
+        "-static-libs": "-DBUILD_STATIC_LIBS=OFF",
+        "ssl": "-DENABLE_OPENSSL=ON",
+        "-ssl": "-DENABLE_OPENSSL=OFF",
+        "gnutls": "-DENABLE_GNUTLS=ON",
+        "-gnutls": "-DENABLE_GNUTLS=OFF",
+        "examples": "-DENABLE_EXAMPLES=ON",
+        "-examples": "-DENABLE_EXAMPLES=OFF",
+    },
+    visibility = ["PUBLIC"],
+)

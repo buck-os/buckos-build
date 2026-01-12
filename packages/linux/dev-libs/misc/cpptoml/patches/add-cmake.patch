@@ -1,0 +1,30 @@
+--- /dev/null
++++ b/CMakeLists.txt
+@@ -0,0 +1,27 @@
++# CMakeLists.txt for cpptoml
++# A header-only library for parsing TOML configuration files
++
++cmake_minimum_required(VERSION 3.10)
++project(cpptoml VERSION 0.1.1)
++
++# Set C++ standard
++set(CMAKE_CXX_STANDARD 11)
++set(CMAKE_CXX_STANDARD_REQUIRED ON)
++
++# Header-only library
++add_library(cpptoml INTERFACE)
++
++target_include_directories(cpptoml INTERFACE
++    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
++    $<INSTALL_INTERFACE:include>
++)
++
++# Install headers
++install(DIRECTORY include/
++    DESTINATION include
++    FILES_MATCHING PATTERN "*.h"
++)
++
++# Install library target
++install(TARGETS cpptoml
++    EXPORT cpptoml-targets)

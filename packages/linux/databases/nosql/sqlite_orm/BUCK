@@ -1,0 +1,32 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# sqlite_orm - C++ ORM for SQLite
+#
+# sqlite_orm is a powerful header-only C++14 library for working with SQLite databases.
+# It provides a modern, type-safe interface for database operations.
+#
+# Features:
+# - Header-only library (no compilation needed)
+# - Type-safe query building
+# - Support for complex queries
+# - CRUD operations
+# - Custom types support
+
+cmake_package(
+    name = "sqlite_orm",
+    version = "1.6",
+    src_uri = "https://github.com/fnc12/sqlite_orm/archive/refs/tags/1.6.tar.gz",
+    sha256 = "2f1ac922aa564d2a8385515a7d39c7a354df192b370a4713862e41b92bd4e388",
+    description = "Header-only C++14 ORM library for SQLite",
+    homepage = "https://github.com/fnc12/sqlite_orm",
+    license = "BSD-3-Clause",
+    deps = [
+        "//packages/linux/databases/sqlite:sqlite",
+    ],
+    cmake_args = [
+        "-DSQLITE_ORM_ENABLE_CXX_17=ON",
+        "-DBUILD_TESTING=OFF",
+        "-DBUILD_EXAMPLES=OFF",
+    ],
+    visibility = ["PUBLIC"],
+)

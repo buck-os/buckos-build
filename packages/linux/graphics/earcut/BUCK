@@ -1,0 +1,22 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# earcut - Fast polygon triangulation library (header-only)
+
+cmake_package(
+    name = "earcut",
+    version = "2.2.2",
+    src_uri = "https://github.com/mapbox/earcut.hpp/archive/refs/tags/v2.2.2.tar.gz",
+    sha256 = "22bb904f0f7f1d707b89e7f233f0e6945e7d9dd97a9b6b35d854f85c63e7d889",
+    description = "Fast, header-only polygon triangulation library",
+    homepage = "https://github.com/mapbox/earcut.hpp",
+    license = "ISC",
+    deps = [],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DEARCUT_BUILD_TESTS=OFF",
+        "-DEARCUT_BUILD_BENCH=OFF",
+        "-DEARCUT_BUILD_VIZ=OFF",
+    ],
+    maintainers = ["maps"],
+    visibility = ["PUBLIC"],
+)

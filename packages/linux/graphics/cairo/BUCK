@@ -1,0 +1,47 @@
+load("//defs:package_defs.bzl", "meson_package")
+
+# Cairo - 2D graphics library
+
+meson_package(
+    name = "cairo",
+    version = "1.18.0",
+    src_uri = "https://cairographics.org/releases/cairo-1.18.0.tar.xz",
+    sha256 = "TODO",
+    description = "2D graphics library with support for multiple output devices",
+    homepage = "https://cairographics.org/",
+    license = "LGPL-2.1 MPL-1.1",
+    iuse = ["png", "svg", "pdf", "ps", "x11", "xcb", "glib"],
+    use_defaults = ["png", "svg", "pdf", "glib"],
+    deps = [
+        "//packages/linux/graphics/freetype:freetype",
+        "//packages/linux/graphics/fontconfig:fontconfig",
+        "//packages/linux/dev-libs/misc/pixman:pixman",
+    ],
+    use_deps = {
+        "png": ["//packages/linux/media/image/libpng:libpng"],
+        "x11": ["//packages/linux/graphics/x11-libs/libx11:libx11"],
+        "xcb": ["//packages/linux/graphics/x11-libs/libxcb:libxcb"],
+        "glib": ["//packages/linux/core/glib:glib"],
+    },
+    meson_args = [
+        "-Dtests=disabled",
+        "-Dspectre=disabled",
+    ],
+    use_meson = {
+        "png": "-Dpng=enabled",
+        "-png": "-Dpng=disabled",
+        "svg": "-Dsvg=enabled",
+        "-svg": "-Dsvg=disabled",
+        "pdf": "-Dpdf=enabled",
+        "-pdf": "-Dpdf=disabled",
+        "ps": "-Dps=enabled",
+        "-ps": "-Dps=disabled",
+        "x11": "-Dxlib=enabled",
+        "-x11": "-Dxlib=disabled",
+        "xcb": "-Dxcb=enabled",
+        "-xcb": "-Dxcb=disabled",
+        "glib": "-Dglib=enabled",
+        "-glib": "-Dglib=disabled",
+    },
+    visibility = ["PUBLIC"],
+)

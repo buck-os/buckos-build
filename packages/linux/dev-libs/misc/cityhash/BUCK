@@ -1,0 +1,18 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# CityHash - Fast hash functions for strings
+
+cmake_package(
+    name = "cityhash",
+    version = "1.1.1",
+    src_uri = "https://github.com/google/cityhash/archive/refs/tags/v1.1.1.tar.gz",
+    sha256 = "a9b63eea997abb9ee6a8b4fbb515831c841f471af845a09de443b28003874bec",
+    description = "Family of hash functions for strings from Google",
+    homepage = "https://github.com/google/cityhash",
+    license = "MIT",
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+    ],
+    visibility = ["PUBLIC"],
+)

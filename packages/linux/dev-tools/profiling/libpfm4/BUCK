@@ -1,0 +1,15 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "libpfm4",
+    version = "4.11.1",
+    src_uri = "https://downloads.sourceforge.net/project/perfmon2/libpfm4/libpfm-4.11.1.tar.gz",
+    sha256 = "TODO",
+    make_args = [
+        "PREFIX=/usr",
+        "LIBDIR=/usr/lib64",
+        "CONFIG_PFMLIB_SHARED=y",
+    ],
+    deps = [],
+    visibility = ["PUBLIC"],
+)

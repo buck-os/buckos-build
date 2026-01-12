@@ -1,0 +1,19 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# nanogui - Package from third-party
+
+cmake_package(
+    name = "nanogui",
+    version = "0.0.1",
+    src_uri = "https://github.com/mitsuba-renderer/nanogui/archive/refs/tags/v0.0.1.tar.gz",
+    sha256 = "0caf99b0d60970f81ce41c7ba694e5eaaf833227bb2cbcdb2f6dc9666a663c57",
+    description = "nanogui package",
+    homepage = "https://github.com/mitsuba-renderer/nanogui.git",
+    license = "as-is",
+    deps = [],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+    ],
+    visibility = ["PUBLIC"],
+)

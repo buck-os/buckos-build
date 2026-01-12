@@ -1,0 +1,10 @@
+load("//defs:package_defs.bzl", "cargo_package")
+
+cargo_package(
+    name = "rust-analyzer",
+    version = "2025-11-11",
+    src_uri = "https://github.com/rust-lang/rust-analyzer/archive/refs/tags/2025-11-11.tar.gz",
+    sha256 = "283267780bcb0563eae1e8a09b09a516f6fa28dec1c96cab7ecdc9c79c2ecf07",
+    bins = ["rust-analyzer"],
+    cargo_args = ["--release", "-p", "rust-analyzer"],
+)

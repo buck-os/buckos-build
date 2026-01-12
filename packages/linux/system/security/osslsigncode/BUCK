@@ -1,0 +1,20 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "osslsigncode",
+    version = "2.10",
+    src_uri = "https://github.com/mtrojnar/osslsigncode/archive/refs/tags/2.10.tar.gz",
+    sha256 = "2a864e6127ee2350fb648070fa0d459c534ac6400ca0048886aeab7afb250f65",
+    description = "OpenSSL based Authenticode signing for PE, CAB, CAT and MSI files",
+    homepage = "https://github.com/mtrojnar/osslsigncode",
+    license = "GPL-3.0",
+    deps = [
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/system/libs/network/curl:curl",
+        "//packages/linux/core/zlib:zlib",
+    ],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+    ],
+    visibility = ["PUBLIC"],
+)

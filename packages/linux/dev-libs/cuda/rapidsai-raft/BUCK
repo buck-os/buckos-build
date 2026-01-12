@@ -1,0 +1,108 @@
+# RAPIDS RAFT - Reusable Accelerated Functions and Tools for GPU computing
+# High-performance primitives for machine learning and data mining
+
+load("//defs:package_defs.bzl", "download_source", "binary_package")
+
+download_source(
+    name = "rapidsai-raft-src",
+    src_uri = "https://github.com/rapidsai/raft/archive/refs/tags/v25.06.00.tar.gz",
+    sha256 = "5bef9bf52c56f7efb0f120130bd1d6d493ee144f1f7328e02f0f70d5d5f2a33b",
+    signature_required = False,
+)
+
+binary_package(
+    name = "rapidsai-raft",
+    srcs = [":rapidsai-raft-src"],
+    version = "25.06.00",
+    description = "RAPIDS RAFT - Reusable Accelerated Functions and Tools for vector search and clustering on GPUs",
+    homepage = "https://github.com/rapidsai/raft",
+    license = "Apache-2.0",
+    install_script = """
+cd $SRCS
+
+# Find the source directory
+if [ -d raft-25.06.00 ]; then
+    cd raft-25.06.00
+else
+    SRC_DIR=$(find . -maxdepth 2 -name "cpp" -type d | head -1 | xargs dirname)
+    if [ -n "$SRC_DIR" ]; then
+        cd "$SRC_DIR"
+    else
+        echo "Cannot find source directory"
+        exit 1
+    fi
+fi
+
+# RAFT is primarily a header-only CUDA library
+mkdir -p "$OUT/usr/include"
+
+# Install main headers
+cp -r cpp/include/raft "$OUT/usr/include/"
+cp cpp/include/raft.hpp "$OUT/usr/include/" 2>/dev/null || true
+
+# Install thirdparty mdspan headers
+if [ -d cpp/include/raft/thirdparty ]; then
+    mkdir -p "$OUT/usr/include/raft/thirdparty"
+    cp -r cpp/include/raft/thirdparty/* "$OUT/usr/include/raft/thirdparty/"
+fi
+
+# Install CMake configuration files
+mkdir -p "$OUT/usr/lib/cmake/raft"
+
+cat > "$OUT/usr/lib/cmake/raft/raft-config.cmake" << 'EOF'
+# RAFT CMake configuration file
+
+if(NOT TARGET raft::raft)
+    add_library(raft::raft INTERFACE IMPORTED)
+
+    set_target_properties(raft::raft PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_LIST_DIR}/../../../include"
+        INTERFACE_COMPILE_FEATURES cxx_std_17
+    )
+
+    if(CMAKE_CUDA_COMPILER)
+        set_property(TARGET raft::raft PROPERTY
+            INTERFACE_COMPILE_OPTIONS $<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr --expt-extended-lambda>)
+    endif()
+endif()
+
+set(raft_VERSION "25.06.00")
+set(raft_VERSION_MAJOR 25)
+set(raft_VERSION_MINOR 6)
+set(raft_VERSION_PATCH 0)
+EOF
+
+cat > "$OUT/usr/lib/cmake/raft/raft-config-version.cmake" << 'EOF'
+set(PACKAGE_VERSION "25.06.00")
+
+if(PACKAGE_VERSION VERSION_LESS PACKAGE_FIND_VERSION)
+    set(PACKAGE_VERSION_COMPATIBLE FALSE)
+else()
+    set(PACKAGE_VERSION_COMPATIBLE TRUE)
+    if(PACKAGE_FIND_VERSION STREQUAL PACKAGE_VERSION)
+        set(PACKAGE_VERSION_EXACT TRUE)
+    endif()
+endif()
+EOF
+
+# Install pkg-config file
+mkdir -p "$OUT/usr/lib/pkgconfig"
+cat > "$OUT/usr/lib/pkgconfig/raft.pc" << 'EOF'
+prefix=/usr
+includedir=${prefix}/include
+
+Name: RAFT
+Description: RAPIDS RAFT - Reusable Accelerated Functions and Tools for GPU computing
+Version: 25.06.00
+Requires: cuda
+Cflags: -I${includedir}
+EOF
+
+echo "RAPIDS RAFT v25.06.00 installed successfully"
+""",
+    deps = [
+        "//packages/linux/system/gpu/libraries/cuda-toolkit:cuda-toolkit",
+        "//packages/linux/dev-libs/cuda/cutlass4:cutlass4",
+    ],
+    visibility = ["PUBLIC"],
+)

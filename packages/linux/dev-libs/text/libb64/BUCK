@@ -1,0 +1,24 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "libb64",
+    version = "2.0.0.3",
+    src_uri = "https://github.com/libb64/libb64/archive/refs/tags/v2.0.0.3.tar.gz",
+    sha256 = "TODO",
+    signature_required = False,
+    description = "Base64 encoding/decoding library in C",
+    homepage = "https://github.com/libb64/libb64",
+    license = "CC0-1.0",
+    src_configure = "true",
+    src_compile = """
+cd src
+make -j$(nproc) CFLAGS="-O3 -fPIC -Wno-implicit-fallthrough -I../include" libb64.a
+""",
+    src_install = """
+mkdir -p "$DESTDIR/usr/lib"
+mkdir -p "$DESTDIR/usr/include/b64"
+cp src/libb64.a "$DESTDIR/usr/lib/"
+cp include/b64/*.h "$DESTDIR/usr/include/b64/"
+""",
+    visibility = ["PUBLIC"],
+)

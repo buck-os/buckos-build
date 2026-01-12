@@ -1,0 +1,21 @@
+load("//defs:package_defs.bzl", "simple_package")
+
+# unbound_exporter - Prometheus exporter for Unbound DNS resolver
+
+simple_package(
+    name = "unbound-exporter",
+    version = "0.0.1-5e9c7ff",
+    src_uri = "https://github.com/letsencrypt/unbound_exporter/archive/5e9c7ff5c5850a54029ed58e56449d38d14cfcd8.tar.gz",
+    sha256 = "TODO",
+    description = "Prometheus exporter for Unbound DNS resolver statistics",
+    homepage = "https://github.com/letsencrypt/unbound_exporter",
+    license = "Apache-2.0",
+    deps = [
+        "//packages/linux/lang/go:go",
+    ],
+    build_commands = [
+        "go build -o unbound_exporter .",
+        "install -Dm755 unbound_exporter ${PREFIX}/bin/unbound_exporter",
+    ],
+    visibility = ["PUBLIC"],
+)

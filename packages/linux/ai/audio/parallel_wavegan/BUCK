@@ -1,0 +1,26 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "parallel_wavegan",
+    version = "0.6.0",
+    src_uri = "https://github.com/kan-bayashi/ParallelWaveGAN/archive/v0.6.0.tar.gz",
+    sha256 = "TODO",
+    deps = [
+        "//packages/linux/dev-libs/python/h5py",
+        "//packages/linux/dev-libs/python/librosa",
+        "//packages/linux/dev-libs/python/matplotlib",
+        "//packages/linux/dev-libs/python/numpy",
+        "//packages/linux/dev-libs/python/scikit-learn",
+        "//packages/linux/dev-libs/python/soundfile",
+        "//packages/linux/dev-libs/python/tensorboardX",
+        "//packages/linux/dev-libs/python/PyYAML",
+        "//packages/linux/dev-libs/python/tqdm",
+        "//packages/linux/dev-libs/python/kaldiio",
+        "//packages/linux/dev-libs/python/yq",
+        "//packages/linux/dev-libs/python/gdown",
+        "//packages/linux/dev-libs/python/filelock",
+        "//packages/linux/dev-libs/serialization/protobuf",
+        "//packages/linux/ai/ml-frameworks/pytorch",
+    ],
+    visibility = ["PUBLIC"],
+)

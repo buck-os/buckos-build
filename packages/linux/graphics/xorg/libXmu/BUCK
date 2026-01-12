@@ -1,0 +1,25 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# libXmu - X Miscellaneous Utilities library
+autotools_package(
+    name = "libXmu",
+    version = "1.2.1",
+    src_uri = "https://xorg.freedesktop.org/archive/individual/lib/libXmu-1.2.1.tar.xz",
+    sha256 = "fcb27793248a39e5fcc5b9c4aec40cc0734b3ca76aac3d7d1c264e7f7e14e8b2",
+    description = "X Miscellaneous Utilities library",
+    homepage = "https://xorg.freedesktop.org/",
+    license = "MIT",
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--libdir=/usr/lib64",
+        "--disable-docs",
+    ],
+    deps = [
+        "//packages/linux/graphics/xorg/libX11:libX11",
+        "//packages/linux/graphics/xorg/libXext:libXext",
+        "//packages/linux/graphics/xorg/libXt:libXt",
+        "//packages/linux/graphics/xorg/xorgproto:xorgproto",
+    ],
+    visibility = ["PUBLIC"],
+)

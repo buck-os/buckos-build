@@ -1,0 +1,34 @@
+load("//defs:package_defs.bzl", "download_source", "autotools_package")
+
+download_source(
+    name = "honggfuzz-src",
+    src_uri = "https://github.com/google/honggfuzz/archive/refs/tags/2.4.tar.gz",
+    sha256 = "TODO",
+)
+
+autotools_package(
+    name = "honggfuzz",
+    source = ":honggfuzz-src",
+    version = "2.4",
+    description = "Security-oriented coverage-guided fuzzer with powerful analysis options",
+    homepage = "https://github.com/google/honggfuzz",
+    license = "Apache-2.0",
+    src_configure = """
+# No configure script, honggfuzz uses Makefile directly
+true
+""",
+    src_compile = """
+make -j$(nproc) \
+    PREFIX=/usr \
+    BUILD_LINUX_NO_BFD=true
+""",
+    src_install = """
+make install \
+    DESTDIR="$DESTDIR" \
+    PREFIX=/usr
+""",
+    deps = [
+        "//packages/linux/system/libs/libunwind",
+    ],
+    visibility = ["PUBLIC"],
+)

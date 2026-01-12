@@ -1,0 +1,24 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# spawn-fcgi - Spawn FastCGI processes
+#
+# spawn-fcgi is a utility to spawn FastCGI processes. It's used to start
+# FastCGI applications independent of the web server. This is especially
+# useful with nginx and other web servers that don't have built-in FastCGI
+# process management.
+#
+# Originally part of lighttpd, now maintained as a separate project.
+
+autotools_package(
+    name = "spawn-fcgi",
+    version = "1.6.5",
+    src_uri = "https://github.com/lighttpd/spawn-fcgi/archive/refs/tags/spawn-fcgi-1.6.5.tar.gz",
+    sha256 = "5b2ea0fd9e3384be91173d69c722bea3cee56288751b0fc271f3f7830817d3b6",
+    description = "Utility to spawn FastCGI processes",
+    homepage = "https://redmine.lighttpd.net/projects/spawn-fcgi",
+    license = "BSD-3-Clause",
+    configure_args = [
+        "--prefix=${PREFIX}",
+    ],
+    visibility = ["PUBLIC"],
+)

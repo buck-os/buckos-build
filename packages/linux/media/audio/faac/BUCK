@@ -1,0 +1,54 @@
+# =============================================================================
+# FAAC - Freeware Advanced Audio Coder
+# =============================================================================
+#
+# FAAC is an open source MPEG-4 and MPEG-2 AAC encoder, it is licensed under
+# the LGPL license. Features AAC-LC, HE-AAC (AAC+), HE-AACv2 (aacPlus) encoding.
+#
+# FAAC (Freeware Advanced Audio Coder) is a software project which includes
+# the AAC encoder FAAC and decoder FAAD2. It supports several MPEG-4 object
+# types (LC, Main, LTP, HE AAC, PS) and file formats (ADTS AAC, raw AAC, MP4),
+# multichannel and gapless encoding/decoding and MP4 metadata support.
+#
+# Key features:
+# - AAC-LC (Low Complexity) encoding
+# - HE-AAC (High Efficiency AAC / AAC+) support
+# - MP4 container support
+# - ADTS stream format support
+# - Multiple bitrate modes (CBR, ABR, VBR)
+# - Digital Radio Mondiale (DRM) support (optional)
+# - SSE/SSE2 optimizations for x86/x86_64
+# - Joint stereo and intensity stereo coding
+# - Perceptual Noise Substitution (PNS)
+# - Temporal Noise Shaping (TNS)
+#
+# FAAC is widely used for AAC encoding in various applications and provides
+# a command-line encoder tool for creating AAC/MP4 files from PCM audio input.
+#
+# =============================================================================
+
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "faac",
+    version = "1.30",
+    source = "//third-party/faac:1_30",
+    description = "Freeware Advanced Audio Coder - MPEG-4 AAC encoder",
+    homepage = "https://github.com/knik0/faac",
+    license = "LGPL-2.1-or-later",
+    iuse = ["static-libs", "drm"],
+    use_defaults = [],
+    configure_args = [
+        "--prefix=/usr",
+        "--disable-static",
+        "--enable-shared",
+    ],
+    use_configure = {
+        "static-libs": "--enable-static",
+        "-static-libs": "--disable-static",
+        "drm": "--enable-drm",
+        "-drm": "--disable-drm",
+    },
+    deps = [],
+    visibility = ["PUBLIC"],
+)

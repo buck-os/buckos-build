@@ -1,0 +1,23 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "warc2text",
+    version = "1.0.0",
+    src_uri = "https://github.com/facebookexternal/warc2text/archive/refs/heads/flex_scanner.tar.gz",
+    sha256 = "TODO",
+    cmake_args = [
+        "-DCMAKE_CXX_STANDARD=17",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DSKIP_PREPROCESS_BUILD=ON",
+        "-DJSON_BuildTests=OFF",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/boost",
+        "//packages/linux/dev-libs/text/cld2",
+        "//packages/linux/ai/nlp/fasttext",
+        "//packages/linux/dev-tools/parsers/flex",
+        "//packages/linux/dev-libs/xml/libxslt",
+        "//packages/linux/dev-libs/json/nlohmann-json",
+        "//packages/linux/dev-libs/text/re2",
+    ],
+)

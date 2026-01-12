@@ -1,0 +1,31 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "cugraph",
+    version = "24.10.00",
+    src_uri = "https://github.com/rapidsai/cugraph/archive/refs/tags/v24.10.00.tar.gz",
+    sha256 = "4e10699598ce60bf334f70705bc2c4696f945a760198533f493514ba7dc4b5ce",
+    signature_required = False,
+    description = "cuGraph - GPU Graph Analytics Library from NVIDIA RAPIDS",
+    homepage = "https://github.com/rapidsai/cugraph",
+    license = "Apache-2.0",
+    deps = [
+        "//packages/linux/dev-libs/cuda/rmm:rmm",
+        "//packages/linux/dev-libs/cuda/rapidsai-raft:rapidsai-raft",
+        "//packages/linux/dev-libs/cuda/cucollections:cucollections",
+    ],
+    pre_configure = """
+cd cpp
+""",
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_STANDARD=17",
+        "-DCMAKE_CUDA_STANDARD=17",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DBUILD_TESTS=OFF",
+        "-DBUILD_CUGRAPH_MG_TESTS=OFF",
+        "-DUSE_CUGRAPH_OPS=OFF",
+        "-DCUGRAPH_COMPILE_RAFT_LIB=OFF",
+    ],
+    visibility = ["PUBLIC"],
+)

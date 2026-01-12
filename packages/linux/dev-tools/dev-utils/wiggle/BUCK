@@ -1,0 +1,29 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "wiggle",
+    version = "1.3",
+    src_uri = "https://github.com/neilbrown/wiggle/archive/refs/tags/v1.3.tar.gz",
+    sha256 = "ff92cf0133c1f4dce33563e263cb30e7ddb6f4abdf86d427b1ec1490bec25afa",
+    description = "Tool for applying patches with conflicts",
+    homepage = "https://github.com/neilbrown/wiggle",
+    license = "GPL-2.0-or-later",
+    pre_configure = """
+# wiggle uses plain Makefile, skip configure
+""",
+    configure_args = [],
+    make_args = [],
+    post_install = """
+cd "$SRCDIR"
+
+# Build wiggle
+make CC=cc PREFIX=/usr
+
+# Install
+make install DESTDIR="$DESTDIR" PREFIX=/usr
+""",
+    deps = [
+        "//packages/linux/core/ncurses:ncurses",
+    ],
+    visibility = ["PUBLIC"],
+)

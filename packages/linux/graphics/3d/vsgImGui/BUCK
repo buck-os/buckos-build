@@ -1,0 +1,19 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# vsgImGui - Package from third-party
+
+cmake_package(
+    name = "vsgImGui",
+    version = "v0.6.0",
+    src_uri = "https://github.com/vsg-dev/vsgimgui/archive/refs/tags/vv0.6.0.tar.gz",
+    sha256 = "2f1ac922aa564d2a8385515a7d39c7a354df192b370a4713862e41b92bd4e388",
+    description = "vsgImGui package",
+    homepage = "https://github.com/vsg-dev/vsgimgui.git",
+    license = "MIT",
+    deps = [],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+    ],
+    visibility = ["PUBLIC"],
+)

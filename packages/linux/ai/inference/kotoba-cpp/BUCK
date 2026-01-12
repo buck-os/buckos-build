@@ -1,0 +1,24 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "kotoba-cpp",
+    version = "d9f1770",
+    src_uri = "https://github.com/kotoba-tech/kotoba-ios-tts/archive/d9f1770a64d000fca1ef886c27ea850f8e4726e1.tar.gz",
+    sha256 = "e6575877708526e399cff752b4ee23cb1e2ac32fb251e2ca0a1e8d691fd172a7",
+    description = "LLM-based TTS inference library (llama.cpp fork)",
+    homepage = "https://github.com/kotoba-tech/kotoba-ios-tts",
+    license = "MIT",
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DGGML_NATIVE=ON",
+        "-DGGML_OPENMP=ON",
+        "-DLLAMA_BUILD_TESTS=OFF",
+        "-DLLAMA_BUILD_EXAMPLES=OFF",
+        "-DLLAMA_BUILD_SERVER=OFF",
+        "-DLLAMA_BUILD_COMMON=ON",
+    ],
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+    ],
+    visibility = ["PUBLIC"],
+)

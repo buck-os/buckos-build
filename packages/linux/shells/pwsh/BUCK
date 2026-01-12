@@ -1,7 +1,7 @@
 load("//defs:package_defs.bzl", "download_source", "ebuild_package", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
 
-# pwsh - PowerShell for Linux
+# pwsh - PowerShell for Linux (prebuilt binary)
 download_source(
     name = "pwsh-src",
     src_uri = "https://github.com/PowerShell/PowerShell/releases/download/v7.4.1/powershell-7.4.1-linux-x64.tar.gz",
@@ -16,13 +16,14 @@ ebuild_package(
     description = "Cross-platform PowerShell",
     homepage = "https://github.com/PowerShell/PowerShell",
     license = "MIT",
+    src_configure = "true",
+    src_compile = "true",
     src_install = """
 mkdir -p "$DESTDIR/usr/lib/powershell"
 cp -r * "$DESTDIR/usr/lib/powershell/"
 mkdir -p "$DESTDIR/usr/bin"
 ln -s /usr/lib/powershell/pwsh "$DESTDIR/usr/bin/pwsh"
 """,
-    rdepend = [
-    ],
+    rdepend = [],
     visibility = ["PUBLIC"],
 )

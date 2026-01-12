@@ -1,0 +1,55 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "jpeg-xl",
+    version = "0.10.3",
+    src_uri = "https://github.com/libjxl/libjxl/archive/refs/tags/v0.10.3.tar.gz",
+    sha256 = "e0191411cfcd927eebe5392d030fe4283fe27ba1685ab7265104936e0b4283a6",
+    description = "JPEG XL image format reference implementation",
+    homepage = "https://github.com/libjxl/libjxl",
+    license = "Apache-2.0",
+    iuse = [
+        "tools",
+        "gif",
+        "jpeg",
+        "png",
+        "openexr",
+    ],
+    use_defaults = [
+        "tools",
+        "gif",
+        "jpeg",
+        "png",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/compression/brotli:brotli",
+        "//packages/linux/dev-libs/misc/highway:highway",
+    ],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DJPEGXL_ENABLE_SKCMS=ON",
+        "-DJPEGXL_ENABLE_TRANSCODE_JPEG=ON",
+        "-DJPEGXL_ENABLE_BENCHMARK=OFF",
+        "-DJPEGXL_ENABLE_EXAMPLES=OFF",
+        "-DJPEGXL_ENABLE_FUZZERS=OFF",
+        "-DJPEGXL_ENABLE_MANPAGES=OFF",
+        "-DJPEGXL_FORCE_SYSTEM_BROTLI=ON",
+        "-DJPEGXL_FORCE_SYSTEM_HWY=ON",
+        "-DJPEGXL_BUNDLE_LIBPNG=OFF",
+    ],
+    use_options = {
+        "tools": "JPEGXL_ENABLE_TOOLS",
+        "gif": "JPEGXL_ENABLE_GIF",
+        "jpeg": "JPEGXL_ENABLE_JPEG",
+        "png": "JPEGXL_ENABLE_APNG",
+        "openexr": "JPEGXL_ENABLE_OPENEXR",
+    },
+    use_deps = {
+        "gif": ["//packages/linux/media/libraries/giflib:giflib"],
+        "jpeg": ["//packages/linux/media/libraries/libjpeg-turbo:libjpeg-turbo"],
+        "png": ["//packages/linux/media/libraries/libpng:libpng"],
+        "openexr": ["//packages/linux/graphics/3d/openexr:openexr"],
+    },
+    visibility = ["PUBLIC"],
+)

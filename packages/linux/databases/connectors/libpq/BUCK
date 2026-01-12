@@ -1,0 +1,69 @@
+load("//defs:package_defs.bzl", "meson_package")
+load("//defs:use_flags.bzl", "set_use_flags")
+
+# libpq - PostgreSQL C client library
+#
+# The libpq C library provides the official PostgreSQL client API.
+# It's extracted from the PostgreSQL source and can be used standalone
+# for applications that need to connect to PostgreSQL databases.
+#
+# USE flags:
+#   ssl       - Enable SSL/TLS support with OpenSSL
+#   gssapi    - Enable GSSAPI authentication support
+#   ldap      - Enable LDAP authentication support
+#   pam       - Enable PAM authentication support
+#   readline  - Enable readline support for command-line editing
+#   zlib      - Enable compression support
+
+meson_package(
+    name = "libpq",
+    version = "16.4",
+    src_uri = "https://ftp.postgresql.org/pub/source/v16.4/postgresql-16.4.tar.bz2",
+    sha256 = "971766d645aa73e93b9ef4e3be44201b4f45b5477095b049125403f9f3386d6f",
+    signature_required = False,
+    description = "PostgreSQL C client library",
+    homepage = "https://www.postgresql.org/",
+    license = "PostgreSQL",
+
+    # USE flags this package supports
+    iuse = [
+        "ssl",
+        "gssapi",
+        "ldap",
+        "pam",
+        "readline",
+        "zlib",
+        "doc",
+    ],
+
+    # Default enabled flags
+    use_defaults = ["ssl", "zlib"],
+
+    # Conditional dependencies based on USE flags
+    use_deps = {
+        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
+        "readline": ["//packages/linux/core/readline:readline"],
+        "zlib": ["//packages/linux/core/zlib:zlib"],
+    },
+
+    # Meson options based on USE flags
+    use_options = {
+        "ssl": "ssl",
+        "gssapi": "gssapi",
+        "ldap": "ldap",
+        "pam": "pam",
+        "readline": "readline",
+        "zlib": "zlib",
+    },
+
+    # Base Meson arguments (always applied)
+    meson_args = [
+        "-Dsystem_tzdata=/usr/share/zoneinfo",
+        "-Dprefix=/usr",
+    ],
+
+    # Base dependencies (always required)
+    deps = [],
+
+    visibility = ["PUBLIC"],
+)

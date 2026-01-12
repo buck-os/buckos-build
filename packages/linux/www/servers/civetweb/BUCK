@@ -1,0 +1,45 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# CivetWeb - Embedded C/C++ web server
+#
+# CivetWeb is an easy to use, powerful, C/C++ embeddable web server with
+# optional CGI, SSL and Lua support. It can be used to provide web services
+# in desktop applications or embedded systems.
+#
+# USE flags:
+#   ssl       - Enable HTTPS/SSL/TLS support
+#   cgi       - Enable CGI support
+#   websocket - Enable WebSocket support
+#   ipv6      - Enable IPv6 support
+
+cmake_package(
+    name = "civetweb",
+    version = "1.15",
+    src_uri = "https://github.com/civetweb/civetweb/archive/refs/tags/v1.15.tar.gz",
+    sha256 = "TODO",
+    description = "Embedded C/C++ web server with optional CGI, SSL and Lua support",
+    homepage = "https://github.com/civetweb/civetweb",
+    license = "MIT",
+    iuse = ["ssl", "cgi", "websocket", "ipv6"],
+    use_defaults = ["ssl", "websocket", "ipv6"],
+    deps = [],
+    use_deps = {
+        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
+    },
+    cmake_args = [
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DCIVETWEB_ENABLE_SERVER_EXECUTABLE=ON",
+        "-DCIVETWEB_BUILD_TESTING=OFF",
+    ],
+    use_cmake = {
+        "ssl": "-DCIVETWEB_ENABLE_SSL=ON",
+        "-ssl": "-DCIVETWEB_ENABLE_SSL=OFF",
+        "cgi": "-DCIVETWEB_ENABLE_CGI=ON",
+        "-cgi": "-DCIVETWEB_ENABLE_CGI=OFF",
+        "websocket": "-DCIVETWEB_ENABLE_WEBSOCKETS=ON",
+        "-websocket": "-DCIVETWEB_ENABLE_WEBSOCKETS=OFF",
+        "ipv6": "-DCIVETWEB_ENABLE_IPV6=ON",
+        "-ipv6": "-DCIVETWEB_ENABLE_IPV6=OFF",
+    },
+    visibility = ["PUBLIC"],
+)

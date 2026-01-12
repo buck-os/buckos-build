@@ -1,0 +1,16 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "libcroco",
+    version = "0.6.13",
+    src_uri = "https://download.gnome.org/sources/libcroco/0.6/libcroco-0.6.13.tar.xz",
+    sha256 = "767ec234ae7aa684695b3a735548224888132e063f92db585759b422570621d4",
+    configure_args = [
+        "--disable-static",
+        "--disable-gtk-doc",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/glib:glib",
+        "//packages/linux/dev-libs/libxml2:libxml2",
+    ],
+)

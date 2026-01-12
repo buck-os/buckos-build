@@ -1,0 +1,49 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# Cesium Terrain Builder - Tools for creating terrain tiles for Cesium
+#
+# Cesium Terrain Builder is a C++ library and set of associated command line
+# tools for creating terrain tiles for use in the Cesium JavaScript library.
+# The tools can be used to create terrain tiles from GeoTIFF data, GDAL raster
+# formats, and other geospatial data sources.
+
+cmake_package(
+    name = "cesium-terrain-builder",
+    version = "0.4.1",
+    src_uri = "https://github.com/ruanqizhen/cesium-terrain-builder/archive/50d5a68fbbb0ff30de82d59f97308f8a8bbd6dfe.tar.gz",
+    sha256 = "TODO",
+    description = "Tools for creating terrain tiles for Cesium - converts geospatial data to Cesium terrain format",
+    homepage = "https://github.com/ruanqizhen/cesium-terrain-builder",
+    license = "Apache-2.0",
+    deps = [
+        # GDAL >= 2.0.0 required (RFC 46 unified GDAL/OGR API)
+        # TODO: Add GDAL dependency when available
+        # "//packages/linux/graphics/gdal:gdal",
+
+        # zlib required for terrain tile compression
+        "//packages/linux/core/zlib:zlib",
+
+        # Note: Threads library (pthread) is provided by system toolchain
+    ],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        # Tile size - according to spec should always be 65
+        "-DTERRAIN_TILE_SIZE=65",
+        # Water mask size - according to spec should always be 256
+        "-DTERRAIN_MASK_SIZE=256",
+    ],
+    pre_configure = """
+        # Configure config.hpp from template
+        # CMake will handle this via configure_file() in CMakeLists.txt
+
+        # Note: GDAL >= 2.0.0 is required (RFC 46 unified GDAL/OGR API)
+        # The build will check for GDALOpenEx function to verify GDAL version
+
+        echo "Cesium Terrain Builder requires:"
+        echo "  - GDAL >= 2.0.0 (RFC 46 unified API with GDALOpenEx)"
+        echo "  - zlib for terrain tile compression"
+        echo "  - C++11 compatible compiler"
+    """,
+    visibility = ["PUBLIC"],
+)

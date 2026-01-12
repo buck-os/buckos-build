@@ -1,0 +1,17 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "pytorch-frame",
+    version = "0.3.0",
+    src_uri = "https://github.com/pyg-team/pytorch-frame/archive/refs/tags/v0.3.0.tar.gz",
+    sha256 = "TODO",
+    description = "Tabular Deep Learning Library for PyTorch",
+    homepage = "https://github.com/pyg-team/pytorch-frame",
+    license = "MIT",
+    deps = [
+        "//packages/linux/lang/python:python",
+        "//packages/linux/dev-libs/python/numpy:numpy",
+        "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
+    ],
+    visibility = ["PUBLIC"],
+)

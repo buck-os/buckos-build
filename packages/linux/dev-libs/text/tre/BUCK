@@ -1,0 +1,41 @@
+load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
+
+# TRE - Lightweight, robust, and efficient POSIX compliant regexp matching library
+download_source(
+    name = "tre-src",
+    src_uri = "https://github.com/laurikari/tre/archive/refs/tags/0.8.0.tar.gz",
+    sha256 = "17506f1ef5c92491183ab28242fa4f658d9625fe4f91ccd1d1358cb6e5f5acb6",
+    signature_required = False,
+)
+
+autotools_package(
+    name = "tre",
+    source = ":tre-src",
+    version = "0.8.0",
+    description = "Lightweight, robust POSIX compliant regexp matching library with approximate matching",
+    homepage = "https://github.com/laurikari/tre",
+    license = "BSD-2-Clause",
+    iuse = ["static-libs", "nls"],
+    use_defaults = ["nls"],
+    configure_args = [
+        "--enable-shared",
+    ],
+    use_configure = {
+        "static-libs": "--enable-static",
+        "-static-libs": "--disable-static",
+        "nls": "--enable-nls",
+        "-nls": "--disable-nls",
+    },
+    bdepend = [
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+    ],
+    src_prepare = """
+        # Generate configure script if not present
+        if [ ! -f configure ]; then
+            autoreconf -fiv
+        fi
+    """,
+    visibility = ["PUBLIC"],
+)

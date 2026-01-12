@@ -1,0 +1,62 @@
+load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:use_flags.bzl", "set_use_flags")
+
+# =============================================================================
+# Arm Tarmac Trace Utilities - Tools for analyzing Tarmac trace files
+# =============================================================================
+# This package provides tools to read, analyze and browse traces of running
+# programs in the 'Tarmac' textual format used by Arm simulators and tools.
+#
+# Main tools installed:
+#   - tarmac-callinfo: Generate call information reports
+#   - tarmac-calltree: Show tree of function calls and returns
+#   - tarmac-flamegraph: Generate flamegraph data from traces
+#   - tarmac-profile: Generate per-function profiling reports
+#   - tarmac-vcd: Convert traces to IEEE 1364 Value Change Dump format
+
+autotools_package(
+    name = "arm-tarmac",
+    version = "0.0.1",
+    src_uri = "https://github.com/ARM-software/tarmac-trace-utilities/archive/e9b24783c2be2a47aaf5f85e6bbd54f1fa8e7122.tar.gz",
+    sha256 = "",  # TODO: Calculate sha256 for this specific commit
+    signature_required = False,
+    description = "Arm Tarmac Trace Utilities - tools to analyze trace files in Tarmac format",
+    homepage = "https://github.com/ARM-software/tarmac-trace-utilities",
+    license = "Apache-2.0",
+
+    # arm-tarmac uses CMake, not autotools
+    src_configure = """
+echo "=== Configuring arm-tarmac with CMake ==="
+mkdir -p build
+cd build
+cmake .. \\
+    -DCMAKE_INSTALL_PREFIX=/usr \\
+    -DCMAKE_BUILD_TYPE=Release \\
+    -DCMAKE_CXX_STANDARD=14 \\
+    -DCMAKE_CXX_FLAGS="-static-libgcc -static-libstdc++" \\
+    -DCMAKE_EXE_LINKER_FLAGS="-static" \\
+    -DFORCE_BUILDING_ALL_APPS=OFF
+""",
+
+    src_compile = """
+echo "=== Building arm-tarmac ==="
+cd build
+make -j$(nproc)
+""",
+
+    src_install = """
+echo "=== Installing arm-tarmac ==="
+cd build
+make install DESTDIR="$DESTDIR"
+
+# Install library and headers
+if [ -f libtarmac.a ]; then
+    install -D -m 644 libtarmac.a "$DESTDIR/usr/lib64/libtarmac.a"
+fi
+""",
+
+    deps = [
+        "//packages/linux/dev-tools/build-systems/cmake:cmake",
+    ],
+    visibility = ["PUBLIC"],
+)

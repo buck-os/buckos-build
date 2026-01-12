@@ -1,0 +1,28 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "asterisk",
+    version = "22.4.0",
+    src_uri = "https://github.com/asterisk/asterisk/archive/refs/tags/22.4.0.tar.gz",
+    sha256 = "d2ee5d12968b7e5a4f5a28aaf3a89885a23c262254a785d43c752fdbc26ac252",
+    description = "Open source PBX and telephony toolkit",
+    homepage = "https://www.asterisk.org/",
+    license = "GPL-2.0",
+    iuse = ["ssl", "pjsip", "sqlite", "uuid"],
+    use_defaults = ["ssl", "pjsip", "sqlite", "uuid"],
+    deps = [],
+    use_deps = {
+        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
+        "pjsip": ["//packages/linux/network/voip/pjsip:pjsip"],
+        "sqlite": ["//packages/linux/databases/sqlite:sqlite"],
+        "uuid": ["//packages/linux/system/libs/uuid:uuid"],
+    },
+    configure_args = [
+        "--prefix=${PREFIX}",
+        "--with-jansson-bundled",
+        "--with-pjproject-bundled",
+        "--with-libjwt-bundled",
+        "--disable-xmldoc",
+    ],
+    visibility = ["PUBLIC"],
+)

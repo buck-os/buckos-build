@@ -1,0 +1,27 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# libjpeg-turbo - JPEG image codec with accelerated baseline compression/decompression
+
+cmake_package(
+    name = "libjpeg-turbo",
+    version = "2.1.5",
+    src_uri = "https://github.com/libjpeg-turbo/libjpeg-turbo/archive/2.1.5.tar.gz",
+    sha256 = "254f3642b04e309fee775123133c6464181addc150499561020312ec61c1bf7c",
+    description = "JPEG image codec that uses SIMD instructions to accelerate baseline JPEG compression and decompression",
+    homepage = "https://libjpeg-turbo.org/",
+    license = "BSD-3-Clause",
+    iuse = ["shared", "static", "simd", "12bit", "java"],
+    use_defaults = ["shared", "simd"],
+    deps = [],
+    cmake_args = [
+        "-DCMAKE_INSTALL_PREFIX=${PREFIX}",
+    ],
+    use_options = {
+        "shared": "ENABLE_SHARED",
+        "static": "ENABLE_STATIC",
+        "simd": "WITH_SIMD",
+        "12bit": "WITH_12BIT",
+        "java": "WITH_JAVA",
+    },
+    visibility = ["PUBLIC"],
+)

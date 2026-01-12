@@ -1,0 +1,43 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# NATS C Client - C client for NATS messaging system
+#
+# NATS is a simple, secure, and high-performance messaging system for
+# cloud native applications, IoT messaging, and microservices architectures.
+#
+# This is the official C client library for NATS.
+#
+# USE flags:
+#   ssl       - Enable TLS/SSL support
+#   streaming - Enable NATS Streaming support
+
+cmake_package(
+    name = "nats.c",
+    version = "3.8.2",
+    src_uri = "https://github.com/nats-io/nats.c/archive/refs/tags/v3.8.2.tar.gz",
+    sha256 = "TODO",
+    description = "C client library for the NATS messaging system",
+    homepage = "https://github.com/nats-io/nats.c",
+    license = "Apache-2.0",
+    iuse = ["ssl", "streaming"],
+    use_defaults = ["ssl"],
+    deps = [
+        "//packages/linux/dev-libs/serialization/protobuf:protobuf",
+    ],
+    use_deps = {
+        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
+    },
+    cmake_args = [
+        "-DNATS_BUILD_STREAMING=ON",
+        "-DNATS_BUILD_EXAMPLES=OFF",
+        "-DNATS_BUILD_LIBEVENT=OFF",
+        "-DNATS_BUILD_LIBUV=OFF",
+    ],
+    use_cmake = {
+        "ssl": "-DNATS_BUILD_WITH_TLS=ON",
+        "-ssl": "-DNATS_BUILD_WITH_TLS=OFF",
+        "streaming": "-DNATS_BUILD_STREAMING=ON",
+        "-streaming": "-DNATS_BUILD_STREAMING=OFF",
+    },
+    visibility = ["PUBLIC"],
+)

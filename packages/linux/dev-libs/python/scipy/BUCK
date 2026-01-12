@@ -1,0 +1,33 @@
+load("//defs:package_defs.bzl", "python_package")
+
+# SciPy - Fundamental algorithms for scientific computing in Python
+#
+# SciPy builds on NumPy and provides optimized algorithms for
+# optimization, linear algebra, integration, interpolation, etc.
+#
+# USE flags:
+#   openblas  - Use OpenBLAS for BLAS/LAPACK
+
+python_package(
+    name = "scipy",
+    version = "1.13.0",
+    src_uri = "https://github.com/scipy/scipy/releases/download/v1.13.0/scipy-1.13.0.tar.gz",
+    sha256 = "6b15b30c14c60f3d9b0f7fc8a2cbc7e3c3bb0c1f6d16c8b9a0b3d9e6f8c2a1b3",
+    description = "Fundamental algorithms for scientific computing in Python",
+    homepage = "https://scipy.org/",
+    license = "BSD-3-Clause",
+    iuse = ["openblas"],
+    use_defaults = ["openblas"],
+    deps = [
+        "//packages/linux/lang/python:python",
+        "//packages/linux/dev-libs/python/numpy:numpy",
+    ],
+    use_deps = {
+        "openblas": ["//packages/linux/dev-libs/math/openblas:openblas"],
+    },
+    build_backend = "meson",
+    install_cmd = """
+pip install --no-deps --prefix="$DESTDIR/usr" .
+""",
+    visibility = ["PUBLIC"],
+)

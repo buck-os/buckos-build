@@ -1,0 +1,63 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# COLMAP - Structure-from-Motion and Multi-View Stereo Pipeline
+
+cmake_package(
+    name = "colmap",
+    version = "3.13.0",
+    src_uri = "https://github.com/colmap/colmap/archive/refs/tags/3.13.0.tar.gz",
+    sha256 = "98a8f8cf6358774be223239a9b034cc9d55bf66c43f54fc6ddea9128a1ee197a",
+    description = "COLMAP - Structure-from-Motion and Multi-View Stereo pipeline",
+    homepage = "https://colmap.github.io/",
+    license = "BSD-3-Clause",
+    iuse = ["cuda", "gui", "cgal", "tests", "openmp", "download"],
+    use_defaults = ["cgal", "openmp"],
+    deps = [
+        "//packages/linux/dev-libs/boost:boost",
+        "//packages/linux/dev-libs/eigen:eigen",
+        "//packages/linux/dev-libs/google/glog:glog",
+        "//packages/linux/dev-libs/google/gflags:gflags",
+        "//packages/linux/dev-libs/math/ceres-solver:ceres-solver",
+        "//packages/linux/databases/sqlite:sqlite",
+        "//packages/linux/dev-libs/glew:glew",
+        "//packages/linux/media/image/openimageio:openimageio",
+        "//packages/linux/graphics/rendering/opengl:opengl",
+    ],
+    use_deps = {
+        "cgal": ["//packages/linux/dev-libs/cgal:cgal"],
+        "gui": ["//packages/linux/graphics/qt:qt"],
+        "download": [
+            "//packages/linux/network/curl:curl",
+            "//packages/linux/system/libs/crypto/openssl:openssl",
+        ],
+        "tests": ["//packages/linux/dev-tools/testing/googletest:googletest"],
+    },
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DTESTS_ENABLED=OFF",
+        "-DGUI_ENABLED=OFF",
+        "-DCUDA_ENABLED=OFF",
+        "-DCGAL_ENABLED=OFF",
+        "-DDOWNLOAD_ENABLED=OFF",
+        "-DOPENMP_ENABLED=OFF",
+        "-DSIMD_ENABLED=ON",
+        "-DIFO_ENABLED=OFF",
+        "-DLSD_ENABLED=OFF",
+        "-DCCACHE_ENABLED=OFF",
+        "-DFETCH_POSELIB=ON",
+        "-DFETCH_FAISS=ON",
+        # Use OpenImageIO instead of FreeImage
+        "-DFreeImage_INCLUDE_DIR=${PREFIX}/include",
+        "-DFreeImage_LIBRARY=${PREFIX}/lib/libOpenImageIO.so",
+    ],
+    use_options = {
+        "cuda": "CUDA_ENABLED",
+        "gui": "GUI_ENABLED",
+        "cgal": "CGAL_ENABLED",
+        "tests": "TESTS_ENABLED",
+        "openmp": "OPENMP_ENABLED",
+        "download": "DOWNLOAD_ENABLED",
+    },
+    visibility = ["PUBLIC"],
+)

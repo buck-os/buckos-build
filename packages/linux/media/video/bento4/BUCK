@@ -1,0 +1,48 @@
+# =============================================================================
+# Bento4 - MP4 and DASH Tools and Library
+# =============================================================================
+#
+# Bento4 is a C++ class library and tools designed to read and write ISO-MP4
+# files. This format is defined in international specifications ISO/IEC 14496-12,
+# 14496-14 and 14496-15. The format is a derivative of the Apple Quicktime file
+# format, so Bento4 can be used to read and write most Quicktime files as well.
+#
+# Features include:
+# - MPEG DASH with fragmented MP4 files (ISO/IEC 23009-1)
+# - MPEG Common Encryption (CENC) as specified in ISO/IEC 23001-7
+# - PIFF (Protected Interoperable File Format) for encrypted HTTP Smooth Streaming
+# - Reading and writing 3GPP and iTunes-compatible metadata
+# - ISMA Encryption and Decryption
+# - OMA 2.0 and 2.1 DCF/PDCF Encryption and Decryption
+# - ISO-MP4 files profiled as part of the 3GPP family of standards
+# - Support for H.264 (AVC), H.265 (HEVC), AAC, AC3, eAC3, DTS, ALAC
+#
+# Provides command-line tools including:
+#   mp4info      - Display high-level info about MP4 files
+#   mp4dump      - Display atom/box structure of MP4 files
+#   mp4extract   - Extract tracks and media from MP4 files
+#   mp4encrypt   - Encrypt MP4 files
+#   mp4decrypt   - Decrypt MP4 files
+#   mp4fragment  - Fragment MP4 files for DASH/HLS
+#   mp42hls      - Convert MP4 to HLS
+#   mp42ts       - Convert MP4 to MPEG2-TS
+#   And many more...
+#
+# =============================================================================
+
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "bento4",
+    version = "1.6.0-641",
+    src_uri = "https://github.com/axiomatic-systems/Bento4/archive/refs/tags/v1.6.0-641.tar.gz",
+    sha256 = "e6575877708526e399cff752b4ee23cb1e2ac32fb251e2ca0a1e8d691fd172a7",
+    description = "C++ class library and tools for ISO-MP4 and DASH media files",
+    homepage = "https://www.bento4.com",
+    license = "GPL-2.0",
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+    ],
+    deps = [],
+    visibility = ["PUBLIC"],
+)

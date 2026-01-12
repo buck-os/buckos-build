@@ -1,0 +1,19 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# libseccomp - Package from third-party
+
+autotools_package(
+    name = "libseccomp",
+    version = "2.4.2",
+    src_uri = "https://github.com/seccomp/libseccomp/archive/refs/tags/v2.4.2.tar.gz",
+    sha256 = "TODO",
+    description = "libseccomp package",
+    homepage = "https://github.com/seccomp/libseccomp.git",
+    license = "LGPL",
+    source_subdir = "libseccomp-2.4.2",
+    deps = [],
+    configure_args = [
+        "--enable-shared",
+    ],
+    visibility = ["PUBLIC"],
+)

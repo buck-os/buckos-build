@@ -1,0 +1,19 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# opentelemetry-cpp - Package from third-party
+
+cmake_package(
+    name = "opentelemetry-cpp",
+    version = "v1.21.0",
+    src_uri = "https://github.com/open-telemetry/opentelemetry-cpp/archive/refs/tags/vv1.21.0.tar.gz",
+    sha256 = "1fe83501edfc3a7ec96bb1e69db3fd5ea1730135bd73ab152186fd0b437013bc",
+    description = "opentelemetry-cpp package",
+    homepage = "https://github.com/open-telemetry/opentelemetry-cpp.git",
+    license = "Apache-2.0",
+    deps = [],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+    ],
+    visibility = ["PUBLIC"],
+)

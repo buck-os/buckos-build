@@ -1,0 +1,36 @@
+load("//defs:package_defs.bzl", "download_source", "binary_package")
+
+download_source(
+    name = "assimp-src",
+    src_uri = "https://github.com/assimp/assimp/archive/refs/tags/v5.4.3.tar.gz",
+    sha256 = "66dfbaee288f2bc43172440a55d0235dfc7bf885dda6435c038e8000e79582cb",
+    signature_required = False,
+)
+
+binary_package(
+    name = "assimp",
+    srcs = [":assimp-src"],
+    version = "5.4.3",
+    description = "Open Asset Import Library - portable 3D model import library",
+    homepage = "https://www.assimp.org/",
+    license = "BSD-3-Clause",
+    install_script = """
+        cd "$SRCS"
+        mkdir -p build && cd build
+        cmake .. \
+            -DCMAKE_INSTALL_PREFIX=/usr \
+            -DCMAKE_INSTALL_LIBDIR=lib64 \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_SHARED_LIBS=ON \
+            -DASSIMP_BUILD_TESTS=OFF \
+            -DASSIMP_BUILD_ASSIMP_TOOLS=ON \
+            -DASSIMP_BUILD_ZLIB=OFF \
+            -DASSIMP_WARNINGS_AS_ERRORS=OFF
+        make -j$(nproc)
+        make install DESTDIR="$OUT"
+    """,
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+    ],
+    visibility = ["PUBLIC"],
+)

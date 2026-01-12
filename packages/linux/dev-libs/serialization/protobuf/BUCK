@@ -1,27 +1,33 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
+load("//defs:package_defs.bzl", "cmake_package")
 
-# protobuf - Protocol Buffers (cmake build)
-# USE flags: static-libs, test, zlib
-# Default: zlib
+# Protocol Buffers - Google's language-neutral data serialization
 
 cmake_package(
     name = "protobuf",
-    version = "26.1",
-    src_uri = "https://github.com/protocolbuffers/protobuf/releases/download/v26.1/protobuf-26.1.tar.gz",
-    sha256 = "4fc5ff1b2c339fb86cd3a25f0b5311478ab081e65ad258c6789359cd84d421f8",
-    signature_required = False,
-    description = "Google's language-neutral, platform-neutral protocol buffers",
+    version = "25.1",
+    src_uri = "https://github.com/protocolbuffers/protobuf/releases/download/v25.1/protobuf-25.1.tar.gz",
+    sha256 = "TODO",
+    description = "Google's language-neutral, platform-neutral, extensible data serialization format",
     homepage = "https://protobuf.dev/",
     license = "BSD-3-Clause",
+    iuse = ["lite", "python", "java"],
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/dev-libs/misc/abseil-cpp:abseil-cpp",
+    ],
+    use_deps = {
+        "python": ["//packages/linux/lang/python:python"],
+    },
     cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
         "-Dprotobuf_BUILD_TESTS=OFF",
-        "-Dprotobuf_BUILD_SHARED_LIBS=ON",
+        "-Dprotobuf_BUILD_EXAMPLES=OFF",
         "-Dprotobuf_ABSL_PROVIDER=package",
     ],
-    deps = [
-        "//packages/linux/dev-libs/google/abseil-cpp:abseil-cpp",
-        "//packages/linux/core/zlib:zlib",
-    ],
+    use_cmake = {
+        "lite": "-Dprotobuf_BUILD_LIBPROTOC=OFF",
+        "-lite": "-Dprotobuf_BUILD_LIBPROTOC=ON",
+    },
     visibility = ["PUBLIC"],
 )

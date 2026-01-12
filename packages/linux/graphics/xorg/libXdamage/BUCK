@@ -1,0 +1,23 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# libXdamage - X Damage extension library
+autotools_package(
+    name = "libXdamage",
+    version = "1.1.6",
+    src_uri = "https://xorg.freedesktop.org/archive/individual/lib/libXdamage-1.1.6.tar.xz",
+    sha256 = "52733c1f5262fca35f64e7d5060c6fcd81a880ba8e1e65c9621cf0727afb5d11",
+    description = "X Damage extension library",
+    homepage = "https://xorg.freedesktop.org/",
+    license = "MIT",
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--libdir=/usr/lib64",
+    ],
+    deps = [
+        "//packages/linux/graphics/xorg/libX11:libX11",
+        "//packages/linux/graphics/xorg/libXfixes:libXfixes",
+        "//packages/linux/graphics/xorg/xorgproto:xorgproto",
+    ],
+    visibility = ["PUBLIC"],
+)

@@ -1,0 +1,24 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# libSM - Session Management library
+autotools_package(
+    name = "libSM",
+    version = "1.2.4",
+    src_uri = "https://xorg.freedesktop.org/archive/individual/lib/libSM-1.2.4.tar.xz",
+    sha256 = "fdcbe51e4d1276b1183da77a8a4e74a137ca203e0bcfb20972dd5f3347e97b84",
+    description = "X Session Management library",
+    homepage = "https://xorg.freedesktop.org/",
+    license = "MIT",
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--libdir=/usr/lib64",
+        "--disable-docs",
+    ],
+    deps = [
+        "//packages/linux/graphics/xorg/libICE:libICE",
+        "//packages/linux/graphics/xorg/xorgproto:xorgproto",
+        "//packages/linux/graphics/xorg/xtrans:xtrans",
+    ],
+    visibility = ["PUBLIC"],
+)

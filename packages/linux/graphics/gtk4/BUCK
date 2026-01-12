@@ -1,0 +1,58 @@
+load("//defs:package_defs.bzl", "meson_package")
+
+# GTK 4 - GIMP Toolkit
+
+meson_package(
+    name = "gtk4",
+    version = "4.14.0",
+    src_uri = "https://download.gnome.org/sources/gtk/4.14/gtk-4.14.0.tar.xz",
+    sha256 = "TODO",
+    description = "The GIMP Toolkit - version 4",
+    homepage = "https://www.gtk.org/",
+    license = "LGPL-2.1",
+    iuse = ["x11", "wayland", "broadway", "vulkan", "cups", "introspection"],
+    use_defaults = ["x11", "wayland", "introspection"],
+    deps = [
+        "//packages/linux/core/glib:glib",
+        "//packages/linux/graphics/cairo:cairo",
+        "//packages/linux/graphics/pango:pango",
+        "//packages/linux/dev-libs/misc/gdk-pixbuf:gdk-pixbuf",
+        "//packages/linux/dev-libs/misc/graphene:graphene",
+        "//packages/linux/dev-libs/misc/epoxy:epoxy",
+    ],
+    use_deps = {
+        "x11": [
+            "//packages/linux/graphics/x11-libs/libx11:libx11",
+        ],
+        "wayland": [
+            "//packages/linux/graphics/wayland/wayland:wayland",
+            "//packages/linux/graphics/wayland/wayland-protocols:wayland-protocols",
+        ],
+        "vulkan": ["//packages/linux/graphics/vulkan/vulkan-loader:vulkan-loader"],
+        "cups": ["//packages/linux/network/printing/cups:cups"],
+        "introspection": ["//packages/linux/dev-libs/misc/gobject-introspection:gobject-introspection"],
+    },
+    meson_args = [
+        "-Dbuild-docs=false",
+        "-Dman-pages=false",
+        "-Dbuild-tests=false",
+        "-Dbuild-testsuite=false",
+        "-Dbuild-examples=false",
+        "-Ddemos=false",
+    ],
+    use_meson = {
+        "x11": "-Dx11-backend=true",
+        "-x11": "-Dx11-backend=false",
+        "wayland": "-Dwayland-backend=true",
+        "-wayland": "-Dwayland-backend=false",
+        "broadway": "-Dbroadway-backend=true",
+        "-broadway": "-Dbroadway-backend=false",
+        "vulkan": "-Dvulkan=enabled",
+        "-vulkan": "-Dvulkan=disabled",
+        "cups": "-Dprint-cups=enabled",
+        "-cups": "-Dprint-cups=disabled",
+        "introspection": "-Dintrospection=enabled",
+        "-introspection": "-Dintrospection=disabled",
+    },
+    visibility = ["PUBLIC"],
+)

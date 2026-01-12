@@ -1,0 +1,20 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "swiftshader",
+    version = "2024.01.07",
+    src_uri = "https://github.com/google/swiftshader/archive/8b4cf1c2491d56cf9eda153b5455e4b295732b7c.tar.gz",
+    sha256 = "eeb94e98cf508536a574a3ebfbd195017f3ccfe947cf85118b057c642ade28d1",
+    cmake_args = [
+        "-DSWIFTSHADER_BUILD_TESTS=OFF",
+        "-DSWIFTSHADER_BUILD_SAMPLES=OFF",
+        "-DSWIFTSHADER_WARNINGS_AS_ERRORS=OFF",
+        "-DSWIFTSHADER_BUILD_VULKAN=ON",
+        "-DSWIFTSHADER_BUILD_EGL=ON",
+        "-DSWIFTSHADER_BUILD_GLESv2=ON",
+    ],
+    deps = [
+        "//packages/linux/graphics/xorg/x11:libx11",
+        "//packages/linux/graphics/xorg/xcb:libxcb",
+    ],
+)

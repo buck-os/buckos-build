@@ -1,0 +1,22 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "sdbus-cpp",
+    version = "1.3.0",
+    src_uri = "https://github.com/kistler-group/sdbus-cpp/archive/v1.3.0.tar.gz",
+    sha256 = "TODO",
+    description = "High-level C++ D-Bus library",
+    homepage = "https://github.com/kistler-group/sdbus-cpp",
+    license = "LGPL-2.1-only",
+    cmake_args = [
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DBUILD_TESTS=OFF",
+        "-DBUILD_CODE_GEN=OFF",
+        "-DBUILD_EXAMPLES=OFF",
+        "-DBUILD_DOC=OFF",
+    ],
+    deps = [
+        "//packages/linux/system/libs/systemd",
+    ],
+    visibility = ["PUBLIC"],
+)

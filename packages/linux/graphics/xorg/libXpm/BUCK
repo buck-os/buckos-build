@@ -1,0 +1,24 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# libXpm - X Pixmap library
+autotools_package(
+    name = "libXpm",
+    version = "3.5.17",
+    src_uri = "https://xorg.freedesktop.org/archive/individual/lib/libXpm-3.5.17.tar.xz",
+    sha256 = "64b31f81019e7d388c822b0b28af8d51c4622b83f1f0cb6fa3fc95e271226e43",
+    description = "X Pixmap library",
+    homepage = "https://xorg.freedesktop.org/",
+    license = "MIT",
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--libdir=/usr/lib64",
+    ],
+    deps = [
+        "//packages/linux/graphics/xorg/libX11:libX11",
+        "//packages/linux/graphics/xorg/libXext:libXext",
+        "//packages/linux/graphics/xorg/libXt:libXt",
+        "//packages/linux/graphics/xorg/xorgproto:xorgproto",
+    ],
+    visibility = ["PUBLIC"],
+)

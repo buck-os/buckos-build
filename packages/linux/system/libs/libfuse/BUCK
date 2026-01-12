@@ -1,0 +1,17 @@
+load("//defs:package_defs.bzl", "meson_package")
+
+meson_package(
+    name = "libfuse",
+    version = "3.18.0",
+    src_uri = "https://github.com/libfuse/libfuse/releases/download/fuse-3.18.0/fuse-3.18.0.tar.gz",
+    sha256 = "TODO",
+    meson_args = [
+        "-Dexamples=false",
+        "-Dtests=false",
+        "-Duseroot=false",
+    ],
+    deps = [
+        "//packages/linux/system/libs/liburing",
+        "//packages/linux/system/libs/numactl",
+    ],
+)

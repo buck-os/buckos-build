@@ -1,0 +1,21 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "cobbler",
+    version = "3.4.0",
+    src_uri = "https://github.com/cobbler/cobbler/archive/v3.4.0.tar.gz",
+    sha256 = "TODO",
+    deps = [
+        "//packages/linux/dev-libs/python/requests",
+        "//packages/linux/dev-libs/python/pyyaml",
+        "//packages/linux/dev-libs/python/netaddr",
+        "//packages/linux/dev-libs/python/cheetah3",
+        "//packages/linux/dev-libs/python/pymongo",
+        "//packages/linux/dev-libs/python/distro",
+        "//packages/linux/dev-libs/python/python-ldap",
+        "//packages/linux/dev-libs/python/dnspython",
+        "//packages/linux/dev-libs/python/file-magic",
+        "//packages/linux/dev-libs/python/schema",
+        "//packages/linux/dev-libs/python/gunicorn",
+    ],
+)

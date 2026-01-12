@@ -1,0 +1,19 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+# console_bridge - Package from third-party
+
+cmake_package(
+    name = "console_bridge",
+    version = "1.0.2",
+    src_uri = "https://github.com/ros/console_bridge/archive/refs/tags/v1.0.2.tar.gz",
+    sha256 = "TODO",
+    description = "console_bridge package",
+    homepage = "https://github.com/ros/console_bridge.git",
+    license = "BSD-3-Clause",
+    deps = [],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+    ],
+    visibility = ["PUBLIC"],
+)

@@ -1,0 +1,18 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "meres",
+    version = "0.1.0",
+    src_uri = "https://github.com/fairinternal/MERES_internal/archive/refs/heads/lcm-classifier-repro.tar.gz",
+    sha256 = "TODO",
+    deps = [
+        "//packages/linux/dev-libs/python/pyarrow:pyarrow",
+        "//packages/linux/ai/ml-frameworks/fairseq2:fairseq2",
+        "//packages/linux/dev-libs/python/hydra-core:hydra-core",
+        "//packages/linux/dev-libs/python/tensorboard:tensorboard",
+        "//packages/linux/dev-libs/python/retrying:retrying",
+        "//packages/linux/dev-libs/python/fire:fire",
+        "//packages/linux/dev-libs/python/dacite:dacite",
+        "//packages/linux/dev-libs/python/polars:polars",
+    ],
+)

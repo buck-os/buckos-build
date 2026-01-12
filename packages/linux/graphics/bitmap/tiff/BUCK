@@ -1,0 +1,26 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "tiff",
+    version = "4.7.1",
+    src_uri = "https://download.osgeo.org/libtiff/tiff-4.7.1.tar.gz",
+    sha256 = "TODO",
+    cmake_args = [
+        "-DBUILD_SHARED_LIBS=ON",
+        "-Dtiff-tools=OFF",
+        "-Dtiff-tests=OFF",
+        "-Dtiff-contrib=OFF",
+        "-Dtiff-docs=OFF",
+        "-Dzlib=ON",
+        "-Dzstd=ON",
+        "-Djpeg=OFF",
+        "-Djbig=OFF",
+        "-Dlzma=OFF",
+        "-Dwebp=OFF",
+        "-Dlerc=OFF",
+    ],
+    deps = [
+        "//packages/linux/core/zlib",
+        "//packages/linux/dev-libs/compression/zstd",
+    ],
+)

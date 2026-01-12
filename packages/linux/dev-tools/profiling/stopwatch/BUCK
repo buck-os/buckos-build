@@ -1,0 +1,15 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "stopwatch",
+    version = "0.1.0",
+    src_uri = "https://github.com/mp3guy/Stopwatch/archive/1e12267deaf492127287f5319122044c53fa9ca5.tar.gz",
+    sha256 = "99eaeda1838dfef71d5cf5cad958124fa4393dce685c5ce756e34c83d00dc2f3",
+    cmake_args = [
+        "-DCMAKE_CXX_STANDARD=17",
+    ],
+    deps = [
+        "//packages/linux/graphics/qt:qt6-base",
+        "//packages/linux/dev-libs/misc/cpp-terminal:cpp-terminal",
+    ],
+)

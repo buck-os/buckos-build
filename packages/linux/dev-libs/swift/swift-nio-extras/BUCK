@@ -1,0 +1,15 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "swift-nio-extras",
+    version = "1.10.2",
+    src_uri = "https://github.com/apple/swift-nio-extras/archive/refs/tags/1.10.2.tar.gz",
+    sha256 = "TODO",
+    cmake_args = [
+        "-DBUILD_TESTING=OFF",
+    ],
+    deps = [
+        "//packages/linux/lang/swift",
+    ],
+    visibility = ["PUBLIC"],
+)

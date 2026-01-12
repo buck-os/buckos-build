@@ -1,0 +1,18 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "ethos-u-core-driver",
+    version = "23.02",
+    src_uri = "https://git.mlplatform.org/ml/ethos-u/ethos-u-core-driver.git/snapshot/ethos-u-core-driver-23.02.tar.gz",
+    sha256 = "04e5e09335f5fa265e0d2b154a99213dc77e80975583ad5c832d1ebdeaa5a4ef",
+    description = "Arm Ethos-U NPU core driver",
+    homepage = "https://review.mlplatform.org/plugins/gitiles/ml/ethos-u/ethos-u-core-driver/",
+    license = "Apache-2.0",
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DETHOSU_LOG_SEVERITY=warning",
+        "-DETHOSU_TARGET_NPU_CONFIG=ethos-u55-128",
+    ],
+    deps = [],
+    visibility = ["PUBLIC"],
+)

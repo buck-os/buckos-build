@@ -1,0 +1,23 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# libXScrnSaver - X Screen Saver extension library
+autotools_package(
+    name = "libXScrnSaver",
+    version = "1.2.4",
+    src_uri = "https://xorg.freedesktop.org/archive/individual/lib/libXScrnSaver-1.2.4.tar.xz",
+    sha256 = "75cd2859f38e207a090cac980d76bc71e9da99d48d09703584e00585abc920fe",
+    description = "X Screen Saver extension library",
+    homepage = "https://xorg.freedesktop.org/",
+    license = "MIT",
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--libdir=/usr/lib64",
+    ],
+    deps = [
+        "//packages/linux/graphics/xorg/libX11:libX11",
+        "//packages/linux/graphics/xorg/libXext:libXext",
+        "//packages/linux/graphics/xorg/xorgproto:xorgproto",
+    ],
+    visibility = ["PUBLIC"],
+)

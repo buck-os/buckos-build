@@ -1,0 +1,18 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "metis",
+    version = "5.1.0",
+    src_uri = "http://glaros.dtc.umn.edu/gkhome/fetch/sw/metis/metis-5.1.0.tar.gz",
+    sha256 = "de3f74d375d6a02acee6bbc8594c0c65adfff14f48cb201ca3f86e91fc5c805c",
+    description = "Graph partitioning and fill-reducing matrix ordering library",
+    homepage = "http://glaros.dtc.umn.edu/gkhome/metis/metis/overview",
+    license = "Apache-2.0",
+    deps = [],
+    cmake_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DGKLIB_PATH=GKlib",
+    ],
+    visibility = ["PUBLIC"],
+)

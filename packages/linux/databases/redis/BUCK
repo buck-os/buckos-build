@@ -1,0 +1,52 @@
+load("//defs:package_defs.bzl", "simple_package")
+
+# Redis - In-memory data structure store
+#
+# Redis uses a custom Makefile-based build system, not autotools.
+# We use simple_package with custom build commands.
+#
+# USE flags:
+#   ssl       - Enable SSL/TLS support
+#   systemd   - Enable systemd integration
+#   jemalloc  - Use jemalloc memory allocator (recommended)
+
+simple_package(
+    name = "redis",
+    version = "7.4.1",
+    src_uri = "https://github.com/redis/redis/archive/refs/tags/7.4.1.tar.gz",
+    sha256 = "29f7c7a1c0e546bc6dc17cd4a8ec06abba877da9bd5c2e8e2ed8da14bbad1c29",
+    description = "In-memory data structure store, used as database, cache, and message broker",
+    homepage = "https://redis.io/",
+    license = "BSD-3-Clause",
+    iuse = ["ssl", "systemd", "jemalloc"],
+    use_defaults = ["jemalloc"],
+    deps = [],
+    use_deps = {
+        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
+        "jemalloc": ["//packages/linux/dev-libs/allocators/jemalloc:jemalloc"],
+    },
+    build_env = {
+        "PREFIX": "/usr",
+    },
+    build_cmd = """
+# Redis uses make directly
+make -j$(nproc) PREFIX=/usr
+""",
+    install_cmd = """
+make PREFIX=/usr DESTDIR="$DESTDIR" install
+
+# Create directories
+mkdir -p "$DESTDIR/etc/redis"
+mkdir -p "$DESTDIR/var/lib/redis"
+mkdir -p "$DESTDIR/var/log/redis"
+
+# Install default config
+cp redis.conf "$DESTDIR/etc/redis/redis.conf"
+
+# Update config for production use
+sed -i 's/^daemonize no/daemonize yes/' "$DESTDIR/etc/redis/redis.conf"
+sed -i 's|^dir \./|dir /var/lib/redis|' "$DESTDIR/etc/redis/redis.conf"
+sed -i 's|^logfile ""|logfile /var/log/redis/redis.log|' "$DESTDIR/etc/redis/redis.conf"
+""",
+    visibility = ["PUBLIC"],
+)

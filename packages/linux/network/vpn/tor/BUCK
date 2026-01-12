@@ -1,0 +1,44 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "tor",
+    version = "0.4.7.13",
+    src_uri = "https://dist.torproject.org/tor-0.4.7.13.tar.gz",
+    sha256 = "2079172cce034556f110048e26083ce9bea751f3154b0ad2809751815b11ea9d",
+
+    deps = [
+        "//packages/linux/network/openssl:openssl",
+        "//packages/linux/dev-libs/misc/libevent:libevent",
+        "//packages/linux/core/zlib:zlib",
+    ],
+
+    iuse = ["systemd", "zstd", "lzma"],
+    use_defaults = [],
+
+    use_deps = {
+        "systemd": ["//packages/linux/system/init/systemd:systemd"],
+        "zstd": ["//packages/linux/system/libs/compression/zstd:zstd"],
+        "lzma": ["//packages/linux/system/libs/compression/xz-utils:xz-utils"],
+    },
+
+    use_configure = {
+        "systemd": "--enable-systemd",
+        "-systemd": "--disable-systemd",
+        "zstd": "--enable-zstd",
+        "-zstd": "--disable-zstd",
+        "lzma": "--enable-lzma",
+        "-lzma": "--disable-lzma",
+    },
+
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--localstatedir=/var",
+        "--disable-unittests",
+    ],
+
+    description = "Anonymity network and onion routing",
+    homepage = "https://www.torproject.org/",
+    license = "BSD-3-Clause",
+    visibility = ["PUBLIC"],
+)

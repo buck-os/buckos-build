@@ -1,0 +1,20 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "renderdoc",
+    version = "1.4",
+    src_uri = "https://github.com/baldurk/renderdoc/archive/refs/tags/v1.4.tar.gz",
+    sha256 = "9a78951f386fb7c3ecf7df6919d300db59719d14f0621438963ae30a75d33677",
+    cmake_args = [
+        "-DENABLE_QRENDERDOC=OFF",
+        "-DENABLE_PYRENDERDOC=OFF",
+        "-DENABLE_RENDERDOCCMD=ON",
+        "-DENABLE_GL=ON",
+        "-DENABLE_VULKAN=ON",
+        "-DENABLE_XLIB=ON",
+        "-DENABLE_XCB=ON",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/nss:nss",
+    ],
+)

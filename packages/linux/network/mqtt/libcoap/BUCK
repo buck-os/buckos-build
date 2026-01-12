@@ -1,0 +1,34 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# libcoap - C Implementation of CoAP protocol
+
+autotools_package(
+    name = "libcoap",
+    version = "4.3.4",
+    src_uri = "https://github.com/obgm/libcoap/archive/refs/tags/v4.3.4.tar.gz",
+    sha256 = "ae61a48c21f7b40e1442c9e1da9aab9e6f2cf0deccb02f3fed4de232a0b0522e",
+    description = "C implementation of the Constrained Application Protocol (CoAP)",
+    homepage = "https://libcoap.net/",
+    license = "BSD-2-Clause",
+    iuse = ["ssl", "dtls", "examples"],
+    use_defaults = ["ssl", "dtls"],
+    deps = [],
+    use_deps = {
+        "ssl": ["//packages/linux/network/openssl:openssl"],
+    },
+    configure_args = [
+        "--prefix=${PREFIX}",
+        "--enable-shared",
+        "--disable-static",
+        "--disable-documentation",
+    ],
+    use_configure = {
+        "ssl": "--with-openssl",
+        "-ssl": "--without-openssl",
+        "dtls": "--enable-dtls",
+        "-dtls": "--disable-dtls",
+        "examples": "--enable-examples",
+        "-examples": "--disable-examples",
+    },
+    visibility = ["PUBLIC"],
+)

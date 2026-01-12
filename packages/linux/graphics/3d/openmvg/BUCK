@@ -1,0 +1,27 @@
+load("//defs:package_defs.bzl", "cmake_package")
+
+cmake_package(
+    name = "openmvg",
+    version = "1.6.0",
+    src_uri = "https://github.com/openMVG/openMVG/archive/refs/tags/v1.6.tar.gz",
+    sha256 = "TODO",
+    cmake_args = [
+        "-DOpenMVG_BUILD_TESTS=OFF",
+        "-DOpenMVG_BUILD_DOC=OFF",
+        "-DOpenMVG_BUILD_EXAMPLES=OFF",
+        "-DOpenMVG_BUILD_OPENGL_EXAMPLES=OFF",
+        "-DOpenMVG_BUILD_SOFTWARES=ON",
+        "-DOpenMVG_BUILD_GUI_SOFTWARES=OFF",
+        "-DOpenMVG_USE_OPENMP=ON",
+        "-DOpenMVG_USE_OPENCV=OFF",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/serialization/cereal",
+        "//packages/linux/dev-libs/math/ceres-solver",
+        "//packages/linux/dev-libs/math/eigen",
+        "//packages/linux/dev-libs/misc/flann",
+        "//packages/linux/media/libraries/libjpeg-turbo",
+        "//packages/linux/media/libraries/libpng",
+        "//packages/linux/media/libraries/libtiff",
+    ],
+)

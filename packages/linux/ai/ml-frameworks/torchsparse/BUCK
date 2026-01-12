@@ -1,0 +1,18 @@
+load("//defs:package_defs.bzl", "python_package")
+
+python_package(
+    name = "torchsparse",
+    version = "1.4.0",
+    src_uri = "https://github.com/mit-han-lab/torchsparse/archive/refs/tags/v1.4.0.tar.gz",
+    sha256 = "a1cf3e8ecabb0f81cab7e14ed5ed0a31c8cb62b73d8ae172c50a779a82aae640",
+    description = "High-performance neural network library for point cloud processing",
+    homepage = "https://github.com/mit-han-lab/torchsparse",
+    license = "MIT",
+    deps = [
+        "//packages/linux/lang/python:python",
+        "//packages/linux/dev-libs/python/numpy:numpy",
+        "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
+        "//packages/linux/dev-libs/misc/sparsehash:sparsehash",
+    ],
+    visibility = ["PUBLIC"],
+)
