@@ -14,6 +14,20 @@ BASE_URL="$2"
 EXPECTED_SHA256="$3"
 PROXY="$4"
 
+# === GUARD RAILS: Validate inputs ===
+if [[ -z "$OUT_FILE" ]]; then
+    echo "ERROR: Output file path not specified" >&2
+    exit 1
+fi
+if [[ -z "$BASE_URL" ]]; then
+    echo "ERROR: Base URL not specified" >&2
+    exit 1
+fi
+if [[ -z "$EXPECTED_SHA256" ]]; then
+    echo "ERROR: Expected SHA256 not specified" >&2
+    exit 1
+fi
+
 # Build curl proxy args if proxy is set
 CURL_PROXY_ARGS=""
 if [ -n "$PROXY" ]; then

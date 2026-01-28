@@ -82,6 +82,10 @@ def _should_use_host_toolchain():
     """
     Check if host toolchain should be used instead of bootstrap toolchain.
     Reads from buckos.use_host_toolchain config (default: false)
+
+    NOTE: In Buck2, read_config reads from the cell context where the BUCK file
+    is being evaluated. Each cell needs its own .buckconfig with the [buckos]
+    section to enable use_host_toolchain.
     """
     use_host = read_config("buckos", "use_host_toolchain", "false")
     return use_host.lower() in ["true", "1", "yes"]
@@ -1055,6 +1059,27 @@ PKGCONFIG_WRAPPER_EOF
     export PATH="$WORK/bin:$PATH"
     echo "Installed pkg-config wrapper at $WORK/bin/pkg-config"
 fi
+
+# Ensure CC/CXX are set to proper compiler names
+# This handles ccache/sccache setups where CC might be inherited as just the wrapper name
+# Meson and other build systems need proper compiler names like "gcc" or "ccache gcc"
+if [ -z "${{CC:-}}" ] || [ "$CC" = "cc" ]; then
+    export CC="gcc"
+fi
+if [ -z "${{CXX:-}}" ] || [ "$CXX" = "c++" ]; then
+    export CXX="g++"
+fi
+# Fix malformed CC/CXX that contain only wrapper name (e.g., "sccache cc" -> "sccache gcc")
+case "$CC" in
+    "sccache cc"|"ccache cc") export CC="${{CC%cc}}gcc" ;;
+    "sccache c++"|"ccache c++") export CC="${{CC%c++}}gcc" ;;
+esac
+case "$CXX" in
+    "sccache c++"|"ccache c++") export CXX="${{CXX%c++}}g++" ;;
+    "sccache cc"|"ccache cc") export CXX="${{CXX%cc}}g++" ;;
+esac
+echo "CC=$CC"
+echo "CXX=$CXX"
 
 # Verify key tools are available
 echo "=== Verifying tools ==="

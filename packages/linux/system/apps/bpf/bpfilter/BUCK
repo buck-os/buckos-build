@@ -1,0 +1,36 @@
+load("@root//defs:package_defs.bzl", "download_source", "cmake_package")
+
+download_source(
+    name = "bpfilter-src",
+    src_uri = "https://github.com/facebook/bpfilter/archive/refs/tags/v0.6.0.tar.gz",
+    sha256 = "2ef67624381b9a32a6be99f3a6362faeb8576290bf6ffaa7e24952d5693e4d9a",
+    signature_required = False,
+)
+
+cmake_package(
+    name = "bpfilter",
+    source = ":bpfilter-src",
+    version = "0.6.0",
+    description = "BPF-based packet filtering framework",
+    homepage = "https://github.com/facebook/bpfilter",
+    license = "GPL-2.0",
+    iuse = [
+        "docs",
+        "tests",
+    ],
+    use_cmake = {
+        "-docs": "-DNO_DOCS=ON",
+        "-tests": "-DNO_TESTS=ON",
+        "docs": "-DNO_DOCS=OFF",
+        "tests": "-DNO_TESTS=OFF",
+    },
+    cmake_args = [
+        "-DNO_CHECKS=ON",
+        "-DNO_BENCHMARKS=ON",
+    ],
+    deps = [
+        "system//libs/bpf/libbpf:libbpf",
+        "core//libnl:libnl",
+    ],
+    visibility = ["PUBLIC"],
+)

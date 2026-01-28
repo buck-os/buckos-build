@@ -2,9 +2,10 @@ load("@root//defs:package_defs.bzl", "download_source", "cmake_package")
 
 download_source(
     name = "bcc-src",
-    src_uri = "https://github.com/iovisor/bcc/releases/download/v0.35.0/bcc-src-with-submodule.tar.gz",
-    sha256 = "a77c8dda4d0c0d93b5cad7b9c8539a7a180005b49ecfb0fbc3d902b5adb03ca2",
+    src_uri = "https://github.com/iovisor/bcc/releases/download/v0.36.0/bcc-src-with-submodule-0.36.0.tar.gz",
+    sha256 = "d39e23a72bb30167286553c7daefb39c5d8a43c401b53524aba42477ce4c63ca",
     signature_required = False,
+    strip_components = 2,  # Tarball has bcc-src-with-submodule-0.36.0/bcc/ structure
 )
 
 cmake_package(
@@ -29,7 +30,7 @@ cmake_package(
         "python": "-DENABLE_PYTHON=ON",
         "static-libs": "-DBUILD_STATIC_LIBS=ON",
     },
-    version = "0.35.0",
+    version = "0.36.0",
     description = "BPF Compiler Collection - tools for BPF-based Linux tracing",
     homepage = "https://github.com/iovisor/bcc",
     license = "Apache-2.0",
@@ -44,6 +45,8 @@ cmake_package(
         "system//libs/bpf/libbpf:libbpf",
         "dev-tools//dev-utils/elfutils:elfutils",
         "core//zlib:zlib",
+        "core//llvm:llvm",
+        "core//libffi:libffi",
     ],
     visibility = ["PUBLIC"],
 )

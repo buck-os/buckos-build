@@ -1086,6 +1086,33 @@ BUILD_SYSROOT="$MERGED_SYSROOT"
 echo "Using merged sysroot: $BUILD_SYSROOT"
 echo "Contents check: usr/include/stdio.h exists: $(test -f "$BUILD_SYSROOT/usr/include/stdio.h" && echo YES || echo NO)"
 
+# Create stub sys/sdt.h header (systemtap SDT probes header)
+# libstdc++ checks for this during configure and fails during build if missing
+mkdir -p "$BUILD_SYSROOT/usr/include/sys"
+cat > "$BUILD_SYSROOT/usr/include/sys/sdt.h" << 'SDTHDR'
+/* Stub sys/sdt.h - SystemTap SDT probes disabled for bootstrap */
+#ifndef _SYS_SDT_H
+#define _SYS_SDT_H
+#define STAP_PROBE(provider, name)
+#define STAP_PROBE1(provider, name, arg1)
+#define STAP_PROBE2(provider, name, arg1, arg2)
+#define STAP_PROBE3(provider, name, arg1, arg2, arg3)
+#define STAP_PROBE4(provider, name, arg1, arg2, arg3, arg4)
+#define STAP_PROBE5(provider, name, arg1, arg2, arg3, arg4, arg5)
+#define STAP_PROBE6(provider, name, arg1, arg2, arg3, arg4, arg5, arg6)
+#define STAP_PROBE7(provider, name, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+#define STAP_PROBE8(provider, name, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8)
+#define STAP_PROBE9(provider, name, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
+#define STAP_PROBE10(provider, name, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10)
+#define DTRACE_PROBE(provider, name) STAP_PROBE(provider, name)
+#define DTRACE_PROBE1(provider, name, arg1) STAP_PROBE1(provider, name, arg1)
+#define DTRACE_PROBE2(provider, name, arg1, arg2) STAP_PROBE2(provider, name, arg1, arg2)
+#define DTRACE_PROBE3(provider, name, arg1, arg2, arg3) STAP_PROBE3(provider, name, arg1, arg2, arg3)
+#define DTRACE_PROBE4(provider, name, arg1, arg2, arg3, arg4) STAP_PROBE4(provider, name, arg1, arg2, arg3, arg4)
+#endif /* _SYS_SDT_H */
+SDTHDR
+echo "Created stub sys/sdt.h in sysroot"
+
 # Find cross-binutils ar/ranlib from TOOLCHAIN_PATH
 # Search for x86_64-buckos-linux-gnu-ar in the PATH
 CROSS_AR=$(which x86_64-buckos-linux-gnu-ar 2>/dev/null || true)

@@ -23,6 +23,17 @@ EXCLUDE_ARGS="$6"
 STRIP_COMPONENTS="${7:-1}"
 DO_EXTRACT="${8:-1}"
 
+# === GUARD RAILS: Validate inputs early ===
+if [[ -z "$OUT_DIR" ]]; then
+    echo "ERROR: Output directory not specified" >&2
+    exit 1
+fi
+
+if [[ -z "$ARCHIVE" ]]; then
+    echo "ERROR: Archive path not specified" >&2
+    exit 1
+fi
+
 # Convert to absolute paths before changing directories
 if [[ "$ARCHIVE" != /* ]]; then
     ARCHIVE="$(pwd)/$ARCHIVE"
@@ -31,12 +42,32 @@ if [[ -n "$SIGNATURE" && "$SIGNATURE" != /* ]]; then
     SIGNATURE="$(pwd)/$SIGNATURE"
 fi
 
+# === GUARD RAIL: Check archive exists before proceeding ===
+if [[ ! -f "$ARCHIVE" ]]; then
+    echo "ERROR: Archive file does not exist: $ARCHIVE" >&2
+    echo "  This usually means the download failed or the path is incorrect." >&2
+    echo "  Check that the download_source URL and sha256 are correct." >&2
+    exit 1
+fi
+
+# === GUARD RAIL: Check archive is not empty ===
+if [[ ! -s "$ARCHIVE" ]]; then
+    echo "ERROR: Archive file is empty: $ARCHIVE" >&2
+    echo "  The download may have failed silently." >&2
+    exit 1
+fi
+
 mkdir -p "$OUT_DIR"
 cd "$OUT_DIR"
 
 # Copy archive to working directory with original filename
 FILENAME=$(basename "$ARCHIVE")
-cp "$ARCHIVE" "$FILENAME"
+if ! cp "$ARCHIVE" "$FILENAME"; then
+    echo "ERROR: Failed to copy archive to working directory" >&2
+    echo "  Source: $ARCHIVE" >&2
+    echo "  Dest: $(pwd)/$FILENAME" >&2
+    exit 1
+fi
 
 # Disable glob expansion for exclude patterns (they contain * that shouldn't be expanded by bash)
 set -f

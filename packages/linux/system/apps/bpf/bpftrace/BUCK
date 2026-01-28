@@ -1,15 +1,46 @@
-load("@root//defs:package_defs.bzl", "download_source", "binary_package")
+load("@root//defs:package_defs.bzl", "download_source", "cmake_package")
 
 download_source(
     name = "bpftrace-src",
-    src_uri = "https://github.com/bpftrace/bpftrace/archive/refs/tags/v0.21.2.tar.gz",
-    sha256 = "7c2cb089da6e6074574edc164cf9242e06843e66c493304a9d2739258e6a1459",
+    src_uri = "https://github.com/bpftrace/bpftrace/archive/refs/tags/v0.24.2.tar.gz",
+    sha256 = "e0514aa3e1a032b0b2de2cf3c281bfee9b9e80509498e70ed78786bbd64db373",
     signature_required = False,
 )
 
-binary_package(
+cmake_package(
     name = "bpftrace",
-    srcs = [":bpftrace-src"],
-    version = "0.21.2",
+    source = ":bpftrace-src",
+    version = "0.24.2",
+    description = "High-level tracing language for Linux using BPF",
+    homepage = "https://github.com/bpftrace/bpftrace",
+    license = "Apache-2.0",
+    iuse = [
+        "libfuzzer",
+        "man",
+        "static-libs",
+        "tests",
+    ],
+    use_cmake = {
+        "-libfuzzer": "-DENABLE_LIBFUZZER=OFF",
+        "-man": "-DBUILD_MAN=OFF",
+        "-static-libs": "-DSTATIC_LINKING=OFF",
+        "-tests": "-DBUILD_TESTING=OFF",
+        "libfuzzer": "-DENABLE_LIBFUZZER=ON",
+        "man": "-DBUILD_MAN=ON",
+        "static-libs": "-DSTATIC_LINKING=ON",
+        "tests": "-DBUILD_TESTING=ON",
+    },
+    cmake_args = [
+        "-DUSE_SYSTEM_BPF_BCC=ON",
+        "-DBUILD_FUZZ=OFF",
+    ],
+    deps = [
+        "system//apps/bpf/bcc:bcc",
+        "system//libs/bpf/libbpf:libbpf",
+        "dev-tools//dev-utils/elfutils:elfutils",
+        "core//zlib:zlib",
+        "core//llvm:llvm",
+        "dev-libs//serialization/cereal:cereal",
+    ],
     visibility = ["PUBLIC"],
 )

@@ -221,7 +221,9 @@ fi
 # We explicitly use the host gcc/g++ to compile the cross-compiler itself
 
 echo ""
-echo "=== Stage 1 Compiler Configuration ==="
+echo "=== Stage 1 Build Configuration ==="
+echo "BUILD_THREADS=$BUILD_THREADS"
+echo "MAKE_JOBS=$MAKE_JOBS (nproc=$(nproc 2>/dev/null || echo 'N/A'))"
 echo "Using HOST system compiler to build cross-toolchain"
 
 # Use host compiler with C17/C++17 standards for GCC 15 compatibility

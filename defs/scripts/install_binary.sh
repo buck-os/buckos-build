@@ -12,6 +12,35 @@
 
 set -e
 
+# === GUARD RAILS: Validate required environment variables ===
+_binary_fail() {
+    echo "ERROR: $1" >&2
+    echo "  Package: ${PN:-unknown}" >&2
+    exit 1
+}
+
+if [[ -z "$_BINARY_DESTDIR" ]]; then
+    _binary_fail "DESTDIR not set - wrapper script misconfigured"
+fi
+if [[ -z "$_BINARY_WORKDIR" ]]; then
+    _binary_fail "WORKDIR not set - wrapper script misconfigured"
+fi
+if [[ -z "$_BINARY_SRCDIR" ]]; then
+    _binary_fail "SRCDIR not set - wrapper script misconfigured"
+fi
+if [[ ! -d "$_BINARY_SRCDIR" ]]; then
+    _binary_fail "Source directory does not exist: $_BINARY_SRCDIR
+  This usually means:
+  1. The download_source/srcs target failed
+  2. The source archive has an unexpected structure (wrong strip_components?)
+  3. The source extraction silently failed"
+fi
+if [[ -z "$(ls -A "$_BINARY_SRCDIR" 2>/dev/null)" ]]; then
+    _binary_fail "Source directory is empty: $_BINARY_SRCDIR
+  The archive may have extracted to a different location.
+  Check strip_components setting in download_source."
+fi
+
 # Directory setup from wrapper environment
 # Argument order: DEST, WORK, SRCS (matches existing binary_package convention)
 mkdir -p "$_BINARY_DESTDIR"

@@ -1,16 +1,38 @@
-load("@root//defs:package_defs.bzl", "download_source", "binary_package")
-load("@root//defs:use_flags.bzl", "use_dep")
+load("@root//defs:package_defs.bzl", "download_source", "make_package")
 
 download_source(
     name = "libbpf-src",
-    src_uri = "https://github.com/libbpf/libbpf/archive/refs/tags/v1.4.6.tar.gz",
-    sha256 = "d4cf3ee697d9bd959ad3c0f5c6757370a2559e54448761271e15a23c31c1082e",
+    src_uri = "https://github.com/libbpf/libbpf/archive/refs/tags/v1.6.2.tar.gz",
+    sha256 = "16f31349c70764cba8e0fad3725cc9f52f6cf952554326aa0229daaa21ef4fbd",
     signature_required = False,
 )
 
-binary_package(
+make_package(
     name = "libbpf",
-    srcs = [":libbpf-src"],
-    version = "1.4.6",
+    source = ":libbpf-src",
+    version = "1.6.2",
+    description = "BPF library for loading BPF programs",
+    homepage = "https://github.com/libbpf/libbpf",
+    license = "LGPL-2.1 BSD-2-Clause",
+    # Build in the src/ subdirectory where the Makefile is
+    src_compile = """
+cd src
+make -j${MAKE_JOBS:-$(nproc)} \
+    PREFIX=/usr \
+    LIBDIR=/usr/lib64 \
+    OBJDIR=../build
+""",
+    src_install = """
+cd src
+make install \
+    PREFIX=/usr \
+    LIBDIR=/usr/lib64 \
+    OBJDIR=../build \
+    DESTDIR="$DESTDIR"
+""",
+    deps = [
+        "dev-tools//dev-utils/elfutils:elfutils",
+        "core//zlib:zlib",
+    ],
     visibility = ["PUBLIC"],
 )

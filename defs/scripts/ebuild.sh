@@ -10,6 +10,32 @@
 #   USE_BOOTSTRAP, BOOTSTRAP_SYSROOT - bootstrap config
 #   PHASES_CONTENT - the build phases to execute
 
+# === GUARD RAILS: Validate required environment variables ===
+_ebuild_fail() {
+    echo "ERROR: $1" >&2
+    echo "  Package: ${PN:-unknown}" >&2
+    exit 1
+}
+
+if [[ -z "$_EBUILD_DESTDIR" ]]; then
+    _ebuild_fail "DESTDIR not set - wrapper script misconfigured"
+fi
+if [[ -z "$_EBUILD_SRCDIR" ]]; then
+    _ebuild_fail "SRCDIR not set - wrapper script misconfigured"
+fi
+if [[ ! -d "$_EBUILD_SRCDIR" ]]; then
+    _ebuild_fail "Source directory does not exist: $_EBUILD_SRCDIR
+  This usually means:
+  1. The download_source target failed
+  2. The source archive has an unexpected structure (wrong strip_components?)
+  3. The source extraction silently failed"
+fi
+if [[ -z "$(ls -A "$_EBUILD_SRCDIR" 2>/dev/null)" ]]; then
+    _ebuild_fail "Source directory is empty: $_EBUILD_SRCDIR
+  The archive may have extracted to a different location.
+  Check strip_components setting in download_source."
+fi
+
 # Installation directories (from wrapper environment)
 mkdir -p "$_EBUILD_DESTDIR"
 export DESTDIR="$(cd "$_EBUILD_DESTDIR" && pwd)"
@@ -266,6 +292,13 @@ if [ -z "$MAKE_JOBS" ]; then
         export MAKE_JOBS="$BUILD_THREADS"
     fi
 fi
+
+# =============================================================================
+# Build Configuration
+# =============================================================================
+echo "=== Build Configuration ==="
+echo "BUILD_THREADS=$BUILD_THREADS"
+echo "MAKE_JOBS=$MAKE_JOBS (nproc=$(nproc 2>/dev/null || echo 'N/A'))"
 
 # =============================================================================
 # Bootstrap Toolchain Setup

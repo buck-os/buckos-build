@@ -13,6 +13,21 @@
 #   $10 - Do extract (1 or 0)
 
 set -e
+
+# === GUARD RAILS: Validate inputs ===
+if [[ -z "$1" ]]; then
+    echo "ERROR: Output directory not specified" >&2
+    exit 1
+fi
+if [[ -z "$2" ]]; then
+    echo "ERROR: Source URL not specified" >&2
+    exit 1
+fi
+if [[ -z "$3" ]]; then
+    echo "ERROR: Expected checksum not specified" >&2
+    exit 1
+fi
+
 mkdir -p "$1"
 cd "$1"
 
@@ -85,7 +100,29 @@ acquire_download_slot
 # Download with original filename
 URL="$2"
 FILENAME="${URL##*/}"
-curl -L $CURL_PROXY_ARGS -o "$FILENAME" "$URL"
+
+echo "Downloading: $URL"
+if ! curl -fL --connect-timeout 30 --max-time 600 $CURL_PROXY_ARGS -o "$FILENAME" "$URL"; then
+    echo "ERROR: Download failed for URL: $URL" >&2
+    echo "  curl exit code: $?" >&2
+    echo "  Check that the URL is correct and accessible." >&2
+    rm -f "$FILENAME"  # Clean up partial download
+    exit 1
+fi
+
+# === GUARD RAIL: Verify download produced a file ===
+if [[ ! -f "$FILENAME" ]]; then
+    echo "ERROR: Download completed but file not found: $FILENAME" >&2
+    exit 1
+fi
+if [[ ! -s "$FILENAME" ]]; then
+    echo "ERROR: Downloaded file is empty: $FILENAME" >&2
+    echo "  URL: $URL" >&2
+    rm -f "$FILENAME"
+    exit 1
+fi
+
+echo "Downloaded: $FILENAME ($(stat -c%s "$FILENAME" 2>/dev/null || stat -f%z "$FILENAME") bytes)"
 
 # Strip components setting (passed as $9)
 STRIP_COMPONENTS="${9:-1}"
