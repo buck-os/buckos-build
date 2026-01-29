@@ -114,9 +114,30 @@ for dep_dir in "${DEP_DIRS_ARRAY[@]}"; do
     # Store base directory for packages that need direct access
     DEP_BASE_DIRS="${DEP_BASE_DIRS:+$DEP_BASE_DIRS:}$dep_dir"
 
-    # Check if this is the bootstrap toolchain from Stage 1
+    # Check if this is the cross-compiler toolchain from Stage 1
+    # IMPORTANT: Only add cross-gcc and cross-binutils to TOOLCHAIN_PATH
+    # Do NOT add bootstrap-make, bootstrap-sed, etc. - those are cross-compiled
+    # for the TARGET and cannot run on the HOST system
     if [ -d "$dep_dir/tools/bin" ]; then
-        TOOLCHAIN_PATH="${TOOLCHAIN_PATH:+$TOOLCHAIN_PATH:}$dep_dir/tools/bin"
+        # Check for cross-compiler or cross-binutils by looking for the target triplet pattern
+        # This works for any arch: x86_64-buckos-linux-gnu, aarch64-buckos-linux-gnu, etc.
+        for compiler in "$dep_dir/tools/bin/"*-buckos-linux-gnu-gcc; do
+            if [ -f "$compiler" ]; then
+                TOOLCHAIN_PATH="${TOOLCHAIN_PATH:+$TOOLCHAIN_PATH:}$dep_dir/tools/bin"
+                echo "Added cross-gcc to TOOLCHAIN_PATH: $dep_dir/tools/bin"
+                break
+            fi
+        done
+        # If no gcc found, check for binutils (separate package)
+        if [[ "$TOOLCHAIN_PATH" != *"$dep_dir/tools/bin"* ]]; then
+            for linker in "$dep_dir/tools/bin/"*-buckos-linux-gnu-ld; do
+                if [ -f "$linker" ]; then
+                    TOOLCHAIN_PATH="${TOOLCHAIN_PATH:+$TOOLCHAIN_PATH:}$dep_dir/tools/bin"
+                    echo "Added cross-binutils to TOOLCHAIN_PATH: $dep_dir/tools/bin"
+                    break
+                fi
+            done
+        fi
         # NOTE: We don't set BOOTSTRAP_SYSROOT in Stage 2 because libraries
         # are spread across multiple dependencies. We use -L paths instead.
     fi

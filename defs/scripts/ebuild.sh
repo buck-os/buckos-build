@@ -52,11 +52,38 @@ PKG_CONFIG_WRAPPER_SCRIPT="$_EBUILD_PKG_CONFIG_WRAPPER"
 # Convert dep dirs from space-separated to array
 read -ra DEP_DIRS_ARRAY <<< "$_EBUILD_DEP_DIRS"
 
+# Convert host tool dirs from space-separated to array
+# These are build tools (autoconf, gawk, meson, etc.) built for the HOST platform
+read -ra HOST_TOOL_DIRS_ARRAY <<< "$_EBUILD_HOST_TOOL_DIRS"
+
 # Package variables are already exported by wrapper
 export PACKAGE_NAME="$PN"
 
 # Bootstrap configuration
 BUCKOS_TARGET="x86_64-buckos-linux-gnu"
+
+# Build HOST_TOOL_PATH from host tool directories (exec_bdepend)
+# These are tools built for the HOST platform that need to run during the build
+HOST_TOOL_PATH=""
+HOST_TOOL_PYTHONPATH=""
+for tool_dir in "${HOST_TOOL_DIRS_ARRAY[@]}"; do
+    # Convert to absolute path if relative
+    if [[ "$tool_dir" != /* ]]; then
+        tool_dir="$(cd "$tool_dir" 2>/dev/null && pwd)" || continue
+    fi
+    if [ -d "$tool_dir/usr/bin" ]; then
+        HOST_TOOL_PATH="${HOST_TOOL_PATH:+$HOST_TOOL_PATH:}$tool_dir/usr/bin"
+    fi
+    if [ -d "$tool_dir/bin" ]; then
+        HOST_TOOL_PATH="${HOST_TOOL_PATH:+$HOST_TOOL_PATH:}$tool_dir/bin"
+    fi
+    # Add Python package paths for tools like meson that need Python modules
+    for pypath in "$tool_dir/usr/lib/python"*/dist-packages "$tool_dir/usr/lib/python"*/site-packages; do
+        if [ -d "$pypath" ]; then
+            HOST_TOOL_PYTHONPATH="${HOST_TOOL_PYTHONPATH:+$HOST_TOOL_PYTHONPATH:}$pypath"
+        fi
+    done
+done
 
 # Set up PATH from dependency directories
 # Convert relative paths to absolute to ensure they work after cd "$S" in phases.sh
@@ -67,6 +94,7 @@ TOOLCHAIN_PATH=""
 TOOLCHAIN_LIBPATH=""
 TOOLCHAIN_INCLUDE=""
 TOOLCHAIN_ROOT=""
+BOOTSTRAP_TOOLCHAIN_BIN=""  # Store bootstrap-toolchain bin dir for CC/CXX absolute paths
 for dep_dir in "${DEP_DIRS_ARRAY[@]}"; do
     # Convert to absolute path if relative
     if [[ "$dep_dir" != /* ]]; then
@@ -74,12 +102,38 @@ for dep_dir in "${DEP_DIRS_ARRAY[@]}"; do
     fi
     # Store base directory for packages that need direct access
     DEP_BASE_DIRS="${DEP_BASE_DIRS:+$DEP_BASE_DIRS:}$dep_dir"
-    # Check if this is the bootstrap toolchain or has tools dir
+    # Check if this is a toolchain directory with cross-compiler tools
     if [ -d "$dep_dir/tools/bin" ]; then
-        TOOLCHAIN_PATH="${TOOLCHAIN_PATH:+$TOOLCHAIN_PATH:}$dep_dir/tools/bin"
-        # Set sysroot from toolchain if not explicitly provided
-        if [ -z "$BOOTSTRAP_SYSROOT" ] && [ -d "$dep_dir/tools" ]; then
-            BOOTSTRAP_SYSROOT="$dep_dir/tools"
+        # Check if this is bootstrap-toolchain (aggregated package with both
+        # cross-compiler AND cross-compiled utilities like gawk, make, sed)
+        if [[ "$dep_dir" == *"bootstrap-toolchain"* ]]; then
+            # Store for absolute path CC/CXX setup, but DON'T add to PATH
+            # This avoids using cross-compiled gawk/make/sed that crash on host
+            BOOTSTRAP_TOOLCHAIN_BIN="$dep_dir/tools/bin"
+            if [ -z "$BOOTSTRAP_SYSROOT" ]; then
+                BOOTSTRAP_SYSROOT="$dep_dir/tools"
+            fi
+        else
+            # For non-aggregated toolchain packages (cross-gcc-pass2, cross-binutils),
+            # check if they have the cross-compiler and add to PATH
+            for compiler in "$dep_dir/tools/bin/"*-buckos-linux-gnu-gcc; do
+                if [ -f "$compiler" ]; then
+                    TOOLCHAIN_PATH="${TOOLCHAIN_PATH:+$TOOLCHAIN_PATH:}$dep_dir/tools/bin"
+                    if [ -z "$BOOTSTRAP_SYSROOT" ]; then
+                        BOOTSTRAP_SYSROOT="$dep_dir/tools"
+                    fi
+                    break
+                fi
+            done
+            # If no gcc found, check for binutils (separate package)
+            if [[ "$TOOLCHAIN_PATH" != *"$dep_dir/tools/bin"* ]]; then
+                for linker in "$dep_dir/tools/bin/"*-buckos-linux-gnu-ld; do
+                    if [ -f "$linker" ]; then
+                        TOOLCHAIN_PATH="${TOOLCHAIN_PATH:+$TOOLCHAIN_PATH:}$dep_dir/tools/bin"
+                        break
+                    fi
+                done
+            fi
         fi
     fi
     # Collect toolchain library paths for bootstrap tools (bash, etc)
@@ -121,7 +175,10 @@ export TOOLCHAIN_ROOT     # For copying toolchain files
 # For regular packages: prioritize host tools, but include toolchain at the end
 # This way: host utilities (bash, make, etc.) are used first (avoiding GLIBC conflicts)
 # But GCC can still find its internal programs (cc1, etc.) from TOOLCHAIN_PATH
-if [ -n "$DEP_PATH" ] && [ -n "$TOOLCHAIN_PATH" ]; then
+# Priority: HOST_TOOL_PATH (exec_bdepend) > DEP_PATH (bdepend) > system PATH > TOOLCHAIN_PATH
+if [ -n "$HOST_TOOL_PATH" ]; then
+    export PATH="$HOST_TOOL_PATH:$DEP_PATH:$PATH:$TOOLCHAIN_PATH"
+elif [ -n "$DEP_PATH" ] && [ -n "$TOOLCHAIN_PATH" ]; then
     export PATH="$DEP_PATH:$PATH:$TOOLCHAIN_PATH"
 elif [ -n "$DEP_PATH" ]; then
     export PATH="$DEP_PATH:$PATH"
@@ -130,7 +187,10 @@ elif [ -n "$TOOLCHAIN_PATH" ]; then
 fi
 
 # Set up PYTHONPATH for Python-based build tools (meson, etc)
-if [ -n "$DEP_PYTHONPATH" ]; then
+# Prioritize host tool Python paths over target dep Python paths
+if [ -n "$HOST_TOOL_PYTHONPATH" ]; then
+    export PYTHONPATH="${HOST_TOOL_PYTHONPATH}${DEP_PYTHONPATH:+:$DEP_PYTHONPATH}${PYTHONPATH:+:$PYTHONPATH}"
+elif [ -n "$DEP_PYTHONPATH" ]; then
     export PYTHONPATH="${DEP_PYTHONPATH}${PYTHONPATH:+:$PYTHONPATH}"
 fi
 
@@ -139,10 +199,59 @@ fi
 # The autoreconf script uses $autom4te_perllibdir to find its modules
 # Automake/aclocal uses AUTOMAKE_PERLLIBDIR for data files (am/*.am)
 DEP_PERL5LIB=""
+HOST_PERL5LIB=""
 AUTOCONF_PERLLIBDIR=""
 AUTOMAKE_PERLLIBDIR=""
 ACLOCAL_AUTOMAKE_DIR=""
 ACLOCAL_PATH=""
+
+# First process HOST_TOOL_DIRS (exec_bdepend - autoconf/automake from host platform)
+for tool_dir in "${HOST_TOOL_DIRS_ARRAY[@]}"; do
+    if [[ "$tool_dir" != /* ]]; then
+        tool_dir="$(cd "$tool_dir" 2>/dev/null && pwd)" || continue
+    fi
+    # Autoconf Perl modules - set autom4te_perllibdir for autoreconf
+    if [ -d "$tool_dir/usr/share/autoconf" ]; then
+        HOST_PERL5LIB="${HOST_PERL5LIB:+$HOST_PERL5LIB:}$tool_dir/usr/share/autoconf"
+        if [ -z "$AUTOCONF_PERLLIBDIR" ]; then
+            AUTOCONF_PERLLIBDIR="$tool_dir/usr/share/autoconf"
+        fi
+    fi
+    # Automake Perl modules and data files
+    for am_dir in "$tool_dir/usr/share/automake"*; do
+        if [ -d "$am_dir" ]; then
+            HOST_PERL5LIB="${HOST_PERL5LIB:+$HOST_PERL5LIB:}$am_dir"
+            if [ -z "$AUTOMAKE_PERLLIBDIR" ]; then
+                AUTOMAKE_PERLLIBDIR="$am_dir"
+            fi
+        fi
+    done
+    # aclocal directories
+    for aclocal_dir in "$tool_dir/usr/share/aclocal"*; do
+        if [ -d "$aclocal_dir" ]; then
+            if [[ "$aclocal_dir" == *"aclocal-"* ]]; then
+                if [ -z "$ACLOCAL_AUTOMAKE_DIR" ]; then
+                    ACLOCAL_AUTOMAKE_DIR="$aclocal_dir"
+                fi
+            fi
+            ACLOCAL_PATH="${ACLOCAL_PATH:+$ACLOCAL_PATH:}$aclocal_dir"
+        fi
+    done
+    # Standard Perl lib directories
+    for perl_lib in \
+        "$tool_dir/usr/share/perl5" \
+        "$tool_dir/usr/share/perl5/vendor_perl" \
+        "$tool_dir/usr/lib/perl5" \
+        "$tool_dir/usr/lib/perl5/vendor_perl" \
+        "$tool_dir/usr/lib64/perl5" \
+        "$tool_dir/usr/lib64/perl5/vendor_perl"; do
+        if [ -d "$perl_lib" ]; then
+            HOST_PERL5LIB="${HOST_PERL5LIB:+$HOST_PERL5LIB:}$perl_lib"
+        fi
+    done
+done
+
+# Then process DEP_DIRS (bdepend - target platform dependencies)
 for dep_dir in "${DEP_DIRS_ARRAY[@]}"; do
     if [[ "$dep_dir" != /* ]]; then
         dep_dir="$(cd "$dep_dir" 2>/dev/null && pwd)" || continue
@@ -198,7 +307,10 @@ for dep_dir in "${DEP_DIRS_ARRAY[@]}"; do
         fi
     done
 done
-if [ -n "$DEP_PERL5LIB" ]; then
+# Export PERL5LIB with host tools first (exec_bdepend), then target deps
+if [ -n "$HOST_PERL5LIB" ]; then
+    export PERL5LIB="${HOST_PERL5LIB}${DEP_PERL5LIB:+:$DEP_PERL5LIB}${PERL5LIB:+:$PERL5LIB}"
+elif [ -n "$DEP_PERL5LIB" ]; then
     export PERL5LIB="${DEP_PERL5LIB}${PERL5LIB:+:$PERL5LIB}"
 fi
 # Set autom4te_perllibdir for autoreconf to find its Perl modules
@@ -225,6 +337,36 @@ fi
 
 # Set autotools environment variables to override hardcoded paths
 # autoreconf uses AUTOCONF, AUTOHEADER, AUTOM4TE with /usr/bin defaults
+# First check HOST_TOOL_DIRS (exec_bdepend - host platform tools)
+for tool_dir in "${HOST_TOOL_DIRS_ARRAY[@]}"; do
+    if [[ "$tool_dir" != /* ]]; then
+        tool_dir="$(cd "$tool_dir" 2>/dev/null && pwd)" || continue
+    fi
+    # Check for autoconf tools
+    if [ -z "$AUTOCONF" ] && [ -x "$tool_dir/usr/bin/autoconf" ]; then
+        export AUTOCONF="$tool_dir/usr/bin/autoconf"
+    fi
+    if [ -z "$AUTOHEADER" ] && [ -x "$tool_dir/usr/bin/autoheader" ]; then
+        export AUTOHEADER="$tool_dir/usr/bin/autoheader"
+    fi
+    if [ -z "$AUTOM4TE" ] && [ -x "$tool_dir/usr/bin/autom4te" ]; then
+        export AUTOM4TE="$tool_dir/usr/bin/autom4te"
+    fi
+    # autom4te needs its config file
+    if [ -z "$AUTOM4TE_CFG" ] && [ -f "$tool_dir/usr/share/autoconf/autom4te.cfg" ]; then
+        export AUTOM4TE_CFG="$tool_dir/usr/share/autoconf/autom4te.cfg"
+    fi
+    # Also set AC_MACRODIR for autoconf m4 macros
+    if [ -z "$AC_MACRODIR" ] && [ -d "$tool_dir/usr/share/autoconf" ]; then
+        export AC_MACRODIR="$tool_dir/usr/share/autoconf"
+    fi
+    # Check for libtool's libtoolize
+    if [ -z "$LIBTOOLIZE" ] && [ -x "$tool_dir/usr/bin/libtoolize" ]; then
+        export LIBTOOLIZE="$tool_dir/usr/bin/libtoolize"
+    fi
+done
+
+# Fallback: check DEP_DIRS (bdepend - for backwards compatibility)
 for dep_dir in "${DEP_DIRS_ARRAY[@]}"; do
     if [[ "$dep_dir" != /* ]]; then
         dep_dir="$(cd "$dep_dir" 2>/dev/null && pwd)" || continue
@@ -329,29 +471,39 @@ if [ "$USE_HOST_TOOLCHAIN" = "true" ]; then
     export OBJCOPY="${OBJCOPY:-objcopy}"
     export OBJDUMP="${OBJDUMP:-objdump}"
 elif [ "$USE_BOOTSTRAP" = "true" ]; then
+    # Determine which cross-compiler bin directory to use
+    # Prefer BOOTSTRAP_TOOLCHAIN_BIN (aggregated toolchain) over TOOLCHAIN_PATH
+    CROSS_COMPILER_BIN=""
+    if [ -n "$BOOTSTRAP_TOOLCHAIN_BIN" ]; then
+        CROSS_COMPILER_BIN="$BOOTSTRAP_TOOLCHAIN_BIN"
+    elif [ -n "$TOOLCHAIN_PATH" ]; then
+        # Use first directory in TOOLCHAIN_PATH (separated by colon)
+        CROSS_COMPILER_BIN="${TOOLCHAIN_PATH%%:*}"
+    fi
+
     # Verify the cross-compiler actually exists
-    if [ -n "$TOOLCHAIN_PATH" ] && [ -x "$TOOLCHAIN_PATH/${BUCKOS_TARGET}-gcc" ]; then
+    if [ -n "$CROSS_COMPILER_BIN" ] && [ -x "$CROSS_COMPILER_BIN/${BUCKOS_TARGET}-gcc" ]; then
         CROSS_COMPILING="true"
         echo "=== Using Bootstrap Toolchain ==="
         echo "Target: $BUCKOS_TARGET"
         echo "Sysroot: $BOOTSTRAP_SYSROOT"
-        echo "Toolchain PATH: $TOOLCHAIN_PATH"
+        echo "Cross-compiler bin: $CROSS_COMPILER_BIN"
 
-        # Set cross-compilation environment variables
-        # Use binary names (not absolute paths) so GCC can find its internal programs
-        # The cross-compiler will be found via TOOLCHAIN_PATH at end of PATH
-        export CC="${BUCKOS_TARGET}-gcc"
-        export CXX="${BUCKOS_TARGET}-g++"
-        export CPP="${BUCKOS_TARGET}-gcc -E"
-        export AR="${BUCKOS_TARGET}-ar"
-        export AS="${BUCKOS_TARGET}-as"
-        export LD="${BUCKOS_TARGET}-ld"
-        export NM="${BUCKOS_TARGET}-nm"
-        export RANLIB="${BUCKOS_TARGET}-ranlib"
-        export STRIP="${BUCKOS_TARGET}-strip"
-        export OBJCOPY="${BUCKOS_TARGET}-objcopy"
-        export OBJDUMP="${BUCKOS_TARGET}-objdump"
-        export READELF="${BUCKOS_TARGET}-readelf"
+        # Set cross-compilation environment variables using ABSOLUTE PATHS
+        # This ensures we use the cross-compiler without putting bootstrap-toolchain in PATH
+        # (which would expose cross-compiled utilities that crash on host)
+        export CC="$CROSS_COMPILER_BIN/${BUCKOS_TARGET}-gcc"
+        export CXX="$CROSS_COMPILER_BIN/${BUCKOS_TARGET}-g++"
+        export CPP="$CROSS_COMPILER_BIN/${BUCKOS_TARGET}-gcc -E"
+        export AR="$CROSS_COMPILER_BIN/${BUCKOS_TARGET}-ar"
+        export AS="$CROSS_COMPILER_BIN/${BUCKOS_TARGET}-as"
+        export LD="$CROSS_COMPILER_BIN/${BUCKOS_TARGET}-ld"
+        export NM="$CROSS_COMPILER_BIN/${BUCKOS_TARGET}-nm"
+        export RANLIB="$CROSS_COMPILER_BIN/${BUCKOS_TARGET}-ranlib"
+        export STRIP="$CROSS_COMPILER_BIN/${BUCKOS_TARGET}-strip"
+        export OBJCOPY="$CROSS_COMPILER_BIN/${BUCKOS_TARGET}-objcopy"
+        export OBJDUMP="$CROSS_COMPILER_BIN/${BUCKOS_TARGET}-objdump"
+        export READELF="$CROSS_COMPILER_BIN/${BUCKOS_TARGET}-readelf"
 
         # Set sysroot for all compilation
         if [ -n "$BOOTSTRAP_SYSROOT" ]; then

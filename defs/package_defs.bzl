@@ -39,7 +39,7 @@ LLVM_TOOLCHAIN = "toolchains//bootstrap/llvm:llvm-toolchain"
 VALID_EBUILD_KWARGS = [
     "category", "slot", "description", "homepage", "license",
     "src_unpack", "src_test", "pre_configure", "run_tests",
-    "depend", "pdepend", "local_only", "bootstrap_sysroot", "bootstrap_stage",
+    "depend", "pdepend", "exec_bdepend", "local_only", "bootstrap_sysroot", "bootstrap_stage",
     "visibility",
 ]
 
@@ -3986,9 +3986,14 @@ def _ebuild_package_impl(ctx: AnalysisContext) -> list[Provider]:
         # Filter out bootstrap toolchain from bdepend when using host toolchain
         bdepend_list = [dep for dep in ctx.attrs.bdepend if "bootstrap-toolchain" not in str(dep.label)]
 
-    # Collect all dependency directories
-    all_deps = ctx.attrs.depend + bdepend_list + ctx.attrs.rdepend
-    dep_dirs = _collect_dep_dirs(all_deps)
+    # Collect dependency directories:
+    # - Target platform dependencies (cross-compiled libraries/headers): depend + bdepend + rdepend
+    # - Host platform dependencies (native build tools): exec_bdepend
+    target_deps = ctx.attrs.depend + bdepend_list + ctx.attrs.rdepend
+    dep_dirs = _collect_dep_dirs(target_deps)
+
+    # Collect exec dependencies (build tools for host platform)
+    exec_dep_dirs = _collect_dep_dirs(ctx.attrs.exec_bdepend)
 
     # Build phases (use 'true' as no-op for empty phases to avoid syntax errors)
     src_unpack = ctx.attrs.src_unpack if ctx.attrs.src_unpack else "true"
@@ -4078,7 +4083,7 @@ ORIGINAL_ARGS=("$@")
 
 # Arguments: DESTDIR, SRC_DIR, PKG_CONFIG_WRAPPER, FRAMEWORK_SCRIPT, PATCH_COUNT,
 #            ENV_SCRIPT, SRC_UNPACK, SRC_PREPARE, PRE_CONFIGURE, SRC_CONFIGURE,
-#            SRC_COMPILE, SRC_TEST, SRC_INSTALL, patches..., dep_dirs...
+#            SRC_COMPILE, SRC_TEST, SRC_INSTALL, HOST_TOOL_COUNT, patches..., host_tool_dirs..., dep_dirs...
 # Convert paths to absolute to work in mount namespace
 export _EBUILD_DESTDIR="$(readlink -f "$1")"
 export _EBUILD_SRCDIR="$(readlink -f "$2")"
@@ -4097,7 +4102,8 @@ export PHASE_SRC_CONFIGURE="$(readlink -f "$5")"
 export PHASE_SRC_COMPILE="$(readlink -f "$6")"
 export PHASE_SRC_TEST="$(readlink -f "$7")"
 export PHASE_SRC_INSTALL="$(readlink -f "$8")"
-shift 8
+HOST_TOOL_COUNT="$9"
+shift 9
 
 # Debug: Log phase script paths for troubleshooting
 if [ -n "${EBUILD_DEBUG:-}" ]; then
@@ -4200,20 +4206,25 @@ for ((i=0; i<$PATCH_COUNT; i++)); do
     shift
 done
 
-# Remaining args ($@) are: dep_dirs...
+# Extract host tool directories (build tools for host platform)
+# These are compiled for the execution platform (host) and should be in PATH first
+HOST_TOOL_DIRS=()
+for ((i=0; i<$HOST_TOOL_COUNT; i++)); do
+    HOST_TOOL_DIRS+=("$1")
+    shift
+done
+export _EBUILD_HOST_TOOL_DIRS="${HOST_TOOL_DIRS[*]}"
+
+# Remaining args ($@) are: target dep_dirs...
 export _EBUILD_DEP_DIRS="$@"
 
-# Set up LD_LIBRARY_PATH early so bootstrap bash can find its libraries
-# This must happen before any bash subprocesses are spawned
-_TOOLCHAIN_LIBPATH=""
-for dep_dir in "$@"; do
-    if [ -d "$dep_dir/tools/lib" ]; then
-        _TOOLCHAIN_LIBPATH="${_TOOLCHAIN_LIBPATH:+$_TOOLCHAIN_LIBPATH:}$dep_dir/tools/lib"
-    fi
-done
-if [ -n "$_TOOLCHAIN_LIBPATH" ]; then
-    export LD_LIBRARY_PATH="${_TOOLCHAIN_LIBPATH}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-fi
+# NOTE: Do NOT set LD_LIBRARY_PATH here!
+# The dependencies may include bootstrap-toolchain which has libraries built for the
+# TARGET system (e.g., glibc 2.42 for x86_64-buckos-linux-gnu). Setting LD_LIBRARY_PATH
+# to include these libraries would cause HOST utilities (mkdir, rm, cp, etc.) to crash
+# with GLIBC version errors or segfaults.
+# LD_LIBRARY_PATH should only be set by the framework script (ebuild.sh) AFTER the
+# initial source copy, and only for running cross-compiled tools, not host utilities.
 
 # Export package variables
 export PN="@@NAME@@"
@@ -4525,7 +4536,7 @@ source "$FRAMEWORK_SCRIPT"
     # Build command - wrapper sources the external framework
     # Arguments order: DESTDIR, SRC_DIR, PKG_CONFIG_WRAPPER, FRAMEWORK_SCRIPT, PATCH_COUNT,
     #                  ENV_SCRIPT, SRC_UNPACK, SRC_PREPARE, PRE_CONFIGURE, SRC_CONFIGURE,
-    #                  SRC_COMPILE, SRC_TEST, SRC_INSTALL, patches..., dep_dirs...
+    #                  SRC_COMPILE, SRC_TEST, SRC_INSTALL, HOST_TOOL_COUNT, patches..., host_tool_dirs..., dep_dirs...
     cmd = cmd_args([
         "bash",
         script,
@@ -4546,11 +4557,19 @@ source "$FRAMEWORK_SCRIPT"
     cmd.add(phase_scripts["src_test"])
     cmd.add(phase_scripts["src_install"])
 
+    # Add host tool count (number of exec_bdepend directories)
+    exec_dep_count = len(exec_dep_dirs)
+    cmd.add(str(exec_dep_count))
+
     # Add patch files as arguments
     for patch_file in patch_file_list:
         cmd.add(patch_file)
 
-    # Add dependency directories
+    # Add host tool directories (exec_bdepend - tools that run on host platform)
+    for exec_dep_dir in exec_dep_dirs:
+        cmd.add(exec_dep_dir)
+
+    # Add target dependency directories (cross-compiled libraries/headers)
     for dep_dir in dep_dirs:
         cmd.add(dep_dir)
 
@@ -4613,6 +4632,7 @@ ebuild_package_rule = rule(
         "depend": attrs.list(attrs.dep(), default = []),
         "rdepend": attrs.list(attrs.dep(), default = []),
         "bdepend": attrs.list(attrs.dep(), default = []),
+        "exec_bdepend": attrs.list(attrs.exec_dep(), default = []),  # Build tools for host platform
         "pdepend": attrs.list(attrs.dep(), default = []),
         "maintainers": attrs.list(attrs.string(), default = []),
         "patches": attrs.list(attrs.source(), default = []),
@@ -4651,6 +4671,7 @@ def ebuild_package(
         depend: list[str] = [],
         rdepend: list[str] = [],
         bdepend: list[str] = [],
+        exec_bdepend: list[str] = [],  # Build tools that run on host platform
         pdepend: list[str] = [],
         # Build phases
         src_unpack: str = "",
@@ -4751,6 +4772,7 @@ def ebuild_package(
         depend = resolved_depend,
         rdepend = rdepend,
         bdepend = bdepend,
+        exec_bdepend = exec_bdepend,
         pdepend = pdepend,
         src_unpack = src_unpack,
         src_prepare = final_src_prepare,
@@ -4958,6 +4980,12 @@ def cmake_package(
         if dep not in bdepend:
             bdepend.append(dep)
 
+    # Merge eclass exec_bdepend (host-platform build tools) with any existing exec_bdepend
+    exec_bdepend = list(kwargs.pop("exec_bdepend", []))
+    for dep in eclass_config.get("exec_bdepend", []):
+        if dep not in exec_bdepend:
+            exec_bdepend.append(dep)
+
     # Add bootstrap toolchain by default to ensure linking against BuckOS glibc
     # get_toolchain_dep() returns None when use_host_toolchain is enabled
     use_bootstrap = kwargs.pop("use_bootstrap", True)
@@ -5008,6 +5036,7 @@ def cmake_package(
         src_install = src_install,
         rdepend = resolved_deps,
         bdepend = bdepend,
+        exec_bdepend = exec_bdepend,
         env = env,
         maintainers = maintainers,
         use_flags = effective_use,
@@ -5158,6 +5187,12 @@ def meson_package(
         if dep not in bdepend:
             bdepend.append(dep)
 
+    # Merge eclass exec_bdepend (host-platform build tools) with any existing exec_bdepend
+    exec_bdepend = list(kwargs.pop("exec_bdepend", []))
+    for dep in eclass_config.get("exec_bdepend", []):
+        if dep not in exec_bdepend:
+            exec_bdepend.append(dep)
+
     # Add bootstrap toolchain by default to ensure linking against BuckOS glibc
     # get_toolchain_dep() returns None when use_host_toolchain is enabled
     use_bootstrap = kwargs.pop("use_bootstrap", True)
@@ -5190,6 +5225,7 @@ def meson_package(
         src_install = src_install,
         rdepend = resolved_deps,
         bdepend = bdepend,
+        exec_bdepend = exec_bdepend,
         env = env,
         maintainers = maintainers,
         use_flags = effective_use,
@@ -5347,6 +5383,12 @@ def autotools_package(
     # Merge eclass bdepend with any existing bdepend
     bdepend = list(kwargs.pop("bdepend", []))
 
+    # Merge eclass exec_bdepend (host-platform build tools) with any existing exec_bdepend
+    exec_bdepend = list(kwargs.pop("exec_bdepend", []))
+    for dep in eclass_config.get("exec_bdepend", []):
+        if dep not in exec_bdepend:
+            exec_bdepend.append(dep)
+
     # Check if host toolchain is enabled
     use_host_toolchain = _should_use_host_toolchain()
 
@@ -5421,6 +5463,7 @@ def autotools_package(
         src_install = src_install,
         rdepend = resolved_deps,
         bdepend = bdepend,
+        exec_bdepend = exec_bdepend,
         env = env,
         maintainers = maintainers,
         use_flags = effective_use,

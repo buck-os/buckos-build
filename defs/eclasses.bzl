@@ -97,7 +97,7 @@ DESTDIR="$DESTDIR" cmake --install "$S/build"
 cd "$S/build"
 ctest --output-on-failure
 ''',
-    "bdepend": ["//packages/linux/dev-tools/build-systems/cmake:cmake", "//packages/linux/dev-tools/build-systems/ninja:ninja"],
+    "exec_bdepend": ["//packages/linux/dev-tools/build-systems/cmake:cmake", "//packages/linux/dev-tools/build-systems/ninja:ninja"],
     "exports": ["cmake-utils_src_configure", "cmake-utils_src_compile", "cmake-utils_src_install"],
 }
 
@@ -124,7 +124,7 @@ DESTDIR="$DESTDIR" meson install -C "${BUILD_DIR:-build}"
     "src_test": '''
 meson test -C "${BUILD_DIR:-build}" --print-errorlogs
 ''',
-    "bdepend": ["//packages/linux/dev-tools/build-systems/meson:meson", "//packages/linux/dev-tools/build-systems/ninja:ninja"],
+    "exec_bdepend": ["//packages/linux/dev-tools/build-systems/meson:meson", "//packages/linux/dev-tools/build-systems/ninja:ninja"],
     "exports": ["meson_src_configure", "meson_src_compile", "meson_src_install"],
 }
 
@@ -184,7 +184,7 @@ elif make -q test 2>/dev/null; then
     make test
 fi
 ''',
-    "bdepend": ["//packages/linux/dev-tools/build-systems/autoconf:autoconf", "//packages/linux/dev-tools/build-systems/automake:automake", "//packages/linux/dev-tools/build-systems/libtool:libtool"],
+    "exec_bdepend": ["//packages/linux/dev-tools/build-systems/autoconf:autoconf", "//packages/linux/dev-tools/build-systems/automake:automake", "//packages/linux/dev-tools/build-systems/libtool:libtool"],
     "exports": ["eautoreconf", "econf", "emake", "einstall"],
 }
 
@@ -1183,6 +1183,7 @@ def inherit(eclass_names):
         "src_test": "",
         "post_install": "",
         "bdepend": [],
+        "exec_bdepend": [],  # Build tools that run on host platform
         "rdepend": [],
         "inherited": [],
     }
@@ -1215,6 +1216,10 @@ def inherit(eclass_names):
             for dep in eclass["bdepend"]:
                 if dep not in result["bdepend"]:
                     result["bdepend"].append(dep)
+        if "exec_bdepend" in eclass:
+            for dep in eclass["exec_bdepend"]:
+                if dep not in result["exec_bdepend"]:
+                    result["exec_bdepend"].append(dep)
         if "rdepend" in eclass:
             for dep in eclass["rdepend"]:
                 if dep not in result["rdepend"]:
