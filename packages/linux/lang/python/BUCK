@@ -38,6 +38,11 @@ autotools_package(
     },
 
     # Base configure arguments (always applied)
+    # Python cross-compilation requires a build-host Python of the same
+    # major.minor version. Since the host has 3.13 and we build 3.12,
+    # use the host toolchain instead. Python's configure also runs test
+    # programs making true cross-compilation impractical.
+    use_bootstrap = False,
     configure_args = [
         "--enable-shared",
         "--with-system-expat",

@@ -21,13 +21,23 @@ autotools_package(
     configure_args = [
         "--disable-static",
     ],
-    # Fix libbsd.la to not reference host's libmd.la
+    # Fix libbsd linker script and .la to not reference absolute host paths.
+    # libbsd.so is a GNU ld script: GROUP(/usr/lib64/libbsd.so.0.12.2 AS_NEEDED(-lmd))
+    # The absolute path breaks cross-compilation. Rewrite with relative name.
     post_install = """
+# Fix libbsd.so linker script: replace absolute host paths with relative names
+if [ -f "$DESTDIR/usr/lib64/libbsd.so" ]; then
+    echo "Fixing libbsd.so linker script..."
+    cat > "$DESTDIR/usr/lib64/libbsd.so" << 'LDSCRIPT'
+/* GNU ld script */
+OUTPUT_FORMAT(elf64-x86-64)
+GROUP(libbsd.so.0 AS_NEEDED(-lmd))
+LDSCRIPT
+fi
 # Remove host path references from libbsd.la
 if [ -f "$DESTDIR/usr/lib64/libbsd.la" ]; then
     echo "Fixing libbsd.la to remove host path references..."
     sed -i "s|/usr/lib64/libmd.la|-lmd|g" "$DESTDIR/usr/lib64/libbsd.la"
-    cat "$DESTDIR/usr/lib64/libbsd.la" | grep dependency_libs
 fi
 """,
     deps = [

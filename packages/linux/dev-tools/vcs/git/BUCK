@@ -51,6 +51,10 @@ autotools_package(
         "--with-expat",
         "--with-openssl",
         "--with-zlib",
+        # Cross-compilation cache variables (cannot run test programs on target)
+        "ac_cv_iconv_omits_bom=no",
+        "ac_cv_fread_reads_directories=no",
+        "ac_cv_snprintf_returns_bogus=no",
     ],
 
     make_args = [

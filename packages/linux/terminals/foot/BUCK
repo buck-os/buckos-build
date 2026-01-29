@@ -19,14 +19,47 @@ meson_package(
     meson_args = [
         "-Ddocs=disabled",
         "-Dterminfo=disabled",
+        "-Dtests=false",
     ],
+    src_configure = """
+# Add rpath-link for all dep lib dirs so the linker can resolve
+# transitive shared library deps (e.g. fcft -> harfbuzz)
+_EXTRA_LDFLAGS=""
+IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
+for _dep in "${_DEP_ARRAY[@]}"; do
+    for _libdir in "$_dep/usr/lib64" "$_dep/usr/lib"; do
+        if [ -d "$_libdir" ]; then
+            _EXTRA_LDFLAGS="$_EXTRA_LDFLAGS -Wl,-rpath-link,$_libdir"
+        fi
+    done
+done
+export LDFLAGS="${LDFLAGS:-} $_EXTRA_LDFLAGS"
+
+meson setup "${BUILD_DIR:-build}" \\
+    --prefix="${EPREFIX:-/usr}" \\
+    --libdir="${LIBDIR:-lib64}" \\
+    --buildtype="${MESON_BUILD_TYPE:-release}" \\
+    -Dwerror=false \\
+    ${MESON_EXTRA_ARGS:-}
+""",
     use_meson = {
         "grapheme-clustering": "-Dgrapheme-clustering=enabled",
         "-grapheme-clustering": "-Dgrapheme-clustering=disabled",
     },
     deps = [
         "core//libffi:libffi",
+        "core//zlib:zlib",
+        "system//libs/font/fcft:fcft",
+        "system//libs/font/fontconfig:fontconfig",
+        "system//libs/font/freetype:freetype",
+        "system//libs/font/harfbuzz:harfbuzz",
+        "system//libs/font/graphite2:graphite2",
         "system//libs/graphics/pixman:pixman",
+        "system//libs/input/libxkbcommon:libxkbcommon",
+        "system//libs/image/libpng:libpng",
+        "system//libs/compression/bzip2:bzip2",
+        "system//libs/data/expat:expat",
+        "system//libs/data/tllist:tllist",
         "graphics//rendering/wayland-protocols:wayland-protocols",
         "graphics//rendering/wayland:wayland",
     ],

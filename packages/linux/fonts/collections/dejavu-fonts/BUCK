@@ -14,28 +14,22 @@ ebuild_package(
     description = "DejaVu fonts - derivative of Bitstream Vera with extended Unicode coverage",
     homepage = "https://dejavu-fonts.github.io/",
     license = "BitstreamVera",
+    src_configure = "true",
+    src_compile = "true",
     src_install = """
-# Create font directory
-dodir /usr/share/fonts/dejavu
-
-# Install all TTF fonts
+mkdir -p "$DESTDIR/usr/share/fonts/dejavu"
 cd ttf || true
 for font in *.ttf; do
     if [ -f "$font" ]; then
-        insinto /usr/share/fonts/dejavu
-        doins "$font"
+        install -m 0644 "$font" "$DESTDIR/usr/share/fonts/dejavu/"
     fi
 done
 cd ..
 
-# Install fontconfig configuration
 if [ -d fontconfig ]; then
-    insinto /etc/fonts/conf.avail
-    doins fontconfig/*.conf
+    mkdir -p "$DESTDIR/etc/fonts/conf.avail"
+    install -m 0644 fontconfig/*.conf "$DESTDIR/etc/fonts/conf.avail/" 2>/dev/null || true
 fi
-
-# Install documentation
-dodoc AUTHORS LICENSE NEWS README.md 2>/dev/null || true
 """,
     rdepend = [
         "fonts//libraries/fontconfig:fontconfig",

@@ -2,7 +2,7 @@ load("@root//defs:package_defs.bzl", "download_source", "autotools_package")
 load("@root//defs:use_flags.bzl", "set_use_flags")
 
 download_source(
-    name = "fontconfig-src",
+    name = "fontconfig-source",
     src_uri = "https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.15.0.tar.xz",
     sha256 = "63a0658d0e06e0fa886106452b58ef04f21f58202ea02a94c39de0d3335d7c0e",
     signature_required = False,
@@ -10,7 +10,7 @@ download_source(
 
 autotools_package(
     name = "fontconfig",
-    source = ":fontconfig-src",
+    source = ":fontconfig-source",
     iuse = ["nls"],
     use_configure = {
         "-nls": "--disable-nls",
@@ -26,6 +26,29 @@ autotools_package(
         "--localstatedir=/var",
         "--disable-docs",
     ],
+    src_compile = """
+# Fix libtool .la file cross-compilation issue:
+# Dep .la files in read-only Buck2 artifacts reference absolute host paths
+# like /usr/lib64/libpng16.la that don't exist.
+# Fix: Strip dependency_libs from all dep .la files (writable copies in temp dir)
+# and pass the temp dir first in LDFLAGS on the make command line.
+_LA_OVERRIDE=$(mktemp -d)
+_la_count=0
+shopt -s nullglob
+for lib_dir in $(echo "$LDFLAGS" | tr ' ' '\\n' | sed -n 's/^-L//p'); do
+    for la_file in "$lib_dir"/*.la; do
+        [ -f "$la_file" ] || continue
+        sed "s|dependency_libs='[^']*'|dependency_libs=''|" "$la_file" > "$_LA_OVERRIDE/$(basename "$la_file")"
+        _la_count=$((_la_count + 1))
+    done
+done
+shopt -u nullglob
+echo "Copied $_la_count .la files to override dir: $_LA_OVERRIDE"
+ls "$_LA_OVERRIDE/" | head -20
+_NEW_LDFLAGS="-L$_LA_OVERRIDE $LDFLAGS"
+echo "LDFLAGS starts with: $(echo "$_NEW_LDFLAGS" | cut -c1-200)"
+make -j${MAKEOPTS:-$(nproc)} ${EXTRA_EMAKE:-} LDFLAGS="$_NEW_LDFLAGS"
+""",
     deps = [
         "system//libs/font/freetype:freetype",
         "system//libs/data/expat:expat",

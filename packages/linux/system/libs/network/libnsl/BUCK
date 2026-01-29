@@ -43,6 +43,8 @@ echo "  LIBS: $(pkg-config --libs libtirpc)"
 ./configure \
     --prefix=/usr \
     --libdir=/usr/lib64 \
+    --build="${CBUILD:-$(gcc -dumpmachine)}" \
+    --host="${CHOST:-$(gcc -dumpmachine)}" \
     --enable-shared \
     --disable-static
 ''',

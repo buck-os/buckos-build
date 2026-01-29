@@ -1,4 +1,6 @@
 #!/bin/bash
+# Prevent cd from outputting paths when CDPATH is set
+unset CDPATH
 # ebuild-bootstrap-stage1.sh - Bootstrap Stage 1: Minimal Cross-Compilation Toolchain
 #
 # PURPOSE: Build the initial cross-compilation toolchain targeting x86_64-buckos-linux-gnu

@@ -11,6 +11,9 @@
 
 set -e
 
+# Prevent cd from outputting paths when CDPATH is set
+unset CDPATH
+
 # Directory setup from wrapper environment
 mkdir -p "$_PRECOMPILED_DESTDIR"
 export OUT="$(cd "$_PRECOMPILED_DESTDIR" && pwd)"

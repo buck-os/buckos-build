@@ -41,6 +41,12 @@ sed -i '/#ifndef HAVE_HANDLE_AT/,/#endif/d' lib/fs.c || true
 
 # Patch include/namespace.h to remove setns redefinition
 sed -i '/^static inline int setns/,/^}/d' include/namespace.h || true
+
+# Disable netem utilities - they use host compiler/linker which fails
+# in the network-isolated build environment
+sed -i '/^TARGETS/s/ maketable//' netem/Makefile 2>/dev/null || true
+sed -i '/maketable/d' netem/Makefile 2>/dev/null || true
+sed -i '/paretonormal/d' netem/Makefile 2>/dev/null || true
 """,
 
     pre_configure = """

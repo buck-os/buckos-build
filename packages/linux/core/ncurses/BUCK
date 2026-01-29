@@ -70,6 +70,11 @@ autotools_package(
         "--with-shared",
         "--enable-pc-files",
         "--with-pkg-config-libdir=/usr/lib/pkgconfig",
+        # Cross-compilation: ncurses needs a native host compiler for tools (tic, infocmp)
+        # Note: values must not contain spaces - EXTRA_ECONF is word-split by the shell
+        "--with-build-cc=gcc",
+        "--with-build-cflags=-O2",
+        "--with-build-ldflags=-L/usr/lib64",
         # NOTE: --with-termlib is disabled because it causes library dependency issues
         # when RPATH is not used. Applications linking against libncursesw also need
         # to explicitly link against libtinfow, which many build systems don't handle.

@@ -40,7 +40,11 @@ ebuild_package(
     description = "Perl is a highly capable, feature-rich programming language",
     homepage = "https://www.perl.org/",
     license = "Artistic-1.0-Perl OR GPL-1.0-or-later",
-    # Perl uses its own Configure script (capital C), not autotools
+    # Perl uses its own Configure script (capital C), not autotools.
+    # Perl Configure compiles and RUNS test programs, so it CANNOT cross-compile
+    # inside the network-isolated mount namespace (host gcc can't link against
+    # sysroot's glibc). Build with host compiler instead.
+    use_bootstrap = False,
     src_configure = """
 chmod +x Configure
 ./Configure -des \\

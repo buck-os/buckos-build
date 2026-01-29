@@ -3,8 +3,8 @@ load("@root//defs:use_flags.bzl", "set_use_flags")
 
 download_source(
     name = "acl-src",
-    src_uri = "https://github.com/sailfishos-mirror/acl/archive/refs/tags/v2.3.2.tar.gz",
-    sha256 = "0fc318808c1e91925398cbe41399a33b74dcf788a1c0af4feae8f7a322c6e6fd",
+    src_uri = "https://download.savannah.nongnu.org/releases/acl/acl-2.3.2.tar.xz",
+    sha256 = "97203a72cae99ab89a067fe2210c1cbf052bc492b479eca7d226d9830883b0bd",
     signature_required = False,
 )
 
@@ -24,14 +24,6 @@ ebuild_package(
     description = "Access Control List library",
     homepage = "https://github.com/sailfishos-mirror/acl",
     license = "LGPL-2.1",
-
-    src_prepare = '''
-# GitHub archive doesn't include pre-generated configure script
-# Remove po directory to avoid NLS build issues
-rm -rf po
-sed -i '/^SUBDIRS/s/po//' Makefile.am
-autoreconf -fiv
-''',
 
     src_configure = '''
 ./configure \\

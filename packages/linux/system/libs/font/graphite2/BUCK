@@ -17,6 +17,13 @@ cmake_package(
     license = "LGPL-2.1",
     cmake_args = [
         "-DGRAPHITE2_TESTS=OFF",
+        "-DBUILD_TESTING=OFF",
+    ],
+    deps = [
+        "system//libs/font/freetype:freetype",
+        "core//zlib:zlib",
+        "system//libs/image/libpng:libpng",
+        "system//libs/compression/bzip2:bzip2",
     ],
     visibility = ["PUBLIC"],
 )

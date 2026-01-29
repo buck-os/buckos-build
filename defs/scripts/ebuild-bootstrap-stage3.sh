@@ -1,4 +1,6 @@
 #!/bin/bash
+# Prevent cd from outputting paths when CDPATH is set
+unset CDPATH
 # ebuild-bootstrap-stage3.sh - Bootstrap Stage 3: Verification & Final System
 #
 # PURPOSE: Verify bootstrap correctness and build final system packages

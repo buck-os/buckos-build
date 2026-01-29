@@ -1,11 +1,17 @@
 load("@root//defs:package_defs.bzl", "download_source", "autotools_package")
 load("@root//defs:use_flags.bzl", "set_use_flags")
 
-autotools_package(
-    name = "vim",
-    version = "9.1.0",
+download_source(
+    name = "vim-source",
     src_uri = "https://github.com/vim/vim/archive/v9.1.0.tar.gz",
     sha256 = "ddb435f6e386c53799a3025bdc5a3533beac735a0ee596cb27ada97366a1c725",
+    signature_required = False,
+)
+
+autotools_package(
+    name = "vim",
+    source = ":vim-source",
+    version = "9.1.0",
     signature_required = False,
     description = "Highly configurable text editor built to make creating and changing any kind of text very efficient",
     homepage = "https://www.vim.org/",
@@ -94,6 +100,18 @@ autotools_package(
         "--with-features=huge",
         "--enable-multibyte",
         "--disable-netbeans",
+        "--with-tlib=ncurses",
+        # Cross-compilation cache variables - vim configure tries to run test
+        # programs which can't work when cross-compiling. These are the correct
+        # values for modern Linux x86_64 with glibc.
+        "vim_cv_toupper_broken=no",
+        "vim_cv_terminfo=yes",
+        "vim_cv_tgetent=zero",
+        "vim_cv_getcwd_broken=no",
+        "vim_cv_stat_ignores_slash=no",
+        "vim_cv_memmove_handles_overlap=yes",
+        "vim_cv_bcopy_handles_overlap=yes",
+        "vim_cv_memcpy_handles_overlap=yes",
     ],
 
     pre_configure = """

@@ -69,16 +69,86 @@ autotools_package(
         "--prefix=/usr",
         "--sysconfdir=/etc",
     ],
-    pre_configure = """
-# Remove ALL libtool .la files from sysroot to prevent host path contamination
-# .la files are legacy and cause issues when they reference host system paths
-# Modern systems use pkg-config instead
-echo "Removing all .la files from sysroot..."
-LA_COUNT=$(find "$SYSROOT/usr/lib" "$SYSROOT/usr/lib64" -name "*.la" -type f 2>/dev/null | wc -l)
-if [ "$LA_COUNT" -gt 0 ]; then
-    echo "Found $LA_COUNT .la files to remove"
-    find "$SYSROOT/usr/lib" "$SYSROOT/usr/lib64" -name "*.la" -type f -delete 2>/dev/null || true
-    echo "Done removing .la files"
+    src_configure = """
+# Add libbsd overlay headers for BSD functions (freezero, readpassphrase, etc.)
+# Find libbsd overlay include directory from dependency paths
+_BSD_INC=""
+IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
+echo "DEBUG: DEP_BASE_DIRS has ${#_DEP_ARRAY[@]} entries"
+for _dep in "${_DEP_ARRAY[@]}"; do
+    if [ -d "$_dep/usr/include/bsd" ]; then
+        _BSD_INC="$_dep/usr/include/bsd"
+        echo "Found libbsd overlay at: $_BSD_INC"
+        break
+    fi
+done
+# Fallback: search CPATH for bsd subdirectory
+if [ -z "$_BSD_INC" ]; then
+    IFS=':' read -ra _CPATH_ARRAY <<< "${CPATH:-}"
+    for _inc in "${_CPATH_ARRAY[@]}"; do
+        if [ -d "$_inc/bsd" ]; then
+            _BSD_INC="$_inc/bsd"
+            echo "Found libbsd overlay via CPATH: $_BSD_INC"
+            break
+        fi
+    done
+fi
+if [ -n "$_BSD_INC" ]; then
+    # PREPEND overlay path so it's searched BEFORE sysroot/toolchain includes.
+    # GCC searches -isystem dirs in order, so the overlay must come first
+    # to intercept <stdlib.h> etc. via #include_next.
+    export CFLAGS="-isystem $_BSD_INC -DLIBBSD_OVERLAY $CFLAGS"
+    export CPPFLAGS="-isystem $_BSD_INC -DLIBBSD_OVERLAY $CPPFLAGS"
+    echo "CFLAGS now includes libbsd overlay (prepended)"
+else
+    echo "WARNING: libbsd overlay headers not found"
+fi
+export LIBS="${LIBS:-} -lbsd"
+
+ECONF_SOURCE="${ECONF_SOURCE:-.}"
+"$ECONF_SOURCE/configure" \\
+    --prefix="${EPREFIX:-/usr}" \\
+    --build="${CBUILD:-$(gcc -dumpmachine)}" \\
+    --host="${CHOST:-$(gcc -dumpmachine)}" \\
+    --mandir="${EPREFIX:-/usr}/share/man" \\
+    --infodir="${EPREFIX:-/usr}/share/info" \\
+    --datadir="${EPREFIX:-/usr}/share" \\
+    --sysconfdir="${EPREFIX:-/etc}" \\
+    --localstatedir="${EPREFIX:-/var}" \\
+    --libdir="${EPREFIX:-/usr}/${LIBDIR:-lib64}" \\
+    ${EXTRA_ECONF:-}
+""",
+    src_compile = """
+# Re-apply libbsd overlay flags for compilation phase.
+# Each phase runs in a separate subshell, so exports from src_configure
+# don't persist here. We need to find the overlay path again and pass
+# the flags directly to make on the command line.
+_BSD_INC=""
+IFS=':' read -ra _CPATH_ARRAY <<< "${CPATH:-}"
+for _inc in "${_CPATH_ARRAY[@]}"; do
+    if [ -d "$_inc/bsd" ]; then
+        _BSD_INC="$_inc/bsd"
+        break
+    fi
+done
+if [ -z "$_BSD_INC" ]; then
+    IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
+    for _dep in "${_DEP_ARRAY[@]}"; do
+        if [ -d "$_dep/usr/include/bsd" ]; then
+            _BSD_INC="$_dep/usr/include/bsd"
+            break
+        fi
+    done
+fi
+if [ -n "$_BSD_INC" ]; then
+    echo "src_compile: Found libbsd overlay at: $_BSD_INC"
+    # PREPEND overlay path so it's searched BEFORE sysroot/toolchain includes
+    make -j${MAKEOPTS:-$(nproc)} ${EXTRA_EMAKE:-} \
+        CPPFLAGS="-isystem $_BSD_INC -DLIBBSD_OVERLAY ${CPPFLAGS:-}" \
+        CFLAGS="-isystem $_BSD_INC -DLIBBSD_OVERLAY ${CFLAGS:-}"
+else
+    echo "WARNING: libbsd overlay not found in src_compile, building without it"
+    make -j${MAKEOPTS:-$(nproc)} ${EXTRA_EMAKE:-}
 fi
 """,
     deps = [

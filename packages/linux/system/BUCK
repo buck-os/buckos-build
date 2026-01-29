@@ -194,7 +194,11 @@ rootfs(
     packages = [
         ":init-scripts-gen",
         ":baselayout-gen",
+        # C runtime (required for all dynamically-linked binaries)
+        "core//glibc:glibc",
         # Core system
+        "system//apps/coreutils:coreutils",
+        "editors//grep:grep",
         "core//cpio:cpio",
         "core//util-linux:util-linux",
         "core//zlib:zlib",
@@ -449,7 +453,7 @@ rootfs(
         "system//apps/patch:patch",
         "system//apps/sed:sed",
         "system//apps/gawk:gawk",
-        "system//apps/grep:grep",
+        "editors//grep:grep",
         "system//apps/diffutils:diffutils",
         "system//apps/findutils:findutils",
         # Build systems
@@ -490,7 +494,7 @@ rootfs(
         "system//apps/patch:patch",
         "system//apps/sed:sed",
         "system//apps/gawk:gawk",
-        "system//apps/grep:grep",
+        "editors//grep:grep",
         "system//apps/diffutils:diffutils",
         "system//apps/findutils:findutils",
         "dev-tools//build-systems/make:make",
@@ -619,7 +623,11 @@ rootfs(
     packages = [
         ":live-init-scripts-gen",
         ":baselayout-gen",
-        # Core system
+        # C runtime (required for all dynamically-linked binaries)
+        "core//glibc:glibc",
+        # Core system utilities
+        "system//apps/coreutils:coreutils",
+        "editors//grep:grep",
         "core//cpio:cpio",
         "core//util-linux:util-linux",
         "core//zlib:zlib",
@@ -627,6 +635,7 @@ rootfs(
         "core//readline:readline",
         "core//bash:bash",
         "core//less:less",
+        "core//libffi:libffi",
         "system//libs/compression/bzip2:bzip2",
         "system//libs/compression/xz:xz",
         "core//procps-ng:procps-ng",
@@ -637,14 +646,41 @@ rootfs(
         "network//openssh:openssh",
         "network//iproute2:iproute2",
         "network//dhcpcd:dhcpcd",
+        # Device management and session
+        "system//init/eudev:eudev",
+        "system//libs/libseat:libseat",
+        "system//libs/ipc/dbus:dbus",
+        "system//libs/kmod:kmod",
         # Graphics stack
         "desktop//mesa:mesa",
         "graphics//rendering/wayland:wayland",
         "graphics//rendering/wayland-protocols:wayland-protocols",
         "desktop//libinput:libinput",
         "desktop//libdrm:libdrm",
+        "system//libs/graphics/pixman:pixman",
+        "system//libs/image/libpng:libpng",
+        "desktop//cairo:cairo",
+        "system//libs/data/expat:expat",
+        "system//libs/data/json-c:json-c",
+        "system//libs/utility/pcre2:pcre2",
+        "dev-libs//glib:glib",
+        # Input handling
+        "system//libs/input/libxkbcommon:libxkbcommon",
+        "system//libs/input/libevdev:libevdev",
+        # Font rendering and fonts
+        "system//libs/font/freetype:freetype",
+        "system//libs/font/fontconfig:fontconfig",
+        "system//libs/font/harfbuzz:harfbuzz",
+        "system//libs/font/graphite2:graphite2",
+        "system//libs/font/fribidi:fribidi",
+        "fonts//libraries/pango:pango",
+        "system//libs/font/fcft:fcft",
+        "system//libs/data/tllist:tllist",
+        "fonts//collections/dejavu-fonts:dejavu-fonts",
+        "fonts//collections/liberation-fonts:liberation-fonts",
         # Sway compositor
-        "desktop//sway:sway-desktop",
+        "desktop//sway:sway",
+        "desktop//sway:wlroots",
         # Terminal
         "terminals//foot:foot",
         # Development tools
@@ -663,7 +699,8 @@ initramfs(
     name = "buckos-live-initramfs",
     rootfs = ":buckos-rootfs",  # Base system for initramfs tools
     compression = "gz",
-    init = "/sbin/init",
+    init = "/init",
+    init_script = "root//defs/scripts:live-init",
     visibility = ["PUBLIC"],
 )
 
@@ -691,7 +728,7 @@ iso_image(
     rootfs = ":buckos-live-sway-rootfs",
     boot_mode = "hybrid",
     volume_label = "BUCKOS_LIVE",
-    kernel_args = "quiet splash init=/sbin/init",
+    kernel_args = "console=tty0 console=ttyS0,115200 init=/init",
     visibility = ["PUBLIC"],
 )
 
@@ -947,7 +984,7 @@ rootfs(
         "system//apps/patch:patch",
         "system//apps/sed:sed",
         "system//apps/gawk:gawk",
-        "system//apps/grep:grep",
+        "editors//grep:grep",
         "system//apps/diffutils:diffutils",
         "system//apps/findutils:findutils",
         "dev-tools//build-systems/make:make",

@@ -1,0 +1,46 @@
+load("@root//defs:package_defs.bzl", "download_source", "autotools_package")
+
+# pciutils - PCI bus configuration space access library and tools
+# Provides: lspci, setpci, update-pciids
+download_source(
+    name = "pciutils-src",
+    src_uri = "https://mirrors.kernel.org/pub/software/utils/pciutils/pciutils-3.13.0.tar.xz",
+    sha256 = "77f11f78298502634d1af50308f15a5788629f6cf45cba376f5009aea4cb4926",
+    signature_required = False,
+)
+
+autotools_package(
+    name = "pciutils",
+    source = ":pciutils-src",
+    version = "3.13.0",
+    description = "PCI bus configuration space access library and tools",
+    homepage = "https://mj.ucw.cz/sw/pciutils/",
+    license = "GPL-2",
+    # pciutils uses Make directly, skip configure
+    src_configure = "true",
+    configure_args = [],
+    # Build with shared library support
+    src_compile = """
+make -j${MAKEOPTS:-$(nproc)} \
+    PREFIX=/usr \
+    LIBDIR=/usr/lib64 \
+    SHAREDIR=/usr/share/hwdata \
+    ZLIB=yes \
+    SHARED=yes \
+    CC="${CC:-gcc}" \
+    OPT="$CFLAGS"
+""",
+    src_install = """
+make install install-lib \
+    PREFIX=/usr \
+    LIBDIR=/usr/lib64 \
+    SHAREDIR=/usr/share/hwdata \
+    DESTDIR="$DESTDIR"
+# Create symlink for library
+ln -sf libpci.so.3 "$DESTDIR/usr/lib64/libpci.so"
+""",
+    deps = [
+        "core//zlib:zlib",
+    ],
+    visibility = ["PUBLIC"],
+)

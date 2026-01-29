@@ -1,0 +1,34 @@
+load("@root//defs:package_defs.bzl", "download_source", "meson_package")
+
+download_source(
+    name = "fcft-source",
+    src_uri = "https://codeberg.org/dnkl/fcft/releases/download/3.3.3/fcft-3.3.3.tar.gz",
+    sha256 = "bb298772d625e7d917373d541456f34f1957a9e22b16f17f64158b2c3816563c",
+    signature_required = False,
+)
+
+meson_package(
+    name = "fcft",
+    source = ":fcft-source",
+    version = "3.3.3",
+    description = "Simple library for font loading and glyph rasterization",
+    homepage = "https://codeberg.org/dnkl/fcft",
+    license = "MIT",
+    meson_args = [
+        "-Ddocs=disabled",
+        "-Dexamples=false",
+    ],
+    deps = [
+        "system//libs/font/fontconfig:fontconfig",
+        "system//libs/font/freetype:freetype",
+        "system//libs/font/harfbuzz:harfbuzz",
+        "system//libs/font/graphite2:graphite2",
+        "system//libs/graphics/pixman:pixman",
+        "system//libs/data/tllist:tllist",
+        "core//zlib:zlib",
+        "system//libs/image/libpng:libpng",
+        "system//libs/compression/bzip2:bzip2",
+        "system//libs/data/expat:expat",
+    ],
+    visibility = ["PUBLIC"],
+)

@@ -10,6 +10,9 @@
 #   USE_BOOTSTRAP, BOOTSTRAP_SYSROOT - bootstrap config
 #   PHASES_CONTENT - the build phases to execute
 
+# Prevent cd from outputting paths when CDPATH is set
+unset CDPATH
+
 # === GUARD RAILS: Validate required environment variables ===
 _ebuild_fail() {
     echo "ERROR: $1" >&2
@@ -410,6 +413,10 @@ elif [ "$USE_BOOTSTRAP" = "true" ]; then
         # For autotools, set build/host triplets
         export BUILD_TRIPLET="$(gcc -dumpmachine)"
         export HOST_TRIPLET="$BUCKOS_TARGET"
+
+        # CHOST/CBUILD are used by econf() and custom configure scripts
+        export CHOST="$BUCKOS_TARGET"
+        export CBUILD="$BUILD_TRIPLET"
 
         echo "CC=$CC"
         echo "CXX=$CXX"

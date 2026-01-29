@@ -1,4 +1,6 @@
 #!/bin/bash
+# Prevent cd from outputting paths when CDPATH is set
+unset CDPATH
 # ebuild-bootstrap-stage2.sh - Bootstrap Stage 2: Core System Utilities
 #
 # PURPOSE: Build core system utilities and tools using the cross-compilation toolchain

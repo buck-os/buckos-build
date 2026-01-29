@@ -358,4 +358,7 @@ exec /bin/bash --noediting -i
 SWAYINIT
 chmod +x "$OUT/sbin/sway-init"
 
+# Create /sbin/init symlink to sway-init for live boot
+ln -sf sway-init "$OUT/sbin/init"
+
 echo "Live init scripts generated successfully in $OUT"

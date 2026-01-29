@@ -12,6 +12,9 @@
 
 set -e
 
+# Prevent cd from outputting paths when CDPATH is set
+unset CDPATH
+
 # === GUARD RAILS: Validate required environment variables ===
 _binary_fail() {
     echo "ERROR: $1" >&2

@@ -21,20 +21,15 @@ ebuild_package(
     description = "Liberation fonts - metrically compatible with Arial, Times New Roman, Courier New",
     homepage = "https://github.com/liberationfonts/liberation-fonts",
     license = "OFL-1.1",
+    src_configure = "true",
+    src_compile = "true",
     src_install = """
-# Create font directory
-dodir /usr/share/fonts/liberation
-
-# Install all TTF fonts
+mkdir -p "$DESTDIR/usr/share/fonts/liberation"
 for font in *.ttf; do
     if [ -f "$font" ]; then
-        insinto /usr/share/fonts/liberation
-        doins "$font"
+        install -m 0644 "$font" "$DESTDIR/usr/share/fonts/liberation/"
     fi
 done
-
-# Install documentation
-dodoc AUTHORS ChangeLog LICENSE README.md 2>/dev/null || true
 """,
     rdepend = [
         "fonts//libraries/fontconfig:fontconfig",

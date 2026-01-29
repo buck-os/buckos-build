@@ -14,7 +14,16 @@ ebuild_package(
     source = ":packaging-src",
     version = "24.2",
     src_configure = """
-# Verify Python is available for getting site-packages path
+# Set LD_LIBRARY_PATH so python3 can find libpython during cross-compilation
+# (the ebuild system intentionally doesn't set LD_LIBRARY_PATH during cross-builds)
+IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
+for _dep in "${_DEP_ARRAY[@]}"; do
+    if ls "$_dep"/usr/lib64/libpython3*.so* &>/dev/null; then
+        export LD_LIBRARY_PATH="$_dep/usr/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+        echo "Set LD_LIBRARY_PATH for Python: $_dep/usr/lib64"
+        break
+    fi
+done
 echo "Python: $(which python3 2>/dev/null || echo 'not found')"
 python3 --version || { echo "ERROR: python3 not found in PATH"; exit 1; }
 """,
@@ -24,8 +33,17 @@ echo "Using pre-built wheel, no compilation required"
 ls -la "$S"
 """,
     src_install = """
-# Get Python site-packages directory
-SITE_PACKAGES="$DESTDIR/usr/lib/python3.12/site-packages"
+# Set LD_LIBRARY_PATH for Python (phases run in separate subshells)
+IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
+for _dep in "${_DEP_ARRAY[@]}"; do
+    if ls "$_dep"/usr/lib64/libpython3*.so* &>/dev/null; then
+        export LD_LIBRARY_PATH="$_dep/usr/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+        break
+    fi
+done
+# Get Python version dynamically
+_PYVER=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || echo "3.12")
+SITE_PACKAGES="$DESTDIR/usr/lib/python${_PYVER}/site-packages"
 mkdir -p "$SITE_PACKAGES"
 
 # Copy the extracted wheel contents directly
