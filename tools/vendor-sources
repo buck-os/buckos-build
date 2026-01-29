@@ -18,6 +18,18 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
+# Find the Buck project root (where .buckroot or .buckconfig is)
+# Skip the local config if we're inside a parent repo
+BUCK_ROOT="$REPO_ROOT"
+search_dir="$(dirname "$REPO_ROOT")"
+while [[ "$search_dir" != "/" ]]; do
+    if [[ -f "$search_dir/.buckroot" || -f "$search_dir/.buckconfig" ]]; then
+        BUCK_ROOT="$search_dir"
+        break
+    fi
+    search_dir="$(dirname "$search_dir")"
+done
+
 # Convert arguments for BXL CLI format
 ARGS=()
 for arg in "$@"; do
@@ -34,8 +46,33 @@ for arg in "$@"; do
     fi
 done
 
-# Run the BXL script and capture output
-BXL_OUTPUT=$(buck2 bxl //defs:vendor_sources.bxl:vendor_sources -- "${ARGS[@]}" 2>&1)
+# Determine if running in a parent repo context (buckos cell exists)
+CELL_PREFIX=""
+if (cd "$BUCK_ROOT" && buck2 audit cell 2>/dev/null) | grep -q "^buckos:"; then
+    CELL_PREFIX="buckos"
+fi
+
+# Convert target paths to use cell prefix if needed
+if [[ -n "$CELL_PREFIX" ]]; then
+    PREFIXED_ARGS=()
+    for arg in "${ARGS[@]}"; do
+        if [[ "$arg" == "--target" ]]; then
+            PREFIXED_ARGS+=("$arg")
+        elif [[ "$arg" == //* && "${PREFIXED_ARGS[-1]:-}" == "--target" ]]; then
+            # Convert //path to buckos//path
+            PREFIXED_ARGS+=("${CELL_PREFIX}${arg}")
+        else
+            PREFIXED_ARGS+=("$arg")
+        fi
+    done
+    ARGS=("${PREFIXED_ARGS[@]}")
+    BXL_PATH="${CELL_PREFIX}//defs:vendor_sources.bxl:vendor_sources"
+else
+    BXL_PATH="//defs:vendor_sources.bxl:vendor_sources"
+fi
+
+# Run the BXL script and capture output (from Buck root)
+BXL_OUTPUT=$(cd "$BUCK_ROOT" && buck2 bxl "$BXL_PATH" -- "${ARGS[@]}" 2>&1)
 
 # Parse the BXL output (include digits for SOURCE_0_*, etc.)
 eval "$(echo "$BXL_OUTPUT" | grep -E '^[A-Z][A-Z0-9_]*=' | head -200)"
