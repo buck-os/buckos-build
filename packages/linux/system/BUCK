@@ -1,6 +1,6 @@
-load("@root//defs:package_defs.bzl", "binary_package", "rootfs", "autotools_package")
-load("@root//defs:use_flags.bzl", "set_use_flags")
-load("@root//defs:package_defs.bzl", "binary_package", "rootfs", "initramfs", "qemu_boot_script", "iso_image", "stage3_tarball", "autotools_package")
+load("//defs:package_defs.bzl", "binary_package", "rootfs", "autotools_package")
+load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package_defs.bzl", "binary_package", "rootfs", "initramfs", "qemu_boot_script", "iso_image", "stage3_tarball", "autotools_package")
 
 # =============================================================================
 # Base system files - Essential configuration and scripts
@@ -558,7 +558,7 @@ stage3_tarball(
 genrule(
     name = "live-init-scripts-gen",
     out = "live-init-scripts",
-    cmd = "bash $(location @root//defs/scripts:generate-live-init-scripts) $OUT",
+    cmd = "bash $(location //defs/scripts:generate-live-init-scripts) $OUT",
     visibility = ["PUBLIC"],
 )
 
