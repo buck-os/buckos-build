@@ -14,16 +14,16 @@ Example usage:
         name = "my-server",
         profile = "server",
         additions = ["//packages/linux/network/vpn/wireguard-tools:wireguard-tools"],
-        removals = ["//packages/linux/editors/emacs"],
+        removals = ["//packages/linux/editors/emacs:emacs"],
     )
 
     # Create a custom package set
     package_set(
         name = "web-development",
         packages = [
-            "//packages/linux/lang/nodejs",
-            "//packages/linux/lang/python",
-            "//packages/linux/editors/neovim",
+            "//packages/linux/lang/nodejs:nodejs",
+            "//packages/linux/lang/python:python",
+            "//packages/linux/editors/neovim:neovim",
         ],
         inherits = ["@base"],
     )
@@ -169,7 +169,7 @@ PROFILE_PACKAGE_SETS = {
             "//packages/linux/network/openssh:openssh",
 
             # Editors
-            "//packages/linux/editors/vim",
+            "//packages/linux/editors/vim:vim",
 
             # System administration
             "//packages/linux/system/apps/sudo:sudo",
@@ -197,8 +197,8 @@ PROFILE_PACKAGE_SETS = {
             "//packages/linux/network/openssh:openssh",
 
             # Editors
-            "//packages/linux/editors/vim",
-            "//packages/linux/editors/neovim",
+            "//packages/linux/editors/vim:vim",
+            "//packages/linux/editors/neovim:neovim",
 
             # System administration
             "//packages/linux/system/apps/sudo:sudo",
@@ -235,9 +235,9 @@ PROFILE_PACKAGE_SETS = {
             "//packages/linux/network/openssh:openssh",
 
             # Editors
-            "//packages/linux/editors/vim",
-            "//packages/linux/editors/neovim",
-            "//packages/linux/editors/emacs",
+            "//packages/linux/editors/vim:vim",
+            "//packages/linux/editors/neovim:neovim",
+            "//packages/linux/editors/emacs:emacs",
 
             # Shells
             "//packages/linux/shells/zsh:zsh",
@@ -268,7 +268,7 @@ PROFILE_PACKAGE_SETS = {
             "//packages/linux/network/openssh:openssh",
 
             # Minimal editor
-            "//packages/linux/editors/vim",
+            "//packages/linux/editors/vim:vim",
 
             # System administration
             "//packages/linux/system/apps/sudo:sudo",
@@ -521,7 +521,7 @@ LANGUAGE_DEVELOPMENT_SETS = {
     "python-dev": {
         "description": "Python development environment with tooling",
         "packages": [
-            "//packages/linux/lang/python:python",
+            "//packages/linux/lang/python:python:python",
         ],
         "inherits": ["developer"],
     },
@@ -530,7 +530,7 @@ LANGUAGE_DEVELOPMENT_SETS = {
     "nodejs-dev": {
         "description": "Node.js development environment with npm",
         "packages": [
-            "//packages/linux/lang/nodejs:nodejs",
+            "//packages/linux/lang/nodejs:nodejs:nodejs",
         ],
         "inherits": ["developer"],
     },
@@ -675,7 +675,7 @@ STAGE3_PACKAGE_SETS = {
             "//packages/linux/system/apps/findutils:findutils",
             # Scripting languages (needed for many build systems)
             "//packages/linux/lang/perl:perl",
-            "//packages/linux/lang/python:python",
+            "//packages/linux/lang/python:python:python",
         ],
         "inherits": ["stage3-minimal"],
         "use_profile": "server",
@@ -715,7 +715,7 @@ STAGE3_PACKAGE_SETS = {
             "//packages/linux/dev-tools/compilers/llvm:llvm",
             "//packages/linux/dev-tools/compilers/clang:clang",
             # Additional editors
-            "//packages/linux/editors/neovim:neovim",
+            "//packages/linux/editors/neovim:neovim:neovim",
         ],
         "inherits": ["stage3-developer"],
         "use_profile": "developer",
@@ -953,7 +953,7 @@ def package_set(
         package_set(
             name = "my-tools",
             packages = [
-                "//packages/linux/editors/vim",
+                "//packages/linux/editors/vim:vim",
                 "//packages/linux/system/apps/tmux:tmux",
             ],
             inherits = ["@base"],
@@ -1010,7 +1010,7 @@ def system_set(
                 "//packages/linux/www/servers/nginx:nginx",
             ],
             removals = [
-                "//packages/linux/editors/emacs",
+                "//packages/linux/editors/emacs:emacs",
             ],
             description = "Custom web server configuration",
         )

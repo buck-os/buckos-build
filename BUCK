@@ -128,7 +128,7 @@ alias(
 # Benchmarking tools
 alias(
     name = "benchmarks",
-    actual = "//packages/linux/benchmarks/:all-benchmarks",
+    actual = "//packages/linux/benchmarks:all-benchmarks",
     visibility = ["PUBLIC"],
 )
 
@@ -224,9 +224,9 @@ filegroup(
 filegroup(
     name = "editor-packages",
     srcs = [
-        "//packages/linux/editors/vim",
-        "//packages/linux/editors/neovim",
-        "//packages/linux/editors/emacs",
+        "//packages/linux/editors/vim:vim",
+        "//packages/linux/editors/neovim:neovim",
+        "//packages/linux/editors/emacs:emacs",
     ],
     visibility = ["PUBLIC"],
 )
@@ -577,14 +577,14 @@ alias(
 # Cloud Hypervisor full stack (CH + virtiofsd + firmware)
 alias(
     name = "ch-full",
-    actual = "//packages/linux/emulation/:cloud-hypervisor-full",
+    actual = "//packages/linux/emulation:cloud-hypervisor-full",
     visibility = ["PUBLIC"],
 )
 
 # Cloud Hypervisor minimal (CH + virtiofsd)
 alias(
     name = "ch-minimal",
-    actual = "//packages/linux/emulation/:cloud-hypervisor-minimal",
+    actual = "//packages/linux/emulation:cloud-hypervisor-minimal",
     visibility = ["PUBLIC"],
 )
 
@@ -649,7 +649,7 @@ alias(
 filegroup(
     name = "emulation-essential",
     srcs = [
-        "//packages/linux/emulation/:essential",
+        "//packages/linux/emulation:essential",
     ],
     visibility = ["PUBLIC"],
 )
@@ -671,7 +671,7 @@ filegroup(
 filegroup(
     name = "emulation-server",
     srcs = [
-        "//packages/linux/emulation/:server",
+        "//packages/linux/emulation:server",
     ],
     visibility = ["PUBLIC"],
 )
@@ -689,7 +689,7 @@ filegroup(
 filegroup(
     name = "emulation-desktop",
     srcs = [
-        "//packages/linux/emulation/:desktop",
+        "//packages/linux/emulation:desktop",
     ],
     visibility = ["PUBLIC"],
 )
@@ -707,7 +707,7 @@ filegroup(
 filegroup(
     name = "emulation-cloud",
     srcs = [
-        "//packages/linux/emulation/:cloud",
+        "//packages/linux/emulation:cloud",
     ],
     visibility = ["PUBLIC"],
 )
@@ -725,7 +725,7 @@ filegroup(
 filegroup(
     name = "emulation-development",
     srcs = [
-        "//packages/linux/emulation/:development",
+        "//packages/linux/emulation:development",
     ],
     visibility = ["PUBLIC"],
 )
@@ -752,7 +752,7 @@ filegroup(
 filegroup(
     name = "emulation-all",
     srcs = [
-        "//packages/linux/emulation/:all",
+        "//packages/linux/emulation:all",
     ],
     visibility = ["PUBLIC"],
 )
@@ -932,7 +932,7 @@ combined_set(
     name = "ci-runner",
     sets = ["@container-host"],
     additions = [
-        "//packages/linux/editors/vim",
+        "//packages/linux/editors/vim:vim",
     ],
     removals = [
         "//packages/linux/system/docs:texinfo",
@@ -946,7 +946,7 @@ system_set(
     profile = "minimal",
     additions = [
         "//packages/linux/network/openssh:openssh",
-        "//packages/linux/editors/vim",
+        "//packages/linux/editors/vim:vim",
         "//packages/linux/system/apps/sudo:sudo",
     ],
     description = "Lightweight server with SSH access",

@@ -81,14 +81,34 @@ def get_toolchain_dep():
 def _should_use_host_toolchain():
     """
     Check if host toolchain should be used instead of bootstrap toolchain.
-    Reads from buckos.use_host_toolchain config (default: false)
+
+    Returns True if:
+    1. buckos.use_host_toolchain config is explicitly set to true/false
+    2. Auto-detected as running in an external monorepo by checking if the
+       buckos cell is defined (indicates buckos is imported as a dependency)
+
+    When integrated into a larger monorepo, we use the host/system toolchains
+    since the bootstrap toolchain cell name may conflict with existing cells.
 
     NOTE: In Buck2, read_config reads from the cell context where the BUCK file
-    is being evaluated. Each cell needs its own .buckconfig with the [buckos]
-    section to enable use_host_toolchain.
+    is being evaluated.
     """
-    use_host = read_config("buckos", "use_host_toolchain", "false")
-    return use_host.lower() in ["true", "1", "yes"]
+    # Explicit config override takes precedence
+    use_host = read_config("buckos", "use_host_toolchain", "")
+    if use_host.lower() in ["true", "1", "yes"]:
+        return True
+    if use_host.lower() in ["false", "0", "no"]:
+        return False
+
+    # Auto-detect external monorepo integration
+    # If buckos cell is explicitly defined, we're imported into another project
+    # In standalone mode, there's no "buckos" cell - it's just the root
+    buckos_cell = read_config("cells", "buckos", "")
+    if buckos_cell:
+        return True
+
+    # Default: use bootstrap toolchain (standalone mode)
+    return False
 
 def get_go_toolchain_dep():
     """
@@ -3963,7 +3983,7 @@ def _ebuild_package_impl(ctx: AnalysisContext) -> list[Provider]:
     src_dir = ctx.attrs.source[DefaultInfo].default_outputs[0]
 
     # Read host toolchain config
-    use_host_toolchain = read_config("buckos", "use_host_toolchain", "false").lower() in ["true", "1", "yes"]
+    use_host_toolchain = _should_use_host_toolchain()
 
     # Filter dependencies: skip bootstrap toolchain when using host toolchain
     bdepend_list = ctx.attrs.bdepend
@@ -4681,7 +4701,7 @@ def ebuild_package(
     """
     # Add bootstrap toolchain by default to ensure linking against BuckOS glibc
     use_bootstrap = kwargs.pop("use_bootstrap", True)
-    use_host_toolchain = read_config("buckos", "use_host_toolchain", "false").lower() in ["true", "1", "yes"]
+    use_host_toolchain = _should_use_host_toolchain()
     bdepend = list(bdepend)  # Make mutable copy
     bootstrap_stage = kwargs.get("bootstrap_stage", "")
     if use_bootstrap and not use_host_toolchain and not bootstrap_stage and name != "bootstrap-toolchain":
@@ -5333,7 +5353,7 @@ def autotools_package(
     bdepend = list(kwargs.pop("bdepend", []))
 
     # Check if host toolchain is enabled
-    use_host_toolchain = read_config("buckos", "use_host_toolchain", "false").lower() in ["true", "1", "yes"]
+    use_host_toolchain = _should_use_host_toolchain()
 
     for dep in eclass_config["bdepend"]:
         # NOTE: We no longer skip autoconf/automake/libtool with host toolchain
