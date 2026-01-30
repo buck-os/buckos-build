@@ -12,6 +12,18 @@ autotools_package(
     sha256 = "b343fbcdbff87f15b1986e6e15d6d4fc9a7d36066be6b7fb507087ba8f966c02",
     signature_required = False,
 
+    # Need autoreconf to regenerate configure properly
+    bdepend = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+    ],
+
+    # Run autoreconf to regenerate configure (matches Gentoo)
+    src_prepare = """
+autoreconf -fi
+""",
+
     iuse = [
         "abi_mips_n32",
         "audit",
@@ -82,7 +94,24 @@ autotools_package(
         "--disable-strip",
         "--with-privsep-user=nobody",
         "--with-privsep-path=/var/empty",
+        # Disable hardening flags that cause issues (matches Gentoo)
+        "--without-hardening",
+        "--without-pie",
+        "--without-stackprotect",
     ],
+
+    # Cross-compilation requires explicit definition of BSD compat functions
+    # Force openssh to use its bundled openbsd-compat implementations
+    env = {
+        "CFLAGS": "-O2",
+        # Tell configure to use openbsd-compat for these functions
+        "ac_cv_func_strlcpy": "no",
+        "ac_cv_func_strlcat": "no",
+        "ac_cv_func_arc4random": "no",
+        "ac_cv_func_arc4random_buf": "no",
+        "ac_cv_func_arc4random_uniform": "no",
+        "ac_cv_func_arc4random_stir": "no",
+    },
 
     deps = ["//packages/linux/core/zlib:zlib"],
 
