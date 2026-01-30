@@ -164,6 +164,29 @@ def _get_vendor_require():
     """
     return read_config("vendor", "require_vendored", "false") == "true"
 
+def _get_vendor_dir():
+    """
+    Get the vendor directory path.
+    Reads from vendor.dir config in .buckconfig.
+
+    Returns the configured vendor directory (default: "vendor").
+    """
+    return read_config("vendor", "dir", "vendor")
+
+def get_vendor_path(package_path: str, filename: str) -> str:
+    """
+    Get the vendor path for a source file.
+
+    Args:
+        package_path: The package path (e.g., "packages/linux/core/bash") - unused, kept for API compatibility
+        filename: The source filename (e.g., "bash-5.2.tar.gz")
+
+    Returns:
+        The path where the vendored source should be stored: vendor/<filename>
+    """
+    vendor_dir = _get_vendor_dir()
+    return "{}/{}".format(vendor_dir, filename)
+
 def _get_download_max_concurrent():
     """
     Get the maximum concurrent downloads setting.
@@ -263,9 +286,9 @@ def _http_file_with_proxy_impl(ctx: AnalysisContext) -> list[Provider]:
     proxy = ctx.attrs.proxy
     proxy_args = "--proxy {}".format(proxy) if proxy else ""
 
-    # Calculate vendor path - .vendor subdirectory within package directory
+    # Calculate vendor path using configurable vendor directory
     # ctx.label.package gives us the package path (e.g., "packages/linux/core/bash")
-    vendor_path = "{}/.vendor/{}".format(ctx.label.package, ctx.attrs.out)
+    vendor_path = get_vendor_path(ctx.label.package, ctx.attrs.out)
 
     # Get vendor configuration
     prefer_vendored = "true" if _get_vendor_prefer() else "false"
@@ -378,8 +401,8 @@ def _download_signature_impl(ctx: AnalysisContext) -> list[Provider]:
     """Download GPG signature, trying multiple extensions, checking for vendored signature first."""
     out_file = ctx.actions.declare_output(ctx.attrs.out)
 
-    # Calculate vendor path for signature - .vendor subdirectory within package directory
-    vendor_path = "{}/.vendor/{}".format(ctx.label.package, ctx.attrs.out)
+    # Calculate vendor path for signature using configurable vendor directory
+    vendor_path = get_vendor_path(ctx.label.package, ctx.attrs.out)
 
     # Get vendor configuration
     prefer_vendored = "true" if _get_vendor_prefer() else "false"

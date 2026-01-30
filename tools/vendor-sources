@@ -4,7 +4,8 @@
 # This script wraps the BXL command and handles the actual file operations
 # (downloading, manifest management) that BXL cannot perform directly.
 #
-# Each package's .vendor/ directory contains its own MANIFEST.json
+# All vendored sources are stored in a centralized vendor/ directory
+# with a single MANIFEST.json tracking all sources.
 #
 # Usage:
 #   ./tools/vendor-sources --target //packages/linux/core:bash
@@ -80,99 +81,103 @@ eval "$(echo "$BXL_OUTPUT" | grep -E '^[A-Z][A-Z0-9_]*=' | head -200)"
 # Handle different actions
 case "$VENDOR_ACTION" in
     clean)
-        echo "Cleaning all vendored sources..."
-        find "$REPO_ROOT/packages" -type d -name ".vendor" 2>/dev/null | while read -r vendor_dir; do
-            if [[ -d "$vendor_dir" ]]; then
-                echo "  Removing: ${vendor_dir#$REPO_ROOT/}"
-                rm -rf "$vendor_dir"
-            fi
-        done
+        echo "Cleaning vendored sources..."
+        if [[ -n "$VENDOR_DIR" && -d "$REPO_ROOT/$VENDOR_DIR" ]]; then
+            echo "  Removing: $VENDOR_DIR/"
+            rm -rf "$REPO_ROOT/$VENDOR_DIR"
+        fi
         echo "Done."
         ;;
 
     list)
-        echo "Vendored sources:"
-        find "$REPO_ROOT/packages" -type d -name ".vendor" 2>/dev/null | sort | while read -r vendor_dir; do
-            manifest="$vendor_dir/MANIFEST.json"
-            if [[ -f "$manifest" ]] && command -v jq &> /dev/null; then
-                jq -r '.sources[] | "  \(.target) -> \(.filename)"' "$manifest" 2>/dev/null
-            else
-                # List files if no manifest
-                for f in "$vendor_dir"/*; do
-                    if [[ -f "$f" && "$(basename "$f")" != "MANIFEST.json" ]]; then
-                        echo "  ${vendor_dir#$REPO_ROOT/}/$(basename "$f")"
-                    fi
-                done
-            fi
-        done
+        echo "Vendored sources in $VENDOR_DIR/:"
+        MANIFEST="$REPO_ROOT/$VENDOR_DIR/MANIFEST.json"
+        if [[ -f "$MANIFEST" ]] && command -v jq &> /dev/null; then
+            jq -r '.sources[] | "  \(.filename) (\(.target))"' "$MANIFEST" 2>/dev/null
+        elif [[ -d "$REPO_ROOT/$VENDOR_DIR" ]]; then
+            # List files if no manifest
+            for f in "$REPO_ROOT/$VENDOR_DIR"/*; do
+                if [[ -f "$f" && "$(basename "$f")" != "MANIFEST.json" ]]; then
+                    echo "  $(basename "$f")"
+                fi
+            done
+        else
+            echo "  (no vendored sources)"
+        fi
         ;;
 
     verify)
-        echo "Verifying vendored sources..."
+        echo "Verifying vendored sources in $VENDOR_DIR/..."
+        MANIFEST="$REPO_ROOT/$VENDOR_DIR/MANIFEST.json"
         errors=0
-        find "$REPO_ROOT/packages" -type d -name ".vendor" 2>/dev/null | sort | while read -r vendor_dir; do
-            manifest="$vendor_dir/MANIFEST.json"
-            if [[ -f "$manifest" ]] && command -v jq &> /dev/null; then
-                while IFS='|' read -r filename sha256; do
-                    full_path="$vendor_dir/$filename"
-                    if [[ -f "$full_path" ]]; then
-                        actual_sha256=$(sha256sum "$full_path" | cut -d' ' -f1)
-                        if [[ "$actual_sha256" == "$sha256" ]]; then
-                            echo "  OK: ${vendor_dir#$REPO_ROOT/}/$filename"
-                        else
-                            echo "  MISMATCH: ${vendor_dir#$REPO_ROOT/}/$filename"
-                            echo "    Expected: $sha256"
-                            echo "    Actual:   $actual_sha256"
-                            ((errors++)) || true
-                        fi
+        if [[ -f "$MANIFEST" ]] && command -v jq &> /dev/null; then
+            while IFS='|' read -r filename sha256; do
+                full_path="$REPO_ROOT/$VENDOR_DIR/$filename"
+                if [[ -f "$full_path" ]]; then
+                    actual_sha256=$(sha256sum "$full_path" | cut -d' ' -f1)
+                    if [[ "$actual_sha256" == "$sha256" ]]; then
+                        echo "  OK: $filename"
                     else
-                        echo "  MISSING: ${vendor_dir#$REPO_ROOT/}/$filename"
+                        echo "  MISMATCH: $filename"
+                        echo "    Expected: $sha256"
+                        echo "    Actual:   $actual_sha256"
                         ((errors++)) || true
                     fi
-                done < <(jq -r '.sources[] | "\(.filename)|\(.sha256)"' "$manifest" 2>/dev/null)
-            fi
-        done
+                else
+                    echo "  MISSING: $filename"
+                    ((errors++)) || true
+                fi
+            done < <(jq -r '.sources[] | "\(.filename)|\(.sha256)"' "$MANIFEST" 2>/dev/null)
 
-        if [[ $errors -eq 0 ]]; then
-            echo "All vendored sources verified successfully."
+            if [[ $errors -eq 0 ]]; then
+                echo "All vendored sources verified successfully."
+            else
+                echo "Verification failed: $errors error(s)"
+                exit 1
+            fi
         else
-            echo "Verification failed: $errors error(s)"
-            exit 1
+            echo "  No manifest found at $MANIFEST"
         fi
         ;;
 
     download)
-        echo "Vendoring $SOURCES_COUNT source(s)..."
+        echo "Vendoring $SOURCES_COUNT source(s) to $VENDOR_DIR/..."
+        DEST_DIR="$ROOT/$VENDOR_DIR"
+        MANIFEST="$DEST_DIR/MANIFEST.json"
+
+        # Create vendor directory
+        mkdir -p "$DEST_DIR"
+
+        # Initialize manifest if it doesn't exist
+        if [[ ! -f "$MANIFEST" ]]; then
+            echo '{"version": 1, "sources": []}' > "$MANIFEST"
+        fi
 
         # Process each source
         for ((i=0; i<SOURCES_COUNT; i++)); do
             eval "TARGET=\$SOURCE_${i}_TARGET"
-            eval "PACKAGE_PATH=\$SOURCE_${i}_PACKAGE_PATH"
             eval "SRC_URI=\$SOURCE_${i}_SRC_URI"
             eval "SHA256=\$SOURCE_${i}_SHA256"
             eval "FILENAME=\$SOURCE_${i}_FILENAME"
             eval "SIG_SHA256=\$SOURCE_${i}_SIG_SHA256"
 
-            DEST_DIR="$ROOT/$PACKAGE_PATH"
             DEST_FILE="$DEST_DIR/$FILENAME"
-            MANIFEST="$DEST_DIR/MANIFEST.json"
 
             # Check if already vendored with correct checksum
             if [[ -f "$DEST_FILE" ]]; then
                 actual_sha256=$(sha256sum "$DEST_FILE" | cut -d' ' -f1)
                 if [[ "$actual_sha256" == "$SHA256" ]]; then
-                    echo "  Already vendored: ${PACKAGE_PATH#packages/}/$FILENAME"
+                    echo "  Already vendored: $FILENAME"
                     continue
                 else
-                    echo "  Checksum mismatch, re-downloading: ${PACKAGE_PATH#packages/}/$FILENAME"
+                    echo "  Checksum mismatch, re-downloading: $FILENAME"
                 fi
             fi
 
             echo "  Downloading: $SRC_URI"
-            echo "           -> ${PACKAGE_PATH#packages/}/$FILENAME"
+            echo "           -> $VENDOR_DIR/$FILENAME"
 
             # Download the file
-            mkdir -p "$DEST_DIR"
             if curl -fsSL --retry 3 --retry-delay 2 -o "$DEST_FILE" "$SRC_URI"; then
                 # Verify checksum
                 actual_sha256=$(sha256sum "$DEST_FILE" | cut -d' ' -f1)
@@ -192,7 +197,7 @@ case "$VENDOR_ACTION" in
                         if curl -fsSL --retry 3 --retry-delay 2 -o "$SIG_FILE" "${SRC_URI}${ext}" 2>/dev/null; then
                             sig_actual=$(sha256sum "$SIG_FILE" | cut -d' ' -f1)
                             if [[ "$sig_actual" == "$SIG_SHA256" ]]; then
-                                echo "    Signature downloaded: ${FILENAME}.sig"
+                                echo "    Signature downloaded: ${FILENAME}${ext}"
                                 break
                             fi
                             rm -f "$SIG_FILE"
@@ -200,13 +205,8 @@ case "$VENDOR_ACTION" in
                     done
                 fi
 
-                # Update per-directory manifest
+                # Update manifest
                 if command -v jq &> /dev/null; then
-                    # Initialize manifest if it doesn't exist
-                    if [[ ! -f "$MANIFEST" ]]; then
-                        echo '{"version": 1, "sources": []}' > "$MANIFEST"
-                    fi
-
                     # Remove existing entry for this target if present
                     tmp_manifest=$(mktemp)
                     jq --arg target "$TARGET" 'del(.sources[] | select(.target == $target))' "$MANIFEST" > "$tmp_manifest"

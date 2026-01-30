@@ -8,12 +8,18 @@
 #   ./tools/cargo-vendor --src-uri URL --sha256 HASH [--output DIR]
 #   ./tools/cargo-vendor --target //path/to:package  # Auto-detect from BUCK file
 #
-# The output is a vendor.tar.gz in the package's .vendor/ directory
+# The output is a vendor.tar.gz in the centralized vendor/ directory
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# Get vendor directory from .buckconfig (default: vendor)
+VENDOR_DIR=$(grep -E '^\s*dir\s*=' "$REPO_ROOT/.buckconfig" 2>/dev/null | grep -A1 '^\[vendor\]' | tail -1 | sed 's/.*=\s*//' | tr -d ' ' || echo "vendor")
+if [[ -z "$VENDOR_DIR" ]]; then
+    VENDOR_DIR="vendor"
+fi
 
 # Parse arguments
 SRC_URI=""
@@ -51,7 +57,7 @@ while [[ $# -gt 0 ]]; do
             echo "Options:"
             echo "  --src-uri URL    Source tarball URL"
             echo "  --sha256 HASH    SHA256 checksum of source tarball"
-            echo "  --output DIR     Output directory (default: package's .vendor/)"
+            echo "  --output DIR     Output directory (default: $VENDOR_DIR/)"
             echo "  --target TARGET  Buck target to auto-detect src_uri/sha256 from BUCK file"
             echo "  --keep-temp      Keep temporary directory for debugging"
             exit 0
@@ -79,7 +85,7 @@ if [[ -n "$TARGET" ]]; then
     # Extract src_uri and sha256 from BUCK file (simple grep, assumes standard format)
     SRC_URI=$(grep -oP 'src_uri\s*=\s*"\K[^"]+' "$BUCK_FILE" | head -1)
     SHA256=$(grep -oP 'sha256\s*=\s*"\K[^"]+' "$BUCK_FILE" | head -1)
-    OUTPUT_DIR="$REPO_ROOT/$PACKAGE_PATH/.vendor"
+    OUTPUT_DIR="$REPO_ROOT/$VENDOR_DIR"
 
     if [[ -z "$SRC_URI" || -z "$SHA256" ]]; then
         echo "ERROR: Could not extract src_uri/sha256 from $BUCK_FILE" >&2
@@ -100,7 +106,7 @@ fi
 
 # Default output directory
 if [[ -z "$OUTPUT_DIR" ]]; then
-    OUTPUT_DIR="$PWD"
+    OUTPUT_DIR="$REPO_ROOT/$VENDOR_DIR"
 fi
 
 # Create temp directory
