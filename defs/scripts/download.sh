@@ -31,8 +31,13 @@ fi
 mkdir -p "$1"
 cd "$1"
 
-# Proxy can be passed as argument $11
+# Proxy can be passed as argument $11, or via environment variables
 PROXY="${11:-}"
+
+# Also check environment variables if no proxy arg provided
+if [ -z "$PROXY" ]; then
+    PROXY="${https_proxy:-${HTTPS_PROXY:-${http_proxy:-${HTTP_PROXY:-}}}}"
+fi
 
 # Build curl proxy args if proxy is set
 CURL_PROXY_ARGS=""

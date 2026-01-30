@@ -1,0 +1,48 @@
+load("//defs:package_defs.bzl", "meson_package")
+
+# GLib - Core application building blocks library
+# Provides data structures, threading, event loops, and other utilities
+meson_package(
+    name = "glib",
+    version = "2.84.4",
+    src_uri = "https://download.gnome.org/sources/glib/2.84/glib-2.84.4.tar.xz",
+    sha256 = "8a9ea10943c36fc117e253f80c91e477b673525ae45762942858aef57631bb90",
+    description = "Core application building blocks library",
+    homepage = "https://wiki.gnome.org/Projects/GLib",
+    license = "LGPL-2.1+",
+    iuse = ["nls"],
+    # Fix meson options conflict - glib 2.84.4 has both files
+    src_prepare = "rm -f meson_options.txt",
+    meson_args = [
+        "-Dtests=false",
+        "-Dinstalled_tests=false",
+        "-Ddocumentation=false",
+        "-Dman-pages=disabled",
+        "-Ddtrace=false",
+        "-Dsystemtap=false",
+        "-Dselinux=disabled",
+        "-Dlibmount=disabled",
+        "-Dglib_debug=disabled",
+        "-Dnls=disabled",
+        "-Doss_fuzz=disabled",
+        "-Dlibelf=disabled",
+        "-Dmultiarch=false",
+        "-Dintrospection=disabled",
+        # Cross-compilation settings
+        "-Dxattr=false",
+    ],
+    use_meson = {
+        "nls": "-Dnls=enabled",
+        "-nls": "-Dnls=disabled",
+    },
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/system/libs/utility/pcre2:pcre2",
+    ],
+    # Python is used for code generation at build time
+    exec_bdepend = [
+        "//packages/linux/lang/python:python-host",
+    ],
+    visibility = ["PUBLIC"],
+)

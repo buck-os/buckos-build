@@ -6,16 +6,15 @@ load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
 
 download_source(
     name = "meson-src",
-    src_uri = "https://github.com/mesonbuild/meson/releases/download/1.3.1/meson-1.3.1.tar.gz",
-    sha256 = "6020568bdede1643d4fb41e28215be38eff5d52da28ac7d125457c59e0032ad7",
-    signature_sha256 = "573ffb2ff8a6a31c71a990eb56ffab7b78c3e5211a2f1c86d2ecc75519de47cd",
+    src_uri = "https://github.com/mesonbuild/meson/releases/download/1.10.1/meson-1.10.1.tar.gz",
+    sha256 = "c42296f12db316a4515b9375a5df330f2e751ccdd4f608430d41d7d6210e4317",
     signature_required = False,
 )
 
 binary_package(
     name = "meson",
     srcs = [":meson-src"],
-    version = "1.3.1",
+    version = "1.10.1",
     description = "High productivity build system",
     homepage = "https://mesonbuild.com/",
     license = "Apache-2.0",

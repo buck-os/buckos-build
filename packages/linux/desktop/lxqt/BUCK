@@ -16,10 +16,37 @@ download_source(
 cmake_package(
     name = "lxqt-session",
     source = ":lxqt-session-src",
-    iuse = ["udev"],
+    iuse = ["X", "wayland", "udev", "pulseaudio"],
+    use_defaults = ["X", "udev"],
     use_cmake = {
+        # X11 support
+        "X": "-DWITH_X11=ON",
+        "-X": "-DWITH_X11=OFF",
+        # Wayland support
+        "wayland": "-DWITH_WAYLAND=ON",
+        "-wayland": "-DWITH_WAYLAND=OFF",
+        # udev for device detection
         "-udev": "-DENABLE_UDEV=OFF",
         "udev": "-DENABLE_UDEV=ON",
+    },
+    use_deps = {
+        # X11 dependencies
+        "X": [
+            "graphics//xorg/libX11:libX11",
+            "graphics//xorg/libxcb:libxcb",
+        ],
+        # Wayland dependencies
+        "wayland": [
+            "graphics//rendering/wayland:wayland",
+        ],
+        # Udev support
+        "udev": [
+            "system//init/eudev:eudev",
+        ],
+        # Audio support
+        "pulseaudio": [
+            "audio//daemons/pulseaudio:pulseaudio",
+        ],
     },
     version = "1.4.0",
     description = "LXQt Session Manager",
@@ -49,6 +76,37 @@ cmake_package(
     description = "LXQt Panel",
     homepage = "https://lxqt-project.org/",
     license = "LGPL-2.1",
+    iuse = ["X", "wayland", "pulseaudio", "sensors"],
+    use_defaults = ["X"],
+    use_cmake = {
+        # X11 support
+        "X": "-DWITH_X11=ON",
+        "-X": "-DWITH_X11=OFF",
+        # Wayland support
+        "wayland": "-DWITH_WAYLAND=ON",
+        "-wayland": "-DWITH_WAYLAND=OFF",
+        # Pulseaudio volume control
+        "pulseaudio": "-DVOLUME_USE_PULSEAUDIO=ON",
+        "-pulseaudio": "-DVOLUME_USE_PULSEAUDIO=OFF",
+        # Hardware sensors
+        "sensors": "-DSENSORS_PLUGIN=ON",
+        "-sensors": "-DSENSORS_PLUGIN=OFF",
+    },
+    use_deps = {
+        # X11 dependencies
+        "X": [
+            "graphics//xorg/libX11:libX11",
+            "graphics//xorg/libxcb:libxcb",
+        ],
+        # Wayland dependencies
+        "wayland": [
+            "graphics//rendering/wayland:wayland",
+        ],
+        # Audio support
+        "pulseaudio": [
+            "audio//daemons/pulseaudio:pulseaudio",
+        ],
+    },
     cmake_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
     ],

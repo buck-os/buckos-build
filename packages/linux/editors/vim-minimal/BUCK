@@ -32,8 +32,20 @@ cd src
         "--without-x",
         "--disable-gtktest",
         "--disable-xim",
+        "--with-tlib=ncurses",
     ],
+    # Cross-compilation cache variables for vim
+    env = {
+        "vim_cv_toupper_broken": "no",
+        "vim_cv_getcwd_broken": "no",
+        "vim_cv_memmove_handles_overlap": "yes",
+        "vim_cv_stat_ignores_slash": "yes",
+        "vim_cv_terminfo": "yes",
+        "vim_cv_tgetent": "zero",
+        "ac_cv_sizeof_int": "4",
+    },
     deps = [
+        "core//ncurses:ncurses",
     ],
     visibility = ["PUBLIC"],
 )

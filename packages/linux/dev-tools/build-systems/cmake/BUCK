@@ -10,6 +10,8 @@ load("//defs:use_flags.bzl", "set_use_flags")
 autotools_package(
     name = "cmake",
     version = "4.2.0",
+    # Use host toolchain - cmake needs C++ and is used as a build tool
+    use_bootstrap = False,
     iuse = ["dap", "gui", "ncurses"],
     use_configure = {
         "-dap": "--disable-dap",
@@ -29,17 +31,14 @@ autotools_package(
     # CMAKE uses its own bootstrap script, not autotools configure
     # NOTE: --no-system-cppdap avoids needing to build cppdap separately
     # NOTE: Disable ccmake (curses GUI) to avoid NCURSES_BOOL/std::function conflict with GCC 15
+    # NOTE: When using host toolchain, use bundled libraries to avoid glibc version mismatch
     src_configure = """
 echo "=== Configuring cmake with bootstrap ==="
 ./bootstrap \\
     --prefix=/usr \\
-    --system-curl \\
-    --system-zlib \\
-    --system-expat \\
     --parallel=$(nproc) \\
     --no-qt-gui \\
-    -- -DCMAKE_USE_OPENSSL=ON \\
-       -DBUILD_CursesDialog=OFF
+    -- -DBUILD_CursesDialog=OFF
 """,
 
     src_compile = """
@@ -52,13 +51,8 @@ echo "=== Installing cmake ==="
 make install DESTDIR="$DESTDIR"
 """,
 
-    deps = [
-        "//packages/linux/core/zlib:zlib",
-        "//packages/linux/system/libs/data/expat:expat",
-        "//packages/linux/system/libs/network/curl:curl",
-        "//packages/linux/system/libs/crypto/openssl:openssl",
-        # nghttp2 is needed because curl links against it for HTTP/2 support
-        "//packages/linux/system/libs/network/nghttp2:nghttp2",
-    ],
+    # No external deps - cmake uses bundled versions when building with host toolchain
+    # This avoids glibc version mismatches between host and target libraries
+    deps = [],
     visibility = ["PUBLIC"],
 )

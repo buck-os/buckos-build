@@ -26,19 +26,34 @@ autotools_package(
         "--localstatedir=/var",
         "--disable-docs",
     ],
+    # Add freetype2 include path to CPPFLAGS for compilation
+    pre_configure = """
+# Set up pkg-config to find freetype2
+export FREETYPE_CFLAGS="$(pkg-config --cflags freetype2 2>/dev/null || echo '-I/usr/include/freetype2')"
+export FREETYPE_LIBS="$(pkg-config --libs freetype2 2>/dev/null || echo '-lfreetype')"
+export CPPFLAGS="$CPPFLAGS $FREETYPE_CFLAGS"
+echo "FREETYPE_CFLAGS=$FREETYPE_CFLAGS"
+echo "FREETYPE_LIBS=$FREETYPE_LIBS"
+""",
     src_compile = """
+# Get freetype2 include path from pkg-config
+FREETYPE_CFLAGS="$(pkg-config --cflags freetype2 2>/dev/null || echo '-I/usr/include/freetype2')"
+echo "Using FREETYPE_CFLAGS=$FREETYPE_CFLAGS"
+
 # Fix libtool .la file cross-compilation issue:
 # Dep .la files in read-only Buck2 artifacts reference absolute host paths
-# like /usr/lib64/libpng16.la that don't exist.
-# Fix: Strip dependency_libs from all dep .la files (writable copies in temp dir)
-# and pass the temp dir first in LDFLAGS on the make command line.
+# like /usr/lib64/libfreetype.la that don't exist on the build host.
+# Fix: Strip dependency_libs AND fix libdir in all dep .la files
 _LA_OVERRIDE=$(mktemp -d)
 _la_count=0
 shopt -s nullglob
 for lib_dir in $(echo "$LDFLAGS" | tr ' ' '\\n' | sed -n 's/^-L//p'); do
     for la_file in "$lib_dir"/*.la; do
         [ -f "$la_file" ] || continue
-        sed "s|dependency_libs='[^']*'|dependency_libs=''|" "$la_file" > "$_LA_OVERRIDE/$(basename "$la_file")"
+        # Strip dependency_libs and fix libdir to point to the actual lib directory
+        sed -e "s|dependency_libs='[^']*'|dependency_libs=''|" \\
+            -e "s|^libdir=.*|libdir='$lib_dir'|" \\
+            "$la_file" > "$_LA_OVERRIDE/$(basename "$la_file")"
         _la_count=$((_la_count + 1))
     done
 done
@@ -47,7 +62,12 @@ echo "Copied $_la_count .la files to override dir: $_LA_OVERRIDE"
 ls "$_LA_OVERRIDE/" | head -20
 _NEW_LDFLAGS="-L$_LA_OVERRIDE $LDFLAGS"
 echo "LDFLAGS starts with: $(echo "$_NEW_LDFLAGS" | cut -c1-200)"
-make -j${MAKEOPTS:-$(nproc)} ${EXTRA_EMAKE:-} LDFLAGS="$_NEW_LDFLAGS"
+
+# Also need to set FREETYPE_LIBS to point to the correct library path
+FREETYPE_LIBS="$(pkg-config --libs freetype2 2>/dev/null || echo '-lfreetype')"
+echo "Using FREETYPE_LIBS=$FREETYPE_LIBS"
+
+make -j${MAKEOPTS:-$(nproc)} ${EXTRA_EMAKE:-} LDFLAGS="$_NEW_LDFLAGS" CPPFLAGS="$CPPFLAGS $FREETYPE_CFLAGS" FREETYPE_LIBS="$FREETYPE_LIBS"
 """,
     deps = [
         "//packages/linux/system/libs/font/freetype:freetype",

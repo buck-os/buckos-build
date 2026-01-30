@@ -15,11 +15,15 @@ autotools_package(
     homepage = "https://xorg.freedesktop.org/",
     license = "MIT",
     configure_args = [
+        # Cross-compilation: malloc(0) returns non-NULL on Linux/glibc
+        "--enable-malloc0returnsnull=no",
         "--prefix=/usr",
         "--sysconfdir=/etc",
         "--libdir=/usr/lib64",
         "--disable-docs",
     ],
+    # Remove .la files that cause libtool path issues
+    src_install = "make DESTDIR=\"$DESTDIR\" install && find \"$DESTDIR\" -name '*.la' -delete",
     deps = [
         "//packages/linux/graphics/xorg/libICE:libICE",
         "//packages/linux/graphics/xorg/xorgproto:xorgproto",

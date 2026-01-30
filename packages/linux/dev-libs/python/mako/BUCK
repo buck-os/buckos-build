@@ -1,0 +1,15 @@
+load("@root//defs:package_defs.bzl", "python_package")
+
+# Mako - Python templating library
+# Used by Mesa and other packages for code generation
+
+python_package(
+    name = "mako",
+    version = "1.3.10",
+    src_uri = "https://files.pythonhosted.org/packages/source/m/mako/mako-1.3.10.tar.gz",
+    sha256 = "99579a6f39583fa7e5630a28c3c1f440e4e97a414b80372649c0ce338da2ea28",
+    deps = [
+        "dev-libs//python/markupsafe:markupsafe",
+    ],
+    visibility = ["PUBLIC"],
+)

@@ -17,6 +17,18 @@ for p in $(type -ap pkg-config); do
 done
 
 if [ -z "$REAL_PKGCONFIG" ]; then
+    # Check TOOLCHAIN_PATH if set (bootstrap toolchain)
+    if [ -n "$TOOLCHAIN_PATH" ]; then
+        for dir in ${TOOLCHAIN_PATH//:/ }; do
+            if [ -x "$dir/pkg-config" ]; then
+                REAL_PKGCONFIG="$dir/pkg-config"
+                break
+            fi
+        done
+    fi
+fi
+
+if [ -z "$REAL_PKGCONFIG" ]; then
     # Fallback: try common locations
     for p in /usr/bin/pkg-config /bin/pkg-config; do
         if [ -x "$p" ]; then

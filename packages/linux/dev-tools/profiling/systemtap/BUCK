@@ -1,0 +1,73 @@
+load("@root//defs:package_defs.bzl", "download_source", "autotools_package")
+
+# =============================================================================
+# SystemTap - Dynamic Tracing Framework
+# =============================================================================
+# Provides the sys/sdt.h header needed for SDT (Static Defined Tracing) probes
+# in GCC's libstdc++ and other software.
+
+download_source(
+    name = "systemtap-src",
+    src_uri = "https://sourceware.org/ftp/systemtap/releases/systemtap-5.1.tar.gz",
+    sha256 = "c98da9d76ce2a7a8492e56a4e6c71b885cfb5d4f93fbab1be5da9e9da3dce8d3",
+    signature_required = False,
+)
+
+# Full SystemTap package (for when full functionality is needed)
+autotools_package(
+    name = "systemtap",
+    source = ":systemtap-src",
+    version = "5.1",
+    description = "SystemTap - Dynamic Tracing Framework for Linux",
+    homepage = "https://sourceware.org/systemtap/",
+    license = "GPL-2.0+",
+    configure_args = [
+        "--prefix=/usr",
+        "--disable-docs",
+        "--disable-publican",
+        "--disable-refdocs",
+        "--without-python3",
+        "--without-python2-probes",
+        "--without-python3-probes",
+        "--disable-grapher",
+        # Minimal build - we mainly need the headers
+        "--enable-translator=no",
+        "--disable-server",
+        "--disable-virt",
+    ],
+    deps = [
+        "core//elfutils:elfutils",
+    ],
+    visibility = ["PUBLIC"],
+)
+
+# SDT headers only - minimal package for build-time SDT support
+# This provides sys/sdt.h without building the full systemtap
+genrule(
+    name = "sdt-headers-gen",
+    out = "sdt-headers",
+    srcs = [":systemtap-src"],
+    cmd = """
+        set -e
+        mkdir -p $OUT/usr/include/sys
+
+        # Extract just the sdt.h header from the source
+        tar -xf $(location :systemtap-src) --strip-components=1 -C $TMPDIR
+
+        # Install the SDT header
+        cp $TMPDIR/includes/sys/sdt.h $OUT/usr/include/sys/
+
+        # Also install dtrace compatibility header if present
+        if [ -f $TMPDIR/includes/sys/dtrace.h ]; then
+            cp $TMPDIR/includes/sys/dtrace.h $OUT/usr/include/sys/
+        fi
+    """,
+    visibility = ["PUBLIC"],
+)
+
+filegroup(
+    name = "sdt-headers",
+    srcs = [":sdt-headers-gen"],
+    default_target_platform = "root//platforms:linux-target",
+    visibility = ["PUBLIC"],
+)

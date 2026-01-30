@@ -24,9 +24,52 @@ autotools_package(
     description = "LightDM - A lightweight display manager",
     homepage = "https://github.com/canonical/lightdm",
     license = "GPL-3.0",
+    iuse = ["X", "gtk", "introspection", "vala", "pam"],
+    use_defaults = ["X", "gtk", "pam"],
+    use_configure = {
+        # X11 support
+        "X": "--with-x",
+        "-X": "--without-x",
+        # GTK greeter support
+        "gtk": "--enable-gtk3",
+        "-gtk": "--disable-gtk3",
+        # GObject introspection
+        "introspection": "--enable-introspection",
+        "-introspection": "--disable-introspection",
+        # Vala bindings
+        "vala": "--enable-vala",
+        "-vala": "--disable-vala",
+        # PAM authentication
+        "pam": "--enable-pam",
+        "-pam": "--disable-pam",
+    },
+    use_deps = {
+        # X11 dependencies
+        "X": [
+            "graphics//xorg/libX11:libX11",
+            "graphics//xorg/libxcb:libxcb",
+            "graphics//xorg/libXau:libXau",
+            "graphics//xorg/libXdmcp:libXdmcp",
+        ],
+        # GTK greeter dependencies
+        "gtk": [
+            "desktop//gtk:gtk3",
+        ],
+        # GObject introspection
+        "introspection": [
+            "desktop//gobject-introspection:gobject-introspection",
+        ],
+        # PAM support
+        "pam": [
+            "system//security/linux-pam:linux-pam",
+        ],
+    },
     configure_args = [
         "--disable-tests",
         "--with-greeter-session=lightdm-gtk-greeter",
+    ],
+    deps = [
+        "dev-libs//glib:glib",
     ],
     visibility = ["PUBLIC"],
 )

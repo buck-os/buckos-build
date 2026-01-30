@@ -35,6 +35,9 @@ autotools_package(
     use_configure = {
         # When ncurses is disabled, prevent Python from building curses module
         "-ncurses": "ac_cv_header_curses_h=no ac_cv_header_ncurses_h=no",
+        # When readline is disabled, prevent Python from detecting/using it
+        # This avoids cross-compilation issues where target readline leaks into host tools
+        "-readline": "ac_cv_lib_readline_readline=no",
     },
 
     # Base configure arguments (always applied)
@@ -60,6 +63,58 @@ autotools_package(
     # Create a symlink so Python can find its C extensions
     post_install = """
         # Create lib-dynload symlink in lib/python3.12 pointing to lib64/python3.12/lib-dynload
+        if [ -d "$DESTDIR/usr/lib64/python3.12/lib-dynload" ] && [ ! -e "$DESTDIR/usr/lib/python3.12/lib-dynload" ]; then
+            ln -sf ../../lib64/python3.12/lib-dynload "$DESTDIR/usr/lib/python3.12/lib-dynload"
+        fi
+    """,
+
+    visibility = ["PUBLIC"],
+)
+
+# =============================================================================
+# Python Host - Minimal Python for use as a build tool (exec_bdepend)
+# =============================================================================
+# This variant is specifically for code generation during builds.
+# It avoids cross-compilation issues by not depending on libraries
+# that would be built for the target platform.
+
+autotools_package(
+    name = "python-host",
+    version = "3.12.1",
+    # Reuse the same source as the main python target
+    source = ":python-src",
+    description = "Minimal Python for build-time code generation",
+    homepage = "https://www.python.org/",
+    license = "PSF-2.0",
+
+    # No USE flags - this is a minimal build
+    iuse = [],
+    use_defaults = [],
+
+    # Disable optional modules that would require target libraries
+    configure_args = [
+        "--enable-shared",
+        "--with-system-expat",
+        "--with-system-ffi",
+        "--with-ensurepip=no",  # Not needed for code generation
+        # Disable features that cause cross-compilation issues
+        "ac_cv_lib_readline_readline=no",
+        "ac_cv_header_curses_h=no",
+        "ac_cv_header_ncurses_h=no",
+    ],
+
+    # Use host toolchain - do not use bootstrap cross-compiler
+    use_bootstrap = False,
+
+    # Minimal dependencies - only what's needed for Python to work
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/data/expat:expat",
+        "//packages/linux/system/libs/utility/libffi:libffi",
+    ],
+
+    post_install = """
+        # Create lib-dynload symlink
         if [ -d "$DESTDIR/usr/lib64/python3.12/lib-dynload" ] && [ ! -e "$DESTDIR/usr/lib/python3.12/lib-dynload" ]; then
             ln -sf ../../lib64/python3.12/lib-dynload "$DESTDIR/usr/lib/python3.12/lib-dynload"
         fi

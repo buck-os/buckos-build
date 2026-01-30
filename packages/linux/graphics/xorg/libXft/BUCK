@@ -14,12 +14,44 @@ autotools_package(
         "--sysconfdir=/etc",
         "--libdir=/usr/lib64",
     ],
+    # Add freetype2 include path for compilation and fix .la file issues
+    src_compile = """
+FREETYPE_CFLAGS="$(pkg-config --cflags freetype2 2>/dev/null || echo '-I/usr/include/freetype2')"
+echo "Using FREETYPE_CFLAGS=$FREETYPE_CFLAGS"
+
+# Fix libtool .la file cross-compilation issue
+_LA_OVERRIDE=$(mktemp -d)
+_la_count=0
+shopt -s nullglob
+for lib_dir in $(echo "$LDFLAGS" | tr ' ' '\\n' | sed -n 's/^-L//p'); do
+    for la_file in "$lib_dir"/*.la; do
+        [ -f "$la_file" ] || continue
+        sed -e "s|dependency_libs='[^']*'|dependency_libs=''|" \\
+            -e "s|^libdir=.*|libdir='$lib_dir'|" \\
+            "$la_file" > "$_LA_OVERRIDE/$(basename "$la_file")"
+        _la_count=$((_la_count + 1))
+    done
+done
+shopt -u nullglob
+echo "Copied $_la_count .la files to override dir: $_LA_OVERRIDE"
+_NEW_LDFLAGS="-L$_LA_OVERRIDE $LDFLAGS"
+
+make -j${MAKEOPTS:-$(nproc)} ${EXTRA_EMAKE:-} CPPFLAGS="$CPPFLAGS $FREETYPE_CFLAGS" LDFLAGS="$_NEW_LDFLAGS"
+""",
     deps = [
         "//packages/linux/graphics/xorg/libX11:libX11",
         "//packages/linux/graphics/xorg/libXrender:libXrender",
         "//packages/linux/graphics/xorg/xorgproto:xorgproto",
         "//packages/linux/system/libs/font/freetype:freetype",
         "//packages/linux/system/libs/font/fontconfig:fontconfig",
+        # Transitive deps for pkg-config
+        "//packages/linux/graphics/xorg/libxcb:libxcb",
+        "//packages/linux/graphics/xorg/libXau:libXau",
+        "//packages/linux/graphics/xorg/libXdmcp:libXdmcp",
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/compression/bzip2:bzip2",
+        "//packages/linux/system/libs/image/libpng:libpng",
+        "//packages/linux/system/libs/data/expat:expat",
     ],
     visibility = ["PUBLIC"],
 )

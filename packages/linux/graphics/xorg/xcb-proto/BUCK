@@ -12,12 +12,15 @@ autotools_package(
     homepage = "https://xcb.freedesktop.org/",
     license = "MIT",
     configure_args = [
+        # Cross-compilation: malloc(0) returns non-NULL on Linux/glibc
+        "--enable-malloc0returnsnull=no",
         "--prefix=/usr",
         "--sysconfdir=/etc",
         "--datadir=/usr/share",
     ],
-    bdepend = [
-        "//packages/linux/lang/python:python",
+    # Python is used for code generation at build time, needs to run on host
+    exec_bdepend = [
+        "//packages/linux/lang/python:python-host",
     ],
     visibility = ["PUBLIC"],
 )

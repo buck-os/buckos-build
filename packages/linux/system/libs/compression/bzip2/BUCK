@@ -16,12 +16,13 @@ make_package(
     # Build both static library and shared library
     src_compile = """
 # Build shared library first (needs -fPIC)
-make -j$MAKE_JOBS CC="${CC:-gcc}" CFLAGS="-fPIC -O2 -g -D_FILE_OFFSET_BITS=64" PREFIX=/usr -f Makefile-libbz2_so
+# Preserve existing CFLAGS/LDFLAGS for cross-compilation sysroot flags
+make -j$MAKE_JOBS CC="${CC:-gcc}" CFLAGS="${CFLAGS:-} -fPIC -O2 -g -D_FILE_OFFSET_BITS=64" LDFLAGS="${LDFLAGS:-}" PREFIX=/usr -f Makefile-libbz2_so
 # Save shared library object files
 mkdir -p sharedobj
 mv *.o sharedobj/ 2>/dev/null || true
 # Build static library and binaries
-make -j$MAKE_JOBS CC="${CC:-gcc}" PREFIX=/usr libbz2.a bzip2 bzip2recover
+make -j$MAKE_JOBS CC="${CC:-gcc}" CFLAGS="${CFLAGS:-} -O2 -g -D_FILE_OFFSET_BITS=64" LDFLAGS="${LDFLAGS:-}" PREFIX=/usr libbz2.a bzip2 bzip2recover
 # Restore shared library files
 mv sharedobj/*.o . 2>/dev/null || true
 rmdir sharedobj 2>/dev/null || true

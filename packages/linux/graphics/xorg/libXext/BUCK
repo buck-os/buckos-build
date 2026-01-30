@@ -10,6 +10,8 @@ autotools_package(
     homepage = "https://xorg.freedesktop.org/",
     license = "MIT",
     configure_args = [
+        # Cross-compilation: malloc(0) returns non-NULL on Linux/glibc
+        "--enable-malloc0returnsnull=no",
         "--prefix=/usr",
         "--sysconfdir=/etc",
         "--libdir=/usr/lib64",

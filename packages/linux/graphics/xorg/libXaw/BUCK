@@ -15,11 +15,15 @@ autotools_package(
     homepage = "https://xorg.freedesktop.org/",
     license = "MIT",
     configure_args = [
+        # Cross-compilation: malloc(0) returns non-NULL on Linux/glibc
+        "--enable-malloc0returnsnull=no",
         "--prefix=/usr",
         "--sysconfdir=/etc",
         "--libdir=/usr/lib64",
         "--disable-specs",
     ],
+    # Remove .la files that cause libtool path issues
+    src_install = "make DESTDIR=\"$DESTDIR\" install && find \"$DESTDIR\" -name '*.la' -delete",
     deps = [
         "//packages/linux/graphics/xorg/libX11:libX11",
         "//packages/linux/graphics/xorg/libXext:libXext",
@@ -27,6 +31,12 @@ autotools_package(
         "//packages/linux/graphics/xorg/libXmu:libXmu",
         "//packages/linux/graphics/xorg/libXpm:libXpm",
         "//packages/linux/graphics/xorg/xorgproto:xorgproto",
+        # Transitive deps for pkg-config
+        "//packages/linux/graphics/xorg/libxcb:libxcb",
+        "//packages/linux/graphics/xorg/libXau:libXau",
+        "//packages/linux/graphics/xorg/libXdmcp:libXdmcp",
+        "//packages/linux/graphics/xorg/libSM:libSM",
+        "//packages/linux/graphics/xorg/libICE:libICE",
     ],
     visibility = ["PUBLIC"],
 )

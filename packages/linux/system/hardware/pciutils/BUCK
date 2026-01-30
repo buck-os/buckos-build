@@ -1,0 +1,47 @@
+load("@root//defs:package_defs.bzl", "make_package")
+
+# =============================================================================
+# pciutils - PCI Utilities (lspci, setpci)
+# =============================================================================
+
+make_package(
+    name = "pciutils",
+    version = "3.10.0",
+    src_uri = "https://github.com/pciutils/pciutils/archive/refs/tags/v3.10.0.tar.gz",
+    sha256 = "e579d87f1afe2196db7db648857023f80adb500e8194c4488c8b47f9a238c1c6",
+
+    # Make arguments for compilation
+    make_args = [
+        "PREFIX=/usr",
+        "SHARED=yes",
+        "ZLIB=yes",
+        "DNS=no",
+        "HWDB=no",
+    ],
+
+    # Make arguments for installation
+    make_install_args = [
+        "PREFIX=/usr",
+        "SHARED=yes",
+        "install",
+        "install-lib",
+    ],
+
+    # Post-install: ensure lspci is in /usr/bin
+    src_install = '''
+make PREFIX=/usr DESTDIR="$DESTDIR" SHARED=yes install install-lib
+
+# Ensure binaries are also in /usr/bin (pciutils installs to /usr/sbin)
+if [ -f "$DESTDIR/usr/sbin/lspci" ]; then
+    mkdir -p "$DESTDIR/usr/bin"
+    cp "$DESTDIR/usr/sbin/lspci" "$DESTDIR/usr/bin/" || true
+    cp "$DESTDIR/usr/sbin/setpci" "$DESTDIR/usr/bin/" || true
+fi
+''',
+
+    deps = [
+        "core//zlib:zlib",
+    ],
+
+    visibility = ["PUBLIC"],
+)

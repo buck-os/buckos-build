@@ -15,17 +15,33 @@ meson_package(
     description = "Mesa 3D Graphics Library - OpenGL and Vulkan",
     homepage = "https://www.mesa3d.org/",
     license = "MIT",
+    iuse = ["X", "wayland", "vulkan", "llvm"],
+    use_defaults = ["wayland"],
+    use_meson = {
+        # X11 support: enable GLX and X11 platform
+        "X": "-Dplatforms=x11,wayland -Dglx=dri",
+        "-X": "-Dplatforms=wayland -Dglx=disabled",
+        # Vulkan drivers (Intel and AMD)
+        "vulkan": "-Dvulkan-drivers=intel,amd",
+        "-vulkan": "-Dvulkan-drivers=",
+        # LLVM support for llvmpipe and radeonsi
+        "llvm": "-Dllvm=enabled -Dgallium-drivers=nouveau,iris,swrast,llvmpipe,virgl",
+        "-llvm": "-Dllvm=disabled -Dgallium-drivers=nouveau,iris,swrast,virgl",
+    },
+    use_deps = {
+        # X11 dependencies for GLX and DRI
+        "X": [
+            "graphics//xorg/libX11:libX11",
+            "graphics//xorg/libxcb:libxcb",
+            "graphics//xorg/libXext:libXext",
+            "graphics//xorg/libXfixes:libXfixes",
+            "graphics//xorg/libXrandr:libXrandr",
+            "graphics//xorg/libXxf86vm:libXxf86vm",
+            "graphics//xorg/xorgproto:xorgproto",
+            "graphics//xorg/libxshmfence:libxshmfence",
+        ],
+    },
     meson_args = [
-        # Wayland-only build (no X11)
-        "-Dplatforms=wayland",
-        "-Dglx=disabled",
-        # Gallium drivers for common GPUs (swrast is software, radeonsi removed because it requires LLVM)
-        # llvmpipe disabled due to LLVM 20 incompatibility
-        "-Dgallium-drivers=nouveau,iris,swrast",
-        # Vulkan disabled (requires glslang)
-        "-Dvulkan-drivers=",
-        # LLVM disabled (incompatible with LLVM 20)
-        "-Dllvm=disabled",
         # Core features
         "-Degl=enabled",
         "-Dgbm=enabled",

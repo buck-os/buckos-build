@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("@root//defs:package_defs.bzl", "download_source", "ebuild_package")
 
 # =============================================================================
 # Bootstrap Toolchain for BuckOS
@@ -68,7 +68,13 @@ mkdir -p build && cd build
 
     src_compile = '''
 cd build
-make -j$MAKE_JOBS MAKEINFO=true all-binutils all-gas all-ld
+# Build binutils and ld with full parallelism
+make -j$MAKE_JOBS MAKEINFO=true all-binutils all-ld
+
+# Build gas with reduced parallelism to avoid race condition with temp .s files
+# (tc-i386.o can fail when conftest .s files are deleted before as reads them)
+GAS_JOBS=$((MAKE_JOBS > 4 ? 4 : MAKE_JOBS))
+make -j$GAS_JOBS MAKEINFO=true all-gas
 ''',
 
     src_install = '''
@@ -676,6 +682,45 @@ make headers
 find usr/include -type f ! -name '*.h' -delete
 mkdir -p "$DESTDIR/usr/include"
 cp -rv usr/include/* "$DESTDIR/usr/include/"
+
+# Create stub sys/sdt.h for SystemTap SDT probes (required by libstdc++)
+# This provides empty probe macros when SystemTap is not available
+mkdir -p "$DESTDIR/usr/include/sys"
+cat > "$DESTDIR/usr/include/sys/sdt.h" << 'EOF'
+/* Stub sys/sdt.h for SystemTap SDT probes */
+/* This file provides empty macros when SystemTap is not installed */
+
+#ifndef _SYS_SDT_H
+#define _SYS_SDT_H
+
+/* Empty probe macros */
+#define STAP_PROBE(provider, name) do {} while (0)
+#define STAP_PROBE1(provider, name, arg1) do {} while (0)
+#define STAP_PROBE2(provider, name, arg1, arg2) do {} while (0)
+#define STAP_PROBE3(provider, name, arg1, arg2, arg3) do {} while (0)
+#define STAP_PROBE4(provider, name, arg1, arg2, arg3, arg4) do {} while (0)
+#define STAP_PROBE5(provider, name, arg1, arg2, arg3, arg4, arg5) do {} while (0)
+#define STAP_PROBE6(provider, name, arg1, arg2, arg3, arg4, arg5, arg6) do {} while (0)
+#define STAP_PROBE7(provider, name, arg1, arg2, arg3, arg4, arg5, arg6, arg7) do {} while (0)
+#define STAP_PROBE8(provider, name, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) do {} while (0)
+#define STAP_PROBE9(provider, name, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9) do {} while (0)
+#define STAP_PROBE10(provider, name, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10) do {} while (0)
+
+/* DTRACE compatibility macros */
+#define DTRACE_PROBE(provider, name) STAP_PROBE(provider, name)
+#define DTRACE_PROBE1(provider, name, arg1) STAP_PROBE1(provider, name, arg1)
+#define DTRACE_PROBE2(provider, name, arg1, arg2) STAP_PROBE2(provider, name, arg1, arg2)
+#define DTRACE_PROBE3(provider, name, arg1, arg2, arg3) STAP_PROBE3(provider, name, arg1, arg2, arg3)
+#define DTRACE_PROBE4(provider, name, arg1, arg2, arg3, arg4) STAP_PROBE4(provider, name, arg1, arg2, arg3, arg4)
+#define DTRACE_PROBE5(provider, name, arg1, arg2, arg3, arg4, arg5) STAP_PROBE5(provider, name, arg1, arg2, arg3, arg4, arg5)
+
+/* SDT note section helpers (no-ops without SystemTap) */
+#define STAP_SDT_VOLATILE
+#define STAP_SDT_ARG_CONSTRAINT g
+
+#endif /* _SYS_SDT_H */
+EOF
+echo "Created stub sys/sdt.h for SDT probe support"
 ''',
 
     depend = [],
@@ -1194,6 +1239,7 @@ stage1_ldflags="" poststage1_ldflags="" BOOT_LDFLAGS="" CET_FLAGS="-fcf-protecti
     --disable-libssp \
     --disable-libvtv \
     --enable-libstdcxx \
+    --disable-libstdcxx-sdt \
     --disable-bootstrap \
     --disable-c++tools \
     --disable-cet \
@@ -3371,7 +3417,12 @@ mkdir -p build && cd build
 
     src_compile = '''
 cd build
-make -j$MAKE_JOBS MAKEINFO=true all-binutils all-gas all-ld
+# Build binutils and ld with full parallelism
+make -j$MAKE_JOBS MAKEINFO=true all-binutils all-ld
+
+# Build gas with reduced parallelism to avoid race condition with temp .s files
+GAS_JOBS=$((MAKE_JOBS > 4 ? 4 : MAKE_JOBS))
+make -j$GAS_JOBS MAKEINFO=true all-gas
 ''',
 
     src_install = '''
