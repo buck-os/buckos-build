@@ -266,9 +266,9 @@ qemu_boot_script(
     kernel = "//packages/linux/kernel/buckos-kernel:buckos-kernel",
     initramfs = ":buckos-initramfs",
     arch = "x86_64",
-    memory = "512M",
+    memory = "2G",
     cpus = "2",
-    kernel_args = "console=ttyS0 init=/sbin/init",
+    kernel_args = "console=ttyS0 rdinit=/init",
     visibility = ["PUBLIC"],
 )
 
@@ -280,7 +280,7 @@ qemu_boot_script(
     arch = "x86_64",
     memory = "2G",
     cpus = "4",
-    kernel_args = "console=ttyS0 init=/sbin/init loglevel=7",
+    kernel_args = "console=ttyS0 rdinit=/init loglevel=7",
     extra_args = ["-enable-kvm"],
     visibility = ["PUBLIC"],
 )
@@ -293,7 +293,7 @@ qemu_boot_script(
 #     arch = "x86_64",
 #     memory = "1G",
 #     cpus = "2",
-#     kernel_args = "console=ttyS0 init=/sbin/init",
+#     kernel_args = "console=ttyS0 rdinit=/init",
 #     visibility = ["PUBLIC"],
 # )
 
@@ -303,9 +303,9 @@ qemu_boot_script(
     kernel = "//packages/linux/kernel/buckos-kernel:buckos-kernel",
     initramfs = ":buckos-initramfs",
     arch = "x86_64",
-    memory = "512M",
+    memory = "2G",
     cpus = "2",
-    kernel_args = "console=ttyS0 init=/sbin/init",
+    kernel_args = "console=ttyS0 rdinit=/init",
     extra_args = [
         "-netdev user,id=net0,hostfwd=tcp::2222-:22",
         "-device virtio-net-pci,netdev=net0",
@@ -324,7 +324,7 @@ iso_image(
     initramfs = ":buckos-initramfs",
     boot_mode = "hybrid",
     volume_label = "BUCKOS",
-    kernel_args = "quiet init=/sbin/init",
+    kernel_args = "quiet rdinit=/init",
     visibility = ["PUBLIC"],
 )
 
@@ -335,7 +335,7 @@ iso_image(
     initramfs = ":buckos-initramfs",
     boot_mode = "bios",
     volume_label = "BUCKOS",
-    kernel_args = "quiet init=/sbin/init",
+    kernel_args = "quiet rdinit=/init",
     visibility = ["PUBLIC"],
 )
 
@@ -346,7 +346,7 @@ iso_image(
     initramfs = ":buckos-initramfs",
     boot_mode = "efi",
     volume_label = "BUCKOS",
-    kernel_args = "quiet init=/sbin/init",
+    kernel_args = "quiet rdinit=/init",
     visibility = ["PUBLIC"],
 )
 
@@ -358,7 +358,7 @@ iso_image(
     rootfs = ":buckos-rootfs",
     boot_mode = "hybrid",
     volume_label = "BUCKOS_LIVE",
-    kernel_args = "quiet init=/sbin/init",
+    kernel_args = "quiet rdinit=/init",
     visibility = ["PUBLIC"],
 )
 
@@ -370,7 +370,7 @@ iso_image(
 #     rootfs = ":buckos-bootable",
 #     boot_mode = "hybrid",
 #     volume_label = "BUCKOS_FULL",
-#     kernel_args = "quiet init=/sbin/init",
+#     kernel_args = "quiet rdinit=/init",
 #     visibility = ["PUBLIC"],
 # )
 
@@ -381,7 +381,7 @@ iso_image(
     initramfs = ":buckos-initramfs",
     boot_mode = "hybrid",
     volume_label = "BUCKOS_DEV",
-    kernel_args = "init=/sbin/init loglevel=7 debug",
+    kernel_args = "rdinit=/init loglevel=7 debug",
     visibility = ["PUBLIC"],
 )
 
@@ -718,7 +718,7 @@ iso_image(
     rootfs = ":buckos-live-kde-rootfs",
     boot_mode = "hybrid",
     volume_label = "BUCKOS_LIVE",
-    kernel_args = "quiet splash init=/sbin/init",
+    kernel_args = "quiet splash rdinit=/init",
     visibility = ["PUBLIC"],
 )
 
@@ -752,7 +752,7 @@ qemu_boot_script(
     arch = "x86_64",
     memory = "4G",
     cpus = "4",
-    kernel_args = "console=ttyS0 init=/sbin/init",
+    kernel_args = "console=ttyS0 rdinit=/init",
     extra_args = [
         "-enable-kvm",
         "-vga virtio",
@@ -768,7 +768,7 @@ qemu_boot_script(
     arch = "x86_64",
     memory = "2G",
     cpus = "2",
-    kernel_args = "console=ttyS0 init=/sbin/init",
+    kernel_args = "console=ttyS0 rdinit=/init",
     extra_args = [
         "-enable-kvm",
         "-vga virtio",
@@ -891,9 +891,9 @@ qemu_boot_script(
     kernel = "//packages/linux/kernel/buckos-kernel:buckos-kernel-aarch64",
     initramfs = ":buckos-initramfs-aarch64",
     arch = "aarch64",
-    memory = "1G",
+    memory = "2G",
     cpus = "2",
-    kernel_args = "console=ttyAMA0 init=/sbin/init",
+    kernel_args = "console=ttyAMA0 rdinit=/init",
     visibility = ["PUBLIC"],
 )
 
@@ -905,7 +905,7 @@ qemu_boot_script(
     arch = "aarch64",
     memory = "4G",
     cpus = "4",
-    kernel_args = "console=ttyAMA0 init=/sbin/init loglevel=7",
+    kernel_args = "console=ttyAMA0 rdinit=/init loglevel=7",
     visibility = ["PUBLIC"],
 )
 
@@ -1081,7 +1081,7 @@ iso_image(
     rootfs = ":buckos-live-sway-rootfs-aarch64",
     boot_mode = "efi",  # ARM64 uses UEFI
     volume_label = "BUCKOS_ARM64",
-    kernel_args = "quiet splash init=/sbin/init",
+    kernel_args = "quiet splash rdinit=/init",
     arch = "aarch64",
     visibility = ["PUBLIC"],
 )
@@ -1105,7 +1105,7 @@ qemu_boot_script(
     arch = "aarch64",
     memory = "2G",
     cpus = "4",
-    kernel_args = "console=ttyAMA0 init=/sbin/init",
+    kernel_args = "console=ttyAMA0 rdinit=/init",
     extra_args = [
         "-device virtio-gpu-pci",
         "-display gtk",
@@ -1121,7 +1121,7 @@ qemu_boot_script(
     arch = "aarch64",
     memory = "4G",
     cpus = "4",
-    kernel_args = "console=ttyAMA0 init=/sbin/init",
+    kernel_args = "console=ttyAMA0 rdinit=/init",
     extra_args = [
         "-device virtio-gpu-pci",
         "-device usb-ehci",
