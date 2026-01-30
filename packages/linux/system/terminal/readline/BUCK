@@ -1,27 +1,33 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package_defs.bzl", "autotools_package")
 
-# readline - Package from third-party
+# readline - GNU Readline library for command line editing
+# Uses traditional autotools (configure/make), not cmake
 
-cmake_package(
+autotools_package(
     name = "readline",
     version = "8.3",
-    iuse = ["static-libs", "unicode", "utils"],
-    use_cmake = {
-        "-static-libs": "-DBUILD_STATIC_LIBS=OFF",
-        "-unicode": "-DENABLE_UNICODE=OFF",
-        "-utils": "-DENABLE_UTILS=OFF",
-        "static-libs": "-DBUILD_STATIC_LIBS=ON",
-        "unicode": "-DENABLE_UNICODE=ON",
-        "utils": "-DENABLE_UTILS=ON",
-    },
     src_uri = "https://ftp.gnu.org/gnu/readline/readline-8.3.tar.gz",
     sha256 = "fe5383204467828cd495ee8d1d3c037a7eba1389c22bc6a041f627976f9061cc",
+    signature_required = False,
     description = "GNU Readline library for command line editing",
+    homepage = "https://tiswww.case.edu/php/chet/readline/rltop.html",
     license = "GPL-3.0-or-later",
-    deps = [],
-    cmake_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DBUILD_SHARED_LIBS=ON",
+
+    iuse = ["static-libs", "unicode"],
+
+    use_defaults = ["unicode"],
+
+    use_configure = {
+        "-static-libs": "--disable-static",
+        "-unicode": "--disable-multibyte",
+        "static-libs": "--enable-static",
+        "unicode": "--enable-multibyte",
+    },
+
+    configure_args = [
+        "--with-curses",
     ],
+
+    deps = ["//packages/linux/system/terminal/ncurses:ncurses"],
     visibility = ["PUBLIC"],
 )

@@ -1,10 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package_defs.bzl", "autotools_package")
 
-# ncurses - Package from third-party
+# ncurses - Console display library
+# Uses traditional autotools (configure/make), not cmake
 
-cmake_package(
+autotools_package(
     name = "ncurses",
     version = "6.5",
+    src_uri = "https://ftp.gnu.org/gnu/ncurses/ncurses-6.5.tar.gz",
+    sha256 = "136d91bc269a9a5785e5f9e980bc76ab57428f604ce3e5a5a90cebc767971cc6",
+    signature_required = False,
+    description = "Console display library",
+    homepage = "https://www.gnu.org/software/ncurses/",
+    license = "MIT",
+
     iuse = [
         "ada",
         "cxx",
@@ -12,41 +20,47 @@ cmake_package(
         "gpm",
         "minimal",
         "profile",
-        "stack-realign",
         "static-libs",
         "tinfo",
         "trace",
     ],
-    use_cmake = {
-        "-ada": "-DENABLE_ADA=OFF",
-        "-cxx": "-DENABLE_CXX=OFF",
-        "-debug": "-DCMAKE_BUILD_TYPE=Release",
-        "-gpm": "-DENABLE_GPM=OFF",
-        "-minimal": "-DENABLE_MINIMAL=OFF",
-        "-profile": "-DENABLE_PROFILE=OFF",
-        "-stack-realign": "-DENABLE_STACK_REALIGN=OFF",
-        "-static-libs": "-DBUILD_STATIC_LIBS=OFF",
-        "-tinfo": "-DENABLE_TINFO=OFF",
-        "-trace": "-DENABLE_TRACE=OFF",
-        "ada": "-DENABLE_ADA=ON",
-        "cxx": "-DENABLE_CXX=ON",
-        "debug": "-DCMAKE_BUILD_TYPE=Debug",
-        "gpm": "-DENABLE_GPM=ON",
-        "minimal": "-DENABLE_MINIMAL=ON",
-        "profile": "-DENABLE_PROFILE=ON",
-        "stack-realign": "-DENABLE_STACK_REALIGN=ON",
-        "static-libs": "-DBUILD_STATIC_LIBS=ON",
-        "tinfo": "-DENABLE_TINFO=ON",
-        "trace": "-DENABLE_TRACE=ON",
+
+    use_defaults = [],
+
+    use_configure = {
+        "-ada": "--without-ada",
+        "-cxx": "--without-cxx --without-cxx-binding",
+        "-debug": "--without-debug",
+        "-gpm": "--without-gpm",
+        "-profile": "--without-profile",
+        "-static-libs": "--with-shared --without-normal",
+        "-tinfo": "--without-termlib",
+        "-trace": "--without-trace",
+        "ada": "--with-ada",
+        "cxx": "--with-cxx --with-cxx-binding --with-cxx-shared",
+        "debug": "--with-debug",
+        "gpm": "--with-gpm",
+        "profile": "--with-profile",
+        "static-libs": "--with-normal",
+        "tinfo": "--with-termlib",
+        "trace": "--with-trace",
     },
-    src_uri = "https://ftp.gnu.org/gnu/ncurses/ncurses-6.5.tar.gz",
-    sha256 = "136d91bc269a9a5785e5f9e980bc76ab57428f604ce3e5a5a90cebc767971cc6",
-    description = "ncurses package",
-    license = "unknown",
-    deps = [],
-    cmake_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DBUILD_SHARED_LIBS=ON",
+
+    configure_args = [
+        "--with-shared",
+        "--enable-pc-files",
+        "--with-pkg-config-libdir=/usr/lib64/pkgconfig",
+        "--enable-widec",
+        "--enable-symlinks",
+        "--with-manpage-format=normal",
+        "--enable-const",
+        "--enable-colorfgbg",
+        "--enable-hard-tabs",
+        "--enable-echo",
+        "--disable-termcap",
+        "--disable-stripping",
     ],
+
+    deps = [],
     visibility = ["PUBLIC"],
 )
