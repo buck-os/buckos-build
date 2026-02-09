@@ -3,7 +3,7 @@ load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 # Download BuckOS source from GitHub (reuse from installer if in same package group)
 download_source(
     name = "buckos-src",
-    url = "https://github.com/hodgesds/buckos/archive/refs/heads/main.tar.gz",
+    src_uri = "https://github.com/hodgesds/buckos/archive/refs/heads/main.tar.gz",
     sha256 = "",  # Will be updated after first download
     signature_required = False,
 )
@@ -21,9 +21,6 @@ ebuild_package(
     category = "apps",
     slot = "0",
 
-    # Build with host toolchain (Rust not in bootstrap)
-    use_bootstrap = False,
-
     src_prepare = """
 # Extract to a known directory name
 if [ -d buckos-main ]; then
@@ -36,13 +33,6 @@ cd buckos-src/buckos || exit 1
 cd buckos-src/buckos
 export CARGO_HOME="$S/cargo"
 export RUSTUP_HOME="$S/rustup"
-
-# Use the bootstrap rust toolchain
-if [ -n "$BOOTSTRAP_ROOT" ]; then
-    export PATH="$BOOTSTRAP_ROOT/usr/bin:$PATH"
-fi
-
-# Configure cargo for cross-compilation if needed
 export CARGO_BUILD_TARGET="${CARGO_TARGET:-x86_64-unknown-linux-gnu}"
 """,
 
@@ -67,8 +57,9 @@ install -D -m 755 target/${CARGO_BUILD_TARGET}/release/buckos-cli \\
 echo "Installed buckos CLI"
 """,
 
-    # Depend on Rust build tools (will come from bootstrap)
-    bdepend = [],
+    bdepend = [
+        "toolchains//bootstrap/rust:rust-toolchain",
+    ],
 
     # Runtime dependencies
     depend = [],

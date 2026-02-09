@@ -1263,10 +1263,8 @@ rootfs(
         "//packages/linux/dev-tools/vcs/git:git",
         "//packages/linux/editors/vim:vim",
 
-        # NOTE: BuckOS installer and CLI tools require Rust toolchain
-        # Commented out until Rust is added to bootstrap toolchain
-        # "//packages/linux/apps/buckos-tools/installer:buckos-installer",
-        # "//packages/linux/apps/buckos-tools/cli:buckos-cli",
+        "//packages/linux/apps/buckos-tools/installer:buckos-installer",
+        "//packages/linux/apps/buckos-tools/cli:buckos-cli",
 
         # IMPORTANT: This must be LAST to override PAM's /etc/environment file
         ":live-environment-gen",
