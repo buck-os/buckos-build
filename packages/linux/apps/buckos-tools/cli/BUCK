@@ -22,37 +22,34 @@ ebuild_package(
     slot = "0",
 
     src_prepare = """
-# Extract to a known directory name
-if [ -d buckos-main ]; then
-    mv buckos-main buckos-src
-fi
-cd buckos-src/buckos || exit 1
+# Source is extracted to ../source/ - buckos subdir contains the CLI
+cd ../source/buckos || exit 1
+echo "Source ready in ../source/buckos/"
 """,
 
     src_configure = """
-cd buckos-src/buckos
+cd ../source/buckos
 export CARGO_HOME="$S/cargo"
 export RUSTUP_HOME="$S/rustup"
 export CARGO_BUILD_TARGET="${CARGO_TARGET:-x86_64-unknown-linux-gnu}"
 """,
 
     src_compile = """
-cd buckos-src/buckos
+cd ../source/buckos
 
-# Build the CLI binary
-cargo build --release --target="${CARGO_BUILD_TARGET}" --locked || \\
-cargo build --release --target="${CARGO_BUILD_TARGET}"
+# Build the CLI binary (native build - no cross-compile target)
+# Binary ends up in workspace root target/ not buckos/target/
+cargo build --release --locked || cargo build --release
 
 echo "CLI build complete"
-ls -lh target/${CARGO_BUILD_TARGET}/release/buckos-cli
+ls -lh ../target/release/buckos-cli
 """,
 
     src_install = """
-cd buckos-src/buckos
+cd ../source
 
-# Install the binary
-install -D -m 755 target/${CARGO_BUILD_TARGET}/release/buckos-cli \\
-    "$DESTDIR/usr/bin/buckos"
+# Install the binary (from workspace root target/)
+install -D -m 755 target/release/buckos-cli "$DESTDIR/usr/bin/buckos"
 
 echo "Installed buckos CLI"
 """,
@@ -60,8 +57,10 @@ echo "Installed buckos CLI"
     _rust_toolchain = get_rust_typed_toolchain_dep(),
     bdepend = [],
 
-    # Runtime dependencies
-    depend = [],
+    # Build dependencies (for native builds)
+    depend = [
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+    ],
 
     visibility = ["PUBLIC"],
 )

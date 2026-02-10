@@ -197,7 +197,7 @@ echo "Rust build complete"
 ''',
 
     src_install = '''
-# Install Rust using x.py
+# Install Rust using x.py (force rebuild 2026-02-09)
 DESTDIR="$DESTDIR" python3 x.py install
 
 # Create symlinks if not already present
@@ -265,8 +265,32 @@ for dep_dir in "${DEP_ARRAY[@]}"; do
     fi
 done
 
+# Fallback to rust-bootstrap if rust-native did not produce output
 if [ ! -x "$DESTDIR/tools/bin/rustc" ]; then
-    echo "ERROR: Could not find rust-native output"
+    echo "rust-native output empty, checking rust-bootstrap..."
+    for dep_dir in "${DEP_ARRAY[@]}"; do
+        # Check rust-bootstrap location (/tools/rust-bootstrap/bin/)
+        if [ -x "$dep_dir/tools/rust-bootstrap/bin/rustc" ]; then
+            echo "Found rust-bootstrap at: $dep_dir/tools/rust-bootstrap"
+
+            # Copy the entire rust-bootstrap directory to preserve library paths
+            cp -a "$dep_dir/tools/rust-bootstrap" "$DESTDIR/tools/"
+
+            # Create symlinks in /tools/bin for convenience
+            mkdir -p "$DESTDIR/tools/bin"
+            for bin in rustc cargo rustfmt clippy-driver cargo-clippy rustdoc; do
+                if [ -f "$DESTDIR/tools/rust-bootstrap/bin/$bin" ]; then
+                    ln -sf ../rust-bootstrap/bin/$bin "$DESTDIR/tools/bin/$bin"
+                fi
+            done
+            break
+        fi
+    done
+fi
+
+if [ ! -x "$DESTDIR/tools/bin/rustc" ]; then
+    echo "ERROR: Could not find Rust in rust-native or rust-bootstrap"
+    echo "DEP_BASE_DIRS: $DEP_BASE_DIRS"
     exit 1
 fi
 
@@ -274,13 +298,13 @@ fi
 cat > "$DESTDIR/tools/.rust-toolchain" << 'EOF'
 BuckOS Rust Toolchain
 Rust version: 1.90.0
-Built from source with rust-bootstrap 1.90.0
 EOF
 
 echo "Rust toolchain assembled in /tools"
+echo "Version: $($DESTDIR/tools/bin/rustc --version)"
 ''',
 
-    bdepend = [":rust-native"],
+    bdepend = [":rust-native", ":rust-bootstrap"],  # Fallback to rust-bootstrap if rust-native empty
     depend = [],
     use_bootstrap = False,
     visibility = ["PUBLIC"],

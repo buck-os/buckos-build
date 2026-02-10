@@ -22,34 +22,33 @@ ebuild_package(
     slot = "0",
 
     src_prepare = """
-# Extract to a known directory name
-if [ -d buckos-main ]; then
-    mv buckos-main buckos-src
-fi
-cd buckos-src/installer || exit 1
+# Source is extracted to ../source/ - the installer is a workspace member
+cd ../source/installer || exit 1
+echo "Source ready in ../source/installer/"
 """,
 
     src_configure = """
-cd buckos-src/installer
+cd ../source/installer
 export CARGO_HOME="$S/cargo"
 export RUSTUP_HOME="$S/rustup"
 """,
 
     src_compile = """
-cd buckos-src/installer
+cd ../source/installer
 
 # Build the installer binary (native build)
+# Binary ends up in workspace root target/ not installer/target/
 echo "Building buckos-installer..."
 cargo build --release --locked 2>&1 || cargo build --release 2>&1
 
 echo "Installer build complete"
-ls -lh target/release/buckos-installer
+ls -lh ../target/release/buckos-installer
 """,
 
     src_install = """
-cd buckos-src/installer
+cd ../source
 
-# Install the binary
+# Install the binary (from workspace root target/)
 install -D -m 755 target/release/buckos-installer \\
     "$DESTDIR/usr/bin/buckos-installer"
 
