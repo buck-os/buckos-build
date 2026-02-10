@@ -31,7 +31,7 @@ sed -i 's/CXXFLAGS = /CXXFLAGS = -std=c++14 /' Makefile.in
 ''',
 
     src_compile = '''
-make -j$(nproc)
+make -j${MAKEOPTS:-$(nproc)}
 ''',
 
     src_install = '''

@@ -17,7 +17,7 @@ ebuild_package(
     license = "Apache-2.0",
 
     src_compile = '''
-make -j$(nproc) CC="${CC:-gcc}" CFLAGS="-std=c99 -Wall -O3 -g -D_GNU_SOURCE -DNO_LIBNUMA"
+make -j${MAKEOPTS:-$(nproc)} CC="${CC:-gcc}" CFLAGS="-std=c99 -Wall -O3 -g -D_GNU_SOURCE -DNO_LIBNUMA"
 ''',
 
     src_install = '''

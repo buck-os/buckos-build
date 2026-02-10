@@ -63,7 +63,7 @@ sed -i 's/^int read_config();$/int read_config(char *file, int whinge_on_error);
 sed -i 's|^iftop_LDADD = |iftop_LDADD = -Wl,--allow-multiple-definition |' Makefile
 sed -i "s|^iftop_LDADD = .*$|iftop_LDADD = -Wl,--allow-multiple-definition $LDFLAGS -lncursesw -ltinfow|" Makefile
 
-make -j$(nproc) LDFLAGS="-Wl,--allow-multiple-definition $LDFLAGS -lncursesw -ltinfow"
+make -j${MAKEOPTS:-$(nproc)} LDFLAGS="-Wl,--allow-multiple-definition $LDFLAGS -lncursesw -ltinfow"
 """,
 
     description = "Display bandwidth usage on an interface by host",

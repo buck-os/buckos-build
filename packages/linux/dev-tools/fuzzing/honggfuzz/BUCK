@@ -23,7 +23,7 @@ autotools_package(
 true
 """,
     src_compile = """
-make -j$(nproc) \
+make -j${MAKEOPTS:-$(nproc)} \
     PREFIX=/usr \
     BUILD_LINUX_NO_BFD=true
 """,

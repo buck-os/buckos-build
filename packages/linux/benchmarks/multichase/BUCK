@@ -26,7 +26,7 @@ binary_package(
 
         # Build without -static flag since glibc-static may not be available
         # Override LDFLAGS to remove -static
-        make -j$(nproc) CC="${CC:-cc}" CFLAGS="${CFLAGS:-}" LDFLAGS="-pthread"
+        make -j${MAKEOPTS:-$(nproc)} CC="${CC:-cc}" CFLAGS="${CFLAGS:-}" LDFLAGS="-pthread"
 
         mkdir -p "$OUT/usr/bin"
         cp multichase multiload fairness pingpong "$OUT/usr/bin/"

@@ -85,7 +85,7 @@ if [ -n "$_LIB_DIRS" ]; then
     export LDFLAGS="${LDFLAGS:-} -Wl,--library-path=$_LIB_DIRS"
 fi
 
-make -j$(nproc)
+make -j${MAKEOPTS:-$(nproc)}
 ''',
 
     src_install = '''

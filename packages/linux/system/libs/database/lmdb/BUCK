@@ -27,7 +27,7 @@ autotools_package(
     src_configure = "true",
     src_compile = """
 cd libraries/liblmdb
-make -j$(nproc) prefix=/usr
+make -j${MAKEOPTS:-$(nproc)} prefix=/usr
 """,
     src_install = """
 cd libraries/liblmdb

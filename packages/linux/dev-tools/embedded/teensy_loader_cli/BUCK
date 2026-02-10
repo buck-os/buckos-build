@@ -9,7 +9,7 @@ autotools_package(
     homepage = "https://www.pjrc.com/teensy/loader_cli.html",
     license = "GPL-3.0",
     src_configure = "true",
-    src_compile = "make OS=LINUX -j$(nproc)",
+    src_compile = "make OS=LINUX -j${MAKEOPTS:-$(nproc)}",
     src_install = """
 mkdir -p "$DESTDIR/usr/bin"
 install -m 755 teensy_loader_cli "$DESTDIR/usr/bin/"

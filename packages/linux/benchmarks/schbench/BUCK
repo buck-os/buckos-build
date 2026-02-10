@@ -16,7 +16,7 @@ binary_package(
     license = "GPL-2.0",
     install_script = """
         cd $SRCS
-        make -j$(nproc) CFLAGS="-Wall -O2 -g -W -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
+        make -j${MAKEOPTS:-$(nproc)} CFLAGS="-Wall -O2 -g -W -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
         mkdir -p $OUT/usr/bin
         cp schbench $OUT/usr/bin/
     """,

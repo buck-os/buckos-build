@@ -29,7 +29,7 @@ cmake_package(
         "-DENABLE_LTO=OFF",
     ],
     env = {
-        "CMAKE_BUILD_PARALLEL_LEVEL": "$(nproc)",
+        "CMAKE_BUILD_PARALLEL_LEVEL": "${MAKEOPTS:-$(nproc)}",
     },
     deps = [
     ],

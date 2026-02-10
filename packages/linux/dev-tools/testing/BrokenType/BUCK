@@ -18,7 +18,7 @@ ebuild_package(
 
     src_compile = '''
 cd ttf-otf-mutator
-make -f Makefile.linux -j$(nproc)
+make -f Makefile.linux -j${MAKEOPTS:-$(nproc)}
 ''',
 
     src_install = '''

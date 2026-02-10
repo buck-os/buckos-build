@@ -20,7 +20,7 @@ binary_package(
     ],
     install_script = """
         cd $SRCS
-        make -j$(nproc) CXXFLAGS="-g -O2 -std=c++2a -Wall" LDFLAGS="-lpthread -lboost_thread -lboost_system -lboost_program_options -luring"
+        make -j${MAKEOPTS:-$(nproc)} CXXFLAGS="-g -O2 -std=c++2a -Wall" LDFLAGS="-lpthread -lboost_thread -lboost_system -lboost_program_options -luring"
         mkdir -p $OUT/usr/bin
         cp netbench $OUT/usr/bin/
     """,

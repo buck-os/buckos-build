@@ -46,8 +46,8 @@ autotools_package(
     src_compile = """
 cd src
 # Disable -Werror since some warnings are treated as errors
-make -j$(nproc) NO_WERROR=1 bin-x86_64-efi/ipxe.efi bin-x86_64-efi/snponly.efi
-make -j$(nproc) NO_WERROR=1 bin/ipxe.iso bin/ipxe.usb bin/undionly.kpxe
+make -j${MAKEOPTS:-$(nproc)} NO_WERROR=1 bin-x86_64-efi/ipxe.efi bin-x86_64-efi/snponly.efi
+make -j${MAKEOPTS:-$(nproc)} NO_WERROR=1 bin/ipxe.iso bin/ipxe.usb bin/undionly.kpxe
 """,
     src_install = """
 mkdir -p "$DESTDIR/usr/share/ipxe"

@@ -91,7 +91,7 @@ binary_package(
             $EXTRA_OPTS
 
         # Build and install
-        make -j$(nproc)
+        make -j${MAKEOPTS:-$(nproc)}
         make DESTDIR="$OUT" install
 
         # Create compatibility symlinks

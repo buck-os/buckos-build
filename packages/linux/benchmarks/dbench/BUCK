@@ -40,7 +40,7 @@ autoconf
 ''',
 
     src_compile = '''
-make -j$(nproc)
+make -j${MAKEOPTS:-$(nproc)}
 ''',
 
     src_install = '''

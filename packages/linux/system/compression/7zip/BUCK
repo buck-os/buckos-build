@@ -16,7 +16,7 @@ binary_package(
     license = "LGPL-2.1",
     install_script = """
         cd "$SRCS/CPP/7zip/Bundles/Alone2"
-        make -f ../../cmpl_gcc.mak -j$(nproc)
+        make -f ../../cmpl_gcc.mak -j${MAKEOPTS:-$(nproc)}
         
         # Install
         mkdir -p "$OUT/usr/bin"

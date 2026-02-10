@@ -45,7 +45,7 @@ export PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
 """,
     src_compile = """
 cd source
-make -j$(nproc)
+make -j${MAKEOPTS:-$(nproc)}
 """,
     src_install = """
 cd source
@@ -144,7 +144,7 @@ fi
 """,
     src_compile = """
 cd source
-make -j$(nproc)
+make -j${MAKEOPTS:-$(nproc)}
 """,
     src_install = """
 cd source

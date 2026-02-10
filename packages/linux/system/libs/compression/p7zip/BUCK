@@ -36,7 +36,7 @@ autotools_package(
     license = "LGPL-2.1-or-later",
     src_configure = "true",
     src_compile = """
-make -j$(nproc) all3
+make -j${MAKEOPTS:-$(nproc)} all3
 """,
     src_install = """
 make install DEST_DIR="$DESTDIR" DEST_HOME=/usr DEST_SHARE_DOC=/usr/share/doc/p7zip

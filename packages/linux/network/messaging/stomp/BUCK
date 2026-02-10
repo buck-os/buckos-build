@@ -19,7 +19,7 @@ simple_package(
     license = "Apache-2.0",
     build_cmd = """
 # Build the library
-make -j$(nproc)
+make -j${MAKEOPTS:-$(nproc)}
 """,
     install_cmd = """
 # Install library

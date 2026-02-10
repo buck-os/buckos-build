@@ -943,7 +943,7 @@ fi
 # Build kernel
 # -Wno-unterminated-string-initialization: suppresses ACPI driver warnings about truncated strings
 # GCC wrapper (if GCC 14+) appends -std=gnu11 to all compilations via CC override
-make $MAKE_CC_OVERRIDE $MAKE_ARCH_OPTS -j$(nproc) WERROR=0 KCFLAGS="-Wno-unterminated-string-initialization"
+make $MAKE_CC_OVERRIDE $MAKE_ARCH_OPTS -j${MAKEOPTS:-$(nproc)} WERROR=0 KCFLAGS="-Wno-unterminated-string-initialization"
 
 # Manual install to avoid system kernel-install scripts that try to write to /boot, run dracut, etc.
 # Get kernel release version
@@ -3969,6 +3969,7 @@ export GOCACHE="${{GOCACHE:-$PWD/.cache/go-build}}"
 export CGO_ENABLED="${{CGO_ENABLED:-1}}"
 go build \\
     -v \\
+    -p ${{MAKEOPTS:-$(nproc)}} \\
     -ldflags="-s -w {ldflags}" \\
     -o "${{BUILD_DIR:-build}}/" \\
     {packages}
@@ -4388,7 +4389,7 @@ def _ebuild_package_impl(ctx: AnalysisContext) -> list[Provider]:
     src_prepare = ctx.attrs.src_prepare if ctx.attrs.src_prepare else "true"
     pre_configure = ctx.attrs.pre_configure if ctx.attrs.pre_configure else "true"
     src_configure = ctx.attrs.src_configure if ctx.attrs.src_configure else "true"
-    src_compile = ctx.attrs.src_compile if ctx.attrs.src_compile else "make -j$(nproc)"
+    src_compile = ctx.attrs.src_compile if ctx.attrs.src_compile else "make -j${MAKEOPTS:-$(nproc)}"
     src_test = ctx.attrs.src_test if ctx.attrs.src_test else "true"
     src_install = ctx.attrs.src_install if ctx.attrs.src_install else "make install DESTDIR=\"$DESTDIR\""
 
@@ -6078,7 +6079,7 @@ def make_package(
 
     # Default src_compile if not provided
     if src_compile == None:
-        src_compile = 'make -j$(nproc) $EXTRA_EMAKE'
+        src_compile = 'make -j${MAKEOPTS:-$(nproc)} $EXTRA_EMAKE'
 
     # Default src_install if not provided
     if src_install == None:
@@ -7411,7 +7412,7 @@ echo "Go library source installed to /usr/share/go/src"
     else:
         src_compile = '''
 # Library-only package: verify compilation without producing executables
-go build -v ${GO_BUILD_FLAGS:-} ./...
+go build -v -p ${MAKEOPTS:-$(nproc)} ${GO_BUILD_FLAGS:-} ./...
 echo "Go library compiled successfully (no binaries to install)"
 '''
 

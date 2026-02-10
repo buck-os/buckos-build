@@ -16,7 +16,7 @@ make_package(
     license = "GPL-2.0-or-later",
     src_configure = "true",
     src_compile = """
-make -j$(nproc) \
+make -j${MAKEOPTS:-$(nproc)} \
     PREFIX=/usr \
     NCURSES_LIBS="-lncursesw -ltinfow -lstdc++"
 """,

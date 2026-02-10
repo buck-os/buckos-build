@@ -46,7 +46,7 @@ binary_package(
             -DLSTM=ON \
             -DNNSUPPORT=ON
 
-        make -j$(nproc)
+        make -j${MAKEOPTS:-$(nproc)}
 
         # Install the library
         mkdir -p "$OUT/usr/lib64"

@@ -55,13 +55,13 @@ mkdir -p lib
 # Determine which backend to use
 if [ "${USE_X}" = "1" ]; then
     echo "Building GLEW with X11/GLX support..."
-    make -j$(nproc) SYSTEM=linux-egl GLEW_DEST=/usr
+    make -j${MAKEOPTS:-$(nproc)} SYSTEM=linux-egl GLEW_DEST=/usr
 elif [ "${USE_egl}" = "1" ]; then
     echo "Building GLEW with EGL support (no X11)..."
-    make -j$(nproc) SYSTEM=linux-egl GLEW_DEST=/usr GLEW_NO_GLX=1
+    make -j${MAKEOPTS:-$(nproc)} SYSTEM=linux-egl GLEW_DEST=/usr GLEW_NO_GLX=1
 elif [ "${USE_osmesa}" = "1" ]; then
     echo "Building GLEW with OSMesa support..."
-    make -j$(nproc) SYSTEM=linux GLEW_DEST=/usr GLEW_OSMESA=1 GLEW_NO_GLX=1
+    make -j${MAKEOPTS:-$(nproc)} SYSTEM=linux GLEW_DEST=/usr GLEW_OSMESA=1 GLEW_NO_GLX=1
 else
     # No backend - build headers-only stub library
     echo "Building GLEW stub library (headers only)..."

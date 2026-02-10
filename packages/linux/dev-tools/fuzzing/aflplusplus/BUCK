@@ -21,7 +21,7 @@ autotools_package(
 true
 """,
     src_compile = """
-make -j$(nproc) \
+make -j${MAKEOPTS:-$(nproc)} \
     PREFIX=/usr \
     BIN_PATH=/usr/bin \
     HELPER_PATH=/usr/lib/afl \

@@ -20,7 +20,7 @@ ebuild_package(
     src_configure = "true",
     src_compile = """
 # SCTK builds with just make
-make -j$(nproc) all
+make -j${MAKEOPTS:-$(nproc)} all
 """,
     src_install = """
 mkdir -p "$DESTDIR/usr/bin"

@@ -108,7 +108,7 @@ HELP2MAN_STUB
     export PATH="$T/bin:$PATH"
 fi
 
-make -j$(nproc)
+make -j${MAKEOPTS:-$(nproc)}
 ''',
 
     src_install = '''

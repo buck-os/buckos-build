@@ -22,7 +22,7 @@ ebuild_package(
     license = "ISC Apache-2.0 MIT",
 
     src_compile = """
-make CC="${CC:-gcc}" CFLAGS="${CFLAGS:--O2}" -j$(nproc)
+make CC="${CC:-gcc}" CFLAGS="${CFLAGS:--O2}" -j${MAKEOPTS:-$(nproc)}
 """,
 
     src_install = """

@@ -414,6 +414,7 @@ fi
     "src_compile": '''
 go build \\
     -v \\
+    -p ${MAKEOPTS:-$(nproc)} \\
     -ldflags="-s -w ${GO_LDFLAGS:-}" \\
     -o "${BUILD_DIR:-build}/" \\
     ${GO_PACKAGES:-.}

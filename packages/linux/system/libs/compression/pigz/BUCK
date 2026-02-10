@@ -19,7 +19,7 @@ autotools_package(
     license = "Zlib",
     src_configure = "true",
     src_compile = """
-make -j$(nproc)
+make -j${MAKEOPTS:-$(nproc)}
 """,
     src_install = """
 install -Dm755 pigz "$DESTDIR/usr/bin/pigz"

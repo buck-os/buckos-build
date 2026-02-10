@@ -9,7 +9,7 @@ autotools_package(
     homepage = "https://github.com/hoytech/vmtouch",
     license = "BSD-3-Clause",
     src_configure = "true",
-    src_compile = "make -j$(nproc) CC=${CC:-gcc}",
+    src_compile = "make -j${MAKEOPTS:-$(nproc)} CC=${CC:-gcc}",
     src_install = """
 mkdir -p "$DESTDIR/usr/bin" "$DESTDIR/usr/share/man/man8"
 install -m 0755 vmtouch "$DESTDIR/usr/bin/vmtouch"

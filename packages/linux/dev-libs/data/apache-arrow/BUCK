@@ -33,7 +33,7 @@ binary_package(
             -DARROW_WITH_SNAPPY=ON \
             -DARROW_WITH_ZLIB=ON \
             -DARROW_WITH_ZSTD=ON
-        make -j$(nproc)
+        make -j${MAKEOPTS:-$(nproc)}
         make install DESTDIR="$OUT"
     """,
     deps = [

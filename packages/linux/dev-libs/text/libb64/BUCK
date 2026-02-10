@@ -13,7 +13,7 @@ autotools_package(
     src_compile = """
 cd src
 # Build object files
-make -j$(nproc) CFLAGS="-O3 -fPIC -Wno-implicit-fallthrough -I../include" cencode.o cdecode.o
+make -j${MAKEOPTS:-$(nproc)} CFLAGS="-O3 -fPIC -Wno-implicit-fallthrough -I../include" cencode.o cdecode.o
 # Create static library manually (Makefile uses 'rv' which doesn't exist)
 ar rcs libb64.a cencode.o cdecode.o
 """,
