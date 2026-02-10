@@ -211,6 +211,9 @@ if [ -z "$MAKE_JOBS" ]; then
     fi
 fi
 
+# Export MAKEOPTS so all build systems inherit job count
+export MAKEOPTS="${MAKE_JOBS}"
+
 # =============================================================================
 # Stage 1: Compiler Setup
 # =============================================================================
@@ -220,7 +223,7 @@ fi
 echo ""
 echo "=== Stage 1 Build Configuration ==="
 echo "BUILD_THREADS=$BUILD_THREADS"
-echo "MAKE_JOBS=$MAKE_JOBS (nproc=$(nproc 2>/dev/null || echo 'N/A'))"
+echo "MAKE_JOBS=$MAKE_JOBS MAKEOPTS=$MAKEOPTS (nproc=$(nproc 2>/dev/null || echo 'N/A'))"
 echo "Using HOST system compiler to build cross-toolchain"
 
 # Use host compiler with C17/C++17 standards for GCC 15 compatibility

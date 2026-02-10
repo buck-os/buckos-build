@@ -73,7 +73,7 @@ fi
     ${LIB_OPTS:+--with-ld-opt="$LIB_OPTS"}
 """,
     src_compile = """
-make -j$(nproc)
+make -j${MAKEOPTS:-$(nproc)}
 """,
     src_install = """
 make DESTDIR="$DESTDIR" install

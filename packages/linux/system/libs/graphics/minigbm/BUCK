@@ -30,7 +30,7 @@ make_package(
     },
     src_compile = """
 # Build without i915 driver which requires proprietary headers
-make -j$(nproc) \\
+make -j${MAKEOPTS:-$(nproc)} \\
     DRV_I915=0 \\
     DRV_AMDGPU=0 \\
     DRV_EXYNOS=0 \\

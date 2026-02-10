@@ -41,7 +41,7 @@ cmake .. \\
     src_compile = """
 echo "=== Building arm-tarmac ==="
 cd build
-make -j$(nproc)
+make -j${MAKEOPTS:-$(nproc)}
 """,
 
     src_install = """

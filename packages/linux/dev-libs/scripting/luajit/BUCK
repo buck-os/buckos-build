@@ -18,7 +18,7 @@ autotools_package(
     license = "MIT",
     src_configure = "true",
     src_compile = """
-make -j$(nproc) PREFIX=/usr INSTALL_LIB=/usr/lib amalg
+make -j${MAKEOPTS:-$(nproc)} PREFIX=/usr INSTALL_LIB=/usr/lib amalg
 """,
     src_install = """
 # LuaJIT requires DESTDIR to be set for all directory creation

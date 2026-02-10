@@ -15,7 +15,7 @@ make_package(
     homepage = "https://github.com/robertdavidgraham/masscan",
     license = "AGPL-3.0-only",
     src_configure = "true",
-    src_compile = "make -j$(nproc)",
+    src_compile = "make -j${MAKEOPTS:-$(nproc)}",
     src_install = "make install DESTDIR=\"$DESTDIR\" PREFIX=/usr",
     deps = [
         "//packages/linux/network/libs/libpcap:libpcap",

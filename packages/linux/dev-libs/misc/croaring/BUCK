@@ -26,7 +26,7 @@ binary_package(
             -DROARING_BUILD_STATIC=OFF \
             -DENABLE_ROARING_TESTS=OFF \
             -DROARING_EXCEPTIONS=ON
-        make -j$(nproc)
+        make -j${MAKEOPTS:-$(nproc)}
         make install DESTDIR="$OUT"
     """,
     deps = [],

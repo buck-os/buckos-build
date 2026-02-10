@@ -50,7 +50,7 @@ binary_package(
             link=shared \
             threading=multi \
             runtime-link=shared \
-            -j$(nproc)
+            -j${MAKEOPTS:-$(nproc)}
     """,
     deps = [
         "//packages/linux/system/libs/compression/zstd:zstd",

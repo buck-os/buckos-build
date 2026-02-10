@@ -42,7 +42,7 @@ unset CC CXX CFLAGS CXXFLAGS LDFLAGS
 # We don't use --system-* options because the deps are in buck-out paths that bootstrap can't find
 ./bootstrap \\
     --prefix=/usr \\
-    --parallel=$(nproc) \\
+    --parallel=${MAKEOPTS:-$(nproc)} \\
     --no-qt-gui \\
     -- -DCMAKE_USE_OPENSSL=OFF \\
        -DBUILD_CursesDialog=OFF
@@ -50,7 +50,7 @@ unset CC CXX CFLAGS CXXFLAGS LDFLAGS
 
     src_compile = """
 echo "=== Building cmake ==="
-make -j$(nproc)
+make -j${MAKEOPTS:-$(nproc)}
 """,
 
     src_install = """

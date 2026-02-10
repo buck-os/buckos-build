@@ -22,7 +22,7 @@ autotools_package(
     src_configure = "true",
     src_compile = """
 cd build/gcc
-make -j$(nproc)
+make -j${MAKEOPTS:-$(nproc)}
 """,
     src_install = """
 cd build/gcc

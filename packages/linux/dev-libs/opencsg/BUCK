@@ -22,7 +22,7 @@ qmake opencsg.pro PREFIX=/usr
 """,
     src_compile = """
 cd src
-make -j$(nproc)
+make -j${MAKEOPTS:-$(nproc)}
 """,
     src_install = """
 cd src

@@ -21,7 +21,7 @@ autotools_package(
     """,
     src_compile = """
         cd unix
-        make -j$(nproc)
+        make -j${MAKEOPTS:-$(nproc)}
     """,
     src_install = """
         cd unix

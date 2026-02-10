@@ -13,7 +13,7 @@ make_package(
     src_configure = "cd squashfs-tools",
     src_compile = """
 cd squashfs-tools
-make -j$(nproc) \
+make -j${MAKEOPTS:-$(nproc)} \
     XZ_SUPPORT=1 \
     LZO_SUPPORT=1 \
     ZSTD_SUPPORT=1 \

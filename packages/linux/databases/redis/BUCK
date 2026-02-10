@@ -42,7 +42,7 @@ simple_package(
     },
     build_cmd = """
 # Redis uses make directly
-make -j$(nproc) PREFIX=/usr
+make -j${MAKEOPTS:-$(nproc)} PREFIX=/usr
 """,
     install_cmd = """
 make PREFIX=/usr DESTDIR="$DESTDIR" install

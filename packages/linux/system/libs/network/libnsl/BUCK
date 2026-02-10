@@ -77,7 +77,7 @@ for _dep in "${_DEP_ARRAY[@]}"; do
 done
 
 # Pass LDFLAGS on command line to override Makefile variables
-make -j$(nproc) LDFLAGS="${LDFLAGS:-}"
+make -j${MAKEOPTS:-$(nproc)} LDFLAGS="${LDFLAGS:-}"
 ''',
 
     src_install = '''

@@ -14,7 +14,7 @@ autotools_package(
     src_configure = "true",
     src_compile = """
 # Build only specific targets - avoid 'lib' target which includes static library
-make -j$(nproc) PREFIX=/usr LIBDIR=/usr/lib libxxhash.so.0.8.2 xxhsum
+make -j${MAKEOPTS:-$(nproc)} PREFIX=/usr LIBDIR=/usr/lib libxxhash.so.0.8.2 xxhsum
 # Create symlinks
 ln -sf libxxhash.so.0.8.2 libxxhash.so.0
 ln -sf libxxhash.so.0 libxxhash.so

@@ -16,7 +16,7 @@ ebuild_package(
     license = "Apache-2.0",
 
     src_compile = """
-make WITH_LIBUV=1 WITH_OPENSSL=1 -j$(nproc)
+make WITH_LIBUV=1 WITH_OPENSSL=1 -j${MAKEOPTS:-$(nproc)}
 """,
 
     src_install = """

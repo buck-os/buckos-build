@@ -24,7 +24,7 @@ sed -i -e '/$(MAKE) -C doc/d' Makefile
     src_compile = """
 # Build using the standard Makefile like Gentoo does
 # Pass AR explicitly to avoid 'rcs' command issues
-make -j$(nproc) \
+make -j${MAKEOPTS:-$(nproc)} \
     AR="${AR:-ar}" \
     CC="${CC:-gcc}" \
     CFLAGS="${CFLAGS:--O2} -std=gnu99 -fPIC" \

@@ -46,7 +46,7 @@ ac_cv_unsupported_fs_chars='\"<>\\\\|' ./configure \\
 find . -name '*.m4f' -delete 2>/dev/null || true
 
 # Build with MAKEINFO=true to skip documentation (reduces build time)
-make -j$(nproc) MAKEINFO=true
+make -j${MAKEOPTS:-$(nproc)} MAKEINFO=true
 ''',
 
     src_install = '''

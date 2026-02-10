@@ -53,7 +53,7 @@ fi
 ''',
 
     src_compile = '''
-make -j$(nproc) CC="${CC:-gcc}" lib/libalephzero.a lib/libalephzero.so
+make -j${MAKEOPTS:-$(nproc)} CC="${CC:-gcc}" lib/libalephzero.a lib/libalephzero.so
 ''',
 
     src_install = '''

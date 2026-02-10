@@ -16,12 +16,12 @@ make_package(
     src_compile = """
 # Build lib first
 cd lib
-make -j$(nproc)
+make -j${MAKEOPTS:-$(nproc)}
 cd ..
 
 # Build programs - need to set include path to local lib
 cd programs
-make -j$(nproc) LZ4_PATH=../lib CPPFLAGS="-I../lib"
+make -j${MAKEOPTS:-$(nproc)} LZ4_PATH=../lib CPPFLAGS="-I../lib"
 cd ..
 """,
     src_install = """

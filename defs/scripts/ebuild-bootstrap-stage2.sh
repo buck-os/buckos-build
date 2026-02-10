@@ -332,6 +332,9 @@ if [ -z "$MAKE_JOBS" ]; then
     fi
 fi
 
+# Export MAKEOPTS so all build systems inherit job count
+export MAKEOPTS="${MAKE_JOBS}"
+
 # =============================================================================
 # Stage 2: Cross-Compilation Setup
 # =============================================================================

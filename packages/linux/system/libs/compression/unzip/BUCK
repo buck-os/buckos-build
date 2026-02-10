@@ -31,7 +31,7 @@ autotools_package(
     env = {"CFLAGS": "-O2 -Wno-format-security -Wno-implicit-function-declaration -Wno-old-style-definition -Wno-implicit-int"},
     src_configure = "true",
     src_compile = """
-make -f unix/Makefile -j$(nproc) generic CC=gcc LOCAL_UNZIP="$CFLAGS"
+make -f unix/Makefile -j${MAKEOPTS:-$(nproc)} generic CC=gcc LOCAL_UNZIP="$CFLAGS"
 """,
     src_install = """
 make -f unix/Makefile prefix="$DESTDIR/usr" install

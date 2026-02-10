@@ -495,12 +495,15 @@ if [ -z "$MAKE_JOBS" ]; then
     fi
 fi
 
+# Export MAKEOPTS so all build systems (make, cmake, meson, ninja, cargo) inherit job count
+export MAKEOPTS="${MAKE_JOBS}"
+
 # =============================================================================
 # Build Configuration
 # =============================================================================
 echo "=== Build Configuration ==="
 echo "BUILD_THREADS=$BUILD_THREADS"
-echo "MAKE_JOBS=$MAKE_JOBS (nproc=$(nproc 2>/dev/null || echo 'N/A'))"
+echo "MAKE_JOBS=$MAKE_JOBS MAKEOPTS=$MAKEOPTS (nproc=$(nproc 2>/dev/null || echo 'N/A'))"
 
 # =============================================================================
 # Bootstrap Toolchain Setup

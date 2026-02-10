@@ -12,7 +12,7 @@ autotools_package(
     src_configure = "true",
     src_compile = """
 cd cformers/cpp
-make -j$(nproc)
+make -j${MAKEOPTS:-$(nproc)}
 """,
     src_install = """
 mkdir -p "$DESTDIR/usr/bin"

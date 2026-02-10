@@ -55,8 +55,8 @@ LD=/usr/bin/ld AR=/usr/bin/ar RANLIB=/usr/bin/ranlib NM=/usr/bin/nm STRIP=/usr/b
 
 # Build only the file binary with HOST compiler
 # First build magic.h (generated header), then build file
-make -j$(nproc) -C src magic.h
-make -j$(nproc) -C src file
+make -j${MAKEOPTS:-$(nproc)} -C src magic.h
+make -j${MAKEOPTS:-$(nproc)} -C src file
 
 # Restore original environment
 export PATH="$ORIG_PATH"

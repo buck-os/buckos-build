@@ -44,7 +44,7 @@ fi
     src_compile = """
 # Let make compile - it uses the full CC path from configure
 cd libltdl
-make -j$(nproc)
+make -j${MAKEOPTS:-$(nproc)}
 
 # Now manually link a shared library from the PIC objects.
 # Libtool's standalone configure only builds a convenience library (libltdlc),

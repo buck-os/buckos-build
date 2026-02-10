@@ -37,7 +37,7 @@ cd nspr
 """,
     src_compile = """
 cd nspr
-make -j$(nproc)
+make -j${MAKEOPTS:-$(nproc)}
 """,
     src_install = """
 cd nspr

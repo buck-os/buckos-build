@@ -839,7 +839,7 @@ binary_package(
             -no-separate-debug-info \
             -no-pch \
             -no-use-gold-linker
-        make -j$(nproc)
+        make -j${MAKEOPTS:-$(nproc)}
         make install
     """,
     deps = [

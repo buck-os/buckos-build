@@ -22,7 +22,7 @@ binary_package(
     ],
     install_script = """
         cd $SRCS
-        make -j$(nproc) lzbench
+        make -j${MAKEOPTS:-$(nproc)} lzbench
         mkdir -p $OUT/usr/bin
         cp lzbench $OUT/usr/bin/
     """,

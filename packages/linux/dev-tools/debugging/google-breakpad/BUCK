@@ -80,7 +80,7 @@ binary_package(
             --libdir=/usr/lib64
 
         # Override the Werror flag in make
-        make -j$(nproc) CXXFLAGS="-O2 -fPIC -Wno-error -Wno-deprecated-declarations" || make CXXFLAGS="-O2 -fPIC -Wno-error -Wno-deprecated-declarations"
+        make -j${MAKEOPTS:-$(nproc)} CXXFLAGS="-O2 -fPIC -Wno-error -Wno-deprecated-declarations" || make CXXFLAGS="-O2 -fPIC -Wno-error -Wno-deprecated-declarations"
         make install DESTDIR="$OUT"
     """,
     deps = [

@@ -51,7 +51,7 @@ HOST_SYSTEM=${CHOST:-$(${CC:-gcc} -dumpmachine)}
 ''',
 
     src_compile = '''
-make -j$(nproc)
+make -j${MAKEOPTS:-$(nproc)}
 ''',
 
     src_install = '''

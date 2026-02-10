@@ -26,7 +26,7 @@ binary_package(
             -DCRC32C_BUILD_TESTS=OFF \
             -DCRC32C_BUILD_BENCHMARKS=OFF \
             -DCRC32C_USE_GLOG=OFF
-        make -j$(nproc)
+        make -j${MAKEOPTS:-$(nproc)}
         make install DESTDIR="$OUT"
     """,
     deps = [],
