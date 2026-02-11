@@ -171,12 +171,20 @@ meson setup "${BUILD_DIR:-build}" \
         # X11 support: enable GLX and X11 platform
         "X": "-Dplatforms=x11,wayland -Dglx=dri",
         "-X": "-Dplatforms=wayland -Dglx=disabled",
-        # Vulkan drivers (Intel and AMD)
-        "vulkan": "-Dvulkan-drivers=intel,amd",
+        # Vulkan drivers (Intel, AMD, software lavapipe)
+        "vulkan": "-Dvulkan-drivers=intel,intel_hasvk,amd,swrast",
         "-vulkan": "-Dvulkan-drivers=",
-        # LLVM support for llvmpipe and radeonsi
-        "llvm": "-Dllvm=enabled -Dgallium-drivers=iris,swrast,llvmpipe,virgl",
-        "-llvm": "-Dllvm=disabled -Dgallium-drivers=iris,swrast,virgl",
+        # LLVM support - enables llvmpipe, radeonsi, and better zink
+        # Driver set for broad hardware support:
+        # - iris: Intel Gen8+ (Broadwell and newer)
+        # - crocus: Intel Gen4-7 (older Intel)
+        # - radeonsi: AMD GCN/RDNA (requires LLVM)
+        # - swrast/llvmpipe: Software rendering
+        # - virgl: Virtual GPU (QEMU/VirtIO)
+        # - zink: OpenGL over Vulkan
+        # Note: nouveau removed due to atomic_uint_fast32_t build issue
+        "llvm": "-Dllvm=enabled -Dgallium-drivers=iris,crocus,radeonsi,swrast,llvmpipe,virgl,zink",
+        "-llvm": "-Dllvm=disabled -Dgallium-drivers=iris,crocus,swrast,virgl,zink",
     },
     use_deps = {
         # X11 dependencies for GLX and DRI

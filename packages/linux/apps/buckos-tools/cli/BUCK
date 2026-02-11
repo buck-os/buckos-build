@@ -1,67 +1,30 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package", "get_rust_typed_toolchain_dep")
+load("//defs:package_defs.bzl", "download_source", "cargo_workspace_package")
 
-# Download BuckOS source from GitHub (reuse from installer if in same package group)
+# Download BuckOS source from GitHub (shared across workspace members)
 download_source(
     name = "buckos-src",
     src_uri = "https://github.com/hodgesds/buckos/archive/refs/heads/main.tar.gz",
-    sha256 = "",  # Will be updated after first download
+    sha256 = "",  # Updated after first download
     signature_required = False,
 )
 
 # BuckOS CLI - Command-line interface for BuckOS management
-# Provides package management, system configuration, and utilities
-
-ebuild_package(
+# Build v2: Using /lib64 library path fix
+cargo_workspace_package(
     name = "buckos-cli",
-    source = ":buckos-src",
-    version = "0.1.0",
+    workspace_source = ":buckos-src",
+    member = "buckos-cli",
+    version = "0.1.1",
+    bins = ["buckos-cli"],
     description = "BuckOS command-line interface for system management",
     homepage = "https://github.com/hodgesds/buckos",
     license = "Apache-2.0 OR MIT",
-    category = "apps",
-    slot = "0",
-
-    src_prepare = """
-# Extract to a known directory name
-if [ -d buckos-main ]; then
-    mv buckos-main buckos-src
-fi
-cd buckos-src/buckos || exit 1
+    extra_install = """
+# Create symlink so users can run 'buckos' instead of 'buckos-cli'
+ln -sf buckos-cli "$DESTDIR/usr/bin/buckos"
 """,
-
-    src_configure = """
-cd buckos-src/buckos
-export CARGO_HOME="$S/cargo"
-export RUSTUP_HOME="$S/rustup"
-export CARGO_BUILD_TARGET="${CARGO_TARGET:-x86_64-unknown-linux-gnu}"
-""",
-
-    src_compile = """
-cd buckos-src/buckos
-
-# Build the CLI binary
-cargo build --release --target="${CARGO_BUILD_TARGET}" --locked || \\
-cargo build --release --target="${CARGO_BUILD_TARGET}"
-
-echo "CLI build complete"
-ls -lh target/${CARGO_BUILD_TARGET}/release/buckos-cli
-""",
-
-    src_install = """
-cd buckos-src/buckos
-
-# Install the binary
-install -D -m 755 target/${CARGO_BUILD_TARGET}/release/buckos-cli \\
-    "$DESTDIR/usr/bin/buckos"
-
-echo "Installed buckos CLI"
-""",
-
-    _rust_toolchain = get_rust_typed_toolchain_dep(),
-    bdepend = [],
-
-    # Runtime dependencies
-    depend = [],
-
+    deps = [
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+    ],
     visibility = ["PUBLIC"],
 )

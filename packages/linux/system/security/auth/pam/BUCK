@@ -97,27 +97,23 @@ password  required  pam_deny.so
 
 session   required  pam_limits.so
 session   required  pam_unix.so
+-session  optional  pam_systemd.so
 SYSTEMAUTH
 
-# Fix login PAM config to not require missing modules (pam_console, pam_selinux)
+# Fix login PAM config to use system-auth (which includes pam_systemd.so for logind sessions)
 cat > "$DESTDIR/etc/pam.d/login" << 'LOGINPAM'
 #%PAM-1.0
 # Login PAM configuration
 
-# Make securetty optional in case of issues
 auth      optional  pam_securetty.so
-auth      required  pam_env.so
-auth      sufficient pam_unix.so try_first_pass nullok
-auth      required  pam_deny.so
+auth      include   system-auth
 
 account   optional  pam_nologin.so
-account   required  pam_unix.so
+account   include   system-auth
 
-password  sufficient pam_unix.so try_first_pass nullok sha512 shadow
-password  required  pam_deny.so
+password  include   system-auth
 
-session   optional  pam_limits.so
-session   required  pam_unix.so
+session   include   system-auth
 session   optional  pam_loginuid.so
 LOGINPAM
 

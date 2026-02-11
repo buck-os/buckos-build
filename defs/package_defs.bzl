@@ -2874,11 +2874,31 @@ ISOCFG
 if [ -n "{include_rootfs}" ] && [ -d "$ROOTFS_DIR" ]; then
     echo "Creating squashfs from rootfs..."
     mkdir -p "$WORK/live"
+
+    # Create a working copy of rootfs to add kernel modules
+    ROOTFS_WORK=$(mktemp -d)
+    cp -a "$ROOTFS_DIR/." "$ROOTFS_WORK/"
+
+    # Copy kernel modules from kernel build to rootfs
+    if [ -d "$KERNEL_DIR/lib/modules" ]; then
+        echo "Copying kernel modules to rootfs..."
+        mkdir -p "$ROOTFS_WORK/lib/modules"
+        cp -a "$KERNEL_DIR/lib/modules/." "$ROOTFS_WORK/lib/modules/"
+        # Run depmod to generate modules.dep
+        KVER=$(ls "$KERNEL_DIR/lib/modules" | head -1)
+        if [ -n "$KVER" ] && command -v depmod >/dev/null 2>&1; then
+            echo "Running depmod for kernel $KVER..."
+            depmod -b "$ROOTFS_WORK" "$KVER" 2>/dev/null || true
+        fi
+    fi
+
     if command -v mksquashfs >/dev/null 2>&1; then
-        mksquashfs "$ROOTFS_DIR" "$WORK/live/filesystem.squashfs" -comp xz -no-progress
+        mksquashfs "$ROOTFS_WORK" "$WORK/live/filesystem.squashfs" -comp xz -no-progress
     else
         echo "Warning: mksquashfs not found, skipping rootfs inclusion"
     fi
+
+    rm -rf "$ROOTFS_WORK"
 fi
 
 # Create the ISO image based on boot mode
@@ -6822,6 +6842,229 @@ fi
         maintainers = maintainers,
         use_flags = effective_use,
         use_bootstrap = use_bootstrap,
+        _rust_toolchain = rust_typed_toolchain,
+        **filtered_kwargs
+    )
+
+# -----------------------------------------------------------------------------
+# Cargo Workspace Package Support
+# -----------------------------------------------------------------------------
+
+def cargo_workspace_package(
+        name: str,
+        workspace_source: str,
+        member: str,
+        version: str = "0.1.0",
+        bins: list[str] = [],
+        vendor_tarball_uri: str | None = None,
+        vendor_tarball_sha256: str | None = None,
+        cargo_args: list[str] = [],
+        deps: list[str] = [],
+        description: str = "",
+        homepage: str = "",
+        license: str = "",
+        desktop_entry: dict | None = None,
+        extra_install: str = "",
+        allow_network: bool = True,
+        **kwargs):
+    """
+    Build a member of a Cargo workspace.
+
+    This is for projects where multiple crates share a single Cargo.toml workspace.
+    The vendor tarball covers all workspace members, so it only needs to be
+    downloaded once.
+
+    Args:
+        name: Package name (target name)
+        workspace_source: Buck target for the workspace source tarball
+        member: Name of the workspace member to build (the -p argument to cargo)
+        version: Package version
+        bins: List of binary names to install from target/release/
+        vendor_tarball_uri: URL to vendor tarball with all Cargo dependencies
+        vendor_tarball_sha256: SHA256 of vendor tarball
+        cargo_args: Additional cargo build arguments
+        deps: Runtime dependencies
+        description: Package description
+        homepage: Project homepage URL
+        license: License identifier
+        desktop_entry: Optional dict with desktop entry fields:
+                      {name, comment, icon, exec, terminal, categories, keywords}
+        extra_install: Additional shell commands for src_install phase
+        allow_network: If True, allow network access for cargo to download deps
+
+    Example:
+        # First, download the workspace source
+        download_source(
+            name = "myworkspace-src",
+            src_uri = "https://github.com/org/myworkspace/archive/main.tar.gz",
+            sha256 = "...",
+        )
+
+        # Build the "cli" member of the workspace (with network for deps)
+        cargo_workspace_package(
+            name = "myworkspace-cli",
+            workspace_source = ":myworkspace-src",
+            member = "cli",
+            bins = ["mycli"],
+            allow_network = True,  # Allow cargo to download dependencies
+        )
+    """
+    # Apply platform-specific constraints
+    kwargs = _apply_platform_constraints(kwargs)
+
+    # Download vendor tarball if provided
+    vendor_tarball_target = None
+    if vendor_tarball_uri and vendor_tarball_sha256:
+        vendor_tarball_name = name + "-vendor"
+        download_source(
+            name = vendor_tarball_name,
+            src_uri = vendor_tarball_uri,
+            sha256 = vendor_tarball_sha256,
+            signature_required = False,
+            strip_components = 0,
+        )
+        vendor_tarball_target = ":" + vendor_tarball_name
+
+    # Build bdepend list
+    bdepend = list(kwargs.pop("bdepend", []))
+    if vendor_tarball_target:
+        bdepend.append(vendor_tarball_target)
+
+    # Add bootstrap toolchain
+    toolchain_dep = get_toolchain_dep()
+    if toolchain_dep:
+        bdepend.append(toolchain_dep)
+
+    rust_typed_toolchain = get_rust_typed_toolchain_dep()
+
+    # Build cargo args string
+    cargo_args_str = " ".join(cargo_args) if cargo_args else ""
+
+    # Generate src_prepare phase
+    # Note: ebuild.sh handles cargo vendoring before phases run
+    src_prepare = '''
+# Workspace source is in ../source/
+cd ../source || exit 1
+echo "Workspace ready, will build member: {member}"
+'''.format(member = member)
+
+    # Generate src_configure phase
+    src_configure = '''
+cd ../source
+'''
+
+    # Generate src_compile phase - build using vendored deps (ebuild.sh sets up vendor/)
+    # Fix for systems with /lib64 instead of /lib:
+    # rust-lld and linker scripts reference /lib which may not exist or have 32-bit libs
+    src_compile = '''
+cd ../source
+
+# Fix library paths for systems using /lib64 instead of /lib
+# The rust toolchain's linker scripts reference /lib paths which may be 32-bit or missing
+if [ -f /lib64/ld-linux-x86-64.so.2 ] && [ ! -e /lib/ld-linux-x86-64.so.2 ]; then
+    echo "Configuring library paths for /lib64 system"
+    # Set library search path to prefer /lib64
+    export LIBRARY_PATH="/lib64:/usr/lib64:${{LIBRARY_PATH:-}}"
+    # Tell linker to use correct paths
+    export RUSTFLAGS="${{RUSTFLAGS:-}} -C link-arg=-L/lib64 -C link-arg=-L/usr/lib64"
+    export RUSTFLAGS="${{RUSTFLAGS}} -C link-arg=-Wl,-rpath-link,/lib64 -C link-arg=-Wl,-rpath-link,/usr/lib64"
+    export RUSTFLAGS="${{RUSTFLAGS}} -C link-arg=-Wl,--dynamic-linker=/lib64/ld-linux-x86-64.so.2"
+fi
+
+echo "Building workspace member: {member}"
+echo "RUSTFLAGS=${{RUSTFLAGS:-}}"
+cargo build --release -p {member} {cargo_args}
+
+echo "Build complete"
+ls -lh target/release/ | head -20
+'''.format(member = member, cargo_args = cargo_args_str)
+
+    # Generate src_install phase
+    install_bins = ""
+    if bins:
+        for bin_name in bins:
+            install_bins += '''
+install -D -m 755 target/release/{bin} "$DESTDIR/usr/bin/{bin}"
+echo "Installed {bin}"
+'''.format(bin = bin_name)
+    else:
+        # Default: install binary matching member name
+        install_bins = '''
+if [ -f "target/release/{member}" ]; then
+    install -D -m 755 target/release/{member} "$DESTDIR/usr/bin/{member}"
+    echo "Installed {member}"
+fi
+'''.format(member = member)
+
+    # Generate desktop entry if provided
+    desktop_install = ""
+    if desktop_entry:
+        desktop_name = desktop_entry.get("name", name)
+        desktop_comment = desktop_entry.get("comment", description)
+        desktop_icon = desktop_entry.get("icon", "application-x-executable")
+        desktop_exec = desktop_entry.get("exec", bins[0] if bins else member)
+        desktop_terminal = "true" if desktop_entry.get("terminal", False) else "false"
+        desktop_categories = desktop_entry.get("categories", "Utility;")
+        desktop_keywords = desktop_entry.get("keywords", "")
+
+        desktop_install = '''
+mkdir -p "$DESTDIR/usr/share/applications"
+cat > "$DESTDIR/usr/share/applications/{name}.desktop" << 'DESKTOP_EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name={desktop_name}
+Comment={desktop_comment}
+Icon={desktop_icon}
+Exec={desktop_exec}
+Terminal={desktop_terminal}
+Categories={desktop_categories}
+Keywords={desktop_keywords}
+DESKTOP_EOF
+chmod 644 "$DESTDIR/usr/share/applications/{name}.desktop"
+echo "Installed desktop entry"
+'''.format(
+            name = name,
+            desktop_name = desktop_name,
+            desktop_comment = desktop_comment,
+            desktop_icon = desktop_icon,
+            desktop_exec = desktop_exec,
+            desktop_terminal = desktop_terminal,
+            desktop_categories = desktop_categories,
+            desktop_keywords = desktop_keywords,
+        )
+
+    src_install = '''
+cd ../source
+{install_bins}
+{desktop_install}
+{extra_install}
+'''.format(
+        install_bins = install_bins,
+        desktop_install = desktop_install,
+        extra_install = extra_install,
+    )
+
+    # Filter kwargs for ebuild_package_rule
+    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install)
+
+    # Note: ebuild.sh handles cargo vendoring with network access before
+    # entering the network-isolated build environment automatically
+
+    ebuild_package_rule(
+        name = name,
+        source = workspace_source,
+        version = version,
+        package_type = "cargo",
+        description = description,
+        homepage = homepage,
+        license = license,
+        src_prepare = src_prepare,
+        src_configure = src_configure,
+        src_compile = src_compile,
+        src_install = src_install,
+        rdepend = deps,
+        bdepend = bdepend,
         _rust_toolchain = rust_typed_toolchain,
         **filtered_kwargs
     )

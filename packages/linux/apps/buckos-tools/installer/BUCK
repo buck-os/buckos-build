@@ -1,84 +1,36 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package", "get_rust_typed_toolchain_dep")
+load("//defs:package_defs.bzl", "download_source", "cargo_workspace_package")
 
-# Download BuckOS source from GitHub
+# Download BuckOS source from GitHub (shared across workspace members)
 download_source(
     name = "buckos-src",
     src_uri = "https://github.com/hodgesds/buckos/archive/refs/heads/main.tar.gz",
-    sha256 = "",  # Will be updated after first download
+    sha256 = "",  # Updated after first download
     signature_required = False,
 )
 
 # BuckOS Installer - Graphical installer for live environment
-# Uses eframe/egui for GUI on Wayland/X11
-
-ebuild_package(
+# Build v2: Using /lib64 library path fix
+cargo_workspace_package(
     name = "buckos-installer",
-    source = ":buckos-src",
-    version = "0.1.0",
+    workspace_source = ":buckos-src",
+    member = "buckos-installer",
+    version = "0.1.1",
+    bins = ["buckos-installer"],
     description = "Graphical installer for BuckOS - beginner-friendly system installation",
     homepage = "https://github.com/hodgesds/buckos",
     license = "Apache-2.0 OR MIT",
-    category = "apps",
-    slot = "0",
-
-    src_prepare = """
-# Extract to a known directory name
-if [ -d buckos-main ]; then
-    mv buckos-main buckos-src
-fi
-cd buckos-src/installer || exit 1
-""",
-
-    src_configure = """
-cd buckos-src/installer
-export CARGO_HOME="$S/cargo"
-export RUSTUP_HOME="$S/rustup"
-""",
-
-    src_compile = """
-cd buckos-src/installer
-
-# Build the installer binary (native build)
-echo "Building buckos-installer..."
-cargo build --release --locked 2>&1 || cargo build --release 2>&1
-
-echo "Installer build complete"
-ls -lh target/release/buckos-installer
-""",
-
-    src_install = """
-cd buckos-src/installer
-
-# Install the binary
-install -D -m 755 target/release/buckos-installer \\
-    "$DESTDIR/usr/bin/buckos-installer"
-
-# Create desktop entry for live environment
-mkdir -p "$DESTDIR/usr/share/applications"
-cat > "$DESTDIR/usr/share/applications/buckos-installer.desktop" << 'EOF'
-[Desktop Entry]
-Version=1.0
-Type=Application
-Name=Install BuckOS
-Comment=Install BuckOS to your hard drive
-Icon=system-software-install
-Exec=buckos-installer
-Terminal=false
-Categories=System;Settings;
-Keywords=install;installer;setup;
-EOF
-
-chmod 644 "$DESTDIR/usr/share/applications/buckos-installer.desktop"
-echo "Installed buckos-installer"
-""",
-
-    _rust_toolchain = get_rust_typed_toolchain_dep(),
-    bdepend = [],
-
-    # Runtime dependencies
-    depend = [
-        "//packages/linux/desktop/qt:qt6",  # For GUI
+    desktop_entry = {
+        "name": "Install BuckOS",
+        "comment": "Install BuckOS to your hard drive",
+        "icon": "system-software-install",
+        "exec": "buckos-installer",
+        "terminal": False,
+        "categories": "System;Settings;",
+        "keywords": "install;installer;setup;",
+    },
+    deps = [
+        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
     ],
-
     visibility = ["PUBLIC"],
 )

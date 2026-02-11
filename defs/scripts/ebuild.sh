@@ -1146,20 +1146,44 @@ fi
 # First check if vendor directory exists in dependencies (from vendor tarball)
 # This allows pre-made vendor tarballs to be used for fully offline builds
 # Use DEP_BASE_DIRS which contains absolute paths (converted earlier in the script)
+
+# Determine where Cargo.toml is located (may be in source dir for workspace packages)
+CARGO_ROOT=""
+if [ -f Cargo.toml ]; then
+    CARGO_ROOT="."
+elif [ -f "${_EBUILD_SRCDIR:-../source}/Cargo.toml" ]; then
+    CARGO_ROOT="${_EBUILD_SRCDIR:-../source}"
+fi
+
 VENDOR_FROM_DEP=false
-if [ -f Cargo.toml ] && [ ! -d vendor ]; then
+
+# Check if vendor directory exists AND has actual crates (not just empty from failed attempt)
+_local_vendor_valid=false
+if [ -n "$CARGO_ROOT" ] && [ -d "$CARGO_ROOT/vendor" ]; then
+    _local_vendor_count=$(find "$CARGO_ROOT/vendor" -maxdepth 1 -type d 2>/dev/null | wc -l)
+    if [ "$_local_vendor_count" -gt 1 ]; then
+        _local_vendor_valid=true
+        echo "Found existing vendor directory with $(($_local_vendor_count - 1)) crates"
+    else
+        echo "Vendor directory exists but is empty ($(($_local_vendor_count)) entries), removing..."
+        rm -rf "$CARGO_ROOT/vendor"
+    fi
+fi
+
+if [ -n "$CARGO_ROOT" ] && [ "$_local_vendor_valid" = "false" ]; then
+    echo "No valid vendor dir found, checking deps..."
     IFS=':' read -ra ABS_DEP_DIRS <<< "$DEP_BASE_DIRS"
     for dep_dir in "${ABS_DEP_DIRS[@]}"; do
         if [ -d "$dep_dir/vendor" ]; then
             echo "📦 Found pre-made vendor directory in $dep_dir"
-            cp -r "$dep_dir/vendor" .
+            cp -r "$dep_dir/vendor" "$CARGO_ROOT/"
             if [ -f "$dep_dir/.cargo/config.toml" ]; then
-                mkdir -p .cargo
-                cp "$dep_dir/.cargo/config.toml" .cargo/
+                mkdir -p "$CARGO_ROOT/.cargo"
+                cp "$dep_dir/.cargo/config.toml" "$CARGO_ROOT/.cargo/"
                 echo "✓ Copied vendor directory and config.toml from dependency"
             elif [ -f "$dep_dir/config.toml" ]; then
-                mkdir -p .cargo
-                cp "$dep_dir/config.toml" .cargo/
+                mkdir -p "$CARGO_ROOT/.cargo"
+                cp "$dep_dir/config.toml" "$CARGO_ROOT/.cargo/"
                 echo "✓ Copied vendor directory and config.toml from dependency"
             fi
             VENDOR_FROM_DEP=true
@@ -1169,8 +1193,10 @@ if [ -f Cargo.toml ] && [ ! -d vendor ]; then
     done
 fi
 
-if [ -f Cargo.toml ] && [ ! -d vendor ] && [ "$VENDOR_FROM_DEP" = "false" ]; then
+# Vendor if we have a CARGO_ROOT, no valid local vendor, and didn't get vendor from deps
+if [ -n "$CARGO_ROOT" ] && [ "$_local_vendor_valid" = "false" ] && [ "$VENDOR_FROM_DEP" = "false" ]; then
     echo "🔄 Vendoring Cargo crate dependencies (before network isolation)..."
+    echo "  CARGO_ROOT=$CARGO_ROOT"
 
     # Set up Cargo environment
     export CARGO_HOME="${CARGO_HOME:-$WORKDIR/.cargo}"
@@ -1180,12 +1206,14 @@ if [ -f Cargo.toml ] && [ ! -d vendor ] && [ "$VENDOR_FROM_DEP" = "false" ]; the
     export CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
 
     # Check if there are git dependencies that need to be fetched first
-    if grep -qE '^\s*git\s*=' Cargo.toml 2>/dev/null || grep -qE '\[patch\.' Cargo.toml 2>/dev/null; then
+    if grep -qE '^\s*git\s*=' "$CARGO_ROOT/Cargo.toml" 2>/dev/null || grep -qE '\[patch\.' "$CARGO_ROOT/Cargo.toml" 2>/dev/null; then
         echo "  Detected git dependencies, running cargo fetch first..."
         # cargo fetch will clone git dependencies into CARGO_HOME/git
+        pushd "$CARGO_ROOT" > /dev/null
         if ! cargo fetch 2>&1; then
             echo "  ⚠ cargo fetch failed for git dependencies"
         fi
+        popd > /dev/null
     fi
 
     CARGO_VENDOR_SUCCESS=false
@@ -1194,8 +1222,9 @@ if [ -f Cargo.toml ] && [ ! -d vendor ] && [ "$VENDOR_FROM_DEP" = "false" ]; the
         # Use --locked to respect Cargo.lock if it exists
         # IMPORTANT: cargo vendor outputs config to stdout and progress to stderr
         # We only want stdout in vendor_config.toml, stderr goes to terminal
+        pushd "$CARGO_ROOT" > /dev/null
         if [ -f Cargo.lock ]; then
-            echo "Running: cargo vendor --locked"
+            echo "Running: cargo vendor --locked (in $CARGO_ROOT)"
             if cargo vendor --locked vendor > vendor_config.toml; then
                 CARGO_VENDOR_SUCCESS=true
             else
@@ -1205,7 +1234,7 @@ if [ -f Cargo.toml ] && [ ! -d vendor ] && [ "$VENDOR_FROM_DEP" = "false" ]; the
                 fi
             fi
         else
-            echo "Running: cargo vendor"
+            echo "Running: cargo vendor (in $CARGO_ROOT)"
             if cargo vendor vendor > vendor_config.toml; then
                 CARGO_VENDOR_SUCCESS=true
             fi
@@ -1252,6 +1281,7 @@ if [ -f Cargo.toml ] && [ ! -d vendor ] && [ "$VENDOR_FROM_DEP" = "false" ]; the
             fi
             rm -f vendor_config.toml
         fi
+        popd > /dev/null
     else
         echo "⚠ Warning: 'cargo' command not found, skipping crate vendoring"
     fi

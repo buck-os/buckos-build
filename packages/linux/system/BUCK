@@ -299,36 +299,91 @@ DBUSEOF
     visibility = ["PUBLIC"],
 )
 
-# SDDM configuration for live environment
+# Plasma Login Manager configuration (like CachyOS)
 genrule(
-    name = "live-sddm-config-gen",
-    out = "live-sddm-config",
+    name = "live-plasmalogin-config-gen",
+    out = "live-plasmalogin-config",
     cmd = """
-mkdir -p $OUT/etc/sddm.conf.d
-cat > $OUT/etc/sddm.conf.d/autologin.conf << 'SDDMEOF'
+# Main plasmalogin.conf
+mkdir -p $OUT/etc
+cat > $OUT/etc/plasmalogin.conf << 'PLASMALOGINCFG'
 [Autologin]
 User=live
-Session=plasma
-
-[General]
-# Halt display server to restart cleanly
-HaltCommand=/usr/bin/systemctl poweroff
-RebootCommand=/usr/bin/systemctl reboot
+Session=plasma.desktop
+Relogin=false
 
 [Users]
-# Maximum user id for displayed users
+MinimumUid=100
 MaximumUid=60000
-# Minimum user id for displayed users
-MinimumUid=1000
+PLASMALOGINCFG
 
-[X11]
-# Script to run when starting X11 display server
-DisplayCommand=/usr/share/sddm/scripts/Xsetup
-SDDMEOF
+# Autologin drop-in (like CachyOS)
+mkdir -p $OUT/etc/plasmalogin.conf.d
+cat > $OUT/etc/plasmalogin.conf.d/autologin.conf << 'AUTOLOGINEOF'
+[Autologin]
+User=live
+Session=plasma.desktop
+Relogin=false
 
-# Create script to ensure runtime directories exist before SDDM starts
+[Users]
+MinimumUid=100
+MaximumUid=60000
+AUTOLOGINEOF
+
+# Create custom wayland-session wrapper that sets XDG_RUNTIME_DIR and starts D-Bus
 mkdir -p $OUT/usr/local/bin
-cat > $OUT/usr/local/bin/sddm-pre-start.sh << 'PRESTARTEOF'
+cat > $OUT/usr/local/bin/wayland-session-wrapper << 'WRAPPEREOF'
+#!/bin/sh
+# Wayland session wrapper for BuckOS live environment
+# Sets XDG_RUNTIME_DIR and starts D-Bus session
+
+# Set XDG_RUNTIME_DIR for live user (UID 1000)
+export XDG_RUNTIME_DIR="/run/user/1000"
+
+# Ensure the directory exists with correct permissions
+if [ ! -d "/run/user/1000" ]; then
+    mkdir -p /run/user/1000 2>/dev/null || true
+    chmod 700 /run/user/1000 2>/dev/null || true
+    chown 1000:1000 /run/user/1000 2>/dev/null || true
+fi
+
+# Set XDG base directories
+export XDG_CONFIG_HOME="$HOME/.config"
+export XDG_DATA_HOME="$HOME/.local/share"
+export XDG_CACHE_HOME="$HOME/.cache"
+export XDG_STATE_HOME="$HOME/.local/state"
+
+# Create XDG directories
+mkdir -p "$XDG_CONFIG_HOME" "$XDG_DATA_HOME" "$XDG_CACHE_HOME" "$XDG_STATE_HOME" 2>/dev/null || true
+
+# Start D-Bus session if not already running
+if [ -z "$DBUS_SESSION_BUS_ADDRESS" ]; then
+    # Start dbus-daemon directly and export its address
+    eval `dbus-launch --sh-syntax`
+    export DBUS_SESSION_BUS_ADDRESS
+fi
+
+# Now exec the actual session command directly (bypass plasma-dbus-run-session-if-needed)
+# The session command is passed as the first argument
+SESSION_CMD="$1"
+shift
+
+# If session command contains plasma-dbus-run-session-if-needed, skip it and run startplasma directly
+case "$SESSION_CMD" in
+    *plasma-dbus-run-session-if-needed*)
+        # Extract the actual command (startplasma-wayland)
+        exec /usr/bin/startplasma-wayland
+        ;;
+    *)
+        exec $SESSION_CMD "$@"
+        ;;
+esac
+WRAPPEREOF
+chmod 755 $OUT/usr/local/bin/wayland-session-wrapper
+
+# Create script to ensure runtime directories exist before plasmalogin starts
+mkdir -p $OUT/usr/local/bin
+cat > $OUT/usr/local/bin/plasmalogin-pre-start.sh << 'PRESTARTEOF'
 #!/bin/bash
 set -x  # Debug output
 
@@ -352,26 +407,6 @@ mkdir -p /run/user/1000
 chown 1000:1000 /run/user/1000
 chmod 700 /run/user/1000
 
-# Ensure SDDM user's runtime directory exists (UID 990)
-mkdir -p /run/user/990
-chown 990:990 /run/user/990
-chmod 700 /run/user/990
-
-# Ensure /var/lib/sddm exists and is writable by sddm user
-mkdir -p /var/lib/sddm
-chown 990:990 /var/lib/sddm
-chmod 755 /var/lib/sddm
-
-# Pre-create state.conf with correct ownership so SDDM can write to it
-touch /var/lib/sddm/state.conf
-chown 990:990 /var/lib/sddm/state.conf
-chmod 644 /var/lib/sddm/state.conf
-
-# Ensure /run/sddm exists
-mkdir -p /run/sddm
-chown 990:990 /run/sddm
-chmod 755 /run/sddm
-
 # Ensure home directories exist with correct ownership
 mkdir -p /home/live/Desktop
 chown -R 1000:1000 /home/live
@@ -379,9 +414,160 @@ chown -R 1000:1000 /home/live
 # Restart polkit now that permissions are fixed
 systemctl restart polkit 2>/dev/null || true
 
-echo "SDDM pre-start completed"
+echo "plasmalogin pre-start completed"
 PRESTARTEOF
-chmod 755 $OUT/usr/local/bin/sddm-pre-start.sh
+chmod 755 $OUT/usr/local/bin/plasmalogin-pre-start.sh
+
+# kwin_wayland service override (from CachyOS) - disables lockscreen for live environment
+mkdir -p "$OUT/etc/skel/.config/systemd/user/plasma-login-kwin_wayland.service.d"
+cat > "$OUT/etc/skel/.config/systemd/user/plasma-login-kwin_wayland.service.d/override.conf" << 'KWINEOF'
+[Service]
+ExecStart=
+ExecStart=/usr/bin/kwin_wayland --no-lockscreen --no-global-shortcuts --no-kactivities --locale1
+KWINEOF
+
+# Also put it in home/live directly
+mkdir -p "$OUT/home/live/.config/systemd/user/plasma-login-kwin_wayland.service.d"
+cp "$OUT/etc/skel/.config/systemd/user/plasma-login-kwin_wayland.service.d/override.conf" \
+   "$OUT/home/live/.config/systemd/user/plasma-login-kwin_wayland.service.d/override.conf"
+
+# logind config to not suspend (like CachyOS)
+mkdir -p "$OUT/etc/systemd/logind.conf.d"
+cat > "$OUT/etc/systemd/logind.conf.d/do-not-suspend.conf" << 'LOGINDEOF'
+[Login]
+HandleSuspendKey=ignore
+HandleHibernateKey=ignore
+HandleLidSwitch=ignore
+LOGINDEOF
+
+# Module loading for hardware support (WiFi, USB, etc.)
+mkdir -p "$OUT/etc/modules-load.d"
+
+# Common WiFi modules
+cat > "$OUT/etc/modules-load.d/wifi.conf" << 'WIFIEOF'
+# Common WiFi drivers
+cfg80211
+mac80211
+# Intel WiFi
+iwlwifi
+iwlmvm
+# Atheros
+ath9k
+ath10k_pci
+# Realtek
+rtw88_pci
+rtw89_pci
+# Broadcom (open source)
+brcmfmac
+WIFIEOF
+
+# USB modules
+cat > "$OUT/etc/modules-load.d/usb.conf" << 'USBEOF'
+# USB storage
+usb_storage
+uas
+# USB HID (keyboard, mouse)
+usbhid
+hid_generic
+USBEOF
+
+# Input modules
+cat > "$OUT/etc/modules-load.d/input.conf" << 'INPUTEOF'
+# Input devices
+evdev
+uinput
+INPUTEOF
+
+# DRM/Graphics modules
+# Note: drm, drm_kms_helper, virtio_gpu, bochs, qxl are built-in (=y) in live kernel
+# Only list actual modules here
+cat > "$OUT/etc/modules-load.d/drm.conf" << 'DRMEOF'
+# i915 for Intel GPUs (if present as module)
+# i915
+# nouveau for NVIDIA GPUs (if present as module)
+# nouveau
+# amdgpu for AMD GPUs (if present as module)
+# amdgpu
+DRMEOF
+
+# Network modules
+cat > "$OUT/etc/modules-load.d/network.conf" << 'NETEOF'
+# Virtio network for QEMU
+virtio_net
+# Common Ethernet drivers
+e1000e
+r8169
+igc
+NETEOF
+
+# =============================================================================
+# Systemd getty auto-login (since we don't have plasma-login-manager)
+# =============================================================================
+
+# Create getty@tty1 override for auto-login
+mkdir -p "$OUT/etc/systemd/system/getty@tty1.service.d"
+cat > "$OUT/etc/systemd/system/getty@tty1.service.d/autologin.conf" << 'GETTYEOF'
+[Service]
+ExecStart=
+ExecStart=-/sbin/agetty --autologin live --noclear %I $TERM
+Type=idle
+GETTYEOF
+
+# Create .bash_profile for live user to start Plasma Wayland on tty1
+mkdir -p "$OUT/home/live"
+cat > "$OUT/home/live/.bash_profile" << 'PROFILEEOF'
+# BuckOS Live - Auto-start Plasma Wayland on tty1
+
+# Only start on tty1 and if not already in a graphical session
+if [ "`tty`" = "/dev/tty1" ] && [ -z "$WAYLAND_DISPLAY" ] && [ -z "$DISPLAY" ]; then
+    # Set up XDG runtime directory
+    export XDG_RUNTIME_DIR="/run/user/1000"
+
+    # Ensure runtime directory exists
+    if [ ! -d "$XDG_RUNTIME_DIR" ]; then
+        sudo mkdir -p "$XDG_RUNTIME_DIR"
+        sudo chown 1000:1000 "$XDG_RUNTIME_DIR"
+        sudo chmod 700 "$XDG_RUNTIME_DIR"
+    fi
+
+    # Set XDG base directories
+    export XDG_CONFIG_HOME="$HOME/.config"
+    export XDG_DATA_HOME="$HOME/.local/share"
+    export XDG_CACHE_HOME="$HOME/.cache"
+    export XDG_STATE_HOME="$HOME/.local/state"
+
+    # Create directories if needed
+    mkdir -p "$XDG_CONFIG_HOME" "$XDG_DATA_HOME" "$XDG_CACHE_HOME" "$XDG_STATE_HOME"
+
+    # Start Plasma Wayland session
+    echo "Starting Plasma Wayland session..."
+    exec dbus-run-session startplasma-wayland
+fi
+
+# Source .bashrc for interactive shells
+if [ -f ~/.bashrc ]; then
+    . ~/.bashrc
+fi
+PROFILEEOF
+
+# Also create it in /etc/skel
+mkdir -p "$OUT/etc/skel"
+cp "$OUT/home/live/.bash_profile" "$OUT/etc/skel/.bash_profile"
+
+# Enable getty@tty1 (create symlink for systemd)
+mkdir -p "$OUT/etc/systemd/system/getty.target.wants"
+ln -sf /lib/systemd/system/getty@.service "$OUT/etc/systemd/system/getty.target.wants/getty@tty1.service"
+
+# Create symlink for pam_systemd.so (systemd installs to lib64, pam looks in lib)
+mkdir -p "$OUT/usr/lib/security"
+ln -sf ../../lib64/security/pam_systemd.so "$OUT/usr/lib/security/pam_systemd.so"
+
+# Fix user@.service to set XDG_RUNTIME_DIR (needed for user systemd instance)
+mkdir -p "$OUT/etc/systemd/system/user@.service.d"
+cat > "$OUT/etc/systemd/system/user@.service.d/runtime.conf" << 'USERSERVICEEOF'
+[Service]
+Environment=XDG_RUNTIME_DIR=/run/user/%i
+USERSERVICEEOF
 """,
     visibility = ["PUBLIC"],
 )
@@ -396,7 +582,6 @@ genrule(
 mkdir -p $OUT/etc
 mkdir -p $OUT/home/live
 mkdir -p $OUT/var/empty
-mkdir -p $OUT/var/lib/sddm
 mkdir -p $OUT/root
 
 echo "buckos-live" > $OUT/etc/hostname
@@ -412,7 +597,6 @@ systemd-journal:x:190:190:systemd Journal:/dev/null:/bin/false
 systemd-network:x:192:192:systemd Network Management:/dev/null:/bin/false
 systemd-resolve:x:193:193:systemd Resolver:/dev/null:/bin/false
 systemd-timesync:x:194:194:systemd Time Synchronization:/dev/null:/bin/false
-sddm:x:990:990:SDDM Display Manager:/var/lib/sddm:/sbin/nologin
 live:x:1000:1000:Live User:/home/live:/bin/bash
 nobody:x:65534:65534:Nobody:/:/bin/false
 PASSWDEOF
@@ -437,26 +621,25 @@ man:x:15:
 dialout:x:18:live
 floppy:x:19:
 games:x:20:
-utmp:x:22:sddm,live
+utmp:x:22:live
 tape:x:26:
-video:x:27:live,root,sddm
-audio:x:29:live,root,sddm
+video:x:27:live,root
+audio:x:29:live,root
 messagebus:x:81:
 polkitd:x:87:
 network:x:90:live
 storage:x:91:live
 rfkill:x:92:live
 kvm:x:78:live
-input:x:97:live,root,sddm
+input:x:97:live,root
 users:x:100:live
 sgx:x:106:
-render:x:109:live,root,sddm
+render:x:109:live,root
 systemd-journal:x:190:
 systemd-network:x:192:
 systemd-resolve:x:193:
 systemd-timesync:x:194:
-seat:x:985:root,sddm
-sddm:x:990:
+seat:x:985:root
 live:x:1000:
 nopasswdlogin:x:1001:live
 autologin:x:1002:live
@@ -475,14 +658,12 @@ systemd-journal:!:0:0:99999:7:::
 systemd-network:!:0:0:99999:7:::
 systemd-resolve:!:0:0:99999:7:::
 systemd-timesync:!:0:0:99999:7:::
-sddm:!:0:0:99999:7:::
 live:$6$XxYSRB9p2uZQDqdN$5y91468svaBTNkjBI9Z18f/Tw019c6QmeyhcWpa4FcHHdleWagixJvhK0tWMNW20XZwzn0AWw9iTSYN7Ed1zF/:19000:0:99999:7:::
 nobody:!:0:0:99999:7:::
 SHADOWEOF
 chmod 640 $OUT/etc/shadow
 chmod 755 $OUT/home/live
 chmod 755 $OUT/var/empty
-chmod 755 $OUT/var/lib/sddm
 """,
     visibility = ["PUBLIC"],
 )
@@ -494,7 +675,7 @@ genrule(
     cmd = """
 mkdir -p $OUT/etc/tmpfiles.d
 cat > $OUT/etc/tmpfiles.d/live-session.conf << 'TMPFILESEOF'
-# Session tracking files for PAM - owned by utmp group so SDDM can write login records
+# Session tracking files for PAM - owned by utmp group for login records
 # Use /run/utmp (NOT /var/run/utmp) since /var/run is a symlink to /run
 f /run/utmp 0664 root utmp -
 f /var/log/wtmp 0664 root utmp -
@@ -505,11 +686,6 @@ f /var/log/lastlog 0664 root utmp -
 # systemd-logind will set proper permissions when pam_systemd runs
 d /run/user 0755 root root -
 d /run/user/1000 0700 live live -
-
-# SDDM directories - must be owned by sddm user for the greeter to run properly
-d /var/lib/sddm 0755 sddm sddm -
-d /run/sddm 0755 sddm sddm -
-d /var/lib/sddm/.cache 0755 sddm sddm -
 
 # Live user home directory
 d /home/live 0755 live live -
@@ -641,7 +817,139 @@ Terminal=false
 Categories=System;
 DESKTOPEOF
 chmod 755 $OUT/home/live/Desktop/Install-BuckOS.desktop
+
+# Set up live user profile with XDG_RUNTIME_DIR
+cat > $OUT/home/live/.profile << 'PROFILEEOF'
+# ~/.profile - Live user environment
+
+# Set XDG_RUNTIME_DIR for the live user (UID 1000)
+export XDG_RUNTIME_DIR=/run/user/1000
+
+# Ensure the directory exists with correct permissions
+if [ ! -d "$XDG_RUNTIME_DIR" ]; then
+    mkdir -p "$XDG_RUNTIME_DIR" 2>/dev/null || true
+    chmod 700 "$XDG_RUNTIME_DIR" 2>/dev/null || true
+fi
+
+# Set other XDG directories
+export XDG_CONFIG_HOME="$HOME/.config"
+export XDG_DATA_HOME="$HOME/.local/share"
+export XDG_CACHE_HOME="$HOME/.cache"
+export XDG_STATE_HOME="$HOME/.local/state"
+
+# D-Bus session address (if not already set by systemd)
+if [ -z "$DBUS_SESSION_BUS_ADDRESS" ]; then
+    export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
+fi
+PROFILEEOF
+chmod 644 $OUT/home/live/.profile
+
+# Also create .bash_profile to source .profile
+cat > $OUT/home/live/.bash_profile << 'BASHPROFILEEOF'
+# ~/.bash_profile - Source .profile for bash login shells
+if [ -f ~/.profile ]; then
+    . ~/.profile
+fi
+if [ -f ~/.bashrc ]; then
+    . ~/.bashrc
+fi
+BASHPROFILEEOF
+chmod 644 $OUT/home/live/.bash_profile
+
 chown -R 1000:1000 $OUT/home/live 2>/dev/null || true
+
+# Create Qt font directory symlink (Qt looks in /usr/lib/fonts)
+mkdir -p $OUT/usr/lib
+ln -sf ../share/fonts $OUT/usr/lib/fonts
+
+# Create environment.d for Qt and cursor settings
+mkdir -p $OUT/etc/environment.d
+cat > $OUT/etc/environment.d/60-qt-fonts.conf << 'QTFONTEOF'
+# Qt font directory
+QT_QPA_FONTDIR=/usr/share/fonts
+QTFONTEOF
+
+cat > $OUT/etc/environment.d/60-xcursor.conf << 'XCURSOREOF'
+# Cursor theme settings
+XCURSOR_PATH=/usr/share/icons
+XCURSOR_SIZE=24
+XCURSOREOF
+
+# Libseat backend for DRM access via logind
+cat > $OUT/etc/environment.d/60-libseat.conf << 'LIBSEATEOF'
+# Use logind backend for libseat (required for Wayland DRM access)
+LIBSEAT_BACKEND=logind
+LIBSEATEOF
+
+# Locale settings for Qt and KDE
+cat > $OUT/etc/environment.d/50-locale.conf << 'LOCALEEOF'
+# UTF-8 locale for Qt applications
+LANG=C.UTF-8
+LC_ALL=C.UTF-8
+LOCALEEOF
+
+# Qt and KDE paths
+cat > $OUT/etc/environment.d/60-kde-paths.conf << 'KDEPATHSEOF'
+# Qt/KDE plugin and QML paths
+# KDE installs QML modules to /usr/lib64/qml, Qt to /usr/lib64/qt6/qml
+QT_PLUGIN_PATH=/usr/lib64/qt6/plugins:/usr/lib64/plugins
+QML_IMPORT_PATH=/usr/lib64/qml:/usr/lib64/qt6/qml
+QML2_IMPORT_PATH=/usr/lib64/qml:/usr/lib64/qt6/qml
+XDG_DATA_DIRS=/usr/share:/usr/local/share
+XDG_CONFIG_DIRS=/etc/xdg
+KDEPATHSEOF
+
+# XDG runtime directory for user sessions - use profile.d for dynamic $UID
+mkdir -p $OUT/etc/profile.d
+cat > $OUT/etc/profile.d/xdg-runtime.sh << 'XDGEOF'
+# Set XDG_RUNTIME_DIR dynamically per user
+if [ -z "$XDG_RUNTIME_DIR" ]; then
+    export XDG_RUNTIME_DIR="/run/user/$UID"
+fi
+if [ -z "$DBUS_SESSION_BUS_ADDRESS" ] && [ -S "$XDG_RUNTIME_DIR/bus" ]; then
+    export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
+fi
+XDGEOF
+chmod +x $OUT/etc/profile.d/xdg-runtime.sh
+
+# Systemd user environment generator for XDG_RUNTIME_DIR
+# This runs when systemd --user starts and sets environment for user services
+mkdir -p $OUT/usr/lib/systemd/user-environment-generators
+cat > $OUT/usr/lib/systemd/user-environment-generators/50-xdg-runtime << 'GENEOF'
+#!/bin/sh
+# Generate XDG_RUNTIME_DIR for systemd user instance
+MYUID=`id -u`
+echo "XDG_RUNTIME_DIR=/run/user/$MYUID"
+if [ -S "/run/user/$MYUID/bus" ]; then
+    echo "DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$MYUID/bus"
+fi
+GENEOF
+chmod +x $OUT/usr/lib/systemd/user-environment-generators/50-xdg-runtime
+
+# Create tmpfiles.d to ensure /run/user/1000 exists at boot for live user
+mkdir -p $OUT/etc/tmpfiles.d
+cat > $OUT/etc/tmpfiles.d/live-user-runtime.conf << 'TMPFILESEOF'
+# Create runtime directory for live user (UID 1000)
+d /run/user/1000 0700 1000 1000 -
+TMPFILESEOF
+
+# Fix kwin_wayland_wrapper - the binary passes --xwayland which kwin doesn't support
+# Replace with a simple shell script that filters out unsupported options
+mkdir -p $OUT/usr/bin $OUT/usr/sbin
+cat > $OUT/usr/bin/kwin_wayland_wrapper << 'KWRAPPER'
+#!/bin/bash
+# Wrapper replacement: filter out unsupported --xwayland flag
+ARGS=()
+for arg in "$@"; do
+    case "$arg" in
+        --xwayland) ;; # Skip this unsupported option
+        *) ARGS+=("$arg") ;;
+    esac
+done
+exec /usr/bin/kwin_wayland "${ARGS[@]}"
+KWRAPPER
+chmod +x $OUT/usr/bin/kwin_wayland_wrapper
+cp $OUT/usr/bin/kwin_wayland_wrapper $OUT/usr/sbin/kwin_wayland_wrapper
 """,
     visibility = ["PUBLIC"],
 )
@@ -678,7 +986,7 @@ cat > $OUT/etc/systemd/logind.conf << 'LOGINDEOF'
 # Don't kill user processes on logout (useful for live environment)
 KillUserProcesses=no
 # Only create user instances for regular users (UID >= 1000)
-# System users (messagebus, polkitd, sddm, etc.) should not have user instances
+# System users (messagebus, polkitd, etc.) should not have user instances
 UserTasksMax=12288
 LOGINDEOF
 
@@ -704,28 +1012,73 @@ ln -sf /usr/lib/systemd/system/polkit.service $OUT/etc/systemd/system/multi-user
 # Enable systemd-logind (required for loginctl and PAM sessions)
 ln -sf /usr/lib/systemd/system/systemd-logind.service $OUT/etc/systemd/system/multi-user.target.wants/systemd-logind.service
 
-# Create SDDM service drop-in to ensure dependencies and runtime directories
-mkdir -p $OUT/etc/systemd/system/sddm.service.d
-cat > $OUT/etc/systemd/system/sddm.service.d/10-dependencies.conf << 'SDDMDROPINEOF'
+# Create a systemd service to start Plasma Wayland on tty1 (no display manager needed)
+mkdir -p $OUT/usr/lib/systemd/system
+cat > $OUT/usr/lib/systemd/system/plasma-wayland-live.service << 'PLASMASERVICEEOF'
 [Unit]
-# Ensure polkit and systemd-logind are running before SDDM starts
-# pam_systemd needs to talk to systemd-logind via D-Bus, which needs polkit
-After=polkit.service systemd-logind.service dbus.service systemd-user-sessions.service
-Wants=polkit.service systemd-logind.service dbus.service
+Description=Plasma Wayland Session (Live)
+After=systemd-user-sessions.service dbus.service polkit.service systemd-logind.service
+Wants=dbus.service polkit.service systemd-logind.service
+Conflicts=getty@tty1.service
 
 [Service]
-# Ensure /run/user/1000 exists before SDDM starts
-ExecStartPre=/usr/local/bin/sddm-pre-start.sh
-# Set environment for SDDM greeter - needed for Qt platform plugins
-Environment=XDG_RUNTIME_DIR=/run/sddm
-Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/dbus/system_bus_socket
-SDDMDROPINEOF
+Type=simple
+User=live
+Group=live
+PAMName=login
+TTYPath=/dev/tty1
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=yes
+StandardInput=tty
+StandardOutput=tty
+StandardError=journal
+Environment=XDG_SESSION_TYPE=wayland
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
+Environment=QT_QPA_PLATFORM=wayland
+Environment=QML_IMPORT_PATH=/usr/lib64/qml:/usr/lib64/qt6/qml
+Environment=QT_PLUGIN_PATH=/usr/lib64/qt6/plugins:/usr/lib64/plugins
+Environment=LIBSEAT_BACKEND=logind
+ExecStartPre=/bin/mkdir -p /run/user/1000
+ExecStartPre=/bin/chown 1000:1000 /run/user/1000
+ExecStartPre=/bin/chmod 700 /run/user/1000
+ExecStart=/usr/bin/dbus-run-session /usr/bin/startplasma-wayland
+Restart=on-failure
+RestartSec=3
 
-# Enable SDDM display manager
-ln -sf /usr/lib/systemd/system/sddm.service $OUT/etc/systemd/system/graphical.target.wants/sddm.service
+[Install]
+WantedBy=graphical.target
+PLASMASERVICEEOF
 
-# Enable sshd for remote access
-ln -sf /usr/lib/systemd/system/sshd.service $OUT/etc/systemd/system/multi-user.target.wants/sshd.service
+# Enable plasma-wayland-live service
+ln -sf /usr/lib/systemd/system/plasma-wayland-live.service $OUT/etc/systemd/system/graphical.target.wants/plasma-wayland-live.service
+
+# Disable getty on tty1 (plasma-wayland-live will use it)
+ln -sf /dev/null $OUT/etc/systemd/system/getty@tty1.service
+
+# Disable screen locker for live session
+mkdir -p $OUT/home/live/.config
+cat > $OUT/home/live/.config/kscreenlockerrc << 'LOCKEREOF'
+[Daemon]
+Autolock=false
+LockOnResume=false
+Timeout=0
+LOCKEREOF
+chown -R 1000:1000 $OUT/home/live/.config
+
+# Also set a known password for live user in case lock screen appears
+# Password is "live"
+mkdir -p $OUT/etc
+# Use openssl to generate password hash for "live"
+# This is pre-computed: live -> $6$rounds=5000$salt$hash
+sed -i 's|^live:!:|live:$6$xyz$LH0pTsMhKj5X5VQrDvKxQ8Kj7FqNJvGqKxjQh3CqZ8nD6s5R2lVpLlZ.K9J4X5.iY8J6m.tQ3H4D5v6W7x8Y9z0:0|' $OUT/etc/shadow 2>/dev/null || true
+
+# Note: sshd is NOT enabled by default - it needs host keys generated first
+# To enable SSH access, run: systemctl start sshd (after generating keys with ssh-keygen -A)
+# ln -sf /usr/lib/systemd/system/sshd.service $OUT/etc/systemd/system/multi-user.target.wants/sshd.service
+
+# Note: XDG_RUNTIME_DIR setup moved to live-desktop-gen with dynamic $UID
 """,
     visibility = ["PUBLIC"],
 )
@@ -1117,12 +1470,47 @@ filegroup(
 # Live Root Filesystem - Full desktop environment
 # =============================================================================
 
+# BuckOS source repository for the live environment
+# Downloads from GitHub to get the full buckos-build repository
+# The buckos CLI expects /var/db/repos/buckos-build with defs/ and packages/ directories
+# Also downloads buck2 prebuilt binary for building packages
+genrule(
+    name = "buckos-repo-gen",
+    out = "buckos-repo",
+    cmd = """
+mkdir -p "$OUT/var/db/repos/buckos-build"
+mkdir -p "$OUT/usr/bin"
+# Create empty etc directory to trigger fast tar merge path in assemble.sh
+# Without this, the assemble script recursively processes thousands of directories
+mkdir -p "$OUT/etc"
+
+# Download the buckos-build tarball from GitHub
+TARBALL=`mktemp`
+curl -sL "https://github.com/buck-os/buckos-build/archive/refs/heads/main.tar.gz" -o "$TARBALL"
+# Extract defs/ directory (required by buckos CLI)
+tar -xzf "$TARBALL" --strip-components=1 -C "$OUT/var/db/repos/buckos-build" "buckos-build-main/defs"
+# Extract packages/linux directory
+mkdir -p "$OUT/var/db/repos/buckos-build/packages"
+tar -xzf "$TARBALL" --strip-components=2 -C "$OUT/var/db/repos/buckos-build/packages" "buckos-build-main/packages/linux"
+rm -f "$TARBALL"
+
+# Download buck2 prebuilt static binary (x86_64)
+BUCK2_ZST=`mktemp`
+curl -sL "https://github.com/facebook/buck2/releases/download/2026-01-02/buck2-x86_64-unknown-linux-gnu.zst" -o "$BUCK2_ZST"
+zstd -d "$BUCK2_ZST" -o "$OUT/usr/bin/buck2"
+chmod +x "$OUT/usr/bin/buck2"
+rm -f "$BUCK2_ZST"
+""",
+    visibility = ["PUBLIC"],
+)
+
 # Live rootfs with KDE Plasma desktop (systemd-only, no eudev)
 rootfs(
     name = "buckos-live-kde-rootfs",
     packages = [
         ":live-init-scripts-gen",
         ":baselayout-gen",
+        ":buckos-repo-gen",
         ":live-dbus-policy-gen",
         ":polkit-live-rules-gen",
         ":live-utmp-gen",
@@ -1130,8 +1518,10 @@ rootfs(
         ":live-tmpfiles-gen",
         ":live-desktop-gen",
         ":live-ssh-config-gen",
-        ":live-sddm-config-gen",
+        ":live-plasmalogin-config-gen",
         ":live-systemd-config-gen",
+        # Kernel modules (needed for hardware support at runtime)
+        "//packages/linux/kernel/buckos-kernel:buckos-kernel-live",
         # System groups (automatically merged into /etc/group)
         "//packages/acct-group/tty:tty",
         "//packages/acct-group/disk:disk",
@@ -1157,6 +1547,8 @@ rootfs(
 
         # Core system utilities
         "//packages/linux/system/apps/coreutils:coreutils",
+        "//packages/linux/system/apps/which:which",
+        "//packages/linux/lang/binutils:binutils",  # Provides strings, nm, objdump, etc.
         "//packages/linux/editors/grep:grep",
         "//packages/linux/system/libs/cpio:cpio",
         "//packages/linux/core/util-linux:util-linux",
@@ -1172,6 +1564,8 @@ rootfs(
         "//packages/linux/system/libs/compression/zstd:zstd",
         "//packages/linux/core/procps-ng:procps-ng",
         "//packages/linux/core/file:file",
+        "//packages/linux/system/apps/findutils:findutils",
+        # strace requires libunwind which needs stdatomic.h - skipped for now
         "//packages/linux/system/apps/shadow:shadow",
         # PAM runtime dependencies (required for login/authentication)
         "//packages/linux/system/libs/ipc/libtirpc:libtirpc",
@@ -1217,6 +1611,7 @@ rootfs(
         # Input handling
         "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
         "//packages/linux/system/libs/input/libevdev:libevdev",
+        "//packages/linux/graphics/xorg/xkeyboard-config:xkeyboard-config",  # XKB data for keyboard layouts
 
         # Font rendering and fonts
         "//packages/linux/system/libs/font/freetype:freetype",
@@ -1234,6 +1629,17 @@ rootfs(
         "//packages/linux/desktop/kde/apps:konsole",
         "//packages/linux/desktop/kde/apps:dolphin",
         "//packages/linux/desktop/kde/apps:kate",
+        # KDE Frameworks (QML modules required for Plasma)
+        "//packages/linux/desktop/kde:kirigami",
+        "//packages/linux/desktop/kde:kcmutils",
+        "//packages/linux/desktop/kde:kdeclarative",
+        "//packages/linux/desktop/kde:kitemmodels",
+        "//packages/linux/desktop/kde:ksvg",
+        "//packages/linux/desktop/kde:krunner",
+        "//packages/linux/desktop/kde:kpackage",
+        "//packages/linux/desktop/kde:plasma-activities",
+        "//packages/linux/desktop/kde:breeze-icons",
+        "//packages/linux/desktop/kde:kiconthemes",
         # KDE/Graphics libraries (explicit dependencies - not auto-pulled from filegroup)
         "//packages/linux/desktop/kde:libplasma",
         "//packages/linux/desktop/kde:plasma5support",
@@ -1251,9 +1657,8 @@ rootfs(
         "//packages/linux/graphics/xorg/xcb-util-image:xcb-util-image",
         "//packages/linux/graphics/xorg/xcb-util-renderutil:xcb-util-renderutil",
 
-        # Display Manager
-        "//packages/linux/desktop/sddm:sddm",
-        "//packages/linux/desktop/sddm/pam:sddm-pam",  # SDDM PAM configuration
+        # Note: Using getty autologin + startplasma-wayland instead of plasma-login-manager
+        # (plasma-login-manager 6.5.91 requires PlasmaQuick 6.5.90, but we have 6.2.4)
 
         # Audio (PipeWire with systemd support)
         "//packages/linux/audio/daemons/pipewire:pipewire",
@@ -1263,6 +1668,7 @@ rootfs(
         "//packages/linux/dev-tools/vcs/git:git",
         "//packages/linux/editors/vim:vim",
 
+        # BuckOS tools (uses cargo_workspace_package with vendor tarball)
         "//packages/linux/apps/buckos-tools/installer:buckos-installer",
         "//packages/linux/apps/buckos-tools/cli:buckos-cli",
 
@@ -1328,6 +1734,7 @@ rootfs(
         # Input handling
         "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
         "//packages/linux/system/libs/input/libevdev:libevdev",
+        "//packages/linux/graphics/xorg/xkeyboard-config:xkeyboard-config",  # XKB data for keyboard layouts
         # Font rendering and fonts
         "//packages/linux/system/libs/font/freetype:freetype",
         "//packages/linux/system/libs/font/fontconfig:fontconfig",
@@ -1372,7 +1779,7 @@ initramfs(
 
 # Live ISO with KDE Plasma desktop (hybrid BIOS+UEFI boot)
 iso_image(
-    name = "buckos-live-installer-kde-iso",
+    name = "buckos-live-installer-kde",
     kernel = "//packages/linux/kernel/buckos-kernel:buckos-kernel-live",
     initramfs = ":buckos-live-initramfs",
     rootfs = ":buckos-live-kde-rootfs",
@@ -1384,7 +1791,7 @@ iso_image(
 
 # Live ISO with Sway (lighter alternative)
 iso_image(
-    name = "buckos-live-installer-sway-iso",
+    name = "buckos-live-installer-sway",
     kernel = "//packages/linux/kernel/buckos-kernel:buckos-kernel-live",
     initramfs = ":buckos-live-initramfs",
     rootfs = ":buckos-live-sway-rootfs",
@@ -1396,7 +1803,7 @@ iso_image(
 
 # Live ISO with KDE Plasma desktop for aarch64 (UEFI boot)
 iso_image(
-    name = "buckos-live-installer-kde-iso-aarch64",
+    name = "buckos-live-installer-kde-aarch64",
     kernel = "//packages/linux/kernel/buckos-kernel:buckos-kernel-live",
     initramfs = ":buckos-live-initramfs",
     rootfs = ":buckos-live-kde-rootfs",
@@ -1409,8 +1816,8 @@ iso_image(
 
 # Main live installer ISO (defaults to KDE x86_64)
 alias(
-    name = "buckos-live-installer-iso",
-    actual = ":buckos-live-installer-kde-iso",
+    name = "buckos-live-installer",
+    actual = ":buckos-live-installer-kde",
     visibility = ["PUBLIC"],
 )
 

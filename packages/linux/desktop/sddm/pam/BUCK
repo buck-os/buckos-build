@@ -31,8 +31,8 @@ genrule(
     cmd = """
 cat > $OUT << 'PAM_EOF'
 #%PAM-1.0
-# Minimal autologin PAM configuration for SDDM (live ISO)
-# No pam_systemd - we set up XDG_RUNTIME_DIR manually
+# Autologin PAM configuration for SDDM (live ISO)
+# Uses pam_systemd to create proper user session
 
 auth      required    pam_permit.so
 
@@ -40,9 +40,13 @@ account   required    pam_permit.so
 
 password  required    pam_permit.so
 
-# Session setup - pam_env sets XDG_RUNTIME_DIR from /etc/security/pam_env.conf
+# Session setup
 session   required    pam_env.so
-session   required    pam_permit.so
+session   required    pam_limits.so
+session   required    pam_unix.so
+session   required    pam_loginuid.so
+# pam_systemd creates user session, XDG_RUNTIME_DIR, and starts user@.service
+session   required    pam_systemd.so
 PAM_EOF
 """,
 )

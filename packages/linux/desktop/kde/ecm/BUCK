@@ -2,16 +2,15 @@ load("//defs:package_defs.bzl", "download_source", "cmake_package")
 
 download_source(
     name = "ecm-src",
-    src_uri = "https://download.kde.org/stable/frameworks/6.18/extra-cmake-modules-6.18.0.tar.xz",
-    sha256 = "b2d2222cfe5ace502c60bd8a77a79bc0230f48cee83265c89dcc2618b960e293",
-    signature_sha256 = "63e75dee6e068f46c166fb5935a0cf43e77f00962bc0c23df76a03cc51b6984b",
+    src_uri = "https://download.kde.org/stable/frameworks/6.22/extra-cmake-modules-6.22.0.tar.xz",
+    sha256 = "cb83a69571b277c20b3a6567ef0b6f39bf29c43a619282bf4bb076feb4c609a6",
     signature_required = False,
 )
 
 cmake_package(
     name = "extra-cmake-modules",
     source = ":ecm-src",
-    version = "6.18.0",
+    version = "6.22.0",
     description = "Extra modules and scripts for CMake",
     homepage = "https://invent.kde.org/frameworks/extra-cmake-modules",
     license = "BSD",

@@ -953,6 +953,17 @@ system_set(
 )
 
 # =============================================================================
+# Source Repository for Live ISO
+# =============================================================================
+# This filegroup captures the packages/linux source tree for inclusion in live ISOs
+
+filegroup(
+    name = "packages-linux-src",
+    srcs = glob(["packages/linux/**/*"]),
+    visibility = ["PUBLIC"],
+)
+
+# =============================================================================
 # Validation Target
 # =============================================================================
 # Use this to validate all dependencies exist without building:

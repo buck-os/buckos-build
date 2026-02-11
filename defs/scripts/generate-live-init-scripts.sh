@@ -14,7 +14,7 @@ fi
 mkdir -p "$OUT/etc/init.d"
 mkdir -p "$OUT/etc/rc.d"
 mkdir -p "$OUT/sbin"
-mkdir -p "$OUT/etc/sddm.conf.d"
+# Removed: mkdir -p "$OUT/etc/sddm.conf.d" (using plasma-login-manager)
 mkdir -p "$OUT/etc/xdg/autostart"
 mkdir -p "$OUT/usr/share/applications"
 mkdir -p "$OUT/etc/systemd/system/getty@tty1.service.d"
@@ -221,49 +221,7 @@ cat > "$OUT/etc/issue" << 'ISSUE'
 
 ISSUE
 
-# Create SDDM autologin configuration
-cat > "$OUT/etc/sddm.conf.d/autologin.conf" << 'SDDMCONF'
-[Autologin]
-User=live
-Session=plasma
-Relogin=false
-
-[Theme]
-Current=breeze
-
-[General]
-HaltCommand=/sbin/poweroff
-RebootCommand=/sbin/reboot
-DisplayServer=wayland
-
-[X11]
-DisplayCommand=/usr/share/sddm/scripts/Xsetup
-
-[Wayland]
-SessionDir=/usr/share/wayland-sessions
-SDDMCONF
-
-# Also create a direct sddm.conf (some versions read this instead of conf.d)
-cat > "$OUT/etc/sddm.conf" << 'SDDMCONFMAIN'
-[Autologin]
-User=live
-Session=plasma
-Relogin=false
-
-[Theme]
-Current=breeze
-
-[General]
-HaltCommand=/sbin/poweroff
-RebootCommand=/sbin/reboot
-DisplayServer=wayland
-
-[X11]
-DisplayCommand=/usr/share/sddm/scripts/Xsetup
-
-[Wayland]
-SessionDir=/usr/share/wayland-sessions
-SDDMCONFMAIN
+# Note: SDDM config removed - using plasma-login-manager instead
 
 # Create XDG autostart for installer notification
 cat > "$OUT/etc/xdg/autostart/buckos-installer-notify.desktop" << 'AUTOSTART'
@@ -403,9 +361,7 @@ done
 # Set graphical.target as default (needed for display manager)
 ln -sf /usr/lib/systemd/system/graphical.target "$OUT/etc/systemd/system/default.target"
 
-# Enable SDDM display manager (if present, it will start at boot)
-mkdir -p "$OUT/etc/systemd/system/display-manager.service.d"
-ln -sf /usr/lib/systemd/system/sddm.service "$OUT/etc/systemd/system/display-manager.service"
+# Note: plasma-login-manager is enabled in live-systemd-config-gen instead of SDDM
 
 # Enable dbus and logind (required by most desktop services and session management)
 mkdir -p "$OUT/etc/systemd/system/multi-user.target.wants"
@@ -607,11 +563,7 @@ f /var/log/wtmp 0664 root utmp -
 f /var/log/btmp 0600 root utmp -
 f /var/log/lastlog 0664 root utmp -
 
-# SDDM display manager runtime and state directories
-d /run/sddm 0755 sddm sddm -
-d /var/lib/sddm 0755 sddm sddm -
-
-# X11 socket directory (needed for SDDM and X server)
+# X11 socket directory (needed for X server)
 d /tmp/.X11-unix 1777 root root -
 
 # Note: /run/user/1000 is created automatically by systemd-logind on user login
