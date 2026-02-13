@@ -206,6 +206,8 @@ ln -s usr/bin $OUT/bin
 ln -s usr/sbin $OUT/sbin
 ln -s usr/lib $OUT/lib
 ln -s usr/lib64 $OUT/lib64
+# Create /usr/bin/sh symlink to bash (required for #!/bin/sh scripts in initramfs)
+ln -s bash $OUT/usr/bin/sh
 mkdir -p $OUT/usr/share
 mkdir -p $OUT/usr/include
 mkdir -p $OUT/usr/local/bin
@@ -940,12 +942,23 @@ genrule(
     srcs = [":plasma-env-sh"],
     cmd = """
 mkdir -p $OUT/home/live/Desktop
+
+# Create sudoers rule for buckos-installer (allows live user to run without password)
+mkdir -p $OUT/etc/sudoers.d
+cat > $OUT/etc/sudoers.d/buckos-installer << 'SUDOERSEOF'
+# Allow live user to run buckos-installer without password
+live ALL=(root) NOPASSWD: /usr/bin/buckos-installer
+# Also allow wheel group as fallback
+%wheel ALL=(root) NOPASSWD: /usr/bin/buckos-installer
+SUDOERSEOF
+chmod 440 $OUT/etc/sudoers.d/buckos-installer
+
 cat > $OUT/home/live/Desktop/Install-BuckOS.desktop << 'DESKTOPEOF'
 [Desktop Entry]
 Type=Application
 Name=Install BuckOS
 Comment=Install BuckOS to your computer
-Exec=pkexec /usr/bin/buckos-installer
+Exec=sudo /usr/bin/buckos-installer
 Icon=system-software-install
 Terminal=false
 Categories=System;
@@ -1841,6 +1854,7 @@ rootfs(
         "//packages/linux/system/apps/findutils:findutils",
         # strace requires libunwind which needs stdatomic.h - skipped for now
         "//packages/linux/system/apps/shadow:shadow",
+        "//packages/linux/system/apps/sudo:sudo",  # Required for installer and admin tasks
         # PAM runtime dependencies (required for login/authentication)
         "//packages/linux/system/libs/ipc/libtirpc:libtirpc",
         "//packages/linux/system/libs/network/libnsl:libnsl",
@@ -2068,13 +2082,181 @@ rootfs(
 # Live Initramfs - Specialized for live boot
 # =============================================================================
 
-# Initramfs for live system (includes live-init)
+# Static init wrapper - a minimal statically-linked init that bootstraps the system
+# This avoids dynamic linking issues that can occur on some hardware
+genrule(
+    name = "static-init-gen",
+    out = "static-init",
+    cmd = """
+mkdir -p $OUT/usr/bin
+
+# Create a minimal static init using direct syscalls - NO glibc!
+# This avoids AVX/VEX instructions that cause "invalid opcode" on older CPUs.
+# Force rebuild v3
+cat > /tmp/init.c << 'INITC'
+// Minimal init using direct syscalls - no glibc
+#include <linux/unistd.h>
+#include <sys/syscall.h>
+
+// Direct syscall wrappers
+static long my_write(int fd, const void *buf, unsigned long count) {
+    long ret;
+    __asm__ volatile (
+        "syscall"
+        : "=a" (ret)
+        : "a" (__NR_write), "D" (fd), "S" (buf), "d" (count)
+        : "rcx", "r11", "memory"
+    );
+    return ret;
+}
+
+static long my_mount(const char *source, const char *target, const char *fstype, unsigned long flags, const void *data) {
+    long ret;
+    register const void *r10 __asm__("r10") = data;
+    register unsigned long r8 __asm__("r8") = 0;
+    __asm__ volatile (
+        "syscall"
+        : "=a" (ret)
+        : "a" (__NR_mount), "D" (source), "S" (target), "d" (fstype), "r" (flags), "r" (r10)
+        : "rcx", "r11", "memory"
+    );
+    return ret;
+}
+
+static long my_mkdir(const char *path, int mode) {
+    long ret;
+    __asm__ volatile (
+        "syscall"
+        : "=a" (ret)
+        : "a" (__NR_mkdir), "D" (path), "S" (mode)
+        : "rcx", "r11", "memory"
+    );
+    return ret;
+}
+
+static long my_open(const char *path, int flags, int mode) {
+    long ret;
+    __asm__ volatile (
+        "syscall"
+        : "=a" (ret)
+        : "a" (__NR_open), "D" (path), "S" (flags), "d" (mode)
+        : "rcx", "r11", "memory"
+    );
+    return ret;
+}
+
+static long my_execve(const char *path, char *const argv[], char *const envp[]) {
+    long ret;
+    __asm__ volatile (
+        "syscall"
+        : "=a" (ret)
+        : "a" (__NR_execve), "D" (path), "S" (argv), "d" (envp)
+        : "rcx", "r11", "memory"
+    );
+    return ret;
+}
+
+static void my_exit(int code) {
+    __asm__ volatile (
+        "syscall"
+        :
+        : "a" (__NR_exit), "D" (code)
+    );
+}
+
+static unsigned long my_strlen(const char *s) {
+    unsigned long len = 0;
+    while (*s++) len++;
+    return len;
+}
+
+static void write_str(int fd, const char *s) {
+    my_write(fd, s, my_strlen(s));
+}
+
+void _start(void) {
+    int console = my_open("/dev/console", 2, 0);
+    if (console < 0) console = my_open("/dev/tty0", 2, 0);
+    if (console < 0) console = 1;
+
+    write_str(console, "\\n[init] Starting...\\n");
+
+    my_mount("proc", "/proc", "proc", 0, 0);
+    my_mount("sysfs", "/sys", "sysfs", 0, 0);
+    my_mount("devtmpfs", "/dev", "devtmpfs", 0, 0);
+
+    write_str(console, "[init] Mounted /proc /sys /dev\\n");
+
+    my_mkdir("/dev/pts", 0755);
+    my_mkdir("/run", 0755);
+    my_mount("devpts", "/dev/pts", "devpts", 0, 0);
+    my_mount("tmpfs", "/run", "tmpfs", 0, 0);
+
+    write_str(console, "[init] Exec /bin/sh...\\n");
+
+    char *argv[] = { "/bin/sh", "-c", "exec /usr/bin/live-init-script", 0 };
+    char *envp[] = { "HOME=/", "TERM=linux", "PATH=/usr/bin:/bin:/usr/sbin:/sbin", 0 };
+    my_execve("/bin/sh", argv, envp);
+
+    write_str(console, "[init] sh failed\\n");
+    argv[0] = "/bin/bash";
+    my_execve("/bin/bash", argv, envp);
+
+    write_str(console, "[init] FATAL\\n");
+    while(1) {}
+    my_exit(1);
+}
+INITC
+
+# Compile with NO libc - direct syscalls only, no AVX/VEX instructions
+gcc -nostdlib -nostartfiles -static -march=x86-64 -mtune=generic -mno-avx -mno-avx2 -fno-tree-vectorize -o $OUT/usr/bin/static-init /tmp/init.c
+chmod 755 $OUT/usr/bin/static-init
+rm /tmp/init.c
+""",
+    visibility = ["PUBLIC"],
+)
+
+# Copy live-init script to initramfs location
+genrule(
+    name = "live-init-script-gen",
+    out = "live-init-script",
+    srcs = ["//defs/scripts:live-init"],
+    cmd = """
+mkdir -p $OUT/usr/bin
+cp $(location //defs/scripts:live-init) $OUT/usr/bin/live-init-script
+chmod +x $OUT/usr/bin/live-init-script
+""",
+    visibility = ["PUBLIC"],
+)
+
+# Rootfs with static init for the initramfs
+rootfs(
+    name = "buckos-initramfs-rootfs",
+    packages = [
+        ":baselayout-gen",
+        ":static-init-gen",
+        ":live-init-script-gen",
+        # C runtime (required for dynamically-linked binaries)
+        "//packages/linux/core/glibc:glibc",
+        # Core utilities
+        "//packages/linux/system/apps/coreutils:coreutils",
+        "//packages/linux/core/util-linux:util-linux",
+        "//packages/linux/core/bash:bash",
+        # Compression (squashfs is mounted via kernel, not userspace tools)
+        "//packages/linux/system/libs/compression/xz:xz",
+        "//packages/linux/system/libs/compression/zstd:zstd",
+        "//packages/linux/core/zlib:zlib",
+    ],
+    visibility = ["PUBLIC"],
+)
+
+# Initramfs for live system with static init (more robust for real hardware)
 initramfs(
     name = "buckos-live-initramfs",
-    rootfs = ":buckos-rootfs",  # Base system for initramfs tools
+    rootfs = ":buckos-initramfs-rootfs",
     compression = "gz",
-    init = "/init",
-    init_script = "//defs/scripts:live-init",
+    init = "/usr/bin/static-init",
+    # Don't use init_script - we include live-init-script via live-init-script-gen
     visibility = ["PUBLIC"],
 )
 
@@ -2090,7 +2272,7 @@ iso_image(
     rootfs = ":buckos-live-kde-rootfs",
     boot_mode = "hybrid",
     volume_label = "BUCKOS_LIVE",
-    kernel_args = "console=tty0 console=ttyS0,115200 init=/init quiet systemd.unified_cgroup_hierarchy=1",
+    kernel_args = "console=tty0 console=ttyS0,115200 rdinit=/init nokaslr systemd.unified_cgroup_hierarchy=1",
     visibility = ["PUBLIC"],
 )
 
@@ -2102,7 +2284,7 @@ iso_image(
     rootfs = ":buckos-live-sway-rootfs",
     boot_mode = "hybrid",
     volume_label = "BUCKOS_LIVE",
-    kernel_args = "console=tty0 console=ttyS0,115200 init=/init",
+    kernel_args = "console=tty0 console=ttyS0,115200 rdinit=/init nokaslr",
     visibility = ["PUBLIC"],
 )
 
@@ -2194,6 +2376,8 @@ mkdir -p $OUT/usr/lib
 ln -s usr/bin $OUT/bin
 ln -s usr/sbin $OUT/sbin
 ln -s usr/lib $OUT/lib
+# Create /usr/bin/sh symlink to bash (required for #!/bin/sh scripts in initramfs)
+ln -s bash $OUT/usr/bin/sh
 mkdir -p $OUT/usr/share
 mkdir -p $OUT/usr/include
 mkdir -p $OUT/usr/local/bin

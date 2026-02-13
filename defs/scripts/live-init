@@ -47,6 +47,67 @@ mount_essential() {
     mount -t tmpfs tmpfs /run 2>/dev/null || true
 }
 
+# Load kernel modules needed for USB/SCSI boot
+load_modules() {
+    log "Loading kernel modules..."
+
+    # Find kernel version from /lib/modules
+    KVER=$(ls /lib/modules/ 2>/dev/null | head -1)
+    if [ -z "$KVER" ] || [ ! -d "/lib/modules/$KVER" ]; then
+        warn "No kernel modules found in /lib/modules"
+        return 0
+    fi
+
+    MODDIR="/lib/modules/$KVER/kernel"
+
+    # USB host controller drivers (XHCI for USB 3.0, EHCI/OHCI/UHCI for USB 2.0/1.1)
+    # These are usually built-in, but load if available as modules
+    for mod in xhci-hcd xhci-pci ehci-hcd ehci-pci ohci-hcd ohci-pci uhci-hcd; do
+        modprobe "$mod" 2>/dev/null || true
+    done
+
+    # USB storage driver - REQUIRED for USB boot on real hardware
+    modprobe usb-storage 2>/dev/null || true
+    modprobe uas 2>/dev/null || true
+
+    # SCSI disk support (usually built-in)
+    modprobe sd_mod 2>/dev/null || true
+    modprobe sr_mod 2>/dev/null || true
+
+    # Block device drivers
+    modprobe loop 2>/dev/null || true
+
+    # Filesystem modules
+    modprobe squashfs 2>/dev/null || true
+    modprobe overlay 2>/dev/null || true
+    modprobe isofs 2>/dev/null || true
+    modprobe vfat 2>/dev/null || true
+
+    # VirtIO modules (for QEMU)
+    modprobe virtio 2>/dev/null || true
+    modprobe virtio_pci 2>/dev/null || true
+    modprobe virtio_blk 2>/dev/null || true
+    modprobe virtio_scsi 2>/dev/null || true
+
+    # NVMe support
+    modprobe nvme 2>/dev/null || true
+
+    # SATA/AHCI (usually built-in but just in case)
+    modprobe ahci 2>/dev/null || true
+    modprobe ata_piix 2>/dev/null || true
+    modprobe ata_generic 2>/dev/null || true
+
+    # Wait for USB devices to settle after module loading
+    log "Waiting for USB devices to settle..."
+    sleep 3
+
+    # Trigger udev if available to enumerate devices
+    if command -v udevadm >/dev/null 2>&1; then
+        udevadm trigger 2>/dev/null || true
+        udevadm settle --timeout=5 2>/dev/null || true
+    fi
+}
+
 # Find the boot device (CD/USB with the live filesystem)
 find_boot_device() {
     log "Searching for live boot media..."
@@ -218,6 +279,7 @@ main() {
 
     mount_essential
     parse_cmdline
+    load_modules
 
     if ! find_boot_device; then
         error "Could not find live boot media!"
