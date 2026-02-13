@@ -20,6 +20,7 @@ autotools_package(
         "ssh",
         "static",
         "static-libs",
+        "systemd",  # Use systemd's libudev instead of eudev
         "udev",
         "urandom",
     ],
@@ -51,13 +52,23 @@ autotools_package(
     license = "GPL-2.0",
     configure_args = [
         "--with-crypto_backend=openssl",
-        "--enable-libargon2",
+        "--disable-libargon2",  # Disable external argon2, use OpenSSL's argon2
+        "--with-luks2-pbkdf=pbkdf2",  # Fallback PBKDF for LUKS2
         "--disable-ssh-token",
+        "--disable-asciidoc",  # Don't build man pages (requires asciidoctor)
+        "--disable-external-tokens",  # Disable external token handlers
     ],
+    use_defaults = ["-nls", "-fips", "-passwdqc", "-pwquality", "-ssh", "-argon2", "systemd"],
+    use_deps = {
+        "systemd": ["//packages/linux/system/init/systemd:systemd"],  # Provides libudev
+        "-systemd": ["//packages/linux/system/init/eudev:eudev"],  # Standalone udev
+    },
     deps = [
         "//packages/linux/core/util-linux:util-linux",
         "//packages/linux/system/libs/crypto/openssl:openssl",
         "//packages/linux/system/security/cryptsetup:lvm2",
+        "//packages/linux/system/security/cryptsetup:popt",
+        "//packages/linux/dev-libs/json-c:json-c",
     ],
     visibility = ["PUBLIC"],
 )

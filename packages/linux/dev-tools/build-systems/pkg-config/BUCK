@@ -33,8 +33,13 @@ autotools_package(
     },
 
     # Force C17 to avoid C23 bool keyword conflict in bundled glib
+    # Cross-compilation cache values for internal glib (avoids running test programs)
     env = {
         "CFLAGS": "-std=gnu17 -O2",
+        "glib_cv_stack_grows": "no",
+        "glib_cv_uscore": "no",
+        "ac_cv_func_posix_getpwuid_r": "yes",
+        "ac_cv_func_posix_getgrgid_r": "yes",
     },
 
     visibility = ["PUBLIC"],

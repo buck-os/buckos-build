@@ -391,6 +391,65 @@ fi
 
     # Custom src_configure: Set QT_HOST_PATH for cross-compilation
     src_configure = """
+# Build PKG_CONFIG_PATH from all dependency pkg-config directories
+# This is required for Qt to find fontconfig/freetype/harfbuzz via pkg-config
+export PKG_CONFIG_PATH=""
+IFS=':' read -ra DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
+for dep_dir in "${DEP_ARRAY[@]}"; do
+    for pc_dir in "$dep_dir/usr/lib64/pkgconfig" "$dep_dir/usr/lib/pkgconfig" "$dep_dir/usr/share/pkgconfig"; do
+        if [ -d "$pc_dir" ]; then
+            PKG_CONFIG_PATH="${PKG_CONFIG_PATH:+$PKG_CONFIG_PATH:}$pc_dir"
+        fi
+    done
+done
+echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
+
+# Workaround for Qt CMake WrapHarfbuzz including transitive dependency paths with wrong prefix
+# pkg-config returns absolute paths like /usr/include/freetype2 which get prefixed incorrectly
+# Create symlinks from harfbuzz's and freetype's include dirs to missing dependency headers
+for dep_dir in "${DEP_ARRAY[@]}"; do
+    # Fix harfbuzz -> freetype2
+    if [ -d "$dep_dir/usr/include/harfbuzz" ] && [ ! -d "$dep_dir/usr/include/freetype2" ]; then
+        for ft_dir in "${DEP_ARRAY[@]}"; do
+            if [ -d "$ft_dir/usr/include/freetype2" ]; then
+                echo "Creating freetype2 symlink in harfbuzz include directory"
+                ln -sf "$ft_dir/usr/include/freetype2" "$dep_dir/usr/include/freetype2"
+                break
+            fi
+        done
+    fi
+    # Fix harfbuzz -> libpng16 (through freetype2)
+    if [ -d "$dep_dir/usr/include/harfbuzz" ] && [ ! -d "$dep_dir/usr/include/libpng16" ]; then
+        for png_dir in "${DEP_ARRAY[@]}"; do
+            if [ -d "$png_dir/usr/include/libpng16" ]; then
+                echo "Creating libpng16 symlink in harfbuzz include directory"
+                ln -sf "$png_dir/usr/include/libpng16" "$dep_dir/usr/include/libpng16"
+                break
+            fi
+        done
+    fi
+    # Fix freetype -> libpng16
+    if [ -d "$dep_dir/usr/include/freetype2" ] && [ ! -d "$dep_dir/usr/include/libpng16" ]; then
+        for png_dir in "${DEP_ARRAY[@]}"; do
+            if [ -d "$png_dir/usr/include/libpng16" ]; then
+                echo "Creating libpng16 symlink in freetype include directory"
+                ln -sf "$png_dir/usr/include/libpng16" "$dep_dir/usr/include/libpng16"
+                break
+            fi
+        done
+    fi
+    # Fix fontconfig -> freetype2
+    if [ -d "$dep_dir/usr/include/fontconfig" ] && [ ! -d "$dep_dir/usr/include/freetype2" ]; then
+        for ft_dir in "${DEP_ARRAY[@]}"; do
+            if [ -d "$ft_dir/usr/include/freetype2" ]; then
+                echo "Creating freetype2 symlink in fontconfig include directory"
+                ln -sf "$ft_dir/usr/include/freetype2" "$dep_dir/usr/include/freetype2"
+                break
+            fi
+        done
+    fi
+done
+
 # For cross-compilation: find native Qt6 from exec_bdepend (EXEC_BDEP_BASE_DIRS)
 QT_HOST_PATH_ARG=""
 if [ -n "${EXEC_BDEP_BASE_DIRS:-}" ] && [ "${CROSS_COMPILING:-false}" = "true" ]; then
@@ -439,6 +498,62 @@ if [ "${CROSS_COMPILING:-false}" = "true" ]; then
     echo "Exported LDFLAGS and CMAKE linker flags with rpath-link"
 fi
 
+# Find freetype and fontconfig paths for CMake - required for Qt to find system fonts
+# Qt's fontconfig feature requires system_freetype to be enabled, so we need both libraries
+# CMake's FindFontconfig and FindFreetype can't find them in cross-compilation sysroot
+FONT_CMAKE_ARGS=""
+IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
+
+# Find freetype (REQUIRED for fontconfig to work in Qt)
+_FT_INCLUDE=""
+_FT_LIB=""
+for _dep in "${_DEP_ARRAY[@]}"; do
+    if [ -f "$_dep/usr/include/freetype2/freetype/freetype.h" ]; then
+        _FT_INCLUDE="$_dep/usr/include/freetype2"
+        echo "Found freetype includes: $_FT_INCLUDE"
+    fi
+    if [ -f "$_dep/usr/lib64/libfreetype.so" ]; then
+        _FT_LIB="$_dep/usr/lib64/libfreetype.so"
+        echo "Found freetype library: $_FT_LIB"
+    elif [ -f "$_dep/usr/lib/libfreetype.so" ]; then
+        _FT_LIB="$_dep/usr/lib/libfreetype.so"
+        echo "Found freetype library: $_FT_LIB"
+    fi
+done
+if [ -n "${_FT_INCLUDE:-}" ] && [ -n "${_FT_LIB:-}" ]; then
+    FONT_CMAKE_ARGS="$FONT_CMAKE_ARGS -DFREETYPE_INCLUDE_DIR_freetype2=$_FT_INCLUDE"
+    FONT_CMAKE_ARGS="$FONT_CMAKE_ARGS -DFREETYPE_INCLUDE_DIR_ft2build=$_FT_INCLUDE"
+    FONT_CMAKE_ARGS="$FONT_CMAKE_ARGS -DFREETYPE_LIBRARY_RELEASE=$_FT_LIB"
+    echo "Setting freetype CMake args"
+else
+    echo "WARNING: Could not find freetype in dependencies - Qt fonts may not work!"
+fi
+
+# Find fontconfig (depends on freetype being found first)
+_FC_INCLUDE=""
+_FC_LIB=""
+for _dep in "${_DEP_ARRAY[@]}"; do
+    if [ -f "$_dep/usr/include/fontconfig/fontconfig.h" ]; then
+        _FC_INCLUDE="$_dep/usr/include"
+        echo "Found fontconfig includes: $_FC_INCLUDE"
+    fi
+    if [ -f "$_dep/usr/lib64/libfontconfig.so" ]; then
+        _FC_LIB="$_dep/usr/lib64/libfontconfig.so"
+        echo "Found fontconfig library: $_FC_LIB"
+    elif [ -f "$_dep/usr/lib/libfontconfig.so" ]; then
+        _FC_LIB="$_dep/usr/lib/libfontconfig.so"
+        echo "Found fontconfig library: $_FC_LIB"
+    fi
+done
+if [ -n "${_FC_INCLUDE:-}" ] && [ -n "${_FC_LIB:-}" ]; then
+    FONT_CMAKE_ARGS="$FONT_CMAKE_ARGS -DFontconfig_INCLUDE_DIR=$_FC_INCLUDE -DFontconfig_LIBRARY=$_FC_LIB"
+    echo "Setting fontconfig CMake args"
+else
+    echo "WARNING: Could not find fontconfig in dependencies - Qt will not have font support!"
+fi
+
+echo "FONT_CMAKE_ARGS: $FONT_CMAKE_ARGS"
+
 # Run cmake configure with QT_HOST_PATH if cross-compiling
 rm -rf "${BUILD_DIR:-build}"
 mkdir -p "${BUILD_DIR:-build}"
@@ -458,12 +573,14 @@ if [ "${CROSS_COMPILING:-false}" = "true" ]; then
         -DCMAKE_EXE_LINKER_FLAGS="$_CMAKE_LINKER_FLAGS" \
         -DCMAKE_SHARED_LINKER_FLAGS="$_CMAKE_LINKER_FLAGS" \
         -DCMAKE_MODULE_LINKER_FLAGS="$_CMAKE_LINKER_FLAGS" \
+        $FONT_CMAKE_ARGS \
         $QT_HOST_PATH_ARG \
         ${CMAKE_ARGS:-}
 else
     cmake "$S" \
         -DCMAKE_INSTALL_PREFIX="${EPREFIX:-/usr}" \
         -DCMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE:-Release}" \
+        $FONT_CMAKE_ARGS \
         $QT_HOST_PATH_ARG \
         ${CMAKE_ARGS:-}
 fi
@@ -552,16 +669,14 @@ cmake --build "$S/build" -j${MAKEOPTS:-$(nproc)}
         "-DINSTALL_TRANSLATIONSDIR=share/qt6/translations",
         # Force system libraries
         "-DQT_FEATURE_relocatable=OFF",
-        # Disable system font libraries to avoid pkg-config sysroot path issues
-        # Qt6 will use its bundled versions of these libraries
+        # Enable fontconfig so Qt can find system fonts
+        # Qt fontconfig REQUIRES system_freetype to be ON - the feature condition is:
+        # "NOT APPLE AND NOT WIN32 AND QT_FEATURE_system_freetype AND Fontconfig_FOUND"
+        "-DQT_FEATURE_fontconfig=ON",
         "-DQT_FEATURE_harfbuzz=ON",
-        "-DQT_FEATURE_system_harfbuzz=OFF",
-        "-DQT_FEATURE_system_freetype=OFF",
-        "-DQT_FEATURE_fontconfig=OFF",
-        # Explicitly disable finding system harfbuzz/freetype via CMake
-        "-DCMAKE_DISABLE_FIND_PACKAGE_harfbuzz=ON",
-        "-DCMAKE_DISABLE_FIND_PACKAGE_Freetype=ON",
-        "-DCMAKE_DISABLE_FIND_PACKAGE_Fontconfig=ON",
+        "-DQT_FEATURE_system_harfbuzz=OFF",  # Use bundled harfbuzz
+        "-DQT_FEATURE_freetype=ON",
+        "-DQT_FEATURE_system_freetype=ON",   # REQUIRED for fontconfig to work
         # Core modules always built
         "-DQT_FEATURE_concurrent=ON",
         "-DQT_FEATURE_gui=ON",
@@ -717,8 +832,6 @@ cmake --build "$S/build" -j${MAKEOPTS:-$(nproc)}
     },
 
     # Base dependencies (always needed)
-    # NOTE: fontconfig/freetype/harfbuzz removed - Qt6 will use bundled versions
-    # to avoid pkg-config sysroot path issues during cross-compilation
     deps = [
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/dev-libs/glib:glib",
@@ -726,13 +839,18 @@ cmake --build "$S/build" -j${MAKEOPTS:-$(nproc)}
         "//packages/linux/system/libs/utility/pcre2:pcre2",
         "//packages/linux/system/libs/compression/zstd:zstd",
         "//packages/linux/system/libs/utility/icu:icu",
-        # GUI deps (using Qt's bundled freetype/harfbuzz)
+        # GUI deps - using system freetype + fontconfig for font support
+        # (bundled harfbuzz, but system_freetype is REQUIRED for fontconfig to work)
         "//packages/linux/system/libs/image/libpng:libpng",
         "//packages/linux/system/libs/image/libjpeg-turbo:libjpeg-turbo",
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
+        # Freetype and Fontconfig - REQUIRED for Qt to find and render system fonts
+        # Qt's fontconfig feature requires system_freetype=ON
+        "//packages/linux/system/libs/font/freetype:freetype",
+        "//packages/linux/system/libs/font/fontconfig:fontconfig",
         # Transitive dependencies needed for linking:
-        # - expat: needed by Mesa's libEGL
+        # - expat: needed by Mesa's libEGL and fontconfig
         # - libffi: needed by wayland
         # - openssl: needed by Qt6Network for SSL/TLS
         "//packages/linux/system/libs/data/expat:expat",

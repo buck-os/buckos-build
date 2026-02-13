@@ -64,9 +64,10 @@ autotools_package(
         "themes": "--enable-themes",
         "truetype": "--enable-truetype",
     },
-    use_defaults = [],
+    use_defaults = ["device-mapper"],
     use_deps = {
         "splash": ["//packages/linux/media/image/imagemagick:imagemagick"],
+        "device-mapper": ["//packages/linux/system/security/cryptsetup:lvm2"],
     },
     pre_configure = """
 # Create extra_deps.lst to avoid build error (from Gentoo ebuild)
@@ -85,7 +86,6 @@ echo "depends bli part_gpt" > grub-core/extra_deps.lst
     ],
     deps = [
         "//packages/linux/system/libs/compression/xz:xz",
-        "//packages/linux/system/security/cryptsetup:lvm2",
         "//packages/linux/system/init/eudev:eudev",
         # Note: bash and sed are runtime deps for grub-mkconfig, not build deps
     ],
@@ -208,10 +208,11 @@ autotools_package(
     description = "GNU GRUB for BIOS systems",
     homepage = "https://www.gnu.org/software/grub/",
     license = "GPL-3.0",
-    iuse = ["splash"],
-    use_defaults = [],
+    iuse = ["splash", "device-mapper"],
+    use_defaults = ["device-mapper"],
     use_deps = {
         "splash": ["//packages/linux/media/image/imagemagick:imagemagick"],
+        "device-mapper": ["//packages/linux/system/security/cryptsetup:lvm2"],
     },
     pre_configure = """
 # Create extra_deps.lst to avoid build error (from Gentoo ebuild)
@@ -229,7 +230,6 @@ echo "depends bli part_gpt" > grub-core/extra_deps.lst
     ],
     deps = [
         "//packages/linux/system/libs/compression/xz:xz",
-        "//packages/linux/system/security/cryptsetup:lvm2",
         "//packages/linux/system/init/eudev:eudev",
         # Note: bash and sed are runtime deps for grub-mkconfig, not build deps
     ],

@@ -1,0 +1,29 @@
+load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:use_flags.bzl", "set_use_flags")
+
+cmake_package(
+    name = "json-c",
+    version = "0.18",
+    src_uri = "https://s3.amazonaws.com/json-c_releases/releases/json-c-0.18.tar.gz",
+    sha256 = "876ab046479166b869afc6896d288183bbc0e5843f141200c677b3e8dfb11724",
+    signature_required = False,
+    description = "A JSON implementation in C",
+    homepage = "https://github.com/json-c/json-c/wiki",
+    license = "MIT",
+    iuse = ["static-libs", "threads"],
+    use_defaults = ["-static-libs", "threads"],
+    cmake_args = [
+        "-DBUILD_APPS=OFF",
+        "-DDISABLE_EXTRA_LIBS=ON",
+        "-DDISABLE_WERROR=ON",
+        "-DBUILD_TESTING=OFF",
+    ],
+    use_cmake = {
+        "static-libs": "-DBUILD_STATIC_LIBS=ON",
+        "-static-libs": "-DBUILD_STATIC_LIBS=OFF",
+        "threads": "-DENABLE_THREADING=ON",
+        "-threads": "-DENABLE_THREADING=OFF",
+    },
+    deps = [],
+    visibility = ["PUBLIC"],
+)

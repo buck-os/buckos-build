@@ -43,10 +43,53 @@ autotools_package(
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
         "//packages/linux/dev-tools/build-systems/automake:automake",
         "//packages/linux/dev-tools/build-systems/libtool:libtool",
+        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",  # For PKG_* m4 macros
         "//packages/linux/dev-libs/misc/gettext:gettext",
     ],
-    src_prepare = """
-autoreconf -fi
+    # Use pre-generated configure from tarball to avoid AX_PYTHON_MODULE macro issues
+    src_prepare = "",
+    # Add library search paths for cross-compilation via LDFLAGS -L flags
+    src_configure = """
+_EXTRA_LDFLAGS=""
+IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
+for _dep in "${_DEP_ARRAY[@]}"; do
+    for _libdir in "$_dep/usr/lib64" "$_dep/usr/lib" "$_dep/lib64" "$_dep/lib"; do
+        if [ -d "$_libdir" ]; then
+            _EXTRA_LDFLAGS="$_EXTRA_LDFLAGS -L$_libdir -Wl,-rpath-link,$_libdir"
+        fi
+    done
+done
+export LDFLAGS="${LDFLAGS:-} $_EXTRA_LDFLAGS"
+echo "LDFLAGS=$LDFLAGS"
+./configure \\
+    --build=$CBUILD \\
+    --host=$CHOST \\
+    --target=$CHOST \\
+    --prefix=/usr \\
+    --sbindir=/sbin \\
+    --sysconfdir=/etc \\
+    --localstatedir=/var \\
+    --enable-cmdlib \\
+    --enable-pkgconfig \\
+    --disable-dbus \\
+    --enable-udev_rules \\
+    --enable-udev_sync \\
+    --disable-readline \\
+    --disable-thin_check_needs_check \\
+    --disable-cache_check_needs_check
+""",
+    # LDFLAGS must be set again in compile phase (each phase is a separate subshell)
+    src_compile = """
+_EXTRA_LDFLAGS=""
+IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
+for _dep in "${_DEP_ARRAY[@]}"; do
+    for _libdir in "$_dep/usr/lib64" "$_dep/usr/lib" "$_dep/lib64" "$_dep/lib"; do
+        if [ -d "$_libdir" ]; then
+            _EXTRA_LDFLAGS="$_EXTRA_LDFLAGS -L$_libdir -Wl,-rpath-link,$_libdir"
+        fi
+    done
+done
+make -j${MAKEOPTS:-$(nproc)} ${EXTRA_EMAKE:-} LDFLAGS="${LDFLAGS:-} $_EXTRA_LDFLAGS"
 """,
     version = "2.03.23",
     src_uri = "https://mirrors.kernel.org/sourceware/lvm2/LVM2.2.03.23.tgz",
@@ -56,32 +99,16 @@ autoreconf -fi
     description = "Logical Volume Manager 2 utilities",
     homepage = "https://sourceware.org/lvm2/",
     license = "GPL-2.0",
-    iuse = ["udev", "readline", "thin", "cache"],
-    use_defaults = ["udev"],
+    # USE flags: systemd - use systemd's libudev instead of eudev
+    iuse = ["systemd"],
+    use_defaults = ["systemd"],  # Default to systemd for modern systems
     use_deps = {
-        "udev": ["//packages/linux/system/init/eudev:eudev"],
-        "readline": ["//packages/linux/system/terminal/readline:readline"],
+        "systemd": ["//packages/linux/system/init/systemd:systemd"],  # Provides libudev
+        "-systemd": ["//packages/linux/system/init/eudev:eudev"],  # Standalone udev
     },
-    use_configure = {
-        "udev": "--enable-udev_rules --enable-udev_sync",
-        "-udev": "--disable-udev_rules --disable-udev_sync",
-        "readline": "--enable-readline",
-        "-readline": "--disable-readline",
-        "thin": "--enable-thin_check_needs_check",
-        "-thin": "--disable-thin_check_needs_check",
-        "cache": "--enable-cache_check_needs_check",
-        "-cache": "--disable-cache_check_needs_check",
-    },
-    configure_args = [
-        "--prefix=/usr",
-        "--sbindir=/sbin",
-        "--sysconfdir=/etc",
-        "--localstatedir=/var",
-        "--enable-cmdlib",
-        "--enable-pkgconfig",
-    ],
     deps = [
         "//packages/linux/system/libs/io/libaio:libaio",
+        "//packages/linux/system/libs/ipc/libcap:libcap",  # Required by libsystemd
     ],
     visibility = ["PUBLIC"],
 )

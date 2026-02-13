@@ -23,20 +23,13 @@ autotools_package(
     license = "LGPL-2.1",
     src_configure = "true",  # libaio uses Make directly, skip configure entirely
     configure_args = [],
-    # Build only shared library
+    # Use upstream Makefile with cross-compiler settings (like Gentoo's approach)
+    # Note: Preserve -I. -fPIC from Makefile defaults while adding our CFLAGS
     src_compile = """
-cd src
-gcc -Wall -I. -fPIC -c *.c
-gcc -shared -Wl,-soname,libaio.so.1 -o libaio.so.1.0.2 *.o
-ln -sf libaio.so.1.0.2 libaio.so.1
-ln -sf libaio.so.1 libaio.so
+make -C src CC="$CC" AR="$AR" RANLIB="$RANLIB" CFLAGS="-I. -fPIC $CFLAGS" LDFLAGS="$LDFLAGS" CFLAGS_WERROR=
 """,
     src_install = """
-install -d "$DESTDIR/usr/lib"
-install -d "$DESTDIR/usr/include"
-install -m755 src/libaio.so.* "$DESTDIR/usr/lib/"
-cp -P src/libaio.so src/libaio.so.1 "$DESTDIR/usr/lib/"
-install -m644 src/libaio.h "$DESTDIR/usr/include/"
+make -C src install CC="$CC" AR="$AR" RANLIB="$RANLIB" prefix="$DESTDIR/usr" libdir="$DESTDIR/usr/lib" includedir="$DESTDIR/usr/include"
 """,
     visibility = ["PUBLIC"],
 )

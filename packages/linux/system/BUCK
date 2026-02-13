@@ -752,6 +752,124 @@ mkdir -p $OUT/usr/lib/locale
     visibility = ["PUBLIC"],
 )
 
+# Fontconfig symlinks to enable installed fonts
+genrule(
+    name = "fontconfig-symlinks-gen",
+    out = "fontconfig-symlinks",
+    cmd = """
+mkdir -p $OUT/etc/fonts/conf.d
+
+# Enable dejavu fonts configuration
+for conf in 57-dejavu-sans.conf 57-dejavu-sans-mono.conf 57-dejavu-serif.conf \
+            20-unhint-small-dejavu-sans.conf 20-unhint-small-dejavu-sans-mono.conf 20-unhint-small-dejavu-serif.conf; do
+    ln -sf ../conf.avail/$conf $OUT/etc/fonts/conf.d/$conf 2>/dev/null || true
+done
+
+# Enable liberation fonts configuration if available
+for conf in 60-liberation.conf; do
+    ln -sf ../conf.avail/$conf $OUT/etc/fonts/conf.d/$conf 2>/dev/null || true
+done
+
+# Create fonts cache directory
+mkdir -p $OUT/var/cache/fontconfig
+
+# Set up default cursor theme (breeze_cursors)
+mkdir -p $OUT/usr/share/icons/default
+cat > $OUT/usr/share/icons/default/index.theme << 'CURSOREOF'
+[Icon Theme]
+Name=Default
+Comment=Default Cursor Theme
+Inherits=breeze_cursors
+CURSOREOF
+
+# Also create cursor symlink for X compatibility
+mkdir -p $OUT/usr/share/cursors/xorg-x11
+ln -sf ../../icons/breeze_cursors $OUT/usr/share/cursors/xorg-x11/default 2>/dev/null || true
+
+# Create local.conf for additional font settings
+mkdir -p $OUT/etc/fonts
+cat > $OUT/etc/fonts/local.conf << 'LOCALCONFEOF'
+<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+<fontconfig>
+  <!-- Prefer DejaVu fonts for common generic families -->
+  <alias>
+    <family>sans-serif</family>
+    <prefer>
+      <family>DejaVu Sans</family>
+      <family>Liberation Sans</family>
+    </prefer>
+  </alias>
+  <alias>
+    <family>serif</family>
+    <prefer>
+      <family>DejaVu Serif</family>
+      <family>Liberation Serif</family>
+    </prefer>
+  </alias>
+  <alias>
+    <family>monospace</family>
+    <prefer>
+      <family>DejaVu Sans Mono</family>
+      <family>Liberation Mono</family>
+    </prefer>
+  </alias>
+  <!-- Enable antialiasing and hinting -->
+  <match target="font">
+    <edit name="antialias" mode="assign"><bool>true</bool></edit>
+    <edit name="hinting" mode="assign"><bool>true</bool></edit>
+    <edit name="hintstyle" mode="assign"><const>hintslight</const></edit>
+    <edit name="rgba" mode="assign"><const>rgb</const></edit>
+    <edit name="lcdfilter" mode="assign"><const>lcddefault</const></edit>
+  </match>
+</fontconfig>
+LOCALCONFEOF
+
+# Create KDE configuration for cursor theme
+mkdir -p $OUT/etc/xdg
+cat > $OUT/etc/xdg/kcminputrc << 'KCMINPUTEOF'
+[Mouse]
+cursorTheme=breeze_cursors
+cursorSize=24
+KCMINPUTEOF
+
+# Create KDE kdeglobals for fonts and general settings
+cat > $OUT/etc/xdg/kdeglobals << 'KDEGLOBALSEOF'
+[General]
+fixed=DejaVu Sans Mono,10,-1,5,50,0,0,0,0,0
+font=DejaVu Sans,10,-1,5,50,0,0,0,0,0
+menuFont=DejaVu Sans,10,-1,5,50,0,0,0,0,0
+smallestReadableFont=DejaVu Sans,8,-1,5,50,0,0,0,0,0
+toolBarFont=DejaVu Sans,10,-1,5,50,0,0,0,0,0
+
+[Icons]
+Theme=breeze
+
+[KDE]
+LookAndFeelPackage=org.kde.breeze.desktop
+SingleClick=false
+widgetStyle=breeze
+KDEGLOBALSEOF
+
+# Create KWin cursor configuration
+cat > $OUT/etc/xdg/kwinrc << 'KWINRCEOF'
+[Wayland]
+InputMethod=
+
+[org.kde.kdecoration2]
+library=org.kde.breeze
+theme=Breeze
+KWINRCEOF
+
+# Create Plasma desktop theme configuration
+cat > $OUT/etc/xdg/plasmarc << 'PLASMARCEOF'
+[Theme]
+name=breeze-light
+PLASMARCEOF
+""",
+    visibility = ["PUBLIC"],
+)
+
 # Polkit rules for live session (allow session management without authentication)
 genrule(
     name = "polkit-live-rules-gen",
@@ -893,6 +1011,7 @@ cat > $OUT/etc/environment.d/60-xcursor.conf << 'XCURSOREOF'
 # Cursor theme settings
 XCURSOR_PATH=/usr/share/icons
 XCURSOR_SIZE=24
+XCURSOR_THEME=breeze_cursors
 XCURSOREOF
 
 # Libseat backend for DRM access via logind
@@ -1113,6 +1232,17 @@ Environment=LIBSEAT_BACKEND=logind
 Environment=PLASMA_SKIP_SPLASH=1
 # Explicit home directory
 Environment=HOME=/home/live
+# Cursor theme settings
+Environment=XCURSOR_THEME=breeze_cursors
+Environment=XCURSOR_SIZE=24
+Environment=XCURSOR_PATH=/usr/share/icons
+# Font configuration
+Environment=QT_QPA_FONTDIR=/usr/share/fonts
+Environment=FONTCONFIG_FILE=/etc/fonts/fonts.conf
+Environment=FONTCONFIG_PATH=/etc/fonts
+# Locale/encoding (required for proper text rendering)
+Environment=LANG=C.UTF-8
+Environment=LC_ALL=C.UTF-8
 # Setup runtime directory
 ExecStartPre=/bin/mkdir -p /run/user/1000
 ExecStartPre=/bin/chown 1000:1000 /run/user/1000
@@ -1143,6 +1273,72 @@ Autolock=false
 LockOnResume=false
 Timeout=0
 LOCKEREOF
+
+# User-level cursor theme configuration
+cat > $OUT/home/live/.config/kcminputrc << 'USERINPUTEOF'
+[Mouse]
+cursorTheme=breeze_cursors
+cursorSize=24
+USERINPUTEOF
+
+# User-level KDE globals (fonts, icons, etc)
+cat > $OUT/home/live/.config/kdeglobals << 'USERKDEGLOBALSEOF'
+[General]
+fixed=DejaVu Sans Mono,10,-1,5,50,0,0,0,0,0
+font=DejaVu Sans,10,-1,5,50,0,0,0,0,0
+menuFont=DejaVu Sans,10,-1,5,50,0,0,0,0,0
+smallestReadableFont=DejaVu Sans,8,-1,5,50,0,0,0,0,0
+toolBarFont=DejaVu Sans,10,-1,5,50,0,0,0,0,0
+
+[Icons]
+Theme=breeze
+
+[KDE]
+LookAndFeelPackage=org.kde.breeze.desktop
+SingleClick=false
+widgetStyle=breeze
+USERKDEGLOBALSEOF
+
+# Konsole profile with explicit font configuration
+mkdir -p $OUT/home/live/.local/share/konsole
+cat > $OUT/home/live/.local/share/konsole/Profile1.profile << 'KONSOLEPROFILEEOF'
+[Appearance]
+Font=DejaVu Sans Mono,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
+
+[General]
+Name=Profile 1
+Parent=FALLBACK/
+KONSOLEPROFILEEOF
+
+# Set Konsole to use the profile by default
+cat > $OUT/home/live/.config/konsolerc << 'KONSOLERCEOF'
+[Desktop Entry]
+DefaultProfile=Profile1.profile
+
+[MainWindow]
+MenuBar=Disabled
+ToolBarsMovable=Disabled
+KONSOLERCEOF
+
+# User-level kwinrc (cursor theme for wayland compositor)
+cat > $OUT/home/live/.config/kwinrc << 'USERKWINEOF'
+[Wayland]
+InputMethod=
+
+[TabBox]
+LayoutName=org.kde.breeze.desktop
+
+[org.kde.kdecoration2]
+library=org.kde.breeze
+theme=Breeze
+USERKWINEOF
+
+# User-level Plasma theme
+cat > $OUT/home/live/.config/plasmarc << 'USERPLASMAEOF'
+[Theme]
+name=breeze-light
+USERPLASMAEOF
+
 chown -R 1000:1000 $OUT/home/live/.config
 
 # Also set a known password for live user in case lock screen appears
@@ -1701,6 +1897,7 @@ rootfs(
         "//packages/linux/fonts/libraries/pango:pango",
         "//packages/linux/fonts/collections/dejavu-fonts:dejavu-fonts",
         "//packages/linux/fonts/collections/liberation-fonts:liberation-fonts",
+        ":fontconfig-symlinks-gen",  # Enable font configurations
 
         # KDE Plasma Desktop
         "//packages/linux/desktop/kde:kde-plasma",
@@ -1758,6 +1955,27 @@ rootfs(
         # BuckOS tools (uses cargo_workspace_package with vendor tarball)
         "//packages/linux/apps/buckos-tools/installer:buckos-installer",
         "//packages/linux/apps/buckos-tools/cli:buckos-cli",
+
+        # Installer dependencies - filesystem tools
+        "//packages/linux/system/filesystem/native/e2fsprogs:e2fsprogs",  # mkfs.ext4
+        "//packages/linux/system/filesystem/management/parted:parted",  # parted
+        "//packages/linux/system/filesystem/native/btrfs-progs:btrfs-progs",  # mkfs.btrfs
+        # xfsprogs requires libinih - TODO: add libinih package
+        "//packages/linux/system/filesystem/native/dosfstools:dosfstools",  # mkfs.vfat (EFI)
+        "//packages/linux/system/filesystem/management/cryptsetup:cryptsetup",  # LUKS encryption
+        "//packages/linux/system/security/cryptsetup:lvm2",  # LVM2 utilities
+
+        # Installer dependencies - file operations
+        "//packages/linux/system/apps/rsync:rsync",  # rsync (file sync during install)
+        "//packages/linux/system/apps/psmisc:psmisc",  # fuser, killall, pstree
+        "//packages/linux/system/apps/lsof:lsof",  # lsof (list open files)
+
+        # Installer dependencies - hardware detection
+        "//packages/linux/system/hardware/pciutils:pciutils",  # lspci (GPU detection)
+        "//packages/linux/system/hardware/usbutils:usbutils",  # lsusb (USB/Bluetooth detection)
+
+        # Installer dependencies - bootloader
+        "//packages/linux/boot/grub:grub",  # grub-install, grub-mkconfig
 
         # IMPORTANT: This must be LAST to override PAM's /etc/environment file
         ":live-environment-gen",
