@@ -23,6 +23,7 @@ load("//config:fedora_build_flags.bzl",
 load("//defs:toolchain_providers.bzl",
      "GoToolchainInfo",
      "RustToolchainInfo")
+load("//defs:patch_registry.bzl", "apply_registry_overrides")
 
 # Bootstrap toolchain target path (for use in package definitions)
 # All packages will use this by default to ensure they link against BuckOS glibc
@@ -71,7 +72,7 @@ VALID_EBUILD_KWARGS = [
     "category", "slot", "description", "homepage", "license",
     "src_unpack", "src_test", "pre_configure", "run_tests",
     "depend", "pdepend", "exec_bdepend", "local_only", "bootstrap_sysroot", "bootstrap_stage",
-    "visibility",
+    "visibility", "patches",
 ]
 
 def filter_ebuild_kwargs(kwargs, src_install = None):
@@ -5204,6 +5205,20 @@ def ebuild_package(
             final_src_prepare += "\n" + pre_configure
         else:
             final_src_prepare = pre_configure
+
+    # Apply private patch registry overrides (patches/registry.bzl)
+    existing_patches = kwargs.get("patches", [])
+    registry_result = apply_registry_overrides(
+        name = name,
+        patches = existing_patches,
+        env = resolved_env,
+        src_prepare = final_src_prepare,
+        pre_configure = "",
+        src_configure = src_configure,
+    )
+    registry_patches, resolved_env, final_src_prepare, _, src_configure = registry_result
+    if registry_patches:
+        kwargs["patches"] = registry_patches
 
     # Filter kwargs to only include parameters that ebuild_package_rule accepts
     filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install)

@@ -16,6 +16,7 @@ buckos-build/
 ├── BUCK                  # Root build targets
 ├── defs/                 # Build rule definitions
 │   ├── package_defs.bzl  # Core package build rules
+│   ├── patch_registry.bzl # Private patch registry loader
 │   ├── eclasses.bzl      # Eclass inheritance system (20 eclasses)
 │   ├── use_flags.bzl     # USE flag system (65+ flags)
 │   ├── versions.bzl      # Multi-version/slot support
@@ -27,6 +28,9 @@ buckos-build/
 │   ├── arch.bzl          # Architecture configuration
 │   ├── platform_defs.bzl # Platform targeting
 │   └── ...               # Additional definitions
+├── patches/              # Private patch registry (gitignored)
+│   ├── registry.bzl      # Target-to-patch mapping (user-maintained)
+│   └── BUCK              # Patch file exports
 ├── platforms/
 │   └── BUCK              # Platform definitions and constraints
 ├── toolchains/
@@ -526,6 +530,87 @@ download_source(
     signature_uri = "https://example.com/package-1.0.tar.gz.asc",
     gpg_key = "ABCD1234...",
 )
+```
+
+## Private Patch Registry
+
+BuckOS supports applying private patches to any package without modifying the
+upstream build graph. This is useful for internal/personal customizations that
+shouldn't be committed to the public repository.
+
+### Setup
+
+The patch registry consists of three files in the `patches/` directory (all
+gitignored so your changes stay private):
+
+1. **`patches/registry.bzl`** - Maps package names to patches and overrides
+2. **`patches/BUCK`** - Exports patch files as Buck2 sources
+3. **Patch files** - Stored under `patches/` in any directory structure you prefer
+
+### Quick Example
+
+1. Create a patch file:
+   ```bash
+   mkdir -p patches/core/zlib
+   # Create your patch file at patches/core/zlib/my-fix.patch
+   ```
+
+2. Export it in `patches/BUCK`:
+   ```python
+   export_file(
+       name = "zlib-fix.patch",
+       src = "core/zlib/my-fix.patch",
+       visibility = ["PUBLIC"],
+   )
+   ```
+
+3. Register it in `patches/registry.bzl`:
+   ```python
+   PATCH_REGISTRY = {
+       "zlib": {
+           "patches": ["//patches:zlib-fix.patch"],
+       },
+   }
+   ```
+
+4. Build normally - the patch is applied automatically:
+   ```bash
+   buck2 build //packages/linux/core/zlib:zlib
+   ```
+
+### Registry Format
+
+Each entry maps a package name to an override config:
+
+```python
+PATCH_REGISTRY = {
+    "package-name": {
+        # Patch files (appended to any existing patches)
+        "patches": ["//patches:my-fix.patch"],
+
+        # Environment variable overrides (merged with existing)
+        "env": {"CFLAGS": "-DCUSTOM_FLAG"},
+
+        # Extra configure arguments (appended)
+        "extra_configure_args": "--with-custom-option",
+
+        # Additional pre-configure commands (appended)
+        "pre_configure": "sed -i 's/old/new/' configure.ac",
+
+        # Replace src_prepare phase entirely (use with caution)
+        "src_prepare": "autoreconf -fiv",
+    },
+}
+```
+
+### Disabling the Registry
+
+To temporarily disable all private patches without deleting your registry:
+
+```ini
+# .buckconfig
+[buckos]
+patch_registry_enabled = false
 ```
 
 ## License
