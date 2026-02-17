@@ -5,19 +5,23 @@ download_source(
     name = "parted-src",
     src_uri = "https://mirrors.kernel.org/gnu/parted/parted-3.6.tar.xz",
     sha256 = "3b43dbe33cca0f9a18601ebab56b7852b128ec1a3df3a9b30ccde5e73359e612",
-    signature_sha256 = "cdc0e7fcf5056e7f3f45d43bb980bd6d835b09a5c762ecd2b65c47742a0e583e",
     signature_required = False,
 )
 
 autotools_package(
     name = "parted",
     source = ":parted-src",
+    version = "3.6",
+    description = "Partition manipulation program (parted, partprobe)",
+    homepage = "https://www.gnu.org/software/parted/",
+    license = "GPL-3.0",
     iuse = [
         "debug",
         "device-mapper",
         "nls",
         "readline",
     ],
+    use_defaults = ["device-mapper", "readline", "debug"],
     use_configure = {
         "-debug": "--disable-debug",
         "-device-mapper": "--disable-device-mapper",
@@ -28,14 +32,38 @@ autotools_package(
         "nls": "--enable-nls",
         "readline": "--with-readline",
     },
-    version = "3.6",
-    description = "Partition manipulation program (parted, partprobe)",
-    homepage = "https://www.gnu.org/software/parted/",
-    license = "GPL-3.0",
-    configure_args = [
-        "--disable-device-mapper",
-        "--without-readline",
-    ],
+    use_deps = {
+        "device-mapper": [
+            "//packages/linux/system/security/cryptsetup:lvm2",
+            "//packages/linux/system/init/systemd:systemd",  # provides libudev for libdevmapper
+        ],
+        "readline": [
+            "//packages/linux/system/terminal/readline:readline",
+        ],
+    },
+    # lvm2 installs to /usr/lib not /usr/lib64
+    src_configure = """
+# Find lvm2 lib directory (it uses /usr/lib not /usr/lib64)
+_EXTRA_LDFLAGS=""
+_EXTRA_CPPFLAGS=""
+for dep in ${DEP_BASE_DIRS//:/ }; do
+    if [ -f "$dep/usr/lib/libdevmapper.so" ]; then
+        _EXTRA_LDFLAGS="$_EXTRA_LDFLAGS -L$dep/usr/lib -Wl,-rpath-link,$dep/usr/lib"
+        _EXTRA_CPPFLAGS="$_EXTRA_CPPFLAGS -I$dep/usr/include"
+        echo "Found libdevmapper at: $dep/usr/lib"
+    fi
+done
+
+export LDFLAGS="${LDFLAGS:-} $_EXTRA_LDFLAGS"
+export CPPFLAGS="${CPPFLAGS:-} $_EXTRA_CPPFLAGS"
+
+./configure \\
+    --prefix=/usr \\
+    --build="${CBUILD:-$(gcc -dumpmachine)}" \\
+    --host="${CHOST:-$(gcc -dumpmachine)}" \\
+    --libdir=/usr/lib64 \\
+    ${EXTRA_ECONF:-}
+""",
     deps = [
         "//packages/linux/core/util-linux:util-linux",
     ],

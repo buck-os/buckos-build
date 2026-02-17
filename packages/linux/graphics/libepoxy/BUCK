@@ -8,13 +8,18 @@ meson_package(
     signature_required = False,
     meson_args = [
         "-Degl=yes",
-        "-Dglx=no",
-        "-Dx11=false",
+        "-Dglx=yes",
+        "-Dx11=true",
         "-Dtests=false",
         "-Ddocs=false",
     ],
     deps = [
         "//packages/linux/desktop/mesa:mesa",
+        "//packages/linux/graphics/xorg/libX11:libX11",
+        "//packages/linux/graphics/xorg/xorgproto:xorgproto",
+        "//packages/linux/graphics/xorg/libxcb:libxcb",
+        "//packages/linux/graphics/xorg/libXau:libXau",
+        "//packages/linux/graphics/xorg/libXdmcp:libXdmcp",
     ],
     visibility = ["PUBLIC"],
 )

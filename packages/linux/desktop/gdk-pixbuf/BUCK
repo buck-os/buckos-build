@@ -38,6 +38,13 @@ meson_package(
     ],
     deps = [
         "//packages/linux/dev-libs/glib:glib",
+        # glib's transitive deps needed for pkg-config
+        "//packages/linux/system/libs/utility/pcre2:pcre2",
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/core/zlib:zlib",
+        # MIME type support
+        "//packages/linux/desktop/shared-mime-info:shared-mime-info",
+        # Image libraries
         "//packages/linux/system/libs/image/libpng:libpng",
         "//packages/linux/system/libs/image/libjpeg-turbo:libjpeg-turbo",
         "//packages/linux/system/libs/image/libtiff:libtiff",

@@ -631,12 +631,15 @@ elif [ "$USE_BOOTSTRAP" = "true" ]; then
             # Add GCC internal include directory for stdatomic.h, stddef.h, etc.
             # These headers are installed with GCC, not in the sysroot
             # Check both /lib/gcc and /tools/lib/gcc paths (depending on toolchain layout)
-            # Set both CFLAGS/CPPFLAGS and C_INCLUDE_PATH since meson may not use CPPFLAGS
+            # IMPORTANT: These must be searched BEFORE dependency includes to find C11 headers
+            # We save to GCC_INTERNAL_ISYSTEM for later use (after DEP_ISYSTEM_FLAGS is built)
             for GCC_INCLUDE_DIR in "$BOOTSTRAP_SYSROOT/lib/gcc/$BUCKOS_TARGET/"*/include "$BOOTSTRAP_SYSROOT/tools/lib/gcc/$BUCKOS_TARGET/"*/include; do
                 if [ -f "$GCC_INCLUDE_DIR/stdatomic.h" ]; then
-                    export CFLAGS="$CFLAGS -isystem $GCC_INCLUDE_DIR"
-                    export CXXFLAGS="$CXXFLAGS -isystem $GCC_INCLUDE_DIR"
-                    export CPPFLAGS="$CPPFLAGS -isystem $GCC_INCLUDE_DIR"
+                    # Save GCC include path - will be prepended before DEP_ISYSTEM_FLAGS later
+                    export GCC_INTERNAL_ISYSTEM="-isystem $GCC_INCLUDE_DIR"
+                    export CFLAGS="$CFLAGS $GCC_INTERNAL_ISYSTEM"
+                    export CXXFLAGS="$CXXFLAGS $GCC_INTERNAL_ISYSTEM"
+                    export CPPFLAGS="$CPPFLAGS $GCC_INTERNAL_ISYSTEM"
                     # Also set C_INCLUDE_PATH for meson builds which may not respect CPPFLAGS
                     export C_INCLUDE_PATH="${C_INCLUDE_PATH:+$C_INCLUDE_PATH:}$GCC_INCLUDE_DIR"
                     export CPLUS_INCLUDE_PATH="${CPLUS_INCLUDE_PATH:+$CPLUS_INCLUDE_PATH:}$GCC_INCLUDE_DIR"
@@ -891,10 +894,12 @@ if [ -n "$DEP_CPATH" ]; then
         DEP_I_FLAGS="${DEP_I_FLAGS} -I$inc_dir"
     done
 
-    export CFLAGS="${DEP_ISYSTEM_FLAGS} ${CFLAGS:-}"
-    export CXXFLAGS="${DEP_ISYSTEM_FLAGS} ${CXXFLAGS:-}"
+    # GCC_INTERNAL_ISYSTEM must come FIRST to find stdatomic.h, stddef.h, etc.
+    # before any dependency headers. Order: GCC internal -> dependencies -> sysroot
+    export CFLAGS="${GCC_INTERNAL_ISYSTEM:-}${DEP_ISYSTEM_FLAGS} ${CFLAGS:-}"
+    export CXXFLAGS="${GCC_INTERNAL_ISYSTEM:-}${DEP_ISYSTEM_FLAGS} ${CXXFLAGS:-}"
     export CXXFLAGS="${CXXFLAGS} -fpermissive"
-    export CPPFLAGS="${DEP_I_FLAGS} ${CPPFLAGS:-}"
+    export CPPFLAGS="${GCC_INTERNAL_ISYSTEM:-}${DEP_I_FLAGS} ${CPPFLAGS:-}"
 fi
 
 # Set up linker flags

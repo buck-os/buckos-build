@@ -104,6 +104,35 @@ case "$*" in
                 fi
             done
         fi
+
+        # Fix include paths that reference transitive dependency subdirectories
+        # e.g., pango's .pc references -I.../pango/usr/include/harfbuzz but harfbuzz
+        # is in a separate package. Search all deps for missing subdirectories.
+        if [ -n "$DEP_BASE_DIRS" ]; then
+            NEW_OUTPUT=""
+            for token in $OUTPUT; do
+                case "$token" in
+                    -I*)
+                        inc_path="${token#-I}"
+                        if [ ! -d "$inc_path" ]; then
+                            # Extract the subdirectory name (e.g., harfbuzz, freetype2)
+                            subdir=$(basename "$inc_path")
+                            found=false
+                            IFS=':' read -ra ALL_DEPS <<< "$DEP_BASE_DIRS"
+                            for dep in "${ALL_DEPS[@]}"; do
+                                if [ -d "$dep/usr/include/$subdir" ]; then
+                                    token="-I$dep/usr/include/$subdir"
+                                    found=true
+                                    break
+                                fi
+                            done
+                        fi
+                        ;;
+                esac
+                NEW_OUTPUT="$NEW_OUTPUT $token"
+            done
+            OUTPUT="${NEW_OUTPUT# }"
+        fi
         ;;
 esac
 

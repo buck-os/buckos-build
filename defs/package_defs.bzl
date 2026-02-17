@@ -2040,6 +2040,7 @@ rootfs = rule(
     impl = _rootfs_impl,
     attrs = {
         "packages": attrs.list(attrs.dep()),
+        "version": attrs.string(default = "1"),  # Bump to invalidate cache
     },
 )
 
@@ -3367,6 +3368,7 @@ iso_image = rule(
         "volume_label": attrs.string(default = "BUCKOS"),
         "kernel_args": attrs.string(default = "quiet"),
         "arch": attrs.string(default = "x86_64"),  # x86_64 or aarch64
+        "version": attrs.string(default = "1"),  # Bump to invalidate cache
     },
 )
 

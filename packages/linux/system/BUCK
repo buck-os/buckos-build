@@ -555,6 +555,11 @@ if [ "`tty`" = "/dev/tty1" ] && [ -z "$WAYLAND_DISPLAY" ] && [ -z "$DISPLAY" ]; 
     export QML2_IMPORT_PATH="/usr/lib64/qml"
     export XDG_DATA_DIRS="/usr/share:/usr/local/share"
 
+    # Build KDE service cache (sycoca) for application menu discovery
+    # This must run before Plasma starts so the menu is populated
+    echo "Building KDE service cache (kbuildsycoca6)..."
+    kbuildsycoca6 --noincremental 2>/dev/null || true
+
     # Start Plasma Wayland session
     export PLASMA_SKIP_SPLASH=1  # Skip splash screen to avoid KSplash wait timeout
     echo "Starting Plasma Wayland session..."
@@ -704,16 +709,43 @@ f /var/log/lastlog 0664 root utmp -
 d /run/user 0755 root root -
 d /run/user/1000 0700 live live -
 
-# Live user home directory
-d /home/live 0755 live live -
-d /home/live/Desktop 0755 live live -
-d /home/live/.cache 0755 live live -
-d /home/live/.config 0755 live live -
-d /home/live/.local 0755 live live -
-d /home/live/.local/share 0755 live live -
+# Live user home directory - use Z to recursively fix ownership on overlay
+# This is critical for overlay filesystems where dirs exist in lower layer as root
+Z /home/live 0755 live live -
+
+# KDE-specific cache directories (must be writable for KDE to function)
+d /home/live/.cache/ksvg-elements 0755 live live -
+d /home/live/.cache/kcrash-metadata 0755 live live -
+d /home/live/.cache/icon-cache.kcache 0755 live live -
+d /home/live/.cache/plasma_theme_default 0755 live live -
+d /home/live/.cache/plasmashell 0755 live live -
+d /home/live/.cache/kwin 0755 live live -
+d /home/live/.cache/kioexec 0755 live live -
+d /home/live/.cache/konsole 0755 live live -
+d /home/live/.cache/ksycoca6 0755 live live -
+d /home/live/.cache/mesa_shader_cache 0755 live live -
+d /home/live/.cache/event-sound-cache.tdb.* 0755 live live -
+d /home/live/.cache/fontconfig 0755 live live -
+
+# KDE config directories (must exist for KDE settings to work)
+d /home/live/.config/kde.org 0755 live live -
+d /home/live/.config/kdedefaults 0755 live live -
+d /home/live/.config/plasma-workspace 0755 live live -
+d /home/live/.config/xdg-desktop-portal-kde 0755 live live -
+
+# KDE data directories
+d /home/live/.local/share/kwalletd 0755 live live -
+d /home/live/.local/share/kscreen 0755 live live -
+d /home/live/.local/share/recently-used.xbel 0755 live live -
+d /home/live/.local/share/applications 0755 live live -
+d /home/live/.local/share/icons 0755 live live -
+d /home/live/.local/share/Trash 0755 live live -
 
 # Fontconfig cache directory (writable for font caching)
 d /var/cache/fontconfig 0755 root root -
+
+# System-wide KDE cache directories
+d /var/tmp/kdecache-live 0755 live live -
 TMPFILESEOF
 
 # Create PAM environment configuration to ensure XDG_RUNTIME_DIR is set
@@ -1195,6 +1227,14 @@ ln -sf /usr/lib/systemd/system/polkit.service $OUT/etc/systemd/system/multi-user
 # Enable systemd-logind (required for loginctl and PAM sessions)
 ln -sf /usr/lib/systemd/system/systemd-logind.service $OUT/etc/systemd/system/multi-user.target.wants/systemd-logind.service
 
+# Enable NetworkManager for network connectivity (including WiFi)
+mkdir -p $OUT/etc/systemd/system/network-online.target.wants
+ln -sf /usr/lib/systemd/system/NetworkManager.service $OUT/etc/systemd/system/multi-user.target.wants/NetworkManager.service
+ln -sf /usr/lib/systemd/system/NetworkManager-wait-online.service $OUT/etc/systemd/system/network-online.target.wants/NetworkManager-wait-online.service
+
+# Enable wpa_supplicant for WiFi authentication (NetworkManager will use it)
+ln -sf /usr/lib/systemd/system/wpa_supplicant.service $OUT/etc/systemd/system/multi-user.target.wants/wpa_supplicant.service 2>/dev/null || true
+
 # =============================================================================
 # Plasma Wayland Live Session - Startup Flow Documentation
 # =============================================================================
@@ -1273,10 +1313,16 @@ Environment=FONTCONFIG_PATH=/etc/fonts
 # Locale/encoding (required for proper text rendering)
 Environment=LANG=C.UTF-8
 Environment=LC_ALL=C.UTF-8
-# Setup runtime directory
-ExecStartPre=/bin/mkdir -p /run/user/1000
-ExecStartPre=/bin/chown 1000:1000 /run/user/1000
-ExecStartPre=/bin/chmod 700 /run/user/1000
+# Fix home directory ownership (critical for overlay filesystem)
+# The squashfs has /home/live owned by root, overlay needs copy-up with correct ownership
+# Use + prefix to run as root since service runs as User=live
+ExecStartPre=+/bin/chown -R 1000:1000 /home/live
+# Setup runtime directory (run as root with + prefix)
+ExecStartPre=+/bin/mkdir -p /run/user/1000
+ExecStartPre=+/bin/chown 1000:1000 /run/user/1000
+ExecStartPre=+/bin/chmod 700 /run/user/1000
+# Rebuild KDE sycoca cache for application menu
+ExecStartPre=-/usr/bin/kbuildsycoca6 --noincremental
 # Build font cache (optional, continues on failure)
 ExecStartPre=-/usr/bin/fc-cache -f
 # Start kwin_wayland as compositor with plasmashell as the session
@@ -1811,6 +1857,7 @@ rm -f "$BUCK2_ZST"
 # Live rootfs with KDE Plasma desktop (systemd-only, no eudev)
 rootfs(
     name = "buckos-live-kde-rootfs",
+    version = "4",  # installer 0.0.2 + full build toolchain
     packages = [
         ":live-init-scripts-gen",
         ":baselayout-gen",
@@ -1880,6 +1927,18 @@ rootfs(
         "//packages/linux/network/openssh:openssh",
         "//packages/linux/network/iproute2:iproute2",
         "//packages/linux/network/dhcpcd:dhcpcd",
+        # Wireless networking tools (WiFi support)
+        "//packages/linux/core/libnl:libnl",  # Required by wpa-supplicant and iw
+        "//packages/linux/network/wireless/wpa-supplicant:wpa-supplicant",  # WiFi authentication
+        "//packages/linux/network/wireless/iw:iw",  # WiFi configuration
+        "//packages/linux/network/wireless/wireless-tools:wireless-tools",  # Legacy WiFi tools (iwconfig, etc.)
+        "//packages/linux/network/wireless/wireless-regdb:wireless-regdb",  # WiFi regulatory database
+        # NetworkManager for easier network management (GUI and CLI)
+        "//packages/linux/network/networkmanager:networkmanager",
+        "//packages/linux/network/networkmanager:nm-applet",  # System tray applet
+        # Common network utilities
+        "//packages/linux/network/iputils:iputils",  # ping, tracepath, etc.
+        "//packages/linux/network/wget:wget",  # wget for downloads
         "//packages/linux/system/libs/kmod:kmod",  # Provides modprobe, lsmod, etc.
 
         # Security and capabilities (required by systemd)
@@ -1944,6 +2003,7 @@ rootfs(
         "//packages/linux/desktop/kde/apps:dolphin",
         "//packages/linux/desktop/kde/apps:kate",
         # KDE Frameworks (QML modules required for Plasma)
+        "//packages/linux/desktop/kde:kservice",  # Provides kbuildsycoca6 for application menu
         "//packages/linux/desktop/kde:kirigami",
         "//packages/linux/desktop/kde:kcmutils",
         "//packages/linux/desktop/kde:kdeclarative",
@@ -1986,9 +2046,19 @@ rootfs(
         "//packages/linux/audio/daemons/pipewire:pipewire",
         "//packages/linux/system/libs/audio/alsa-lib:alsa-lib",
 
-        # Development tools (for post-install)
+        # Development tools and build toolchain
         "//packages/linux/dev-tools/vcs/git:git",
         "//packages/linux/editors/vim:vim",
+        "//packages/linux/lang/rust:rust",  # Rust toolchain including cargo
+        "//packages/linux/lang/gcc:gcc",  # GCC compiler
+        "//packages/linux/dev-tools/build-systems/make:make",
+        "//packages/linux/dev-tools/build-systems/cmake:cmake",
+        "//packages/linux/dev-tools/build-systems/meson:meson",
+        "//packages/linux/dev-tools/build-systems/ninja:ninja",
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
 
         # BuckOS tools (uses cargo_workspace_package with vendor tarball)
         "//packages/linux/apps/buckos-tools/installer:buckos-installer",
@@ -2602,7 +2672,8 @@ iso_image(
     initramfs = ":buckos-live-initramfs-systemd",
     rootfs = ":buckos-live-kde-rootfs",
     boot_mode = "hybrid",
-    volume_label = "BUCKOS_LIVE",
+    volume_label = "BUCKOS_LIVE_V2",
+    version = "4",  # installer 0.0.2 + full build toolchain
     # Systemd initrd boot parameters (no serial console - causes hangs on AMD laptops)
     kernel_args = "console=tty0 loglevel=7 rd.systemd.show_status=true",
     visibility = ["PUBLIC"],

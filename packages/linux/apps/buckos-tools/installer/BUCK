@@ -1,27 +1,28 @@
 load("//defs:package_defs.bzl", "download_source", "cargo_workspace_package")
 
 # Download BuckOS source from GitHub (shared across workspace members)
+# Using 0.0.2 tag with NVMe partition path fix
 download_source(
     name = "buckos-src",
-    src_uri = "https://github.com/hodgesds/buckos/archive/refs/heads/main.tar.gz",
-    sha256 = "",  # Updated after first download
+    src_uri = "https://github.com/hodgesds/buckos/archive/refs/tags/0.0.2.tar.gz",
+    sha256 = "a968f3df8597370a6000d8ae25d3f6a018db835ef80e03fe424cfd6f6527ff2e",
     signature_required = False,
 )
 
 # BuckOS Installer - Graphical installer for live environment
-# Build v2: Using /lib64 library path fix
+# Build v3: 0.0.2 with NVMe partition path fix
 cargo_workspace_package(
     name = "buckos-installer",
     workspace_source = ":buckos-src",
     member = "buckos-installer",
     version = "0.1.1",
     bins = ["buckos-installer"],
-    description = "Graphical installer for BuckOS - beginner-friendly system installation",
+    description = "Graphical installer for BuckOS (0.0.2) - beginner-friendly system installation",
     homepage = "https://github.com/hodgesds/buckos",
     license = "Apache-2.0 OR MIT",
     desktop_entry = {
         "name": "Install BuckOS",
-        "comment": "Install BuckOS to your hard drive",
+        "comment": "Install BuckOS",
         "icon": "system-software-install",
         "exec": "buckos-installer",
         "terminal": False,

@@ -1,0 +1,29 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# libndp - Library for Neighbor Discovery Protocol
+# Provides a wrapper for IPv6 Neighbor Discovery Protocol
+autotools_package(
+    name = "libndp",
+    version = "1.9",
+    src_uri = "https://github.com/jpirko/libndp/archive/refs/tags/v1.9.tar.gz",
+    sha256 = "e564f5914a6b1b799c3afa64c258824a801c1b79a29e2fe6525b682249c65261",
+    signature_required = False,
+    description = "Library for Neighbor Discovery Protocol",
+    homepage = "https://github.com/jpirko/libndp",
+    license = "LGPL-2.1",
+    # libndp uses autogen.sh, needs autotools to generate configure
+    pre_configure = """
+if [ ! -f configure ]; then
+    ./autogen.sh
+fi
+""",
+    configure_args = [
+        "--disable-static",
+    ],
+    deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+    ],
+    visibility = ["PUBLIC"],
+)

@@ -144,11 +144,34 @@ fi
 """,
     src_compile = """
 cd source
-make -j${MAKEOPTS:-$(nproc)}
+# Force clean the lib/ directory before building (previous incomplete builds may have left empty files)
+rm -f lib/*.so* lib/*.a 2>/dev/null || true
+
+# Build ICU libraries only - skip tools which can't cross-compile easily
+# Build order: stubdata first, then common (libicuuc), then i18n/io/data
+make -j${MAKEOPTS:-$(nproc)} -C stubdata all
+make -j${MAKEOPTS:-$(nproc)} -C common all
+make -j${MAKEOPTS:-$(nproc)} -C i18n all
+make -j${MAKEOPTS:-$(nproc)} -C io all || true
+make -j${MAKEOPTS:-$(nproc)} -C data all
+
+# Verify libraries were built
+ls -la lib/
+for lib in libicuuc libicui18n libicudata; do
+    if [ ! -s "lib/${lib}.so.75.1" ]; then
+        echo "ERROR: ${lib}.so.75.1 not built or is empty"
+        exit 1
+    fi
+done
+echo "All required ICU libraries built successfully"
 """,
     src_install = """
 cd source
+# Install all ICU libraries and headers
 make DESTDIR="$DESTDIR" install
+# Remove tools (we only want libraries for cross-compilation target)
+rm -rf "$DESTDIR/usr/bin" "$DESTDIR/usr/sbin" || true
+rm -rf "$DESTDIR/usr/share/man" || true
 """,
     visibility = ["PUBLIC"],
 )

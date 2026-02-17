@@ -1,7 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package_defs.bzl", "download_source", "make_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-autotools_package(
+# wpa_supplicant doesn't use autotools - it uses a Makefile with a .config file
+make_package(
     name = "wpa-supplicant",
     version = "2.10",
     src_uri = "https://w1.fi/releases/wpa_supplicant-2.10.tar.gz",
@@ -12,13 +13,7 @@ autotools_package(
     iuse = ["ssl", "readline", "dbus", "wps", "mesh", "sae", "owe", "dpp", "fils"],
     use_defaults = ["ssl", "readline", "wps", "mesh", "sae", "owe", "dpp", "fils"],
 
-    use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "readline": ["//packages/linux/system/terminal/readline:readline"],
-    },
-
-    use_configure = {},
-
+    # Create the .config file for wpa_supplicant build
     pre_configure = """
 cd wpa_supplicant
 cat > .config << 'EOF'
@@ -38,7 +33,6 @@ CONFIG_EAP_PEAP=y
 CONFIG_EAP_TLS=y
 CONFIG_EAP_TTLS=y
 CONFIG_IEEE8021X_EAPOL=y
-CONFIG_PEERKEY=y
 CONFIG_PKCS12=y
 CONFIG_READLINE=y
 CONFIG_SMARTCARD=y
@@ -49,6 +43,7 @@ CONFIG_SAE=y
 CONFIG_OWE=y
 CONFIG_DPP=y
 CONFIG_FILS=y
+CONFIG_TLS=openssl
 EOF
 """,
 
@@ -65,6 +60,7 @@ install -d "$DESTDIR/usr/share/man/man5"
 install -d "$DESTDIR/usr/share/man/man8"
 install -d "$DESTDIR/usr/share/dbus-1/system-services"
 install -d "$DESTDIR/etc/dbus-1/system.d"
+install -d "$DESTDIR/usr/lib/systemd/system"
 install -m 755 wpa_supplicant "$DESTDIR/sbin/"
 install -m 755 wpa_cli "$DESTDIR/sbin/"
 install -m 755 wpa_passphrase "$DESTDIR/sbin/"
@@ -72,10 +68,31 @@ install -m 644 doc/docbook/*.5 "$DESTDIR/usr/share/man/man5/" 2>/dev/null || tru
 install -m 644 doc/docbook/*.8 "$DESTDIR/usr/share/man/man8/" 2>/dev/null || true
 install -m 644 dbus/fi.w1.wpa_supplicant1.service "$DESTDIR/usr/share/dbus-1/system-services/" 2>/dev/null || true
 install -m 644 dbus/dbus-wpa_supplicant.conf "$DESTDIR/etc/dbus-1/system.d/" 2>/dev/null || true
+
+# Install systemd service file
+cat > "$DESTDIR/usr/lib/systemd/system/wpa_supplicant.service" << 'SERVICEEOF'
+[Unit]
+Description=WPA supplicant
+Before=network.target
+After=dbus.service
+Wants=dbus.service
+
+[Service]
+Type=dbus
+BusName=fi.w1.wpa_supplicant1
+ExecStart=/sbin/wpa_supplicant -u -s
+
+[Install]
+WantedBy=multi-user.target
+Alias=dbus-fi.w1.wpa_supplicant1.service
+SERVICEEOF
 """,
 
     deps = [
         "//packages/linux/system/terminal/ncurses:ncurses",
+        "//packages/linux/system/terminal/readline:readline",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/core/libnl:libnl",  # Required for CONFIG_LIBNL32
     ],
 
     description = "WPA/WPA2/WPA3 supplicant for wireless network authentication",

@@ -51,10 +51,15 @@ echo "Fixed CPPFLAGS: $CPPFLAGS"
     # Only build and install libraries, not the utils (which require C++)
     src_compile = '''
 # Build only the required libraries, skip the C++ utils
+# Order matters: libdw depends on libcpu, libdwfl, libdwfl_stacktrace, libdwelf
 make -j${MAKEOPTS:-$(nproc)} -C lib
 make -j${MAKEOPTS:-$(nproc)} -C libelf
 make -j${MAKEOPTS:-$(nproc)} -C libebl
+make -j${MAKEOPTS:-$(nproc)} -C libcpu
 make -j${MAKEOPTS:-$(nproc)} -C backends
+make -j${MAKEOPTS:-$(nproc)} -C libdwelf
+make -j${MAKEOPTS:-$(nproc)} -C libdwfl
+make -j${MAKEOPTS:-$(nproc)} -C libdwfl_stacktrace || true  # May not exist in all versions
 make -j${MAKEOPTS:-$(nproc)} -C libdw
 make -j${MAKEOPTS:-$(nproc)} -C libasm
 ''',

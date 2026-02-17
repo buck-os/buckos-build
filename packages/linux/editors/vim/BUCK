@@ -117,6 +117,8 @@ autotools_package(
     pre_configure = """
 # Vim source is in src directory, need to run configure from there
 cd src
+# Clear any stale config cache from previous builds
+rm -f auto/config.cache
 """,
 
     deps = [

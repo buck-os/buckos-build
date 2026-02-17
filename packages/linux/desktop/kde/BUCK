@@ -2745,13 +2745,20 @@ sed -i '/add_custom_command.*TARGET docbookl10nhelper POST_BUILD/,/^)/d' src/CMa
 """,
     src_configure = KDE_HOST_LD_SETUP + """
 # Force CMake to find cross-compiled libxslt/libexslt instead of host's
-XSLT_DEP_PATH=$(echo "$CMAKE_PREFIX_PATH" | tr ';' '\\n' | grep libxslt || echo "")
+XSLT_DEP_PATH=$(echo "$CMAKE_PREFIX_PATH" | tr ';' '\\n' | grep libxslt | head -1 || echo "")
 if [ -n "$XSLT_DEP_PATH" ]; then
     export CMAKE_EXTRA_ARGS="${CMAKE_EXTRA_ARGS:-} -DLIBXSLT_INCLUDE_DIR=$XSLT_DEP_PATH/include -DLIBXSLT_EXSLT_LIBRARY=$XSLT_DEP_PATH/lib64/libexslt.so -DLIBXSLT_LIBRARY=$XSLT_DEP_PATH/lib64/libxslt.so"
 fi
-XML2_DEP_PATH=$(echo "$CMAKE_PREFIX_PATH" | tr ';' '\\n' | grep libxml2 || echo "")
+XML2_DEP_PATH=$(echo "$CMAKE_PREFIX_PATH" | tr ';' '\\n' | grep libxml2 | head -1 || echo "")
 if [ -n "$XML2_DEP_PATH" ]; then
     export CMAKE_EXTRA_ARGS="${CMAKE_EXTRA_ARGS:-} -DLIBXML2_INCLUDE_DIR=$XML2_DEP_PATH/include/libxml2 -DLIBXML2_LIBRARY=$XML2_DEP_PATH/lib64/libxml2.so"
+fi
+# Also add include_directories to CMakeLists.txt for libxml2 (needed for #include <libxml/...>)
+if [ -n "$XML2_DEP_PATH" ] && [ -f CMakeLists.txt ]; then
+    echo "include_directories($XML2_DEP_PATH/include/libxml2)" >> CMakeLists.txt
+fi
+if [ -n "$XSLT_DEP_PATH" ] && [ -f CMakeLists.txt ]; then
+    echo "include_directories($XSLT_DEP_PATH/include)" >> CMakeLists.txt
 fi
 """ + KDE_CMAKE_CONFIGURE,
     src_compile = KDE_HOST_LD_SETUP + """
@@ -4981,17 +4988,57 @@ SERVICEEOF
     visibility = ["PUBLIC"],
 )
 
-# KDE Plasma meta-package for Live CD (auto-login, no display manager)
+# KDE Plasma meta-package for installation (matches live KDE ISO for bootable system)
 filegroup(
     name = "kde-plasma",
     srcs = [
+        # Core Plasma components
         ":plasma-desktop",
         ":plasma-workspace",
         ":kwin",
+        # KDE Apps (essential for usable desktop)
+        "//packages/linux/desktop/kde/apps:konsole",
+        "//packages/linux/desktop/kde/apps:dolphin",
+        "//packages/linux/desktop/kde/apps:kate",
+        # KDE Frameworks (QML modules required for Plasma)
+        ":kservice",  # Provides kbuildsycoca6 for application menu
+        ":kirigami",
+        ":kcmutils",
+        ":kdeclarative",
+        ":kitemmodels",
+        ":ksvg",
+        ":krunner",
+        ":kpackage",
+        ":plasma-activities",
+        ":kactivitymanagerd",
+        ":breeze",
+        ":breeze-icons",
+        ":kiconthemes",
+        # KDE/Graphics libraries (explicit dependencies for Plasma shell)
+        ":libplasma",
+        ":plasma5support",
+        ":kdecoration2",
+        ":kwayland",
+        ":kscreenlocker",
+        ":kglobalacceld",
+        ":layer-shell-qt",
+        ":kquickcharts",
+        ":kholidays",
+        ":kirigami-addons",
+        ":milou",
+        # Graphics stack
         "//packages/linux/graphics/rendering/wayland:wayland",
         "//packages/linux/desktop/mesa:mesa",
+        "//packages/linux/graphics/libepoxy:libepoxy",
+        "//packages/linux/system/libs/graphics/lcms2:lcms2",
+        "//packages/linux/graphics/xorg/libxcvt:libxcvt",
+        "//packages/linux/graphics/utilities/libdisplay-info:libdisplay-info",
+        "//packages/linux/graphics/xorg/xcb-util-cursor:xcb-util-cursor",
+        "//packages/linux/graphics/xorg/xcb-util-image:xcb-util-image",
+        "//packages/linux/graphics/xorg/xcb-util-renderutil:xcb-util-renderutil",
         # Audio support
         "//packages/linux/audio/daemons/pipewire:pipewire",
+        "//packages/linux/system/libs/audio/alsa-lib:alsa-lib",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],

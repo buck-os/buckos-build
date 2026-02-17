@@ -34,6 +34,7 @@ autotools_package(
     configure_args = [
         "--disable-static",
         "--disable-thorough-tests",
+        "--disable-programs",  # Don't build flac/metaflac tools (causes linking issues in cross-compile)
     ],
     deps = [
         "//packages/linux/system/libs/audio/libogg:libogg",

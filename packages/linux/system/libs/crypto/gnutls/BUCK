@@ -32,7 +32,7 @@ autotools_package(
         "zlib",
         "zstd",
     ],
-    use_defaults = [],
+    use_defaults = ["zlib", "zstd"],
     use_configure = {
         "-brotli": "--without-brotli",
         "-cxx": "--disable-cxx",
@@ -76,11 +76,21 @@ autotools_package(
     use_deps = {
         "p11": ["//packages/linux/dev-libs/p11-kit:p11-kit"],
         "guile": ["//packages/linux/lang/guile:guile"],
+        "zlib": ["//packages/linux/core/zlib:zlib"],
+        "zstd": ["//packages/linux/system/libs/compression/zstd:zstd"],
     },
     configure_args = [
         "--with-included-libtasn1",
         "--with-included-unistring",
+        "--without-brotli",  # Brotli not commonly needed for TLS
     ],
+    # Patch dlwrap headers to not include brotli when disabled
+    # The headers unconditionally include <brotli/*.h> which fails when brotli isn't installed
+    src_prepare = """
+# Guard brotli includes in dlwrap headers
+sed -i 's|#include <brotli/encode.h>|#ifdef HAVE_BROTLI\\n#include <brotli/encode.h>\\n#endif|' lib/dlwrap/brotlienc.h
+sed -i 's|#include <brotli/decode.h>|#ifdef HAVE_BROTLI\\n#include <brotli/decode.h>\\n#endif|' lib/dlwrap/brotlidec.h
+""",
     deps = [
         "//packages/linux/system/libs/crypto/nettle:nettle",
         "//packages/linux/system/libs/crypto/libgcrypt:libgcrypt",

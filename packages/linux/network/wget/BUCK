@@ -15,6 +15,13 @@ autotools_package(
 
     use_defaults = ["ssl", "ipv6"],
 
+    # Explicitly use openssl, disable gnutls auto-detection
+    configure_args = [
+        "--with-ssl=openssl",
+        "--without-libpsl",
+        "--without-zlib",
+    ],
+
     use_deps = {
         "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
         "gnutls": ["//packages/linux/system/libs/crypto/gnutls:gnutls"],
@@ -24,6 +31,7 @@ autotools_package(
 
     deps = [
         "//packages/linux/network/ca-certificates:ca-certificates",
+        "//packages/linux/system/libs/crypto/openssl:openssl",  # Explicit SSL dependency
     ],
 
     description = "Network utility to retrieve files from the web",

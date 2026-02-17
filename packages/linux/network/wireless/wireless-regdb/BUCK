@@ -1,6 +1,8 @@
 load("//defs:package_defs.bzl","download_source", "make_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
+# wireless-regdb contains pre-built regulatory.db files
+# We skip the build phase and just install the pre-built files
 make_package(
     name = "wireless-regdb",
     version = "2024.01.23",
@@ -11,12 +13,21 @@ make_package(
     iuse = [],
     use_defaults = [],
 
+    # Skip build - the tarball already contains pre-built regulatory.db files
+    src_compile = """
+echo "Using pre-built regulatory database files from tarball"
+""",
+
     post_install = """
 install -d "$DESTDIR/usr/lib/crda"
 install -d "$DESTDIR/lib/firmware"
-install -m 644 regulatory.bin "$DESTDIR/lib/firmware/"
-install -m 644 regulatory.db "$DESTDIR/lib/firmware/" 2>/dev/null || true
-install -m 644 regulatory.db.p7s "$DESTDIR/lib/firmware/" 2>/dev/null || true
+# Install pre-built files from tarball
+install -m 644 regulatory.db "$DESTDIR/lib/firmware/"
+install -m 644 regulatory.db.p7s "$DESTDIR/lib/firmware/"
+# Also install to /usr/lib/firmware for systemd compatibility
+install -d "$DESTDIR/usr/lib/firmware"
+install -m 644 regulatory.db "$DESTDIR/usr/lib/firmware/"
+install -m 644 regulatory.db.p7s "$DESTDIR/usr/lib/firmware/"
 """,
 
     description = "Wireless regulatory database for Linux",

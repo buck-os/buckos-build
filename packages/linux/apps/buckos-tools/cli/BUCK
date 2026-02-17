@@ -1,10 +1,11 @@
 load("//defs:package_defs.bzl", "download_source", "cargo_workspace_package")
 
 # Download BuckOS source from GitHub (shared across workspace members)
+# Using 0.0.2 tag with NVMe partition path fix
 download_source(
     name = "buckos-src",
-    src_uri = "https://github.com/hodgesds/buckos/archive/refs/heads/main.tar.gz",
-    sha256 = "",  # Updated after first download
+    src_uri = "https://github.com/hodgesds/buckos/archive/refs/tags/0.0.2.tar.gz",
+    sha256 = "a968f3df8597370a6000d8ae25d3f6a018db835ef80e03fe424cfd6f6527ff2e",
     signature_required = False,
 )
 

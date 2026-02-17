@@ -42,18 +42,84 @@ autotools_package(
         "cups": ["//packages/linux/system/printing/cups:cups"],
         "colord": ["//packages/linux/system/color/colord:colord"],
     },
-    pre_configure = """
-mkdir -p build
-cd build
-# USE flags: introspection, X, wayland, broadway, cups, cloudprint, colord, doc, test, examples, demos
-meson setup .. --prefix=/usr \
-    $CONFIGURE_ARGS
+    src_configure = """
+# Force reconfigure to use at-spi2-core's atk instead of separate atk
+rm -rf build
+meson setup build --prefix=/usr \
+    --libdir=/usr/lib64 \
+    -Dintrospection=false \
+    -Dx11_backend=true \
+    -Dwayland_backend=true \
+    -Dbroadway_backend=false \
+    -Dprint_backends=file \
+    -Dcloudproviders=false \
+    -Dcolord=no \
+    -Dgtk_doc=false \
+    -Dtests=false \
+    -Dexamples=false \
+    -Ddemos=false
+""",
+    src_compile = """
+meson compile -C build -j${MAKEOPTS:-$(nproc)}
+""",
+    src_install = """
+DESTDIR="$DESTDIR" meson install -C build --no-rebuild
 """,
     deps = [
         "//packages/linux/dev-libs/glib:glib",
+        # glib's transitive deps needed for pkg-config
+        "//packages/linux/system/libs/utility/pcre2:pcre2",
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/core/zlib:zlib",
+        # Cairo and its transitive deps
+        "//packages/linux/system/libs/graphics/cairo:cairo",
+        "//packages/linux/system/security/auth/biometric:pixman",
+        "//packages/linux/system/libs/font/fontconfig:fontconfig",
+        "//packages/linux/system/libs/data/expat:expat",
+        "//packages/linux/system/libs/image/libpng:libpng",
+        # X11 deps for cairo and GTK
+        "//packages/linux/graphics/xorg/libX11:libX11",
+        "//packages/linux/graphics/xorg/libXext:libXext",
+        "//packages/linux/graphics/xorg/libXrender:libXrender",
+        "//packages/linux/graphics/xorg/libXrandr:libXrandr",
+        "//packages/linux/graphics/xorg/libXi:libXi",
+        "//packages/linux/graphics/xorg/libXfixes:libXfixes",
+        "//packages/linux/graphics/xorg/libXcursor:libXcursor",
+        "//packages/linux/graphics/xorg/libXdamage:libXdamage",
+        "//packages/linux/graphics/xorg/libXcomposite:libXcomposite",
+        "//packages/linux/graphics/xorg/libXinerama:libXinerama",
+        "//packages/linux/graphics/xorg/xorgproto:xorgproto",
+        "//packages/linux/graphics/xorg/libxcb:libxcb",
+        "//packages/linux/graphics/xorg/xcb-proto:xcb-proto",
+        "//packages/linux/graphics/xorg/libXau:libXau",
+        "//packages/linux/graphics/xorg/libXdmcp:libXdmcp",
+        # Pango transitive deps
+        "//packages/linux/system/libs/compression/brotli:brotli",
+        "//packages/linux/system/libs/compression/bzip2:bzip2",
+        "//packages/linux/system/libs/font/fribidi:fribidi",
+        "//packages/linux/system/libs/font/harfbuzz:harfbuzz",
+        # gdk-pixbuf transitive deps
+        "//packages/linux/desktop/shared-mime-info:shared-mime-info",
+        "//packages/linux/system/libs/data/libxml2:libxml2",
+        "//packages/linux/system/libs/image/libjpeg-turbo:libjpeg-turbo",
+        "//packages/linux/system/libs/image/libtiff:libtiff",
+        # OpenGL/EGL deps
+        "//packages/linux/graphics/libepoxy:libepoxy",
+        "//packages/linux/desktop/mesa:mesa",
+        # Accessibility (at-spi2-core >= 2.46 includes atk)
+        "//packages/linux/desktop/at-spi2-core:at-spi2-core",
+        "//packages/linux/graphics/xorg/libXtst:libXtst",
+        "//packages/linux/system/libs/ipc/dbus:dbus",
+        "//packages/linux/system/init/systemd:systemd",
+        "//packages/linux/system/security/capabilities:libcap",
+        # Input
+        "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
+        # Wayland
+        "//packages/linux/graphics/rendering/wayland:wayland",
+        "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
+        # GTK deps
         "//packages/linux/system/libs/font/freetype:freetype",
         "//packages/linux/fonts/libraries/pango:pango",
-        "//packages/linux/system/libs/graphics/cairo:cairo",
         "//packages/linux/desktop/gdk-pixbuf:gdk-pixbuf",
     ],
     visibility = ["PUBLIC"],

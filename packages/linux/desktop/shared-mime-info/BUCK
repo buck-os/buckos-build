@@ -1,0 +1,24 @@
+load("//defs:package_defs.bzl", "meson_package")
+
+# shared-mime-info - Core MIME database for freedesktop.org
+meson_package(
+    name = "shared-mime-info",
+    version = "2.4",
+    src_uri = "https://gitlab.freedesktop.org/xdg/shared-mime-info/-/archive/2.4/shared-mime-info-2.4.tar.gz",
+    sha256 = "531291d0387eb94e16e775d7e73788d06d2b2fdd8cd2ac6b6b15287593b6a2de",
+    signature_required = False,
+    description = "Freedesktop.org shared MIME info database",
+    homepage = "https://freedesktop.org/wiki/Software/shared-mime-info/",
+    license = "GPL-2.0",
+    meson_args = [
+        "-Dupdate-mimedb=false",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/glib:glib",
+        "//packages/linux/system/libs/utility/pcre2:pcre2",
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/data/libxml2:libxml2",
+    ],
+    visibility = ["PUBLIC"],
+)

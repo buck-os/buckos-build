@@ -176,13 +176,29 @@ if [ "${CROSS_COMPILING:-false}" = "true" ] && [ -n "${CC:-}" ]; then
             ;;
     esac
 
+    # Build pkg_config_libdir array from PKG_CONFIG_LIBDIR (colon-separated)
+    MESON_PKG_CONFIG_LIBDIR=""
+    if [ -n "${PKG_CONFIG_LIBDIR:-}" ]; then
+        for pc_dir in ${PKG_CONFIG_LIBDIR//:/ }; do
+            if [ -n "$MESON_PKG_CONFIG_LIBDIR" ]; then
+                MESON_PKG_CONFIG_LIBDIR="${MESON_PKG_CONFIG_LIBDIR}, '${pc_dir}'"
+            else
+                MESON_PKG_CONFIG_LIBDIR="'${pc_dir}'"
+            fi
+        done
+    fi
+
     cat > "$MESON_CROSS_FILE" << CROSSEOF
 [binaries]
 c = '${CC}'
 cpp = '${CXX}'
 ar = '${AR:-ar}'
 strip = '${STRIP:-strip}'
-pkgconfig = 'pkg-config'
+pkg-config = 'pkg-config'
+
+[properties]
+pkg_config_libdir = [${MESON_PKG_CONFIG_LIBDIR}]
+sys_root = '${SYSROOT:-}'
 
 [built-in options]
 c_args = [${MESON_C_ARGS}]
