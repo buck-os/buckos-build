@@ -46,22 +46,22 @@ autotools_package(
     use_deps = {
         # X11 dependencies
         "X": [
-            "graphics//xorg/libX11:libX11",
-            "graphics//xorg/libxcb:libxcb",
-            "graphics//xorg/libXau:libXau",
-            "graphics//xorg/libXdmcp:libXdmcp",
+            "//packages/linux/graphics/xorg/libX11:libX11",
+            "//packages/linux/graphics/xorg/libxcb:libxcb",
+            "//packages/linux/graphics/xorg/libXau:libXau",
+            "//packages/linux/graphics/xorg/libXdmcp:libXdmcp",
         ],
         # GTK greeter dependencies
         "gtk": [
-            "desktop//gtk:gtk3",
+            "//packages/linux/desktop/gtk:gtk3",
         ],
         # GObject introspection
         "introspection": [
-            "desktop//gobject-introspection:gobject-introspection",
+            "//packages/linux/desktop/gobject-introspection:gobject-introspection",
         ],
         # PAM support
         "pam": [
-            "system//security/linux-pam:linux-pam",
+            "//packages/linux/system/security/linux-pam:linux-pam",
         ],
     },
     configure_args = [
@@ -69,7 +69,7 @@ autotools_package(
         "--with-greeter-session=lightdm-gtk-greeter",
     ],
     deps = [
-        "dev-libs//glib:glib",
+        "//packages/linux/dev-libs/glib:glib",
     ],
     visibility = ["PUBLIC"],
 )

@@ -5,112 +5,103 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-# NOTE: nftables requires libmnl and libnftnl which do not exist in this build yet
-# To enable nftables, first create:
-# - packages/linux/system/libs/network/libmnl/BUCK
-# - packages/linux/system/libs/network/libnftnl/BUCK
-#
-# libmnl source: https://www.netfilter.org/projects/libmnl/
-# libnftnl source: https://www.netfilter.org/projects/libnftnl/
+autotools_package(
+    name = "nftables",
+    version = "1.0.9",
+    src_uri = "https://www.netfilter.org/projects/nftables/files/nftables-1.0.9.tar.xz",
+    sha256 = "a3c304cd9ba061239ee0474f9afb938a9bb99d89b960246f66f0c3a0a85e14cd",
+    signature_sha256 = "d07c88a9b5e8510c4af787caabb108b69dd53885939c135ef8cfe12bab79fe2f",
+    signature_required=False,
 
-# Commented out until dependencies are available
-# autotools_package(
-#     name = "nftables",
-#     version = "1.0.9",
-#     src_uri = "https://www.netfilter.org/projects/nftables/files/nftables-1.0.9.tar.xz",
-#     sha256 = "a3c304cd9ba061239ee0474f9afb938a9bb99d89b960246f66f0c3a0a85e14cd",
-#     signature_sha256 = "d07c88a9b5e8510c4af787caabb108b69dd53885939c135ef8cfe12bab79fe2f",
-#     signature_required=False,
-#
-#     iuse = [
-#         "debug",
-#         "doc",
-#         "gmp",
-#         "json",
-#         "libedit",
-#         "python",
-#         "readline",
-#         "static-libs",
-#         "xtables",
-#     ],
-#     use_defaults = ["json", "readline"],
-#
-#     use_deps = {
-#         "readline": ["//packages/linux/system/terminal/readline:readline"],
-#         "python": ["//packages/linux/lang/python:python"],
-#     },
-#
-#     use_configure = {
-#         "-debug": "--disable-debug",
-#         "-doc": "--disable-man-doc",
-#         "-gmp": "--disable-gmp",
-#         "-json": "--without-json",
-#         "-libedit": "--disable-libedit",
-#         "-python": "--disable-python",
-#         "-readline": "--without-readline",
-#         "-static-libs": "--disable-static",
-#         "-xtables": "--disable-xtables",
-#         "debug": "--enable-debug",
-#         "doc": "--enable-man-doc",
-#         "gmp": "--enable-gmp",
-#         "json": "--with-json",
-#         "libedit": "--enable-libedit",
-#         "python": "--enable-python",
-#         "readline": "--with-readline",
-#         "static-libs": "--enable-static",
-#         "xtables": "--enable-xtables",
-#     },
-#
-#     configure_args = [
-#         "--prefix=/usr",
-#         "--sbindir=/sbin",
-#         "--sysconfdir=/etc",
-#         "--localstatedir=/var",
-#         "--with-python-bin=/usr/bin/python3",
-#     ],
-#
-#     post_install = """
-# # Create nftables configuration directories
-# mkdir -p "$DESTDIR/etc/nftables"
-# mkdir -p "$DESTDIR/var/lib/nftables"
-#
-# # Create default configuration file
-# cat > "$DESTDIR/etc/nftables/nftables.conf" << 'NFTCONF'
-# #!/usr/sbin/nft -f
-# # Default nftables configuration
-# flush ruleset
-#
-# table inet filter {
-#     chain input {
-#         type filter hook input priority 0; policy drop;
-#         ct state established,related accept
-#         iif lo accept
-#         ip protocol icmp accept
-#         ip6 nexthdr icmpv6 accept
-#     }
-#
-#     chain forward {
-#         type filter hook forward priority 0; policy drop;
-#     }
-#
-#     chain output {
-#         type filter hook output priority 0; policy accept;
-#     }
-# }
-# NFTCONF
-# chmod 600 "$DESTDIR/etc/nftables/nftables.conf"
-# """,
-#
-#     deps = [
-#         "//packages/linux/core/libnl:libnl",
-#         "//packages/linux/system/libs/utility/gmp:gmp",
-#         "//packages/linux/system/terminal/readline:readline",
-#         # "//packages/linux/system/libs/network/libmnl:libmnl",  # TODO: Create this package
-#         # "//packages/linux/system/libs/network/libnftnl:libnftnl",  # TODO: Create this package
-#     ],
-#
-#     description = "Modern Linux packet filtering framework replacing iptables",
-#     homepage = "https://netfilter.org/projects/nftables/",
-#     license = "GPL-2.0",
-#     visibility = ["PUBLIC"],
-# )
+    iuse = [
+        "debug",
+        "doc",
+        "gmp",
+        "json",
+        "libedit",
+        "python",
+        "readline",
+        "static-libs",
+        "xtables",
+    ],
+    use_defaults = ["json", "readline"],
+
+    use_deps = {
+        "readline": ["//packages/linux/system/terminal/readline:readline"],
+        "python": ["//packages/linux/lang/python:python"],
+    },
+
+    use_configure = {
+        "-debug": "--disable-debug",
+        "-doc": "--disable-man-doc",
+        "-gmp": "--disable-gmp",
+        "-json": "--without-json",
+        "-libedit": "--disable-libedit",
+        "-python": "--disable-python",
+        "-readline": "--without-readline",
+        "-static-libs": "--disable-static",
+        "-xtables": "--disable-xtables",
+        "debug": "--enable-debug",
+        "doc": "--enable-man-doc",
+        "gmp": "--enable-gmp",
+        "json": "--with-json",
+        "libedit": "--enable-libedit",
+        "python": "--enable-python",
+        "readline": "--with-readline",
+        "static-libs": "--enable-static",
+        "xtables": "--enable-xtables",
+    },
+
+    configure_args = [
+        "--prefix=/usr",
+        "--sbindir=/sbin",
+        "--sysconfdir=/etc",
+        "--localstatedir=/var",
+        "--with-python-bin=/usr/bin/python3",
+    ],
+
+    post_install = """
+# Create nftables configuration directories
+mkdir -p "$DESTDIR/etc/nftables"
+mkdir -p "$DESTDIR/var/lib/nftables"
+
+# Create default configuration file
+cat > "$DESTDIR/etc/nftables/nftables.conf" << 'NFTCONF'
+#!/usr/sbin/nft -f
+# Default nftables configuration
+flush ruleset
+
+table inet filter {
+    chain input {
+        type filter hook input priority 0; policy drop;
+        ct state established,related accept
+        iif lo accept
+        ip protocol icmp accept
+        ip6 nexthdr icmpv6 accept
+    }
+
+    chain forward {
+        type filter hook forward priority 0; policy drop;
+    }
+
+    chain output {
+        type filter hook output priority 0; policy accept;
+    }
+}
+NFTCONF
+chmod 600 "$DESTDIR/etc/nftables/nftables.conf"
+""",
+
+    deps = [
+        "//packages/linux/core/libnl:libnl",
+        "//packages/linux/system/libs/utility/gmp:gmp",
+        "//packages/linux/system/terminal/readline:readline",
+        "//packages/linux/system/libs/network/libmnl:libmnl",
+        "//packages/linux/system/libs/network/libnftnl:libnftnl",
+    ],
+
+    description = "Modern Linux packet filtering framework replacing iptables",
+    homepage = "https://netfilter.org/projects/nftables/",
+    license = "GPL-2.0",
+    visibility = ["PUBLIC"],
+)

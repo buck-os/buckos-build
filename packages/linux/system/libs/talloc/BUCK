@@ -35,11 +35,11 @@ autotools_package(
     # Custom phases for waf build system
     # Samba's waf configure wrapper script generates a Makefile
     src_configure = '''
-# talloc uses waf - run configure directly (it's the waf wrapper)
-python3 ./configure \\
-    --prefix=/usr \\
-    --sysconfdir=/etc \\
-    --libdir=/usr/lib64 \\
+# talloc uses waf - the configure script is a shell wrapper around waf
+./configure \
+    --prefix=/usr \
+    --sysconfdir=/etc \
+    --libdir=/usr/lib64 \
     --disable-python
 ''',
     src_compile = '''

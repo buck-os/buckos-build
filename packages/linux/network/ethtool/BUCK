@@ -14,10 +14,13 @@ autotools_package(
     signature_required = False,
 
     iuse = ["pretty-dump", "netlink"],
-    use_defaults = [],  # libmnl not yet packaged, disable netlink by default
+    use_defaults = ["netlink"],
 
     use_deps = {
-        "netlink": ["//packages/linux/core/libnl:libnl"],
+        "netlink": [
+            "//packages/linux/core/libnl:libnl",
+            "//packages/linux/system/libs/network/libmnl:libmnl",
+        ],
     },
 
     use_configure = {

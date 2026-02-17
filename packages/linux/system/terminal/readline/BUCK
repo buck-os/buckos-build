@@ -29,6 +29,12 @@ autotools_package(
         "--with-curses",
     ],
 
+    # Force readline to link against ncurses/tinfo in the shared library
+    # readline's configure finds ncurses but doesn't propagate it to SHLIB_LIBS
+    src_compile = '''
+make -j${MAKEOPTS:-$(nproc)} SHLIB_LIBS="-lncursesw"
+''',
+
     deps = ["//packages/linux/system/terminal/ncurses:ncurses"],
     visibility = ["PUBLIC"],
 )
