@@ -669,12 +669,27 @@ def download_source(
             base_pkg = base_pkg[:-len(suffix)]
             break
 
-    # Ensure the archive filename contains the package name to avoid
-    # mirror path collisions and numeric-only filenames. For example:
-    #   "1.5.10.tar.gz" -> "libepoxy-1.5.10.tar.gz"
-    #   "vulkan-sdk-1.4.335.0.tar.gz" -> "SPIRV-Tools-vulkan-sdk-1.4.335.0.tar.gz" (if different pkg)
-    # Skip if the filename already starts with the package name (case-insensitive)
-    if not archive_filename.lower().startswith(base_pkg.lower()):
+    # Prefix the archive filename with the package name when the filename is
+    # ambiguous or could cause mirror path collisions:
+    #   - Starts with a digit: "1.5.10.tar.gz" -> "libepoxy-1.5.10.tar.gz"
+    #   - Starts with "v" + digit (version tag): "v3.3.0.tar.gz" -> "double-conversion-v3.3.0.tar.gz"
+    #   - From /archive/ URL and already exists under different package (SPIRV collision):
+    #     "vulkan-sdk-1.4.335.0.tar.gz" -> "spirv-headers-vulkan-sdk-1.4.335.0.tar.gz"
+    # Keep descriptive filenames as-is (e.g., "openssl-3.3.2.tar.gz", "linux-6.12.6.tar.xz")
+    needs_prefix = False
+    fname_base = archive_filename.split(".")[0]  # strip extensions
+
+    # Always prefix if filename starts with a digit
+    if archive_filename[0:1].isdigit():
+        needs_prefix = True
+    # Prefix if filename is a version tag (v + digit)
+    elif len(fname_base) > 1 and fname_base[0:1] == "v" and fname_base[1:2].isdigit():
+        needs_prefix = True
+    # Prefix GitHub/GitLab archive URLs where filename doesn't contain the package name
+    elif "/archive/" in src_uri and not archive_filename.lower().startswith(base_pkg.lower()):
+        needs_prefix = True
+
+    if needs_prefix:
         archive_filename = base_pkg + "-" + archive_filename
 
     # Create http_file for the main archive (using custom rule with proxy support)
