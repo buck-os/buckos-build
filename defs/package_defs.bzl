@@ -179,21 +179,21 @@ def _get_download_proxy():
     Get the HTTP proxy for downloading sources.
     Reads from download.proxy config in .buckconfig.
     """
-    return read_config("download", "proxy", "")
+    return read_root_config("download", "proxy", "")
 
 def _get_vendor_prefer():
     """
     Check if vendored sources should be preferred over downloads.
     Reads from vendor.prefer_vendored config in .buckconfig.
     """
-    return read_config("vendor", "prefer_vendored", "true") == "true"
+    return read_root_config("vendor", "prefer_vendored", "true") == "true"
 
 def _get_vendor_require():
     """
     Check if vendored sources are required (strict offline mode).
     Reads from vendor.require_vendored config in .buckconfig.
     """
-    return read_config("vendor", "require_vendored", "false") == "true"
+    return read_root_config("vendor", "require_vendored", "false") == "true"
 
 def _get_vendor_dir():
     """
@@ -202,7 +202,7 @@ def _get_vendor_dir():
 
     Returns the configured vendor directory (default: "vendor").
     """
-    return read_config("vendor", "dir", "vendor")
+    return read_root_config("vendor", "dir", "vendor")
 
 def get_vendor_path(package_path: str, filename: str) -> str:
     """
@@ -225,7 +225,7 @@ def _get_download_max_concurrent():
     Get the maximum concurrent downloads setting.
     Reads from download.max_concurrent config in .buckconfig.
     """
-    return read_config("download", "max_concurrent", "4")
+    return read_root_config("download", "max_concurrent", "4")
 
 def _get_download_env():
     """
@@ -271,23 +271,23 @@ def _get_download_env():
 
 def _get_mirror_source_order():
     """Get the source resolution order from [mirror] section."""
-    return read_config("mirror", "source_order", "vendor,buckos-mirror,upstream")
+    return read_root_config("mirror", "source_order", "vendor,buckos-mirror,upstream")
 
 def _get_mirror_buckos_url():
     """Get the public BuckOS mirror URL from [mirror] section."""
-    return read_config("mirror", "buckos_mirror_url", "")
+    return read_root_config("mirror", "buckos_mirror_url", "")
 
 def _get_mirror_internal_type():
     """Get the internal mirror type (http or cli) from [mirror] section."""
-    return read_config("mirror", "internal_mirror_type", "")
+    return read_root_config("mirror", "internal_mirror_type", "")
 
 def _get_mirror_internal_base_url():
     """Get the internal mirror base URL from [mirror] section."""
-    return read_config("mirror", "internal_mirror_base_url", "")
+    return read_root_config("mirror", "internal_mirror_base_url", "")
 
 def _get_mirror_internal_cert_path():
     """Get the internal mirror x509 cert path from [mirror] section."""
-    return read_config("mirror", "internal_mirror_cert_path", "")
+    return read_root_config("mirror", "internal_mirror_cert_path", "")
 
 def _get_mirror_internal_cli_get():
     """Get the internal mirror CLI get command template from [mirror] section.
@@ -295,7 +295,7 @@ def _get_mirror_internal_cli_get():
     The command template uses {path} and {output} placeholders.
     Example: 'mycli get mybucket/{path} {output}'
     """
-    return read_config("mirror", "internal_mirror_cli_get", "")
+    return read_root_config("mirror", "internal_mirror_cli_get", "")
 
 # Platform constraint values for target_compatible_with
 # Only macOS packages need constraints to prevent building on Linux
