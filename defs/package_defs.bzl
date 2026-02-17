@@ -1082,7 +1082,7 @@ fi
         "cache_key.txt",
         "version={}\n".format(ctx.attrs.version),
     )
-    cmd.hidden(cache_key)
+    cmd.add(cmd_args(hidden = [cache_key]))
 
     ctx.actions.run(
         cmd,
@@ -1653,7 +1653,7 @@ done
             "maintainers=" + ",".join(ctx.attrs.maintainers),
         ]) + "\n",
     )
-    install_cmd.hidden(cache_key)
+    install_cmd.add(cmd_args(hidden = [cache_key]))
 
     ctx.actions.run(
         install_cmd,
@@ -1763,12 +1763,12 @@ cp -r "$SRC"/* "$OUT{extract_to}/" 2>/dev/null || true
         install_dir.as_output(),
         src_dir,
     ])
-    cmd.hidden(cache_key)
+    cmd.add(cmd_args(hidden = [cache_key]))
 
     # Track runtime deps so adding/removing them invalidates the cache
     for dep in ctx.attrs.deps:
         dep_dir = dep[DefaultInfo].default_outputs[0]
-        cmd.hidden(dep_dir)
+        cmd.add(cmd_args(hidden = [dep_dir]))
 
     ctx.actions.run(
         cmd,
@@ -3180,6 +3180,7 @@ if command -v xorriso >/dev/null 2>&1; then
             done
             xorriso -as mkisofs \\
                 -o "$ISO_OUT" \\
+                -iso-level 3 \\
                 ${{ISOHDPFX:+-isohybrid-mbr "$ISOHDPFX"}} \\
                 -c isolinux/boot.cat \\
                 -b isolinux/isolinux.bin \\
@@ -3227,6 +3228,7 @@ EARLYCFG
 
             xorriso -as mkisofs \\
                 -o "$ISO_OUT" \\
+                -iso-level 3 \\
                 -e boot/efi.img \\
                 -no-emul-boot \\
                 -V "$VOLUME_LABEL" \\
@@ -3293,6 +3295,7 @@ EARLYCFG
                 # Full hybrid: BIOS + EFI
                 xorriso -as mkisofs \\
                     -o "$ISO_OUT" \\
+                    -iso-level 3 \\
                     ${{ISOHDPFX:+-isohybrid-mbr "$ISOHDPFX"}} \\
                     -c isolinux/boot.cat \\
                     -b isolinux/isolinux.bin \\
@@ -3309,6 +3312,7 @@ EARLYCFG
                 # EFI only
                 xorriso -as mkisofs \\
                     -o "$ISO_OUT" \\
+                    -iso-level 3 \\
                     -e boot/efi.img \\
                     -no-emul-boot \\
                     -isohybrid-gpt-basdat \\
@@ -3318,6 +3322,7 @@ EARLYCFG
                 # BIOS only
                 xorriso -as mkisofs \\
                     -o "$ISO_OUT" \\
+                    -iso-level 3 \\
                     ${{ISOHDPFX:+-isohybrid-mbr "$ISOHDPFX"}} \\
                     -c isolinux/boot.cat \\
                     -b isolinux/isolinux.bin \\
@@ -3331,6 +3336,7 @@ EARLYCFG
                 echo "Warning: No BIOS or EFI boot images found, creating non-bootable ISO"
                 xorriso -as mkisofs \\
                     -o "$ISO_OUT" \\
+                    -iso-level 3 \\
                     -V "$VOLUME_LABEL" \\
                     -J -R \\
                     "$WORK"
@@ -5256,12 +5262,12 @@ source "$FRAMEWORK_SCRIPT"
             "maintainers=" + ",".join(ctx.attrs.maintainers),
         ]) + "\n",
     )
-    cmd.hidden(cache_key)
+    cmd.add(cmd_args(hidden = [cache_key]))
 
     # Track pdepend outputs so adding/removing post-deps invalidates the cache
     for pdep in ctx.attrs.pdepend:
         pdep_dir = pdep[DefaultInfo].default_outputs[0]
-        cmd.hidden(pdep_dir)
+        cmd.add(cmd_args(hidden = [pdep_dir]))
 
     # Determine if this action should be local-only:
     # - Bootstrap packages (use_bootstrap=true) use the host compiler and tools,

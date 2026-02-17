@@ -1857,7 +1857,7 @@ rm -f "$BUCK2_ZST"
 # Live rootfs with KDE Plasma desktop (systemd-only, no eudev)
 rootfs(
     name = "buckos-live-kde-rootfs",
-    version = "4",  # installer 0.0.2 + full build toolchain
+    version = "0.0.1",
     packages = [
         ":live-init-scripts-gen",
         ":baselayout-gen",
@@ -2050,6 +2050,7 @@ rootfs(
         "//packages/linux/dev-tools/vcs/git:git",
         "//packages/linux/editors/vim:vim",
         "//packages/linux/lang/rust:rust",  # Rust toolchain including cargo
+        "//packages/linux/lang/go:go",  # Go toolchain
         "//packages/linux/lang/gcc:gcc",  # GCC compiler
         "//packages/linux/dev-tools/build-systems/make:make",
         "//packages/linux/dev-tools/build-systems/cmake:cmake",
@@ -2672,9 +2673,9 @@ iso_image(
     initramfs = ":buckos-live-initramfs-systemd",
     rootfs = ":buckos-live-kde-rootfs",
     boot_mode = "hybrid",
-    volume_label = "BUCKOS_LIVE_V2",
-    version = "4",  # installer 0.0.2 + full build toolchain
-    # Systemd initrd boot parameters (no serial console - causes hangs on AMD laptops)
+    volume_label = "BUCKOS_LIVE",
+    version = "0.0.1",
+    # Systemd initrd boot parameters (no serial console)
     kernel_args = "console=tty0 loglevel=7 rd.systemd.show_status=true",
     visibility = ["PUBLIC"],
 )
