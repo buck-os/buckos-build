@@ -64,7 +64,7 @@ buckos-build/
 
 ```bash
 # Download Buck2
-curl -LO https://github.com/facebook/buck2/releases/latest/download/buck2-x86_64-unknown-linux-gnu.zst
+curl -LO https://github.com/facebook/buck2/releases/download/latest/buck2-x86_64-unknown-linux-gnu.zst
 zstd -d buck2-x86_64-unknown-linux-gnu.zst -o buck2
 chmod +x buck2
 sudo mv buck2 /usr/local/bin/
