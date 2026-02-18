@@ -30,8 +30,5 @@ autotools_package(
         "-unwind": "--without-libunwind",
     },
 
-    # Fix GCC 15+ warning for unterminated string initialization
-    env = {"CFLAGS": "-std=gnu17 -O2 -Wno-error=unterminated-string-initialization"},
-
     visibility = ["PUBLIC"],
 )

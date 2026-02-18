@@ -1839,10 +1839,25 @@ TARBALL=`mktemp`
 curl -sL "https://github.com/buck-os/buckos-build/archive/refs/heads/main.tar.gz" -o "$TARBALL"
 # Extract defs/ directory (required by buckos CLI)
 tar -xzf "$TARBALL" --strip-components=1 -C "$OUT/var/db/repos/buckos-build" "buckos-build-main/defs"
+# Extract config/ directory (Fedora build flags and other config)
+tar -xzf "$TARBALL" --strip-components=1 -C "$OUT/var/db/repos/buckos-build" "buckos-build-main/config"
+# Extract .buckconfig and .buckroot (required for buck2 to work)
+tar -xzf "$TARBALL" --strip-components=1 -C "$OUT/var/db/repos/buckos-build" "buckos-build-main/.buckconfig"
+tar -xzf "$TARBALL" --strip-components=1 -C "$OUT/var/db/repos/buckos-build" "buckos-build-main/.buckroot"
+# Extract platforms/ directory (required for buck2 target platforms)
+tar -xzf "$TARBALL" --strip-components=1 -C "$OUT/var/db/repos/buckos-build" "buckos-build-main/platforms"
+# Extract toolchains/ directory (required for buck2 toolchains)
+tar -xzf "$TARBALL" --strip-components=1 -C "$OUT/var/db/repos/buckos-build" "buckos-build-main/toolchains"
 # Extract packages/linux directory
 mkdir -p "$OUT/var/db/repos/buckos-build/packages"
 tar -xzf "$TARBALL" --strip-components=2 -C "$OUT/var/db/repos/buckos-build/packages" "buckos-build-main/packages/linux"
 rm -f "$TARBALL"
+
+# Create symlink for buck-out to use tmpfs (avoids filling overlay RAM)
+ln -s /tmp/buck-out "$OUT/var/db/repos/buckos-build/buck-out"
+
+# Create install/ directory (installer generates install/BUCK dynamically)
+mkdir -p "$OUT/var/db/repos/buckos-build/install"
 
 # Download buck2 prebuilt static binary (x86_64)
 BUCK2_ZST=`mktemp`
@@ -1916,7 +1931,7 @@ rootfs(
         "//packages/linux/core/procps-ng:procps-ng",
         "//packages/linux/core/file:file",
         "//packages/linux/system/apps/findutils:findutils",
-        # strace requires libunwind which needs stdatomic.h - skipped for now
+        "//packages/linux/dev-tools/debuggers/strace:strace",
         "//packages/linux/system/apps/shadow:shadow",
         "//packages/linux/system/apps/sudo:sudo",  # Required for installer and admin tasks
         # PAM runtime dependencies (required for login/authentication)
@@ -1924,6 +1939,7 @@ rootfs(
         "//packages/linux/system/libs/network/libnsl:libnsl",
         "//packages/linux/system/libs/crypto/openssl:openssl",
         "//packages/linux/system/libs/network/curl:curl",
+        "//packages/linux/network/ca-certificates:ca-certificates",
         "//packages/linux/network/openssh:openssh",
         "//packages/linux/network/iproute2:iproute2",
         "//packages/linux/network/dhcpcd:dhcpcd",

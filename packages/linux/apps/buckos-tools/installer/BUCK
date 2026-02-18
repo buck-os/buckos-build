@@ -10,15 +10,16 @@ download_source(
 )
 
 # BuckOS Installer - Graphical installer for live environment
+# version_key: 2 - force rebuild to pick up NVMe partition fix
 cargo_workspace_package(
     name = "buckos-installer",
     workspace_source = ":buckos-src",
     member = "buckos-installer",
     version = "0.0.3",
     bins = ["buckos-installer"],
-    description = "Graphical installer for BuckOS (0.0.3) - beginner-friendly system installation",
+    description = "Graphical installer for BuckOS",
     homepage = "https://github.com/hodgesds/buckos",
-    license = "Apache-2.0 OR MIT",
+    license = "GPL-2",
     desktop_entry = {
         "name": "Install BuckOS",
         "comment": "Install BuckOS",
