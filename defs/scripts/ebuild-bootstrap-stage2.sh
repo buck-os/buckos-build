@@ -324,7 +324,7 @@ if [ -z "$MAKE_JOBS" ]; then
         if command -v nproc >/dev/null 2>&1; then
             export MAKE_JOBS="$(nproc)"
         else
-            # nproc not available (early bootstrap), use unlimited parallelism
+            # nproc not available, use unlimited parallelism
             export MAKE_JOBS=""
         fi
     else

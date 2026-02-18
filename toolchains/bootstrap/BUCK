@@ -80,9 +80,9 @@ make -j$GAS_JOBS MAKEINFO=true all-gas
     src_install = '''
 cd build
 BUCKOS_TARGET="x86_64-buckos-linux-gnu"
-make DESTDIR="$DESTDIR" install-binutils install-gas install-ld MAKEINFO=true
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install-binutils install-gas install-ld MAKEINFO=true
 # Also install target libraries that were built
-make DESTDIR="$DESTDIR" install-bfd install-libiberty install-libsframe MAKEINFO=true || true
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install-bfd install-libiberty install-libsframe MAKEINFO=true || true
 
 # Replace unprefixed tools with symlinks to prefixed versions
 # Cross-binutils installs both prefixed (x86_64-buckos-linux-gnu-as) and unprefixed (as) tools.
@@ -188,7 +188,7 @@ make -j$MAKE_JOBS
 
     src_install = '''
 cd build
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 # Remove libtool archive files (.la) as they're deprecated and cause build issues
 find "$DESTDIR" -name '*.la' -delete
 ''',
@@ -247,7 +247,7 @@ make -j$MAKE_JOBS
 
     src_install = '''
 cd build
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 # Remove libtool archive files (.la) as they're deprecated and cause build issues
 find "$DESTDIR" -name '*.la' -delete
 ''',
@@ -315,7 +315,7 @@ make -j$MAKE_JOBS
 
     src_install = '''
 cd build
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 # Remove libtool archive files (.la) as they're deprecated and cause build issues
 find "$DESTDIR" -name '*.la' -delete
 ''',
@@ -540,12 +540,9 @@ mkdir -p build && cd build
     src_compile = '''
 cd build
 
-# GCC's build system has race conditions with parallel configures.
-# Pre-run configure targets sequentially to avoid conftest.c collisions.
-echo "Running configure targets sequentially to avoid race conditions..."
-make -j1 configure-host configure-target 2>/dev/null || true
-
-# Pre-configure sub-components that might run configure during 'make all-gcc'
+# GCC's build system can trigger configure during parallel make if subdirectories
+# aren't pre-configured. Pre-configure the specific components we need.
+echo "Pre-configuring GCC subdirectories..."
 for subdir in libiberty zlib libcpp libdecnumber libbacktrace gmp mpfr mpc; do
     if [ -d "../$subdir" ] || [ -d "$subdir" ]; then
         echo "Pre-configuring $subdir..."
@@ -621,7 +618,7 @@ BUCKOS_TARGET="x86_64-buckos-linux-gnu"
 # "make install" tries to install everything including fixincludes which needs libiberty.a
 
 echo "Installing GCC compiler..."
-make DESTDIR="$DESTDIR" install-gcc
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install-gcc
 
 # Manually install libgcc.a (we can't use install-target-libgcc as it tries to install libgcov)
 GCC_VERSION=$(cat gcc/BASE-VER 2>/dev/null || echo "14.3.0")
@@ -885,7 +882,7 @@ make -j$MAKE_JOBS || {
 
     src_install = '''
 cd build
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 
 # Create /lib64/ld-linux-x86-64.so.2 symlink (required for dynamic linker to be found)
 ln -sfv ../usr/lib64/ld-linux-x86-64.so.2 "$DESTDIR/lib64/ld-linux-x86-64.so.2"
@@ -969,7 +966,7 @@ make -j$MAKE_JOBS
 
     src_install = '''
 cd build
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 # Remove libtool archives
 rm -vf "$DESTDIR"/usr/lib/lib{stdc++{,exp,fs},supc++}.la || true
 rm -vf "$DESTDIR"/usr/lib64/lib{stdc++{,exp,fs},supc++}.la || true
@@ -1283,13 +1280,9 @@ if [ -z "$CROSS_AR" ] || [ -z "$CROSS_RANLIB" ]; then
     exit 1
 fi
 
-# GCC's build system has race conditions with parallel configures.
-# Pre-run ALL configure targets sequentially to avoid conftest.c collisions.
-echo "Running all configure targets sequentially to avoid race conditions..."
-make -j1 configure-host configure-target 2>/dev/null || true
-
-# Pre-configure all sub-components that might run configure during 'make all-gcc'
-# libcody is required for C++ support (cc1plus needs libcody.a)
+# GCC's build system can trigger configure during parallel make if subdirectories
+# aren't pre-configured. Pre-configure the specific components we need.
+echo "Pre-configuring GCC subdirectories..."
 for subdir in libiberty zlib libcpp libdecnumber libbacktrace libcody gmp mpfr mpc; do
     if [ -d "../$subdir" ] || [ -d "$subdir" ]; then
         echo "Pre-configuring $subdir..."
@@ -1359,7 +1352,7 @@ make -j$MAKE_JOBS \
 cd build
 BUCKOS_TARGET="x86_64-buckos-linux-gnu"
 # Install GCC, libgcc, and libstdc++ explicitly
-make DESTDIR="$DESTDIR" install-gcc install-target-libgcc install-target-libstdc++-v3
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install-gcc install-target-libgcc install-target-libstdc++-v3
 
 # For cross-gcc-pass2 (the final cross-compiler), we DO want unprefixed symlinks
 # so that build systems looking for 'cc' or 'gcc' in /tools/bin find our cross-compiler.
@@ -1520,7 +1513,7 @@ make -j$MAKE_JOBS
 
     src_install = '''
 cd build
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 # Create non-wide symlinks
 cd "$DESTDIR/tools/lib"
 for lib in ncurses form panel menu; do
@@ -1571,7 +1564,7 @@ make -j$MAKE_JOBS SHLIB_LIBS="-lncursesw"
 ''',
 
     src_install = '''
-make DESTDIR="$DESTDIR" install SHLIB_LIBS="-lncursesw"
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install SHLIB_LIBS="-lncursesw"
 ''',
 
     bdepend = [":cross-gcc-pass2", ":cross-binutils", ":cross-glibc", ":bootstrap-ncurses"],
@@ -1636,7 +1629,7 @@ make -j$MAKE_JOBS
 ''',
 
     src_install = '''
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 ln -sf bash "$DESTDIR/tools/bin/sh"
 ''',
 
@@ -1692,7 +1685,7 @@ make -j$MAKE_JOBS
 
     src_install = '''
 cd "$WORKDIR/build"
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 ''',
 
     bdepend = [":cross-gcc-pass2", ":cross-binutils", ":cross-glibc"],
@@ -1732,7 +1725,7 @@ make -j$MAKE_JOBS
 ''',
 
     src_install = '''
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 ''',
 
     bdepend = [":cross-gcc-pass2", ":cross-binutils", ":cross-glibc"],
@@ -1785,7 +1778,7 @@ make -j$MAKE_JOBS
 
     src_install = '''
 cd "$WORKDIR/build"
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 ''',
 
     bdepend = [":cross-gcc-pass2", ":cross-binutils", ":cross-glibc"],
@@ -1824,7 +1817,7 @@ make -j$MAKE_JOBS
 ''',
 
     src_install = '''
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 ln -sf gawk "$DESTDIR/tools/bin/awk"
 ''',
 
@@ -1864,7 +1857,7 @@ make -j$MAKE_JOBS
 ''',
 
     src_install = '''
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 ''',
 
     bdepend = [":cross-gcc-pass2", ":cross-binutils", ":cross-glibc"],
@@ -1904,7 +1897,7 @@ make -j$MAKE_JOBS
 ''',
 
     src_install = '''
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 ''',
 
     bdepend = [":cross-gcc-pass2", ":cross-binutils", ":cross-glibc"],
@@ -1943,7 +1936,7 @@ make -j$MAKE_JOBS
 ''',
 
     src_install = '''
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 ''',
 
     bdepend = [":cross-gcc-pass2", ":cross-binutils", ":cross-glibc"],
@@ -1982,7 +1975,7 @@ make -j$MAKE_JOBS
 ''',
 
     src_install = '''
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 ''',
 
     bdepend = [":cross-gcc-pass2", ":cross-binutils", ":cross-glibc"],
@@ -2021,7 +2014,7 @@ make -j$MAKE_JOBS
 ''',
 
     src_install = '''
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 ''',
 
     bdepend = [":cross-gcc-pass2", ":cross-binutils", ":cross-glibc"],
@@ -2061,7 +2054,7 @@ make -j$MAKE_JOBS
 ''',
 
     src_install = '''
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 ''',
 
     bdepend = [":cross-gcc-pass2", ":cross-binutils", ":cross-glibc"],
@@ -2183,7 +2176,7 @@ make -j$MAKE_JOBS
 ''',
 
     src_install = '''
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 # Create pkg-config symlink (some scripts expect this name)
 ln -sf pkg-config "$DESTDIR/tools/bin/${BUCKOS_TARGET}-pkg-config" || true
 ''',
@@ -2227,7 +2220,7 @@ make -C src -j$MAKE_JOBS
 ''',
 
     src_install = '''
-make -C src DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS -C src DESTDIR="$DESTDIR" install
 # Install the host system's magic database
 mkdir -p "$DESTDIR/tools/share/misc"
 if [ -f /usr/share/misc/magic.mgc ]; then
@@ -2275,7 +2268,7 @@ make -j$MAKE_JOBS
 ''',
 
     src_install = '''
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 ''',
 
     bdepend = [":cross-gcc-pass2", ":cross-binutils", ":cross-glibc"],
@@ -2398,7 +2391,7 @@ echo "Native GCC Stage 2 compilation complete"
 
     src_install = '''
 cd build
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 
 # Create marker
 cat > "$DESTDIR/tools/lib/gcc/x86_64-buckos-linux-gnu/15.2.0/.stage2-marker" << 'EOF'
@@ -2925,9 +2918,9 @@ fi
 # Install GCC components - use subshell to isolate errors
 # Stage 3 install may have partial failures (missing libgcc_eh.a etc.) which is OK
 (
-    make DESTDIR="$DESTDIR" install-gcc || echo "install-gcc had errors (non-fatal)"
-    make DESTDIR="$DESTDIR" install-target-libgcc || echo "install-target-libgcc had errors (non-fatal)"
-    make DESTDIR="$DESTDIR" install-target-libstdc++-v3 2>/dev/null || echo "install-target-libstdc++-v3 had errors (non-fatal)"
+    make -j$MAKE_JOBS DESTDIR="$DESTDIR" install-gcc || echo "install-gcc had errors (non-fatal)"
+    make -j$MAKE_JOBS DESTDIR="$DESTDIR" install-target-libgcc || echo "install-target-libgcc had errors (non-fatal)"
+    make -j$MAKE_JOBS DESTDIR="$DESTDIR" install-target-libstdc++-v3 2>/dev/null || echo "install-target-libstdc++-v3 had errors (non-fatal)"
 ) || true
 
 # Create stage3 marker
@@ -3037,7 +3030,7 @@ echo "Glibc Stage 3 compilation complete"
 
     src_install = '''
 cd build
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 
 # Create dynamic linker symlink
 ln -sfv ../usr/lib64/ld-linux-x86-64.so.2 "$DESTDIR/lib64/ld-linux-x86-64.so.2"
@@ -3456,8 +3449,8 @@ make -j$GAS_JOBS MAKEINFO=true all-gas
     src_install = '''
 cd build
 BUCKOS_TARGET="aarch64-buckos-linux-gnu"
-make DESTDIR="$DESTDIR" install-binutils install-gas install-ld MAKEINFO=true
-make DESTDIR="$DESTDIR" install-bfd install-libiberty install-libsframe MAKEINFO=true || true
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install-binutils install-gas install-ld MAKEINFO=true
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install-bfd install-libiberty install-libsframe MAKEINFO=true || true
 
 # Create unprefixed symlinks in the standard cross-toolchain location
 # GCC looks in <prefix>/<target>/bin/ for target tools (as, ld, etc.)
@@ -3684,12 +3677,9 @@ for dep_dir in "${DEPS[@]}"; do
     fi
 done
 
-# GCC's build system has race conditions with parallel configures.
-# Pre-run configure targets sequentially to avoid conftest.c collisions.
-echo "Running configure targets sequentially to avoid race conditions..."
-make -j1 configure-host configure-target 2>/dev/null || true
-
-# Pre-configure sub-components that might run configure during 'make all-gcc'
+# GCC's build system can trigger configure during parallel make if subdirectories
+# aren't pre-configured. Pre-configure the specific components we need.
+echo "Pre-configuring GCC subdirectories..."
 for subdir in libiberty zlib libcpp libdecnumber libbacktrace gmp mpfr mpc; do
     if [ -d "../$subdir" ] || [ -d "$subdir" ]; then
         echo "Pre-configuring $subdir..."
@@ -3773,7 +3763,7 @@ done
 
 # For pass1, we only need to install the compiler and libgcc.a
 echo "Installing GCC compiler..."
-make DESTDIR="$DESTDIR" install-gcc MAKEINFO=true 2>&1 | tee install.log
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install-gcc MAKEINFO=true 2>&1 | tee install.log
 
 # Check if install created the bin directory
 if [ ! -d "$DESTDIR/tools/bin" ]; then
@@ -3864,7 +3854,7 @@ HEADER_DEST="$DESTDIR/tools/$BUCKOS_TARGET/include"
 mkdir -p "$HEADER_DEST"
 
 # Use ARCH=arm64 for aarch64 headers
-make ARCH=arm64 INSTALL_HDR_PATH="$DESTDIR/tools/$BUCKOS_TARGET" headers_install
+make -j$MAKE_JOBS ARCH=arm64 INSTALL_HDR_PATH="$DESTDIR/tools/$BUCKOS_TARGET" headers_install
 
 # Also install to /tools/include for compatibility
 mkdir -p "$DESTDIR/tools/include"
@@ -4041,11 +4031,11 @@ BUCKOS_TARGET="aarch64-buckos-linux-gnu"
 
 # First install headers explicitly (glibc cross-compile may not install them with regular install)
 echo "Installing glibc headers..."
-make DESTDIR="$DESTDIR" install-headers || echo "install-headers failed, continuing..."
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install-headers || echo "install-headers failed, continuing..."
 
 # Then run full install (libraries, etc.)
 echo "Installing glibc..."
-make DESTDIR="$DESTDIR" install || echo "install failed, will manually copy files..."
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install || echo "install failed, will manually copy files..."
 
 # Create a dummy stubs.h if it wasn't generated
 if [ ! -f "$DESTDIR/usr/include/gnu/stubs.h" ]; then
@@ -4456,7 +4446,7 @@ make -j$MAKE_JOBS MAKEINFO=true \
 
     src_install = '''
 cd build
-make DESTDIR="$DESTDIR" install MAKEINFO=true
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install MAKEINFO=true
 ''',
 
     bdepend = [":gmp-src", ":mpfr-src", ":mpc-src", ":cross-binutils-aarch64", ":cross-glibc-aarch64", ":cross-linux-headers-aarch64"],
@@ -4690,7 +4680,7 @@ make -j$MAKE_JOBS
 
     src_install = '''
 cd build
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 # Create non-wide symlinks
 cd "$DESTDIR/tools/lib"
 for lib in ncurses form panel menu; do
@@ -4734,7 +4724,7 @@ make -j$MAKE_JOBS SHLIB_LIBS="-lncursesw"
 ''',
 
     src_install = '''
-make DESTDIR="$DESTDIR" install SHLIB_LIBS="-lncursesw"
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install SHLIB_LIBS="-lncursesw"
 ''',
 
     bdepend = [":cross-gcc-aarch64-pass2", ":cross-binutils-aarch64", ":cross-glibc-aarch64", ":cross-linux-headers-aarch64", ":bootstrap-ncurses-aarch64"],
@@ -4792,7 +4782,7 @@ make -j$MAKE_JOBS
 ''',
 
     src_install = '''
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 ln -sf bash "$DESTDIR/tools/bin/sh"
 ''',
 
@@ -4837,7 +4827,7 @@ make -j$MAKE_JOBS
 
     src_install = '''
 cd "$WORKDIR/build"
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 ''',
 
     bdepend = [":cross-gcc-aarch64-pass2", ":cross-binutils-aarch64", ":cross-glibc-aarch64", ":cross-linux-headers-aarch64"],
@@ -4870,7 +4860,7 @@ make -j$MAKE_JOBS
 ''',
 
     src_install = '''
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 ''',
 
     bdepend = [":cross-gcc-aarch64-pass2", ":cross-binutils-aarch64", ":cross-glibc-aarch64", ":cross-linux-headers-aarch64"],
@@ -4912,7 +4902,7 @@ make -j$MAKE_JOBS
 
     src_install = '''
 cd "$WORKDIR/build"
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 ''',
 
     bdepend = [":cross-gcc-aarch64-pass2", ":cross-binutils-aarch64", ":cross-glibc-aarch64", ":cross-linux-headers-aarch64"],
@@ -4944,7 +4934,7 @@ make -j$MAKE_JOBS
 ''',
 
     src_install = '''
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 ln -sf gawk "$DESTDIR/tools/bin/awk"
 ''',
 
@@ -4977,7 +4967,7 @@ make -j$MAKE_JOBS
 ''',
 
     src_install = '''
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 ''',
 
     bdepend = [":cross-gcc-aarch64-pass2", ":cross-binutils-aarch64", ":cross-glibc-aarch64", ":cross-linux-headers-aarch64"],
@@ -5010,7 +5000,7 @@ make -j$MAKE_JOBS
 ''',
 
     src_install = '''
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 ''',
 
     bdepend = [":cross-gcc-aarch64-pass2", ":cross-binutils-aarch64", ":cross-glibc-aarch64", ":cross-linux-headers-aarch64"],
@@ -5042,7 +5032,7 @@ make -j$MAKE_JOBS
 ''',
 
     src_install = '''
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 ''',
 
     bdepend = [":cross-gcc-aarch64-pass2", ":cross-binutils-aarch64", ":cross-glibc-aarch64", ":cross-linux-headers-aarch64"],
@@ -5074,7 +5064,7 @@ make -j$MAKE_JOBS
 ''',
 
     src_install = '''
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 ''',
 
     bdepend = [":cross-gcc-aarch64-pass2", ":cross-binutils-aarch64", ":cross-glibc-aarch64", ":cross-linux-headers-aarch64"],
@@ -5106,7 +5096,7 @@ make -j$MAKE_JOBS
 ''',
 
     src_install = '''
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 ''',
 
     bdepend = [":cross-gcc-aarch64-pass2", ":cross-binutils-aarch64", ":cross-glibc-aarch64", ":cross-linux-headers-aarch64"],
@@ -5139,7 +5129,7 @@ make -j$MAKE_JOBS
 ''',
 
     src_install = '''
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 ''',
 
     bdepend = [":cross-gcc-aarch64-pass2", ":cross-binutils-aarch64", ":cross-glibc-aarch64", ":cross-linux-headers-aarch64"],
@@ -5256,7 +5246,7 @@ make -j$MAKE_JOBS
 
     src_install = '''
 BUCKOS_TARGET="aarch64-buckos-linux-gnu"
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 # Create pkg-config symlink (some scripts expect this name)
 ln -sf pkg-config "$DESTDIR/tools/bin/${BUCKOS_TARGET}-pkg-config" || true
 ''',
@@ -5293,7 +5283,7 @@ make -C src -j$MAKE_JOBS
 ''',
 
     src_install = '''
-make -C src DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS -C src DESTDIR="$DESTDIR" install
 # Install the host system's magic database
 mkdir -p "$DESTDIR/tools/share/misc"
 if [ -f /usr/share/misc/magic.mgc ]; then
@@ -5334,7 +5324,7 @@ make -j$MAKE_JOBS
 ''',
 
     src_install = '''
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 ''',
 
     bdepend = [":cross-gcc-aarch64-pass2", ":cross-binutils-aarch64", ":cross-glibc-aarch64", ":cross-linux-headers-aarch64"],
@@ -5458,7 +5448,7 @@ echo "Native GCC Stage 2 for aarch64 compilation complete"
 
     src_install = '''
 cd build
-make DESTDIR="$DESTDIR" install
+make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 
 # Create marker
 mkdir -p "$DESTDIR/tools/lib/gcc/aarch64-buckos-linux-gnu/14.3.0"
