@@ -2081,6 +2081,54 @@ fi
     for pkg_dir in pkg_dirs:
         cmd.add(pkg_dir)
 
+    # Write version to a file that contributes to action cache key
+    # This ensures bumping the version forces a rootfs rebuild
+    version_key = ctx.actions.write(
+        "version_key.txt",
+        "version={}\n".format(ctx.attrs.version),
+    )
+    cmd.add(cmd_args(hidden = [version_key]))
+
+    # IMPORTANT: Force deep content tracking of all package directories.
+    # Buck2's default directory fingerprinting may not detect changes to files
+    # inside directories. We work around this by creating a manifest action that
+    # computes content hashes, then include the manifest as a hidden input.
+    # This ensures the rootfs action cache key changes when any package content changes.
+    manifest_script = ctx.actions.write(
+        "compute_manifest.sh",
+        """#!/bin/bash
+set -e
+OUT="$1"
+shift
+{
+    echo "# Package content manifest for rootfs cache invalidation"
+    for pkg_dir in "$@"; do
+        if [ -d "$pkg_dir" ]; then
+            # Compute a fast content fingerprint using file metadata
+            # This includes file sizes and modification times
+            HASH=$(find "$pkg_dir" -type f -exec stat -c '%n %s %Y' {} \\; 2>/dev/null | LC_ALL=C sort | sha256sum | cut -d' ' -f1)
+            echo "$pkg_dir: $HASH"
+        fi
+    done
+} > "$OUT"
+""",
+        is_executable = True,
+    )
+
+    manifest_file = ctx.actions.declare_output("package_manifest.txt")
+    manifest_cmd = cmd_args(["bash", manifest_script, manifest_file.as_output()])
+    for pkg_dir in pkg_dirs:
+        manifest_cmd.add(pkg_dir)
+
+    ctx.actions.run(
+        manifest_cmd,
+        category = "rootfs_manifest",
+        identifier = ctx.attrs.name + "-manifest",
+    )
+
+    # Include manifest as hidden input to force cache invalidation
+    cmd.add(cmd_args(hidden = [manifest_file]))
+
     ctx.actions.run(
         cmd,
         category = "rootfs",
@@ -3402,15 +3450,25 @@ ls -lh "$ISO_OUT"
 
     rootfs_arg = rootfs_dir if rootfs_dir else ""
 
+    cmd = cmd_args([
+        "bash",
+        script,
+        iso_file.as_output(),
+        kernel_dir,
+        initramfs_file,
+        rootfs_arg,
+    ])
+
+    # Write version to a file that contributes to action cache key
+    # This ensures bumping the version forces an ISO rebuild
+    version_key = ctx.actions.write(
+        "version_key.txt",
+        "version={}\n".format(ctx.attrs.version),
+    )
+    cmd.add(cmd_args(hidden = [version_key]))
+
     ctx.actions.run(
-        cmd_args([
-            "bash",
-            script,
-            iso_file.as_output(),
-            kernel_dir,
-            initramfs_file,
-            rootfs_arg,
-        ]),
+        cmd,
         category = "iso",
         identifier = ctx.attrs.name,
     )

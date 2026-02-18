@@ -1857,7 +1857,7 @@ rm -f "$BUCK2_ZST"
 # Live rootfs with KDE Plasma desktop (systemd-only, no eudev)
 rootfs(
     name = "buckos-live-kde-rootfs",
-    version = "0.0.1",
+    version = "0.0.3",
     packages = [
         ":live-init-scripts-gen",
         ":baselayout-gen",
@@ -2674,7 +2674,7 @@ iso_image(
     rootfs = ":buckos-live-kde-rootfs",
     boot_mode = "hybrid",
     volume_label = "BUCKOS_LIVE",
-    version = "0.0.1",
+    version = "0.0.3",
     # Systemd initrd boot parameters (no serial console)
     kernel_args = "console=tty0 loglevel=7 rd.systemd.show_status=true",
     visibility = ["PUBLIC"],
