@@ -4753,7 +4753,7 @@ def _ebuild_package_impl(ctx: AnalysisContext) -> list[Provider]:
     src_configure = ctx.attrs.src_configure if ctx.attrs.src_configure else "true"
     src_compile = ctx.attrs.src_compile if ctx.attrs.src_compile else "make -j${MAKEOPTS:-$(nproc)}"
     src_test = ctx.attrs.src_test if ctx.attrs.src_test else "true"
-    src_install = ctx.attrs.src_install if ctx.attrs.src_install else "make install DESTDIR=\"$DESTDIR\""
+    src_install = ctx.attrs.src_install if ctx.attrs.src_install else "make -j${MAKEOPTS:-$(nproc)} install DESTDIR=\"$DESTDIR\""
 
     # Write phase scripts to separate files to avoid format string conflicts
     # Shell scripts often contain ${VAR} which conflicts with Python's {placeholder} syntax
@@ -4995,12 +4995,14 @@ if [ "$BUILD_THREADS" = "0" ]; then
     if command -v nproc >/dev/null 2>&1; then
         export MAKE_JOBS="$(nproc)"
     else
-        # nproc not available (early bootstrap), use unlimited parallelism
+        # nproc not available (early bootstrap), fall back to unlimited parallelism
         export MAKE_JOBS=""
     fi
 else
     export MAKE_JOBS="$BUILD_THREADS"
 fi
+
+echo "=== Build parallelism: MAKE_JOBS=$MAKE_JOBS (cores=$(nproc 2>/dev/null || echo N/A)) ==="
 
 # CRITICAL: Copy source to isolated build directory
 # Buck2's download_source produces a single shared artifact - multiple packages using
@@ -6486,7 +6488,7 @@ def make_package(
 
     # Default src_install if not provided
     if src_install == None:
-        src_install = 'make DESTDIR="$DESTDIR" $MAKE_INSTALL_ARGS install'
+        src_install = 'make -j${MAKEOPTS:-$(nproc)} DESTDIR="$DESTDIR" $MAKE_INSTALL_ARGS install'
 
     # Handle config.in style configuration (for packages like net-tools)
     if config_in_options:
