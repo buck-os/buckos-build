@@ -23,8 +23,8 @@ def _buck2_build(repo_root: Path, target: str, provenance: bool = True,
         pytest.skip("buck2 not found on PATH")
     args = [
         "buck2", "build", "--show-full-output",
-        "-c", f"buckos.provenance={'true' if provenance else 'false'}",
-        "-c", f"buckos.slsa={'true' if slsa else 'false'}",
+        "-c", f"use.provenance={'true' if provenance else 'false'}",
+        "-c", f"use.slsa={'true' if slsa else 'false'}",
         "-c", "buckos.use_host_toolchain=true",
         target,
     ]

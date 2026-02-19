@@ -1,5 +1,5 @@
 load("//defs:package_defs.bzl", "cmake_package")
-load("//defs:use_flags.bzl", "set_use_flags", "use_dep", "use_configure_args", "GLOBAL_USE_FLAGS")
+load("//defs:use_flags.bzl", "use_dep", "use_configure_args", "GLOBAL_USE_FLAGS")
 
 # =============================================================================
 # LLVM - Low Level Virtual Machine
@@ -26,10 +26,6 @@ LLVM_USE_DEPS = {
     "zlib": ["//packages/linux/core/zlib:zlib"],
     "ffi": ["//packages/linux/system/libs/utility/libffi:libffi"],
 }
-
-# Get current global USE flags (can be overridden per-build)
-_global_use = set_use_flags(LLVM_USE_DEFAULTS)
-_effective_use = LLVM_USE_DEFAULTS
 
 # Common CMake arguments for all LLVM versions
 LLVM_CMAKE_ARGS = [
@@ -132,10 +128,9 @@ cmake_package(
     src_configure = LLVM_SRC_CONFIGURE,
     src_compile = LLVM_SRC_COMPILE,
     cmake_args = LLVM_CMAKE_ARGS,
-    deps = use_dep(LLVM_USE_DEPS, _effective_use) + [
+    deps = use_dep(LLVM_USE_DEPS, LLVM_USE_DEFAULTS) + [
         "//packages/linux/system/terminal/ncurses:ncurses",
         "//packages/linux/system/libs/data/libxml2:libxml2",
     ],
     visibility = ["PUBLIC"],
 )
-

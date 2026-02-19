@@ -4919,8 +4919,8 @@ def _ebuild_package_impl(ctx: AnalysisContext) -> list[Provider]:
     use_host_toolchain = _should_use_host_toolchain()
 
     # Read provenance config
-    provenance_enabled = read_config("buckos", "provenance", "false").lower() in ["true", "1", "yes"]
-    slsa_enabled = read_config("buckos", "slsa", "false").lower() in ["true", "1", "yes"]
+    provenance_enabled = read_config("use", "provenance", "false").lower() in ["true", "1", "yes"]
+    slsa_enabled = read_config("use", "slsa", "false").lower() in ["true", "1", "yes"]
 
     # Read graph hash from the graph-hash genrule output
     graph_hash_artifact = ctx.attrs._graph_hash[DefaultInfo].default_outputs[0]
@@ -5692,8 +5692,6 @@ def ebuild_package(
         use_defaults: list[str] = [],
         use_configure: dict = {},
         use_deps: dict = {},
-        global_use: dict | None = None,
-        package_overrides: dict | None = None,
         # Dependencies
         depend: list[str] = [],
         rdepend: list[str] = [],
@@ -5726,8 +5724,6 @@ def ebuild_package(
         use_configure: Dict mapping USE flag to configure argument(s)
                        Example: {"ssl": "--with-ssl", "-ssl": "--without-ssl"}
         use_deps: Dict mapping USE flag to conditional dependencies
-        global_use: Global USE flag configuration
-        package_overrides: Package-specific USE overrides
         depend: Runtime dependencies
         rdepend: Runtime-only dependencies
         bdepend: Build-time dependencies
@@ -5810,8 +5806,6 @@ def ebuild_package(
             name,
             iuse,
             use_defaults,
-            global_use,
-            package_overrides,
         )
 
         # Resolve conditional dependencies
@@ -5939,8 +5933,6 @@ def cmake_package(
         use_options: dict = {},
         use_cmake: dict = {},  # Raw cmake args like use_configure: {"ssl": "-DWITH_SSL=ON", "-ssl": "-DWITH_SSL=OFF"}
         use_deps: dict = {},
-        global_use: dict | None = None,
-        package_overrides: dict | None = None,
         # Distribution compatibility
         compat_tags: list[str] | None = None,
         signature_sha256: str | None = None,
@@ -5967,8 +5959,6 @@ def cmake_package(
         use_options: Dict mapping USE flag to CMake option(s)
                      Example: {"ssl": "ENABLE_SSL", "tests": "BUILD_TESTING"}
         use_deps: Dict mapping USE flag to conditional dependencies
-        global_use: Global USE flag configuration
-        package_overrides: Package-specific USE overrides
         signature_sha256: SHA256 of GPG signature file (use update_checksums.py to populate)
         gpg_key: Optional GPG key ID or fingerprint to import and verify against
         gpg_keyring: Optional path to GPG keyring file with trusted keys
@@ -6024,8 +6014,6 @@ def cmake_package(
             name,
             iuse,
             use_defaults,
-            global_use,
-            package_overrides,
         )
 
         # Resolve conditional dependencies
@@ -6152,8 +6140,6 @@ def meson_package(
         use_meson: dict = {},  # Raw meson args like use_configure: {"ssl": "-Dssl=enabled", "-ssl": "-Dssl=disabled"}
         use_configure: dict = {},  # Alias for use_meson (for consistency with autotools_package)
         use_deps: dict = {},
-        global_use: dict | None = None,
-        package_overrides: dict | None = None,
         # Distribution compatibility
         compat_tags: list[str] | None = None,
         signature_sha256: str | None = None,
@@ -6182,8 +6168,6 @@ def meson_package(
                    Example: {"ssl": "-Dssl=enabled", "-ssl": "-Dssl=disabled"}
         use_configure: Alias for use_meson (for consistency with autotools_package)
         use_deps: Dict mapping USE flag to conditional dependencies
-        global_use: Global USE flag configuration
-        package_overrides: Package-specific USE overrides
         signature_sha256: SHA256 of GPG signature file (use update_checksums.py to populate)
         gpg_key: Optional GPG key ID or fingerprint to import and verify against
         gpg_keyring: Optional path to GPG keyring file with trusted keys
@@ -6244,8 +6228,6 @@ def meson_package(
             name,
             iuse,
             use_defaults,
-            global_use,
-            package_overrides,
         )
 
         # Resolve conditional dependencies
@@ -6357,8 +6339,6 @@ def autotools_package(
         use_defaults: list[str] = [],
         use_configure: dict = {},
         use_deps: dict = {},
-        global_use: dict | None = None,
-        package_overrides: dict | None = None,
         # Distribution compatibility
         compat_tags: list[str] | None = None,
         signature_sha256: str | None = None,
@@ -6389,8 +6369,6 @@ def autotools_package(
         use_configure: Dict mapping USE flag to configure argument(s)
                        Example: {"ssl": "--with-ssl", "-ssl": "--without-ssl"}
         use_deps: Dict mapping USE flag to conditional dependencies
-        global_use: Global USE flag configuration
-        package_overrides: Package-specific USE overrides
         compat_tags: Distribution compatibility tags (e.g., ["buckos-native", "fedora"])
                     Defaults to ["buckos-native"] if not specified
         signature_sha256: SHA256 of GPG signature file (use update_checksums.py to populate)
@@ -6466,8 +6444,6 @@ def autotools_package(
             name,
             iuse,
             use_defaults,
-            global_use,
-            package_overrides,
         )
 
         # Resolve conditional dependencies
@@ -6597,8 +6573,6 @@ def make_package(
         use_defaults: list[str] = [],
         use_make: dict = {},
         use_deps: dict = {},
-        global_use: dict | None = None,
-        package_overrides: dict | None = None,
         # Distribution compatibility
         compat_tags: list[str] | None = None,
         signature_sha256: str | None = None,
@@ -6635,8 +6609,6 @@ def make_package(
         use_make: Dict mapping USE flag to make arguments
                   Example: {"debug": "DEBUG=1", "-debug": "DEBUG=0"}
         use_deps: Dict mapping USE flag to conditional dependencies
-        global_use: Global USE flag configuration
-        package_overrides: Package-specific USE overrides
         compat_tags: Distribution compatibility tags
         config_in_options: Dict mapping config.in option names to values (y/n).
                           For packages using config.in + configure.sh style configuration.
@@ -6707,8 +6679,6 @@ def make_package(
             name,
             iuse,
             use_defaults,
-            global_use,
-            package_overrides,
         )
 
         # Resolve conditional dependencies
@@ -7263,8 +7233,6 @@ def cargo_package(
         use_defaults: list[str] = [],
         use_features: dict = {},
         use_deps: dict = {},
-        global_use: dict | None = None,
-        package_overrides: dict | None = None,
         signature_sha256: str | None = None,
         gpg_key: str | None = None,
         gpg_keyring: str | None = None,
@@ -7294,8 +7262,6 @@ def cargo_package(
         use_features: Dict mapping USE flag to Cargo feature(s)
                       Example: {"ssl": "tls", "compression": ["zstd", "brotli"]}
         use_deps: Dict mapping USE flag to conditional dependencies
-        global_use: Global USE flag configuration
-        package_overrides: Package-specific USE overrides
         signature_sha256: SHA256 of GPG signature file (use update_checksums.py to populate)
         gpg_key: Optional GPG key ID or fingerprint to import and verify against
         gpg_keyring: Optional path to GPG keyring file with trusted keys
@@ -7359,8 +7325,6 @@ def cargo_package(
             name,
             iuse,
             use_defaults,
-            global_use,
-            package_overrides,
         )
 
         # Resolve conditional dependencies
@@ -8114,8 +8078,6 @@ def go_package(
         use_defaults: list[str] = [],
         use_tags: dict = {},
         use_deps: dict = {},
-        global_use: dict | None = None,
-        package_overrides: dict | None = None,
         signature_sha256: str | None = None,
         gpg_key: str | None = None,
         gpg_keyring: str | None = None,
@@ -8142,8 +8104,6 @@ def go_package(
         use_tags: Dict mapping USE flag to Go build tag(s)
                   Example: {"sqlite": "sqlite", "postgres": "postgres"}
         use_deps: Dict mapping USE flag to conditional dependencies
-        global_use: Global USE flag configuration
-        package_overrides: Package-specific USE overrides
         signature_sha256: SHA256 of GPG signature file (use update_checksums.py to populate)
         gpg_key: Optional GPG key ID or fingerprint to import and verify against
         gpg_keyring: Optional path to GPG keyring file with trusted keys
@@ -8193,8 +8153,6 @@ def go_package(
             name,
             iuse,
             use_defaults,
-            global_use,
-            package_overrides,
         )
 
         # Resolve conditional dependencies
@@ -9318,8 +9276,6 @@ def python_package(
         use_defaults: list[str] = [],
         use_extras: dict = {},
         use_deps: dict = {},
-        global_use: dict | None = None,
-        package_overrides: dict | None = None,
         signature_sha256: str | None = None,
         gpg_key: str | None = None,
         gpg_keyring: str | None = None,
@@ -9345,8 +9301,6 @@ def python_package(
         use_extras: Dict mapping USE flag to Python extras
                     Example: {"ssl": "ssl", "http2": "http2"}
         use_deps: Dict mapping USE flag to conditional dependencies
-        global_use: Global USE flag configuration
-        package_overrides: Package-specific USE overrides
         signature_sha256: SHA256 of GPG signature file (use update_checksums.py to populate)
         gpg_key: Optional GPG key ID or fingerprint to import and verify against
         gpg_keyring: Optional path to GPG keyring file with trusted keys
@@ -9393,8 +9347,6 @@ def python_package(
             name,
             iuse,
             use_defaults,
-            global_use,
-            package_overrides,
         )
 
         # Resolve conditional dependencies
@@ -10888,8 +10840,6 @@ def java_package(
         iuse: list[str] = [],
         use_defaults: list[str] = [],
         use_deps: dict = {},
-        global_use: dict | None = None,
-        package_overrides: dict | None = None,
         signature_sha256: str | None = None,
         gpg_key: str | None = None,
         gpg_keyring: str | None = None,
@@ -10916,8 +10866,6 @@ def java_package(
         iuse: List of USE flags this package supports
         use_defaults: Default enabled USE flags
         use_deps: Dict mapping USE flag to conditional dependencies
-        global_use: Global USE flag configuration
-        package_overrides: Package-specific USE overrides
 
     Example:
         java_package(
@@ -10960,8 +10908,6 @@ def java_package(
             name,
             iuse,
             use_defaults,
-            global_use,
-            package_overrides,
         )
 
         # Resolve conditional dependencies
@@ -11053,8 +10999,6 @@ def maven_package(
         use_defaults: list[str] = [],
         use_maven: dict = {},
         use_deps: dict = {},
-        global_use: dict | None = None,
-        package_overrides: dict | None = None,
         signature_sha256: str | None = None,
         gpg_key: str | None = None,
         gpg_keyring: str | None = None,
@@ -11079,8 +11023,6 @@ def maven_package(
         use_defaults: Default enabled USE flags
         use_maven: Dict mapping USE flag to Maven arguments
         use_deps: Dict mapping USE flag to conditional dependencies
-        global_use: Global USE flag configuration
-        package_overrides: Package-specific USE overrides
 
     Example:
         maven_package(
@@ -11124,8 +11066,6 @@ def maven_package(
             name,
             iuse,
             use_defaults,
-            global_use,
-            package_overrides,
         )
 
         # Resolve conditional dependencies
@@ -11368,8 +11308,6 @@ def qt6_package(
         use_options: dict = {},
         use_cmake: dict = {},
         use_deps: dict = {},
-        global_use: dict | None = None,
-        package_overrides: dict | None = None,
         # Distribution compatibility
         compat_tags: list[str] | None = None,
         signature_sha256: str | None = None,
@@ -11400,8 +11338,6 @@ def qt6_package(
                      Example: {"ssl": "ENABLE_SSL", "tests": "BUILD_TESTING"}
         use_cmake: Dict mapping USE flag to raw cmake arguments
         use_deps: Dict mapping USE flag to conditional dependencies
-        global_use: Global USE flag configuration
-        package_overrides: Package-specific USE overrides
         signature_sha256: SHA256 of GPG signature file (use update_checksums.py to populate)
         gpg_key: Optional GPG key ID or fingerprint to import and verify against
         gpg_keyring: Optional path to GPG keyring file with trusted keys
@@ -11455,8 +11391,6 @@ def qt6_package(
             name,
             iuse,
             use_defaults,
-            global_use,
-            package_overrides,
         )
 
         # Resolve conditional dependencies

@@ -1,11 +1,20 @@
 # Example packages demonstrating the USE flag system
 #
-# This file shows how to use BuckOs USE flags for package customization,
-# similar to Gentoo's ebuild system.
+# USE flags are configured via .buckconfig:
+#
+#   [use]
+#   ssl = true
+#   http2 = true
+#   ipv6 = true
+#   debug = false
+#   zstd = true
+#
+#   [use.curl-gnutls-example]
+#   ssl = false
+#   gnutls = true
+#   brotli = true
 
 load("//defs:use_flags.bzl",
-     "set_use_flags",
-     "package_use",
      "USE_PROFILES",
      "GLOBAL_USE_FLAGS",
 )
@@ -21,15 +30,7 @@ load("//defs:package_defs.bzl",
 #
 # This example shows a package with conditional features.
 # USE flags control which features are built and which dependencies are included.
-
-# Define global USE flags for this build
-GLOBAL_USE = set_use_flags([
-    "ssl",           # Enable SSL/TLS support
-    "http2",         # Enable HTTP/2
-    "ipv6",          # Enable IPv6
-    "-debug",        # Disable debug builds
-    "zstd",          # Enable zstd compression
-])
+# Global flags come from .buckconfig [use] section.
 
 # Example: curl with USE flags
 autotools_package(
@@ -86,9 +87,6 @@ autotools_package(
         "-debug": "--disable-debug",
     },
 
-    # Apply global USE flags
-    global_use = GLOBAL_USE,
-
     # Package metadata
     description = "Command line tool for transferring data with URLs",
     homepage = "https://curl.se/",
@@ -100,15 +98,11 @@ autotools_package(
 # EXAMPLE 2: Package with Per-Package USE Override
 # =============================================================================
 #
-# Override global USE flags for a specific package.
-# This is like /etc/portage/package.use in Gentoo.
-
-# Override: Use GnuTLS instead of OpenSSL for this package
-CURL_GNUTLS_OVERRIDE = package_use("curl-gnutls", [
-    "-ssl",      # Disable OpenSSL
-    "gnutls",    # Enable GnuTLS
-    "brotli",    # Also enable brotli
-])
+# Per-package overrides are set in .buckconfig:
+#   [use.curl-gnutls-example]
+#   ssl = false
+#   gnutls = true
+#   brotli = true
 
 autotools_package(
     name = "curl-gnutls-example",
@@ -132,8 +126,6 @@ autotools_package(
         "http2": "--with-nghttp2",
         "brotli": "--with-brotli",
     },
-    global_use = GLOBAL_USE,
-    package_overrides = CURL_GNUTLS_OVERRIDE,  # Apply override
     description = "curl built with GnuTLS instead of OpenSSL",
 )
 

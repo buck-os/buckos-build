@@ -3,16 +3,24 @@ USE Flag system for BuckOs Linux Distribution.
 
 Similar to Gentoo's USE flags, this provides:
 - Global USE flag definitions with descriptions
-- Per-package USE flag customization
+- Per-package USE flag customization via .buckconfig
 - Conditional dependencies based on USE flags
 - Build configuration profiles (minimal, default, full)
 - USE flag expansion and inheritance
 
-Configuration is loaded from //config:use_config.bzl if it exists.
-The installer generates this file based on installation options.
+Configuration is read from .buckconfig sections:
+  [use]            — global flag defaults (ssl = true, debug = false, etc.)
+  [use.PKGNAME]    — per-package overrides
+
+Resolution order (later overrides earlier):
+  1. Package use_defaults (from macro param)
+  2. Global .buckconfig [use] section
+  3. Per-package .buckconfig [use.PKGNAME] section
+
+"unset" (absent key) means fall through to the previous layer.
+"true"/"1"/"yes" enables; "false"/"0"/"no" disables.
 
 Example usage:
-    # Define package with USE flags (in defs/package_defs.bzl)
     autotools_package(
         name = "curl",
         version = "8.5.0",
@@ -41,11 +49,14 @@ Example usage:
         },
     )
 
-    # Set global USE flags in profile
-    set_use_flags(["ssl", "ipv6", "-ldap", "http2"])
-
-    # Override for specific package
-    package_use("curl", ["-ssl", "gnutls", "brotli"])
+    # .buckconfig
+    # [use]
+    # ssl = true
+    # ipv6 = true
+    #
+    # [use.curl]
+    # gnutls = true
+    # ssl = false
 """
 
 # =============================================================================
@@ -163,6 +174,10 @@ GLOBAL_USE_FLAGS = {
     "xml": "Enable XML support",
     "json": "Enable JSON support",
     "yaml": "Enable YAML support",
+
+    # Provenance & Supply Chain
+    "provenance": "Embed source provenance metadata in build artifacts",
+    "slsa": "Generate SLSA provenance attestations",
 }
 
 # =============================================================================
@@ -272,144 +287,47 @@ USE_PROFILES = {
 }
 
 # =============================================================================
-# LOAD INSTALL CONFIGURATION
+# USE FLAG RESOLUTION (reads .buckconfig)
 # =============================================================================
 
-# Load installer-generated USE flag configuration
-load(
-    "//config:use_config.bzl",
-    "INSTALL_INPUT_DEVICES",
-    "INSTALL_PACKAGE_USE",
-    "INSTALL_USE_FLAGS",
-    "INSTALL_VIDEO_CARDS",
-)
+_TRUTHY = ["true", "1", "yes"]
+_FALSY = ["false", "0", "no"]
 
-# =============================================================================
-# GLOBAL STATE
-# =============================================================================
-
-# Current global USE flags (initialized from install config)
-_GLOBAL_USE = INSTALL_USE_FLAGS
-
-# Per-package USE flag overrides (initialized from install config)
-_PACKAGE_USE = INSTALL_PACKAGE_USE
-
-# USE_EXPAND variables (hardware-specific)
-VIDEO_CARDS = INSTALL_VIDEO_CARDS
-INPUT_DEVICES = INSTALL_INPUT_DEVICES
-
-# Current profile
-_CURRENT_PROFILE = "default"
-
-# =============================================================================
-# USE FLAG CONFIGURATION FUNCTIONS
-# =============================================================================
-
-def set_profile(profile_name):
-    """Set the active USE flag profile.
-
-    Args:
-        profile_name: Name of profile (minimal, server, desktop, developer, hardened, default)
-
-    Returns:
-        The profile configuration dict
-    """
-    if profile_name not in USE_PROFILES:
-        fail("Unknown profile: {}. Available: {}".format(
-            profile_name, ", ".join(USE_PROFILES.keys())))
-
-    return USE_PROFILES[profile_name]
-
-def set_use_flags(flags):
-    """Set global USE flags.
-
-    Args:
-        flags: List of USE flags. Prefix with "-" to disable.
-               Example: ["ssl", "ipv6", "-ldap", "http2"]
-
-    Returns:
-        Processed USE flags dict
-    """
-    enabled = []
-    disabled = []
-
-    for flag in flags:
-        if flag.startswith("-"):
-            disabled.append(flag[1:])
-        else:
-            enabled.append(flag)
-
-    return {
-        "enabled": enabled,
-        "disabled": disabled,
-    }
-
-def package_use(package_name, flags):
-    """Set USE flags for a specific package.
-
-    This overrides global settings for the specified package.
-
-    Args:
-        package_name: Package name (e.g., "curl", "openssl")
-        flags: List of USE flags for this package
-
-    Returns:
-        Package USE configuration
-    """
-    enabled = []
-    disabled = []
-
-    for flag in flags:
-        if flag.startswith("-"):
-            disabled.append(flag[1:])
-        else:
-            enabled.append(flag)
-
-    return {
-        "package": package_name,
-        "enabled": enabled,
-        "disabled": disabled,
-    }
-
-def get_effective_use(package_name, iuse, use_defaults, global_use = None, package_overrides = None):
+def get_effective_use(package_name, iuse, use_defaults):
     """Calculate effective USE flags for a package.
 
     Resolution order (later overrides earlier):
-    1. Package IUSE defaults (from use_defaults)
-    2. Global profile USE flags
-    3. Global USE flags (from set_use_flags)
-    4. Per-package overrides (from package_use)
+    1. Package use_defaults (from macro param)
+    2. Global .buckconfig [use] section
+    3. Per-package .buckconfig [use.PKGNAME] section
 
     Args:
         package_name: Package name
         iuse: List of USE flags the package supports
         use_defaults: Default USE flags for this package
-        global_use: Global USE flag settings
-        package_overrides: Package-specific USE overrides
 
     Returns:
         List of enabled USE flags for this package
     """
-    # Start with package defaults (use dict as set)
+    # Layer 1: package defaults
     effective = {flag: True for flag in use_defaults} if use_defaults else {}
 
-    # Apply global USE settings
-    if global_use:
-        for flag in global_use.get("enabled", []):
-            if flag in iuse:
-                effective[flag] = True
-        for flag in global_use.get("disabled", []):
-            if flag in effective:
-                effective.pop(flag)
+    # Layer 2: global buckconfig [use] section
+    for flag in iuse:
+        val = read_config("use", flag, "")
+        if val.lower() in _TRUTHY:
+            effective[flag] = True
+        elif val.lower() in _FALSY:
+            effective.pop(flag, None)
+        # "" (unset) = no override, keep use_defaults
 
-    # Apply package-specific overrides
-    if package_overrides:
-        for flag in package_overrides.get("enabled", []):
-            if flag in iuse:
-                effective[flag] = True
-        for flag in package_overrides.get("disabled", []):
-            if flag in effective:
-                effective.pop(flag)
+    # Layer 3: per-package buckconfig [use.PKGNAME] section
+    for flag in iuse:
+        val = read_config("use." + package_name, flag, "")
+        if val.lower() in _TRUTHY:
+            effective[flag] = True
+        elif val.lower() in _FALSY:
+            effective.pop(flag, None)
 
     return sorted(effective.keys())
 

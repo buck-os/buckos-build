@@ -60,8 +60,6 @@ Example usage:
 
 load("//defs:use_flags.bzl",
      "USE_PROFILES",
-     "set_use_flags",
-     "package_use",
      "get_effective_use",
      "use_configure_args",
      "use_dep",
@@ -90,6 +88,10 @@ def package_config(
 
     This is similar to Gentoo's make.conf + /etc/portage/ system.
 
+    Note: USE flag resolution now happens via .buckconfig [use] / [use.PKGNAME]
+    sections at analysis time. This function records intent for tooling and
+    config generation; actual flag resolution uses get_effective_use().
+
     Args:
         use_flags: Global USE flags (like USE in make.conf)
         profile: Profile name (minimal, server, desktop, etc.)
@@ -111,24 +113,22 @@ def package_config(
     # Parse profile
     profile_config = USE_PROFILES.get(profile, USE_PROFILES["default"])
 
-    # Parse global USE flags
-    global_use = set_use_flags(use_flags)
-
-    # Merge profile USE with explicit USE flags
+    # Merge profile USE with explicit USE flags for tooling output
     merged_enabled = list(profile_config["enabled"])
     merged_disabled = list(profile_config["disabled"])
 
-    for flag in global_use["enabled"]:
-        if flag not in merged_enabled:
-            merged_enabled.append(flag)
-        if flag in merged_disabled:
-            merged_disabled.remove(flag)
-
-    for flag in global_use["disabled"]:
-        if flag not in merged_disabled:
-            merged_disabled.append(flag)
-        if flag in merged_enabled:
-            merged_enabled.remove(flag)
+    for flag in use_flags:
+        if flag.startswith("-"):
+            actual = flag[1:]
+            if actual not in merged_disabled:
+                merged_disabled.append(actual)
+            if actual in merged_enabled:
+                merged_enabled.remove(actual)
+        else:
+            if flag not in merged_enabled:
+                merged_enabled.append(flag)
+            if flag in merged_disabled:
+                merged_disabled.remove(flag)
 
     # Parse per-package USE flags
     parsed_package_use = {}
@@ -219,16 +219,11 @@ def apply_customizations(
     if is_masked(name, config):
         fail("Package {} is masked".format(name))
 
-    # Get package-specific USE overrides
-    pkg_use = config["package_use"].get(name, None)
-
-    # Calculate effective USE flags
+    # Calculate effective USE flags (reads from .buckconfig)
     effective_use = get_effective_use(
         name,
         iuse,
         use_defaults,
-        config["use_flags"],
-        pkg_use,
     )
 
     # Resolve dependencies

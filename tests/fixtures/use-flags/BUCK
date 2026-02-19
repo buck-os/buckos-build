@@ -1,0 +1,32 @@
+# Test fixture for USE flag resolution via .buckconfig
+#
+# This package declares iuse/use_defaults so tests can verify
+# the buckconfig-based resolution order:
+#   1. use_defaults
+#   2. [use] section
+#   3. [use.test-use-flags] section
+
+load("//defs:package_defs.bzl", "autotools_package")
+
+autotools_package(
+    name = "test-use-flags",
+    version = "1.0.0",
+    src_uri = "https://example.com/test-use-flags-1.0.0.tar.gz",
+    sha256 = "0000000000000000000000000000000000000000000000000000000000000000",
+    iuse = ["ssl", "zstd", "debug"],
+    use_defaults = ["ssl"],
+    use_configure = {
+        "ssl": "--with-ssl",
+        "-ssl": "--without-ssl",
+        "zstd": "--with-zstd",
+        "-zstd": "--without-zstd",
+        "debug": "--enable-debug",
+        "-debug": "--disable-debug",
+    },
+    use_deps = {
+        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
+        "zstd": ["//packages/linux/system/libs/compression/zstd:zstd"],
+    },
+    description = "Test fixture for USE flag resolution",
+    visibility = ["PUBLIC"],
+)
