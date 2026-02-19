@@ -17,9 +17,15 @@ ebuild_package(
     license = "|| ( GPL-2 BSD )",
     iuse = ["pam", "static-libs"],
     src_compile = """
+# BUILD_CC/BUILD_CFLAGS/BUILD_LDFLAGS are used by libcap for host tools (_makenames)
+# They must use the native compiler without cross-compilation flags
+# We need to clear the LDFLAGS for the host tools since they include --sysroot
 make -j${MAKEOPTS:-$(nproc)} \\
     AR="${AR:-ar}" \\
     CC="${CC:-gcc}" \\
+    BUILD_CC="gcc" \\
+    BUILD_CFLAGS="" \\
+    BUILD_LDFLAGS="" \\
     RANLIB="${RANLIB:-ranlib}" \\
     exec_prefix="/usr" \\
     lib_prefix="/usr" \\

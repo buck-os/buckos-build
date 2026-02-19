@@ -123,7 +123,8 @@ genrule(
     out = "buckos-build-defs",
     cmd = """
 set -e
-mkdir -p $OUT/usr/share/buckos-build
+BUILD_DEST="$OUT/var/repos/db/buckos-build"
+mkdir -p "$BUILD_DEST"
 
 # Get the path to the buckos-build repository root
 REPO_ROOT="${HOME}/buckos-build"
@@ -132,39 +133,57 @@ if [ -d "$REPO_ROOT/defs" ] && [ -d "$REPO_ROOT/packages" ]; then
     echo "Copying buckos-build definitions from $REPO_ROOT..."
 
     # Copy defs/ directory (build rules)
-    cp -a "$REPO_ROOT/defs" "$OUT/usr/share/buckos-build/"
+    cp -a "$REPO_ROOT/defs" "$BUILD_DEST/"
 
     # Copy packages/ directory (package definitions)
-    cp -a "$REPO_ROOT/packages" "$OUT/usr/share/buckos-build/"
+    cp -a "$REPO_ROOT/packages" "$BUILD_DEST/"
 
     # Copy platforms/ directory
     if [ -d "$REPO_ROOT/platforms" ]; then
-        cp -a "$REPO_ROOT/platforms" "$OUT/usr/share/buckos-build/"
+        cp -a "$REPO_ROOT/platforms" "$BUILD_DEST/"
+    fi
+
+    # Copy config/ directory with fedora_build_flags.bzl
+    if [ -d "$REPO_ROOT/config" ]; then
+        cp -a "$REPO_ROOT/config" "$BUILD_DEST/"
+    fi
+
+    # Copy patches/ directory with registry.bzl
+    if [ -d "$REPO_ROOT/patches" ]; then
+        cp -a "$REPO_ROOT/patches" "$BUILD_DEST/"
     fi
 
     # Copy config files needed for buck2
     for f in .buckconfig .buckroot; do
         if [ -e "$REPO_ROOT/$f" ]; then
-            cp -a "$REPO_ROOT/$f" "$OUT/usr/share/buckos-build/"
+            cp -a "$REPO_ROOT/$f" "$BUILD_DEST/"
         fi
     done
 
     # Copy prelude if present
     if [ -d "$REPO_ROOT/prelude" ]; then
-        cp -a "$REPO_ROOT/prelude" "$OUT/usr/share/buckos-build/"
+        cp -a "$REPO_ROOT/prelude" "$BUILD_DEST/"
     fi
 
+    # Copy toolchains if present
+    if [ -d "$REPO_ROOT/toolchains" ]; then
+        cp -a "$REPO_ROOT/toolchains" "$BUILD_DEST/"
+    fi
+
+    # Create buck-out as a real directory (not a symlink)
+    mkdir -p "$BUILD_DEST/buck-out"
+
     # Create a version file
-    echo "version: 0.1.0" > "$OUT/usr/share/buckos-build/VERSION"
-    echo "source: buckos-build" >> "$OUT/usr/share/buckos-build/VERSION"
+    echo "version: 0.1.0" > "$BUILD_DEST/VERSION"
+    echo "source: buckos-build" >> "$BUILD_DEST/VERSION"
 
     echo "buckos-build definitions bundled:"
-    du -sh "$OUT/usr/share/buckos-build/"* 2>/dev/null || ls -la "$OUT/usr/share/buckos-build/"
+    du -sh "$BUILD_DEST/"* 2>/dev/null || ls -la "$BUILD_DEST/"
 else
     echo "Warning: buckos-build repository not found at $REPO_ROOT"
     echo "Creating placeholder..."
-    mkdir -p "$OUT/usr/share/buckos-build"
-    cat > "$OUT/usr/share/buckos-build/README" << 'EOF'
+    mkdir -p "$BUILD_DEST"
+    cat > "$BUILD_DEST/README" << 'EOF'
 BuckOS Build Definitions Placeholder
 
 The buckos-build definitions were not found during ISO creation.

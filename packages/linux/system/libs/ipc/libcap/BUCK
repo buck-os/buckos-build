@@ -48,11 +48,14 @@ true
     src_compile = '''
 # libcap's Makefile needs explicit CC and binutils tools for cross-compilation
 # Otherwise it finds host tools which generate/expect wrong arch
+# BUILD_CC/BUILD_CFLAGS/BUILD_LDFLAGS must be clean for host tools (_makenames)
 make -j${MAKEOPTS:-$(nproc)} \\
     prefix=/usr \\
     lib=lib \\
     CC="${CC:-gcc}" \\
     BUILD_CC=gcc \\
+    BUILD_CFLAGS="" \\
+    BUILD_LDFLAGS="" \\
     AR="${AR:-ar}" \\
     RANLIB="${RANLIB:-ranlib}" \\
     OBJCOPY="${OBJCOPY:-objcopy}" \\

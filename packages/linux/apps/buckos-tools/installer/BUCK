@@ -1,24 +1,22 @@
 load("//defs:package_defs.bzl", "download_source", "cargo_workspace_package")
 
 # Download BuckOS source from GitHub (shared across workspace members)
-# Using 0.0.3 tag with NVMe partition naming fix
 download_source(
     name = "buckos-src",
-    src_uri = "https://github.com/hodgesds/buckos/archive/refs/tags/0.0.3.tar.gz",
-    sha256 = "554533d05a90d8fbb0d81775ed9396edb70364531df596867f4dd139a8abec2b",
+    src_uri = "https://github.com/buck-os/buckos/archive/refs/tags/0.0.1.tar.gz",
+    sha256 = "6c986bced0a60473b9e8e5f843e34bb09648f870473a12dde68a7b75cd57b1d4",
     signature_required = False,
 )
 
 # BuckOS Installer - Graphical installer for live environment
-# version_key: 2 - force rebuild to pick up NVMe partition fix
 cargo_workspace_package(
     name = "buckos-installer",
     workspace_source = ":buckos-src",
     member = "buckos-installer",
-    version = "0.0.3",
+    version = "0.0.1",
     bins = ["buckos-installer"],
     description = "Graphical installer for BuckOS",
-    homepage = "https://github.com/hodgesds/buckos",
+    homepage = "https://github.com/buck-os/buckos",
     license = "GPL-2",
     desktop_entry = {
         "name": "Install BuckOS",

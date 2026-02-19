@@ -884,6 +884,27 @@ make -j$MAKE_JOBS || {
 cd build
 make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
 
+# Fix linker scripts to use relative paths instead of absolute paths
+# This is critical for cross-compilation with --sysroot
+# glibc installs libc.so as a linker script with absolute paths like:
+#   GROUP ( /lib/libc.so.6 /lib/libc_nonshared.a AS_NEEDED ( /lib/ld-linux-x86-64.so.2 ) )
+# We need to change these to relative paths that work with sysroot:
+#   GROUP ( libc.so.6 libc_nonshared.a AS_NEEDED ( ld-linux-x86-64.so.2 ) )
+echo "Fixing glibc linker scripts for cross-compilation..."
+for script in "$DESTDIR"/usr/lib*/libc.so "$DESTDIR"/usr/lib*/libpthread.so "$DESTDIR"/usr/lib*/libm.so; do
+    if [ -f "$script" ] && file "$script" | grep -q "ASCII"; then
+        echo "Fixing linker script: $script"
+        # Remove absolute paths, keeping just the filename
+        sed -i -e 's|/usr/lib64/||g' \
+               -e 's|/usr/lib/||g' \
+               -e 's|/lib64/||g' \
+               -e 's|/lib/||g' \
+               "$script"
+        echo "  After fix:"
+        cat "$script"
+    fi
+done
+
 # Create /lib64/ld-linux-x86-64.so.2 symlink (required for dynamic linker to be found)
 ln -sfv ../usr/lib64/ld-linux-x86-64.so.2 "$DESTDIR/lib64/ld-linux-x86-64.so.2"
 
@@ -2531,6 +2552,13 @@ for tool in ar as ld ld.bfd nm objcopy objdump ranlib readelf size strings strip
     fi
 done
 cd -
+
+# Create x86_64-buckos-linux-gnu/lib -> ../lib symlink for GCC linker to find CRT files
+# GCC's linker spec searches for CRT files (Scrt1.o, crti.o, crtn.o) in $prefix/$target/lib/
+if [ ! -e "$DESTDIR/tools/x86_64-buckos-linux-gnu/lib" ]; then
+    ln -s ../lib "$DESTDIR/tools/x86_64-buckos-linux-gnu/lib"
+    echo "Created symlink: x86_64-buckos-linux-gnu/lib -> ../lib"
+fi
 
 # Create lib64 -> lib symlink for GCC library path compatibility
 # GCC 14+ looks in lib64/gcc/ but we install to lib/gcc/

@@ -804,6 +804,9 @@ if [ -n "$DEP_LIBPATH" ]; then
         DEP_LDFLAGS="${DEP_LDFLAGS} -L$lib_dir -Wl,-rpath-link,$lib_dir"
     done
     export LDFLAGS="${LDFLAGS:-} $DEP_LDFLAGS"
+    # Some packages (like lvm2) use CLDFLAGS for configure-time linker flags
+    # Make it available alongside LDFLAGS for compatibility
+    export CLDFLAGS="${CLDFLAGS:-} $DEP_LDFLAGS"
 fi
 if [ -n "$DEP_PKG_CONFIG_PATH" ]; then
     export PKG_CONFIG_LIBDIR="${DEP_PKG_CONFIG_PATH}"
