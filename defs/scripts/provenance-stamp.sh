@@ -105,6 +105,9 @@ mkdir -p "$DESTDIR"
     [ -n "$_aggregate" ] && printf '%s' "$_aggregate"
 } > "$DESTDIR/.buckos-provenance.jsonl"
 
+# ── 4b. Write subgraph hash for downstream dep consumption ───────────────────
+printf '%s\n' "$BUCKOS_PKG_GRAPH_HASH" > "$DESTDIR/.buckos-subgraph-hash"
+
 # ── 5. Stamp ELF binaries with .note.package ────────────────────────────────
 
 _objcopy="${OBJCOPY:-objcopy}"

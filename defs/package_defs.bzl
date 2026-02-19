@@ -4943,9 +4943,6 @@ def _ebuild_package_impl(ctx: AnalysisContext) -> list[Provider]:
     provenance_enabled = read_config("use", "provenance", "false").lower() in ["true", "1", "yes"]
     slsa_enabled = read_config("use", "slsa", "false").lower() in ["true", "1", "yes"]
 
-    # Read graph hash from the graph-hash genrule output
-    graph_hash_artifact = ctx.attrs._graph_hash[DefaultInfo].default_outputs[0]
-
     # Extract source provenance metadata from labels
     pkg_source_url = ""
     pkg_source_sha256 = ""
@@ -5044,6 +5041,71 @@ def _ebuild_package_impl(ctx: AnalysisContext) -> list[Provider]:
     # Get provenance stamp script artifact
     provenance_stamp_script = ctx.attrs._provenance_stamp_script[DefaultInfo].default_outputs[0]
 
+    # ── Per-target Merkle subgraph hash ──────────────────────────────────────
+    # Each package gets a SHA-256 computed from its own build inputs plus the
+    # subgraph hashes of all its dependencies, forming a Merkle tree.
+    subgraph_hash_artifact = ctx.actions.declare_output("subgraph-hash.txt")
+
+    # Write metadata string as a hashable artifact
+    _use_str = ",".join(ctx.attrs.use_flags) if ctx.attrs.use_flags else ""
+    metadata_line = "{}|{}|{}|{}|{}|{}|{}".format(
+        ctx.attrs.name,
+        ctx.attrs.version,
+        ctx.attrs.package_type,
+        str(ctx.label),
+        pkg_source_url,
+        pkg_source_sha256,
+        _use_str,
+    )
+    subgraph_metadata = ctx.actions.write("subgraph-inputs.txt", metadata_line)
+
+    # Collect all input artifacts that define this package's build identity
+    subgraph_inputs = [
+        env_script,
+        phase_scripts["src_unpack"],
+        phase_scripts["src_prepare"],
+        phase_scripts["pre_configure"],
+        phase_scripts["src_configure"],
+        phase_scripts["src_compile"],
+        phase_scripts["src_test"],
+        phase_scripts["src_install"],
+        ebuild_script,
+        provenance_stamp_script,
+        pkg_config_wrapper,
+        subgraph_metadata,
+    ]
+
+    # Build the hash command: cat all input artifacts + dep subgraph hashes | sha256sum
+    hash_cmd = cmd_args(["bash", "-c"])
+    # The script receives all inputs as positional args:
+    #   $1..N = input artifacts, then dep dirs (count passed via env)
+    hash_script = """\
+set -e
+_dep_count="$1"; shift
+_input_count="$1"; shift
+# Hash all input artifacts
+{ for _i in $(seq 1 "$_input_count"); do cat "$1"; shift; done
+  # Append sorted dep subgraph hashes
+  _hashes=""
+  for _i in $(seq 1 "$_dep_count"); do
+      _f="$1/.buckos-subgraph-hash"
+      if [ -f "$_f" ]; then _hashes="${_hashes}$(cat "$_f")\n"; fi
+      shift
+  done
+  [ -n "$_hashes" ] && printf '%b' "$_hashes" | sort
+} | sha256sum | cut -d' ' -f1 > "${1}"
+"""
+    hash_cmd.add(hash_script)
+    hash_cmd.add(str(len(dep_dirs)))
+    hash_cmd.add(str(len(subgraph_inputs)))
+    for inp in subgraph_inputs:
+        hash_cmd.add(inp)
+    for dd in dep_dirs:
+        hash_cmd.add(dd)
+    hash_cmd.add(subgraph_hash_artifact.as_output())
+
+    ctx.actions.run(hash_cmd, category = "subgraph_hash")
+
     # Generate patch application commands if patches are provided
     # We'll pass patch files via command line arguments and copy them to the build dir
     patch_file_list = []
@@ -5069,7 +5131,7 @@ ORIGINAL_ARGS=("$@")
 
 # Arguments: DESTDIR, SRC_DIR, PKG_CONFIG_WRAPPER, FRAMEWORK_SCRIPT, PATCH_COUNT,
 #            ENV_SCRIPT, SRC_UNPACK, SRC_PREPARE, PRE_CONFIGURE, SRC_CONFIGURE,
-#            SRC_COMPILE, SRC_TEST, SRC_INSTALL, PROVENANCE_STAMP, GRAPH_HASH,
+#            SRC_COMPILE, SRC_TEST, SRC_INSTALL, PROVENANCE_STAMP, SUBGRAPH_HASH,
 #            HOST_TOOL_COUNT, patches..., host_tool_dirs..., dep_dirs...
 # Convert paths to absolute to work in mount namespace
 export _EBUILD_DESTDIR="$(readlink -f "$1")"
@@ -5552,7 +5614,8 @@ source "$FRAMEWORK_SCRIPT"
     # Build command - wrapper sources the external framework
     # Arguments order: DESTDIR, SRC_DIR, PKG_CONFIG_WRAPPER, FRAMEWORK_SCRIPT, PATCH_COUNT,
     #                  ENV_SCRIPT, SRC_UNPACK, SRC_PREPARE, PRE_CONFIGURE, SRC_CONFIGURE,
-    #                  SRC_COMPILE, SRC_TEST, SRC_INSTALL, HOST_TOOL_COUNT, patches..., host_tool_dirs..., dep_dirs...
+    #                  SRC_COMPILE, SRC_TEST, SRC_INSTALL, PROVENANCE_STAMP, SUBGRAPH_HASH,
+    #                  HOST_TOOL_COUNT, patches..., host_tool_dirs..., dep_dirs...
     cmd = cmd_args([
         "bash",
         script,
@@ -5573,9 +5636,9 @@ source "$FRAMEWORK_SCRIPT"
     cmd.add(phase_scripts["src_test"])
     cmd.add(phase_scripts["src_install"])
 
-    # Provenance stamp script and graph hash (positional args before HOST_TOOL_COUNT)
+    # Provenance stamp script and subgraph hash (positional args before HOST_TOOL_COUNT)
     cmd.add(provenance_stamp_script)
-    cmd.add(graph_hash_artifact)
+    cmd.add(subgraph_hash_artifact)
 
     # Add host tool count (number of exec_bdepend directories)
     exec_dep_count = len(exec_dep_dirs)
@@ -5695,7 +5758,6 @@ ebuild_package_rule = rule(
         "_ebuild_bootstrap_stage2_script": attrs.dep(default = "//defs/scripts:ebuild-bootstrap-stage2"),
         "_ebuild_bootstrap_stage3_script": attrs.dep(default = "//defs/scripts:ebuild-bootstrap-stage3"),
         "_provenance_stamp_script": attrs.dep(default = "//defs/scripts:provenance-stamp"),
-        "_graph_hash": attrs.dep(default = "//:graph-hash"),
         "labels": attrs.list(attrs.string(), default = []),
     },
 )

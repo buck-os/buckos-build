@@ -286,6 +286,57 @@ class TestUseFlagsInProvenance(unittest.TestCase):
         self.assertNotEqual(rec_ssl["BOS_PROV"], rec_debug["BOS_PROV"])
 
 
+class TestSubgraphHash(unittest.TestCase):
+    """Verify .buckos-subgraph-hash is written with the graph hash value."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self.destdir = os.path.join(self.tmpdir, "dest")
+        os.makedirs(self.destdir)
+        self.t = os.path.join(self.tmpdir, "temp")
+        os.makedirs(self.t)
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir)
+
+    def test_subgraph_hash_written(self):
+        result = _run_stamp({
+            "DESTDIR": self.destdir,
+            "T": self.t,
+        })
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+        hash_path = os.path.join(self.destdir, ".buckos-subgraph-hash")
+        self.assertTrue(os.path.exists(hash_path))
+
+    def test_subgraph_hash_matches_graph_hash(self):
+        graph_hash = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+        result = _run_stamp({
+            "DESTDIR": self.destdir,
+            "T": self.t,
+            "BUCKOS_PKG_GRAPH_HASH": graph_hash,
+        })
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+        hash_path = os.path.join(self.destdir, ".buckos-subgraph-hash")
+        with open(hash_path) as f:
+            content = f.read().strip()
+        self.assertEqual(content, graph_hash)
+
+    def test_subgraph_hash_empty_when_no_graph_hash(self):
+        result = _run_stamp({
+            "DESTDIR": self.destdir,
+            "T": self.t,
+            "BUCKOS_PKG_GRAPH_HASH": "",
+        })
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+        hash_path = os.path.join(self.destdir, ".buckos-subgraph-hash")
+        with open(hash_path) as f:
+            content = f.read().strip()
+        self.assertEqual(content, "")
+
+
 class TestSlsaMode(unittest.TestCase):
     """SLSA volatile fields."""
 
