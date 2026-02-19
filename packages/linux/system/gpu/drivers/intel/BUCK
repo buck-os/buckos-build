@@ -34,6 +34,7 @@ cp -r i915/* "$DESTDIR/usr/lib/firmware/i915/"
 mkdir -p "$DESTDIR/usr/lib/firmware/intel"
 cp -r intel/* "$DESTDIR/usr/lib/firmware/intel/" 2>/dev/null || true
 """,
+    labels = ["buckos:firmware", "buckos:hw:gpu"],
     visibility = ["PUBLIC"],
 )
 
@@ -60,6 +61,7 @@ meson_package(
         "CFLAGS": "-O2 -march=x86-64 -pipe",
         "LDFLAGS": "-Wl,-O1,--as-needed",
     },
+    labels = ["buckos:hw:gpu"],
     visibility = ["PUBLIC"],
 )
 
