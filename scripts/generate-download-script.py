@@ -363,7 +363,11 @@ Files:
 MANIFEST_EOF
 
 # List all files
-find "$OUTPUT_DIR" -type f ! -name "MANIFEST.txt" | sort >> "$OUTPUT_DIR/MANIFEST.txt"
+if command -v fd >/dev/null 2>&1; then
+    fd --type f --no-ignore --hidden -E "MANIFEST.txt" '' "$OUTPUT_DIR" 2>/dev/null | sort >> "$OUTPUT_DIR/MANIFEST.txt"
+else
+    find "$OUTPUT_DIR" -type f ! -name "MANIFEST.txt" | sort >> "$OUTPUT_DIR/MANIFEST.txt"
+fi
 
 echo ""
 echo "Manifest created: $OUTPUT_DIR/MANIFEST.txt"

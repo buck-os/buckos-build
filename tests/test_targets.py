@@ -35,5 +35,7 @@ def test_bzl_files_load(buck2):
 @pytest.mark.timeout(600)
 def test_smoke_build_zlib(buck2):
     """Smoke test: zlib actually builds."""
-    result = buck2("build", "//packages/linux/core/zlib:zlib", timeout=600)
+    result = buck2("build",
+                    "--config", "buckos.use_host_toolchain=true",
+                    "//packages/linux/core/zlib:zlib", timeout=600)
     assert result.returncode == 0, f"zlib build failed:\n{result.stderr}"

@@ -23,8 +23,8 @@ def _buck2_build(repo_root: Path, target: str, provenance: bool = True,
         pytest.skip("buck2 not found on PATH")
     args = [
         "buck2", "build", "--show-full-output",
-        "-c", f"buckos.provenance={'true' if provenance else 'false'}",
-        "-c", f"buckos.slsa={'true' if slsa else 'false'}",
+        "-c", f"use.provenance={'true' if provenance else 'false'}",
+        "-c", f"use.slsa={'true' if slsa else 'false'}",
         "-c", "buckos.use_host_toolchain=true",
         target,
     ]
@@ -42,10 +42,19 @@ def _buck2_build(repo_root: Path, target: str, provenance: bool = True,
 
 
 def _find_elfs(root: Path) -> list[Path]:
+    # Use fd for fast file discovery, fall back to rglob
+    fd_bin = shutil.which("fd") or shutil.which("fdfind")
+    if fd_bin:
+        result = subprocess.run(
+            [fd_bin, "--type", "f", "--no-ignore", "--hidden", ".", str(root)],
+            capture_output=True, text=True,
+        )
+        candidates = [Path(p) for p in result.stdout.strip().splitlines()] if result.returncode == 0 else []
+    else:
+        candidates = [p for p in root.rglob("*") if p.is_file()]
+
     elfs = []
-    for p in root.rglob("*"):
-        if not p.is_file():
-            continue
+    for p in candidates:
         try:
             magic = p.read_bytes()[:4]
         except (PermissionError, OSError):

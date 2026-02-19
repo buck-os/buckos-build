@@ -31,7 +31,11 @@ if [ -n "$SYMLINKS_SCRIPT" ]; then
 fi
 
 # Verification
-FILE_COUNT=$(find "$OUT" -type f 2>/dev/null | wc -l)
+if command -v fd >/dev/null 2>&1; then
+    FILE_COUNT=$(fd --type f --no-ignore --hidden '' "$OUT" 2>/dev/null | wc -l)
+else
+    FILE_COUNT=$(find "$OUT" -type f 2>/dev/null | wc -l)
+fi
 if [ "$FILE_COUNT" -eq 0 ]; then
     echo "Warning: No files installed to $OUT" >&2
 fi

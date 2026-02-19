@@ -422,8 +422,13 @@ echo "STAGE 3 POST-INSTALL VERIFICATION"
 echo "========================================================================="
 
 # Count installed files
-BINARY_COUNT=$(find "$DESTDIR" -type f -executable 2>/dev/null | wc -l)
-LIBRARY_COUNT=$(find "$DESTDIR" -type f -name '*.so*' 2>/dev/null | wc -l)
+if command -v fd >/dev/null 2>&1; then
+    BINARY_COUNT=$(fd --type x --no-ignore --hidden '' "$DESTDIR" 2>/dev/null | wc -l)
+    LIBRARY_COUNT=$(fd --type f --no-ignore --hidden '\.so' "$DESTDIR" 2>/dev/null | wc -l)
+else
+    BINARY_COUNT=$(find "$DESTDIR" -type f -executable 2>/dev/null | wc -l)
+    LIBRARY_COUNT=$(find "$DESTDIR" -type f -name '*.so*' 2>/dev/null | wc -l)
+fi
 
 echo "Installed: $BINARY_COUNT executables, $LIBRARY_COUNT shared libraries"
 echo ""
@@ -473,7 +478,7 @@ while read -r binary; do
             fi
         fi
     fi
-done < <(find "$DESTDIR" -type f -executable 2>/dev/null | head -$MAX_CHECK)
+done < <(if command -v fd >/dev/null 2>&1; then fd --type x --no-ignore --hidden --max-results "$MAX_CHECK" '' "$DESTDIR" 2>/dev/null; else find "$DESTDIR" -type f -executable 2>/dev/null | head -$MAX_CHECK; fi)
 
 echo ""
 if [ -n "$CONTAMINATED_BINARIES" ]; then

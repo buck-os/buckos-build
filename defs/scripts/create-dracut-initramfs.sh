@@ -197,7 +197,11 @@ ln -sf usr/lib64 "$WORK/usr/lib" 2>/dev/null || true
 # Create cpio archive
 echo "Creating cpio archive..."
 cd "$WORK"
-find . -print0 | cpio --null -o -H newc 2>/dev/null | gzip -9 > "$OUTPUT"
+if command -v fd >/dev/null 2>&1; then
+    { printf '.\0'; fd --no-ignore --hidden -0 '' .; } | cpio --null -o -H newc 2>/dev/null | gzip -9 > "$OUTPUT"
+else
+    find . -print0 | cpio --null -o -H newc 2>/dev/null | gzip -9 > "$OUTPUT"
+fi
 
 rm -rf "$WORK"
 

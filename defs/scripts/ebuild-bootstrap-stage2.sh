@@ -652,16 +652,30 @@ echo "=== Stage 2 Post-Install Verification ==="
 
 # Check that binaries were actually built
 if command -v wc >/dev/null 2>&1; then
-    BINARY_COUNT=$(find "$DESTDIR" -type f -executable 2>/dev/null | wc -l)
-    LIBRARY_COUNT=$(find "$DESTDIR" -type f -name '*.so*' 2>/dev/null | wc -l)
+    if command -v fd >/dev/null 2>&1; then
+        BINARY_COUNT=$(fd --type x --no-ignore --hidden '' "$DESTDIR" 2>/dev/null | wc -l)
+        LIBRARY_COUNT=$(fd --type f --no-ignore --hidden '\.so' "$DESTDIR" 2>/dev/null | wc -l)
+    else
+        BINARY_COUNT=$(find "$DESTDIR" -type f -executable 2>/dev/null | wc -l)
+        LIBRARY_COUNT=$(find "$DESTDIR" -type f -name '*.so*' 2>/dev/null | wc -l)
+    fi
     echo "Installed: $BINARY_COUNT executables, $LIBRARY_COUNT shared libraries"
 else
     # wc not available during early bootstrap, just check if files exist
-    if find "$DESTDIR" -type f -executable 2>/dev/null | head -1 | grep -q .; then
-        echo "Installed: executables found (count unavailable, wc not built yet)"
-    fi
-    if find "$DESTDIR" -type f -name '*.so*' 2>/dev/null | head -1 | grep -q .; then
-        echo "Installed: shared libraries found (count unavailable, wc not built yet)"
+    if command -v fd >/dev/null 2>&1; then
+        if fd --type x --no-ignore --hidden --max-results 1 '' "$DESTDIR" 2>/dev/null | grep -q .; then
+            echo "Installed: executables found (count unavailable, wc not built yet)"
+        fi
+        if fd --type f --no-ignore --hidden --max-results 1 '\.so' "$DESTDIR" 2>/dev/null | grep -q .; then
+            echo "Installed: shared libraries found (count unavailable, wc not built yet)"
+        fi
+    else
+        if find "$DESTDIR" -type f -executable 2>/dev/null | head -1 | grep -q .; then
+            echo "Installed: executables found (count unavailable, wc not built yet)"
+        fi
+        if find "$DESTDIR" -type f -name '*.so*' 2>/dev/null | head -1 | grep -q .; then
+            echo "Installed: shared libraries found (count unavailable, wc not built yet)"
+        fi
     fi
 fi
 
@@ -669,7 +683,11 @@ fi
 if command -v ldd >/dev/null 2>&1; then
     echo ""
     echo "Checking for host library dependencies (sample)..."
-    SAMPLE_BINARY=$(find "$DESTDIR" -type f -executable | head -1 || true)
+    if command -v fd >/dev/null 2>&1; then
+        SAMPLE_BINARY=$(fd --type x --no-ignore --hidden --max-results 1 '' "$DESTDIR" 2>/dev/null || true)
+    else
+        SAMPLE_BINARY=$(find "$DESTDIR" -type f -executable | head -1 || true)
+    fi
     if [ -n "$SAMPLE_BINARY" ] && file "$SAMPLE_BINARY" 2>/dev/null | grep -q "ELF"; then
         echo "Sample binary: $SAMPLE_BINARY"
         if ldd "$SAMPLE_BINARY" 2>/dev/null | grep -E "(/lib64/|/usr/lib/)" | grep -v "buckos" | grep -v "/tools/"; then
