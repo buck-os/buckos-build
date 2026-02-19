@@ -358,7 +358,13 @@ echo "=== Stage 1 Build Complete ==="
 echo "Output directory: $DESTDIR"
 if [ -d "$DESTDIR/tools" ]; then
     echo "Tools installed:"
-    find "$DESTDIR/tools" -type f -name '*.so*' -o -type f -executable | head -20 || true
+    if command -v fd >/dev/null 2>&1; then
+        { fd --type x --no-ignore --hidden '' "$DESTDIR/tools" 2>/dev/null
+          fd --type f --no-ignore --hidden '\.so' "$DESTDIR/tools" 2>/dev/null
+        } | sort -u | head -20 || true
+    else
+        find "$DESTDIR/tools" -type f -name '*.so*' -o -type f -executable | head -20 || true
+    fi
 else
     echo "Warning: No /tools directory created"
 fi

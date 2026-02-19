@@ -1,13 +1,26 @@
-# Test fixture for USE flag resolution via .buckconfig
+# Test fixtures for USE flag resolution via .buckconfig
 #
-# This package declares iuse/use_defaults so tests can verify
-# the buckconfig-based resolution order:
+# Covers all build system macros and their USE flag plumbing:
+#   autotools  → EXTRA_ECONF       (use_configure)
+#   cmake      → CMAKE_EXTRA_ARGS  (use_options → use_cmake_options)
+#   meson      → MESON_EXTRA_ARGS  (use_options → use_meson_options)
+#   cargo      → CARGO_BUILD_FLAGS (use_features → use_cargo_args)
+#   go         → GO_BUILD_FLAGS    (use_tags → use_go_build_args)
+#
+# Resolution order:
 #   1. use_defaults
 #   2. [use] section
-#   3. [use.test-use-flags] section
+#   3. [use.PKGNAME] section
 
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package_defs.bzl",
+    "autotools_package",
+    "cmake_package",
+    "meson_package",
+    "cargo_package",
+    "go_package",
+)
 
+# --- autotools: use_configure → EXTRA_ECONF ---
 autotools_package(
     name = "test-use-flags",
     version = "1.0.0",
@@ -27,6 +40,86 @@ autotools_package(
         "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
         "zstd": ["//packages/linux/system/libs/compression/zstd:zstd"],
     },
-    description = "Test fixture for USE flag resolution",
+    description = "Test fixture for autotools USE flag resolution",
+    visibility = ["PUBLIC"],
+)
+
+# --- cmake: use_options → CMAKE_EXTRA_ARGS (use_cmake_options) ---
+cmake_package(
+    name = "test-cmake-use",
+    version = "1.0.0",
+    src_uri = "https://example.com/test-cmake-use-1.0.0.tar.gz",
+    sha256 = "0000000000000000000000000000000000000000000000000000000000000000",
+    iuse = ["ssl", "zstd", "debug"],
+    use_defaults = ["ssl"],
+    use_options = {
+        "ssl": "WITH_SSL",
+        "zstd": "WITH_ZSTD",
+        "debug": "ENABLE_DEBUG",
+    },
+    use_deps = {
+        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
+    },
+    description = "Test fixture for cmake USE flag resolution",
+    visibility = ["PUBLIC"],
+)
+
+# --- meson: use_options → MESON_EXTRA_ARGS (use_meson_options) ---
+meson_package(
+    name = "test-meson-use",
+    version = "1.0.0",
+    src_uri = "https://example.com/test-meson-use-1.0.0.tar.gz",
+    sha256 = "0000000000000000000000000000000000000000000000000000000000000000",
+    iuse = ["ssl", "zstd", "debug"],
+    use_defaults = ["ssl"],
+    use_options = {
+        "ssl": "ssl",
+        "zstd": "zstd",
+        "debug": "debug",
+    },
+    use_deps = {
+        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
+    },
+    description = "Test fixture for meson USE flag resolution",
+    visibility = ["PUBLIC"],
+)
+
+# --- cargo: use_features → CARGO_BUILD_FLAGS (use_cargo_args) ---
+cargo_package(
+    name = "test-cargo-use",
+    version = "1.0.0",
+    src_uri = "https://example.com/test-cargo-use-1.0.0.tar.gz",
+    sha256 = "0000000000000000000000000000000000000000000000000000000000000000",
+    iuse = ["ssl", "zstd", "debug"],
+    use_defaults = ["ssl"],
+    use_features = {
+        "ssl": "openssl-tls",
+        "zstd": "zstd-compression",
+        "debug": "debug-mode",
+    },
+    use_deps = {
+        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
+    },
+    description = "Test fixture for cargo USE flag resolution",
+    visibility = ["PUBLIC"],
+)
+
+# --- go: use_tags → GO_BUILD_FLAGS (use_go_build_args) ---
+go_package(
+    name = "test-go-use",
+    version = "1.0.0",
+    src_uri = "https://example.com/test-go-use-1.0.0.tar.gz",
+    sha256 = "0000000000000000000000000000000000000000000000000000000000000000",
+    iuse = ["ssl", "zstd", "debug"],
+    use_defaults = ["ssl"],
+    use_tags = {
+        "ssl": "with_ssl",
+        "zstd": "with_zstd",
+        "debug": "debug",
+    },
+    use_deps = {
+        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
+    },
+    description = "Test fixture for go USE flag resolution",
     visibility = ["PUBLIC"],
 )

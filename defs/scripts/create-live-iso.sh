@@ -46,7 +46,11 @@ done
 if [ -z "$KERNEL" ]; then
     echo "Error: Cannot find kernel image in $KERNEL_DIR"
     echo "Contents of $KERNEL_DIR:"
-    find "$KERNEL_DIR" -name "vmlinuz*" -o -name "bzImage" 2>/dev/null || ls -la "$KERNEL_DIR"
+    if command -v fd >/dev/null 2>&1; then
+        fd --no-ignore --hidden '(vmlinuz|bzImage)' "$KERNEL_DIR" 2>/dev/null || ls -la "$KERNEL_DIR"
+    else
+        find "$KERNEL_DIR" -name "vmlinuz*" -o -name "bzImage" 2>/dev/null || ls -la "$KERNEL_DIR"
+    fi
     exit 1
 fi
 
