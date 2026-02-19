@@ -226,11 +226,28 @@ else
     exit 1
 fi
 
+# === Fast tool selection: prefer fd/rg, fall back to find/grep ===
+if command -v fd >/dev/null 2>&1; then
+    _FD=fd
+elif command -v fdfind >/dev/null 2>&1; then
+    _FD=fdfind
+else
+    _FD=""
+fi
+
 # Global cleanup: Remove libtool .la files
-LA_COUNT=$(find "$DESTDIR" -name "*.la" -type f 2>/dev/null | wc -l)
+if [ -n "$_FD" ]; then
+    LA_COUNT=$("$_FD" --type f --no-ignore --hidden -e la '' "$DESTDIR" 2>/dev/null | wc -l)
+else
+    LA_COUNT=$(find "$DESTDIR" -name "*.la" -type f 2>/dev/null | wc -l)
+fi
 if [ "$LA_COUNT" -gt 0 ]; then
     echo "Removing $LA_COUNT libtool .la files (using pkg-config instead)"
-    find "$DESTDIR" -name "*.la" -type f -delete 2>/dev/null || true
+    if [ -n "$_FD" ]; then
+        "$_FD" --type f --no-ignore --hidden -e la '' "$DESTDIR" 2>/dev/null | xargs -r rm -f
+    else
+        find "$DESTDIR" -name "*.la" -type f -delete 2>/dev/null || true
+    fi
 fi
 
 BUILD_END=$(date +%s)
@@ -242,8 +259,13 @@ echo "[TIMING] Total build time: $((BUILD_END - BUILD_START)) seconds"
 echo ""
 echo "📋 Verifying build output..."
 
-FILE_COUNT=$(find "$OUT" -type f 2>/dev/null | wc -l)
-DIR_COUNT=$(find "$OUT" -type d 2>/dev/null | wc -l)
+if [ -n "$_FD" ]; then
+    FILE_COUNT=$("$_FD" --type f --no-ignore --hidden '' "$OUT" 2>/dev/null | wc -l)
+    DIR_COUNT=$("$_FD" --type d --no-ignore --hidden '' "$OUT" 2>/dev/null | wc -l)
+else
+    FILE_COUNT=$(find "$OUT" -type f 2>/dev/null | wc -l)
+    DIR_COUNT=$(find "$OUT" -type d 2>/dev/null | wc -l)
+fi
 
 if [ "$FILE_COUNT" -eq 0 ]; then
     echo "" >&2
