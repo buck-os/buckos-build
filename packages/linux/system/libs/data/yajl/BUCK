@@ -9,10 +9,21 @@ cmake_package(
     description = "Yet Another JSON Library - A fast streaming JSON parser",
     homepage = "https://lloyd.github.io/yajl/",
     license = "ISC",
+    # Patch deprecated CMake patterns before configure
+    pre_configure = """
+# Disable all subdirectories except src (the library) - they use deprecated CMake patterns
+sed -i 's/ADD_SUBDIRECTORY(reformatter)/# disabled/' CMakeLists.txt
+sed -i 's/ADD_SUBDIRECTORY(verify)/# disabled/' CMakeLists.txt
+sed -i 's/ADD_SUBDIRECTORY(test)/# disabled/' CMakeLists.txt
+sed -i 's/ADD_SUBDIRECTORY(example)/# disabled/' CMakeLists.txt
+sed -i 's/ADD_SUBDIRECTORY(perf)/# disabled/' CMakeLists.txt
+# Update cmake_minimum_required to a modern version
+sed -i 's/CMAKE_MINIMUM_REQUIRED(VERSION 2.6)/cmake_minimum_required(VERSION 3.5)/' CMakeLists.txt
+""",
     cmake_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
-        "-DCMAKE_POLICY_DEFAULT_CMP0026=OLD",  # Allow GET_TARGET_PROPERTY LOCATION usage
+        "-Wno-dev",  # Suppress developer warnings
     ],
     visibility = ["PUBLIC"],
 )

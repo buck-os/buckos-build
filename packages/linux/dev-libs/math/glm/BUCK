@@ -15,5 +15,21 @@ cmake_package(
         "-DCMAKE_BUILD_TYPE=Release",
         "-DGLM_TEST_ENABLE=OFF",
     ],
+    # glm is header-only; manually install headers
+    src_install = """
+mkdir -p "${DESTDIR}/${EPREFIX:-/usr}/include"
+cp -r glm "${DESTDIR}/${EPREFIX:-/usr}/include/"
+# Create pkg-config file
+mkdir -p "${DESTDIR}/${EPREFIX:-/usr}/${LIBDIR:-lib64}/pkgconfig"
+cat > "${DESTDIR}/${EPREFIX:-/usr}/${LIBDIR:-lib64}/pkgconfig/glm.pc" << 'EOF'
+prefix=/usr
+includedir=${prefix}/include
+
+Name: GLM
+Description: OpenGL Mathematics
+Version: 0.9.9.8
+Cflags: -I${includedir}
+EOF
+""",
     visibility = ["PUBLIC"],
 )

@@ -46,8 +46,8 @@ meson_package(
     bdepend = [
         "//packages/linux/dev-libs/python/mako:mako",
     ],
-    # Work around pkg-config path resolution issues in cross-compilation
-    env = {"CFLAGS": "-Wno-missing-include-dirs"},
+    # NOTE: Don't use env={"CFLAGS": ...} as it OVERRIDES rather than appends
+    # and would lose GCC internal include paths. Add to src_configure instead.
     pre_configure = '''
 # Set up wayland-scanner path for meson
 IFS=':' read -ra DEP_ARRAY <<< "$DEP_BASE_DIRS"
@@ -78,6 +78,13 @@ NEOF
 done
 ''',
     src_configure = """
+# Force reconfigure by wiping build directory (meson caches flags and deps)
+rm -rf "${BUILD_DIR:-build}"
+
+# Add -Wno-missing-include-dirs to work around pkg-config path resolution issues
+export CFLAGS="${CFLAGS:-} -Wno-missing-include-dirs"
+export CXXFLAGS="${CXXFLAGS:-} -Wno-missing-include-dirs"
+
 # Add include subdirectory paths to CFLAGS (freetype2, harfbuzz, etc.)
 IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
 for _dep in "${_DEP_ARRAY[@]}"; do
@@ -174,6 +181,22 @@ meson setup "${BUILD_DIR:-build}" \\
         "//packages/linux/desktop/sway:wlroots",
         "//packages/linux/system/libs/libseat:libseat",  # Transitive dep via wlroots - needed for pkg-config resolution
         "//packages/linux/system/libs/input/mtdev:mtdev",  # Transitive dep via libinput - needed for linking
+        # X11/XCB deps needed for cairo pkg-config resolution (cairo was built with X support)
+        "//packages/linux/graphics/xorg/libX11:libX11",
+        "//packages/linux/graphics/xorg/libXext:libXext",
+        "//packages/linux/graphics/xorg/libXrender:libXrender",
+        "//packages/linux/graphics/xorg/xorgproto:xorgproto",
+        "//packages/linux/graphics/xorg/libxcb:libxcb",
+        "//packages/linux/graphics/xorg/xcb-proto:xcb-proto",
+        "//packages/linux/graphics/xorg/libXau:libXau",
+        "//packages/linux/graphics/xorg/libXdmcp:libXdmcp",
+        # Mesa transitive deps needed for linking (mesa built with llvm flag)
+        "//packages/linux/core/llvm:llvm",
+        "//packages/linux/system/libs/compression/zstd:zstd",
+        "//packages/linux/dev-libs/elfutils:elfutils",
+        # LLVM transitive deps
+        "//packages/linux/system/libs/data/libxml2:libxml2",
+        "//packages/linux/system/terminal/ncurses:ncurses",
     ],
     visibility = ["PUBLIC"],
 )
@@ -195,13 +218,39 @@ meson_package(
     exec_bdepend = [
         "//packages/linux/graphics/rendering/wayland:wayland-scanner",
     ],
+    # Copy GCC's stdatomic.h to source tree (meson doesn't pass -isystem for GCC internal includes)
+    src_prepare = '''
+for gcc_inc in "$BOOTSTRAP_SYSROOT/lib/gcc/"*"/14"*"/include" "$BOOTSTRAP_SYSROOT/tools/lib/gcc/"*"/14"*"/include"; do
+    if [ -f "$gcc_inc/stdatomic.h" ]; then
+        echo "Copying stdatomic.h from $gcc_inc to source include/"
+        mkdir -p include
+        cp "$gcc_inc/stdatomic.h" include/
+        cp "$gcc_inc/stdarg.h" include/ 2>/dev/null || true
+        cp "$gcc_inc/stddef.h" include/ 2>/dev/null || true
+        cp "$gcc_inc/stdbool.h" include/ 2>/dev/null || true
+        break
+    fi
+done
+''',
     # Work around pkg-config path resolution issues in cross-compilation
     # where Mesa's dri.pc references libdrm but the resolved include path
     # ends up pointing to mesa/usr/include/libdrm (which doesn't exist)
-    env = {"CFLAGS": "-Wno-missing-include-dirs"},
+    # NOTE: Don't use env={"CFLAGS": ...} as it OVERRIDES rather than appends
+    # and would lose GCC internal include paths needed for stdatomic.h
     pre_configure = '''
 # Set up wayland-scanner path for meson
 IFS=':' read -ra DEP_ARRAY <<< "$DEP_BASE_DIRS"
+
+# Find GCC internal include path for stdatomic.h and set CPPFLAGS
+for gcc_inc in "$BOOTSTRAP_SYSROOT/lib/gcc/"*"/14"*"/include" "$BOOTSTRAP_SYSROOT/tools/lib/gcc/"*"/14"*"/include"; do
+    if [ -f "$gcc_inc/stdatomic.h" ]; then
+        echo "Found GCC internal includes at: $gcc_inc"
+        # Set CPPFLAGS which meson should preserve
+        export CPPFLAGS="-isystem $gcc_inc ${CPPFLAGS:-}"
+        break
+    fi
+done
+
 for dep_dir in "${DEP_ARRAY[@]}"; do
     if [ -x "$dep_dir/usr/bin/wayland-scanner" ]; then
         WAYLAND_SCANNER="$dep_dir/usr/bin/wayland-scanner"
@@ -229,6 +278,18 @@ NEOF
 done
 ''',
     src_configure = """
+# Force reconfigure by wiping build directory (meson caches flags)
+rm -rf "${BUILD_DIR:-build}"
+
+# Find GCC internal include path for stdatomic.h and set CPPFLAGS
+for gcc_inc in "$BOOTSTRAP_SYSROOT/lib/gcc/"*"/14"*"/include" "$BOOTSTRAP_SYSROOT/tools/lib/gcc/"*"/14"*"/include"; do
+    if [ -f "$gcc_inc/stdatomic.h" ]; then
+        echo "Found GCC internal includes at: $gcc_inc"
+        export CPPFLAGS="-isystem $gcc_inc ${CPPFLAGS:-}"
+        break
+    fi
+done
+
 # Add rpath-link for all dep lib dirs so the linker can resolve
 # transitive shared library deps
 _EXTRA_LDFLAGS=""

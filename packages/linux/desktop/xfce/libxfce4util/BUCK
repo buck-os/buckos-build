@@ -1,0 +1,36 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# libxfce4util - XFCE utility library
+
+autotools_package(
+    name = "libxfce4util",
+    version = "4.18.2",
+    src_uri = "https://archive.xfce.org/src/xfce/libxfce4util/4.18/libxfce4util-4.18.2.tar.bz2",
+    sha256 = "d9a329182b78f7e2520cd4aafcbb276bbbf162f6a89191676539ad2e3889c353",
+    description = "XFCE utility library",
+    homepage = "https://xfce.org/",
+    license = "LGPL-2.0+",
+    bdepend = [
+        "//packages/linux/dev-tools/dev-utils/intltool:intltool",
+    ],
+    # Custom compile to add -lgio-2.0 explicitly for linking
+    src_compile = """
+_EXTRA_LDFLAGS=""
+IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
+for _dep in "${_DEP_ARRAY[@]}"; do
+    for _libdir in "$_dep/usr/lib64" "$_dep/usr/lib"; do
+        if [ -d "$_libdir" ]; then
+            _EXTRA_LDFLAGS="$_EXTRA_LDFLAGS -Wl,-rpath-link,$_libdir"
+        fi
+    done
+done
+make -j${MAKEOPTS:-$(nproc)} LDFLAGS="$LDFLAGS $_EXTRA_LDFLAGS -lgio-2.0 -lgobject-2.0 -lglib-2.0 -lz" ${EXTRA_EMAKE:-}
+""",
+    deps = [
+        "//packages/linux/dev-libs/glib:glib",
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/system/libs/utility/pcre2:pcre2",
+        "//packages/linux/core/zlib:zlib",
+    ],
+    visibility = ["PUBLIC"],
+)

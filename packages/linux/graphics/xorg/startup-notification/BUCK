@@ -1,0 +1,27 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# startup-notification - Library for startup notification protocol
+# Used by window managers to show launch feedback
+
+autotools_package(
+    name = "startup-notification",
+    version = "0.12",
+    src_uri = "https://www.freedesktop.org/software/startup-notification/releases/startup-notification-0.12.tar.gz",
+    sha256 = "3c391f7e930c583095045cd2d10eb73a64f085c7fde9d260f2652c7cb3cfbe4a",
+    description = "Reference implementation of the freedesktop.org startup notification protocol",
+    homepage = "https://www.freedesktop.org/wiki/Software/startup-notification/",
+    license = "LGPL-2.0-or-later",
+    # Cross-compilation: cache results that require running test programs
+    configure_args = [
+        "lf_cv_sane_realloc=yes",
+    ],
+    deps = [
+        "//packages/linux/graphics/xorg/libX11:libX11",
+        "//packages/linux/graphics/xorg/libxcb:libxcb",
+        "//packages/linux/graphics/xorg/xcb-util:xcb-util",
+        "//packages/linux/graphics/xorg/xorgproto:xorgproto",
+        "//packages/linux/graphics/xorg/libXau:libXau",
+        "//packages/linux/graphics/xorg/libXdmcp:libXdmcp",
+    ],
+    visibility = ["PUBLIC"],
+)

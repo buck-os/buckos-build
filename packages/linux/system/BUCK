@@ -2699,11 +2699,12 @@ iso_image(
 iso_image(
     name = "buckos-live-installer-sway",
     kernel = "//packages/linux/kernel/buckos-kernel:buckos-kernel-live",
-    initramfs = ":buckos-live-initramfs",
+    initramfs = ":buckos-live-initramfs-systemd",  # Use same minimal initramfs as KDE
     rootfs = ":buckos-live-sway-rootfs",
     boot_mode = "hybrid",
     volume_label = "BUCKOS_LIVE",
-    kernel_args = "console=tty0 console=ttyS0,115200 rdinit=/init nokaslr",
+    # Systemd initrd boot parameters (same as KDE)
+    kernel_args = "console=tty0 loglevel=7 rd.systemd.show_status=true",
     visibility = ["PUBLIC"],
 )
 

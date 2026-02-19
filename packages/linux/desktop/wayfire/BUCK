@@ -1,47 +1,94 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package_defs.bzl", "download_source", "meson_package")
 
 # =============================================================================
 # Wayfire - 3D Wayland compositor
 # =============================================================================
 
-autotools_package(
+meson_package(
     name = "wayfire",
     src_uri = "https://github.com/WayfireWM/wayfire/releases/download/v0.8.1/wayfire-0.8.1.tar.xz",
-
     sha256 = "8ac1947b688a9ec6c4d9ee2d77311bb357a8ead25665b8000eda96952328290d",
-    iuse = [
-        "X",
-        "dbus",
-        "gles3",
-        "openmp",
-    ],
-    use_configure = {
-        "-X": "--without-x",
-        "-dbus": "--disable-dbus",
-        "-gles3": "--disable-gles3",
-        "-openmp": "--disable-openmp",
-        "X": "--with-x",
-        "dbus": "--enable-dbus",
-        "gles3": "--enable-gles3",
-        "openmp": "--enable-openmp",
-    },
     version = "0.8.1",
     description = "Wayfire - 3D Wayland compositor",
     homepage = "https://wayfire.org/",
     license = "MIT",
-    pre_configure = """
-mkdir -p build
-cd build
-meson setup .. --prefix=/usr \\
-    -Duse_system_wlroots=enabled \\
-    -Duse_system_wfconfig=enabled
+    # Fix GCC 14 compatibility - missing #include <algorithm> for std::any_of
+    src_prepare = """
+sed -i '1i #include <algorithm>' subprojects/wf-config/src/file.cpp
 """,
+    # USE flags for configurable features
+    iuse = [
+        # Build options
+        "system-wlroots",
+        "system-wfconfig",
+        # Features
+        "xwayland",
+        "test",
+    ],
+    # Default USE flags - use bundled libs for stability
+    use_defaults = [],
+    use_meson = {
+        # System vs bundled libraries
+        "system-wlroots": "-Duse_system_wlroots=enabled",
+        "-system-wlroots": "-Duse_system_wlroots=disabled",
+        "system-wfconfig": "-Duse_system_wfconfig=enabled",
+        "-system-wfconfig": "-Duse_system_wfconfig=disabled",
+        # Features
+        "xwayland": "-Dxwayland=enabled",
+        "-xwayland": "-Dxwayland=disabled",
+        "test": "-Dtests=enabled",
+        "-test": "-Dtests=disabled",
+    },
+    # Static meson args (always applied)
+    meson_args = [
+        "-Dwerror=false",  # GCC 14 compatibility
+    ],
     deps = [
         "//packages/linux/system/libs/utility/libffi:libffi",
         "//packages/linux/graphics/rendering/wayland:wayland",
+        "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
         "//packages/linux/desktop/sway:wlroots",
         "//packages/linux/desktop/mesa:mesa",
         "//packages/linux/system/libs/input/libinput:libinput",
+        "//packages/linux/system/init/eudev:eudev",
+        "//packages/linux/desktop/libdrm:libdrm",
+        "//packages/linux/dev-libs/math/glm:glm",
+        "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
+        "//packages/linux/system/libs/input/libevdev:libevdev",
+        "//packages/linux/system/libs/data/libxml2:libxml2",
+        "//packages/linux/system/libs/image/libjpeg-turbo:libjpeg-turbo",
+        "//packages/linux/dev-libs/json/nlohmann-json:nlohmann-json",
+        # Rendering deps
+        "//packages/linux/system/libs/graphics/cairo:cairo",
+        "//packages/linux/dev-libs/glib:glib",
+        "//packages/linux/system/libs/utility/pcre2:pcre2",
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/security/auth/biometric:pixman",
+        "//packages/linux/system/libs/image/libpng:libpng",
+        "//packages/linux/system/libs/font/fontconfig:fontconfig",
+        "//packages/linux/system/libs/font/freetype:freetype",
+        "//packages/linux/system/libs/data/expat:expat",
+        "//packages/linux/system/libs/font/harfbuzz:harfbuzz",
+        "//packages/linux/system/libs/font/fribidi:fribidi",
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/fonts/libraries/pango:pango",
+        # X11 deps
+        "//packages/linux/graphics/xorg/libxcb:libxcb",
+        "//packages/linux/graphics/xorg/xorgproto:xorgproto",
+        "//packages/linux/graphics/xorg/libXau:libXau",
+        "//packages/linux/graphics/xorg/libXdmcp:libXdmcp",
+        "//packages/linux/graphics/xorg/xcb-proto:xcb-proto",
+        "//packages/linux/graphics/xorg/libX11:libX11",
+        "//packages/linux/graphics/xorg/libXext:libXext",
+        "//packages/linux/graphics/xorg/libXrender:libXrender",
+        # Mesa transitive deps (for libgallium linking)
+        "//packages/linux/core/llvm:llvm",
+        "//packages/linux/dev-libs/elfutils:elfutils",
+        "//packages/linux/system/libs/compression/zstd:zstd",
+        "//packages/linux/system/libs/input/mtdev:mtdev",
+        "//packages/linux/system/libs/libseat:libseat",
+        "//packages/linux/system/hardware/hwdata:hwdata",
+        "//packages/linux/graphics/utilities/libdisplay-info:libdisplay-info",
     ],
     visibility = ["PUBLIC"],
 )

@@ -1020,7 +1020,7 @@ binary_package(
         echo "Using Qt source directory: $QT_DIR"
         cd "$QT_DIR"
         ./configure \
-            -prefix $PREFIX \
+            -prefix "${PREFIX:-/usr}" \
             -opensource \
             -confirm-license \
             -release \

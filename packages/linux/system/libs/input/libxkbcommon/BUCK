@@ -9,6 +9,8 @@ meson_package(
         "tools",
         "wayland",
     ],
+    # Default USE flags - enable X11 for i3 and other X11 apps
+    use_defaults = ["X"],
     src_uri = "https://xkbcommon.org/download/libxkbcommon-1.7.0.tar.xz",
     sha256 = "65782f0a10a4b455af9c6baab7040e2f537520caa2ec2092805cdfd36863b247",
     description = "Keymap handling library for toolkits and window systems",
@@ -31,6 +33,12 @@ meson_package(
     deps = [
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/data/libxml2:libxml2",
+        # X11 deps for xkbcommon-x11 backend
+        "//packages/linux/graphics/xorg/libxcb:libxcb",
+        "//packages/linux/graphics/xorg/xorgproto:xorgproto",
+        "//packages/linux/graphics/xorg/libXau:libXau",
+        "//packages/linux/graphics/xorg/libXdmcp:libXdmcp",
+        "//packages/linux/graphics/xorg/xcb-proto:xcb-proto",
     ],
     visibility = ["PUBLIC"],
 )

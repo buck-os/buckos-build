@@ -1,0 +1,24 @@
+load("//defs:package_defs.bzl", "autotools_package")
+
+# xcb-util-xrm - XCB X Resource Manager library
+
+autotools_package(
+    name = "xcb-util-xrm",
+    version = "1.3",
+    src_uri = "https://github.com/Airblader/xcb-util-xrm/releases/download/v1.3/xcb-util-xrm-1.3.tar.bz2",
+    sha256 = "301cf33701207ea8782d49f4cb6404abd8f2d64e16f242017fd720be7c900c85",
+    description = "XCB X Resource Manager library",
+    homepage = "https://github.com/Airblader/xcb-util-xrm",
+    license = "MIT",
+    deps = [
+        "//packages/linux/graphics/xorg/libxcb:libxcb",
+        "//packages/linux/graphics/xorg/xcb-util:xcb-util",
+        "//packages/linux/graphics/xorg/xorgproto:xorgproto",
+        "//packages/linux/graphics/xorg/libXau:libXau",
+        "//packages/linux/graphics/xorg/libXdmcp:libXdmcp",
+        "//packages/linux/graphics/xorg/xcb-proto:xcb-proto",
+        "//packages/linux/graphics/xorg/libX11:libX11",
+        "//packages/linux/graphics/xorg/util-macros:util-macros",
+    ],
+    visibility = ["PUBLIC"],
+)
