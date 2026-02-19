@@ -905,79 +905,6 @@ LDCONF
 )
 
 # =============================================================================
-# Stage 1.5: Libstdc++ (C++ standard library)
-# =============================================================================
-
-ebuild_package(
-    name = "cross-libstdcxx",
-    source = ":gcc-14-src",
-    version = "14.3.0",
-    category = "toolchain/bootstrap",
-    slot = "0",
-    description = "C++ standard library for bootstrap",
-    homepage = "https://gcc.gnu.org/",
-    license = "GPL-3.0",
-    bootstrap_stage = "stage1",  # STAGE 1: C++ library built with cross-gcc-pass1
-
-    # Use same environment as cross-gcc-pass2 to avoid dependency contamination
-    # Force C++17 for GCC 15 compatibility
-    env = {
-        "LDFLAGS": "",
-        "CFLAGS": "",
-        "CXX": "g++ -std=gnu++17",
-        "CXXFLAGS": "-O2 -std=gnu++17",
-        "CPATH": "",
-        "C_INCLUDE_PATH": "",
-        "CPLUS_INCLUDE_PATH": "",
-    },
-
-    src_prepare = '''
-# Fix thread_header for glibc-2.39+ compatibility
-sed '/thread_header =/s/@.*@/gthr-posix.h/' \
-    -i libstdc++-v3/include/Makefile.in || true
-''',
-
-    src_configure = '''
-BUCKOS_TARGET="x86_64-buckos-linux-gnu"
-
-# Clear stale config.cache files that break rebuilds with changed LDFLAGS
-find . -name 'config.cache' -delete 2>/dev/null || true
-
-mkdir -p build && cd build
-
-# Need the cross-compiler in PATH
-export PATH="$DESTDIR/tools/bin:$PATH"
-
-../libstdc++-v3/configure \
-    --prefix=/usr \
-    --host=$BUCKOS_TARGET \
-    --build=$(../config.guess) \
-    --disable-multilib \
-    --disable-nls \
-    --disable-libstdcxx-pch \
-    --disable-libstdcxx-visibility \
-    --with-gxx-include-dir=/usr/$BUCKOS_TARGET/include/c++/15.2.0
-''',
-
-    src_compile = '''
-cd build
-make -j$MAKE_JOBS
-''',
-
-    src_install = '''
-cd build
-make -j$MAKE_JOBS DESTDIR="$DESTDIR" install
-# Remove libtool archives
-rm -vf "$DESTDIR"/usr/lib/lib{stdc++{,exp,fs},supc++}.la || true
-rm -vf "$DESTDIR"/usr/lib64/lib{stdc++{,exp,fs},supc++}.la || true
-''',
-
-    bdepend = [":cross-glibc"],
-    depend = [],
-    visibility = ["PUBLIC"],
-)
-
-# =============================================================================
 # Stage 1.6: GCC Pass 2 (full compiler with libc)
 # =============================================================================
 
@@ -1662,6 +1589,11 @@ ebuild_package(
 # Copy source to writable location
 cp -a "$S" "$WORKDIR/src"
 mkdir -p "$WORKDIR/build"
+# Prevent autotools regeneration — timestamps get skewed by cp -a
+find "$WORKDIR/src" -name 'aclocal.m4' -exec touch {} +
+find "$WORKDIR/src" -name 'configure' -exec touch {} +
+find "$WORKDIR/src" -name 'config.h.in' -exec touch {} +
+find "$WORKDIR/src" -name 'Makefile.in' -exec touch {} +
 ''',
 
     src_configure = '''
@@ -1757,6 +1689,11 @@ ebuild_package(
 # Copy source to writable location
 cp -a "$S" "$WORKDIR/src"
 mkdir -p "$WORKDIR/build"
+# Prevent autotools regeneration — timestamps get skewed by cp -a
+find "$WORKDIR/src" -name 'aclocal.m4' -exec touch {} +
+find "$WORKDIR/src" -name 'configure' -exec touch {} +
+find "$WORKDIR/src" -name 'config.h.in' -exec touch {} +
+find "$WORKDIR/src" -name 'Makefile.in' -exec touch {} +
 ''',
 
     src_configure = '''
@@ -4650,6 +4587,16 @@ ebuild_package(
     license = "MIT",
     bootstrap_stage = "stage2",
 
+    # ncurses cross-build requires a native build compiler. We must clear the
+    # cross-compilation flags so the build-compiler test doesn't pick up the
+    # aarch64 sysroot from LDFLAGS.
+    env = {
+        "BUILD_CC": "/usr/bin/gcc -B/usr/bin",
+        "BUILD_CFLAGS": "",
+        "BUILD_LDFLAGS": "",
+        "BUILD_CPPFLAGS": "",
+    },
+
     src_configure = '''
 BUCKOS_TARGET="aarch64-buckos-linux-gnu"
 # Force C17 standard to avoid GCC 15 C23 bool keyword conflict
@@ -4661,6 +4608,10 @@ mkdir -p build && cd build
     --prefix=/tools \
     --host=$BUCKOS_TARGET \
     --build=$(../config.guess) \
+    --with-build-cc="/usr/bin/gcc -B/usr/bin" \
+    --with-build-cflags="" \
+    --with-build-ldflags="" \
+    --with-build-cppflags="" \
     --with-shared \
     --without-debug \
     --without-ada \
@@ -4806,6 +4757,11 @@ ebuild_package(
 # Copy source to writable location
 cp -a "$S" "$WORKDIR/src"
 mkdir -p "$WORKDIR/build"
+# Prevent autotools regeneration — timestamps get skewed by cp -a
+find "$WORKDIR/src" -name 'aclocal.m4' -exec touch {} +
+find "$WORKDIR/src" -name 'configure' -exec touch {} +
+find "$WORKDIR/src" -name 'config.h.in' -exec touch {} +
+find "$WORKDIR/src" -name 'Makefile.in' -exec touch {} +
 ''',
 
     src_configure = '''
@@ -4883,6 +4839,11 @@ ebuild_package(
 # Copy source to writable location
 cp -a "$S" "$WORKDIR/src"
 mkdir -p "$WORKDIR/build"
+# Prevent autotools regeneration — timestamps get skewed by cp -a
+find "$WORKDIR/src" -name 'aclocal.m4' -exec touch {} +
+find "$WORKDIR/src" -name 'configure' -exec touch {} +
+find "$WORKDIR/src" -name 'config.h.in' -exec touch {} +
+find "$WORKDIR/src" -name 'Makefile.in' -exec touch {} +
 ''',
 
     src_configure = '''

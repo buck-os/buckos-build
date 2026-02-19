@@ -253,7 +253,7 @@ BuckOS implements a proper multi-stage bootstrap similar to Linux From Scratch.
 
 ### Toolchain Modes
 
-BuckOS supports two toolchain modes:
+BuckOS supports three toolchain modes:
 
 #### Bootstrap Mode (Default - Recommended for Production)
 
@@ -288,16 +288,50 @@ buck2 build //packages/linux/editors/entr:entr --target-platforms //platforms:li
 
 **Benefits:**
 - Faster builds (no toolchain compilation)
-- Less disk space
 - Useful for rapid iteration
+
+#### Pre-built Toolchain Mode (For CI/CD and Repeat Builds)
+
+Uses a previously-built bootstrap toolchain exported as a tarball, avoiding recompilation on subsequent builds.
+
+First, build and export the bootstrap toolchain:
+
+```bash
+# Build the bootstrap toolchain and Export it as a tarball
+scripts/export-toolchain.sh /path/to/toolchain.tar.zst
+```
+
+Then configure `.buckconfig` to use it:
+
+```ini
+[buckos]
+prebuilt_toolchain_path = /path/to/toolchain.tar.zst
+```
+
+You can now empty the cache, kill buck2 and start again using the toolchain:
+
+```bash
+buck2 clean
+buck2 kill
+```
+
+The next build will be using the pre-compiled toolchain.
+
+
+**Benefits:**
+- Reproducible builds without re-compiling the toolchain every time
+- Significantly faster CI/CD pipelines
+- Same binary output as full bootstrap mode
 
 | Use Case | Recommended Mode |
 |----------|------------------|
-| Production builds | Bootstrap |
+| First bootstrap build | Bootstrap |
+| Production builds | Bootstrap or Pre-built |
+| Subsequent builds after first bootstrap | Pre-built |
 | Development/testing | Host |
-| Creating distributable binaries | Bootstrap |
+| Creating distributable binaries | Bootstrap or Pre-built |
 | Quick prototyping | Host |
-| CI/CD builds | Bootstrap |
+| CI/CD builds | Pre-built |
 
 ## Package System
 

@@ -520,9 +520,11 @@ echo "HOST_TRIPLET=$HOST_TRIPLET (target system)"
 # IMPORTANT: These tools run on the host but shouldn't link against host
 # libraries where possible. We use clean flags.
 
-export CC_FOR_BUILD="${CC_FOR_BUILD:-gcc -std=gnu17}"
-export CXX_FOR_BUILD="${CXX_FOR_BUILD:-g++ -std=gnu++17}"
-export CPP_FOR_BUILD="${CPP_FOR_BUILD:-gcc -E}"
+# Use -B/usr/bin so the host gcc finds the host assembler/linker
+# instead of the cross-toolchain ones that appear first in PATH
+export CC_FOR_BUILD="${CC_FOR_BUILD:-gcc -B/usr/bin -std=gnu17}"
+export CXX_FOR_BUILD="${CXX_FOR_BUILD:-g++ -B/usr/bin -std=gnu++17}"
+export CPP_FOR_BUILD="${CPP_FOR_BUILD:-gcc -B/usr/bin -E}"
 export CFLAGS_FOR_BUILD="${CFLAGS_FOR_BUILD:--O2 -std=gnu17}"
 export CXXFLAGS_FOR_BUILD="${CXXFLAGS_FOR_BUILD:--O2 -std=gnu++17}"
 export CPPFLAGS_FOR_BUILD="${CPPFLAGS_FOR_BUILD:-}"

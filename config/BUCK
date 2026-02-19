@@ -1,2 +1,32 @@
 # Configuration files for the build system
 # This directory contains local configuration that is gitignored
+
+# -----------------------------------------------------------------------------
+# Pre-built bootstrap toolchain cache
+# -----------------------------------------------------------------------------
+# When buckos.prebuilt_toolchain_path is set in .buckconfig, this target
+# extracts the pre-built tarball containing per-target output directories.
+# Individual bootstrap targets use this cache via ebuild_package's prebuilt
+# short-circuit. Use scripts/export-toolchain.sh to create the tarball.
+#
+# This genrule lives in the root cell (not toolchains//) so that read_config
+# can access the root .buckconfig.
+
+_prebuilt_toolchain_path = read_config("buckos", "prebuilt_toolchain_path", "")
+
+genrule(
+    name = "prebuilt-bootstrap-cache",
+    out = "cache",
+    cmd = "mkdir -p $OUT && tar --zstd -xf " + _prebuilt_toolchain_path + " -C $OUT" if _prebuilt_toolchain_path else 'echo "ERROR: buckos.prebuilt_toolchain_path is not set in .buckconfig" >&2; exit 1',
+    visibility = ["PUBLIC"],
+)
+
+# Legacy alias — the aggregate bootstrap-toolchain output is at <cache>/bootstrap-toolchain
+genrule(
+    name = "prebuilt-bootstrap-toolchain",
+    out = "toolchain",
+    cmd = "cp -a $(location :prebuilt-bootstrap-cache)/bootstrap-toolchain/. $OUT && " +
+          "for d in $OUT/tools/*-buckos-linux-gnu; do " +
+          "ln -sfn ../lib \"$d/lib\" && ln -sfn .. \"$d/sys-root\"; done" if _prebuilt_toolchain_path else 'echo "ERROR: buckos.prebuilt_toolchain_path is not set in .buckconfig" >&2; exit 1',
+    visibility = ["PUBLIC"],
+)

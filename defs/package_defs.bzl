@@ -31,6 +31,11 @@ load("//defs:patch_registry.bzl", "apply_registry_overrides", "lookup_patches")
 # Note: Uses toolchains// cell prefix per buck2 cell configuration
 BOOTSTRAP_TOOLCHAIN = "toolchains//bootstrap:bootstrap-toolchain"
 BOOTSTRAP_TOOLCHAIN_AARCH64 = "toolchains//bootstrap:bootstrap-toolchain-aarch64"
+PREBUILT_BOOTSTRAP_TOOLCHAIN = "//config:prebuilt-bootstrap-toolchain"
+
+# Pre-computed at module level so it reads from the root cell's .buckconfig,
+# not the calling BUCK file's cell (toolchains// has no .buckconfig).
+_PREBUILT_TOOLCHAIN_PATH = read_config("buckos", "prebuilt_toolchain_path", "")
 
 # Detect host architecture from host_info()
 # This helps choose the right toolchain when building on native aarch64
@@ -42,19 +47,25 @@ def _is_host_aarch64():
 def get_bootstrap_toolchain():
     """Return the appropriate bootstrap toolchain for the target architecture.
 
+    When buckos.prebuilt_toolchain_path is set, returns the prebuilt toolchain
+    target which extracts a cached tarball instead of building from source.
+
     On aarch64 hosts, we prefer the aarch64 toolchain by default since we can't
     build x86_64 cross-compilers on aarch64.
     """
+    if _PREBUILT_TOOLCHAIN_PATH:
+        return PREBUILT_BOOTSTRAP_TOOLCHAIN
+
     if _is_host_aarch64():
         # On aarch64 host, default to aarch64 toolchain
         return select({
-            "//platforms:is_x86_64": BOOTSTRAP_TOOLCHAIN,
+            "root//platforms:is_x86_64": BOOTSTRAP_TOOLCHAIN,
             "DEFAULT": BOOTSTRAP_TOOLCHAIN_AARCH64,
         })
     else:
         # On x86_64 host, default to x86_64 toolchain
         return select({
-            "//platforms:is_aarch64": BOOTSTRAP_TOOLCHAIN_AARCH64,
+            "root//platforms:is_aarch64": BOOTSTRAP_TOOLCHAIN_AARCH64,
             "DEFAULT": BOOTSTRAP_TOOLCHAIN,
         })
 
@@ -5480,9 +5491,20 @@ def ebuild_package(
         env: Environment variables
         **kwargs: Additional arguments passed to the rule
     """
+    # When a prebuilt toolchain cache is available, bootstrap targets can be
+    # resolved directly from the extracted tarball instead of building from source.
+    bootstrap_stage = kwargs.get("bootstrap_stage", "")
+    if _PREBUILT_TOOLCHAIN_PATH and bootstrap_stage:
+        native.genrule(
+            name = name,
+            out = name,
+            cmd = "cp -a $(location root//config:prebuilt-bootstrap-cache)/" + name + " $OUT",
+            visibility = kwargs.get("visibility", []),
+        )
+        return
+
     # Add bootstrap toolchain by default to ensure linking against BuckOS glibc
     use_bootstrap = kwargs.pop("use_bootstrap", True)
-    use_host_toolchain = _should_use_host_toolchain()
 
     # Extract typed toolchain overrides before kwargs filtering
     rust_toolchain_override = kwargs.pop("_rust_toolchain", None)
@@ -5500,20 +5522,13 @@ def ebuild_package(
         final_bdepend = list(bdepend)  # Make mutable copy
 
     bootstrap_stage = kwargs.get("bootstrap_stage", "")
-    if use_bootstrap and not use_host_toolchain and not bootstrap_stage and name != "bootstrap-toolchain" and name != "bootstrap-toolchain-aarch64":
-        # Use select to pick the right toolchain based on target architecture
-        if is_bdepend_select:
-            # Can't check membership in a select, so just add the toolchain select
-            # The select will resolve to the right deps at configuration time
-            final_bdepend = final_bdepend + [select({
-                "//platforms:is_aarch64": BOOTSTRAP_TOOLCHAIN_AARCH64,
-                "DEFAULT": BOOTSTRAP_TOOLCHAIN,
-            })]
-        elif BOOTSTRAP_TOOLCHAIN not in final_bdepend and BOOTSTRAP_TOOLCHAIN_AARCH64 not in final_bdepend:
-            final_bdepend.append(select({
-                "//platforms:is_aarch64": BOOTSTRAP_TOOLCHAIN_AARCH64,
-                "DEFAULT": BOOTSTRAP_TOOLCHAIN,
-            }))
+    if use_bootstrap and not bootstrap_stage and name != "bootstrap-toolchain" and name != "bootstrap-toolchain-aarch64":
+        toolchain_dep = get_toolchain_dep()
+        if toolchain_dep:
+            if is_bdepend_select:
+                final_bdepend = final_bdepend + [toolchain_dep]
+            else:
+                final_bdepend.append(toolchain_dep)
 
     # Calculate effective USE flags if USE flags are specified
     effective_use = []
@@ -6226,13 +6241,10 @@ def autotools_package(
     # Add bootstrap toolchain by default to ensure linking against BuckOS glibc
     # Skip if this package is part of the bootstrap toolchain itself or if using host toolchain
     use_bootstrap = kwargs.pop("use_bootstrap", True)
-    if use_bootstrap and not use_host_toolchain:
-        # Use select to pick the right toolchain based on target architecture
-        if BOOTSTRAP_TOOLCHAIN not in bdepend and BOOTSTRAP_TOOLCHAIN_AARCH64 not in bdepend:
-            bdepend.append(select({
-                "//platforms:is_aarch64": BOOTSTRAP_TOOLCHAIN_AARCH64,
-                "DEFAULT": BOOTSTRAP_TOOLCHAIN,
-            }))
+    if use_bootstrap:
+        toolchain_dep = get_toolchain_dep()
+        if toolchain_dep:
+            bdepend.append(toolchain_dep)
 
     # Get pre_configure and post_install if provided
     pre_configure = kwargs.pop("pre_configure", "")
@@ -6462,16 +6474,11 @@ def make_package(
     bdepend = list(kwargs.pop("bdepend", []))
 
     # Add bootstrap toolchain by default
-    # Skip if using host toolchain
     use_bootstrap = kwargs.pop("use_bootstrap", True)
-    use_host_toolchain = _should_use_host_toolchain()
-    if use_bootstrap and not use_host_toolchain:
-        # Use select to pick the right toolchain based on target architecture
-        if BOOTSTRAP_TOOLCHAIN not in bdepend and BOOTSTRAP_TOOLCHAIN_AARCH64 not in bdepend:
-            bdepend.append(select({
-                "//platforms:is_aarch64": BOOTSTRAP_TOOLCHAIN_AARCH64,
-                "DEFAULT": BOOTSTRAP_TOOLCHAIN,
-            }))
+    if use_bootstrap:
+        toolchain_dep = get_toolchain_dep()
+        if toolchain_dep:
+            bdepend.append(toolchain_dep)
 
     # Default src_compile if not provided
     if src_compile == None:

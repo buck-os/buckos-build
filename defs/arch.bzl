@@ -87,8 +87,8 @@ def arch_select(x86_64_value, aarch64_value):
         A select() expression
     """
     return select({
-        "//platforms:is_x86_64": x86_64_value,
-        "//platforms:is_aarch64": aarch64_value,
+        "root//platforms:is_x86_64": x86_64_value,
+        "root//platforms:is_aarch64": aarch64_value,
     })
 
 def get_cross_compile_prefix(host_arch, target_arch):
