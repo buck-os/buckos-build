@@ -83,17 +83,19 @@ VALID_EBUILD_KWARGS = [
     "category", "slot", "description", "homepage", "license",
     "src_unpack", "src_test", "pre_configure", "run_tests",
     "depend", "pdepend", "exec_bdepend", "local_only", "bootstrap_sysroot", "bootstrap_stage",
-    "visibility", "patches",
+    "visibility", "patches", "labels",
 ]
 
-def filter_ebuild_kwargs(kwargs, src_install = None):
+def filter_ebuild_kwargs(kwargs, src_install = None, package_type = None):
     """
     Filter kwargs to only include parameters that ebuild_package_rule accepts.
-    Also handles post_install by appending it to src_install.
+    Also handles post_install by appending it to src_install, and injects
+    buckos:* auto-labels based on the package_type and other attributes.
 
     Args:
         kwargs: The kwargs dict from a wrapper function
         src_install: The current src_install script (if any)
+        package_type: Build system type for label injection (e.g. "cmake")
 
     Returns:
         tuple: (filtered_kwargs dict, updated src_install string)
@@ -108,7 +110,79 @@ def filter_ebuild_kwargs(kwargs, src_install = None):
         else:
             src_install = post_install
 
+    # Auto-inject buckos:* labels
+    filtered["labels"] = _compile_labels(
+        package_type = package_type or filtered.get("package_type"),
+        bootstrap_stage = filtered.get("bootstrap_stage"),
+        extra = filtered.pop("labels", []),
+    )
+
     return filtered, src_install
+
+# =============================================================================
+# Label helpers
+# =============================================================================
+
+_ARCH_NORMALIZE = {
+    "amd64": "x86_64",
+    "arm64": "aarch64",
+}
+
+def _buckos_labels(base_labels, extra = []):
+    """Merge auto-injected labels with any user-provided labels.
+
+    Args:
+        base_labels: list of buckos:* labels to auto-apply
+        extra: user-provided labels from the macro's labels= or kwargs
+
+    Returns:
+        Deduplicated sorted label list.
+    """
+    combined = {l: True for l in base_labels}
+    for l in extra:
+        combined[l] = True
+    return sorted(combined.keys())
+
+def _compile_labels(package_type = None, bootstrap_stage = None, arch = None, extra = []):
+    """Build labels for a compilation target."""
+    labels = ["buckos:compile"]
+    if package_type:
+        labels.append("buckos:build:" + package_type)
+    if bootstrap_stage:
+        stage_num = bootstrap_stage.replace("stage", "")
+        labels.append("buckos:stage:" + stage_num)
+    if arch:
+        normalized = _ARCH_NORMALIZE.get(arch, arch)
+        labels.append("buckos:arch:" + normalized)
+    return _buckos_labels(labels, extra)
+
+def _download_labels(extra = []):
+    """Build labels for a download target."""
+    return _buckos_labels(["buckos:download"], extra)
+
+def _image_labels(arch = None, extra = []):
+    """Build labels for an image/aggregate target."""
+    labels = ["buckos:image"]
+    if arch:
+        normalized = _ARCH_NORMALIZE.get(arch, arch)
+        labels.append("buckos:arch:" + normalized)
+    return _buckos_labels(labels, extra)
+
+def _bootscript_labels(arch = None, extra = []):
+    """Build labels for a boot script target."""
+    labels = ["buckos:bootscript"]
+    if arch:
+        normalized = _ARCH_NORMALIZE.get(arch, arch)
+        labels.append("buckos:arch:" + normalized)
+    return _buckos_labels(labels, extra)
+
+def _config_labels(extra = []):
+    """Build labels for a config target."""
+    return _buckos_labels(["buckos:config"], extra)
+
+def _prebuilt_labels(extra = []):
+    """Build labels for a precompiled binary target."""
+    return _buckos_labels(["buckos:prebuilt"], extra)
 
 def get_toolchain_dep():
     """
@@ -698,12 +772,14 @@ def download_source(
 
     # Create http_file for the main archive (using custom rule with proxy support)
     archive_target = name + "-archive"
+    dl_labels = _download_labels()
     _http_file_with_proxy(
         name = archive_target,
         urls = [src_uri],
         sha256 = sha256,
         out = archive_filename,
         proxy = _get_download_proxy(),
+        labels = dl_labels,
     )
 
     # Create signature download rule if signature_required and signature_sha256 provided
@@ -732,6 +808,7 @@ def download_source(
         strip_components = strip_components,
         extract = extract,
         visibility = visibility,
+        labels = dl_labels,
     )
 
 def _kernel_config_impl(ctx: AnalysisContext) -> list[Provider]:
@@ -1137,6 +1214,7 @@ def kernel_build(
         cross_toolchain = None,
         patches = [],
         modules = [],
+        labels = [],
         visibility = []):
     """Build Linux kernel with optional patches and external modules.
 
@@ -1171,6 +1249,7 @@ def kernel_build(
         cross_toolchain = cross_toolchain,
         patches = merged_patches,
         modules = modules,
+        labels = _compile_labels(package_type = "kernel", arch = arch, extra = labels),
         visibility = visibility,
     )
 
@@ -5857,7 +5936,7 @@ def cmake_package(
 
     # Filter kwargs to only include parameters that ebuild_package_rule accepts
     src_install = custom_src_install if custom_src_install else eclass_config["src_install"]
-    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install)
+    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install, package_type = "cmake")
 
     ebuild_package_rule(
         name = name,
@@ -6064,7 +6143,7 @@ def meson_package(
 
     # Filter kwargs to only include parameters that ebuild_package_rule accepts
     src_install = custom_src_install if custom_src_install else eclass_config["src_install"]
-    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install)
+    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install, package_type = "meson")
 
     ebuild_package_rule(
         name = name,
@@ -6304,7 +6383,7 @@ def autotools_package(
             patch_refs.append(":" + patch_target_name)
 
     # Filter kwargs to only include parameters that ebuild_package_rule accepts
-    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install)
+    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install, package_type = "autotools")
 
     ebuild_package_rule(
         name = name,
@@ -6537,7 +6616,7 @@ def make_package(
             patch_refs.append(":" + patch_target_name)
 
     # Filter kwargs to only include parameters that ebuild_package_rule accepts
-    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install)
+    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install, package_type = "make")
 
     ebuild_package_rule(
         name = name,
@@ -7206,7 +7285,7 @@ fi
     src_install = cargo_src_install(bins) if bins else eclass_config["src_install"]
 
     # Filter kwargs to only include parameters that ebuild_package_rule accepts
-    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install)
+    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install, package_type = "cargo")
 
     ebuild_package_rule(
         name = name,
@@ -7427,7 +7506,7 @@ cd ../source
     )
 
     # Filter kwargs for ebuild_package_rule
-    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install)
+    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install, package_type = "cargo")
 
     # Note: ebuild.sh handles cargo vendoring with network access before
     # entering the network-isolated build environment automatically
@@ -8054,7 +8133,7 @@ echo "Go library compiled successfully (no binaries to install)"
 '''
 
     # Filter kwargs to only include parameters that ebuild_package_rule accepts
-    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install)
+    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install, package_type = "go")
 
     ebuild_package_rule(
         name = name,
@@ -8163,7 +8242,7 @@ def perl_package(
     src_install = kwargs.pop("src_install", eclass_config["src_install"])
 
     # Filter kwargs
-    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install)
+    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install, package_type = "perl")
 
     ebuild_package_rule(
         name = name,
@@ -8265,7 +8344,7 @@ def ruby_package(
     src_install = kwargs.pop("src_install", eclass_config["src_install"])
 
     # Filter kwargs
-    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install)
+    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install, package_type = "ruby")
 
     ebuild_package_rule(
         name = name,
@@ -8413,7 +8492,7 @@ def font_package(
     post_install = eclass_config.get("post_install", "")
 
     # Filter kwargs and handle post_install
-    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install)
+    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install, package_type = "font")
 
     # Append eclass post_install to src_install
     if post_install:
@@ -8579,7 +8658,7 @@ done
     src_install = custom_src_install if custom_src_install else eclass_config["src_install"]
 
     # Filter kwargs to only include parameters that ebuild_package_rule accepts
-    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install)
+    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install, package_type = "npm")
 
     ebuild_package_rule(
         name = name,
@@ -9195,7 +9274,7 @@ def python_package(
     # Filter kwargs to only include parameters that ebuild_package_rule accepts
     # Also pop src_prepare before filtering so we can use custom_src_prepare
     custom_src_prepare = kwargs.pop("src_prepare", None)
-    filtered_kwargs, _ = filter_ebuild_kwargs(kwargs)
+    filtered_kwargs, _ = filter_ebuild_kwargs(kwargs, package_type = "python")
 
     # Setup vendor src_prepare for offline builds
     vendor_src_prepare = ""
@@ -10759,7 +10838,7 @@ def java_package(
 
     # Filter kwargs
     src_install = custom_src_install if custom_src_install else eclass_config["src_install"]
-    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install)
+    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install, package_type = "java")
 
     ebuild_package_rule(
         name = name,
@@ -10960,7 +11039,7 @@ done
 
     # Filter kwargs
     src_install = custom_src_install if custom_src_install else eclass_config["src_install"]
-    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install)
+    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install, package_type = "maven")
 
     ebuild_package_rule(
         name = name,
@@ -11284,7 +11363,7 @@ def qt6_package(
 
     # Filter kwargs to only include parameters that ebuild_package_rule accepts
     src_install = custom_src_install if custom_src_install else eclass_config["src_install"]
-    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install)
+    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install, package_type = "qt6")
 
     ebuild_package_rule(
         name = name,
@@ -11375,6 +11454,7 @@ def acct_user_package(
     if post_install:
         src_install = src_install + "\n" + post_install
 
+    user_labels = kwargs.pop("labels", [])
     ebuild_package_rule(
         name = name,
         source = ":" + src_name,
@@ -11385,6 +11465,7 @@ def acct_user_package(
         rdepend = deps,
         env = env,
         description = description if description else "System user account: " + name,
+        labels = _compile_labels(package_type = "acct-user", extra = user_labels),
         visibility = visibility,
         **kwargs
     )
@@ -11435,6 +11516,7 @@ def acct_group_package(
     if post_install:
         src_install = src_install + "\n" + post_install
 
+    group_labels = kwargs.pop("labels", [])
     ebuild_package_rule(
         name = name,
         source = ":" + src_name,
@@ -11444,6 +11526,7 @@ def acct_group_package(
         src_install = src_install,
         env = env,
         description = description if description else "System group account: " + name,
+        labels = _compile_labels(package_type = "acct-group", extra = group_labels),
         visibility = visibility,
         **kwargs
     )
