@@ -100,18 +100,43 @@ _stamp_tmp="$T/.buckos-note-package.json"
 printf '%s\n' "$_own_record" > "$_stamp_tmp"
 
 # Find ELF executables and shared objects in DESTDIR
-while IFS= read -r -d '' _elf; do
+_stamp_elf() {
+    local _elf="$1"
     # Verify it's actually an ELF file
-    _magic="$(head -c 4 "$_elf" 2>/dev/null)" || continue
+    local _magic
+    _magic="$(head -c 4 "$_elf" 2>/dev/null)" || return
     case "$_magic" in
         $'\x7fELF') ;;
-        *) continue ;;
+        *) return ;;
     esac
     "$_objcopy" --add-section .note.package="$_stamp_tmp" \
                 --set-section-flags .note.package=noload,readonly \
                 "$_elf" 2>/dev/null || {
         echo "provenance-stamp: warning: failed to stamp $_elf"
     }
-done < <(find "$DESTDIR" -type f \( -executable -o -name '*.so' -o -name '*.so.*' \) -print0 2>/dev/null)
+}
+
+_fd_bin=""
+command -v fd >/dev/null 2>&1 && _fd_bin=fd
+[ -z "$_fd_bin" ] && command -v fdfind >/dev/null 2>&1 && _fd_bin=fdfind
+
+if [ -n "$_fd_bin" ]; then
+    # .so files (exact extension)
+    while IFS= read -r _elf; do
+        [ -n "$_elf" ] && _stamp_elf "$_elf"
+    done < <("$_fd_bin" --type f --no-ignore --hidden -e so '' "$DESTDIR" 2>/dev/null)
+    # .so.N versioned shared libs (regex)
+    while IFS= read -r _elf; do
+        [ -n "$_elf" ] && _stamp_elf "$_elf"
+    done < <("$_fd_bin" --type f --no-ignore --hidden '\.so\.' "$DESTDIR" 2>/dev/null)
+    # executable files (--type x implies --type f)
+    while IFS= read -r _elf; do
+        [ -n "$_elf" ] && _stamp_elf "$_elf"
+    done < <("$_fd_bin" --type x --no-ignore --hidden '' "$DESTDIR" 2>/dev/null)
+else
+    while IFS= read -r -d '' _elf; do
+        _stamp_elf "$_elf"
+    done < <(find "$DESTDIR" -type f \( -executable -o -name '*.so' -o -name '*.so.*' \) -print0 2>/dev/null)
+fi
 
 echo "provenance-stamp: stamped ELF binaries in $DESTDIR"

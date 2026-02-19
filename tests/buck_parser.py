@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import ast
 import dataclasses
+import shutil
+import subprocess
 import warnings
 from pathlib import Path
 
@@ -118,10 +120,23 @@ def _parse_one(buck_path: Path, repo_root: Path) -> list[BuckTarget]:
     return targets
 
 
+def _find_buck_files(packages_dir: Path) -> list[Path]:
+    """Find all BUCK files under packages_dir, using fd if available."""
+    fd_bin = shutil.which("fd") or shutil.which("fdfind")
+    if fd_bin:
+        result = subprocess.run(
+            [fd_bin, "--type", "f", "--min-depth", "1", "--glob", "BUCK", str(packages_dir)],
+            capture_output=True, text=True,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return sorted(Path(p) for p in result.stdout.strip().splitlines())
+    return sorted(packages_dir.rglob("BUCK"))
+
+
 def parse_buck_files(packages_dir: Path) -> list[BuckTarget]:
     """Parse all BUCK files under packages_dir and return labeled target definitions."""
     repo_root = packages_dir.parent
     targets = []
-    for buck_path in sorted(packages_dir.rglob("BUCK")):
+    for buck_path in _find_buck_files(packages_dir):
         targets.extend(_parse_one(buck_path, repo_root))
     return targets

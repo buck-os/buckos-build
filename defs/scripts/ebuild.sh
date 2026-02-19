@@ -13,6 +13,66 @@
 # Prevent cd from outputting paths when CDPATH is set
 unset CDPATH
 
+# === Fast tool selection: prefer fd over find ===
+# rg is NOT wrapped because grep -E (extended regex) conflicts with rg -E
+# (encoding), and the grep calls here operate on individual files, not trees.
+if command -v fd >/dev/null 2>&1; then
+    _FD=fd
+elif command -v fdfind >/dev/null 2>&1; then
+    _FD=fdfind
+else
+    _FD=""
+fi
+
+# _fast_find DIR [EXTRA_FIND_ARGS...]
+#   Lists regular files under DIR.  Uses fd when available.
+_fast_find() {
+    local dir="$1"; shift
+    if [ -n "$_FD" ]; then
+        "$_FD" --type f --no-ignore --hidden '' "$dir" 2>/dev/null
+    else
+        find "$dir" -type f "$@" 2>/dev/null
+    fi
+}
+
+# _fast_find_exec DIR
+#   Lists executable files and shared objects (.so, .so.*) under DIR.
+_fast_find_exec() {
+    local dir="$1"
+    if [ -n "$_FD" ]; then
+        # --type x = executable files (implies --type f)
+        "$_FD" --type x --no-ignore --hidden '' "$dir" 2>/dev/null
+        # .so files (exact extension match)
+        "$_FD" --type f --no-ignore --hidden -e so '' "$dir" 2>/dev/null
+        # .so.N versioned shared libs (regex on full name)
+        "$_FD" --type f --no-ignore --hidden '\.so\.' "$dir" 2>/dev/null
+    else
+        find "$dir" -type f \( -executable -o -name '*.so' -o -name '*.so.*' \) 2>/dev/null
+    fi | sort -u
+}
+
+# _fast_count_files DIR
+#   Counts regular files under DIR.
+_fast_count_files() {
+    local dir="$1"
+    if [ -n "$_FD" ]; then
+        "$_FD" --type f --no-ignore --hidden '' "$dir" 2>/dev/null | wc -l
+    else
+        find "$dir" -type f 2>/dev/null | wc -l
+    fi
+}
+
+# _fast_count_dirs DIR
+#   Counts directories under DIR.
+_fast_count_dirs() {
+    local dir="$1"
+    if [ -n "$_FD" ]; then
+        "$_FD" --type d --no-ignore --hidden '' "$dir" 2>/dev/null | wc -l
+    else
+        find "$dir" -type d 2>/dev/null | wc -l
+    fi
+}
+
 # === GUARD RAILS: Validate required environment variables ===
 _ebuild_fail() {
     echo "ERROR: $1" >&2
@@ -1027,13 +1087,23 @@ cd "$S"
 # This must happen BEFORE entering unshare namespace where permission changes may fail
 # IMPORTANT: Also make WORKDIR writable as some builds (coreutils) copy to ../source/
 chmod -R u+w . 2>/dev/null || {
-    find . -type f -exec chmod u+w {} + 2>/dev/null || true
-    find . -type d -exec chmod u+w {} + 2>/dev/null || true
+    if [ -n "$_FD" ]; then
+        "$_FD" --type f --no-ignore --hidden '' . 2>/dev/null | xargs -r chmod u+w 2>/dev/null || true
+        "$_FD" --type d --no-ignore --hidden '' . 2>/dev/null | xargs -r chmod u+w 2>/dev/null || true
+    else
+        find . -type f -exec chmod u+w {} + 2>/dev/null || true
+        find . -type d -exec chmod u+w {} + 2>/dev/null || true
+    fi
 }
 # Also make the parent WORKDIR writable in case of out-of-tree builds
 chmod -R u+w "$WORKDIR" 2>/dev/null || {
-    find "$WORKDIR" -type f -exec chmod u+w {} + 2>/dev/null || true
-    find "$WORKDIR" -type d -exec chmod u+w {} + 2>/dev/null || true
+    if [ -n "$_FD" ]; then
+        "$_FD" --type f --no-ignore --hidden '' "$WORKDIR" 2>/dev/null | xargs -r chmod u+w 2>/dev/null || true
+        "$_FD" --type d --no-ignore --hidden '' "$WORKDIR" 2>/dev/null | xargs -r chmod u+w 2>/dev/null || true
+    else
+        find "$WORKDIR" -type f -exec chmod u+w {} + 2>/dev/null || true
+        find "$WORKDIR" -type d -exec chmod u+w {} + 2>/dev/null || true
+    fi
 }
 
 # =============================================================================
@@ -1168,7 +1238,11 @@ VENDOR_FROM_DEP=false
 # Check if vendor directory exists AND has actual crates (not just empty from failed attempt)
 _local_vendor_valid=false
 if [ -n "$CARGO_ROOT" ] && [ -d "$CARGO_ROOT/vendor" ]; then
-    _local_vendor_count=$(find "$CARGO_ROOT/vendor" -maxdepth 1 -type d 2>/dev/null | wc -l)
+    if [ -n "$_FD" ]; then
+        _local_vendor_count=$("$_FD" --type d --no-ignore --max-depth 1 '' "$CARGO_ROOT/vendor" 2>/dev/null | wc -l)
+    else
+        _local_vendor_count=$(find "$CARGO_ROOT/vendor" -maxdepth 1 -type d 2>/dev/null | wc -l)
+    fi
     if [ "$_local_vendor_count" -gt 1 ]; then
         _local_vendor_valid=true
         echo "Found existing vendor directory with $(($_local_vendor_count - 1)) crates"
@@ -1273,7 +1347,11 @@ if [ -n "$CARGO_ROOT" ] && [ "$_local_vendor_valid" = "false" ] && [ "$VENDOR_FR
             rm -f vendor_config.toml
 
             # Count vendored crates for diagnostics
-            CRATE_COUNT=$(find vendor -maxdepth 1 -type d 2>/dev/null | wc -l)
+            if [ -n "$_FD" ]; then
+                CRATE_COUNT=$("$_FD" --type d --no-ignore --max-depth 1 '' vendor 2>/dev/null | wc -l)
+            else
+                CRATE_COUNT=$(find vendor -maxdepth 1 -type d 2>/dev/null | wc -l)
+            fi
             echo "✓ Cargo crates vendored to ./vendor/ ($((CRATE_COUNT - 1)) crates)"
             echo "✓ Cargo config updated at .cargo/config.toml"
 
@@ -1486,8 +1564,8 @@ if [[ "$PN" == "bootstrap-toolchain" ]]; then
     echo "✓ Bootstrap toolchain package created successfully"
 else
     # Regular verification for non-bootstrap packages
-    FILE_COUNT=$(/usr/bin/find "$DESTDIR" -type f 2>/dev/null | /usr/bin/wc -l)
-    DIR_COUNT=$(/usr/bin/find "$DESTDIR" -type d 2>/dev/null | /usr/bin/wc -l)
+    FILE_COUNT=$(_fast_count_files "$DESTDIR")
+    DIR_COUNT=$(_fast_count_dirs "$DESTDIR")
 
     # Strip whitespace from counts
     FILE_COUNT=$(echo "$FILE_COUNT" | /usr/bin/tr -d ' \t\n\r')
@@ -1514,11 +1592,23 @@ fi
 
 # Skip summary for bootstrap-toolchain
 if [[ "$PN" != "bootstrap-toolchain" ]]; then
-/usr/bin/find "$DESTDIR" -type d -name "bin" -exec sh -c 'echo "  Binaries: $(/usr/bin/ls "$1" 2>/dev/null | /usr/bin/wc -l) files in $1"' _ {} \;
-/usr/bin/find "$DESTDIR" -type d -name "lib" -o -name "lib64" 2>/dev/null | /usr/bin/head -2 | while read d; do
-    echo "  Libraries: $(/usr/bin/find "$d" -maxdepth 1 -name "*.so*" -o -name "*.a" 2>/dev/null | /usr/bin/wc -l) files in $d"
-done
-/usr/bin/find "$DESTDIR" -type d -name "include" 2>/dev/null | /usr/bin/head -1 | while read d; do
-    echo "  Headers: $(/usr/bin/find "$d" -name "*.h" 2>/dev/null | /usr/bin/wc -l) files in $d"
-done
+if [ -n "$_FD" ]; then
+    "$_FD" --type d --no-ignore --hidden --glob 'bin' "$DESTDIR" 2>/dev/null | while read -r d; do
+        echo "  Binaries: $(ls "$d" 2>/dev/null | wc -l) files in $d"
+    done
+    "$_FD" --type d --no-ignore --hidden '^(lib|lib64)$' "$DESTDIR" 2>/dev/null | head -2 | while read -r d; do
+        echo "  Libraries: $("$_FD" --type f --no-ignore --max-depth 1 -e so -e a '' "$d" 2>/dev/null | wc -l) files in $d"
+    done
+    "$_FD" --type d --no-ignore --hidden --glob 'include' "$DESTDIR" 2>/dev/null | head -1 | while read -r d; do
+        echo "  Headers: $("$_FD" --type f --no-ignore -e h '' "$d" 2>/dev/null | wc -l) files in $d"
+    done
+else
+    /usr/bin/find "$DESTDIR" -type d -name "bin" -exec sh -c 'echo "  Binaries: $(/usr/bin/ls "$1" 2>/dev/null | /usr/bin/wc -l) files in $1"' _ {} \;
+    /usr/bin/find "$DESTDIR" -type d -name "lib" -o -name "lib64" 2>/dev/null | /usr/bin/head -2 | while read d; do
+        echo "  Libraries: $(/usr/bin/find "$d" -maxdepth 1 -name "*.so*" -o -name "*.a" 2>/dev/null | /usr/bin/wc -l) files in $d"
+    done
+    /usr/bin/find "$DESTDIR" -type d -name "include" 2>/dev/null | /usr/bin/head -1 | while read d; do
+        echo "  Headers: $(/usr/bin/find "$d" -name "*.h" 2>/dev/null | /usr/bin/wc -l) files in $d"
+    done
+fi
 fi

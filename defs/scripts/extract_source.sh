@@ -215,40 +215,75 @@ set +f
 # cause build failures. Ensure all files are readable and writable.
 chmod -R u+rwX . 2>/dev/null || true
 
+# === Fast tool selection: prefer fd over find ===
+if command -v fd >/dev/null 2>&1; then
+    _FD=fd
+elif command -v fdfind >/dev/null 2>&1; then
+    _FD=fdfind
+else
+    _FD=""
+fi
+
 # Fix filenames with escape sequences (e.g., \x2d -> -)
 # Buck2 cannot handle files with escape sequences in their names
 # These are literal backslash-x sequences in the filenames, not actual escape chars
 # First try find with -name pattern, then try grep-based approach as fallback
 RENAMED_COUNT=0
 
-# Method 1: Find files with \x in name using -name (may not work on all systems)
-find . -name '*\x*' 2>/dev/null | while read -r file; do
-    # Decode \x2d (hyphen), \x40 (@), etc. to their actual characters
-    newname=$(echo "$file" | sed 's/\\x2d/-/g; s/\\x40/@/g; s/\\x2e/./g')
-    if [ "$file" != "$newname" ]; then
-        mkdir -p "$(dirname "$newname")"
-        mv "$file" "$newname" 2>/dev/null && echo "Renamed: $file -> $newname" && RENAMED_COUNT=$((RENAMED_COUNT+1))
-    fi
-done
-
-# Method 2: Use find with -print0 and grep to catch files the -name pattern missed
-find . -print0 2>/dev/null | tr '\0' '\n' | grep '\\x' | while read -r file; do
-    if [ -e "$file" ]; then
-        # Decode \x2d (hyphen), \x40 (@), etc. to their actual characters
+# Method 1: Find files with \x in name
+if [ -n "$_FD" ]; then
+    "$_FD" --no-ignore --hidden '\\x' . 2>/dev/null | while read -r file; do
         newname=$(echo "$file" | sed 's/\\x2d/-/g; s/\\x40/@/g; s/\\x2e/./g')
         if [ "$file" != "$newname" ]; then
             mkdir -p "$(dirname "$newname")"
-            mv "$file" "$newname" 2>/dev/null && echo "Renamed: $file -> $newname"
+            mv "$file" "$newname" 2>/dev/null && echo "Renamed: $file -> $newname" && RENAMED_COUNT=$((RENAMED_COUNT+1))
         fi
-    fi
-done
+    done
+else
+    find . -name '*\x*' 2>/dev/null | while read -r file; do
+        newname=$(echo "$file" | sed 's/\\x2d/-/g; s/\\x40/@/g; s/\\x2e/./g')
+        if [ "$file" != "$newname" ]; then
+            mkdir -p "$(dirname "$newname")"
+            mv "$file" "$newname" 2>/dev/null && echo "Renamed: $file -> $newname" && RENAMED_COUNT=$((RENAMED_COUNT+1))
+        fi
+    done
+fi
+
+# Method 2: Catch files the name pattern missed
+if [ -n "$_FD" ]; then
+    "$_FD" --no-ignore --hidden '' . 2>/dev/null | grep '\\x' | while read -r file; do
+        if [ -e "$file" ]; then
+            newname=$(echo "$file" | sed 's/\\x2d/-/g; s/\\x40/@/g; s/\\x2e/./g')
+            if [ "$file" != "$newname" ]; then
+                mkdir -p "$(dirname "$newname")"
+                mv "$file" "$newname" 2>/dev/null && echo "Renamed: $file -> $newname"
+            fi
+        fi
+    done
+else
+    find . -print0 2>/dev/null | tr '\0' '\n' | grep '\\x' | while read -r file; do
+        if [ -e "$file" ]; then
+            newname=$(echo "$file" | sed 's/\\x2d/-/g; s/\\x40/@/g; s/\\x2e/./g')
+            if [ "$file" != "$newname" ]; then
+                mkdir -p "$(dirname "$newname")"
+                mv "$file" "$newname" 2>/dev/null && echo "Renamed: $file -> $newname"
+            fi
+        fi
+    done
+fi
 
 # Method 3: Brute force - list all files and check each one
 # This handles cases where the filesystem represents the backslash differently
-for file in $(find . -type f -o -type d 2>/dev/null); do
+_list_all() {
+    if [ -n "$_FD" ]; then
+        "$_FD" --no-ignore --hidden '' . 2>/dev/null
+    else
+        find . -type f -o -type d 2>/dev/null
+    fi
+}
+for file in $(_list_all); do
     case "$file" in
         *x2d*|*x40*|*x2e*)
-            # Check if it's a literal \x sequence (4-char sequence with backslash)
             if echo "$file" | grep -q '\\x[0-9a-fA-F][0-9a-fA-F]'; then
                 newname=$(echo "$file" | sed 's/\\x2d/-/g; s/\\x40/@/g; s/\\x2e/./g')
                 if [ "$file" != "$newname" ] && [ -e "$file" ]; then
@@ -260,4 +295,8 @@ for file in $(find . -type f -o -type d 2>/dev/null); do
     esac
 done
 
-echo "Extraction complete: $(find . -type f | wc -l) files"
+if [ -n "$_FD" ]; then
+    echo "Extraction complete: $("$_FD" --type f --no-ignore --hidden '' . 2>/dev/null | wc -l) files"
+else
+    echo "Extraction complete: $(find . -type f | wc -l) files"
+fi
