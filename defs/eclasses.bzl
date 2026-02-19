@@ -1382,59 +1382,6 @@ def eclass_has_phase(eclass_name, phase):
     return phase in eclass and eclass[phase]
 
 # =============================================================================
-# ECLASS HELPER MACROS
-# =============================================================================
-
-def eclass_package(
-        name,
-        source,
-        version,
-        eclass_inherit,
-        category = "",
-        slot = "0",
-        description = "",
-        homepage = "",
-        license = "",
-        use_flags = [],
-        env = {},
-        depend = [],
-        rdepend = [],
-        bdepend = [],
-        pdepend = [],
-        maintainers = [],
-        src_prepare_extra = "",
-        src_configure_extra = "",
-        src_compile_extra = "",
-        src_install_extra = "",
-        run_tests = False,
-        **kwargs):
-    """
-    Create an ebuild-style package with eclass inheritance.
-
-    This is a convenience macro that combines ebuild_package with the
-    inherit() function for cleaner package definitions.
-
-    Args:
-        name: Package name
-        source: Source dependency
-        version: Package version
-        eclass_inherit: List of eclasses to inherit from
-        ... (other ebuild_package arguments)
-
-    Example:
-        eclass_package(
-            name = "my-cmake-app",
-            source = ":my-cmake-app-src",
-            version = "1.0.0",
-            eclass_inherit = ["cmake", "xdg"],
-            description = "My CMake Application",
-        )
-    """
-    # This would be implemented in package_defs.bzl to create ebuild_package
-    # with inherited eclass configuration
-    pass  # Implementation would go here
-
-# =============================================================================
 # DOCUMENTATION
 # =============================================================================
 

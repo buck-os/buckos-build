@@ -1,9 +1,11 @@
-"""Tests for .buckconfig-based USE flag resolution.
+"""Tests for .buckconfig-based USE flag and USE_EXPAND resolution.
 
 Verifies the resolution order:
   1. Package use_defaults
   2. Global [use] section
   3. Per-package [use.PKGNAME] section
+
+Also verifies [use_expand] section parsing.
 
 Uses buck2 uquery with --config/--config-file overrides to exercise each layer.
 Tests run sequentially; buck2 is killed before the first test to avoid
@@ -150,3 +152,47 @@ class TestUnsetPassthrough:
             "--config", "use.zstd=true",
         )
         assert "zstd" in flags
+
+
+class TestUseExpand:
+    """[use_expand] section provides comma-separated multi-value variables."""
+
+    def test_video_cards_readable(self, buck2):
+        """buck2 audit config returns [use_expand] video_cards."""
+        result = buck2(
+            "audit", "config", "use_expand.video_cards",
+            check=True,
+        )
+        assert "video_cards" in result.stdout
+        assert "fbdev" in result.stdout
+        assert "vesa" in result.stdout
+
+    def test_input_devices_readable(self, buck2):
+        """buck2 audit config returns [use_expand] input_devices."""
+        result = buck2(
+            "audit", "config", "use_expand.input_devices",
+            check=True,
+        )
+        assert "input_devices" in result.stdout
+        assert "evdev" in result.stdout
+        assert "libinput" in result.stdout
+
+    def test_use_expand_override(self, buck2):
+        """--config can override [use_expand] values."""
+        result = buck2(
+            "audit", "config", "use_expand.video_cards",
+            "--config", "use_expand.video_cards=amdgpu,radeonsi",
+            check=True,
+        )
+        assert "amdgpu" in result.stdout
+        assert "radeonsi" in result.stdout
+
+    def test_use_expand_empty(self, buck2):
+        """Empty [use_expand] value is valid."""
+        result = buck2(
+            "audit", "config", "use_expand.video_cards",
+            "--config", "use_expand.video_cards=",
+            check=True,
+        )
+        # Should not contain the default values
+        assert "fbdev" not in result.stdout

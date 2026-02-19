@@ -259,16 +259,28 @@ fn calculate_config_hash(target: &str, skip_build: bool) -> Result<String> {
         .unwrap_or_else(|| "unknown".to_string());
     config_parts.push(format!("platform:{}", platform));
 
-    // Get USE flags
-    if let Ok(content) = fs::read_to_string("config/use_config.bzl") {
-        if let Some(caps) =
-            regex::Regex::new(r"INSTALL_USE_FLAGS\s*=\s*\[(.*?)\]")
-                .ok()
-                .and_then(|re| re.captures(&content))
-        {
-            if let Some(use_flags) = caps.get(1) {
-                config_parts.push(format!("use:{}", use_flags.as_str()));
+    // Get USE flags from .buckconfig [use] section
+    if let Ok(content) = fs::read_to_string(".buckconfig") {
+        let mut flags = Vec::new();
+        let mut in_use_section = false;
+        for line in content.lines() {
+            let trimmed = line.trim();
+            if trimmed == "[use]" {
+                in_use_section = true;
+            } else if trimmed.starts_with('[') {
+                in_use_section = false;
+            } else if in_use_section {
+                if let Some((key, val)) = trimmed.split_once('=') {
+                    let val = val.trim().to_lowercase();
+                    if val == "true" || val == "1" || val == "yes" {
+                        flags.push(key.trim().to_string());
+                    }
+                }
             }
+        }
+        if !flags.is_empty() {
+            flags.sort();
+            config_parts.push(format!("use:{}", flags.join(",")));
         }
     }
 
