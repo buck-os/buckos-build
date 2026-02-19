@@ -4918,6 +4918,22 @@ def _ebuild_package_impl(ctx: AnalysisContext) -> list[Provider]:
     # Read host toolchain config
     use_host_toolchain = _should_use_host_toolchain()
 
+    # Read provenance config
+    provenance_enabled = read_config("buckos", "provenance", "false").lower() in ["true", "1", "yes"]
+    slsa_enabled = read_config("buckos", "slsa", "false").lower() in ["true", "1", "yes"]
+
+    # Read graph hash from the graph-hash genrule output
+    graph_hash_artifact = ctx.attrs._graph_hash[DefaultInfo].default_outputs[0]
+
+    # Extract source provenance metadata from labels
+    pkg_source_url = ""
+    pkg_source_sha256 = ""
+    for label in ctx.attrs.labels:
+        if label.startswith("buckos:url:"):
+            pkg_source_url = label[len("buckos:url:"):]
+        elif label.startswith("buckos:sha256:"):
+            pkg_source_sha256 = label[len("buckos:sha256:"):]
+
     # Filter dependencies: skip bootstrap toolchain when using host toolchain
     bdepend_list = ctx.attrs.bdepend
     if use_host_toolchain:
@@ -5003,6 +5019,9 @@ def _ebuild_package_impl(ctx: AnalysisContext) -> list[Provider]:
         # Default: use regular ebuild script
         ebuild_script = ctx.attrs._ebuild_script[DefaultInfo].default_outputs[0]
 
+    # Get provenance stamp script artifact
+    provenance_stamp_script = ctx.attrs._provenance_stamp_script[DefaultInfo].default_outputs[0]
+
     # Generate patch application commands if patches are provided
     # We'll pass patch files via command line arguments and copy them to the build dir
     patch_file_list = []
@@ -5028,7 +5047,8 @@ ORIGINAL_ARGS=("$@")
 
 # Arguments: DESTDIR, SRC_DIR, PKG_CONFIG_WRAPPER, FRAMEWORK_SCRIPT, PATCH_COUNT,
 #            ENV_SCRIPT, SRC_UNPACK, SRC_PREPARE, PRE_CONFIGURE, SRC_CONFIGURE,
-#            SRC_COMPILE, SRC_TEST, SRC_INSTALL, HOST_TOOL_COUNT, patches..., host_tool_dirs..., dep_dirs...
+#            SRC_COMPILE, SRC_TEST, SRC_INSTALL, PROVENANCE_STAMP, GRAPH_HASH,
+#            HOST_TOOL_COUNT, patches..., host_tool_dirs..., dep_dirs...
 # Convert paths to absolute to work in mount namespace
 export _EBUILD_DESTDIR="$(readlink -f "$1")"
 export _EBUILD_SRCDIR="$(readlink -f "$2")"
@@ -5047,8 +5067,11 @@ export PHASE_SRC_CONFIGURE="$(readlink -f "$5")"
 export PHASE_SRC_COMPILE="$(readlink -f "$6")"
 export PHASE_SRC_TEST="$(readlink -f "$7")"
 export PHASE_SRC_INSTALL="$(readlink -f "$8")"
-HOST_TOOL_COUNT="$9"
-shift 9
+export PHASE_PROVENANCE_STAMP="$(readlink -f "$9")"
+BUCKOS_PKG_GRAPH_HASH="$(cat "$(readlink -f "${10}")")"
+export BUCKOS_PKG_GRAPH_HASH
+HOST_TOOL_COUNT="${11}"
+shift 11
 
 # Debug: Log phase script paths for troubleshooting
 if [ -n "${EBUILD_DEBUG:-}" ]; then
@@ -5061,6 +5084,7 @@ if [ -n "${EBUILD_DEBUG:-}" ]; then
     echo "  SRC_COMPILE:   $PHASE_SRC_COMPILE"
     echo "  SRC_TEST:      $PHASE_SRC_TEST"
     echo "  SRC_INSTALL:   $PHASE_SRC_INSTALL"
+    echo "  PROV_STAMP:    $PHASE_PROVENANCE_STAMP"
     echo "=========================="
 fi
 
@@ -5182,6 +5206,14 @@ export USE_BOOTSTRAP="@@USE_BOOTSTRAP@@"
 export USE_HOST_TOOLCHAIN="@@USE_HOST@@"
 export BOOTSTRAP_SYSROOT="@@BOOTSTRAP_SYSROOT@@"
 export BUILD_THREADS="@@BUILD_THREADS@@"
+
+# Provenance stamping config
+export BUCKOS_PROVENANCE_ENABLED="@@PROVENANCE_ENABLED@@"
+export BUCKOS_SLSA_ENABLED="@@SLSA_ENABLED@@"
+export BUCKOS_PKG_TYPE="@@PKG_TYPE@@"
+export BUCKOS_PKG_TARGET="@@PKG_TARGET@@"
+export BUCKOS_PKG_SOURCE_URL="@@PKG_SOURCE_URL@@"
+export BUCKOS_PKG_SOURCE_SHA256="@@PKG_SOURCE_SHA256@@"
 
 # Set MAKE_JOBS based on BUILD_THREADS
 # 0 = auto-detect with nproc, otherwise use specified value
@@ -5412,6 +5444,12 @@ if command -v tee >/dev/null 2>&1; then
 else
     ( source "$PHASE_SRC_INSTALL" ) > "$T/src_install.log" 2>&1 || handle_phase_error "src_install" $? "$PHASE_SRC_INSTALL"
 fi
+
+# Phase: provenance_stamp (conditional on buckos.provenance config)
+if [ "$BUCKOS_PROVENANCE_ENABLED" = "true" ]; then
+    echo "📦 Phase: provenance_stamp"
+    source "$PHASE_PROVENANCE_STAMP"
+fi
 PHASES_EOF
 export PHASES_CONTENT
 
@@ -5473,6 +5511,12 @@ source "$FRAMEWORK_SCRIPT"
     script_content = script_content.replace("@@BUILD_THREADS@@", build_threads)
     script_content = script_content.replace("@@RUN_TESTS@@", "yes" if ctx.attrs.run_tests else "")
     script_content = script_content.replace("@@PROXY@@", _get_download_proxy())
+    script_content = script_content.replace("@@PROVENANCE_ENABLED@@", "true" if provenance_enabled else "false")
+    script_content = script_content.replace("@@SLSA_ENABLED@@", "true" if slsa_enabled else "false")
+    script_content = script_content.replace("@@PKG_TYPE@@", ctx.attrs.package_type)
+    script_content = script_content.replace("@@PKG_TARGET@@", str(ctx.label))
+    script_content = script_content.replace("@@PKG_SOURCE_URL@@", pkg_source_url)
+    script_content = script_content.replace("@@PKG_SOURCE_SHA256@@", pkg_source_sha256)
 
     script = ctx.actions.write(
         "ebuild_wrapper.sh",
@@ -5503,6 +5547,10 @@ source "$FRAMEWORK_SCRIPT"
     cmd.add(phase_scripts["src_compile"])
     cmd.add(phase_scripts["src_test"])
     cmd.add(phase_scripts["src_install"])
+
+    # Provenance stamp script and graph hash (positional args before HOST_TOOL_COUNT)
+    cmd.add(provenance_stamp_script)
+    cmd.add(graph_hash_artifact)
 
     # Add host tool count (number of exec_bdepend directories)
     exec_dep_count = len(exec_dep_dirs)
@@ -5621,6 +5669,8 @@ ebuild_package_rule = rule(
         "_ebuild_bootstrap_stage1_script": attrs.dep(default = "//defs/scripts:ebuild-bootstrap-stage1"),
         "_ebuild_bootstrap_stage2_script": attrs.dep(default = "//defs/scripts:ebuild-bootstrap-stage2"),
         "_ebuild_bootstrap_stage3_script": attrs.dep(default = "//defs/scripts:ebuild-bootstrap-stage3"),
+        "_provenance_stamp_script": attrs.dep(default = "//defs/scripts:provenance-stamp"),
+        "_graph_hash": attrs.dep(default = "//:graph-hash"),
         "labels": attrs.list(attrs.string(), default = []),
     },
 )

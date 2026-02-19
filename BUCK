@@ -766,6 +766,33 @@ filegroup(
     visibility = ["PUBLIC"],
 )
 
+# Graph hash: sha256 of the entire build graph — all buck2 state that can
+# affect a build: BUCK files, .bzl definitions, build scripts, and configs.
+#
+# buck2 glob() cannot cross package boundaries, so we hash the source tree
+# directly.  $SRCS ensures buck2 tracks the files it CAN see for invalidation;
+# the find(1) picks up BUCK files in subpackages that glob can't reach.
+genrule(
+    name = "graph-hash",
+    srcs = glob(["defs/*.bzl"]) +
+           glob(["defs/scripts/*.sh"]) +
+           [".buckconfig"] +
+           glob([".buckconfig.local"]),
+    cmd = """\
+        find "$SRCS_DIR/.." \
+            \\( -name 'BUCK' -o -name '*.bzl' -o -name '.buckconfig' \
+               -o -name '.buckconfig.local' -o -path '*/defs/scripts/*.sh' \
+               -o -path '*/config/*' \\) \
+            -not -path '*/buck-out/*' \
+            -not -path '*/.git/*' \
+            2>/dev/null \
+        | sort | xargs cat 2>/dev/null \
+        | sha256sum | cut -d' ' -f1 > $OUT
+    """,
+    out = "graph-hash.txt",
+    visibility = ["PUBLIC"],
+)
+
 # =============================================================================
 # System Profile Sets
 # =============================================================================
