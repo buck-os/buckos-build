@@ -31,8 +31,11 @@ jobs:
             bash -c '
               cp -r /src/. . &&
               bash setup.sh --yes &&
-              export PATH="$HOME/.local/bin:$PATH" &&
+              export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH" &&
               gcc --version &&
               buck2 --version &&
+              cargo --version &&
+              rg --version &&
+              fd --version || fdfind --version &&
               grep use_host_toolchain .buckconfig.local
             '

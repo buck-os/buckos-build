@@ -51,6 +51,7 @@ define_packages() {
                 libtool pkg-config curl tar xz bzip2 gzip lzip zstd file patch
                 unzip gawk sed grep diffutils findutils coreutils bash gettext
                 texinfo bison flex gperf zlib linux-api-headers git gnupg
+                rust fd ripgrep
             )
             ;;
         debian)
@@ -60,6 +61,7 @@ define_packages() {
                 bzip2 gzip lzip zstd file patch unzip util-linux gawk sed grep
                 diffutils findutils coreutils bash gettext texinfo bison flex
                 gperf zlib1g-dev linux-libc-dev git gnupg
+                cargo fd-find ripgrep
             )
             ;;
         fedora)
@@ -69,6 +71,7 @@ define_packages() {
                 lzip zstd file patch unzip util-linux-core gawk sed grep
                 diffutils findutils coreutils bash gettext texinfo bison flex
                 gperf zlib-devel kernel-headers git gnupg2
+                cargo fd-find ripgrep
             )
             ;;
     esac
@@ -169,7 +172,7 @@ verify() {
     echo "--- Verification ---"
     local failed=false
 
-    for cmd in gcc g++ make cmake meson ninja ar ld nm curl tar zstd python3 perl; do
+    for cmd in gcc g++ make cmake meson ninja ar ld nm curl tar zstd python3 perl cargo rg; do
         if command -v "$cmd" &>/dev/null; then
             printf "  %-12s %s\n" "$cmd" "$(command -v "$cmd")"
         else
@@ -177,6 +180,16 @@ verify() {
             failed=true
         fi
     done
+
+    # fd-find: binary is "fd" on Arch/Fedora, "fdfind" on Debian/Ubuntu
+    if command -v fd &>/dev/null; then
+        printf "  %-12s %s\n" "fd" "$(command -v fd)"
+    elif command -v fdfind &>/dev/null; then
+        printf "  %-12s %s\n" "fd(find)" "$(command -v fdfind)"
+    else
+        printf "  %-12s MISSING\n" "fd"
+        failed=true
+    fi
 
     # Check buck2 separately (might need PATH update)
     local buck2_path
