@@ -779,13 +779,34 @@ genrule(
            [".buckconfig"] +
            glob([".buckconfig.local"]),
     cmd = """\
-        find "$SRCS_DIR/.." \
-            \\( -name 'BUCK' -o -name '*.bzl' -o -name '.buckconfig' \
-               -o -name '.buckconfig.local' -o -path '*/defs/scripts/*.sh' \
-               -o -path '*/config/*' \\) \
-            -not -path '*/buck-out/*' \
-            -not -path '*/.git/*' \
-            2>/dev/null \
+        _root=`pwd`
+        _fd=""
+        command -v fd  >/dev/null 2>&1 && _fd=fd
+        [ -z "$_fd" ] && command -v fdfind >/dev/null 2>&1 && _fd=fdfind
+
+        if [ -n "$_fd" ]; then
+            "$_fd" --type f --no-ignore --hidden \
+                '(^BUCK$|\\.bzl$|^\\.buckconfig$|^\\.buckconfig\\.local$)' \
+                "$_root" \
+                --exclude buck-out --exclude .git \
+                2>/dev/null
+            "$_fd" --type f --no-ignore --hidden '' \
+                "$_root/defs/scripts" \
+                --exclude buck-out --exclude .git \
+                -e sh 2>/dev/null
+            "$_fd" --type f --no-ignore --hidden '' \
+                "$_root/config" \
+                --exclude buck-out --exclude .git \
+                2>/dev/null
+        else
+            find "$_root" \
+                \\( -name 'BUCK' -o -name '*.bzl' -o -name '.buckconfig' \
+                   -o -name '.buckconfig.local' -o -path '*/defs/scripts/*.sh' \
+                   -o -path '*/config/*' \\) \
+                -not -path '*/buck-out/*' \
+                -not -path '*/.git/*' \
+                2>/dev/null
+        fi \
         | sort | xargs cat 2>/dev/null \
         | sha256sum | cut -d' ' -f1 > $OUT
     """,

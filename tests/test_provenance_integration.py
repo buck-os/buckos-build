@@ -7,6 +7,7 @@ import os
 import re
 import shutil
 import subprocess
+import uuid
 from pathlib import Path
 
 import pytest
@@ -16,18 +17,26 @@ import pytest
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _buck2_build(repo_root: Path, target: str, provenance: bool = True,
-                 slsa: bool = False, timeout: int = 120) -> Path:
+def _buck2_build(
+    repo_root: Path, target: str,
+    provenance: bool = True, slsa: bool = False,
+    use_overrides: dict[str, str] | None = None,
+    timeout: int = 120,
+) -> Path:
     """Build a target with provenance config and return the output directory."""
     if not shutil.which("buck2"):
         pytest.skip("buck2 not found on PATH")
+    iso_name = "test-" + uuid.uuid4().hex[:12]
     args = [
-        "buck2", "build", "--show-full-output",
+        "buck2", "--isolation-dir", iso_name,
+        "build", "--show-full-output",
         "-c", f"use.provenance={'true' if provenance else 'false'}",
         "-c", f"use.slsa={'true' if slsa else 'false'}",
         "-c", "buckos.use_host_toolchain=true",
-        target,
     ]
+    for flag, val in (use_overrides or {}).items():
+        args.extend(["-c", f"use.{flag}={val}"])
+    args.append(target)
     result = subprocess.run(
         args, cwd=repo_root, capture_output=True, text=True, timeout=timeout,
     )
@@ -119,6 +128,25 @@ def _verify_bos_prov(rec: dict) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Session cleanup — kill test daemons and remove isolation dirs
+# ---------------------------------------------------------------------------
+
+@pytest.fixture(scope="session", autouse=True)
+def _cleanup_test_isolation_dirs(repo_root: Path):
+    """Kill test daemons and remove isolation dirs after all tests."""
+    yield
+    buck_out = repo_root / "buck-out"
+    if buck_out.exists():
+        for d in buck_out.iterdir():
+            if d.is_dir() and d.name.startswith("test-"):
+                subprocess.run(
+                    ["buck2", "--isolation-dir", d.name, "kill"],
+                    cwd=repo_root, capture_output=True, timeout=30,
+                )
+                shutil.rmtree(d, ignore_errors=True)
+
+
+# ---------------------------------------------------------------------------
 # Fixtures — test binary (//tests/fixtures/hello:hello)
 # ---------------------------------------------------------------------------
 
@@ -199,6 +227,12 @@ class TestExecutableStamping:
         assert result.returncode == 0, f"Stamped binary failed:\n{result.stderr}"
         assert "hello-provenance-test" in result.stdout
 
+    def test_use_flags_in_note_package(self, hello_output: Path):
+        exes = _find_executables(hello_output)
+        rec = json.loads(_readelf_note_package(exes[0]))
+        assert "useFlags" in rec
+        assert rec["useFlags"] == ["debug"]
+
     def test_elf_stamp_matches_jsonl(self, hello_output: Path):
         own = _read_jsonl(hello_output / ".buckos-provenance.jsonl")[0]
         exes = _find_executables(hello_output)
@@ -231,6 +265,12 @@ class TestSharedLibStamping:
         lib = _find_shared_libs(testlib_output)[0]
         rec = json.loads(_readelf_note_package(lib))
         _verify_bos_prov(rec)
+
+    def test_use_flags_in_note_package(self, testlib_output: Path):
+        lib = _find_shared_libs(testlib_output)[0]
+        rec = json.loads(_readelf_note_package(lib))
+        assert "useFlags" in rec
+        assert rec["useFlags"] == ["debug"]
 
     def test_stamped_lib_still_valid_elf(self, testlib_output: Path):
         for lib in _find_shared_libs(testlib_output):
@@ -274,6 +314,17 @@ class TestJsonlOutput:
 
     def test_bos_prov_matches_hash(self, testlib_output: Path):
         rec = _read_jsonl(testlib_output / ".buckos-provenance.jsonl")[0]
+        _verify_bos_prov(rec)
+
+    def test_use_flags_in_jsonl(self, testlib_output: Path):
+        rec = _read_jsonl(testlib_output / ".buckos-provenance.jsonl")[0]
+        assert "useFlags" in rec
+        assert rec["useFlags"] == ["debug"]
+
+    def test_bos_prov_covers_use_flags(self, testlib_output: Path):
+        """BOS_PROV hash includes useFlags in the canonical JSON."""
+        rec = _read_jsonl(testlib_output / ".buckos-provenance.jsonl")[0]
+        assert "useFlags" in rec
         _verify_bos_prov(rec)
 
     def test_no_slsa_fields_without_slsa(self, testlib_output: Path):
@@ -373,6 +424,10 @@ class TestProvenanceDisabled:
                 f"{exe.name}: .note.package should not exist"
             )
 
+    def test_no_use_flags_when_disabled(self, hello_output_disabled: Path):
+        jsonl = hello_output_disabled / ".buckos-provenance.jsonl"
+        assert not jsonl.exists()
+
     def test_disabled_binary_still_runs(self, hello_output_disabled: Path):
         exes = _find_executables(hello_output_disabled)
         if not exes:
@@ -382,3 +437,85 @@ class TestProvenanceDisabled:
             [str(hello)], capture_output=True, text=True,
         )
         assert result.returncode == 0
+
+
+# ---------------------------------------------------------------------------
+# USE flags in provenance — multi-flag coverage
+# ---------------------------------------------------------------------------
+
+class TestUseFlagsInProvenance:
+
+    @pytest.fixture(scope="class")
+    def hello_defaults(self, repo_root: Path) -> Path:
+        """Default flags: debug=on (from use_defaults), trace=off."""
+        return _buck2_build(repo_root, "//tests/fixtures/hello:hello")
+
+    @pytest.fixture(scope="class")
+    def hello_both_on(self, repo_root: Path) -> Path:
+        """Both debug (default) and trace (override) enabled."""
+        return _buck2_build(
+            repo_root, "//tests/fixtures/hello:hello",
+            use_overrides={"trace": "true"},
+        )
+
+    @pytest.fixture(scope="class")
+    def hello_debug_off(self, repo_root: Path) -> Path:
+        """debug disabled, trace still off — no flags active."""
+        return _buck2_build(
+            repo_root, "//tests/fixtures/hello:hello",
+            use_overrides={"debug": "false"},
+        )
+
+    @pytest.fixture(scope="class")
+    def hello_trace_only(self, repo_root: Path) -> Path:
+        """debug off, trace on — only trace active."""
+        return _buck2_build(
+            repo_root, "//tests/fixtures/hello:hello",
+            use_overrides={"debug": "false", "trace": "true"},
+        )
+
+    # -- defaults (debug only) --
+
+    def test_defaults_use_flags(self, hello_defaults: Path):
+        rec = _read_jsonl(hello_defaults / ".buckos-provenance.jsonl")[0]
+        assert rec["useFlags"] == ["debug"]
+
+    def test_defaults_bos_prov(self, hello_defaults: Path):
+        rec = _read_jsonl(hello_defaults / ".buckos-provenance.jsonl")[0]
+        _verify_bos_prov(rec)
+
+    # -- both flags on --
+
+    def test_both_on_use_flags(self, hello_both_on: Path):
+        rec = _read_jsonl(hello_both_on / ".buckos-provenance.jsonl")[0]
+        assert rec["useFlags"] == ["debug", "trace"]
+
+    def test_both_on_bos_prov(self, hello_both_on: Path):
+        rec = _read_jsonl(hello_both_on / ".buckos-provenance.jsonl")[0]
+        _verify_bos_prov(rec)
+
+    def test_both_on_elf_stamp_matches_jsonl(self, hello_both_on: Path):
+        own = _read_jsonl(hello_both_on / ".buckos-provenance.jsonl")[0]
+        exes = _find_executables(hello_both_on)
+        elf_rec = json.loads(_readelf_note_package(exes[0]))
+        assert elf_rec == own
+
+    # -- debug off (empty flags) --
+
+    def test_debug_off_use_flags(self, hello_debug_off: Path):
+        rec = _read_jsonl(hello_debug_off / ".buckos-provenance.jsonl")[0]
+        assert rec["useFlags"] == []
+
+    def test_debug_off_bos_prov(self, hello_debug_off: Path):
+        rec = _read_jsonl(hello_debug_off / ".buckos-provenance.jsonl")[0]
+        _verify_bos_prov(rec)
+
+    # -- trace only --
+
+    def test_trace_only_use_flags(self, hello_trace_only: Path):
+        rec = _read_jsonl(hello_trace_only / ".buckos-provenance.jsonl")[0]
+        assert rec["useFlags"] == ["trace"]
+
+    def test_trace_only_bos_prov(self, hello_trace_only: Path):
+        rec = _read_jsonl(hello_trace_only / ".buckos-provenance.jsonl")[0]
+        _verify_bos_prov(rec)

@@ -31,7 +31,6 @@ def test_bzl_files_load(buck2):
     assert result_tc.returncode == 0, f"//toolchains/... failed:\n{result_tc.stderr}"
 
 
-@pytest.mark.slow
 @pytest.mark.timeout(600)
 def test_smoke_build_zlib(buck2):
     """Smoke test: zlib actually builds."""

@@ -48,12 +48,6 @@ def _parse_uquery_labels(stdout: str) -> dict[str, list[str]]:
     return result
 
 
-@pytest.fixture(scope="session", autouse=True)
-def _kill_buck2_daemons():
-    """Kill any lingering buck2 daemons before the test suite starts."""
-    subprocess.run(["killall", "buck2"], capture_output=True)
-
-
 @pytest.fixture(scope="session")
 def repo_root() -> Path:
     return _find_repo_root()
