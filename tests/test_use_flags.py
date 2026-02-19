@@ -8,25 +8,17 @@ Verifies the resolution order:
 Also verifies [use_expand] section parsing.
 
 Uses buck2 uquery with --config/--config-file overrides to exercise each layer.
-Tests run sequentially; buck2 is killed before the first test to avoid
-stale daemons.
+Uses only buck2 uquery/audit (no builds, no gcc).
 """
 from __future__ import annotations
 
 import json
-import subprocess
 import tempfile
 from pathlib import Path
 
 import pytest
 
 TARGET = "//tests/fixtures/use-flags:test-use-flags"
-
-
-@pytest.fixture(scope="module", autouse=True)
-def _kill_buck2():
-    """Kill any lingering buck2 daemons before running this module."""
-    subprocess.run(["killall", "buck2"], capture_output=True)
 
 
 def _uquery_use_flags(buck2, *extra_args: str) -> list[str]:

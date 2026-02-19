@@ -6,7 +6,7 @@ This document compares the Buck macros in the `defs` directory with Gentoo's ebu
 
 | Category | Status | Notes |
 |----------|--------|-------|
-| USE Flags | **Implemented** | 80+ flags, profiles, conditional deps |
+| USE Flags | **Implemented** | .buckconfig-driven, profiles, conditional deps |
 | Build Phases | **Implemented** | All standard phases supported |
 | Slots/Subslots | **Implemented** | Full slot and subslot support with ABI tracking |
 | Version Constraints | **Implemented** | Full constraint syntax |
@@ -18,7 +18,7 @@ This document compares the Buck macros in the `defs` directory with Gentoo's ebu
 | VDB | **Implemented** | Installed package database with file ownership |
 | Overlays | **Implemented** | Layered repository system with priorities |
 | Config Protection | **Implemented** | CONFIG_PROTECT with merge file support |
-| USE_EXPAND | **Implemented** | PYTHON_TARGETS, CPU_FLAGS_X86, VIDEO_CARDS, etc. |
+| USE_EXPAND | **Implemented** | .buckconfig `[use_expand]` section |
 | Package Blockers | **Implemented** | Soft (!) and hard (!!) blockers |
 | SRC_URI Advanced | **Implemented** | Rename (->), mirrors, fetch restrictions |
 | REQUIRED_USE Complex | **Implemented** | ^^, ??, || operators and nesting |
@@ -28,25 +28,43 @@ This document compares the Buck macros in the `defs` directory with Gentoo's ebu
 
 ## Well-Implemented Features
 
-### 1. USE Flags System (`use_flags.bzl`)
+### 1. USE Flags System (`use_flags.bzl`, `.buckconfig`)
 
 **Equivalent Features:**
-- Global USE flags (80+ defined covering build, graphics, audio, networking, etc.)
-- Per-package USE flags via `package_use()`
+- Global USE flags via `.buckconfig` `[use]` section
+- Per-package USE overrides via `[use.PKGNAME]` sections
+- Package-declared flags via `iuse` and `use_defaults` parameters
 - USE-conditional dependencies via `use_dep()`
 - `use_enable()` and `use_with()` helpers
-- REQUIRED_USE constraint checking
+- Build-system-specific helpers: `use_cmake_options()`, `use_meson_options()`,
+  `use_cargo_features()`, `use_go_tags()`
 - Profile-based USE defaults
-- USE flag descriptions
 
-**Example:**
+**Resolution order:**
+1. Package `use_defaults` (per-package declaration)
+2. Global `.buckconfig` `[use]` section
+3. Per-package `.buckconfig` `[use.PKGNAME]` section
+
+**Example `.buckconfig`:**
+```ini
+[use]
+ssl = true
+ipv6 = true
+
+[use.curl]
+ssl = false
+gnutls = true
+```
+
+**Example BUCK file:**
 ```python
-use_package(
-    name = "ffmpeg",
-    use_flags = ["x264", "x265", "opus", "webp"],
-    use_conditional_deps = {
-        "x264": [":x264"],
-        "x265": [":x265"],
+autotools_package(
+    name = "curl",
+    iuse = ["ssl", "gnutls", "http2", "ipv6"],
+    use_defaults = ["ssl", "ipv6"],
+    use_deps = {
+        "ssl": ["//packages/openssl:openssl"],
+        "gnutls": ["//packages/gnutls:gnutls"],
     },
 )
 ```
@@ -96,12 +114,12 @@ versioned_package(
 - Desktop environment sets (gnome, kde, xfce, sway, etc.)
 - Set operations (union, intersection, difference)
 
-### 5. Package Masking (`package_customize.bzl`)
+### 5. Package Masking
 
-**Implemented:**
-- Package masking/unmasking
-- Keyword acceptance per package
-- Profile-based masking
+**Implemented (via `advanced_deps.bzl`):**
+- Package masking/unmasking via `package_masks` parameter
+- Keyword acceptance per package via `package_accept_keywords`
+- Package environment overrides
 
 ### 6. Build Systems Support
 
@@ -121,14 +139,13 @@ versioned_package(
 - `openrc_doinitd()`, `openrc_doconfd()`
 - `newinitd()`, `newconfd()`
 
-### 8. System Detection (`tooling.bzl`)
+### 8. System Configuration (`.buckconfig`)
 
-**Automated Detection:**
-- CPU flags (AES, AVX, SSE)
-- GPU (NVIDIA, AMD, Intel)
-- Audio system
-- Init system
-- Storage type
+**Configuration via `.buckconfig`:**
+- USE flags: `[use]` section for global flags, `[use.PKGNAME]` for per-package
+- USE_EXPAND: `[use_expand]` section for multi-value variables (video_cards, input_devices)
+- Feature toggles: provenance, SLSA via `[use]` section
+- Platform config: `[buckos]` section for target platform settings
 
 ---
 
@@ -378,8 +395,8 @@ BuckOs has achieved full parity with Gentoo's package building and management sy
 |----------------|-----------------|--------|
 | ebuild | `ebuild_package()` | Done |
 | eclass | `eclasses.bzl`, `inherit()` | Done |
-| USE flags | `use_flags.bzl` | Done |
-| USE_EXPAND | `use_expand.bzl` | Done |
+| USE flags | `use_flags.bzl`, `.buckconfig [use]` | Done |
+| USE_EXPAND | `use_expand.bzl`, `.buckconfig [use_expand]` | Done |
 | SLOT | `slot` parameter | Done |
 | SUBSLOT | `subslot` parameter, `subslot_dep()` | Done |
 | KEYWORDS | `keywords` parameter | Partial |
@@ -398,8 +415,8 @@ BuckOs has achieved full parity with Gentoo's package building and management sy
 | do* helpers | Helper functions | Done |
 | /var/db/pkg | `vdb.bzl` | Done |
 | emerge | Buck2 build | Different paradigm |
-| make.conf | `generate_make_conf()` | Done |
-| package.use | `generate_package_use()` | Done |
+| make.conf | `.buckconfig [use]` | Done |
+| package.use | `.buckconfig [use.PKGNAME]` | Done |
 | package.mask | `package_masks` | Done |
 | package.accept_keywords | `package_accept_keywords` | Done |
 | package.env | `advanced_deps.bzl` | Done |
