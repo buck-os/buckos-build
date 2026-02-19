@@ -179,6 +179,8 @@ if [ "${BUCKOS_IMA_ENABLED:-false}" = "true" ]; then
         exit 1
     fi
 
+    _ima_signed=0
+
     _ima_sign_elf() {
         local _elf="$1"
         local _magic
@@ -187,9 +189,14 @@ if [ "${BUCKOS_IMA_ENABLED:-false}" = "true" ]; then
             $'\x7fELF') ;;
             *) return ;;
         esac
-        evmctl ima_sign --key "$BUCKOS_IMA_KEY" "$_elf" 2>/dev/null || {
-            echo "provenance-stamp: warning: failed to IMA-sign $_elf" >&2
-        }
+        # --sigfile writes a .sig sidecar without needing CAP_SYS_ADMIN;
+        # evmctl returns non-zero (the xattr attempt fails) but the .sig is created
+        evmctl ima_sign --sigfile --key "$BUCKOS_IMA_KEY" "$_elf" >/dev/null 2>&1 || true
+        if [ -f "${_elf}.sig" ]; then
+            _ima_signed=$((_ima_signed + 1))
+        else
+            echo "provenance-stamp: warning: no .sig sidecar for $_elf" >&2
+        fi
     }
 
     if [ -n "$_fd_bin" ]; then
@@ -208,5 +215,5 @@ if [ "${BUCKOS_IMA_ENABLED:-false}" = "true" ]; then
         done < <(find "$DESTDIR" -type f \( -executable -o -name '*.so' -o -name '*.so.*' \) -print0 2>/dev/null)
     fi
 
-    echo "provenance-stamp: IMA-signed ELF binaries in $DESTDIR"
+    echo "provenance-stamp: IMA-signed $_ima_signed binaries (.sig sidecars)"
 fi

@@ -662,7 +662,7 @@ class TestImaSigning(unittest.TestCase):
         "evmctl, cc, and objcopy required",
     )
     def test_ima_sign_elf(self):
-        """Verify security.ima xattr is set on a signed ELF."""
+        """--sigfile produces .sig sidecar without needing root."""
         # Build a minimal binary
         c_src = os.path.join(self.tmpdir, "hello.c")
         with open(c_src, "w") as f:
@@ -692,22 +692,12 @@ class TestImaSigning(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("IMA-signed", result.stdout)
 
-        # Check for security.ima xattr
-        try:
-            import xattr
-            attrs = xattr.listxattr(elf_path)
-            self.assertIn("security.ima", attrs)
-        except ImportError:
-            # xattr module not available, check with getfattr
-            if shutil.which("getfattr"):
-                check = subprocess.run(
-                    ["getfattr", "-n", "security.ima", elf_path],
-                    capture_output=True, text=True,
-                )
-                self.assertEqual(check.returncode, 0,
-                                 "security.ima xattr not found on signed ELF")
-            else:
-                self.skipTest("Neither xattr module nor getfattr available")
+        # .sig sidecar must exist next to the binary
+        sig_path = elf_path + ".sig"
+        self.assertTrue(
+            os.path.exists(sig_path),
+            f".sig sidecar not found at {sig_path}",
+        )
 
 
 if __name__ == "__main__":

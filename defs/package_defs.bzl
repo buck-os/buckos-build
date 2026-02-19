@@ -3107,6 +3107,20 @@ mount "${{LOOP}}p1" "$MOUNT_DIR/boot/efi"
 # Copy rootfs
 cp -a "$ROOTFS"/* "$MOUNT_DIR"/ || true
 
+# Apply IMA .sig sidecars as security.ima xattrs and clean up
+if command -v evmctl >/dev/null 2>&1; then
+    _ima_applied=0
+    while IFS= read -r -d '' _sig; do
+        _target="${{_sig%.sig}}"
+        [ -f "$_target" ] || continue
+        evmctl ima_setxattr --sigfile "$_sig" "$_target" >/dev/null 2>&1 && {{
+            rm -f "$_sig"
+            _ima_applied=$((_ima_applied + 1))
+        }}
+    done < <(find "$MOUNT_DIR" -name '*.sig' -print0 2>/dev/null)
+    [ "$_ima_applied" -gt 0 ] && echo "Applied security.ima to $_ima_applied files"
+fi
+
 # Unmount
 sync
 umount "$MOUNT_DIR/boot/efi"
@@ -3162,6 +3176,20 @@ mount -o loop "$OUTPUT" "$MOUNT_DIR"
 
 # Copy rootfs
 cp -a "$ROOTFS"/* "$MOUNT_DIR"/ || true
+
+# Apply IMA .sig sidecars as security.ima xattrs and clean up
+if command -v evmctl >/dev/null 2>&1; then
+    _ima_applied=0
+    while IFS= read -r -d '' _sig; do
+        _target="${{_sig%.sig}}"
+        [ -f "$_target" ] || continue
+        evmctl ima_setxattr --sigfile "$_sig" "$_target" >/dev/null 2>&1 && {{
+            rm -f "$_sig"
+            _ima_applied=$((_ima_applied + 1))
+        }}
+    done < <(find "$MOUNT_DIR" -name '*.sig' -print0 2>/dev/null)
+    [ "$_ima_applied" -gt 0 ] && echo "Applied security.ima to $_ima_applied files"
+fi
 
 # Unmount
 sync
@@ -3383,6 +3411,20 @@ if [ -n "{include_rootfs}" ] && [ -d "$ROOTFS_DIR" ]; then
     # Create a working copy of rootfs to add kernel modules
     ROOTFS_WORK=$(mktemp -d)
     cp -a "$ROOTFS_DIR/." "$ROOTFS_WORK/"
+
+    # Apply IMA .sig sidecars as security.ima xattrs and clean up
+    if command -v evmctl >/dev/null 2>&1; then
+        _ima_applied=0
+        while IFS= read -r -d '' _sig; do
+            _target="${{_sig%.sig}}"
+            [ -f "$_target" ] || continue
+            evmctl ima_setxattr --sigfile "$_sig" "$_target" >/dev/null 2>&1 && {{
+                rm -f "$_sig"
+                _ima_applied=$((_ima_applied + 1))
+            }}
+        done < <(find "$ROOTFS_WORK" -name '*.sig' -print0 2>/dev/null)
+        [ "$_ima_applied" -gt 0 ] && echo "Applied security.ima to $_ima_applied files"
+    fi
 
     # Copy kernel modules from kernel build to rootfs
     if [ -d "$KERNEL_DIR/lib/modules" ]; then
@@ -3766,6 +3808,20 @@ trap "rm -rf $WORKDIR" EXIT
 # Copy rootfs to working directory
 cp -a "$ROOTFS"/. "$WORKDIR/"
 
+# Apply IMA .sig sidecars as security.ima xattrs and clean up
+if command -v evmctl >/dev/null 2>&1; then
+    _ima_applied=0
+    while IFS= read -r -d '' _sig; do
+        _target="${{_sig%.sig}}"
+        [ -f "$_target" ] || continue
+        evmctl ima_setxattr --sigfile "$_sig" "$_target" >/dev/null 2>&1 && {{
+            rm -f "$_sig"
+            _ima_applied=$((_ima_applied + 1))
+        }}
+    done < <(find "$WORKDIR" -name '*.sig' -print0 2>/dev/null)
+    [ "$_ima_applied" -gt 0 ] && echo "Applied security.ima to $_ima_applied files"
+fi
+
 # Create metadata directory
 mkdir -p "$WORKDIR/etc/buckos"
 
@@ -3814,6 +3870,7 @@ echo "Creating tarball with {compression} compression..."
     cd "$WORKDIR"
     # Use numeric owner to ensure reproducibility
     tar --numeric-owner --owner=0 --group=0 \\
+        --xattrs \\
         --sort=name \\
         {compress_flag} \\
         -cf "$TARBALL" .
@@ -5769,7 +5826,7 @@ ebuild_package_rule = rule(
         "_ebuild_bootstrap_stage2_script": attrs.dep(default = "//defs/scripts:ebuild-bootstrap-stage2"),
         "_ebuild_bootstrap_stage3_script": attrs.dep(default = "//defs/scripts:ebuild-bootstrap-stage3"),
         "_provenance_stamp_script": attrs.dep(default = "//defs/scripts:provenance-stamp"),
-        "_ima_key": attrs.dep(default = "//defs/keys:ima-test-key"),
+        "_ima_key": attrs.dep(default = read_config("use", "ima_key", "//defs/keys:ima-test-key")),
         "labels": attrs.list(attrs.string(), default = []),
     },
 )
