@@ -2,16 +2,11 @@ load("//defs:package_defs.bzl", "download_source", "ebuild_package", "autotools_
 load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
 
 # csvtool - Command-line CSV processor
-download_source(
-    name = "csvtool-src",
-    src_uri = "https://github.com/Chris00/ocaml-csv/archive/refs/tags/2.4.tar.gz",
-    sha256 = "14b1173d2a64053e06571cbe4a86fa4be4b48ea190d1f0c389ce34fd9800c665",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "csvtool",
-    source = ":csvtool-src",
+    src_uri = "https://github.com/Chris00/ocaml-csv/archive/refs/tags/2.4.tar.gz",
+
+    sha256 = "14b1173d2a64053e06571cbe4a86fa4be4b48ea190d1f0c389ce34fd9800c665",
     version = "2.4",
     description = "Command-line tool for handling CSV files",
     homepage = "https://github.com/Chris00/ocaml-csv",

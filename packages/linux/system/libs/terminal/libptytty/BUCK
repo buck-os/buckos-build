@@ -5,16 +5,11 @@ load("//defs:package_defs.bzl", "download_source", "cmake_package")
 # =============================================================================
 # Library for secure pseudo-terminal handling, used by rxvt-unicode and others.
 
-download_source(
-    name = "libptytty-src",
-    src_uri = "https://dist.schmorp.de/libptytty/libptytty-2.0.tar.gz",
-    sha256 = "8033ed3aadf28759660d4f11f2d7b030acf2a6890cb0f7926fb0cfa6739d31f7",
-    signature_required = False,
-)
-
 cmake_package(
     name = "libptytty",
-    source = ":libptytty-src",
+    src_uri = "https://dist.schmorp.de/libptytty/libptytty-2.0.tar.gz",
+
+    sha256 = "8033ed3aadf28759660d4f11f2d7b030acf2a6890cb0f7926fb0cfa6739d31f7",
     version = "2.0",
     description = "Secure PTY/TTY library for terminal emulators",
     homepage = "http://software.schmorp.de/pkg/libptytty.html",

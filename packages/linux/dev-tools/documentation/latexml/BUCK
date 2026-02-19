@@ -1,15 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 
-download_source(
-    name = "latexml-src",
-    src_uri = "https://github.com/brucemiller/LaTeXML/archive/refs/tags/v0.8.8.tar.gz",
-    sha256 = "8a26ee4b5cc37db0c5733131187e2821283004e77e9edb27f4f37b76c6077b52",
-    signature_required = False,
-)
-
 autotools_package(
     name = "latexml",
-    source = ":latexml-src",
+    src_uri = "https://github.com/brucemiller/LaTeXML/archive/refs/tags/v0.8.8.tar.gz",
+
+    sha256 = "8a26ee4b5cc37db0c5733131187e2821283004e77e9edb27f4f37b76c6077b52",
     version = "0.8.8",
     description = "LaTeX to XML/HTML/MathML Converter",
     homepage = "https://dlmf.nist.gov/LaTeXML/",

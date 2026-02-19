@@ -1,20 +1,16 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
 
-download_source(
-    name = "diffutils-src",
-    src_uri = "https://mirrors.kernel.org/gnu/diffutils/diffutils-3.10.tar.xz",
-    sha256 = "90e5e93cc724e4ebe12ede80df1634063c7a855692685919bfe60b556c9bd09e",
-    signature_sha256 = "a94faf8f1baa04ff220f7b2ccb137c16337284e023ebc4a1d5df475c08d810f7",
-    signature_required=False,
-)
-
 autotools_package(
     name = "diffutils",
     # GNU release tarball includes pre-generated configure script
     bdepend = [],
     src_prepare = "",
-    source = ":diffutils-src",
+    src_uri = "https://mirrors.kernel.org/gnu/diffutils/diffutils-3.10.tar.xz",
+
+    sha256 = "90e5e93cc724e4ebe12ede80df1634063c7a855692685919bfe60b556c9bd09e",
+
+    signature_sha256 = "a94faf8f1baa04ff220f7b2ccb137c16337284e023ebc4a1d5df475c08d810f7",
     iuse = ["source"],
     use_configure = {
         "-source": "--disable-source",

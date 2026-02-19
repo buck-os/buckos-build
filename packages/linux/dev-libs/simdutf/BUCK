@@ -3,16 +3,11 @@ load("//defs:package_defs.bzl", "download_source", "cmake_package")
 # simdutf - Unicode validation and transcoding at gigabytes per second
 # Used by Ladybird web browser and other projects
 
-download_source(
-    name = "simdutf-src",
-    src_uri = "https://github.com/simdutf/simdutf/archive/refs/tags/v7.7.0.tar.gz",
-    sha256 = "0180de81a1dd48a87b8c0442ffa81734f3db91a7350914107a449935124e3c6f",
-    signature_required = False,
-)
-
 cmake_package(
     name = "simdutf",
-    source = ":simdutf-src",
+    src_uri = "https://github.com/simdutf/simdutf/archive/refs/tags/v7.7.0.tar.gz",
+
+    sha256 = "0180de81a1dd48a87b8c0442ffa81734f3db91a7350914107a449935124e3c6f",
     version = "7.7.0",
     description = "Unicode validation and transcoding at gigabytes per second using SIMD instructions",
     homepage = "https://github.com/simdutf/simdutf",

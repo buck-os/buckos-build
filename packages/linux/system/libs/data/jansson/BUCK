@@ -1,19 +1,16 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "jansson-src",
-    src_uri = "https://github.com/akheron/jansson/releases/download/v2.14/jansson-2.14.tar.bz2",
-    sha256 = "fba956f27c6ae56ce6dfd52fbf9d20254aad42821f74fa52f83957625294afb9",
-    signature_sha256 = "f3aaf05239a6bc5f684f760bc2e7cc87c9064b96c67b7c2374e6989faf9f5545",
-)
-
 autotools_package(
     name = "jansson",
     # GitHub releases/download tarball includes pre-generated configure script
     bdepend = [],
     src_prepare = "",
-    source = ":jansson-src",
+    src_uri = "https://github.com/akheron/jansson/releases/download/v2.14/jansson-2.14.tar.bz2",
+
+    sha256 = "fba956f27c6ae56ce6dfd52fbf9d20254aad42821f74fa52f83957625294afb9",
+
+    signature_sha256 = "f3aaf05239a6bc5f684f760bc2e7cc87c9064b96c67b7c2374e6989faf9f5545",
     iuse = ["static-libs"],
     use_configure = {
         "-static-libs": "--disable-static",

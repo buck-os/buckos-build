@@ -1,17 +1,13 @@
 load("//defs:package_defs.bzl","download_source", "make_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "rkhunter-src",
-    src_uri = "https://downloads.sourceforge.net/project/rkhunter/rkhunter/1.4.6/rkhunter-1.4.6.tar.gz",
-    sha256 = "f750aa3e22f839b637a073647510d7aa3adf7496e21f3c875b7a368c71d37487",
-    signature_sha256 = "be64201a2af97c42ae968ec7ed9073d4bc75ef20dd3de5806176970f2ec73c98",
-    signature_required=False,
-)
-
 make_package(
     name = "rkhunter",
-    source = ":rkhunter-src",
+    src_uri = "https://downloads.sourceforge.net/project/rkhunter/rkhunter/1.4.6/rkhunter-1.4.6.tar.gz",
+
+    sha256 = "f750aa3e22f839b637a073647510d7aa3adf7496e21f3c875b7a368c71d37487",
+
+    signature_sha256 = "be64201a2af97c42ae968ec7ed9073d4bc75ef20dd3de5806176970f2ec73c98",
     version = "1.4.6",
     description = "Rootkit Hunter - scans for rootkits, backdoors and local exploits",
     homepage = "http://rkhunter.sourceforge.net/",

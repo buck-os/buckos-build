@@ -4,18 +4,13 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "thermald-src",
-    src_uri = "https://github.com/intel/thermal_daemon/archive/refs/tags/v2.5.7.tar.gz",
-    sha256 = "b7df06bbd813bf039893a533d1e30073102a2494f6fdd432ae7c05f376c7cc15",
-    signature_required = False,
-)
-
 # USE flags: See use_flags.bzl for available flags
 
 autotools_package(
     name = "thermald",
-    source = ":thermald-src",
+    src_uri = "https://github.com/intel/thermal_daemon/archive/refs/tags/v2.5.7.tar.gz",
+
+    sha256 = "b7df06bbd813bf039893a533d1e30073102a2494f6fdd432ae7c05f376c7cc15",
     version = "2.5.7",
     description = "Intel thermal daemon for temperature management and throttling",
     homepage = "https://github.com/intel/thermal_daemon",

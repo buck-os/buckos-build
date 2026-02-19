@@ -4,17 +4,12 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "sdparm-src",
-    src_uri = "https://sg.danny.cz/sg/p/sdparm-1.12.tar.xz",
-    sha256 = "c4c9efafdbeb662e2f9712707ec490932bd4d010bb1129ae7a99526546eeadbe",
-    signature_required = False,
-)
-
 autotools_package(
     name = "sdparm",
     # Release tarball includes pre-generated configure script
-    source = ":sdparm-src",
+    src_uri = "https://sg.danny.cz/sg/p/sdparm-1.12.tar.xz",
+
+    sha256 = "c4c9efafdbeb662e2f9712707ec490932bd4d010bb1129ae7a99526546eeadbe",
     version = "1.12",
     description = "Get/set SCSI device parameters and power conditions",
     homepage = "https://sg.danny.cz/sg/sdparm.html",

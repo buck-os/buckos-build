@@ -5,16 +5,11 @@ load("//defs:use_flags.bzl", "set_use_flags")
 # bspwm - Binary space partitioning window manager
 # =============================================================================
 
-download_source(
-    name = "bspwm-src",
-    src_uri = "https://github.com/baskerville/bspwm/archive/refs/tags/0.9.10.tar.gz",
-    sha256 = "0d0f5e465b9c27a5c2143c86189392fa297fad55253b9ed8f6854473d3928f8f",
-    signature_required = False,
-)
-
 make_package(
     name = "bspwm",
-    source = ":bspwm-src",
+    src_uri = "https://github.com/baskerville/bspwm/archive/refs/tags/0.9.10.tar.gz",
+
+    sha256 = "0d0f5e465b9c27a5c2143c86189392fa297fad55253b9ed8f6854473d3928f8f",
     version = "0.9.10",
     description = "bspwm - Tiling window manager based on binary space partitioning",
     homepage = "https://github.com/baskerville/bspwm",

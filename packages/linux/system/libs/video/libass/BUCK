@@ -1,16 +1,13 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "libass-src",
-    src_uri = "https://github.com/libass/libass/releases/download/0.17.3/libass-0.17.3.tar.xz",
-    sha256 = "eae425da50f0015c21f7b3a9c7262a910f0218af469e22e2931462fed3c50959",
-    signature_sha256 = "71383b2d1138bf13008d2919da911a2c381bb196fe546571e2698e44d336b7b1",
-)
-
 autotools_package(
     name = "libass",
-    source = ":libass-src",
+    src_uri = "https://github.com/libass/libass/releases/download/0.17.3/libass-0.17.3.tar.xz",
+
+    sha256 = "eae425da50f0015c21f7b3a9c7262a910f0218af469e22e2931462fed3c50959",
+
+    signature_sha256 = "71383b2d1138bf13008d2919da911a2c381bb196fe546571e2698e44d336b7b1",
     iuse = ["fontconfig", "libunibreak"],
     use_configure = {
         "-fontconfig": "--disable-fontconfig",

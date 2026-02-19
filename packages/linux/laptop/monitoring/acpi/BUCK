@@ -4,19 +4,14 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "acpi-src",
-    src_uri = "https://downloads.sourceforge.net/acpiclient/acpi-1.7.tar.gz",
-    sha256 = "d7a504b61c716ae5b7e81a0c67a50a51f06c7326f197b66a4b823de076a35005",
-    signature_required = False,
-)
-
 # USE flags: See use_flags.bzl for available flags
 
 autotools_package(
     name = "acpi",
     # Release tarball includes pre-generated configure script
-    source = ":acpi-src",
+    src_uri = "https://downloads.sourceforge.net/acpiclient/acpi-1.7.tar.gz",
+
+    sha256 = "d7a504b61c716ae5b7e81a0c67a50a51f06c7326f197b66a4b823de076a35005",
     version = "1.7",
     description = "ACPI client to show battery, thermal, and adapter status",
     homepage = "https://sourceforge.net/projects/acpiclient/",

@@ -1,14 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 
-download_source(
-    name = "librtmp-src",
-    src_uri = "https://github.com/mirror/rtmpdump/archive/f1b83c10d8beb43fcc70a6e88cf4325499f25857.tar.gz",
-    sha256 = "97b0d3d20d980ac38aa9729e60e926f101854b59960fd50c82686bfdd3d420ff",
-)
-
 ebuild_package(
     name = "librtmp",
-    source = ":librtmp-src",
+    src_uri = "https://github.com/mirror/rtmpdump/archive/f1b83c10d8beb43fcc70a6e88cf4325499f25857.tar.gz",
+
+    sha256 = "97b0d3d20d980ac38aa9729e60e926f101854b59960fd50c82686bfdd3d420ff",
     version = "2.4",
     description = "RTMPDump Real-Time Messaging Protocol library",
     homepage = "https://github.com/yixia/librtmp",

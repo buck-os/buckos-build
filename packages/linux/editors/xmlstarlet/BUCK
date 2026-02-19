@@ -1,16 +1,11 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
 
-download_source(
-    name = "xmlstarlet-src",
-    src_uri = "https://sourceforge.net/projects/xmlstar/files/xmlstarlet/1.6.1/xmlstarlet-1.6.1.tar.gz",
-    sha256 = "15d838c4f3375332fd95554619179b69e4ec91418a3a5296e7c631b7ed19e7ca",
-    signature_required = False,
-)
-
 autotools_package(
     name = "xmlstarlet",
-    source = ":xmlstarlet-src",
+    src_uri = "https://sourceforge.net/projects/xmlstar/files/xmlstarlet/1.6.1/xmlstarlet-1.6.1.tar.gz",
+
+    sha256 = "15d838c4f3375332fd95554619179b69e4ec91418a3a5296e7c631b7ed19e7ca",
     version = "1.6.1",
     description = "Command-line XML toolkit for querying and editing XML documents",
     homepage = "http://xmlstar.sourceforge.net/",

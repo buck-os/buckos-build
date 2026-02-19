@@ -3,17 +3,12 @@ load("//defs:use_flags.bzl", "set_use_flags")
 
 # p7zip - 7-Zip file archiver port for Unix systems
 
-download_source(
-    name = "p7zip-src",
-    src_uri = "https://github.com/p7zip-project/p7zip/archive/refs/tags/v17.05.tar.gz",
-    sha256 = "d2788f892571058c08d27095c22154579dfefb807ebe357d145ab2ddddefb1a6",
-    signature_required = False,
-)
-
 # p7zip uses a Makefile, not autotools
 autotools_package(
     name = "p7zip",
-    source = ":p7zip-src",
+    src_uri = "https://github.com/p7zip-project/p7zip/archive/refs/tags/v17.05.tar.gz",
+
+    sha256 = "d2788f892571058c08d27095c22154579dfefb807ebe357d145ab2ddddefb1a6",
     iuse = [
         "abi_x86_x32",
         "natspec",

@@ -5,17 +5,13 @@ load("//defs:use_flags.bzl", "set_use_flags")
 # i3 - Tiling window manager
 # =============================================================================
 
-download_source(
-    name = "i3-src",
-    src_uri = "https://i3wm.org/downloads/i3-4.23.tar.xz",
-    sha256 = "61026a7196c9139d0f3aadd27197e8b320c576e3a450e01d74c1aca484044c46",
-    signature_sha256 = "afb593a129563c985ae20d1cc4753ff448476569e049b074cde4a69cdc989948",
-    signature_required=False,
-)
-
 meson_package(
     name = "i3",
-    source = ":i3-src",
+    src_uri = "https://i3wm.org/downloads/i3-4.23.tar.xz",
+
+    sha256 = "61026a7196c9139d0f3aadd27197e8b320c576e3a450e01d74c1aca484044c46",
+
+    signature_sha256 = "afb593a129563c985ae20d1cc4753ff448476569e049b074cde4a69cdc989948",
     version = "4.23",
     description = "i3 - Improved tiling window manager",
     homepage = "https://i3wm.org/",

@@ -11,16 +11,11 @@ load("//defs:use_flags.bzl", "set_use_flags")
 # - sdl: SDL support (default: enabled)
 # - python: Python scripting (default: enabled)
 
-download_source(
-    name = "blender-src",
-    src_uri = "https://download.blender.org/source/blender-4.0.2.tar.xz",
-    sha256 = "aaa0e729da7591cfbf45772af76345977daaa7b11a0af35d98f9313e246077a3",
-    signature_required = False,
-)
-
 autotools_package(
     name = "blender",
-    source = ":blender-src",
+    src_uri = "https://download.blender.org/source/blender-4.0.2.tar.xz",
+
+    sha256 = "aaa0e729da7591cfbf45772af76345977daaa7b11a0af35d98f9313e246077a3",
     iuse = [
         "X",
         "alembic",

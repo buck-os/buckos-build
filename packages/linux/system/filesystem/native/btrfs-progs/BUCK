@@ -1,16 +1,11 @@
 load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "btrfs-progs-src",
-    src_uri = "https://mirrors.edge.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/btrfs-progs-v6.7.tar.xz",
-    sha256 = "c27f755185b9f2dab31f42e8a303d36bed2a3f3341cc6d75ee68a0a650a24767",
-    signature_required = False,
-)
-
 autotools_package(
     name = "btrfs-progs",
-    source = ":btrfs-progs-src",
+    src_uri = "https://mirrors.edge.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/btrfs-progs-v6.7.tar.xz",
+
+    sha256 = "c27f755185b9f2dab31f42e8a303d36bed2a3f3341cc6d75ee68a0a650a24767",
     iuse = [
         "convert",
         "experimental",

@@ -1,16 +1,11 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "maim-src",
-    src_uri = "https://github.com/naelstrof/maim/archive/refs/tags/v5.7.4.tar.gz",
-    sha256 = "075090fd4c3b87663a26d0c2de63b5c822fd96aaeef6ac4fe6ded3abd506be9e",
-    signature_required = False,
-)
-
 autotools_package(
     name = "maim",
-    source = ":maim-src",
+    src_uri = "https://github.com/naelstrof/maim/archive/refs/tags/v5.7.4.tar.gz",
+
+    sha256 = "075090fd4c3b87663a26d0c2de63b5c822fd96aaeef6ac4fe6ded3abd506be9e",
     iuse = ["icu"],
     use_configure = {
         "-icu": "--disable-icu",

@@ -1,19 +1,14 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "libcap-ng-src",
-    src_uri = "https://people.redhat.com/sgrubb/libcap-ng/libcap-ng-0.8.5.tar.gz",
-    sha256 = "3ba5294d1cbdfa98afaacfbc00b6af9ed2b83e8a21817185dfd844cc8c7ac6ff",
-    signature_required = False,
-)
-
 autotools_package(
     name = "libcap-ng",
     # Official release tarball includes pre-generated configure script
     bdepend = [],
     src_prepare = "",
-    source = ":libcap-ng-src",
+    src_uri = "https://people.redhat.com/sgrubb/libcap-ng/libcap-ng-0.8.5.tar.gz",
+
+    sha256 = "3ba5294d1cbdfa98afaacfbc00b6af9ed2b83e8a21817185dfd844cc8c7ac6ff",
     iuse = ["python", "static-libs"],
     use_configure = {
         "-python": "--disable-python",

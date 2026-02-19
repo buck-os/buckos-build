@@ -4,18 +4,13 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "bluez-src",
-    src_uri = "https://www.kernel.org/pub/linux/bluetooth/bluez-5.72.tar.xz",
-    sha256 = "499d7fa345a996c1bb650f5c6749e1d929111fa6ece0be0e98687fee6124536e",
-    signature_required = False,
-)
-
 # USE flags: See use_flags.bzl for available flags
 
 autotools_package(
     name = "bluez",
-    source = ":bluez-src",
+    src_uri = "https://www.kernel.org/pub/linux/bluetooth/bluez-5.72.tar.xz",
+
+    sha256 = "499d7fa345a996c1bb650f5c6749e1d929111fa6ece0be0e98687fee6124536e",
     iuse = [
         "btpclient",
         "cups",

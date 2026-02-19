@@ -1,16 +1,13 @@
 load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "dosfstools-src",
-    src_uri = "https://github.com/dosfstools/dosfstools/releases/download/v4.2/dosfstools-4.2.tar.gz",
-    sha256 = "64926eebf90092dca21b14259a5301b7b98e7b1943e8a201c7d726084809b527",
-    signature_sha256 = "90f58a303fd7c55e02370357054f7207f05c3736f23d9a82cfb4a10acd7d55f9",
-)
-
 autotools_package(
     name = "dosfstools",
-    source = ":dosfstools-src",
+    src_uri = "https://github.com/dosfstools/dosfstools/releases/download/v4.2/dosfstools-4.2.tar.gz",
+
+    sha256 = "64926eebf90092dca21b14259a5301b7b98e7b1943e8a201c7d726084809b527",
+
+    signature_sha256 = "90f58a303fd7c55e02370357054f7207f05c3736f23d9a82cfb4a10acd7d55f9",
     iuse = ["compat", "iconv"],
     use_configure = {
         "-compat": "--disable-compat",

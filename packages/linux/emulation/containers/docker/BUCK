@@ -2,13 +2,6 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package", "ebuild_
 load("//defs:use_flags.bzl", "set_use_flags")
 
 # Docker CLI
-download_source(
-    name = "docker-cli-src",
-    src_uri = "https://github.com/docker/cli/archive/refs/tags/v27.3.1.tar.gz",
-    sha256 = "df7d44387166d90954e290dfbe0a278649bf71d0e89933615bdc0757580b68e4",
-    signature_required = False,
-)
-
 # USE flags: See use_flags.bzl for available flags
 
 autotools_package(
@@ -21,7 +14,9 @@ autotools_package(
     src_prepare = """
 autoreconf -fi
 """,
-    source = ":docker-cli-src",
+    src_uri = "https://github.com/docker/cli/archive/refs/tags/v27.3.1.tar.gz",
+
+    sha256 = "df7d44387166d90954e290dfbe0a278649bf71d0e89933615bdc0757580b68e4",
     iuse = ["hardened", "selinux"],
     use_configure = {
         "-hardened": "--disable-hardening",
@@ -68,13 +63,6 @@ install -m 0644 contrib/completion/fish/docker.fish "$DESTDIR/usr/share/fish/ven
 )
 
 # Docker Engine (dockerd)
-download_source(
-    name = "docker-engine-src",
-    src_uri = "https://github.com/moby/moby/archive/refs/tags/v27.3.1.tar.gz",
-    sha256 = "d18208d9e0b6421307342cdef266193984c97c87177b9262b1113e6e9e7e020e",
-    signature_required = False,
-)
-
 # USE flags: See use_flags.bzl for available flags
 
 autotools_package(
@@ -87,7 +75,9 @@ autotools_package(
     src_prepare = """
 autoreconf -fi
 """,
-    source = ":docker-engine-src",
+    src_uri = "https://github.com/moby/moby/archive/refs/tags/v27.3.1.tar.gz",
+
+    sha256 = "d18208d9e0b6421307342cdef266193984c97c87177b9262b1113e6e9e7e020e",
     version = "27.3.1",
     description = "Docker Engine daemon and runtime",
     homepage = "https://www.docker.com/",
@@ -172,13 +162,6 @@ echo 'g docker - -' > "$DESTDIR/usr/lib/sysusers.d/docker.conf"
 )
 
 # Docker Compose
-download_source(
-    name = "docker-compose-src",
-    src_uri = "https://github.com/docker/compose/archive/refs/tags/v2.30.3.tar.gz",
-    sha256 = "b9b6f45ccad892a3f9353a03b6bdf3f79ea15ee2076f98bf013ef1db40034378",
-    signature_required = False,
-)
-
 # USE flags: See use_flags.bzl for available flags
 
 autotools_package(
@@ -191,7 +174,9 @@ autotools_package(
     src_prepare = """
 autoreconf -fi
 """,
-    source = ":docker-compose-src",
+    src_uri = "https://github.com/docker/compose/archive/refs/tags/v2.30.3.tar.gz",
+
+    sha256 = "b9b6f45ccad892a3f9353a03b6bdf3f79ea15ee2076f98bf013ef1db40034378",
     version = "2.30.3",
     description = "Define and run multi-container Docker applications",
     homepage = "https://docs.docker.com/compose/",
@@ -222,18 +207,13 @@ ln -sf /usr/lib/docker/cli-plugins/docker-compose "$DESTDIR/usr/bin/docker-compo
 )
 
 # Docker Buildx
-download_source(
-    name = "docker-buildx-src",
-    src_uri = "https://github.com/docker/buildx/archive/refs/tags/v0.18.0.tar.gz",
-    sha256 = "a935cb2715a5054d918d40ef07cdd4a6465b20a755d466248718ab59fd41c334",
-    signature_required = False,
-)
-
 # USE flags: See use_flags.bzl for available flags
 
 ebuild_package(
     name = "docker-buildx",
-    source = ":docker-buildx-src",
+    src_uri = "https://github.com/docker/buildx/archive/refs/tags/v0.18.0.tar.gz",
+
+    sha256 = "a935cb2715a5054d918d40ef07cdd4a6465b20a755d466248718ab59fd41c334",
     version = "0.18.0",
     description = "Docker CLI plugin for extended build capabilities with BuildKit",
     homepage = "https://github.com/docker/buildx",

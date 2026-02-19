@@ -4,16 +4,11 @@
 load("//defs:package_defs.bzl","download_source", "make_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "x86_energy_perf_policy-src",
-    src_uri = "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.6.8.tar.xz",
-    sha256 = "5036c434e11e4b36d8da3f489851f7f829cf785fa7f7887468537a9ea4572416",
-    signature_required = False,
-)
-
 make_package(
     name = "x86_energy_perf_policy",
-    source = ":x86_energy_perf_policy-src",
+    src_uri = "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.6.8.tar.xz",
+
+    sha256 = "5036c434e11e4b36d8da3f489851f7f829cf785fa7f7887468537a9ea4572416",
     version = "6.6.8",
     description = "Set x86 CPU energy performance policy",
     homepage = "https://kernel.org/",

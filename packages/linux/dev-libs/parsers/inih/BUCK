@@ -1,15 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "meson_package")
 
-download_source(
-    name = "inih-src",
-    src_uri = "https://github.com/benhoyt/inih/archive/refs/tags/r58.tar.gz",
-    sha256 = "e79216260d5dffe809bda840be48ab0eec7737b2bb9f02d2275c1b46344ea7b7",
-    signature_required = False,
-)
-
 meson_package(
     name = "inih",
-    source = ":inih-src",
+    src_uri = "https://github.com/benhoyt/inih/archive/refs/tags/r58.tar.gz",
+
+    sha256 = "e79216260d5dffe809bda840be48ab0eec7737b2bb9f02d2275c1b46344ea7b7",
     version = "58",
     description = "Simple .INI file parser in C, good for embedded systems",
     homepage = "https://github.com/benhoyt/inih",

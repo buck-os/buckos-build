@@ -1,15 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 
-download_source(
-    name = "apr-src",
-    src_uri = "https://archive.apache.org/dist/apr/apr-1.7.5.tar.gz",
-    sha256 = "3375fa365d67bcf945e52b52cba07abea57ef530f40b281ffbe977a9251361db",
-    signature_required = False,
-)
-
 autotools_package(
     name = "apr",
-    source = ":apr-src",
+    src_uri = "https://archive.apache.org/dist/apr/apr-1.7.5.tar.gz",
+
+    sha256 = "3375fa365d67bcf945e52b52cba07abea57ef530f40b281ffbe977a9251361db",
     iuse = [
         "old-kernel",
         "selinux",

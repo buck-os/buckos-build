@@ -1,17 +1,13 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
 
-download_source(
-    name = "grep-src",
-    src_uri = "https://mirrors.kernel.org/gnu/grep/grep-3.11.tar.xz",
-    sha256 = "1db2aedde89d0dea42b16d9528f894c8d15dae4e190b59aecc78f5a951276eab",
-    signature_sha256 = "89ec23ffd59b68822732dc8204fc89883c3af30a90ae390feb94346d9d09a589",
-    signature_required=False,
-)
-
 autotools_package(
     name = "grep",
-    source = ":grep-src",
+    src_uri = "https://mirrors.kernel.org/gnu/grep/grep-3.11.tar.xz",
+
+    sha256 = "1db2aedde89d0dea42b16d9528f894c8d15dae4e190b59aecc78f5a951276eab",
+
+    signature_sha256 = "89ec23ffd59b68822732dc8204fc89883c3af30a90ae390feb94346d9d09a589",
     iuse = [
         "egrep-fgrep",
         "nls",

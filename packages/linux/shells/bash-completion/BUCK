@@ -2,19 +2,14 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
 
 # bash-completion - Programmable completion functions for bash
-download_source(
-    name = "bash-completion-src",
-    src_uri = "https://github.com/scop/bash-completion/releases/download/2.14.0/bash-completion-2.14.0.tar.xz",
-    sha256 = "5c7494f968280832d6adb5aa19f745a56f1a79df311e59338c5efa6f7285e168",
-    signature_required = False,
-)
-
 autotools_package(
     name = "bash-completion",
     # GitHub releases/download tarball includes pre-generated configure script
     bdepend = [],
     src_prepare = "",
-    source = ":bash-completion-src",
+    src_uri = "https://github.com/scop/bash-completion/releases/download/2.14.0/bash-completion-2.14.0.tar.xz",
+
+    sha256 = "5c7494f968280832d6adb5aa19f745a56f1a79df311e59338c5efa6f7285e168",
     iuse = ["eselect"],
     use_configure = {
         "-eselect": "--disable-eselect",

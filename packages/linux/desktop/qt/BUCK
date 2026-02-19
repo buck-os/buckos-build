@@ -1049,16 +1049,11 @@ binary_package(
 # polkit-qt - Qt wrapper around polkit-1 client libraries
 # =============================================================================
 
-download_source(
-    name = "polkit-qt-src",
-    src_uri = "https://download.kde.org/stable/polkit-qt-1/polkit-qt-1-0.200.0.tar.xz",
-    sha256 = "5d3b611c062d2b76a93750bb10c907bfd21d1ff08d0a15dc2cf63e278e1677fb",
-    signature_required = False,
-)
-
 cmake_package(
     name = "polkit-qt",
-    source = ":polkit-qt-src",
+    src_uri = "https://download.kde.org/stable/polkit-qt-1/polkit-qt-1-0.200.0.tar.xz",
+
+    sha256 = "5d3b611c062d2b76a93750bb10c907bfd21d1ff08d0a15dc2cf63e278e1677fb",
     version = "0.200.0",
     description = "Qt6 wrapper around polkit-1 client libraries",
     homepage = "https://api.kde.org/polkit-qt-1/html/",

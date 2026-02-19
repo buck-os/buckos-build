@@ -33,6 +33,7 @@ binary_package(
         cat intel-ucode/* > kernel/x86/microcode/GenuineIntel.bin
         echo kernel/x86/microcode/GenuineIntel.bin | cpio -o -H newc -R 0:0 > "$OUT/boot/intel-ucode.img"
     """,
+    labels = ["buckos:firmware"],
     deps = [],
     visibility = ["PUBLIC"],
 )
@@ -66,6 +67,7 @@ binary_package(
             echo kernel/x86/microcode/AuthenticAMD.bin | cpio -o -H newc -R 0:0 > "$OUT/boot/amd-ucode.img"
         fi
     """,
+    labels = ["buckos:firmware"],
     deps = [],
     visibility = ["PUBLIC"],
 )

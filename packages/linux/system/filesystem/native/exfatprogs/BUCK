@@ -1,19 +1,16 @@
 load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "exfatprogs-src",
-    src_uri = "https://github.com/exfatprogs/exfatprogs/releases/download/1.2.2/exfatprogs-1.2.2.tar.xz",
-    sha256 = "61d517231f8ec177eeb5955fd6edb89748d3f88ba412c48bcb32741b430e359a",
-    signature_sha256 = "aaace54bec15549e19a8a1cdd836eeebe492a920d748d0d02d19f1edbeba0a6a",
-)
-
 autotools_package(
     name = "exfatprogs",
     # GitHub release tarball includes pre-generated configure script
     bdepend = [],
     src_prepare = "",
-    source = ":exfatprogs-src",
+    src_uri = "https://github.com/exfatprogs/exfatprogs/releases/download/1.2.2/exfatprogs-1.2.2.tar.xz",
+
+    sha256 = "61d517231f8ec177eeb5955fd6edb89748d3f88ba412c48bcb32741b430e359a",
+
+    signature_sha256 = "aaace54bec15549e19a8a1cdd836eeebe492a920d748d0d02d19f1edbeba0a6a",
     version = "1.2.2",
     description = "exFAT filesystem utilities (mkfs.exfat, fsck.exfat, etc.)",
     homepage = "https://github.com/exfatprogs/exfatprogs",

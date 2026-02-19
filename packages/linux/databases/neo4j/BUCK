@@ -1,17 +1,12 @@
 load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 
 # neo4j - Graph database (prebuilt Java app)
-download_source(
-    name = "neo4j-src",
-    src_uri = "https://dist.neo4j.org/neo4j-community-5.17.0-unix.tar.gz",
-    sha256 = "975b79448e4a7e0cd3f729c343149b52d20474fb3505509d638dfde861c9c440",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "neo4j",
     version = "5.17.0",
-    source = ":neo4j-src",
+    src_uri = "https://dist.neo4j.org/neo4j-community-5.17.0-unix.tar.gz",
+
+    sha256 = "975b79448e4a7e0cd3f729c343149b52d20474fb3505509d638dfde861c9c440",
     description = "High-performance graph database",
     homepage = "https://neo4j.com",
     license = "GPL-3",

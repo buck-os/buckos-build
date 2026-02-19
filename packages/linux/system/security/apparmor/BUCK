@@ -1,16 +1,11 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "apparmor-src",
-    src_uri = "https://gitlab.com/apparmor/apparmor/-/archive/v3.1.6/apparmor-v3.1.6.tar.gz",
-    sha256 = "a7899f1529ad7f1e33fb07109075be3827edf43997040ecdec601590748f1039",
-    signature_required = False,
-)
-
 autotools_package(
     name = "apparmor",
-    source = ":apparmor-src",
+    src_uri = "https://gitlab.com/apparmor/apparmor/-/archive/v3.1.6/apparmor-v3.1.6.tar.gz",
+
+    sha256 = "a7899f1529ad7f1e33fb07109075be3827edf43997040ecdec601590748f1039",
     version = "3.1.6",
     description = "AppArmor userspace utilities and profiles",
     homepage = "https://apparmor.net/",

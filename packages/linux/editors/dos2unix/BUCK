@@ -3,17 +3,13 @@ load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
 
 # dos2unix - Text file format converter between DOS and Unix
 
-download_source(
-    name = "dos2unix-src",
-    src_uri = "https://waterlan.home.xs4all.nl/dos2unix/dos2unix-7.5.2.tar.gz",
-    sha256 = "264742446608442eb48f96c20af6da303cb3a92b364e72cb7e24f88239c4bf3a",
-    signature_sha256 = "757d4e7a3b0185079516d83c3f1ba8528bcffbb0ff3b41cd2df2b10cfac57c5a",
-    signature_required=False,
-)
-
 make_package(
     name = "dos2unix",
-    source = ":dos2unix-src",
+    src_uri = "https://waterlan.home.xs4all.nl/dos2unix/dos2unix-7.5.2.tar.gz",
+
+    sha256 = "264742446608442eb48f96c20af6da303cb3a92b364e72cb7e24f88239c4bf3a",
+
+    signature_sha256 = "757d4e7a3b0185079516d83c3f1ba8528bcffbb0ff3b41cd2df2b10cfac57c5a",
     iuse = ["debug", "nls"],
     use_configure = {
         "-debug": "--disable-debug",

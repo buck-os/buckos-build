@@ -3,18 +3,13 @@
 
 load("//defs:package_defs.bzl", "meson_package", "download_source")
 
-download_source(
-    name = "gamemode-src",
-    src_uri = "https://github.com/FeralInteractive/gamemode/archive/refs/tags/1.8.2.tar.gz",
-    sha256 = "2b4a20894822caf04767af6a1601130d6b718fc30b8a77895607341b1674740f",
-    signature_required = False,
-)
-
 # GameMode - Optimize Linux system performance on demand
 
 meson_package(
     name = "gamemode",
-    source = ":gamemode-src",
+    src_uri = "https://github.com/FeralInteractive/gamemode/archive/refs/tags/1.8.2.tar.gz",
+
+    sha256 = "2b4a20894822caf04767af6a1601130d6b718fc30b8a77895607341b1674740f",
     version = "1.8.2",
     description = "Optimize Linux system performance on demand",
     homepage = "https://github.com/FeralInteractive/gamemode",

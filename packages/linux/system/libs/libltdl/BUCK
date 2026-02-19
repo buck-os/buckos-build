@@ -6,15 +6,11 @@ load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 # libltdl is the runtime library component of GNU Libtool, providing a
 # portable interface to dlopen/dlsym across different platforms.
 
-download_source(
-    name = "libltdl-src",
-    src_uri = "https://mirror.buckos.org/l/libtool-2.4.7.tar.xz",
-    sha256 = "4f7f217f057ce655ff22559ad221a0fd8ef84ad1fc5fcb6990cecc333aa1635d",
-)
-
 ebuild_package(
     name = "libltdl",
-    source = ":libltdl-src",
+    src_uri = "https://mirror.buckos.org/l/libtool-2.4.7.tar.xz",
+
+    sha256 = "4f7f217f057ce655ff22559ad221a0fd8ef84ad1fc5fcb6990cecc333aa1635d",
     version = "2.4.7",
     category = "system/libs/libltdl",
     description = "Portable dlopen wrapper library from GNU Libtool",  # rebuild-v7

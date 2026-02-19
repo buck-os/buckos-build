@@ -1,16 +1,11 @@
 load("//defs:package_defs.bzl", "download_source", "meson_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "libinput-src",
-    src_uri = "https://gitlab.freedesktop.org/libinput/libinput/-/archive/1.26.2/libinput-1.26.2.tar.gz",
-    sha256 = "5c1c4150f217fea1db2d1fd88e2607b2f1928cfde65c34da65a9f24dcfd69464",
-    signature_required = False,
-)
-
 meson_package(
     name = "libinput",
-    source = ":libinput-src",
+    src_uri = "https://gitlab.freedesktop.org/libinput/libinput/-/archive/1.26.2/libinput-1.26.2.tar.gz",
+
+    sha256 = "5c1c4150f217fea1db2d1fd88e2607b2f1928cfde65c34da65a9f24dcfd69464",
     iuse = ["input_devices_wacom"],
     use_meson = {
         "input_devices_wacom": "-Dlibwacom=true",

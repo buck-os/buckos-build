@@ -1,16 +1,11 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "slop-src",
-    src_uri = "https://github.com/naelstrof/slop/archive/refs/tags/v7.6.tar.gz",
-    sha256 = "ec45f9a69d7a24df621f5c634d202451ddca987d550cf588c5c427b99106fb6b",
-    signature_required = False,
-)
-
 autotools_package(
     name = "slop",
-    source = ":slop-src",
+    src_uri = "https://github.com/naelstrof/slop/archive/refs/tags/v7.6.tar.gz",
+
+    sha256 = "ec45f9a69d7a24df621f5c634d202451ddca987d550cf588c5c427b99106fb6b",
     version = "7.6",
     description = "Select operation - query for a selection from the user and print to stdout",
     homepage = "https://github.com/naelstrof/slop",

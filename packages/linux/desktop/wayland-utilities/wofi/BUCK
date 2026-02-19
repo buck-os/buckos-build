@@ -1,15 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "meson_package")
 
-download_source(
-    name = "wofi-src",
-    src_uri = "https://github.com/SimplyCEO/wofi/archive/refs/tags/v1.4.1.tar.gz",
-    sha256 = "815da56e9085e336bb31fbe7137f7db7a6c95db57274a93f6eeea995dee62656",
-    signature_required = False,
-)
-
 meson_package(
     name = "wofi",
-    source = ":wofi-src",
+    src_uri = "https://github.com/SimplyCEO/wofi/archive/refs/tags/v1.4.1.tar.gz",
+
+    sha256 = "815da56e9085e336bb31fbe7137f7db7a6c95db57274a93f6eeea995dee62656",
     version = "1.4.1",
     description = "Launcher/menu program for Wayland",
     homepage = "https://hg.sr.ht/~scoopta/wofi",

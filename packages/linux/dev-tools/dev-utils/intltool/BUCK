@@ -2,16 +2,11 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
 
 # intltool - Internationalization tool collection
-download_source(
-    name = "intltool-src",
-    src_uri = "https://launchpad.net/intltool/trunk/0.51.0/+download/intltool-0.51.0.tar.gz",
-    sha256 = "67c74d94196b153b774ab9f89b2fa6c6ba79352407037c8c14d5aeb334e959cd",
-    signature_required = False,
-)
-
 autotools_package(
     name = "intltool",
-    source = ":intltool-src",
+    src_uri = "https://launchpad.net/intltool/trunk/0.51.0/+download/intltool-0.51.0.tar.gz",
+
+    sha256 = "67c74d94196b153b774ab9f89b2fa6c6ba79352407037c8c14d5aeb334e959cd",
     version = "0.51.0",
     description = "Internationalization tool collection for XML and desktop files",
     homepage = "https://launchpad.net/intltool",

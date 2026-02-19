@@ -5,16 +5,11 @@ load("//defs:use_flags.bzl", "set_use_flags")
 # SANE - Scanner Access Now Easy
 # =============================================================================
 
-download_source(
-    name = "sane-backends-src",
-    src_uri = "https://gitlab.com/sane-project/backends/-/archive/1.3.0/backends-1.3.0.tar.gz",
-    sha256 = "0bd3114d0ed8eca9f054e2c6727ab95afa6da0e8e602cc648955e1a788bc2070",
-    signature_required = False,
-)
-
 autotools_package(
     name = "sane-backends",
-    source = ":sane-backends-src",
+    src_uri = "https://gitlab.com/sane-project/backends/-/archive/1.3.0/backends-1.3.0.tar.gz",
+
+    sha256 = "0bd3114d0ed8eca9f054e2c6727ab95afa6da0e8e602cc648955e1a788bc2070",
     iuse = [
         "gphoto2",
         "sane_backends_${GBACKEND}",
@@ -82,16 +77,11 @@ autoreconf -fiv
 )
 
 # Simple Scan - GTK scanning application
-download_source(
-    name = "simple-scan-src",
-    src_uri = "https://github.com/GNOME/simple-scan/archive/refs/tags/46.0.tar.gz",
-    sha256 = "edeb254834fea2c0faacc49f924c626071c3519b71eaa65e41059f5250612da9",
-    signature_required = False,
-)
-
 autotools_package(
     name = "simple-scan",
-    source = ":simple-scan-src",
+    src_uri = "https://github.com/GNOME/simple-scan/archive/refs/tags/46.0.tar.gz",
+
+    sha256 = "edeb254834fea2c0faacc49f924c626071c3519b71eaa65e41059f5250612da9",
     version = "46.0",
     description = "Simple Scan - easy to use scanning application",
     homepage = "https://github.com/GNOME/simple-scan",
@@ -116,16 +106,13 @@ autotools_package(
 )
 
 # Skanlite - KDE scanning application
-download_source(
-    name = "skanlite-src",
-    src_uri = "https://download.kde.org/stable/release-service/24.02.0/src/skanlite-24.02.0.tar.xz",
-    sha256 = "c15ee8defcfb05da1fd1deea2c9aaa3cc6fb32489794f571ec09dd8b4d938aa6",
-    signature_sha256 = "39affcdea6cfab2f2173d572e0797c7a820e27dbb9e1e9ac13833e459bc14a45",
-)
-
 autotools_package(
     name = "skanlite",
-    source = ":skanlite-src",
+    src_uri = "https://download.kde.org/stable/release-service/24.02.0/src/skanlite-24.02.0.tar.xz",
+
+    sha256 = "c15ee8defcfb05da1fd1deea2c9aaa3cc6fb32489794f571ec09dd8b4d938aa6",
+
+    signature_sha256 = "39affcdea6cfab2f2173d572e0797c7a820e27dbb9e1e9ac13833e459bc14a45",
     version = "24.02.0",
     description = "KDE scanner application",
     homepage = "https://apps.kde.org/skanlite/",

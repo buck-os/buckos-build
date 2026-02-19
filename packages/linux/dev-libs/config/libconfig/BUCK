@@ -1,18 +1,13 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
 
-download_source(
-    name = "libconfig-src",
-    src_uri = "https://github.com/hyperrealm/libconfig/releases/download/v1.7.3/libconfig-1.7.3.tar.gz",
-    sha256 = "545166d6cac037744381d1e9cc5a5405094e7bfad16a411699bcff40bbb31ee7",
-    signature_required = False,
-)
-
 autotools_package(
     name = "libconfig",
     # GitHub releases/download tarball includes pre-generated configure script
     bdepend = [],
-    source = ":libconfig-src",
+    src_uri = "https://github.com/hyperrealm/libconfig/releases/download/v1.7.3/libconfig-1.7.3.tar.gz",
+
+    sha256 = "545166d6cac037744381d1e9cc5a5405094e7bfad16a411699bcff40bbb31ee7",
     iuse = ["cxx", "debug", "static-libs"],
     use_configure = {
         "-cxx": "--disable-cxx",

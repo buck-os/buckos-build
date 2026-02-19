@@ -5,16 +5,11 @@ load("//defs:use_flags.bzl", "set_use_flags")
 # GDM - GNOME Display Manager
 # =============================================================================
 
-download_source(
-    name = "gdm-src",
-    src_uri = "https://download.gnome.org/sources/gdm/45/gdm-45.0.1.tar.xz",
-    sha256 = "6572578c05e3c6569d6ed269f7de2aaf3a035657654586d8243907bb7a6ffa85",
-    signature_required = False,
-)
-
 autotools_package(
     name = "gdm",
-    source = ":gdm-src",
+    src_uri = "https://download.gnome.org/sources/gdm/45/gdm-45.0.1.tar.xz",
+
+    sha256 = "6572578c05e3c6569d6ed269f7de2aaf3a035657654586d8243907bb7a6ffa85",
     iuse = [
         "X",
         "accessibility",

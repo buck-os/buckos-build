@@ -7,16 +7,11 @@ load("//defs:use_flags.bzl", "set_use_flags")
 # Multi-version package supporting both 3.6.x and 3.3.x series
 
 # OpenSSL 3.6.0 (latest stable)
-download_source(
-    name = "openssl-3.6.0-src",
-    src_uri = "https://github.com/openssl/openssl/releases/download/openssl-3.6.0/openssl-3.6.0.tar.gz",
-    sha256 = "b6a5f44b7eb69e3fa35dbf15524405b44837a481d43d81daddde3ff21fcbb8e9",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "openssl-3.6.0",
-    source = ":openssl-3.6.0-src",
+    src_uri = "https://github.com/openssl/openssl/releases/download/openssl-3.6.0/openssl-3.6.0.tar.gz",
+
+    sha256 = "b6a5f44b7eb69e3fa35dbf15524405b44837a481d43d81daddde3ff21fcbb8e9",
     version = "3.6.0",
     description = "TLS/SSL and crypto library",
     homepage = "https://www.openssl.org/",
@@ -64,17 +59,13 @@ ln -sf libcrypto.so.3 "$DESTDIR/usr/lib/libcrypto.so" || true
 )
 
 # OpenSSL 3.3.2 (LTS stable)
-download_source(
-    name = "openssl-3.3.2-src",
-    src_uri = "https://www.openssl.org/source/openssl-3.3.2.tar.gz",
-    sha256 = "2e8a40b01979afe8be0bbfb3de5dc1c6709fedb46d6c89c10da114ab5fc3d281",
-    signature_sha256 = "8a9ba21af0d770b3f9ee098269cfeb220a8b296639e6ad5d0593ffb7a15a742b",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "openssl-3.3.2",
-    source = ":openssl-3.3.2-src",
+    src_uri = "https://www.openssl.org/source/openssl-3.3.2.tar.gz",
+
+    sha256 = "2e8a40b01979afe8be0bbfb3de5dc1c6709fedb46d6c89c10da114ab5fc3d281",
+
+    signature_sha256 = "8a9ba21af0d770b3f9ee098269cfeb220a8b296639e6ad5d0593ffb7a15a742b",
     version = "3.3.2",
     description = "TLS/SSL and crypto library (LTS)",
     homepage = "https://www.openssl.org/",

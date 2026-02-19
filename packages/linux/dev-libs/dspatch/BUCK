@@ -1,12 +1,6 @@
 load("//defs:package_defs.bzl", "meson_package", "download_source")
 
 download_source(
-    name = "dspatch-src",
-    src_uri = "https://github.com/cross-platform/dspatch/archive/refs/tags/11.4.1.tar.gz",
-    sha256 = "10095b582994b446631cfd13f0038903f89f80afcf3699f213a2779d065ea888",
-)
-
-download_source(
     name = "fast_any-src",
     src_uri = "https://github.com/cross-platform/fast_any/archive/d2e46b7eeb504e1141dafa7def52fb33e090b4a1.tar.gz",
     sha256 = "a8162a41d5518e042ac4eb49d7001550c3cdbf1d65033653a6b8722e16d988f5",
@@ -15,7 +9,9 @@ download_source(
 
 meson_package(
     name = "dspatch",
-    source = ":dspatch-src",
+    src_uri = "https://github.com/cross-platform/dspatch/archive/refs/tags/11.4.1.tar.gz",
+
+    sha256 = "10095b582994b446631cfd13f0038903f89f80afcf3699f213a2779d065ea888",
     version = "11.4.1",
     meson_args = [
         "-Dcpp_std=c++17",

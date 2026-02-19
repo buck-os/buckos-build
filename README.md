@@ -516,6 +516,76 @@ config = get_arch_config("x86_64")
 # Returns: target_triplet, kernel_arch, march, qemu settings, etc.
 ```
 
+## Target Labels
+
+BuckOS uses Buck2's `labels` attribute to tag targets with structured metadata.
+Labels follow the `buckos:<category>:<value>` convention and are queryable with
+`buck2 cquery 'attrfilter(labels, "buckos:compile", //packages/...)'`.
+
+### Auto-injected Labels
+
+These labels are applied automatically by the build macros:
+
+| Label | Applied To |
+|-------|-----------|
+| `buckos:compile` | All ebuild-based packages |
+| `buckos:download` | Source download and extract targets |
+| `buckos:prebuilt` | `binary_package` and `precompiled_package` targets |
+| `buckos:image` | `rootfs`, `initramfs`, `iso_image`, `raw_disk_image`, `stage3_tarball` |
+| `buckos:bootscript` | `qemu_boot_script`, `ch_boot_script` |
+| `buckos:config` | `kernel_config` targets |
+| `buckos:build:<type>` | Build system type: cmake, meson, autotools, make, cargo, go, etc. |
+| `buckos:stage:<N>` | Bootstrap stage (1, 2, 3) |
+| `buckos:arch:<arch>` | Architecture: x86_64, aarch64 |
+
+### Manual Labels
+
+These labels are set per-target in BUCK files:
+
+| Label | Description |
+|-------|-------------|
+| `buckos:hw:cuda` | Requires NVIDIA CUDA |
+| `buckos:hw:rocm` | Requires AMD ROCm |
+| `buckos:hw:vulkan` | Requires Vulkan |
+| `buckos:hw:opencl` | Requires OpenCL |
+| `buckos:hw:gpu` | General GPU drivers/tools |
+| `buckos:hw:dpdk` | Requires DPDK |
+| `buckos:hw:rdma` | Requires RDMA/InfiniBand |
+| `buckos:firmware` | Firmware blobs or microcode |
+| `buckos:ci:skip` | Skip in CI |
+| `buckos:ci:long` | Long build, sample in CI |
+
+### Query Examples
+
+```bash
+# All CMake packages
+buck2 cquery 'attrfilter(labels, "buckos:build:cmake", //packages/...)'
+
+# All CUDA-dependent targets
+buck2 cquery 'attrfilter(labels, "buckos:hw:cuda", //packages/...)'
+
+# All firmware targets
+buck2 cquery 'attrfilter(labels, "buckos:firmware", //packages/...)'
+
+# Prebuilt packages (no compilation needed)
+buck2 cquery 'attrfilter(labels, "buckos:prebuilt", //packages/...)'
+```
+
+### Adding Labels to New Packages
+
+Auto-labels are injected by the macros — no action needed. For hardware or
+firmware labels, add `labels = [...]` to your target:
+
+```python
+cmake_package(
+    name = "my-cuda-lib",
+    ...
+    labels = ["buckos:hw:cuda"],
+)
+```
+
+User-provided labels are merged with auto-injected labels.
+
 ## Testing
 
 ### Boot in QEMU

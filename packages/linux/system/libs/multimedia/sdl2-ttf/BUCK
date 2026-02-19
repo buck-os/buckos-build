@@ -1,16 +1,11 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "sdl2-ttf-src",
-    src_uri = "https://github.com/libsdl-org/SDL_ttf/releases/download/release-2.22.0/SDL2_ttf-2.22.0.tar.gz",
-    sha256 = "d48cbd1ce475b9e178206bf3b72d56b66d84d44f64ac05803328396234d67723",
-    signature_required = False,
-)
-
 autotools_package(
     name = "sdl2-ttf",
-    source = ":sdl2-ttf-src",
+    src_uri = "https://github.com/libsdl-org/SDL_ttf/releases/download/release-2.22.0/SDL2_ttf-2.22.0.tar.gz",
+
+    sha256 = "d48cbd1ce475b9e178206bf3b72d56b66d84d44f64ac05803328396234d67723",
     iuse = ["X", "harfbuzz", "static-libs"],
     use_configure = {
         "-X": "--without-x",

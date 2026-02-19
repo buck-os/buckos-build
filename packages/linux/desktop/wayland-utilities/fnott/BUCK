@@ -1,15 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "meson_package")
 
-download_source(
-    name = "fnott-src",
-    src_uri = "https://codeberg.org/dnkl/fnott/archive/1.4.1.tar.gz",
-    sha256 = "20da05357aa83b3541b6c02bb162af10c89519602bc91fdfaa190239ce303300",
-    signature_required = False,
-)
-
 meson_package(
     name = "fnott",
-    source = ":fnott-src",
+    src_uri = "https://codeberg.org/dnkl/fnott/archive/1.4.1.tar.gz",
+
+    sha256 = "20da05357aa83b3541b6c02bb162af10c89519602bc91fdfaa190239ce303300",
     version = "1.4.1",
     description = "Keyboard driven and lightweight Wayland notification daemon",
     homepage = "https://codeberg.org/dnkl/fnott",

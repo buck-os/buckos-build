@@ -1,15 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 
-download_source(
-    name = "appworld-src",
-    src_uri = "https://github.com/StonyBrookNLP/appworld/archive/refs/tags/v0.1.3.tar.gz",
-    sha256 = "b75dfc99ed77def58ce758c1d158af034ffa30f0769a3f32dcb6ca7c0b7b0e0a",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "appworld",
-    source = ":appworld-src",
+    src_uri = "https://github.com/StonyBrookNLP/appworld/archive/refs/tags/v0.1.3.tar.gz",
+
+    sha256 = "b75dfc99ed77def58ce758c1d158af034ffa30f0769a3f32dcb6ca7c0b7b0e0a",
     version = "0.1.3",
     description = "A Controllable World of Apps and People for Benchmarking Function Calling and Interactive Coding Agents",
     homepage = "https://appworld.dev/",

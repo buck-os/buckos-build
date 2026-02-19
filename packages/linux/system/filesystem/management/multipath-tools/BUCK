@@ -1,16 +1,11 @@
 load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "multipath-tools-src",
-    src_uri = "https://github.com/opensvc/multipath-tools/archive/refs/tags/0.9.7.tar.gz",
-    sha256 = "8f0a7ddc01137d0f90ac3ef5700131dfbd6cf3bbbccdcfa317e8379efa328d59",
-    signature_required = False,
-)
-
 autotools_package(
     name = "multipath-tools",
-    source = ":multipath-tools-src",
+    src_uri = "https://github.com/opensvc/multipath-tools/archive/refs/tags/0.9.7.tar.gz",
+
+    sha256 = "8f0a7ddc01137d0f90ac3ef5700131dfbd6cf3bbbccdcfa317e8379efa328d59",
     iuse = ["systemd"],
     use_configure = {
         "-systemd": "--disable-systemd",

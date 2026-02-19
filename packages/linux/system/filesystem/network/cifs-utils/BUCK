@@ -1,16 +1,13 @@
 load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "cifs-utils-src",
-    src_uri = "https://download.samba.org/pub/linux-cifs/cifs-utils/cifs-utils-7.0.tar.bz2",
-    sha256 = "0defaab85bd3ea46ffc45ab41fb0d0ad54d05ae2cfaa7e503de86d4f12bc8161",
-    signature_sha256 = "d05dcc274b3c637dfc7a2636510e7ac8a2c73a22e36a9b6d63d353728617f92a",
-)
-
 autotools_package(
     name = "cifs-utils",
-    source = ":cifs-utils-src",
+    src_uri = "https://download.samba.org/pub/linux-cifs/cifs-utils/cifs-utils-7.0.tar.bz2",
+
+    sha256 = "0defaab85bd3ea46ffc45ab41fb0d0ad54d05ae2cfaa7e503de86d4f12bc8161",
+
+    signature_sha256 = "d05dcc274b3c637dfc7a2636510e7ac8a2c73a22e36a9b6d63d353728617f92a",
     iuse = [
         "acl",
         "ads",

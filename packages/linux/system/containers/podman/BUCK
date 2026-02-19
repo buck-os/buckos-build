@@ -5,16 +5,11 @@ load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 # =============================================================================
 
 # containers-common - Common configuration and documentation for containers
-download_source(
-    name = "containers-common-src",
-    src_uri = "https://github.com/containers/common/archive/refs/tags/v0.58.0.tar.gz",
-    sha256 = "d8985643c514130b26bc15b7da275e15d4007675dbedfa701cb757f0d51407f6",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "containers-common",
-    source = ":containers-common-src",
+    src_uri = "https://github.com/containers/common/archive/refs/tags/v0.58.0.tar.gz",
+
+    sha256 = "d8985643c514130b26bc15b7da275e15d4007675dbedfa701cb757f0d51407f6",
     version = "0.58.0",
     description = "Common configuration and documentation for container tools",
     homepage = "https://github.com/containers/common",
@@ -64,16 +59,11 @@ EOF
 )
 
 # podman - Container management tool
-download_source(
-    name = "podman-src",
-    src_uri = "https://github.com/containers/podman/archive/refs/tags/v5.0.2.tar.gz",
-    sha256 = "85c3f70a1c293ccf48907d8e9fe13c6c9aac67242525a539296beeef31ba11a8",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "podman",
-    source = ":podman-src",
+    src_uri = "https://github.com/containers/podman/archive/refs/tags/v5.0.2.tar.gz",
+
+    sha256 = "85c3f70a1c293ccf48907d8e9fe13c6c9aac67242525a539296beeef31ba11a8",
     version = "5.0.2",
     description = "A tool for managing OCI containers and pods",
     homepage = "https://podman.io",
@@ -115,16 +105,11 @@ mkdir -p "$DESTDIR/usr/share/fish/vendor_completions.d"
 )
 
 # buildah - Container image builder
-download_source(
-    name = "buildah-src",
-    src_uri = "https://github.com/containers/buildah/archive/refs/tags/v1.35.3.tar.gz",
-    sha256 = "c88d212b8a5e9ced86e3446477130abf42ed30c93f6be891c069abe566c8fe7d",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "buildah",
-    source = ":buildah-src",
+    src_uri = "https://github.com/containers/buildah/archive/refs/tags/v1.35.3.tar.gz",
+
+    sha256 = "c88d212b8a5e9ced86e3446477130abf42ed30c93f6be891c069abe566c8fe7d",
     version = "1.35.3",
     description = "A tool for building OCI container images",
     homepage = "https://buildah.io",
@@ -158,16 +143,11 @@ mkdir -p "$DESTDIR/usr/share/bash-completion/completions"
 )
 
 # skopeo - Container image inspection and transport
-download_source(
-    name = "skopeo-src",
-    src_uri = "https://github.com/containers/skopeo/archive/refs/tags/v1.15.1.tar.gz",
-    sha256 = "4db9798afd45e3282f35ddad3e494db99231e84470f30d6b105a3ed687e67ee0",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "skopeo",
-    source = ":skopeo-src",
+    src_uri = "https://github.com/containers/skopeo/archive/refs/tags/v1.15.1.tar.gz",
+
+    sha256 = "4db9798afd45e3282f35ddad3e494db99231e84470f30d6b105a3ed687e67ee0",
     version = "1.15.1",
     description = "Command line utility for container image operations",
     homepage = "https://github.com/containers/skopeo",
@@ -197,16 +177,11 @@ mkdir -p "$DESTDIR/usr/share/bash-completion/completions"
 )
 
 # podman-compose - Run docker-compose files with Podman
-download_source(
-    name = "podman-compose-src",
-    src_uri = "https://github.com/containers/podman-compose/archive/refs/tags/v1.0.6.tar.gz",
-    sha256 = "0b9ee7cc000ef5d0ce7f81ce2e306be56d1edb0f494a883ca25c4d163469b12b",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "podman-compose",
-    source = ":podman-compose-src",
+    src_uri = "https://github.com/containers/podman-compose/archive/refs/tags/v1.0.6.tar.gz",
+
+    sha256 = "0b9ee7cc000ef5d0ce7f81ce2e306be56d1edb0f494a883ca25c4d163469b12b",
     version = "1.0.6",
     description = "Run docker-compose.yml files using Podman",
     homepage = "https://github.com/containers/podman-compose",

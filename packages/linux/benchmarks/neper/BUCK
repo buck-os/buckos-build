@@ -1,15 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 
-download_source(
-    name = "neper-src",
-    src_uri = "https://github.com/google/neper/archive/859fd82edc08b0714b027e2a217dbe77b9fc0f5f.tar.gz",
-    sha256 = "cd3c590805d96c536d99e43d6f80f83b1ae8a2f53cf1eba0be965b0869dd15bf",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "neper",
-    source = ":neper-src",
+    src_uri = "https://github.com/google/neper/archive/859fd82edc08b0714b027e2a217dbe77b9fc0f5f.tar.gz",
+
+    sha256 = "cd3c590805d96c536d99e43d6f80f83b1ae8a2f53cf1eba0be965b0869dd15bf",
     version = "0.0.1_git20240101",
     category = "benchmarks",
     description = "Linux networking performance tool with multi-thread and multi-flow support",

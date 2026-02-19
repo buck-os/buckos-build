@@ -144,18 +144,12 @@ autotools_package(
 # Maximum flexibility with custom phase functions.
 # USE flags are available via the use() shell function.
 
-download_source(
-    name = "libxml2-src",
-    src_uri = "https://download.gnome.org/sources/libxml2/2.12/libxml2-2.12.3.tar.xz",
-    sha256 = "8c8f1092340a89ff32bc44ad5c9693aff9bc8a7a3e161bb239666e5d15ac9aaa",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "libxml2-example",
     version = "2.12.3",
-    source = ":libxml2-src",
+    src_uri = "https://download.gnome.org/sources/libxml2/2.12/libxml2-2.12.3.tar.xz",
 
+    sha256 = "8c8f1092340a89ff32bc44ad5c9693aff9bc8a7a3e161bb239666e5d15ac9aaa",
     # USE flags
     use_flags = ["readline"],
 
@@ -181,16 +175,11 @@ ebuild_package(
 # EXAMPLE 4: Hardened OpenSSH
 # =============================================================================
 
-download_source(
-    name = "openssh-src",
-    src_uri = "https://cdn.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-9.9p1.tar.gz",
-    sha256 = "b343fbcdbff87f15b1986e6e15d6d4fc9a7d36066be6b7fb507087ba8f966c02",
-    signature_required = False,
-)
-
 autotools_package(
     name = "openssh-hardened-example",
-    source = ":openssh-src",
+    src_uri = "https://cdn.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-9.9p1.tar.gz",
+
+    sha256 = "b343fbcdbff87f15b1986e6e15d6d4fc9a7d36066be6b7fb507087ba8f966c02",
     version = "9.9p1",
     pre_configure = """
 # Patch configure to accept newer OpenSSL versions

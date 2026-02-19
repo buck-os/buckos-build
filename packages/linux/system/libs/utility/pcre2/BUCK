@@ -1,17 +1,13 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "pcre2-src",
-    src_uri = "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.44/pcre2-10.44.tar.bz2",
-    sha256 = "d34f02e113cf7193a1ebf2770d3ac527088d485d4e047ed10e5d217c6ef5de96",
-    signature_sha256 = "df418f44905d5df54783a19724dce2355062a3eb75ee17aaae32bcb61aa26bde",
-    signature_required=False,
-)
-
 autotools_package(
     name = "pcre2",
-    source = ":pcre2-src",
+    src_uri = "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.44/pcre2-10.44.tar.bz2",
+
+    sha256 = "d34f02e113cf7193a1ebf2770d3ac527088d485d4e047ed10e5d217c6ef5de96",
+
+    signature_sha256 = "df418f44905d5df54783a19724dce2355062a3eb75ee17aaae32bcb61aa26bde",
     version = "10.44",
     description = "Perl Compatible Regular Expressions library (version 2)",
     homepage = "https://www.pcre.org/",

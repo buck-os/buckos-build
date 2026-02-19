@@ -1,19 +1,14 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
 
-download_source(
-    name = "libatomic_ops-src",
-    src_uri = "https://github.com/ivmai/libatomic_ops/releases/download/v7.8.2/libatomic_ops-7.8.2.tar.gz",
-    sha256 = "d305207fe207f2b3fb5cb4c019da12b44ce3fcbc593dfd5080d867b1a2419b51",
-    signature_required = False,
-)
-
 autotools_package(
     name = "libatomic_ops",
     # GitHub release tarball includes pre-generated configure script
     bdepend = [],
     src_prepare = "",
-    source = ":libatomic_ops-src",
+    src_uri = "https://github.com/ivmai/libatomic_ops/releases/download/v7.8.2/libatomic_ops-7.8.2.tar.gz",
+
+    sha256 = "d305207fe207f2b3fb5cb4c019da12b44ce3fcbc593dfd5080d867b1a2419b51",
     version = "7.8.2",
     description = "Implementation for atomic memory update operations",
     homepage = "https://github.com/ivmai/libatomic_ops",

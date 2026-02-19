@@ -3,16 +3,11 @@ load("//defs:use_flags.bzl", "set_use_flags")
 
 # keyutils - Linux key management utilities
 
-download_source(
-    name = "keyutils-src",
-    src_uri = "https://git.kernel.org/pub/scm/linux/kernel/git/dhowells/keyutils.git/snapshot/keyutils-1.6.3.tar.gz",
-    sha256 = "a61d5706136ae4c05bd48f86186bcfdbd88dd8bd5107e3e195c924cfc1b39bb4",
-    signature_required = False,
-)
-
 make_package(
     name = "keyutils",
-    source = ":keyutils-src",
+    src_uri = "https://git.kernel.org/pub/scm/linux/kernel/git/dhowells/keyutils.git/snapshot/keyutils-1.6.3.tar.gz",
+
+    sha256 = "a61d5706136ae4c05bd48f86186bcfdbd88dd8bd5107e3e195c924cfc1b39bb4",
     iuse = ["static", "static-libs"],
     use_configure = {
         "-static": "--disable-static",

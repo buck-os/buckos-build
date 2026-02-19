@@ -1,15 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "meson_package")
 
-download_source(
-    name = "tofi-src",
-    src_uri = "https://github.com/philj56/tofi/archive/v0.9.1.tar.gz",
-    sha256 = "dd55347b509af786f133def64f3a86f1db258b5e196de80e53d62827bdcc37bc",
-    signature_required = False,
-)
-
 meson_package(
     name = "tofi",
-    source = ":tofi-src",
+    src_uri = "https://github.com/philj56/tofi/archive/v0.9.1.tar.gz",
+
+    sha256 = "dd55347b509af786f133def64f3a86f1db258b5e196de80e53d62827bdcc37bc",
     version = "0.9.1",
     description = "Tiny dynamic menu for Wayland",
     homepage = "https://github.com/philj56/tofi",

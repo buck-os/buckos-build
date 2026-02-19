@@ -6,16 +6,11 @@
 load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "tp_smapi-src",
-    src_uri = "https://github.com/evgeni/tp_smapi/archive/refs/tags/tp-smapi/0.44.tar.gz",
-    sha256 = "ccc317157c71df621ef92e0213c3a813de4a792fa1dce16a1784944edfcb9ea4",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "tp_smapi",
-    source = ":tp_smapi-src",
+    src_uri = "https://github.com/evgeni/tp_smapi/archive/refs/tags/tp-smapi/0.44.tar.gz",
+
+    sha256 = "ccc317157c71df621ef92e0213c3a813de4a792fa1dce16a1784944edfcb9ea4",
     iuse = ["hdaps"],
     use_configure = {
         "-hdaps": "--disable-hdaps",

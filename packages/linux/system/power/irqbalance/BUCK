@@ -4,16 +4,11 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "irqbalance-src",
-    src_uri = "https://github.com/Irqbalance/irqbalance/archive/refs/tags/v1.9.3.tar.gz",
-    sha256 = "8d698799251ea8518f342f36be26f2f092df51189f6777db33116d40cf0dae6c",
-    signature_required = False,
-)
-
 autotools_package(
     name = "irqbalance",
-    source = ":irqbalance-src",
+    src_uri = "https://github.com/Irqbalance/irqbalance/archive/refs/tags/v1.9.3.tar.gz",
+
+    sha256 = "8d698799251ea8518f342f36be26f2f092df51189f6777db33116d40cf0dae6c",
     iuse = [
         "caps",
         "numa",

@@ -3,15 +3,11 @@ load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 # SCTK - NIST Scoring Toolkit for speech recognition evaluation
 # Contains tools like sclite, sc_stats, rover, etc.
 
-download_source(
-    name = "sctk-src",
-    src_uri = "https://github.com/usnistgov/SCTK/archive/refs/tags/v2.4.12.tar.gz",
-    sha256 = "43bd2bfe60e0ad04a563ddef025e84fca4c073f8f7c02f056b59fb8e2ec4f022",
-)
-
 ebuild_package(
     name = "sctk",
-    source = ":sctk-src",
+    src_uri = "https://github.com/usnistgov/SCTK/archive/refs/tags/v2.4.12.tar.gz",
+
+    sha256 = "43bd2bfe60e0ad04a563ddef025e84fca4c073f8f7c02f056b59fb8e2ec4f022",
     version = "2.4.12",
     description = "NIST Scoring Toolkit for speech recognition evaluation",
     homepage = "https://github.com/usnistgov/SCTK",

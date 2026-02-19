@@ -4,18 +4,13 @@
 load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "dxvk-src",
-    src_uri = "https://github.com/doitsujin/dxvk/archive/refs/tags/v2.4.1.tar.gz",
-    sha256 = "aa6b95f6c80dab704fa15df5b22b5f5a4931687c0bdab190f32fe666f6c0a707",
-    signature_required = False,
-)
-
 # USE flags: See use_flags.bzl for available flags
 
 autotools_package(
     name = "dxvk",
-    source = ":dxvk-src",
+    src_uri = "https://github.com/doitsujin/dxvk/archive/refs/tags/v2.4.1.tar.gz",
+
+    sha256 = "aa6b95f6c80dab704fa15df5b22b5f5a4931687c0bdab190f32fe666f6c0a707",
     iuse = [
         "crossdev-mingw",
         "d3d10",
@@ -125,5 +120,6 @@ chmod +x "$DESTDIR/usr/bin/setup_dxvk"
     deps = [
         "//packages/linux/gaming/compatibility/wine:wine",
     ],
+    labels = ["buckos:hw:vulkan"],
     visibility = ["PUBLIC"],
 )

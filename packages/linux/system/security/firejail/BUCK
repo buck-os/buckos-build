@@ -1,20 +1,16 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "firejail-src",
-    src_uri = "https://github.com/netblue30/firejail/releases/download/0.9.72/firejail-0.9.72.tar.xz",
-    sha256 = "82e177c48cfc87f62b088b55efc53ff4612b9740aab5ea35cbf2395e83efe7f4",
-    signature_sha256 = "112f4cbc6b29dce82b8b8532e717bbd004a8c647b84b3d2e5feb40ea20262aaf",
-    signature_required=False,
-)
-
 autotools_package(
     name = "firejail",
     # GitHub release tarball includes pre-generated configure script
     bdepend = [],
     src_prepare = "",
-    source = ":firejail-src",
+    src_uri = "https://github.com/netblue30/firejail/releases/download/0.9.72/firejail-0.9.72.tar.xz",
+
+    sha256 = "82e177c48cfc87f62b088b55efc53ff4612b9740aab5ea35cbf2395e83efe7f4",
+
+    signature_sha256 = "112f4cbc6b29dce82b8b8532e717bbd004a8c647b84b3d2e5feb40ea20262aaf",
     iuse = [
         "X",
         "apparmor",

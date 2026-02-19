@@ -1,16 +1,11 @@
 load("//defs:package_defs.bzl", "download_source", "meson_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "libevdev-src",
-    src_uri = "https://www.freedesktop.org/software/libevdev/libevdev-1.13.2.tar.xz",
-    sha256 = "3eca86a6ce55b81d5bce910637fc451c8bbe373b1f9698f375c7f1ad0de3ac48",
-    signature_required = False,
-)
-
 meson_package(
     name = "libevdev",
-    source = ":libevdev-src",
+    src_uri = "https://www.freedesktop.org/software/libevdev/libevdev-1.13.2.tar.xz",
+
+    sha256 = "3eca86a6ce55b81d5bce910637fc451c8bbe373b1f9698f375c7f1ad0de3ac48",
     version = "1.13.2",
     description = "Wrapper library for evdev devices",
     homepage = "https://www.freedesktop.org/wiki/Software/libevdev/",

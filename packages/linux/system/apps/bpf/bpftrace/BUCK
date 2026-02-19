@@ -1,15 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "cmake_package")
 
-download_source(
-    name = "bpftrace-src",
-    src_uri = "https://github.com/bpftrace/bpftrace/archive/refs/tags/v0.24.2.tar.gz",
-    sha256 = "e0514aa3e1a032b0b2de2cf3c281bfee9b9e80509498e70ed78786bbd64db373",
-    signature_required = False,
-)
-
 cmake_package(
     name = "bpftrace",
-    source = ":bpftrace-src",
+    src_uri = "https://github.com/bpftrace/bpftrace/archive/refs/tags/v0.24.2.tar.gz",
+
+    sha256 = "e0514aa3e1a032b0b2de2cf3c281bfee9b9e80509498e70ed78786bbd64db373",
     version = "0.24.2",
     description = "High-level tracing language for Linux using BPF",
     homepage = "https://github.com/bpftrace/bpftrace",

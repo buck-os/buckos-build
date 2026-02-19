@@ -2,16 +2,11 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
 
 # TRE - Lightweight, robust, and efficient POSIX compliant regexp matching library
-download_source(
-    name = "tre-src",
-    src_uri = "https://github.com/laurikari/tre/archive/refs/tags/v0.8.0.tar.gz",
-    sha256 = "c0d53e6052ef306ff9f02074ab8c28cb10ae4a001bf409d0859494fc32f1c29d",
-    signature_required = False,
-)
-
 autotools_package(
     name = "tre",
-    source = ":tre-src",
+    src_uri = "https://github.com/laurikari/tre/archive/refs/tags/v0.8.0.tar.gz",
+
+    sha256 = "c0d53e6052ef306ff9f02074ab8c28cb10ae4a001bf409d0859494fc32f1c29d",
     version = "0.8.0",
     description = "Lightweight, robust POSIX compliant regexp matching library with approximate matching",
     homepage = "https://github.com/laurikari/tre",

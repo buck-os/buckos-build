@@ -1,20 +1,16 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
 
-download_source(
-    name = "patch-src",
-    src_uri = "https://mirrors.kernel.org/gnu/patch/patch-2.7.6.tar.xz",
-    sha256 = "ac610bda97abe0d9f6b7c963255a11dcb196c25e337c61f94e4778d632f1d8fd",
-    signature_sha256 = "2398352147c006e0737430247960d1c75ce33377a3278023cdc34ebd4a810cd9",
-    signature_required=False,
-)
-
 autotools_package(
     name = "patch",
     # GNU release tarball includes pre-generated configure script
     bdepend = [],
     src_prepare = "",
-    source = ":patch-src",
+    src_uri = "https://mirrors.kernel.org/gnu/patch/patch-2.7.6.tar.xz",
+
+    sha256 = "ac610bda97abe0d9f6b7c963255a11dcb196c25e337c61f94e4778d632f1d8fd",
+
+    signature_sha256 = "2398352147c006e0737430247960d1c75ce33377a3278023cdc34ebd4a810cd9",
     iuse = ["ocamlopt"],
     use_configure = {
         "-ocamlopt": "--disable-ocamlopt",

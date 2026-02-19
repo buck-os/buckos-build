@@ -3,17 +3,13 @@ load("//defs:use_flags.bzl", "set_use_flags")
 
 # MPlayer - The Movie Player
 
-download_source(
-    name = "mplayer-src",
-    src_uri = "http://www.mplayerhq.hu/MPlayer/releases/MPlayer-1.5.tar.xz",
-    sha256 = "650cd55bb3cb44c9b39ce36dac488428559799c5f18d16d98edb2b7256cbbf85",
-    signature_sha256 = "eeb19414314dccb6fb93502ee5edf541b8283b8f9f832d96019e06ef3be09235",
-    signature_required=False,
-)
-
 autotools_package(
     name = "mplayer",
-    source = ":mplayer-src",
+    src_uri = "http://www.mplayerhq.hu/MPlayer/releases/MPlayer-1.5.tar.xz",
+
+    sha256 = "650cd55bb3cb44c9b39ce36dac488428559799c5f18d16d98edb2b7256cbbf85",
+
+    signature_sha256 = "eeb19414314dccb6fb93502ee5edf541b8283b8f9f832d96019e06ef3be09235",
     iuse = [
         "X",
         "a52",

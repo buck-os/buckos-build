@@ -2,17 +2,13 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
 
 # gettext - GNU internationalization utilities
-download_source(
-    name = "gettext-src",
-    src_uri = "https://mirrors.kernel.org/gnu/gettext/gettext-0.26.tar.xz",
-    sha256 = "d1fb86e260cfe7da6031f94d2e44c0da55903dbae0a2fa0fae78c91ae1b56f00",
-    signature_sha256 = "a0c4b074f63dcddf49f430ac9dcc94b78bf47d51d9db60167dea047cb9fc4f1d",
-    signature_required = False,
-)
-
 autotools_package(
     name = "gettext",
-    source = ":gettext-src",
+    src_uri = "https://mirrors.kernel.org/gnu/gettext/gettext-0.26.tar.xz",
+
+    sha256 = "d1fb86e260cfe7da6031f94d2e44c0da55903dbae0a2fa0fae78c91ae1b56f00",
+
+    signature_sha256 = "a0c4b074f63dcddf49f430ac9dcc94b78bf47d51d9db60167dea047cb9fc4f1d",
     iuse = [
         "acl",
         "cxx",

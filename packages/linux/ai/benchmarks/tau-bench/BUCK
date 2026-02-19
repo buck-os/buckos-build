@@ -1,15 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 
-download_source(
-    name = "tau-bench-src",
-    src_uri = "https://github.com/sierra-research/tau-bench/archive/refs/heads/main.tar.gz",
-    sha256 = "831f7850609f44f0f6905a467dd38c1507773b4818398354015f76d5fd4815ee",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "tau-bench",
-    source = ":tau-bench-src",
+    src_uri = "https://github.com/sierra-research/tau-bench/archive/refs/heads/main.tar.gz",
+
+    sha256 = "831f7850609f44f0f6905a467dd38c1507773b4818398354015f76d5fd4815ee",
     version = "0.1.0",
     description = "A benchmark for evaluating tool-augmented agents on realistic tasks",
     homepage = "https://github.com/sierra-research/tau-bench",

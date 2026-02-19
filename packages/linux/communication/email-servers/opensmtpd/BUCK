@@ -1,18 +1,13 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "opensmtpd-src",
-    src_uri = "https://www.opensmtpd.org/archives/opensmtpd-7.5.0p0.tar.gz",
-    sha256 = "84f5c1393c0c1becc72ceea971e0abd7075b2ca7e4e1f8909b83edfd8de0c39c",
-    signature_required = False,
-)
-
 # USE flags: See use_flags.bzl for available flags
 
 autotools_package(
     name = "opensmtpd",
-    source = ":opensmtpd-src",
+    src_uri = "https://www.opensmtpd.org/archives/opensmtpd-7.5.0p0.tar.gz",
+
+    sha256 = "84f5c1393c0c1becc72ceea971e0abd7075b2ca7e4e1f8909b83edfd8de0c39c",
     iuse = ["berkdb", "mta", "pam"],
     use_configure = {
         "-berkdb": "--disable-berkdb",

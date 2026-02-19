@@ -6,16 +6,11 @@ load("//defs:use_flags.bzl", "set_use_flags")
 # - imagemagick: ImageMagick support (default: enabled)
 # - openmp: OpenMP parallel processing (default: enabled)
 
-download_source(
-    name = "inkscape-src",
-    src_uri = "https://media.inkscape.org/dl/resources/file/inkscape-1.3.2.tar.xz",
-    sha256 = "dbd1844dc443fe5e10d3e9a887144e5fb7223852fff191cfb5ef7adeab0e086b",
-    signature_required = False,
-)
-
 autotools_package(
     name = "inkscape",
-    source = ":inkscape-src",
+    src_uri = "https://media.inkscape.org/dl/resources/file/inkscape-1.3.2.tar.xz",
+
+    sha256 = "dbd1844dc443fe5e10d3e9a887144e5fb7223852fff191cfb5ef7adeab0e086b",
     iuse = [
         "X",
         "cdr",

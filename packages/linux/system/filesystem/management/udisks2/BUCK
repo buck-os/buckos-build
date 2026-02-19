@@ -1,16 +1,11 @@
 load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "udisks2-src",
-    src_uri = "https://github.com/storaged-project/udisks/releases/download/udisks-2.10.1/udisks-2.10.1.tar.bz2",
-    sha256 = "b75734ccf602540dedb4068bec206adcb508a4c003725e117ae8f994d92d8ece",
-    signature_required = False,
-)
-
 autotools_package(
     name = "udisks2",
-    source = ":udisks2-src",
+    src_uri = "https://github.com/storaged-project/udisks/releases/download/udisks-2.10.1/udisks-2.10.1.tar.bz2",
+
+    sha256 = "b75734ccf602540dedb4068bec206adcb508a4c003725e117ae8f994d92d8ece",
     version = "2.10.1",
     description = "Disk management service and tools",
     homepage = "https://github.com/storaged-project/udisks",

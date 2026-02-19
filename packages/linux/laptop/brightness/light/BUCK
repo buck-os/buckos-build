@@ -6,18 +6,13 @@ load("//defs:use_flags.bzl", "set_use_flags")
 
 # NOTE: 'light' has been replaced by acpilight - a Python-based backlight controller
 # The original 'light' project is archived. Use acpilight instead.
-download_source(
-    name = "light-src",
-    src_uri = "https://gitlab.com/wavexx/acpilight/-/archive/v1.2/acpilight-v1.2.tar.bz2",
-    sha256 = "0b80cbe7edaf48307fc26dbb34c260ec9ed0c19c56743291e5a7cc23044ff9ae",
-    signature_required = False,
-)
-
 # USE flags: See use_flags.bzl for available flags
 
 make_package(
     name = "light",
-    source = ":light-src",
+    src_uri = "https://gitlab.com/wavexx/acpilight/-/archive/v1.2/acpilight-v1.2.tar.bz2",
+
+    sha256 = "0b80cbe7edaf48307fc26dbb34c260ec9ed0c19c56743291e5a7cc23044ff9ae",
     iuse = ["udev"],
     use_configure = {
         "-udev": "--disable-udev",

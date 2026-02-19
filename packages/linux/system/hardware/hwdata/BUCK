@@ -2,19 +2,14 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
 # hwdata - Hardware identification databases
-download_source(
-    name = "hwdata-src",
-    src_uri = "https://github.com/vcrhonek/hwdata/archive/refs/tags/v0.391.tar.gz",
-    sha256 = "620fe1c22922a3d1bd1062424e9cc6b954acea2f83b72ff0cb45144981cb1975",
-    signature_required = False,
-)
-
 autotools_package(
     name = "hwdata",
     bdepend = [],
     src_prepare = "",
     src_configure = "./configure --prefix=/usr --sysconfdir=/etc --datadir=/usr/share",
-    source = ":hwdata-src",
+    src_uri = "https://github.com/vcrhonek/hwdata/archive/refs/tags/v0.391.tar.gz",
+
+    sha256 = "620fe1c22922a3d1bd1062424e9cc6b954acea2f83b72ff0cb45144981cb1975",
     version = "0.391",
     description = "Hardware identification and configuration data",
     homepage = "https://github.com/vcrhonek/hwdata",

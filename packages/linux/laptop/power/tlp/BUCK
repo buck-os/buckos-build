@@ -4,18 +4,13 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "tlp-src",
-    src_uri = "https://github.com/linrunner/TLP/archive/refs/tags/1.6.1.tar.gz",
-    sha256 = "f7d013691a92ffcf42ef1648565dbc24a33202046d3c8138dad1963a3169a0f5",
-    signature_required = False,
-)
-
 # USE flags: See use_flags.bzl for available flags
 
 autotools_package(
     name = "tlp",
-    source = ":tlp-src",
+    src_uri = "https://github.com/linrunner/TLP/archive/refs/tags/1.6.1.tar.gz",
+
+    sha256 = "f7d013691a92ffcf42ef1648565dbc24a33202046d3c8138dad1963a3169a0f5",
     iuse = ["ppd", "rdw"],
     use_configure = {
         "-ppd": "--disable-ppd",

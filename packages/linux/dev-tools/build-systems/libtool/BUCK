@@ -4,17 +4,13 @@ load("//defs:use_flags.bzl", "set_use_flags")
 
 # Libtool cannot use autotools_package because it would create a circular dependency
 # (autotools eclass depends on libtool). Build it manually instead.
-download_source(
-    name = "libtool-src",
-    src_uri = "https://mirror.buckos.org/l/libtool-2.4.7.tar.xz",
-    sha256 = "4f7f217f057ce655ff22559ad221a0fd8ef84ad1fc5fcb6990cecc333aa1635d",
-    signature_sha256 = "595c23d4681ad6c5fc40ddbc0af85b54c008968000c902ebb216af44a71fe81d",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "libtool",
-    source = ":libtool-src",
+    src_uri = "https://mirror.buckos.org/l/libtool-2.4.7.tar.xz",
+
+    sha256 = "4f7f217f057ce655ff22559ad221a0fd8ef84ad1fc5fcb6990cecc333aa1635d",
+
+    signature_sha256 = "595c23d4681ad6c5fc40ddbc0af85b54c008968000c902ebb216af44a71fe81d",
     iuse = ["vanilla"],
     use_configure = {
         "-vanilla": "--disable-vanilla",

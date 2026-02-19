@@ -5,14 +5,6 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
 # MIT Kerberos
-download_source(
-    name = "krb5-src",
-    src_uri = "https://kerberos.org/dist/krb5/1.21/krb5-1.21.2.tar.gz",
-    sha256 = "9560941a9d843c0243a71b17a7ac6fe31c7cebb5bce3983db79e52ae7e850491",
-    signature_sha256 = "780b07aad5ac5449d1dd735dd42fd3325ec851b316d075a54a24f35d3e945190",
-    signature_required=False,
-)
-
 autotools_package(
     name = "krb5",
     bdepend = [
@@ -24,7 +16,11 @@ autotools_package(
     src_prepare = """
 autoreconf -fi
 """,
-    source = ":krb5-src",
+    src_uri = "https://kerberos.org/dist/krb5/1.21/krb5-1.21.2.tar.gz",
+
+    sha256 = "9560941a9d843c0243a71b17a7ac6fe31c7cebb5bce3983db79e52ae7e850491",
+
+    signature_sha256 = "780b07aad5ac5449d1dd735dd42fd3325ec851b316d075a54a24f35d3e945190",
     version = "1.21.2",
     description = "MIT Kerberos network authentication system",
     homepage = "https://kerberos.org/",
@@ -62,13 +58,6 @@ autoreconf -fi
 
 # e2fsprogs-libs (for libcom_err, needed by Kerberos)
 # Note: e2fsprogs-libs separate tarball no longer exists; use main e2fsprogs package
-download_source(
-    name = "e2fsprogs-libs-src",
-    src_uri = "https://mirrors.edge.kernel.org/pub/linux/kernel/people/tytso/e2fsprogs/v1.47.0/e2fsprogs-1.47.0.tar.xz",
-    sha256 = "144af53f2bbd921cef6f8bea88bb9faddca865da3fbc657cc9b4d2001097d5db",
-    signature_required = False,
-)
-
 autotools_package(
     name = "e2fsprogs-libs",
     bdepend = [
@@ -80,7 +69,9 @@ autotools_package(
     src_prepare = """
 autoreconf -fi
 """,
-    source = ":e2fsprogs-libs-src",
+    src_uri = "https://mirrors.edge.kernel.org/pub/linux/kernel/people/tytso/e2fsprogs/v1.47.0/e2fsprogs-1.47.0.tar.xz",
+
+    sha256 = "144af53f2bbd921cef6f8bea88bb9faddca865da3fbc657cc9b4d2001097d5db",
     version = "1.47.0",
     description = "E2fsprogs libraries (libcom_err, libss)",
     homepage = "https://e2fsprogs.sourceforge.net/",
@@ -100,14 +91,6 @@ autoreconf -fi
 )
 
 # OpenLDAP
-download_source(
-    name = "openldap-src",
-    src_uri = "https://www.openldap.org/software/download/OpenLDAP/openldap-release/openldap-2.6.7.tgz",
-    sha256 = "cd775f625c944ed78a3da18a03b03b08eea73c8aabc97b41bb336e9a10954930",
-    signature_sha256 = "38b0852ee709c5943d557cdd2207186c86c5c702853a839a7e273616c8d06f8c",
-    signature_required=False,
-)
-
 autotools_package(
     name = "openldap",
     bdepend = [
@@ -119,7 +102,11 @@ autotools_package(
     src_prepare = """
 autoreconf -fi
 """,
-    source = ":openldap-src",
+    src_uri = "https://www.openldap.org/software/download/OpenLDAP/openldap-release/openldap-2.6.7.tgz",
+
+    sha256 = "cd775f625c944ed78a3da18a03b03b08eea73c8aabc97b41bb336e9a10954930",
+
+    signature_sha256 = "38b0852ee709c5943d557cdd2207186c86c5c702853a839a7e273616c8d06f8c",
     version = "2.6.7",
     description = "Open source LDAP implementation",
     homepage = "https://www.openldap.org/",
@@ -153,14 +140,6 @@ autoreconf -fi
 )
 
 # Cyrus SASL - Simple Authentication and Security Layer
-download_source(
-    name = "cyrus-sasl-src",
-    src_uri = "https://github.com/cyrusimap/cyrus-sasl/releases/download/cyrus-sasl-2.1.28/cyrus-sasl-2.1.28.tar.gz",
-    sha256 = "7ccfc6abd01ed67c1a0924b353e526f1b766b21f42d4562ee635a8ebfc5bb38c",
-    signature_sha256 = "e6169548f42234eb2b1af9719415016a57116835b8ea494596f52743b49971fd",
-    signature_required=False,
-)
-
 autotools_package(
     name = "cyrus-sasl",
     bdepend = [
@@ -172,7 +151,11 @@ autotools_package(
     src_prepare = """
 autoreconf -fi
 """,
-    source = ":cyrus-sasl-src",
+    src_uri = "https://github.com/cyrusimap/cyrus-sasl/releases/download/cyrus-sasl-2.1.28/cyrus-sasl-2.1.28.tar.gz",
+
+    sha256 = "7ccfc6abd01ed67c1a0924b353e526f1b766b21f42d4562ee635a8ebfc5bb38c",
+
+    signature_sha256 = "e6169548f42234eb2b1af9719415016a57116835b8ea494596f52743b49971fd",
     version = "2.1.28",
     description = "Simple Authentication and Security Layer library",
     homepage = "https://www.cyrusimap.org/sasl/",
@@ -211,14 +194,6 @@ autoreconf -fi
 )
 
 # SSSD - System Security Services Daemon
-download_source(
-    name = "sssd-src",
-    src_uri = "https://github.com/SSSD/sssd/releases/download/2.9.4/sssd-2.9.4.tar.gz",
-    sha256 = "82b5ef80be47c96d518de26cfb440000f1bc6b9e3441a8393a007d21af316b18",
-    signature_sha256 = "573cd513ac23aa7bb2802b2bfefd2ecb72b3b2c1a0e8c64fd19f82ac8dffd880",
-    signature_required=False,
-)
-
 autotools_package(
     name = "sssd",
     bdepend = [
@@ -230,7 +205,11 @@ autotools_package(
     src_prepare = """
 autoreconf -fi
 """,
-    source = ":sssd-src",
+    src_uri = "https://github.com/SSSD/sssd/releases/download/2.9.4/sssd-2.9.4.tar.gz",
+
+    sha256 = "82b5ef80be47c96d518de26cfb440000f1bc6b9e3441a8393a007d21af316b18",
+
+    signature_sha256 = "573cd513ac23aa7bb2802b2bfefd2ecb72b3b2c1a0e8c64fd19f82ac8dffd880",
     version = "2.9.4",
     description = "System Security Services Daemon for identity and authentication",
     homepage = "https://sssd.io/",
@@ -279,13 +258,6 @@ autoreconf -fi
 # Samba libraries (tdb, tevent) needed by SSSD
 # talloc, ldb, lmdb now in system/libs/
 
-download_source(
-    name = "tdb-src",
-    src_uri = "https://www.samba.org/ftp/tdb/tdb-1.4.10.tar.gz",
-    sha256 = "02338e33c16c21c9e29571cef523e76b2b708636254f6f30c6cf195d48c62daf",
-    signature_required = False,
-)
-
 autotools_package(
     name = "tdb",
     bdepend = [
@@ -297,7 +269,9 @@ autotools_package(
     src_prepare = """
 autoreconf -fi
 """,
-    source = ":tdb-src",
+    src_uri = "https://www.samba.org/ftp/tdb/tdb-1.4.10.tar.gz",
+
+    sha256 = "02338e33c16c21c9e29571cef523e76b2b708636254f6f30c6cf195d48c62daf",
     version = "1.4.10",
     description = "Trivial Database library",
     homepage = "https://tdb.samba.org/",
@@ -311,13 +285,6 @@ autoreconf -fi
     visibility = ["PUBLIC"],
 )
 
-download_source(
-    name = "tevent-src",
-    src_uri = "https://www.samba.org/ftp/tevent/tevent-0.16.1.tar.gz",
-    sha256 = "362971e0f32dc1905f6fe4736319c4b8348c22dc85aa6c3f690a28efe548029e",
-    signature_required = False,
-)
-
 autotools_package(
     name = "tevent",
     bdepend = [
@@ -329,7 +296,9 @@ autotools_package(
     src_prepare = """
 autoreconf -fi
 """,
-    source = ":tevent-src",
+    src_uri = "https://www.samba.org/ftp/tevent/tevent-0.16.1.tar.gz",
+
+    sha256 = "362971e0f32dc1905f6fe4736319c4b8348c22dc85aa6c3f690a28efe548029e",
     version = "0.16.1",
     description = "Event system based on talloc",
     homepage = "https://tevent.samba.org/",
@@ -345,14 +314,6 @@ autoreconf -fi
 )
 
 # ding-libs - SSSD helper libraries
-download_source(
-    name = "ding-libs-src",
-    src_uri = "https://github.com/SSSD/ding-libs/releases/download/0.6.2/ding-libs-0.6.2.tar.gz",
-    sha256 = "e5f07f34f5921bcb5ccccfe3751c28497879a6451cd7b395e99e24d9b5728e8d",
-    signature_sha256 = "ec100c9256deb375da3f07e6e5215612da22241bd7297f8250019e5729e74d4c",
-    signature_required=False,
-)
-
 autotools_package(
     name = "ding-libs",
     bdepend = [
@@ -364,7 +325,11 @@ autotools_package(
     src_prepare = """
 autoreconf -fi
 """,
-    source = ":ding-libs-src",
+    src_uri = "https://github.com/SSSD/ding-libs/releases/download/0.6.2/ding-libs-0.6.2.tar.gz",
+
+    sha256 = "e5f07f34f5921bcb5ccccfe3751c28497879a6451cd7b395e99e24d9b5728e8d",
+
+    signature_sha256 = "ec100c9256deb375da3f07e6e5215612da22241bd7297f8250019e5729e74d4c",
     version = "0.6.2",
     description = "SSSD helper libraries",
     homepage = "https://github.com/SSSD/ding-libs",
@@ -381,14 +346,6 @@ autoreconf -fi
 )
 
 # libunistring - Unicode string library
-download_source(
-    name = "libunistring-src",
-    src_uri = "https://mirrors.kernel.org/gnu/libunistring/libunistring-1.2.tar.xz",
-    sha256 = "632bd65ed74a881ca8a0309a1001c428bd1cbd5cd7ddbf8cedcd2e65f4dcdc44",
-    signature_sha256 = "91da3f033231a635dae9e0161c834b74e890e1eba19d4e5972b26c5c312ac2cb",
-    signature_required=False,
-)
-
 autotools_package(
     name = "libunistring",
     bdepend = [
@@ -400,7 +357,11 @@ autotools_package(
     src_prepare = """
 autoreconf -fi
 """,
-    source = ":libunistring-src",
+    src_uri = "https://mirrors.kernel.org/gnu/libunistring/libunistring-1.2.tar.xz",
+
+    sha256 = "632bd65ed74a881ca8a0309a1001c428bd1cbd5cd7ddbf8cedcd2e65f4dcdc44",
+
+    signature_sha256 = "91da3f033231a635dae9e0161c834b74e890e1eba19d4e5972b26c5c312ac2cb",
     version = "1.2",
     description = "Unicode string library",
     homepage = "https://www.gnu.org/software/libunistring/",
@@ -417,14 +378,6 @@ autoreconf -fi
 )
 
 # nss-pam-ldapd - LDAP client for NSS/PAM
-download_source(
-    name = "nss-pam-ldapd-src",
-    src_uri = "https://arthurdejong.org/nss-pam-ldapd/nss-pam-ldapd-0.9.12.tar.gz",
-    sha256 = "c6d661e74693cbf531a790631ca93b73f291fb23cc39465b09deb8da2bfb0e14",
-    signature_sha256 = "f79323f63f5c1c5b616931a56be75b4833a9275ff9f463ba575cdfd21796d8c4",
-    signature_required=False,
-)
-
 autotools_package(
     name = "nss-pam-ldapd",
     bdepend = [
@@ -436,7 +389,11 @@ autotools_package(
     src_prepare = """
 autoreconf -fi
 """,
-    source = ":nss-pam-ldapd-src",
+    src_uri = "https://arthurdejong.org/nss-pam-ldapd/nss-pam-ldapd-0.9.12.tar.gz",
+
+    sha256 = "c6d661e74693cbf531a790631ca93b73f291fb23cc39465b09deb8da2bfb0e14",
+
+    signature_sha256 = "f79323f63f5c1c5b616931a56be75b4833a9275ff9f463ba575cdfd21796d8c4",
     version = "0.9.12",
     description = "NSS and PAM module for LDAP",
     homepage = "https://arthurdejong.org/nss-pam-ldapd/",

@@ -1,16 +1,11 @@
 load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "f2fs-tools-src",
-    src_uri = "https://git.kernel.org/pub/scm/linux/kernel/git/jaegeuk/f2fs-tools.git/snapshot/f2fs-tools-1.16.0.tar.gz",
-    sha256 = "208c7a07e95383fbd7b466b5681590789dcb41f41bf197369c41a95383b57c5e",
-    signature_required = False,
-)
-
 autotools_package(
     name = "f2fs-tools",
-    source = ":f2fs-tools-src",
+    src_uri = "https://git.kernel.org/pub/scm/linux/kernel/git/jaegeuk/f2fs-tools.git/snapshot/f2fs-tools-1.16.0.tar.gz",
+
+    sha256 = "208c7a07e95383fbd7b466b5681590789dcb41f41bf197369c41a95383b57c5e",
     iuse = ["lz4", "lzo", "selinux"],
     use_configure = {
         "-lz4": "--without-lz4",

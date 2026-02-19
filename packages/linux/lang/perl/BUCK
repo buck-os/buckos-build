@@ -4,16 +4,11 @@ load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 # Perl - Practical Extraction and Report Language
 # =============================================================================
 
-download_source(
-    name = "perl-src",
-    src_uri = "https://www.cpan.org/src/5.0/perl-5.38.2.tar.xz",
-    sha256 = "d91115e90b896520e83d4de6b52f8254ef2b70a8d545ffab33200ea9f1cf29e8",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "perl",
-    source = ":perl-src",
+    src_uri = "https://www.cpan.org/src/5.0/perl-5.38.2.tar.xz",
+
+    sha256 = "d91115e90b896520e83d4de6b52f8254ef2b70a8d545ffab33200ea9f1cf29e8",
     iuse = [
         "berkdb",
         "gdbm",

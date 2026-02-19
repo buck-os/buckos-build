@@ -1,16 +1,11 @@
 load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 
-download_source(
-    name = "zlib-src",
-    src_uri = "https://mirror.buckos.org/z/zlib-1.3.1.tar.gz",
-    sha256 = "9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23",
-    signature_required = False,
-)
-
 # zlib uses a non-standard configure script that doesn't accept autotools args
 ebuild_package(
     name = "zlib",
-    source = ":zlib-src",
+    src_uri = "https://mirror.buckos.org/z/zlib-1.3.1.tar.gz",
+
+    sha256 = "9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23",
     version = "1.3.1",
     iuse = ["minizip", "static-libs"],
     use_defaults = [],

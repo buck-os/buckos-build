@@ -1,15 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 
-download_source(
-    name = "usockets-src",
-    src_uri = "https://github.com/uNetworking/uSockets/archive/refs/tags/v0.8.8.tar.gz",
-    sha256 = "d14d2efe1df767dbebfb8d6f5b52aa952faf66b30c822fbe464debaa0c5c0b17",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "usockets",
-    source = ":usockets-src",
+    src_uri = "https://github.com/uNetworking/uSockets/archive/refs/tags/v0.8.8.tar.gz",
+
+    sha256 = "d14d2efe1df767dbebfb8d6f5b52aa952faf66b30c822fbe464debaa0c5c0b17",
     version = "0.8.8",
     description = "Tiny evented I/O library for Linux and other platforms",
     homepage = "https://github.com/uNetworking/uSockets",

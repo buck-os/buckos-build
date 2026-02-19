@@ -2,16 +2,11 @@ load("//defs:package_defs.bzl", "download_source", "ebuild_package", "autotools_
 load("//defs:use_flags.bzl", "set_use_flags")
 
 # terraform - Infrastructure as code tool
-download_source(
-    name = "terraform-src",
-    src_uri = "https://github.com/hashicorp/terraform/archive/refs/tags/v1.7.3.tar.gz",
-    sha256 = "e99efa7e1e4e7fd37e7aaac5f6bd864260aa95b38a461899d0ec23069d614f19",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "terraform",
-    source = ":terraform-src",
+    src_uri = "https://github.com/hashicorp/terraform/archive/refs/tags/v1.7.3.tar.gz",
+
+    sha256 = "e99efa7e1e4e7fd37e7aaac5f6bd864260aa95b38a461899d0ec23069d614f19",
     version = "1.7.3",
     description = "Infrastructure as code software tool",
     homepage = "https://www.terraform.io",

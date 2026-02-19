@@ -1,16 +1,13 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "darktable-src",
-    src_uri = "https://github.com/darktable-org/darktable/releases/download/release-4.6.1/darktable-4.6.1.tar.xz",
-    sha256 = "16edc0a070293e2d3cda4ea10e49bda9bde932e23f9e62e2fa2e7ac74acf7afd",
-    signature_sha256 = "74ffb2d0b24f0e001ca0fb6ed53a0009a8b9331626cd57dfb3512118362b76de",
-)
-
 autotools_package(
     name = "darktable",
-    source = ":darktable-src",
+    src_uri = "https://github.com/darktable-org/darktable/releases/download/release-4.6.1/darktable-4.6.1.tar.xz",
+
+    sha256 = "16edc0a070293e2d3cda4ea10e49bda9bde932e23f9e62e2fa2e7ac74acf7afd",
+
+    signature_sha256 = "74ffb2d0b24f0e001ca0fb6ed53a0009a8b9331626cd57dfb3512118362b76de",
     iuse = [
         "/",
         "X",

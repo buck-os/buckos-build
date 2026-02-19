@@ -3,17 +3,13 @@ load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
 
 # tcsh - Enhanced version of the Berkeley UNIX C shell
 
-download_source(
-    name = "tcsh-src",
-    src_uri = "https://astron.com/pub/tcsh/tcsh-6.24.13.tar.gz",
-    sha256 = "1e927d52e9c85d162bf985f24d13c6ccede9beb880d86fec492ed15480a5c71a",
-    signature_sha256 = "e32a7e50053a56fd3b4a1c81900e9246131928df48b2b24c0848e03578f39b88",
-    signature_required = False,
-)
-
 autotools_package(
     name = "tcsh",
-    source = ":tcsh-src",
+    src_uri = "https://astron.com/pub/tcsh/tcsh-6.24.13.tar.gz",
+
+    sha256 = "1e927d52e9c85d162bf985f24d13c6ccede9beb880d86fec492ed15480a5c71a",
+
+    signature_sha256 = "e32a7e50053a56fd3b4a1c81900e9246131928df48b2b24c0848e03578f39b88",
     iuse = ["man", "nls"],
     use_configure = {
         "-man": "--disable-man",

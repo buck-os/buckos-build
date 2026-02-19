@@ -7,16 +7,11 @@ load("//defs:use_flags.bzl", "set_use_flags")
 # Modular initramfs generator with hook-based system.
 # Known for simplicity, speed, and excellent documentation.
 
-download_source(
-    name = "mkinitcpio-src",
-    src_uri = "https://github.com/archlinux/mkinitcpio/archive/refs/tags/v38.tar.gz",
-    sha256 = "a5a6b6877fda57aaf26b7ebc738ef1dc510d54efb16ede58519b55a1a08028b4",
-    signature_required = False,
-)
-
 autotools_package(
     name = "mkinitcpio",
-    source = ":mkinitcpio-src",
+    src_uri = "https://github.com/archlinux/mkinitcpio/archive/refs/tags/v38.tar.gz",
+
+    sha256 = "a5a6b6877fda57aaf26b7ebc738ef1dc510d54efb16ede58519b55a1a08028b4",
     version = "38",
     description = "Modular initramfs image creation utility (Arch Linux default)",
     homepage = "https://gitlab.archlinux.org/archlinux/mkinitcpio/mkinitcpio",

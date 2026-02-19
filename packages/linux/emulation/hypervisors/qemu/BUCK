@@ -12,22 +12,6 @@ download_source(
 
 # Separate sources for each QEMU variant to avoid parallel build race conditions
 download_source(
-    name = "qemu-guest-agent-src",
-    src_uri = "https://download.qemu.org/qemu-9.1.0.tar.xz",
-    sha256 = "816b7022a8ba7c2ac30e2e0cf973e826f6bcc8505339603212c5ede8e94d7834",
-    signature_sha256 = "ef1c9465e513753b89038275859142898536b6f8e9a622b4fd8e1db85f7a164d",
-    signature_required = False,
-)
-
-download_source(
-    name = "qemu-user-src",
-    src_uri = "https://download.qemu.org/qemu-9.1.0.tar.xz",
-    sha256 = "816b7022a8ba7c2ac30e2e0cf973e826f6bcc8505339603212c5ede8e94d7834",
-    signature_sha256 = "ef1c9465e513753b89038275859142898536b6f8e9a622b4fd8e1db85f7a164d",
-    signature_required = False,
-)
-
-download_source(
     name = "qemu-img-src",
     src_uri = "https://download.qemu.org/qemu-9.1.0.tar.xz",
     sha256 = "816b7022a8ba7c2ac30e2e0cf973e826f6bcc8505339603212c5ede8e94d7834",
@@ -308,7 +292,11 @@ autotools_package(
 
 autotools_package(
     name = "qemu-guest-agent",
-    source = ":qemu-guest-agent-src",
+    src_uri = "https://download.qemu.org/qemu-9.1.0.tar.xz",
+
+    sha256 = "816b7022a8ba7c2ac30e2e0cf973e826f6bcc8505339603212c5ede8e94d7834",
+
+    signature_sha256 = "ef1c9465e513753b89038275859142898536b6f8e9a622b4fd8e1db85f7a164d",
     version = "9.1.0",
     description = "QEMU Guest Agent for improved host-guest communication",
     homepage = "https://www.qemu.org/",
@@ -332,7 +320,11 @@ autotools_package(
 
 autotools_package(
     name = "qemu-user",
-    source = ":qemu-user-src",
+    src_uri = "https://download.qemu.org/qemu-9.1.0.tar.xz",
+
+    sha256 = "816b7022a8ba7c2ac30e2e0cf973e826f6bcc8505339603212c5ede8e94d7834",
+
+    signature_sha256 = "ef1c9465e513753b89038275859142898536b6f8e9a622b4fd8e1db85f7a164d",
     version = "9.1.0",
     description = "QEMU user-space emulation for running foreign binaries",
     homepage = "https://www.qemu.org/",

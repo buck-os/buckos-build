@@ -5,17 +5,12 @@ load("//defs:use_flags.bzl", "set_use_flags")
 # Uses the autotools_package macro with custom build steps since it has a simple Makefile
 # Original by Colin Percival: http://www.daemonology.net/bsdiff/
 
-download_source(
-    name = "bsdiff-src",
-    src_uri = "https://mirror.buckos.org/b/bsdiff-4.3.tar.gz",
-    sha256 = "18821588b2dc5bf159aa37d3bcb7b885d85ffd1e19f23a0c57a58723fea85f48",
-    signature_required = False,
-)
-
 autotools_package(
     name = "bsdiff",
     version = "4.3",
-    source = ":bsdiff-src",
+    src_uri = "https://mirror.buckos.org/b/bsdiff-4.3.tar.gz",
+
+    sha256 = "18821588b2dc5bf159aa37d3bcb7b885d85ffd1e19f23a0c57a58723fea85f48",
     description = "Binary diff/patch utility for efficient delta compression",
     homepage = "http://www.daemonology.net/bsdiff/",
     license = "BSD-2-Clause",

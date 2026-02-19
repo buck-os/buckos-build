@@ -1,15 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "cmake_package")
 
-download_source(
-    name = "bpfilter-src",
-    src_uri = "https://github.com/facebook/bpfilter/archive/refs/tags/v0.6.0.tar.gz",
-    sha256 = "2ef67624381b9a32a6be99f3a6362faeb8576290bf6ffaa7e24952d5693e4d9a",
-    signature_required = False,
-)
-
 cmake_package(
     name = "bpfilter",
-    source = ":bpfilter-src",
+    src_uri = "https://github.com/facebook/bpfilter/archive/refs/tags/v0.6.0.tar.gz",
+
+    sha256 = "2ef67624381b9a32a6be99f3a6362faeb8576290bf6ffaa7e24952d5693e4d9a",
     version = "0.6.0",
     description = "BPF-based packet filtering framework",
     homepage = "https://github.com/facebook/bpfilter",

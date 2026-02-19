@@ -12,16 +12,11 @@ load("//defs:use_flags.bzl", "set_use_flags")
 #   prometheus - Enable Prometheus metrics exporter
 #   threads   - Enable multi-threading support
 
-download_source(
-    name = "haproxy-src",
-    src_uri = "https://www.haproxy.org/download/3.0/src/haproxy-3.0.5.tar.gz",
-    sha256 = "ae38221e85aeba038a725efbef5bfe5e76671ba7959e5eb74c39fd079e5d002e",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "haproxy",
-    source = ":haproxy-src",
+    src_uri = "https://www.haproxy.org/download/3.0/src/haproxy-3.0.5.tar.gz",
+
+    sha256 = "ae38221e85aeba038a725efbef5bfe5e76671ba7959e5eb74c39fd079e5d002e",
     version = "3.0.5",
     description = "High-performance TCP/HTTP load balancer and proxy server",
     homepage = "https://www.haproxy.org/",

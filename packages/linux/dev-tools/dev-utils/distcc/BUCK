@@ -1,19 +1,14 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
 
-download_source(
-    name = "distcc-src",
-    src_uri = "https://github.com/distcc/distcc/releases/download/v3.4/distcc-3.4.tar.gz",
-    sha256 = "2b99edda9dad9dbf283933a02eace6de7423fe5650daa4a728c950e5cd37bd7d",
-    signature_required = False,
-)
-
 autotools_package(
     name = "distcc",
     # GitHub release tarball includes pre-generated configure script
     bdepend = [],
     src_prepare = "",
-    source = ":distcc-src",
+    src_uri = "https://github.com/distcc/distcc/releases/download/v3.4/distcc-3.4.tar.gz",
+
+    sha256 = "2b99edda9dad9dbf283933a02eace6de7423fe5650daa4a728c950e5cd37bd7d",
     version = "3.4",
     description = "Distributed C/C++/ObjC compiler with distcc-pump extensions",
     homepage = "https://github.com/distcc/distcc",

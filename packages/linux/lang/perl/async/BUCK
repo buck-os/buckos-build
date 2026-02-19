@@ -2,16 +2,11 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
 
 # AnyEvent - The DBI of event loop programming
-download_source(
-    name = "anyevent-src",
-    src_uri = "https://cpan.metacpan.org/authors/id/M/ML/MLEHMANN/AnyEvent-7.17.tar.gz",
-    sha256 = "50beea689c098fe4aaeb83806c40b9fe7f946d5769acf99f849f099091a4b985",
-    signature_required = False,
-)
-
 autotools_package(
     name = "anyevent",
-    source = ":anyevent-src",
+    src_uri = "https://cpan.metacpan.org/authors/id/M/ML/MLEHMANN/AnyEvent-7.17.tar.gz",
+
+    sha256 = "50beea689c098fe4aaeb83806c40b9fe7f946d5769acf99f849f099091a4b985",
     version = "7.17",
     description = "The DBI of event loop programming",
     homepage = "https://metacpan.org/pod/AnyEvent",
@@ -28,16 +23,11 @@ autotools_package(
 )
 
 # IO::Async - Asynchronous event-driven programming
-download_source(
-    name = "io-async-src",
-    src_uri = "https://cpan.metacpan.org/authors/id/P/PE/PEVANS/IO-Async-0.803.tar.gz",
-    sha256 = "dc94ec92296db27fede6c37bba8b9c748c571000db8e61f794198981973c97ce",
-    signature_required = False,
-)
-
 autotools_package(
     name = "io-async",
-    source = ":io-async-src",
+    src_uri = "https://cpan.metacpan.org/authors/id/P/PE/PEVANS/IO-Async-0.803.tar.gz",
+
+    sha256 = "dc94ec92296db27fede6c37bba8b9c748c571000db8e61f794198981973c97ce",
     version = "0.803",
     description = "Asynchronous event-driven programming",
     homepage = "https://metacpan.org/pod/IO::Async",
@@ -55,16 +45,11 @@ autotools_package(
 )
 
 # POE - Portable multitasking and networking framework
-download_source(
-    name = "poe-src",
-    src_uri = "https://cpan.metacpan.org/authors/id/B/BI/BINGOS/POE-1.370.tar.gz",
-    sha256 = "57de2b635b15fa3a31a9e55dd51122149e5414e1158ee82235062634ee18a693",
-    signature_required = False,
-)
-
 autotools_package(
     name = "poe",
-    source = ":poe-src",
+    src_uri = "https://cpan.metacpan.org/authors/id/B/BI/BINGOS/POE-1.370.tar.gz",
+
+    sha256 = "57de2b635b15fa3a31a9e55dd51122149e5414e1158ee82235062634ee18a693",
     version = "1.370",
     description = "Portable multitasking and networking framework",
     homepage = "https://metacpan.org/pod/POE",
@@ -81,16 +66,11 @@ autotools_package(
 )
 
 # Future - Represent an operation awaiting completion
-download_source(
-    name = "future-src",
-    src_uri = "https://cpan.metacpan.org/authors/id/P/PE/PEVANS/Future-0.50.tar.gz",
-    sha256 = "c035e3d9e69a3af144b33ac834dee9e65ad360f2a51db9f158dc342ecddd5f44",
-    signature_required = False,
-)
-
 autotools_package(
     name = "future",
-    source = ":future-src",
+    src_uri = "https://cpan.metacpan.org/authors/id/P/PE/PEVANS/Future-0.50.tar.gz",
+
+    sha256 = "c035e3d9e69a3af144b33ac834dee9e65ad360f2a51db9f158dc342ecddd5f44",
     version = "0.50",
     description = "Represent an operation awaiting completion",
     homepage = "https://metacpan.org/pod/Future",
@@ -107,16 +87,11 @@ autotools_package(
 )
 
 # Future::AsyncAwait - Deferred subroutine syntax for futures
-download_source(
-    name = "future-asyncawait-src",
-    src_uri = "https://cpan.metacpan.org/authors/id/P/PE/PEVANS/Future-AsyncAwait-0.66.tar.gz",
-    sha256 = "c6a0f4de462bf324b5baca1775d199ec3246a358c13db9b64acbfcdbe6e5ec21",
-    signature_required = False,
-)
-
 autotools_package(
     name = "future-asyncawait",
-    source = ":future-asyncawait-src",
+    src_uri = "https://cpan.metacpan.org/authors/id/P/PE/PEVANS/Future-AsyncAwait-0.66.tar.gz",
+
+    sha256 = "c6a0f4de462bf324b5baca1775d199ec3246a358c13db9b64acbfcdbe6e5ec21",
     version = "0.66",
     description = "Deferred subroutine syntax for futures",
     homepage = "https://metacpan.org/pod/Future::AsyncAwait",
@@ -134,16 +109,11 @@ autotools_package(
 )
 
 # Coro - The only real threads in perl
-download_source(
-    name = "coro-src",
-    src_uri = "https://cpan.metacpan.org/authors/id/M/ML/MLEHMANN/Coro-6.57.tar.gz",
-    sha256 = "1928e48033540e11ebf5506986dd101af78d2421d210f96599223b15d51714c6",
-    signature_required = False,
-)
-
 autotools_package(
     name = "coro",
-    source = ":coro-src",
+    src_uri = "https://cpan.metacpan.org/authors/id/M/ML/MLEHMANN/Coro-6.57.tar.gz",
+
+    sha256 = "1928e48033540e11ebf5506986dd101af78d2421d210f96599223b15d51714c6",
     version = "6.57",
     description = "The only real threads in perl",
     homepage = "https://metacpan.org/pod/Coro",
@@ -162,16 +132,11 @@ autotools_package(
 )
 
 # EV - Perl interface to libev, a high performance full-featured event loop
-download_source(
-    name = "ev-src",
-    src_uri = "https://cpan.metacpan.org/authors/id/M/ML/MLEHMANN/EV-4.34.tar.gz",
-    sha256 = "1211683dce7b6771f4ab710cc153712bdd77ba6157a13294d0bb73491fd06560",
-    signature_required = False,
-)
-
 autotools_package(
     name = "ev",
-    source = ":ev-src",
+    src_uri = "https://cpan.metacpan.org/authors/id/M/ML/MLEHMANN/EV-4.34.tar.gz",
+
+    sha256 = "1211683dce7b6771f4ab710cc153712bdd77ba6157a13294d0bb73491fd06560",
     version = "4.34",
     description = "Perl interface to libev, a high performance event loop",
     homepage = "https://metacpan.org/pod/EV",
@@ -189,17 +154,12 @@ autotools_package(
 )
 
 # Mojo::IOLoop - Minimalistic event loop
-download_source(
-    name = "mojo-ioloop-src",
-    src_uri = "https://cpan.metacpan.org/authors/id/S/SR/SRI/Mojolicious-9.37.tar.gz",
-    sha256 = "4fb8a0882ed17f864f7de96b94fab61706f967f919c572dcccede68e588e9810",
-    signature_required = False,
-)
-
 # Note: Mojo::IOLoop is part of Mojolicious, using the same source
 autotools_package(
     name = "mojo-ioloop",
-    source = ":mojo-ioloop-src",
+    src_uri = "https://cpan.metacpan.org/authors/id/S/SR/SRI/Mojolicious-9.37.tar.gz",
+
+    sha256 = "4fb8a0882ed17f864f7de96b94fab61706f967f919c572dcccede68e588e9810",
     version = "9.37",
     description = "Minimalistic event loop (part of Mojolicious)",
     homepage = "https://metacpan.org/pod/Mojo::IOLoop",
@@ -216,16 +176,11 @@ autotools_package(
 )
 
 # Guard - Safe cleanup blocks
-download_source(
-    name = "guard-src",
-    src_uri = "https://cpan.metacpan.org/authors/id/M/ML/MLEHMANN/Guard-1.023.tar.gz",
-    sha256 = "34c4ddf91fc93d1090d86da14df706d175b1610c67372c01e12ce9555d4dd1dc",
-    signature_required = False,
-)
-
 autotools_package(
     name = "guard",
-    source = ":guard-src",
+    src_uri = "https://cpan.metacpan.org/authors/id/M/ML/MLEHMANN/Guard-1.023.tar.gz",
+
+    sha256 = "34c4ddf91fc93d1090d86da14df706d175b1610c67372c01e12ce9555d4dd1dc",
     version = "1.023",
     description = "Safe cleanup blocks",
     homepage = "https://metacpan.org/pod/Guard",

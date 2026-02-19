@@ -3,16 +3,13 @@ load("//defs:use_flags.bzl", "set_use_flags")
 
 # HandBrake - Open-source video transcoder
 
-download_source(
-    name = "handbrake-src",
-    src_uri = "https://github.com/HandBrake/HandBrake/releases/download/1.8.0/HandBrake-1.8.0-source.tar.bz2",
-    sha256 = "8b1df7d6aa7aa3c2e12978f3473e301c4b60b4fedc749b75aa6f310b80310cef",
-    signature_sha256 = "56cb8ee4892d4c3dbcc00a28802f0134cc65d052da791e46a3459bcd6bffa09b",
-)
-
 autotools_package(
     name = "handbrake",
-    source = ":handbrake-src",
+    src_uri = "https://github.com/HandBrake/HandBrake/releases/download/1.8.0/HandBrake-1.8.0-source.tar.bz2",
+
+    sha256 = "8b1df7d6aa7aa3c2e12978f3473e301c4b60b4fedc749b75aa6f310b80310cef",
+
+    signature_sha256 = "56cb8ee4892d4c3dbcc00a28802f0134cc65d052da791e46a3459bcd6bffa09b",
     iuse = [
         "amf",
         "fdk",

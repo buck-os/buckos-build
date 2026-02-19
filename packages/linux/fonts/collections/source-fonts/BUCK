@@ -1,32 +1,13 @@
 load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 
 # Adobe Source Sans
-download_source(
-    name = "source-sans-src",
-    src_uri = "https://github.com/adobe-fonts/source-sans/releases/download/3.052R/OTF-source-sans-3.052R.zip",
-    sha256 = "a4ebbdea20b08ccbd7bf3665a9462454eefdd01d9a6307129d3b3d4672981074",
-    signature_required = False,
-)
-
 # Adobe Source Serif
-download_source(
-    name = "source-serif-src",
-    src_uri = "https://github.com/adobe-fonts/source-serif/releases/download/4.005R/source-serif-4.005_Desktop.zip",
-    sha256 = "549fdb8f9a682bd06944298621404969f6de77c2e422ff3b8244a1dcd6a0c425",
-    signature_required = False,
-)
-
 # Adobe Source Code Pro
-download_source(
-    name = "source-code-pro-src",
-    src_uri = "https://github.com/adobe-fonts/source-code-pro/releases/download/2.042R-u%2F1.062R-i%2F1.026R-vf/OTF-source-code-pro-2.042R-u_1.062R-i.zip",
-    sha256 = "754a2e3ebb945ae905d720ac5896b3b34acc9546dd6551ef9536869788629dae",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "source-sans",
-    source = ":source-sans-src",
+    src_uri = "https://github.com/adobe-fonts/source-sans/releases/download/3.052R/OTF-source-sans-3.052R.zip",
+
+    sha256 = "a4ebbdea20b08ccbd7bf3665a9462454eefdd01d9a6307129d3b3d4672981074",
     version = "3.052",
     description = "Adobe Source Sans - sans-serif typeface for user interfaces",
     homepage = "https://github.com/adobe-fonts/source-sans",
@@ -49,7 +30,9 @@ dodoc LICENSE.md README.md 2>/dev/null || true
 
 ebuild_package(
     name = "source-serif",
-    source = ":source-serif-src",
+    src_uri = "https://github.com/adobe-fonts/source-serif/releases/download/4.005R/source-serif-4.005_Desktop.zip",
+
+    sha256 = "549fdb8f9a682bd06944298621404969f6de77c2e422ff3b8244a1dcd6a0c425",
     version = "4.005",
     description = "Adobe Source Serif - serif typeface for setting long texts",
     homepage = "https://github.com/adobe-fonts/source-serif",
@@ -72,7 +55,9 @@ dodoc LICENSE.md README.md 2>/dev/null || true
 
 ebuild_package(
     name = "source-code-pro",
-    source = ":source-code-pro-src",
+    src_uri = "https://github.com/adobe-fonts/source-code-pro/releases/download/2.042R-u%2F1.062R-i%2F1.026R-vf/OTF-source-code-pro-2.042R-u_1.062R-i.zip",
+
+    sha256 = "754a2e3ebb945ae905d720ac5896b3b34acc9546dd6551ef9536869788629dae",
     version = "2.042",
     description = "Adobe Source Code Pro - monospaced font for coding environments",
     homepage = "https://github.com/adobe-fonts/source-code-pro",

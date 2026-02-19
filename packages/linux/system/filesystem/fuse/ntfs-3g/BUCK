@@ -1,13 +1,6 @@
 load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "ntfs-3g-src",
-    src_uri = "https://github.com/tuxera/ntfs-3g/archive/refs/tags/2022.10.3.tar.gz",
-    sha256 = "8bd7749ea9d8534c9f0664d48b576e90b96d45ec8803c9427f6ffaa2f0dde299",
-    signature_required = False,
-)
-
 autotools_package(
     name = "ntfs-3g",
     bdepend = [
@@ -19,7 +12,9 @@ autotools_package(
     src_prepare = """
 autoreconf -fi
 """,
-    source = ":ntfs-3g-src",
+    src_uri = "https://github.com/tuxera/ntfs-3g/archive/refs/tags/2022.10.3.tar.gz",
+
+    sha256 = "8bd7749ea9d8534c9f0664d48b576e90b96d45ec8803c9427f6ffaa2f0dde299",
     version = "2022.10.3",
     description = "NTFS filesystem driver with read/write support",
     homepage = "https://www.tuxera.com/community/open-source-ntfs-3g/",

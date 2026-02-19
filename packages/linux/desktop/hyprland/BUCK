@@ -5,16 +5,11 @@ load("//defs:use_flags.bzl", "set_use_flags")
 # Hyprland - Dynamic tiling Wayland compositor
 # =============================================================================
 
-download_source(
-    name = "hyprland-src",
-    src_uri = "https://github.com/hyprwm/Hyprland/releases/download/v0.36.0/source-v0.36.0.tar.gz",
-    sha256 = "8e44c379794663accf928458b5e363ed248d56fc5f267e6b3759146fdf1229bb",
-    signature_required = False,
-)
-
 autotools_package(
     name = "hyprland",
-    source = ":hyprland-src",
+    src_uri = "https://github.com/hyprwm/Hyprland/releases/download/v0.36.0/source-v0.36.0.tar.gz",
+
+    sha256 = "8e44c379794663accf928458b5e363ed248d56fc5f267e6b3759146fdf1229bb",
     iuse = ["X", "qtutils", "systemd"],
     use_configure = {
         "-X": "--without-x",

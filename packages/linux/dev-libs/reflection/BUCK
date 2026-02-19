@@ -1,14 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 
-download_source(
-    name = "reflect-src",
-    src_uri = "https://github.com/qlibs/reflect/archive/refs/tags/v1.2.4.tar.gz",
-    sha256 = "8844faf7e282d9b9841fdee89b3ccfa80a800d7c35b6575c5f64cfa5946e0854",
-)
-
 ebuild_package(
     name = "reflect",
-    source = ":reflect-src",
+    src_uri = "https://github.com/qlibs/reflect/archive/refs/tags/v1.2.4.tar.gz",
+
+    sha256 = "8844faf7e282d9b9841fdee89b3ccfa80a800d7c35b6575c5f64cfa5946e0854",
     version = "1.2.4",
     description = "C++20 Static Reflection library",
     homepage = "https://github.com/qlibs/reflect",

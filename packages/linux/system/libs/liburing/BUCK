@@ -3,16 +3,11 @@ load("//defs:use_flags.bzl", "set_use_flags")
 
 # liburing - io_uring library interface
 
-download_source(
-    name = "liburing-src",
-    src_uri = "https://github.com/axboe/liburing/archive/refs/tags/liburing-2.5.tar.gz",
-    sha256 = "456f5f882165630f0dc7b75e8fd53bd01a955d5d4720729b4323097e6e9f2a98",
-    signature_required = False,
-)
-
 autotools_package(
     name = "liburing",
-    source = ":liburing-src",
+    src_uri = "https://github.com/axboe/liburing/archive/refs/tags/liburing-2.5.tar.gz",
+
+    sha256 = "456f5f882165630f0dc7b75e8fd53bd01a955d5d4720729b4323097e6e9f2a98",
     iuse = ["examples", "static-libs"],
     use_configure = {
         "-examples": "--disable-examples",

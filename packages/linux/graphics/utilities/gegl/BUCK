@@ -1,16 +1,11 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "gegl-src",
-    src_uri = "https://download.gimp.org/gegl/0.4/gegl-0.4.48.tar.xz",
-    sha256 = "418c26d94be8805d7d98f6de0c6825ca26bd74fcacb6c188da47533d9ee28247",
-    signature_required = False,
-)
-
 autotools_package(
     name = "gegl",
-    source = ":gegl-src",
+    src_uri = "https://download.gimp.org/gegl/0.4/gegl-0.4.48.tar.xz",
+
+    sha256 = "418c26d94be8805d7d98f6de0c6825ca26bd74fcacb6c188da47533d9ee28247",
     iuse = [
         "cairo",
         "debug",

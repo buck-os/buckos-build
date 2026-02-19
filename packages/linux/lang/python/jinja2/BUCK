@@ -1,15 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 
-download_source(
-    name = "markupsafe-src",
-    src_uri = "https://files.pythonhosted.org/packages/b2/97/5d42485e71dfc078108a86d6de8fa46db44a1a9295e89c5d6d4a06e23a62/markupsafe-3.0.2.tar.gz",
-    sha256 = "ee55d3edf80167e48ea11a923c7386f4669df67d7994554387f84e7d8b0a2bf0",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "markupsafe",
-    source = ":markupsafe-src",
+    src_uri = "https://files.pythonhosted.org/packages/b2/97/5d42485e71dfc078108a86d6de8fa46db44a1a9295e89c5d6d4a06e23a62/markupsafe-3.0.2.tar.gz",
+
+    sha256 = "ee55d3edf80167e48ea11a923c7386f4669df67d7994554387f84e7d8b0a2bf0",
     iuse = ["native-extensions"],
     use_configure = {
         "-native-extensions": "--disable-native-extensions",
@@ -33,16 +28,11 @@ ebuild_package(
     visibility = ["PUBLIC"],
 )
 
-download_source(
-    name = "jinja2-src",
-    src_uri = "https://files.pythonhosted.org/packages/df/bf/f7da0350254c0ed7c72f3e33cef02e048281fec7ecec5f032d4aac52226b/jinja2-3.1.6.tar.gz",
-    sha256 = "0137fb05990d35f1275a587e9aee6d56da821fc83491a0fb838183be43f66d6d",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "jinja2",
-    source = ":jinja2-src",
+    src_uri = "https://files.pythonhosted.org/packages/df/bf/f7da0350254c0ed7c72f3e33cef02e048281fec7ecec5f032d4aac52226b/jinja2-3.1.6.tar.gz",
+
+    sha256 = "0137fb05990d35f1275a587e9aee6d56da821fc83491a0fb838183be43f66d6d",
     version = "3.1.6",
     description = "A modern and designer-friendly templating language for Python",
     homepage = "https://palletsprojects.com/p/jinja/",
@@ -65,16 +55,11 @@ ebuild_package(
     visibility = ["PUBLIC"],
 )
 
-download_source(
-    name = "python-mako-src",
-    src_uri = "https://files.pythonhosted.org/packages/5f/d9/8518279534ed7dace1795d5a47e49d5299dd0994eed1053996402a8902f9/mako-1.3.8.tar.gz",
-    sha256 = "577b97e414580d3e088d47c2dbbe9594aa7a5146ed2875d4dfa9075af2dd3cc8",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "python-mako",
-    source = ":python-mako-src",
+    src_uri = "https://files.pythonhosted.org/packages/5f/d9/8518279534ed7dace1795d5a47e49d5299dd0994eed1053996402a8902f9/mako-1.3.8.tar.gz",
+
+    sha256 = "577b97e414580d3e088d47c2dbbe9594aa7a5146ed2875d4dfa9075af2dd3cc8",
     version = "1.3.8",
     description = "A Python templating language",
     homepage = "https://www.makotemplates.org/",

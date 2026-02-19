@@ -7,16 +7,11 @@ load("//defs:use_flags.bzl", "set_use_flags")
 # The standard Debian/Ubuntu initramfs generator.
 # Uses hook-based architecture with scripts in /etc/initramfs-tools.
 
-download_source(
-    name = "initramfs-tools-src",
-    src_uri = "https://mirror.buckos.org/i/initramfs-tools-v0.142.tar.gz",
-    sha256 = "27a78cc25acc3ca3d9c78deca165bf001b09b260ce25a3f3756e47a0e7bc0554",
-    signature_required = False,
-)
-
 autotools_package(
     name = "initramfs-tools",
-    source = ":initramfs-tools-src",
+    src_uri = "https://mirror.buckos.org/i/initramfs-tools-v0.142.tar.gz",
+
+    sha256 = "27a78cc25acc3ca3d9c78deca165bf001b09b260ce25a3f3756e47a0e7bc0554",
     version = "0.142",
     description = "Generic initramfs generation tool (Debian/Ubuntu default)",
     homepage = "https://salsa.debian.org/kernel-team/initramfs-tools",

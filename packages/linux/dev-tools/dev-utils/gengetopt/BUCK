@@ -2,14 +2,6 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
 
 # gengetopt - Generate C code to parse command-line arguments
-download_source(
-    name = "gengetopt-src",
-    src_uri = "https://mirrors.kernel.org/gnu/gengetopt/gengetopt-2.23.tar.xz",
-    sha256 = "b941aec9011864978dd7fdeb052b1943535824169d2aa2b0e7eae9ab807584ac",
-    signature_sha256 = "8b99708453506b258e100c7784bc404349987e403b660aba1d8959479efaca5f",
-    signature_required=False,
-)
-
 autotools_package(
     name = "gengetopt",
     # GNU release tarball includes pre-generated configure script
@@ -17,7 +9,11 @@ autotools_package(
         "//packages/linux/dev-tools/documentation/texinfo:texinfo",
     ],
     src_prepare = "",
-    source = ":gengetopt-src",
+    src_uri = "https://mirrors.kernel.org/gnu/gengetopt/gengetopt-2.23.tar.xz",
+
+    sha256 = "b941aec9011864978dd7fdeb052b1943535824169d2aa2b0e7eae9ab807584ac",
+
+    signature_sha256 = "8b99708453506b258e100c7784bc404349987e403b660aba1d8959479efaca5f",
     version = "2.23",
     description = "Generate C code to parse command-line arguments",
     homepage = "https://www.gnu.org/software/gengetopt/",

@@ -1,13 +1,6 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
 
-download_source(
-    name = "splint-src",
-    src_uri = "https://splint.org/downloads/splint-3.1.2.src.tgz",
-    sha256 = "c78db643df663313e3fa9d565118391825dd937617819c6efc7966cdf444fb0a",
-    signature_required = False,
-)
-
 autotools_package(
     name = "splint",
     # Official release tarball includes pre-generated configure script
@@ -19,7 +12,9 @@ autotools_package(
 export BISON=no
 make -j1
 """,
-    source = ":splint-src",
+    src_uri = "https://splint.org/downloads/splint-3.1.2.src.tgz",
+
+    sha256 = "c78db643df663313e3fa9d565118391825dd937617819c6efc7966cdf444fb0a",
     version = "3.1.2",
     description = "A tool for statically checking C programs for security vulnerabilities",
     homepage = "https://splint.org/",

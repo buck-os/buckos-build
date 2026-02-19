@@ -1,14 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 
-download_source(
-    name = "verilog-eval-src",
-    src_uri = "https://github.com/NVlabs/verilog-eval/archive/refs/heads/main.tar.gz",
-    sha256 = "26043d72e0ccd743742be93047c8e16af22c10ed05af05686b029d82cb63a635",
-)
-
 autotools_package(
     name = "verilog-eval",
-    source = ":verilog-eval-src",
+    src_uri = "https://github.com/NVlabs/verilog-eval/archive/refs/heads/main.tar.gz",
+
+    sha256 = "26043d72e0ccd743742be93047c8e16af22c10ed05af05686b029d82cb63a635",
     version = "2.0.0",
     description = "VerilogEval - LLM evaluation harness for Verilog code generation",
     homepage = "https://github.com/NVlabs/verilog-eval",

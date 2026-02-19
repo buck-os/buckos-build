@@ -1,16 +1,11 @@
 load("//defs:package_defs.bzl","autotools_package", "download_source", "make_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "unionfs-fuse-src",
-    src_uri = "https://github.com/rpodgorny/unionfs-fuse/archive/refs/tags/v3.4.tar.gz",
-    sha256 = "fc315f13f6ba1a736eab86981dde2ad417926f61cec5eff23bcaeca93235377c",
-    signature_required = False,
-)
-
 make_package(
     name = "unionfs-fuse",
-    source = ":unionfs-fuse-src",
+    src_uri = "https://github.com/rpodgorny/unionfs-fuse/archive/refs/tags/v3.4.tar.gz",
+
+    sha256 = "fc315f13f6ba1a736eab86981dde2ad417926f61cec5eff23bcaeca93235377c",
     version = "3.4",
     description = "Union filesystem implementation using FUSE",
     homepage = "https://github.com/rpodgorny/unionfs-fuse",

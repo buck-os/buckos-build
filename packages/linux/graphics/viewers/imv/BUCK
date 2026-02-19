@@ -1,16 +1,11 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "imv-src",
-    src_uri = "https://git.sr.ht/~exec64/imv/archive/v4.5.0.tar.gz",
-    sha256 = "3b11991a86942d757830015033b1c3a3cc915be2f0c20fee7bc7493be560cbcb",
-    signature_required = False,
-)
-
 autotools_package(
     name = "imv",
-    source = ":imv-src",
+    src_uri = "https://git.sr.ht/~exec64/imv/archive/v4.5.0.tar.gz",
+
+    sha256 = "3b11991a86942d757830015033b1c3a3cc915be2f0c20fee7bc7493be560cbcb",
     iuse = [
         "X",
         "bmp",

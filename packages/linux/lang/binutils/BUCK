@@ -4,17 +4,13 @@ load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 # Binutils - GNU Binary Utilities
 # =============================================================================
 
-download_source(
-    name = "binutils-src",
-    src_uri = "https://mirror.buckos.org/b/binutils-2.45.1.tar.xz",
-    sha256 = "5fe101e6fe9d18fdec95962d81ed670fdee5f37e3f48f0bef87bddf862513aa5",
-    signature_sha256 = "6a3cb8380ec47a98310e90d42c65be7617f3b6f3ea08d90ea98f37909e0407a2",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "binutils",
-    source = ":binutils-src",
+    src_uri = "https://mirror.buckos.org/b/binutils-2.45.1.tar.xz",
+
+    sha256 = "5fe101e6fe9d18fdec95962d81ed670fdee5f37e3f48f0bef87bddf862513aa5",
+
+    signature_sha256 = "6a3cb8380ec47a98310e90d42c65be7617f3b6f3ea08d90ea98f37909e0407a2",
     iuse = [
         "cet",
         "debuginfod",

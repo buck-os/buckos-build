@@ -5,17 +5,13 @@ load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 # =============================================================================
 
 # runc - OCI container runtime
-download_source(
-    name = "runc-src",
-    src_uri = "https://github.com/opencontainers/runc/releases/download/v1.1.12/runc.tar.xz",
-    sha256 = "47d9e34500e478d860512b3b646724ee4b9e638692122ddaa82af417668ca4d7",
-    signature_sha256 = "15e8eb638234ae56eede9f92ede33f010437c4cdb96f73d34315435dbafde9fc",
-    signature_required=False,
-)
-
 ebuild_package(
     name = "runc",
-    source = ":runc-src",
+    src_uri = "https://github.com/opencontainers/runc/releases/download/v1.1.12/runc.tar.xz",
+
+    sha256 = "47d9e34500e478d860512b3b646724ee4b9e638692122ddaa82af417668ca4d7",
+
+    signature_sha256 = "15e8eb638234ae56eede9f92ede33f010437c4cdb96f73d34315435dbafde9fc",
     iuse = [
         "apparmor",
         "hardened",
@@ -58,17 +54,13 @@ install -m 755 runc "$DESTDIR/usr/bin/runc"
 )
 
 # crun - Fast and lightweight OCI runtime
-download_source(
-    name = "crun-src",
-    src_uri = "https://github.com/containers/crun/releases/download/1.14.4/crun-1.14.4.tar.xz",
-    sha256 = "fd6af195a73ae9bf3aea1a6c976a914492324c828542f35a7f1570a659f2e512",
-    signature_sha256 = "17a21e6d26d2c45d6bfa00d9553a66e3e5555096ae8c9da65a06db1fad4cd407",
-    signature_required=False,
-)
-
 ebuild_package(
     name = "crun",
-    source = ":crun-src",
+    src_uri = "https://github.com/containers/crun/releases/download/1.14.4/crun-1.14.4.tar.xz",
+
+    sha256 = "fd6af195a73ae9bf3aea1a6c976a914492324c828542f35a7f1570a659f2e512",
+
+    signature_sha256 = "17a21e6d26d2c45d6bfa00d9553a66e3e5555096ae8c9da65a06db1fad4cd407",
     version = "1.14.4",
     description = "Fast and lightweight fully featured OCI runtime and C library",
     homepage = "https://github.com/containers/crun",
@@ -91,16 +83,11 @@ make install DESTDIR="$DESTDIR"
 )
 
 # conmon - Container monitor
-download_source(
-    name = "conmon-src",
-    src_uri = "https://github.com/containers/conmon/archive/refs/tags/v2.1.10.tar.gz",
-    sha256 = "455fabcbd4a5a5dc5e05374a71b62dc0b08ee865c2ba398e9dc9acac1ea1836a",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "conmon",
-    source = ":conmon-src",
+    src_uri = "https://github.com/containers/conmon/archive/refs/tags/v2.1.10.tar.gz",
+
+    sha256 = "455fabcbd4a5a5dc5e05374a71b62dc0b08ee865c2ba398e9dc9acac1ea1836a",
     version = "2.1.10",
     description = "OCI container runtime monitor",
     homepage = "https://github.com/containers/conmon",

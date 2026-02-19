@@ -5,16 +5,11 @@ load("//defs:use_flags.bzl", "set_use_flags")
 # SDDM - Simple Desktop Display Manager (KDE default)
 # =============================================================================
 
-download_source(
-    name = "sddm-src",
-    src_uri = "https://github.com/sddm/sddm/archive/refs/tags/v0.21.0.tar.gz",
-    sha256 = "f895de2683627e969e4849dbfbbb2b500787481ca5ba0de6d6dfdae5f1549abf",
-    signature_required = False,
-)
-
 cmake_package(
     name = "sddm",
-    source = ":sddm-src",
+    src_uri = "https://github.com/sddm/sddm/archive/refs/tags/v0.21.0.tar.gz",
+
+    sha256 = "f895de2683627e969e4849dbfbbb2b500787481ca5ba0de6d6dfdae5f1549abf",
     version = "0.21.0",
     description = "Simple Desktop Display Manager - QML-based",
     homepage = "https://github.com/sddm/sddm",

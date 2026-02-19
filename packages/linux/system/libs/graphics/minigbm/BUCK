@@ -2,16 +2,11 @@ load("//defs:package_defs.bzl","download_source", "make_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
 # NOTE: Using intel/minigbm GitHub mirror as chromium.googlesource blocks CI/CD
-download_source(
-    name = "minigbm-src",
-    src_uri = "https://github.com/intel/minigbm/archive/refs/heads/master.tar.gz",
-    sha256 = "8244c0eea5c9fb39a8f8bf8c8e7522b171a83cb6bf2c402719d86ab5bb0dc87a",
-    signature_required = False,
-)
-
 make_package(
     name = "minigbm",
-    source = ":minigbm-src",
+    src_uri = "https://github.com/intel/minigbm/archive/refs/heads/master.tar.gz",
+
+    sha256 = "8244c0eea5c9fb39a8f8bf8c8e7522b171a83cb6bf2c402719d86ab5bb0dc87a",
     version = "main",
     description = "Mini GBM implementation for ChromeOS",
     homepage = "https://chromium.googlesource.com/chromiumos/platform/minigbm",

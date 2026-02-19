@@ -5,13 +5,6 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package", "cmake_p
 load("//defs:use_flags.bzl", "set_use_flags")
 
 # oath-toolkit - TOTP/HOTP authentication
-download_source(
-    name = "oath-toolkit-src",
-    src_uri = "https://download.savannah.nongnu.org/releases/oath-toolkit/oath-toolkit-2.6.9.tar.gz",
-    sha256 = "333ac831c8f1a6dbd7feb897339bba453ff34d3b0f4cfaa6b5a20dba55c8e985",
-    signature_required = False,
-)
-
 autotools_package(
     name = "oath-toolkit",
     bdepend = [
@@ -22,7 +15,9 @@ autotools_package(
     src_prepare = """
 autoreconf -fi
 """,
-    source = ":oath-toolkit-src",
+    src_uri = "https://download.savannah.nongnu.org/releases/oath-toolkit/oath-toolkit-2.6.9.tar.gz",
+
+    sha256 = "333ac831c8f1a6dbd7feb897339bba453ff34d3b0f4cfaa6b5a20dba55c8e985",
     iuse = ["pam", "static-libs"],
     use_cmake = {
         "-pam": "-DENABLE_PAM=OFF",
@@ -51,13 +46,6 @@ autoreconf -fi
 )
 
 # Google Authenticator PAM module
-download_source(
-    name = "google-authenticator-src",
-    src_uri = "https://github.com/google/google-authenticator-libpam/archive/refs/tags/1.10.tar.gz",
-    sha256 = "6fe08e7a73ed8f176569c3ad6ad95a5677873e59300d463a2d962c92685a8596",
-    signature_required = False,
-)
-
 autotools_package(
     name = "google-authenticator",
     bdepend = [
@@ -68,7 +56,9 @@ autotools_package(
     src_prepare = """
 autoreconf -fi
 """,
-    source = ":google-authenticator-src",
+    src_uri = "https://github.com/google/google-authenticator-libpam/archive/refs/tags/1.10.tar.gz",
+
+    sha256 = "6fe08e7a73ed8f176569c3ad6ad95a5677873e59300d463a2d962c92685a8596",
     version = "1.10",
     description = "Google Authenticator PAM module for two-factor authentication",
     homepage = "https://github.com/google/google-authenticator-libpam",
@@ -132,13 +122,6 @@ cmake_package(
 )
 
 # pam-u2f - U2F PAM module
-download_source(
-    name = "pam-u2f-src",
-    src_uri = "https://developers.yubico.com/pam-u2f/Releases/pam_u2f-1.3.0.tar.gz",
-    sha256 = "72360c6875485eb4df409da8f8f52b17893f05e4d998529c238814480e115220",
-    signature_required = False,
-)
-
 autotools_package(
     name = "pam-u2f",
     bdepend = [
@@ -149,7 +132,9 @@ autotools_package(
     src_prepare = """
 autoreconf -fi
 """,
-    source = ":pam-u2f-src",
+    src_uri = "https://developers.yubico.com/pam-u2f/Releases/pam_u2f-1.3.0.tar.gz",
+
+    sha256 = "72360c6875485eb4df409da8f8f52b17893f05e4d998529c238814480e115220",
     version = "1.3.0",
     description = "PAM module for U2F and FIDO2 authentication",
     homepage = "https://developers.yubico.com/pam-u2f/",
@@ -166,13 +151,6 @@ autoreconf -fi
 )
 
 # YubiKey Manager
-download_source(
-    name = "yubikey-manager-src",
-    src_uri = "https://github.com/Yubico/yubikey-manager/archive/refs/tags/5.4.0.tar.gz",
-    sha256 = "babd34dffbc53445416d1e27e5e5859c95615252f066d0a22cb51653f546af17",
-    signature_required = False,
-)
-
 autotools_package(
     name = "yubikey-manager",
     bdepend = [
@@ -183,7 +161,9 @@ autotools_package(
     src_prepare = """
 autoreconf -fi
 """,
-    source = ":yubikey-manager-src",
+    src_uri = "https://github.com/Yubico/yubikey-manager/archive/refs/tags/5.4.0.tar.gz",
+
+    sha256 = "babd34dffbc53445416d1e27e5e5859c95615252f066d0a22cb51653f546af17",
     version = "5.4.0",
     description = "YubiKey configuration and management tool",
     homepage = "https://developers.yubico.com/yubikey-manager/",
@@ -205,13 +185,6 @@ autoreconf -fi
 )
 
 # yubico-pam - YubiKey PAM module
-download_source(
-    name = "yubico-pam-src",
-    src_uri = "https://developers.yubico.com/yubico-pam/Releases/pam_yubico-2.27.tar.gz",
-    sha256 = "63d02788852644d871746e1a7a1d16c272c583c226f62576f5ad232a6a44e18c",
-    signature_required = False,
-)
-
 autotools_package(
     name = "yubico-pam",
     bdepend = [
@@ -222,7 +195,9 @@ autotools_package(
     src_prepare = """
 autoreconf -fi
 """,
-    source = ":yubico-pam-src",
+    src_uri = "https://developers.yubico.com/yubico-pam/Releases/pam_yubico-2.27.tar.gz",
+
+    sha256 = "63d02788852644d871746e1a7a1d16c272c583c226f62576f5ad232a6a44e18c",
     version = "2.27",
     description = "YubiKey PAM module for OTP and challenge-response authentication",
     homepage = "https://developers.yubico.com/yubico-pam/",
@@ -240,13 +215,6 @@ autoreconf -fi
 )
 
 # ykclient - Yubico client library
-download_source(
-    name = "ykclient-src",
-    src_uri = "https://developers.yubico.com/yubico-c-client/Releases/ykclient-2.15.tar.gz",
-    sha256 = "f461cdefe7955d58bbd09d0eb7a15b36cb3576b88adbd68008f40ea978ea5016",
-    signature_required = False,
-)
-
 autotools_package(
     name = "ykclient",
     bdepend = [
@@ -257,7 +225,9 @@ autotools_package(
     src_prepare = """
 autoreconf -fi
 """,
-    source = ":ykclient-src",
+    src_uri = "https://developers.yubico.com/yubico-c-client/Releases/ykclient-2.15.tar.gz",
+
+    sha256 = "f461cdefe7955d58bbd09d0eb7a15b36cb3576b88adbd68008f40ea978ea5016",
     version = "2.15",
     description = "Yubico client C library",
     homepage = "https://developers.yubico.com/yubico-c-client/",
@@ -275,14 +245,6 @@ autoreconf -fi
 )
 
 # ykpers - YubiKey personalization library
-download_source(
-    name = "ykpers-src",
-    src_uri = "https://developers.yubico.com/yubikey-personalization/Releases/ykpers-1.20.0.tar.gz",
-    sha256 = "0ec84d0ea862f45a7d85a1a3afe5e60b8da42df211bb7d27a50f486e31a79b93",
-    signature_sha256 = "0a230ccb2ca37886c044e58e5216ff1142496bb0b43a23581b877852fdc20a22",
-    signature_required=False,
-)
-
 autotools_package(
     name = "ykpers",
     bdepend = [
@@ -293,7 +255,11 @@ autotools_package(
     src_prepare = """
 autoreconf -fi
 """,
-    source = ":ykpers-src",
+    src_uri = "https://developers.yubico.com/yubikey-personalization/Releases/ykpers-1.20.0.tar.gz",
+
+    sha256 = "0ec84d0ea862f45a7d85a1a3afe5e60b8da42df211bb7d27a50f486e31a79b93",
+
+    signature_sha256 = "0a230ccb2ca37886c044e58e5216ff1142496bb0b43a23581b877852fdc20a22",
     version = "1.20.0",
     description = "YubiKey personalization library and tools",
     homepage = "https://developers.yubico.com/yubikey-personalization/",
@@ -312,14 +278,6 @@ autoreconf -fi
 )
 
 # libyubikey - YubiKey low-level library
-download_source(
-    name = "libyubikey-src",
-    src_uri = "https://developers.yubico.com/yubico-c/Releases/libyubikey-1.13.tar.gz",
-    sha256 = "04edd0eb09cb665a05d808c58e1985f25bb7c5254d2849f36a0658ffc51c3401",
-    signature_sha256 = "0332791bd12e89ccca84d064fcace65c7858131695068638f5fde4485525900b",
-    signature_required=False,
-)
-
 autotools_package(
     name = "libyubikey",
     bdepend = [
@@ -330,7 +288,11 @@ autotools_package(
     src_prepare = """
 autoreconf -fi
 """,
-    source = ":libyubikey-src",
+    src_uri = "https://developers.yubico.com/yubico-c/Releases/libyubikey-1.13.tar.gz",
+
+    sha256 = "04edd0eb09cb665a05d808c58e1985f25bb7c5254d2849f36a0658ffc51c3401",
+
+    signature_sha256 = "0332791bd12e89ccca84d064fcace65c7858131695068638f5fde4485525900b",
     version = "1.13",
     description = "YubiKey C library for low-level operations",
     homepage = "https://developers.yubico.com/yubico-c/",

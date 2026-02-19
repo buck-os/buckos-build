@@ -1,15 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "meson_package")
 
-download_source(
-    name = "wshowkeys-src",
-    src_uri = "https://git.sr.ht/~sircmpwn/wshowkeys/archive/1.0.tar.gz",
-    sha256 = "78544bcde5cf63183647e5b5f5c6ca3320208e4471103e7a277dbb3775e4a6c2",
-    signature_required = False,
-)
-
 meson_package(
     name = "wshowkeys",
-    source = ":wshowkeys-src",
+    src_uri = "https://git.sr.ht/~sircmpwn/wshowkeys/archive/1.0.tar.gz",
+
+    sha256 = "78544bcde5cf63183647e5b5f5c6ca3320208e4471103e7a277dbb3775e4a6c2",
     version = "1.0",
     description = "Displays keys being pressed on a Wayland compositor",
     homepage = "https://git.sr.ht/~sircmpwn/wshowkeys",

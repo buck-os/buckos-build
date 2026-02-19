@@ -2,16 +2,11 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package")
 
 # pciutils - PCI bus configuration space access library and tools
 # Provides: lspci, setpci, update-pciids
-download_source(
-    name = "pciutils-src",
-    src_uri = "https://mirrors.kernel.org/pub/software/utils/pciutils/pciutils-3.13.0.tar.xz",
-    sha256 = "77f11f78298502634d1af50308f15a5788629f6cf45cba376f5009aea4cb4926",
-    signature_required = False,
-)
-
 autotools_package(
     name = "pciutils",
-    source = ":pciutils-src",
+    src_uri = "https://mirrors.kernel.org/pub/software/utils/pciutils/pciutils-3.13.0.tar.xz",
+
+    sha256 = "77f11f78298502634d1af50308f15a5788629f6cf45cba376f5009aea4cb4926",
     version = "3.13.0",
     description = "PCI bus configuration space access library and tools",
     homepage = "https://mj.ucw.cz/sw/pciutils/",

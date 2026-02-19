@@ -3,17 +3,13 @@ load("//defs:use_flags.bzl", "set_use_flags")
 
 # slang - Multi-platform programmer's library designed for creating multi-platform software
 
-download_source(
-    name = "slang-src",
-    src_uri = "https://www.jedsoft.org/releases/slang/slang-2.3.3.tar.bz2",
-    sha256 = "f9145054ae131973c61208ea82486d5dd10e3c5cdad23b7c4a0617743c8f5a18",
-    signature_sha256 = "dc3380cd53b573bd93d94e5a1ab9eaf9c98e88fa0c72c4de0168aa431e41de75",
-    signature_required=False,
-)
-
 autotools_package(
     name = "slang",
-    source = ":slang-src",
+    src_uri = "https://www.jedsoft.org/releases/slang/slang-2.3.3.tar.bz2",
+
+    sha256 = "f9145054ae131973c61208ea82486d5dd10e3c5cdad23b7c4a0617743c8f5a18",
+
+    signature_sha256 = "dc3380cd53b573bd93d94e5a1ab9eaf9c98e88fa0c72c4de0168aa431e41de75",
     iuse = [
         "cjk",
         "pcre",

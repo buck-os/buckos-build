@@ -5,17 +5,13 @@ load("//defs:use_flags.bzl", "set_use_flags")
 # Awesome - Highly configurable tiling window manager
 # =============================================================================
 
-download_source(
-    name = "awesome-src",
-    src_uri = "https://github.com/awesomeWM/awesome/releases/download/v4.3/awesome-4.3.tar.xz",
-    sha256 = "78264d6f012350b371e339127aca485260bc0aa935eff578ba75ce1a00e11753",
-    signature_sha256 = "6afb73289caed82173d56a8e496658fdd338a0dadc436fd074f1261d2cd229fd",
-    signature_required=False,
-)
-
 autotools_package(
     name = "awesome",
-    source = ":awesome-src",
+    src_uri = "https://github.com/awesomeWM/awesome/releases/download/v4.3/awesome-4.3.tar.xz",
+
+    sha256 = "78264d6f012350b371e339127aca485260bc0aa935eff578ba75ce1a00e11753",
+
+    signature_sha256 = "6afb73289caed82173d56a8e496658fdd338a0dadc436fd074f1261d2cd229fd",
     iuse = ["dbus", "gnome"],
     use_configure = {
         "-dbus": "--disable-dbus",

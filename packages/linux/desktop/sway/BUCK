@@ -179,16 +179,11 @@ meson setup "${BUILD_DIR:-build}" \\
     visibility = ["PUBLIC"],
 )
 
-download_source(
-    name = "wlroots-src",
-    src_uri = "https://gitlab.freedesktop.org/wlroots/wlroots/-/releases/0.17.1/downloads/wlroots-0.17.1.tar.gz",
-    sha256 = "d58d68e3f90d92de4d49fa43b4d75dc78f8af1d920d090729331cefbdfcf361b",
-    signature_required=False,
-)
-
 meson_package(
     name = "wlroots",
-    source = ":wlroots-src",
+    src_uri = "https://gitlab.freedesktop.org/wlroots/wlroots/-/releases/0.17.1/downloads/wlroots-0.17.1.tar.gz",
+
+    sha256 = "d58d68e3f90d92de4d49fa43b4d75dc78f8af1d920d090729331cefbdfcf361b",
     version = "0.17.1",
     description = "wlroots - Modular Wayland compositor library",
     homepage = "https://gitlab.freedesktop.org/wlroots/wlroots",

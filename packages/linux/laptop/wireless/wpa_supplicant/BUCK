@@ -4,18 +4,15 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "wpa_supplicant-src",
-    src_uri = "https://w1.fi/releases/wpa_supplicant-2.10.tar.gz",
-    sha256 = "20df7ae5154b3830355f8ab4269123a87affdea59fe74fe9292a91d0d7e17b2f",
-    signature_sha256 = "5512ef486877b231fe4eef3240c2aec9bfb671c1fe2ceb4e5d9ac1f17caddfac",
-)
-
 # USE flags: See use_flags.bzl for available flags
 
 autotools_package(
     name = "wpa_supplicant",
-    source = ":wpa_supplicant-src",
+    src_uri = "https://w1.fi/releases/wpa_supplicant-2.10.tar.gz",
+
+    sha256 = "20df7ae5154b3830355f8ab4269123a87affdea59fe74fe9292a91d0d7e17b2f",
+
+    signature_sha256 = "5512ef486877b231fe4eef3240c2aec9bfb671c1fe2ceb4e5d9ac1f17caddfac",
     iuse = [
         "ap",
         "broadcom-sta",

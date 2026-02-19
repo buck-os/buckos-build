@@ -3,16 +3,11 @@ load("//defs:use_flags.bzl", "set_use_flags")
 
 # Natron - Open-source compositing software (node-based)
 
-download_source(
-    name = "natron-src",
-    src_uri = "https://github.com/NatronGitHub/Natron/archive/refs/tags/v2.5.0.tar.gz",
-    sha256 = "013c75b9b443cb22eafea4a18ea06d4fefe4c4985a2801ab402251cbf88cc384",
-    signature_required = False,
-)
-
 autotools_package(
     name = "natron",
-    source = ":natron-src",
+    src_uri = "https://github.com/NatronGitHub/Natron/archive/refs/tags/v2.5.0.tar.gz",
+
+    sha256 = "013c75b9b443cb22eafea4a18ea06d4fefe4c4985a2801ab402251cbf88cc384",
     version = "2.5.0",
     description = "Open-source compositing software for VFX and motion graphics",
     homepage = "https://natrongithub.github.io/",

@@ -6,17 +6,12 @@ load("@root//defs:package_defs.bzl", "download_source", "autotools_package")
 # Provides the sys/sdt.h header needed for SDT (Static Defined Tracing) probes
 # in GCC's libstdc++ and other software.
 
-download_source(
-    name = "systemtap-src",
-    src_uri = "https://sourceware.org/ftp/systemtap/releases/systemtap-5.1.tar.gz",
-    sha256 = "c98da9d76ce2a7a8492e56a4e6c71b885cfb5d4f93fbab1be5da9e9da3dce8d3",
-    signature_required = False,
-)
-
 # Full SystemTap package (for when full functionality is needed)
 autotools_package(
     name = "systemtap",
-    source = ":systemtap-src",
+    src_uri = "https://sourceware.org/ftp/systemtap/releases/systemtap-5.1.tar.gz",
+
+    sha256 = "c98da9d76ce2a7a8492e56a4e6c71b885cfb5d4f93fbab1be5da9e9da3dce8d3",
     version = "5.1",
     description = "SystemTap - Dynamic Tracing Framework for Linux",
     homepage = "https://sourceware.org/systemtap/",

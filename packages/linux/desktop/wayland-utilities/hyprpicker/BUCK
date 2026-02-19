@@ -1,15 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "cmake_package")
 
-download_source(
-    name = "hyprpicker-src",
-    src_uri = "https://github.com/hyprwm/hyprpicker/archive/v0.2.0.tar.gz",
-    sha256 = "fa1b0c29682f5ede5a03d754770d152f38d869bc1faa300564680cef2de0758a",
-    signature_required = False,
-)
-
 cmake_package(
     name = "hyprpicker",
-    source = ":hyprpicker-src",
+    src_uri = "https://github.com/hyprwm/hyprpicker/archive/v0.2.0.tar.gz",
+
+    sha256 = "fa1b0c29682f5ede5a03d754770d152f38d869bc1faa300564680cef2de0758a",
     version = "0.2.0",
     description = "A wlroots-compatible Wayland color picker",
     homepage = "https://github.com/hyprwm/hyprpicker",

@@ -2,16 +2,11 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
 # efivar - Tools and library for manipulating EFI variables
-download_source(
-    name = "efivar-src",
-    src_uri = "https://github.com/rhboot/efivar/archive/refs/tags/39.tar.gz",
-    sha256 = "c9edd15f2eeeea63232f3e669a48e992c7be9aff57ee22672ac31f5eca1609a6",
-    signature_required = False,
-)
-
 autotools_package(
     name = "efivar",
-    source = ":efivar-src",
+    src_uri = "https://github.com/rhboot/efivar/archive/refs/tags/39.tar.gz",
+
+    sha256 = "c9edd15f2eeeea63232f3e669a48e992c7be9aff57ee22672ac31f5eca1609a6",
     version = "39",
     description = "Tools and library for manipulating EFI variables",
     homepage = "https://github.com/rhboot/efivar",

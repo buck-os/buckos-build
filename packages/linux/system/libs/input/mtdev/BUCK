@@ -1,19 +1,14 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "mtdev-src",
-    src_uri = "https://bitmath.org/code/mtdev/mtdev-1.1.7.tar.bz2",
-    sha256 = "a107adad2101fecac54ac7f9f0e0a0dd155d954193da55c2340c97f2ff1d814e",
-    signature_required = False,
-)
-
 autotools_package(
     name = "mtdev",
     # Official release tarball includes pre-generated configure script
     bdepend = [],
     src_prepare = "",
-    source = ":mtdev-src",
+    src_uri = "https://bitmath.org/code/mtdev/mtdev-1.1.7.tar.bz2",
+
+    sha256 = "a107adad2101fecac54ac7f9f0e0a0dd155d954193da55c2340c97f2ff1d814e",
     version = "1.1.7",
     description = "Multitouch protocol translation library",
     homepage = "https://bitmath.org/code/mtdev/",

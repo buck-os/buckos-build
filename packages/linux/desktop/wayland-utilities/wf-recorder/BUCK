@@ -1,15 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "meson_package")
 
-download_source(
-    name = "wf-recorder-src",
-    src_uri = "https://github.com/ammen99/wf-recorder/releases/download/v0.5.0/wf-recorder-0.5.0.tar.xz",
-    sha256 = "50b30569f9ecf4f6ba5ba76c422b7af652b4fbc7cae86c25e19ecbe669fca327",
-    signature_required = False,
-)
-
 meson_package(
     name = "wf-recorder",
-    source = ":wf-recorder-src",
+    src_uri = "https://github.com/ammen99/wf-recorder/releases/download/v0.5.0/wf-recorder-0.5.0.tar.xz",
+
+    sha256 = "50b30569f9ecf4f6ba5ba76c422b7af652b4fbc7cae86c25e19ecbe669fca327",
     iuse = ["pipewire"],
     use_meson = {
         "-pipewire": "-Dpipewire=disabled",

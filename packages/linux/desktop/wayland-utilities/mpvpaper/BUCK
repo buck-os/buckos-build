@@ -1,15 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "meson_package")
 
-download_source(
-    name = "mpvpaper-src",
-    src_uri = "https://github.com/GhostNaN/mpvpaper/archive/1.6.tar.gz",
-    sha256 = "2a66b2dcabc864c544de2344fd4d8ce23984e4540c4b0d4befae2dc83393f090",
-    signature_required = False,
-)
-
 meson_package(
     name = "mpvpaper",
-    source = ":mpvpaper-src",
+    src_uri = "https://github.com/GhostNaN/mpvpaper/archive/1.6.tar.gz",
+
+    sha256 = "2a66b2dcabc864c544de2344fd4d8ce23984e4540c4b0d4befae2dc83393f090",
     version = "1.6",
     description = "A video wallpaper program for wlroots compositors",
     homepage = "https://github.com/GhostNaN/mpvpaper",

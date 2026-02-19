@@ -3,16 +3,11 @@ load("//defs:use_flags.bzl", "set_use_flags")
 
 # zip - Info-ZIP compression utility
 
-download_source(
-    name = "zip-src",
-    src_uri = "https://downloads.sourceforge.net/infozip/zip30.tar.gz",
-    sha256 = "f0e8bb1f9b7eb0b01285495a2699df3a4b766784c1765a8f1aeedf63c0806369",
-    signature_required = False,
-)
-
 autotools_package(
     name = "zip",
-    source = ":zip-src",
+    src_uri = "https://downloads.sourceforge.net/infozip/zip30.tar.gz",
+
+    sha256 = "f0e8bb1f9b7eb0b01285495a2699df3a4b766784c1765a8f1aeedf63c0806369",
     iuse = [
         "bzip2",
         "crypt",

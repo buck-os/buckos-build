@@ -7,16 +7,11 @@ load("//defs:use_flags.bzl", "set_use_flags")
 # Essential for creating compressed root filesystems used in live systems
 # and embedded devices.
 
-download_source(
-    name = "squashfs-tools-src",
-    src_uri = "https://github.com/plougher/squashfs-tools/archive/refs/tags/4.6.1.tar.gz",
-    sha256 = "9c4974e07c61547dae14af4ed1f358b7d04618ae194e54d6be72ee126f0d2f53",
-    signature_required = False,
-)
-
 make_package(
     name = "squashfs-tools",
-    source = ":squashfs-tools-src",
+    src_uri = "https://github.com/plougher/squashfs-tools/archive/refs/tags/4.6.1.tar.gz",
+
+    sha256 = "9c4974e07c61547dae14af4ed1f358b7d04618ae194e54d6be72ee126f0d2f53",
     iuse = [
         "debug",
         "lz4",

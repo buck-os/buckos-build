@@ -1,15 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "cmake_package")
 
-download_source(
-    name = "hyprpaper-src",
-    src_uri = "https://github.com/hyprwm/hyprpaper/archive/v0.6.0.tar.gz",
-    sha256 = "71d8294ffbcbaae628c4eabdcb3b7fb1974d6bed7794b787bb77934d0a3f4538",
-    signature_required = False,
-)
-
 cmake_package(
     name = "hyprpaper",
-    source = ":hyprpaper-src",
+    src_uri = "https://github.com/hyprwm/hyprpaper/archive/v0.6.0.tar.gz",
+
+    sha256 = "71d8294ffbcbaae628c4eabdcb3b7fb1974d6bed7794b787bb77934d0a3f4538",
     version = "0.6.0",
     description = "A blazing fast Wayland wallpaper utility",
     homepage = "https://github.com/hyprwm/hyprpaper",

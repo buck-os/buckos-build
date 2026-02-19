@@ -1,16 +1,11 @@
 # POSIX capabilities library
 load("//defs:package_defs.bzl", "ebuild_package", "download_source")
 
-download_source(
-    name = "libcap-src",
-    src_uri = "https://www.kernel.org/pub/linux/libs/security/linux-privs/libcap2/libcap-2.77.tar.xz",
-    sha256 = "897bc18b44afc26c70e78cead3dbb31e154acc24bee085a5a09079a88dbf6f52",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "libcap",
-    source = ":libcap-src",
+    src_uri = "https://www.kernel.org/pub/linux/libs/security/linux-privs/libcap2/libcap-2.77.tar.xz",
+
+    sha256 = "897bc18b44afc26c70e78cead3dbb31e154acc24bee085a5a09079a88dbf6f52",
     version = "2.77",
     description = "POSIX 1003.1e capabilities",
     homepage = "https://sites.google.com/site/fully capable/",

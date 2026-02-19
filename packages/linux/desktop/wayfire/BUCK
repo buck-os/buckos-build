@@ -5,16 +5,11 @@ load("//defs:use_flags.bzl", "set_use_flags")
 # Wayfire - 3D Wayland compositor
 # =============================================================================
 
-download_source(
-    name = "wayfire-src",
-    src_uri = "https://github.com/WayfireWM/wayfire/releases/download/v0.8.1/wayfire-0.8.1.tar.xz",
-    sha256 = "8ac1947b688a9ec6c4d9ee2d77311bb357a8ead25665b8000eda96952328290d",
-    signature_required = False,
-)
-
 autotools_package(
     name = "wayfire",
-    source = ":wayfire-src",
+    src_uri = "https://github.com/WayfireWM/wayfire/releases/download/v0.8.1/wayfire-0.8.1.tar.xz",
+
+    sha256 = "8ac1947b688a9ec6c4d9ee2d77311bb357a8ead25665b8000eda96952328290d",
     iuse = [
         "X",
         "dbus",

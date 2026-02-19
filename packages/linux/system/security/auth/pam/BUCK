@@ -2,17 +2,13 @@ load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
 # pam - Pluggable Authentication Modules
-download_source(
-    name = "pam-src",
-    src_uri = "https://github.com/linux-pam/linux-pam/releases/download/v1.6.1/Linux-PAM-1.6.1.tar.xz",
-    sha256 = "f8923c740159052d719dbfc2a2f81942d68dd34fcaf61c706a02c9b80feeef8e",
-    signature_sha256 = "ef0e0597974d988c9f25f5a155e001b9dcb972618a4a166b8acefac1f5357303",
-    signature_required=False,
-)
-
 ebuild_package(
     name = "pam",
-    source = ":pam-src",
+    src_uri = "https://github.com/linux-pam/linux-pam/releases/download/v1.6.1/Linux-PAM-1.6.1.tar.xz",
+
+    sha256 = "f8923c740159052d719dbfc2a2f81942d68dd34fcaf61c706a02c9b80feeef8e",
+
+    signature_sha256 = "ef0e0597974d988c9f25f5a155e001b9dcb972618a4a166b8acefac1f5357303",
     iuse = [
         "audit",
         "berkdb",

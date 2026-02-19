@@ -1,17 +1,12 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
 
-download_source(
-    name = "libev-src",
-    src_uri = "https://dist.schmorp.de/libev/libev-4.33.tar.gz",
-    sha256 = "507eb7b8d1015fbec5b935f34ebed15bf346bed04a11ab82b8eee848c4205aea",
-    signature_required = False,
-)
-
 autotools_package(
     name = "libev",
     # Release tarball includes pre-generated configure script
-    source = ":libev-src",
+    src_uri = "https://dist.schmorp.de/libev/libev-4.33.tar.gz",
+
+    sha256 = "507eb7b8d1015fbec5b935f34ebed15bf346bed04a11ab82b8eee848c4205aea",
     iuse = ["static-libs"],
     use_configure = {
         "-static-libs": "--disable-static",

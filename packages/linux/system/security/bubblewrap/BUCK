@@ -1,16 +1,11 @@
 load("//defs:package_defs.bzl", "download_source", "meson_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "bubblewrap-src",
-    src_uri = "https://github.com/containers/bubblewrap/releases/download/v0.8.0/bubblewrap-0.8.0.tar.xz",
-    sha256 = "957ad1149db9033db88e988b12bcebe349a445e1efc8a9b59ad2939a113d333a",
-    signature_required = False,
-)
-
 meson_package(
     name = "bubblewrap",
-    source = ":bubblewrap-src",
+    src_uri = "https://github.com/containers/bubblewrap/releases/download/v0.8.0/bubblewrap-0.8.0.tar.xz",
+
+    sha256 = "957ad1149db9033db88e988b12bcebe349a445e1efc8a9b59ad2939a113d333a",
     iuse = [],
     version = "0.8.0",
     description = "Unprivileged sandboxing tool using user namespaces",

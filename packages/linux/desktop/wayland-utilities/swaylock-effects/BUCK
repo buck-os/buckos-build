@@ -1,15 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "meson_package")
 
-download_source(
-    name = "swaylock-effects-src",
-    src_uri = "https://github.com/mortie/swaylock-effects/archive/refs/tags/v1.6-4.tar.gz",
-    sha256 = "4f82c9d875ce20f1d58227ef65db60aacccb3fb29ce67c0f744849da68e82b20",
-    signature_required = False,
-)
-
 meson_package(
     name = "swaylock-effects",
-    source = ":swaylock-effects-src",
+    src_uri = "https://github.com/mortie/swaylock-effects/archive/refs/tags/v1.6-4.tar.gz",
+
+    sha256 = "4f82c9d875ce20f1d58227ef65db60aacccb3fb29ce67c0f744849da68e82b20",
     iuse = ["pam"],
     use_defaults = ["pam"],
     use_meson = {

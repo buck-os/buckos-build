@@ -1,16 +1,13 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "libcdio-src",
-    src_uri = "https://mirrors.kernel.org/gnu/libcdio/libcdio-2.1.0.tar.bz2",
-    sha256 = "8550e9589dbd594bfac93b81ecf129b1dc9d0d51e90f9696f1b2f9b2af32712b",
-    signature_sha256 = "56c77b212c84b5b2587dc33c35ae310478bb170f30ad5a9cd0d62eaf8c224765",
-)
-
 autotools_package(
     name = "libcdio",
-    source = ":libcdio-src",
+    src_uri = "https://mirrors.kernel.org/gnu/libcdio/libcdio-2.1.0.tar.bz2",
+
+    sha256 = "8550e9589dbd594bfac93b81ecf129b1dc9d0d51e90f9696f1b2f9b2af32712b",
+
+    signature_sha256 = "56c77b212c84b5b2587dc33c35ae310478bb170f30ad5a9cd0d62eaf8c224765",
     iuse = [
         "cddb",
         "cxx",
@@ -45,17 +42,13 @@ autotools_package(
 )
 
 # libcdio-paranoia - CD audio extraction with error correction
-download_source(
-    name = "libcdio-paranoia-src",
-    src_uri = "https://mirrors.kernel.org/gnu/libcdio/libcdio-paranoia-10.2+2.0.2.tar.bz2",
-    sha256 = "186892539dedd661276014d71318c8c8f97ecb1250a86625256abd4defbf0d0c",
-    signature_sha256 = "a3e5ad39ad0da2e2ddf9b7f16b1782a97ed6d6698c4d7a8ba24a4b607b249a70",
-    signature_required = False,
-)
-
 autotools_package(
     name = "libcdio-paranoia",
-    source = ":libcdio-paranoia-src",
+    src_uri = "https://mirrors.kernel.org/gnu/libcdio/libcdio-paranoia-10.2+2.0.2.tar.bz2",
+
+    sha256 = "186892539dedd661276014d71318c8c8f97ecb1250a86625256abd4defbf0d0c",
+
+    signature_sha256 = "a3e5ad39ad0da2e2ddf9b7f16b1782a97ed6d6698c4d7a8ba24a4b607b249a70",
     version = "10.2+2.0.2",
     description = "CD paranoia library for jitter-free audio extraction",
     homepage = "https://www.gnu.org/software/libcdio/",

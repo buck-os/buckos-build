@@ -2,17 +2,13 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package", "meson_p
 load("//defs:use_flags.bzl", "set_use_flags")
 
 # SPICE protocol library (uses meson)
-download_source(
-    name = "spice-protocol-src",
-    src_uri = "https://www.spice-space.org/download/releases/spice-protocol-0.14.4.tar.xz",
-    sha256 = "04ffba610d9fd441cfc47dfaa135d70096e60b1046d2119d8db2f8ea0d17d912",
-    signature_sha256 = "d5416f50a49220967d9ef66c25e75b8b6c51d4d372dea48c5d55249f865a989e",
-    signature_required=False,
-)
-
 meson_package(
     name = "spice-protocol",
-    source = ":spice-protocol-src",
+    src_uri = "https://www.spice-space.org/download/releases/spice-protocol-0.14.4.tar.xz",
+
+    sha256 = "04ffba610d9fd441cfc47dfaa135d70096e60b1046d2119d8db2f8ea0d17d912",
+
+    signature_sha256 = "d5416f50a49220967d9ef66c25e75b8b6c51d4d372dea48c5d55249f865a989e",
     version = "0.14.4",
     description = "SPICE protocol headers",
     homepage = "https://www.spice-space.org/",
@@ -21,19 +17,15 @@ meson_package(
 )
 
 # SPICE server library
-download_source(
-    name = "spice-server-src",
-    src_uri = "https://www.spice-space.org/download/releases/spice-0.15.2.tar.bz2",
-    sha256 = "6d9eb6117f03917471c4bc10004abecff48a79fb85eb85a1c45f023377015b81",
-    signature_sha256 = "7b6b0c9a8db33312ed2ce56e71ef77a63a47a9aabd9a59af677a8091771a4313",
-    signature_required=False,
-)
-
 # USE flags: See use_flags.bzl for available flags
 
 autotools_package(
     name = "spice-server",
-    source = ":spice-server-src",
+    src_uri = "https://www.spice-space.org/download/releases/spice-0.15.2.tar.bz2",
+
+    sha256 = "6d9eb6117f03917471c4bc10004abecff48a79fb85eb85a1c45f023377015b81",
+
+    signature_sha256 = "7b6b0c9a8db33312ed2ce56e71ef77a63a47a9aabd9a59af677a8091771a4313",
     version = "0.15.2",
     description = "SPICE server library for virtualization graphics",
     homepage = "https://www.spice-space.org/",
@@ -59,18 +51,14 @@ autotools_package(
 )
 
 # SPICE GTK client library
-download_source(
-    name = "spice-gtk-src",
-    src_uri = "https://www.spice-space.org/download/gtk/spice-gtk-0.42.tar.xz",
-    sha256 = "9380117f1811ad1faa1812cb6602479b6290d4a0d8cc442d44427f7f6c0e7a58",
-    signature_sha256 = "8b67370559cec304a26387c5f5c0f3592a1f0becb679b8f02c0df0f8888ce4f9",
-    signature_required=False,
-)
-
 # spice-gtk uses meson
 meson_package(
     name = "spice-gtk",
-    source = ":spice-gtk-src",
+    src_uri = "https://www.spice-space.org/download/gtk/spice-gtk-0.42.tar.xz",
+
+    sha256 = "9380117f1811ad1faa1812cb6602479b6290d4a0d8cc442d44427f7f6c0e7a58",
+
+    signature_sha256 = "8b67370559cec304a26387c5f5c0f3592a1f0becb679b8f02c0df0f8888ce4f9",
     version = "0.42",
     description = "GTK client library for SPICE protocol",
     homepage = "https://www.spice-space.org/",
@@ -97,19 +85,15 @@ meson_package(
 )
 
 # SPICE VD Agent for guest
-download_source(
-    name = "spice-vdagent-src",
-    src_uri = "https://www.spice-space.org/download/releases/spice-vdagent-0.22.1.tar.bz2",
-    sha256 = "93b0d15aca4762cc7d379b179a7101149dbaed62b72112fffb2b3e90b11687a0",
-    signature_sha256 = "c0e36b84417243b673ef849ebefee765f740b8a195371997b00c9e143aa0e8c9",
-    signature_required=False,
-)
-
 # USE flags: See use_flags.bzl for available flags
 
 autotools_package(
     name = "spice-vdagent",
-    source = ":spice-vdagent-src",
+    src_uri = "https://www.spice-space.org/download/releases/spice-vdagent-0.22.1.tar.bz2",
+
+    sha256 = "93b0d15aca4762cc7d379b179a7101149dbaed62b72112fffb2b3e90b11687a0",
+
+    signature_sha256 = "c0e36b84417243b673ef849ebefee765f740b8a195371997b00c9e143aa0e8c9",
     version = "0.22.1",
     description = "SPICE VD Agent for Linux guests",
     homepage = "https://www.spice-space.org/",

@@ -1,16 +1,11 @@
 load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "libcap-src",
-    src_uri = "https://www.kernel.org/pub/linux/libs/security/linux-privs/libcap2/libcap-2.70.tar.xz",
-    sha256 = "23a6ef8aadaf1e3e875f633bb2d116cfef8952dba7bc7c569b13458e1952b30f",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "libcap",
-    source = ":libcap-src",
+    src_uri = "https://www.kernel.org/pub/linux/libs/security/linux-privs/libcap2/libcap-2.70.tar.xz",
+
+    sha256 = "23a6ef8aadaf1e3e875f633bb2d116cfef8952dba7bc7c569b13458e1952b30f",
     iuse = ["pam", "static-libs", "tools"],
     use_configure = {
         "-pam": "--disable-pam",

@@ -4,20 +4,16 @@ load("//defs:use_flags.bzl", "set_use_flags")
 
 # Autoconf cannot use autotools_package because it would create a circular dependency
 # (autotools eclass depends on autoconf). Build it manually instead.
-download_source(
-    name = "autoconf-src",
-    src_uri = "https://mirrors.kernel.org/gnu/autoconf/autoconf-2.72.tar.xz",
-    sha256 = "ba885c1319578d6c94d46e9b0dceb4014caafe2490e437a0dbca3f270a223f5a",
-    signature_sha256 = "66930207a5e2e5edf7a135aca43c2f38a98333717d4b10be3f0b96566aadaa55",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "autoconf",
     # NOTE: autoconf is a bootstrap package - it cannot depend on autotools
     # because that would create a circular dependency. The tarball ships with
     # a pre-generated configure script, so we don't need autoreconf.
-    source = ":autoconf-src",
+    src_uri = "https://mirrors.kernel.org/gnu/autoconf/autoconf-2.72.tar.xz",
+
+    sha256 = "ba885c1319578d6c94d46e9b0dceb4014caafe2490e437a0dbca3f270a223f5a",
+
+    signature_sha256 = "66930207a5e2e5edf7a135aca43c2f38a98333717d4b10be3f0b96566aadaa55",
     version = "2.72",
     category = "dev-tools/build-systems",
     slot = "0",

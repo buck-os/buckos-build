@@ -3,16 +3,11 @@ load("//defs:use_flags.bzl", "set_use_flags")
 
 # LiVES - Video editing system and VJ tool
 
-download_source(
-    name = "lives-src",
-    src_uri = "http://lives-video.com/releases/LiVES-3.2.0.tar.bz2",
-    sha256 = "5aa438b5af7e97f77bbbeadf032cfd8d64aca0a880780180600d5aada05c229a",
-    signature_required = False,
-)
-
 autotools_package(
     name = "lives",
-    source = ":lives-src",
+    src_uri = "http://lives-video.com/releases/LiVES-3.2.0.tar.bz2",
+
+    sha256 = "5aa438b5af7e97f77bbbeadf032cfd8d64aca0a880780180600d5aada05c229a",
     version = "3.2.0",
     description = "Video editing system and VJ tool",
     homepage = "http://lives-video.com/",

@@ -1,13 +1,6 @@
 load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 
 download_source(
-    name = "alephzero-src",
-    src_uri = "https://github.com/alephzero/alephzero/archive/refs/heads/master.tar.gz",
-    sha256 = "e2d950cc25f14dc7719687279d485eaffaa3c8c5168d5dc5359df42ecb923e76",
-    signature_required = False,
-)
-
-download_source(
     name = "yyjson-src",
     src_uri = "https://github.com/ibireme/yyjson/archive/refs/tags/0.10.0.tar.gz",
     sha256 = "0d901cb2c45c5586e3f3a4245e58c2252d6b24bf4b402723f6179523d389b165",
@@ -16,7 +9,9 @@ download_source(
 
 ebuild_package(
     name = "alephzero",
-    source = ":alephzero-src",
+    src_uri = "https://github.com/alephzero/alephzero/archive/refs/heads/master.tar.gz",
+
+    sha256 = "e2d950cc25f14dc7719687279d485eaffaa3c8c5168d5dc5359df42ecb923e76",
     version = "0_git",
     category = "dev-libs/misc",
     slot = "0",

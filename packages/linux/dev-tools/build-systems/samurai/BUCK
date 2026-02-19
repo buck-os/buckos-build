@@ -6,15 +6,11 @@ load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 # A lightweight ninja alternative. Much smaller codebase (~1.2k lines of C)
 # compared to ninja (~20k+ lines of C++).
 
-download_source(
-    name = "samurai-src",
-    src_uri = "https://mirror.buckos.org/s/samurai-1.2.tar.gz",
-    sha256 = "FIXME",
-)
-
 ebuild_package(
     name = "samurai",
-    source = ":samurai-src",
+    src_uri = "https://mirror.buckos.org/s/samurai-1.2.tar.gz",
+
+    sha256 = "FIXME",
     version = "1.2",
     category = "dev-tools/build-systems",
     description = "ninja-compatible build tool written in C",

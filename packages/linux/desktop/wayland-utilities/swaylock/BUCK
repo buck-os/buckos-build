@@ -1,15 +1,12 @@
 load("//defs:package_defs.bzl", "download_source", "meson_package")
 
-download_source(
-    name = "swaylock-src",
-    src_uri = "https://github.com/swaywm/swaylock/releases/download/v1.8.0/swaylock-1.8.0.tar.gz",
-    sha256 = "6a1175442380b87b2d2868c4a5366ee3592163158d02e3a7fbf3a0bfe07d8b00",
-    signature_sha256 = "b16b2ae59d56adf07262f449df1bdd462ac948767a3c826ebbaa82b83ff952f0",
-)
-
 meson_package(
     name = "swaylock",
-    source = ":swaylock-src",
+    src_uri = "https://github.com/swaywm/swaylock/releases/download/v1.8.0/swaylock-1.8.0.tar.gz",
+
+    sha256 = "6a1175442380b87b2d2868c4a5366ee3592163158d02e3a7fbf3a0bfe07d8b00",
+
+    signature_sha256 = "b16b2ae59d56adf07262f449df1bdd462ac948767a3c826ebbaa82b83ff952f0",
     iuse = ["gdk-pixbuf", "pam"],
     use_defaults = ["gdk-pixbuf", "pam"],
     use_meson = {

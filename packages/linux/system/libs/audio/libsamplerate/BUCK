@@ -1,16 +1,13 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "libsamplerate-src",
-    src_uri = "https://github.com/libsndfile/libsamplerate/releases/download/0.2.2/libsamplerate-0.2.2.tar.xz",
-    sha256 = "3258da280511d24b49d6b08615bbe824d0cacc9842b0e4caf11c52cf2b043893",
-    signature_sha256 = "48febb940c17a243584860ea0c151e652f2cad261f1fcf28a84aa1cd833cd167",
-)
-
 autotools_package(
     name = "libsamplerate",
-    source = ":libsamplerate-src",
+    src_uri = "https://github.com/libsndfile/libsamplerate/releases/download/0.2.2/libsamplerate-0.2.2.tar.xz",
+
+    sha256 = "3258da280511d24b49d6b08615bbe824d0cacc9842b0e4caf11c52cf2b043893",
+
+    signature_sha256 = "48febb940c17a243584860ea0c151e652f2cad261f1fcf28a84aa1cd833cd167",
     version = "0.2.2",
     description = "Sample rate conversion library",
     license = "BSD-2-Clause",

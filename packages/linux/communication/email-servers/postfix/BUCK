@@ -1,19 +1,15 @@
 load("//defs:package_defs.bzl", "download_source", "make_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "postfix-src",
-    src_uri = "https://de.postfix.org/ftpmirror/official/postfix-3.9.0.tar.gz",
-    sha256 = "56f5e420e7c25455a4e96c19b672f80f9a0a35fb5becc9247c9e3d5dcc617f34",
-    signature_sha256 = "62e71d0f7f50eefccdffa318be448b53c065b6f1aa3f2be8b144f764a82b23fc",
-    signature_required = False,
-)
-
 # USE flags: See use_flags.bzl for available flags
 
 make_package(
     name = "postfix",
-    source = ":postfix-src",
+    src_uri = "https://de.postfix.org/ftpmirror/official/postfix-3.9.0.tar.gz",
+
+    sha256 = "56f5e420e7c25455a4e96c19b672f80f9a0a35fb5becc9247c9e3d5dcc617f34",
+
+    signature_sha256 = "62e71d0f7f50eefccdffa318be448b53c065b6f1aa3f2be8b144f764a82b23fc",
     version = "3.9.0",
     description = "Fast, secure, and flexible mail transfer agent",
     homepage = "https://www.postfix.org/",

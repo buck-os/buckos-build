@@ -2,16 +2,11 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
 
 # mupdf - Lightweight PDF and XPS viewer
-download_source(
-    name = "mupdf-src",
-    src_uri = "https://mupdf.com/downloads/archive/mupdf-1.23.11-source.tar.gz",
-    sha256 = "478f2a167feae2a291c8b8bc5205f2ce2f09f09b574a6eb0525bfad95a3cfe66",
-    signature_required = False,
-)
-
 autotools_package(
     name = "mupdf",
-    source = ":mupdf-src",
+    src_uri = "https://mupdf.com/downloads/archive/mupdf-1.23.11-source.tar.gz",
+
+    sha256 = "478f2a167feae2a291c8b8bc5205f2ce2f09f09b574a6eb0525bfad95a3cfe66",
     iuse = [
         "X",
         "archive",

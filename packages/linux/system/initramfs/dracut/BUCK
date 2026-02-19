@@ -7,16 +7,11 @@ load("//defs:use_flags.bzl", "set_use_flags")
 # Event-driven initramfs generator used by Fedora, RHEL, openSUSE.
 # Supports modular configuration, network boot, encryption, LVM, RAID.
 
-download_source(
-    name = "dracut-src",
-    src_uri = "https://github.com/dracut-ng/dracut-ng/archive/refs/tags/103.tar.gz",
-    sha256 = "9a92b4f0643926a65162171d68b9525fc93e6e82f455a4b3938db385a841bda8",
-    signature_required = False,
-)
-
 autotools_package(
     name = "dracut",
-    source = ":dracut-src",
+    src_uri = "https://github.com/dracut-ng/dracut-ng/archive/refs/tags/103.tar.gz",
+
+    sha256 = "9a92b4f0643926a65162171d68b9525fc93e6e82f455a4b3938db385a841bda8",
     version = "103",
     description = "Event-driven initramfs infrastructure (Fedora/RHEL default)",
     homepage = "https://github.com/dracut-ng/dracut-ng",

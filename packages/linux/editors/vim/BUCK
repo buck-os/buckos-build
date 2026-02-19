@@ -1,16 +1,11 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "vim-source",
-    src_uri = "https://github.com/vim/vim/archive/v9.1.0.tar.gz",
-    sha256 = "ddb435f6e386c53799a3025bdc5a3533beac735a0ee596cb27ada97366a1c725",
-    signature_required = False,
-)
-
 autotools_package(
     name = "vim",
-    source = ":vim-source",
+    src_uri = "https://github.com/vim/vim/archive/v9.1.0.tar.gz",
+
+    sha256 = "ddb435f6e386c53799a3025bdc5a3533beac735a0ee596cb27ada97366a1c725",
     version = "9.1.0",
     signature_required = False,
     description = "Highly configurable text editor built to make creating and changing any kind of text very efficient",

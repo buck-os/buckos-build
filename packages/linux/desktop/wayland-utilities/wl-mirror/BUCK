@@ -1,15 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "cmake_package")
 
-download_source(
-    name = "wl-mirror-src",
-    src_uri = "https://github.com/Ferdi265/wl-mirror/archive/v0.16.0.tar.gz",
-    sha256 = "9da02454ed9b555c8cd9916dbe3056a2c0532e0e3a8889e42b71ade00aea2e7b",
-    signature_required = False,
-)
-
 cmake_package(
     name = "wl-mirror",
-    source = ":wl-mirror-src",
+    src_uri = "https://github.com/Ferdi265/wl-mirror/archive/v0.16.0.tar.gz",
+
+    sha256 = "9da02454ed9b555c8cd9916dbe3056a2c0532e0e3a8889e42b71ade00aea2e7b",
     version = "0.16.0",
     description = "A simple Wayland output mirror client",
     homepage = "https://github.com/Ferdi265/wl-mirror",

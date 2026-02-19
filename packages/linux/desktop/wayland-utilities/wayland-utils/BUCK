@@ -1,15 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "meson_package")
 
-download_source(
-    name = "wayland-utils-src",
-    src_uri = "https://gitlab.freedesktop.org/wayland/wayland-utils/-/releases/1.2.0/downloads/wayland-utils-1.2.0.tar.xz",
-    sha256 = "d9278c22554586881802540751bcc42569262bf80cd9ac9b0fd12ff4bd09a9e4",
-    signature_required = False,
-)
-
 meson_package(
     name = "wayland-utils",
-    source = ":wayland-utils-src",
+    src_uri = "https://gitlab.freedesktop.org/wayland/wayland-utils/-/releases/1.2.0/downloads/wayland-utils-1.2.0.tar.xz",
+
+    sha256 = "d9278c22554586881802540751bcc42569262bf80cd9ac9b0fd12ff4bd09a9e4",
     version = "1.2.0",
     description = "Wayland utilities (wayland-info)",
     homepage = "https://gitlab.freedesktop.org/wayland/wayland-utils",

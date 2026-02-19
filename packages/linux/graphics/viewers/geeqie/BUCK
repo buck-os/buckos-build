@@ -1,16 +1,13 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "geeqie-src",
-    src_uri = "https://github.com/BestImageViewer/geeqie/releases/download/v2.3/geeqie-2.3.tar.xz",
-    sha256 = "cd5cad97f8d0e8c62025334d62688fcf6f82be73a7716c5ca16b205d59b8519b",
-    signature_sha256 = "ae2ddb9700e8b7d1f5e28dcc8b9ad347f5611eb7f600ca3cbdb012f2aa499e3d",
-)
-
 autotools_package(
     name = "geeqie",
-    source = ":geeqie-src",
+    src_uri = "https://github.com/BestImageViewer/geeqie/releases/download/v2.3/geeqie-2.3.tar.xz",
+
+    sha256 = "cd5cad97f8d0e8c62025334d62688fcf6f82be73a7716c5ca16b205d59b8519b",
+
+    signature_sha256 = "ae2ddb9700e8b7d1f5e28dcc8b9ad347f5611eb7f600ca3cbdb012f2aa499e3d",
     iuse = [
         "X",
         "debug",

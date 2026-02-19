@@ -1,17 +1,12 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "lmdb-src",
-    src_uri = "https://git.openldap.org/openldap/openldap/-/archive/LMDB_0.9.33/openldap-LMDB_0.9.33.tar.gz",
-    sha256 = "476801f5239c88c7de61c3390502a5d13965ecedef80105b5fb0fcb8373d1e53",
-    signature_required = False,
-)
-
 # LMDB is a makefile-only project in libraries/liblmdb subdirectory
 autotools_package(
     name = "lmdb",
-    source = ":lmdb-src",
+    src_uri = "https://git.openldap.org/openldap/openldap/-/archive/LMDB_0.9.33/openldap-LMDB_0.9.33.tar.gz",
+
+    sha256 = "476801f5239c88c7de61c3390502a5d13965ecedef80105b5fb0fcb8373d1e53",
     iuse = ["static-libs"],
     use_configure = {
         "-static-libs": "--disable-static",

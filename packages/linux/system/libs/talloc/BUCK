@@ -2,18 +2,13 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
 # talloc - Memory allocator from Samba project
-download_source(
-    name = "talloc-src",
-    src_uri = "https://www.samba.org/ftp/talloc/talloc-2.4.3.tar.gz",
-    sha256 = "dc46c40b9f46bb34dd97fe41f548b0e8b247b77a918576733c528e83abd854dd",
-    signature_required = False,
-)
-
 autotools_package(
     name = "talloc",
     # talloc uses waf (Python-based build system), not autoconf
     # The ./configure script is a waf wrapper
-    source = ":talloc-src",
+    src_uri = "https://www.samba.org/ftp/talloc/talloc-2.4.3.tar.gz",
+
+    sha256 = "dc46c40b9f46bb34dd97fe41f548b0e8b247b77a918576733c528e83abd854dd",
     iuse = ["compat", "python", "valgrind"],
     use_configure = {
         "-compat": "--disable-compat",

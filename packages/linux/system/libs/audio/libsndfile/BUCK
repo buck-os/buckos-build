@@ -1,16 +1,13 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "libsndfile-src",
-    src_uri = "https://github.com/libsndfile/libsndfile/releases/download/1.2.2/libsndfile-1.2.2.tar.xz",
-    sha256 = "3799ca9924d3125038880367bf1468e53a1b7e3686a934f098b7e1d286cdb80e",
-    signature_sha256 = "84ee7165e52f266e18b76a37d7cc8a4522fa6c5a0571776e936b9ddafeff98fa",
-)
-
 autotools_package(
     name = "libsndfile",
-    source = ":libsndfile-src",
+    src_uri = "https://github.com/libsndfile/libsndfile/releases/download/1.2.2/libsndfile-1.2.2.tar.xz",
+
+    sha256 = "3799ca9924d3125038880367bf1468e53a1b7e3686a934f098b7e1d286cdb80e",
+
+    signature_sha256 = "84ee7165e52f266e18b76a37d7cc8a4522fa6c5a0571776e936b9ddafeff98fa",
     iuse = ["alsa", "minimal", "sqlite"],
     use_configure = {
         "-alsa": "--disable-alsa",

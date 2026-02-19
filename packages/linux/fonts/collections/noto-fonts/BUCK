@@ -1,15 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 
-download_source(
-    name = "noto-fonts-src",
-    src_uri = "https://github.com/notofonts/notofonts.github.io/archive/refs/tags/noto-monthly-release-24.3.1.tar.gz",
-    sha256 = "abcef824e61aa99626b6ad331c1cba875f28b3d87cc9ff8c87d46d55fe344369",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "noto-fonts",
-    source = ":noto-fonts-src",
+    src_uri = "https://github.com/notofonts/notofonts.github.io/archive/refs/tags/noto-monthly-release-24.3.1.tar.gz",
+
+    sha256 = "abcef824e61aa99626b6ad331c1cba875f28b3d87cc9ff8c87d46d55fe344369",
     version = "24.3.1",
     description = "Google Noto fonts - beautiful and free fonts for all languages",
     homepage = "https://www.google.com/get/noto/",

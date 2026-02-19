@@ -1,0 +1,26 @@
+load("//defs:package_defs.bzl", "ebuild_package")
+
+# Minimal source directory for test shared library
+genrule(
+    name = "testlib-src",
+    srcs = ["testlib.c"],
+    cmd = "mkdir -p $OUT && cp $SRCS $OUT/",
+    out = "src",
+    visibility = ["PUBLIC"],
+)
+
+ebuild_package(
+    name = "testlib",
+    source = ":testlib-src",
+    version = "0.1.0",
+    use_bootstrap = False,
+    src_configure = "",
+    src_compile = """
+cc -shared -fPIC -o libtestlib.so $S/testlib.c
+""",
+    src_install = """
+install -Dm755 libtestlib.so "$DESTDIR/usr/lib64/libtestlib.so"
+""",
+    depend = [],
+    visibility = ["PUBLIC"],
+)

@@ -1,20 +1,16 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
 
-download_source(
-    name = "entr-src",
-    src_uri = "https://eradman.com/entrproject/code/entr-5.6.tar.gz",
-    sha256 = "0222b8df928d3b5a3b5194d63e7de098533e04190d9d9a154b926c6c1f9dd14e",
-    signature_sha256 = "f7f50247cc7936645a260a4bcff4da27607dbf5bc024004372a6559d801eaa83",
-    signature_required=False,
-)
-
 autotools_package(
     name = "entr",
     # Official release tarball includes pre-generated configure script
     bdepend = [],
     src_prepare = "",
-    source = ":entr-src",
+    src_uri = "https://eradman.com/entrproject/code/entr-5.6.tar.gz",
+
+    sha256 = "0222b8df928d3b5a3b5194d63e7de098533e04190d9d9a154b926c6c1f9dd14e",
+
+    signature_sha256 = "f7f50247cc7936645a260a4bcff4da27607dbf5bc024004372a6559d801eaa83",
     version = "5.6",
     description = "Run arbitrary commands when files change",
     homepage = "https://eradman.com/entrproject/",

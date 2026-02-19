@@ -4,18 +4,13 @@
 load("//defs:package_defs.bzl","download_source", "make_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "cpupower-src",
-    src_uri = "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.6.8.tar.xz",
-    sha256 = "5036c434e11e4b36d8da3f489851f7f829cf785fa7f7887468537a9ea4572416",
-    signature_required = False,
-)
-
 # USE flags: See use_flags.bzl for available flags
 
 make_package(
     name = "cpupower",
-    source = ":cpupower-src",
+    src_uri = "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.6.8.tar.xz",
+
+    sha256 = "5036c434e11e4b36d8da3f489851f7f829cf785fa7f7887468537a9ea4572416",
     iuse = ["nls"],
     use_configure = {
         "-nls": "--disable-nls",

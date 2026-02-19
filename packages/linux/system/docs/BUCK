@@ -6,17 +6,13 @@ load("//defs:use_flags.bzl", "set_use_flags")
 # =============================================================================
 
 # man-db - Man page database and utilities
-download_source(
-    name = "man-db-src",
-    src_uri = "https://download.savannah.nongnu.org/releases/man-db/man-db-2.12.0.tar.xz",
-    sha256 = "415a6284a22764ad22ff0f66710d853be7790dd451cd71436e3d25c74d996a95",
-    signature_sha256 = "3545558c85d4bd30d880e604e622efdff1d4b3b5e139474b667fc2c6f3c7ad06",
-    signature_required=False,
-)
-
 make_package(
     name = "man-db",
-    source = ":man-db-src",
+    src_uri = "https://download.savannah.nongnu.org/releases/man-db/man-db-2.12.0.tar.xz",
+
+    sha256 = "415a6284a22764ad22ff0f66710d853be7790dd451cd71436e3d25c74d996a95",
+
+    signature_sha256 = "3545558c85d4bd30d880e604e622efdff1d4b3b5e139474b667fc2c6f3c7ad06",
     iuse = [
         "manpager",
         "nls",
@@ -54,16 +50,11 @@ make_package(
 )
 
 # man-pages - Linux man pages collection
-download_source(
-    name = "man-pages-src",
-    src_uri = "https://mirrors.edge.kernel.org/pub/linux/docs/man-pages/man-pages-6.06.tar.xz",
-    sha256 = "bd6f89cf26d2262567dac41d2640fc3667f240cb658079530141e372c8581928",
-    signature_required = False,
-)
-
 make_package(
     name = "man-pages",
-    source = ":man-pages-src",
+    src_uri = "https://mirrors.edge.kernel.org/pub/linux/docs/man-pages/man-pages-6.06.tar.xz",
+
+    sha256 = "bd6f89cf26d2262567dac41d2640fc3667f240cb658079530141e372c8581928",
     version = "6.06",
     description = "Linux kernel and C library interface man pages",
     homepage = "https://www.kernel.org/doc/man-pages/",
@@ -77,17 +68,13 @@ make_package(
 )
 
 # groff - GNU troff text formatting system
-download_source(
-    name = "groff-src",
-    src_uri = "https://mirrors.kernel.org/gnu/groff/groff-1.23.0.tar.gz",
-    sha256 = "6b9757f592b7518b4902eb6af7e54570bdccba37a871fddb2d30ae3863511c13",
-    signature_sha256 = "7ec23a8550fba8d942da06b1f84a090d80538ac062e8c73de6a4ad7a4f69e09f",
-    signature_required=False,
-)
-
 make_package(
     name = "groff",
-    source = ":groff-src",
+    src_uri = "https://mirrors.kernel.org/gnu/groff/groff-1.23.0.tar.gz",
+
+    sha256 = "6b9757f592b7518b4902eb6af7e54570bdccba37a871fddb2d30ae3863511c13",
+
+    signature_sha256 = "7ec23a8550fba8d942da06b1f84a090d80538ac062e8c73de6a4ad7a4f69e09f",
     version = "1.23.0",
     description = "GNU troff text formatting system",
     homepage = "https://www.gnu.org/software/groff/",
@@ -98,16 +85,11 @@ make_package(
 )
 
 # libpipeline - Pipeline manipulation library
-download_source(
-    name = "libpipeline-src",
-    src_uri = "https://download.savannah.nongnu.org/releases/libpipeline/libpipeline-1.5.7.tar.gz",
-    sha256 = "b8b45194989022a79ec1317f64a2a75b1551b2a55bea06f67704cb2a2e4690b0",
-    signature_required=False,
-)
-
 make_package(
     name = "libpipeline",
-    source = ":libpipeline-src",
+    src_uri = "https://download.savannah.nongnu.org/releases/libpipeline/libpipeline-1.5.7.tar.gz",
+
+    sha256 = "b8b45194989022a79ec1317f64a2a75b1551b2a55bea06f67704cb2a2e4690b0",
     version = "1.5.7",
     description = "C library for manipulating pipelines of processes",
     homepage = "https://libpipeline.nongnu.org/",
@@ -117,17 +99,13 @@ make_package(
 )
 
 # gdbm - GNU database manager
-download_source(
-    name = "gdbm-src",
-    src_uri = "https://mirrors.kernel.org/gnu/gdbm/gdbm-1.23.tar.gz",
-    sha256 = "74b1081d21fff13ae4bd7c16e5d6e504a4c26f7cde1dca0d963a484174bbcacd",
-    signature_sha256 = "64ebb68cc68e8915d62cb20ea40323c00b56051f844589ee0a52169fff34cecb",
-    signature_required=False,
-)
-
 make_package(
     name = "gdbm",
-    source = ":gdbm-src",
+    src_uri = "https://mirrors.kernel.org/gnu/gdbm/gdbm-1.23.tar.gz",
+
+    sha256 = "74b1081d21fff13ae4bd7c16e5d6e504a4c26f7cde1dca0d963a484174bbcacd",
+
+    signature_sha256 = "64ebb68cc68e8915d62cb20ea40323c00b56051f844589ee0a52169fff34cecb",
     version = "1.23",
     description = "GNU database manager library",
     homepage = "https://www.gnu.org/software/gdbm/",
@@ -140,17 +118,13 @@ make_package(
 )
 
 # texinfo - GNU documentation system
-download_source(
-    name = "texinfo-src",
-    src_uri = "https://mirrors.kernel.org/gnu/texinfo/texinfo-7.2.tar.xz",
-    sha256 = "0329d7788fbef113fa82cb80889ca197a344ce0df7646fe000974c5d714363a6",
-    signature_sha256 = "cf6f6f6ef68734657f333b33afcc7bbaf47efd2d8fd2d732669d8af4fbc2e2c5",
-    signature_required=False,
-)
-
 make_package(
     name = "texinfo",
-    source = ":texinfo-src",
+    src_uri = "https://mirrors.kernel.org/gnu/texinfo/texinfo-7.2.tar.xz",
+
+    sha256 = "0329d7788fbef113fa82cb80889ca197a344ce0df7646fe000974c5d714363a6",
+
+    signature_sha256 = "cf6f6f6ef68734657f333b33afcc7bbaf47efd2d8fd2d732669d8af4fbc2e2c5",
     version = "7.2",
     description = "GNU documentation system for producing online and printed manuals",
     homepage = "https://www.gnu.org/software/texinfo",

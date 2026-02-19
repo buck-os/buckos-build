@@ -1,17 +1,13 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "libvorbis-src",
-    src_uri = "https://downloads.xiph.org/releases/vorbis/libvorbis-1.3.7.tar.xz",
-    sha256 = "b33cc4934322bcbf6efcbacf49e3ca01aadbea4114ec9589d1b1e9d20f72954b",
-    signature_sha256 = "21700821dbac7d5371ba2ef122d3d8d4f0208067a0b850d4512be005f528356c",
-    signature_required=False,
-)
-
 autotools_package(
     name = "libvorbis",
-    source = ":libvorbis-src",
+    src_uri = "https://downloads.xiph.org/releases/vorbis/libvorbis-1.3.7.tar.xz",
+
+    sha256 = "b33cc4934322bcbf6efcbacf49e3ca01aadbea4114ec9589d1b1e9d20f72954b",
+
+    signature_sha256 = "21700821dbac7d5371ba2ef122d3d8d4f0208067a0b850d4512be005f528356c",
     iuse = ["static-libs"],
     use_configure = {
         "-static-libs": "--disable-static",

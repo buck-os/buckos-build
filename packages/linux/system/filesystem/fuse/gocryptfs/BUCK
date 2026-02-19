@@ -1,17 +1,13 @@
 load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "gocryptfs-src",
-    src_uri = "https://github.com/rfjakob/gocryptfs/releases/download/v2.4.0/gocryptfs_v2.4.0_src-deps.tar.gz",
-    sha256 = "45158daf20df7f94e0c9ec57ba07af21df2e25e15b8584bf3c7de96adbbc2efd",
-    signature_sha256 = "2fc8cac0e158f5434984578e40a13c83be5803b89e8e2cc29d5fd678af7881a4",
-    signature_required = False,
-)
-
 autotools_package(
     name = "gocryptfs",
-    source = ":gocryptfs-src",
+    src_uri = "https://github.com/rfjakob/gocryptfs/releases/download/v2.4.0/gocryptfs_v2.4.0_src-deps.tar.gz",
+
+    sha256 = "45158daf20df7f94e0c9ec57ba07af21df2e25e15b8584bf3c7de96adbbc2efd",
+
+    signature_sha256 = "2fc8cac0e158f5434984578e40a13c83be5803b89e8e2cc29d5fd678af7881a4",
     version = "2.4.0",
     description = "Encrypted overlay filesystem written in Go",
     homepage = "https://nuetzlich.net/gocryptfs/",

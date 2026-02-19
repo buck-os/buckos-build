@@ -3,17 +3,13 @@ load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
 
 # aspell - Spell checker with better suggestions than ispell
 
-download_source(
-    name = "aspell-src",
-    src_uri = "https://mirrors.kernel.org/gnu/aspell/aspell-0.60.8.1.tar.gz",
-    sha256 = "d6da12b34d42d457fa604e435ad484a74b2effcd120ff40acd6bb3fb2887d21b",
-    signature_sha256 = "fb284b44f1853adf456aaf271afa3fe0a23459b587e2fdb17fc9fe08bfff83a0",
-    signature_required=False,
-)
-
 autotools_package(
     name = "aspell",
-    source = ":aspell-src",
+    src_uri = "https://mirrors.kernel.org/gnu/aspell/aspell-0.60.8.1.tar.gz",
+
+    sha256 = "d6da12b34d42d457fa604e435ad484a74b2effcd120ff40acd6bb3fb2887d21b",
+
+    signature_sha256 = "fb284b44f1853adf456aaf271afa3fe0a23459b587e2fdb17fc9fe08bfff83a0",
     iuse = ["l10n_${LANG}", "nls", "unicode"],
     use_configure = {
         "-l10n_${LANG}": "--disable-l10n_${LANG}",

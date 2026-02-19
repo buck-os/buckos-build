@@ -5,16 +5,11 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
 # pam_mount - Mount volumes on login
-download_source(
-    name = "pam-mount-src",
-    src_uri = "https://inai.de/files/pam_mount/pam_mount-2.20.tar.xz",
-    sha256 = "5426207a485680f8e1764ba405bb38c39a4e0c8306bc8271910f1b819a336ced",
-    signature_required = False,
-)
-
 autotools_package(
     name = "pam-mount",
-    source = ":pam-mount-src",
+    src_uri = "https://inai.de/files/pam_mount/pam_mount-2.20.tar.xz",
+
+    sha256 = "5426207a485680f8e1764ba405bb38c39a4e0c8306bc8271910f1b819a336ced",
     version = "2.20",
     description = "PAM module to mount volumes on login",
     homepage = "https://pam-mount.sourceforge.net/",
@@ -36,16 +31,11 @@ autotools_package(
 )
 
 # pam_script - Run scripts on authentication
-download_source(
-    name = "pam-script-src",
-    src_uri = "https://github.com/jeroennijhof/pam_script/archive/refs/tags/1.1.9.tar.gz",
-    sha256 = "0aab103d318e3048ccc6f8285950f99284c814f996d2dcbcae8f10d3b8bd8cfe",
-    signature_required = False,
-)
-
 autotools_package(
     name = "pam-script",
-    source = ":pam-script-src",
+    src_uri = "https://github.com/jeroennijhof/pam_script/archive/refs/tags/1.1.9.tar.gz",
+
+    sha256 = "0aab103d318e3048ccc6f8285950f99284c814f996d2dcbcae8f10d3b8bd8cfe",
     version = "1.1.9",
     description = "PAM module to execute scripts",
     homepage = "https://github.com/jeroennijhof/pam_script",
@@ -64,16 +54,11 @@ autotools_package(
 )
 
 # pam_ssh_agent_auth - SSH agent-based authentication for sudo
-download_source(
-    name = "pam-ssh-agent-auth-src",
-    src_uri = "https://github.com/jbeverly/pam_ssh_agent_auth/archive/refs/tags/pam_ssh_agent_auth-0.10.4.tar.gz",
-    sha256 = "9d440de6627940c09eadc342cc7d8bc9823654fd1a2be11c4f5820dd073054e0",
-    signature_required = False,
-)
-
 autotools_package(
     name = "pam-ssh-agent-auth",
-    source = ":pam-ssh-agent-auth-src",
+    src_uri = "https://github.com/jbeverly/pam_ssh_agent_auth/archive/refs/tags/pam_ssh_agent_auth-0.10.4.tar.gz",
+
+    sha256 = "9d440de6627940c09eadc342cc7d8bc9823654fd1a2be11c4f5820dd073054e0",
     version = "0.10.4",
     description = "PAM module for SSH agent-based authentication",
     homepage = "https://github.com/jbeverly/pam_ssh_agent_auth",
@@ -94,16 +79,11 @@ autotools_package(
 )
 
 # pam_pkcs11 - PKCS#11/Smart card PAM module
-download_source(
-    name = "pam-pkcs11-src",
-    src_uri = "https://github.com/OpenSC/pam_pkcs11/archive/refs/tags/pam_pkcs11-0.6.12.tar.gz",
-    sha256 = "c29cfd021fd3793263f1784b039f166f0e751996bada656a0f9470005eb0c093",
-    signature_required = False,
-)
-
 autotools_package(
     name = "pam-pkcs11",
-    source = ":pam-pkcs11-src",
+    src_uri = "https://github.com/OpenSC/pam_pkcs11/archive/refs/tags/pam_pkcs11-0.6.12.tar.gz",
+
+    sha256 = "c29cfd021fd3793263f1784b039f166f0e751996bada656a0f9470005eb0c093",
     version = "0.6.12",
     description = "PAM module for PKCS#11 smart card authentication",
     homepage = "https://github.com/OpenSC/pam_pkcs11",
@@ -128,16 +108,11 @@ autotools_package(
 )
 
 # pam_abl - Auto blacklist for PAM
-download_source(
-    name = "pam-abl-src",
-    src_uri = "https://github.com/deksai/pam_abl/archive/refs/tags/v0.6.0.tar.gz",
-    sha256 = "164d1d5fe042d85f653e61ab8823257a2b377d0c43f391d35d11143b72802ad3",
-    signature_required = False,
-)
-
 autotools_package(
     name = "pam-abl",
-    source = ":pam-abl-src",
+    src_uri = "https://github.com/deksai/pam_abl/archive/refs/tags/v0.6.0.tar.gz",
+
+    sha256 = "164d1d5fe042d85f653e61ab8823257a2b377d0c43f391d35d11143b72802ad3",
     version = "0.6.0",
     description = "PAM module for auto-blacklisting failed logins",
     homepage = "https://github.com/deksai/pam_abl",

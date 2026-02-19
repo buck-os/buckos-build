@@ -1,16 +1,11 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
 
-download_source(
-    name = "libedit-src",
-    src_uri = "https://thrysoee.dk/editline/libedit-20230828-3.1.tar.gz",
-    sha256 = "4ee8182b6e569290e7d1f44f0f78dac8716b35f656b76528f699c69c98814dad",
-    signature_required = False,
-)
-
 autotools_package(
     name = "libedit",
-    source = ":libedit-src",
+    src_uri = "https://thrysoee.dk/editline/libedit-20230828-3.1.tar.gz",
+
+    sha256 = "4ee8182b6e569290e7d1f44f0f78dac8716b35f656b76528f699c69c98814dad",
     iuse = ["static-libs"],
     use_configure = {
         "-static-libs": "--disable-static",

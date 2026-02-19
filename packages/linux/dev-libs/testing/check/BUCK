@@ -1,20 +1,15 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
 
-download_source(
-    name = "check-src",
-    src_uri = "https://github.com/libcheck/check/releases/download/0.15.2/check-0.15.2.tar.gz",
-    sha256 = "a8de4e0bacfb4d76dd1c618ded263523b53b85d92a146d8835eb1a52932fa20a",
-    signature_required = False,
-)
-
 # check - official release tarball includes pre-generated configure
 autotools_package(
     name = "check",
     # No autoreconf needed - tarball has pre-generated configure
     bdepend = [],
     src_prepare = "",
-    source = ":check-src",
+    src_uri = "https://github.com/libcheck/check/releases/download/0.15.2/check-0.15.2.tar.gz",
+
+    sha256 = "a8de4e0bacfb4d76dd1c618ded263523b53b85d92a146d8835eb1a52932fa20a",
     iuse = ["subunit"],
     use_configure = {
         "-subunit": "--disable-subunit",

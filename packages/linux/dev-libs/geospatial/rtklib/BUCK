@@ -1,15 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 
-download_source(
-    name = "rtklib-src",
-    src_uri = "https://github.com/rtklibexplorer/RTKLIB/archive/f1543bf9dc5f179298c7bf7fb34cc5c05220eec7.tar.gz",
-    sha256 = "99a9e40967075f3fd9d1fcb2c83f623bca768c96205f4c110100f8185df9df8c",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "rtklib",
-    source = ":rtklib-src",
+    src_uri = "https://github.com/rtklibexplorer/RTKLIB/archive/f1543bf9dc5f179298c7bf7fb34cc5c05220eec7.tar.gz",
+
+    sha256 = "99a9e40967075f3fd9d1fcb2c83f623bca768c96205f4c110100f8185df9df8c",
     version = "demo5-b34b",
     description = "RTKLIB: An Open Source Program Package for GNSS Positioning",
     homepage = "https://github.com/rtklibexplorer/RTKLIB",

@@ -1,15 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "meson_package")
 
-download_source(
-    name = "wtype-src",
-    src_uri = "https://github.com/atx/wtype/archive/v0.4.tar.gz",
-    sha256 = "da91786d828b6a6e29b884bc510473939eda052658ebef87d7bdeafa6a8746f9",
-    signature_required = False,
-)
-
 meson_package(
     name = "wtype",
-    source = ":wtype-src",
+    src_uri = "https://github.com/atx/wtype/archive/v0.4.tar.gz",
+
+    sha256 = "da91786d828b6a6e29b884bc510473939eda052658ebef87d7bdeafa6a8746f9",
     version = "0.4",
     description = "xdotool type for Wayland",
     homepage = "https://github.com/atx/wtype",

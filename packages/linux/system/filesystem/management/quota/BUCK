@@ -1,16 +1,11 @@
 load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "quota-src",
-    src_uri = "https://github.com/sailfishos-mirror/quota/archive/refs/tags/v4.09.tar.gz",
-    sha256 = "68d92d545731799b207a663c15253ba8237c02f67096f8680ae70cdcd1bd449b",
-    signature_required = False,
-)
-
 autotools_package(
     name = "quota",
-    source = ":quota-src",
+    src_uri = "https://github.com/sailfishos-mirror/quota/archive/refs/tags/v4.09.tar.gz",
+
+    sha256 = "68d92d545731799b207a663c15253ba8237c02f67096f8680ae70cdcd1bd449b",
     iuse = [
         "ldap",
         "netlink",

@@ -1,15 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "meson_package")
 
-download_source(
-    name = "swaync-src",
-    src_uri = "https://github.com/ErikReider/SwayNotificationCenter/archive/v0.9.0.tar.gz",
-    sha256 = "3f00bc858b7b3610e88ef0f6ee64d727892dd82f280f1dfc01dde863c2ea3376",
-    signature_required = False,
-)
-
 meson_package(
     name = "swaync",
-    source = ":swaync-src",
+    src_uri = "https://github.com/ErikReider/SwayNotificationCenter/archive/v0.9.0.tar.gz",
+
+    sha256 = "3f00bc858b7b3610e88ef0f6ee64d727892dd82f280f1dfc01dde863c2ea3376",
     version = "0.9.0",
     description = "A simple GTK notification daemon with a panel for Sway",
     homepage = "https://github.com/ErikReider/SwayNotificationCenter",

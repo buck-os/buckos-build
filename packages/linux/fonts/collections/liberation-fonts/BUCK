@@ -1,15 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 
-download_source(
-    name = "liberation-fonts-src",
-    src_uri = "https://github.com/liberationfonts/liberation-fonts/files/7261482/liberation-fonts-ttf-2.1.5.tar.gz",
-    sha256 = "7191c669bf38899f73a2094ed00f7b800553364f90e2637010a69c0e268f25d0",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "liberation-fonts",
-    source = ":liberation-fonts-src",
+    src_uri = "https://github.com/liberationfonts/liberation-fonts/files/7261482/liberation-fonts-ttf-2.1.5.tar.gz",
+
+    sha256 = "7191c669bf38899f73a2094ed00f7b800553364f90e2637010a69c0e268f25d0",
     iuse = ["X", "fontforge"],
     use_configure = {
         "-X": "--without-x",

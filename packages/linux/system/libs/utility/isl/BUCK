@@ -2,16 +2,11 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
 # Use official release tarball which includes generated configure script
-download_source(
-    name = "isl-src",
-    src_uri = "https://mirror.buckos.org/i/isl-0.26.tar.xz",
-    sha256 = "a0b5cb06d24f9fa9e77b55fabbe9a3c94a336190345c2555f9915bb38e976504",
-    signature_required = False,
-)
-
 autotools_package(
     name = "isl",
-    source = ":isl-src",
+    src_uri = "https://mirror.buckos.org/i/isl-0.26.tar.xz",
+
+    sha256 = "a0b5cb06d24f9fa9e77b55fabbe9a3c94a336190345c2555f9915bb38e976504",
     iuse = ["static-libs"],
     use_configure = {
         "-static-libs": "--disable-static",

@@ -1,17 +1,12 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "yaml-src",
-    src_uri = "https://github.com/yaml/libyaml/releases/download/0.2.5/yaml-0.2.5.tar.gz",
-    sha256 = "c642ae9b75fee120b2d96c712538bd2cf283228d2337df2cf2988e3c02678ef4",
-    signature_required = False,
-)
-
 autotools_package(
     name = "yaml",
     # GitHub release tarball includes pre-generated configure script
-    source = ":yaml-src",
+    src_uri = "https://github.com/yaml/libyaml/releases/download/0.2.5/yaml-0.2.5.tar.gz",
+
+    sha256 = "c642ae9b75fee120b2d96c712538bd2cf283228d2337df2cf2988e3c02678ef4",
     version = "0.2.5",
     description = "YAML 1.1 parser and emitter library",
     homepage = "https://pyyaml.org/wiki/LibYAML",

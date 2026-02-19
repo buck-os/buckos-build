@@ -1,14 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "cmake_package")
 
-download_source(
-    name = "fpnge-src",
-    src_uri = "https://github.com/veluca93/fpnge/archive/bbc7bdf23e7b85ce46381477e9240c1331d9cf43.tar.gz",
-    sha256 = "924b54ae457e4c01c07daa794ceae077b0514e3a83b23ef24d94ffdb2786e12f",
-)
-
 cmake_package(
     name = "fpnge",
-    source = ":fpnge-src",
+    src_uri = "https://github.com/veluca93/fpnge/archive/bbc7bdf23e7b85ce46381477e9240c1331d9cf43.tar.gz",
+
+    sha256 = "924b54ae457e4c01c07daa794ceae077b0514e3a83b23ef24d94ffdb2786e12f",
     version = "0.1",
     description = "Fast PNG Encoder using AVX2",
     homepage = "https://github.com/veluca93/fpnge",

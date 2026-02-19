@@ -2,17 +2,13 @@ load("//defs:package_defs.bzl", "download_source", "ebuild_package", "autotools_
 load("//defs:use_flags.bzl", "set_use_flags")
 
 # puppet - Configuration management tool
-download_source(
-    name = "puppet-src",
-    src_uri = "https://downloads.puppetlabs.com/puppet/puppet-8.4.0.tar.gz",
-    sha256 = "6e528cbcf499fd03f01a362a5a6a7d7e908def2b169d6794e6cf8b2dd1193f8d",
-    signature_sha256 = "7f56b2a37a73ae5aeee51019cd626edbe0e35275703a00b1458107868b642c7d",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "puppet",
-    source = ":puppet-src",
+    src_uri = "https://downloads.puppetlabs.com/puppet/puppet-8.4.0.tar.gz",
+
+    sha256 = "6e528cbcf499fd03f01a362a5a6a7d7e908def2b169d6794e6cf8b2dd1193f8d",
+
+    signature_sha256 = "7f56b2a37a73ae5aeee51019cd626edbe0e35275703a00b1458107868b642c7d",
     version = "8.4.0",
     description = "Configuration management and automation tool",
     homepage = "https://puppet.com",

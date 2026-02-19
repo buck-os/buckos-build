@@ -1,17 +1,11 @@
 load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "attr-src",
-    # Use savannah release which includes pre-generated configure script
-    src_uri = "https://download.savannah.nongnu.org/releases/attr/attr-2.5.2.tar.xz",
-    sha256 = "f2e97b0ab7ce293681ab701915766190d607a1dba7fae8a718138150b700a70b",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "attr",
-    source = ":attr-src",
+    src_uri = "https://download.savannah.nongnu.org/releases/attr/attr-2.5.2.tar.xz",
+
+    sha256 = "f2e97b0ab7ce293681ab701915766190d607a1dba7fae8a718138150b700a70b",
     iuse = ["debug", "nls", "static-libs"],
     use_configure = {
         "-debug": "--disable-debug",

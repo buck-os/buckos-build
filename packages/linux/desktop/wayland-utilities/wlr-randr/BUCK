@@ -1,15 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "meson_package")
 
-download_source(
-    name = "wlr-randr-src",
-    src_uri = "https://gitlab.freedesktop.org/emersion/wlr-randr/-/archive/v0.4.1/wlr-randr-v0.4.1.tar.gz",
-    sha256 = "8af085aeed3132f7442a05bafeadfd0ea30e9a4818af1a91e161f7d560f2cd93",
-    signature_required = False,
-)
-
 meson_package(
     name = "wlr-randr",
-    source = ":wlr-randr-src",
+    src_uri = "https://gitlab.freedesktop.org/emersion/wlr-randr/-/archive/v0.4.1/wlr-randr-v0.4.1.tar.gz",
+
+    sha256 = "8af085aeed3132f7442a05bafeadfd0ea30e9a4818af1a91e161f7d560f2cd93",
     version = "0.4.1",
     description = "An xrandr clone for wlroots compositors",
     homepage = "https://gitlab.freedesktop.org/emersion/wlr-randr",

@@ -1,16 +1,11 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "theora-src",
-    src_uri = "https://downloads.xiph.org/releases/theora/libtheora-1.1.1.tar.xz",
-    sha256 = "f36da409947aa2b3dcc6af0a8c2e3144bc19db2ed547d64e9171c59c66561c61",
-    signature_required = False,
-)
-
 autotools_package(
     name = "theora",
-    source = ":theora-src",
+    src_uri = "https://downloads.xiph.org/releases/theora/libtheora-1.1.1.tar.xz",
+
+    sha256 = "f36da409947aa2b3dcc6af0a8c2e3144bc19db2ed547d64e9171c59c66561c61",
     version = "1.1.1",
     description = "Open video codec",
     homepage = "https://www.theora.org/",

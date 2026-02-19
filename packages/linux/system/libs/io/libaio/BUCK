@@ -2,16 +2,11 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
 # Use GitHub mirror since pagure.io blocks Buck2's user-agent with bot detection
-download_source(
-    name = "libaio-src",
-    src_uri = "https://github.com/yugabyte/libaio/archive/refs/tags/libaio-0.3.113.tar.gz",
-    sha256 = "25f2835de4fe3db1472252a3e3ff572cfdbad291430f4ad14dc475fc4f28ab10",
-    signature_required = False,
-)
-
 autotools_package(
     name = "libaio",
-    source = ":libaio-src",
+    src_uri = "https://github.com/yugabyte/libaio/archive/refs/tags/libaio-0.3.113.tar.gz",
+
+    sha256 = "25f2835de4fe3db1472252a3e3ff572cfdbad291430f4ad14dc475fc4f28ab10",
     iuse = ["static-libs"],
     use_configure = {
         "-static-libs": "--disable-static",

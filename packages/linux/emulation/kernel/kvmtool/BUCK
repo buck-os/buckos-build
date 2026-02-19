@@ -2,17 +2,12 @@ load("//defs:package_defs.bzl", "download_source", "make_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
 # kvmtool - Lightweight KVM host tool
-download_source(
-    name = "kvmtool-src",
-    src_uri = "https://git.kernel.org/pub/scm/linux/kernel/git/will/kvmtool.git/snapshot/kvmtool-master.tar.gz",
-    sha256 = "9296eb605e0b63a9997fab68750f4d21daaaa7d641382bc981e2a3f3cd5f23ee",
-    signature_required = False,
-)
-
 # kvmtool is a simple Makefile-based project (no autotools/configure)
 make_package(
     name = "kvmtool",
-    source = ":kvmtool-src",
+    src_uri = "https://git.kernel.org/pub/scm/linux/kernel/git/will/kvmtool.git/snapshot/kvmtool-master.tar.gz",
+
+    sha256 = "9296eb605e0b63a9997fab68750f4d21daaaa7d641382bc981e2a3f3cd5f23ee",
     version = "git",
     description = "Lightweight tool for hosting KVM guests",
     homepage = "https://git.kernel.org/pub/scm/linux/kernel/git/will/kvmtool.git",

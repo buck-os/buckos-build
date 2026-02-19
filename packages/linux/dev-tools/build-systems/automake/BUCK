@@ -4,17 +4,13 @@ load("//defs:use_flags.bzl", "set_use_flags")
 
 # Automake cannot use autotools_package because it would create a circular dependency
 # (autotools eclass depends on automake). Build it manually instead.
-download_source(
-    name = "automake-src",
-    src_uri = "https://mirror.buckos.org/a/automake-1.16.5.tar.xz",
-    sha256 = "f01d58cd6d9d77fbdca9eb4bbd5ead1988228fdb73d6f7a201f5f8d6b118b469",
-    signature_sha256 = "3a161ab65921eed55e1a94251d97c8451d4ba3431b55ca560e95a951b5f1d73a",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "automake",
-    source = ":automake-src",
+    src_uri = "https://mirror.buckos.org/a/automake-1.16.5.tar.xz",
+
+    sha256 = "f01d58cd6d9d77fbdca9eb4bbd5ead1988228fdb73d6f7a201f5f8d6b118b469",
+
+    signature_sha256 = "3a161ab65921eed55e1a94251d97c8451d4ba3431b55ca560e95a951b5f1d73a",
     version = "1.16.5",
     category = "dev-tools/build-systems",
     slot = "0",

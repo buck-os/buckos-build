@@ -1,27 +1,15 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "grub-src",
-    src_uri = "https://mirrors.kernel.org/gnu/grub/grub-2.12.tar.xz",
-    sha256 = "f3c97391f7c4eaa677a78e090c7e97e6dc47b16f655f04683ebd37bef7fe0faa",
-    signature_sha256 = "062b2e02b82326be39c3883f242d75b63d5a4b5dbe98e5d6657db4e22d479af3",
-    signature_required=False,
-)
-
-download_source(
-    name = "grub-bios-src",
-    src_uri = "https://mirrors.kernel.org/gnu/grub/grub-2.12.tar.xz",
-    sha256 = "f3c97391f7c4eaa677a78e090c7e97e6dc47b16f655f04683ebd37bef7fe0faa",
-    signature_sha256 = "062b2e02b82326be39c3883f242d75b63d5a4b5dbe98e5d6657db4e22d479af3",
-    signature_required=False,
-)
-
 # USE flags: See use_flags.bzl for available flags
 
 autotools_package(
     name = "grub",
-    source = ":grub-src",
+    src_uri = "https://mirrors.kernel.org/gnu/grub/grub-2.12.tar.xz",
+
+    sha256 = "f3c97391f7c4eaa677a78e090c7e97e6dc47b16f655f04683ebd37bef7fe0faa",
+
+    signature_sha256 = "062b2e02b82326be39c3883f242d75b63d5a4b5dbe98e5d6657db4e22d479af3",
     version = "2.12",
     description = "GNU GRUB is a Multiboot boot loader",
     homepage = "https://www.gnu.org/software/grub/",
@@ -203,7 +191,11 @@ chmod +x "$DESTDIR/etc/grub.d/01_buckos_header"
 
 autotools_package(
     name = "grub-bios",
-    source = ":grub-bios-src",
+    src_uri = "https://mirrors.kernel.org/gnu/grub/grub-2.12.tar.xz",
+
+    sha256 = "f3c97391f7c4eaa677a78e090c7e97e6dc47b16f655f04683ebd37bef7fe0faa",
+
+    signature_sha256 = "062b2e02b82326be39c3883f242d75b63d5a4b5dbe98e5d6657db4e22d479af3",
     version = "2.12",
     description = "GNU GRUB for BIOS systems",
     homepage = "https://www.gnu.org/software/grub/",

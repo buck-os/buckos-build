@@ -1,17 +1,13 @@
 load("//defs:package_defs.bzl", "cmake_package", "download_source")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "encfs-src",
-    src_uri = "https://github.com/vgough/encfs/releases/download/v1.9.5/encfs-1.9.5.tar.gz",
-    sha256 = "4709f05395ccbad6c0a5b40a4619d60aafe3473b1a79bafb3aa700b1f756fd63",
-    signature_sha256 = "b0d4dcf25b78163b7a58e16f12d8ac72aa2723712895e0778d6f06606b516f1f",
-    signature_required = False,
-)
-
 cmake_package(
     name = "encfs",
-    source = ":encfs-src",
+    src_uri = "https://github.com/vgough/encfs/releases/download/v1.9.5/encfs-1.9.5.tar.gz",
+
+    sha256 = "4709f05395ccbad6c0a5b40a4619d60aafe3473b1a79bafb3aa700b1f756fd63",
+
+    signature_sha256 = "b0d4dcf25b78163b7a58e16f12d8ac72aa2723712895e0778d6f06606b516f1f",
     iuse = ["nls"],
     use_cmake = {
         "-nls": "-DENABLE_NLS=OFF",

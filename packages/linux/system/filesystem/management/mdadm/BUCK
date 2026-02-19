@@ -1,16 +1,11 @@
 load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "mdadm-src",
-    src_uri = "https://mirrors.edge.kernel.org/pub/linux/utils/raid/mdadm/mdadm-4.3.tar.xz",
-    sha256 = "416727ae1f1080ea6e3090cea36dd076826fc369151e36ab736557ba92196f9f",
-    signature_required = False,
-)
-
 autotools_package(
     name = "mdadm",
-    source = ":mdadm-src",
+    src_uri = "https://mirrors.edge.kernel.org/pub/linux/utils/raid/mdadm/mdadm-4.3.tar.xz",
+
+    sha256 = "416727ae1f1080ea6e3090cea36dd076826fc369151e36ab736557ba92196f9f",
     iuse = [
         "corosync",
         "static",

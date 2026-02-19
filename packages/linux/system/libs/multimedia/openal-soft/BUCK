@@ -1,16 +1,11 @@
 load("//defs:package_defs.bzl", "download_source", "cmake_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "openal-soft-src",
-    src_uri = "https://github.com/kcat/openal-soft/archive/refs/tags/1.23.1.tar.gz",
-    sha256 = "dfddf3a1f61059853c625b7bb03de8433b455f2f79f89548cbcbd5edca3d4a4a",
-    signature_required = False,
-)
-
 cmake_package(
     name = "openal-soft",
-    source = ":openal-soft-src",
+    src_uri = "https://github.com/kcat/openal-soft/archive/refs/tags/1.23.1.tar.gz",
+
+    sha256 = "dfddf3a1f61059853c625b7bb03de8433b455f2f79f89548cbcbd5edca3d4a4a",
     version = "1.23.1",
     description = "Cross-platform 3D audio library (OpenAL implementation)",
     homepage = "https://openal-soft.org/",

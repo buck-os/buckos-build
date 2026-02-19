@@ -1,16 +1,13 @@
 load("//defs:package_defs.bzl", "meson_package", "download_source")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "sshfs-src",
-    src_uri = "https://github.com/libfuse/sshfs/releases/download/sshfs-3.7.3/sshfs-3.7.3.tar.xz",
-    sha256 = "5218ce7bdd2ce0a34137a0d7798e0f6d09f0e6d21b1e98ee730a18b0699c2e99",
-    signature_sha256 = "6ec65377c6da471e509eb0d5583408b46840f6959f13b45385b1acd81692e7bf",
-)
-
 meson_package(
     name = "sshfs",
-    source = ":sshfs-src",
+    src_uri = "https://github.com/libfuse/sshfs/releases/download/sshfs-3.7.3/sshfs-3.7.3.tar.xz",
+
+    sha256 = "5218ce7bdd2ce0a34137a0d7798e0f6d09f0e6d21b1e98ee730a18b0699c2e99",
+
+    signature_sha256 = "6ec65377c6da471e509eb0d5583408b46840f6959f13b45385b1acd81692e7bf",
     version = "3.7.3",
     description = "FUSE-based filesystem client for mounting remote directories over SSH",
     homepage = "https://github.com/libfuse/sshfs",

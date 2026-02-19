@@ -1,15 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 
-download_source(
-    name = "dejavu-fonts-src",
-    src_uri = "https://github.com/dejavu-fonts/dejavu-fonts/releases/download/version_2_37/dejavu-fonts-ttf-2.37.tar.bz2",
-    sha256 = "fa9ca4d13871dd122f61258a80d01751d603b4d3ee14095d65453b4e846e17d7",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "dejavu-fonts",
-    source = ":dejavu-fonts-src",
+    src_uri = "https://github.com/dejavu-fonts/dejavu-fonts/releases/download/version_2_37/dejavu-fonts-ttf-2.37.tar.bz2",
+
+    sha256 = "fa9ca4d13871dd122f61258a80d01751d603b4d3ee14095d65453b4e846e17d7",
     version = "2.37",
     description = "DejaVu fonts - derivative of Bitstream Vera with extended Unicode coverage",
     homepage = "https://dejavu-fonts.github.io/",

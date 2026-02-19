@@ -1,15 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "meson_package")
 
-download_source(
-    name = "wdisplays-src",
-    src_uri = "https://github.com/artizirk/wdisplays/archive/1.1.1.tar.gz",
-    sha256 = "2df2c56db494c8450b1c7746b0ed2af11bf637fe2838f7412146fcc5cc1a2605",
-    signature_required = False,
-)
-
 meson_package(
     name = "wdisplays",
-    source = ":wdisplays-src",
+    src_uri = "https://github.com/artizirk/wdisplays/archive/1.1.1.tar.gz",
+
+    sha256 = "2df2c56db494c8450b1c7746b0ed2af11bf637fe2838f7412146fcc5cc1a2605",
     version = "1.1.1",
     description = "GUI display configurator for wlroots compositors",
     homepage = "https://github.com/artizirk/wdisplays",

@@ -1,18 +1,14 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
 
-download_source(
-    name = "sed-src",
-    src_uri = "https://mirrors.kernel.org/gnu/sed/sed-4.9.tar.xz",
-    sha256 = "6e226b732e1cd739464ad6862bd1a1aba42d7982922da7a53519631d24975181",
-    signature_sha256 = "9ea64f215b308ae0a80cd958daaac23bb13491d69a472a0195974d107890a8c6",
-    signature_required=False,
-)
-
 autotools_package(
     name = "sed",
     bdepend = [],
-    source = ":sed-src",
+    src_uri = "https://mirrors.kernel.org/gnu/sed/sed-4.9.tar.xz",
+
+    sha256 = "6e226b732e1cd739464ad6862bd1a1aba42d7982922da7a53519631d24975181",
+
+    signature_sha256 = "9ea64f215b308ae0a80cd958daaac23bb13491d69a472a0195974d107890a8c6",
     iuse = [
         "acl",
         "nls",

@@ -1,15 +1,12 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 
-download_source(
-    name = "libarchive-src",
-    src_uri = "https://www.libarchive.org/downloads/libarchive-3.7.6.tar.xz",
-    sha256 = "0a2efdcb185da2eb1e7cd8421434cb9a6119f72417a13335cca378d476fd3ba0",
-    signature_sha256 = "ac8b8b4abc81216ffee2ec15fd30eeec55a15b57f3fc6dcba4ccca85d5af9927",
-)
-
 autotools_package(
     name = "libarchive",
-    source = ":libarchive-src",
+    src_uri = "https://www.libarchive.org/downloads/libarchive-3.7.6.tar.xz",
+
+    sha256 = "0a2efdcb185da2eb1e7cd8421434cb9a6119f72417a13335cca378d476fd3ba0",
+
+    signature_sha256 = "ac8b8b4abc81216ffee2ec15fd30eeec55a15b57f3fc6dcba4ccca85d5af9927",
     iuse = [
         "acl",
         "blake2",

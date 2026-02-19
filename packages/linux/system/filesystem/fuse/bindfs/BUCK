@@ -1,13 +1,6 @@
 load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "bindfs-src",
-    src_uri = "https://bindfs.org/downloads/bindfs-1.17.6.tar.gz",
-    sha256 = "d3beb3cc69bb2b6802cc539588e921fea973ed6191b133f2024719311d1cc18b",
-    signature_required = False,
-)
-
 autotools_package(
     name = "bindfs",
     bdepend = [
@@ -19,7 +12,9 @@ autotools_package(
     src_prepare = """
 autoreconf -fi
 """,
-    source = ":bindfs-src",
+    src_uri = "https://bindfs.org/downloads/bindfs-1.17.6.tar.gz",
+
+    sha256 = "d3beb3cc69bb2b6802cc539588e921fea973ed6191b133f2024719311d1cc18b",
     iuse = ["debug"],
     use_configure = {
         "-debug": "--disable-debug",

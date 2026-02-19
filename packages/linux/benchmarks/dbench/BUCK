@@ -6,16 +6,11 @@ load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 # and autoreconf fails due to Automake module issues. We use a custom
 # build that regenerates the configure script properly.
 
-download_source(
-    name = "dbench-src",
-    src_uri = "https://samba.org/ftp/tridge/dbench/dbench-4.0.tar.gz",
-    sha256 = "6001893f34e68a3cfeb5d424e1f2bfef005df96a22d86f35dc770c5bccf3aa8a",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "dbench",
-    source = ":dbench-src",
+    src_uri = "https://samba.org/ftp/tridge/dbench/dbench-4.0.tar.gz",
+
+    sha256 = "6001893f34e68a3cfeb5d424e1f2bfef005df96a22d86f35dc770c5bccf3aa8a",
     version = "4.0",
     category = "benchmarks",
     description = "Database-style benchmark for filesystems",

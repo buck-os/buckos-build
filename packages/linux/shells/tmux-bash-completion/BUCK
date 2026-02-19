@@ -2,16 +2,11 @@ load("//defs:package_defs.bzl", "download_source", "ebuild_package", "autotools_
 load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
 
 # tmux-bash-completion - Bash completion for tmux
-download_source(
-    name = "tmux-bash-completion-src",
-    src_uri = "https://github.com/imomaliev/tmux-bash-completion/archive/refs/heads/master.tar.gz",
-    sha256 = "e19ab4070ff99fcbb8969c9cfb85a984b775567eff6495ce58ee242723e72ca1",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "tmux-bash-completion",
-    source = ":tmux-bash-completion-src",
+    src_uri = "https://github.com/imomaliev/tmux-bash-completion/archive/refs/heads/master.tar.gz",
+
+    sha256 = "e19ab4070ff99fcbb8969c9cfb85a984b775567eff6495ce58ee242723e72ca1",
     version = "2.0.0",
     description = "Bash completion for tmux",
     homepage = "https://github.com/imobert/tmux-bash-completion",

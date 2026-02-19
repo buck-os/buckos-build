@@ -8,16 +8,11 @@
 load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "acpi_call-src",
-    src_uri = "https://github.com/nix-community/acpi_call/archive/refs/tags/v1.2.2.tar.gz",
-    sha256 = "8b1902a94395c2fa5a97f81c94868a9cbc46a48e12309ad01626439bde96f1d9",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "acpi_call",
-    source = ":acpi_call-src",
+    src_uri = "https://github.com/nix-community/acpi_call/archive/refs/tags/v1.2.2.tar.gz",
+
+    sha256 = "8b1902a94395c2fa5a97f81c94868a9cbc46a48e12309ad01626439bde96f1d9",
     iuse = ["examples"],
     use_configure = {
         "-examples": "--disable-examples",

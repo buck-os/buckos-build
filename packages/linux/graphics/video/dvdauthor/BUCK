@@ -3,16 +3,11 @@ load("//defs:use_flags.bzl", "set_use_flags")
 
 # dvdauthor - Tools for generating DVD files
 
-download_source(
-    name = "dvdauthor-src",
-    src_uri = "https://github.com/ldo/dvdauthor/archive/refs/tags/0.7.2.tar.gz",
-    sha256 = "fd66b92f6c67bd406030ff0f1c3233175768b534df4d341c3f380ecd61de91b5",
-    signature_required = False,
-)
-
 autotools_package(
     name = "dvdauthor",
-    source = ":dvdauthor-src",
+    src_uri = "https://github.com/ldo/dvdauthor/archive/refs/tags/0.7.2.tar.gz",
+
+    sha256 = "fd66b92f6c67bd406030ff0f1c3233175768b534df4d341c3f380ecd61de91b5",
     iuse = ["graphicsmagick", "imagemagick"],
     use_configure = {
         "-graphicsmagick": "--disable-graphicsmagick",

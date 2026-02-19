@@ -1,14 +1,10 @@
 load("//defs:package_defs.bzl", "autotools_package", "download_source")
 
-download_source(
-    name = "proton-wine-src",
-    src_uri = "https://github.com/ValveSoftware/wine/archive/refs/tags/proton-wine-9.0-3.tar.gz",
-    sha256 = "df33e623a864cfd9a48a51dd2979d5dc25a03266729faa35f09388be2fb61523",
-)
-
 autotools_package(
     name = "proton-wine",
-    source = ":proton-wine-src",
+    src_uri = "https://github.com/ValveSoftware/wine/archive/refs/tags/proton-wine-9.0-3.tar.gz",
+
+    sha256 = "df33e623a864cfd9a48a51dd2979d5dc25a03266729faa35f09388be2fb61523",
     version = "9.0-3",
     description = "Valve's Wine fork for Steam Proton compatibility layer",
     homepage = "https://github.com/ValveSoftware/wine",

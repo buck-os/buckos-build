@@ -4,18 +4,13 @@
 load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "gamescope-src",
-    src_uri = "https://github.com/ValveSoftware/gamescope/archive/refs/tags/3.14.24.tar.gz",
-    sha256 = "429ef04aab9b3ca5cac76752f59e2219d8326010c0cd9533ad580f65f5bfd3a3",
-    signature_required = False,
-)
-
 # USE flags: See use_flags.bzl for available flags
 
 autotools_package(
     name = "gamescope",
-    source = ":gamescope-src",
+    src_uri = "https://github.com/ValveSoftware/gamescope/archive/refs/tags/3.14.24.tar.gz",
+
+    sha256 = "429ef04aab9b3ca5cac76752f59e2219d8326010c0cd9533ad580f65f5bfd3a3",
     iuse = [
         "avif",
         "libei",

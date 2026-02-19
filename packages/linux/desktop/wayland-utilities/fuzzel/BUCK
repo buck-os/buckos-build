@@ -1,15 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "meson_package")
 
-download_source(
-    name = "fuzzel-src",
-    src_uri = "https://codeberg.org/dnkl/fuzzel/archive/1.9.2.tar.gz",
-    sha256 = "fb68a09a6f6f3dde8266177b1bef6f5c91b3bf60e9925eea7887ad2fa81d2183",
-    signature_required = False,
-)
-
 meson_package(
     name = "fuzzel",
-    source = ":fuzzel-src",
+    src_uri = "https://codeberg.org/dnkl/fuzzel/archive/1.9.2.tar.gz",
+
+    sha256 = "fb68a09a6f6f3dde8266177b1bef6f5c91b3bf60e9925eea7887ad2fa81d2183",
     version = "1.9.2",
     description = "Application launcher for wlroots compositors",
     homepage = "https://codeberg.org/dnkl/fuzzel",

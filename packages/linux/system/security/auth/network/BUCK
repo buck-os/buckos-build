@@ -5,16 +5,11 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
 # pam_radius - RADIUS PAM module
-download_source(
-    name = "pam-radius-src",
-    src_uri = "https://github.com/FreeRADIUS/pam_radius/archive/refs/tags/release_2_0_0.tar.gz",
-    sha256 = "798dc358e7a143163e103bd38c4101645b2e93d82aa0ec63d32c0cb929d9c65c",
-    signature_required = False,
-)
-
 autotools_package(
     name = "pam-radius",
-    source = ":pam-radius-src",
+    src_uri = "https://github.com/FreeRADIUS/pam_radius/archive/refs/tags/release_2_0_0.tar.gz",
+
+    sha256 = "798dc358e7a143163e103bd38c4101645b2e93d82aa0ec63d32c0cb929d9c65c",
     version = "2.0.0",
     description = "PAM module for RADIUS authentication",
     homepage = "https://github.com/FreeRADIUS/pam_radius",
@@ -39,16 +34,11 @@ autotools_package(
 )
 
 # pam_tacplus - TACACS+ PAM module
-download_source(
-    name = "pam-tacplus-src",
-    src_uri = "https://github.com/kravietz/pam_tacplus/archive/refs/tags/v1.7.0.tar.gz",
-    sha256 = "b6c102eef0a42e3946bcdc29bbf7145c6dd13aa1fb6c58f6d282826166391837",
-    signature_required = False,
-)
-
 autotools_package(
     name = "pam-tacplus",
-    source = ":pam-tacplus-src",
+    src_uri = "https://github.com/kravietz/pam_tacplus/archive/refs/tags/v1.7.0.tar.gz",
+
+    sha256 = "b6c102eef0a42e3946bcdc29bbf7145c6dd13aa1fb6c58f6d282826166391837",
     version = "1.7.0",
     description = "PAM module for TACACS+ authentication",
     homepage = "https://github.com/kravietz/pam_tacplus",

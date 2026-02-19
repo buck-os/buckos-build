@@ -5,17 +5,13 @@ load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 # =============================================================================
 
 # umoci - OCI image tool
-download_source(
-    name = "umoci-src",
-    src_uri = "https://github.com/opencontainers/umoci/releases/download/v0.4.7/umoci.tar.xz",
-    sha256 = "693a3780937c785de8f6dd233786c1ea870bbe8ccba2f6f1e20339329394743b",
-    signature_sha256 = "8694e13c7f4f38fefa2fdea774d9f55d8d7179ae53d9f838a40d78bca9e43d0a",
-    signature_required=False,
-)
-
 ebuild_package(
     name = "umoci",
-    source = ":umoci-src",
+    src_uri = "https://github.com/opencontainers/umoci/releases/download/v0.4.7/umoci.tar.xz",
+
+    sha256 = "693a3780937c785de8f6dd233786c1ea870bbe8ccba2f6f1e20339329394743b",
+
+    signature_sha256 = "8694e13c7f4f38fefa2fdea774d9f55d8d7179ae53d9f838a40d78bca9e43d0a",
     version = "0.4.7",
     description = "Modify Open Container images",
     homepage = "https://github.com/opencontainers/umoci",
@@ -34,16 +30,11 @@ install -m 755 build/umoci "$DESTDIR/usr/bin/umoci"
 )
 
 # dive - Explore container image layers
-download_source(
-    name = "dive-src",
-    src_uri = "https://github.com/wagoodman/dive/archive/refs/tags/v0.12.0.tar.gz",
-    sha256 = "2b69b8d28220c66e2575a782a370a0c05077936ae3ce69180525412fcca09230",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "dive",
-    source = ":dive-src",
+    src_uri = "https://github.com/wagoodman/dive/archive/refs/tags/v0.12.0.tar.gz",
+
+    sha256 = "2b69b8d28220c66e2575a782a370a0c05077936ae3ce69180525412fcca09230",
     version = "0.12.0",
     description = "A tool for exploring container image layer contents",
     homepage = "https://github.com/wagoodman/dive",
@@ -64,16 +55,11 @@ install -m 755 dive-bin "$DESTDIR/usr/bin/dive"
 )
 
 # ctop - Container metrics viewer
-download_source(
-    name = "ctop-src",
-    src_uri = "https://github.com/bcicen/ctop/archive/refs/tags/v0.7.7.tar.gz",
-    sha256 = "0db439f2030af73ad5345884b08a33a762c3b41b30604223dd0ebddde72d2741",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "ctop",
-    source = ":ctop-src",
+    src_uri = "https://github.com/bcicen/ctop/archive/refs/tags/v0.7.7.tar.gz",
+
+    sha256 = "0db439f2030af73ad5345884b08a33a762c3b41b30604223dd0ebddde72d2741",
     version = "0.7.7",
     description = "Top-like interface for container metrics",
     homepage = "https://github.com/bcicen/ctop",
@@ -93,16 +79,11 @@ install -m 755 ctop "$DESTDIR/usr/bin/ctop"
 )
 
 # lazydocker - Terminal UI for docker and docker-compose (works with podman)
-download_source(
-    name = "lazydocker-src",
-    src_uri = "https://github.com/jesseduffield/lazydocker/archive/refs/tags/v0.23.1.tar.gz",
-    sha256 = "3f0b8ca1c721191e543d5992d822b41c13e3561bb5e761695031f8ddb961a137",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "lazydocker",
-    source = ":lazydocker-src",
+    src_uri = "https://github.com/jesseduffield/lazydocker/archive/refs/tags/v0.23.1.tar.gz",
+
+    sha256 = "3f0b8ca1c721191e543d5992d822b41c13e3561bb5e761695031f8ddb961a137",
     version = "0.23.1",
     description = "Terminal UI for docker and docker-compose",
     homepage = "https://github.com/jesseduffield/lazydocker",
@@ -122,16 +103,11 @@ install -m 755 lazydocker "$DESTDIR/usr/bin/lazydocker"
 )
 
 # trivy - Security scanner for containers
-download_source(
-    name = "trivy-src",
-    src_uri = "https://github.com/aquasecurity/trivy/archive/refs/tags/v0.50.1.tar.gz",
-    sha256 = "1b5acce5580a401998946d9eeb2aaa0312f243c001809a83eb9557efda628d2d",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "trivy",
-    source = ":trivy-src",
+    src_uri = "https://github.com/aquasecurity/trivy/archive/refs/tags/v0.50.1.tar.gz",
+
+    sha256 = "1b5acce5580a401998946d9eeb2aaa0312f243c001809a83eb9557efda628d2d",
     version = "0.50.1",
     description = "Vulnerability scanner for containers and other artifacts",
     homepage = "https://github.com/aquasecurity/trivy",
@@ -155,16 +131,11 @@ mkdir -p "$DESTDIR/usr/share/bash-completion/completions"
 )
 
 # docker-credential-helpers - Credential helpers for container registries
-download_source(
-    name = "docker-credential-helpers-src",
-    src_uri = "https://github.com/docker/docker-credential-helpers/archive/refs/tags/v0.8.1.tar.gz",
-    sha256 = "c9006b2acf159d54fd00a1713422ab70914dae87270b4f44d05edab526199e20",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "docker-credential-helpers",
-    source = ":docker-credential-helpers-src",
+    src_uri = "https://github.com/docker/docker-credential-helpers/archive/refs/tags/v0.8.1.tar.gz",
+
+    sha256 = "c9006b2acf159d54fd00a1713422ab70914dae87270b4f44d05edab526199e20",
     version = "0.8.1",
     description = "Credential helpers for container registries",
     homepage = "https://github.com/docker/docker-credential-helpers",

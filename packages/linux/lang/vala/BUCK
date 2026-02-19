@@ -1,15 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 
-download_source(
-    name = "vala-src",
-    src_uri = "https://download.gnome.org/sources/vala/0.56/vala-0.56.18.tar.xz",
-    sha256 = "f2affe7d40ab63db8e7b9ecc3f6bdc9c2fc7e3134c84ff2d795f482fe926a382",
-    signature_required = False,
-)
-
 autotools_package(
     name = "vala",
-    source = ":vala-src",
+    src_uri = "https://download.gnome.org/sources/vala/0.56/vala-0.56.18.tar.xz",
+
+    sha256 = "f2affe7d40ab63db8e7b9ecc3f6bdc9c2fc7e3134c84ff2d795f482fe926a382",
     iuse = ["valadoc"],
     use_configure = {
         "-valadoc": "--disable-valadoc",

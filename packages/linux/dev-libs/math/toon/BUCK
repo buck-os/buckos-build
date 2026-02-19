@@ -1,14 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 
-download_source(
-    name = "toon-src",
-    src_uri = "https://www.edwardrosten.com/cvd/TooN-2.2.tar.xz",
-    sha256 = "399b1427c78589d0cf366b84addcebcc09e0f058969f61e86620d07b3540c1cd",
-)
-
 autotools_package(
     name = "toon",
-    source = ":toon-src",
+    src_uri = "https://www.edwardrosten.com/cvd/TooN-2.2.tar.xz",
+
+    sha256 = "399b1427c78589d0cf366b84addcebcc09e0f058969f61e86620d07b3540c1cd",
     version = "2.2",
     description = "TooN - a header-only C++ library for linear algebra",
     homepage = "https://www.edwardrosten.com/cvd/toon.html",

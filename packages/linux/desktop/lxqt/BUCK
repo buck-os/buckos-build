@@ -5,17 +5,13 @@ load("//defs:use_flags.bzl", "set_use_flags")
 # LXQt - Lightweight Qt desktop
 # =============================================================================
 
-download_source(
-    name = "lxqt-session-src",
-    src_uri = "https://github.com/lxqt/lxqt-session/releases/download/1.4.0/lxqt-session-1.4.0.tar.xz",
-    sha256 = "9dcdc846601f1972d01429f2203d36976088edcca5c166eef2b21ad73fcef656",
-    signature_sha256 = "47581a5b959f754af56d371bd8ee24ee0988841c1c5a8f97ec5961ac84d33296",
-    signature_required=False,
-)
-
 cmake_package(
     name = "lxqt-session",
-    source = ":lxqt-session-src",
+    src_uri = "https://github.com/lxqt/lxqt-session/releases/download/1.4.0/lxqt-session-1.4.0.tar.xz",
+
+    sha256 = "9dcdc846601f1972d01429f2203d36976088edcca5c166eef2b21ad73fcef656",
+
+    signature_sha256 = "47581a5b959f754af56d371bd8ee24ee0988841c1c5a8f97ec5961ac84d33296",
     iuse = ["X", "wayland", "udev", "pulseaudio"],
     use_defaults = ["X", "udev"],
     use_cmake = {
@@ -61,17 +57,13 @@ cmake_package(
     visibility = ["PUBLIC"],
 )
 
-download_source(
-    name = "lxqt-panel-src",
-    src_uri = "https://github.com/lxqt/lxqt-panel/releases/download/1.4.0/lxqt-panel-1.4.0.tar.xz",
-    sha256 = "0e660c0397c96a28f0fcf316b20c72d203c85793a884e1487b3b14e3790defc9",
-    signature_sha256 = "79f221529ee8d52cd5e173db280555f53c844f79073688286ca09ddcfba89eef",
-    signature_required=False,
-)
-
 cmake_package(
     name = "lxqt-panel",
-    source = ":lxqt-panel-src",
+    src_uri = "https://github.com/lxqt/lxqt-panel/releases/download/1.4.0/lxqt-panel-1.4.0.tar.xz",
+
+    sha256 = "0e660c0397c96a28f0fcf316b20c72d203c85793a884e1487b3b14e3790defc9",
+
+    signature_sha256 = "79f221529ee8d52cd5e173db280555f53c844f79073688286ca09ddcfba89eef",
     version = "1.4.0",
     description = "LXQt Panel",
     homepage = "https://lxqt-project.org/",

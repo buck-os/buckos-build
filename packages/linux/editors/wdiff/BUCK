@@ -2,19 +2,15 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
 
 # wdiff - Word difference finder
-download_source(
-    name = "wdiff-src",
-    src_uri = "https://mirrors.kernel.org/gnu/wdiff/wdiff-1.2.2.tar.gz",
-    sha256 = "34ff698c870c87e6e47a838eeaaae729fa73349139fc8db12211d2a22b78af6b",
-    signature_sha256 = "6e886f4fe3003ea01480987b6c6bedaf208b049127c834c48862aa5b89e3382e",
-    signature_required=False,
-)
-
 autotools_package(
     name = "wdiff",
     bdepend = [],
     src_prepare = "",
-    source = ":wdiff-src",
+    src_uri = "https://mirrors.kernel.org/gnu/wdiff/wdiff-1.2.2.tar.gz",
+
+    sha256 = "34ff698c870c87e6e47a838eeaaae729fa73349139fc8db12211d2a22b78af6b",
+
+    signature_sha256 = "6e886f4fe3003ea01480987b6c6bedaf208b049127c834c48862aa5b89e3382e",
     iuse = ["experimental"],
     use_configure = {
         "-experimental": "--disable-experimental",

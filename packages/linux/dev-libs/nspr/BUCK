@@ -2,20 +2,15 @@ load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 
 # NSPR - Netscape Portable Runtime
 # Cross-platform abstraction for system-level functions
-download_source(
-    name = "nspr-src",
-    src_uri = "https://archive.mozilla.org/pub/nspr/releases/v4.36/src/nspr-4.36.tar.gz",
-    sha256 = "55dec317f1401cd2e5dba844d340b930ab7547f818179a4002bce62e6f1c6895",
-    signature_required = False,
-)
-
 # NSPR - has its own configure, doesn't use standard autotools
 ebuild_package(
     name = "nspr",
     # No autoreconf needed - tarball has pre-generated configure in nspr/ subdir
     bdepend = [],
     src_prepare = "",
-    source = ":nspr-src",
+    src_uri = "https://archive.mozilla.org/pub/nspr/releases/v4.36/src/nspr-4.36.tar.gz",
+
+    sha256 = "55dec317f1401cd2e5dba844d340b930ab7547f818179a4002bce62e6f1c6895",
     iuse = ["debug"],
     use_configure = {
         "-debug": "--disable-debug",

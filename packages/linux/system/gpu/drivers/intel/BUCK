@@ -10,17 +10,12 @@
 load("//defs:package_defs.bzl", "download_source", "ebuild_package", "meson_package", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "intel-firmware-src",
-    src_uri = "https://cdn.kernel.org/pub/linux/kernel/firmware/linux-firmware-20241017.tar.gz",
-    sha256 = "830b66d0934d205969c472a4d5feb1ce2ed659ccebe81a78214098a982ac93cd",
-    signature_required = False,
-)
-
 # Intel GPU firmware
 ebuild_package(
     name = "intel-firmware",
-    source = ":intel-firmware-src",
+    src_uri = "https://cdn.kernel.org/pub/linux/kernel/firmware/linux-firmware-20241017.tar.gz",
+
+    sha256 = "830b66d0934d205969c472a4d5feb1ce2ed659ccebe81a78214098a982ac93cd",
     version = "20241017",
     description = "Intel GPU firmware files",
     homepage = "https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git",
@@ -34,6 +29,7 @@ cp -r i915/* "$DESTDIR/usr/lib/firmware/i915/"
 mkdir -p "$DESTDIR/usr/lib/firmware/intel"
 cp -r intel/* "$DESTDIR/usr/lib/firmware/intel/" 2>/dev/null || true
 """,
+    labels = ["buckos:firmware", "buckos:hw:gpu"],
     visibility = ["PUBLIC"],
 )
 
@@ -60,6 +56,7 @@ meson_package(
         "CFLAGS": "-O2 -march=x86-64 -pipe",
         "LDFLAGS": "-Wl,-O1,--as-needed",
     },
+    labels = ["buckos:hw:gpu"],
     visibility = ["PUBLIC"],
 )
 

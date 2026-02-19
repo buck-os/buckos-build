@@ -1,16 +1,12 @@
 load("//defs:package_defs.bzl", "download_source", "cmake_package")
 
-download_source(
-    name = "bemenu-src",
-    src_uri = "https://github.com/Cloudef/bemenu/releases/download/0.6.18/bemenu-0.6.18.tar.gz",
-    sha256 = "66e0fafc198937ffbff47513bf79742126f1f674c74c0a95a878582a2f2cb0de",
-    signature_sha256 = "a281441780fa857c86d13a185b65ddaa1037bbac3b59cdcbc6cf4bda3a60e5a4",
-    signature_required = False,
-)
-
 cmake_package(
     name = "bemenu",
-    source = ":bemenu-src",
+    src_uri = "https://github.com/Cloudef/bemenu/releases/download/0.6.18/bemenu-0.6.18.tar.gz",
+
+    sha256 = "66e0fafc198937ffbff47513bf79742126f1f674c74c0a95a878582a2f2cb0de",
+
+    signature_sha256 = "a281441780fa857c86d13a185b65ddaa1037bbac3b59cdcbc6cf4bda3a60e5a4",
     iuse = ["X", "ncurses", "wayland"],
     use_cmake = {
         "-X": "-DENABLE_X=OFF",

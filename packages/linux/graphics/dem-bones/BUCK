@@ -4,16 +4,11 @@ load("//defs:package_defs.bzl", "download_source", "cmake_package")
 # An automated algorithm to extract Linear Blend Skinning (LBS) with bone
 # transformations from example meshes
 
-download_source(
-    name = "dem-bones-src",
-    src_uri = "https://github.com/electronicarts/dem-bones/archive/refs/tags/v1.2.1.tar.gz",
-    sha256 = "095c69216d40071a8b9a578112d67bce928df84ecb1274c3d4cc6c7cc2413c59",
-    signature_required = False,
-)
-
 cmake_package(
     name = "dem-bones",
-    source = ":dem-bones-src",
+    src_uri = "https://github.com/electronicarts/dem-bones/archive/refs/tags/v1.2.1.tar.gz",
+
+    sha256 = "095c69216d40071a8b9a578112d67bce928df84ecb1274c3d4cc6c7cc2413c59",
     version = "1.2.1",
     description = "Smooth Skinning Decomposition with Rigid Bones - automated LBS extraction from animated meshes",
     homepage = "https://github.com/electronicarts/dem-bones",

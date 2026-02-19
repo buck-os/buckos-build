@@ -4,19 +4,15 @@
 load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "wine-src",
-    src_uri = "https://dl.winehq.org/wine/source/9.x/wine-9.21.tar.xz",
-    sha256 = "4442b47ffd9b2ea457100e36ed5fd4e6f4d829d9db79a25e605175a988ca2fff",
-    signature_sha256 = "1840856805c3be19c6bf8d700a20f6016d39b4605919e934db7937c4ad9d6193",
-    signature_required = False,
-)
-
 # USE flags: See use_flags.bzl for available flags
 
 autotools_package(
     name = "wine",
-    source = ":wine-src",
+    src_uri = "https://dl.winehq.org/wine/source/9.x/wine-9.21.tar.xz",
+
+    sha256 = "4442b47ffd9b2ea457100e36ed5fd4e6f4d829d9db79a25e605175a988ca2fff",
+
+    signature_sha256 = "1840856805c3be19c6bf8d700a20f6016d39b4605919e934db7937c4ad9d6193",
     version = "9.21",
     description = "Compatibility layer for running Windows applications",
     homepage = "https://www.winehq.org/",

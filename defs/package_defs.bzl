@@ -83,17 +83,22 @@ VALID_EBUILD_KWARGS = [
     "category", "slot", "description", "homepage", "license",
     "src_unpack", "src_test", "pre_configure", "run_tests",
     "depend", "pdepend", "exec_bdepend", "local_only", "bootstrap_sysroot", "bootstrap_stage",
-    "visibility", "patches",
+    "visibility", "patches", "labels",
 ]
 
-def filter_ebuild_kwargs(kwargs, src_install = None):
+def filter_ebuild_kwargs(kwargs, src_install = None, package_type = None, src_uri = None, sha256 = None, signature_required = False):
     """
     Filter kwargs to only include parameters that ebuild_package_rule accepts.
-    Also handles post_install by appending it to src_install.
+    Also handles post_install by appending it to src_install, and injects
+    buckos:* auto-labels based on the package_type and other attributes.
 
     Args:
         kwargs: The kwargs dict from a wrapper function
         src_install: The current src_install script (if any)
+        package_type: Build system type for label injection (e.g. "cmake")
+        src_uri: Source download URL for provenance labels
+        sha256: Source checksum for provenance labels
+        signature_required: Whether GPG signature is required
 
     Returns:
         tuple: (filtered_kwargs dict, updated src_install string)
@@ -108,7 +113,106 @@ def filter_ebuild_kwargs(kwargs, src_install = None):
         else:
             src_install = post_install
 
+    # Collect provenance labels from source download parameters
+    provenance = _provenance_labels(src_uri, sha256, signature_required)
+
+    # Auto-inject buckos:* labels (compile + provenance)
+    user_labels = filtered.pop("labels", [])
+    filtered["labels"] = _compile_labels(
+        package_type = package_type or filtered.get("package_type"),
+        bootstrap_stage = filtered.get("bootstrap_stage"),
+        extra = user_labels + provenance,
+    )
+
     return filtered, src_install
+
+# =============================================================================
+# Label helpers
+# =============================================================================
+
+_ARCH_NORMALIZE = {
+    "amd64": "x86_64",
+    "arm64": "aarch64",
+}
+
+def _buckos_labels(base_labels, extra = []):
+    """Merge auto-injected labels with any user-provided labels.
+
+    Args:
+        base_labels: list of buckos:* labels to auto-apply
+        extra: user-provided labels from the macro's labels= or kwargs
+
+    Returns:
+        Deduplicated sorted label list.
+    """
+    combined = {l: True for l in base_labels}
+    for l in extra:
+        combined[l] = True
+    return sorted(combined.keys())
+
+def _compile_labels(package_type = None, bootstrap_stage = None, arch = None, extra = []):
+    """Build labels for a compilation target."""
+    labels = ["buckos:compile"]
+    if package_type:
+        labels.append("buckos:build:" + package_type)
+    if bootstrap_stage:
+        stage_num = bootstrap_stage.replace("stage", "")
+        labels.append("buckos:stage:" + stage_num)
+    if arch:
+        normalized = _ARCH_NORMALIZE.get(arch, arch)
+        labels.append("buckos:arch:" + normalized)
+    return _buckos_labels(labels, extra)
+
+def _provenance_labels(src_uri = None, sha256 = None, signature_required = False):
+    """Build provenance labels from download parameters.
+
+    Shared by both download and compile targets so provenance
+    propagates to the final build target.
+    """
+    labels = []
+    if src_uri:
+        host = src_uri.split("://")[-1].split("/")[0]
+        labels.append("buckos:source:" + host)
+        labels.append("buckos:url:" + src_uri)
+    if sha256:
+        labels.append("buckos:sha256:" + sha256)
+    if src_uri:
+        if signature_required:
+            labels.append("buckos:sig:gpg")
+        else:
+            labels.append("buckos:sig:none")
+    return labels
+
+def _download_labels(src_uri = None, sha256 = None, signature_required = False, vendor_path = None, extra = []):
+    """Build labels for a download target."""
+    labels = ["buckos:download"] + _provenance_labels(src_uri, sha256, signature_required)
+    if vendor_path:
+        labels.append("buckos:vendor:" + vendor_path)
+    return _buckos_labels(labels, extra)
+
+def _image_labels(arch = None, extra = []):
+    """Build labels for an image/aggregate target."""
+    labels = ["buckos:image"]
+    if arch:
+        normalized = _ARCH_NORMALIZE.get(arch, arch)
+        labels.append("buckos:arch:" + normalized)
+    return _buckos_labels(labels, extra)
+
+def _bootscript_labels(arch = None, extra = []):
+    """Build labels for a boot script target."""
+    labels = ["buckos:bootscript"]
+    if arch:
+        normalized = _ARCH_NORMALIZE.get(arch, arch)
+        labels.append("buckos:arch:" + normalized)
+    return _buckos_labels(labels, extra)
+
+def _config_labels(extra = []):
+    """Build labels for a config target."""
+    return _buckos_labels(["buckos:config"], extra)
+
+def _prebuilt_labels(extra = []):
+    """Build labels for a precompiled binary target."""
+    return _buckos_labels(["buckos:prebuilt"], extra)
 
 def get_toolchain_dep():
     """
@@ -412,6 +516,7 @@ _http_file_with_proxy = rule(
         "out": attrs.string(doc = "Output filename"),
         "proxy": attrs.string(default = "", doc = "HTTP proxy URL (legacy, now read from env)"),
         "_fetch_script": attrs.dep(default = "//defs/scripts:fetch-source"),
+        "labels": attrs.list(attrs.string(), default = []),
     },
 )
 
@@ -592,6 +697,7 @@ _extract_source = rule(
         "strip_components": attrs.int(default = 1),
         "extract": attrs.bool(default = True),
         "_extract_script": attrs.dep(default = "//defs/scripts:extract-source"),
+        "labels": attrs.list(attrs.string(), default = []),
     },
 )
 
@@ -607,6 +713,7 @@ def download_source(
         exclude_patterns: list[str] = [],
         strip_components: int = 1,
         extract: bool = True,
+        labels: list[str] = [],
         visibility: list[str] = ["PUBLIC"]):
     """
     Download and extract source archives using Buck2's native http_file.
@@ -696,12 +803,15 @@ def download_source(
 
     # Create http_file for the main archive (using custom rule with proxy support)
     archive_target = name + "-archive"
+    v_path = get_vendor_path("", archive_filename)
+    dl_labels = _download_labels(src_uri = src_uri, sha256 = sha256, signature_required = signature_required, vendor_path = v_path, extra = labels)
     _http_file_with_proxy(
         name = archive_target,
         urls = [src_uri],
         sha256 = sha256,
         out = archive_filename,
         proxy = _get_download_proxy(),
+        labels = dl_labels,
     )
 
     # Create signature download rule if signature_required and signature_sha256 provided
@@ -730,7 +840,9 @@ def download_source(
         strip_components = strip_components,
         extract = extract,
         visibility = visibility,
+        labels = dl_labels,
     )
+
 
 def _kernel_config_impl(ctx: AnalysisContext) -> list[Provider]:
     """Merge kernel configuration fragments into a single .config file."""
@@ -796,12 +908,19 @@ done
 
     return [DefaultInfo(default_output = output)]
 
-kernel_config = rule(
+_kernel_config_rule = rule(
     impl = _kernel_config_impl,
     attrs = {
         "fragments": attrs.list(attrs.source()),
+        "labels": attrs.list(attrs.string(), default = []),
     },
 )
+
+def kernel_config(labels = [], **kwargs):
+    _kernel_config_rule(
+        labels = _config_labels(extra = labels),
+        **kwargs
+    )
 
 def _kernel_build_impl(ctx: AnalysisContext) -> list[Provider]:
     """Build Linux kernel with custom configuration."""
@@ -1120,6 +1239,7 @@ _kernel_build_rule = rule(
         "cross_toolchain": attrs.option(attrs.dep(), default = None),  # Cross-toolchain for cross-compilation
         "patches": attrs.list(attrs.source(), default = []),  # Patches to apply to kernel source
         "modules": attrs.list(attrs.dep(), default = []),  # External module sources to build
+        "labels": attrs.list(attrs.string(), default = []),
     },
 )
 
@@ -1133,6 +1253,7 @@ def kernel_build(
         cross_toolchain = None,
         patches = [],
         modules = [],
+        labels = [],
         visibility = []):
     """Build Linux kernel with optional patches and external modules.
 
@@ -1167,6 +1288,7 @@ def kernel_build(
         cross_toolchain = cross_toolchain,
         patches = merged_patches,
         modules = modules,
+        labels = _compile_labels(package_type = "kernel", arch = arch, extra = labels),
         visibility = visibility,
     )
 
@@ -1694,7 +1816,7 @@ done
         ),
     ]
 
-binary_package = rule(
+_binary_package_rule = rule(
     impl = _binary_package_impl,
     attrs = {
         "srcs": attrs.list(attrs.dep(), default = []),
@@ -1708,8 +1830,15 @@ binary_package = rule(
         "deps": attrs.list(attrs.dep(), default = []),
         "build_deps": attrs.list(attrs.dep(), default = []),
         "maintainers": attrs.list(attrs.string(), default = []),
+        "labels": attrs.list(attrs.string(), default = []),
     },
 )
+
+def binary_package(labels = [], **kwargs):
+    _binary_package_rule(
+        labels = _prebuilt_labels(extra = labels),
+        **kwargs
+    )
 
 # -----------------------------------------------------------------------------
 # Precompiled Binary Package Rule
@@ -1809,7 +1938,7 @@ cp -r "$SRC"/* "$OUT{extract_to}/" 2>/dev/null || true
         ),
     ]
 
-precompiled_package = rule(
+_precompiled_package_rule = rule(
     impl = _precompiled_package_impl,
     attrs = {
         "source": attrs.dep(),
@@ -1821,8 +1950,15 @@ precompiled_package = rule(
         "license": attrs.string(default = ""),
         "deps": attrs.list(attrs.dep(), default = []),
         "maintainers": attrs.list(attrs.string(), default = []),
+        "labels": attrs.list(attrs.string(), default = []),
     },
 )
+
+def precompiled_package(labels = [], **kwargs):
+    _precompiled_package_rule(
+        labels = _prebuilt_labels(extra = labels),
+        **kwargs
+    )
 
 def _rootfs_impl(ctx: AnalysisContext) -> list[Provider]:
     """Assemble a root filesystem from packages."""
@@ -2139,13 +2275,20 @@ shift
 
     return [DefaultInfo(default_output = rootfs_dir)]
 
-rootfs = rule(
+_rootfs_rule = rule(
     impl = _rootfs_impl,
     attrs = {
         "packages": attrs.list(attrs.dep()),
         "version": attrs.string(default = "1"),  # Bump to invalidate cache
+        "labels": attrs.list(attrs.string(), default = []),
     },
 )
+
+def rootfs(labels = [], **kwargs):
+    _rootfs_rule(
+        labels = _image_labels(extra = labels),
+        **kwargs
+    )
 
 def _initramfs_impl(ctx: AnalysisContext) -> list[Provider]:
     """Create an initramfs cpio archive from a rootfs."""
@@ -2282,15 +2425,22 @@ echo "Created initramfs: $OUTPUT"
 
     return [DefaultInfo(default_output = initramfs_file)]
 
-initramfs = rule(
+_initramfs_rule = rule(
     impl = _initramfs_impl,
     attrs = {
         "rootfs": attrs.dep(),
         "compression": attrs.string(default = "gz"),
         "init": attrs.string(default = "/sbin/init"),
         "init_script": attrs.option(attrs.dep(), default = None),
+        "labels": attrs.list(attrs.string(), default = []),
     },
 )
+
+def initramfs(labels = [], **kwargs):
+    _initramfs_rule(
+        labels = _image_labels(extra = labels),
+        **kwargs
+    )
 
 def _dracut_initramfs_impl(ctx: AnalysisContext) -> list[Provider]:
     """Create an initramfs using dracut with dmsquash-live module for live boot."""
@@ -2330,7 +2480,7 @@ def _dracut_initramfs_impl(ctx: AnalysisContext) -> list[Provider]:
 
     return [DefaultInfo(default_output = initramfs_file)]
 
-dracut_initramfs = rule(
+_dracut_initramfs_rule = rule(
     impl = _dracut_initramfs_impl,
     attrs = {
         "kernel": attrs.dep(),
@@ -2340,8 +2490,15 @@ dracut_initramfs = rule(
         "kernel_version": attrs.string(default = ""),
         "add_modules": attrs.list(attrs.string(), default = ["dmsquash-live", "livenet"]),
         "compression": attrs.string(default = "gzip"),
+        "labels": attrs.list(attrs.string(), default = []),
     },
 )
+
+def dracut_initramfs(labels = [], **kwargs):
+    _dracut_initramfs_rule(
+        labels = _image_labels(extra = labels),
+        **kwargs
+    )
 
 def _qemu_boot_script_impl(ctx: AnalysisContext) -> list[Provider]:
     """Generate a QEMU boot script for testing."""
@@ -2484,7 +2641,7 @@ chmod +x "$OUTPUT"
 
     return [DefaultInfo(default_output = boot_script)]
 
-qemu_boot_script = rule(
+_qemu_boot_script_rule = rule(
     impl = _qemu_boot_script_impl,
     attrs = {
         "kernel": attrs.dep(),
@@ -2494,8 +2651,15 @@ qemu_boot_script = rule(
         "cpus": attrs.string(default = "2"),
         "kernel_args": attrs.string(default = "console=ttyS0 quiet"),
         "extra_args": attrs.list(attrs.string(), default = []),
+        "labels": attrs.list(attrs.string(), default = []),
     },
 )
+
+def qemu_boot_script(labels = [], **kwargs):
+    _qemu_boot_script_rule(
+        labels = _bootscript_labels(arch = kwargs.get("arch"), extra = labels),
+        **kwargs
+    )
 
 # =============================================================================
 # Cloud Hypervisor Boot Script Rule
@@ -2807,7 +2971,7 @@ echo ""
 
     return [DefaultInfo(default_output = boot_script)]
 
-ch_boot_script = rule(
+_ch_boot_script_rule = rule(
     impl = _ch_boot_script_impl,
     attrs = {
         "kernel": attrs.option(attrs.dep(), default = None),
@@ -2825,8 +2989,15 @@ ch_boot_script = rule(
         "virtiofs_path": attrs.string(default = "/tmp/rootfs"),
         "serial_console": attrs.string(default = "tty"),
         "extra_args": attrs.list(attrs.string(), default = []),
+        "labels": attrs.list(attrs.string(), default = []),
     },
 )
+
+def ch_boot_script(labels = [], **kwargs):
+    _ch_boot_script_rule(
+        labels = _bootscript_labels(extra = labels),
+        **kwargs
+    )
 
 # =============================================================================
 # Raw Disk Image Rule
@@ -3001,7 +3172,7 @@ echo "Disk image created: $OUTPUT"
 
     return [DefaultInfo(default_output = image_file)]
 
-raw_disk_image = rule(
+_raw_disk_image_rule = rule(
     impl = _raw_disk_image_impl,
     attrs = {
         "rootfs": attrs.dep(),
@@ -3009,8 +3180,15 @@ raw_disk_image = rule(
         "filesystem": attrs.string(default = "ext4"),  # ext4, xfs, btrfs
         "label": attrs.option(attrs.string(), default = None),
         "partition_table": attrs.bool(default = False),  # True for GPT with EFI
+        "labels": attrs.list(attrs.string(), default = []),
     },
 )
+
+def raw_disk_image(labels = [], **kwargs):
+    _raw_disk_image_rule(
+        labels = _image_labels(extra = labels),
+        **kwargs
+    )
 
 def _iso_image_impl(ctx: AnalysisContext) -> list[Provider]:
     """Create a bootable ISO image from kernel, initramfs, and optional rootfs."""
@@ -3477,7 +3655,7 @@ ls -lh "$ISO_OUT"
 
     return [DefaultInfo(default_output = iso_file)]
 
-iso_image = rule(
+_iso_image_rule = rule(
     impl = _iso_image_impl,
     attrs = {
         "kernel": attrs.dep(),
@@ -3488,8 +3666,15 @@ iso_image = rule(
         "kernel_args": attrs.string(default = "quiet"),
         "arch": attrs.string(default = "x86_64"),  # x86_64 or aarch64
         "version": attrs.string(default = "1"),  # Bump to invalidate cache
+        "labels": attrs.list(attrs.string(), default = []),
     },
 )
+
+def iso_image(labels = [], **kwargs):
+    _iso_image_rule(
+        labels = _image_labels(arch = kwargs.get("arch"), extra = labels),
+        **kwargs
+    )
 
 # =============================================================================
 # STAGE3 TARBALL
@@ -3663,7 +3848,7 @@ echo "  Contents: $CONTENTS_FILE"
         ),
     ]
 
-stage3_tarball = rule(
+_stage3_tarball_rule = rule(
     impl = _stage3_tarball_impl,
     attrs = {
         "rootfs": attrs.dep(),
@@ -3672,8 +3857,15 @@ stage3_tarball = rule(
         "libc": attrs.string(default = "glibc"),        # glibc, musl
         "compression": attrs.string(default = "xz"),    # xz, gz, zstd
         "version": attrs.string(default = ""),          # Optional version string
+        "labels": attrs.list(attrs.string(), default = []),
     },
 )
+
+def stage3_tarball(labels = [], **kwargs):
+    _stage3_tarball_rule(
+        labels = _image_labels(arch = kwargs.get("arch"), extra = labels),
+        **kwargs
+    )
 
 # =============================================================================
 # EBUILD-STYLE HELPER FUNCTIONS
@@ -4726,6 +4918,22 @@ def _ebuild_package_impl(ctx: AnalysisContext) -> list[Provider]:
     # Read host toolchain config
     use_host_toolchain = _should_use_host_toolchain()
 
+    # Read provenance config
+    provenance_enabled = read_config("buckos", "provenance", "false").lower() in ["true", "1", "yes"]
+    slsa_enabled = read_config("buckos", "slsa", "false").lower() in ["true", "1", "yes"]
+
+    # Read graph hash from the graph-hash genrule output
+    graph_hash_artifact = ctx.attrs._graph_hash[DefaultInfo].default_outputs[0]
+
+    # Extract source provenance metadata from labels
+    pkg_source_url = ""
+    pkg_source_sha256 = ""
+    for label in ctx.attrs.labels:
+        if label.startswith("buckos:url:"):
+            pkg_source_url = label[len("buckos:url:"):]
+        elif label.startswith("buckos:sha256:"):
+            pkg_source_sha256 = label[len("buckos:sha256:"):]
+
     # Filter dependencies: skip bootstrap toolchain when using host toolchain
     bdepend_list = ctx.attrs.bdepend
     if use_host_toolchain:
@@ -4811,6 +5019,9 @@ def _ebuild_package_impl(ctx: AnalysisContext) -> list[Provider]:
         # Default: use regular ebuild script
         ebuild_script = ctx.attrs._ebuild_script[DefaultInfo].default_outputs[0]
 
+    # Get provenance stamp script artifact
+    provenance_stamp_script = ctx.attrs._provenance_stamp_script[DefaultInfo].default_outputs[0]
+
     # Generate patch application commands if patches are provided
     # We'll pass patch files via command line arguments and copy them to the build dir
     patch_file_list = []
@@ -4836,7 +5047,8 @@ ORIGINAL_ARGS=("$@")
 
 # Arguments: DESTDIR, SRC_DIR, PKG_CONFIG_WRAPPER, FRAMEWORK_SCRIPT, PATCH_COUNT,
 #            ENV_SCRIPT, SRC_UNPACK, SRC_PREPARE, PRE_CONFIGURE, SRC_CONFIGURE,
-#            SRC_COMPILE, SRC_TEST, SRC_INSTALL, HOST_TOOL_COUNT, patches..., host_tool_dirs..., dep_dirs...
+#            SRC_COMPILE, SRC_TEST, SRC_INSTALL, PROVENANCE_STAMP, GRAPH_HASH,
+#            HOST_TOOL_COUNT, patches..., host_tool_dirs..., dep_dirs...
 # Convert paths to absolute to work in mount namespace
 export _EBUILD_DESTDIR="$(readlink -f "$1")"
 export _EBUILD_SRCDIR="$(readlink -f "$2")"
@@ -4855,8 +5067,11 @@ export PHASE_SRC_CONFIGURE="$(readlink -f "$5")"
 export PHASE_SRC_COMPILE="$(readlink -f "$6")"
 export PHASE_SRC_TEST="$(readlink -f "$7")"
 export PHASE_SRC_INSTALL="$(readlink -f "$8")"
-HOST_TOOL_COUNT="$9"
-shift 9
+export PHASE_PROVENANCE_STAMP="$(readlink -f "$9")"
+BUCKOS_PKG_GRAPH_HASH="$(cat "$(readlink -f "${10}")")"
+export BUCKOS_PKG_GRAPH_HASH
+HOST_TOOL_COUNT="${11}"
+shift 11
 
 # Debug: Log phase script paths for troubleshooting
 if [ -n "${EBUILD_DEBUG:-}" ]; then
@@ -4869,6 +5084,7 @@ if [ -n "${EBUILD_DEBUG:-}" ]; then
     echo "  SRC_COMPILE:   $PHASE_SRC_COMPILE"
     echo "  SRC_TEST:      $PHASE_SRC_TEST"
     echo "  SRC_INSTALL:   $PHASE_SRC_INSTALL"
+    echo "  PROV_STAMP:    $PHASE_PROVENANCE_STAMP"
     echo "=========================="
 fi
 
@@ -4990,6 +5206,14 @@ export USE_BOOTSTRAP="@@USE_BOOTSTRAP@@"
 export USE_HOST_TOOLCHAIN="@@USE_HOST@@"
 export BOOTSTRAP_SYSROOT="@@BOOTSTRAP_SYSROOT@@"
 export BUILD_THREADS="@@BUILD_THREADS@@"
+
+# Provenance stamping config
+export BUCKOS_PROVENANCE_ENABLED="@@PROVENANCE_ENABLED@@"
+export BUCKOS_SLSA_ENABLED="@@SLSA_ENABLED@@"
+export BUCKOS_PKG_TYPE="@@PKG_TYPE@@"
+export BUCKOS_PKG_TARGET="@@PKG_TARGET@@"
+export BUCKOS_PKG_SOURCE_URL="@@PKG_SOURCE_URL@@"
+export BUCKOS_PKG_SOURCE_SHA256="@@PKG_SOURCE_SHA256@@"
 
 # Set MAKE_JOBS based on BUILD_THREADS
 # 0 = auto-detect with nproc, otherwise use specified value
@@ -5220,6 +5444,12 @@ if command -v tee >/dev/null 2>&1; then
 else
     ( source "$PHASE_SRC_INSTALL" ) > "$T/src_install.log" 2>&1 || handle_phase_error "src_install" $? "$PHASE_SRC_INSTALL"
 fi
+
+# Phase: provenance_stamp (conditional on buckos.provenance config)
+if [ "$BUCKOS_PROVENANCE_ENABLED" = "true" ]; then
+    echo "📦 Phase: provenance_stamp"
+    source "$PHASE_PROVENANCE_STAMP"
+fi
 PHASES_EOF
 export PHASES_CONTENT
 
@@ -5281,6 +5511,12 @@ source "$FRAMEWORK_SCRIPT"
     script_content = script_content.replace("@@BUILD_THREADS@@", build_threads)
     script_content = script_content.replace("@@RUN_TESTS@@", "yes" if ctx.attrs.run_tests else "")
     script_content = script_content.replace("@@PROXY@@", _get_download_proxy())
+    script_content = script_content.replace("@@PROVENANCE_ENABLED@@", "true" if provenance_enabled else "false")
+    script_content = script_content.replace("@@SLSA_ENABLED@@", "true" if slsa_enabled else "false")
+    script_content = script_content.replace("@@PKG_TYPE@@", ctx.attrs.package_type)
+    script_content = script_content.replace("@@PKG_TARGET@@", str(ctx.label))
+    script_content = script_content.replace("@@PKG_SOURCE_URL@@", pkg_source_url)
+    script_content = script_content.replace("@@PKG_SOURCE_SHA256@@", pkg_source_sha256)
 
     script = ctx.actions.write(
         "ebuild_wrapper.sh",
@@ -5311,6 +5547,10 @@ source "$FRAMEWORK_SCRIPT"
     cmd.add(phase_scripts["src_compile"])
     cmd.add(phase_scripts["src_test"])
     cmd.add(phase_scripts["src_install"])
+
+    # Provenance stamp script and graph hash (positional args before HOST_TOOL_COUNT)
+    cmd.add(provenance_stamp_script)
+    cmd.add(graph_hash_artifact)
 
     # Add host tool count (number of exec_bdepend directories)
     exec_dep_count = len(exec_dep_dirs)
@@ -5429,13 +5669,24 @@ ebuild_package_rule = rule(
         "_ebuild_bootstrap_stage1_script": attrs.dep(default = "//defs/scripts:ebuild-bootstrap-stage1"),
         "_ebuild_bootstrap_stage2_script": attrs.dep(default = "//defs/scripts:ebuild-bootstrap-stage2"),
         "_ebuild_bootstrap_stage3_script": attrs.dep(default = "//defs/scripts:ebuild-bootstrap-stage3"),
+        "_provenance_stamp_script": attrs.dep(default = "//defs/scripts:provenance-stamp"),
+        "_graph_hash": attrs.dep(default = "//:graph-hash"),
+        "labels": attrs.list(attrs.string(), default = []),
     },
 )
 
 def ebuild_package(
         name: str,
-        source: str,
-        version: str,
+        source: str | None = None,
+        version: str = "",
+        # Source download (alternative to source=)
+        src_uri: str | None = None,
+        sha256: str | None = None,
+        signature_sha256: str | None = None,
+        signature_required: bool = False,
+        gpg_key: str | None = None,
+        gpg_keyring: str | None = None,
+        exclude_patterns: list[str] = [],
         # USE flag support
         iuse: list[str] = [],
         use_defaults: list[str] = [],
@@ -5503,6 +5754,24 @@ def ebuild_package(
         )
         return
 
+    # Handle source - either use provided source or create one from src_uri
+    if source:
+        src_target = source
+    else:
+        if not src_uri or not sha256:
+            fail("Either 'source' or both 'src_uri' and 'sha256' must be provided")
+        src_name = name + "-src"
+        download_source(
+            name = src_name,
+            src_uri = src_uri,
+            sha256 = sha256,
+            signature_sha256 = signature_sha256,
+            signature_required = signature_required,
+            gpg_key = gpg_key,
+            gpg_keyring = gpg_keyring,
+            exclude_patterns = exclude_patterns,
+        )
+        src_target = ":" + src_name
     # Add bootstrap toolchain by default to ensure linking against BuckOS glibc
     use_bootstrap = kwargs.pop("use_bootstrap", True)
 
@@ -5581,11 +5850,11 @@ def ebuild_package(
         kwargs["patches"] = registry_patches
 
     # Filter kwargs to only include parameters that ebuild_package_rule accepts
-    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install)
+    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install, src_uri = src_uri, sha256 = sha256, signature_required = signature_required)
 
     ebuild_package_rule(
         name = name,
-        source = source,
+        source = src_target,
         version = version,
         use_flags = effective_use,
         use_bootstrap = use_bootstrap,
@@ -5843,7 +6112,7 @@ def cmake_package(
 
     # Filter kwargs to only include parameters that ebuild_package_rule accepts
     src_install = custom_src_install if custom_src_install else eclass_config["src_install"]
-    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install)
+    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install, package_type = "cmake", src_uri = src_uri, sha256 = sha256, signature_required = signature_required)
 
     ebuild_package_rule(
         name = name,
@@ -6050,7 +6319,7 @@ def meson_package(
 
     # Filter kwargs to only include parameters that ebuild_package_rule accepts
     src_install = custom_src_install if custom_src_install else eclass_config["src_install"]
-    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install)
+    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install, package_type = "meson", src_uri = src_uri, sha256 = sha256, signature_required = signature_required)
 
     ebuild_package_rule(
         name = name,
@@ -6290,7 +6559,7 @@ def autotools_package(
             patch_refs.append(":" + patch_target_name)
 
     # Filter kwargs to only include parameters that ebuild_package_rule accepts
-    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install)
+    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install, package_type = "autotools", src_uri = src_uri, sha256 = sha256, signature_required = signature_required)
 
     ebuild_package_rule(
         name = name,
@@ -6523,7 +6792,7 @@ def make_package(
             patch_refs.append(":" + patch_target_name)
 
     # Filter kwargs to only include parameters that ebuild_package_rule accepts
-    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install)
+    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install, package_type = "make", src_uri = src_uri, sha256 = sha256, signature_required = signature_required)
 
     ebuild_package_rule(
         name = name,
@@ -7192,7 +7461,7 @@ fi
     src_install = cargo_src_install(bins) if bins else eclass_config["src_install"]
 
     # Filter kwargs to only include parameters that ebuild_package_rule accepts
-    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install)
+    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install, package_type = "cargo", src_uri = src_uri, sha256 = sha256, signature_required = signature_required)
 
     ebuild_package_rule(
         name = name,
@@ -7413,7 +7682,7 @@ cd ../source
     )
 
     # Filter kwargs for ebuild_package_rule
-    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install)
+    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install, package_type = "cargo")
 
     # Note: ebuild.sh handles cargo vendoring with network access before
     # entering the network-isolated build environment automatically
@@ -8040,7 +8309,7 @@ echo "Go library compiled successfully (no binaries to install)"
 '''
 
     # Filter kwargs to only include parameters that ebuild_package_rule accepts
-    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install)
+    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install, package_type = "go", src_uri = src_uri, sha256 = sha256, signature_required = signature_required)
 
     ebuild_package_rule(
         name = name,
@@ -8149,7 +8418,7 @@ def perl_package(
     src_install = kwargs.pop("src_install", eclass_config["src_install"])
 
     # Filter kwargs
-    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install)
+    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install, package_type = "perl", src_uri = src_uri, sha256 = sha256, signature_required = signature_required)
 
     ebuild_package_rule(
         name = name,
@@ -8251,7 +8520,7 @@ def ruby_package(
     src_install = kwargs.pop("src_install", eclass_config["src_install"])
 
     # Filter kwargs
-    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install)
+    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install, package_type = "ruby", src_uri = src_uri, sha256 = sha256, signature_required = signature_required)
 
     ebuild_package_rule(
         name = name,
@@ -8399,7 +8668,7 @@ def font_package(
     post_install = eclass_config.get("post_install", "")
 
     # Filter kwargs and handle post_install
-    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install)
+    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install, package_type = "font", src_uri = src_uri, sha256 = sha256, signature_required = signature_required)
 
     # Append eclass post_install to src_install
     if post_install:
@@ -8565,7 +8834,7 @@ done
     src_install = custom_src_install if custom_src_install else eclass_config["src_install"]
 
     # Filter kwargs to only include parameters that ebuild_package_rule accepts
-    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install)
+    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install, package_type = "npm", src_uri = src_uri, sha256 = sha256, signature_required = signature_required)
 
     ebuild_package_rule(
         name = name,
@@ -9181,7 +9450,7 @@ def python_package(
     # Filter kwargs to only include parameters that ebuild_package_rule accepts
     # Also pop src_prepare before filtering so we can use custom_src_prepare
     custom_src_prepare = kwargs.pop("src_prepare", None)
-    filtered_kwargs, _ = filter_ebuild_kwargs(kwargs)
+    filtered_kwargs, _ = filter_ebuild_kwargs(kwargs, package_type = "python", src_uri = src_uri, sha256 = sha256, signature_required = signature_required)
 
     # Setup vendor src_prepare for offline builds
     vendor_src_prepare = ""
@@ -10745,7 +11014,7 @@ def java_package(
 
     # Filter kwargs
     src_install = custom_src_install if custom_src_install else eclass_config["src_install"]
-    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install)
+    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install, package_type = "java", src_uri = src_uri, sha256 = sha256, signature_required = signature_required)
 
     ebuild_package_rule(
         name = name,
@@ -10946,7 +11215,7 @@ done
 
     # Filter kwargs
     src_install = custom_src_install if custom_src_install else eclass_config["src_install"]
-    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install)
+    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install, package_type = "maven", src_uri = src_uri, sha256 = sha256, signature_required = signature_required)
 
     ebuild_package_rule(
         name = name,
@@ -11270,7 +11539,7 @@ def qt6_package(
 
     # Filter kwargs to only include parameters that ebuild_package_rule accepts
     src_install = custom_src_install if custom_src_install else eclass_config["src_install"]
-    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install)
+    filtered_kwargs, src_install = filter_ebuild_kwargs(kwargs, src_install, package_type = "qt6", src_uri = src_uri, sha256 = sha256, signature_required = signature_required)
 
     ebuild_package_rule(
         name = name,
@@ -11361,6 +11630,7 @@ def acct_user_package(
     if post_install:
         src_install = src_install + "\n" + post_install
 
+    user_labels = kwargs.pop("labels", [])
     ebuild_package_rule(
         name = name,
         source = ":" + src_name,
@@ -11371,6 +11641,7 @@ def acct_user_package(
         rdepend = deps,
         env = env,
         description = description if description else "System user account: " + name,
+        labels = _compile_labels(package_type = "acct-user", extra = user_labels),
         visibility = visibility,
         **kwargs
     )
@@ -11421,6 +11692,7 @@ def acct_group_package(
     if post_install:
         src_install = src_install + "\n" + post_install
 
+    group_labels = kwargs.pop("labels", [])
     ebuild_package_rule(
         name = name,
         source = ":" + src_name,
@@ -11430,6 +11702,7 @@ def acct_group_package(
         src_install = src_install,
         env = env,
         description = description if description else "System group account: " + name,
+        labels = _compile_labels(package_type = "acct-group", extra = group_labels),
         visibility = visibility,
         **kwargs
     )

@@ -1,15 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 
-download_source(
-    name = "apr-util-src",
-    src_uri = "https://archive.apache.org/dist/apr/apr-util-1.6.3.tar.gz",
-    sha256 = "2b74d8932703826862ca305b094eef2983c27b39d5c9414442e9976a9acf1983",
-    signature_required = False,
-)
-
 autotools_package(
     name = "apr-util",
-    source = ":apr-util-src",
+    src_uri = "https://archive.apache.org/dist/apr/apr-util-1.6.3.tar.gz",
+
+    sha256 = "2b74d8932703826862ca305b094eef2983c27b39d5c9414442e9976a9acf1983",
     iuse = [
         "berkdb",
         "gdbm",

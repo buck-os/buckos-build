@@ -4,16 +4,11 @@ load("//defs:use_flags.bzl", "set_use_flags")
 # unrar - RAR archive extractor
 # Use GitHub mirror since www.rarlab.com often times out
 # Upgraded to 7.0.9 as 6.2.12 is not available on GitHub mirrors
-download_source(
-    name = "unrar-src",
-    src_uri = "https://github.com/aawc/unrar/archive/refs/tags/v7.0.9.tar.gz",
-    sha256 = "6dd89a09514923cbff0e112f33584dc6de0d21ecd30ad1ed19c213a4f3947695",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "unrar",
-    source = ":unrar-src",
+    src_uri = "https://github.com/aawc/unrar/archive/refs/tags/v7.0.9.tar.gz",
+
+    sha256 = "6dd89a09514923cbff0e112f33584dc6de0d21ecd30ad1ed19c213a4f3947695",
     version = "7.0.9",
     description = "RAR archive extractor",
     homepage = "https://www.rarlab.com/rar_add.htm",

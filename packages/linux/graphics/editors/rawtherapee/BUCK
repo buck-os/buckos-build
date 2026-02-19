@@ -1,16 +1,11 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "rawtherapee-src",
-    src_uri = "https://github.com/Beep6581/RawTherapee/releases/download/5.10/rawtherapee-5.10.tar.xz",
-    sha256 = "a799b53cd54dba4a211479e342ffc9c5db1c44d3d6c3a27d5cc13adf0debd2da",
-    signature_required = False,
-)
-
 autotools_package(
     name = "rawtherapee",
-    source = ":rawtherapee-src",
+    src_uri = "https://github.com/Beep6581/RawTherapee/releases/download/5.10/rawtherapee-5.10.tar.xz",
+
+    sha256 = "a799b53cd54dba4a211479e342ffc9c5db1c44d3d6c3a27d5cc13adf0debd2da",
     iuse = ["jpegxl", "openmp", "tcmalloc"],
     use_configure = {
         "-jpegxl": "--disable-jpegxl",

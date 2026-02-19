@@ -1,15 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "make_package")
 
-download_source(
-    name = "efibootmgr-src",
-    src_uri = "https://github.com/rhboot/efibootmgr/archive/18.tar.gz",
-    sha256 = "442867d12f8525034a404fc8af3036dba8e1fc970998af2486c3b940dfad0874",
-    signature_required = False,
-)
-
 make_package(
     name = "efibootmgr",
-    source = ":efibootmgr-src",
+    src_uri = "https://github.com/rhboot/efibootmgr/archive/18.tar.gz",
+
+    sha256 = "442867d12f8525034a404fc8af3036dba8e1fc970998af2486c3b940dfad0874",
     version = "18",
     description = "User-space application to modify the EFI boot manager",
     homepage = "https://github.com/rhinstaller/efibootmgr",

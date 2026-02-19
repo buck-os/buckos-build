@@ -1,19 +1,14 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
 
-download_source(
-    name = "jq-src",
-    src_uri = "https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-1.7.1.tar.gz",
-    sha256 = "478c9ca129fd2e3443fe27314b455e211e0d8c60bc8ff7df703873deeee580c2",
-    signature_required = False,
-)
-
 autotools_package(
     name = "jq",
     # GitHub releases/download tarball includes pre-generated configure script
     bdepend = [],
     src_prepare = "",
-    source = ":jq-src",
+    src_uri = "https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-1.7.1.tar.gz",
+
+    sha256 = "478c9ca129fd2e3443fe27314b455e211e0d8c60bc8ff7df703873deeee580c2",
     iuse = ["oniguruma", "static-libs"],
     use_configure = {
         "-oniguruma": "--disable-oniguruma",

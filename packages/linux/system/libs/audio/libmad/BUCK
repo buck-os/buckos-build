@@ -2,17 +2,13 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
 # Use official SourceForge release which has pre-generated configure
-download_source(
-    name = "libmad-src",
-    src_uri = "https://downloads.sourceforge.net/mad/libmad-0.15.1b.tar.gz",
-    sha256 = "bbfac3ed6bfbc2823d3775ebb931087371e142bb0e9bb1bee51a76a6e0078690",
-    signature_sha256 = "1059d6d131643a6b6c4a6e1141eb49c8e61f9759835973541140ba0963bd292c",
-    signature_required = False,
-)
-
 autotools_package(
     name = "libmad",
-    source = ":libmad-src",
+    src_uri = "https://downloads.sourceforge.net/mad/libmad-0.15.1b.tar.gz",
+
+    sha256 = "bbfac3ed6bfbc2823d3775ebb931087371e142bb0e9bb1bee51a76a6e0078690",
+
+    signature_sha256 = "1059d6d131643a6b6c4a6e1141eb49c8e61f9759835973541140ba0963bd292c",
     iuse = ["debug", "static-libs"],
     use_configure = {
         "-debug": "--disable-debug",

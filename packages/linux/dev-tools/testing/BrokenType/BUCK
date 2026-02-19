@@ -1,15 +1,10 @@
 load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 
-download_source(
-    name = "BrokenType-src",
-    src_uri = "https://github.com/googleprojectzero/BrokenType/archive/cf49a52b8e35b7d684fc8bc6b2ea8b923c177c2e.tar.gz",
-    sha256 = "00640d97ba9e3204eaa9db2f24996c99cd3f49c3ead6aecd07c9d6ea4773dbaf",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "BrokenType",
-    source = ":BrokenType-src",
+    src_uri = "https://github.com/googleprojectzero/BrokenType/archive/cf49a52b8e35b7d684fc8bc6b2ea8b923c177c2e.tar.gz",
+
+    sha256 = "00640d97ba9e3204eaa9db2f24996c99cd3f49c3ead6aecd07c9d6ea4773dbaf",
     version = "0.0.1",
     category = "dev-tools/testing",
     description = "Font rasterization fuzzing tools from Google Project Zero",

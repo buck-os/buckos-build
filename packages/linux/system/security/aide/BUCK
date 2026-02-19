@@ -1,19 +1,15 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "aide-src",
-    src_uri = "https://github.com/aide/aide/releases/download/v0.18.6/aide-0.18.6.tar.gz",
-    sha256 = "8ff36ce47d37d0cc987762d5d961346d475de74bba8a1832fd006db6edd3c10e",
-    signature_sha256 = "67708696dbf7231c59d85ea71c41e08dba136533c2a24b0d239248bd44385fae",
-    signature_required=False,
-)
-
 autotools_package(
     name = "aide",
     bdepend = [],
     src_prepare = "",
-    source = ":aide-src",
+    src_uri = "https://github.com/aide/aide/releases/download/v0.18.6/aide-0.18.6.tar.gz",
+
+    sha256 = "8ff36ce47d37d0cc987762d5d961346d475de74bba8a1832fd006db6edd3c10e",
+
+    signature_sha256 = "67708696dbf7231c59d85ea71c41e08dba136533c2a24b0d239248bd44385fae",
     iuse = [
         "acl",
         "audit",

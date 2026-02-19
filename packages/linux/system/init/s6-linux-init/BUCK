@@ -5,16 +5,11 @@ load("//defs:use_flags.bzl", "set_use_flags")
 # s6-linux-init - Set of tools to create a s6-based init system
 # -----------------------------------------------------------------------------
 
-download_source(
-    name = "s6-linux-init-src",
-    src_uri = "https://skarnet.org/software/s6-linux-init/s6-linux-init-1.1.2.0.tar.gz",
-    sha256 = "11ae08d0a66210b5e56b6baee0f6b9b1b69fbedb05fda1285b115a31ca46c77f",
-    signature_required = False,
-)
-
 autotools_package(
     name = "s6-linux-init",
-    source = ":s6-linux-init-src",
+    src_uri = "https://skarnet.org/software/s6-linux-init/s6-linux-init-1.1.2.0.tar.gz",
+
+    sha256 = "11ae08d0a66210b5e56b6baee0f6b9b1b69fbedb05fda1285b115a31ca46c77f",
     iuse = ["sysv-utils"],
     use_configure = {
         "-sysv-utils": "--disable-sysv-utils",

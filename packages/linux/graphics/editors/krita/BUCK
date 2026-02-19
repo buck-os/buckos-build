@@ -1,16 +1,13 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "krita-src",
-    src_uri = "https://download.kde.org/stable/krita/5.2.2/krita-5.2.2.tar.gz",
-    sha256 = "c1d2e4a36d7d8aa296d021e52be493cc679d3fe5e8aa4fc13c434d33e8154ce2",
-    signature_sha256 = "a19fb65d8946fc710f4a04cc010e3f7769241aa7fffaa701bba29efdddf24f53",
-)
-
 autotools_package(
     name = "krita",
-    source = ":krita-src",
+    src_uri = "https://download.kde.org/stable/krita/5.2.2/krita-5.2.2.tar.gz",
+
+    sha256 = "c1d2e4a36d7d8aa296d021e52be493cc679d3fe5e8aa4fc13c434d33e8154ce2",
+
+    signature_sha256 = "a19fb65d8946fc710f4a04cc010e3f7769241aa7fffaa701bba29efdddf24f53",
     iuse = [
         "color-management",
         "fftw",

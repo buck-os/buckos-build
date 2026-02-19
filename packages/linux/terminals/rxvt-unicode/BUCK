@@ -1,18 +1,13 @@
 load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
 
-download_source(
-    name = "rxvt-unicode-src",
-    src_uri = "https://dist.schmorp.de/rxvt-unicode/rxvt-unicode-9.31.tar.bz2",
-    sha256 = "aaa13fcbc149fe0f3f391f933279580f74a96fd312d6ed06b8ff03c2d46672e8",
-    signature_required = False,
-)
-
 autotools_package(
     name = "rxvt-unicode",
     bdepend = [],
     src_prepare = "",
-    source = ":rxvt-unicode-src",
+    src_uri = "https://dist.schmorp.de/rxvt-unicode/rxvt-unicode-9.31.tar.bz2",
+
+    sha256 = "aaa13fcbc149fe0f3f391f933279580f74a96fd312d6ed06b8ff03c2d46672e8",
     iuse = [
         "24-bit-color",
         "256-color",

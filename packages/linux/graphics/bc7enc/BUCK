@@ -3,16 +3,11 @@ load("//defs:package_defs.bzl", "download_source", "cmake_package")
 # BC7enc - BC7/BC1-5 texture encoder
 # Fast single and multi-threaded BC7/BC1-5 encoders with perceptual metric support
 
-download_source(
-    name = "bc7enc-src",
-    src_uri = "https://github.com/richgel999/bc7enc/archive/f66c2e489b07138f2673a2fb3d27c1aa1d565c48.tar.gz",
-    sha256 = "5c3632dcf5227c15ef987696c23d34be993f2341278ff8a5a37bd23ea714dce9",
-    signature_required = False,
-)
-
 cmake_package(
     name = "bc7enc",
-    source = ":bc7enc-src",
+    src_uri = "https://github.com/richgel999/bc7enc/archive/f66c2e489b07138f2673a2fb3d27c1aa1d565c48.tar.gz",
+
+    sha256 = "5c3632dcf5227c15ef987696c23d34be993f2341278ff8a5a37bd23ea714dce9",
     version = "1.0",
     description = "BC7/BC1-5 texture encoder with perceptual metric support",
     homepage = "https://github.com/richgel999/bc7enc",

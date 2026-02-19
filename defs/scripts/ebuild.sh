@@ -1326,6 +1326,15 @@ if [ -n "$PHASES_CONTENT" ]; then
         [ -n "$PHASE_SRC_COMPILE" ] && echo "export PHASE_SRC_COMPILE=\"$PHASE_SRC_COMPILE\""
         [ -n "$PHASE_SRC_TEST" ] && echo "export PHASE_SRC_TEST=\"$PHASE_SRC_TEST\""
         [ -n "$PHASE_SRC_INSTALL" ] && echo "export PHASE_SRC_INSTALL=\"$PHASE_SRC_INSTALL\""
+        [ -n "${PHASE_PROVENANCE_STAMP:-}" ] && echo "export PHASE_PROVENANCE_STAMP=\"$PHASE_PROVENANCE_STAMP\""
+        # Provenance env vars
+        [ -n "${BUCKOS_PROVENANCE_ENABLED:-}" ] && echo "export BUCKOS_PROVENANCE_ENABLED=\"$BUCKOS_PROVENANCE_ENABLED\""
+        [ -n "${BUCKOS_SLSA_ENABLED:-}" ] && echo "export BUCKOS_SLSA_ENABLED=\"$BUCKOS_SLSA_ENABLED\""
+        [ -n "${BUCKOS_PKG_TYPE:-}" ] && echo "export BUCKOS_PKG_TYPE=\"$BUCKOS_PKG_TYPE\""
+        [ -n "${BUCKOS_PKG_TARGET:-}" ] && echo "export BUCKOS_PKG_TARGET=\"$BUCKOS_PKG_TARGET\""
+        [ -n "${BUCKOS_PKG_SOURCE_URL:-}" ] && echo "export BUCKOS_PKG_SOURCE_URL=\"$BUCKOS_PKG_SOURCE_URL\""
+        [ -n "${BUCKOS_PKG_SOURCE_SHA256:-}" ] && echo "export BUCKOS_PKG_SOURCE_SHA256=\"$BUCKOS_PKG_SOURCE_SHA256\""
+        [ -n "${BUCKOS_PKG_GRAPH_HASH:-}" ] && echo "export BUCKOS_PKG_GRAPH_HASH=\"$BUCKOS_PKG_GRAPH_HASH\""
         echo ""
         echo "$PHASES_CONTENT"
     } > "$T/phases.sh"
@@ -1441,6 +1450,14 @@ if [ -n "$PHASES_CONTENT" ]; then
             CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse \
             CARGO_NET_OFFLINE=true \
             RUSTUP_TOOLCHAIN="${RUSTUP_TOOLCHAIN:-}" \
+            BUCKOS_PROVENANCE_ENABLED="${BUCKOS_PROVENANCE_ENABLED:-}" \
+            BUCKOS_SLSA_ENABLED="${BUCKOS_SLSA_ENABLED:-}" \
+            BUCKOS_PKG_TYPE="${BUCKOS_PKG_TYPE:-}" \
+            BUCKOS_PKG_TARGET="${BUCKOS_PKG_TARGET:-}" \
+            BUCKOS_PKG_SOURCE_URL="${BUCKOS_PKG_SOURCE_URL:-}" \
+            BUCKOS_PKG_SOURCE_SHA256="${BUCKOS_PKG_SOURCE_SHA256:-}" \
+            BUCKOS_PKG_GRAPH_HASH="${BUCKOS_PKG_GRAPH_HASH:-}" \
+            PHASE_PROVENANCE_STAMP="${PHASE_PROVENANCE_STAMP:-}" \
             /bin/bash --norc --noprofile "$T/phases.sh"
         fi
     else

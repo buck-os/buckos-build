@@ -72,19 +72,15 @@ autotools_package(
 )
 
 # virt-viewer - Graphical console client
-download_source(
-    name = "virt-viewer-src",
-    src_uri = "https://releases.pagure.org/virt-viewer/virt-viewer-11.0.tar.xz",
-    sha256 = "a43fa2325c4c1c77a5c8c98065ac30ef0511a21ac98e590f22340869bad9abd0",
-    signature_sha256 = "7698778452261966139bf2189ffab152b88b5b6d663feb9fe3197a0b028bdeaf",
-    signature_required = False,
-)
-
 # USE flags: See use_flags.bzl for available flags
 
 autotools_package(
     name = "virt-viewer",
-    source = ":virt-viewer-src",
+    src_uri = "https://releases.pagure.org/virt-viewer/virt-viewer-11.0.tar.xz",
+
+    sha256 = "a43fa2325c4c1c77a5c8c98065ac30ef0511a21ac98e590f22340869bad9abd0",
+
+    signature_sha256 = "7698778452261966139bf2189ffab152b88b5b6d663feb9fe3197a0b028bdeaf",
     version = "11.0",
     description = "Graphical console client for connecting to virtual machines",
     homepage = "https://virt-manager.org/",

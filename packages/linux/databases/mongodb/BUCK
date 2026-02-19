@@ -7,13 +7,6 @@ load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 #   snappy   - Enable Snappy compression
 #   zstd     - Enable Zstandard compression
 
-download_source(
-    name = "mongodb-src",
-    src_uri = "https://github.com/mongodb/mongo/archive/refs/tags/r7.0.5.tar.gz",
-    sha256 = "8b3bd7d5dfb51d008b8e2b2303b84647002cccd9121fe828e5cebcf70873273f",
-    signature_required = False,
-)
-
 ebuild_package(
     name = "mongodb",
     version = "7.0.5",
@@ -36,7 +29,9 @@ ebuild_package(
         "ssl": "--enable-ssl",
         "tools": "--enable-tools",
     },
-    source = ":mongodb-src",
+    src_uri = "https://github.com/mongodb/mongo/archive/refs/tags/r7.0.5.tar.gz",
+
+    sha256 = "8b3bd7d5dfb51d008b8e2b2303b84647002cccd9121fe828e5cebcf70873273f",
     description = "Document-oriented NoSQL database",
     homepage = "https://www.mongodb.com",
     license = "SSPL-1.0",

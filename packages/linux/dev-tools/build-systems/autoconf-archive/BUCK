@@ -6,15 +6,11 @@ load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 # Collection of freely reusable Autoconf macros including AX_PTHREAD,
 # AX_CHECK_COMPILE_FLAG, AX_CXX_COMPILE_STDCXX, and many others.
 
-download_source(
-    name = "autoconf-archive-src",
-    src_uri = "https://mirror.buckos.org/a/autoconf-archive-2024.10.16.tar.xz",
-    sha256 = "FIXME",
-)
-
 ebuild_package(
     name = "autoconf-archive",
-    source = ":autoconf-archive-src",
+    src_uri = "https://mirror.buckos.org/a/autoconf-archive-2024.10.16.tar.xz",
+
+    sha256 = "FIXME",
     version = "2024.10.16",
     category = "dev-tools/build-systems",
     description = "GNU Autoconf Macro Archive",

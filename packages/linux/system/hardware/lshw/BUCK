@@ -4,16 +4,11 @@
 load("//defs:package_defs.bzl","download_source", "make_package")
 load("//defs:use_flags.bzl", "set_use_flags")
 
-download_source(
-    name = "lshw-src",
-    src_uri = "https://www.ezix.org/software/files/lshw-B.02.20.tar.gz",
-    sha256 = "06d9cf122422220e5dc94e8ea5b01816a69bb6b59368f63d7f21fff31fc6922a",
-    signature_required = False,
-)
-
 make_package(
     name = "lshw",
-    source = ":lshw-src",
+    src_uri = "https://www.ezix.org/software/files/lshw-B.02.20.tar.gz",
+
+    sha256 = "06d9cf122422220e5dc94e8ea5b01816a69bb6b59368f63d7f21fff31fc6922a",
     iuse = ["gtk", "sqlite", "static"],
     use_configure = {
         "-gtk": "--disable-gtk",
