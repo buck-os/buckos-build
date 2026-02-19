@@ -1,4 +1,8 @@
-"""Tests: build targets with provenance via buck2, verify ELF stamps."""
+"""Tests: build targets with provenance via buck2, verify ELF stamps.
+
+Marked slow because every test invokes buck2 build.  Run explicitly:
+    pytest -m slow tests/test_provenance_integration.py
+"""
 from __future__ import annotations
 
 import hashlib
@@ -10,6 +14,8 @@ import subprocess
 from pathlib import Path
 
 import pytest
+
+pytestmark = pytest.mark.slow
 
 
 # ---------------------------------------------------------------------------
