@@ -14,8 +14,13 @@ SCRIPT = os.path.join(
 )
 
 
-def _run_stamp(env_overrides, dep_dirs=None):
-    """Source provenance-stamp.sh inside a bash wrapper and return the result."""
+def _run_stamp(env_overrides, dep_dirs=None, use_flags=None):
+    """Source provenance-stamp.sh inside a bash wrapper and return the result.
+
+    use_flags: optional list of USE flag strings.  When provided the
+    BUCKOS_USE bash array is declared inside the wrapper script (bash
+    arrays cannot be passed through the environment).
+    """
     destdir = env_overrides["DESTDIR"]
     env = {
         "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
@@ -35,9 +40,15 @@ def _run_stamp(env_overrides, dep_dirs=None):
     }
     env.update(env_overrides)
 
+    preamble = ""
+    if use_flags is not None:
+        # Bash arrays can't be passed via env; declare inside the script
+        escaped = " ".join(f'"{f}"' for f in use_flags)
+        preamble = f'BUCKOS_USE=({escaped}); export BUCKOS_USE\n'
+
     script = textwrap.dedent(f"""\
         set -e
-        source "{os.path.abspath(SCRIPT)}"
+        {preamble}source "{os.path.abspath(SCRIPT)}"
     """)
     result = subprocess.run(
         ["bash", "-c", script],
@@ -119,6 +130,7 @@ class TestProvenanceEnabled(unittest.TestCase):
         self.assertEqual(rec["sourceUrl"], "https://example.com/test-1.0.tar.gz")
         self.assertEqual(rec["sourceSha256"], "abc123")
         self.assertEqual(rec["graphHash"], "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
+        self.assertIn("useFlags", rec)
         self.assertIn("BOS_PROV", rec)
 
     def test_bos_prov_is_valid_hash(self):
@@ -204,6 +216,74 @@ class TestProvenanceEnabled(unittest.TestCase):
             text=True,
         )
         self.assertIn("test-pkg", readelf.stdout)
+
+
+def _verify_bos_prov(rec):
+    """Recompute BOS_PROV and assert it matches the record's value."""
+    rec_without = {k: v for k, v in rec.items() if k != "BOS_PROV"}
+    canonical = json.dumps(rec_without, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode()).hexdigest() == rec["BOS_PROV"]
+
+
+class TestUseFlagsInProvenance(unittest.TestCase):
+    """USE flag serialisation in provenance records."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self.destdir = os.path.join(self.tmpdir, "dest")
+        os.makedirs(self.destdir)
+        self.t = os.path.join(self.tmpdir, "temp")
+        os.makedirs(self.t)
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir)
+
+    def _stamp(self, use_flags=None):
+        result = _run_stamp(
+            {"DESTDIR": self.destdir, "T": self.t},
+            use_flags=use_flags,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return _read_jsonl(
+            os.path.join(self.destdir, ".buckos-provenance.jsonl")
+        )[0]
+
+    def test_use_flags_present(self):
+        rec = self._stamp(use_flags=["ssl", "http2"])
+        self.assertEqual(rec["useFlags"], ["ssl", "http2"])
+
+    def test_use_flags_empty_when_unset(self):
+        rec = self._stamp()
+        self.assertEqual(rec["useFlags"], [])
+
+    def test_use_flags_empty_list(self):
+        rec = self._stamp(use_flags=[])
+        self.assertEqual(rec["useFlags"], [])
+
+    def test_use_flags_single(self):
+        rec = self._stamp(use_flags=["debug"])
+        self.assertEqual(rec["useFlags"], ["debug"])
+
+    def test_bos_prov_covers_use_flags(self):
+        rec = self._stamp(use_flags=["ssl"])
+        self.assertTrue(_verify_bos_prov(rec))
+
+    def test_different_flags_different_bos_prov(self):
+        rec_ssl = self._stamp(use_flags=["ssl"])
+
+        # Stamp into a separate destdir for the second run
+        destdir2 = os.path.join(self.tmpdir, "dest2")
+        os.makedirs(destdir2)
+        result = _run_stamp(
+            {"DESTDIR": destdir2, "T": self.t},
+            use_flags=["debug"],
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        rec_debug = _read_jsonl(
+            os.path.join(destdir2, ".buckos-provenance.jsonl")
+        )[0]
+
+        self.assertNotEqual(rec_ssl["BOS_PROV"], rec_debug["BOS_PROV"])
 
 
 class TestSlsaMode(unittest.TestCase):
