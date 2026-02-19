@@ -41,8 +41,9 @@ buck2 query 'filter("fedora", labels(compat_tags, //packages/...))'
 The `fedora` USE flag controls Fedora compatibility mode:
 
 ```python
-# In config/use_config.bzl or via command line
-USE="fedora"  # Enable Fedora compatibility
+# In .buckconfig
+# [use]
+# fedora = true
 
 # Affects:
 # - Filesystem layout (FHS vs BuckOS)
@@ -251,7 +252,7 @@ platform(
 ### USE Flag System
 
 - `defs/use_flags.bzl` - Added `fedora` USE flag
-- `config/use_config.bzl` - USE flag configuration
+- `.buckconfig` `[use]` section - USE flag configuration
 
 ### Package Definitions
 
