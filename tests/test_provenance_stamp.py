@@ -286,6 +286,57 @@ class TestUseFlagsInProvenance(unittest.TestCase):
         self.assertNotEqual(rec_ssl["BOS_PROV"], rec_debug["BOS_PROV"])
 
 
+class TestSubgraphHash(unittest.TestCase):
+    """Verify .buckos-subgraph-hash is written with the graph hash value."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self.destdir = os.path.join(self.tmpdir, "dest")
+        os.makedirs(self.destdir)
+        self.t = os.path.join(self.tmpdir, "temp")
+        os.makedirs(self.t)
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir)
+
+    def test_subgraph_hash_written(self):
+        result = _run_stamp({
+            "DESTDIR": self.destdir,
+            "T": self.t,
+        })
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+        hash_path = os.path.join(self.destdir, ".buckos-subgraph-hash")
+        self.assertTrue(os.path.exists(hash_path))
+
+    def test_subgraph_hash_matches_graph_hash(self):
+        graph_hash = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+        result = _run_stamp({
+            "DESTDIR": self.destdir,
+            "T": self.t,
+            "BUCKOS_PKG_GRAPH_HASH": graph_hash,
+        })
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+        hash_path = os.path.join(self.destdir, ".buckos-subgraph-hash")
+        with open(hash_path) as f:
+            content = f.read().strip()
+        self.assertEqual(content, graph_hash)
+
+    def test_subgraph_hash_empty_when_no_graph_hash(self):
+        result = _run_stamp({
+            "DESTDIR": self.destdir,
+            "T": self.t,
+            "BUCKOS_PKG_GRAPH_HASH": "",
+        })
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+        hash_path = os.path.join(self.destdir, ".buckos-subgraph-hash")
+        with open(hash_path) as f:
+            content = f.read().strip()
+        self.assertEqual(content, "")
+
+
 class TestSlsaMode(unittest.TestCase):
     """SLSA volatile fields."""
 
@@ -559,6 +610,94 @@ class TestLabelParsing(unittest.TestCase):
 
         self.assertEqual(url, "https://example.com/foo-1.0.tar.gz")
         self.assertEqual(sha256, "deadbeef1234")
+
+
+class TestImaSigning(unittest.TestCase):
+    """IMA signing gated by BUCKOS_IMA_ENABLED."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self.destdir = os.path.join(self.tmpdir, "dest")
+        os.makedirs(self.destdir)
+        self.t = os.path.join(self.tmpdir, "temp")
+        os.makedirs(self.t)
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir)
+
+    def test_ima_disabled_no_signing(self):
+        """When IMA is disabled, no evmctl output expected."""
+        result = _run_stamp({
+            "DESTDIR": self.destdir,
+            "T": self.t,
+            "BUCKOS_IMA_ENABLED": "false",
+        })
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn("IMA-signed", result.stdout)
+
+    def test_ima_enabled_missing_key_fails(self):
+        """IMA enabled without a key should fail."""
+        result = _run_stamp({
+            "DESTDIR": self.destdir,
+            "T": self.t,
+            "BUCKOS_IMA_ENABLED": "true",
+            "BUCKOS_IMA_KEY": "",
+        })
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("BUCKOS_IMA_KEY", result.stderr)
+
+    def test_ima_enabled_missing_key_file_fails(self):
+        """IMA enabled with nonexistent key file should fail."""
+        result = _run_stamp({
+            "DESTDIR": self.destdir,
+            "T": self.t,
+            "BUCKOS_IMA_ENABLED": "true",
+            "BUCKOS_IMA_KEY": "/nonexistent/key.priv",
+        })
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("IMA key not found", result.stderr)
+
+    @unittest.skipUnless(
+        shutil.which("evmctl") and shutil.which("cc") and shutil.which("objcopy"),
+        "evmctl, cc, and objcopy required",
+    )
+    def test_ima_sign_elf(self):
+        """--sigfile produces .sig sidecar without needing root."""
+        # Build a minimal binary
+        c_src = os.path.join(self.tmpdir, "hello.c")
+        with open(c_src, "w") as f:
+            f.write("int main(){return 0;}\n")
+        elf_path = os.path.join(self.destdir, "usr", "bin", "hello")
+        os.makedirs(os.path.dirname(elf_path))
+        subprocess.run(
+            ["cc", c_src, "-o", elf_path],
+            check=True,
+            capture_output=True,
+        )
+        os.chmod(elf_path, 0o755)
+
+        # Use the test key
+        key_path = os.path.join(
+            os.path.dirname(__file__), "..", "defs", "keys", "ima-test.priv"
+        )
+        if not os.path.exists(key_path):
+            self.skipTest("IMA test key not found")
+
+        result = _run_stamp({
+            "DESTDIR": self.destdir,
+            "T": self.t,
+            "BUCKOS_IMA_ENABLED": "true",
+            "BUCKOS_IMA_KEY": os.path.abspath(key_path),
+        })
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("IMA-signed", result.stdout)
+
+        # .sig sidecar must exist next to the binary
+        sig_path = elf_path + ".sig"
+        self.assertTrue(
+            os.path.exists(sig_path),
+            f".sig sidecar not found at {sig_path}",
+        )
 
 
 if __name__ == "__main__":

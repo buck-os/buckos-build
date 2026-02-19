@@ -476,6 +476,42 @@ class TestProvenanceSlsaConfig:
 
 
 # ---------------------------------------------------------------------------
+# IMA via [use] section
+# ---------------------------------------------------------------------------
+
+class TestImaConfig:
+    """IMA signing is read from [use] section in .buckconfig."""
+
+    def test_ima_readable(self, buck2):
+        """buck2 audit config returns [use] ima."""
+        result = buck2("audit", "config", "use.ima", check=True)
+        assert "ima" in result.stdout
+
+    def test_ima_override(self, buck2):
+        """--config use.ima=true overrides default."""
+        result = buck2(
+            "audit", "config", "use.ima",
+            "--config", "use.ima=true",
+            check=True,
+        )
+        assert "true" in result.stdout.lower()
+
+    def test_ima_key_readable(self, buck2):
+        """buck2 audit config returns [use] ima_key."""
+        result = buck2("audit", "config", "use.ima_key", check=True)
+        assert "ima-test-key" in result.stdout
+
+    def test_ima_key_override(self, buck2):
+        """--config use.ima_key overrides default key target."""
+        result = buck2(
+            "audit", "config", "use.ima_key",
+            "--config", "use.ima_key=//custom:key",
+            check=True,
+        )
+        assert "//custom:key" in result.stdout
+
+
+# ---------------------------------------------------------------------------
 # USE_EXPAND
 # ---------------------------------------------------------------------------
 

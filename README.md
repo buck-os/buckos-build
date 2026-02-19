@@ -644,6 +644,36 @@ download_source(
 )
 ```
 
+### IMA Binary Signing
+
+Optional IMA (Integrity Measurement Architecture) signing sets the `security.ima`
+extended attribute on every ELF binary and shared library. Kernels with IMA
+appraisal enabled use this to verify binaries at exec time.
+
+Signing is two-phase so package builds need no privilege:
+
+1. **Build time** (unprivileged): `evmctl ima_sign --sigfile` writes `.sig`
+   sidecar files alongside each ELF binary. No `CAP_SYS_ADMIN` needed.
+2. **Image assembly** (root): `.sig` files are applied as `security.ima`
+   xattrs via `evmctl ima_setxattr --sigfile`, then cleaned up.
+
+Enable in `.buckconfig`:
+```ini
+[use]
+  ima = true
+```
+
+Or per-build: `buck2 build --config use.ima=true //packages/...`
+
+To use a custom signing key, override the default target:
+```ini
+[use]
+  ima_key = //path/to:your-key
+```
+
+Requires `ima-evm-utils` (provides `evmctl`). IMA signing runs as part of
+provenance stamping after `.note.package` injection.
+
 ## Private Patch Registry
 
 BuckOS supports applying private patches to any package without modifying the

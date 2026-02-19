@@ -3107,6 +3107,20 @@ mount "${{LOOP}}p1" "$MOUNT_DIR/boot/efi"
 # Copy rootfs
 cp -a "$ROOTFS"/* "$MOUNT_DIR"/ || true
 
+# Apply IMA .sig sidecars as security.ima xattrs and clean up
+if command -v evmctl >/dev/null 2>&1; then
+    _ima_applied=0
+    while IFS= read -r -d '' _sig; do
+        _target="${{_sig%.sig}}"
+        [ -f "$_target" ] || continue
+        evmctl ima_setxattr --sigfile "$_sig" "$_target" >/dev/null 2>&1 && {{
+            rm -f "$_sig"
+            _ima_applied=$((_ima_applied + 1))
+        }}
+    done < <(find "$MOUNT_DIR" -name '*.sig' -print0 2>/dev/null)
+    [ "$_ima_applied" -gt 0 ] && echo "Applied security.ima to $_ima_applied files"
+fi
+
 # Unmount
 sync
 umount "$MOUNT_DIR/boot/efi"
@@ -3162,6 +3176,20 @@ mount -o loop "$OUTPUT" "$MOUNT_DIR"
 
 # Copy rootfs
 cp -a "$ROOTFS"/* "$MOUNT_DIR"/ || true
+
+# Apply IMA .sig sidecars as security.ima xattrs and clean up
+if command -v evmctl >/dev/null 2>&1; then
+    _ima_applied=0
+    while IFS= read -r -d '' _sig; do
+        _target="${{_sig%.sig}}"
+        [ -f "$_target" ] || continue
+        evmctl ima_setxattr --sigfile "$_sig" "$_target" >/dev/null 2>&1 && {{
+            rm -f "$_sig"
+            _ima_applied=$((_ima_applied + 1))
+        }}
+    done < <(find "$MOUNT_DIR" -name '*.sig' -print0 2>/dev/null)
+    [ "$_ima_applied" -gt 0 ] && echo "Applied security.ima to $_ima_applied files"
+fi
 
 # Unmount
 sync
@@ -3383,6 +3411,20 @@ if [ -n "{include_rootfs}" ] && [ -d "$ROOTFS_DIR" ]; then
     # Create a working copy of rootfs to add kernel modules
     ROOTFS_WORK=$(mktemp -d)
     cp -a "$ROOTFS_DIR/." "$ROOTFS_WORK/"
+
+    # Apply IMA .sig sidecars as security.ima xattrs and clean up
+    if command -v evmctl >/dev/null 2>&1; then
+        _ima_applied=0
+        while IFS= read -r -d '' _sig; do
+            _target="${{_sig%.sig}}"
+            [ -f "$_target" ] || continue
+            evmctl ima_setxattr --sigfile "$_sig" "$_target" >/dev/null 2>&1 && {{
+                rm -f "$_sig"
+                _ima_applied=$((_ima_applied + 1))
+            }}
+        done < <(find "$ROOTFS_WORK" -name '*.sig' -print0 2>/dev/null)
+        [ "$_ima_applied" -gt 0 ] && echo "Applied security.ima to $_ima_applied files"
+    fi
 
     # Copy kernel modules from kernel build to rootfs
     if [ -d "$KERNEL_DIR/lib/modules" ]; then
@@ -3766,6 +3808,20 @@ trap "rm -rf $WORKDIR" EXIT
 # Copy rootfs to working directory
 cp -a "$ROOTFS"/. "$WORKDIR/"
 
+# Apply IMA .sig sidecars as security.ima xattrs and clean up
+if command -v evmctl >/dev/null 2>&1; then
+    _ima_applied=0
+    while IFS= read -r -d '' _sig; do
+        _target="${{_sig%.sig}}"
+        [ -f "$_target" ] || continue
+        evmctl ima_setxattr --sigfile "$_sig" "$_target" >/dev/null 2>&1 && {{
+            rm -f "$_sig"
+            _ima_applied=$((_ima_applied + 1))
+        }}
+    done < <(find "$WORKDIR" -name '*.sig' -print0 2>/dev/null)
+    [ "$_ima_applied" -gt 0 ] && echo "Applied security.ima to $_ima_applied files"
+fi
+
 # Create metadata directory
 mkdir -p "$WORKDIR/etc/buckos"
 
@@ -3814,6 +3870,7 @@ echo "Creating tarball with {compression} compression..."
     cd "$WORKDIR"
     # Use numeric owner to ensure reproducibility
     tar --numeric-owner --owner=0 --group=0 \\
+        --xattrs \\
         --sort=name \\
         {compress_flag} \\
         -cf "$TARBALL" .
@@ -4942,9 +4999,7 @@ def _ebuild_package_impl(ctx: AnalysisContext) -> list[Provider]:
     # Read provenance config
     provenance_enabled = read_config("use", "provenance", "false").lower() in ["true", "1", "yes"]
     slsa_enabled = read_config("use", "slsa", "false").lower() in ["true", "1", "yes"]
-
-    # Read graph hash from the graph-hash genrule output
-    graph_hash_artifact = ctx.attrs._graph_hash[DefaultInfo].default_outputs[0]
+    ima_enabled = read_config("use", "ima", "false").lower() in ["true", "1", "yes"]
 
     # Extract source provenance metadata from labels
     pkg_source_url = ""
@@ -5044,6 +5099,76 @@ def _ebuild_package_impl(ctx: AnalysisContext) -> list[Provider]:
     # Get provenance stamp script artifact
     provenance_stamp_script = ctx.attrs._provenance_stamp_script[DefaultInfo].default_outputs[0]
 
+    # ── Per-target Merkle subgraph hash ──────────────────────────────────────
+    # Each package gets a SHA-256 computed from its own build inputs plus the
+    # subgraph hashes of all its dependencies, forming a Merkle tree.
+    subgraph_hash_artifact = ctx.actions.declare_output("subgraph-hash.txt")
+
+    # Write metadata string as a hashable artifact
+    _use_str = ",".join(ctx.attrs.use_flags) if ctx.attrs.use_flags else ""
+    metadata_line = "{}|{}|{}|{}|{}|{}|{}".format(
+        ctx.attrs.name,
+        ctx.attrs.version,
+        ctx.attrs.package_type,
+        str(ctx.label),
+        pkg_source_url,
+        pkg_source_sha256,
+        _use_str,
+    )
+    subgraph_metadata = ctx.actions.write("subgraph-inputs.txt", metadata_line)
+
+    # Collect all input artifacts that define this package's build identity
+    subgraph_inputs = [
+        env_script,
+        phase_scripts["src_unpack"],
+        phase_scripts["src_prepare"],
+        phase_scripts["pre_configure"],
+        phase_scripts["src_configure"],
+        phase_scripts["src_compile"],
+        phase_scripts["src_test"],
+        phase_scripts["src_install"],
+        ebuild_script,
+        provenance_stamp_script,
+        pkg_config_wrapper,
+        subgraph_metadata,
+    ]
+
+    # Build the hash command: cat all input artifacts + dep subgraph hashes | sha256sum
+    hash_cmd = cmd_args(["bash", "-c"])
+    # The script receives all inputs as positional args:
+    #   $1..N = input artifacts, then dep dirs (count passed via env)
+    hash_script = """\
+set -e
+_dep_count="$1"; shift
+_input_count="$1"; shift
+# Collect input file args, then dep dir args, then output path
+_inputs=()
+for _i in $(seq 1 "$_input_count"); do _inputs+=("$1"); shift; done
+_deps=()
+for _i in $(seq 1 "$_dep_count"); do _deps+=("$1"); shift; done
+_out="$1"
+# Hash all input artifacts + sorted dep subgraph hashes
+{ for _f in "${_inputs[@]}"; do cat "$_f"; done
+  _hashes=""
+  for _d in "${_deps[@]}"; do
+      _f="$_d/.buckos-subgraph-hash"
+      [ -f "$_f" ] && _hashes="${_hashes}$(cat "$_f")\n"
+  done
+  [ -n "$_hashes" ] && printf '%b' "$_hashes" | sort
+} | sha256sum | cut -d' ' -f1 > "$_out"
+"""
+    hash_cmd.add(hash_script)
+    hash_cmd.add("_")  # placeholder for bash -c $0
+    hash_cmd.add(str(len(dep_dirs)))
+    hash_cmd.add(str(len(subgraph_inputs)))
+    for inp in subgraph_inputs:
+        hash_cmd.add(inp)
+    for dd in dep_dirs:
+        hash_cmd.add(dd)
+    hash_cmd.add(subgraph_hash_artifact.as_output())
+
+    ctx.actions.run(hash_cmd, category = "subgraph_hash")
+
     # Generate patch application commands if patches are provided
     # We'll pass patch files via command line arguments and copy them to the build dir
     patch_file_list = []
@@ -5069,8 +5194,8 @@ ORIGINAL_ARGS=("$@")
 
 # Arguments: DESTDIR, SRC_DIR, PKG_CONFIG_WRAPPER, FRAMEWORK_SCRIPT, PATCH_COUNT,
 #            ENV_SCRIPT, SRC_UNPACK, SRC_PREPARE, PRE_CONFIGURE, SRC_CONFIGURE,
-#            SRC_COMPILE, SRC_TEST, SRC_INSTALL, PROVENANCE_STAMP, GRAPH_HASH,
-#            HOST_TOOL_COUNT, patches..., host_tool_dirs..., dep_dirs...
+#            SRC_COMPILE, SRC_TEST, SRC_INSTALL, PROVENANCE_STAMP, SUBGRAPH_HASH,
+#            IMA_KEY, HOST_TOOL_COUNT, patches..., host_tool_dirs..., dep_dirs...
 # Convert paths to absolute to work in mount namespace
 export _EBUILD_DESTDIR="$(readlink -f "$1")"
 export _EBUILD_SRCDIR="$(readlink -f "$2")"
@@ -5092,8 +5217,12 @@ export PHASE_SRC_INSTALL="$(readlink -f "$8")"
 export PHASE_PROVENANCE_STAMP="$(readlink -f "$9")"
 BUCKOS_PKG_GRAPH_HASH="$(cat "$(readlink -f "${10}")")"
 export BUCKOS_PKG_GRAPH_HASH
-HOST_TOOL_COUNT="${11}"
-shift 11
+if [ "${11}" != "__none__" ]; then
+    BUCKOS_IMA_KEY="$(readlink -f "${11}")"
+    export BUCKOS_IMA_KEY
+fi
+HOST_TOOL_COUNT="${12}"
+shift 12
 
 # Debug: Log phase script paths for troubleshooting
 if [ -n "${EBUILD_DEBUG:-}" ]; then
@@ -5238,6 +5367,7 @@ export BUCKOS_PKG_TYPE="@@PKG_TYPE@@"
 export BUCKOS_PKG_TARGET="@@PKG_TARGET@@"
 export BUCKOS_PKG_SOURCE_URL="@@PKG_SOURCE_URL@@"
 export BUCKOS_PKG_SOURCE_SHA256="@@PKG_SOURCE_SHA256@@"
+export BUCKOS_IMA_ENABLED="@@IMA_ENABLED@@"
 
 # Set MAKE_JOBS based on BUILD_THREADS
 # 0 = auto-detect with nproc, otherwise use specified value
@@ -5542,6 +5672,7 @@ source "$FRAMEWORK_SCRIPT"
     script_content = script_content.replace("@@PKG_TARGET@@", str(ctx.label))
     script_content = script_content.replace("@@PKG_SOURCE_URL@@", pkg_source_url)
     script_content = script_content.replace("@@PKG_SOURCE_SHA256@@", pkg_source_sha256)
+    script_content = script_content.replace("@@IMA_ENABLED@@", "true" if ima_enabled else "false")
 
     script = ctx.actions.write(
         "ebuild_wrapper.sh",
@@ -5552,7 +5683,8 @@ source "$FRAMEWORK_SCRIPT"
     # Build command - wrapper sources the external framework
     # Arguments order: DESTDIR, SRC_DIR, PKG_CONFIG_WRAPPER, FRAMEWORK_SCRIPT, PATCH_COUNT,
     #                  ENV_SCRIPT, SRC_UNPACK, SRC_PREPARE, PRE_CONFIGURE, SRC_CONFIGURE,
-    #                  SRC_COMPILE, SRC_TEST, SRC_INSTALL, HOST_TOOL_COUNT, patches..., host_tool_dirs..., dep_dirs...
+    #                  SRC_COMPILE, SRC_TEST, SRC_INSTALL, PROVENANCE_STAMP, SUBGRAPH_HASH,
+    #                  IMA_KEY, HOST_TOOL_COUNT, patches..., host_tool_dirs..., dep_dirs...
     cmd = cmd_args([
         "bash",
         script,
@@ -5573,9 +5705,13 @@ source "$FRAMEWORK_SCRIPT"
     cmd.add(phase_scripts["src_test"])
     cmd.add(phase_scripts["src_install"])
 
-    # Provenance stamp script and graph hash (positional args before HOST_TOOL_COUNT)
+    # Provenance stamp script, subgraph hash, IMA key (positional args before HOST_TOOL_COUNT)
     cmd.add(provenance_stamp_script)
-    cmd.add(graph_hash_artifact)
+    cmd.add(subgraph_hash_artifact)
+    if ima_enabled:
+        cmd.add(ctx.attrs._ima_key[DefaultInfo].default_outputs[0])
+    else:
+        cmd.add("__none__")
 
     # Add host tool count (number of exec_bdepend directories)
     exec_dep_count = len(exec_dep_dirs)
@@ -5695,7 +5831,7 @@ ebuild_package_rule = rule(
         "_ebuild_bootstrap_stage2_script": attrs.dep(default = "//defs/scripts:ebuild-bootstrap-stage2"),
         "_ebuild_bootstrap_stage3_script": attrs.dep(default = "//defs/scripts:ebuild-bootstrap-stage3"),
         "_provenance_stamp_script": attrs.dep(default = "//defs/scripts:provenance-stamp"),
-        "_graph_hash": attrs.dep(default = "//:graph-hash"),
+        "_ima_key": attrs.dep(default = read_config("use", "ima_key", "//defs/keys:ima-test-key")),
         "labels": attrs.list(attrs.string(), default = []),
     },
 )

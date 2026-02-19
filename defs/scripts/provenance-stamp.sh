@@ -105,6 +105,9 @@ mkdir -p "$DESTDIR"
     [ -n "$_aggregate" ] && printf '%s' "$_aggregate"
 } > "$DESTDIR/.buckos-provenance.jsonl"
 
+# ── 4b. Write subgraph hash for downstream dep consumption ───────────────────
+printf '%s\n' "$BUCKOS_PKG_GRAPH_HASH" > "$DESTDIR/.buckos-subgraph-hash"
+
 # ── 5. Stamp ELF binaries with .note.package ────────────────────────────────
 
 _objcopy="${OBJCOPY:-objcopy}"
@@ -157,3 +160,60 @@ else
 fi
 
 echo "provenance-stamp: stamped ELF binaries in $DESTDIR"
+
+# ── 6. IMA signing (security.ima xattr) ──────────────────────────────────────
+# Signs every ELF binary with evmctl ima_sign when use.ima=true.
+# Must run AFTER .note.package stamping since objcopy modifies the binary.
+
+if [ "${BUCKOS_IMA_ENABLED:-false}" = "true" ]; then
+    if [ -z "${BUCKOS_IMA_KEY:-}" ]; then
+        echo "provenance-stamp: ERROR: BUCKOS_IMA_ENABLED=true but BUCKOS_IMA_KEY is not set" >&2
+        exit 1
+    fi
+    if ! [ -f "$BUCKOS_IMA_KEY" ]; then
+        echo "provenance-stamp: ERROR: IMA key not found: $BUCKOS_IMA_KEY" >&2
+        exit 1
+    fi
+    if ! command -v evmctl >/dev/null 2>&1; then
+        echo "provenance-stamp: ERROR: evmctl not found (install ima-evm-utils)" >&2
+        exit 1
+    fi
+
+    _ima_signed=0
+
+    _ima_sign_elf() {
+        local _elf="$1"
+        local _magic
+        _magic="$(head -c 4 "$_elf" 2>/dev/null)" || return
+        case "$_magic" in
+            $'\x7fELF') ;;
+            *) return ;;
+        esac
+        # --sigfile writes a .sig sidecar without needing CAP_SYS_ADMIN;
+        # evmctl returns non-zero (the xattr attempt fails) but the .sig is created
+        evmctl ima_sign --sigfile --key "$BUCKOS_IMA_KEY" "$_elf" >/dev/null 2>&1 || true
+        if [ -f "${_elf}.sig" ]; then
+            _ima_signed=$((_ima_signed + 1))
+        else
+            echo "provenance-stamp: warning: no .sig sidecar for $_elf" >&2
+        fi
+    }
+
+    if [ -n "$_fd_bin" ]; then
+        while IFS= read -r _elf; do
+            [ -n "$_elf" ] && _ima_sign_elf "$_elf"
+        done < <("$_fd_bin" --type f --no-ignore --hidden -e so '' "$DESTDIR" 2>/dev/null)
+        while IFS= read -r _elf; do
+            [ -n "$_elf" ] && _ima_sign_elf "$_elf"
+        done < <("$_fd_bin" --type f --no-ignore --hidden '\.so\.' "$DESTDIR" 2>/dev/null)
+        while IFS= read -r _elf; do
+            [ -n "$_elf" ] && _ima_sign_elf "$_elf"
+        done < <("$_fd_bin" --type x --no-ignore --hidden '' "$DESTDIR" 2>/dev/null)
+    else
+        while IFS= read -r -d '' _elf; do
+            _ima_sign_elf "$_elf"
+        done < <(find "$DESTDIR" -type f \( -executable -o -name '*.so' -o -name '*.so.*' \) -print0 2>/dev/null)
+    fi
+
+    echo "provenance-stamp: IMA-signed $_ima_signed binaries (.sig sidecars)"
+fi

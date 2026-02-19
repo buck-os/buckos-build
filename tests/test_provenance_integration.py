@@ -227,6 +227,13 @@ class TestExecutableStamping:
         assert result.returncode == 0, f"Stamped binary failed:\n{result.stderr}"
         assert "hello-provenance-test" in result.stdout
 
+    def test_subgraph_hash_written(self, hello_output: Path):
+        hash_file = hello_output / ".buckos-subgraph-hash"
+        assert hash_file.exists(), f"Missing {hash_file}"
+        content = hash_file.read_text().strip()
+        assert len(content) == 64, f"Expected 64 hex chars, got {len(content)}"
+        int(content, 16)  # valid hex
+
     def test_use_flags_in_note_package(self, hello_output: Path):
         exes = _find_executables(hello_output)
         rec = json.loads(_readelf_note_package(exes[0]))
@@ -519,3 +526,82 @@ class TestUseFlagsInProvenance:
     def test_trace_only_bos_prov(self, hello_trace_only: Path):
         rec = _read_jsonl(hello_trace_only / ".buckos-provenance.jsonl")[0]
         _verify_bos_prov(rec)
+
+
+# ---------------------------------------------------------------------------
+# Per-target subgraph hash
+# ---------------------------------------------------------------------------
+
+class TestSubgraphHash:
+    """Verify per-target subgraph hashes differ across targets and are deterministic."""
+
+    def test_different_targets_different_hashes(
+        self, hello_output: Path, testlib_output: Path,
+    ):
+        hello_hash = (hello_output / ".buckos-subgraph-hash").read_text().strip()
+        testlib_hash = (testlib_output / ".buckos-subgraph-hash").read_text().strip()
+        assert hello_hash != testlib_hash, (
+            "Different targets should have different subgraph hashes"
+        )
+
+    def test_subgraph_hash_matches_graph_hash_in_jsonl(self, hello_output: Path):
+        """The subgraph hash file should match the graphHash in provenance JSONL."""
+        subgraph_hash = (hello_output / ".buckos-subgraph-hash").read_text().strip()
+        rec = _read_jsonl(hello_output / ".buckos-provenance.jsonl")[0]
+        assert rec["graphHash"] == subgraph_hash
+
+    def test_subgraph_hash_deterministic(self, repo_root: Path):
+        """Same target built twice produces the same subgraph hash."""
+        out1 = _buck2_build(repo_root, "//tests/fixtures/hello:hello")
+        out2 = _buck2_build(repo_root, "//tests/fixtures/hello:hello")
+        h1 = (out1 / ".buckos-subgraph-hash").read_text().strip()
+        h2 = (out2 / ".buckos-subgraph-hash").read_text().strip()
+        assert h1 == h2, "Same target should produce identical subgraph hash"
+
+
+# ---------------------------------------------------------------------------
+# IMA signing
+# ---------------------------------------------------------------------------
+
+class TestImaSigning:
+    """IMA signing integration tests — gated on evmctl availability."""
+
+    @pytest.fixture(scope="class")
+    def hello_ima(self, repo_root: Path) -> Path:
+        if not shutil.which("evmctl"):
+            pytest.skip("evmctl not found")
+        return _buck2_build(
+            repo_root, "//tests/fixtures/hello:hello",
+            use_overrides={"ima": "true"},
+        )
+
+    @pytest.fixture(scope="class")
+    def hello_no_ima(self, repo_root: Path) -> Path:
+        return _buck2_build(
+            repo_root, "//tests/fixtures/hello:hello",
+            use_overrides={"ima": "false"},
+        )
+
+    def test_ima_disabled_no_sig(self, hello_no_ima: Path):
+        """Without IMA, no .sig sidecars should exist."""
+        sigs = list(hello_no_ima.rglob("*.sig"))
+        assert not sigs, (
+            f".sig files should not exist when IMA is disabled: {sigs}"
+        )
+
+    def test_ima_signed_elf_has_sig(self, hello_ima: Path):
+        """With IMA enabled, ELF binaries should have .sig sidecars."""
+        exes = _find_executables(hello_ima)
+        assert exes, f"No executables found under {hello_ima}"
+        for exe in exes:
+            sig = exe.with_name(exe.name + ".sig")
+            assert sig.exists(), f"{exe.name}: missing .sig sidecar"
+
+    def test_ima_signed_binary_still_runs(self, hello_ima: Path):
+        """IMA-signed binary should still execute normally."""
+        exes = _find_executables(hello_ima)
+        hello = next((e for e in exes if e.name == "hello"), exes[0])
+        result = subprocess.run(
+            [str(hello)], capture_output=True, text=True,
+        )
+        assert result.returncode == 0, f"IMA-signed binary failed:\n{result.stderr}"

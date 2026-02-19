@@ -144,7 +144,7 @@ versioned_package(
 **Configuration via `.buckconfig`:**
 - USE flags: `[use]` section for global flags, `[use.PKGNAME]` for per-package
 - USE_EXPAND: `[use_expand]` section for multi-value variables (video_cards, input_devices)
-- Feature toggles: provenance, SLSA via `[use]` section
+- Feature toggles: provenance, SLSA, IMA via `[use]` section
 - Platform config: `[buckos]` section for target platform settings
 
 ---

@@ -766,54 +766,6 @@ filegroup(
     visibility = ["PUBLIC"],
 )
 
-# Graph hash: sha256 of the entire build graph — all buck2 state that can
-# affect a build: BUCK files, .bzl definitions, build scripts, and configs.
-#
-# buck2 glob() cannot cross package boundaries, so we hash the source tree
-# directly.  $SRCS ensures buck2 tracks the files it CAN see for invalidation;
-# the find(1) picks up BUCK files in subpackages that glob can't reach.
-genrule(
-    name = "graph-hash",
-    srcs = glob(["defs/*.bzl"]) +
-           glob(["defs/scripts/*.sh"]) +
-           [".buckconfig"] +
-           glob([".buckconfig.local"]),
-    cmd = """\
-        _root=`pwd`
-        _fd=""
-        command -v fd  >/dev/null 2>&1 && _fd=fd
-        [ -z "$_fd" ] && command -v fdfind >/dev/null 2>&1 && _fd=fdfind
-
-        if [ -n "$_fd" ]; then
-            "$_fd" --type f --no-ignore --hidden \
-                '(^BUCK$|\\.bzl$|^\\.buckconfig$|^\\.buckconfig\\.local$)' \
-                "$_root" \
-                --exclude buck-out --exclude .git \
-                2>/dev/null
-            "$_fd" --type f --no-ignore --hidden '' \
-                "$_root/defs/scripts" \
-                --exclude buck-out --exclude .git \
-                -e sh 2>/dev/null
-            "$_fd" --type f --no-ignore --hidden '' \
-                "$_root/config" \
-                --exclude buck-out --exclude .git \
-                2>/dev/null
-        else
-            find "$_root" \
-                \\( -name 'BUCK' -o -name '*.bzl' -o -name '.buckconfig' \
-                   -o -name '.buckconfig.local' -o -path '*/defs/scripts/*.sh' \
-                   -o -path '*/config/*' \\) \
-                -not -path '*/buck-out/*' \
-                -not -path '*/.git/*' \
-                2>/dev/null
-        fi \
-        | sort | xargs cat 2>/dev/null \
-        | sha256sum | cut -d' ' -f1 > $OUT
-    """,
-    out = "graph-hash.txt",
-    visibility = ["PUBLIC"],
-)
-
 # =============================================================================
 # System Profile Sets
 # =============================================================================

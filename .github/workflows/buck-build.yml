@@ -16,7 +16,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Harden apt against flaky mirrors
+        run: |
+          echo 'Acquire::ForceIPv4 "true";' | sudo tee /etc/apt/apt.conf.d/99force-ipv4 >/dev/null
+          echo 'Acquire::Queue-Mode "access";' | sudo tee /etc/apt/apt.conf.d/99queue-mode >/dev/null
+          echo 'Acquire::http::Pipeline-Depth "0";' | sudo tee /etc/apt/apt.conf.d/99pipeline >/dev/null
+          sudo sed -i -E \
+            -e 's|https?://([a-z0-9-]+\.)*archive\.ubuntu\.com/ubuntu|mirror://mirrors.ubuntu.com/mirrors.txt|g' \
+            -e 's|https?://security\.ubuntu\.com/ubuntu|mirror://mirrors.ubuntu.com/mirrors.txt|g' \
+            /etc/apt/sources.list /etc/apt/sources.list.d/*.list 2>/dev/null || true
       - run: bash setup.sh --yes
+        env:
+          DEBIAN_FRONTEND: noninteractive
       - run: make test
 
   required:
