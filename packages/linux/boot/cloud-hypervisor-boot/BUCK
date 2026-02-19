@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "ch_boot_script")
+load("//defs:package_defs.bzl", "ch_direct_boot_script", "ch_firmware_boot_script", "ch_virtiofs_boot_script")
 
 # =============================================================================
 # Cloud Hypervisor Boot Scripts
@@ -28,11 +28,10 @@ load("//defs:package_defs.bzl", "ch_boot_script")
 # =============================================================================
 
 # Minimal direct boot (smallest footprint)
-ch_boot_script(
+ch_direct_boot_script(
     name = "ch-boot-direct-minimal",
     kernel = "//packages/linux/kernel/buckos-kernel:buckos-kernel-ch",
     initramfs = "//packages/linux/system/cloud-hypervisor:ch-initramfs",
-    boot_mode = "direct",
     memory = "256M",
     cpus = "1",
     kernel_args = "console=ttyS0 quiet",
@@ -41,12 +40,11 @@ ch_boot_script(
 )
 
 # Standard direct boot (recommended for testing)
-ch_boot_script(
+ch_direct_boot_script(
     name = "ch-boot-direct",
     kernel = "//packages/linux/kernel/buckos-kernel:buckos-kernel-ch",
     initramfs = "//packages/linux/system/cloud-hypervisor:ch-initramfs",
     disk_image = "//packages/linux/system/cloud-hypervisor:ch-base-disk",
-    boot_mode = "direct",
     memory = "512M",
     cpus = "2",
     kernel_args = "console=ttyS0 root=/dev/vda rw quiet",
@@ -55,12 +53,11 @@ ch_boot_script(
 )
 
 # Full direct boot (with larger disk and more resources)
-ch_boot_script(
+ch_direct_boot_script(
     name = "ch-boot-direct-full",
     kernel = "//packages/linux/kernel/buckos-kernel:buckos-kernel-ch",
     initramfs = "//packages/linux/system/cloud-hypervisor:ch-initramfs",
     disk_image = "//packages/linux/system/cloud-hypervisor:ch-full-disk",
-    boot_mode = "direct",
     memory = "1G",
     cpus = "4",
     kernel_args = "console=ttyS0 root=/dev/vda rw",
@@ -73,11 +70,10 @@ ch_boot_script(
 # =============================================================================
 
 # Boot via rust-hypervisor-firmware (lightweight PVH firmware)
-ch_boot_script(
+ch_firmware_boot_script(
     name = "ch-boot-firmware-pvh",
     firmware = "//packages/linux/boot/rust-hypervisor-firmware:rust-hypervisor-firmware",
     disk_image = "//packages/linux/system/cloud-hypervisor:ch-full-disk-gpt",
-    boot_mode = "firmware",
     memory = "1G",
     cpus = "2",
     serial_console = "tty",
@@ -85,11 +81,10 @@ ch_boot_script(
 )
 
 # Boot via EDK2 CLOUDHV (full UEFI firmware)
-ch_boot_script(
+ch_firmware_boot_script(
     name = "ch-boot-firmware-uefi",
     firmware = "//packages/linux/boot/edk2-cloudhv:edk2-cloudhv",
     disk_image = "//packages/linux/system/cloud-hypervisor:ch-full-disk-gpt",
-    boot_mode = "firmware",
     memory = "1G",
     cpus = "2",
     serial_console = "tty",
@@ -101,11 +96,10 @@ ch_boot_script(
 # =============================================================================
 
 # VirtioFS boot (rootfs shared via virtiofsd)
-ch_boot_script(
+ch_virtiofs_boot_script(
     name = "ch-boot-virtiofs",
     kernel = "//packages/linux/kernel/buckos-kernel:buckos-kernel-ch",
     initramfs = "//packages/linux/system/cloud-hypervisor:ch-initramfs-virtiofs",
-    boot_mode = "virtiofs",
     memory = "512M",
     cpus = "2",
     kernel_args = "console=ttyS0 quiet",
@@ -117,11 +111,10 @@ ch_boot_script(
 )
 
 # VirtioFS boot with more resources
-ch_boot_script(
+ch_virtiofs_boot_script(
     name = "ch-boot-virtiofs-full",
     kernel = "//packages/linux/kernel/buckos-kernel:buckos-kernel-ch",
     initramfs = "//packages/linux/system/cloud-hypervisor:ch-initramfs-virtiofs",
-    boot_mode = "virtiofs",
     memory = "1G",
     cpus = "4",
     kernel_args = "console=ttyS0",
@@ -133,52 +126,15 @@ ch_boot_script(
 )
 
 # =============================================================================
-# Network-Enabled Boot Scripts
-# =============================================================================
-
-# Direct boot with TAP networking
-ch_boot_script(
-    name = "ch-boot-network",
-    kernel = "//packages/linux/kernel/buckos-kernel:buckos-kernel-ch",
-    initramfs = "//packages/linux/system/cloud-hypervisor:ch-initramfs",
-    disk_image = "//packages/linux/system/cloud-hypervisor:ch-base-disk",
-    boot_mode = "direct",
-    memory = "512M",
-    cpus = "2",
-    kernel_args = "console=ttyS0 root=/dev/vda rw quiet",
-    network_mode = "tap",
-    tap_name = "tap0",
-    serial_console = "tty",
-    visibility = ["PUBLIC"],
-)
-
-# Full network boot with larger resources
-ch_boot_script(
-    name = "ch-boot-network-full",
-    kernel = "//packages/linux/kernel/buckos-kernel:buckos-kernel-ch",
-    initramfs = "//packages/linux/system/cloud-hypervisor:ch-initramfs",
-    disk_image = "//packages/linux/system/cloud-hypervisor:ch-full-disk",
-    boot_mode = "direct",
-    memory = "1G",
-    cpus = "4",
-    kernel_args = "console=ttyS0 root=/dev/vda rw",
-    network_mode = "tap",
-    tap_name = "tap0",
-    serial_console = "tty",
-    visibility = ["PUBLIC"],
-)
-
-# =============================================================================
 # Development/Debug Boot Scripts
 # =============================================================================
 
 # Debug boot with verbose output
-ch_boot_script(
+ch_direct_boot_script(
     name = "ch-boot-debug",
     kernel = "//packages/linux/kernel/buckos-kernel:buckos-kernel-ch",
     initramfs = "//packages/linux/system/cloud-hypervisor:ch-initramfs",
     disk_image = "//packages/linux/system/cloud-hypervisor:ch-base-disk",
-    boot_mode = "direct",
     memory = "512M",
     cpus = "2",
     kernel_args = "console=ttyS0 root=/dev/vda rw debug loglevel=7 earlyprintk=serial",
@@ -198,6 +154,7 @@ filegroup(
         ":ch-boot-direct-minimal",
         ":ch-boot-direct",
         ":ch-boot-direct-full",
+        ":ch-boot-debug",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],
@@ -225,17 +182,6 @@ filegroup(
     visibility = ["PUBLIC"],
 )
 
-# All network boot scripts
-filegroup(
-    name = "network-boot-scripts",
-    srcs = [
-        ":ch-boot-network",
-        ":ch-boot-network-full",
-    ],
-    default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
-)
-
 # All Cloud Hypervisor boot scripts
 # Note: firmware-boot-scripts excluded as they require packages not yet available
 filegroup(
@@ -244,8 +190,6 @@ filegroup(
         ":direct-boot-scripts",
         # ":firmware-boot-scripts",  # Requires edk2-cloudhv which needs iasl/nasm
         ":virtiofs-boot-scripts",
-        ":network-boot-scripts",
-        ":ch-boot-debug",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],

@@ -34,8 +34,6 @@ BOOT_SCRIPT_NAMES = [
     "ch-boot-direct-minimal",
     "ch-boot-firmware-pvh",
     "ch-boot-firmware-uefi",
-    "ch-boot-network",
-    "ch-boot-network-full",
     "ch-boot-virtiofs",
     "ch-boot-virtiofs-full",
 ]
@@ -46,7 +44,6 @@ SYSTEM_IMAGE_NAMES = [
     "ch-full-rootfs",
     "ch-initramfs",
     "ch-initramfs-virtiofs",
-    "ch-initramfs-xz",
     "ch-minimal-disk",
     "ch-base-disk",
     "ch-full-disk",
@@ -123,6 +120,15 @@ class TestChTargetsExist:
                 f"Missing system image target: {name}"
             )
 
+    def test_ch_no_network_boot_scripts(self, all_targets: list[str]):
+        network_targets = [
+            t for t in all_targets
+            if "cloud-hypervisor-boot:" in t and "network" in t
+        ]
+        assert not network_targets, (
+            f"Network boot targets should not exist: {network_targets}"
+        )
+
     def test_ch_kernel_config_target(self, all_targets: list[str]):
         assert any(t.endswith(":buckos-ch-guest") for t in all_targets)
 
@@ -157,7 +163,7 @@ class TestChBootScriptsLabeled:
             t: labels for t, labels in all_target_labels.items()
             if "cloud-hypervisor-boot:" in t and ":ch-boot-" in t
         }
-        assert len(boot_targets) >= 10, f"Expected >=10 boot targets, got {len(boot_targets)}"
+        assert len(boot_targets) >= 8, f"Expected >=8 boot targets, got {len(boot_targets)}"
         for t, labels in boot_targets.items():
             assert "buckos:bootscript" in labels, f"{t} missing buckos:bootscript"
 
@@ -167,7 +173,7 @@ class TestChSystemImagesLabeled:
 
     def test_system_images_labeled(self, all_target_labels: dict[str, list[str]]):
         image_names = {"ch-minimal-rootfs", "ch-base-rootfs", "ch-full-rootfs",
-                       "ch-initramfs", "ch-initramfs-virtiofs", "ch-initramfs-xz",
+                       "ch-initramfs", "ch-initramfs-virtiofs",
                        "ch-minimal-disk", "ch-base-disk", "ch-full-disk", "ch-full-disk-gpt"}
         image_targets = {
             t: labels for t, labels in all_target_labels.items()
@@ -225,6 +231,45 @@ class TestChUseFlags:
 def test_ch_binary_builds(ch_binary):
     """CH binary builds successfully via buck2."""
     assert ch_binary.exists(), f"CH binary not found at {ch_binary}"
+
+
+@pytest.mark.slow
+@pytest.mark.timeout(900)
+def test_ch_boot_script_has_resolved_paths(buck2, repo_root):
+    """Build ch-boot-direct-minimal and verify generated script has real paths."""
+    target = "//packages/linux/boot/cloud-hypervisor-boot:ch-boot-direct-minimal"
+    result = buck2(
+        "build", "--show-output",
+        HOST_TC, HOST_TC_VAL,
+        target,
+        timeout=900,
+    )
+
+    script_path = None
+    for line in result.stdout.splitlines():
+        line = line.strip()
+        if not line or line.startswith("["):
+            continue
+        parts = line.split(None, 1)
+        if len(parts) == 2 and "ch-boot-direct-minimal" in parts[0]:
+            script_path = repo_root / parts[1]
+
+    assert script_path and script_path.exists(), (
+        f"Boot script not found in build output: {result.stdout}"
+    )
+    content = script_path.read_text()
+    assert "<build artifact" not in content, (
+        "Script contains unresolved artifact references"
+    )
+    assert "KERNEL_DIR=" in content, "Script missing KERNEL_DIR variable"
+
+    m = re.search(r'KERNEL_DIR="([^"]*)"', content)
+    assert m, "Cannot find KERNEL_DIR assignment"
+    kernel_dir = m.group(1)
+    assert kernel_dir, "KERNEL_DIR is empty"
+    assert "PLACEHOLDER" not in kernel_dir, (
+        "KERNEL_DIR contains unresolved placeholder"
+    )
 
 
 # ---------------------------------------------------------------------------

@@ -2683,342 +2683,131 @@ def qemu_boot_script(labels = [], **kwargs):
     )
 
 # =============================================================================
-# Cloud Hypervisor Boot Script Rule
+# Cloud Hypervisor Boot Script Rules
 # =============================================================================
 
-def _ch_boot_script_impl(ctx: AnalysisContext) -> list[Provider]:
-    """Generate a Cloud Hypervisor boot script with multiple boot modes."""
+def _ch_run_generator(ctx, boot_mode, kernel_dir = None, initramfs = None,
+                      disk_image = None, firmware = None, extra_env = {}):
+    """Shared helper: run the external CH boot script generator."""
     boot_script = ctx.actions.declare_output(ctx.attrs.name + ".sh")
+    generator = ctx.attrs._generator[DefaultInfo].default_outputs[0]
 
-    # Get kernel (required for direct and virtiofs modes)
-    kernel_dir = None
-    if ctx.attrs.kernel:
-        kernel_dir = ctx.attrs.kernel[DefaultInfo].default_outputs[0]
+    env = {
+        "CH_CPUS": ctx.attrs.cpus,
+        "CH_MEMORY": ctx.attrs.memory,
+        "CH_SERIAL": ctx.attrs.serial_console,
+        "CH_EXTRA_ARGS": " ".join(ctx.attrs.extra_args) if ctx.attrs.extra_args else "",
+    }
+    env.update(extra_env)
 
-    # Get firmware if provided
-    firmware_file = None
-    if ctx.attrs.firmware:
-        firmware_file = ctx.attrs.firmware[DefaultInfo].default_outputs[0]
-
-    # Get disk image if provided
-    disk_image_file = None
-    if ctx.attrs.disk_image:
-        disk_image_file = ctx.attrs.disk_image[DefaultInfo].default_outputs[0]
-
-    # Get initramfs if provided
-    initramfs_file = None
-    if ctx.attrs.initramfs:
-        initramfs_file = ctx.attrs.initramfs[DefaultInfo].default_outputs[0]
-
-    # Boot mode configuration
-    boot_mode = ctx.attrs.boot_mode
-    memory = ctx.attrs.memory
-    cpus = ctx.attrs.cpus
-    kernel_args = ctx.attrs.kernel_args
-    extra_args = " ".join(ctx.attrs.extra_args) if ctx.attrs.extra_args else ""
-
-    # Network configuration
-    network_mode = ctx.attrs.network_mode
-    tap_name = ctx.attrs.tap_name
-
-    # VirtioFS configuration
-    virtiofs_socket = ctx.attrs.virtiofs_socket
-    virtiofs_tag = ctx.attrs.virtiofs_tag
-    virtiofs_path = ctx.attrs.virtiofs_path
-
-    # Serial console
-    serial_console = ctx.attrs.serial_console
-
-    # Build kernel path detection
-    kernel_section = ""
-    if kernel_dir:
-        kernel_section = """
-# Find kernel image
-KERNEL=""
-for k in "$KERNEL_DIR/boot/vmlinuz"* "$KERNEL_DIR/boot/bzImage" "$KERNEL_DIR/vmlinuz"* "$KERNEL_DIR/vmlinux"*; do
-    if [ -f "$k" ]; then
-        KERNEL="$k"
-        break
-    fi
-done
-
-if [ -z "$KERNEL" ]; then
-    echo "Error: Cannot find kernel image in $KERNEL_DIR"
-    exit 1
-fi
-echo "  Kernel: $KERNEL"
-"""
-
-    # Build disk image section
-    disk_section = ""
-    if disk_image_file:
-        disk_section = """
-# Check disk image
-if [ ! -f "{disk_image}" ]; then
-    echo "Error: Disk image not found: {disk_image}"
-    exit 1
-fi
-echo "  Disk: {disk_image}"
-DISK_ARGS="--disk path={disk_image}"
-""".format(disk_image = disk_image_file)
-    else:
-        disk_section = """
-DISK_ARGS=""
-"""
-
-    # Build initramfs section
-    initramfs_section = ""
-    if initramfs_file:
-        initramfs_section = """
-# Check initramfs
-if [ ! -f "{initramfs}" ]; then
-    echo "Error: Initramfs not found: {initramfs}"
-    exit 1
-fi
-echo "  Initramfs: {initramfs}"
-INITRAMFS_ARGS="--initramfs {initramfs}"
-""".format(initramfs = initramfs_file)
-    else:
-        initramfs_section = """
-INITRAMFS_ARGS=""
-"""
-
-    # Build firmware section
-    firmware_section = ""
-    if firmware_file and boot_mode == "firmware":
-        firmware_section = """
-# Check firmware
-FIRMWARE="{firmware}"
-if [ ! -f "$FIRMWARE" ]; then
-    echo "Error: Firmware not found: $FIRMWARE"
-    exit 1
-fi
-echo "  Firmware: $FIRMWARE"
-""".format(firmware = firmware_file)
-
-    # Build network section
-    network_section = ""
-    if network_mode == "tap":
-        network_section = """
-# Network configuration (TAP)
-# Note: TAP device must be created beforehand:
-#   sudo ip tuntap add dev {tap_name} mode tap
-#   sudo ip addr add 192.168.100.1/24 dev {tap_name}
-#   sudo ip link set {tap_name} up
-if [ ! -e "/sys/class/net/{tap_name}" ]; then
-    echo "Warning: TAP device {tap_name} not found. Create with:"
-    echo "  sudo ip tuntap add dev {tap_name} mode tap"
-    echo "  sudo ip addr add 192.168.100.1/24 dev {tap_name}"
-    echo "  sudo ip link set {tap_name} up"
-fi
-NET_ARGS="--net tap={tap_name},mac=12:34:56:78:9a:bc"
-""".format(tap_name = tap_name)
-    else:
-        network_section = """
-NET_ARGS=""
-"""
-
-    # Build VirtioFS section
-    virtiofs_section = ""
-    if boot_mode == "virtiofs":
-        virtiofs_section = """
-# VirtioFS configuration
-# Start virtiofsd in background if not already running
-VIRTIOFS_SOCKET="{socket}"
-VIRTIOFS_PATH="${{VIRTIOFS_PATH:-{default_path}}}"
-
-if [ ! -S "$VIRTIOFS_SOCKET" ]; then
-    echo "Starting virtiofsd..."
-    echo "  Socket: $VIRTIOFS_SOCKET"
-    echo "  Share path: $VIRTIOFS_PATH"
-
-    # Ensure socket directory exists
-    mkdir -p "$(dirname "$VIRTIOFS_SOCKET")"
-
-    # Start virtiofsd
-    virtiofsd --socket-path="$VIRTIOFS_SOCKET" \\
-        --shared-dir="$VIRTIOFS_PATH" \\
-        --cache=auto \\
-        --sandbox=chroot &
-    VIRTIOFS_PID=$!
-    echo "  virtiofsd PID: $VIRTIOFS_PID"
-
-    # Wait for socket
-    for i in $(seq 1 10); do
-        if [ -S "$VIRTIOFS_SOCKET" ]; then
-            break
-        fi
-        sleep 0.5
-    done
-
-    if [ ! -S "$VIRTIOFS_SOCKET" ]; then
-        echo "Error: virtiofsd failed to start"
-        exit 1
-    fi
-fi
-
-FS_ARGS="--fs tag={tag},socket=$VIRTIOFS_SOCKET"
-# VirtioFS requires shared memory
-MEMORY_ARGS="size={memory},shared=on"
-""".format(
-            socket = virtiofs_socket,
-            default_path = virtiofs_path,
-            tag = virtiofs_tag,
-            memory = memory,
-        )
-    else:
-        virtiofs_section = """
-FS_ARGS=""
-MEMORY_ARGS="size={memory}"
-""".format(memory = memory)
-
-    # Build the command based on boot mode
-    if boot_mode == "direct":
-        # Direct kernel boot (PVH or standard)
-        boot_cmd = """
-# Direct kernel boot
-exec cloud-hypervisor \\
-    --cpus boot={cpus} \\
-    --memory $MEMORY_ARGS \\
-    --kernel "$KERNEL" \\
-    $INITRAMFS_ARGS \\
-    --cmdline "{kernel_args}" \\
-    $DISK_ARGS \\
-    $NET_ARGS \\
-    $FS_ARGS \\
-    --serial {serial} \\
-    --console off \\
-    {extra_args} \\
-    "$@"
-""".format(
-            cpus = cpus,
-            kernel_args = kernel_args,
-            serial = serial_console,
-            extra_args = extra_args,
-        )
-    elif boot_mode == "firmware":
-        # Boot via firmware (rust-hypervisor-firmware or EDK2)
-        boot_cmd = """
-# Firmware boot
-exec cloud-hypervisor \\
-    --cpus boot={cpus} \\
-    --memory $MEMORY_ARGS \\
-    --kernel "$FIRMWARE" \\
-    $DISK_ARGS \\
-    $NET_ARGS \\
-    $FS_ARGS \\
-    --serial {serial} \\
-    --console off \\
-    {extra_args} \\
-    "$@"
-""".format(
-            cpus = cpus,
-            serial = serial_console,
-            extra_args = extra_args,
-        )
-    elif boot_mode == "virtiofs":
-        # VirtioFS rootfs boot (no disk image)
-        boot_cmd = """
-# VirtioFS boot (rootfs via shared filesystem)
-exec cloud-hypervisor \\
-    --cpus boot={cpus} \\
-    --memory $MEMORY_ARGS \\
-    --kernel "$KERNEL" \\
-    $INITRAMFS_ARGS \\
-    --cmdline "{kernel_args} root={tag} rootfstype=virtiofs rw" \\
-    $NET_ARGS \\
-    $FS_ARGS \\
-    --serial {serial} \\
-    --console off \\
-    {extra_args} \\
-    "$@"
-""".format(
-            cpus = cpus,
-            kernel_args = kernel_args,
-            tag = virtiofs_tag,
-            serial = serial_console,
-            extra_args = extra_args,
-        )
-    else:
-        boot_cmd = """
-echo "Error: Unknown boot mode: {boot_mode}"
-exit 1
-""".format(boot_mode = boot_mode)
-
-    script_content = """#!/bin/bash
-# Cloud Hypervisor Boot Script for BuckOs
-# Generated by Buck2 build system
-# Boot mode: {boot_mode}
-
-set -e
-unset CDPATH
-
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-
-# Paths to built artifacts
-{kernel_dir_var}
-
-echo "Booting BuckOs with Cloud Hypervisor..."
-echo "  Boot mode: {boot_mode}"
-{kernel_section}
-{disk_section}
-{initramfs_section}
-{firmware_section}
-{network_section}
-{virtiofs_section}
-
-echo ""
-echo "Press Ctrl-C to stop Cloud Hypervisor"
-echo ""
-
-{boot_cmd}
-""".format(
-        boot_mode = boot_mode,
-        kernel_dir_var = 'KERNEL_DIR="{}"'.format(kernel_dir) if kernel_dir else "",
-        kernel_section = kernel_section,
-        disk_section = disk_section,
-        initramfs_section = initramfs_section,
-        firmware_section = firmware_section,
-        network_section = network_section,
-        virtiofs_section = virtiofs_section,
-        boot_cmd = boot_cmd,
-    )
-
-    ctx.actions.write(
+    cmd = cmd_args([
+        "bash",
+        generator,
         boot_script.as_output(),
-        script_content,
-        is_executable = True,
-    )
+        boot_mode,
+        kernel_dir if kernel_dir else "",
+        initramfs if initramfs else "",
+        disk_image if disk_image else "",
+        firmware if firmware else "",
+    ])
 
+    ctx.actions.run(cmd, env = env, category = "ch_boot_script", identifier = ctx.attrs.name)
     return [DefaultInfo(default_output = boot_script)]
 
-_ch_boot_script_rule = rule(
-    impl = _ch_boot_script_impl,
+def _ch_direct_boot_script_impl(ctx: AnalysisContext) -> list[Provider]:
+    """Generate a direct-kernel-boot Cloud Hypervisor boot script."""
+    kernel_dir = ctx.attrs.kernel[DefaultInfo].default_outputs[0]
+    initramfs = ctx.attrs.initramfs[DefaultInfo].default_outputs[0]
+    disk_image = ctx.attrs.disk_image[DefaultInfo].default_outputs[0] if ctx.attrs.disk_image else None
+    return _ch_run_generator(ctx, "direct", kernel_dir = kernel_dir, initramfs = initramfs,
+                             disk_image = disk_image, extra_env = {"CH_KERNEL_ARGS": ctx.attrs.kernel_args})
+
+def _ch_firmware_boot_script_impl(ctx: AnalysisContext) -> list[Provider]:
+    """Generate a firmware-boot Cloud Hypervisor boot script."""
+    firmware = ctx.attrs.firmware[DefaultInfo].default_outputs[0]
+    disk_image = ctx.attrs.disk_image[DefaultInfo].default_outputs[0]
+    return _ch_run_generator(ctx, "firmware", firmware = firmware, disk_image = disk_image)
+
+def _ch_virtiofs_boot_script_impl(ctx: AnalysisContext) -> list[Provider]:
+    """Generate a VirtioFS-boot Cloud Hypervisor boot script."""
+    kernel_dir = ctx.attrs.kernel[DefaultInfo].default_outputs[0]
+    initramfs = ctx.attrs.initramfs[DefaultInfo].default_outputs[0]
+    return _ch_run_generator(ctx, "virtiofs", kernel_dir = kernel_dir, initramfs = initramfs,
+        extra_env = {
+            "CH_KERNEL_ARGS": ctx.attrs.kernel_args,
+            "CH_VIRTIOFS_SOCKET": ctx.attrs.virtiofs_socket,
+            "CH_VIRTIOFS_TAG": ctx.attrs.virtiofs_tag,
+            "CH_VIRTIOFS_PATH": ctx.attrs.virtiofs_path,
+        })
+
+_ch_direct_boot_script_rule = rule(
+    impl = _ch_direct_boot_script_impl,
     attrs = {
-        "kernel": attrs.option(attrs.dep(), default = None),
-        "firmware": attrs.option(attrs.dep(), default = None),
+        "kernel": attrs.dep(),
+        "initramfs": attrs.dep(),
         "disk_image": attrs.option(attrs.dep(), default = None),
-        "initramfs": attrs.option(attrs.dep(), default = None),
-        "boot_mode": attrs.string(default = "direct"),  # direct, firmware, virtiofs
+        "kernel_args": attrs.string(default = "console=ttyS0 quiet"),
         "memory": attrs.string(default = "512M"),
         "cpus": attrs.string(default = "2"),
-        "kernel_args": attrs.string(default = "console=ttyS0 quiet"),
-        "network_mode": attrs.string(default = "none"),  # none, tap
-        "tap_name": attrs.string(default = "tap0"),
-        "virtiofs_socket": attrs.string(default = "/tmp/virtiofs.sock"),
-        "virtiofs_tag": attrs.string(default = "rootfs"),
-        "virtiofs_path": attrs.string(default = "/tmp/rootfs"),
         "serial_console": attrs.string(default = "tty"),
         "extra_args": attrs.list(attrs.string(), default = []),
         "labels": attrs.list(attrs.string(), default = []),
+        "_generator": attrs.dep(default = "//defs/scripts:generate-ch-boot-script"),
     },
 )
 
-def ch_boot_script(labels = [], **kwargs):
-    _ch_boot_script_rule(
-        labels = _bootscript_labels(extra = labels),
-        **kwargs
-    )
+_ch_firmware_boot_script_rule = rule(
+    impl = _ch_firmware_boot_script_impl,
+    attrs = {
+        "firmware": attrs.dep(),
+        "disk_image": attrs.dep(),
+        "memory": attrs.string(default = "512M"),
+        "cpus": attrs.string(default = "2"),
+        "serial_console": attrs.string(default = "tty"),
+        "extra_args": attrs.list(attrs.string(), default = []),
+        "labels": attrs.list(attrs.string(), default = []),
+        "_generator": attrs.dep(default = "//defs/scripts:generate-ch-boot-script"),
+    },
+)
+
+_ch_virtiofs_boot_script_rule = rule(
+    impl = _ch_virtiofs_boot_script_impl,
+    attrs = {
+        "kernel": attrs.dep(),
+        "initramfs": attrs.dep(),
+        "kernel_args": attrs.string(default = "console=ttyS0 quiet"),
+        "virtiofs_socket": attrs.string(default = "/tmp/virtiofs.sock"),
+        "virtiofs_tag": attrs.string(default = "rootfs"),
+        "virtiofs_path": attrs.string(default = "/tmp/rootfs"),
+        "memory": attrs.string(default = "512M"),
+        "cpus": attrs.string(default = "2"),
+        "serial_console": attrs.string(default = "tty"),
+        "extra_args": attrs.list(attrs.string(), default = []),
+        "labels": attrs.list(attrs.string(), default = []),
+        "_generator": attrs.dep(default = "//defs/scripts:generate-ch-boot-script"),
+    },
+)
+
+def ch_direct_boot_script(labels = [], **kwargs):
+    _ch_direct_boot_script_rule(labels = _bootscript_labels(extra = labels), **kwargs)
+
+def ch_firmware_boot_script(labels = [], **kwargs):
+    _ch_firmware_boot_script_rule(labels = _bootscript_labels(extra = labels), **kwargs)
+
+def ch_virtiofs_boot_script(labels = [], **kwargs):
+    _ch_virtiofs_boot_script_rule(labels = _bootscript_labels(extra = labels), **kwargs)
+
+def ch_boot_script(boot_mode = "direct", labels = [], **kwargs):
+    """Backward-compatible dispatcher. Prefer mode-specific macros."""
+    kwargs.pop("boot_mode", None)
+    if boot_mode == "direct":
+        ch_direct_boot_script(labels = labels, **kwargs)
+    elif boot_mode == "firmware":
+        ch_firmware_boot_script(labels = labels, **kwargs)
+    elif boot_mode == "virtiofs":
+        ch_virtiofs_boot_script(labels = labels, **kwargs)
+    else:
+        fail("Unknown CH boot mode: " + boot_mode)
 
 # =============================================================================
 # Raw Disk Image Rule
