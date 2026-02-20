@@ -206,9 +206,8 @@ filegroup(
 rootfs(
     name = "ch-minimal-rootfs",
     packages = [
-        # Core utilities
-        "//packages/linux/core/busybox:busybox",
-        "//packages/linux/core/musl:musl",
+        # Core utilities (static — no libc dependency in initramfs)
+        "//packages/linux/core/busybox:busybox-static",
 
         # CH-specific init scripts
         ":ch-init-scripts",
@@ -226,9 +225,8 @@ rootfs(
 rootfs(
     name = "ch-base-rootfs",
     packages = [
-        # Core utilities
-        "//packages/linux/core/busybox:busybox",
-        "//packages/linux/core/musl:musl",
+        # Core utilities (static — no libc dependency in initramfs)
+        "//packages/linux/core/busybox:busybox-static",
         "//packages/linux/core/util-linux:util-linux",
         "//packages/linux/core/zlib:zlib",
 

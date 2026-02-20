@@ -2421,6 +2421,20 @@ INIT_EOF
     fi
 fi
 
+# If init is busybox, wrap it to mount devtmpfs first (busybox init needs /dev/console)
+if [ -L "$WORK/init" ] && [ -x "$WORK/bin/busybox" ]; then
+    REAL_INIT="$(readlink "$WORK/init")"
+    rm -f "$WORK/init"
+    cat > "$WORK/init" << WRAP_EOF
+#!/bin/sh
+/bin/mount -t devtmpfs devtmpfs /dev 2>/dev/null
+/bin/mount -t proc proc /proc 2>/dev/null
+/bin/mount -t sysfs sysfs /sys 2>/dev/null
+exec $REAL_INIT
+WRAP_EOF
+    chmod +x "$WORK/init"
+fi
+
 # Create the cpio archive
 cd "$WORK"
 find . -print0 | cpio --null -o -H newc | {compress_cmd} > "$OUTPUT"

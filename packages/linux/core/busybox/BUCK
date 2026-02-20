@@ -94,6 +94,8 @@ CONFIG_FINDFS=y
 CONFIG_MOUNTPOINT=y
 
 # Init/process utilities
+CONFIG_INIT=y
+CONFIG_FEATURE_USE_INITTAB=y
 CONFIG_SWITCH_ROOT=y
 CONFIG_HALT=y
 CONFIG_POWEROFF=y
@@ -103,13 +105,37 @@ CONFIG_PIDOF=y
 CONFIG_PS=y
 CONFIG_FEATURE_PS_WIDE=y
 
+# Text/search utilities (used by init scripts)
+CONFIG_GREP=y
+CONFIG_SED=y
+CONFIG_AWK=y
+CONFIG_HEAD=y
+CONFIG_TAIL=y
+CONFIG_WC=y
+CONFIG_SORT=y
+CONFIG_BASENAME=y
+
+# Networking
+CONFIG_HOSTNAME=y
+CONFIG_IP=y
+CONFIG_FEATURE_IP_LINK=y
+CONFIG_FEATURE_IP_ADDRESS=y
+CONFIG_FEATURE_IP_ROUTE=y
+CONFIG_IFCONFIG=y
+
 # TTY/console
 CONFIG_CLEAR=y
 CONFIG_RESET=y
+CONFIG_GETTY=y
 
 # Misc utilities for debugging
 CONFIG_DMESG=y
 CONFIG_FEATURE_DMESG_PRETTY=y
+CONFIG_VI=y
+CONFIG_CHMOD=y
+CONFIG_CHOWN=y
+CONFIG_ID=y
+CONFIG_WHOAMI=y
 
 # Compression (for cpio)
 CONFIG_CPIO=y
@@ -148,10 +174,15 @@ ln -sf busybox "$DESTDIR/bin/sh"
 ln -sf busybox "$DESTDIR/bin/ash"
 
 # Core utilities
-for cmd in cat cp date dd echo false ln ls mkdir mknod mv pwd rm rmdir sleep test true uname; do
+for cmd in cat cp date dd echo false ln ls mkdir mknod mv pwd rm rmdir sleep test true uname basename chmod chown id whoami head tail wc sort; do
     ln -sf busybox "$DESTDIR/bin/$cmd"
 done
 ln -sf busybox "$DESTDIR/bin/["
+
+# Text/search utilities
+for cmd in grep sed awk; do
+    ln -sf busybox "$DESTDIR/bin/$cmd"
+done
 
 # Mount/filesystem (in sbin)
 for cmd in mount umount losetup blkid findfs; do
@@ -160,8 +191,13 @@ done
 ln -sf /bin/busybox "$DESTDIR/bin/mountpoint"
 
 # Init utilities (in sbin)
-for cmd in switch_root halt poweroff reboot; do
+for cmd in init switch_root halt poweroff reboot getty; do
     ln -sf /bin/busybox "$DESTDIR/sbin/$cmd"
+done
+
+# Networking
+for cmd in hostname ip ifconfig; do
+    ln -sf busybox "$DESTDIR/bin/$cmd"
 done
 
 # Process utilities
@@ -172,6 +208,7 @@ ln -sf busybox "$DESTDIR/bin/ps"
 # TTY utilities
 ln -sf busybox "$DESTDIR/bin/clear"
 ln -sf busybox "$DESTDIR/bin/reset"
+ln -sf busybox "$DESTDIR/bin/vi"
 
 # Misc
 ln -sf busybox "$DESTDIR/bin/dmesg"
