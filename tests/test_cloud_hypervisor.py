@@ -338,14 +338,30 @@ def test_ch_boots_vm(buck2, repo_root):
     else:
         initramfs_bin = initramfs_path
 
+    # Give the VM 90% of host resources for faster boot
+    import multiprocessing
+    host_cpus = multiprocessing.cpu_count()
+    host_mem_kb = 0
+    with open("/proc/meminfo") as f:
+        for line in f:
+            if line.startswith("MemTotal:"):
+                host_mem_kb = int(line.split()[1])
+                break
+    vm_mem_mb = max(256, int(host_mem_kb * 0.9 / 1024))
+
+    # 1:1 vCPU-to-pCPU pinning
+    affinity = ",".join(
+        f"{{guest={i},host_cpus=[{i}]}}" for i in range(host_cpus)
+    )
+
     # Boot the VM
     cmd = [
         str(ch_path),
         "--kernel", str(kernel_bin),
         "--initramfs", str(initramfs_bin),
         "--cmdline", "console=ttyS0 init=/init panic=-1",
-        "--cpus", "boot=1",
-        "--memory", "size=256M",
+        "--cpus", f"boot={host_cpus},affinity=[{affinity}]",
+        "--memory", f"size={vm_mem_mb}M",
         "--serial", "tty",
         "--console", "off",
     ]
