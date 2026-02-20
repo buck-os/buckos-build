@@ -1,25 +1,19 @@
+load("//defs:package.bzl", "package")
+
 # =============================================================================
 # ufw - Uncomplicated Firewall
 # =============================================================================
 
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "ufw",
     version = "0.36.2",
-    src_uri = "https://github.com/jbq/ufw/archive/237a7bb4e262ab65266b6c1d996eb71ec6d84954.tar.gz",
+    url = "https://github.com/jbq/ufw/archive/237a7bb4e262ab65266b6c1d996eb71ec6d84954.tar.gz",
     sha256 = "7cb6917f76d2c1d5be41409ccaeae6477750bbce45fe92b8a83ccefbb21c4bda",
-    signature_required = False,
-
-    iuse = ["examples", "ipv6"],
-    use_defaults = ["ipv6"],
-
 
     use_configure = {
-        "-examples": "--disable-examples",
-        "-ipv6": "--disable-ipv6",
-        "examples": "--enable-examples",
-        "ipv6": "--enable-ipv6",
+        "examples": ("--enable-examples", "--disable-examples"),
+        "ipv6": ("--enable-ipv6", "--disable-ipv6"),
     },
 
     pre_configure = """

@@ -1,19 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # xtensor - C++ tensors with broadcasting and lazy computing
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "xtensor",
     version = "0.24.7",
-    src_uri = "https://github.com/xtensor-stack/xtensor/archive/refs/tags/0.24.7.tar.gz",
+    url = "https://github.com/xtensor-stack/xtensor/archive/refs/tags/0.24.7.tar.gz",
     sha256 = "0fbbd524dde2199b731b6af99b16063780de6cf1d0d6cb1f3f4d4ceb318f3106",
     description = "C++ tensors with broadcasting and lazy computing",
     homepage = "https://xtensor.readthedocs.io/",
     license = "BSD-3-Clause",
-    iuse = ["xsimd", "blas"],
-    use_defaults = ["xsimd"],
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTS=OFF",
         "-DBUILD_BENCHMARK=OFF",

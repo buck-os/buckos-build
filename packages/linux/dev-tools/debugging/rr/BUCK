@@ -1,20 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "rr",
     version = "5.7.0",
-    iuse = ["multilib"],
-    use_cmake = {
-        "-multilib": "-DENABLE_MULTILIB=OFF",
-        "multilib": "-DENABLE_MULTILIB=ON",
+    use_configure = {
+        "multilib": ("-DENABLE_MULTILIB=ON", "-DENABLE_MULTILIB=OFF"),
     },
-    src_uri = "https://github.com/rr-debugger/rr/archive/refs/tags/5.7.0.tar.gz",
+    url = "https://github.com/rr-debugger/rr/archive/refs/tags/5.7.0.tar.gz",
     sha256 = "f7affaaee7316effd3f0924c94bc452ef50d372b94470cafe8568efd88451447",
-    signature_required = False,
     description = "Record and replay framework for debugging",
     homepage = "https://rr-project.org/",
     license = "MIT",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTS=OFF",
     ],

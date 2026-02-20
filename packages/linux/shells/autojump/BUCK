@@ -1,14 +1,13 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "autojump",
     version = "22.5.3",
-    iuse = ["ipython"],
     use_configure = {
-        "-ipython": "--disable-ipython",
-        "ipython": "--enable-ipython",
+        "ipython": ("--enable-ipython", "--disable-ipython"),
     },
-    src_uri = "https://github.com/wting/autojump/archive/refs/tags/release-v22.5.3.tar.gz",
+    url = "https://github.com/wting/autojump/archive/refs/tags/release-v22.5.3.tar.gz",
     sha256 = "00daf3698e17ac3ac788d529877c03ee80c3790472a85d0ed063ac3a354c37b1",
     description = "A cd command that learns and jumps to frequently used directories",
     homepage = "https://github.com/wting/autojump",

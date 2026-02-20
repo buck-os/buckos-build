@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "go_package")
+load("//defs:package.bzl", "package")
 
-go_package(
+package(
+    build_rule = "go",
     name = "distribution",
     version = "2.8.3",
-    src_uri = "https://github.com/distribution/distribution/archive/refs/tags/v2.8.3.tar.gz",
+    url = "https://github.com/distribution/distribution/archive/refs/tags/v2.8.3.tar.gz",
     sha256 = "c44841796ff59d8b4d62c7f86b58a0fb8f6e60b887a974758cc90079dca628ba",
     bins = [
         "registry",

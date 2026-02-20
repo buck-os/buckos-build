@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "apple-ml-sd",
     version = "1.1.0",
-    src_uri = "https://github.com/apple/ml-stable-diffusion/archive/refs/tags/1.1.0.tar.gz",
+    url = "https://github.com/apple/ml-stable-diffusion/archive/refs/tags/1.1.0.tar.gz",
     sha256 = "85dc3f85ce4bdd169541f94f91841581871e846abb4a3740c155b204d5d5dd32",
     deps = [
         "//packages/linux/ai/ml-frameworks/diffusers:diffusers",

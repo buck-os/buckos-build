@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "llama-recipes",
     version = "0.0.2",
-    src_uri = "https://github.com/meta-llama/llama-recipes/archive/refs/tags/v0.0.2.tar.gz",
+    url = "https://github.com/meta-llama/llama-recipes/archive/refs/tags/v0.0.2.tar.gz",
     sha256 = "dcf475eba02c978155bf059b2c78032a09da27e4e367329562afb90eddf1eff4",
     deps = [
         "//packages/linux/dev-libs/python/accelerate:accelerate",

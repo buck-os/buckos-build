@@ -1,36 +1,32 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # GLFW - Multi-platform library for OpenGL, window and input
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "glfw",
     version = "3.4",
-    src_uri = "https://github.com/glfw/glfw/releases/download/3.4/glfw-3.4.zip",
+    url = "https://github.com/glfw/glfw/releases/download/3.4/glfw-3.4.zip",
     sha256 = "b5ec004b2712fd08e8861dc271428f048775200a2df719ccf575143ba749a3e9",
     description = "Multi-platform library for OpenGL, OpenGL ES, Vulkan, window and input",
     homepage = "https://www.glfw.org/",
     license = "Zlib",
-    iuse = ["X", "wayland", "x11"],
-    use_defaults = ["x11"],
     deps = [],
     use_deps = {
         "wayland": ["//packages/linux/system/libs/utility/libffi:libffi", "//packages/linux/graphics/rendering/wayland:wayland"],
-        "x11": ["//packages/linux/desktop/xorg/x11:libx11"],
+        "x11": "//packages/linux/desktop/xorg/x11:libx11",
     },
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DGLFW_BUILD_EXAMPLES=OFF",
         "-DGLFW_BUILD_TESTS=OFF",
         "-DGLFW_BUILD_DOCS=OFF",
     ],
-    use_cmake = {
-        "-X": "-DENABLE_X=OFF",
-        "-wayland": "-DGLFW_BUILD_WAYLAND=OFF",
-        "-x11": "-DGLFW_BUILD_X11=OFF",
-        "X": "-DENABLE_X=ON",
-        "wayland": "-DGLFW_BUILD_WAYLAND=ON",
-        "x11": "-DGLFW_BUILD_X11=ON",
+    use_configure = {
+        "X": ("-DENABLE_X=ON", "-DENABLE_X=OFF"),
+        "wayland": ("-DGLFW_BUILD_WAYLAND=ON", "-DGLFW_BUILD_WAYLAND=OFF"),
+        "x11": ("-DGLFW_BUILD_X11=ON", "-DGLFW_BUILD_X11=OFF"),
     },
     visibility = ["PUBLIC"],
 )

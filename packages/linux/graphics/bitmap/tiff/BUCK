@@ -1,42 +1,23 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "tiff",
     version = "4.7.1",
-    iuse = [
-        "cxx",
-        "jbig",
-        "jpeg",
-        "lzma",
-        "opengl",
-        "static-libs",
-        "webp",
-        "zlib",
-        "zstd",
-    ],
-    use_cmake = {
-        "-cxx": "-DENABLE_CXX=OFF",
-        "-jbig": "-DENABLE_JBIG=OFF",
-        "-jpeg": "-DENABLE_JPEG=OFF",
-        "-lzma": "-DENABLE_LZMA=OFF",
-        "-opengl": "-DENABLE_OPENGL=OFF",
-        "-static-libs": "-DBUILD_STATIC_LIBS=OFF",
-        "-webp": "-DENABLE_WEBP=OFF",
-        "-zlib": "-DENABLE_ZLIB=OFF",
-        "-zstd": "-DENABLE_ZSTD=OFF",
-        "cxx": "-DENABLE_CXX=ON",
-        "jbig": "-DENABLE_JBIG=ON",
-        "jpeg": "-DENABLE_JPEG=ON",
-        "lzma": "-DENABLE_LZMA=ON",
-        "opengl": "-DENABLE_OPENGL=ON",
-        "static-libs": "-DBUILD_STATIC_LIBS=ON",
-        "webp": "-DENABLE_WEBP=ON",
-        "zlib": "-DENABLE_ZLIB=ON",
-        "zstd": "-DENABLE_ZSTD=ON",
+    use_configure = {
+        "cxx": ("-DENABLE_CXX=ON", "-DENABLE_CXX=OFF"),
+        "jbig": ("-DENABLE_JBIG=ON", "-DENABLE_JBIG=OFF"),
+        "jpeg": ("-DENABLE_JPEG=ON", "-DENABLE_JPEG=OFF"),
+        "lzma": ("-DENABLE_LZMA=ON", "-DENABLE_LZMA=OFF"),
+        "opengl": ("-DENABLE_OPENGL=ON", "-DENABLE_OPENGL=OFF"),
+        "static-libs": ("-DBUILD_STATIC_LIBS=ON", "-DBUILD_STATIC_LIBS=OFF"),
+        "webp": ("-DENABLE_WEBP=ON", "-DENABLE_WEBP=OFF"),
+        "zlib": ("-DENABLE_ZLIB=ON", "-DENABLE_ZLIB=OFF"),
+        "zstd": ("-DENABLE_ZSTD=ON", "-DENABLE_ZSTD=OFF"),
     },
-    src_uri = "https://download.osgeo.org/libtiff/tiff-4.7.1.tar.gz",
+    url = "https://download.osgeo.org/libtiff/tiff-4.7.1.tar.gz",
     sha256 = "f698d94f3103da8ca7438d84e0344e453fe0ba3b7486e04c5bf7a9a3fabe9b69",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_SHARED_LIBS=ON",
         "-Dtiff-tools=OFF",
         "-Dtiff-tests=OFF",

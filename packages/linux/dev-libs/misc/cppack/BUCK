@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # cppack - Modern C++17 implementation of msgpack serialization
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "cppack",
     version = "1.0.0",
-    src_uri = "https://github.com/mikeloomisgg/cppack/archive/51655ec8f2b8fed84f685e3bcf8f226b139a263b.tar.gz",
+    url = "https://github.com/mikeloomisgg/cppack/archive/51655ec8f2b8fed84f685e3bcf8f226b139a263b.tar.gz",
     sha256 = "039cd8ba7314a27e68155c81f85bd34da9b79d31be44952899b55ef6ebcd4bad",
     description = "Modern C++17 implementation of msgpack serialization",
     homepage = "https://github.com/mikeloomisgg/cppack",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],
     subdir = "msgpack",

@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "fast-soft-sort",
     version = "0.1",
-    src_uri = "https://github.com/google-research/fast-soft-sort/archive/6a52ce79869ab16e1e0f39149a84f50f8ad648c5.tar.gz",
+    url = "https://github.com/google-research/fast-soft-sort/archive/6a52ce79869ab16e1e0f39149a84f50f8ad648c5.tar.gz",
     sha256 = "6609ce8a167c95be86d11871a1591dd6cb097e0c41a7ca522ffb76199443daa7",
     deps = [
         "//packages/linux/dev-libs/python/numba:numba",

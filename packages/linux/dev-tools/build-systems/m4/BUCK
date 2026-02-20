@@ -1,20 +1,18 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # m4 - official GNU tarball includes pre-generated configure
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "m4",
     # No autoreconf needed - tarball has pre-generated configure
     bdepend = [],
     src_prepare = "",
     version = "1.4.19",
-    iuse = ["examples", "nls"],
     use_configure = {
-        "-examples": "--disable-examples",
-        "-nls": "--disable-nls",
-        "examples": "--enable-examples",
-        "nls": "--enable-nls",
+        "examples": ("--enable-examples", "--disable-examples"),
+        "nls": ("--enable-nls", "--disable-nls"),
     },
-    src_uri = "https://ftp.gnu.org/gnu/m4/m4-1.4.19.tar.xz",
+    url = "https://ftp.gnu.org/gnu/m4/m4-1.4.19.tar.xz",
     sha256 = "63aede5c6d33b6d9b13511cd0be2cac046f2e70fd0a07aa9573a04a82783af96",
     configure_args = [
         "--enable-changeword",

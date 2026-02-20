@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "meshplot",
     version = "0.4.0",
-    src_uri = "https://github.com/skoch9/meshplot/archive/refs/tags/v0.4.0.tar.gz",
+    url = "https://github.com/skoch9/meshplot/archive/refs/tags/v0.4.0.tar.gz",
     sha256 = "c527a14d803044b190d6da4a21c8507da1bd8d7dc3d449f771da1f5cf00e6ac9",
     deps = [
         "//packages/linux/dev-libs/python/numpy:numpy",

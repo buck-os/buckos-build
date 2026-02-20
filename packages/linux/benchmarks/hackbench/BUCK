@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl","download_source", "make_package")
+load("//defs:package.bzl", "package")
 
 # hackbench - Scheduler benchmark and stress test
 #
@@ -7,14 +7,11 @@ load("//defs:package_defs.bzl","download_source", "make_package")
 make_package(
     name = "hackbench",
     version = "2.6",
-    src_uri = "https://git.kernel.org/pub/scm/utils/rt-tests/rt-tests.git/snapshot/rt-tests-2.6.tar.gz",
+    url = "https://git.kernel.org/pub/scm/utils/rt-tests/rt-tests.git/snapshot/rt-tests-2.6.tar.gz",
     sha256 = "6a9449c11a9ccb37e6c86082bf904337dda928fdcd69f6bd4a4c6567e071ae6d",
-    signature_required = False,
     description = "Scheduler benchmark and stress test - measures process scheduling",
     homepage = "https://git.kernel.org/pub/scm/utils/rt-tests/rt-tests.git",
     license = "GPL-2.0",
-    iuse = [],
-    use_defaults = [],
     deps = [],
     src_configure = """
 # rt-tests uses make directly

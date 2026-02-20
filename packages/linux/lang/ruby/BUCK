@@ -1,13 +1,13 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package", "binary_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # Ruby - Dynamic, open source programming language
 # =============================================================================
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "ruby",
-    src_uri = "https://cache.ruby-lang.org/pub/ruby/3.3/ruby-3.3.0.tar.xz",
+    url = "https://cache.ruby-lang.org/pub/ruby/3.3/ruby-3.3.0.tar.xz",
 
     sha256 = "676b65a36e637e90f982b57b059189b3276b9045034dcd186a7e9078847b975b",
     version = "3.3.0",

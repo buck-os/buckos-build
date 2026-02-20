@@ -1,41 +1,27 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # kdevelop - KDE integrated development environment (cmake build)
 # USE flags: plasma, git, subversion, test
 # Default: plasma, git
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kdevelop",
     version = "24.08.3",
-    iuse = [
-        "gdbui",
-        "hex",
-        "plasma",
-        "qmake",
-        "share",
-        "subversion",
-    ],
-    use_cmake = {
-        "-gdbui": "-DENABLE_GDBUI=OFF",
-        "-hex": "-DENABLE_HEX=OFF",
-        "-plasma": "-DENABLE_PLASMA=OFF",
-        "-qmake": "-DENABLE_QMAKE=OFF",
-        "-share": "-DENABLE_SHARE=OFF",
-        "-subversion": "-DENABLE_SUBVERSION=OFF",
-        "gdbui": "-DENABLE_GDBUI=ON",
-        "hex": "-DENABLE_HEX=ON",
-        "plasma": "-DENABLE_PLASMA=ON",
-        "qmake": "-DENABLE_QMAKE=ON",
-        "share": "-DENABLE_SHARE=ON",
-        "subversion": "-DENABLE_SUBVERSION=ON",
+    use_configure = {
+        "gdbui": ("-DENABLE_GDBUI=ON", "-DENABLE_GDBUI=OFF"),
+        "hex": ("-DENABLE_HEX=ON", "-DENABLE_HEX=OFF"),
+        "plasma": ("-DENABLE_PLASMA=ON", "-DENABLE_PLASMA=OFF"),
+        "qmake": ("-DENABLE_QMAKE=ON", "-DENABLE_QMAKE=OFF"),
+        "share": ("-DENABLE_SHARE=ON", "-DENABLE_SHARE=OFF"),
+        "subversion": ("-DENABLE_SUBVERSION=ON", "-DENABLE_SUBVERSION=OFF"),
     },
-    src_uri = "https://download.kde.org/stable/release-service/24.08.3/src/kdevelop-24.08.3.tar.xz",
+    url = "https://download.kde.org/stable/release-service/24.08.3/src/kdevelop-24.08.3.tar.xz",
     sha256 = "a1690c9672e08064510e4d9c422a214b6d11a54cea5656e29c9445701af4cf71",
-    signature_sha256 = "83ad70bfa3c089978d1878dacd12f7db0f6de972412bab689d3117648a1a80d9",
     description = "KDE integrated development environment",
     homepage = "https://www.kdevelop.org",
     license = "GPL-2+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
     ],

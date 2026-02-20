@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "liboqs",
     version = "0.14.0",
-    src_uri = "https://github.com/open-quantum-safe/liboqs/archive/refs/tags/0.14.0.tar.gz",
+    url = "https://github.com/open-quantum-safe/liboqs/archive/refs/tags/0.14.0.tar.gz",
     sha256 = "5b0df6138763b3fc4e385d58dbb2ee7c7c508a64a413d76a917529e3a9a207ea",
-    cmake_args = [
+    configure_args = [
         "-DOQS_USE_OPENSSL=ON",
         "-DOQS_BUILD_ONLY_LIB=ON",
         "-DBUILD_SHARED_LIBS=ON",

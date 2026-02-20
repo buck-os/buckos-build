@@ -1,28 +1,22 @@
-load("//defs:package_defs.bzl", "download_source", "meson_package")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "cairo",
     version = "1.18.2",
-    src_uri = "https://www.cairographics.org/releases/cairo-1.18.2.tar.xz",
+    url = "https://www.cairographics.org/releases/cairo-1.18.2.tar.xz",
     sha256 = "a62b9bb42425e844cc3d6ddde043ff39dbabedd1542eba57a2eb79f85889d45a",
-    signature_required = False,
     description = "2D graphics library with support for multiple output devices",
     homepage = "https://www.cairographics.org/",
     license = "LGPL-2.1-or-later",
-    iuse = ["X", "xcb", "png", "glib"],
-    use_defaults = ["X", "xcb", "png", "glib"],
     use_configure = {
-        "X": "-Dxlib=enabled",
-        "-X": "-Dxlib=disabled",
-        "xcb": "-Dxcb=enabled",
-        "-xcb": "-Dxcb=disabled",
-        "png": "-Dpng=enabled",
-        "-png": "-Dpng=disabled",
-        "glib": "-Dglib=enabled",
-        "-glib": "-Dglib=disabled",
+        "X": ("-Dxlib=enabled", "-Dxlib=disabled"),
+        "glib": ("-Dglib=enabled", "-Dglib=disabled"),
+        "png": ("-Dpng=enabled", "-Dpng=disabled"),
+        "xcb": ("-Dxcb=enabled", "-Dxcb=disabled"),
     },
     use_deps = {
-        "png": ["//packages/linux/system/libs/image/libpng:libpng"],
+        "png": "//packages/linux/system/libs/image/libpng:libpng",
         "glib": [
             "//packages/linux/dev-libs/glib:glib",
             "//packages/linux/system/libs/utility/pcre2:pcre2",
@@ -46,7 +40,7 @@ meson_package(
     env = {
         "CFLAGS": "-DHAVE_XRENDERCREATELINEARGRADIENT=1 -DHAVE_XRENDERCREATERADIALGRADIENT=1 -DHAVE_XRENDERCREATECONICALGRADIENT=1 -DHAVE_XRENDERCREATESOLIDFILL=1 -DHAVE_CTIME_R=1",
     },
-    meson_args = [
+    configure_args = [
         "-Dfreetype=enabled",
         "-Dfontconfig=enabled",
         "-Dzlib=enabled",

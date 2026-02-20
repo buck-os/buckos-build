@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # CCTZ - C++ library for translating between absolute and civil times
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "cctz",
     version = "2.4",
-    src_uri = "https://github.com/google/cctz/archive/refs/tags/v2.4.tar.gz",
+    url = "https://github.com/google/cctz/archive/refs/tags/v2.4.tar.gz",
     sha256 = "e1a00957d472044808a24a26f1ba020f36dc26949a69c214562d96b74093adb3",
     description = "C++ library for translating between absolute and civil times using the rules of a time zone",
     homepage = "https://github.com/google/cctz",
     license = "Apache-2.0",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
         "-DBUILD_EXAMPLES=OFF",

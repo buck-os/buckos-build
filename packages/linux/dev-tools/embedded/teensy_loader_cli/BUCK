@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "teensy_loader_cli",
     version = "2.2",
-    src_uri = "https://github.com/PaulStoffregen/teensy_loader_cli/archive/9dbbfa3b367b6c37e91e8a42dae3c6edfceccc4d.tar.gz",
+    url = "https://github.com/PaulStoffregen/teensy_loader_cli/archive/9dbbfa3b367b6c37e91e8a42dae3c6edfceccc4d.tar.gz",
     sha256 = "e4a20275102f311eea3138ff28dc6166f5ea4b9801cb7dd8dbd9ac7be5c0443d",
     description = "Command line loader for Teensy microcontroller boards",
     homepage = "https://www.pjrc.com/teensy/loader_cli.html",

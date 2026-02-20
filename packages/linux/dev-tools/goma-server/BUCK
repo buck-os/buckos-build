@@ -1,12 +1,13 @@
-load("//defs:package_defs.bzl", "go_package")
+load("//defs:package.bzl", "package")
 
 # NOTE: Googlesource archives can have dynamic content even for tagged releases.
 # Source archived at mirror.buckos.org for reproducible builds.
 # Downloaded 2026-01-18 from: https://chromium.googlesource.com/infra/goma/server/+archive/v0.0.16.tar.gz
-go_package(
+package(
+    build_rule = "go",
     name = "goma-server",
     version = "0.0.16",
-    src_uri = "https://mirror.buckos.org/g/goma-server-v0.0.16.tar.gz",
+    url = "https://mirror.buckos.org/g/goma-server-v0.0.16.tar.gz",
     sha256 = "6bb4ec895e6ff64e9b0cb4f43ffd435467ff43212481227a83e24481ba881ead",
     bins = [
         "auth_server",

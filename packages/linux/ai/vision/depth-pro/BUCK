@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "depth-pro",
     version = "0.1",
-    src_uri = "https://github.com/apple/ml-depth-pro/archive/b2cd0d51daa95e49277a9f642f7fd736b7f9e91d.tar.gz",
+    url = "https://github.com/apple/ml-depth-pro/archive/b2cd0d51daa95e49277a9f642f7fd736b7f9e91d.tar.gz",
     sha256 = "983d912fb467d66cafedc8c753af2d78d1d4fad5af4781fc6cb98d807c29998e",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

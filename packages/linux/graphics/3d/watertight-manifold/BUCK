@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "watertight-manifold",
     version = "master",
-    src_uri = "https://github.com/hjwdzh/Manifold/archive/refs/heads/master.tar.gz",
+    url = "https://github.com/hjwdzh/Manifold/archive/refs/heads/master.tar.gz",
     sha256 = "625c8c2f31de5e2b65644373d845142a2c06d55f7b9e56925d21fce80f0acf6c",
     description = "Watertight Manifold Surface Generation",
     homepage = "https://github.com/hjwdzh/Manifold",
@@ -12,7 +13,7 @@ cmake_package(
         "//packages/linux/dev-libs/math/eigen:eigen",
         "//packages/linux/dev-libs/math/glm:glm",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_PERFORMANCE_TEST=OFF",
         "-DBUILD_OPENMP=OFF",

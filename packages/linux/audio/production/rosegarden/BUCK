@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "cmake_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # FIXME: This package requires Qt5 which is not yet available in the build system
 # Dependencies: desktop//qt:qt5 (does not exist)
@@ -10,23 +10,20 @@ load("//defs:package_defs.bzl", "download_source", "cmake_package", "autotools_p
 # - qt5: Qt5 interface (default: enabled)
 # - lirc: LIRC support (default: disabled)
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "rosegarden",
     version = "23.12",
-    iuse = ["lirc", "lv2"],
-    use_cmake = {
-        "-lirc": "-DENABLE_LIRC=OFF",
-        "-lv2": "-DENABLE_LV2=OFF",
-        "lirc": "-DENABLE_LIRC=ON",
-        "lv2": "-DENABLE_LV2=ON",
+    use_configure = {
+        "lirc": ("-DENABLE_LIRC=ON", "-DENABLE_LIRC=OFF"),
+        "lv2": ("-DENABLE_LV2=ON", "-DENABLE_LV2=OFF"),
     },
-    src_uri = "https://github.com/tedfelix/rosegarden-official/archive/refs/tags/23.12.tar.gz",
+    url = "https://github.com/tedfelix/rosegarden-official/archive/refs/tags/23.12.tar.gz",
     sha256 = "ca85056d66cb603ea0f83856f5934a592ac323f8d455e9bfdbb5ed7f5d97ddd2",
-    signature_required = False,
     description = "MIDI sequencer, music notation editor and audio recorder",
     homepage = "https://www.rosegardenmusic.com/",
     license = "GPL-2",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DDISABLE_LIRC=ON",
         "-DDISABLE_OSC=ON",

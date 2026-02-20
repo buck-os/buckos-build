@@ -1,15 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "zeek-packages",
     version = "0.1.6",
-    src_uri = "https://github.com/corelight/zeek-spicy-openvpn/archive/refs/tags/v0.1.6.tar.gz",
+    url = "https://github.com/corelight/zeek-spicy-openvpn/archive/refs/tags/v0.1.6.tar.gz",
     sha256 = "ad75104cc238c4b1668d9c7d6e356ce727fa4ad447b9d9e17a9453754921c304",
     deps = [
         "//packages/linux/network/security/zeek:zeek",
         "//packages/linux/network/security/spicy:spicy",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],
 )

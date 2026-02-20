@@ -1,19 +1,12 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
 # exprtk - C++ Mathematical Expression Toolkit Library
 # A header-only mathematical expression parsing and evaluation library for C++
 # Source: https://github.com/ArashPartow/exprtk
 
-download_source(
-    name = "exprtk-src",
-    src_uri = "https://raw.githubusercontent.com/ArashPartow/exprtk/master/exprtk.hpp",
-    sha256 = "3e9c2ab3b5a465c1ae84d95f1eb2dfc7fe5b6467b6984c2153eaddb9ab131ddf",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "exprtk",
-    srcs = [":exprtk-src"],
     version = "2.7182818284",
     description = "C++ Mathematical Expression Toolkit - header-only library for parsing and evaluating mathematical expressions",
     homepage = "http://www.partow.net/programming/exprtk/index.html",

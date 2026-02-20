@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "embeddedartistry-printf",
     version = "6.0.0",
-    src_uri = "https://github.com/eyalroz/printf/archive/refs/tags/v6.0.0.tar.gz",
+    url = "https://github.com/eyalroz/printf/archive/refs/tags/v6.0.0.tar.gz",
     sha256 = "e0e078bead218dbe016ab8fa7729c9046be6adacb647f15c2ac5aabeae8db6b2",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_STATIC_LIBRARY=ON",
         "-DBUILD_TESTS=OFF",
     ],

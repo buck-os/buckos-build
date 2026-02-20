@@ -1,34 +1,28 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # GNU Make - official tarball includes pre-generated configure
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "make",
     # No autoreconf needed - tarball has pre-generated configure
     bdepend = [],
     src_prepare = "",
     version = "4.4.1",
-    src_uri = "https://mirrors.kernel.org/gnu/make/make-4.4.1.tar.gz",
+    url = "https://mirrors.kernel.org/gnu/make/make-4.4.1.tar.gz",
     sha256 = "dd16fb1d67bfab79a72f5e8390735c49e3e8e70b4945a15ab1f81ddb78658fb3",
-    signature_sha256 = "b0085e6c3f9a7461e739786a8d28dec9aeb090335bb8818e42b497fdeb73b929",
-    signature_required = False,
     description = "GNU make utility to maintain groups of programs",
     homepage = "https://www.gnu.org/software/make/",
     license = "GPL-3+",
 
     # USE flags this package supports
-    iuse = ["guile", "nls", "static"],
 
     # Default USE flags
-    use_defaults = ["nls"],
 
     # Conditional configure arguments
     use_configure = {
-        "-guile": "--without-guile",
-        "-nls": "--disable-nls",
-        "-static": "--disable-static",
-        "guile": "--with-guile",
-        "nls": "--enable-nls",
-        "static": "--enable-static",
+        "guile": ("--with-guile", "--without-guile"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "static": ("--enable-static", "--disable-static"),
     },
 
     visibility = ["PUBLIC"],

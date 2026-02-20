@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "encodec-0.1.1",
     version = "0.1.1",
-    src_uri = "https://github.com/facebookresearch/encodec/archive/refs/tags/v0.1.1.tar.gz",
+    url = "https://github.com/facebookresearch/encodec/archive/refs/tags/v0.1.1.tar.gz",
     sha256 = "acdf0320b1591c0d0f430b2eb74219892bbd23083624a0dab14b52b0a90147a1",
     deps = [
         "//packages/linux/dev-libs/python/numpy:numpy",

@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # libnop - C++ Native Object Protocols for serialization
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "libnop",
     version = "2020.01.01",
-    src_uri = "https://github.com/google/libnop/archive/35e800d81f28c632956c5a592e3cbe8085ecd430.tar.gz",
+    url = "https://github.com/google/libnop/archive/35e800d81f28c632956c5a592e3cbe8085ecd430.tar.gz",
     sha256 = "c377bfc07e0029bcd2da23597b9dc668c2450508f57b612fdae0542e097a4f63",
     description = "C++ Native Object Protocols - header-only serialization library",
     homepage = "https://github.com/google/libnop",
@@ -27,7 +28,7 @@ install(TARGETS libnop EXPORT libnopTargets)
 install(EXPORT libnopTargets DESTINATION lib/cmake/libnop)
 EOF
 """,
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],
     visibility = ["PUBLIC"],

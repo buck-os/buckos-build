@@ -1,16 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "fmt",
     version = "10.2.1",
-    src_uri = "https://github.com/fmtlib/fmt/archive/refs/tags/10.2.1.tar.gz",
+    url = "https://github.com/fmtlib/fmt/archive/refs/tags/10.2.1.tar.gz",
     sha256 = "1250e4cc58bf06ee631567523f48848dc4596133e163f02615c97f78bab6c811",
-    signature_required = False,
     description = "Modern formatting library for C++",
     homepage = "https://fmt.dev/",
     license = "MIT",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_SHARED_LIBS=ON",
         "-DFMT_TEST=OFF",
         "-DFMT_DOC=OFF",

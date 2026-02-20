@@ -1,20 +1,12 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package", "binary_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # Kotlin Native - Kotlin compiler for native platforms
 # =============================================================================
 
-download_source(
-    name = "kotlin-native-src",
-    src_uri = "https://github.com/JetBrains/kotlin/releases/download/v1.9.22/kotlin-native-linux-x86_64-1.9.22.tar.gz",
-    sha256 = "c2b0a6481ced5401db4a7028661c039b7466996efaa554bbcc6a3d421ac5e7d4",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "kotlin-native",
-    srcs = [":kotlin-native-src"],
     version = "1.9.22",
     description = "Kotlin/Native is a technology for compiling Kotlin code to native binaries",
     homepage = "https://kotlinlang.org/",

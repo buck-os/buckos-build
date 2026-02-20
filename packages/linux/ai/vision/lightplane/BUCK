@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "lightplane",
     version = "0.1",
-    src_uri = "https://github.com/facebookresearch/lightplane/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/facebookresearch/lightplane/archive/refs/heads/main.tar.gz",
     sha256 = "3708986c40c809e5ea779e3598e1c16d223ec3207f8c268fe5deef05f43758d1",
     description = "Differentiable neural rendering library for 3D vision",
     homepage = "https://github.com/facebookresearch/lightplane",

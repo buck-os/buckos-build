@@ -1,39 +1,26 @@
-load("//defs:package_defs.bzl", "download_source", "meson_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # iputils - Network monitoring tools (ping, tracepath, etc.)
 # =============================================================================
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "iputils",
     version = "20231222",
-    src_uri = "https://github.com/iputils/iputils/archive/refs/tags/20231222.tar.gz",
+    url = "https://github.com/iputils/iputils/archive/refs/tags/20231222.tar.gz",
     sha256 = "18d51e7b416da0ecbc0ae18a2cba76407ca0b5b3f32c356034f258a0cb56793f",
-    signature_required = False,
-
-    iuse = [
-        "arping",
-        "caps",
-        "clockdiff",
-        "idn",
-        "nls",
-        "tracepath",
-    ],
-    use_meson = {
-        "-arping": "-DBUILD_ARPING=false",
-        "-clockdiff": "-DBUILD_CLOCKDIFF=false",
-        "-tracepath": "-DBUILD_TRACEPATH=false",
-        "arping": "-DBUILD_ARPING=true",
-        "clockdiff": "-DBUILD_CLOCKDIFF=true",
-        "tracepath": "-DBUILD_TRACEPATH=true",
+    use_configure = {
+        "arping": ("-DBUILD_ARPING=true", "-DBUILD_ARPING=false"),
+        "clockdiff": ("-DBUILD_CLOCKDIFF=true", "-DBUILD_CLOCKDIFF=false"),
+        "tracepath": ("-DBUILD_TRACEPATH=true", "-DBUILD_TRACEPATH=false"),
     },
-    use_defaults = ["caps"],
 
     use_deps = {
-        "caps": ["//packages/linux/system/libs/ipc/libcap:libcap"],
+        "caps": "//packages/linux/system/libs/ipc/libcap:libcap",
     },
 
-    meson_args = [],
+    configure_args = [],
 
     deps = [],
 

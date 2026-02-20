@@ -1,19 +1,11 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # USE flags: doc, test
 # Default: none
 
-download_source(
-    name = "meson-src",
-    src_uri = "https://github.com/mesonbuild/meson/releases/download/1.10.1/meson-1.10.1.tar.gz",
-    sha256 = "c42296f12db316a4515b9375a5df330f2e751ccdd4f608430d41d7d6210e4317",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "meson",
-    srcs = [":meson-src"],
     version = "1.10.1",
     description = "High productivity build system",
     homepage = "https://mesonbuild.com/",

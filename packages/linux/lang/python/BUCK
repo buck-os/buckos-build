@@ -1,22 +1,20 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package", "binary_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # Python - General-purpose programming language
 # =============================================================================
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "python",
     version = "3.12.1",
-    src_uri = "https://www.python.org/ftp/python/3.12.1/Python-3.12.1.tar.xz",
+    url = "https://www.python.org/ftp/python/3.12.1/Python-3.12.1.tar.xz",
     sha256 = "8dfb8f426fcd226657f9e2bd5f1e96e53264965176fa17d32658e873591aeb21",
-    signature_sha256 = "aac922eeb2bf0c29db4c29fe80ed7439ef1bbcea5a31a910fda6a16481a82077",
-    signature_required=False,
     description = "Python is a powerful, easy to learn programming language",
     homepage = "https://www.python.org/",
     license = "PSF-2.0",
 
     # USE flags this package supports
-    iuse = ["sqlite", "readline", "ncurses", "ssl"],
 
     # Default USE flags
     # Note: PGO disabled due to linking issues with __gcov_* symbols during cross-compile
@@ -25,19 +23,16 @@ autotools_package(
 
     # Conditional dependencies
     use_deps = {
-        "sqlite": ["//packages/linux/system/libs/database/sqlite:sqlite"],
-        "readline": ["//packages/linux/system/terminal/readline:readline"],
-        "ncurses": ["//packages/linux/system/terminal/ncurses:ncurses"],
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
+        "sqlite": "//packages/linux/system/libs/database/sqlite:sqlite",
+        "readline": "//packages/linux/system/terminal/readline:readline",
+        "ncurses": "//packages/linux/system/terminal/ncurses:ncurses",
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
     },
 
     # Conditional configure arguments based on USE flags
     use_configure = {
-        # When ncurses is disabled, prevent Python from building curses module
-        "-ncurses": "ac_cv_header_curses_h=no ac_cv_header_ncurses_h=no",
-        # When readline is disabled, prevent Python from detecting/using it
-        # This avoids cross-compilation issues where target readline leaks into host tools
-        "-readline": "ac_cv_lib_readline_readline=no",
+        # "-ncurses": "ac_cv_header_curses_h=no ac_cv_header_ncurses_h=no",  # negative-only flag dropped
+        # "-readline": "ac_cv_lib_readline_readline=no",  # negative-only flag dropped
     },
 
     # Base configure arguments (always applied)
@@ -78,18 +73,16 @@ autotools_package(
 # It avoids cross-compilation issues by not depending on libraries
 # that would be built for the target platform.
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "python-host",
     version = "3.12.1",
     # Reuse the same source as the main python target
-    source = ":python-src",
     description = "Minimal Python for build-time code generation",
     homepage = "https://www.python.org/",
     license = "PSF-2.0",
 
     # No USE flags - this is a minimal build
-    iuse = [],
-    use_defaults = [],
 
     # Disable optional modules that would require target libraries
     configure_args = [

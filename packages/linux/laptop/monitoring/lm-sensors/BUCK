@@ -1,30 +1,20 @@
+load("//defs:package.bzl", "package")
+
 # lm-sensors - Linux hardware monitoring
 # Provides tools and drivers for hardware monitoring
-
-load("//defs:package_defs.bzl","download_source", "make_package")
 
 # USE flags: See use_flags.bzl for available flags
 
 make_package(
     name = "lm-sensors",
-    src_uri = "https://github.com/lm-sensors/lm-sensors/archive/refs/tags/V3-6-0.tar.gz",
+    url = "https://github.com/lm-sensors/lm-sensors/archive/refs/tags/V3-6-0.tar.gz",
 
     sha256 = "0591f9fa0339f0d15e75326d0365871c2d4e2ed8aa1ff759b3a55d3734b7d197",
-    iuse = [
-        "contrib",
-        "selinux",
-        "sensord",
-        "static-libs",
-    ],
     use_configure = {
-        "-contrib": "--disable-contrib",
-        "-selinux": "--disable-selinux",
-        "-sensord": "--disable-sensord",
-        "-static-libs": "--disable-static",
-        "contrib": "--enable-contrib",
-        "selinux": "--enable-selinux",
-        "sensord": "--enable-sensord",
-        "static-libs": "--enable-static",
+        "contrib": ("--enable-contrib", "--disable-contrib"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "sensord": ("--enable-sensord", "--disable-sensord"),
+        "static-libs": ("--enable-static", "--disable-static"),
     },
     version = "3.6.0",
     description = "Hardware monitoring tools for Linux",

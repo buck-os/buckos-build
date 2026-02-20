@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "nvidia-gpu-admin-tools",
     version = "2024.08.09",
-    src_uri = "https://github.com/nvidia/gpu-admin-tools/archive/refs/tags/v2024.08.09.tar.gz",
+    url = "https://github.com/nvidia/gpu-admin-tools/archive/refs/tags/v2024.08.09.tar.gz",
     sha256 = "502cac0ee0a66fb4bddcffb758f4f94b71d6b9adf4f49ac83d1fcade14cf4bd6",
     description = "NVIDIA GPU Admin Tools for GPU management and diagnostics",
     homepage = "https://github.com/nvidia/gpu-admin-tools",

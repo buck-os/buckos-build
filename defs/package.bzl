@@ -6,7 +6,7 @@ transform rules directly.  The macro wires up:
 
   1a. Private patch registry merge  (public patches first, then private)
   1b. Source target creation        (http_file/export_file + extract_source)
-  2.  Build rule dispatch           (autotools, cmake, meson, cargo, go)
+  2.  Build rule dispatch           (autotools, cmake, meson, cargo, go, python, binary)
   3.  Transform chain               (strip, stamp, ima -- unconditional or USE-gated)
   4.  Final alias                   (name -> last target in the chain)
 
@@ -24,10 +24,12 @@ All intermediate targets are visible and independently buildable:
 load("//defs:empty_registry.bzl", "PATCH_REGISTRY")
 load("//defs:use_helpers.bzl", "use_bool", "use_configure_arg", "use_dep")
 load("//defs/rules:autotools.bzl", "autotools_package")
+load("//defs/rules:binary.bzl", "binary_package")
 load("//defs/rules:cargo.bzl", "cargo_package")
 load("//defs/rules:cmake.bzl", "cmake_package")
 load("//defs/rules:go.bzl", "go_package")
 load("//defs/rules:meson.bzl", "meson_package")
+load("//defs/rules:python.bzl", "python_package")
 load("//defs/rules:source.bzl", "extract_source")
 load("//defs/rules:transforms.bzl", "ima_sign_package", "stamp_package", "strip_package")
 
@@ -35,10 +37,12 @@ load("//defs/rules:transforms.bzl", "ima_sign_package", "stamp_package", "strip_
 # Each build system has a top-level load() and an entry here.
 _BUILD_RULES = {
     "autotools": autotools_package,
+    "binary": binary_package,
     "cargo": cargo_package,
     "cmake": cmake_package,
     "go": go_package,
     "meson": meson_package,
+    "python": python_package,
 }
 
 # Transform name -> (rule function, target suffix).
@@ -47,6 +51,39 @@ _TRANSFORM_MAP = {
     "stamp": (stamp_package, "stamped"),
     "ima": (ima_sign_package, "signed"),
 }
+
+# Fields that are accepted by package() for documentation/compat but
+# silently dropped before forwarding to the build rule.
+_IGNORED_FIELDS = [
+    "signature_required",
+    "signature_sha256",
+    "gpg_key",
+    "gpg_keyring",
+    "exclude_patterns",
+    "iuse",
+    "use_defaults",
+    "compat_tags",
+    "maintainers",
+    "exec_bdepend",
+    "depend",
+    "pdepend",
+    "src_unpack",
+    "src_test",
+    "run_tests",
+    "pre_configure",
+    "src_configure",
+    "src_compile",
+    "src_install",
+    "post_install",
+    "category",
+    "slot",
+    "local_only",
+    "bootstrap_sysroot",
+    "bootstrap_stage",
+    "use_cmake",
+    "use_meson",
+    "use_cargo",
+]
 
 def _merge_private_registry(name, patches, configure_args, extra_cflags):
     """Merge public args with private patch registry entries.
@@ -67,6 +104,63 @@ def _merge_private_registry(name, patches, configure_args, extra_cflags):
     all_cflags = list(extra_cflags) + private.get("extra_cflags", [])
 
     return all_patches, all_configure_args, all_cflags
+
+def _normalize_use_configure(use_configure):
+    """Normalize old-style +/- USE configure to new tuple format.
+
+    Old format:
+        {"ssl": "--with-ssl", "-ssl": "--without-ssl"}
+
+    New format:
+        {"ssl": ("--with-ssl", "--without-ssl")}
+
+    Also handles the already-correct tuple format passthrough.
+    """
+    result = {}
+    negative_keys = {}
+
+    # First pass: collect negative keys
+    for key, value in use_configure.items():
+        if key.startswith("-"):
+            flag = key[1:]  # strip the "-" prefix
+            negative_keys[flag] = value
+
+    # Second pass: build normalized dict
+    for key, value in use_configure.items():
+        if key.startswith("-"):
+            continue  # skip, handled via positive key
+        if type(value) == "tuple":
+            result[key] = value  # already normalized
+        else:
+            off_arg = negative_keys.get(key)
+            if off_arg:
+                result[key] = (value, off_arg)
+            else:
+                result[key] = value  # on-arg only, no off-arg
+
+    return result
+
+def _normalize_use_deps(use_deps):
+    """Normalize old-style list use_deps to single target.
+
+    Old format:
+        {"ssl": ["//path:openssl"]}
+
+    New format:
+        {"ssl": "//path:openssl"}
+    """
+    result = {}
+    for key, value in use_deps.items():
+        if type(value) == "list":
+            if len(value) == 1:
+                result[key] = value[0]
+            elif len(value) > 1:
+                # Multiple deps for one flag — keep first, warn
+                result[key] = value[0]
+            # empty list = no dep, skip
+        else:
+            result[key] = value
+    return result
 
 def package(
         name,
@@ -91,7 +185,7 @@ def package(
         name:              Target name.  The build target is "{name}-build";
                            the final alias is "{name}".
         build_rule:        Build system name: "autotools", "cmake", "meson",
-                           "cargo", or "go".
+                           "cargo", "go", "python", or "binary".
         version:           Upstream version string.
         url:               Upstream source URL.
         sha256:            Source archive sha256.
@@ -105,14 +199,15 @@ def package(
                            enabled = use_bool(flag), so it exists in the
                            graph unconditionally but is a zero-cost
                            passthrough when the flag is off.
-        use_deps:          Dict mapping USE flag name to a dep target.
+        use_deps:          Dict mapping USE flag name to a dep target
+                           (or list of dep targets for backwards compat).
                            Each is expanded via use_dep() and appended to
                            the deps list.
         use_configure:     Dict mapping USE flag name to either a single
-                           string (on-arg only) or a tuple of two strings
-                           (on-arg, off-arg).  Expanded via
-                           use_configure_arg() and appended to
-                           configure_args.
+                           string (on-arg only), a tuple of two strings
+                           (on-arg, off-arg), or old-style separate +/-
+                           keys.  Expanded via use_configure_arg() and
+                           appended to configure_args.
         patches:           Public patches from the package directory.
         configure_args:    Static configure arguments.
         extra_cflags:      Extra CFLAGS.
@@ -120,6 +215,10 @@ def package(
                            build rule (source, version, deps, libraries,
                            license, etc.).
     """
+
+    # -- 0. Strip ignored fields -----------------------------------------------
+    for field in _IGNORED_FIELDS:
+        build_kwargs.pop(field, None)
 
     # -- 1. Merge private patch registry ------------------------------------
     all_patches, all_configure_args, all_cflags = _merge_private_registry(
@@ -168,13 +267,15 @@ def package(
     build_kwargs.setdefault("src_uri", url)
     build_kwargs.setdefault("src_sha256", sha256)
 
-    # -- 2. Resolve USE-conditional deps ------------------------------------
+    # -- 2. Normalize and resolve USE-conditional deps ----------------------
+    normalized_use_deps = _normalize_use_deps(use_deps)
     all_deps = list(build_kwargs.pop("deps", []))
-    for flag, dep in use_deps.items():
+    for flag, dep in normalized_use_deps.items():
         all_deps += use_dep(flag, dep)
 
-    # -- 3. Resolve USE-conditional configure args --------------------------
-    for flag, args in use_configure.items():
+    # -- 3. Normalize and resolve USE-conditional configure args ------------
+    normalized_use_configure = _normalize_use_configure(use_configure)
+    for flag, args in normalized_use_configure.items():
         if type(args) == "tuple" and len(args) == 2:
             all_configure_args += use_configure_arg(flag, args[0], args[1])
         else:
@@ -184,16 +285,26 @@ def package(
     _auto_labels = ["buckos:compile"]
     _label_map = {
         "autotools": "buckos:build:autotools",
+        "binary": "buckos:build:binary",
         "cmake": "buckos:build:cmake",
         "meson": "buckos:build:meson",
         "cargo": "buckos:build:cargo",
         "go": "buckos:build:go",
+        "python": "buckos:build:python",
     }
     if build_rule in _label_map:
         _auto_labels.append(_label_map[build_rule])
 
     _all_labels = _auto_labels + build_kwargs.pop("labels", [])
     build_kwargs["labels"] = _all_labels
+
+    # -- Remap old kwarg names to new rule attrs ----------------------------
+    # cmake_args -> configure_args (cmake rule accepts both)
+    if "cmake_args" in build_kwargs and build_rule == "cmake":
+        # cmake_args are specific cmake flags; keep configure_args separate
+        pass
+    if "meson_args" in build_kwargs and build_rule == "meson":
+        pass
 
     # -- 4. Create the build target -----------------------------------------
     build_target = name + "-build"

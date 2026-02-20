@@ -1,14 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "quadtree",
     version = "1.0",
-    src_uri = "https://github.com/pvigier/Quadtree/archive/d205190a5e74527746acaade89309b33b00985c6.tar.gz",
+    url = "https://github.com/pvigier/Quadtree/archive/d205190a5e74527746acaade89309b33b00985c6.tar.gz",
     sha256 = "7633985e26bd069d51073531280cc3822290956bb30f9fc4cc9474a3ae49b6c3",
     description = "Header-only C++17 quadtree implementation",
     homepage = "https://github.com/pvigier/Quadtree",
     license = "MIT",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_EXAMPLES=OFF",
         "-DBUILD_TESTING=OFF",
         "-DBUILD_BENCHMARKS=OFF",

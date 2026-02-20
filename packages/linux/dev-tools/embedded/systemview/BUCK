@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "simple_binary_package")
+load("//defs:package.bzl", "package")
 
-simple_binary_package(
+simple_package(
+    build_rule = "binary",
     name = "systemview",
     version = "3.50",
-    src_uri = "https://www.segger.com/downloads/systemview/SystemView_Src_V350.zip",
+    url = "https://www.segger.com/downloads/systemview/SystemView_Src_V350.zip",
     sha256 = "8d1df457c3224eae58fd6a5801c5f5fae5ba22c42c9a2a27666163976fad37a3",
     description = "SEGGER SystemView embedded systems real-time analysis and visualization toolkit",
     homepage = "https://www.segger.com/products/development-tools/systemview/",

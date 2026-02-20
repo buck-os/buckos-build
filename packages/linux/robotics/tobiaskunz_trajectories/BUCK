@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "tobiaskunz_trajectories",
     version = "8fd7a4b",
-    src_uri = "https://github.com/tobiaskunz/trajectories/archive/8fd7a4b.tar.gz",
+    url = "https://github.com/tobiaskunz/trajectories/archive/8fd7a4b.tar.gz",
     sha256 = "2df41af03c8c10a9327bebde827dc35d60d875583dccfa6a3554ebdc5c363033",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_CXX_FLAGS=-Wno-unused-variable -Wno-reorder -Wno-unused-function",
     ],
     deps = [

@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "go_package")
+load("//defs:package.bzl", "package")
 
-go_package(
+package(
+    build_rule = "go",
     name = "aquasecurity-defsec",
     version = "0.89.0",
-    src_uri = "https://github.com/aquasecurity/defsec/archive/refs/tags/v0.89.0.tar.gz",
+    url = "https://github.com/aquasecurity/defsec/archive/refs/tags/v0.89.0.tar.gz",
     sha256 = "b05d7448b75be4803003a412fa34630732f26a69f787ccd5cb824ced04df84d6",
     description = "Security scanning library for Infrastructure as Code",
     homepage = "https://github.com/aquasecurity/defsec",

@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "scannetpp",
     version = "0.0.1_git20240107",
-    src_uri = "https://github.com/scannetpp/scannetpp/archive/a92f57db2430c6faa4aee7dbe9a2a6f2199e9324.tar.gz",
+    url = "https://github.com/scannetpp/scannetpp/archive/a92f57db2430c6faa4aee7dbe9a2a6f2199e9324.tar.gz",
     sha256 = "3a2bd97a864d414af21f5bac30e9bbe39e969b56e5eda42489c40a2cf6a67e15",
     deps = [
         "//packages/linux/dev-libs/python/munch:munch",

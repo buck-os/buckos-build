@@ -1,22 +1,21 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # Taskflow - A General-purpose Parallel and Heterogeneous Task Programming System
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "taskflow",
     version = "3.6.0",
-    iuse = ["examples"],
-    use_cmake = {
-        "-examples": "-DBUILD_EXAMPLES=OFF",
-        "examples": "-DBUILD_EXAMPLES=ON",
+    use_configure = {
+        "examples": ("-DBUILD_EXAMPLES=ON", "-DBUILD_EXAMPLES=OFF"),
     },
-    src_uri = "https://github.com/taskflow/taskflow/archive/refs/tags/v3.6.0.tar.gz",
+    url = "https://github.com/taskflow/taskflow/archive/refs/tags/v3.6.0.tar.gz",
     sha256 = "5a1cd9cf89f93a97fcace58fd73ed2fc8ee2053bcb43e047acb6bc121c3edf4c",
     description = "A General-purpose Parallel and Heterogeneous Task Programming System",
     homepage = "https://taskflow.github.io/",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DTF_BUILD_TESTS=OFF",
         "-DTF_BUILD_EXAMPLES=OFF",

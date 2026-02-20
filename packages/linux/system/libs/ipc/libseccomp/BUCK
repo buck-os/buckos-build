@@ -1,25 +1,20 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libseccomp",
     version = "2.5.5",
-    src_uri = "https://github.com/seccomp/libseccomp/releases/download/v2.5.5/libseccomp-2.5.5.tar.gz",
+    url = "https://github.com/seccomp/libseccomp/releases/download/v2.5.5/libseccomp-2.5.5.tar.gz",
     sha256 = "248a2c8a4d9b9858aa6baf52712c34afefcf9c9e94b76dce02c1c9aa25fb3375",
-    signature_sha256 = "f3bf8a946020d3047581f11fe6ac71971a842115ddb362562b193861ef57d97b",
-    signature_required = False,
     description = "Enhanced seccomp BPF library",
     homepage = "https://github.com/seccomp/libseccomp",
     license = "LGPL-2.1",
-    iuse = ["static-libs", "python"],
-    use_defaults = [],
     use_configure = {
-        "static-libs": "--enable-static",
-        "-static-libs": "--disable-static",
-        "python": "--enable-python",
-        "-python": "--disable-python",
+        "python": ("--enable-python", "--disable-python"),
+        "static-libs": ("--enable-static", "--disable-static"),
     },
     use_deps = {
-        "python": ["//packages/linux/lang/python:python"],
+        "python": "//packages/linux/lang/python:python",
     },
     configure_args = [],
     deps = [],

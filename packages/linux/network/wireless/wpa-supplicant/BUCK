@@ -1,16 +1,11 @@
-load("//defs:package_defs.bzl", "download_source", "make_package")
+load("//defs:package.bzl", "package")
 
 # wpa_supplicant doesn't use autotools - it uses a Makefile with a .config file
 make_package(
     name = "wpa-supplicant",
     version = "2.10",
-    src_uri = "https://w1.fi/releases/wpa_supplicant-2.10.tar.gz",
+    url = "https://w1.fi/releases/wpa_supplicant-2.10.tar.gz",
     sha256 = "20df7ae5154b3830355f8ab4269123a87affdea59fe74fe9292a91d0d7e17b2f",
-    signature_sha256 = "5512ef486877b231fe4eef3240c2aec9bfb671c1fe2ceb4e5d9ac1f17caddfac",
-    signature_required = False,
-
-    iuse = ["ssl", "readline", "dbus", "wps", "mesh", "sae", "owe", "dpp", "fils"],
-    use_defaults = ["ssl", "readline", "wps", "mesh", "sae", "owe", "dpp", "fils"],
 
     # Create the .config file for wpa_supplicant build
     pre_configure = """

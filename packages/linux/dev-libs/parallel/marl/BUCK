@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "marl",
     version = "1.0.0",
-    src_uri = "https://github.com/google/marl/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/google/marl/archive/refs/heads/main.tar.gz",
     sha256 = "f8d2d9997d903d1c5b3971028d1458846ede6f377c34981d6e880cf878e37ccd",
-    cmake_args = [
+    configure_args = [
         "-DMARL_BUILD_TESTS=OFF",
         "-DMARL_BUILD_BENCHMARKS=OFF",
         "-DMARL_BUILD_EXAMPLES=OFF",

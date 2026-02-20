@@ -1,19 +1,17 @@
+load("//defs:package.bzl", "package")
+
 # usbutils - USB Utilities
 # Provides lsusb and other USB device inspection tools
 
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "usbutils",
-    src_uri = "https://www.kernel.org/pub/linux/utils/usb/usbutils/usbutils-017.tar.xz",
+    url = "https://www.kernel.org/pub/linux/utils/usb/usbutils/usbutils-017.tar.xz",
 
     sha256 = "a6a25ffdcf9103e38d7a44732aca17073f4e602b92e4ae55625231a82702e05b",
-    iuse = ["python", "usbreset"],
     use_configure = {
-        "-python": "--disable-python",
-        "-usbreset": "--disable-usbreset",
-        "python": "--enable-python",
-        "usbreset": "--enable-usbreset",
+        "python": ("--enable-python", "--disable-python"),
+        "usbreset": ("--enable-usbreset", "--disable-usbreset"),
     },
     version = "017",
     description = "USB device utilities including lsusb",

@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "pulpcore",
     version = "3.92.0",
-    src_uri = "https://github.com/pulp/pulpcore/archive/refs/tags/3.92.0.tar.gz",
+    url = "https://github.com/pulp/pulpcore/archive/refs/tags/3.92.0.tar.gz",
     sha256 = "6948c8aef00512682db598bbbee4fcef58df41a6e26d4f258c6f485f6744b616",
     deps = [
         "//packages/linux/dev-libs/serialization/protobuf:protobuf",

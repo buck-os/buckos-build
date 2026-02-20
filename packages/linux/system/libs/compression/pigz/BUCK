@@ -1,18 +1,16 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # pigz - Parallel implementation of gzip for modern multi-processor machines
 # Makefile-only project (no configure script)
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "pigz",
     version = "2.8",
-    iuse = ["static"],
     use_configure = {
-        "-static": "--disable-static",
-        "static": "--enable-static",
+        "static": ("--enable-static", "--disable-static"),
     },
-    src_uri = "https://zlib.net/pigz/pigz-2.8.tar.gz",
+    url = "https://zlib.net/pigz/pigz-2.8.tar.gz",
     sha256 = "eb872b4f0e1f0ebe59c9f7bd8c506c4204893ba6a8492de31df416f0d5170fd0",
-    signature_required = False,
     description = "Parallel implementation of gzip for modern multi-processor machines",
     homepage = "https://zlib.net/pigz/",
     license = "Zlib",

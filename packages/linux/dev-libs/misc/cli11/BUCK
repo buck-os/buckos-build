@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # CLI11 - Command line parser for C++11
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "cli11",
     version = "2.5.0",
-    src_uri = "https://github.com/CLIUtils/CLI11/archive/refs/tags/v2.5.0.tar.gz",
+    url = "https://github.com/CLIUtils/CLI11/archive/refs/tags/v2.5.0.tar.gz",
     sha256 = "17e02b4cddc2fa348e5dbdbb582c59a3486fa2b2433e70a0c3bacb871334fd55",
     description = "Command line parser for C++11",
     homepage = "https://github.com/CLIUtils/CLI11",
     license = "BSD-3-Clause",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCLI11_BUILD_EXAMPLES=OFF",
         "-DCLI11_BUILD_TESTS=OFF",

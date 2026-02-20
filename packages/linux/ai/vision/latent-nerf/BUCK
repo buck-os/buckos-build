@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "latent_nerf",
     version = "0.0.1",
-    src_uri = "https://github.com/eladrich/latent-nerf/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/eladrich/latent-nerf/archive/refs/heads/main.tar.gz",
     sha256 = "fded0686386377faeda41c74464d6b452167446eb0c7175915beea75c268360c",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

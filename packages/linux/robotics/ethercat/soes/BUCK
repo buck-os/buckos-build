@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "soes",
     version = "3.0.0",
-    src_uri = "https://github.com/OpenEtherCATsociety/SOES/archive/refs/tags/v3.0.0.tar.gz",
+    url = "https://github.com/OpenEtherCATsociety/SOES/archive/refs/tags/v3.0.0.tar.gz",
     sha256 = "dda171deb4b293050d514afe6d1e222921e77cbf69222ae5405e653da567e761",
-    cmake_args = [
+    configure_args = [
         "-DSOES_DEMO=OFF",
     ],
     deps = [],

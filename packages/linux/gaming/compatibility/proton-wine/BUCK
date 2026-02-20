@@ -1,8 +1,9 @@
-load("//defs:package_defs.bzl", "autotools_package", "download_source")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "proton-wine",
-    src_uri = "https://github.com/ValveSoftware/wine/archive/refs/tags/proton-wine-9.0-3.tar.gz",
+    url = "https://github.com/ValveSoftware/wine/archive/refs/tags/proton-wine-9.0-3.tar.gz",
 
     sha256 = "df33e623a864cfd9a48a51dd2979d5dc25a03266729faa35f09388be2fb61523",
     version = "9.0-3",
@@ -11,19 +12,13 @@ autotools_package(
     license = "LGPL-2.1-or-later",
 
     # USE flags
-    iuse = ["multilib", "x11", "wayland", "vulkan"],
-    use_defaults = ["x11", "wayland", "vulkan"],
 
     # Conditional configure args based on USE flags
     use_configure = {
-        "multilib": "",
-        "-multilib": "--enable-win64",
-        "x11": "--with-x --with-opengl",
-        "-x11": "--without-x --without-opengl",
-        "wayland": "--with-wayland",
-        "-wayland": "--without-wayland",
-        "vulkan": "--with-vulkan",
-        "-vulkan": "--without-vulkan",
+        "multilib": ("", "--enable-win64"),
+        "vulkan": ("--with-vulkan", "--without-vulkan"),
+        "wayland": ("--with-wayland", "--without-wayland"),
+        "x11": ("--with-x --with-opengl", "--without-x --without-opengl"),
     },
 
     # Conditional dependencies based on USE flags

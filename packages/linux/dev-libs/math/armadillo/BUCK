@@ -1,45 +1,32 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # Armadillo - C++ linear algebra library
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "armadillo",
     version = "12.8.2",
-    src_uri = "https://sourceforge.net/projects/arma/files/armadillo-12.8.2.tar.xz",
+    url = "https://sourceforge.net/projects/arma/files/armadillo-12.8.2.tar.xz",
     sha256 = "03b62f8c09e4f5d74643b478520741b8e27b55e7e4525978fcae2f5d791ac3bf",
     description = "Fast C++ library for linear algebra & scientific computing",
     homepage = "https://arma.sourceforge.net/",
     license = "Apache-2.0",
-    iuse = [
-        "arpack",
-        "blas",
-        "examples",
-        "hdf5",
-        "lapack",
-        "mkl",
-        "superlu",
-    ],
-    use_cmake = {
-        "-arpack": "-DENABLE_ARPACK=OFF",
-        "-blas": "-DENABLE_BLAS=OFF",
-        "-examples": "-DBUILD_EXAMPLES=OFF",
-        "-lapack": "-DENABLE_LAPACK=OFF",
-        "-mkl": "-DENABLE_MKL=OFF",
-        "arpack": "-DENABLE_ARPACK=ON",
-        "blas": "-DENABLE_BLAS=ON",
-        "examples": "-DBUILD_EXAMPLES=ON",
-        "lapack": "-DENABLE_LAPACK=ON",
-        "mkl": "-DENABLE_MKL=ON",
+    use_configure = {
+        "arpack": ("-DENABLE_ARPACK=ON", "-DENABLE_ARPACK=OFF"),
+        "blas": ("-DENABLE_BLAS=ON", "-DENABLE_BLAS=OFF"),
+        "examples": ("-DBUILD_EXAMPLES=ON", "-DBUILD_EXAMPLES=OFF"),
+        "lapack": ("-DENABLE_LAPACK=ON", "-DENABLE_LAPACK=OFF"),
+        "mkl": ("-DENABLE_MKL=ON", "-DENABLE_MKL=OFF"),
     },
     deps = [
         "//packages/linux/dev-libs/math/lapack:lapack",
         "//packages/linux/dev-libs/math/openblas:openblas",
     ],
     use_deps = {
-        "hdf5": ["//packages/linux/dev-libs/misc/hdf5:hdf5"],
-        "superlu": ["//packages/linux/dev-libs/math/superlu:superlu"],
+        "hdf5": "//packages/linux/dev-libs/misc/hdf5:hdf5",
+        "superlu": "//packages/linux/dev-libs/math/superlu:superlu",
     },
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
     ],

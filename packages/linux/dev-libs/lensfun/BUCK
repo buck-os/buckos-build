@@ -1,21 +1,19 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # lensfun - Library for rectifying lens distortion
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "lensfun",
     version = "0.3.4",
-    iuse = ["cpu_flags_x86_sse"],
-    use_cmake = {
-        "-cpu_flags_x86_sse": "-DENABLE_CPU_FLAGS_X86_SSE=OFF",
-        "cpu_flags_x86_sse": "-DENABLE_CPU_FLAGS_X86_SSE=ON",
+    use_configure = {
+        "cpu_flags_x86_sse": ("-DENABLE_CPU_FLAGS_X86_SSE=ON", "-DENABLE_CPU_FLAGS_X86_SSE=OFF"),
     },
-    src_uri = "https://github.com/lensfun/lensfun/archive/v0.3.4.tar.gz",
+    url = "https://github.com/lensfun/lensfun/archive/v0.3.4.tar.gz",
     sha256 = "dafb39c08ef24a0e2abd00d05d7341b1bf1f0c38bfcd5a4c69cf5f0ecb6db112",
-    signature_required = False,
     description = "Library for rectifying and simulating photographic lens distortions",
     homepage = "https://lensfun.github.io/",
     license = "LGPL-3.0-or-later",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_TESTS=OFF",
         "-DCMAKE_POLICY_VERSION_MINIMUM=3.5",

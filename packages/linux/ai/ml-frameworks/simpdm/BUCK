@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "simpdm",
     version = "69e279a",
-    src_uri = "https://github.com/yixinliu233/simpdm/archive/69e279a38caf098ad1fbcec7f1dbcd90b86d5f97.tar.gz",
+    url = "https://github.com/yixinliu233/simpdm/archive/69e279a38caf098ad1fbcec7f1dbcd90b86d5f97.tar.gz",
     sha256 = "27ee18dffc742d848a3829039c27798761a2cc847361be6fcf0b5de2161c83f0",
     deps = [
         "//packages/linux/dev-libs/python/numpy:numpy",

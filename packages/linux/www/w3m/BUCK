@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # w3m - Text-based web browser with tables and frames support
 #
@@ -10,24 +10,22 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package")
 #   image    - Enable framebuffer image support
 #   ncurses  - Use ncurses for terminal handling
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "w3m",
     version = "0.5.3+git20230121",
-    src_uri = "https://github.com/tats/w3m/archive/refs/tags/v0.5.3+git20230121.tar.gz",
+    url = "https://github.com/tats/w3m/archive/refs/tags/v0.5.3+git20230121.tar.gz",
     sha256 = "fdc7d55d3c0104db26aa9759db34f37e5eee03f44c868796e3bbfb8935c96e39",
-    signature_required = False,
     description = "Text-based web browser with support for tables, frames, and images",
     homepage = "https://w3m.sourceforge.net/",
     license = "MIT",
-    iuse = ["ssl", "ipv6", "nls", "unicode", "image", "ncurses"],
-    use_defaults = ["ssl", "ipv6", "nls", "unicode", "ncurses"],
     deps = [
         "//packages/linux/dev-libs/misc/boehm-gc:boehm-gc",
     ],
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "ncurses": ["//packages/linux/system/terminal/ncurses:ncurses"],
-        "zlib": ["//packages/linux/core/zlib:zlib"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "ncurses": "//packages/linux/system/terminal/ncurses:ncurses",
+        "zlib": "//packages/linux/core/zlib:zlib",
     },
     configure_args = [
         "--disable-w3mmailer",
@@ -58,18 +56,12 @@ autotools_package(
         fi
     """,
     use_configure = {
-        "ssl": "--with-ssl",
-        "-ssl": "--without-ssl",
-        "ipv6": "--enable-ipv6",
-        "-ipv6": "--disable-ipv6",
-        "nls": "--enable-nls",
-        "-nls": "--disable-nls",
-        "unicode": "--enable-unicode",
-        "-unicode": "--disable-unicode",
-        "image": "--enable-image=fb",
-        "-image": "--disable-image",
-        "ncurses": "--with-termlib=ncurses",
-        "-ncurses": "--with-termlib=termcap",
+        "image": ("--enable-image=fb", "--disable-image"),
+        "ipv6": ("--enable-ipv6", "--disable-ipv6"),
+        "ncurses": ("--with-termlib=ncurses", "--with-termlib=termcap"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "ssl": ("--with-ssl", "--without-ssl"),
+        "unicode": ("--enable-unicode", "--disable-unicode"),
     },
     visibility = ["PUBLIC"],
 )

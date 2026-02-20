@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # crosvm - Chrome OS Virtual Machine Monitor
 # DISABLED: SHA256 mismatch - main branch changes frequently, hash is outdated
@@ -8,16 +8,17 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package")
 # Version tracks main branch since the mirror doesn't have tagged releases
 # download_source(
 #     name = "crosvm-src",
-#     src_uri = "https://github.com/google/crosvm/archive/refs/heads/main.tar.gz",
+#     url = "https://github.com/google/crosvm/archive/refs/heads/main.tar.gz",
 #     sha256 = "ce6adafd92189b397590ef5d3244f0a48ded28eccee1d9919ebac4836ab52d2a",  # Dynamic: main branch
-#     signature_required = False,
+#
 # )
 #
 # # USE flags: See use_flags.bzl for available flags
 #
-# autotools_package(
+# package(
+#     build_rule = "autotools",
 #     name = "crosvm",
-#     source = ":crosvm-src",
+#
 #     version = "main",
 #     description = "Chrome OS Virtual Machine Monitor for running Linux and Android guests",
 #     homepage = "https://crosvm.dev/",

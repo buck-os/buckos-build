@@ -1,12 +1,13 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "lightgbm",
     version = "2.3.0",
-    src_uri = "https://github.com/microsoft/LightGBM/archive/refs/tags/v2.3.0.tar.gz",
+    url = "https://github.com/microsoft/LightGBM/archive/refs/tags/v2.3.0.tar.gz",
     sha256 = "e076034ef41229714d59f28c3bd2366830dd9dfb9deff62f9ebc6a26f9e1e975",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DUSE_OPENMP=ON",
     ],

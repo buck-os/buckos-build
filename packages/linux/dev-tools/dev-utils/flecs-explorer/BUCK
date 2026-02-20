@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "flecs-explorer",
     version = "0.0.0_git20250112",
-    src_uri = "https://github.com/flecs-hub/explorer/archive/b97d6adf8ecf464a2ce3323ba0959a0c99eda838.tar.gz",
+    url = "https://github.com/flecs-hub/explorer/archive/b97d6adf8ecf464a2ce3323ba0959a0c99eda838.tar.gz",
     sha256 = "48aca391d88d71fc29e6d1ab3e9fc6566fd408fd5e0b6d80b94cc5054e070927",
     description = "Web-based UI dashboard for monitoring flecs ECS applications",
     homepage = "https://github.com/flecs-hub/explorer",
@@ -40,7 +41,7 @@ install(TARGETS flecs_explorer RUNTIME DESTINATION bin)
 install(DIRECTORY etc/ DESTINATION share/flecs-explorer)
 EOF
 """,
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],
     visibility = ["PUBLIC"],

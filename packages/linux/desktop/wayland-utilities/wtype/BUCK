@@ -1,15 +1,16 @@
-load("//defs:package_defs.bzl", "download_source", "meson_package")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "wtype",
-    src_uri = "https://github.com/atx/wtype/archive/v0.4.tar.gz",
+    url = "https://github.com/atx/wtype/archive/v0.4.tar.gz",
 
     sha256 = "da91786d828b6a6e29b884bc510473939eda052658ebef87d7bdeafa6a8746f9",
     version = "0.4",
     description = "xdotool type for Wayland",
     homepage = "https://github.com/atx/wtype",
     license = "MIT",
-    meson_args = [],
+    configure_args = [],
     deps = [
         "//packages/linux/system/libs/utility/libffi:libffi",
         "//packages/linux/graphics/rendering/wayland:wayland",

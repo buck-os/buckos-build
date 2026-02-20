@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "espnet",
     version = "202412",
-    src_uri = "https://github.com/espnet/espnet/archive/refs/tags/v.202412.tar.gz",
+    url = "https://github.com/espnet/espnet/archive/refs/tags/v.202412.tar.gz",
     sha256 = "650312993a657d0b6274266153c89e7529131e388e0b134987bd612a504ddcc1",
     description = "End-to-end speech processing toolkit",
     homepage = "https://github.com/espnet/espnet",

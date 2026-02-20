@@ -1,15 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "fast-cdr",
     version = "2.3.0",
-    src_uri = "https://github.com/eProsima/Fast-CDR/archive/refs/tags/v2.3.0.tar.gz",
+    url = "https://github.com/eProsima/Fast-CDR/archive/refs/tags/v2.3.0.tar.gz",
     sha256 = "d85ee9e24e105581b49de3e2b6b2585335a8dc98c4cabd288232fffc4b9b6a24",
     description = "eProsima Fast CDR - C++ library for CDR serialization",
     homepage = "https://github.com/eProsima/Fast-CDR",
     license = "Apache-2.0",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_TESTING=OFF",

@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # tinycbor - Concise Binary Object Representation (CBOR) Library
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "tinycbor",
     version = "0.6.0",
-    src_uri = "https://github.com/intel/tinycbor/archive/refs/tags/v0.6.0.tar.gz",
+    url = "https://github.com/intel/tinycbor/archive/refs/tags/v0.6.0.tar.gz",
     sha256 = "512e2c9fce74f60ef9ed3af59161e905f9e19f30a52e433fc55f39f4c70d27e4",
     description = "Concise Binary Object Representation (CBOR) Library",
     homepage = "https://github.com/intel/tinycbor",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
     ],

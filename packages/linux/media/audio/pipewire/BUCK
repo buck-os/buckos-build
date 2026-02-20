@@ -1,28 +1,24 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # WirePlumber - PipeWire session manager
 # =============================================================================
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "wireplumber",
     version = "0.5.3",
-    src_uri = "https://gitlab.freedesktop.org/pipewire/wireplumber/-/archive/0.5.3/wireplumber-0.5.3.tar.gz",
+    url = "https://gitlab.freedesktop.org/pipewire/wireplumber/-/archive/0.5.3/wireplumber-0.5.3.tar.gz",
     sha256 = "f247c7b9df67f9d21d261b80d29c098de8c7d8e99eedab0d63cd53c8fef6fcda",
-    signature_required = False,
     description = "PipeWire session manager",
     homepage = "https://pipewire.org/",
     license = "MIT",
-    iuse = ["doc", "systemd", "test"],
-    use_meson = {
-        "doc": "-Ddocs=enabled",
-        "-doc": "-Ddocs=disabled",
-        "systemd": "-Dsystemd=enabled",
-        "-systemd": "-Dsystemd=disabled",
-        "test": "-Dtests=enabled",
-        "-test": "-Dtests=disabled",
+    use_configure = {
+        "doc": ("-Ddocs=enabled", "-Ddocs=disabled"),
+        "systemd": ("-Dsystemd=enabled", "-Dsystemd=disabled"),
+        "test": ("-Dtests=enabled", "-Dtests=disabled"),
     },
-    meson_args = [
+    configure_args = [
         "-Dintrospection=disabled",
     ],
     deps = [

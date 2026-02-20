@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "meson_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # Sway - i3-compatible Wayland compositor
@@ -11,31 +11,18 @@ load("//defs:package_defs.bzl", "download_source", "meson_package")
 #   zsh-completion  - Install zsh completions
 #   fish-completion - Install fish completions
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "sway",
     version = "1.9",
-    src_uri = "https://github.com/swaywm/sway/releases/download/1.9/sway-1.9.tar.gz",
+    url = "https://github.com/swaywm/sway/releases/download/1.9/sway-1.9.tar.gz",
     sha256 = "a63b2df8722ee595695a0ec6c84bf29a055a9767e63d8e4c07ff568cb6ee0b51",
-    signature_required = False,
     description = "Sway - i3-compatible Wayland compositor",
     homepage = "https://swaywm.org/",
     license = "MIT",
     # Patch to use find_program for wayland-scanner
     patches = [
         "patches/0002-sway-use-find_program-for-wayland-scanner.patch",
-    ],
-    iuse = [
-        "X",
-        "bash-completion",
-        "fish-completion",
-        "man",
-        "man-pages",
-        "swaybar",
-        "swaynag",
-        "tray",
-        "wallpapers",
-        "xwayland",
-        "zsh-completion",
     ],
     use_defaults = [],  # No xwayland for pure Wayland build
     # wayland-scanner provides wayland-scanner for host (exec_bdepend builds for host platform)
@@ -117,33 +104,22 @@ meson setup "${BUILD_DIR:-build}" \\
     $NATIVE_FILE_ARG \\
     ${MESON_EXTRA_ARGS:-}
 """,
-    meson_args = [
+    configure_args = [
         "-Ddefault-wallpaper=false",
         "-Dwerror=false",
     ],
-    use_meson = {
-        "-X": "-Dxwayland=disabled",
-        "-bash-completion": "-Dbash-completions=false",
-        "-fish-completion": "-Dfish-completions=false",
-        "-man": "-Dman-pages=disabled",
-        "-man-pages": "-Dman-pages=disabled",
-        "-swaybar": "-Dswaybar=false",
-        "-swaynag": "-Dswaynag=false",
-        "-tray": "-Dtray=disabled",
-        "-wallpapers": "-Ddefault-wallpaper=false",
-        "-xwayland": "-Dxwayland=disabled",
-        "-zsh-completion": "-Dzsh-completions=false",
-        "X": "-Dxwayland=enabled",
-        "bash-completion": "-Dbash-completions=true",
-        "fish-completion": "-Dfish-completions=true",
-        "man": "-Dman-pages=enabled",
-        "man-pages": "-Dman-pages=enabled",
-        "swaybar": "-Dswaybar=true",
-        "swaynag": "-Dswaynag=true",
-        "tray": "-Dtray=enabled",
-        "wallpapers": "-Ddefault-wallpaper=true",
-        "xwayland": "-Dxwayland=enabled",
-        "zsh-completion": "-Dzsh-completions=true",
+    use_configure = {
+        "X": ("-Dxwayland=enabled", "-Dxwayland=disabled"),
+        "bash-completion": ("-Dbash-completions=true", "-Dbash-completions=false"),
+        "fish-completion": ("-Dfish-completions=true", "-Dfish-completions=false"),
+        "man": ("-Dman-pages=enabled", "-Dman-pages=disabled"),
+        "man-pages": ("-Dman-pages=enabled", "-Dman-pages=disabled"),
+        "swaybar": ("-Dswaybar=true", "-Dswaybar=false"),
+        "swaynag": ("-Dswaynag=true", "-Dswaynag=false"),
+        "tray": ("-Dtray=enabled", "-Dtray=disabled"),
+        "wallpapers": ("-Ddefault-wallpaper=true", "-Ddefault-wallpaper=false"),
+        "xwayland": ("-Dxwayland=enabled", "-Dxwayland=disabled"),
+        "zsh-completion": ("-Dzsh-completions=true", "-Dzsh-completions=false"),
     },
     deps = [
         "//packages/linux/system/libs/utility/libffi:libffi",
@@ -178,9 +154,10 @@ meson setup "${BUILD_DIR:-build}" \\
     visibility = ["PUBLIC"],
 )
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "wlroots",
-    src_uri = "https://gitlab.freedesktop.org/wlroots/wlroots/-/releases/0.17.1/downloads/wlroots-0.17.1.tar.gz",
+    url = "https://gitlab.freedesktop.org/wlroots/wlroots/-/releases/0.17.1/downloads/wlroots-0.17.1.tar.gz",
 
     sha256 = "d58d68e3f90d92de4d49fa43b4d75dc78f8af1d920d090729331cefbdfcf361b",
     version = "0.17.1",
@@ -260,7 +237,7 @@ meson setup "${BUILD_DIR:-build}" \\
     $NATIVE_FILE_ARG \\
     ${MESON_EXTRA_ARGS:-}
 """,
-    meson_args = [
+    configure_args = [
         "-Dexamples=false",
         "-Dwerror=false",  # Also disable -Werror for cross-compilation safety
     ],

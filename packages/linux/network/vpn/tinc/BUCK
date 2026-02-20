@@ -1,47 +1,27 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "tinc",
     version = "1.0.36",
-    src_uri = "https://github.com/gsliepen/tinc/archive/refs/tags/release-1.0.36.tar.gz",
+    url = "https://github.com/gsliepen/tinc/archive/refs/tags/release-1.0.36.tar.gz",
     sha256 = "04d87f81335ca32f00a5be1fc94d13fae9d8ae3a65452b76df259cb44a1afa78",
-    signature_required = False,
-
-    iuse = [
-        "lzo",
-        "ncurses",
-        "readline",
-        "ssl",
-        "uml",
-        "upnp",
-        "vde",
-        "zlib",
-    ],
-    use_defaults = ["ssl", "zlib", "lzo"],
 
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "zlib": ["//packages/linux/core/zlib:zlib"],
-        "lzo": ["//packages/linux/system/libs/compression/lzo:lzo"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "zlib": "//packages/linux/core/zlib:zlib",
+        "lzo": "//packages/linux/system/libs/compression/lzo:lzo",
     },
 
     use_configure = {
-        "-lzo": "--without-lzo",
-        "-ncurses": "--without-ncurses",
-        "-readline": "--without-readline",
-        "-ssl": "--without-openssl",
-        "-uml": "--disable-uml",
-        "-upnp": "--disable-upnp",
-        "-vde": "--disable-vde",
-        "-zlib": "--without-zlib",
-        "lzo": "--with-lzo",
-        "ncurses": "--with-ncurses",
-        "readline": "--with-readline",
-        "ssl": "--with-openssl",
-        "uml": "--enable-uml",
-        "upnp": "--enable-upnp",
-        "vde": "--enable-vde",
-        "zlib": "--with-zlib",
+        "lzo": ("--with-lzo", "--without-lzo"),
+        "ncurses": ("--with-ncurses", "--without-ncurses"),
+        "readline": ("--with-readline", "--without-readline"),
+        "ssl": ("--with-openssl", "--without-openssl"),
+        "uml": ("--enable-uml", "--disable-uml"),
+        "upnp": ("--enable-upnp", "--disable-upnp"),
+        "vde": ("--enable-vde", "--disable-vde"),
+        "zlib": ("--with-zlib", "--without-zlib"),
     },
 
     configure_args = [

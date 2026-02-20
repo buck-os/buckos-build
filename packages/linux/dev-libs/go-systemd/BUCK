@@ -1,12 +1,13 @@
-load("//defs:package_defs.bzl", "go_package")
+load("//defs:package.bzl", "package")
 
 # This is a Go library package, not a binary.
 # It provides Go modules for systemd integration.
 # Libraries don't produce binaries, so we skip the build.
-go_package(
+package(
+    build_rule = "go",
     name = "go-systemd",
     version = "20",
-    src_uri = "https://github.com/coreos/go-systemd/archive/v20.tar.gz",
+    url = "https://github.com/coreos/go-systemd/archive/v20.tar.gz",
     sha256 = "e9d844f7425fdc1e67020c65816485692fb6656325a2b6c6c23d78891af2306c",
     # Library package - no bins means default src_install will install Go source files
     maintainers = ["buckos"],

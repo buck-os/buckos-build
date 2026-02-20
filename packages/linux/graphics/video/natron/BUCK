@@ -1,10 +1,11 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # Natron - Open-source compositing software (node-based)
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "natron",
-    src_uri = "https://github.com/NatronGitHub/Natron/archive/refs/tags/v2.5.0.tar.gz",
+    url = "https://github.com/NatronGitHub/Natron/archive/refs/tags/v2.5.0.tar.gz",
 
     sha256 = "013c75b9b443cb22eafea4a18ea06d4fefe4c4985a2801ab402251cbf88cc384",
     version = "2.5.0",

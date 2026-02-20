@@ -1,14 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "libunifex",
     version = "0.1.0",
-    src_uri = "https://github.com/facebookexperimental/libunifex/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/facebookexperimental/libunifex/archive/refs/heads/main.tar.gz",
     sha256 = "968ed7a515f6224c4ee6e3f27a3e08fa8ff99426087bdeb0a72211ed5d7f0249",
     description = "C++ async programming framework using sender/receiver pattern",
     homepage = "https://github.com/facebookexperimental/libunifex",
     license = "Apache-2.0 WITH LLVM-exception",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
         "-DUNIFEX_BUILD_EXAMPLES=OFF",

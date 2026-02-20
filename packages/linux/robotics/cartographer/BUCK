@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # cartographer - Google Cartographer SLAM (Simultaneous Localization and Mapping)
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "cartographer",
     version = "1.0.0",
-    src_uri = "https://github.com/cartographer-project/cartographer/archive/refs/tags/1.0.0.tar.gz",
+    url = "https://github.com/cartographer-project/cartographer/archive/refs/tags/1.0.0.tar.gz",
     sha256 = "474a410bf6457eb8a0fd92ea412d7889fb013051e625d3ee25e8d65e4113fd6c",
     description = "Cartographer is a system that provides real-time simultaneous localization and mapping (SLAM) in 2D and 3D across multiple platforms and sensor configurations",
     homepage = "https://github.com/cartographer-project/cartographer",
@@ -21,7 +22,7 @@ cmake_package(
         "//packages/linux/dev-libs/misc/lua:lua",
         "//packages/linux/dev-libs/abseil-cpp:abseil-cpp",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_GRPC=OFF",

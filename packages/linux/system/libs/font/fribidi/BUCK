@@ -1,15 +1,15 @@
-load("//defs:package_defs.bzl", "meson_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "fribidi",
     version = "1.0.16",
-    src_uri = "https://github.com/fribidi/fribidi/releases/download/v1.0.16/fribidi-1.0.16.tar.xz",
+    url = "https://github.com/fribidi/fribidi/releases/download/v1.0.16/fribidi-1.0.16.tar.xz",
     sha256 = "1b1cde5b235d40479e91be2f0e88a309e3214c8ab470ec8a2744d82a5a9ea05c",
-    signature_required = False,
     description = "Unicode Bidirectional Algorithm library",
     homepage = "https://github.com/fribidi/fribidi",
     license = "LGPL-2.1",
-    meson_args = [
+    configure_args = [
         "-Ddocs=false",
         "-Dtests=false",
     ],

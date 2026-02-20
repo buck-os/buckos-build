@@ -1,19 +1,15 @@
-load("//defs:package_defs.bzl","download_source", "make_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # mksh - MirBSD Korn Shell
 # Using GitHub mirror since www.mirbsd.org returns 503
 make_package(
     name = "mksh",
-    src_uri = "https://github.com/MirBSD/mksh/archive/refs/tags/mksh-R59c.tar.gz",
+    url = "https://github.com/MirBSD/mksh/archive/refs/tags/mksh-R59c.tar.gz",
 
     sha256 = "e5942607eb930ba6ce3303c4a0db0733371f210c9ce6d5d4b9cc202c76360343",
-    iuse = ["lksh", "static"],
     use_configure = {
-        "-lksh": "--disable-lksh",
-        "-static": "--disable-static",
-        "lksh": "--enable-lksh",
-        "static": "--enable-static",
+        "lksh": ("--enable-lksh", "--disable-lksh"),
+        "static": ("--enable-static", "--disable-static"),
     },
     version = "R59c",
     description = "MirBSD Korn Shell - an enhanced version of the public domain ksh",

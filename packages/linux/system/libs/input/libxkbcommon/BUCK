@@ -1,32 +1,22 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "libxkbcommon",
     version = "1.7.0",
-    iuse = [
-        "X",
-        "static-libs",
-        "tools",
-        "wayland",
-    ],
-    src_uri = "https://xkbcommon.org/download/libxkbcommon-1.7.0.tar.xz",
+    url = "https://xkbcommon.org/download/libxkbcommon-1.7.0.tar.xz",
     sha256 = "65782f0a10a4b455af9c6baab7040e2f537520caa2ec2092805cdfd36863b247",
     description = "Keymap handling library for toolkits and window systems",
     homepage = "https://xkbcommon.org/",
     license = "MIT",
-    signature_required = False,
-    meson_args = [
+    configure_args = [
         "-Denable-docs=false",
     ],
-    use_meson = {
-        "X": "-Denable-x11=true",
-        "-X": "-Denable-x11=false",
-        "static-libs": "-Ddefault_library=both",
-        "-static-libs": "-Ddefault_library=shared",
-        "tools": "-Denable-tools=true",
-        "-tools": "-Denable-tools=false",
-        "wayland": "-Denable-wayland=true",
-        "-wayland": "-Denable-wayland=false",
+    use_configure = {
+        "X": ("-Denable-x11=true", "-Denable-x11=false"),
+        "static-libs": ("-Ddefault_library=both", "-Ddefault_library=shared"),
+        "tools": ("-Denable-tools=true", "-Denable-tools=false"),
+        "wayland": ("-Denable-wayland=true", "-Denable-wayland=false"),
     },
     deps = [
         "//packages/linux/core/zlib:zlib",

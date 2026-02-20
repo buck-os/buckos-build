@@ -1,10 +1,11 @@
+load("//defs:package.bzl", "package")
+
 # =============================================================================
 # ipset - IP set management tool for Linux firewall
 # =============================================================================
 
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "ipset",
     bdepend = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
@@ -16,17 +17,11 @@ autotools_package(
 autoreconf -fi
 """,
     version = "7.21",
-    src_uri = "https://ipset.netfilter.org/ipset-7.21.tar.bz2",
+    url = "https://ipset.netfilter.org/ipset-7.21.tar.bz2",
     sha256 = "e2c6ce4fcf3acb3893ca5d35c86935f80ad76fc5ccae601185842df760e0bc69",
-    signature_required = False,
-
-    iuse = ["static-libs"],
-    use_defaults = [],
-
 
     use_configure = {
-        "static-libs": "--enable-static",
-        "-static-libs": "--disable-static",
+        "static-libs": ("--enable-static", "--disable-static"),
     },
 
     configure_args = [

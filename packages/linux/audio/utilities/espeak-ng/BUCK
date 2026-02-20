@@ -1,3 +1,5 @@
+load("//defs:package.bzl", "package")
+
 # =============================================================================
 # eSpeak NG - Open source speech synthesizer
 # =============================================================================
@@ -25,46 +27,27 @@
 #
 # =============================================================================
 
-load("//defs:package_defs.bzl", "cmake_package")
-
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "espeak-ng",
     version = "1.52.0",
-    src_uri = "https://github.com/espeak-ng/espeak-ng/archive/refs/tags/1.52.0.tar.gz",
+    url = "https://github.com/espeak-ng/espeak-ng/archive/refs/tags/1.52.0.tar.gz",
     sha256 = "bb4338102ff3b49a81423da8a1a158b420124b055b60fa76cfb4b18677130a23",  # Placeholder - verify with update_checksums.py
     description = "Open source speech synthesizer supporting over 100 languages and accents",
     homepage = "https://github.com/espeak-ng/espeak-ng",
     license = "GPL-3.0",
-    iuse = [
-        "async",
-        "klatt",
-        "l10n_ru",
-        "l10n_zh",
-        "man",
-        "mbrola",
-        "pcaudiolib",
-        "sonic",
-        "sound",
-        "speechplayer",
-        "tests",
-    ],
-    use_cmake = {
-        "-l10n_ru": "-DENABLE_L10N_RU=OFF",
-        "-l10n_zh": "-DENABLE_L10N_ZH=OFF",
-        "-man": "-DENABLE_MAN=OFF",
-        "-sound": "-DENABLE_SOUND=OFF",
-        "l10n_ru": "-DENABLE_L10N_RU=ON",
-        "l10n_zh": "-DENABLE_L10N_ZH=ON",
-        "man": "-DENABLE_MAN=ON",
-        "sound": "-DENABLE_SOUND=ON",
+    use_configure = {
+        "l10n_ru": ("-DENABLE_L10N_RU=ON", "-DENABLE_L10N_RU=OFF"),
+        "l10n_zh": ("-DENABLE_L10N_ZH=ON", "-DENABLE_L10N_ZH=OFF"),
+        "man": ("-DENABLE_MAN=ON", "-DENABLE_MAN=OFF"),
+        "sound": ("-DENABLE_SOUND=ON", "-DENABLE_SOUND=OFF"),
     },
-    use_defaults = ["klatt", "speechplayer", "sonic", "async"],
     deps = [],
     use_deps = {
         # pcaudiolib is optional for audio output
         # mbrola is optional for additional voice synthesis
     },
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DCOMPILE_INTONATIONS=ON",

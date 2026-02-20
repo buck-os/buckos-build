@@ -1,25 +1,14 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "alsa-utils",
     version = "1.2.11",
-    src_uri = "https://www.alsa-project.org/files/pub/utils/alsa-utils-1.2.11.tar.bz2",
+    url = "https://www.alsa-project.org/files/pub/utils/alsa-utils-1.2.11.tar.bz2",
     sha256 = "9ac6ca3a883f151e568dcf979b8d2e5cbecc51b819bb0e6bb8a2e9b34cc428a7",
-    signature_sha256 = "1d00a1369c4fb1a7841a57aa7c9f41a80d289053af0b779164f01a3cc0228885",
-    signature_required = False,
     description = "ALSA utilities including alsamixer, amixer, aplay, arecord",
     homepage = "https://www.alsa-project.org/",
     license = "GPL-2",
-    iuse = [
-        "bat",
-        "doc",
-        "ieee1394",
-        "libsamplerate",
-        "ncurses",
-        "nls",
-        "selinux",
-    ],
-    use_defaults = ["ncurses"],
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc",
@@ -28,23 +17,16 @@ autotools_package(
         "--disable-xmlto",
     ],
     use_configure = {
-        "-bat": "--disable-bat",
-        "-doc": "--disable-xmlto",
-        "-ieee1394": "--disable-ieee1394",
-        "-libsamplerate": "--disable-libsamplerate",
-        "-ncurses": "--without-curses",
-        "-nls": "--disable-nls",
-        "-selinux": "--disable-selinux",
-        "bat": "--enable-bat",
-        "doc": "--enable-xmlto",
-        "ieee1394": "--enable-ieee1394",
-        "libsamplerate": "--enable-libsamplerate",
-        "ncurses": "--with-curses=ncurses",
-        "nls": "--enable-nls",
-        "selinux": "--enable-selinux",
+        "bat": ("--enable-bat", "--disable-bat"),
+        "doc": ("--enable-xmlto", "--disable-xmlto"),
+        "ieee1394": ("--enable-ieee1394", "--disable-ieee1394"),
+        "libsamplerate": ("--enable-libsamplerate", "--disable-libsamplerate"),
+        "ncurses": ("--with-curses=ncurses", "--without-curses"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
     },
     use_deps = {
-        "ncurses": ["//packages/linux/system/terminal/ncurses:ncurses"],
+        "ncurses": "//packages/linux/system/terminal/ncurses:ncurses",
     },
     deps = [
         "//packages/linux/system/libs/audio/alsa-lib:alsa-lib",

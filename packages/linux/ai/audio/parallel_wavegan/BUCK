@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "parallel_wavegan",
     version = "0.6.0",
-    src_uri = "https://github.com/kan-bayashi/ParallelWaveGAN/archive/v0.6.0.tar.gz",
+    url = "https://github.com/kan-bayashi/ParallelWaveGAN/archive/v0.6.0.tar.gz",
     sha256 = "6a49b9dcc23236e741fc235f9954d6a14930e813a31621443da04e49b645c191",
     deps = [
         "//packages/linux/dev-libs/python/h5py:h5py",

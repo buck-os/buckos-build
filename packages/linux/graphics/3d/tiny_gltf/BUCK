@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "tiny_gltf",
     version = "2.8.21",
-    src_uri = "https://github.com/syoyo/tinygltf/archive/refs/tags/v2.8.21.tar.gz",
+    url = "https://github.com/syoyo/tinygltf/archive/refs/tags/v2.8.21.tar.gz",
     sha256 = "e567257d7addde58b0a483832cbaa5dd8f15e5bcaee6f023831e215d1a2c0502",
-    cmake_args = [
+    configure_args = [
         "-DTINYGLTF_BUILD_LOADER_EXAMPLE=OFF",
         "-DTINYGLTF_BUILD_GL_EXAMPLES=OFF",
         "-DTINYGLTF_BUILD_VALIDATOR_EXAMPLE=OFF",

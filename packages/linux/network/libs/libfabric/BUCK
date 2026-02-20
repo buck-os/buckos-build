@@ -1,31 +1,18 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libfabric",
     version = "2.2.0",
-    iuse = [
-        "cuda",
-        "efa",
-        "rocm",
-        "ucx",
-        "usnic",
-        "verbs",
-    ],
     use_configure = {
-        "-cuda": "--disable-cuda",
-        "-efa": "--disable-efa",
-        "-rocm": "--disable-rocm",
-        "-ucx": "--disable-ucx",
-        "-usnic": "--disable-usnic",
-        "-verbs": "--disable-verbs",
-        "cuda": "--enable-cuda",
-        "efa": "--enable-efa",
-        "rocm": "--enable-rocm",
-        "ucx": "--enable-ucx",
-        "usnic": "--enable-usnic",
-        "verbs": "--enable-verbs",
+        "cuda": ("--enable-cuda", "--disable-cuda"),
+        "efa": ("--enable-efa", "--disable-efa"),
+        "rocm": ("--enable-rocm", "--disable-rocm"),
+        "ucx": ("--enable-ucx", "--disable-ucx"),
+        "usnic": ("--enable-usnic", "--disable-usnic"),
+        "verbs": ("--enable-verbs", "--disable-verbs"),
     },
-    src_uri = "https://github.com/ofiwg/libfabric/releases/download/v2.2.0/libfabric-2.2.0.tar.bz2",
+    url = "https://github.com/ofiwg/libfabric/releases/download/v2.2.0/libfabric-2.2.0.tar.bz2",
     sha256 = "ff6d05240b4a9753bb3d1eaf962f5a06205038df5142374a6ef40f931bb55ecc",
     configure_args = [
         "--enable-tcp",

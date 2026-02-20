@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # bvh - Modern C++17 header-only BVH library for ray-tracing
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "bvh",
     version = "1.0.0",
-    src_uri = "https://github.com/madmann91/bvh/archive/fac27c6a30520426d0d52164563bf607258d3d16.tar.gz",
+    url = "https://github.com/madmann91/bvh/archive/fac27c6a30520426d0d52164563bf607258d3d16.tar.gz",
     sha256 = "8e64a6ca36adbae604024ca15d176768046cdf283f9b180706946934a416bcdc",
     description = "Modern C++17 header-only BVH acceleration structure library optimized for ray-tracing",
     homepage = "https://github.com/madmann91/bvh",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_CXX_STANDARD=17",
         "-DBUILD_TESTING=OFF",

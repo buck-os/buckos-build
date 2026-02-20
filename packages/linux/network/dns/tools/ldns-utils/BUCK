@@ -1,25 +1,19 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "ldns-utils",
     version = "1.8.3",
-    src_uri = "https://nlnetlabs.nl/downloads/ldns/ldns-1.8.3.tar.gz",
+    url = "https://nlnetlabs.nl/downloads/ldns/ldns-1.8.3.tar.gz",
     sha256 = "c3f72dd1036b2907e3a56e6acf9dfb2e551256b3c1bbd9787942deeeb70e7860",
-    signature_sha256 = "b872fb26a76591af93a73c0dda6532d5dc4c236fec05512f81e81cb2687ef65f",
-    signature_required = False,
-
-    iuse = ["ssl", "dane", "ecdsa"],
-    use_defaults = ["ssl", "dane", "ecdsa"],
 
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
     },
 
     use_configure = {
-        "dane": "--enable-dane",
-        "-dane": "--disable-dane",
-        "ecdsa": "--enable-ecdsa",
-        "-ecdsa": "--disable-ecdsa",
+        "dane": ("--enable-dane", "--disable-dane"),
+        "ecdsa": ("--enable-ecdsa", "--disable-ecdsa"),
     },
 
     configure_args = [

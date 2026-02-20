@@ -1,46 +1,31 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # OpenBLAS - Optimized BLAS library
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "openblas",
     version = "0.3.27",
-    src_uri = "https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.27/OpenBLAS-0.3.27.tar.gz",
+    url = "https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.27/OpenBLAS-0.3.27.tar.gz",
     sha256 = "aa2d68b1564fe2b13bc292672608e9cdeeeb6dc34995512e65c3b10f4599e897",
     description = "Optimized BLAS library based on GotoBLAS2 1.13 BSD version",
     homepage = "https://www.openblas.net/",
     license = "BSD-3-Clause",
-    iuse = [
-        "cpudetection",
-        "eselect-ldso",
-        "index64",
-        "lapack",
-        "openmp",
-        "pthread",
-        "relapack",
-    ],
-    use_defaults = ["openmp", "lapack"],
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_TESTING=OFF",
         "-DUSE_THREAD=ON",
     ],
-    use_cmake = {
-        "-cpudetection": "-DENABLE_CPUDETECTION=OFF",
-        "-eselect-ldso": "-DENABLE_ESELECT_LDSO=OFF",
-        "-index64": "-DENABLE_INDEX64=OFF",
-        "-lapack": "-DBUILD_LAPACK=OFF",
-        "-openmp": "-DUSE_OPENMP=OFF",
-        "-relapack": "-DENABLE_RELAPACK=OFF",
-        "cpudetection": "-DENABLE_CPUDETECTION=ON",
-        "eselect-ldso": "-DENABLE_ESELECT_LDSO=ON",
-        "index64": "-DENABLE_INDEX64=ON",
-        "lapack": "-DBUILD_LAPACK=ON",
-        "openmp": "-DUSE_OPENMP=ON",
+    use_configure = {
+        "cpudetection": ("-DENABLE_CPUDETECTION=ON", "-DENABLE_CPUDETECTION=OFF"),
+        "eselect-ldso": ("-DENABLE_ESELECT_LDSO=ON", "-DENABLE_ESELECT_LDSO=OFF"),
+        "index64": ("-DENABLE_INDEX64=ON", "-DENABLE_INDEX64=OFF"),
+        "lapack": ("-DBUILD_LAPACK=ON", "-DBUILD_LAPACK=OFF"),
+        "openmp": ("-DUSE_OPENMP=ON", "-DUSE_OPENMP=OFF"),
         "pthread": "-DUSE_PTHREAD=ON",
-        "relapack": "-DENABLE_RELAPACK=ON",
+        "relapack": ("-DENABLE_RELAPACK=ON", "-DENABLE_RELAPACK=OFF"),
     },
     visibility = ["PUBLIC"],
 )

@@ -1,15 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "scdoc-src",
-    src_uri = "https://git.sr.ht/~sircmpwn/scdoc/archive/1.11.3.tar.gz",
-    sha256 = "4c5c6136540384e5455b250f768e7ca11b03fdba1a8efc2341ee0f1111e57612",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "scdoc",
-    srcs = [":scdoc-src"],
     version = "1.11.3",
     description = "Simple man page generator for POSIX systems",
     homepage = "https://git.sr.ht/~sircmpwn/scdoc",

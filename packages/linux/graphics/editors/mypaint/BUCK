@@ -1,14 +1,13 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "mypaint",
-    src_uri = "https://github.com/mypaint/mypaint/releases/download/v2.0.1/mypaint-2.0.1.tar.xz",
+    url = "https://github.com/mypaint/mypaint/releases/download/v2.0.1/mypaint-2.0.1.tar.xz",
 
     sha256 = "f3e437d7cdd5fd28ef6532e8ab6b4b05d842bcdd644f16a0162dad3d8e57bb16",
-    iuse = ["openmp"],
     use_configure = {
-        "-openmp": "--disable-openmp",
-        "openmp": "--enable-openmp",
+        "openmp": ("--enable-openmp", "--disable-openmp"),
     },
     version = "2.0.1",
     description = "Simple drawing and painting program for digital artists",

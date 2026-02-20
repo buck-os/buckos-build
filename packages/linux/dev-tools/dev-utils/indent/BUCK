@@ -1,6 +1,7 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "indent",
     # GNU release tarball includes pre-generated configure script
     bdepend = [
@@ -8,18 +9,13 @@ autotools_package(
     ],
     src_prepare = "",
     version = "2.2.13",
-    src_uri = "https://mirrors.kernel.org/gnu/indent/indent-2.2.13.tar.xz",
+    url = "https://mirrors.kernel.org/gnu/indent/indent-2.2.13.tar.xz",
     sha256 = "1b81ba4e9a006ca8e6eb5cbbe4cf4f75dfc1fc9301b459aa0d40393e85590a0b",
-    signature_required = False,
     description = "C language source code formatting program",
     homepage = "https://www.gnu.org/software/indent/",
     license = "GPL-3+",
-
-    iuse = ["nls"],
-    use_defaults = ["nls"],
     use_configure = {
-        "nls": "--enable-nls",
-        "-nls": "--disable-nls",
+        "nls": ("--enable-nls", "--disable-nls"),
     },
 
     visibility = ["PUBLIC"],

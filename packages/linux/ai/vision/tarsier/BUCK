@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "tarsier",
     version = "2024.10",
-    src_uri = "https://github.com/bytedance/tarsier/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/bytedance/tarsier/archive/refs/heads/main.tar.gz",
     sha256 = "ce3c62b57bbf5ac4cb7571c208784fa2720c57580f2f63beede34210e76a1840",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

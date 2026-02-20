@@ -1,44 +1,27 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # fluent-bit - Fast Log, Metrics and Traces Processor and Forwarder
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "fluent-bit",
     version = "3.2.8",
-    src_uri = "https://github.com/fluent/fluent-bit/archive/refs/tags/v3.2.8.tar.gz",
+    url = "https://github.com/fluent/fluent-bit/archive/refs/tags/v3.2.8.tar.gz",
     sha256 = "60af0b45435e211375aa044e8bdd0588e28452872aff320549ef015be33331cf",
     description = "Fast Log, Metrics and Traces Processor and Forwarder for Linux, embedded Linux, macOS and BSD",
     homepage = "https://fluentbit.io",
     license = "Apache-2.0",
-    iuse = [
-        "tls",
-        "yaml",
-        "http-server",
-        "luajit",
-        "regex",
-        "systemd",
-        "examples",
-        "jemalloc",
-        "postgresql",
-    ],
-    use_defaults = [
-        "tls",
-        "yaml",
-        "http-server",
-        "regex",
-        "systemd",
-    ],
     deps = [
         "//packages/linux/dev-tools/dev-utils/flex:flex",
         "//packages/linux/dev-tools/dev-utils/bison:bison",
     ],
     use_deps = {
-        "tls": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "yaml": ["//packages/linux/system/libs/data/yaml:yaml"],
-        "systemd": ["//packages/linux/system/systemd:systemd"],
-        "jemalloc": ["//packages/linux/dev-libs/allocators/jemalloc:jemalloc"],
+        "tls": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "yaml": "//packages/linux/system/libs/data/yaml:yaml",
+        "systemd": "//packages/linux/system/systemd:systemd",
+        "jemalloc": "//packages/linux/dev-libs/allocators/jemalloc:jemalloc",
     },
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DFLB_RELEASE=ON",
         "-DFLB_DEBUG=OFF",
@@ -61,21 +44,14 @@ cmake_package(
         "-DFLB_PREFER_SYSTEM_LIB_CARES=ON",
         "-DFLB_PREFER_SYSTEM_LIB_KAFKA=ON",
     ],
-    use_cmake = {
-        "tls": "-DFLB_TLS=ON",
-        "-tls": "-DFLB_TLS=OFF",
-        "yaml": "-DFLB_CONFIG_YAML=ON",
-        "-yaml": "-DFLB_CONFIG_YAML=OFF",
-        "http-server": "-DFLB_HTTP_SERVER=ON",
-        "-http-server": "-DFLB_HTTP_SERVER=OFF",
-        "luajit": "-DFLB_LUAJIT=ON",
-        "-luajit": "-DFLB_LUAJIT=OFF",
-        "regex": "-DFLB_REGEX=ON",
-        "-regex": "-DFLB_REGEX=OFF",
-        "examples": "-DFLB_EXAMPLES=ON",
-        "-examples": "-DFLB_EXAMPLES=OFF",
-        "jemalloc": "-DFLB_JEMALLOC=ON",
-        "-jemalloc": "-DFLB_JEMALLOC=OFF",
+    use_configure = {
+        "examples": ("-DFLB_EXAMPLES=ON", "-DFLB_EXAMPLES=OFF"),
+        "http-server": ("-DFLB_HTTP_SERVER=ON", "-DFLB_HTTP_SERVER=OFF"),
+        "jemalloc": ("-DFLB_JEMALLOC=ON", "-DFLB_JEMALLOC=OFF"),
+        "luajit": ("-DFLB_LUAJIT=ON", "-DFLB_LUAJIT=OFF"),
+        "regex": ("-DFLB_REGEX=ON", "-DFLB_REGEX=OFF"),
+        "tls": ("-DFLB_TLS=ON", "-DFLB_TLS=OFF"),
+        "yaml": ("-DFLB_CONFIG_YAML=ON", "-DFLB_CONFIG_YAML=OFF"),
     },
     visibility = ["PUBLIC"],
 )

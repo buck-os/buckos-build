@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # Cereal - A C++11 header-only serialization library
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "cereal",
     version = "1.3.2",
-    src_uri = "https://github.com/USCiLab/cereal/archive/refs/tags/v1.3.2.tar.gz",
+    url = "https://github.com/USCiLab/cereal/archive/refs/tags/v1.3.2.tar.gz",
     sha256 = "16a7ad9b31ba5880dac55d62b5d6f243c3ebc8d46a3514149e56b5e7ea81f85f",
     description = "A C++11 header-only serialization library",
     homepage = "https://uscilab.github.io/cereal/",
     license = "BSD-3-Clause",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_DOC=OFF",
         "-DBUILD_SANDBOX=OFF",

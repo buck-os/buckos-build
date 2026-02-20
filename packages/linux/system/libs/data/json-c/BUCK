@@ -1,24 +1,20 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "json-c",
     version = "0.17",
-    iuse = ["cpu_flags_x86_rdrand", "static-libs", "threads"],
-    use_cmake = {
-        "-cpu_flags_x86_rdrand": "-DENABLE_CPU_FLAGS_X86_RDRAND=OFF",
-        "-static-libs": "-DBUILD_STATIC_LIBS=OFF",
-        "-threads": "-DENABLE_THREADS=OFF",
-        "cpu_flags_x86_rdrand": "-DENABLE_CPU_FLAGS_X86_RDRAND=ON",
-        "static-libs": "-DBUILD_STATIC_LIBS=ON",
-        "threads": "-DENABLE_THREADS=ON",
+    use_configure = {
+        "cpu_flags_x86_rdrand": ("-DENABLE_CPU_FLAGS_X86_RDRAND=ON", "-DENABLE_CPU_FLAGS_X86_RDRAND=OFF"),
+        "static-libs": ("-DBUILD_STATIC_LIBS=ON", "-DBUILD_STATIC_LIBS=OFF"),
+        "threads": ("-DENABLE_THREADS=ON", "-DENABLE_THREADS=OFF"),
     },
-    src_uri = "https://s3.amazonaws.com/json-c_releases/releases/json-c-0.17.tar.gz",
+    url = "https://s3.amazonaws.com/json-c_releases/releases/json-c-0.17.tar.gz",
     sha256 = "7550914d58fb63b2c3546f3ccfbe11f1c094147bd31a69dcd23714d7956159e6",
-    signature_required = False,
     description = "JSON implementation in C",
     homepage = "https://github.com/json-c/json-c",
     license = "MIT",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_STATIC_LIBS=OFF",
     ],

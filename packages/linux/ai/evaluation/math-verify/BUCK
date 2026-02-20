@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "math-verify",
     version = "0.7.0",
-    src_uri = "https://github.com/huggingface/Math-Verify/archive/refs/tags/0.7.0.tar.gz",
+    url = "https://github.com/huggingface/Math-Verify/archive/refs/tags/0.7.0.tar.gz",
     sha256 = "5ff43e5a4f035f45c914e12c47d4a2df9eb594dde601cba68ef453e9c7b54f64",
     deps = [
         "//packages/linux/dev-libs/python/latex2sympy2-extended:latex2sympy2-extended",

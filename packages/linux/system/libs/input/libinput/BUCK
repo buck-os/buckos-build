@@ -1,21 +1,19 @@
-load("//defs:package_defs.bzl", "download_source", "meson_package")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "libinput",
-    src_uri = "https://gitlab.freedesktop.org/libinput/libinput/-/archive/1.26.2/libinput-1.26.2.tar.gz",
+    url = "https://gitlab.freedesktop.org/libinput/libinput/-/archive/1.26.2/libinput-1.26.2.tar.gz",
 
     sha256 = "5c1c4150f217fea1db2d1fd88e2607b2f1928cfde65c34da65a9f24dcfd69464",
-    iuse = ["input_devices_wacom"],
-    use_meson = {
-        "input_devices_wacom": "-Dlibwacom=true",
-        "-input_devices_wacom": "-Dlibwacom=false",
+    use_configure = {
+        "input_devices_wacom": ("-Dlibwacom=true", "-Dlibwacom=false"),
     },
-    use_defaults = [],
     version = "1.26.2",
     description = "Input device management and event handling library",
     homepage = "https://www.freedesktop.org/wiki/Software/libinput/",
     license = "MIT",
-    meson_args = [
+    configure_args = [
         "-Ddefault_library=shared",
         "-Dtests=false",
         "-Ddocumentation=false",

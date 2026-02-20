@@ -1,15 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "hat-trie",
     version = "0.6.0",
-    src_uri = "https://github.com/Tessil/hat-trie/archive/refs/tags/v0.6.0.tar.gz",
+    url = "https://github.com/Tessil/hat-trie/archive/refs/tags/v0.6.0.tar.gz",
     sha256 = "f3793fd46f07bdf3de67d719b602c84f66121d81aa02d9e6d53de03ae3444c80",
     description = "HAT-trie implementation - efficient string-based trie data structure",
     homepage = "https://github.com/Tessil/hat-trie",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],
     visibility = ["PUBLIC"],

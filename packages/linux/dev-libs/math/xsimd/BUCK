@@ -1,8 +1,9 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "xsimd",
     version = "9.0.1",
-    src_uri = "https://github.com/xtensor-stack/xsimd/archive/refs/tags/9.0.1.tar.gz",
+    url = "https://github.com/xtensor-stack/xsimd/archive/refs/tags/9.0.1.tar.gz",
     sha256 = "b1bb5f92167fd3a4f25749db0be7e61ed37e0a5d943490f3accdcd2cd2918cc0",
 )

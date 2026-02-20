@@ -1,30 +1,21 @@
+load("//defs:package.bzl", "package")
+
 # ddcutil - Control monitor settings
 # Query and change monitor settings using DDC/CI and USB
 
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-
 # USE flags: See use_flags.bzl for available flags
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "ddcutil",
-    src_uri = "https://github.com/rockowitz/ddcutil/archive/refs/tags/v2.1.4.tar.gz",
+    url = "https://github.com/rockowitz/ddcutil/archive/refs/tags/v2.1.4.tar.gz",
 
     sha256 = "cd8325d399399edba3df4ec58a4051c7c54fcf4fbc8f62937c6f19adb303f4ba",
-    iuse = [
-        "X",
-        "usb-monitor",
-        "user-permissions",
-        "video_cards_nvidia",
-    ],
     use_configure = {
-        "-X": "--without-x",
-        "-usb-monitor": "--disable-usb-monitor",
-        "-user-permissions": "--disable-user-permissions",
-        "-video_cards_nvidia": "--disable-video_cards_nvidia",
-        "X": "--with-x",
-        "usb-monitor": "--enable-usb-monitor",
-        "user-permissions": "--enable-user-permissions",
-        "video_cards_nvidia": "--enable-video_cards_nvidia",
+        "X": ("--with-x", "--without-x"),
+        "usb-monitor": ("--enable-usb-monitor", "--disable-usb-monitor"),
+        "user-permissions": ("--enable-user-permissions", "--disable-user-permissions"),
+        "video_cards_nvidia": ("--enable-video_cards_nvidia", "--disable-video_cards_nvidia"),
     },
     version = "2.1.4",
     description = "Query and change monitor settings using DDC/CI and USB",

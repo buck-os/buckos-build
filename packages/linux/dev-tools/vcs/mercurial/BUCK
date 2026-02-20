@@ -1,41 +1,26 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "mercurial",
     version = "6.6",
-    src_uri = "https://www.mercurial-scm.org/release/mercurial-6.6.tar.gz",
+    url = "https://www.mercurial-scm.org/release/mercurial-6.6.tar.gz",
     sha256 = "6bfd71cba0df3b18de424216b30e2a541cca6e0104853d3334be80a2ab09a4ad",
-    signature_sha256 = "d90a51d0c0daae80c98d0cb4d3c6acb054f068e164393cde691b81810d6d8607",
-    signature_required = False,
     description = "Scalable distributed SCM tool",
     homepage = "https://www.mercurial-scm.org/",
     license = "GPL-2+",
 
     # USE flags this package supports
-    iuse = [
-        "chg",
-        "doc",
-        "emacs",
-        "gpg",
-        "rust",
-        "tk",
-    ],
 
     # Default USE flags
-    use_defaults = [],
 
     # Conditional configure arguments
     use_configure = {
-        "-chg": "--disable-chg",
-        "-emacs": "--disable-emacs",
-        "-gpg": "--disable-gpg",
-        "-rust": "",
-        "-tk": "--disable-tk",
-        "chg": "--enable-chg",
-        "emacs": "--enable-emacs",
-        "gpg": "--enable-gpg",
+        "chg": ("--enable-chg", "--disable-chg"),
+        "emacs": ("--enable-emacs", "--disable-emacs"),
+        "gpg": ("--enable-gpg", "--disable-gpg"),
         "rust": "HGWITHRUSTEXT=cpython",
-        "tk": "--enable-tk",
+        "tk": ("--enable-tk", "--disable-tk"),
     },
 
     make_args = [

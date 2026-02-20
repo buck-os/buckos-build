@@ -1,20 +1,18 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # which - Shows full path of commands
 # USE flags: (minimal package)
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "which",
     # GNU release tarball includes pre-generated configure script
     version = "2.21",
-    src_uri = "https://mirrors.kernel.org/gnu/which/which-2.21.tar.gz",
+    url = "https://mirrors.kernel.org/gnu/which/which-2.21.tar.gz",
     sha256 = "f4a245b94124b377d8b49646bf421f9155d36aa7614b6ebf83705d3ffc76eaad",
-    signature_required = False,
     description = "Shows full path of shell commands",
     homepage = "https://www.gnu.org/software/which",
     license = "GPL-3+",
-    iuse = [],
-    use_defaults = [],
     configure_args = [
         "--prefix=/usr",
     ],

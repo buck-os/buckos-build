@@ -9,6 +9,7 @@ inputs haven't changed.
 3. cmake_configure — run cmake via cmake_helper.py
 4. src_compile — run ninja via build_helper.py
 5. src_install — run ninja install via install_helper.py
+   (post_install_cmds run in the prefix dir after install)
 """
 
 load("//defs:providers.bzl", "PackageInfo")
@@ -41,6 +42,10 @@ def _cmake_configure(ctx, source):
     # Inject toolchain CC/CXX/AR
     for env_arg in toolchain_env_args(ctx):
         cmd.add("--env", env_arg)
+
+    # Inject user-specified environment variables
+    for key, value in ctx.attrs.env.items():
+        cmd.add("--env", "{}={}".format(key, value))
 
     # CMake arguments
     for arg in ctx.attrs.cmake_args:
@@ -96,6 +101,11 @@ def _src_compile(ctx, configured):
     # Inject toolchain CC/CXX/AR
     for env_arg in toolchain_env_args(ctx):
         cmd.add("--env", env_arg)
+
+    # Inject user-specified environment variables
+    for key, value in ctx.attrs.env.items():
+        cmd.add("--env", "{}={}".format(key, value))
+
     for arg in ctx.attrs.make_args:
         cmd.add("--make-arg", arg)
 
@@ -113,8 +123,16 @@ def _src_install(ctx, built):
     for env_arg in toolchain_env_args(ctx):
         cmd.add("--env", env_arg)
 
+    # Inject user-specified environment variables
+    for key, value in ctx.attrs.env.items():
+        cmd.add("--env", "{}={}".format(key, value))
+
     for arg in ctx.attrs.make_args:
         cmd.add("--make-arg", arg)
+
+    # Post-install commands (run in the prefix dir after install)
+    for post_cmd in ctx.attrs.post_install_cmds:
+        cmd.add("--post-cmd", post_cmd)
 
     ctx.actions.run(cmd, category = "install", identifier = ctx.attrs.name)
     return output
@@ -173,6 +191,8 @@ cmake_package = rule(
         "cmake_args": attrs.list(attrs.string(), default = []),
         "cmake_defines": attrs.list(attrs.string(), default = []),
         "make_args": attrs.list(attrs.string(), default = []),
+        "post_install_cmds": attrs.list(attrs.string(), default = []),
+        "env": attrs.dict(attrs.string(), attrs.string(), default = {}),
         "deps": attrs.list(attrs.dep(), default = []),
         "patches": attrs.list(attrs.source(), default = []),
         "libraries": attrs.list(attrs.string(), default = []),

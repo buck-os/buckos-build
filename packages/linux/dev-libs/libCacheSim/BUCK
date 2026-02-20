@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "libCacheSim",
     version = "0.1.0",
-    src_uri = "https://github.com/1a1a11a/libCacheSim/archive/refs/heads/develop.tar.gz",
+    url = "https://github.com/1a1a11a/libCacheSim/archive/refs/heads/develop.tar.gz",
     sha256 = "60a31427020eeb4f87672a53d2bb7a7805a188460aa60477a2ea8e9f6a9d88fd",
-    cmake_args = [
+    configure_args = [
         "-DENABLE_TESTS=OFF",
         "-DUSE_HUGEPAGE=ON",
         "-DSUPPORT_TTL=OFF",

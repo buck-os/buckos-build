@@ -1,15 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "tippecanoe-src",
-    src_uri = "https://github.com/felt/tippecanoe/archive/refs/tags/2.22.0.tar.gz",
-    sha256 = "e1a337ed3454401305df95ab72bd4999b9838caeb954a147f5882ce2040425de",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "tippecanoe",
-    srcs = [":tippecanoe-src"],
     version = "2.22.0",
     description = "Build vector tilesets from large GeoJSON feature collections",
     homepage = "https://github.com/felt/tippecanoe",

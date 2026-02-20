@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "seedvr",
     version = "6b061f4",
-    src_uri = "https://github.com/bytedance-seed/seedvr/archive/6b061f4670599178df207d85a52a8212dd37c541.tar.gz",
+    url = "https://github.com/bytedance-seed/seedvr/archive/6b061f4670599178df207d85a52a8212dd37c541.tar.gz",
     sha256 = "80dc02d1822a700fe495d64a49209b6874c5a8dd7c264e0868098b22f85c5774",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

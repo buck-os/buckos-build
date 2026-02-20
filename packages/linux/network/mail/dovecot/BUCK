@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # dovecot - Secure IMAP and POP3 server
 #
@@ -12,45 +12,34 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package")
 #   solr      - Enable Apache Solr full-text search (default: disabled, requires expat)
 #   lucene    - Enable CLucene full-text search (default: disabled)
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "dovecot",
-    src_uri = "https://dovecot.org/releases/2.3/dovecot-2.3.21.tar.gz",
+    url = "https://dovecot.org/releases/2.3/dovecot-2.3.21.tar.gz",
 
     sha256 = "05b11093a71c237c2ef309ad587510721cc93bbee6828251549fc1586c36502d",
-
-    signature_sha256 = "0809b3c4ee53138d3890cfc4f784519c56f7d0b8a10545b910e7ad6186f68824",
     version = "2.3.21",
     description = "Secure IMAP and POP3 server",
     homepage = "https://www.dovecot.org/",
     license = "MIT LGPL-2.1",
-    iuse = ["ldap", "sqlite", "zlib", "bzip2", "lz4", "zstd", "solr", "lucene"],
-    use_defaults = ["sqlite", "zlib", "bzip2", "lz4", "zstd"],
     use_deps = {
-        "ldap": ["//packages/linux/system/security/auth/directory:openldap"],
-        "sqlite": ["//packages/linux/system/libs/database/sqlite:sqlite"],
-        "zlib": ["//packages/linux/core/zlib:zlib"],
-        "bzip2": ["//packages/linux/system/libs/compression/bzip2:bzip2"],
-        "lz4": ["//packages/linux/system/libs/compression/lz4:lz4"],
-        "zstd": ["//packages/linux/system/libs/compression/zstd:zstd"],
-        "solr": ["//packages/linux/core/expat:expat"],
+        "ldap": "//packages/linux/system/security/auth/directory:openldap",
+        "sqlite": "//packages/linux/system/libs/database/sqlite:sqlite",
+        "zlib": "//packages/linux/core/zlib:zlib",
+        "bzip2": "//packages/linux/system/libs/compression/bzip2:bzip2",
+        "lz4": "//packages/linux/system/libs/compression/lz4:lz4",
+        "zstd": "//packages/linux/system/libs/compression/zstd:zstd",
+        "solr": "//packages/linux/core/expat:expat",
     },
     use_configure = {
-        "ldap": "--with-ldap=plugin",
-        "-ldap": "--without-ldap",
-        "sqlite": "--with-sqlite",
-        "-sqlite": "--without-sqlite",
-        "zlib": "--with-zlib",
-        "-zlib": "--without-zlib",
-        "bzip2": "--with-bzlib",
-        "-bzip2": "--without-bzlib",
-        "lz4": "--with-lz4",
-        "-lz4": "--without-lz4",
-        "zstd": "--with-zstd",
-        "-zstd": "--without-zstd",
-        "solr": "--with-solr",
-        "-solr": "--without-solr",
-        "lucene": "--with-lucene",
-        "-lucene": "--without-lucene",
+        "bzip2": ("--with-bzlib", "--without-bzlib"),
+        "ldap": ("--with-ldap=plugin", "--without-ldap"),
+        "lucene": ("--with-lucene", "--without-lucene"),
+        "lz4": ("--with-lz4", "--without-lz4"),
+        "solr": ("--with-solr", "--without-solr"),
+        "sqlite": ("--with-sqlite", "--without-sqlite"),
+        "zlib": ("--with-zlib", "--without-zlib"),
+        "zstd": ("--with-zstd", "--without-zstd"),
     },
     configure_args = [
         "--prefix=/usr",

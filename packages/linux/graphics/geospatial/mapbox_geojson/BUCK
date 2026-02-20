@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "mapbox_geojson",
     version = "0.5.1",
-    src_uri = "https://github.com/mapbox/geojson-cpp/archive/refs/tags/v0.5.1.tar.gz",
+    url = "https://github.com/mapbox/geojson-cpp/archive/refs/tags/v0.5.1.tar.gz",
     sha256 = "05e60b997ff35ab7d6b1f42f08046097248c5934127a4dff35206f0296101757",
     description = "C++ library for GeoJSON parsing and serialization",
     homepage = "https://github.com/mapbox/geojson-cpp",
@@ -11,7 +12,7 @@ cmake_package(
     deps = [
         "//packages/linux/dev-libs/serialization/cereal:cereal",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_CXX_STANDARD=14",
     ],

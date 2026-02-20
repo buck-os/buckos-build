@@ -1,40 +1,20 @@
-load("//defs:package_defs.bzl", "download_source", "cmake_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "bcc-src",
-    src_uri = "https://github.com/iovisor/bcc/releases/download/v0.36.0/bcc-src-with-submodule-0.36.0.tar.gz",
-    sha256 = "d39e23a72bb30167286553c7daefb39c5d8a43c401b53524aba42477ce4c63ca",
-    signature_required = False,
-    strip_components = 2,  # Tarball has bcc-src-with-submodule-0.36.0/bcc/ structure
-)
-
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "bcc",
-    source = ":bcc-src",
-    iuse = [
-        "debuginfod",
-        "lua",
-        "lzma",
-        "python",
-        "static-libs",
-    ],
-    use_cmake = {
-        "-debuginfod": "-DENABLE_DEBUGINFOD=OFF",
-        "-lua": "-DENABLE_LUA=OFF",
-        "-lzma": "-DENABLE_LZMA=OFF",
-        "-python": "-DENABLE_PYTHON=OFF",
-        "-static-libs": "-DBUILD_STATIC_LIBS=OFF",
-        "debuginfod": "-DENABLE_DEBUGINFOD=ON",
-        "lua": "-DENABLE_LUA=ON",
-        "lzma": "-DENABLE_LZMA=ON",
-        "python": "-DENABLE_PYTHON=ON",
-        "static-libs": "-DBUILD_STATIC_LIBS=ON",
+    use_configure = {
+        "debuginfod": ("-DENABLE_DEBUGINFOD=ON", "-DENABLE_DEBUGINFOD=OFF"),
+        "lua": ("-DENABLE_LUA=ON", "-DENABLE_LUA=OFF"),
+        "lzma": ("-DENABLE_LZMA=ON", "-DENABLE_LZMA=OFF"),
+        "python": ("-DENABLE_PYTHON=ON", "-DENABLE_PYTHON=OFF"),
+        "static-libs": ("-DBUILD_STATIC_LIBS=ON", "-DBUILD_STATIC_LIBS=OFF"),
     },
     version = "0.36.0",
     description = "BPF Compiler Collection - tools for BPF-based Linux tracing",
     homepage = "https://github.com/iovisor/bcc",
     license = "Apache-2.0",
-    cmake_args = [
+    configure_args = [
         "-DENABLE_LLVM_SHARED=ON",
         "-DENABLE_EXAMPLES=OFF",
         "-DENABLE_TESTS=OFF",

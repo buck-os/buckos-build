@@ -1,16 +1,17 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
 # libxcvt - VESA Coordinated Video Timings library
 # Computes video mode parameters (used by compositors and X servers)
-meson_package(
+package(
+    build_rule = "meson",
     name = "libxcvt",
     version = "0.1.2",
-    src_uri = "https://xorg.freedesktop.org/releases/individual/lib/libxcvt-0.1.2.tar.xz",
+    url = "https://xorg.freedesktop.org/releases/individual/lib/libxcvt-0.1.2.tar.xz",
     sha256 = "0561690544796e25cfbd71806ba1b0d797ffe464e9796411123e79450f71db38",
     description = "VESA Coordinated Video Timings library",
     homepage = "https://gitlab.freedesktop.org/xorg/lib/libxcvt",
     license = "MIT",
-    meson_args = [],
+    configure_args = [],
     deps = [],
     visibility = ["PUBLIC"],
 )

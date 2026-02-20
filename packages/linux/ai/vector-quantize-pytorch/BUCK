@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "vector-quantize-pytorch",
     version = "1.11.3",
-    src_uri = "https://github.com/lucidrains/vector-quantize-pytorch/archive/refs/tags/1.11.3.tar.gz",
+    url = "https://github.com/lucidrains/vector-quantize-pytorch/archive/refs/tags/1.11.3.tar.gz",
     sha256 = "6a77bb9e9668ab3e2134d1e6c6cef8f726205cb35f53d7708fc9f33e95c5b53b",
     deps = [
         "//packages/linux/ai/ml-frameworks/einops:einops",

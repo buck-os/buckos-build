@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "maplibre-gl-native",
     version = "5.12.2",
-    src_uri = "https://github.com/maplibre/maplibre-gl-native/archive/refs/tags/ios-v5.12.2.tar.gz",
+    url = "https://github.com/maplibre/maplibre-gl-native/archive/refs/tags/ios-v5.12.2.tar.gz",
     sha256 = "5c494ed30bef50a07ace0397e399a757862cd5dd8bf29d08ab622e047a6a4f50",
     description = "Open-source library for embedding interactive maps",
     homepage = "https://maplibre.org/",
@@ -14,7 +15,7 @@ cmake_package(
         "//packages/linux/graphics/rendering/opengl:opengl",
         "//packages/linux/system/libs/database/sqlite:sqlite",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DMBGL_WITH_CORE_ONLY=ON",
         "-DMBGL_WITH_WERROR=OFF",

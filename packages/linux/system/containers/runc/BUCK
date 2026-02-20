@@ -1,20 +1,11 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
 # runc - CLI tool for spawning and running containers according to the OCI specification
 # Using prebuilt binary from official releases
 
-download_source(
-    name = "runc-src",
-    src_uri = "https://github.com/opencontainers/runc/releases/download/v1.1.12/runc.amd64",
-    sha256 = "aadeef400b8f05645768c1476d1023f7875b78f52c7ff1967a6dbce236b8cbd8",
-    signature_required = False,
-    # Binary file, no extraction needed
-    extract = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "runc",
-    srcs = [":runc-src"],
     version = "1.1.12",
     description = "CLI tool for spawning and running containers according to the OCI specification",
     homepage = "https://github.com/opencontainers/runc",

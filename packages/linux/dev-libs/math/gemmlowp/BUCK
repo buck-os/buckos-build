@@ -1,16 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # gemmlowp - Low-precision matrix multiplication library
 # A small self-contained low-precision GEMM library optimized for mobile/embedded devices
 # GitHub: https://github.com/google/gemmlowp
 # Commit: daf630d3d0c439dbe22229838a5ba1bc5f82908d
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "gemmlowp",
     version = "0.0.0_git20231031",
-    src_uri = "https://github.com/google/gemmlowp/archive/daf630d3d0c439dbe22229838a5ba1bc5f82908d.tar.gz",
+    url = "https://github.com/google/gemmlowp/archive/daf630d3d0c439dbe22229838a5ba1bc5f82908d.tar.gz",
     sha256 = "772ff926dad042175ca1977bbcdb98d2d28d0e045011d995ce17611b3c9020ea",  # TODO: Compute actual SHA256
-    signature_required = False,
     description = "Low-precision matrix multiplication library optimized for mobile and embedded devices",
     homepage = "https://github.com/google/gemmlowp",
     license = "Apache-2.0",
@@ -27,7 +27,7 @@ cmake_package(
             exit 1
         fi
     """,
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_TESTING=OFF",

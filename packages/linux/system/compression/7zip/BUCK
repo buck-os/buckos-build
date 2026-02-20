@@ -1,15 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "7zip-src",
-    src_uri = "https://github.com/ip7z/7zip/archive/refs/tags/24.09.tar.gz",
-    sha256 = "e4757b307925227724a2044651193664ba3d04e9ac13b8e631f1667896014bbf",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "7zip",
-    srcs = [":7zip-src"],
     version = "24.09",
     description = "7-Zip file archiver with high compression ratio",
     homepage = "https://www.7-zip.org/",
@@ -17,7 +10,7 @@ binary_package(
     install_script = """
         cd "$SRCS/CPP/7zip/Bundles/Alone2"
         make -f ../../cmpl_gcc.mak -j${MAKEOPTS:-$(nproc)}
-        
+
         # Install
         mkdir -p "$OUT/usr/bin"
         cp _o/7zz "$OUT/usr/bin/" || cp b/g/7zz "$OUT/usr/bin/"

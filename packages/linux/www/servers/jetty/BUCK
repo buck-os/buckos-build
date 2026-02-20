@@ -1,5 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # jetty - Java HTTP server and servlet container
 #
@@ -7,17 +6,9 @@ load("//defs:use_flags.bzl", "use_dep")
 #   This is a pre-built Java application, USE flags control runtime features
 #   java     - Java runtime (always required)
 
-download_source(
-    name = "jetty-src",
-    src_uri = "https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-home/12.0.6/jetty-home-12.0.6.tar.gz",
-    sha256 = "e433e256fd33279b16435e0f0cd90b187dea3c33c82254ede221b14dc824832a",
-    signature_sha256 = "ad47afc73bbb4eb21b878c532e0fc71624637fd2a94a0c9d74ec23dda1824751",
-    signature_required=False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "jetty",
-    srcs = [":jetty-src"],
     version = "12.0.6",
     description = "Java HTTP server and servlet container",
     homepage = "https://www.eclipse.org/jetty",

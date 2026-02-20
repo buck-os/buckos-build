@@ -1,10 +1,11 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # libmctp actually uses autotools, not meson
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libmctp",
     version = "0.11",
-    src_uri = "https://github.com/openbmc/libmctp/archive/refs/tags/v0.11.tar.gz",
+    url = "https://github.com/openbmc/libmctp/archive/refs/tags/v0.11.tar.gz",
     sha256 = "65ae18c0ea35d67bbd36f6b54fa9d3f8b95cef876c5fe8794f1f9bc2150ceeed",
     description = "Library implementation of MCTP (Management Component Transport Protocol)",
     homepage = "https://github.com/openbmc/libmctp",

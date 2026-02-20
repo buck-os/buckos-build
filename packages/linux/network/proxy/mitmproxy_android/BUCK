@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "mitmproxy_android",
     version = "11.0.0",
-    src_uri = "https://github.com/mitmproxy/mitmproxy/archive/refs/tags/v11.0.0.tar.gz",
+    url = "https://github.com/mitmproxy/mitmproxy/archive/refs/tags/v11.0.0.tar.gz",
     sha256 = "4852952008229292b649c80dcc708f24de0eebb6a8d1aabe8b0c79a735d58f13",
     deps = [
         "//packages/linux/dev-libs/python/aioquic:aioquic",

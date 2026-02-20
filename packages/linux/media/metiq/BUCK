@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "metiq",
     version = "0.4",
-    src_uri = "https://github.com/chemag/metiq/archive/refs/tags/v0.4.tar.gz",
+    url = "https://github.com/chemag/metiq/archive/refs/tags/v0.4.tar.gz",
     sha256 = "d6d193419d7bef6046e521ba6736848282378b2a1c600fc7cf71d1a84d1f03d1",
     deps = [
         "//packages/linux/dev-libs/python/numpy:numpy",

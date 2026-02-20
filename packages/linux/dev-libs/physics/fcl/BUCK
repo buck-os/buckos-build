@@ -1,16 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # fcl - Flexible Collision Library
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "fcl",
     version = "0.7.0",
     source = "//third-party/fcl:fcl",
     description = "Library for performing proximity queries and collision detection",
     homepage = "https://github.com/flexible-collision-library/fcl",
     license = "BSD-3-Clause",
-    iuse = ["octomap", "tests"],
-    use_defaults = [],
     deps = [
         "//packages/linux/dev-libs/eigen:eigen",
         "//packages/linux/dev-libs/physics/libccd:libccd",
@@ -18,9 +17,9 @@ cmake_package(
     use_deps = {
         # octomap is an optional dependency for octree collision detection
         # Uncomment when octomap package is available
-        # "octomap": ["//packages/linux/dev-libs/3d/octomap:octomap"],
+        # "octomap": ["//packages/linux/dev-libs/3d/octomap:octomap"]
     },
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DFCL_ENABLE_PROFILING=OFF",
@@ -28,11 +27,9 @@ cmake_package(
         "-DFCL_WITH_OCTOMAP=OFF",
         "-DBUILD_TESTING=OFF",
     ],
-    use_cmake = {
-        "octomap": "-DFCL_WITH_OCTOMAP=ON",
-        "-octomap": "-DFCL_WITH_OCTOMAP=OFF",
-        "tests": "-DBUILD_TESTING=ON",
-        "-tests": "-DBUILD_TESTING=OFF",
+    use_configure = {
+        "octomap": ("-DFCL_WITH_OCTOMAP=ON", "-DFCL_WITH_OCTOMAP=OFF"),
+        "tests": ("-DBUILD_TESTING=ON", "-DBUILD_TESTING=OFF"),
     },
     visibility = ["PUBLIC"],
 )

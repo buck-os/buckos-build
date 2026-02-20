@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "rapids-logger",
     version = "0.1.0",
-    src_uri = "https://github.com/rapidsai/rapids-logger/archive/refs/tags/v0.1.0.tar.gz",
+    url = "https://github.com/rapidsai/rapids-logger/archive/refs/tags/v0.1.0.tar.gz",
     sha256 = "682c746c8afb571d133ab7717847dcde067c8183ac68aa20f8390f96cb7bbd7c",
     description = "ABI stable interface to spdlog-like logging for RAPIDS",
     homepage = "https://github.com/rapidsai/rapids-logger",
@@ -11,7 +12,7 @@ cmake_package(
     deps = [
         "//packages/linux/dev-libs/logging/spdlog:spdlog",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_TESTS=OFF",

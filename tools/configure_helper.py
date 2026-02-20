@@ -101,6 +101,8 @@ def main():
                         help="Subdirectory to create and run configure from (for out-of-tree builds)")
     parser.add_argument("--path-prepend", action="append", dest="path_prepend", default=[],
                         help="Directory to prepend to PATH (repeatable, resolved to absolute)")
+    parser.add_argument("--pre-cmd", action="append", dest="pre_cmds", default=[],
+                        help="Shell command to run in source dir before configure (repeatable)")
     args = parser.parse_args()
 
     source_dir = os.path.abspath(args.source_dir)
@@ -121,12 +123,6 @@ def main():
         return
 
     configure = os.path.join(output_dir, args.configure_script)
-    if not os.path.isfile(configure):
-        print(f"error: configure script not found in {output_dir}", file=sys.stderr)
-        sys.exit(1)
-
-    # Ensure configure is executable
-    os.chmod(configure, os.stat(configure).st_mode | 0o755)
 
     env = os.environ.copy()
     if args.cc:
@@ -147,6 +143,21 @@ def main():
         prepend = ":".join(os.path.abspath(p) for p in args.path_prepend if os.path.isdir(p))
         if prepend:
             env["PATH"] = prepend + ":" + env.get("PATH", os.environ.get("PATH", ""))
+
+    # Run pre-configure commands (e.g. autoreconf, libtoolize)
+    for cmd_str in args.pre_cmds:
+        result = subprocess.run(cmd_str, shell=True, cwd=output_dir, env=env)
+        if result.returncode != 0:
+            print(f"error: pre-cmd failed with exit code {result.returncode}: {cmd_str}",
+                  file=sys.stderr)
+            sys.exit(1)
+
+    if not os.path.isfile(configure):
+        print(f"error: configure script not found in {output_dir}", file=sys.stderr)
+        sys.exit(1)
+
+    # Ensure configure is executable
+    os.chmod(configure, os.stat(configure).st_mode | 0o755)
 
     # Determine configure working directory
     configure_cwd = output_dir

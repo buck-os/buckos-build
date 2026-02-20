@@ -69,7 +69,7 @@ GLOBAL_USE = set_use_flags(["ssl", "http2", "-debug"])
 use_package(
     name = "curl",
     version = "8.5.0",
-    src_uri = "https://curl.se/download/curl-8.5.0.tar.xz",
+    url = "https://curl.se/download/curl-8.5.0.tar.xz",
     sha256 = "...",
 
     # Supported USE flags
@@ -80,17 +80,15 @@ use_package(
 
     # Conditional dependencies
     use_deps = {
-        "ssl": ["//packages/linux/dev-libs/openssl"],
-        "http2": ["//packages/linux/net-libs/nghttp2"],
+        "ssl": "//packages/linux/dev-libs/openssl",
+        "http2": "//packages/linux/net-libs/nghttp2",
     },
 
     # Conditional configure arguments
     use_configure = {
-        "ssl": "--with-ssl",
-        "-ssl": "--without-ssl",
-        "http2": "--with-nghttp2",
-        "ipv6": "--enable-ipv6",
-        "-ipv6": "--disable-ipv6",
+        "ssl": ("--with-ssl", "--without-ssl"),
+        "http2": ("--with-nghttp2", "--without-nghttp2"),
+        "ipv6": ("--enable-ipv6", "--disable-ipv6"),
     },
 
     global_use = GLOBAL_USE,
@@ -105,7 +103,7 @@ load("//defs:use_flags.bzl", "profile_package")
 profile_package(
     name = "nginx",
     version = "1.25.3",
-    src_uri = "...",
+    url = "...",
     sha256 = "...",
     iuse = ["ssl", "http2", "pcre", "debug"],
     profile = "server",  # Uses server profile defaults
@@ -161,7 +159,7 @@ Main macro for creating packages with USE flag support.
 use_package(
     name,                  # Package name
     version,               # Package version
-    src_uri,               # Source download URL
+    url,                   # Source download URL
     sha256,                # Source checksum
     iuse = [],             # Supported USE flags
     use_defaults = [],     # Default enabled flags
@@ -183,7 +181,7 @@ Ebuild-style package with custom phase functions. USE flags available via `use()
 use_ebuild_package(
     name = "libxml2",
     version = "2.12.3",
-    src_uri = "...",
+    url = "...",
     sha256 = "...",
     iuse = ["debug", "icu", "python"],
 

@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "cardinality_estimation_evaluation_framework",
     version = "0.0",
-    src_uri = "https://github.com/world-federation-of-advertisers/cardinality_estimation_evaluation_framework/archive/732117efd307230156376e88f4d2ab3bb6b5df97.tar.gz",
+    url = "https://github.com/world-federation-of-advertisers/cardinality_estimation_evaluation_framework/archive/732117efd307230156376e88f4d2ab3bb6b5df97.tar.gz",
     sha256 = "9df10cb8e54741c1536fadfc533d5303746f40fbfcae7fd00719c73d5d96f290",
     deps = [
         "//packages/linux/dev-libs/python/absl-py:absl-py",

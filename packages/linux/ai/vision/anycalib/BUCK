@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "anycalib",
     version = "1.0.0",
-    src_uri = "https://github.com/javrtg/AnyCalib/archive/refs/tags/v1.0.0.tar.gz",
+    url = "https://github.com/javrtg/AnyCalib/archive/refs/tags/v1.0.0.tar.gz",
     sha256 = "eb6d316c9f0da2ecf7013fc60a12e3baa8e43454f19aedc4d54a5f6a2503d80a",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "depth_anything_v2",
     version = "0.0.1",
-    src_uri = "https://github.com/DepthAnything/Depth-Anything-V2/archive/31dc97708961675ce6b3a8d8ffa729170a4aa273.tar.gz",
+    url = "https://github.com/DepthAnything/Depth-Anything-V2/archive/31dc97708961675ce6b3a8d8ffa729170a4aa273.tar.gz",
     sha256 = "ce8e60fa523ed43b9903e86b944c1788d9fc7acfd0cfd71e899b0c88535cdfe3",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

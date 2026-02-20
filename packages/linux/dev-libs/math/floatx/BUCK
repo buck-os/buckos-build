@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "floatx",
     version = "1.0.0",
-    src_uri = "https://github.com/oprecomp/floatx/archive/refs/heads/master.tar.gz",
+    url = "https://github.com/oprecomp/floatx/archive/refs/heads/master.tar.gz",
     sha256 = "34e2d8324d72b064cfa76c944cf46dc9d5ed120ec6c0514359bd98676766ce96",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTS=OFF",
         "-DBUILD_EXHAUSTIVE_TESTS=OFF",
         "-DBUILD_EXAMPLES=OFF",

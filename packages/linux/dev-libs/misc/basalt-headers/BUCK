@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # basalt-headers - Reusable components of Basalt project as header-only library
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "basalt-headers",
     version = "1.0.0",
-    src_uri = "https://gitlab.com/VladyslavUsenko/basalt-headers/-/archive/bac4d015d0e2335112790c45e53a0f2a84ed9411/basalt-headers-bac4d015d0e2335112790c45e53a0f2a84ed9411.tar.gz",
+    url = "https://gitlab.com/VladyslavUsenko/basalt-headers/-/archive/bac4d015d0e2335112790c45e53a0f2a84ed9411/basalt-headers-bac4d015d0e2335112790c45e53a0f2a84ed9411.tar.gz",
     sha256 = "7f6b3b215dc3cbdcf75105b91cadc39739f032a8ab4779a05027aa68245db67b",
     description = "Header-only library with reusable Basalt components: camera models, IMU preintegration, B-splines",
     homepage = "https://gitlab.com/VladyslavUsenko/basalt-headers",
@@ -15,7 +16,7 @@ cmake_package(
         "//packages/linux/robotics/sophus:sophus",
         "//packages/linux/dev-libs/serialization/cereal:cereal",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
     ],

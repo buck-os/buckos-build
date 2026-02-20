@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
 # libpq - PostgreSQL C client library
 #
@@ -8,12 +8,12 @@ load("//defs:package_defs.bzl", "meson_package")
 #
 # NOTE: PostgreSQL meson uses combo options (openssl/none/auto), not boolean (enabled/disabled)
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "libpq",
     version = "16.4",
-    src_uri = "https://ftp.postgresql.org/pub/source/v16.4/postgresql-16.4.tar.bz2",
+    url = "https://ftp.postgresql.org/pub/source/v16.4/postgresql-16.4.tar.bz2",
     sha256 = "971766d645aa73e93b9ef4e3be44201b4f45b5477095b049125403f9f3386d6f",
-    signature_required = False,
     description = "PostgreSQL C client library",
     homepage = "https://www.postgresql.org/",
     license = "PostgreSQL",
@@ -56,7 +56,7 @@ rm -f src/backend/snowball/snowball_create.sql || true
 """,
 
     # Base Meson arguments - using explicit values for combo options
-    meson_args = [
+    configure_args = [
         "-Dsystem_tzdata=/usr/share/zoneinfo",
         "-Dssl=openssl",
         "-Dzlib=enabled",

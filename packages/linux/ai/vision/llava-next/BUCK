@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "llava-next",
     version = "1.7.0",
-    src_uri = "https://github.com/LLaVA-VL/LLaVA-NeXT/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/LLaVA-VL/LLaVA-NeXT/archive/refs/heads/main.tar.gz",
     sha256 = "6ccca500a0bca1a4c81c1bdc3fc3366f8fd5fe5f6df4329a2641a601a90b6c36",
     deps = [
         "//packages/linux/ai/ml-frameworks/accelerate:accelerate",

@@ -1,12 +1,13 @@
+load("//defs:package.bzl", "package")
+
 # Network authentication packages
 # RADIUS and TACACS+ PAM modules
 
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-
 # pam_radius - RADIUS PAM module
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "pam-radius",
-    src_uri = "https://github.com/FreeRADIUS/pam_radius/archive/refs/tags/release_2_0_0.tar.gz",
+    url = "https://github.com/FreeRADIUS/pam_radius/archive/refs/tags/release_2_0_0.tar.gz",
 
     sha256 = "798dc358e7a143163e103bd38c4101645b2e93d82aa0ec63d32c0cb929d9c65c",
     version = "2.0.0",
@@ -33,9 +34,10 @@ autotools_package(
 )
 
 # pam_tacplus - TACACS+ PAM module
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "pam-tacplus",
-    src_uri = "https://github.com/kravietz/pam_tacplus/archive/refs/tags/v1.7.0.tar.gz",
+    url = "https://github.com/kravietz/pam_tacplus/archive/refs/tags/v1.7.0.tar.gz",
 
     sha256 = "b6c102eef0a42e3946bcdc29bbf7145c6dd13aa1fb6c58f6d282826166391837",
     version = "1.7.0",

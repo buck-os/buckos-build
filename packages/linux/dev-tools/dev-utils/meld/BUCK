@@ -1,19 +1,18 @@
-load("//defs:package_defs.bzl", "meson_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "meld",
     version = "3.22.2",
-    src_uri = "https://download.gnome.org/sources/meld/3.22/meld-3.22.2.tar.xz",
+    url = "https://download.gnome.org/sources/meld/3.22/meld-3.22.2.tar.xz",
     sha256 = "46a0a713fbcd1b153b377a1e0757c8ce255c9822467658eacfbd89b1e92316ef",
-    signature_required = False,
     description = "Visual diff and merge tool",
     homepage = "https://meldmerge.org/",
     license = "GPL-2+",
     deps = [
         "//packages/linux/lang/python:python3",
     ],
-    meson_args = [
+    configure_args = [
         "-Dbyte-compile=false",
     ],
     visibility = ["PUBLIC"],

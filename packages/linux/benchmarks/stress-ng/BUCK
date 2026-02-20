@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "make_package")
+load("//defs:package.bzl", "package")
 
 # stress-ng - Stress test tool for Linux systems
 #
@@ -9,34 +9,21 @@ load("//defs:package_defs.bzl", "download_source", "make_package")
 make_package(
     name = "stress-ng",
     version = "0.17.08",
-    src_uri = "https://github.com/ColinIanKing/stress-ng/archive/refs/tags/V0.17.08.tar.gz",
+    url = "https://github.com/ColinIanKing/stress-ng/archive/refs/tags/V0.17.08.tar.gz",
     sha256 = "e4982d2a1c57139dad1741d6248b00a30935f746c1f665ec5b9d53c010c8dc08",
-    signature_required = False,
     description = "Stress test tool for Linux systems - CPU, memory, I/O, and more",
     homepage = "https://github.com/ColinIanKing/stress-ng",
     license = "GPL-2.0",
-    iuse = [
-        "apparmor",
-        "jpeg",
-        "keyutils",
-        "sctp",
-        "static",
-        "zlib",
-    ],
     use_configure = {
-        "-apparmor": "--disable-apparmor",
-        "-jpeg": "--without-jpeg",
-        "-keyutils": "--disable-keyutils",
-        "-sctp": "--disable-sctp",
-        "apparmor": "--enable-apparmor",
-        "jpeg": "--with-jpeg",
-        "keyutils": "--enable-keyutils",
-        "sctp": "--enable-sctp",
+        "apparmor": ("--enable-apparmor", "--disable-apparmor"),
+        "jpeg": ("--with-jpeg", "--without-jpeg"),
+        "keyutils": ("--enable-keyutils", "--disable-keyutils"),
+        "sctp": ("--enable-sctp", "--disable-sctp"),
     },
     use_defaults = [],  # Don't build static by default (requires glibc-static)
     deps = [],
     use_deps = {
-        "zlib": ["//packages/linux/core/zlib:zlib"],
+        "zlib": "//packages/linux/core/zlib:zlib",
     },
     use_make = {
         "static": "STATIC=1",

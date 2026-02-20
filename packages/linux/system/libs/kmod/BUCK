@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # kmod - Linux kernel module handling
@@ -6,38 +6,17 @@ load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotoo
 # Provides tools for managing Linux kernel modules:
 # - modprobe, insmod, rmmod, lsmod, depmod, modinfo
 
-download_source(
-    name = "kmod-src",
-    src_uri = "https://kernel.org/pub/linux/utils/kernel/kmod/kmod-32.tar.xz",
-    sha256 = "630ed0d92275a88cb9a7bf68f5700e911fdadaf02e051cf2e4680ff8480bd492",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "kmod",
-    source = ":kmod-src",
-    iuse = [
-        "debug",
-        "lzma",
-        "pkcs7",
-        "tools",
-        "zlib",
-        "zstd",
-    ],
     use_defaults = ["tools"],  # Enable tools by default (modprobe, insmod, etc.)
     use_configure = {
-        "-debug": "--disable-debug",
-        "-lzma": "--without-lzma",
-        "-pkcs7": "--disable-pkcs7",
-        "-tools": "--disable-tools",
-        "-zlib": "--without-zlib",
-        "-zstd": "--without-zstd",
-        "debug": "--enable-debug",
-        "lzma": "--with-lzma",
-        "pkcs7": "--enable-pkcs7",
-        "tools": "--enable-tools",
-        "zlib": "--with-zlib",
-        "zstd": "--with-zstd",
+        "debug": ("--enable-debug", "--disable-debug"),
+        "lzma": ("--with-lzma", "--without-lzma"),
+        "pkcs7": ("--enable-pkcs7", "--disable-pkcs7"),
+        "tools": ("--enable-tools", "--disable-tools"),
+        "zlib": ("--with-zlib", "--without-zlib"),
+        "zstd": ("--with-zstd", "--without-zstd"),
     },
     version = "32",
     description = "Linux kernel module handling tools (modprobe, insmod, rmmod, lsmod, depmod)",
@@ -69,9 +48,9 @@ find $DESTDIR -name "*.la" -delete
 )
 
 # Static version for use in initramfs
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "kmod-static",
-    source = ":kmod-src",
     version = "32",
     description = "Linux kernel module handling tools (static build for initramfs)",
     homepage = "https://git.kernel.org/pub/scm/utils/kernel/kmod/kmod.git",

@@ -1,20 +1,12 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # iozone - Filesystem benchmark tool
 #
 # USE flags: (minimal flags for this benchmark)
 
-download_source(
-    name = "iozone-src",
-    src_uri = "https://www.iozone.org/src/current/iozone3_506.tar",
-    sha256 = "114ce5c071873b9a2c7ba6e73d05d5ef7e66564392acbfcdc0b3261db10fcbe7",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "iozone",
-    srcs = [":iozone-src"],
     version = "3.506",
     description = "Filesystem benchmark tool - tests I/O performance",
     homepage = "https://www.iozone.org/",

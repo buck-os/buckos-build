@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "garment_pattern_generator",
     version = "0.0.1-fad3400",
-    src_uri = "https://github.com/maria-korosteleva/Garment-Pattern-Generator/archive/fad3400699feda0f99df56fdcc31a804c117eb9a.tar.gz",
+    url = "https://github.com/maria-korosteleva/Garment-Pattern-Generator/archive/fad3400699feda0f99df56fdcc31a804c117eb9a.tar.gz",
     sha256 = "4251717b5abf30c6307445486b718062c72631c3b8757d81ce8d313bb6fe84df",
     deps = [
         "//packages/linux/dev-libs/python/numpy:numpy",

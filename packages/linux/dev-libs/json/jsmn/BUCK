@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "jsmn",
     version = "1.1.0",
-    src_uri = "https://github.com/zserge/jsmn/archive/refs/tags/v1.1.0.tar.gz",
+    url = "https://github.com/zserge/jsmn/archive/refs/tags/v1.1.0.tar.gz",
     sha256 = "5f0913a10657fe7ec8d5794ccf00a01000e3e1f2f1e1f143c34a0f7b47edcb38",
     description = "Minimalistic JSON parser in C",
     homepage = "https://github.com/zserge/jsmn",
@@ -16,7 +17,7 @@ project(jsmn)
 install(FILES jsmn.h DESTINATION include)
 EOF
 """,
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],
     visibility = ["PUBLIC"],

@@ -1,5 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # firefox - Mozilla Firefox web browser
 #
@@ -10,17 +9,9 @@ load("//defs:use_flags.bzl", "use_dep")
 #   X           - Enable X11 support
 #   debug       - Enable debugging symbols
 
-download_source(
-    name = "firefox-src",
-    src_uri = "https://archive.mozilla.org/pub/firefox/releases/128.0/source/firefox-128.0.source.tar.xz",
-    sha256 = "65271ffefb235ea1e162a081f2074a0f06fce27b2f613f573c126ba8eef95172",
-    signature_sha256 = "5059489e128bd00646476d68784e49558998afc5a14d75f3efe00901b48b69d4",
-    signature_required=False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "firefox",
-    srcs = [":firefox-src"],
     version = "128.0",
     description = "Mozilla Firefox web browser - fast, private, and secure",
     homepage = "https://www.mozilla.org/firefox/",

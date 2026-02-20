@@ -1,19 +1,20 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # GoogleTest - Google's C++ testing framework
 #
 # GoogleTest provides both Google Test (gtest) and Google Mock (gmock)
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "googletest",
     version = "1.14.0",
-    src_uri = "https://github.com/google/googletest/archive/refs/tags/v1.14.0.tar.gz",
+    url = "https://github.com/google/googletest/archive/refs/tags/v1.14.0.tar.gz",
     sha256 = "8ad598c73ad796e0d8280b082cebd82a630d73e73cd3c70057938a6501bba5d7",
     description = "Google's C++ test framework",
     homepage = "https://github.com/google/googletest",
     license = "BSD-3-Clause",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_GMOCK=ON",

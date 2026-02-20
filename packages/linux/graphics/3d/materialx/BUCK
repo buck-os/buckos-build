@@ -1,14 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "materialx",
     version = "1.38.7",
-    src_uri = "https://github.com/AcademySoftwareFoundation/MaterialX/archive/refs/tags/v1.38.7.tar.gz",
+    url = "https://github.com/AcademySoftwareFoundation/MaterialX/archive/refs/tags/v1.38.7.tar.gz",
     sha256 = "54ea1193c77a8a3a5c80b5c00b1911d82985453f4d4d072737cf44b34325f6df",
     deps = [
         "//packages/linux/dev-libs/text/pugixml:pugixml",
     ],
-    cmake_args = [
+    configure_args = [
         "-DMATERIALX_BUILD_SHARED_LIBS=ON",
         "-DMATERIALX_BUILD_PYTHON=OFF",
         "-DMATERIALX_BUILD_VIEWER=OFF",

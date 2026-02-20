@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "s2geometry",
     version = "0.10.0",
-    src_uri = "https://github.com/google/s2geometry/archive/refs/tags/v0.10.0.tar.gz",
+    url = "https://github.com/google/s2geometry/archive/refs/tags/v0.10.0.tar.gz",
     sha256 = "1c17b04f1ea20ed09a67a83151ddd5d8529716f509dde49a8190618d70532a3d",
     description = "Google S2 spherical geometry library",
     homepage = "https://github.com/google/s2geometry",
@@ -13,7 +14,7 @@ cmake_package(
         "//packages/linux/dev-libs/google/glog:glog",
         "//packages/linux/system/libs/crypto/openssl:openssl",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DWITH_GFLAGS=OFF",

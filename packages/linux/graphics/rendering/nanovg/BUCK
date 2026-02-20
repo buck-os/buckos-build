@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # nanovg - Package from third-party
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "nanovg",
     version = "f93799c",
-    src_uri = "https://github.com/memononen/nanovg/archive/f93799c078fa11ed61c078c65a53914c8782c00b.tar.gz",
+    url = "https://github.com/memononen/nanovg/archive/f93799c078fa11ed61c078c65a53914c8782c00b.tar.gz",
     sha256 = "48c37a18fd68c7ccb8b788ff19c0756bb10164d6e891c1086e0c493b0ee28e1a",
     description = "nanovg package",
     homepage = "https://github.com/memononen/nanovg.git",
     license = "zlib",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
     ],

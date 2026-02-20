@@ -1,16 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "md4c",
     version = "0.5.2",
-    iuse = ["md2html"],
-    use_cmake = {
-        "-md2html": "-DENABLE_MD2HTML=OFF",
-        "md2html": "-DENABLE_MD2HTML=ON",
+    use_configure = {
+        "md2html": ("-DENABLE_MD2HTML=ON", "-DENABLE_MD2HTML=OFF"),
     },
-    src_uri = "https://github.com/mity/md4c/archive/refs/tags/release-0.5.2.tar.gz",
+    url = "https://github.com/mity/md4c/archive/refs/tags/release-0.5.2.tar.gz",
     sha256 = "55d0111d48fb11883aaee91465e642b8b640775a4d6993c2d0e7a8092758ef21",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=OFF",
     ],

@@ -1,51 +1,33 @@
-load("//defs:package_defs.bzl", "download_source", "meson_package")
+load("//defs:package.bzl", "package")
 
 # PulseAudio - A sound server for POSIX and Win32 systems
 # USE flags: alsa, bluetooth, dbus, gstreamer, jack, X, gtk, ssl, systemd, doc
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "pulseaudio",
     version = "17.0",
-    src_uri = "https://freedesktop.org/software/pulseaudio/releases/pulseaudio-17.0.tar.xz",
+    url = "https://freedesktop.org/software/pulseaudio/releases/pulseaudio-17.0.tar.xz",
     sha256 = "053794d6671a3e397d849e478a80b82a63cb9d8ca296bd35b73317bb5ceb87b5",
-    signature_required = False,
     description = "A sound server for POSIX and Win32 systems",
     homepage = "https://www.freedesktop.org/wiki/Software/PulseAudio/",
     license = "LGPL-2.1",
 
     # USE flags this package supports
-    iuse = [
-        "alsa",
-        "bluetooth",
-        "dbus",
-        "gstreamer",
-        "jack",
-        "X",
-        "gtk",
-        "ssl",
-        "systemd",
-        "doc",
-        "webrtc-aec",
-        "fftw",
-        "orc",
-        "soxr",
-        "speex",
-    ],
 
     # Default enabled flags
-    use_defaults = ["alsa", "dbus"],
 
     # Conditional dependencies based on USE flags
     use_deps = {
-        "alsa": ["//packages/linux/system/libs/audio/alsa-lib:alsa-lib"],
-        "bluetooth": ["//packages/linux/system/bluetooth/bluez:bluez"],
-        "dbus": ["//packages/linux/system/libs/ipc/dbus:dbus"],
-        "gstreamer": ["//packages/linux/graphics/video/gstreamer:gstreamer"],
-        "jack": ["//packages/linux/audio/daemons/jack:jack"],
-        "X": ["//packages/linux/desktop/xorg:xorg-libs"],
-        "gtk": ["//packages/linux/desktop/gtk:gtk3"],
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "systemd": ["//packages/linux/system/init/systemd:systemd"],
+        "alsa": "//packages/linux/system/libs/audio/alsa-lib:alsa-lib",
+        "bluetooth": "//packages/linux/system/bluetooth/bluez:bluez",
+        "dbus": "//packages/linux/system/libs/ipc/dbus:dbus",
+        "gstreamer": "//packages/linux/graphics/video/gstreamer:gstreamer",
+        "jack": "//packages/linux/audio/daemons/jack:jack",
+        "X": "//packages/linux/desktop/xorg:xorg-libs",
+        "gtk": "//packages/linux/desktop/gtk:gtk3",
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "systemd": "//packages/linux/system/init/systemd:systemd",
     },
 
     # Meson options based on USE flags
@@ -75,7 +57,7 @@ sed -i "s/intl_dep = cc.find_library('intl'/intl_dep = dependency('', required: 
 """,
 
     # Base Meson arguments (always applied)
-    meson_args = [
+    configure_args = [
         "-Ddaemon=true",
         "-Dclient=true",
         "-Ddoxygen=false",

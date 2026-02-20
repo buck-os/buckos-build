@@ -1,15 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "bwa-src",
-    src_uri = "https://github.com/lh3/bwa/archive/refs/tags/v0.7.18.tar.gz",
-    sha256 = "194788087f7b9a77c0114aa481b2ef21439f6abab72488c83917302e8d0e7870",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "bwa",
-    srcs = [":bwa-src"],
     version = "0.7.18",
     description = "Burrows-Wheeler Aligner for short-read alignment",
     homepage = "https://github.com/lh3/bwa",

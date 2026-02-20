@@ -1,19 +1,20 @@
-load("//defs:package_defs.bzl", "download_source", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # SDDM - Simple Desktop Display Manager (KDE default)
 # =============================================================================
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "sddm",
-    src_uri = "https://github.com/sddm/sddm/archive/refs/tags/v0.21.0.tar.gz",
+    url = "https://github.com/sddm/sddm/archive/refs/tags/v0.21.0.tar.gz",
 
     sha256 = "f895de2683627e969e4849dbfbbb2b500787481ca5ba0de6d6dfdae5f1549abf",
     version = "0.21.0",
     description = "Simple Desktop Display Manager - QML-based",
     homepage = "https://github.com/sddm/sddm",
     license = "GPL-2.0",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DENABLE_JOURNALD=ON",
         "-DBUILD_MAN_PAGES=OFF",

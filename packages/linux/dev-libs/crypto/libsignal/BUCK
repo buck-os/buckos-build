@@ -1,34 +1,13 @@
-load("//defs:package_defs.bzl", "cargo_package", "download_source")
+load("//defs:package.bzl", "package")
 
 # Git dependencies that libsignal patches in Cargo.toml
-download_source(
-    name = "curve25519-dalek-src",
-    src_uri = "https://github.com/signalapp/curve25519-dalek/archive/refs/heads/lizard2.tar.gz",
-    sha256 = "e8bb6df41c09e82266f6845b315c78ac6f038953db815acc727f94ca7105cdfa",
-    signature_required = False,
-)
-
-download_source(
-    name = "boring-src",
-    src_uri = "https://mirror.buckos.org/b/boring-libsignal.tar.gz",
-    sha256 = "0186166c44ab4e081f6c043d6b2bdb57562a506a12df6addb6c1f909ce3978b7",
-    signature_required = False,
-)
-
 # boringssl is a submodule in the boring crate
-download_source(
-    name = "boringssl-src",
-    src_uri = "https://mirror.buckos.org/b/boringssl-master.tar.gz",
-    sha256 = "4cac5561cc68caae02db31c48e96a0a896456e91b44912bdb10aad87bca431c4",
-    signature_required = False,
-)
-
-cargo_package(
+package(
+    build_rule = "cargo",
     name = "libsignal-0.23.1",
     version = "0.23.1",
-    src_uri = "https://github.com/signalapp/libsignal/archive/refs/tags/v0.23.1.tar.gz",
+    url = "https://github.com/signalapp/libsignal/archive/refs/tags/v0.23.1.tar.gz",
     sha256 = "36eff4a90b13bbc769c4af118dbe9686aa1e38dcf9ad4b09dca8e8274bc6c8ee",
-    signature_required = False,
     description = "Signal Protocol cryptographic library",
     homepage = "https://github.com/signalapp/libsignal",
     license = "AGPL-3.0-only",

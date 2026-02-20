@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "webarena",
     version = "0.1.0",
-    src_uri = "https://github.com/web-arena-x/webarena/archive/de524be99e5369e234d91f1e52c0d46dec360e00.tar.gz",
+    url = "https://github.com/web-arena-x/webarena/archive/de524be99e5369e234d91f1e52c0d46dec360e00.tar.gz",
     sha256 = "4f0aa855c62d5a223eb0fe027b37eb2611af49dc6b9f433976301a45bd466ec5",
     deps = [
         "//packages/linux/dev-libs/python/gymnasium:gymnasium",

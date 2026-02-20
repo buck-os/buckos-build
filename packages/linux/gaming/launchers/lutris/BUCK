@@ -1,13 +1,14 @@
+load("//defs:package.bzl", "package")
+
 # Lutris - Open Gaming Platform
 # Unified game launcher supporting multiple gaming platforms and emulators
 
-load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
-
 # USE flags: See use_flags.bzl for available flags
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "lutris",
-    src_uri = "https://github.com/lutris/lutris/archive/refs/tags/v0.5.17.tar.gz",
+    url = "https://github.com/lutris/lutris/archive/refs/tags/v0.5.17.tar.gz",
 
     sha256 = "e913d0c70bcb8c29839fcc2368f0b672bc1e70d1bc2bc18e6fd50ac785261aa8",
     version = "0.5.17",

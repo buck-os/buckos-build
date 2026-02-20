@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "triton-lang-kernels",
     version = "0.1.0",
-    src_uri = "https://github.com/triton-lang/kernels/archive/eeeebdd8be7d13629de22d600621e6234057eed3.tar.gz",
+    url = "https://github.com/triton-lang/kernels/archive/eeeebdd8be7d13629de22d600621e6234057eed3.tar.gz",
     sha256 = "ba589f4eff4c02a0678077c202535a271ada368be525f8e5dbd0bb49cade3974",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

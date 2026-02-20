@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "simple_binary_package")
+load("//defs:package.bzl", "package")
 
-simple_binary_package(
+simple_package(
+    build_rule = "binary",
     name = "verible",
     version = "0.0-4051-g9fdb4057",
-    src_uri = "https://github.com/chipsalliance/verible/releases/download/v0.0-4051-g9fdb4057/verible-v0.0-4051-g9fdb4057-linux-static-x86_64.tar.gz",
+    url = "https://github.com/chipsalliance/verible/releases/download/v0.0-4051-g9fdb4057/verible-v0.0-4051-g9fdb4057-linux-static-x86_64.tar.gz",
     sha256 = "f52e5920ef63f70620a6086e09dea8bd778147cd7a9ff827bb7de5d6316b1754",
     bins = [
         "bin/verible-patch-tool",

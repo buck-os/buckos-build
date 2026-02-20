@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # VulkanSceneGraph - Package from third-party
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "VulkanSceneGraph",
     version = "1.1.13",
-    src_uri = "https://github.com/vsg-dev/VulkanSceneGraph/archive/refs/tags/v1.1.13.tar.gz",
+    url = "https://github.com/vsg-dev/VulkanSceneGraph/archive/refs/tags/v1.1.13.tar.gz",
     sha256 = "653af399405e8a024d3254f9d8862aaaea0ac71ce832a0c09ef5e57d3def2ef3",
     description = "VulkanSceneGraph package",
     homepage = "https://github.com/vsg-dev/vulkanscenegraph.git",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
     ],

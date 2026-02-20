@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # LEAF - Lightweight Error Augmentation Framework
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "leaf",
     version = "1.88.0",
-    src_uri = "https://github.com/boostorg/leaf/archive/refs/tags/boost-1.88.0.tar.gz",
+    url = "https://github.com/boostorg/leaf/archive/refs/tags/boost-1.88.0.tar.gz",
     sha256 = "cbda2e39f62076751097b571ebb9bb7cc8ab0e5d58665cafd44014ccada2872a",
     description = "Lightweight Error Augmentation Framework",
     homepage = "https://boostorg.github.io/leaf/",
     license = "BSL-1.0",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],
     visibility = ["PUBLIC"],

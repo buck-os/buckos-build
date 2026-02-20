@@ -1,21 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # ccache is a CMake-based project
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "ccache",
     version = "4.9.1",
-    iuse = ["redis", "static-c++"],
-    use_cmake = {
-        "-redis": "-DENABLE_REDIS=OFF",
-        "-static-c++": "-DENABLE_STATIC_C++=OFF",
-        "redis": "-DENABLE_REDIS=ON",
-        "static-c++": "-DENABLE_STATIC_C++=ON",
+    use_configure = {
+        "redis": ("-DENABLE_REDIS=ON", "-DENABLE_REDIS=OFF"),
+        "static-c++": ("-DENABLE_STATIC_C++=ON", "-DENABLE_STATIC_C++=OFF"),
     },
-    src_uri = "https://github.com/ccache/ccache/releases/download/v4.9.1/ccache-4.9.1.tar.xz",
+    url = "https://github.com/ccache/ccache/releases/download/v4.9.1/ccache-4.9.1.tar.xz",
     sha256 = "4c03bc840699127d16c3f0e6112e3f40ce6a230d5873daa78c60a59c7ef59d25",
-    signature_sha256 = "b64041507b7de4b0de700e7dbb15eb9b9f67b27700ccf5a45f90e9f29511ed54",
-    signature_required = False,
     description = "Fast C/C++ compiler cache",
     homepage = "https://ccache.dev/",
     license = "GPL-3+",

@@ -1,18 +1,18 @@
+load("//defs:package.bzl", "package")
+
 # Comprehensive encryption tools package
 # This directory contains various encryption and cryptographic utilities
-
-load("//defs:package_defs.bzl","download_source", "autotools_package", "cargo_package", "go_package", "cmake_package", "make_package", "meson_package")
 
 # =============================================================================
 # AGE - Simple, modern, secure file encryption
 # =============================================================================
 
-go_package(
+package(
+    build_rule = "go",
     name = "age",
     version = "1.2.0",
-    src_uri = "https://github.com/FiloSottile/age/archive/refs/tags/v1.2.0.tar.gz",
+    url = "https://github.com/FiloSottile/age/archive/refs/tags/v1.2.0.tar.gz",
     sha256 = "cefe9e956401939ad86a9c9d7dcf843a43b6bcdf4ee7d8e4508864f227a3f6f0",
-    signature_required = False,
     description = "Simple, modern, secure file encryption tool with small explicit keys",
     homepage = "https://age-encryption.org/",
     license = "BSD-3-Clause",
@@ -28,12 +28,12 @@ go_package(
 # RAGE - Rust implementation of age
 # =============================================================================
 
-cargo_package(
+package(
+    build_rule = "cargo",
     name = "rage",
     version = "0.10.0",
-    src_uri = "https://github.com/str4d/rage/archive/refs/tags/v0.10.0.tar.gz",
+    url = "https://github.com/str4d/rage/archive/refs/tags/v0.10.0.tar.gz",
     sha256 = "34c39c28f8032c144a43aea96e58159fe69526f5ff91cb813083530adcaa6ea4",
-    signature_required = False,
     description = "Rust implementation of the age encryption tool",
     homepage = "https://github.com/str4d/rage",
     license = "Apache-2.0 OR MIT",
@@ -55,16 +55,16 @@ cargo_package(
 # MINISIGN - Dead simple signing tool
 # =============================================================================
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "minisign",
     version = "0.11",
-    src_uri = "https://github.com/jedisct1/minisign/archive/refs/tags/0.11.tar.gz",
+    url = "https://github.com/jedisct1/minisign/archive/refs/tags/0.11.tar.gz",
     sha256 = "74c2c78a1cd51a43a6c98f46a4eabefbc8668074ca9aa14115544276b663fc55",
-    signature_required = False,
     description = "Dead simple tool to sign files and verify signatures",
     homepage = "https://jedisct1.github.io/minisign/",
     license = "ISC",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_INSTALL_PREFIX=/usr",
     ],
@@ -80,7 +80,7 @@ cmake_package(
 
 make_package(
     name = "signify",
-    src_uri = "https://github.com/aperezdc/signify/archive/refs/tags/v31.tar.gz",
+    url = "https://github.com/aperezdc/signify/archive/refs/tags/v31.tar.gz",
 
     sha256 = "8111af7424f4cc69dab5cd43a14ccd607ca2d171ac77dd3ae288264a53254e5f",
     version = "31",
@@ -107,11 +107,9 @@ make_package(
 
 make_package(
     name = "libbsd",
-    src_uri = "https://libbsd.freedesktop.org/releases/libbsd-0.12.2.tar.xz",
+    url = "https://libbsd.freedesktop.org/releases/libbsd-0.12.2.tar.xz",
 
     sha256 = "b88cc9163d0c652aaf39a99991d974ddba1c3a9711db8f1b5838af2a14731014",
-
-    signature_sha256 = "620dc92f158ebe0a650c0e92214a8121b927276895dc9a1dcaa38f627fa0fcb0",
     version = "0.12.2",
     description = "BSD compatibility library for Linux",
     homepage = "https://libbsd.freedesktop.org/",
@@ -128,11 +126,9 @@ make_package(
 
 make_package(
     name = "libmd",
-    src_uri = "https://archive.hadrons.org/software/libmd/libmd-1.1.0.tar.xz",
+    url = "https://archive.hadrons.org/software/libmd/libmd-1.1.0.tar.xz",
 
     sha256 = "1bd6aa42275313af3141c7cf2e5b964e8b1fd488025caf2f971f43b00776b332",
-
-    signature_sha256 = "402fd3024e43ab975733d09e661804a58ca58697194e4b15216b1217cfe1dadb",
     version = "1.1.0",
     description = "Message Digest functions from BSD systems",
     homepage = "https://www.hadrons.org/software/libmd/",
@@ -148,7 +144,7 @@ make_package(
 
 make_package(
     name = "ccrypt",
-    src_uri = "https://ccrypt.sourceforge.net/download/1.11/ccrypt-1.11.tar.gz",
+    url = "https://ccrypt.sourceforge.net/download/1.11/ccrypt-1.11.tar.gz",
 
     sha256 = "b19c47500a96ee5fbd820f704c912f6efcc42b638c0a6aa7a4e3dc0a6b51a44f",
     version = "1.11",
@@ -172,7 +168,7 @@ make_package(
 
 make_package(
     name = "pass",
-    src_uri = "https://github.com/zx2c4/password-store/archive/refs/tags/1.7.4.tar.gz",
+    url = "https://github.com/zx2c4/password-store/archive/refs/tags/1.7.4.tar.gz",
 
     sha256 = "ff00bd2db86d8be722fc674f40abdc9b88701e47396378b15a4222c63c1d5243",
     version = "1.7.4",
@@ -202,7 +198,7 @@ make_package(
 
 make_package(
     name = "tomb",
-    src_uri = "https://github.com/dyne/Tomb/archive/refs/tags/v2.10.tar.gz",
+    url = "https://github.com/dyne/Tomb/archive/refs/tags/v2.10.tar.gz",
 
     sha256 = "6d714924fb929442990a9d47e3a8a729f443fcb67de7d190e8eb5a78942cd8f5",
     version = "2.10",
@@ -229,12 +225,12 @@ make_package(
 # GOCRYPTFS - Encrypted overlay filesystem
 # =============================================================================
 
-go_package(
+package(
+    build_rule = "go",
     name = "gocryptfs",
     version = "2.4.0",
-    src_uri = "https://github.com/rfjakob/gocryptfs/archive/refs/tags/v2.4.0.tar.gz",
+    url = "https://github.com/rfjakob/gocryptfs/archive/refs/tags/v2.4.0.tar.gz",
     sha256 = "a36d47f546b7deb87e291066a09d324015dbada123de355f41d035ba7a9d6b2b",
-    signature_required = False,
     description = "Encrypted overlay filesystem written in Go",
     homepage = "https://nuetzlich.net/gocryptfs/",
     license = "MIT",
@@ -251,12 +247,12 @@ go_package(
 # FSCRYPT - Linux native filesystem encryption
 # =============================================================================
 
-go_package(
+package(
+    build_rule = "go",
     name = "fscrypt",
     version = "0.3.5",
-    src_uri = "https://github.com/google/fscrypt/archive/refs/tags/v0.3.5.tar.gz",
+    url = "https://github.com/google/fscrypt/archive/refs/tags/v0.3.5.tar.gz",
     sha256 = "368119b5e67c64bdc5f7872ffc7beed425e1401778003f4c7ae7c1062a45ebaf",
-    signature_required = False,
     description = "Tool for managing Linux native filesystem encryption",
     homepage = "https://github.com/google/fscrypt",
     license = "Apache-2.0",
@@ -275,11 +271,9 @@ go_package(
 
 make_package(
     name = "linux-pam",
-    src_uri = "https://github.com/linux-pam/linux-pam/releases/download/v1.6.1/Linux-PAM-1.6.1.tar.xz",
+    url = "https://github.com/linux-pam/linux-pam/releases/download/v1.6.1/Linux-PAM-1.6.1.tar.xz",
 
     sha256 = "f8923c740159052d719dbfc2a2f81942d68dd34fcaf61c706a02c9b80feeef8e",
-
-    signature_sha256 = "ef0e0597974d988c9f25f5a155e001b9dcb972618a4a166b8acefac1f5357303",
     version = "1.6.1",
     description = "Pluggable Authentication Modules for Linux",
     homepage = "http://www.linux-pam.org/",
@@ -299,7 +293,7 @@ make_package(
 
 make_package(
     name = "ecryptfs-utils",
-    src_uri = "https://github.com/dustinkirkland/ecryptfs-utils/archive/5e877f3747303096f7861863bac937be4328fa72.tar.gz",
+    url = "https://github.com/dustinkirkland/ecryptfs-utils/archive/5e877f3747303096f7861863bac937be4328fa72.tar.gz",
 
     sha256 = "b91cd0a707f0b1d912297efb1019beca1cd973d199c4fd9f0bcdc1898bb66ebe",
     version = "111",
@@ -320,7 +314,7 @@ make_package(
 
 make_package(
     name = "keyutils",
-    src_uri = "https://git.kernel.org/pub/scm/linux/kernel/git/dhowells/keyutils.git/snapshot/keyutils-1.6.3.tar.gz",
+    url = "https://git.kernel.org/pub/scm/linux/kernel/git/dhowells/keyutils.git/snapshot/keyutils-1.6.3.tar.gz",
 
     sha256 = "a61d5706136ae4c05bd48f86186bcfdbd88dd8bd5107e3e195c924cfc1b39bb4",
     version = "1.6.3",
@@ -350,12 +344,12 @@ make_package(
 # SOPS - Secrets OPerationS
 # =============================================================================
 
-go_package(
+package(
+    build_rule = "go",
     name = "sops",
     version = "3.8.1",
-    src_uri = "https://github.com/getsops/sops/archive/refs/tags/v3.8.1.tar.gz",
+    url = "https://github.com/getsops/sops/archive/refs/tags/v3.8.1.tar.gz",
     sha256 = "5ca70fb4f96797d09012c705a5bb935835896de7bcd063b98d498912b0e645a0",
-    signature_required = False,
     description = "Simple and flexible tool for managing secrets",
     homepage = "https://github.com/getsops/sops",
     license = "MPL-2.0",
@@ -373,7 +367,7 @@ go_package(
 
 make_package(
     name = "veracrypt",
-    src_uri = "https://launchpad.net/veracrypt/trunk/1.26.7/+download/VeraCrypt_1.26.7_Source.tar.bz2",
+    url = "https://launchpad.net/veracrypt/trunk/1.26.7/+download/VeraCrypt_1.26.7_Source.tar.bz2",
 
     sha256 = "f76d27b182414e0d4fd9b6b59fbea28b25db6fa69f2bbcffa2ec269b1a865f65",
     version = "1.26.7",
@@ -400,16 +394,17 @@ make_package(
 # FUSE3 - Filesystem in Userspace
 # =============================================================================
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "fuse3",
-    src_uri = "https://github.com/libfuse/libfuse/releases/download/fuse-3.16.2/fuse-3.16.2.tar.gz",
+    url = "https://github.com/libfuse/libfuse/releases/download/fuse-3.16.2/fuse-3.16.2.tar.gz",
 
     sha256 = "f797055d9296b275e981f5f62d4e32e089614fc253d1ef2985851025b8a0ce87",
     version = "3.16.2",
     description = "Filesystem in Userspace (FUSE) interface",
     homepage = "https://github.com/libfuse/libfuse",
     license = "GPL-2.0+ AND LGPL-2.1+",
-    meson_args = [
+    configure_args = [
         "-Dexamples=false",
     ],
     deps = [
@@ -421,12 +416,12 @@ meson_package(
 # AGE-PLUGIN-YUBIKEY - YubiKey plugin for age
 # =============================================================================
 
-cargo_package(
+package(
+    build_rule = "cargo",
     name = "age-plugin-yubikey",
     version = "0.5.0",
-    src_uri = "https://github.com/str4d/age-plugin-yubikey/archive/refs/tags/v0.5.0.tar.gz",
+    url = "https://github.com/str4d/age-plugin-yubikey/archive/refs/tags/v0.5.0.tar.gz",
     sha256 = "65807403f0098569a473ffa76302b205da148a7f46b61fd331b8e323959978ba",
-    signature_required = False,
     description = "YubiKey plugin for age",
     homepage = "https://github.com/str4d/age-plugin-yubikey",
     license = "Apache-2.0 OR MIT",
@@ -448,11 +443,9 @@ cargo_package(
 
 make_package(
     name = "pcsc-lite",
-    src_uri = "https://pcsclite.apdu.fr/files/pcsc-lite-2.0.3.tar.bz2",
+    url = "https://pcsclite.apdu.fr/files/pcsc-lite-2.0.3.tar.bz2",
 
     sha256 = "f42ee9efa489e9ff5d328baefa26f9c515be65021856e78d99ad1f0ead9ec85d",
-
-    signature_sha256 = "2100b77891116e0f7a8e449d63b22e7f2ef503a11d9e50b344a8678b369f8efd",
     version = "2.0.3",
     description = "PC/SC smart card daemon and library",
     homepage = "https://pcsclite.apdu.fr/",
@@ -473,11 +466,9 @@ make_package(
 
 make_package(
     name = "libusb",
-    src_uri = "https://github.com/libusb/libusb/releases/download/v1.0.27/libusb-1.0.27.tar.bz2",
+    url = "https://github.com/libusb/libusb/releases/download/v1.0.27/libusb-1.0.27.tar.bz2",
 
     sha256 = "ffaa41d741a8a3bee244ac8e54a72ea05bf2879663c098c82fc5757853441575",
-
-    signature_sha256 = "1cd22bbfe4ce382ca9b091e2a6275c48f1c776253815cbb615da295ae0bfe687",
     version = "1.0.27",
     description = "Library for USB device access",
     homepage = "https://libusb.info/",
@@ -492,12 +483,12 @@ make_package(
 # SEQUOIA-SQ - Modern PGP implementation
 # =============================================================================
 
-cargo_package(
+package(
+    build_rule = "cargo",
     name = "sequoia-sq",
     version = "0.35.0",
-    src_uri = "https://gitlab.com/sequoia-pgp/sequoia-sq/-/archive/v0.35.0/sequoia-sq-v0.35.0.tar.gz",
+    url = "https://gitlab.com/sequoia-pgp/sequoia-sq/-/archive/v0.35.0/sequoia-sq-v0.35.0.tar.gz",
     sha256 = "0b16bb4dcd7b85eb1292dfe4b22dfa3c0df44bae1e84859e91aadfee80b08bec",
-    signature_required = False,
     description = "Command-line frontend for Sequoia, a modern OpenPGP implementation",
     homepage = "https://sequoia-pgp.org/",
     license = "GPL-2.0+",
@@ -520,11 +511,9 @@ cargo_package(
 
 make_package(
     name = "nettle",
-    src_uri = "https://mirrors.kernel.org/gnu/nettle/nettle-3.9.1.tar.gz",
+    url = "https://mirrors.kernel.org/gnu/nettle/nettle-3.9.1.tar.gz",
 
     sha256 = "ccfeff981b0ca71bbd6fbcb054f407c60ffb644389a5be80d6716d5b550c6ce3",
-
-    signature_sha256 = "793b2f165f3527d0ae54d36f3c042908204bd8871598cdcd7c0ff2d3725eb8f5",
     version = "3.9.1",
     description = "Low-level cryptographic library",
     homepage = "https://www.lysator.liu.se/~nisse/nettle/",
@@ -540,7 +529,7 @@ make_package(
 
 make_package(
     name = "opensc",
-    src_uri = "https://github.com/OpenSC/OpenSC/releases/download/0.25.1/opensc-0.25.1.tar.gz",
+    url = "https://github.com/OpenSC/OpenSC/releases/download/0.25.1/opensc-0.25.1.tar.gz",
 
     sha256 = "23cbaae8bd7c8eb589b68c0a961dfb0d02007bea3165a3fc5efe2621d549b37b",
     version = "0.25.1",
@@ -563,7 +552,7 @@ make_package(
 
 make_package(
     name = "argon2",
-    src_uri = "https://github.com/P-H-C/phc-winner-argon2/archive/refs/tags/20190702.tar.gz",
+    url = "https://github.com/P-H-C/phc-winner-argon2/archive/refs/tags/20190702.tar.gz",
 
     sha256 = "daf972a89577f8772602bf2eb38b6a3dd3d922bf5724d45e7f9589b5e830442c",
     version = "20190702",
@@ -590,11 +579,9 @@ make_package(
 
 make_package(
     name = "libressl",
-    src_uri = "https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-3.9.2.tar.gz",
+    url = "https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-3.9.2.tar.gz",
 
     sha256 = "7b031dac64a59eb6ee3304f7ffb75dad33ab8c9d279c847f92c89fb846068f97",
-
-    signature_sha256 = "22195457d9a79c5800f139c02578fa5b4d33e6898290fb40ae3fb3582f77220b",
     version = "3.9.2",
     description = "OpenBSD's fork of the OpenSSL library",
     homepage = "https://www.libressl.org/",
@@ -610,11 +597,9 @@ make_package(
 
 make_package(
     name = "botan",
-    src_uri = "https://botan.randombit.net/releases/Botan-3.4.0.tar.xz",
+    url = "https://botan.randombit.net/releases/Botan-3.4.0.tar.xz",
 
     sha256 = "71843afcc0a2c585f8f33fa304f0b58ae4b9c5d8306f894667b3746044277557",
-
-    signature_sha256 = "fbfc23a6b01ce866f83bff2bdf538e973581ce911a7c617aff63f43e3c44fa90",
     version = "3.4.0",
     description = "C++ cryptography library",
     homepage = "https://botan.randombit.net/",
@@ -639,11 +624,9 @@ make_package(
 
 make_package(
     name = "hashcat",
-    src_uri = "https://hashcat.net/files/hashcat-6.2.6.tar.gz",
+    url = "https://hashcat.net/files/hashcat-6.2.6.tar.gz",
 
     sha256 = "b25e1077bcf34908cc8f18c1a69a2ec98b047b2cbcf0f51144dcf3ba1e0b7b2a",
-
-    signature_sha256 = "1e881eeff14a58557c767abe867fd06dc2895cb03934c5eee6f1cdd7fa9a18e8",
     version = "6.2.6",
     description = "Advanced CPU-based password recovery utility",
     homepage = "https://hashcat.net/hashcat/",
@@ -668,11 +651,9 @@ make_package(
 
 make_package(
     name = "john",
-    src_uri = "https://www.openwall.com/john/k/john-1.9.0.tar.xz",
+    url = "https://www.openwall.com/john/k/john-1.9.0.tar.xz",
 
     sha256 = "0b266adcfef8c11eed690187e71494baea539efbd632fe221181063ba09508df",
-
-    signature_sha256 = "9ca688129da714713d5c8b125d86e7a04232d07b336a62e83b7fba90716b9c88",
     version = "1.9.0",
     description = "John the Ripper password security auditing tool",
     homepage = "https://www.openwall.com/john/",
@@ -702,11 +683,9 @@ make_package(
 
 make_package(
     name = "bcrypt",
-    src_uri = "https://bcrypt.sourceforge.net/bcrypt-1.1.tar.gz",
+    url = "https://bcrypt.sourceforge.net/bcrypt-1.1.tar.gz",
 
     sha256 = "b9c1a7c0996a305465135b90123b0c63adbb5fa7c47a24b3f347deb2696d417d",
-
-    signature_sha256 = "0b9f6e1c0bca7be97c2bbf7e5445d6e95b996a99796b4be7b6fd55f60b318a89",
     version = "1.1",
     description = "Blowfish file encryption utility",
     homepage = "https://bcrypt.sourceforge.net/",
@@ -733,11 +712,9 @@ make_package(
 
 make_package(
     name = "libp11",
-    src_uri = "https://github.com/OpenSC/libp11/releases/download/libp11-0.4.12/libp11-0.4.12.tar.gz",
+    url = "https://github.com/OpenSC/libp11/releases/download/libp11-0.4.12/libp11-0.4.12.tar.gz",
 
     sha256 = "1e1a2533b3fcc45fde4da64c9c00261b1047f14c3f911377ebd1b147b3321cfd",
-
-    signature_sha256 = "b0f124ad5db1344969438098a765a3fd884622a1a181facfad83c34868f7c776",
     version = "0.4.12",
     description = "PKCS#11 wrapper library and OpenSSL engine",
     homepage = "https://github.com/OpenSC/libp11",
@@ -752,16 +729,17 @@ make_package(
 # CLEVIS - Automated decryption framework
 # =============================================================================
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "clevis",
-    src_uri = "https://github.com/latchset/clevis/archive/refs/tags/v21.tar.gz",
+    url = "https://github.com/latchset/clevis/archive/refs/tags/v21.tar.gz",
 
     sha256 = "0ba38f0438337a799e98e1ab41ca30670cc8c13eb5f1f628b4680d46e2ef0013",
     version = "21",
     description = "Automated decryption framework",
     homepage = "https://github.com/latchset/clevis",
     license = "GPL-3.0+",
-    meson_args = [],
+    configure_args = [],
     deps = [
         ":jose",
         "//packages/linux/system/filesystem/management/cryptsetup:cryptsetup",
@@ -773,16 +751,17 @@ meson_package(
 # JOSE - JavaScript Object Signing and Encryption
 # =============================================================================
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "jose",
-    src_uri = "https://github.com/latchset/jose/archive/refs/tags/v14.tar.gz",
+    url = "https://github.com/latchset/jose/archive/refs/tags/v14.tar.gz",
 
     sha256 = "3ffb8ea9a0fa5194051499d96bfde957621fcd490ef7ed95effc699029d7ad3b",
     version = "14",
     description = "C-language implementation of JOSE",
     homepage = "https://github.com/latchset/jose",
     license = "Apache-2.0",
-    meson_args = [],
+    configure_args = [],
     deps = [
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/crypto/openssl:openssl",
@@ -797,11 +776,9 @@ meson_package(
 
 make_package(
     name = "jansson",
-    src_uri = "https://github.com/akheron/jansson/releases/download/v2.14/jansson-2.14.tar.gz",
+    url = "https://github.com/akheron/jansson/releases/download/v2.14/jansson-2.14.tar.gz",
 
     sha256 = "5798d010e41cf8d76b66236cfb2f2543c8d082181d16bc3085ab49538d4b9929",
-
-    signature_sha256 = "a29cab18600e0439b5ef08cd71c9b8241c6467ec02a8af52a25ed3b95d109c1c",
     version = "2.14",
     description = "C library for encoding and decoding JSON data",
     homepage = "https://github.com/akheron/jansson",

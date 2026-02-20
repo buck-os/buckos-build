@@ -1,32 +1,21 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "rocksdb",
     version = "9.1.1",
-    iuse = [
-        "jemalloc",
-        "numa",
-        "static-libs",
-        "tbb",
-    ],
-    use_cmake = {
-        "-jemalloc": "-DENABLE_JEMALLOC=OFF",
-        "-numa": "-DENABLE_NUMA=OFF",
-        "-static-libs": "-DBUILD_STATIC_LIBS=OFF",
-        "-tbb": "-DENABLE_TBB=OFF",
-        "jemalloc": "-DENABLE_JEMALLOC=ON",
-        "numa": "-DENABLE_NUMA=ON",
-        "static-libs": "-DBUILD_STATIC_LIBS=ON",
-        "tbb": "-DENABLE_TBB=ON",
+    use_configure = {
+        "jemalloc": ("-DENABLE_JEMALLOC=ON", "-DENABLE_JEMALLOC=OFF"),
+        "numa": ("-DENABLE_NUMA=ON", "-DENABLE_NUMA=OFF"),
+        "static-libs": ("-DBUILD_STATIC_LIBS=ON", "-DBUILD_STATIC_LIBS=OFF"),
+        "tbb": ("-DENABLE_TBB=ON", "-DENABLE_TBB=OFF"),
     },
-    src_uri = "https://github.com/facebook/rocksdb/archive/refs/tags/v9.1.1.tar.gz",
+    url = "https://github.com/facebook/rocksdb/archive/refs/tags/v9.1.1.tar.gz",
     sha256 = "54ca90dd782a988cd3ebc3e0e9ba9b4efd563d7eb78c5e690c2403f1b7d4a87a",
-    signature_required = False,
     description = "Persistent key-value store for fast storage environments",
     homepage = "https://rocksdb.org/",
     license = "GPL-2.0 OR Apache-2.0",
-    cmake_args = [
+    configure_args = [
         "-DWITH_TESTS=OFF",
         "-DWITH_BENCHMARK_TOOLS=OFF",
         "-DWITH_TOOLS=OFF",

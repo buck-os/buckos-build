@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # iperf3 - Network bandwidth measurement tool
 #
@@ -6,30 +6,28 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package")
 #   ssl      - Enable SSL/TLS support with OpenSSL
 #   sctp     - Enable SCTP support
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "iperf3",
     # GitHub release tarball includes pre-generated configure script
     version = "3.16",
-    src_uri = "https://github.com/esnet/iperf/releases/download/3.16/iperf-3.16.tar.gz",
+    url = "https://github.com/esnet/iperf/releases/download/3.16/iperf-3.16.tar.gz",
     sha256 = "cc740c6bbea104398cc3e466befc515a25896ec85e44a662d5f4a767b9cf713e",
-    signature_required = False,
     description = "Network bandwidth measurement tool - TCP, UDP, and SCTP",
     homepage = "https://software.es.net/iperf/",
     license = "BSD-3-Clause",
-    iuse = ["sctp"],
     deps = [],
     # Fix GCC strict function pointer type checking
     env = {"CFLAGS": "-O2 -Wno-incompatible-pointer-types"},
     use_deps = {
-        "sctp": ["//packages/linux/network/lksctp-tools:lksctp-tools"],
+        "sctp": "//packages/linux/network/lksctp-tools:lksctp-tools",
     },
     configure_args = [
         "--disable-static",
         "--without-openssl",  # iperf3 configure is picky about --with-openssl format
     ],
     use_configure = {
-        "sctp": "--enable-sctp",
-        "-sctp": "--disable-sctp",
+        "sctp": ("--enable-sctp", "--disable-sctp"),
     },
     visibility = ["PUBLIC"],
 )

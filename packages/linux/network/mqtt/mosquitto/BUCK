@@ -1,34 +1,30 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # Mosquitto - MQTT message broker
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "mosquitto",
     version = "2.0.18",
-    src_uri = "https://mosquitto.org/files/source/mosquitto-2.0.18.tar.gz",
+    url = "https://mosquitto.org/files/source/mosquitto-2.0.18.tar.gz",
     sha256 = "d665fe7d0032881b1371a47f34169ee4edab67903b2cd2b4c083822823f4448a",
     description = "Open source MQTT message broker",
     homepage = "https://mosquitto.org/",
     license = "EPL-2.0",
-    iuse = ["ssl", "websockets", "cjson"],
-    use_defaults = ["ssl", "cjson"],
     deps = [],
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "websockets": ["//packages/linux/network/libs/libwebsockets:libwebsockets"],
-        "cjson": ["//packages/linux/dev-libs/misc/cjson:cjson"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "websockets": "//packages/linux/network/libs/libwebsockets:libwebsockets",
+        "cjson": "//packages/linux/dev-libs/misc/cjson:cjson",
     },
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DDOCUMENTATION=OFF",
     ],
-    use_cmake = {
-        "ssl": "-DWITH_TLS=ON",
-        "-ssl": "-DWITH_TLS=OFF",
-        "websockets": "-DWITH_WEBSOCKETS=ON",
-        "-websockets": "-DWITH_WEBSOCKETS=OFF",
-        "cjson": "-DWITH_CJSON=ON",
-        "-cjson": "-DWITH_CJSON=OFF",
+    use_configure = {
+        "cjson": ("-DWITH_CJSON=ON", "-DWITH_CJSON=OFF"),
+        "ssl": ("-DWITH_TLS=ON", "-DWITH_TLS=OFF"),
+        "websockets": ("-DWITH_WEBSOCKETS=ON", "-DWITH_WEBSOCKETS=OFF"),
     },
     visibility = ["PUBLIC"],
 )

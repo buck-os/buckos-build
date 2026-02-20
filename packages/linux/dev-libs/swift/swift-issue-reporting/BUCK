@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "swift-issue-reporting",
     version = "1.4.0",
-    src_uri = "https://github.com/pointfreeco/swift-issue-reporting/archive/refs/tags/1.4.0.tar.gz",
+    url = "https://github.com/pointfreeco/swift-issue-reporting/archive/refs/tags/1.4.0.tar.gz",
     sha256 = "fb3f6fda531bcf5f7c6fcb1ab4e7f98460b438af5a846f039448fcd636759dfb",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTING=OFF",
     ],
     deps = [

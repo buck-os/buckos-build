@@ -1,13 +1,13 @@
-load("//defs:package_defs.bzl", "go_package")
+load("//defs:package.bzl", "package")
 
 # This is a Go library package for extracting Rust dependency information.
 # It provides Go modules, not a binary executable.
-go_package(
+package(
+    build_rule = "go",
     name = "go-rustaudit",
     version = "0.0.0-204dfee52032",
-    src_uri = "https://github.com/microsoft/go-rustaudit/archive/204dfee52032963d1c64725a41f7fd88feaf1503.tar.gz",
+    url = "https://github.com/microsoft/go-rustaudit/archive/204dfee52032963d1c64725a41f7fd88feaf1503.tar.gz",
     sha256 = "52d28e9e30ab0adac617a04ad3e26cdfada4d4fdad1936aa2f7c9f81f1b86fd5",
-    signature_required = False,
     description = "Go library for extracting Rust dependency information from binaries",
     homepage = "https://github.com/microsoft/go-rustaudit",
     license = "MIT",

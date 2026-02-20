@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # argparse - Argument Parser for Modern C++
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "argparse",
     version = "3.0",
-    src_uri = "https://github.com/p-ranav/argparse/archive/refs/tags/v3.0.tar.gz",
+    url = "https://github.com/p-ranav/argparse/archive/refs/tags/v3.0.tar.gz",
     sha256 = "ba7b465759bb01069d57302855eaf4d1f7d677f21ad7b0b00b92939645c30f47",
     description = "Argument Parser for Modern C++",
     homepage = "https://github.com/p-ranav/argparse",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DARGPARSE_BUILD_TESTS=OFF",
         "-DARGPARSE_BUILD_SAMPLES=OFF",

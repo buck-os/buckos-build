@@ -1,10 +1,11 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # libXxf86vm - XFree86 Video Mode extension library
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libXxf86vm",
     version = "1.1.5",
-    src_uri = "https://xorg.freedesktop.org/archive/individual/lib/libXxf86vm-1.1.5.tar.xz",
+    url = "https://xorg.freedesktop.org/archive/individual/lib/libXxf86vm-1.1.5.tar.xz",
     sha256 = "247fef48b3e0e7e67129e41f1e789e8d006ba47dba1c0cdce684b9b703f888e7",
     description = "XFree86 Video Mode extension library",
     homepage = "https://xorg.freedesktop.org/",

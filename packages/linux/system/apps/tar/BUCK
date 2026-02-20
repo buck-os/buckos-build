@@ -1,33 +1,27 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # tar - GNU tape archiver
 # USE flags: nls, acl, xattr, selinux
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "tar",
     version = "1.35",
-    src_uri = "https://mirrors.kernel.org/gnu/tar/tar-1.35.tar.xz",
+    url = "https://mirrors.kernel.org/gnu/tar/tar-1.35.tar.xz",
     sha256 = "4d62ff37342ec7aed748535323930c7cf94acf71c3591882b26a7ea50f3edc16",
-    signature_required = False,
     description = "GNU tape archiver for creating and extracting archives",
     homepage = "https://www.gnu.org/software/tar",
     license = "GPL-3+",
-    iuse = ["nls", "acl", "xattr", "selinux"],
     # TEMPORARILY DISABLED acl for aarch64 cross-compilation (Fix #26 - acl/libattr linking issue)
-    use_defaults = ["xattr"],
     use_deps = {
-        "acl": ["//packages/linux/system/libs/ipc/acl:acl"],
-        "selinux": ["//packages/linux/system/security/selinux:selinux"],
+        "acl": "//packages/linux/system/libs/ipc/acl:acl",
+        "selinux": "//packages/linux/system/security/selinux:selinux",
     },
     use_configure = {
-        "nls": "--enable-nls",
-        "-nls": "--disable-nls",
-        "acl": "--with-acl",
-        "-acl": "--without-acl",
-        "xattr": "--with-xattrs",
-        "-xattr": "--without-xattrs",
-        "selinux": "--with-selinux",
-        "-selinux": "--without-selinux",
+        "acl": ("--with-acl", "--without-acl"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "selinux": ("--with-selinux", "--without-selinux"),
+        "xattr": ("--with-xattrs", "--without-xattrs"),
     },
     configure_args = [
         "--prefix=/usr",

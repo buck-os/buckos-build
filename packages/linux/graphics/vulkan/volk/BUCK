@@ -1,16 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "volk",
     version = "1.4.304",
-    iuse = ["orc"],
-    use_cmake = {
-        "-orc": "-DENABLE_ORC=OFF",
-        "orc": "-DENABLE_ORC=ON",
-    },
-    src_uri = "https://github.com/zeux/volk/archive/refs/tags/vulkan-sdk-1.4.304.0.tar.gz",
+    url = "https://github.com/zeux/volk/archive/refs/tags/vulkan-sdk-1.4.304.0.tar.gz",
     sha256 = "2a563c9dd926c804d91d7b84c59516678ccb32d039038049fc20eb22547c88fb",
-    cmake_args = [
+    configure_args = [
         "-DVOLK_INSTALL=ON",
         "-DVOLK_PULL_IN_VULKAN=OFF",
     ],

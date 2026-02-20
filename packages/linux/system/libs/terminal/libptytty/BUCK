@@ -1,20 +1,21 @@
-load("//defs:package_defs.bzl", "download_source", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # libptytty - Secure PTY/TTY library
 # =============================================================================
 # Library for secure pseudo-terminal handling, used by rxvt-unicode and others.
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "libptytty",
-    src_uri = "https://dist.schmorp.de/libptytty/libptytty-2.0.tar.gz",
+    url = "https://dist.schmorp.de/libptytty/libptytty-2.0.tar.gz",
 
     sha256 = "8033ed3aadf28759660d4f11f2d7b030acf2a6890cb0f7926fb0cfa6739d31f7",
     version = "2.0",
     description = "Secure PTY/TTY library for terminal emulators",
     homepage = "http://software.schmorp.de/pkg/libptytty.html",
     license = "GPL-2.0",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_SHARED_LIBS=ON",
     ],
     visibility = ["PUBLIC"],

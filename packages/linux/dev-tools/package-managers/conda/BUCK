@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "conda",
     version = "23.9.0",
-    src_uri = "https://github.com/conda/conda/archive/refs/tags/23.9.0.tar.gz",
+    url = "https://github.com/conda/conda/archive/refs/tags/23.9.0.tar.gz",
     sha256 = "423aaa6f4af0b04c2608b63230ccdf60012896e7888ad0ddba06ab197ec44014",
     description = "OS-agnostic, system-level binary package manager",
     homepage = "https://docs.conda.io/",

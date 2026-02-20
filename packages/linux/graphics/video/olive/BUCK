@@ -1,17 +1,17 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # Olive - Free non-linear video editor
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "olive",
     version = "0.1.2",
-    src_uri = "https://github.com/olive-editor/olive/archive/refs/tags/0.1.2.tar.gz",
+    url = "https://github.com/olive-editor/olive/archive/refs/tags/0.1.2.tar.gz",
     sha256 = "cb9a5b109e67a47f03448633cbc7a257aa8e6c3c76a59c1fada77fd3d97875c1",
-    signature_required = False,
     description = "Free non-linear video editor",
     homepage = "https://www.olivevideoeditor.org/",
     license = "GPL-3.0-or-later",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DBUILD_QT6=ON",

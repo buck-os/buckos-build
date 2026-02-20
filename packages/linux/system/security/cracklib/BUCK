@@ -1,31 +1,20 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # cracklib - Password checking library
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "cracklib",
     # GitHub release tarball includes pre-generated configure script
     bdepend = [],
     src_prepare = "",
-    src_uri = "https://github.com/cracklib/cracklib/releases/download/v2.10.3/cracklib-2.10.3.tar.xz",
+    url = "https://github.com/cracklib/cracklib/releases/download/v2.10.3/cracklib-2.10.3.tar.xz",
 
     sha256 = "1d1b83676b5673051b9373e1ca0db81c1fa88faf9a195a3c1af984fd9c250d66",
-
-    signature_sha256 = "cb1da630d22e69c91f0684d2f97dbdcaf50031c8a065cd9ce3a02dc2d2288069",
-    iuse = [
-        "nls",
-        "python",
-        "static-libs",
-        "zlib",
-    ],
     use_configure = {
-        "-nls": "--disable-nls",
-        "-python": "--disable-python",
-        "-static-libs": "--disable-static",
-        "-zlib": "--without-zlib",
-        "nls": "--enable-nls",
-        "python": "--enable-python",
-        "static-libs": "--enable-static",
-        "zlib": "--with-zlib",
+        "nls": ("--enable-nls", "--disable-nls"),
+        "python": ("--enable-python", "--disable-python"),
+        "static-libs": ("--enable-static", "--disable-static"),
+        "zlib": ("--with-zlib", "--without-zlib"),
     },
     version = "2.10.3",
     description = "Library for enforcing strong passwords",

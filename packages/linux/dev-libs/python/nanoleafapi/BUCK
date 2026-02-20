@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "nanoleafapi",
     version = "2.1.2",
-    src_uri = "https://github.com/MylesMor/nanoleafapi/archive/refs/tags/v2.1.2.tar.gz",
+    url = "https://github.com/MylesMor/nanoleafapi/archive/refs/tags/v2.1.2.tar.gz",
     sha256 = "28fd6ad3ff6a462b27c654d9ef2b9cdabaff9f1126dc61a6622470316ec02a2d",
     deps = [
         "//packages/linux/dev-libs/python/requests:requests",

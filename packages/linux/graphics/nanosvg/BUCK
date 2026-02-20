@@ -1,14 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "nanosvg-src",
-    src_uri = "https://github.com/memononen/nanosvg/archive/refs/heads/master.tar.gz",
-    sha256 = "177cfa8c31b1733c82dd27a255502f1ec436bfae90f76fd139e3956eb57e114e",
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "nanosvg",
-    srcs = [":nanosvg-src"],
     version = "1.0.0",
     description = "Simple, lightweight SVG parser library (header-only)",
     homepage = "https://github.com/memononen/nanosvg",

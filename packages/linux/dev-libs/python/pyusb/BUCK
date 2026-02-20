@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "pyusb",
     version = "1.0.2",
-    src_uri = "https://github.com/pyusb/pyusb/archive/refs/tags/v1.0.2.tar.gz",
+    url = "https://github.com/pyusb/pyusb/archive/refs/tags/v1.0.2.tar.gz",
     sha256 = "49dfa601f28e9399df62004170cfb623197ad32d8399885b7f789775767b50c3",
     deps = [
         "//packages/linux/system/libs/libusb:libusb",

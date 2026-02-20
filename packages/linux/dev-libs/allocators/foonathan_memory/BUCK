@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # foonathan_memory - STL compatible C++ memory allocator library
 # Provides various allocator implementations including:
@@ -14,17 +14,18 @@ load("//defs:package_defs.bzl", "cmake_package")
 # Or use the tools/update_checksums.py script:
 #   ./tools/update_checksums.py packages/linux/dev-libs/allocators/foonathan_memory/BUCK
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "foonathan_memory",
     version = "0.7.4",
-    src_uri = "https://github.com/foonathan/memory/archive/refs/tags/v0.7-4.tar.gz",
+    url = "https://github.com/foonathan/memory/archive/refs/tags/v0.7-4.tar.gz",
     # SHA256 checksum - needs verification (see TODO above)
     sha256 = "e6b532c78022709dcf8ae3db9cad0d687df12ec67141f688a01a1abd82ed2810",
     description = "STL compatible C++ memory allocator library providing various allocator implementations",
     homepage = "https://github.com/foonathan/memory",
     license = "Zlib",
     maintainers = ["buckos"],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DFOONATHAN_MEMORY_BUILD_EXAMPLES=OFF",

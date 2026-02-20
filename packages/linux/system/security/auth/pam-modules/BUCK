@@ -1,12 +1,13 @@
+load("//defs:package.bzl", "package")
+
 # Additional PAM modules
 # Mount, script, SSH, PKCS#11, and blacklist modules
 
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-
 # pam_mount - Mount volumes on login
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "pam-mount",
-    src_uri = "https://inai.de/files/pam_mount/pam_mount-2.20.tar.xz",
+    url = "https://inai.de/files/pam_mount/pam_mount-2.20.tar.xz",
 
     sha256 = "5426207a485680f8e1764ba405bb38c39a4e0c8306bc8271910f1b819a336ced",
     version = "2.20",
@@ -30,9 +31,10 @@ autotools_package(
 )
 
 # pam_script - Run scripts on authentication
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "pam-script",
-    src_uri = "https://github.com/jeroennijhof/pam_script/archive/refs/tags/1.1.9.tar.gz",
+    url = "https://github.com/jeroennijhof/pam_script/archive/refs/tags/1.1.9.tar.gz",
 
     sha256 = "0aab103d318e3048ccc6f8285950f99284c814f996d2dcbcae8f10d3b8bd8cfe",
     version = "1.1.9",
@@ -53,9 +55,10 @@ autotools_package(
 )
 
 # pam_ssh_agent_auth - SSH agent-based authentication for sudo
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "pam-ssh-agent-auth",
-    src_uri = "https://github.com/jbeverly/pam_ssh_agent_auth/archive/refs/tags/pam_ssh_agent_auth-0.10.4.tar.gz",
+    url = "https://github.com/jbeverly/pam_ssh_agent_auth/archive/refs/tags/pam_ssh_agent_auth-0.10.4.tar.gz",
 
     sha256 = "9d440de6627940c09eadc342cc7d8bc9823654fd1a2be11c4f5820dd073054e0",
     version = "0.10.4",
@@ -78,9 +81,10 @@ autotools_package(
 )
 
 # pam_pkcs11 - PKCS#11/Smart card PAM module
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "pam-pkcs11",
-    src_uri = "https://github.com/OpenSC/pam_pkcs11/archive/refs/tags/pam_pkcs11-0.6.12.tar.gz",
+    url = "https://github.com/OpenSC/pam_pkcs11/archive/refs/tags/pam_pkcs11-0.6.12.tar.gz",
 
     sha256 = "c29cfd021fd3793263f1784b039f166f0e751996bada656a0f9470005eb0c093",
     version = "0.6.12",
@@ -107,9 +111,10 @@ autotools_package(
 )
 
 # pam_abl - Auto blacklist for PAM
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "pam-abl",
-    src_uri = "https://github.com/deksai/pam_abl/archive/refs/tags/v0.6.0.tar.gz",
+    url = "https://github.com/deksai/pam_abl/archive/refs/tags/v0.6.0.tar.gz",
 
     sha256 = "164d1d5fe042d85f653e61ab8823257a2b377d0c43f391d35d11143b72802ad3",
     version = "0.6.0",

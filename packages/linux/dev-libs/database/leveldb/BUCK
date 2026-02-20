@@ -1,23 +1,19 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "leveldb",
     version = "1.23",
-    iuse = ["snappy", "tcmalloc"],
-    use_cmake = {
-        "-snappy": "-DENABLE_SNAPPY=OFF",
-        "-tcmalloc": "-DENABLE_TCMALLOC=OFF",
-        "snappy": "-DENABLE_SNAPPY=ON",
-        "tcmalloc": "-DENABLE_TCMALLOC=ON",
+    use_configure = {
+        "snappy": ("-DENABLE_SNAPPY=ON", "-DENABLE_SNAPPY=OFF"),
+        "tcmalloc": ("-DENABLE_TCMALLOC=ON", "-DENABLE_TCMALLOC=OFF"),
     },
-    src_uri = "https://github.com/google/leveldb/archive/refs/tags/1.23.tar.gz",
+    url = "https://github.com/google/leveldb/archive/refs/tags/1.23.tar.gz",
     sha256 = "9a37f8a6174f09bd622bc723b55881dc541cd50747cbd08831c2a82d620f6d76",
-    signature_required = False,
     description = "Fast key-value storage library",
     homepage = "https://github.com/google/leveldb",
     license = "BSD-3-Clause",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_SHARED_LIBS=ON",
         "-DLEVELDB_BUILD_TESTS=OFF",
         "-DLEVELDB_BUILD_BENCHMARKS=OFF",

@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "libosmium",
     version = "2.20.0",
-    src_uri = "https://github.com/osmcode/libosmium/archive/refs/tags/v2.20.0.tar.gz",
+    url = "https://github.com/osmcode/libosmium/archive/refs/tags/v2.20.0.tar.gz",
     sha256 = "3d3e0873c6aaabb3b2ef4283896bebf233334891a7a49f4712af30ca6ed72477",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTING=OFF",
         "-DBUILD_EXAMPLES=OFF",
         "-DBUILD_BENCHMARKS=OFF",

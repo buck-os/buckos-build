@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # hapPLY - Header-only C++ PLY file format reader/writer
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "happly",
     version = "2019.07.20",
-    src_uri = "https://github.com/nmwsharp/happly/archive/refs/heads/master.tar.gz",
+    url = "https://github.com/nmwsharp/happly/archive/refs/heads/master.tar.gz",
     sha256 = "20c0f42059699004f7d9c326628b5dfe346ece9bc049263ccc945c54a68f1b56",
     description = "Header-only C++ reader/writer for the PLY file format",
     homepage = "https://github.com/nmwsharp/happly",
@@ -27,7 +28,7 @@ install(TARGETS happly EXPORT happlyTargets)
 install(EXPORT happlyTargets DESTINATION lib/cmake/happly)
 EOF
 """,
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],
     visibility = ["PUBLIC"],

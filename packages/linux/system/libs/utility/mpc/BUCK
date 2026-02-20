@@ -1,14 +1,13 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "mpc",
-    src_uri = "https://mirror.buckos.org/m/mpc-1.3.1.tar.gz",
+    url = "https://mirror.buckos.org/m/mpc-1.3.1.tar.gz",
 
     sha256 = "ab642492f5cf882b74aa0cb730cd410a81edcdbec895183ce930e706c1c759b8",
-    iuse = ["static-libs"],
     use_configure = {
-        "-static-libs": "--disable-static",
-        "static-libs": "--enable-static",
+        "static-libs": ("--enable-static", "--disable-static"),
     },
     version = "1.3.1",
     description = "GNU Multiple Precision Complex Library",

@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "vulkan-headers",
     version = "1.4.313",
-    src_uri = "https://github.com/KhronosGroup/Vulkan-Headers/archive/refs/tags/v1.4.313.tar.gz",
+    url = "https://github.com/KhronosGroup/Vulkan-Headers/archive/refs/tags/v1.4.313.tar.gz",
     sha256 = "f3298b8dc620530493296759858a69b622f98ececa0e8c75488ad2000778148f",
-    cmake_args = [
+    configure_args = [
         "-DVULKAN_HEADERS_ENABLE_TESTS=OFF",
         "-DVULKAN_HEADERS_ENABLE_MODULE=OFF",
     ],

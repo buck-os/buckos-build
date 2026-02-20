@@ -1,15 +1,14 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # libXaw - X Athena Widgets library
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libXaw",
     version = "1.0.16",
-    iuse = ["deprecated"],
     use_configure = {
-        "-deprecated": "--disable-deprecated",
-        "deprecated": "--enable-deprecated",
+        "deprecated": ("--enable-deprecated", "--disable-deprecated"),
     },
-    src_uri = "https://xorg.freedesktop.org/archive/individual/lib/libXaw-1.0.16.tar.xz",
+    url = "https://xorg.freedesktop.org/archive/individual/lib/libXaw-1.0.16.tar.xz",
     sha256 = "731d572b54c708f81e197a6afa8016918e2e06dfd3025e066ca642a5b8c39c8f",
     description = "X Athena Widgets library",
     homepage = "https://xorg.freedesktop.org/",

@@ -1,14 +1,15 @@
 """
-Template for cargo_package with USE flags
+Template for package(build_rule = "cargo") with USE flags
 Based on PACKAGE-SPEC-003: Rust/Cargo Packages
 """
 
-load("//defs:package_defs.bzl", "cargo_package")
+load("//defs:package.bzl", "package")
 
-cargo_package(
+package(
+    build_rule = "cargo",
     name = "PACKAGE_NAME",
     version = "VERSION",
-    src_uri = "SOURCE_URL",
+    url = "SOURCE_URL",
     sha256 = "SHA256_CHECKSUM",
 
     # Binary names to install (if different from package name)

@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "nanoprintf",
     version = "0.4.0",
-    src_uri = "https://github.com/charlesnicholson/nanoprintf/archive/1e254afc4fcb97d5a7cf3ce9d029fdfc3ded7d82.tar.gz",
+    url = "https://github.com/charlesnicholson/nanoprintf/archive/1e254afc4fcb97d5a7cf3ce9d029fdfc3ded7d82.tar.gz",
     sha256 = "218943c7c329199c0eb1bef7549a2815bcdf34d0eafa414b749bec95cc589437",
     description = "Tiny header-only printf implementation for embedded systems",
     homepage = "https://github.com/charlesnicholson/nanoprintf",
@@ -25,7 +26,7 @@ install(TARGETS nanoprintf EXPORT nanoprintfTargets)
 install(EXPORT nanoprintfTargets DESTINATION lib/cmake/nanoprintf)
 EOF
 """,
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],
     visibility = ["PUBLIC"],

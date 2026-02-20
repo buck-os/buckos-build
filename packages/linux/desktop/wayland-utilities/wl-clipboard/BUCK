@@ -1,17 +1,16 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "wl-clipboard",
     version = "2.2.1",
-    src_uri = "https://github.com/bugaevc/wl-clipboard/archive/v2.2.1.tar.gz",
+    url = "https://github.com/bugaevc/wl-clipboard/archive/v2.2.1.tar.gz",
     sha256 = "6eb8081207fb5581d1d82c4bcd9587205a31a3d47bea3ebeb7f41aa1143783eb",
-    signature_required = False,
     description = "Command-line copy/paste utilities for Wayland",
     homepage = "https://github.com/bugaevc/wl-clipboard",
     license = "GPL-3.0",
-    meson_args = [],
+    configure_args = [],
     # Exclude bundled subprojects - use system dependencies instead
-    exclude_patterns = ["*subprojects*"],
     deps = [
         "//packages/linux/system/libs/utility/libffi:libffi",
         "//packages/linux/graphics/rendering/wayland:wayland",

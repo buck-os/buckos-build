@@ -1,43 +1,25 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "tesseract",
     version = "5.2.0",
-    iuse = [
-        "float32",
-        "jpeg",
-        "openmp",
-        "png",
-        "static-libs",
-        "tiff",
-        "training",
-        "webp",
-    ],
-    use_cmake = {
-        "-float32": "-DENABLE_FLOAT32=OFF",
-        "-jpeg": "-DENABLE_JPEG=OFF",
-        "-openmp": "-DWITH_OPENMP=OFF",
-        "-png": "-DENABLE_PNG=OFF",
-        "-static-libs": "-DBUILD_STATIC_LIBS=OFF",
-        "-tiff": "-DENABLE_TIFF=OFF",
-        "-training": "-DENABLE_TRAINING=OFF",
-        "-webp": "-DENABLE_WEBP=OFF",
-        "float32": "-DENABLE_FLOAT32=ON",
-        "jpeg": "-DENABLE_JPEG=ON",
-        "openmp": "-DWITH_OPENMP=ON",
-        "png": "-DENABLE_PNG=ON",
-        "static-libs": "-DBUILD_STATIC_LIBS=ON",
-        "tiff": "-DENABLE_TIFF=ON",
-        "training": "-DENABLE_TRAINING=ON",
-        "webp": "-DENABLE_WEBP=ON",
+    use_configure = {
+        "float32": ("-DENABLE_FLOAT32=ON", "-DENABLE_FLOAT32=OFF"),
+        "jpeg": ("-DENABLE_JPEG=ON", "-DENABLE_JPEG=OFF"),
+        "openmp": ("-DWITH_OPENMP=ON", "-DWITH_OPENMP=OFF"),
+        "png": ("-DENABLE_PNG=ON", "-DENABLE_PNG=OFF"),
+        "static-libs": ("-DBUILD_STATIC_LIBS=ON", "-DBUILD_STATIC_LIBS=OFF"),
+        "tiff": ("-DENABLE_TIFF=ON", "-DENABLE_TIFF=OFF"),
+        "training": ("-DENABLE_TRAINING=ON", "-DENABLE_TRAINING=OFF"),
+        "webp": ("-DENABLE_WEBP=ON", "-DENABLE_WEBP=OFF"),
     },
-    src_uri = "https://github.com/tesseract-ocr/tesseract/archive/refs/tags/5.2.0.tar.gz",
+    url = "https://github.com/tesseract-ocr/tesseract/archive/refs/tags/5.2.0.tar.gz",
     sha256 = "eba4deb2f92a3f89a6623812074af8c53b772079525b3c263aa70bbf7b748b3c",
-    signature_required = False,
     description = "Open source OCR engine",
     homepage = "https://github.com/tesseract-ocr/tesseract",
     license = "Apache-2.0",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TRAINING_TOOLS=OFF",
         "-DBUILD_TESTS=OFF",

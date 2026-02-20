@@ -1,11 +1,11 @@
-load("//defs:package_defs.bzl", "go_package")
+load("//defs:package.bzl", "package")
 
-go_package(
+package(
+    build_rule = "go",
     name = "go-fuse",
     version = "2.8.0",
-    src_uri = "https://github.com/hanwen/go-fuse/archive/v2.8.0.tar.gz",
+    url = "https://github.com/hanwen/go-fuse/archive/v2.8.0.tar.gz",
     sha256 = "31df53df0ef274a4f67b3f2b7d901976ccac447ae394bd4831a6f199f43981d6",
-    signature_required = False,
     description = "Go native bindings for the FUSE kernel module",
     homepage = "https://github.com/hanwen/go-fuse",
     license = "BSD",

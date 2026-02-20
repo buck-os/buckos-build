@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "opencv3",
     version = "3.4.11",
-    src_uri = "https://github.com/opencv/opencv/archive/refs/tags/3.4.11.tar.gz",
+    url = "https://github.com/opencv/opencv/archive/refs/tags/3.4.11.tar.gz",
     sha256 = "10898a0268d8f8cbaf0354ddd1d9de6abaac84e3d9a6c9754f56a0aa3383d73b",
     deps = [
         "//packages/linux/core/zlib:zlib",
@@ -15,7 +16,7 @@ cmake_package(
         "//packages/linux/dev-libs/eigen:eigen",
         "//packages/linux/dev-libs/serialization/protobuf:protobuf",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_TESTS=OFF",

@@ -1,45 +1,30 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "cvs",
     # GNU release tarball includes pre-generated configure script
     bdepend = [],
     src_prepare = "",
     version = "1.12.13",
-    src_uri = "https://ftp.gnu.org/non-gnu/cvs/source/feature/1.12.13/cvs-1.12.13.tar.bz2",
+    url = "https://ftp.gnu.org/non-gnu/cvs/source/feature/1.12.13/cvs-1.12.13.tar.bz2",
     sha256 = "78853613b9a6873a30e1cc2417f738c330e75f887afdaf7b3d0800cb19ca515e",
-    signature_required = False,
     description = "Concurrent Versions System - source code revision control tools",
     homepage = "https://cvs.nongnu.org/",
     license = "GPL-2",
 
     # USE flags this package supports
-    iuse = [
-        "crypt",
-        "kerberos",
-        "nls",
-        "pam",
-        "selinux",
-        "server",
-    ],
 
     # Default USE flags
-    use_defaults = [],
 
     # Conditional configure arguments
     use_configure = {
-        "-crypt": "--disable-crypt",
-        "-kerberos": "--without-gssapi",
-        "-nls": "--disable-nls",
-        "-pam": "--disable-pam",
-        "-selinux": "--disable-selinux",
-        "-server": "--disable-server",
-        "crypt": "--enable-crypt",
-        "kerberos": "--with-gssapi",
-        "nls": "--enable-nls",
-        "pam": "--enable-pam",
-        "selinux": "--enable-selinux",
-        "server": "--enable-server",
+        "crypt": ("--enable-crypt", "--disable-crypt"),
+        "kerberos": ("--with-gssapi", "--without-gssapi"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "pam": ("--enable-pam", "--disable-pam"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "server": ("--enable-server", "--disable-server"),
     },
 
     # Base configure arguments (always applied)

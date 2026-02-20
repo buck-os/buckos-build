@@ -1,26 +1,16 @@
-load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "btrfs-progs",
-    src_uri = "https://mirrors.edge.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/btrfs-progs-v6.7.tar.xz",
+    url = "https://mirrors.edge.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/btrfs-progs-v6.7.tar.xz",
 
     sha256 = "c27f755185b9f2dab31f42e8a303d36bed2a3f3341cc6d75ee68a0a650a24767",
-    iuse = [
-        "convert",
-        "experimental",
-        "static",
-        "static-libs",
-        "zstd",
-    ],
     use_configure = {
-        "-convert": "--disable-convert",
-        "-experimental": "--disable-experimental",
-        "-static": "--disable-static",
-        "-static-libs": "--disable-static",
-        "convert": "--enable-convert",
-        "experimental": "--enable-experimental",
-        "static": "--enable-static",
-        "static-libs": "--enable-static",
+        "convert": ("--enable-convert", "--disable-convert"),
+        "experimental": ("--enable-experimental", "--disable-experimental"),
+        "static": ("--enable-static", "--disable-static"),
+        "static-libs": ("--enable-static", "--disable-static"),
     },
     version = "6.7",
     description = "Btrfs filesystem utilities (mkfs.btrfs, btrfs-check, etc.)",

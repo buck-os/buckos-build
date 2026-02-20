@@ -1,15 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "opengm",
     version = "2.3.6",
-    src_uri = "https://github.com/opengm/opengm/archive/refs/tags/v2.3.6.tar.gz",
+    url = "https://github.com/opengm/opengm/archive/refs/tags/v2.3.6.tar.gz",
     sha256 = "b8e8d69b87f602072160e9b483128cbb04a4cdf0c505c9b1c1e1f42165d47afa",
     description = "OpenGM - A C++ Library for Discrete Graphical Models",
     homepage = "https://github.com/opengm/opengm",
     license = "GPL-1.0-or-later",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
         "-DBUILD_EXAMPLES=OFF",

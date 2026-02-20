@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "handheld_sr",
     version = "0.0.1",
-    src_uri = "https://github.com/jamy-l/handheld-multi-frame-super-resolution/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/jamy-l/handheld-multi-frame-super-resolution/archive/refs/heads/main.tar.gz",
     sha256 = "6375f92a4b8d4f000c04d28784521e0cc7f6e9c72a3893eafe51bfc78b5d1568",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

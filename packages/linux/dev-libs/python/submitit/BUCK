@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "submitit",
     version = "1.5.1",
-    src_uri = "https://github.com/facebookincubator/submitit/archive/refs/tags/1.5.1.tar.gz",
+    url = "https://github.com/facebookincubator/submitit/archive/refs/tags/1.5.1.tar.gz",
     sha256 = "f9268962ee96b802e83825d6074ac55c2c5329a528d4c8d01960a79650ebe8ae",
     description = "Lightweight Python library for submitting jobs to Slurm clusters",
     homepage = "https://github.com/facebookincubator/submitit",

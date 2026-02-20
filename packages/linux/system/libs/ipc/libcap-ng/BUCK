@@ -1,19 +1,17 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libcap-ng",
     # Official release tarball includes pre-generated configure script
     bdepend = [],
     src_prepare = "",
-    src_uri = "https://people.redhat.com/sgrubb/libcap-ng/libcap-ng-0.8.5.tar.gz",
+    url = "https://people.redhat.com/sgrubb/libcap-ng/libcap-ng-0.8.5.tar.gz",
 
     sha256 = "3ba5294d1cbdfa98afaacfbc00b6af9ed2b83e8a21817185dfd844cc8c7ac6ff",
-    iuse = ["python", "static-libs"],
     use_configure = {
-        "-python": "--disable-python",
-        "-static-libs": "--disable-static",
-        "python": "--enable-python",
-        "static-libs": "--enable-static",
+        "python": ("--enable-python", "--disable-python"),
+        "static-libs": ("--enable-static", "--disable-static"),
     },
     version = "0.8.5",
     description = "Alternate POSIX capabilities library",

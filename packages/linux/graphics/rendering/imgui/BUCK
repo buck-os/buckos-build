@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # imgui - Package from third-party
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "imgui",
     version = "1.91.0",
-    src_uri = "https://github.com/ocornut/imgui/archive/refs/tags/v1.91.0.tar.gz",
+    url = "https://github.com/ocornut/imgui/archive/refs/tags/v1.91.0.tar.gz",
     sha256 = "6e62c87252e6b3725ba478a1c04dc604aa0aaeec78fedcf4011f1e52548f4cc9",
     description = "imgui package",
     homepage = "https://github.com/ocornut/imgui.git",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
     ],

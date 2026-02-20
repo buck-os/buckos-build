@@ -1,15 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "enchantum",
     version = "0.3.0",
-    src_uri = "https://github.com/ZXShady/enchantum/archive/refs/tags/0.3.0.tar.gz",
+    url = "https://github.com/ZXShady/enchantum/archive/refs/tags/0.3.0.tar.gz",
     sha256 = "9b476fc4b872e5f4c7cb75707d587bf9333254200ff0851fbbc544078c0000d2",
     description = "Fast macro-free enum reflection C++ library",
     homepage = "https://github.com/ZXShady/enchantum",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DENCHANTUM_BUILD_TESTS=OFF",
         "-DENCHANTUM_BUILD_BENCHMARKS=OFF",

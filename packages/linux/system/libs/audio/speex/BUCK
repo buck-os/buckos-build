@@ -1,40 +1,23 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # Speex audio codec
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "speex",
     # Xiph release tarball includes pre-generated configure script
     bdepend = [],
     src_prepare = "",
-    src_uri = "https://downloads.xiph.org/releases/speex/speex-1.2.1.tar.gz",
+    url = "https://downloads.xiph.org/releases/speex/speex-1.2.1.tar.gz",
 
     sha256 = "4b44d4f2b38a370a2d98a78329fefc56a0cf93d1c1be70029217baae6628feea",
-
-    signature_sha256 = "7d0457864f7dc83f05749b8ebeeafb1192b15f1643b08c38e8084e856a0d7b7f",
-    iuse = [
-        "cpu_flags_arm_v4",
-        "cpu_flags_arm_v5",
-        "cpu_flags_arm_v6",
-        "cpu_flags_x86_sse",
-        "utils",
-        "valgrind",
-        "vbr",
-    ],
     use_configure = {
-        "-cpu_flags_arm_v4": "--disable-cpu_flags_arm_v4",
-        "-cpu_flags_arm_v5": "--disable-cpu_flags_arm_v5",
-        "-cpu_flags_arm_v6": "--disable-cpu_flags_arm_v6",
-        "-cpu_flags_x86_sse": "--disable-cpu_flags_x86_sse",
-        "-utils": "--disable-utils",
-        "-valgrind": "--disable-valgrind",
-        "-vbr": "--disable-vbr",
-        "cpu_flags_arm_v4": "--enable-cpu_flags_arm_v4",
-        "cpu_flags_arm_v5": "--enable-cpu_flags_arm_v5",
-        "cpu_flags_arm_v6": "--enable-cpu_flags_arm_v6",
-        "cpu_flags_x86_sse": "--enable-cpu_flags_x86_sse",
-        "utils": "--enable-utils",
-        "valgrind": "--enable-valgrind",
-        "vbr": "--enable-vbr",
+        "cpu_flags_arm_v4": ("--enable-cpu_flags_arm_v4", "--disable-cpu_flags_arm_v4"),
+        "cpu_flags_arm_v5": ("--enable-cpu_flags_arm_v5", "--disable-cpu_flags_arm_v5"),
+        "cpu_flags_arm_v6": ("--enable-cpu_flags_arm_v6", "--disable-cpu_flags_arm_v6"),
+        "cpu_flags_x86_sse": ("--enable-cpu_flags_x86_sse", "--disable-cpu_flags_x86_sse"),
+        "utils": ("--enable-utils", "--disable-utils"),
+        "valgrind": ("--enable-valgrind", "--disable-valgrind"),
+        "vbr": ("--enable-vbr", "--disable-vbr"),
     },
     version = "1.2.1",
     description = "Open source speech codec",
@@ -52,16 +35,15 @@ autotools_package(
 )
 
 # SpeexDSP - signal processing library
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "speexdsp",
     # Xiph release tarball includes pre-generated configure script
     bdepend = [],
     src_prepare = "",
-    src_uri = "https://downloads.xiph.org/releases/speex/speexdsp-1.2.1.tar.gz",
+    url = "https://downloads.xiph.org/releases/speex/speexdsp-1.2.1.tar.gz",
 
     sha256 = "8c777343e4a6399569c72abc38a95b24db56882c83dbdb6c6424a5f4aeb54d3d",
-
-    signature_sha256 = "e5796f1492587b8cfcb835b6410701e7273208b04c224b6c73aaf9d06f4cea92",
     version = "1.2.1",
     description = "Speex audio processing library (resampler, echo cancellation, etc.)",
     homepage = "https://www.speex.org/",

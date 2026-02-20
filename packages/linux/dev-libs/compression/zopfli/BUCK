@@ -1,18 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # Zopfli - High-quality deflate/gzip/zlib compression library
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "zopfli",
     version = "1.0.3",
-    src_uri = "https://github.com/google/zopfli/archive/refs/tags/zopfli-1.0.3.tar.gz",
+    url = "https://github.com/google/zopfli/archive/refs/tags/zopfli-1.0.3.tar.gz",
     sha256 = "e955a7739f71af37ef3349c4fa141c648e8775bceb2195be07e86f8e638814bd",
     description = "Zopfli Compression Algorithm by Google",
     homepage = "https://github.com/google/zopfli",
     license = "Apache-2.0",
-    iuse = [],
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DZOPFLI_BUILD_INSTALL=ON",

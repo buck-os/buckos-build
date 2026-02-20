@@ -1,12 +1,13 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "tinyxml2",
     version = "11.0.0",
-    src_uri = "https://github.com/leethomason/tinyxml2/archive/refs/tags/11.0.0.tar.gz",
+    url = "https://github.com/leethomason/tinyxml2/archive/refs/tags/11.0.0.tar.gz",
     sha256 = "5556deb5081fb246ee92afae73efd943c889cef0cafea92b0b82422d6a18f289",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
     ],

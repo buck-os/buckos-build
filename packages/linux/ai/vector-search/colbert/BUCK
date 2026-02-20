@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "colbert",
     version = "0.2.22",
-    src_uri = "https://github.com/stanford-futuredata/ColBERT/archive/refs/tags/v0.2.22.tar.gz",
+    url = "https://github.com/stanford-futuredata/ColBERT/archive/refs/tags/v0.2.22.tar.gz",
     sha256 = "c38a09d2392dc4a79363e941cec37d4bb4bfc0d868ffa1d75280134701ffc777",
     deps = [
         "//packages/linux/dev-libs/python/bitarray:bitarray",

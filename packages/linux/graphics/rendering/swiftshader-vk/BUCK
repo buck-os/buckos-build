@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "swiftshader-vk",
     version = "2026.01.18",
-    src_uri = "https://github.com/google/swiftshader/archive/9c9be842747090b0be33d817b79a307f55d402db.tar.gz",
+    url = "https://github.com/google/swiftshader/archive/9c9be842747090b0be33d817b79a307f55d402db.tar.gz",
     sha256 = "93eb557b859a310f9b8053099bd7e9df4ba978059c1609404a0af7ebdf26c7cb",
-    cmake_args = [
+    configure_args = [
         "-DSWIFTSHADER_BUILD_VULKAN=ON",
         "-DSWIFTSHADER_BUILD_EGL=OFF",
         "-DSWIFTSHADER_BUILD_GLESv2=OFF",

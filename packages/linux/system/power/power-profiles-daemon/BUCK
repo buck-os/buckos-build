@@ -1,35 +1,25 @@
+load("//defs:package.bzl", "package")
+
 # power-profiles-daemon - D-Bus Power Profile Service
 # Makes power profiles handling available over D-Bus
 
-load("//defs:package_defs.bzl", "meson_package", "autotools_package")
-
-meson_package(
+package(
+    build_rule = "meson",
     name = "power-profiles-daemon",
     version = "0.21",
-    iuse = [
-        "bash-completion",
-        "gtk-doc",
-        "man",
-        "selinux",
-        "zsh-completion",
-    ],
-    src_uri = "https://gitlab.freedesktop.org/upower/power-profiles-daemon/-/archive/0.21/power-profiles-daemon-0.21.tar.gz",
+    url = "https://gitlab.freedesktop.org/upower/power-profiles-daemon/-/archive/0.21/power-profiles-daemon-0.21.tar.gz",
     sha256 = "c15a368a59f2cae1474bdfccdd9357f06b0abc9eb7638a87f68c091aaf570349",
-    signature_required = False,
     description = "D-Bus daemon for power profile handling",
     homepage = "https://gitlab.freedesktop.org/upower/power-profiles-daemon",
     license = "GPL-3.0",
-    meson_args = [
+    configure_args = [
         "-Dtests=false",
         "-Dsystemdsystemunitdir=/usr/lib/systemd/system",
     ],
-    use_meson = {
-        "bash-completion": "-Dbash_completion=true",
-        "-bash-completion": "-Dbash_completion=false",
-        "gtk-doc": "-Dgtk_doc=true",
-        "-gtk-doc": "-Dgtk_doc=false",
-        "man": "-Dman=true",
-        "-man": "-Dman=false",
+    use_configure = {
+        "bash-completion": ("-Dbash_completion=true", "-Dbash_completion=false"),
+        "gtk-doc": ("-Dgtk_doc=true", "-Dgtk_doc=false"),
+        "man": ("-Dman=true", "-Dman=false"),
     },
     deps = [
         "//packages/linux/dev-libs/glib:glib",

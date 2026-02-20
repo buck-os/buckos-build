@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "nrd",
     version = "4.14.0",
-    src_uri = "https://github.com/NVIDIA-RTX/NRD/archive/refs/tags/v4.14.0.tar.gz",
+    url = "https://github.com/NVIDIA-RTX/NRD/archive/refs/tags/v4.14.0.tar.gz",
     sha256 = "e10fe4903cceb4bb4f8bd54df9b4b7768dd4b9050eb73bf677c60433c8fd4457",
-    cmake_args = [
+    configure_args = [
         "-DNRD_STATIC_LIBRARY=ON",
         "-DNRD_EMBEDS_SPIRV_SHADERS=ON",
         "-DNRD_EMBEDS_DXBC_SHADERS=OFF",

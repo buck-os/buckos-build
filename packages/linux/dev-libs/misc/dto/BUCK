@@ -1,15 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "dto-src",
-    src_uri = "https://github.com/intel/dto/archive/refs/heads/main.tar.gz",
-    sha256 = "b41f5d599ffe8f516bcc593af4b76e3534d9f197e0199d49840e785d99d528d3",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "dto",
-    srcs = [":dto-src"],
     version = "1.0",
     description = "Intel Data Transfer Optimizer library for DSA acceleration",
     homepage = "https://github.com/intel/dto",

@@ -1,16 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # MessagePack - Efficient binary serialization format
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "msgpack",
     version = "6.1.0",
-    iuse = ["examples"],
-    use_cmake = {
-        "-examples": "-DBUILD_EXAMPLES=OFF",
-        "examples": "-DBUILD_EXAMPLES=ON",
+    use_configure = {
+        "examples": ("-DBUILD_EXAMPLES=ON", "-DBUILD_EXAMPLES=OFF"),
     },
-    src_uri = "https://github.com/msgpack/msgpack-c/releases/download/cpp-6.1.0/msgpack-cxx-6.1.0.tar.gz",
+    url = "https://github.com/msgpack/msgpack-c/releases/download/cpp-6.1.0/msgpack-cxx-6.1.0.tar.gz",
     sha256 = "23ede7e93c8efee343ad8c6514c28f3708207e5106af3b3e4969b3a9ed7039e7",
     description = "Efficient binary serialization format like JSON but smaller",
     homepage = "https://msgpack.org/",
@@ -18,7 +17,7 @@ cmake_package(
     deps = [
         "//packages/linux/dev-libs/boost:boost",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DMSGPACK_BUILD_TESTS=OFF",
         "-DMSGPACK_BUILD_EXAMPLES=OFF",

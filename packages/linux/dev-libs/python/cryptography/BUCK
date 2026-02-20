@@ -1,13 +1,14 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
 # Python cryptography library - provides cryptographic primitives and recipes
 # Note: Modern versions require Rust for compilation. Using older pure-Python version
 # for bootstrap compatibility.
 
-python_package(
+package(
+    build_rule = "python",
     name = "cryptography",
     version = "41.0.7",
-    src_uri = "https://files.pythonhosted.org/packages/source/c/cryptography/cryptography-41.0.7.tar.gz",
+    url = "https://files.pythonhosted.org/packages/source/c/cryptography/cryptography-41.0.7.tar.gz",
     sha256 = "13f93ce9bea8016c253b34afc6bd6a75993e5c40672ed5405a9c832f0d4a00bc",
     deps = [
         "//packages/linux/system/libs/crypto/openssl:openssl",

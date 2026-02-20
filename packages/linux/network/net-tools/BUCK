@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "make_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # net-tools - Traditional network utilities (ifconfig, netstat, route)
@@ -7,30 +7,13 @@ load("//defs:package_defs.bzl", "download_source", "make_package")
 make_package(
     name = "net-tools",
     version = "2.10",
-    src_uri = "https://github.com/ecki/net-tools/archive/refs/tags/v2.10.tar.gz",
+    url = "https://github.com/ecki/net-tools/archive/refs/tags/v2.10.tar.gz",
     sha256 = "8e186f65f0ff304989b3dc8b0067c3a07d36ae777da60667bdd6ccb2730908d2",
-    signature_required = False,
-
-    iuse = [
-        "arp",
-        "hostname",
-        "ipv6",
-        "nis",
-        "nls",
-        "plipconfig",
-        "selinux",
-        "slattach",
-        "static",
-    ],
     use_configure = {
-        "-nis": "--disable-nis",
-        "-selinux": "--disable-selinux",
-        "-static": "--disable-static",
-        "nis": "--enable-nis",
-        "selinux": "--enable-selinux",
-        "static": "--enable-static",
+        "nis": ("--enable-nis", "--disable-nis"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "static": ("--enable-static", "--disable-static"),
     },
-    use_defaults = ["ipv6", "arp", "hostname"],
 
     deps = [],
 

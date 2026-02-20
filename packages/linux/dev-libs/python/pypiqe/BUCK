@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "pypiqe",
     version = "1.2",
-    src_uri = "https://github.com/michael-rutherford/pypiqe/archive/refs/tags/v1.2.tar.gz",
+    url = "https://github.com/michael-rutherford/pypiqe/archive/refs/tags/v1.2.tar.gz",
     sha256 = "2c6ff2eb43eafbf8f8b361f7e45c965193869f4d628b782b97b48cd800d9c05c",
     deps = [
         "//packages/linux/dev-libs/python/numpy:numpy",

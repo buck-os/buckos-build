@@ -1,19 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # Bullet Physics SDK - Real-time collision detection and multi-physics simulation
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "bullet3",
     version = "3.25",
-    src_uri = "https://github.com/bulletphysics/bullet3/archive/refs/tags/3.25.tar.gz",
+    url = "https://github.com/bulletphysics/bullet3/archive/refs/tags/3.25.tar.gz",
     sha256 = "c45afb6399e3f68036ddb641c6bf6f552bf332d5ab6be62f7e6c54eda05ceb77",
     description = "Real-time collision detection and multi-physics simulation library",
     homepage = "https://pybullet.org/",
     license = "Zlib",
-    iuse = ["double-precision", "opengl", "extras", "examples"],
-    use_defaults = [],
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DUSE_DOUBLE_PRECISION=OFF",
@@ -26,21 +25,10 @@ cmake_package(
         "-DINSTALL_LIBS=ON",
         "-DINSTALL_CMAKE_FILES=ON",
     ],
-    use_cmake = {
-        "double-precision": "-DUSE_DOUBLE_PRECISION=ON",
-        "-double-precision": "-DUSE_DOUBLE_PRECISION=OFF",
-        "opengl": "-DBUILD_OPENGL3_DEMOS=ON",
-        "-opengl": "-DBUILD_OPENGL3_DEMOS=OFF",
-        "extras": "-DBUILD_EXTRAS=ON",
-        "-extras": "-DBUILD_EXTRAS=OFF",
-        "examples": [
-            "-DBUILD_CPU_DEMOS=ON",
-            "-DBUILD_BULLET2_DEMOS=ON",
-        ],
-        "-examples": [
-            "-DBUILD_CPU_DEMOS=OFF",
-            "-DBUILD_BULLET2_DEMOS=OFF",
-        ],
+    use_configure = {
+        "double-precision": ("-DUSE_DOUBLE_PRECISION=ON", "-DUSE_DOUBLE_PRECISION=OFF"),
+        "extras": ("-DBUILD_EXTRAS=ON", "-DBUILD_EXTRAS=OFF"),
+        "opengl": ("-DBUILD_OPENGL3_DEMOS=ON", "-DBUILD_OPENGL3_DEMOS=OFF"),
     },
     visibility = ["PUBLIC"],
 )

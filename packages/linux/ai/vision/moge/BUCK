@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "moge",
     version = "2.0.0+git20251102",
-    src_uri = "https://github.com/microsoft/MoGe/archive/07444410f1e33f402353b99d6ccd26bd31e469e8.tar.gz",
+    url = "https://github.com/microsoft/MoGe/archive/07444410f1e33f402353b99d6ccd26bd31e469e8.tar.gz",
     sha256 = "08e5fcbaa4421a0e3e284ac7e3196965904677bb479c29b19c95ead47407f734",
     deps = [
         "//packages/linux/dev-libs/python/click:click",

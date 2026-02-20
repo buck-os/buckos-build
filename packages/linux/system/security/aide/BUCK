@@ -1,38 +1,21 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "aide",
     bdepend = [],
     src_prepare = "",
-    src_uri = "https://github.com/aide/aide/releases/download/v0.18.6/aide-0.18.6.tar.gz",
+    url = "https://github.com/aide/aide/releases/download/v0.18.6/aide-0.18.6.tar.gz",
 
     sha256 = "8ff36ce47d37d0cc987762d5d961346d475de74bba8a1832fd006db6edd3c10e",
-
-    signature_sha256 = "67708696dbf7231c59d85ea71c41e08dba136533c2a24b0d239248bd44385fae",
-    iuse = [
-        "acl",
-        "audit",
-        "curl",
-        "e2fs",
-        "mhash",
-        "selinux",
-        "xattr",
-    ],
     use_configure = {
-        "-acl": "--disable-acl",
-        "-audit": "--disable-audit",
-        "-curl": "--without-curl",
-        "-e2fs": "--disable-e2fs",
-        "-mhash": "--disable-mhash",
-        "-selinux": "--disable-selinux",
-        "-xattr": "--disable-xattr",
-        "acl": "--enable-acl",
-        "audit": "--enable-audit",
-        "curl": "--with-curl",
-        "e2fs": "--enable-e2fs",
-        "mhash": "--enable-mhash",
-        "selinux": "--enable-selinux",
-        "xattr": "--enable-xattr",
+        "acl": ("--enable-acl", "--disable-acl"),
+        "audit": ("--enable-audit", "--disable-audit"),
+        "curl": ("--with-curl", "--without-curl"),
+        "e2fs": ("--enable-e2fs", "--disable-e2fs"),
+        "mhash": ("--enable-mhash", "--disable-mhash"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "xattr": ("--enable-xattr", "--disable-xattr"),
     },
     version = "0.18.6",
     description = "Advanced Intrusion Detection Environment - file integrity checker",

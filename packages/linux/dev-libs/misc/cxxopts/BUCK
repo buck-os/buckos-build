@@ -1,22 +1,21 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # cxxopts - Lightweight C++ command line option parser
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "cxxopts",
     version = "3.1.1",
-    iuse = ["icu"],
-    use_cmake = {
-        "-icu": "-DENABLE_ICU=OFF",
-        "icu": "-DENABLE_ICU=ON",
+    use_configure = {
+        "icu": ("-DENABLE_ICU=ON", "-DENABLE_ICU=OFF"),
     },
-    src_uri = "https://github.com/jarro2783/cxxopts/archive/refs/tags/v3.1.1.tar.gz",
+    url = "https://github.com/jarro2783/cxxopts/archive/refs/tags/v3.1.1.tar.gz",
     sha256 = "523175f792eb0ff04f9e653c90746c12655f10cb70f1d5e6d6d9491420298a08",
     description = "Lightweight C++ command line option parser",
     homepage = "https://github.com/jarro2783/cxxopts",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCXXOPTS_BUILD_EXAMPLES=OFF",
         "-DCXXOPTS_BUILD_TESTS=OFF",

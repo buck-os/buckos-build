@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "udvd",
     version = "0.0.1",
-    src_uri = "https://github.com/sreyas-mohan/udvd/archive/7374e5bafde865c3a7ef11c5543d5c0b19da40af.tar.gz",
+    url = "https://github.com/sreyas-mohan/udvd/archive/7374e5bafde865c3a7ef11c5543d5c0b19da40af.tar.gz",
     sha256 = "c972bbf1d10543bf1db46d6d570a0dc510a936af92ee257e644cff3d6e18d555",
     deps = [
         "//packages/linux/dev-libs/python/numpy:numpy",

@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "perftest",
     version = "25.07.0-0.104",
-    src_uri = "https://github.com/linux-rdma/perftest/archive/refs/tags/25.07.0-0.104.tar.gz",
+    url = "https://github.com/linux-rdma/perftest/archive/refs/tags/25.07.0-0.104.tar.gz",
     sha256 = "e5acee7cd735b60e04c997c2792d7400fbc39aeeea526fbc377a224398fb5f18",
     deps = [
         "//packages/linux/network/libs/rdma-core:rdma-core",

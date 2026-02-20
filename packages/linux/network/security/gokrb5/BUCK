@@ -1,11 +1,11 @@
-load("//defs:package_defs.bzl", "go_package")
+load("//defs:package.bzl", "package")
 
-go_package(
+package(
+    build_rule = "go",
     name = "gokrb5",
     version = "8.4.2",
-    src_uri = "https://github.com/jcmturner/gokrb5/archive/v8.4.2.tar.gz",
+    url = "https://github.com/jcmturner/gokrb5/archive/v8.4.2.tar.gz",
     sha256 = "089b73043d9209d998b81f117f22b0c5c4e749c0270d6e12eba649b25e8e0b0a",
-    signature_required = False,
     description = "Pure Go Kerberos 5 implementation with SPNEGO and PAC support",
     homepage = "https://github.com/jcmturner/gokrb5",
     license = "Apache-2.0",

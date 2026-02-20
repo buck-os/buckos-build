@@ -1,39 +1,21 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # mupdf - Lightweight PDF and XPS viewer
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "mupdf",
-    src_uri = "https://mupdf.com/downloads/archive/mupdf-1.23.11-source.tar.gz",
+    url = "https://mupdf.com/downloads/archive/mupdf-1.23.11-source.tar.gz",
 
     sha256 = "478f2a167feae2a291c8b8bc5205f2ce2f09f09b574a6eb0525bfad95a3cfe66",
-    iuse = [
-        "X",
-        "archive",
-        "barcode",
-        "brotli",
-        "javascript",
-        "jpeg2k",
-        "opengl",
-        "ssl",
-    ],
     use_configure = {
-        "-X": "--without-x",
-        "-archive": "--disable-archive",
-        "-barcode": "--disable-barcode",
-        "-brotli": "--without-brotli",
-        "-javascript": "--disable-javascript",
-        "-jpeg2k": "--disable-jpeg2k",
-        "-opengl": "--disable-opengl",
-        "-ssl": "--disable-ssl",
-        "X": "--with-x",
-        "archive": "--enable-archive",
-        "barcode": "--enable-barcode",
-        "brotli": "--with-brotli",
-        "javascript": "--enable-javascript",
-        "jpeg2k": "--enable-jpeg2k",
-        "opengl": "--enable-opengl",
-        "ssl": "--enable-ssl",
+        "X": ("--with-x", "--without-x"),
+        "archive": ("--enable-archive", "--disable-archive"),
+        "barcode": ("--enable-barcode", "--disable-barcode"),
+        "brotli": ("--with-brotli", "--without-brotli"),
+        "javascript": ("--enable-javascript", "--disable-javascript"),
+        "jpeg2k": ("--enable-jpeg2k", "--disable-jpeg2k"),
+        "opengl": ("--enable-opengl", "--disable-opengl"),
+        "ssl": ("--enable-ssl", "--disable-ssl"),
     },
     version = "1.23.11",
     description = "Lightweight PDF and XPS viewer",

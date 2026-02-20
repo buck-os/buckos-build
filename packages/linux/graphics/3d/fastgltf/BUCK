@@ -1,32 +1,22 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # fastgltf - Fast glTF 2.0 parser and loader
 # A speed and usability focused glTF 2.0 library written in modern C++17
 # with minimal dependencies. Uses SIMD in various areas to decrease parsing time.
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "fastgltf",
     version = "0.8.0",
-    src_uri = "https://github.com/spnda/fastgltf/archive/refs/tags/v0.8.0.tar.gz",
+    url = "https://github.com/spnda/fastgltf/archive/refs/tags/v0.8.0.tar.gz",
     sha256 = "0bc88a0858c88d94306443946a5a1606118b7d5e4960f1e6186a3632e9df38fb",
     description = "Fast glTF 2.0 parser and loader with SIMD optimizations",
     homepage = "https://github.com/spnda/fastgltf",
     license = "MIT",
-    iuse = [
-        "tests",
-        "examples",
-        "docs",
-        "cpp20",
-        "modules",
-        "custom-smallvector",
-        "deprecated-ext",
-        "64bit-float",
-    ],
-    use_defaults = [],
     deps = [
         "//packages/linux/dev-libs/json/simdjson:simdjson",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DFASTGLTF_ENABLE_TESTS=OFF",

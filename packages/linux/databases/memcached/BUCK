@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # memcached - High-performance distributed memory object caching system
 #
@@ -8,37 +8,31 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package")
 #   sasl     - Enable SASL authentication
 #   doc      - Build documentation
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "memcached",
     version = "1.6.28",
-    src_uri = "https://www.memcached.org/files/memcached-1.6.28.tar.gz",
+    url = "https://www.memcached.org/files/memcached-1.6.28.tar.gz",
     sha256 = "b1d02d7e9887d80f4885a024931c8bbe9c16d333200d2dcadde8597892c54855",
-    signature_required = False,
     description = "High-performance distributed memory object caching system",
     homepage = "https://memcached.org/",
     license = "BSD-3-Clause",
-    iuse = ["ssl", "seccomp", "sasl", "doc"],
-    use_defaults = ["seccomp"],
     deps = [
         "//packages/linux/system/libs/utility/libevent:libevent",
     ],
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "sasl": ["//packages/linux/system/security/auth/directory:cyrus-sasl"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "sasl": "//packages/linux/system/security/auth/directory:cyrus-sasl",
     },
     configure_args = [
         "--prefix=/usr",
         "--enable-64bit",
     ],
     use_configure = {
-        "ssl": "--enable-tls",
-        "-ssl": "--disable-tls",
-        "seccomp": "--enable-seccomp",
-        "-seccomp": "--disable-seccomp",
-        "sasl": "--enable-sasl",
-        "-sasl": "--disable-sasl",
-        "doc": "--enable-docs",
-        "-doc": "--disable-docs",
+        "doc": ("--enable-docs", "--disable-docs"),
+        "sasl": ("--enable-sasl", "--disable-sasl"),
+        "seccomp": ("--enable-seccomp", "--disable-seccomp"),
+        "ssl": ("--enable-tls", "--disable-tls"),
     },
     visibility = ["PUBLIC"],
 )

@@ -1,18 +1,19 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # AnimX - Autodesk Maya Animation Library
 # A library that replicates Maya's animation curve interpolation schemes
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "animx",
     version = "1.0.0",
-    src_uri = "https://github.com/Autodesk/animx/archive/11c31ac74e526b599031414866db639383c9a5e0.tar.gz",
+    url = "https://github.com/Autodesk/animx/archive/11c31ac74e526b599031414866db639383c9a5e0.tar.gz",
     sha256 = "60db341041b64ac326075da2557b6df05bb85a7fa830394a4e5ceafa3153b750",
     description = "Animation library that replicates Maya's curve interpolation",
     homepage = "https://github.com/Autodesk/animx",
     license = "Apache-2.0",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DMAYA_64BIT_TIME_PRECISION=ON",
         "-DANIMX_BUILD_MAYA_TESTSUITE=OFF",

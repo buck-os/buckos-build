@@ -1,18 +1,19 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # MikkTSpace - Tangent Space Normal Maps library
 # A library for generating tangent spaces for normal mapping
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "mikktspace",
     version = "1.0",
-    src_uri = "https://github.com/mmikk/MikkTSpace/archive/refs/heads/master.tar.gz",
+    url = "https://github.com/mmikk/MikkTSpace/archive/refs/heads/master.tar.gz",
     sha256 = "a07fb76cee5e5e08be84086462b9377b92cb369c878d953f32ca2e69b44cbd3b",
     description = "Tangent space calculation library for normal mapping",
     homepage = "https://github.com/mmikk/MikkTSpace",
     license = "Zlib",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
     ],

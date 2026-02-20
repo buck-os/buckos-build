@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # CMake - Cross-platform build system
@@ -6,23 +6,19 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package")
 # NOTE: cmake uses its own bootstrap script, not autotools.
 # We use custom src_configure/src_compile/src_install phases.
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "cmake",
     version = "4.2.0",
     # Use host toolchain - cmake needs C++ and is used as a build tool
     use_bootstrap = False,
-    iuse = ["dap", "gui", "ncurses"],
     use_configure = {
-        "-dap": "--disable-dap",
-        "-gui": "--disable-gui",
-        "-ncurses": "--without-ncurses",
-        "dap": "--enable-dap",
-        "gui": "--enable-gui",
-        "ncurses": "--with-ncurses",
+        "dap": ("--enable-dap", "--disable-dap"),
+        "gui": ("--enable-gui", "--disable-gui"),
+        "ncurses": ("--with-ncurses", "--without-ncurses"),
     },
-    src_uri = "https://github.com/Kitware/CMake/releases/download/v4.2.0/cmake-4.2.0.tar.gz",
+    url = "https://github.com/Kitware/CMake/releases/download/v4.2.0/cmake-4.2.0.tar.gz",
     sha256 = "4104e94657d247c811cb29985405a360b78130b5d51e7f6daceb2447830bd579",
-    signature_required = False,
     description = "Cross-platform, open-source build system",
     homepage = "https://cmake.org/",
     license = "BSD-3-Clause",

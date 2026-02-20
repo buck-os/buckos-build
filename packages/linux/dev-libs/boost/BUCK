@@ -1,20 +1,12 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # boost - Peer-reviewed C++ libraries
 # USE flags: python, mpi, icu, zstd, bzip2, lzma, context, coroutine
 # Default: icu, zstd, bzip2, lzma
 
-download_source(
-    name = "boost-src",
-    src_uri = "https://archives.boost.io/release/1.84.0/source/boost_1_84_0.tar.bz2",
-    sha256 = "cc4b893acf645c9d4b698e9a0f08ca8846aa5d6c68275c14c3e7949c24109454",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "boost",
-    srcs = [":boost-src"],
     version = "1.84.0",
     description = "Free peer-reviewed portable C++ source libraries",
     homepage = "https://www.boost.org/",

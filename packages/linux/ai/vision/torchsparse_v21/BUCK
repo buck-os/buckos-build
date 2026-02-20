@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "torchsparse_v21",
     version = "2.0.0",
-    src_uri = "https://github.com/mit-han-lab/torchsparse/archive/refs/tags/v2.0.0.tar.gz",
+    url = "https://github.com/mit-han-lab/torchsparse/archive/refs/tags/v2.0.0.tar.gz",
     sha256 = "74e9cc0666487c54443b8fc7dbac4d6d7f9f5b747163c4f6b0a57c9e11c833ba",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

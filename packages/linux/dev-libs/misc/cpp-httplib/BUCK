@@ -1,41 +1,31 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # cpp-httplib - A C++ header-only HTTP/HTTPS server and client library
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "cpp-httplib",
     version = "0.15.3",
-    src_uri = "https://github.com/yhirose/cpp-httplib/archive/refs/tags/v0.15.3.tar.gz",
+    url = "https://github.com/yhirose/cpp-httplib/archive/refs/tags/v0.15.3.tar.gz",
     sha256 = "2121bbf38871bb2aafb5f7f2b9b94705366170909f434428352187cb0216124e",
     description = "A C++ header-only HTTP/HTTPS server and client library",
     homepage = "https://github.com/yhirose/cpp-httplib",
     license = "MIT",
-    iuse = [
-        "brotli",
-        "ssl",
-        "zlib",
-        "zstd",
-    ],
-    use_defaults = ["ssl", "zlib"],
     deps = [],
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "zlib": ["//packages/linux/core/zlib:zlib"],
-        "brotli": ["//packages/linux/system/libs/compression/brotli:brotli"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "zlib": "//packages/linux/core/zlib:zlib",
+        "brotli": "//packages/linux/system/libs/compression/brotli:brotli",
     },
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DHTTPLIB_COMPILE=ON",
     ],
-    use_cmake = {
-        "-brotli": "-DHTTPLIB_REQUIRE_BROTLI=OFF",
-        "-ssl": "-DHTTPLIB_REQUIRE_OPENSSL=OFF",
-        "-zlib": "-DHTTPLIB_REQUIRE_ZLIB=OFF",
-        "-zstd": "-DENABLE_ZSTD=OFF",
-        "brotli": "-DHTTPLIB_REQUIRE_BROTLI=ON",
-        "ssl": "-DHTTPLIB_REQUIRE_OPENSSL=ON",
-        "zlib": "-DHTTPLIB_REQUIRE_ZLIB=ON",
-        "zstd": "-DENABLE_ZSTD=ON",
+    use_configure = {
+        "brotli": ("-DHTTPLIB_REQUIRE_BROTLI=ON", "-DHTTPLIB_REQUIRE_BROTLI=OFF"),
+        "ssl": ("-DHTTPLIB_REQUIRE_OPENSSL=ON", "-DHTTPLIB_REQUIRE_OPENSSL=OFF"),
+        "zlib": ("-DHTTPLIB_REQUIRE_ZLIB=ON", "-DHTTPLIB_REQUIRE_ZLIB=OFF"),
+        "zstd": ("-DENABLE_ZSTD=ON", "-DENABLE_ZSTD=OFF"),
     },
     visibility = ["PUBLIC"],
 )

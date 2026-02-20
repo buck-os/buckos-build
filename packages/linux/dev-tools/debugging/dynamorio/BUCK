@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # DynamoRIO - Dynamic Binary Instrumentation Framework
 #
@@ -7,10 +7,11 @@ load("//defs:package_defs.bzl", "cmake_package")
 # a powerful API for building dynamic analysis tools, profilers, tracers,
 # optimizers, and other instrumentation frameworks.
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "dynamorio",
     version = "11.0.0",
-    src_uri = "https://github.com/DynamoRIO/dynamorio/releases/download/release_11.0.0/DynamoRIO-Linux-11.0.0.tar.gz",
+    url = "https://github.com/DynamoRIO/dynamorio/releases/download/release_11.0.0/DynamoRIO-Linux-11.0.0.tar.gz",
     sha256 = "6bf624390c31483751de61ed858a2769464fc949721688c34bd0cfce0e2ce2df",  # Update with actual SHA256 from release
     description = "Dynamic binary instrumentation framework for building analysis and profiling tools",
     homepage = "https://dynamorio.org/",
@@ -19,7 +20,7 @@ cmake_package(
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/dev-tools/build-systems/cmake:cmake",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_CORE=ON",

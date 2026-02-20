@@ -1,16 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # fbthrift - Facebook's branch of Apache Thrift
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "fbthrift",
     version = "2024.01.01.00",
-    iuse = ["io-uring"],
-    use_cmake = {
-        "-io-uring": "-DENABLE_IO_URING=OFF",
-        "io-uring": "-DENABLE_IO_URING=ON",
+    use_configure = {
+        "io-uring": ("-DENABLE_IO_URING=ON", "-DENABLE_IO_URING=OFF"),
     },
-    src_uri = "https://github.com/facebook/fbthrift/archive/refs/tags/v2024.01.01.00.tar.gz",
+    url = "https://github.com/facebook/fbthrift/archive/refs/tags/v2024.01.01.00.tar.gz",
     sha256 = "7a80b83a54b750055433e0c7342288a4469ff072b4eb7a4cec8e72790bc75e75",
     description = "Facebook's branch of Apache Thrift",
     homepage = "https://github.com/facebook/fbthrift",
@@ -26,7 +25,7 @@ cmake_package(
         "//packages/linux/dev-libs/misc/fmt:fmt",
         "//packages/linux/core/zlib:zlib",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-Dthriftpy=OFF",

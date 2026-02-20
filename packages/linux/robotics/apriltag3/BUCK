@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # apriltag3 - Package from third-party
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "apriltag3",
     version = "v3.4.2",
-    src_uri = "https://github.com/aprilrobotics/apriltag/archive/refs/tags/v3.4.2.tar.gz",
+    url = "https://github.com/aprilrobotics/apriltag/archive/refs/tags/v3.4.2.tar.gz",
     sha256 = "7e021bab89f136aa3cf736f772a635aaa353f93f6f8859495f4bd8c519be4805",
     description = "apriltag3 package",
     homepage = "https://github.com/aprilrobotics/apriltag.git",
     license = "BSD",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
     ],

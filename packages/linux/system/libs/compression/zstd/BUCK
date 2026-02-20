@@ -1,17 +1,16 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
 # Zstandard - Fast real-time compression algorithm
 # Following Gentoo's approach: uses meson build (in build/meson subdirectory)
-meson_package(
+package(
+    build_rule = "meson",
     name = "zstd",
     version = "1.5.7",
-    src_uri = "https://github.com/facebook/zstd/releases/download/v1.5.7/zstd-1.5.7.tar.gz",
+    url = "https://github.com/facebook/zstd/releases/download/v1.5.7/zstd-1.5.7.tar.gz",
     sha256 = "eb33e51f49a15e023950cd7825ca74a4a2b43db8354825ac24fc1b7ee09e6fa3",
     description = "Zstandard - fast real-time compression algorithm",
     homepage = "https://facebook.github.io/zstd/",
     license = "BSD-3-Clause OR GPL-2",
-    iuse = ["static-libs", "lz4", "zlib", "lzma", "test"],
-    use_defaults = [],
 
     # Override src_configure to handle meson source in build/meson subdirectory
     # This replicates meson eclass logic but points to build/meson as source dir
@@ -137,30 +136,25 @@ BUILD_DIR="_build"
 DESTDIR="$DESTDIR" meson install -C "$BUILD_DIR"
 """,
 
-    meson_args = [
+    configure_args = [
         "-Dbin_programs=true",
         "-Dbin_contrib=true",
     ],
 
     # USE flag to meson option mapping
-    use_meson = {
-        "static-libs": "-Ddefault_library=both",
-        "-static-libs": "-Ddefault_library=shared",
-        "test": "-Dbin_tests=true",
-        "-test": "-Dbin_tests=false",
-        "zlib": "-Dzlib=enabled",
-        "-zlib": "-Dzlib=disabled",
-        "lzma": "-Dlzma=enabled",
-        "-lzma": "-Dlzma=disabled",
-        "lz4": "-Dlz4=enabled",
-        "-lz4": "-Dlz4=disabled",
+    use_configure = {
+        "lz4": ("-Dlz4=enabled", "-Dlz4=disabled"),
+        "lzma": ("-Dlzma=enabled", "-Dlzma=disabled"),
+        "static-libs": ("-Ddefault_library=both", "-Ddefault_library=shared"),
+        "test": ("-Dbin_tests=true", "-Dbin_tests=false"),
+        "zlib": ("-Dzlib=enabled", "-Dzlib=disabled"),
     },
 
     # Conditional dependencies based on USE flags
     use_deps = {
-        "lz4": ["//packages/linux/system/libs/compression/lz4:lz4"],
-        "zlib": ["//packages/linux/core/zlib:zlib"],
-        "lzma": ["//packages/linux/system/libs/compression/xz:xz"],
+        "lz4": "//packages/linux/system/libs/compression/lz4:lz4",
+        "zlib": "//packages/linux/core/zlib:zlib",
+        "lzma": "//packages/linux/system/libs/compression/xz:xz",
     },
 
     deps = [],

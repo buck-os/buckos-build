@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # lynx - Text-based web browser
 #
@@ -10,62 +10,36 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package")
 #   unicode  - Enable wide character (Unicode) support
 #   ncurses  - Use ncurses for terminal handling
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "lynx",
     version = "2.9.0",
-    src_uri = "https://invisible-mirror.net/archives/lynx/tarballs/lynx2.9.0.tar.bz2",
+    url = "https://invisible-mirror.net/archives/lynx/tarballs/lynx2.9.0.tar.bz2",
     sha256 = "5bcae5e2e6043ca7b220963a97763c49c13218d849ffda6be7739bfd5a2d36ff",
-    signature_sha256 = "8c2dc5fc2b2eb198dd24f6bc67e58dd55c1292a0dad4a6c1d27d0af8d5fee7e8",
-    signature_required=False,
     description = "Text-based web browser with SSL support",
     homepage = "https://lynx.invisible-island.net/",
     license = "GPL-2.0",
-    iuse = [
-        "brotli",
-        "bzip2",
-        "cjk",
-        "gnutls",
-        "idn",
-        "ipv6",
-        "ncurses",
-        "nls",
-        "ssl",
-        "unicode",
-        "zlib",
-    ],
-    use_defaults = ["ssl", "zlib", "ipv6", "nls", "unicode", "ncurses"],
     deps = [],
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "zlib": ["//packages/linux/core/zlib:zlib"],
-        "ncurses": ["//packages/linux/system/terminal/ncurses:ncurses"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "zlib": "//packages/linux/core/zlib:zlib",
+        "ncurses": "//packages/linux/system/terminal/ncurses:ncurses",
     },
     configure_args = [
         "--enable-default-colors",
     ],
     use_configure = {
-        "-brotli": "--without-brotli",
-        "-bzip2": "--without-bzip2",
-        "-cjk": "--disable-cjk",
-        "-gnutls": "--without-gnutls",
-        "-idn": "--disable-idn",
-        "-ipv6": "--disable-ipv6",
-        "-ncurses": "--with-screen=curses",
-        "-nls": "--disable-nls",
-        "-ssl": "--without-ssl",
-        "-unicode": "--disable-widec",
-        "-zlib": "--without-zlib",
-        "brotli": "--with-brotli",
-        "bzip2": "--with-bzip2",
-        "cjk": "--enable-cjk",
-        "gnutls": "--with-gnutls",
-        "idn": "--enable-idn",
-        "ipv6": "--enable-ipv6",
-        "ncurses": "--with-screen=ncursesw",
-        "nls": "--enable-nls",
-        "ssl": "--with-ssl",
-        "unicode": "--enable-widec",
-        "zlib": "--with-zlib",
+        "brotli": ("--with-brotli", "--without-brotli"),
+        "bzip2": ("--with-bzip2", "--without-bzip2"),
+        "cjk": ("--enable-cjk", "--disable-cjk"),
+        "gnutls": ("--with-gnutls", "--without-gnutls"),
+        "idn": ("--enable-idn", "--disable-idn"),
+        "ipv6": ("--enable-ipv6", "--disable-ipv6"),
+        "ncurses": ("--with-screen=ncursesw", "--with-screen=curses"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "ssl": ("--with-ssl", "--without-ssl"),
+        "unicode": ("--enable-widec", "--disable-widec"),
+        "zlib": ("--with-zlib", "--without-zlib"),
     },
     visibility = ["PUBLIC"],
 )

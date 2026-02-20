@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "groundingdino",
     version = "0.1.0",
-    src_uri = "https://github.com/IDEA-Research/GroundingDINO/archive/refs/tags/v0.1.0-alpha2.tar.gz",
+    url = "https://github.com/IDEA-Research/GroundingDINO/archive/refs/tags/v0.1.0-alpha2.tar.gz",
     sha256 = "4d2ce7d9340e5d88a6c867cdbf4afd9f9b121499b06a5ac28392e9f608634ad1",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

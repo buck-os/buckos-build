@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "teaser-plusplus",
     version = "1.0",
-    src_uri = "https://github.com/MIT-SPARK/TEASER-plusplus/archive/refs/tags/v1.0.tar.gz",
+    url = "https://github.com/MIT-SPARK/TEASER-plusplus/archive/refs/tags/v1.0.tar.gz",
     sha256 = "959e8ff8ecbdc45de9cde588a105dd4bb2b7455b0a30c47c40491ea2b0d58deb",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTS=OFF",
         "-DBUILD_PYTHON_BINDINGS=OFF",

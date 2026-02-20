@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "duo_log_sync",
     version = "2.4.1",
-    src_uri = "https://mirror.buckos.org/d/duo_log_sync-2.4.1.tar.gz",
+    url = "https://mirror.buckos.org/d/duo_log_sync-2.4.1.tar.gz",
     sha256 = "16eb6d24a777a6bcca5152be2732d0b672b6ae10acb309cd2a9bb03e5e35abe2",
     deps = [
         "//packages/linux/dev-libs/python/pyyaml:pyyaml",

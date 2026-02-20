@@ -1,12 +1,13 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
 # MarkupSafe - Safe string markup library for Python
 # Dependency for mako and other templating libraries
 
-python_package(
+package(
+    build_rule = "python",
     name = "markupsafe",
     version = "3.0.2",
-    src_uri = "https://files.pythonhosted.org/packages/source/m/markupsafe/markupsafe-3.0.2.tar.gz",
+    url = "https://files.pythonhosted.org/packages/source/m/markupsafe/markupsafe-3.0.2.tar.gz",
     sha256 = "ee55d3edf80167e48ea11a923c7386f4669df67d7994554387f84e7d8b0a2bf0",
     visibility = ["PUBLIC"],
     # Fix setuptools compatibility for older versions that don't have CCompilerError
@@ -35,10 +36,8 @@ except ImportError:
 
 ext_modules = [Extension("markupsafe._speedups", ["src/markupsafe/_speedups.c"])]
 
-
 class BuildFailed(Exception):
     pass
-
 
 class ve_build_ext(build_ext):
     """This class allows C extension building to fail."""
@@ -59,20 +58,17 @@ class ve_build_ext(build_ext):
                 raise BuildFailed() from e
             raise
 
-
 def run_setup(with_binary):
     setup(
         cmdclass={"build_ext": ve_build_ext},
         ext_modules=ext_modules if with_binary else [],
     )
 
-
 def show_message(*lines):
     print("=" * 74)
     for line in lines:
         print(line)
     print("=" * 74)
-
 
 supports_speedups = platform.python_implementation() not in {
     "PyPy",

@@ -1,45 +1,28 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # dhcpcd - DHCP client daemon
 # =============================================================================
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "dhcpcd",
     # Release tarball already includes configure script
     version = "10.0.6",
-    src_uri = "https://github.com/NetworkConfiguration/dhcpcd/releases/download/v10.0.6/dhcpcd-10.0.6.tar.xz",
+    url = "https://github.com/NetworkConfiguration/dhcpcd/releases/download/v10.0.6/dhcpcd-10.0.6.tar.xz",
     sha256 = "779d3ae514e8f24d7449503e1f0a20f5137c773bd04ca98c62386bf81e99f482",
-    signature_sha256 = "b46b79a0b77981079b26c359fe50b27167e4855106cf2256a6d725091e59da27",
-    signature_required = False,
-
-    iuse = [
-        "auth",
-        "debug",
-        "embedded",
-        "ipv6",
-        "privsep",
-        "udev",
-    ],
-    use_defaults = ["ipv6"],
 
     use_deps = {
-        "udev": ["//packages/linux/system/init/eudev:eudev"],
+        "udev": "//packages/linux/system/init/eudev:eudev",
     },
 
     use_configure = {
-        "-auth": "--disable-auth",
-        "-debug": "--disable-debug",
-        "-embedded": "--disable-embedded",
-        "-ipv6": "--disable-ipv6",
-        "-privsep": "--disable-privsep",
-        "-udev": "--without-udev",
-        "auth": "--enable-auth",
-        "debug": "--enable-debug",
-        "embedded": "--enable-embedded",
-        "ipv6": "--enable-ipv6",
-        "privsep": "--enable-privsep",
-        "udev": "--with-udev",
+        "auth": ("--enable-auth", "--disable-auth"),
+        "debug": ("--enable-debug", "--disable-debug"),
+        "embedded": ("--enable-embedded", "--disable-embedded"),
+        "ipv6": ("--enable-ipv6", "--disable-ipv6"),
+        "privsep": ("--enable-privsep", "--disable-privsep"),
+        "udev": ("--with-udev", "--without-udev"),
     },
 
     configure_args = [

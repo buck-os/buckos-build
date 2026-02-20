@@ -1,12 +1,11 @@
-load("//defs:package_defs.bzl", "cargo_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
-cargo_package(
+package(
+    build_rule = "cargo",
     name = "bat",
     version = "0.24.0",
-    src_uri = "https://github.com/sharkdp/bat/archive/refs/tags/v0.24.0.tar.gz",
+    url = "https://github.com/sharkdp/bat/archive/refs/tags/v0.24.0.tar.gz",
     sha256 = "907554a9eff239f256ee8fe05a922aad84febe4fe10a499def72a4557e9eedfb",
-    signature_required = False,
     description = "Cat clone with syntax highlighting and Git integration",
     homepage = "https://github.com/sharkdp/bat",
     license = "Apache-2.0",

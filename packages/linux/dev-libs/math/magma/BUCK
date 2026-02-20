@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "magma",
     version = "2.5.4",
-    src_uri = "https://github.com/icl-utk-edu/magma/archive/refs/tags/v2.5.4.tar.gz",
+    url = "https://github.com/icl-utk-edu/magma/archive/refs/tags/v2.5.4.tar.gz",
     sha256 = "0c6eb4447331304497c30f89ee2f43d2b013b65d50de278f54ef1d35c551c01c",
     description = "Dense linear algebra library for GPUs and multicore CPUs",
     homepage = "https://icl.utk.edu/magma/",
@@ -12,7 +13,7 @@ cmake_package(
         "//packages/linux/dev-libs/math/openblas:openblas",
         "//packages/linux/system/gpu/libraries/cuda-toolkit:cuda-toolkit",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DUSE_FORTRAN=OFF",

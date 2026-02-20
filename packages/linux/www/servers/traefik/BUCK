@@ -1,22 +1,13 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # traefik - Modern HTTP reverse proxy and load balancer
 #
 # USE flags:
 #   This is a pre-built Go binary, minimal USE flag customization available
 
-download_source(
-    name = "traefik-src",
-    src_uri = "https://github.com/traefik/traefik/releases/download/v3.1.6/traefik_v3.1.6_linux_amd64.tar.gz",
-    sha256 = "b1f405ab5985121fa54ece00a951781e368bbb8c7e8d3211f66fe4f347a506b7",
-    signature_required = False,
-    strip_components = 0,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "traefik",
-    srcs = [":traefik-src"],
     version = "3.1.6",
     description = "Modern HTTP reverse proxy and load balancer for microservices",
     homepage = "https://traefik.io/",

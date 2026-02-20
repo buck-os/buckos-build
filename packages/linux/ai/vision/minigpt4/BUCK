@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "minigpt4",
     version = "1.0.0",
-    src_uri = "https://github.com/Vision-CAIR/MiniGPT-4/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/Vision-CAIR/MiniGPT-4/archive/refs/heads/main.tar.gz",
     sha256 = "afcd8d68c936b1b4d0d9c85918953e7ca7d7f1e7435cd6b2eb3200c7aeee90a2",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

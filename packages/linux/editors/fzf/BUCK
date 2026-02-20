@@ -1,12 +1,11 @@
-load("//defs:package_defs.bzl", "go_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
-go_package(
+package(
+    build_rule = "go",
     name = "fzf",
     version = "0.55.0",
-    src_uri = "https://github.com/junegunn/fzf/archive/refs/tags/v0.55.0.tar.gz",
+    url = "https://github.com/junegunn/fzf/archive/refs/tags/v0.55.0.tar.gz",
     sha256 = "805383f71bca7f8fb271ecd716852aea88fd898d5027d58add9e43df6ea766da",
-    signature_required = False,
     description = "Command-line fuzzy finder for interactive filtering",
     homepage = "https://github.com/junegunn/fzf",
     license = "MIT",

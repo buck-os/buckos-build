@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "backboned_unet",
     version = "0.0.1",
-    src_uri = "https://github.com/mkisantal/backboned-unet/archive/8e60ce62481c56eacf4a1441c376bb580da41bc5.tar.gz",
+    url = "https://github.com/mkisantal/backboned-unet/archive/8e60ce62481c56eacf4a1441c376bb580da41bc5.tar.gz",
     sha256 = "d70d08ab5d406338d9966ad3e254c05318dd5f9bd706f6b59a234f5be0cce8c7",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

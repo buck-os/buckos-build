@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl","download_source", "make_package")
+load("//defs:package.bzl", "package")
 
 # baselayout - Filesystem baselayout and target system init scripts
 # USE flags: (minimal package)
@@ -6,18 +6,14 @@ load("//defs:package_defs.bzl","download_source", "make_package")
 make_package(
     name = "baselayout",
     version = "2.9",
-    src_uri = "https://gitweb.gentoo.org/proj/baselayout.git/snapshot/baselayout-2.9.tar.gz",
+    url = "https://gitweb.gentoo.org/proj/baselayout.git/snapshot/baselayout-2.9.tar.gz",
     sha256 = "a4391267c964fdfc7c0ccfcdc599308de0d288e59d7c2cd517853d29d7cab5b7",
-    signature_required = False,
     description = "Filesystem baselayout and target system init scripts",
     homepage = "https://wiki.gentoo.org/wiki/Project:Baselayout",
     license = "GPL-2",
-    iuse = ["build"],
     use_configure = {
-        "-build": "--disable-build",
-        "build": "--enable-build",
+        "build": ("--enable-build", "--disable-build"),
     },
-    use_defaults = [],
     deps = [
     ],
     visibility = ["PUBLIC"],

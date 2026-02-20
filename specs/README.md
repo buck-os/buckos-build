@@ -332,7 +332,8 @@ Reference specs in build definitions:
 
 ```python
 # In BUCK files
-ebuild_package(
+package(
+    build_rule = "ebuild",
     name = "mypackage",
     # Declare spec compliance
     spec_compliance = [

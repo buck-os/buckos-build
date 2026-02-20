@@ -1,11 +1,11 @@
-load("//defs:package_defs.bzl", "cargo_package")
+load("//defs:package.bzl", "package")
 
-cargo_package(
+package(
+    build_rule = "cargo",
     name = "wl-clip-persist",
     version = "0.4.0",
-    src_uri = "https://github.com/Linus789/wl-clip-persist/archive/refs/tags/v0.4.0.tar.gz",
+    url = "https://github.com/Linus789/wl-clip-persist/archive/refs/tags/v0.4.0.tar.gz",
     sha256 = "6c18d7e388167f3a18271f0415b6636330b1858e485a57d4bfb6d3faa5300e7b",
-    signature_required = False,
     description = "Keep Wayland clipboard after program closes",
     homepage = "https://github.com/Linus789/wl-clip-persist",
     license = "MIT",

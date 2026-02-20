@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "modelgauge",
     version = "0.5.0",
-    src_uri = "https://github.com/mlcommons/modelgauge/archive/refs/tags/v0.5.0.tar.gz",
+    url = "https://github.com/mlcommons/modelgauge/archive/refs/tags/v0.5.0.tar.gz",
     sha256 = "fe4c40bcfad8014fd239ac2ef84538ada9f8392ffb6e2c6bf9e417664fff39d4",
     deps = [
         "//packages/linux/dev-libs/python/click:click",

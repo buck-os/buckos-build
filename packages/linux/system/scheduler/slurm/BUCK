@@ -1,6 +1,7 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "slurm",
     bdepend = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
@@ -12,7 +13,7 @@ autotools_package(
 autoreconf -fi
 """,
     version = "25.05.1",
-    src_uri = "https://github.com/SchedMD/slurm/archive/refs/tags/slurm-25-05-1-1.tar.gz",
+    url = "https://github.com/SchedMD/slurm/archive/refs/tags/slurm-25-05-1-1.tar.gz",
     sha256 = "b568c761a6c9d72358addb3bb585456e73e80a02214ce375d2de8534f9ddb585",
     configure_args = [
         "--sysconfdir=/etc/slurm",

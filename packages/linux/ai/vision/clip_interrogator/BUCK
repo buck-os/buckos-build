@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "clip_interrogator",
     version = "0.6.0",
-    src_uri = "https://github.com/pharmapsychotic/clip-interrogator/archive/refs/tags/v0.6.0.tar.gz",
+    url = "https://github.com/pharmapsychotic/clip-interrogator/archive/refs/tags/v0.6.0.tar.gz",
     sha256 = "5013b4cfdd0d5eacb1125713b9241e2121348576b3b33b3168d9a1151bac5cd9",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

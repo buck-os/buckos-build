@@ -1,10 +1,10 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # LWP - The World-Wide Web library for Perl
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "lwp",
-    src_uri = "https://cpan.metacpan.org/authors/id/O/OA/OALDERS/libwww-perl-6.76.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/O/OA/OALDERS/libwww-perl-6.76.tar.gz",
 
     sha256 = "75c2e57d6102eea540f3611b56fd86268a59b022dd00ea6562ac36412fcdf8e1",
     version = "6.76",
@@ -26,9 +26,10 @@ autotools_package(
 )
 
 # HTTP::Tiny - A small, simple, correct HTTP/1.1 client
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "http-tiny",
-    src_uri = "https://cpan.metacpan.org/authors/id/D/DA/DAGOLDEN/HTTP-Tiny-0.088.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/D/DA/DAGOLDEN/HTTP-Tiny-0.088.tar.gz",
 
     sha256 = "7ce6367e861883b6868d6dd86168af33524717d8cc94100c2abf9bd86a82b4d8",
     version = "0.088",
@@ -47,9 +48,10 @@ autotools_package(
 )
 
 # HTTP::Message - HTTP style message (base class)
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "http-message",
-    src_uri = "https://cpan.metacpan.org/authors/id/O/OA/OALDERS/HTTP-Message-6.45.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/O/OA/OALDERS/HTTP-Message-6.45.tar.gz",
 
     sha256 = "01cb8406612a3f738842d1e97313ae4d874870d1b8d6d66331f16000943d4cbe",
     version = "6.45",
@@ -69,9 +71,10 @@ autotools_package(
 )
 
 # HTTP::Cookies - HTTP cookie jars
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "http-cookies",
-    src_uri = "https://cpan.metacpan.org/authors/id/O/OA/OALDERS/HTTP-Cookies-6.11.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/O/OA/OALDERS/HTTP-Cookies-6.11.tar.gz",
 
     sha256 = "8c9a541a4a39f6c0c7e3d0b700b05dfdb830bd490a1b1942a7dedd1b50d9a8c8",
     version = "6.11",
@@ -91,9 +94,10 @@ autotools_package(
 )
 
 # IO::Socket::SSL - SSL sockets with IO::Socket interface
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "io-socket-ssl",
-    src_uri = "https://cpan.metacpan.org/authors/id/S/SU/SULLR/IO-Socket-SSL-2.085.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/S/SU/SULLR/IO-Socket-SSL-2.085.tar.gz",
 
     sha256 = "95b2f7c0628a7e246a159665fbf0620d0d7835e3a940f22d3fdd47c3aa799c2e",
     version = "2.085",
@@ -113,9 +117,10 @@ autotools_package(
 )
 
 # Net::SSLeay - Perl bindings for OpenSSL
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "net-ssleay",
-    src_uri = "https://cpan.metacpan.org/authors/id/C/CH/CHRISN/Net-SSLeay-1.94.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/C/CH/CHRISN/Net-SSLeay-1.94.tar.gz",
 
     sha256 = "9d7be8a56d1bedda05c425306cc504ba134307e0c09bda4a788c98744ebcd95d",
     version = "1.94",
@@ -134,9 +139,10 @@ autotools_package(
 )
 
 # Socket - Networking constants and support functions
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "socket",
-    src_uri = "https://cpan.metacpan.org/authors/id/P/PE/PEVANS/Socket-2.038.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/P/PE/PEVANS/Socket-2.038.tar.gz",
 
     sha256 = "563d11731ff44307fa2779a6958fd2d2f6643fbd9a3174cbf350228b159681f8",
     version = "2.038",
@@ -155,9 +161,10 @@ autotools_package(
 )
 
 # Net::DNS - Perl Interface to the Domain Name System
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "net-dns",
-    src_uri = "https://cpan.metacpan.org/authors/id/N/NL/NLNETLABS/Net-DNS-1.44.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/N/NL/NLNETLABS/Net-DNS-1.44.tar.gz",
 
     sha256 = "13d7edc4b8cea0132147faac3571f6b3c71d1d0cfd844c530c5a044f4a3ec31e",
     version = "1.44",
@@ -176,9 +183,10 @@ autotools_package(
 )
 
 # Net::SMTP - Simple Mail Transfer Protocol Client
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libnet",
-    src_uri = "https://cpan.metacpan.org/authors/id/S/SH/SHAY/libnet-3.15.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/S/SH/SHAY/libnet-3.15.tar.gz",
 
     sha256 = "a71f4db580e1a767d6936faa5baf38f1fa617824342da078b561283e86f8f4a2",
     version = "3.15",
@@ -197,9 +205,10 @@ autotools_package(
 )
 
 # Email::MIME - Easy MIME message handling
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "email-mime",
-    src_uri = "https://cpan.metacpan.org/authors/id/R/RJ/RJBS/Email-MIME-1.953.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/R/RJ/RJBS/Email-MIME-1.953.tar.gz",
 
     sha256 = "98fb067850699a224babc348f1cefe30d744c60da8902e7a5ce9d8b7e73df735",
     version = "1.953",
@@ -218,9 +227,10 @@ autotools_package(
 )
 
 # Email::Sender - A library for sending email
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "email-sender",
-    src_uri = "https://cpan.metacpan.org/authors/id/R/RJ/RJBS/Email-Sender-2.601.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/R/RJ/RJBS/Email-Sender-2.601.tar.gz",
 
     sha256 = "dead783d62a968a5104c962e5562172d1e4dfebfa07a323ca62a4f9b455d000d",
     version = "2.601",
@@ -241,9 +251,10 @@ autotools_package(
 )
 
 # WWW::Mechanize - Handy web browsing in a Perl object
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "www-mechanize",
-    src_uri = "https://cpan.metacpan.org/authors/id/O/OA/OALDERS/WWW-Mechanize-2.18.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/O/OA/OALDERS/WWW-Mechanize-2.18.tar.gz",
 
     sha256 = "14135fe6fd9df5fcdc40f767ab9cf49e623ce8c5223ba91e1d44e04d1e0aa1c9",
     version = "2.18",
@@ -264,9 +275,10 @@ autotools_package(
 )
 
 # Furl - Lightning-fast URL fetcher
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "furl",
-    src_uri = "https://cpan.metacpan.org/authors/id/S/SY/SYOHEX/Furl-3.14.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/S/SY/SYOHEX/Furl-3.14.tar.gz",
 
     sha256 = "35ddbd8880d71f19e202433e1761fd1177385e630bf50685bc48b6b7acb857b9",
     version = "3.14",

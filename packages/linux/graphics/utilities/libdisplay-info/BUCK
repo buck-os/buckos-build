@@ -1,13 +1,14 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "libdisplay-info",
     version = "0.2.0",
-    src_uri = "https://gitlab.freedesktop.org/emersion/libdisplay-info/-/archive/0.2.0/libdisplay-info-0.2.0.tar.gz",
+    url = "https://gitlab.freedesktop.org/emersion/libdisplay-info/-/archive/0.2.0/libdisplay-info-0.2.0.tar.gz",
     sha256 = "f7331fcaf5527251b84c8fb84238d06cd2f458422ce950c80e86c72927aa8c2b",
     description = "EDID and DisplayID library",
     homepage = "https://gitlab.freedesktop.org/emersion/libdisplay-info",
     license = "MIT",
-    meson_args = [],
+    configure_args = [],
     visibility = ["PUBLIC"],
 )

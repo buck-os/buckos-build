@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "monado",
     version = "24.0.0",
-    src_uri = "https://gitlab.freedesktop.org/monado/monado/-/archive/v24.0.0/monado-v24.0.0.tar.gz",
+    url = "https://gitlab.freedesktop.org/monado/monado/-/archive/v24.0.0/monado-v24.0.0.tar.gz",
     sha256 = "96d2c4761ea86c8e6c832297a92e8479a560e601712d9f25ede36ade533ddc22",
-    cmake_args = [
+    configure_args = [
         "-DXRT_HAVE_VULKAN=ON",
         "-DXRT_HAVE_OPENGL=ON",
         "-DXRT_HAVE_EGL=ON",

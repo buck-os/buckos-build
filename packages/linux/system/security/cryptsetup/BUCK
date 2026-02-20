@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # cryptsetup - Disk encryption setup utility
 # USE flags: openssl, gcrypt, nettle, nls, argon2, ssh-token, fips
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "popt",
     bdepend = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
@@ -15,19 +16,14 @@ autotools_package(
 autoreconf -fi
 """,
     version = "1.19",
-    src_uri = "http://ftp.rpm.org/popt/releases/popt-1.x/popt-1.19.tar.gz",
+    url = "http://ftp.rpm.org/popt/releases/popt-1.x/popt-1.19.tar.gz",
     sha256 = "c25a4838fc8e4c1c8aacb8bd620edb3084a3d63bf8987fdad3ca2758c63240f9",
-    signature_required = False,
     description = "Command line option parsing library",
     homepage = "http://ftp.rpm.org/popt/",
     license = "MIT",
-    iuse = ["nls", "static-libs"],
-    use_defaults = [],
     use_configure = {
-        "nls": "--enable-nls",
-        "-nls": "--disable-nls",
-        "static-libs": "--enable-static",
-        "-static-libs": "--disable-static",
+        "nls": ("--enable-nls", "--disable-nls"),
+        "static-libs": ("--enable-static", "--disable-static"),
     },
     configure_args = [
         "--prefix=/usr",
@@ -36,7 +32,8 @@ autoreconf -fi
     visibility = ["PUBLIC"],
 )
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "lvm2",
     bdepend = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
@@ -84,19 +81,16 @@ echo "LDFLAGS=$LDFLAGS"
 make -j${MAKEOPTS:-$(nproc)} CLDFLAGS="${CLDFLAGS:-}"
 """,
     version = "2.03.23",
-    src_uri = "https://mirrors.kernel.org/sourceware/lvm2/LVM2.2.03.23.tgz",
+    url = "https://mirrors.kernel.org/sourceware/lvm2/LVM2.2.03.23.tgz",
     sha256 = "74e794a9e9dee1bcf8a2065f65b9196c44fdf321e22d63b98ed7de8c9aa17a5d",
-    signature_sha256 = "baf194cf8262601e73c7be64b9720300e1f738be7d801eac6bf02f49934dff41",
-    signature_required = False,
     description = "Logical Volume Manager 2 utilities",
     homepage = "https://sourceware.org/lvm2/",
     license = "GPL-2.0",
     # USE flags: systemd - use systemd's libudev instead of eudev
-    iuse = ["systemd"],
     use_defaults = ["systemd"],  # Default to systemd for modern systems
     use_deps = {
-        "systemd": ["//packages/linux/system/init/systemd:systemd"],  # Provides libudev
-        "-systemd": ["//packages/linux/system/init/eudev:eudev"],  # Standalone udev
+        "systemd": "//packages/linux/system/init/systemd:systemd",
+        "-systemd": "//packages/linux/system/init/eudev:eudev",
     },
     deps = [
         "//packages/linux/system/libs/io/libaio:libaio",

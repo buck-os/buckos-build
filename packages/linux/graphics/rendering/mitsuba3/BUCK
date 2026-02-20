@@ -1,15 +1,14 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "mitsuba3",
     version = "3.7.0",
-    src_uri = "https://github.com/mitsuba-renderer/mitsuba3/archive/refs/tags/v3.7.0.tar.gz",
+    url = "https://github.com/mitsuba-renderer/mitsuba3/archive/refs/tags/v3.7.0.tar.gz",
     sha256 = "fcf54773a5c9c2ff4dd473ccefd1109008ad2f12f2138207d04d93bf67b1a48f",
     description = "Retargetable Forward and Inverse Renderer",
     homepage = "https://mitsuba-renderer.org/",
     license = "BSD-3-Clause",
-    iuse = ["python", "embree", "cuda", "llvm"],
-    use_defaults = ["python", "embree"],
     deps = [
         "//packages/linux/graphics/3d/openexr:openexr",
         "//packages/linux/dev-libs/misc/asmjit:asmjit",
@@ -18,22 +17,18 @@ cmake_package(
         "//packages/linux/dev-libs/parsers/pugixml:pugixml",
     ],
     use_deps = {
-        "embree": ["//packages/linux/graphics/3d/embree:embree"],
+        "embree": "//packages/linux/graphics/3d/embree:embree",
     },
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DMI_DEFAULT_VARIANTS=scalar_rgb",
     ],
-    use_cmake = {
-        "python": "-DMI_ENABLE_PYTHON=ON",
-        "-python": "-DMI_ENABLE_PYTHON=OFF",
-        "embree": "-DMI_ENABLE_EMBREE=ON",
-        "-embree": "-DMI_ENABLE_EMBREE=OFF",
-        "cuda": "-DMI_ENABLE_CUDA=ON",
-        "-cuda": "-DMI_ENABLE_CUDA=OFF",
-        "llvm": "-DMI_ENABLE_LLVM=ON",
-        "-llvm": "-DMI_ENABLE_LLVM=OFF",
+    use_configure = {
+        "cuda": ("-DMI_ENABLE_CUDA=ON", "-DMI_ENABLE_CUDA=OFF"),
+        "embree": ("-DMI_ENABLE_EMBREE=ON", "-DMI_ENABLE_EMBREE=OFF"),
+        "llvm": ("-DMI_ENABLE_LLVM=ON", "-DMI_ENABLE_LLVM=OFF"),
+        "python": ("-DMI_ENABLE_PYTHON=ON", "-DMI_ENABLE_PYTHON=OFF"),
     },
     visibility = ["PUBLIC"],
 )

@@ -1,21 +1,18 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # ldb - LDAP-like embedded database
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "ldb",
     # ldb uses waf (Python-based build system), not autoconf
     # The ./configure script is a waf wrapper
-    src_uri = "https://www.samba.org/ftp/ldb/ldb-2.8.0.tar.gz",
+    url = "https://www.samba.org/ftp/ldb/ldb-2.8.0.tar.gz",
 
     sha256 = "358dca10fcd27207ac857a0d7f435a46dbc6cd1f7c10dbb840c1931bf1965f08",
-    iuse = ["ldap", "lmdb", "python"],
     use_configure = {
-        "-ldap": "--disable-ldap",
-        "-lmdb": "--disable-lmdb",
-        "-python": "--disable-python",
-        "ldap": "--enable-ldap",
-        "lmdb": "--enable-lmdb",
-        "python": "--enable-python",
+        "ldap": ("--enable-ldap", "--disable-ldap"),
+        "lmdb": ("--enable-lmdb", "--disable-lmdb"),
+        "python": ("--enable-python", "--disable-python"),
     },
     version = "2.8.0",
     description = "LDAP-like embedded database library",

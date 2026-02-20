@@ -1,19 +1,15 @@
-load("//defs:package_defs.bzl", "cargo_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
-cargo_package(
+package(
+    build_rule = "cargo",
     name = "alacritty",
     version = "0.13.1",
-    iuse = ["X", "wayland"],
     use_configure = {
-        "-X": "--without-x",
-        "-wayland": "--disable-wayland",
-        "X": "--with-x",
-        "wayland": "--enable-wayland",
+        "X": ("--with-x", "--without-x"),
+        "wayland": ("--enable-wayland", "--disable-wayland"),
     },
-    src_uri = "https://github.com/alacritty/alacritty/archive/refs/tags/v0.13.1.tar.gz",
+    url = "https://github.com/alacritty/alacritty/archive/refs/tags/v0.13.1.tar.gz",
     sha256 = "38a42e23e1e6faaa9e300347df3f7b58b6182908a701517aac6e296fbdf37451",
-    signature_required = False,
     description = "A cross-platform, GPU-accelerated terminal emulator",
     homepage = "https://alacritty.org/",
     license = "Apache-2.0",

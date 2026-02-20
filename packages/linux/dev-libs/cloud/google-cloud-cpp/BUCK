@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "google-cloud-cpp",
     version = "2.43.0",
-    src_uri = "https://github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.43.0.tar.gz",
+    url = "https://github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.43.0.tar.gz",
     sha256 = "2aea914128db8a550bd926e1e08c155fae1caff8a451e1b644602952dd6d8b5c",
     description = "C++ client libraries for Google Cloud Platform APIs",
     homepage = "https://github.com/googleapis/google-cloud-cpp",
@@ -17,7 +18,7 @@ cmake_package(
         "//packages/linux/dev-libs/serialization/protobuf:protobuf",
         "//packages/linux/dev-libs/json/nlohmann-json:nlohmann-json",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_TESTING=OFF",

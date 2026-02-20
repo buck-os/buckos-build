@@ -1,14 +1,13 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "yarl",
     version = "1.4.0",
-    iuse = ["native-extensions"],
     use_configure = {
-        "-native-extensions": "--disable-native-extensions",
-        "native-extensions": "--enable-native-extensions",
+        "native-extensions": ("--enable-native-extensions", "--disable-native-extensions"),
     },
-    src_uri = "https://github.com/aio-libs/yarl/archive/refs/tags/v1.4.0.tar.gz",
+    url = "https://github.com/aio-libs/yarl/archive/refs/tags/v1.4.0.tar.gz",
     sha256 = "b6dd8f6b3dc55d017a3be7edbd775a1886c7ea572749094ce79845384adfef5e",
     description = "Yet another URL library",
     homepage = "https://github.com/aio-libs/yarl",

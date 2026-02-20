@@ -1,22 +1,21 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # Fruit - Dependency Injection Framework for C++
 # Fruit is a dependency injection framework for C++, loosely inspired by the Guice framework for Java.
 # It uses C++ metaprogramming together with some C++11 features to detect most injection problems at compile-time.
 # It allows to split the implementation code in "components" (aka modules) that can be assembled to form other components.
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "fruit",
     version = "3.7.1",
-    src_uri = "https://github.com/google/fruit/archive/refs/tags/v3.7.1.tar.gz",
+    url = "https://github.com/google/fruit/archive/refs/tags/v3.7.1.tar.gz",
     sha256 = "ed4c6b7ebfbf75e14a74e21eb74ce2703b8485bfc9e660b1c36fb7fe363172d0",
     description = "Dependency injection framework for C++ with compile-time error detection",
     homepage = "https://github.com/google/fruit",
     license = "Apache-2.0",
-    iuse = ["boost", "static-libs"],
-    use_defaults = ["boost"],
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DCMAKE_CXX_STANDARD=17",
@@ -29,7 +28,7 @@ cmake_package(
         "-static-libs": "-DBUILD_SHARED_LIBS=ON",
     },
     use_deps = {
-        "boost": ["//packages/linux/dev-libs/boost:boost"],
+        "boost": "//packages/linux/dev-libs/boost:boost",
     },
     visibility = ["PUBLIC"],
 )

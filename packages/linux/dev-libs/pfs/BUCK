@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "pfs",
     version = "0.4.6",
-    src_uri = "https://github.com/dtrugman/pfs/archive/v0.4.6.tar.gz",
+    url = "https://github.com/dtrugman/pfs/archive/v0.4.6.tar.gz",
     sha256 = "6e8bf2d6628c9153ed63e0fee9e0fb7febb8856bf1fdb28e3b84c58124a00fc7",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_SAMPLES=OFF",
         "-DBUILD_TESTS=OFF",

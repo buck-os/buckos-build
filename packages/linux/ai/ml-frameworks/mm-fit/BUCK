@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "mm-fit",
     version = "1.0.0",
-    src_uri = "https://github.com/KDMStromback/mm-fit/archive/refs/heads/master.tar.gz",
+    url = "https://github.com/KDMStromback/mm-fit/archive/refs/heads/master.tar.gz",
     sha256 = "e8d5e4627ed77f511551706bcde9e16599ba651895afb6fecd8ae7826d70a279",
     deps = [
         "//packages/linux/dev-libs/python/numpy:numpy",

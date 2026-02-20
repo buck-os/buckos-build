@@ -1,10 +1,11 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # libXpm - X Pixmap library
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libXpm",
     version = "3.5.17",
-    src_uri = "https://xorg.freedesktop.org/archive/individual/lib/libXpm-3.5.17.tar.xz",
+    url = "https://xorg.freedesktop.org/archive/individual/lib/libXpm-3.5.17.tar.xz",
     sha256 = "64b31f81019e7d388c822b0b28af8d51c4622b83f1f0cb6fa3fc95e271226e43",
     description = "X Pixmap library",
     homepage = "https://xorg.freedesktop.org/",

@@ -1,14 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "pigpio",
     version = "1.78",
-    src_uri = "https://github.com/joan2937/pigpio/archive/refs/tags/v78.tar.gz",
+    url = "https://github.com/joan2937/pigpio/archive/refs/tags/v78.tar.gz",
     sha256 = "ef4a4dc7ca8ca2f97fbdb9fd75586f61be7222d0f6c14e58af6c9192ad42f682",
     description = "Library for Raspberry Pi GPIO control",
     homepage = "https://github.com/joan2937/pigpio",
     license = "Unlicense",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_SHARED_LIBS=ON",
     ],
     visibility = ["PUBLIC"],

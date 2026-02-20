@@ -1,16 +1,13 @@
-load("//defs:package_defs.bzl", "download_source", "make_package")
+load("//defs:package.bzl", "package")
 
 make_package(
     name = "lz4",
     version = "1.10.0",
-    src_uri = "https://github.com/lz4/lz4/releases/download/v1.10.0/lz4-1.10.0.tar.gz",
+    url = "https://github.com/lz4/lz4/releases/download/v1.10.0/lz4-1.10.0.tar.gz",
     sha256 = "537512904744b35e232912055ccf8ec66d768639ff3abe5788d90d792ec5f48b",
-    signature_required = False,
     description = "Extremely fast compression algorithm",
     homepage = "https://lz4.github.io/lz4/",
     license = "BSD-2-Clause",
-    iuse = ["static-libs"],
-    use_defaults = [],
     # Build the library only first, then programs
     src_compile = """
 # Build lib first

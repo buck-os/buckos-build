@@ -1,38 +1,27 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "openvpn",
     version = "2.6.8",
-    src_uri = "https://swupdate.openvpn.org/community/releases/openvpn-2.6.8.tar.gz",
+    url = "https://swupdate.openvpn.org/community/releases/openvpn-2.6.8.tar.gz",
     sha256 = "5ede1565c8a6d880100f7f235317a7ee9eea83d5052db5547f13a9e76af7805d",
-    signature_sha256 = "1da1853a04f3e7c892af2d92375ec1a04dacd2cf9c8c289c6175461c39bd6cea",
-    signature_required = False,
-
-    iuse = ["ssl", "lzo", "lz4", "plugins", "systemd", "iproute2", "debug"],
-    use_defaults = ["ssl", "lzo", "lz4", "plugins", "systemd", "iproute2"],
 
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "lzo": ["//packages/linux/system/libs/compression/lzo:lzo"],
-        "lz4": ["//packages/linux/system/libs/compression/lz4:lz4"],
-        "systemd": ["//packages/linux/system/init/systemd:systemd"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "lzo": "//packages/linux/system/libs/compression/lzo:lzo",
+        "lz4": "//packages/linux/system/libs/compression/lz4:lz4",
+        "systemd": "//packages/linux/system/init/systemd:systemd",
     },
 
     use_configure = {
-        "ssl": "--enable-crypto",
-        "-ssl": "--disable-crypto",
-        "lzo": "--enable-lzo",
-        "-lzo": "--disable-lzo",
-        "lz4": "--enable-lz4",
-        "-lz4": "--disable-lz4",
-        "plugins": "--enable-plugins",
-        "-plugins": "--disable-plugins",
-        "systemd": "--enable-systemd",
-        "-systemd": "--disable-systemd",
-        "iproute2": "--enable-iproute2",
-        "-iproute2": "--disable-iproute2",
-        "debug": "--enable-debug",
-        "-debug": "--disable-debug",
+        "debug": ("--enable-debug", "--disable-debug"),
+        "iproute2": ("--enable-iproute2", "--disable-iproute2"),
+        "lz4": ("--enable-lz4", "--disable-lz4"),
+        "lzo": ("--enable-lzo", "--disable-lzo"),
+        "plugins": ("--enable-plugins", "--disable-plugins"),
+        "ssl": ("--enable-crypto", "--disable-crypto"),
+        "systemd": ("--enable-systemd", "--disable-systemd"),
     },
 
     configure_args = [

@@ -1,16 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # mp-units - A Physical Quantities and Units library for C++
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "units",
     version = "2.1.0",
-    iuse = ["units-cur"],
-    use_cmake = {
-        "-units-cur": "-DENABLE_UNITS_CUR=OFF",
-        "units-cur": "-DENABLE_UNITS_CUR=ON",
+    use_configure = {
+        "units-cur": ("-DENABLE_UNITS_CUR=ON", "-DENABLE_UNITS_CUR=OFF"),
     },
-    src_uri = "https://github.com/mpusz/mp-units/archive/refs/tags/v2.1.0.tar.gz",
+    url = "https://github.com/mpusz/mp-units/archive/refs/tags/v2.1.0.tar.gz",
     sha256 = "a42057492f5a8e80442cf13602b97bb48b9c3a408bc91bdb60d86aadc84c95cc",
     description = "A Physical Quantities and Units library for C++",
     homepage = "https://mpusz.github.io/mp-units/",
@@ -18,7 +17,7 @@ cmake_package(
     deps = [
         "//packages/linux/dev-libs/misc/fmt:fmt",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DMP_UNITS_BUILD_LA=OFF",
     ],

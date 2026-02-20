@@ -1,29 +1,26 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "graphene",
     version = "1.10.8",
-    src_uri = "https://mirror.buckos.org/g/graphene-1.10.8.tar.gz",
+    url = "https://mirror.buckos.org/g/graphene-1.10.8.tar.gz",
     sha256 = "922dc109d2dc5dc56617a29bd716c79dd84db31721a8493a13a5f79109a4a4ed",
     description = "Thin layer of types for graphic libraries",
     homepage = "https://github.com/ebassi/graphene",
     license = "MIT",
-    iuse = ["cpu_flags_arm_neon", "gobject", "introspection"],
-    use_defaults = ["gobject"],
     deps = [],
     use_deps = {
-        "gobject": ["//packages/linux/dev-libs/glib:gobject"],
+        "gobject": "//packages/linux/dev-libs/glib:gobject",
     },
-    meson_args = [
+    configure_args = [
         "-Dtests=false",
         "-Dgtk_doc=false",
         "-Dinstalled_tests=false",
     ],
-    use_meson = {
-        "gobject": "-Dgobject_types=true",
-        "-gobject": "-Dgobject_types=false",
-        "introspection": "-Dintrospection=enabled",
-        "-introspection": "-Dintrospection=disabled",
+    use_configure = {
+        "gobject": ("-Dgobject_types=true", "-Dgobject_types=false"),
+        "introspection": ("-Dintrospection=enabled", "-Dintrospection=disabled"),
     },
     visibility = ["PUBLIC"],
 )

@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # Vulkan Memory Allocator - Easy to integrate Vulkan memory allocation library
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "vulkan-memory-allocator",
     version = "3.0.1",
-    src_uri = "https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/archive/refs/tags/v3.0.1.tar.gz",
+    url = "https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/archive/refs/tags/v3.0.1.tar.gz",
     sha256 = "2a84762b2d10bf540b9dc1802a198aca8ad1f3d795a4ae144212c595696a360c",
     description = "Easy to integrate Vulkan memory allocation library",
     homepage = "https://gpuopen.com/vulkan-memory-allocator/",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DVMA_BUILD_DOCUMENTATION=OFF",
         "-DVMA_BUILD_SAMPLES=OFF",

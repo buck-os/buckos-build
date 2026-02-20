@@ -1,10 +1,11 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "turtle",
     version = "1.0.0",
     # Note: No versioned tags available, using main branch
-    src_uri = "https://github.com/Ascend-Research/Turtle/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/Ascend-Research/Turtle/archive/refs/heads/main.tar.gz",
     sha256 = "1eba1f0d24202c543ccc1cb5ff0721a389e0b68330649b6189b3d25f02701c14",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

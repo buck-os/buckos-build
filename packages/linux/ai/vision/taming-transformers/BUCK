@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "taming-transformers",
     version = "0.0.1",
-    src_uri = "https://github.com/CompVis/taming-transformers/archive/24268930bf1dce879235a7fddd0b2355b84d7ea6.tar.gz",
+    url = "https://github.com/CompVis/taming-transformers/archive/24268930bf1dce879235a7fddd0b2355b84d7ea6.tar.gz",
     sha256 = "8f36156eefc185a5afd512b82c8b9a5a5f85a4ad656ec49d769aec50d4d87f6e",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

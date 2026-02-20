@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "gpujpeg",
     version = "0.26.0",
-    src_uri = "https://github.com/CESNET/GPUJPEG/archive/refs/tags/v0.26.0.tar.gz",
+    url = "https://github.com/CESNET/GPUJPEG/archive/refs/tags/v0.26.0.tar.gz",
     sha256 = "e673e0890e82793485728ef576b9f00fe7a878fff8b0b1d1f00c1eb1725ecc63",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_OPENGL=OFF",
         "-DBUILD_SHARED_LIBS=ON",
     ],

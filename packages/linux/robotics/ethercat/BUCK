@@ -1,6 +1,7 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "ethercat",
     bdepend = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
@@ -12,7 +13,7 @@ autotools_package(
 autoreconf -fi
 """,
     version = "1.6.8",
-    src_uri = "https://gitlab.com/etherlab.org/ethercat/-/archive/stable-1.6/ethercat-stable-1.6.tar.gz",
+    url = "https://gitlab.com/etherlab.org/ethercat/-/archive/stable-1.6/ethercat-stable-1.6.tar.gz",
     sha256 = "7771b4876d2d16a6ecc0ddad8dc2128ddb7ac53d89759cbb3d1d90474037ea62",
     configure_args = [
         "--disable-kernel",

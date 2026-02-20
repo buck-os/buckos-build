@@ -1,10 +1,11 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # libXtst - X Test extension library (RECORD/XTEST)
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libXtst",
     version = "1.2.5",
-    src_uri = "https://xorg.freedesktop.org/archive/individual/lib/libXtst-1.2.5.tar.xz",
+    url = "https://xorg.freedesktop.org/archive/individual/lib/libXtst-1.2.5.tar.xz",
     sha256 = "b50d4c25b97009a744706c1039c598f4d8e64910c9fde381994e1cae235d9242",
     description = "X Test extension library",
     homepage = "https://xorg.freedesktop.org/",

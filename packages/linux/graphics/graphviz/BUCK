@@ -1,30 +1,19 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "libgraphviz",
     version = "10.0.1",
-    src_uri = "https://gitlab.com/graphviz/graphviz/-/archive/10.0.1/graphviz-10.0.1.tar.gz",
+    url = "https://gitlab.com/graphviz/graphviz/-/archive/10.0.1/graphviz-10.0.1.tar.gz",
     sha256 = "28f452ef1cb12288c8758a62f8c3fcfefdb91b251f7aae61d0d703f851bde931",
     description = "Graph visualization software",
     homepage = "https://graphviz.org",
     license = "EPL-1.0",
-    iuse = [
-        "expat",
-        "gts",
-        "ltdl",
-        "sfdp",
-        "zlib",
-    ],
-    use_defaults = [
-        "expat",
-        "sfdp",
-        "zlib",
-    ],
     deps = [
         "//packages/linux/dev-tools/build-systems:bison",
         "//packages/linux/dev-tools/build-systems:flex",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-Dwith_gvedit=OFF",
@@ -38,8 +27,8 @@ cmake_package(
         "zlib": "with_zlib",
     },
     use_deps = {
-        "expat": ["//packages/linux/dev-libs/parsers/expat:expat"],
-        "zlib": ["//packages/linux/system/compression/zlib:zlib"],
+        "expat": "//packages/linux/dev-libs/parsers/expat:expat",
+        "zlib": "//packages/linux/system/compression/zlib:zlib",
     },
     visibility = ["PUBLIC"],
 )

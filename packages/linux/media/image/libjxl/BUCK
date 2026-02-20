@@ -1,43 +1,30 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # JPEG XL - Modern image compression codec
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "libjxl",
     version = "0.10.2",
-    src_uri = "https://github.com/libjxl/libjxl/archive/refs/tags/v0.10.2.tar.gz",
+    url = "https://github.com/libjxl/libjxl/archive/refs/tags/v0.10.2.tar.gz",
     sha256 = "95e807f63143856dc4d161c071cca01115d2c6405b3d3209854ac6989dc6bb91",
     description = "JPEG XL image format reference implementation",
     homepage = "https://jpeg.org/jpegxl/",
     license = "BSD-3-Clause",
-    iuse = [
-        "avx2",
-        "avx512",
-        "gdk-pixbuf",
-        "gif",
-        "jpeg",
-        "openexr",
-        "png",
-    ],
-    use_cmake = {
-        "-gdk-pixbuf": "-DENABLE_GDK_PIXBUF=OFF",
-        "-gif": "-DENABLE_GIF=OFF",
-        "-jpeg": "-DENABLE_JPEG=OFF",
-        "-png": "-DENABLE_PNG=OFF",
-        "gdk-pixbuf": "-DENABLE_GDK_PIXBUF=ON",
-        "gif": "-DENABLE_GIF=ON",
-        "jpeg": "-DENABLE_JPEG=ON",
-        "png": "-DENABLE_PNG=ON",
+    use_configure = {
+        "gdk-pixbuf": ("-DENABLE_GDK_PIXBUF=ON", "-DENABLE_GDK_PIXBUF=OFF"),
+        "gif": ("-DENABLE_GIF=ON", "-DENABLE_GIF=OFF"),
+        "jpeg": ("-DENABLE_JPEG=ON", "-DENABLE_JPEG=OFF"),
+        "png": ("-DENABLE_PNG=ON", "-DENABLE_PNG=OFF"),
     },
-    use_defaults = ["avx2"],
     deps = [
         "//packages/linux/dev-libs/misc/brotli:brotli",
         "//packages/linux/dev-libs/misc/highway:highway",
     ],
     use_deps = {
-        "openexr": ["//packages/linux/media/image/openexr:openexr"],
+        "openexr": "//packages/linux/media/image/openexr:openexr",
     },
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_TESTING=OFF",

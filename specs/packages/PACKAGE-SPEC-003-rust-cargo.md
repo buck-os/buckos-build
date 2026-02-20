@@ -43,19 +43,20 @@ This specification defines how to create BuckOS packages for Rust projects using
 
 ## Package Type
 
-**`cargo_package()`** - Builds Rust projects with Cargo
+**`package(build_rule = "cargo")`** - Builds Rust projects with Cargo
 
 ## Quick Start
 
 ### Basic Cargo Package
 
 ```python
-load("//defs:package_defs.bzl", "cargo_package")
+load("//defs:package.bzl", "package")
 
-cargo_package(
+package(
+    build_rule = "cargo",
     name = "ripgrep",
     version = "14.0.3",
-    src_uri = "https://github.com/BurntSushi/ripgrep/archive/14.0.3.tar.gz",
+    url = "https://github.com/BurntSushi/ripgrep/archive/14.0.3.tar.gz",
     sha256 = "cf04af86dc085268c5f4470fbae49b18afbc221b78096aab842d934a76bad0ab",
     maintainers = ["rust@buckos.org"],
 )
@@ -64,10 +65,11 @@ cargo_package(
 ### With Cargo Features
 
 ```python
-cargo_package(
+package(
+    build_rule = "cargo",
     name = "fd",
     version = "9.0.0",
-    src_uri = "https://github.com/sharkdp/fd/archive/v9.0.0.tar.gz",
+    url = "https://github.com/sharkdp/fd/archive/v9.0.0.tar.gz",
     sha256 = "abc123...",
     cargo_args = ["--release"],
     iuse = ["jemalloc"],
@@ -75,7 +77,7 @@ cargo_package(
         "jemalloc": "use-jemalloc",
     },
     use_deps = {
-        "jemalloc": ["//packages/linux/dev-libs:jemalloc"],
+        "jemalloc": "//packages/linux/dev-libs:jemalloc",
     },
 )
 ```
@@ -86,7 +88,7 @@ cargo_package(
 |-------|------|-------------|
 | `name` | string | Package name (crate name) |
 | `version` | string | Crate version |
-| `src_uri` | string | Source tarball URL |
+| `url` | string | Source tarball URL |
 | `sha256` | string | SHA-256 checksum |
 
 ## Cargo-Specific Fields
@@ -110,7 +112,7 @@ use_features = {
     "simd": "simd-accel",
 }
 use_deps = {
-    "pcre2": ["//packages/linux/dev-libs/pcre2"],
+    "pcre2": "//packages/linux/dev-libs/pcre2",
 }
 ```
 
@@ -156,7 +158,8 @@ cargo install --path . \
 Use the `env` parameter for build customization:
 
 ```python
-cargo_package(
+package(
+    build_rule = "cargo",
     name = "tool",
     env = {
         "RUSTFLAGS": "-C target-feature=+crt-static",

@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "simple_package")
+load("//defs:package.bzl", "package")
 
 # OpenSBI requires RISC-V cross-compiler (riscv64-linux-gnu-gcc)
 # Disabled on x86_64 host - needs cross-compilation toolchain
@@ -7,7 +7,7 @@ load("//defs:package_defs.bzl", "simple_package")
 simple_package(
     name = "opensbi",
     version = "1.2",
-    src_uri = "https://github.com/riscv-software-src/opensbi/archive/refs/tags/v1.2.tar.gz",
+    url = "https://github.com/riscv-software-src/opensbi/archive/refs/tags/v1.2.tar.gz",
     sha256 = "8fcbce598a73acc2c7f7d5607d46b9d5107d3ecbede8f68f42631dcfc25ef2b2",
     description = "RISC-V Open Source Supervisor Binary Interface (requires RISC-V cross-compiler)",
     homepage = "https://github.com/riscv-software-src/opensbi",

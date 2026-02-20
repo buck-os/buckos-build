@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "sageattention",
     version = "2.2.0",
-    src_uri = "https://github.com/thu-ml/SageAttention/archive/refs/tags/v2.2.0.tar.gz",
+    url = "https://github.com/thu-ml/SageAttention/archive/refs/tags/v2.2.0.tar.gz",
     sha256 = "ddddf0ad4387ab3e45f14c6e2ae3b5898a158444fed21633b27586ca29ccdb49",
     description = "Accurate 8-bit attention for plug-and-play inference acceleration",
     homepage = "https://github.com/thu-ml/SageAttention",

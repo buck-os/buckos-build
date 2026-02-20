@@ -1,11 +1,11 @@
-load("//defs:package_defs.bzl", "cargo_package")
+load("//defs:package.bzl", "package")
 
-cargo_package(
+package(
+    build_rule = "cargo",
     name = "uv-0.9.7",
     version = "0.9.7",
-    src_uri = "https://github.com/astral-sh/uv/archive/refs/tags/0.9.7.tar.gz",
+    url = "https://github.com/astral-sh/uv/archive/refs/tags/0.9.7.tar.gz",
     sha256 = "050c37c43c3c54bc322b26770550c654969f057e9d079aa658a6555fa6a3a409",
-    signature_required = False,
     description = "An extremely fast Python package installer and resolver, written in Rust",
     homepage = "https://github.com/astral-sh/uv",
     license = "MIT OR Apache-2.0",

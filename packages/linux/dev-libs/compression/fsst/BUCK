@@ -1,19 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # FSST - Fast Static Symbol Table compression
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "fsst",
     version = "1.0.0",
-    src_uri = "https://github.com/cwida/fsst/archive/50dd308befd5121bd1121428a833f42cce6e1f9d.tar.gz",
+    url = "https://github.com/cwida/fsst/archive/50dd308befd5121bd1121428a833f42cce6e1f9d.tar.gz",
     sha256 = "3b14f636acbcfca7092e42664bf0a7139907c526963b1e227a6d6659e2bbedc1",
     description = "Fast Static Symbol Table compression - fast text compression with random access",
     homepage = "https://github.com/cwida/fsst",
     license = "MIT",
-    iuse = ["cli"],
-    use_defaults = [],
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DCMAKE_CXX_STANDARD=17",

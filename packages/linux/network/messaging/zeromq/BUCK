@@ -1,48 +1,34 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # ZeroMQ - High-performance asynchronous messaging library
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "zeromq",
     version = "4.3.5",
-    src_uri = "https://github.com/zeromq/libzmq/releases/download/v4.3.5/zeromq-4.3.5.tar.gz",
+    url = "https://github.com/zeromq/libzmq/releases/download/v4.3.5/zeromq-4.3.5.tar.gz",
     sha256 = "6653ef5910f17954861fe72332e68b03ca6e4d9c7160eb3a8de5a5a913bfab43",
     description = "High-performance asynchronous messaging library",
     homepage = "https://zeromq.org/",
     license = "LGPL-3.0",
-    iuse = [
-        "curve",
-        "drafts",
-        "libbsd",
-        "sodium",
-        "static-libs",
-        "unwind",
-    ],
-    use_defaults = ["sodium", "curve"],
     deps = [],
     use_deps = {
-        "sodium": ["//packages/linux/system/libs/crypto/libsodium:libsodium"],
+        "sodium": "//packages/linux/system/libs/crypto/libsodium:libsodium",
     },
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED=ON",
         "-DBUILD_STATIC=OFF",
         "-DBUILD_TESTS=OFF",
         "-DENABLE_DRAFTS=OFF",
     ],
-    use_cmake = {
-        "-curve": "-DENABLE_CURVE=OFF",
-        "-drafts": "-DENABLE_DRAFTS=OFF",
-        "-libbsd": "-DENABLE_LIBBSD=OFF",
-        "-sodium": "-DWITH_LIBSODIUM=OFF",
-        "-static-libs": "-DBUILD_STATIC_LIBS=OFF",
-        "-unwind": "-DENABLE_UNWIND=OFF",
-        "curve": "-DENABLE_CURVE=ON",
-        "drafts": "-DENABLE_DRAFTS=ON",
-        "libbsd": "-DENABLE_LIBBSD=ON",
-        "sodium": "-DWITH_LIBSODIUM=ON",
-        "static-libs": "-DBUILD_STATIC_LIBS=ON",
-        "unwind": "-DENABLE_UNWIND=ON",
+    use_configure = {
+        "curve": ("-DENABLE_CURVE=ON", "-DENABLE_CURVE=OFF"),
+        "drafts": ("-DENABLE_DRAFTS=ON", "-DENABLE_DRAFTS=OFF"),
+        "libbsd": ("-DENABLE_LIBBSD=ON", "-DENABLE_LIBBSD=OFF"),
+        "sodium": ("-DWITH_LIBSODIUM=ON", "-DWITH_LIBSODIUM=OFF"),
+        "static-libs": ("-DBUILD_STATIC_LIBS=ON", "-DBUILD_STATIC_LIBS=OFF"),
+        "unwind": ("-DENABLE_UNWIND=ON", "-DENABLE_UNWIND=OFF"),
     },
     visibility = ["PUBLIC"],
 )

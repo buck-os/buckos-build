@@ -1,18 +1,11 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package", "gen_pkgconfig")
+load("//defs:package.bzl", "package")
 
 # ARM CMSIS-NN - Neural Network library for Cortex-M processors
 # Optimized kernels for neural network operations on embedded devices
 
-download_source(
-    name = "cmsis-nn-src",
-    src_uri = "https://github.com/ARM-software/CMSIS-NN/archive/refs/tags/v5.0.0.tar.gz",
-    sha256 = "284ebec8594d5169f43fdd76d776cc42a5ca2561179dcc280bd80c1de5ff27db",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "cmsis-nn",
-    srcs = [":cmsis-nn-src"],
     version = "5.0.0",
     description = "CMSIS Neural Network Library - optimized NN kernels for Cortex-M",
     homepage = "https://github.com/ARM-software/CMSIS-NN",

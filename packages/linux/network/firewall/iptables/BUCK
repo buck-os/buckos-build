@@ -1,50 +1,26 @@
+load("//defs:package.bzl", "package")
+
 # =============================================================================
 # iptables - Legacy Linux packet filtering administration
 # =============================================================================
 
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "iptables",
     version = "1.8.10",
-    src_uri = "https://www.netfilter.org/projects/iptables/files/iptables-1.8.10.tar.xz",
+    url = "https://www.netfilter.org/projects/iptables/files/iptables-1.8.10.tar.xz",
     sha256 = "5cc255c189356e317d070755ce9371eb63a1b783c34498fb8c30264f3cc59c9c",
-    signature_sha256 = "b73295a18ab65070cb5e6c31ec11dcfc13a50b1f67888976cc0b708cd7fc5151",
-    signature_required=False,
-
-    iuse = [
-        "bpf",
-        "connlabel",
-        "conntrack",
-        "ipv6",
-        "netlink",
-        "nfsynproxy",
-        "nftables",
-        "pcap",
-        "static-libs",
-    ],
-    use_defaults = ["ipv6", "bpf", "nfsynproxy"],
-
 
     use_configure = {
-        "-bpf": "--disable-bpf-compiler",
-        "-connlabel": "--disable-connlabel",
-        "-conntrack": "--disable-conntrack",
-        "-ipv6": "--disable-ipv6",
-        "-netlink": "--disable-netlink",
-        "-nfsynproxy": "--disable-nfsynproxy",
-        "-nftables": "--disable-nftables",
-        "-pcap": "--disable-pcap",
-        "-static-libs": "--disable-static",
-        "bpf": "--enable-bpf-compiler",
-        "connlabel": "--enable-connlabel",
-        "conntrack": "--enable-conntrack",
-        "ipv6": "--enable-ipv6",
-        "netlink": "--enable-netlink",
-        "nfsynproxy": "--enable-nfsynproxy",
-        "nftables": "--enable-nftables",
-        "pcap": "--enable-pcap",
-        "static-libs": "--enable-static",
+        "bpf": ("--enable-bpf-compiler", "--disable-bpf-compiler"),
+        "connlabel": ("--enable-connlabel", "--disable-connlabel"),
+        "conntrack": ("--enable-conntrack", "--disable-conntrack"),
+        "ipv6": ("--enable-ipv6", "--disable-ipv6"),
+        "netlink": ("--enable-netlink", "--disable-netlink"),
+        "nfsynproxy": ("--enable-nfsynproxy", "--disable-nfsynproxy"),
+        "nftables": ("--enable-nftables", "--disable-nftables"),
+        "pcap": ("--enable-pcap", "--disable-pcap"),
+        "static-libs": ("--enable-static", "--disable-static"),
     },
 
     configure_args = [

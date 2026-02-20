@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # initramfs-tools - Debian initramfs generator
@@ -6,9 +6,10 @@ load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotoo
 # The standard Debian/Ubuntu initramfs generator.
 # Uses hook-based architecture with scripts in /etc/initramfs-tools.
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "initramfs-tools",
-    src_uri = "https://mirror.buckos.org/i/initramfs-tools-v0.142.tar.gz",
+    url = "https://mirror.buckos.org/i/initramfs-tools-v0.142.tar.gz",
 
     sha256 = "27a78cc25acc3ca3d9c78deca165bf001b09b260ce25a3f3756e47a0e7bc0554",
     version = "0.142",

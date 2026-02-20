@@ -1,16 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "libuv",
     version = "1.49.1",
-    src_uri = "https://dist.libuv.org/dist/v1.49.1/libuv-v1.49.1.tar.gz",
+    url = "https://dist.libuv.org/dist/v1.49.1/libuv-v1.49.1.tar.gz",
     sha256 = "8d84f714f4cfd167b1576a58b82430cc2166ef135463d0644964fd71c61a6766",
-    signature_sha256 = "8633b89cbc0ff703c016ecc10dfa5911cf5800c8a5a0f3872956ec28c9d09b17",
-    signature_required = False,
     description = "Cross-platform asynchronous I/O library",
     homepage = "https://libuv.org/",
     license = "MIT",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTING=OFF",
         "-DLIBUV_BUILD_SHARED=ON",
     ],

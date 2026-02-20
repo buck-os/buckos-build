@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "bark-with-voice-clone",
     version = "0.0.1a",
-    src_uri = "https://github.com/serp-ai/bark-with-voice-clone/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/serp-ai/bark-with-voice-clone/archive/refs/heads/main.tar.gz",
     sha256 = "1f0a03046434771624a694349ae770efa503c61295bcbba8f117d279b79de6b0",
     deps = [
         "//packages/linux/dev-libs/python/boto3:boto3",

@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # yaml-cpp - YAML parser and emitter in C++
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "yaml-cpp",
     version = "0.8.0",
-    src_uri = "https://github.com/jbeder/yaml-cpp/archive/refs/tags/0.8.0.tar.gz",
+    url = "https://github.com/jbeder/yaml-cpp/archive/refs/tags/0.8.0.tar.gz",
     sha256 = "fbe74bbdcee21d656715688706da3c8becfd946d92cd44705cc6098bb23b3a16",
     description = "YAML parser and emitter in C++ matching the YAML 1.2 spec",
     homepage = "https://github.com/jbeder/yaml-cpp",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DYAML_BUILD_SHARED_LIBS=ON",

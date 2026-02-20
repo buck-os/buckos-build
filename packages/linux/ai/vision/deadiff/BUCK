@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "deadiff",
     version = "0.0.1",
-    src_uri = "https://github.com/bytedance/DEADiff/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/bytedance/DEADiff/archive/refs/heads/main.tar.gz",
     sha256 = "8bf3af2ff1442b7ac4a6284141699309dd159aad60f099b9c84a506f09b85894",
     deps = [
         "//packages/linux/dev-libs/python/pytorch:pytorch",

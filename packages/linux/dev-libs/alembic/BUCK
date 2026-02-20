@@ -1,16 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # alembic - Open framework for storing and sharing scene data
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "alembic",
     version = "1.8.6",
-    src_uri = "https://github.com/alembic/alembic/archive/1.8.6.tar.gz",
+    url = "https://github.com/alembic/alembic/archive/1.8.6.tar.gz",
     sha256 = "c572ebdea3a5f0ce13774dd1fceb5b5815265cd1b29d142cf8c144b03c131c8c",
-    signature_required = False,
     description = "Open framework for storing and sharing scene data",
     homepage = "https://www.alembic.io/",
     license = "BSD-3-Clause",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_SHARED_LIBS=ON",
         "-DUSE_TESTS=OFF",
         "-DUSE_HDF5=OFF",

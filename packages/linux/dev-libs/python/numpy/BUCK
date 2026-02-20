@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
 # NumPy - Fundamental package for scientific computing with Python
 #
@@ -9,38 +9,26 @@ load("//defs:package_defs.bzl", "python_package")
 #   openblas  - Use OpenBLAS for BLAS/LAPACK
 #   simd      - Enable SIMD optimizations (AVX, SSE, etc.)
 
-python_package(
+package(
+    build_rule = "python",
     name = "numpy",
     version = "1.26.4",
-    src_uri = "https://github.com/numpy/numpy/releases/download/v1.26.4/numpy-1.26.4.tar.gz",
+    url = "https://github.com/numpy/numpy/releases/download/v1.26.4/numpy-1.26.4.tar.gz",
     sha256 = "2a02aba9ed12e4ac4eb3ea9421c420301a0c6460d9830d74a9df87efa4912010",
     description = "Fundamental package for array computing with Python",
     homepage = "https://numpy.org/",
     license = "BSD-3-Clause",
-    iuse = [
-        "big-endian",
-        "cpudetection",
-        "index64",
-        "lapack",
-        "openblas",
-        "simd",
-    ],
     use_configure = {
-        "-big-endian": "--disable-big-endian",
-        "-cpudetection": "--disable-cpudetection",
-        "-index64": "--disable-index64",
-        "-lapack": "--disable-lapack",
-        "big-endian": "--enable-big-endian",
-        "cpudetection": "--enable-cpudetection",
-        "index64": "--enable-index64",
-        "lapack": "--enable-lapack",
+        "big-endian": ("--enable-big-endian", "--disable-big-endian"),
+        "cpudetection": ("--enable-cpudetection", "--disable-cpudetection"),
+        "index64": ("--enable-index64", "--disable-index64"),
+        "lapack": ("--enable-lapack", "--disable-lapack"),
     },
-    use_defaults = ["openblas", "simd"],
     deps = [
         "//packages/linux/lang/python:python",
     ],
     use_deps = {
-        "openblas": ["//packages/linux/dev-libs/math/openblas:openblas"],
+        "openblas": "//packages/linux/dev-libs/math/openblas:openblas",
     },
     build_backend = "meson",
     build_env = {

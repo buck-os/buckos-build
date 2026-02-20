@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "pointnet2_ops",
     version = "3.0.0",
-    src_uri = "https://github.com/fishbotics/pointnet2_ops/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/fishbotics/pointnet2_ops/archive/refs/heads/main.tar.gz",
     sha256 = "5d2f3752dc222af6530952ee1447287241dd4521eb8d2636445e2b31995aff94",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

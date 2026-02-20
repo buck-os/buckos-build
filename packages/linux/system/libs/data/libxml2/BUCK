@@ -1,28 +1,19 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libxml2",
     # GNOME release tarball includes pre-generated configure script
     bdepend = [],
     src_prepare = "",
-    src_uri = "https://download.gnome.org/sources/libxml2/2.12/libxml2-2.12.9.tar.xz",
+    url = "https://download.gnome.org/sources/libxml2/2.12/libxml2-2.12.9.tar.xz",
 
     sha256 = "59912db536ab56a3996489ea0299768c7bcffe57169f0235e7f962a91f483590",
-    iuse = [
-        "icu",
-        "python",
-        "readline",
-        "static-libs",
-    ],
     use_configure = {
-        "-icu": "--disable-icu",
-        "-python": "--disable-python",
-        "-readline": "--without-readline",
-        "-static-libs": "--disable-static",
-        "icu": "--enable-icu",
-        "python": "--enable-python",
-        "readline": "--with-readline",
-        "static-libs": "--enable-static",
+        "icu": ("--enable-icu", "--disable-icu"),
+        "python": ("--enable-python", "--disable-python"),
+        "readline": ("--with-readline", "--without-readline"),
+        "static-libs": ("--enable-static", "--disable-static"),
     },
     version = "2.12.9",
     description = "XML C parser and toolkit",

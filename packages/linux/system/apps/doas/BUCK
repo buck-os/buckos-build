@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # doas - Simple sudo alternative from OpenBSD
 # OpenDoas has its own configure script, not autotools
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "doas",
     bdepend = [
         "//packages/linux/dev-tools/dev-utils/bison:bison",  # Provides yacc for parse.y
@@ -11,22 +12,17 @@ autotools_package(
     src_prepare = "",
     src_configure = "./configure --prefix=/usr",
     version = "6.8.2",
-    src_uri = "https://github.com/Duncaen/OpenDoas/archive/v6.8.2.tar.gz",
+    url = "https://github.com/Duncaen/OpenDoas/archive/v6.8.2.tar.gz",
     sha256 = "6da058a0e70b7543bc60624389b0b00b686189ec933828c522bf8b2600495a67",
-    signature_required = False,
     description = "Simple sudo alternative from OpenBSD",
     homepage = "https://github.com/Duncaen/OpenDoas",
     license = "ISC",
-    iuse = ["pam", "persist", "static-libs"],
-    use_defaults = [],
     use_deps = {
-        "pam": ["//packages/linux/system/security/auth/pam:pam"],
+        "pam": "//packages/linux/system/security/auth/pam:pam",
     },
     use_configure = {
-        "pam": "--with-pam",
-        "-pam": "--without-pam",
-        "persist": "--with-timestamp",
-        "-persist": "--without-timestamp",
+        "pam": ("--with-pam", "--without-pam"),
+        "persist": ("--with-timestamp", "--without-timestamp"),
     },
     deps = [],
     visibility = ["PUBLIC"],

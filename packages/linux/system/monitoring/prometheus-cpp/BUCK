@@ -1,32 +1,29 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # prometheus-cpp - Prometheus Client Library for C++
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "prometheus-cpp",
     version = "1.2.4",
-    src_uri = "https://github.com/jupp0r/prometheus-cpp/releases/download/v1.2.4/prometheus-cpp-with-submodules.tar.gz",
+    url = "https://github.com/jupp0r/prometheus-cpp/releases/download/v1.2.4/prometheus-cpp-with-submodules.tar.gz",
     sha256 = "0d6852291063c35853e88805c73b52f73c0c08b78c1e7bc4d588fcf72a7172eb",
     description = "Prometheus Client Library for Modern C++",
     homepage = "https://github.com/jupp0r/prometheus-cpp",
     license = "MIT",
-    iuse = ["pull", "push", "zlib"],
-    use_defaults = ["pull"],
     deps = [
         "//packages/linux/core/zlib:zlib",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DENABLE_TESTING=OFF",
         "-DENABLE_PUSH=OFF",
         "-DENABLE_COMPRESSION=ON",
     ],
-    use_cmake = {
-        "-push": "-DENABLE_PUSH=OFF",
-        "-zlib": "-DENABLE_ZLIB=OFF",
-        "push": "-DENABLE_PUSH=ON",
-        "zlib": "-DENABLE_ZLIB=ON",
+    use_configure = {
+        "push": ("-DENABLE_PUSH=ON", "-DENABLE_PUSH=OFF"),
+        "zlib": ("-DENABLE_ZLIB=ON", "-DENABLE_ZLIB=OFF"),
     },
     visibility = ["PUBLIC"],
 )

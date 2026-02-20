@@ -1,14 +1,15 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "libvfio-user",
     version = "0.1",
-    src_uri = "https://github.com/nutanix/libvfio-user/archive/refs/tags/v0.1.tar.gz",
+    url = "https://github.com/nutanix/libvfio-user/archive/refs/tags/v0.1.tar.gz",
     sha256 = "c73899dca716e07899a43a5df577edcf3928908e542d724d6ad170f7bf0e7a5b",
     deps = [
         "//packages/linux/system/libs/data/json-c:json-c",
     ],
-    meson_args = [
+    configure_args = [
         "-Dtests=disabled",
         "-Ddocs=disabled",
     ],

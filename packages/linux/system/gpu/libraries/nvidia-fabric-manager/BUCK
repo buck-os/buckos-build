@@ -1,21 +1,12 @@
+load("//defs:package.bzl", "package")
+
 # =============================================================================
 # NVIDIA Fabric Manager - NVSwitch fabric management library
 # =============================================================================
 
-load("//defs:package_defs.bzl", "download_source", "binary_package")
-
-download_source(
-    name = "nvidia-fabric-manager-src",
-    src_uri = "https://developer.download.nvidia.com/compute/cuda/repos/rhel9/x86_64/nvidia-fabric-manager-550.90.07-1.x86_64.rpm",
-    sha256 = "e580c8b412de7a9f352c2eacce877b4cbccd494bfdee7a0e6c94010a06c91c92",
-    signature_required = False,
-    # Don't auto-extract - RPM needs special handling
-    extract = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "nvidia-fabric-manager",
-    srcs = [":nvidia-fabric-manager-src"],
     version = "550.90.07",
     description = "NVIDIA Fabric Manager for NVSwitch GPU interconnect management",
     homepage = "https://developer.nvidia.com/",

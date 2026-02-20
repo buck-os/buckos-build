@@ -1,16 +1,14 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "fail2ban",
-    src_uri = "https://github.com/fail2ban/fail2ban/archive/refs/tags/1.0.2.tar.gz",
+    url = "https://github.com/fail2ban/fail2ban/archive/refs/tags/1.0.2.tar.gz",
 
     sha256 = "ae8b0b41f27a7be12d40488789d6c258029b23a01168e3c0d347ee80b325ac23",
-    iuse = ["selinux", "systemd"],
     use_configure = {
-        "-selinux": "--disable-selinux",
-        "-systemd": "--disable-systemd",
-        "selinux": "--enable-selinux",
-        "systemd": "--enable-systemd",
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "systemd": ("--enable-systemd", "--disable-systemd"),
     },
     version = "1.0.2",
     description = "Daemon to ban hosts that cause multiple authentication errors",

@@ -1,37 +1,24 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "ceres-solver",
     version = "1.14.0",
-    iuse = [
-        "cuda",
-        "examples",
-        "gflags",
-        "lapack",
-        "schur",
-        "sparse",
-    ],
-    use_cmake = {
-        "-cuda": "-DWITH_CUDA=OFF",
-        "-examples": "-DBUILD_EXAMPLES=OFF",
-        "-gflags": "-DENABLE_GFLAGS=OFF",
-        "-lapack": "-DENABLE_LAPACK=OFF",
-        "-schur": "-DENABLE_SCHUR=OFF",
-        "-sparse": "-DENABLE_SPARSE=OFF",
-        "cuda": "-DWITH_CUDA=ON",
-        "examples": "-DBUILD_EXAMPLES=ON",
-        "gflags": "-DENABLE_GFLAGS=ON",
-        "lapack": "-DENABLE_LAPACK=ON",
-        "schur": "-DENABLE_SCHUR=ON",
-        "sparse": "-DENABLE_SPARSE=ON",
+    use_configure = {
+        "cuda": ("-DWITH_CUDA=ON", "-DWITH_CUDA=OFF"),
+        "examples": ("-DBUILD_EXAMPLES=ON", "-DBUILD_EXAMPLES=OFF"),
+        "gflags": ("-DENABLE_GFLAGS=ON", "-DENABLE_GFLAGS=OFF"),
+        "lapack": ("-DENABLE_LAPACK=ON", "-DENABLE_LAPACK=OFF"),
+        "schur": ("-DENABLE_SCHUR=ON", "-DENABLE_SCHUR=OFF"),
+        "sparse": ("-DENABLE_SPARSE=ON", "-DENABLE_SPARSE=OFF"),
     },
-    src_uri = "https://github.com/ceres-solver/ceres-solver/archive/refs/tags/1.14.0.tar.gz",
+    url = "https://github.com/ceres-solver/ceres-solver/archive/refs/tags/1.14.0.tar.gz",
     sha256 = "1296330fcf1e09e6c2f926301916f64d4a4c5c0ff12d460a9bc5d4c48411518f",
     deps = [
         "//packages/linux/dev-libs/eigen:eigen",
         "//packages/linux/dev-libs/gmp:gmp",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
         "-DBUILD_EXAMPLES=OFF",

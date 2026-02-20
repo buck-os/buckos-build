@@ -1,16 +1,16 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
 # libnma - NetworkManager UI library
-meson_package(
+package(
+    build_rule = "meson",
     name = "libnma",
     version = "1.10.6",
-    src_uri = "https://download.gnome.org/sources/libnma/1.10/libnma-1.10.6.tar.xz",
+    url = "https://download.gnome.org/sources/libnma/1.10/libnma-1.10.6.tar.xz",
     sha256 = "53a6fb2b190ad37c5986caed3e98bede7c3c602399ee4f93c8fc054303d76dab",
-    signature_required = False,
     description = "NetworkManager GUI library",
     homepage = "https://gitlab.gnome.org/GNOME/libnma",
     license = "LGPL-2.1+",
-    meson_args = [
+    configure_args = [
         "-Dgtk_doc=false",
         "-Dintrospection=false",
         "-Dvapi=false",

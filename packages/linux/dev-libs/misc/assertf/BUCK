@@ -1,15 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "assertf",
     version = "master",
-    src_uri = "https://github.com/leiless/assertf.h/archive/refs/heads/master.tar.gz",
+    url = "https://github.com/leiless/assertf.h/archive/refs/heads/master.tar.gz",
     sha256 = "1efc6f9d746d04eb496146d8174ea63efc6c04d9504fa2afa5ce13c35d85b1d9",
     description = "C header-only formattable assert macros",
     homepage = "https://github.com/leiless/assertf.h",
     license = "BSD-2",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],
     visibility = ["PUBLIC"],

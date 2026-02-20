@@ -1,3 +1,5 @@
+load("//defs:package.bzl", "package")
+
 # =============================================================================
 # ROCm - AMD ROCm platform for GPU computing
 # =============================================================================
@@ -7,25 +9,9 @@
 #
 # =============================================================================
 
-load("//defs:package_defs.bzl", "download_source", "binary_package", "autotools_package", "gen_pkgconfig")
-
-download_source(
-    name = "rocm-src",
-    src_uri = "https://repo.radeon.com/rocm/apt/7.0.1/pool/main/r/rocm-core/rocm-core_7.0.1.70001-42~24.04_amd64.deb",
-    sha256 = "bb88ee585f6fdda157049e3ecc5b7422eb3c5d41c6e066cecfcbab8245690506",
-    signature_required = False,
-)
-
-download_source(
-    name = "hip-runtime-src",
-    src_uri = "https://repo.radeon.com/rocm/apt/7.0.1/pool/main/h/hip-runtime-amd/hip-runtime-amd_7.0.51831.70001-42~24.04_amd64.deb",
-    sha256 = "837be3bcfc3d7ace79a5aec079959e2d125b77b2cbff53b5255efb78b66adc11",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "rocm",
-    srcs = [":rocm-src"],
     version = "7.0.1",
     description = "AMD ROCm platform for GPU computing",
     homepage = "https://rocm.docs.amd.com/",

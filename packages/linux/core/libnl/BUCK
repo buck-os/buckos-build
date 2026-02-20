@@ -1,31 +1,21 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libnl",
     # GitHub release tarball includes pre-generated configure script
     bdepend = [],
     src_prepare = "",
     version = "3.9.0",
-    src_uri = "https://github.com/thom311/libnl/releases/download/libnl3_9_0/libnl-3.9.0.tar.gz",
+    url = "https://github.com/thom311/libnl/releases/download/libnl3_9_0/libnl-3.9.0.tar.gz",
     sha256 = "aed507004d728a5cf11eab48ca4bf9e6e1874444e33939b9d3dfed25018ee9bb",
-    signature_sha256 = "673a014ae2405ee7c1877c407c669b35fe36ae56ab0497a2b3443b3e8aa73a59",
-    signature_required=False,
     description = "Library for applications dealing with netlink sockets",
     homepage = "https://www.infradead.org/~tgr/libnl/",
     license = "LGPL-2.1",
 
     # USE flags this package supports
-    iuse = [
-        "cli",
-        "debug",
-        "python",
-        "static-libs",
-        "threads",
-        "utils",
-    ],
 
     # Default USE flags
-    use_defaults = [],
 
     # Pre-configure to fix missing time.h include
     pre_configure = """
@@ -41,18 +31,12 @@ done
 
     # Conditional configure arguments
     use_configure = {
-        "-cli": "--disable-cli",
-        "-debug": "--disable-debug",
-        "-python": "--disable-python",
-        "-static-libs": "--disable-static",
-        "-threads": "--disable-pthreads",
-        "-utils": "--disable-utils",
-        "cli": "--enable-cli",
-        "debug": "--enable-debug",
-        "python": "--enable-python",
-        "static-libs": "--enable-static",
-        "threads": "--enable-pthreads",
-        "utils": "--enable-utils",
+        "cli": ("--enable-cli", "--disable-cli"),
+        "debug": ("--enable-debug", "--disable-debug"),
+        "python": ("--enable-python", "--disable-python"),
+        "static-libs": ("--enable-static", "--disable-static"),
+        "threads": ("--enable-pthreads", "--disable-pthreads"),
+        "utils": ("--enable-utils", "--disable-utils"),
     },
 
     visibility = ["PUBLIC"],

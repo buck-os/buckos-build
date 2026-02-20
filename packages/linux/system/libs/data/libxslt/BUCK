@@ -1,31 +1,18 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libxslt",
-    src_uri = "https://download.gnome.org/sources/libxslt/1.1/libxslt-1.1.42.tar.xz",
+    url = "https://download.gnome.org/sources/libxslt/1.1/libxslt-1.1.42.tar.xz",
 
     sha256 = "85ca62cac0d41fc77d3f6033da9df6fd73d20ea2fc18b0a3609ffb4110e1baeb",
-    iuse = [
-        "crypt",
-        "debug",
-        "debugger",
-        "examples",
-        "python",
-        "static-libs",
-    ],
     use_configure = {
-        "-crypt": "--disable-crypt",
-        "-debug": "--disable-debug",
-        "-debugger": "--disable-debugger",
-        "-examples": "--disable-examples",
-        "-python": "--disable-python",
-        "-static-libs": "--disable-static",
-        "crypt": "--enable-crypt",
-        "debug": "--enable-debug",
-        "debugger": "--enable-debugger",
-        "examples": "--enable-examples",
-        "python": "--enable-python",
-        "static-libs": "--enable-static",
+        "crypt": ("--enable-crypt", "--disable-crypt"),
+        "debug": ("--enable-debug", "--disable-debug"),
+        "debugger": ("--enable-debugger", "--disable-debugger"),
+        "examples": ("--enable-examples", "--disable-examples"),
+        "python": ("--enable-python", "--disable-python"),
+        "static-libs": ("--enable-static", "--disable-static"),
     },
     version = "1.1.42",
     description = "XSLT C library",

@@ -1,15 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "bpftool-src",
-    src_uri = "https://github.com/libbpf/bpftool/releases/download/v7.5.0/bpftool-libbpf-v7.5.0-sources.tar.gz",
-    sha256 = "1468d3fb8c70698359a6593d8828f0e0a56b72244cb8632c6e1947e11b3520b9",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "bpftool",
-    srcs = [":bpftool-src"],
     version = "7.5.0",
     visibility = ["PUBLIC"],
 )

@@ -1,18 +1,15 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package", "binary_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # darkstat - Network statistics gatherer with web interface
 # =============================================================================
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "darkstat",
     version = "3.0.721",
-    src_uri = "https://github.com/emikulic/darkstat/archive/refs/tags/3.0.721.tar.gz",
+    url = "https://github.com/emikulic/darkstat/archive/refs/tags/3.0.721.tar.gz",
     sha256 = "0b405a6c011240f577559d84db22684a6349b25067c3a800df12439783c25494",
-    signature_required = False,
-
-
-
 
     configure_args = [
         "--with-pcap=/usr",

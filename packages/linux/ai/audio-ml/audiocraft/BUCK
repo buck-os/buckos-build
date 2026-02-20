@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "audiocraft",
     version = "1.3.0",
-    src_uri = "https://github.com/facebookresearch/audiocraft/archive/refs/tags/v1.3.0.tar.gz",
+    url = "https://github.com/facebookresearch/audiocraft/archive/refs/tags/v1.3.0.tar.gz",
     sha256 = "774a0885ff6fb55c6a6c98efc123d5656c469488eff95ba01070cfd73fa265dd",
     deps = [
         "//packages/linux/dev-libs/serialization/protobuf:protobuf",

@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "slimonnx",
     version = "0.1.0",
-    src_uri = "https://github.com/zhongkuima/slimonnx/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/zhongkuima/slimonnx/archive/refs/heads/main.tar.gz",
     sha256 = "fe2f01a743deee577e43068524c30c0aae71c6f91b792875ef240287b20be4ef",
     deps = [
         "//packages/linux/dev-libs/python/numpy:numpy",

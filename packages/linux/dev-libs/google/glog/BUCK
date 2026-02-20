@@ -1,25 +1,20 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "glog",
     version = "0.7.0",
-    iuse = ["gflags", "libunwind", "llvm-libunwind"],
-    use_cmake = {
-        "-gflags": "-DENABLE_GFLAGS=OFF",
-        "-libunwind": "-DENABLE_LIBUNWIND=OFF",
-        "-llvm-libunwind": "-DENABLE_LLVM_LIBUNWIND=OFF",
-        "gflags": "-DENABLE_GFLAGS=ON",
-        "libunwind": "-DENABLE_LIBUNWIND=ON",
-        "llvm-libunwind": "-DENABLE_LLVM_LIBUNWIND=ON",
+    use_configure = {
+        "gflags": ("-DENABLE_GFLAGS=ON", "-DENABLE_GFLAGS=OFF"),
+        "libunwind": ("-DENABLE_LIBUNWIND=ON", "-DENABLE_LIBUNWIND=OFF"),
+        "llvm-libunwind": ("-DENABLE_LLVM_LIBUNWIND=ON", "-DENABLE_LLVM_LIBUNWIND=OFF"),
     },
-    src_uri = "https://github.com/google/glog/archive/refs/tags/v0.7.0.tar.gz",
+    url = "https://github.com/google/glog/archive/refs/tags/v0.7.0.tar.gz",
     sha256 = "375106b5976231b92e66879c1a92ce062923b9ae573c42b56ba28b112ee4cc11",
-    signature_required = False,
     description = "Google logging library for C++",
     homepage = "https://github.com/google/glog",
     license = "BSD-3-Clause",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_TESTING=OFF",
         "-DWITH_GFLAGS=ON",

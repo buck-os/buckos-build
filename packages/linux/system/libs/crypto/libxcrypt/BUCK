@@ -1,34 +1,23 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # libxcrypt - Extended crypt library
 # Provides libcrypt.so.2 for password hashing functions
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libxcrypt",
     # GitHub releases/download tarball includes pre-generated configure script
     bdepend = [],
     src_prepare = "",
     version = "4.4.38",
-    iuse = [
-        "compat",
-        "headers-only",
-        "static-libs",
-        "system",
-    ],
     use_configure = {
-        "-compat": "--disable-compat",
-        "-headers-only": "--disable-headers-only",
-        "-static-libs": "--disable-static",
-        "-system": "--disable-system",
-        "compat": "--enable-compat",
-        "headers-only": "--enable-headers-only",
-        "static-libs": "--enable-static",
-        "system": "--enable-system",
+        "compat": ("--enable-compat", "--disable-compat"),
+        "headers-only": ("--enable-headers-only", "--disable-headers-only"),
+        "static-libs": ("--enable-static", "--disable-static"),
+        "system": ("--enable-system", "--disable-system"),
     },
-    src_uri = "https://github.com/besser82/libxcrypt/releases/download/v4.4.38/libxcrypt-4.4.38.tar.xz",
+    url = "https://github.com/besser82/libxcrypt/releases/download/v4.4.38/libxcrypt-4.4.38.tar.xz",
     sha256 = "80304b9c306ea799327f01d9a7549bdb28317789182631f1b54f4511b4206dd6",
-    signature_sha256 = "5ea7cbac9345271c1ba6abb7d591a7e5ddbf188d21470f103bd450cb981a49d5",
-    signature_required = False,
     description = "Extended crypt library for descrypt, md5crypt, bcrypt, and others",
     homepage = "https://github.com/besser82/libxcrypt",
     license = "LGPL-2.1+",

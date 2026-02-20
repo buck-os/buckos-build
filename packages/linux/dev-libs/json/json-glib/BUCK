@@ -1,23 +1,20 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "json-glib",
     version = "1.2.8",
-    iuse = ["gtk-doc", "introspection", "nls"],
     use_configure = {
-        "-gtk-doc": "--disable-gtk-doc",
-        "-introspection": "--disable-introspection",
-        "-nls": "--disable-nls",
-        "gtk-doc": "--enable-gtk-doc",
-        "introspection": "--enable-introspection",
-        "nls": "--enable-nls",
+        "gtk-doc": ("--enable-gtk-doc", "--disable-gtk-doc"),
+        "introspection": ("--enable-introspection", "--disable-introspection"),
+        "nls": ("--enable-nls", "--disable-nls"),
     },
-    src_uri = "https://download.gnome.org/sources/json-glib/1.2/json-glib-1.2.8.tar.xz",
+    url = "https://download.gnome.org/sources/json-glib/1.2/json-glib-1.2.8.tar.xz",
     sha256 = "fd55a9037d39e7a10f0db64309f5f0265fa32ec962bf85066087b83a2807f40a",
     deps = [
         "//packages/linux/dev-libs/glib:glib",
     ],
-    meson_args = [
+    configure_args = [
         "-Ddisable_introspection=true",
         "-Denable-gtk-doc=false",
     ],

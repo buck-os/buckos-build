@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "pyxtension",
     version = "1.16.1",
-    src_uri = "https://github.com/asuiu/pyxtension/archive/refs/tags/v1.16.1.tar.gz",
+    url = "https://github.com/asuiu/pyxtension/archive/refs/tags/v1.16.1.tar.gz",
     sha256 = "1b8808015e4146e9d3b5021ab2dd70529bdb7cd2989766e99ddaa05e2b51ad34",
     deps = [
         "//packages/linux/dev-libs/python/tqdm:tqdm",

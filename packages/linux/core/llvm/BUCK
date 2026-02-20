@@ -1,5 +1,4 @@
-load("//defs:package_defs.bzl", "cmake_package")
-load("//defs:use_flags.bzl", "use_dep", "use_configure_args")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # LLVM - Low Level Virtual Machine
@@ -111,23 +110,21 @@ cmake --build "$S/build" -j${MAKEOPTS:-$(nproc)}
 # =============================================================================
 # LLVM 21.1.6 (Latest - Default)
 # =============================================================================
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "llvm",
     version = "21.1.6",
-    iuse = ["debug"],
-    use_cmake = {
-        "-debug": "-DCMAKE_BUILD_TYPE=Release",
-        "debug": "-DCMAKE_BUILD_TYPE=Debug",
+    use_configure = {
+        "debug": ("-DCMAKE_BUILD_TYPE=Debug", "-DCMAKE_BUILD_TYPE=Release"),
     },
-    src_uri = "https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.6/llvm-project-21.1.6.src.tar.xz",
+    url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.6/llvm-project-21.1.6.src.tar.xz",
     sha256 = "ae67086eb04bed7ca11ab880349b5f1ab6f50e1b88cda376eaf8a845b935762b",
-    signature_required = False,
     description = "Low Level Virtual Machine - compiler infrastructure",
     homepage = "https://llvm.org/",
     license = "Apache-2.0 WITH LLVM-exception",
     src_configure = LLVM_SRC_CONFIGURE,
     src_compile = LLVM_SRC_COMPILE,
-    cmake_args = LLVM_CMAKE_ARGS,
+    configure_args = LLVM_CMAKE_ARGS,
     deps = use_dep(LLVM_USE_DEPS, LLVM_USE_DEFAULTS) + [
         "//packages/linux/system/terminal/ncurses:ncurses",
         "//packages/linux/system/libs/data/libxml2:libxml2",

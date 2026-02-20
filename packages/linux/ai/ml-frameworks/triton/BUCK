@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "triton",
     version = "3.3.1",
-    src_uri = "https://github.com/triton-lang/triton/archive/refs/tags/v3.3.1.tar.gz",
+    url = "https://github.com/triton-lang/triton/archive/refs/tags/v3.3.1.tar.gz",
     sha256 = "9dc77d9205933bf2fc05eb054f4f1d92acd79a963826174d57fe9cfd58ba367b",
-    cmake_args = [
+    configure_args = [
         "-DTRITON_BUILD_PYTHON_MODULE=ON",
         "-DTRITON_BUILD_PROTON=ON",
         "-DTRITON_BUILD_UT=OFF",
@@ -15,6 +16,5 @@ cmake_package(
         "//packages/linux/core/llvm:llvm",
         "//packages/linux/dev-libs/python/pybind11:pybind11",
     ],
-    signature_required = False,
     labels = ["buckos:hw:cuda", "buckos:hw:rocm"],
 )

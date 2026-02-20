@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # visit_struct - A miniature library for struct-field reflection
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "visit_struct",
     version = "1.1.0",
-    src_uri = "https://github.com/cbeck88/visit_struct/archive/refs/tags/v1.1.0.tar.gz",
+    url = "https://github.com/cbeck88/visit_struct/archive/refs/tags/v1.1.0.tar.gz",
     sha256 = "73a84f2d8a8844bc03a919163b27ee3b3f85d8c64f6151ce098ca50dbed6be51",
     description = "A miniature library for struct-field reflection in C++11",
     homepage = "https://github.com/cbeck88/visit_struct",
     license = "BSL-1.0",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],
     visibility = ["PUBLIC"],

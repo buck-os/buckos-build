@@ -1,27 +1,25 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # Asio - Cross-platform C++ library for network programming (standalone)
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "asio",
     version = "1.28.2",
-    src_uri = "https://github.com/chriskohlhoff/asio/archive/refs/tags/asio-1-28-2.tar.gz",
+    url = "https://github.com/chriskohlhoff/asio/archive/refs/tags/asio-1-28-2.tar.gz",
     sha256 = "5705a0e403017eba276625107160498518838064a6dd7fd8b00b2e30c0ffbdee",
     description = "Cross-platform C++ library for network and low-level I/O programming",
     homepage = "https://think-async.com/Asio/",
     license = "BSL-1.0",
-    iuse = ["examples", "ssl"],
-    use_cmake = {
-        "-examples": "-DBUILD_EXAMPLES=OFF",
-        "examples": "-DBUILD_EXAMPLES=ON",
+    use_configure = {
+        "examples": ("-DBUILD_EXAMPLES=ON", "-DBUILD_EXAMPLES=OFF"),
     },
-    use_defaults = ["ssl"],
     deps = [],
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
     },
     source_subdir = "asio",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DASIO_STANDALONE=ON",
     ],

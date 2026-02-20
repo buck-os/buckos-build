@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "cmake_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # FIXME: This package requires Qt5 which is not yet available in the build system
 # Dependencies: desktop//qt:qt5 (does not exist)
@@ -11,16 +11,16 @@ load("//defs:package_defs.bzl", "download_source", "cmake_package", "autotools_p
 # - qt5: Qt5 interface (default: enabled)
 # - vst: VST plugin support (default: disabled)
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "lmms",
     version = "1.2.2",
-    src_uri = "https://github.com/LMMS/lmms/releases/download/v1.2.2/lmms_1.2.2.tar.xz",
+    url = "https://github.com/LMMS/lmms/releases/download/v1.2.2/lmms_1.2.2.tar.xz",
     sha256 = "b185507fb64ecfd8e31145135b58ab244b637f9efc09c4176caf70aa3cbaae1e",
-    signature_required = False,
     description = "Linux MultiMedia Studio - music production software",
     homepage = "https://lmms.io/",
     license = "GPL-2",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DWANT_QT5=ON",
         "-DWANT_ALSA=ON",

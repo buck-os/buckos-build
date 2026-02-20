@@ -1,16 +1,16 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
 # ATK - Accessibility Toolkit
-meson_package(
+package(
+    build_rule = "meson",
     name = "atk",
     version = "2.38.0",
-    src_uri = "https://download.gnome.org/sources/atk/2.38/atk-2.38.0.tar.xz",
+    url = "https://download.gnome.org/sources/atk/2.38/atk-2.38.0.tar.xz",
     sha256 = "ac4de2a4ef4bd5665052952fe169657e65e895c5057dffb3c2a810f6191a0c36",
-    signature_required = False,
     description = "Accessibility Toolkit",
     homepage = "https://gitlab.gnome.org/GNOME/atk",
     license = "LGPL-2.0+",
-    meson_args = [
+    configure_args = [
         "-Dintrospection=false",
         "-Ddocs=false",
     ],

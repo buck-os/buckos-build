@@ -1,11 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "precompiled_package")
-
-download_source(
-    name = "wasi-sysroot-source",
-    version = "25.0",
-    src_uri = "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-25/wasi-sysroot-${VERSION}.tar.gz",
-    sha256 = "d09c62c18efcddffe4b2fdd8c5830109cc8e36130cdbc9acdc0bd1b204c942bb",
-)
+load("//defs:package.bzl", "package")
 
 precompiled_package(
     name = "wasi-sysroot",

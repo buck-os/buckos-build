@@ -1,13 +1,12 @@
-load("//defs:package_defs.bzl", "cargo_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # mcfly - Fly through your shell history
-cargo_package(
+package(
+    build_rule = "cargo",
     name = "mcfly",
     version = "0.9.2",
-    src_uri = "https://github.com/cantino/mcfly/archive/refs/tags/v0.9.2.tar.gz",
+    url = "https://github.com/cantino/mcfly/archive/refs/tags/v0.9.2.tar.gz",
     sha256 = "bfb6ca73c6a03047e3c61edf2b3c770e24ddbb0720e2a7dad3ea13a759572bb6",
-    signature_required = False,
     description = "Fly through your shell history",
     homepage = "https://github.com/cantino/mcfly",
     license = "MIT",

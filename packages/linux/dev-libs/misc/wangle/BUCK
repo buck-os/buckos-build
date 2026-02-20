@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # Wangle - Facebook's C++ networking library
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "wangle",
     version = "2024.01.01.00",
-    src_uri = "https://github.com/facebook/wangle/archive/refs/tags/v2024.01.01.00.tar.gz",
+    url = "https://github.com/facebook/wangle/archive/refs/tags/v2024.01.01.00.tar.gz",
     sha256 = "b09bae0554aaf0dde7a3ab2171c04f2a48722f8609a622f6b21136b6f2f0e05b",
     description = "Facebook's C++ networking library",
     homepage = "https://github.com/facebook/wangle",
@@ -20,7 +21,7 @@ cmake_package(
         "//packages/linux/system/libs/utility/libevent:libevent",
         "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_TESTS=OFF",

@@ -1,28 +1,25 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # LZ4 - Extremely fast compression algorithm
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "lz4",
     version = "1.9.4",
-    src_uri = "https://github.com/lz4/lz4/archive/refs/tags/v1.9.4.tar.gz",
+    url = "https://github.com/lz4/lz4/archive/refs/tags/v1.9.4.tar.gz",
     sha256 = "0b0e3aa07c8c063ddf40b082bdf7e37a1562bda40a0ff5272957f3e987e0e54b",
     description = "Extremely fast compression algorithm",
     homepage = "https://lz4.github.io/lz4/",
     license = "BSD-2-Clause OR GPL-2.0-only",
-    iuse = ["cli", "static-libs"],
-    use_defaults = ["cli"],
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DLZ4_BUILD_LEGACY_LZ4C=OFF",
     ],
-    use_cmake = {
-        "-cli": "-DLZ4_BUILD_CLI=OFF",
-        "-static-libs": "-DBUILD_STATIC_LIBS=OFF",
-        "cli": "-DLZ4_BUILD_CLI=ON",
-        "static-libs": "-DBUILD_STATIC_LIBS=ON",
+    use_configure = {
+        "cli": ("-DLZ4_BUILD_CLI=ON", "-DLZ4_BUILD_CLI=OFF"),
+        "static-libs": ("-DBUILD_STATIC_LIBS=ON", "-DBUILD_STATIC_LIBS=OFF"),
     },
     src_subdir = "build/cmake",
     visibility = ["PUBLIC"],

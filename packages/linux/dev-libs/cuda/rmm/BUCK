@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "rmm",
     version = "24.12.00",
-    src_uri = "https://github.com/rapidsai/rmm/archive/refs/tags/v24.12.00.tar.gz",
+    url = "https://github.com/rapidsai/rmm/archive/refs/tags/v24.12.00.tar.gz",
     sha256 = "4a48e86a9ae9997b79b2d0708a58929fa61cb138a75064293ff77bed2dc21938",
     description = "RAPIDS Memory Manager - CUDA memory allocation library",
     homepage = "https://github.com/rapidsai/rmm",
@@ -13,7 +14,7 @@ cmake_package(
         "//packages/linux/dev-libs/logging/spdlog:spdlog",
         "//packages/linux/dev-libs/cuda/nvtx:nvtx",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTS=OFF",
         "-DBUILD_BENCHMARKS=OFF",

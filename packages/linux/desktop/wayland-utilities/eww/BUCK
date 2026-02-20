@@ -1,11 +1,11 @@
-load("//defs:package_defs.bzl", "cargo_package")
+load("//defs:package.bzl", "package")
 
-cargo_package(
+package(
+    build_rule = "cargo",
     name = "eww",
     version = "0.5.0",
-    src_uri = "https://github.com/elkowar/eww/archive/v0.5.0.tar.gz",
+    url = "https://github.com/elkowar/eww/archive/v0.5.0.tar.gz",
     sha256 = "ea4f62e48e3750a361e0f359933d7d840d158592ff5b3683ba1f3ccf42bda819",
-    signature_required = False,
     description = "ElKowars wacky widgets - custom widgets for X11 and Wayland",
     homepage = "https://github.com/elkowar/eww",
     license = "MIT",

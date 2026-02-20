@@ -1,24 +1,22 @@
-load("//defs:package_defs.bzl", "download_source", "meson_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # USE flags for pavucontrol (meson build):
 # - gtk: GTK+ interface (default: enabled)
 # - doc: Build documentation with lynx (default: disabled)
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "pavucontrol",
     version = "5.0",
-    iuse = ["X"],
     use_configure = {
-        "-X": "--without-x",
-        "X": "--with-x",
+        "X": ("--with-x", "--without-x"),
     },
-    src_uri = "https://freedesktop.org/software/pulseaudio/pavucontrol/pavucontrol-5.0.tar.xz",
+    url = "https://freedesktop.org/software/pulseaudio/pavucontrol/pavucontrol-5.0.tar.xz",
     sha256 = "ce2b72c3b5f1a70ad0df19dd81750f9455bd20870d1d3a36d20536af2e8f4e7a",
-    signature_required = False,
     description = "PulseAudio volume control GTK application",
     homepage = "https://freedesktop.org/software/pulseaudio/pavucontrol/",
     license = "GPL-2",
-    meson_args = [
+    configure_args = [
         "-Dlynx=false",
     ],
     deps = [

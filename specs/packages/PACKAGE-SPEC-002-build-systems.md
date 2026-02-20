@@ -43,29 +43,30 @@ This specification defines packages using modern build systems: CMake, Meson, an
 
 ## Package Types
 
-- **`cmake_package()`** - CMake-based builds
-- **`meson_package()`** - Meson/Ninja builds
+- **`package(build_rule = "cmake")`** - CMake-based builds
+- **`package(build_rule = "meson")`** - Meson/Ninja builds
 
 ## Quick Start Examples
 
 ### CMake Package
 
 ```python
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "opencv",
     version = "4.8.0",
-    src_uri = "https://github.com/opencv/opencv/archive/4.8.0.tar.gz",
+    url = "https://github.com/opencv/opencv/archive/4.8.0.tar.gz",
     sha256 = "abc123...",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_EXAMPLES=OFF",
         "-DWITH_FFMPEG=ON",
     ],
     iuse = ["cuda", "opencl", "python"],
     use_options = {
-        "cuda": ["-DWITH_CUDA=ON", "-DWITH_CUDA=OFF"],
-        "python": ["-DBUILD_PYTHON3=ON", "-DBUILD_PYTHON3=OFF"],
+        "cuda": ("-DWITH_CUDA=ON", "-DWITH_CUDA=OFF"),
+        "python": ("-DBUILD_PYTHON3=ON", "-DBUILD_PYTHON3=OFF"),
     },
 )
 ```
@@ -73,19 +74,20 @@ cmake_package(
 ### Meson Package
 
 ```python
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "glib",
     version = "2.78.0",
-    src_uri = "https://download.gnome.org/sources/glib/2.78/glib-2.78.0.tar.xz",
+    url = "https://download.gnome.org/sources/glib/2.78/glib-2.78.0.tar.xz",
     sha256 = "xyz789...",
-    meson_args = [
+    configure_args = [
         "-Dselinux=disabled",
     ],
     iuse = ["doc", "systemtap"],
     use_options = {
-        "doc": ["-Ddocumentation=true", "-Ddocumentation=false"],
+        "doc": ("-Ddocumentation=true", "-Ddocumentation=false"),
     },
 )
 ```
@@ -103,8 +105,8 @@ CMake packages automatically receive:
 
 ```python
 use_options = {
-    "ssl": ["-DENABLE_SSL=ON", "-DENABLE_SSL=OFF"],
-    "test": ["-DBUILD_TESTING=ON", "-DBUILD_TESTING=OFF"],
+    "ssl": ("-DENABLE_SSL=ON", "-DENABLE_SSL=OFF"),
+    "test": ("-DBUILD_TESTING=ON", "-DBUILD_TESTING=OFF"),
 }
 ```
 
@@ -122,8 +124,8 @@ Meson packages automatically receive:
 
 ```python
 use_options = {
-    "systemd": ["-Dsystemd=enabled", "-Dsystemd=disabled"],
-    "doc": ["-Ddocs=true", "-Ddocs=false"],
+    "systemd": ("-Dsystemd=enabled", "-Dsystemd=disabled"),
+    "doc": ("-Ddocs=true", "-Ddocs=false"),
 }
 ```
 
@@ -135,14 +137,14 @@ All fields from PACKAGE-SPEC-001 apply, plus:
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `cmake_args` | list[string] | Additional CMake arguments |
+| `configure_args` | list[string] | Additional CMake arguments |
 | `use_options` | dict | USE flag to CMake option mapping |
 
 ### Meson-Specific
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `meson_args` | list[string] | Additional Meson arguments |
+| `configure_args` | list[string] | Additional Meson arguments |
 | `use_options` | dict | USE flag to Meson option mapping |
 
 ## Examples

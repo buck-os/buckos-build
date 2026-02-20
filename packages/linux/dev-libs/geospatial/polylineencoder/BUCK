@@ -1,15 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "polylineencoder",
     version = "1.0.0",
-    src_uri = "https://github.com/vahancho/polylineencoder/archive/refs/heads/master.tar.gz",
+    url = "https://github.com/vahancho/polylineencoder/archive/refs/heads/master.tar.gz",
     sha256 = "25d1f846bcfc34f1ad85f363c27d478935a2f42c4afadba4505e1c432a7273f7",
     description = "C++11 header-only Google Encoded Polyline Algorithm implementation",
     homepage = "https://github.com/vahancho/polylineencoder",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],
     visibility = ["PUBLIC"],

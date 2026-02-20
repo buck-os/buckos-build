@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "wan",
     version = "2.2.0",
-    src_uri = "https://github.com/Wan-Video/Wan2.2/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/Wan-Video/Wan2.2/archive/refs/heads/main.tar.gz",
     sha256 = "214cbdf14307317c5d5beb881baba9e91f4c34117bef914e8092689442cc47fe",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

@@ -1,14 +1,13 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "dynolog",
     version = "0.3.2",
-    iuse = ["perf-events"],
-    use_cmake = {
-        "-perf-events": "-DENABLE_PERF_EVENTS=OFF",
-        "perf-events": "-DENABLE_PERF_EVENTS=ON",
+    use_configure = {
+        "perf-events": ("-DENABLE_PERF_EVENTS=ON", "-DENABLE_PERF_EVENTS=OFF"),
     },
-    src_uri = "https://github.com/facebookincubator/dynolog/archive/refs/tags/v0.3.2.tar.gz",
+    url = "https://github.com/facebookincubator/dynolog/archive/refs/tags/v0.3.2.tar.gz",
     sha256 = "c68091b30ff3abcc157d6472a084e31146ee354a5fa4989957b7b7046c322334",
     description = "Dynolog is a lightweight monitoring daemon for heterogeneous CPU/GPU systems",
     homepage = "https://github.com/facebookincubator/dynolog",
@@ -19,7 +18,7 @@ cmake_package(
         "//packages/linux/dev-libs/json/nlohmann-json:nlohmann-json",
         "//packages/linux/dev-libs/misc/fmt:fmt",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_TESTS=OFF",

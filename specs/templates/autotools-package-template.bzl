@@ -1,14 +1,15 @@
 """
-Template for autotools_package with USE flags
+Template for package(build_rule = "autotools") with USE flags
 Based on PACKAGE-SPEC-001: Simple and Autotools Packages
 """
 
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "PACKAGE_NAME",
     version = "VERSION",
-    src_uri = "SOURCE_URL",
+    url = "SOURCE_URL",
     sha256 = "SHA256_CHECKSUM",
 
     # USE flags this package supports

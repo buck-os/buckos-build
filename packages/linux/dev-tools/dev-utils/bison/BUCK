@@ -1,34 +1,28 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # bison - official GNU tarball includes pre-generated configure
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "bison",
     # No autoreconf needed - tarball has pre-generated configure
     bdepend = [],
     src_prepare = "",
     version = "3.8.2",
-    src_uri = "https://mirrors.kernel.org/gnu/bison/bison-3.8.2.tar.xz",
+    url = "https://mirrors.kernel.org/gnu/bison/bison-3.8.2.tar.xz",
     sha256 = "9bba0214ccf7f1079c5d59210045227bcf619519840ebfa80cd3849cff5a5bf2",
-    signature_sha256 = "aeff6fd7d7d7cad905ba3bc5228a2ccb95500c0f51fb4483e229c47c7c50f835",
-    signature_required=False,
     description = "GNU parser generator",
     homepage = "https://www.gnu.org/software/bison/",
     license = "GPL-3+",
 
     # USE flags this package supports
-    iuse = ["examples", "nls", "static"],
 
     # Default USE flags
-    use_defaults = ["nls"],
 
     # Conditional configure arguments
     use_configure = {
-        "-examples": "--disable-examples",
-        "-nls": "--disable-nls",
-        "-static": "--disable-static",
-        "examples": "--enable-examples",
-        "nls": "--enable-nls",
-        "static": "--enable-static",
+        "examples": ("--enable-examples", "--disable-examples"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "static": ("--enable-static", "--disable-static"),
     },
 
     visibility = ["PUBLIC"],

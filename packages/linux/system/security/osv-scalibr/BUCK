@@ -1,11 +1,11 @@
-load("//defs:package_defs.bzl", "go_package")
+load("//defs:package.bzl", "package")
 
-go_package(
+package(
+    build_rule = "go",
     name = "osv-scalibr",
     version = "0.1.6",
-    src_uri = "https://github.com/google/osv-scalibr/archive/refs/tags/v0.1.6.tar.gz",
+    url = "https://github.com/google/osv-scalibr/archive/refs/tags/v0.1.6.tar.gz",
     sha256 = "9fa04a3f1b1058308642046a33ad166775a38fa5cafc440d5ae20ebcef692cb9",
-    signature_required = False,
     description = "SCALIBR is a file system scanner for SBOM and vulnerability detection",
     homepage = "https://github.com/google/osv-scalibr",
     license = "Apache-2.0",

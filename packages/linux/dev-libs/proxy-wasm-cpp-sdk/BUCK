@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "proxy-wasm-cpp-sdk",
     version = "0.0.1",
-    src_uri = "https://github.com/proxy-wasm/proxy-wasm-cpp-sdk/archive/c32d380ca6c9b1afac38a3841be99c37af2698bf.tar.gz",
+    url = "https://github.com/proxy-wasm/proxy-wasm-cpp-sdk/archive/c32d380ca6c9b1afac38a3841be99c37af2698bf.tar.gz",
     sha256 = "f83b83fe919905d8a6bb6ed6a0afb30d41a02cb52f33b616292c1de010d237db",
     description = "WebAssembly for Proxies (C++ SDK)",
     homepage = "https://github.com/proxy-wasm/proxy-wasm-cpp-sdk",
@@ -59,7 +60,7 @@ if(NOT TARGET proxy-wasm-cpp-sdk::proxy-wasm-cpp-sdk)
 endif()
 EOF
     """,
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],
     visibility = ["PUBLIC"],

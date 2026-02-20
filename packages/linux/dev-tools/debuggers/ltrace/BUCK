@@ -1,6 +1,7 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "ltrace",
     bdepend = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
@@ -12,34 +13,22 @@ mkdir -p config/m4 config/autoconf
 autoreconf -fi
 """,
     version = "0.7.91_pre20221216",
-    src_uri = "https://gitlab.com/cespedes/ltrace/-/archive/5cffc0d2134f697fbac8627ec5b5f0085cd47c8a.tar.bz2",
+    url = "https://gitlab.com/cespedes/ltrace/-/archive/5cffc0d2134f697fbac8627ec5b5f0085cd47c8a.tar.bz2",
     sha256 = "52200d6262a8de40e494301f6af015da2b34fe69d85b55f6223464c03a999800",
-    signature_required = False,
     description = "Library call tracer",
     homepage = "https://gitlab.com/cespedes/ltrace",
     license = "GPL-2+",
 
     # USE flags this package supports
-    iuse = [
-        "debug",
-        "elfutils",
-        "selinux",
-        "unwind",
-    ],
 
     # Default USE flags
-    use_defaults = [],
 
     # Conditional configure arguments
     use_configure = {
-        "-debug": "--disable-debug",
-        "-elfutils": "--disable-elfutils",
-        "-selinux": "--disable-selinux",
-        "-unwind": "--without-libunwind",
-        "debug": "--enable-debug",
-        "elfutils": "--enable-elfutils",
-        "selinux": "--enable-selinux",
-        "unwind": "--with-libunwind",
+        "debug": ("--enable-debug", "--disable-debug"),
+        "elfutils": ("--enable-elfutils", "--disable-elfutils"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "unwind": ("--with-libunwind", "--without-libunwind"),
     },
 
     # Base configure arguments (always applied)

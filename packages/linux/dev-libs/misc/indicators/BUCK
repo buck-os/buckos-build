@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # indicators - Activity Indicators for Modern C++
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "indicators",
     version = "2.3",
-    src_uri = "https://github.com/p-ranav/indicators/archive/refs/tags/v2.3.tar.gz",
+    url = "https://github.com/p-ranav/indicators/archive/refs/tags/v2.3.tar.gz",
     sha256 = "70da7a693ff7a6a283850ab6d62acf628eea17d386488af8918576d0760aef7b",
     description = "Activity Indicators for Modern C++",
     homepage = "https://github.com/p-ranav/indicators",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DINDICATORS_BUILD_TESTS=OFF",
         "-DINDICATORS_SAMPLES=OFF",

@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
 # JAX - Autograd and XLA for high-performance ML research
 
-python_package(
+package(
+    build_rule = "python",
     name = "jax",
     version = "0.4.24",
-    src_uri = "https://github.com/google/jax/archive/refs/tags/jax-v0.4.24.tar.gz",
+    url = "https://github.com/google/jax/archive/refs/tags/jax-v0.4.24.tar.gz",
     sha256 = "6e52d8b547624bd70d423e6bf85f4fcd47336b529f1a4f6a94fac3096017a694",
     description = "Autograd and XLA for high-performance machine learning research",
     homepage = "https://github.com/google/jax",

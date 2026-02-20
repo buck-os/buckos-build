@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # nlohmann/json - JSON for Modern C++
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "nlohmann-json",
     version = "3.11.3",
-    src_uri = "https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz",
+    url = "https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz",
     sha256 = "d6c65aca6b1ed68e7a182f4757257b107ae403032760ed6ef121c9d55e81757d",
     description = "JSON for Modern C++ - header-only library",
     homepage = "https://json.nlohmann.me/",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DJSON_BuildTests=OFF",
     ],

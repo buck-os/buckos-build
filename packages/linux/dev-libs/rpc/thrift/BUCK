@@ -1,53 +1,39 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # Apache Thrift - Scalable cross-language services framework
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "thrift",
     version = "0.20.0",
-    src_uri = "https://github.com/apache/thrift/archive/refs/tags/v0.20.0.tar.gz",
+    url = "https://github.com/apache/thrift/archive/refs/tags/v0.20.0.tar.gz",
     sha256 = "cd7b829d3d9d87f9f7d708e004eef7629789591ee1d416f4741913bc33e5c27d",
     description = "Scalable cross-language services framework for RPC",
     homepage = "https://thrift.apache.org/",
     license = "Apache-2.0",
-    iuse = [
-        "cpp",
-        "java",
-        "libevent",
-        "lua",
-        "python",
-        "ssl",
-    ],
-    use_defaults = ["cpp", "ssl", "libevent"],
     deps = [
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/dev-libs/boost:boost",
     ],
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "libevent": ["//packages/linux/system/libs/utility/libevent:libevent"],
-        "python": ["//packages/linux/lang/python:python"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "libevent": "//packages/linux/system/libs/utility/libevent:libevent",
+        "python": "//packages/linux/lang/python:python",
     },
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_TESTING=OFF",
         "-DBUILD_EXAMPLES=OFF",
         "-DBUILD_TUTORIALS=OFF",
     ],
-    use_cmake = {
-        "-cpp": "-DWITH_CPP=OFF",
-        "-java": "-DWITH_JAVA=OFF",
-        "-libevent": "-DWITH_LIBEVENT=OFF",
-        "-lua": "-DENABLE_LUA=OFF",
-        "-python": "-DWITH_PYTHON=OFF",
-        "-ssl": "-DWITH_OPENSSL=OFF",
-        "cpp": "-DWITH_CPP=ON",
-        "java": "-DWITH_JAVA=ON",
-        "libevent": "-DWITH_LIBEVENT=ON",
-        "lua": "-DENABLE_LUA=ON",
-        "python": "-DWITH_PYTHON=ON",
-        "ssl": "-DWITH_OPENSSL=ON",
+    use_configure = {
+        "cpp": ("-DWITH_CPP=ON", "-DWITH_CPP=OFF"),
+        "java": ("-DWITH_JAVA=ON", "-DWITH_JAVA=OFF"),
+        "libevent": ("-DWITH_LIBEVENT=ON", "-DWITH_LIBEVENT=OFF"),
+        "lua": ("-DENABLE_LUA=ON", "-DENABLE_LUA=OFF"),
+        "python": ("-DWITH_PYTHON=ON", "-DWITH_PYTHON=OFF"),
+        "ssl": ("-DWITH_OPENSSL=ON", "-DWITH_OPENSSL=OFF"),
     },
     visibility = ["PUBLIC"],
 )

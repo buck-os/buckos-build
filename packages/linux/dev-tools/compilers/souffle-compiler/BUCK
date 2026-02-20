@@ -1,15 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "souffle-compiler",
     version = "2.4.1",
-    src_uri = "https://github.com/souffle-lang/souffle/archive/refs/tags/2.4.1.tar.gz",
+    url = "https://github.com/souffle-lang/souffle/archive/refs/tags/2.4.1.tar.gz",
     sha256 = "08d9b19cb4a8f570ac75dea73016b6a326d87ac28fccd4afeba217ace2071587",
-    signature_required = False,
     description = "A Datalog Compiler for static program analysis",
     homepage = "https://souffle-lang.github.io/",
     license = "UPL-1.0",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DSOUFFLE_DOMAIN_64BIT=ON",
         "-DSOUFFLE_USE_CURSES=OFF",

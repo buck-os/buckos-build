@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # genkernel - Gentoo's automatic kernel/initramfs builder
@@ -6,19 +6,16 @@ load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotoo
 # All-in-one tool for building kernels and initramfs images.
 # Supports LVM, LUKS, software RAID, multipath, and more.
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "genkernel",
-    src_uri = "https://github.com/gentoo/genkernel/archive/refs/tags/v4.3.5.tar.gz",
+    url = "https://github.com/gentoo/genkernel/archive/refs/tags/v4.3.5.tar.gz",
 
     sha256 = "b3f2b8791ff031ec6d7adea21b873bcd57978565f216b5a224c8ef82db109236",
-    iuse = ["firmware", "ibm", "systemd"],
     use_configure = {
-        "-firmware": "--disable-firmware",
-        "-ibm": "--disable-ibm",
-        "-systemd": "--disable-systemd",
-        "firmware": "--enable-firmware",
-        "ibm": "--enable-ibm",
-        "systemd": "--enable-systemd",
+        "firmware": ("--enable-firmware", "--disable-firmware"),
+        "ibm": ("--enable-ibm", "--disable-ibm"),
+        "systemd": ("--enable-systemd", "--disable-systemd"),
     },
     version = "4.3.5",
     description = "Gentoo automatic kernel/initramfs builder",
@@ -94,9 +91,10 @@ mkdir -p $OUT/usr/share/genkernel/defaults
 )
 
 # genkernel-next - Modernized fork with additional features
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "genkernel-next",
-    src_uri = "https://github.com/Sabayon/genkernel-next/archive/refs/tags/v70.tar.gz",
+    url = "https://github.com/Sabayon/genkernel-next/archive/refs/tags/v70.tar.gz",
 
     sha256 = "62f97f0fee1d2c54e90d1f5b3d805527ce2582d93757a2ce34060b9340d67c43",
     version = "70",

@@ -1,15 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "cpp-date-src",
-    src_uri = "https://github.com/HowardHinnant/date/archive/refs/tags/v3.0.1.tar.gz",
-    sha256 = "7a390f200f0ccd207e8cff6757e04817c1a0aec3e327b006b7eb451c57ee3538",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "cpp-date",
-    srcs = [":cpp-date-src"],
     version = "3.0.1",
     description = "Howard Hinnant's date and time library based on C++11/14/17 <chrono>",
     homepage = "https://github.com/HowardHinnant/date",

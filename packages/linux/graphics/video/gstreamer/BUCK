@@ -1,34 +1,23 @@
-load("//defs:package_defs.bzl", "meson_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # GStreamer - Open source multimedia framework
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "gstreamer",
     version = "1.24.6",
-    iuse = [
-        "caps",
-        "introspection",
-        "ptp",
-        "unwind",
-    ],
     use_configure = {
-        "-caps": "--disable-libcap",
-        "-introspection": "--disable-introspection",
-        "-ptp": "--disable-ptp",
-        "-unwind": "--disable-unwind",
-        "caps": "--enable-libcap",
-        "introspection": "--enable-introspection",
-        "ptp": "--enable-ptp",
-        "unwind": "--enable-unwind",
+        "caps": ("--enable-libcap", "--disable-libcap"),
+        "introspection": ("--enable-introspection", "--disable-introspection"),
+        "ptp": ("--enable-ptp", "--disable-ptp"),
+        "unwind": ("--enable-unwind", "--disable-unwind"),
     },
-    src_uri = "https://gstreamer.freedesktop.org/src/gstreamer/gstreamer-1.24.6.tar.xz",
+    url = "https://gstreamer.freedesktop.org/src/gstreamer/gstreamer-1.24.6.tar.xz",
     sha256 = "64342060d7c6f9e36a35e3be38a4f5ac3b41ed93b0853619be45141ef3cc1b9d",
-    signature_sha256 = "1c3f490d1476fe5ceab8c7ea17b67b24391b75669641cd43c3c22b81d37c39ca",
-    signature_required=False,
     description = "Open source multimedia framework",
     homepage = "https://gstreamer.freedesktop.org/",
     license = "LGPL-2.0-or-later",
-    meson_args = [
+    configure_args = [
         "-Dexamples=disabled",
         "-Dtests=disabled",
         "-Dbenchmarks=disabled",
@@ -49,17 +38,16 @@ meson_package(
 )
 
 # GStreamer plugins - base set
-meson_package(
+package(
+    build_rule = "meson",
     name = "gst-plugins-base",
     version = "1.24.6",
-    src_uri = "https://gstreamer.freedesktop.org/src/gst-plugins-base/gst-plugins-base-1.24.6.tar.xz",
+    url = "https://gstreamer.freedesktop.org/src/gst-plugins-base/gst-plugins-base-1.24.6.tar.xz",
     sha256 = "cf52b535a0ce7ec974756891818f34f06317c2e136abb24149e18c23ecc229b5",
-    signature_sha256 = "994e2203dcefdbd1e4583367259b74b8113456b5dfe291b8e3e680d13b2dfe4a",
-    signature_required=False,
     description = "GStreamer base plugins",
     homepage = "https://gstreamer.freedesktop.org/",
     license = "LGPL-2.0-or-later",
-    meson_args = [
+    configure_args = [
         "-Dexamples=disabled",
         "-Dtests=disabled",
         "-Ddoc=disabled",
@@ -76,17 +64,16 @@ meson_package(
 )
 
 # GStreamer plugins - good set
-meson_package(
+package(
+    build_rule = "meson",
     name = "gst-plugins-good",
     version = "1.24.6",
-    src_uri = "https://gstreamer.freedesktop.org/src/gst-plugins-good/gst-plugins-good-1.24.6.tar.xz",
+    url = "https://gstreamer.freedesktop.org/src/gst-plugins-good/gst-plugins-good-1.24.6.tar.xz",
     sha256 = "996b9c8d1d246ed43be304718b6086e5a17d4ae8114d1920aed9ea75b920ba2d",
-    signature_sha256 = "96856071164da10cce736ee4b162c3c6fdbc0eb1d4ae4062b98b7a8d1130c0b3",
-    signature_required=False,
     description = "GStreamer good plugins",
     homepage = "https://gstreamer.freedesktop.org/",
     license = "LGPL-2.0-or-later",
-    meson_args = [
+    configure_args = [
         "-Dexamples=disabled",
         "-Dtests=disabled",
         "-Ddoc=disabled",
@@ -101,17 +88,16 @@ meson_package(
 )
 
 # GStreamer plugins - bad set
-meson_package(
+package(
+    build_rule = "meson",
     name = "gst-plugins-bad",
     version = "1.24.6",
-    src_uri = "https://gstreamer.freedesktop.org/src/gst-plugins-bad/gst-plugins-bad-1.24.6.tar.xz",
+    url = "https://gstreamer.freedesktop.org/src/gst-plugins-bad/gst-plugins-bad-1.24.6.tar.xz",
     sha256 = "8f4d965513e7827c1f547c1e749e4ef2812b371974fe64857fe5029a19c5b64c",
-    signature_sha256 = "60aa252270b368f9d938dd4027cd5d0f461453af4cff50bfcd80158289302da8",
-    signature_required=False,
     description = "GStreamer bad plugins (less tested)",
     homepage = "https://gstreamer.freedesktop.org/",
     license = "LGPL-2.0-or-later",
-    meson_args = [
+    configure_args = [
         "-Dexamples=disabled",
         "-Dtests=disabled",
         "-Ddoc=disabled",
@@ -129,17 +115,16 @@ meson_package(
 )
 
 # GStreamer plugins - ugly set (may have licensing issues)
-meson_package(
+package(
+    build_rule = "meson",
     name = "gst-plugins-ugly",
     version = "1.24.6",
-    src_uri = "https://gstreamer.freedesktop.org/src/gst-plugins-ugly/gst-plugins-ugly-1.24.6.tar.xz",
+    url = "https://gstreamer.freedesktop.org/src/gst-plugins-ugly/gst-plugins-ugly-1.24.6.tar.xz",
     sha256 = "5dfdbb2978ab282e637255cd875cf5b7b93fc83db62f8a0b1af02c85c84a75c4",
-    signature_sha256 = "6ae48fc342c088717599d805f6661849ea70d40b62d662114987f81e87b81e1b",
-    signature_required=False,
     description = "GStreamer ugly plugins (may have licensing issues)",
     homepage = "https://gstreamer.freedesktop.org/",
     license = "LGPL-2.0-or-later",
-    meson_args = [
+    configure_args = [
         "-Dexamples=disabled",
         "-Dtests=disabled",
         "-Ddoc=disabled",
@@ -155,17 +140,16 @@ meson_package(
 )
 
 # GStreamer libav - FFmpeg plugin
-meson_package(
+package(
+    build_rule = "meson",
     name = "gst-libav",
     version = "1.24.6",
-    src_uri = "https://gstreamer.freedesktop.org/src/gst-libav/gst-libav-1.24.6.tar.xz",
+    url = "https://gstreamer.freedesktop.org/src/gst-libav/gst-libav-1.24.6.tar.xz",
     sha256 = "4bbd08481a390f907e342aa3f25ab885c80ec0a53f3b14244cf733cc8622f2bf",
-    signature_sha256 = "75b0b74c2337fac110d6b107549b5d804f50ca073437f8bb9acce1dbfd96d28a",
-    signature_required=False,
     description = "GStreamer FFmpeg plugin",
     homepage = "https://gstreamer.freedesktop.org/",
     license = "LGPL-2.0-or-later",
-    meson_args = [
+    configure_args = [
         "-Ddoc=disabled",
     ],
     deps = [

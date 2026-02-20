@@ -1,19 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # CoreIR - An LLVM-style hardware compiler with first class support for generators
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "coreir",
     version = "0.1.61",
-    src_uri = "https://github.com/rdaly525/coreir/archive/refs/tags/v0.1.61.tar.gz",
+    url = "https://github.com/rdaly525/coreir/archive/refs/tags/v0.1.61.tar.gz",
     sha256 = "2a8f8344fe073a73cc11c48837c9f1ba8021d83b4d161114b4c205a7220ed07c",  # TODO: Update with actual hash
     description = "An LLVM-style hardware compiler with first class support for generators",
     homepage = "https://github.com/rdaly525/coreir",
     license = "BSD-3-Clause",
-    iuse = [],
-    use_defaults = [],
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DCMAKE_CXX_STANDARD=17",

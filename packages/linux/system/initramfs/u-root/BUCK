@@ -1,11 +1,11 @@
-load("//defs:package_defs.bzl", "go_package")
+load("//defs:package.bzl", "package")
 
-go_package(
+package(
+    build_rule = "go",
     name = "u-root",
     version = "0.14.0",
-    src_uri = "https://github.com/u-root/u-root/archive/v0.14.0.tar.gz",
+    url = "https://github.com/u-root/u-root/archive/v0.14.0.tar.gz",
     sha256 = "fb45d0ab2dac3ea56e9496d659b167031c90496c330090ba74e77c3c64265302",
-    signature_required = False,
     description = "Go-based Linux userland and initramfs builder",
     homepage = "https://github.com/u-root/u-root",
     license = "BSD-3-Clause",

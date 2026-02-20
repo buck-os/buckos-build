@@ -1,27 +1,23 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # heaptrack - Heap memory profiler (cmake build)
 # USE flags: gui, test
 # Default: none
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "heaptrack",
     version = "1.5.0",
-    iuse = ["gui", "zstd"],
-    use_cmake = {
-        "-gui": "-DENABLE_GUI=OFF",
-        "-zstd": "-DENABLE_ZSTD=OFF",
-        "gui": "-DENABLE_GUI=ON",
-        "zstd": "-DENABLE_ZSTD=ON",
+    use_configure = {
+        "gui": ("-DENABLE_GUI=ON", "-DENABLE_GUI=OFF"),
+        "zstd": ("-DENABLE_ZSTD=ON", "-DENABLE_ZSTD=OFF"),
     },
-    src_uri = "https://download.kde.org/stable/heaptrack/1.5.0/heaptrack-1.5.0.tar.xz",
+    url = "https://download.kde.org/stable/heaptrack/1.5.0/heaptrack-1.5.0.tar.xz",
     sha256 = "a278d9d8f91e8bfb8a1c2f5b73eecab47fd45d0693f5dbea637536413cec2ea5",
-    signature_sha256 = "4bcafccf5484f701cbdb5f1edcef1161f387fad6434950334f51be5737aaac2d",
-    signature_required=False,
     description = "Heap memory profiler for Linux",
     homepage = "https://github.com/KDE/heaptrack",
     license = "GPL-2+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
     ],

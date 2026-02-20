@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "simple_binary_package")
+load("//defs:package.bzl", "package")
 
-simple_binary_package(
+simple_package(
+    build_rule = "binary",
     name = "adb-sync",
     version = "1.0",
-    src_uri = "https://github.com/google/adb-sync/archive/refs/heads/master.tar.gz",
+    url = "https://github.com/google/adb-sync/archive/refs/heads/master.tar.gz",
     sha256 = "c6628658498c2ebc27c4a8b92bfd20a66542a9db53b5d6f3fddbecf00430ab34",
     bins = ["adb-sync", "adb-channel"],
 )

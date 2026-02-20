@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "llava",
     version = "1.0.2",
-    src_uri = "https://github.com/haotian-liu/LLaVA/archive/v1.0.2.tar.gz",
+    url = "https://github.com/haotian-liu/LLaVA/archive/v1.0.2.tar.gz",
     sha256 = "4562d7f5ce1c31d8daf21ff80f8c755c573017a187e5c00d261b230a6f72b419",
     deps = [
         "//packages/linux/dev-libs/python/numpy:numpy",

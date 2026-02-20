@@ -1,16 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "q-src",
-    src_uri = "https://github.com/natesales/q/releases/download/v0.19.2/q_0.19.2_linux_amd64.tar.gz",
-    sha256 = "e3a0a960592d320eddbef8c4ce2f9df4651fbcb0d9648aa24fbf8f0d7b3aace1",
-    signature_required = False,
-    strip_components = 0,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "q",
-    srcs = [":q-src"],
     version = "0.19.2",
     description = "Tiny command line DNS client with support for UDP, TCP, DoT, DoH, DoQ and ODoH",
     homepage = "https://github.com/natesales/q",

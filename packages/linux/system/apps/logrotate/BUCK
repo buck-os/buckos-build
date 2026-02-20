@@ -1,31 +1,25 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # logrotate - Log file rotation utility
 # USE flags: selinux, acl
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "logrotate",
     version = "3.21.0",
-    src_uri = "https://github.com/logrotate/logrotate/releases/download/3.21.0/logrotate-3.21.0.tar.xz",
+    url = "https://github.com/logrotate/logrotate/releases/download/3.21.0/logrotate-3.21.0.tar.xz",
     sha256 = "8fa12015e3b8415c121fc9c0ca53aa872f7b0702f543afda7e32b6c4900f6516",
-    signature_sha256 = "e38d481becc5546a236e92002605b73760d73f18b000153bc2d838ed085da456",
-    signature_required=False,
     description = "Rotates, compresses, and mails system logs",
     homepage = "https://github.com/logrotate/logrotate",
     license = "GPL-2+",
-    iuse = ["acl", "cron", "selinux"],
-    use_defaults = [],
     use_deps = {
-        "selinux": ["//packages/linux/system/security/selinux:selinux"],
-        "acl": ["//packages/linux/system/libs/ipc/acl:acl"],
+        "selinux": "//packages/linux/system/security/selinux:selinux",
+        "acl": "//packages/linux/system/libs/ipc/acl:acl",
     },
     use_configure = {
-        "-acl": "--without-acl",
-        "-cron": "--disable-cron",
-        "-selinux": "--without-selinux",
-        "acl": "--with-acl",
-        "cron": "--enable-cron",
-        "selinux": "--with-selinux",
+        "acl": ("--with-acl", "--without-acl"),
+        "cron": ("--enable-cron", "--disable-cron"),
+        "selinux": ("--with-selinux", "--without-selinux"),
     },
     configure_args = [
         "--prefix=/usr",

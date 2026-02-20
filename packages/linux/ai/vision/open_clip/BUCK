@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "open_clip",
     version = "2.7.0",
-    src_uri = "https://github.com/mlfoundations/open_clip/archive/refs/tags/v2.7.0.tar.gz",
+    url = "https://github.com/mlfoundations/open_clip/archive/refs/tags/v2.7.0.tar.gz",
     sha256 = "bd2ed777f0a058a37b54c08d2d54084dc55c113bcebeac10cbf7c6ce5d86688a",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

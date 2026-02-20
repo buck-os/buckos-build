@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # EnTT - Gaming meets modern C++ - Entity Component System library
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "entt",
     version = "3.13.1",
-    src_uri = "https://github.com/skypjack/entt/archive/refs/tags/v3.13.1.tar.gz",
+    url = "https://github.com/skypjack/entt/archive/refs/tags/v3.13.1.tar.gz",
     sha256 = "a4f290b601a70333126abd2cec7b0c232c74a4f85dcf1e04d969e8122dae8652",
     description = "Gaming meets modern C++ - Entity Component System library",
     homepage = "https://github.com/skypjack/entt",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DENTT_BUILD_TESTING=OFF",
         "-DENTT_BUILD_DOCS=OFF",

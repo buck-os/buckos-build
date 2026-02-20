@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "transform360",
     version = "1a4b9ac9",
-    src_uri = "https://github.com/facebook/transform360/archive/1a4b9ac9b4251c9cea2242e33bdc5ca32f20f849.tar.gz",
+    url = "https://github.com/facebook/transform360/archive/1a4b9ac9b4251c9cea2242e33bdc5ca32f20f849.tar.gz",
     sha256 = "fe06640f1d0e0910cf563f53acb9abe94d890c609ccb3bb9cfe945206efe7032",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_SHARED_LIBS=OFF",
     ],
     deps = [

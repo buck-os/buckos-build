@@ -1,8 +1,9 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # liquid-dsp - Software-defined radio digital signal processing library
 # Provides modulation, error correction, filtering, and more
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "liquid-dsp",
     bdepend = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
@@ -13,22 +14,18 @@ autotools_package(
 autoreconf -fi
 """,
     version = "1.6.0",
-    src_uri = "https://github.com/jgaeddert/liquid-dsp/archive/refs/tags/v1.6.0.tar.gz",
+    url = "https://github.com/jgaeddert/liquid-dsp/archive/refs/tags/v1.6.0.tar.gz",
     sha256 = "6ee6a5dfb48e047b118cf613c0b9f43e34356a5667a77a72a55371d2c8c53bf5",
     configure_args = [
         "--enable-shared",
         "--disable-static",
     ],
-    iuse = ["fftw", "static-libs"],
-    use_defaults = [],
     use_configure = {
-        "-fftw": "--disable-fftoverride",
-        "-static-libs": "--disable-static",
-        "fftw": "--enable-fftoverride",
-        "static-libs": "--enable-static",
+        "fftw": ("--enable-fftoverride", "--disable-fftoverride"),
+        "static-libs": ("--enable-static", "--disable-static"),
     },
     use_deps = {
-        "fftw": ["//packages/linux/dev-libs/math/fftw:fftw"],
+        "fftw": "//packages/linux/dev-libs/math/fftw:fftw",
     },
     description = "Software-defined radio digital signal processing library",
     homepage = "https://liquidsdr.org/",

@@ -1,33 +1,20 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "rdma-core",
     version = "60.0",
-    iuse = [
-        "lttng",
-        "neigh",
-        "python",
-        "static-libs",
-        "systemd",
-        "valgrind",
-    ],
-    use_cmake = {
-        "-lttng": "-DENABLE_LTTNG=OFF",
-        "-neigh": "-DENABLE_NEIGH=OFF",
-        "-python": "-DENABLE_PYTHON=OFF",
-        "-static-libs": "-DBUILD_STATIC_LIBS=OFF",
-        "-systemd": "-DENABLE_SYSTEMD=OFF",
-        "-valgrind": "-DENABLE_VALGRIND=OFF",
-        "lttng": "-DENABLE_LTTNG=ON",
-        "neigh": "-DENABLE_NEIGH=ON",
-        "python": "-DENABLE_PYTHON=ON",
-        "static-libs": "-DBUILD_STATIC_LIBS=ON",
-        "systemd": "-DENABLE_SYSTEMD=ON",
-        "valgrind": "-DENABLE_VALGRIND=ON",
+    use_configure = {
+        "lttng": ("-DENABLE_LTTNG=ON", "-DENABLE_LTTNG=OFF"),
+        "neigh": ("-DENABLE_NEIGH=ON", "-DENABLE_NEIGH=OFF"),
+        "python": ("-DENABLE_PYTHON=ON", "-DENABLE_PYTHON=OFF"),
+        "static-libs": ("-DBUILD_STATIC_LIBS=ON", "-DBUILD_STATIC_LIBS=OFF"),
+        "systemd": ("-DENABLE_SYSTEMD=ON", "-DENABLE_SYSTEMD=OFF"),
+        "valgrind": ("-DENABLE_VALGRIND=ON", "-DENABLE_VALGRIND=OFF"),
     },
-    src_uri = "https://github.com/linux-rdma/rdma-core/releases/download/v60.0/rdma-core-60.0.tar.gz",
+    url = "https://github.com/linux-rdma/rdma-core/releases/download/v60.0/rdma-core-60.0.tar.gz",
     sha256 = "9b1b892e4eaaaa5dfbade07a290fbf5079e39117724fa1ef80d0ad78839328de",
-    cmake_args = [
+    configure_args = [
         "-DNO_PYVERBS=1",
         "-DENABLE_STATIC=1",
     ],

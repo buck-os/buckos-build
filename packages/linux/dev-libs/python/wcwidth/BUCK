@@ -1,14 +1,13 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "wcwidth",
     version = "0.1.9",
-    iuse = ["cli"],
     use_configure = {
-        "-cli": "--disable-cli",
-        "cli": "--enable-cli",
+        "cli": ("--enable-cli", "--disable-cli"),
     },
-    src_uri = "https://github.com/jquast/wcwidth/archive/refs/tags/0.1.9.tar.gz",
+    url = "https://github.com/jquast/wcwidth/archive/refs/tags/0.1.9.tar.gz",
     sha256 = "e97f34ae353abada7ebc2d11e4bb3c53e38411dd53df2ec467c997d352d2e137",
     deps = [],
 )

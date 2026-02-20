@@ -1,16 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "cukd",
     version = "1.0.1+git20251104",
-    src_uri = "https://github.com/ingowald/cudaKDTree/archive/0e174fe3f2662b2ee7530c73aedcb85114ef6a3b.tar.gz",
+    url = "https://github.com/ingowald/cudaKDTree/archive/0e174fe3f2662b2ee7530c73aedcb85114ef6a3b.tar.gz",
     sha256 = "b766b088734fb6816e296ce36377274ad637ef9c44fe9bc5d4b8be17bd9ffbc3",
-    signature_required = False,
     description = "CUDA KD-Tree library for fast nearest neighbor queries on GPU",
     homepage = "https://github.com/ingowald/cudaKDTree",
     license = "Apache-2.0",
 
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_CXX_STANDARD=14",
         "-DCMAKE_CUDA_STANDARD=14",

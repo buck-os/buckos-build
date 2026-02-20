@@ -11,6 +11,21 @@ import subprocess
 import sys
 
 
+def _can_unshare_net():
+    """Check if unshare --net is available for network isolation."""
+    try:
+        result = subprocess.run(
+            ["unshare", "--net", "true"],
+            capture_output=True, timeout=5,
+        )
+        return result.returncode == 0
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return False
+
+
+_NETWORK_ISOLATED = _can_unshare_net()
+
+
 def _resolve_env_paths(value):
     """Resolve relative Buck2 artifact paths in env values to absolute."""
     parts = []
@@ -42,6 +57,12 @@ def main():
                         help="Linker flags for go build (-ldflags value)")
     parser.add_argument("--env", action="append", dest="extra_env", default=[],
                         help="Extra environment variable KEY=VALUE (repeatable)")
+    parser.add_argument("--bin", action="append", dest="bins", default=[],
+                        help="Specific binary name to install (repeatable; default: all executables)")
+    parser.add_argument("--package", action="append", dest="packages", default=[],
+                        help="Go package to build (repeatable; default: ./...)")
+    parser.add_argument("--vendor-dir", default=None,
+                        help="Vendor directory containing pre-downloaded dependencies")
     args = parser.parse_args()
 
     if not os.path.isdir(args.source_dir):
@@ -61,8 +82,11 @@ def main():
 
     cmd.extend(args.go_args)
 
-    # Build from the source directory so go.mod is found
-    cmd.append("./...")
+    # Build specified packages or default to ./...
+    if args.packages:
+        cmd.extend(args.packages)
+    else:
+        cmd.append("./...")
 
     env = os.environ.copy()
     for entry in args.extra_env:
@@ -70,6 +94,19 @@ def main():
         if key:
             env[key] = _resolve_env_paths(value)
     env["GOFLAGS"] = env.get("GOFLAGS", "")
+
+    # Set up vendored dependencies if provided
+    if args.vendor_dir:
+        vendor_dir = os.path.abspath(args.vendor_dir)
+        env["GOFLAGS"] = env.get("GOFLAGS", "") + " -mod=vendor"
+        env["GOPATH"] = vendor_dir
+
+    # Wrap with unshare --net for network isolation (reproducibility)
+    if _NETWORK_ISOLATED:
+        cmd = ["unshare", "--net"] + cmd
+    else:
+        print("⚠ Warning: unshare --net unavailable, building without network isolation",
+              file=sys.stderr)
 
     result = subprocess.run(cmd, cwd=args.source_dir, env=env)
     if result.returncode != 0:
@@ -80,6 +117,14 @@ def main():
     binaries = [f for f in os.listdir(bin_dir)
                 if os.path.isfile(os.path.join(bin_dir, f))
                 and os.access(os.path.join(bin_dir, f), os.X_OK)]
+
+    # If specific bins were requested, remove any extras
+    if args.bins:
+        for f in list(binaries):
+            if f not in args.bins:
+                os.remove(os.path.join(bin_dir, f))
+        binaries = [f for f in binaries if f in args.bins]
+
     if not binaries:
         print("warning: no executable binaries found in output directory", file=sys.stderr)
 

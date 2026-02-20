@@ -1,20 +1,17 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "paho-mqtt-c",
     version = "1.3.8",
-    iuse = ["examples", "high-performance", "ssl"],
-    use_cmake = {
-        "-examples": "-DBUILD_EXAMPLES=OFF",
-        "-high-performance": "-DENABLE_HIGH_PERFORMANCE=OFF",
-        "-ssl": "-DENABLE_SSL=OFF",
-        "examples": "-DBUILD_EXAMPLES=ON",
-        "high-performance": "-DENABLE_HIGH_PERFORMANCE=ON",
-        "ssl": "-DENABLE_SSL=ON",
+    use_configure = {
+        "examples": ("-DBUILD_EXAMPLES=ON", "-DBUILD_EXAMPLES=OFF"),
+        "high-performance": ("-DENABLE_HIGH_PERFORMANCE=ON", "-DENABLE_HIGH_PERFORMANCE=OFF"),
+        "ssl": ("-DENABLE_SSL=ON", "-DENABLE_SSL=OFF"),
     },
-    src_uri = "https://github.com/eclipse/paho.mqtt.c/archive/refs/tags/v1.3.8.tar.gz",
+    url = "https://github.com/eclipse/paho.mqtt.c/archive/refs/tags/v1.3.8.tar.gz",
     sha256 = "4920ff685344cdb0272568bc4414dcf48fcdfc4a98c78b1f3ca49c38417bf391",
-    cmake_args = [
+    configure_args = [
         "-DPAHO_WITH_SSL=ON",
         "-DPAHO_BUILD_STATIC=ON",
         "-DPAHO_BUILD_SHARED=ON",

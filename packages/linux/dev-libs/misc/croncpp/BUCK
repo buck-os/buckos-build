@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # croncpp - C++11/14/17 header-only cross-platform library for handling CRON expressions
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "croncpp",
     version = "2024.03.30",
-    src_uri = "https://github.com/mariusbancila/croncpp/archive/999f7685ab683b58872386c0aa019acf97c6570a.tar.gz",
+    url = "https://github.com/mariusbancila/croncpp/archive/999f7685ab683b58872386c0aa019acf97c6570a.tar.gz",
     sha256 = "8207f5f0776debcca4846571a28d13baa50688ed2be2ab9def130b0d03681ea9",
     description = "C++ header-only library for parsing and evaluating CRON expressions",
     homepage = "https://github.com/mariusbancila/croncpp",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCRONCPP_BUILD_TESTS=OFF",
         "-DCRONCPP_BUILD_BENCHMARK=OFF",

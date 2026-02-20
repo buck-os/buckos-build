@@ -1,28 +1,17 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "gammastep",
-    src_uri = "https://gitlab.com/chinstrap/gammastep/-/archive/v2.0.9/gammastep-v2.0.9.tar.gz",
+    url = "https://gitlab.com/chinstrap/gammastep/-/archive/v2.0.9/gammastep-v2.0.9.tar.gz",
 
     sha256 = "bbb9d90e1cf30920c1017db4ce5c4652e4c7843fd4c4e34164d99ecbc3bbb4c0",
-    iuse = [
-        "appindicator",
-        "geoclue",
-        "gtk",
-        "nls",
-        "wayland",
-    ],
     use_configure = {
-        "-appindicator": "--disable-appindicator",
-        "-geoclue": "--disable-geoclue",
-        "-gtk": "--disable-gtk",
-        "-nls": "--disable-nls",
-        "-wayland": "--disable-wayland",
-        "appindicator": "--enable-appindicator",
-        "geoclue": "--enable-geoclue",
-        "gtk": "--enable-gtk",
-        "nls": "--enable-nls",
-        "wayland": "--enable-wayland",
+        "appindicator": ("--enable-appindicator", "--disable-appindicator"),
+        "geoclue": ("--enable-geoclue", "--disable-geoclue"),
+        "gtk": ("--enable-gtk", "--disable-gtk"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "wayland": ("--enable-wayland", "--disable-wayland"),
     },
     version = "2.0.9",
     description = "Adjust the color temperature of your screen according to your surroundings",

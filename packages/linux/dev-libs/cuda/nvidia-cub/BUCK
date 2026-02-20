@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "nvidia-cub",
     version = "1.12.1",
-    src_uri = "https://github.com/NVIDIA/cub/archive/refs/tags/1.12.1.tar.gz",
+    url = "https://github.com/NVIDIA/cub/archive/refs/tags/1.12.1.tar.gz",
     sha256 = "f9650a9bf3738b84db4f3b397462533c8970e4e1842006d156f5c48a9a80b7c8",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCUB_ENABLE_HEADER_TESTING=OFF",
         "-DCUB_ENABLE_TESTING=OFF",

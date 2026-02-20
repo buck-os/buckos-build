@@ -1,46 +1,20 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "mpg123-src",
-    src_uri = "https://www.mpg123.de/download/mpg123-1.32.6.tar.bz2",
-    sha256 = "ccdd1d0abc31d73d8b435fc658c79049d0a905b30669b6a42a03ad169dc609e6",
-    signature_sha256 = "b7fa1172144de441d2a7f9ca1ec05c7185757a500e754b767d9156e7fff878f7",
-    signature_required=False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "mpg123",
     # Official release tarball includes pre-generated configure script
     bdepend = [],
     src_prepare = "",
-    source = ":mpg123-src",
-    iuse = [
-        "alsa",
-        "coreaudio",
-        "jack",
-        "nas",
-        "oss",
-        "portaudio",
-        "pulseaudio",
-        "sdl",
-    ],
     use_configure = {
-        "-alsa": "--disable-alsa",
-        "-coreaudio": "--disable-coreaudio",
-        "-jack": "--disable-jack",
-        "-nas": "--disable-nas",
-        "-oss": "--disable-oss",
-        "-portaudio": "--disable-portaudio",
-        "-pulseaudio": "--disable-pulseaudio",
-        "-sdl": "--disable-sdl",
-        "alsa": "--enable-alsa",
-        "coreaudio": "--enable-coreaudio",
-        "jack": "--enable-jack",
-        "nas": "--enable-nas",
-        "oss": "--enable-oss",
-        "portaudio": "--enable-portaudio",
-        "pulseaudio": "--enable-pulseaudio",
-        "sdl": "--enable-sdl",
+        "alsa": ("--enable-alsa", "--disable-alsa"),
+        "coreaudio": ("--enable-coreaudio", "--disable-coreaudio"),
+        "jack": ("--enable-jack", "--disable-jack"),
+        "nas": ("--enable-nas", "--disable-nas"),
+        "oss": ("--enable-oss", "--disable-oss"),
+        "portaudio": ("--enable-portaudio", "--disable-portaudio"),
+        "pulseaudio": ("--enable-pulseaudio", "--disable-pulseaudio"),
+        "sdl": ("--enable-sdl", "--disable-sdl"),
     },
     version = "1.32.6",
     description = "Fast console MPEG audio player and decoder library",
@@ -60,12 +34,12 @@ autotools_package(
 )
 
 # libmpg123 - just the library without the player
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libmpg123",
     # Official release tarball includes pre-generated configure script
     bdepend = [],
     src_prepare = "",
-    source = ":mpg123-src",
     version = "1.32.6",
     description = "MPEG audio decoder library",
     homepage = "https://www.mpg123.de/",

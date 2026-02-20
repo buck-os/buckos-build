@@ -1,18 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # log4cxx - Apache logging framework for C++
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "log4cxx",
     version = "1.3.0",
-    iuse = ["odbc", "smtp"],
-    use_cmake = {
-        "-odbc": "-DENABLE_ODBC=OFF",
-        "-smtp": "-DENABLE_SMTP=OFF",
-        "odbc": "-DENABLE_ODBC=ON",
-        "smtp": "-DENABLE_SMTP=ON",
+    use_configure = {
+        "odbc": ("-DENABLE_ODBC=ON", "-DENABLE_ODBC=OFF"),
+        "smtp": ("-DENABLE_SMTP=ON", "-DENABLE_SMTP=OFF"),
     },
-    src_uri = "https://github.com/apache/logging-log4cxx/archive/refs/tags/rel/v1.3.0.tar.gz",
+    url = "https://github.com/apache/logging-log4cxx/archive/refs/tags/rel/v1.3.0.tar.gz",
     sha256 = "d46b4e856d8275a8993fb0b8df895b658d97b6d91e949463e624c55e25ed9a4c",
     description = "Apache logging framework for C++",
     homepage = "https://logging.apache.org/log4cxx/",
@@ -21,7 +19,7 @@ cmake_package(
         "//packages/linux/dev-libs/misc/apr:apr",
         "//packages/linux/dev-libs/misc/apr-util:apr-util",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_TESTING=OFF",

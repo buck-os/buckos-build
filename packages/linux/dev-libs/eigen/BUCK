@@ -1,41 +1,25 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # eigen - C++ template library for linear algebra
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "eigen",
     version = "3.4.0",
-    iuse = [
-        "benchmark",
-        "clang",
-        "cuda",
-        "debug",
-        "hip",
-        "lapack",
-        "mathjax",
-    ],
-    use_cmake = {
-        "-benchmark": "-DENABLE_BENCHMARK=OFF",
-        "-clang": "-DENABLE_CLANG=OFF",
-        "-cuda": "-DWITH_CUDA=OFF",
-        "-debug": "-DCMAKE_BUILD_TYPE=Release",
-        "-hip": "-DENABLE_HIP=OFF",
-        "-lapack": "-DENABLE_LAPACK=OFF",
-        "-mathjax": "-DENABLE_MATHJAX=OFF",
-        "benchmark": "-DENABLE_BENCHMARK=ON",
-        "clang": "-DENABLE_CLANG=ON",
-        "cuda": "-DWITH_CUDA=ON",
-        "debug": "-DCMAKE_BUILD_TYPE=Debug",
-        "hip": "-DENABLE_HIP=ON",
-        "lapack": "-DENABLE_LAPACK=ON",
-        "mathjax": "-DENABLE_MATHJAX=ON",
+    use_configure = {
+        "benchmark": ("-DENABLE_BENCHMARK=ON", "-DENABLE_BENCHMARK=OFF"),
+        "clang": ("-DENABLE_CLANG=ON", "-DENABLE_CLANG=OFF"),
+        "cuda": ("-DWITH_CUDA=ON", "-DWITH_CUDA=OFF"),
+        "debug": ("-DCMAKE_BUILD_TYPE=Debug", "-DCMAKE_BUILD_TYPE=Release"),
+        "hip": ("-DENABLE_HIP=ON", "-DENABLE_HIP=OFF"),
+        "lapack": ("-DENABLE_LAPACK=ON", "-DENABLE_LAPACK=OFF"),
+        "mathjax": ("-DENABLE_MATHJAX=ON", "-DENABLE_MATHJAX=OFF"),
     },
-    src_uri = "https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz",
+    url = "https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz",
     sha256 = "8586084f71f9bde545ee7fa6d00288b264a2b7ac3607b974e54d13e7162c1c72",
-    signature_required = False,
     description = "C++ template library for linear algebra",
     homepage = "https://eigen.tuxfamily.org/",
     license = "MPL-2.0",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTING=OFF",
     ],
     deps = [],

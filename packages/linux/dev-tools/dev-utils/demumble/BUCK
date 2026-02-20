@@ -1,18 +1,19 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # demumble - A tool that demangles both Itanium and Visual Studio symbols
 # Supports C++, Rust, Swift, and D symbol demangling on both POSIX and Windows
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "demumble",
     version = "1.3.0",
-    src_uri = "https://github.com/nico/demumble/archive/10e00fb708a3d24c1bb16682cac76925ffb76af5.tar.gz",
+    url = "https://github.com/nico/demumble/archive/10e00fb708a3d24c1bb16682cac76925ffb76af5.tar.gz",
     sha256 = "6be3415d9287fd31a834bb8533e32e664ba42048c2751c0fa5fca2369851c146",
     description = "A tool that demangles C++, Rust, Swift, and D symbols. Runs on both POSIX and Windows",
     homepage = "https://github.com/nico/demumble",
     license = "Apache-2.0",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_CXX_STANDARD=17",
     ],

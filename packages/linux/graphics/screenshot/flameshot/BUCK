@@ -1,14 +1,13 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "flameshot",
-    src_uri = "https://github.com/flameshot-org/flameshot/archive/refs/tags/v12.1.0.tar.gz",
+    url = "https://github.com/flameshot-org/flameshot/archive/refs/tags/v12.1.0.tar.gz",
 
     sha256 = "c82c05d554e7a6d810aca8417ca12b21e4f74864455ab4ac94602668f85ac22a",
-    iuse = ["wayland"],
     use_configure = {
-        "-wayland": "--disable-wayland",
-        "wayland": "--enable-wayland",
+        "wayland": ("--enable-wayland", "--disable-wayland"),
     },
     version = "12.1.0",
     description = "Powerful yet simple to use screenshot software",

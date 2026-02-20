@@ -1,25 +1,16 @@
-load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "mdadm",
-    src_uri = "https://mirrors.edge.kernel.org/pub/linux/utils/raid/mdadm/mdadm-4.3.tar.xz",
+    url = "https://mirrors.edge.kernel.org/pub/linux/utils/raid/mdadm/mdadm-4.3.tar.xz",
 
     sha256 = "416727ae1f1080ea6e3090cea36dd076826fc369151e36ab736557ba92196f9f",
-    iuse = [
-        "corosync",
-        "static",
-        "systemd",
-        "udev",
-    ],
     use_configure = {
-        "-corosync": "--disable-corosync",
-        "-static": "--disable-static",
-        "-systemd": "--disable-systemd",
-        "-udev": "--disable-udev",
-        "corosync": "--enable-corosync",
-        "static": "--enable-static",
-        "systemd": "--enable-systemd",
-        "udev": "--enable-udev",
+        "corosync": ("--enable-corosync", "--disable-corosync"),
+        "static": ("--enable-static", "--disable-static"),
+        "systemd": ("--enable-systemd", "--disable-systemd"),
+        "udev": ("--enable-udev", "--disable-udev"),
     },
     version = "4.3",
     description = "Tool for managing Linux software RAID arrays",

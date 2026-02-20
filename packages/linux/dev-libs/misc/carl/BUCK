@@ -1,12 +1,13 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # CARL - Classical Action Recognition Library
 # A C++ library for generalized action recognition in XR applications
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "carl",
     version = "0.1.0",
-    src_uri = "https://github.com/facebookexperimental/carl/archive/2b39b96f4f4fb1301faabaabb45d4d9ee166dbad.tar.gz",
+    url = "https://github.com/facebookexperimental/carl/archive/2b39b96f4f4fb1301faabaabb45d4d9ee166dbad.tar.gz",
     sha256 = "ae910e38610b04817fcab897796fddf0bcdbfb3ececc90ffeb7d94a96f2327cb",
     description = "Classical Action Recognition Library for gesture recognition in XR applications",
     homepage = "https://github.com/facebookexperimental/carl",
@@ -15,7 +16,7 @@ cmake_package(
         "//packages/linux/dev-libs/eigen:eigen",
         "//packages/linux/dev-libs/misc/arcana-cpp:arcana-cpp",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_CXX_STANDARD=17",
         "-DBUILD_SHARED_LIBS=ON",

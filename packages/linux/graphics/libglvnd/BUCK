@@ -1,16 +1,15 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "libglvnd",
     version = "1.4.0",
-    iuse = ["X"],
     use_configure = {
-        "-X": "--without-x",
-        "X": "--with-x",
+        "X": ("--with-x", "--without-x"),
     },
-    src_uri = "https://gitlab.freedesktop.org/glvnd/libglvnd/-/archive/v1.4.0/libglvnd-v1.4.0.tar.gz",
+    url = "https://gitlab.freedesktop.org/glvnd/libglvnd/-/archive/v1.4.0/libglvnd-v1.4.0.tar.gz",
     sha256 = "33b8b993adf47a21bc1c46bcf970927edeb9884390d5b09b1aed051d600c0b2f",
-    meson_args = [
+    configure_args = [
         "-Dasm=enabled",
         "-Dx11=enabled",
         "-Dglx=enabled",

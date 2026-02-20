@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "metaseq",
     version = "0.0.1+git20230608",
-    src_uri = "https://github.com/facebookresearch/metaseq/archive/f7ffa5fd61cf90f498a36d365c13dd7f1a912ff7.tar.gz",
+    url = "https://github.com/facebookresearch/metaseq/archive/f7ffa5fd61cf90f498a36d365c13dd7f1a912ff7.tar.gz",
     sha256 = "a517ef629b20381d2a1d58b4a16650eb73eeea3e6f35e30fa5eaa20fe85b4c69",
     deps = [
         "//packages/linux/dev-libs/python/numpy:numpy",

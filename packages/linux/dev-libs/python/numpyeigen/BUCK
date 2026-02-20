@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "numpyeigen",
     version = "0.1.0",
-    src_uri = "https://github.com/fwilliams/numpyeigen/archive/refs/heads/master.tar.gz",
+    url = "https://github.com/fwilliams/numpyeigen/archive/refs/heads/master.tar.gz",
     sha256 = "9faccddab63fb0ad6a8f581e9b1de9d8d1bf81e90f21f1f05a36be15db05f9ea",
     description = "Fast zero-overhead bindings between NumPy and Eigen",
     homepage = "https://github.com/fwilliams/numpyeigen",
@@ -13,7 +14,7 @@ cmake_package(
         "//packages/linux/dev-libs/python/pybind11:pybind11",
         "//packages/linux/lang/python:python",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DNPE_BUILD_TESTS=OFF",
         "-DNPE_WITH_EIGEN=OFF",

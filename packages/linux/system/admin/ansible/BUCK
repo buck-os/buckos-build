@@ -1,12 +1,12 @@
-load("//defs:package_defs.bzl", "python_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # ansible - IT automation platform
-python_package(
+package(
+    build_rule = "python",
     name = "ansible",
     version = "9.2.0",
-    src_uri = "https://files.pythonhosted.org/packages/source/a/ansible/ansible-9.2.0.tar.gz",
+    url = "https://files.pythonhosted.org/packages/source/a/ansible/ansible-9.2.0.tar.gz",
     sha256 = "a207a4a00a45e5cd178a7f94ca42afe26f23c9d27be49901ea8c45d18a07b7c6",
-    signature_required = False,
     description = "IT automation platform for configuration management",
     homepage = "https://www.ansible.com",
     license = "GPL-3+",

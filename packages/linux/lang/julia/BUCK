@@ -1,5 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package", "binary_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # Julia - High-level, high-performance dynamic language (Pre-built binaries)
@@ -7,17 +6,9 @@ load("//defs:use_flags.bzl", "use_dep")
 # Building Julia from source requires specific LLVM/GCC version combinations.
 # Using official pre-built binaries is recommended.
 
-download_source(
-    name = "julia-bin-src",
-    src_uri = "https://julialang-s3.julialang.org/bin/linux/x64/1.11/julia-1.11.2-linux-x86_64.tar.gz",
-    sha256 = "8a372ad262d4d4d55a1044f4fe3bce7c9a4a3ce8c513d2470e58e8071eecd476",
-    signature_sha256 = "c48af41b9af1853d5477dc127d5a944192c051e7293a8070c213319898012f4a",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "julia",
-    srcs = [":julia-bin-src"],
     version = "1.11.2",
     description = "Julia is a high-level, high-performance dynamic language for technical computing",
     homepage = "https://julialang.org/",

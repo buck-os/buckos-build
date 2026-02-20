@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "go_package")
+load("//defs:package.bzl", "package")
 
-go_package(
+package(
+    build_rule = "go",
     name = "mcap-cli",
     version = "0.0.57",
-    src_uri = "https://github.com/foxglove/mcap/archive/refs/tags/releases/mcap-cli/v0.0.57.tar.gz",
+    url = "https://github.com/foxglove/mcap/archive/refs/tags/releases/mcap-cli/v0.0.57.tar.gz",
     sha256 = "00bfa671eeb44a3abdfb543cdb6faa7d13900fb8f174497c1f6bf3416e4023af",
     bins = ["mcap"],
     # Build from the cli/mcap package within the go subdirectory

@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "inja",
     version = "3.4.0",
-    src_uri = "https://github.com/pantor/inja/archive/refs/tags/v3.4.0.tar.gz",
+    url = "https://github.com/pantor/inja/archive/refs/tags/v3.4.0.tar.gz",
     sha256 = "7155f944553ca6064b26e88e6cae8b71f8be764832c9c7c6d5998e0d5fd60c55",
     description = "A template engine for modern C++",
     homepage = "https://github.com/pantor/inja",
@@ -11,7 +12,7 @@ cmake_package(
     deps = [
         "//packages/linux/dev-libs/json/nlohmann-json:nlohmann-json",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DINJA_USE_EMBEDDED_JSON=OFF",
         "-DBUILD_TESTING=OFF",

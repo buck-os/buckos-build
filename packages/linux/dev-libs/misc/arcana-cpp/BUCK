@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # arcana.cpp - Collection of general purpose C++ utilities
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "arcana-cpp",
     version = "0.1.0",
-    src_uri = "https://github.com/microsoft/arcana.cpp/archive/f2757396e80bc4169f2ddb938ce25367a98ffdd0.tar.gz",
+    url = "https://github.com/microsoft/arcana.cpp/archive/f2757396e80bc4169f2ddb938ce25367a98ffdd0.tar.gz",
     sha256 = "9eee0cb6fb3c97228e12b9a060a8a7c728b2da6baed0a4eca915b43a3d36cfae",
     description = "Collection of general purpose C++ utilities with task library",
     homepage = "https://github.com/microsoft/arcana.cpp",
@@ -13,7 +14,7 @@ cmake_package(
     deps = [
         "//packages/linux/dev-libs/math/ms-gsl:ms-gsl",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_CXX_STANDARD=17",
     ],

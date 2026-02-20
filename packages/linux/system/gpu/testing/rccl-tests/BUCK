@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "rccl-tests",
     version = "7.10",
-    src_uri = "https://github.com/ROCm/rccl-tests/archive/refs/tags/therock-7.10.tar.gz",
+    url = "https://github.com/ROCm/rccl-tests/archive/refs/tags/therock-7.10.tar.gz",
     sha256 = "1a4ec4c42d2ff407e8816d1b461df42611df8c6aa0ffef5119eb79d38afcda19",
-    cmake_args = [
+    configure_args = [
         "-DNO_MPI=ON",
         "-DBUILD_TESTING=OFF",
     ],

@@ -1,8 +1,9 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # Gaia-ECS - High-performance Entity Component System framework
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "gaia-ecs",
     version = "0.8.7",
     source = "//third-party/gaia-ecs:gaia-ecs",
@@ -10,7 +11,7 @@ cmake_package(
     homepage = "https://github.com/richardbiely/gaia-ecs",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DGAIA_BUILD_UNITTEST=OFF",
         "-DGAIA_BUILD_BENCHMARK=OFF",

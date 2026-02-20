@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # linb::any - Implementation of std::any for C++11 compilers
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "any",
     version = "1.0.0",
-    src_uri = "https://github.com/thelink2012/any/archive/a05d5ad91cfbca0153adb7d7b3e6456fffc7b812.tar.gz",
+    url = "https://github.com/thelink2012/any/archive/a05d5ad91cfbca0153adb7d7b3e6456fffc7b812.tar.gz",
     sha256 = "0148f38d7a97bec157f9d8b5420ff6cb47cecebc4b8103c4db5bc4bc0e522a92",
     description = "Implementation of N4562 std::experimental::any (C++17) for C++11 compilers",
     homepage = "https://github.com/thelink2012/any",
@@ -56,7 +57,7 @@ if(NOT TARGET any::any)
 endif()
 EOF
     """,
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],
     visibility = ["PUBLIC"],

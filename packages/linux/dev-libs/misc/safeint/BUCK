@@ -1,15 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "safeint",
     version = "3.0.28a",
-    src_uri = "https://github.com/dcleblanc/SafeInt/archive/refs/tags/3.0.28a.tar.gz",
+    url = "https://github.com/dcleblanc/SafeInt/archive/refs/tags/3.0.28a.tar.gz",
     sha256 = "9e652d065a3cef80623287d5dc61edcf6a95ddab38a9dfeb34f155261fc9cef7",
     description = "SafeInt - C++ class library for managing integer overflows",
     homepage = "https://github.com/dcleblanc/SafeInt",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],
     visibility = ["PUBLIC"],

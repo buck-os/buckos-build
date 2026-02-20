@@ -1,45 +1,22 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "hostapd",
     version = "2.10",
-    src_uri = "https://w1.fi/releases/hostapd-2.10.tar.gz",
+    url = "https://w1.fi/releases/hostapd-2.10.tar.gz",
     sha256 = "206e7c799b678572c2e3d12030238784bc4a9f82323b0156b4c9466f1498915d",
-    signature_sha256 = "4fbb95310f193fda1fa8f4446eb6c7a7b98458e700b7f2a8bd804fe5d319d8f9",
-    signature_required = False,
-
-    iuse = [
-        "acs",
-        "dpp",
-        "fils",
-        "internal-tls",
-        "ipv6",
-        "netlink",
-        "owe",
-        "sae",
-        "selinux",
-        "sqlite",
-        "ssl",
-        "suiteb",
-        "wps",
-    ],
-    use_defaults = ["ssl", "wps", "ipv6", "acs", "sae", "owe", "dpp", "fils"],
 
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
     },
 
     use_configure = {
-        "-internal-tls": "--disable-internal-tls",
-        "-netlink": "--disable-netlink",
-        "-selinux": "--disable-selinux",
-        "-sqlite": "--disable-sqlite",
-        "-suiteb": "--disable-suiteb",
-        "internal-tls": "--enable-internal-tls",
-        "netlink": "--enable-netlink",
-        "selinux": "--enable-selinux",
-        "sqlite": "--enable-sqlite",
-        "suiteb": "--enable-suiteb",
+        "internal-tls": ("--enable-internal-tls", "--disable-internal-tls"),
+        "netlink": ("--enable-netlink", "--disable-netlink"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "sqlite": ("--enable-sqlite", "--disable-sqlite"),
+        "suiteb": ("--enable-suiteb", "--disable-suiteb"),
     },
 
     pre_configure = """

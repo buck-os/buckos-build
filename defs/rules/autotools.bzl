@@ -1,7 +1,7 @@
 """
 autotools_package rule: ./configure && make && make install.
 
-Five discrete cacheable actions — Buck2 can skip any phase whose
+Six discrete cacheable actions — Buck2 can skip any phase whose
 inputs haven't changed.
 
 1. src_unpack  — obtain source artifact from source dep
@@ -9,10 +9,13 @@ inputs haven't changed.
 3. src_configure — run ./configure via configure_helper.py
    (skip_configure=True copies source without running ./configure,
    for Kconfig-based packages like busybox or the kernel)
+   (pre_configure_cmds run in the source dir before ./configure,
+   for autoreconf or other pre-configure setup)
 4. src_compile — run make via build_helper.py
    (pre_build_cmds run in the build dir before the main make invocation,
    for Kconfig initialisation or other setup)
 5. src_install — run make install via install_helper.py
+   (post_install_cmds run in the prefix dir after make install)
 """
 
 load("//defs:providers.bzl", "PackageInfo")
@@ -51,8 +54,16 @@ def _src_configure(ctx, source):
     for env_arg in toolchain_env_args(ctx):
         cmd.add("--env", env_arg)
 
+    # Inject user-specified environment variables
+    for key, value in ctx.attrs.env.items():
+        cmd.add("--env", "{}={}".format(key, value))
+
     if ctx.attrs.configure_script:
         cmd.add("--configure-script", ctx.attrs.configure_script)
+
+    # Pre-configure commands (run before ./configure in the source tree)
+    for pre_cmd in ctx.attrs.pre_configure_cmds:
+        cmd.add("--pre-cmd", pre_cmd)
 
     if ctx.attrs.skip_configure:
         cmd.add("--skip-configure")
@@ -111,6 +122,10 @@ def _src_compile(ctx, configured):
     for env_arg in toolchain_env_args(ctx):
         cmd.add("--env", env_arg)
 
+    # Inject user-specified environment variables
+    for key, value in ctx.attrs.env.items():
+        cmd.add("--env", "{}={}".format(key, value))
+
     for pre_cmd in ctx.attrs.pre_build_cmds:
         cmd.add("--pre-cmd", pre_cmd)
     for arg in ctx.attrs.make_args:
@@ -124,6 +139,7 @@ def _src_install(ctx, built):
 
     install_prefix_var overrides the make variable name for the install
     prefix (default: DESTDIR).  Busybox uses CONFIG_PREFIX instead.
+    post_install_cmds run in the prefix directory after make install.
     """
     output = ctx.actions.declare_output("installed", dir = True)
     cmd = cmd_args(ctx.attrs._install_tool[RunInfo])
@@ -134,10 +150,18 @@ def _src_install(ctx, built):
     for env_arg in toolchain_env_args(ctx):
         cmd.add("--env", env_arg)
 
+    # Inject user-specified environment variables
+    for key, value in ctx.attrs.env.items():
+        cmd.add("--env", "{}={}".format(key, value))
+
     if ctx.attrs.install_prefix_var:
         cmd.add("--destdir-var", ctx.attrs.install_prefix_var)
     for arg in ctx.attrs.make_args:
         cmd.add("--make-arg", arg)
+
+    # Post-install commands (run in the prefix dir after make install)
+    for post_cmd in ctx.attrs.post_install_cmds:
+        cmd.add("--post-cmd", post_cmd)
 
     ctx.actions.run(cmd, category = "install", identifier = ctx.attrs.name)
     return output
@@ -198,9 +222,12 @@ autotools_package = rule(
         "configure_args": attrs.list(attrs.string(), default = []),
         "configure_script": attrs.option(attrs.string(), default = None),
         "skip_configure": attrs.bool(default = False),
+        "pre_configure_cmds": attrs.list(attrs.string(), default = []),
         "pre_build_cmds": attrs.list(attrs.string(), default = []),
+        "post_install_cmds": attrs.list(attrs.string(), default = []),
         "make_args": attrs.list(attrs.string(), default = []),
         "install_prefix_var": attrs.option(attrs.string(), default = None),
+        "env": attrs.dict(attrs.string(), attrs.string(), default = {}),
         "deps": attrs.list(attrs.dep(), default = []),
         "patches": attrs.list(attrs.source(), default = []),
         "libraries": attrs.list(attrs.string(), default = []),

@@ -1,16 +1,14 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "ndctl",
     version = "79",
-    iuse = ["libtracefs", "systemd"],
     use_configure = {
-        "-libtracefs": "--disable-libtracefs",
-        "-systemd": "--disable-systemd",
-        "libtracefs": "--enable-libtracefs",
-        "systemd": "--enable-systemd",
+        "libtracefs": ("--enable-libtracefs", "--disable-libtracefs"),
+        "systemd": ("--enable-systemd", "--disable-systemd"),
     },
-    src_uri = "https://github.com/pmem/ndctl/archive/refs/tags/v79.tar.gz",
+    url = "https://github.com/pmem/ndctl/archive/refs/tags/v79.tar.gz",
     sha256 = "c4c4e698c38ba8be4c08f3a9554cca3db8e71db1ace13906e3f8490db13418f0",
     configure_args = [
         "--disable-docs",

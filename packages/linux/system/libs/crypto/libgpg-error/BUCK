@@ -1,6 +1,7 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libgpg-error",
     # GnuPG release tarball includes pre-generated configure script
     bdepend = [],
@@ -9,37 +10,25 @@ autotools_package(
     # conflict with test code that uses nullptr as a variable name
     env = {"CFLAGS": "-std=gnu11"},
     version = "1.50",
-    src_uri = "https://gnupg.org/ftp/gcrypt/libgpg-error/libgpg-error-1.50.tar.bz2",
+    url = "https://gnupg.org/ftp/gcrypt/libgpg-error/libgpg-error-1.50.tar.bz2",
     sha256 = "69405349e0a633e444a28c5b35ce8f14484684518a508dc48a089992fe93e20a",
-    signature_required = False,
     description = "GnuPG error values library",
     homepage = "https://gnupg.org/related_software/libgpg-error/",
     license = "LGPL-2.1",
 
     # USE flags: static-libs, nls, doc, threads
-    iuse = [
-        "common-lisp",
-        "doc",
-        "nls",
-        "static-libs",
-        "threads",
-    ],
-    use_defaults = ["nls", "threads"],
 
     use_configure = {
-        "-common-lisp": "--disable-common-lisp",
-        "-doc": "--disable-doc",
-        "-nls": "--disable-nls",
-        "-static-libs": "--disable-static",
-        "-threads": "--disable-threads",
-        "common-lisp": "--enable-common-lisp",
-        "doc": "--enable-doc",
-        "nls": "--enable-nls",
-        "static-libs": "--enable-static",
-        "threads": "--enable-threads",
+        "common-lisp": ("--enable-common-lisp", "--disable-common-lisp"),
+        "doc": ("--enable-doc", "--disable-doc"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "static-libs": ("--enable-static", "--disable-static"),
+        "threads": ("--enable-threads", "--disable-threads"),
     },
 
-    use_deps = {},
+    use_deps = {
+
+    },
 
     configure_args = [
         "--enable-shared",

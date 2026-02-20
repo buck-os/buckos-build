@@ -1,39 +1,24 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # xerces-c - Validating XML parser written in C++
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "xerces-c",
     version = "3.2.5",
-    iuse = [
-        "curl",
-        "examples",
-        "iconv",
-        "icu",
-        "static-libs",
-        "threads",
-    ],
-    use_cmake = {
-        "-curl": "-DENABLE_CURL=OFF",
-        "-examples": "-DBUILD_EXAMPLES=OFF",
-        "-iconv": "-DENABLE_ICONV=OFF",
-        "-icu": "-DENABLE_ICU=OFF",
-        "-static-libs": "-DBUILD_STATIC_LIBS=OFF",
-        "-threads": "-DENABLE_THREADS=OFF",
-        "curl": "-DENABLE_CURL=ON",
-        "examples": "-DBUILD_EXAMPLES=ON",
-        "iconv": "-DENABLE_ICONV=ON",
-        "icu": "-DENABLE_ICU=ON",
-        "static-libs": "-DBUILD_STATIC_LIBS=ON",
-        "threads": "-DENABLE_THREADS=ON",
+    use_configure = {
+        "curl": ("-DENABLE_CURL=ON", "-DENABLE_CURL=OFF"),
+        "examples": ("-DBUILD_EXAMPLES=ON", "-DBUILD_EXAMPLES=OFF"),
+        "iconv": ("-DENABLE_ICONV=ON", "-DENABLE_ICONV=OFF"),
+        "icu": ("-DENABLE_ICU=ON", "-DENABLE_ICU=OFF"),
+        "static-libs": ("-DBUILD_STATIC_LIBS=ON", "-DBUILD_STATIC_LIBS=OFF"),
+        "threads": ("-DENABLE_THREADS=ON", "-DENABLE_THREADS=OFF"),
     },
-    src_uri = "https://archive.apache.org/dist/xerces/c/3/sources/xerces-c-3.2.5.tar.gz",
+    url = "https://archive.apache.org/dist/xerces/c/3/sources/xerces-c-3.2.5.tar.gz",
     sha256 = "545cfcce6c4e755207bd1f27e319241e50e37c0c27250f11cda116018f1ef0f5",
-    signature_sha256 = "2b142b51f2959d44cdd6b0d630e2fe3dcf84a39705141b47c76f7200300c9662",
-    signature_required=False,
     description = "Validating XML parser written in portable C++",
     homepage = "https://xerces.apache.org/xerces-c/",
     license = "Apache-2.0",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_SHARED_LIBS=ON",
         "-DCMAKE_INSTALL_LIBDIR=lib",
     ],

@@ -1,25 +1,14 @@
-load("//defs:package_defs.bzl","download_source", "make_package")
+load("//defs:package.bzl", "package")
 
 make_package(
     name = "wireguard-tools",
     version = "1.0.20210914",
-    src_uri = "https://github.com/WireGuard/wireguard-tools/archive/refs/tags/v1.0.20210914.tar.gz",
+    url = "https://github.com/WireGuard/wireguard-tools/archive/refs/tags/v1.0.20210914.tar.gz",
     sha256 = "acb8517eed8f352bbf0758a70573c665521a4300d0c4865afebd6b643738c640",
-    signature_required = False,
-
-    iuse = [
-        "bash-completion",
-        "selinux",
-        "systemd",
-        "wg-quick",
-    ],
     use_configure = {
-        "-selinux": "--disable-selinux",
-        "-wg-quick": "--disable-wg-quick",
-        "selinux": "--enable-selinux",
-        "wg-quick": "--enable-wg-quick",
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "wg-quick": ("--enable-wg-quick", "--disable-wg-quick"),
     },
-    use_defaults = ["bash-completion", "systemd"],
 
     make_args = [
         "-C", "src",

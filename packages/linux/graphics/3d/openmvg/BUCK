@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "openmvg",
     version = "1.6.0",
-    src_uri = "https://github.com/openMVG/openMVG/archive/refs/tags/v1.6.tar.gz",
+    url = "https://github.com/openMVG/openMVG/archive/refs/tags/v1.6.tar.gz",
     sha256 = "11b7f632a773f8c06fe7e30caeebc8ac124049cd5dd947eaadc8c7bf0a294d64",
-    cmake_args = [
+    configure_args = [
         "-DOpenMVG_BUILD_TESTS=OFF",
         "-DOpenMVG_BUILD_DOC=OFF",
         "-DOpenMVG_BUILD_EXAMPLES=OFF",

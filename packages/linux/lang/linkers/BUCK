@@ -1,5 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package", "binary_package", "cmake_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # Linkers - Alternative Linker Implementations
@@ -22,10 +21,11 @@ load("//defs:use_flags.bzl", "use_dep")
 # It is several times faster than the LLVM lld linker.
 # =============================================================================
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "mold",
     version = "2.34.1",
-    src_uri = "https://github.com/rui314/mold/archive/refs/tags/v2.34.1.tar.gz",
+    url = "https://github.com/rui314/mold/archive/refs/tags/v2.34.1.tar.gz",
     sha256 = "a8cf638045b4a4b2697d0bcc77fd96eae93d54d57ad3021bf03b0333a727a59d",
     description = "A modern, high-performance linker",
     homepage = "https://github.com/rui314/mold",
@@ -45,23 +45,8 @@ cmake_package(
 # It provides fast linking with better diagnostics than traditional linkers.
 # =============================================================================
 
-download_source(
-    name = "lld-src",
-    src_uri = "https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/lld-18.1.8.src.tar.xz",
-    sha256 = "800e6805fb613eb8428f7a199f6d06c4c19f78f2db69157a129bb04fc1c99769",
-    signature_sha256 = "325f868d92f16e8e8654cdc70bdeab476d83e27ab1bb1010a39a208e5321678e",
-    signature_required=False,
-)
-
-download_source(
-    name = "llvm-cmake-src",
-    src_uri = "https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/cmake-18.1.8.src.tar.xz",
-    sha256 = "59badef592dd34893cd319d42b323aaa990b452d05c7180ff20f23ab1b41e837",
-    signature_sha256 = "c5623a78c55beddd836c5a1ff905aaca2fb724ebe936b173c843b59daee5646f",
-    signature_required=False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "lld",
     srcs = [
         ":lld-src",

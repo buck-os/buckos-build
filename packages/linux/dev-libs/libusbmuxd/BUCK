@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libusbmuxd",
     version = "2.0.2",
-    src_uri = "https://github.com/libimobiledevice/libusbmuxd/releases/download/2.0.2/libusbmuxd-2.0.2.tar.bz2",
+    url = "https://github.com/libimobiledevice/libusbmuxd/releases/download/2.0.2/libusbmuxd-2.0.2.tar.bz2",
     sha256 = "cc6a808553da4efa9fa5638be256d5ae020498795d9d260d280b87074e799b20",
     deps = [
         "//packages/linux/dev-libs/libimobiledevice-glue:libimobiledevice-glue",

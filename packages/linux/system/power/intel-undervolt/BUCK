@@ -1,23 +1,21 @@
+load("//defs:package.bzl", "package")
+
 # intel-undervolt - Intel CPU Undervolting Tool
 # Undervolt and set power limits on Intel CPUs
 
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
-
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "intel-undervolt",
     version = "1.7",
-    iuse = ["elogind"],
-    use_cmake = {
-        "-elogind": "-DENABLE_ELOGIND=OFF",
-        "elogind": "-DENABLE_ELOGIND=ON",
+    use_configure = {
+        "elogind": ("-DENABLE_ELOGIND=ON", "-DENABLE_ELOGIND=OFF"),
     },
-    src_uri = "https://github.com/kitsunyan/intel-undervolt/archive/refs/tags/1.7.tar.gz",
+    url = "https://github.com/kitsunyan/intel-undervolt/archive/refs/tags/1.7.tar.gz",
     sha256 = "29a7ebaee4830d65d0b5cefa6d497887d4f23f34659876dfe944f3a020cf33ff",
-    signature_required = False,
     description = "Intel CPU undervolting and power limit tool",
     homepage = "https://github.com/kitsunyan/intel-undervolt",
     license = "GPL-3.0",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DENABLE_SYSTEMD=ON",

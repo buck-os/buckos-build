@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "onnx2c",
     version = "0.0.1",
-    src_uri = "https://github.com/kraiskil/onnx2c/archive/refs/heads/master.tar.gz",
+    url = "https://github.com/kraiskil/onnx2c/archive/refs/heads/master.tar.gz",
     sha256 = "222461d9811a5065832872d5ca13647bef007367486f9392958e2cc4cc65fe36",
     description = "ONNX to C compiler - generates C code from ONNX neural network models",
     homepage = "https://github.com/kraiskil/onnx2c",
@@ -11,7 +12,7 @@ cmake_package(
     deps = [
         "//packages/linux/dev-libs/serialization/protobuf:protobuf",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_CXX_STANDARD=20",
     ],

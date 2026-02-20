@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "roomformer",
     version = "1.0.0",
-    src_uri = "https://github.com/ywyue/RoomFormer/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/ywyue/RoomFormer/archive/refs/heads/main.tar.gz",
     sha256 = "193622bc93c6bab3791f9fd91935381bc3f4ea96f53fd13eec8c9f29aa2cf3c0",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

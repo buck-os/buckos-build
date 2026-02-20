@@ -1,30 +1,21 @@
+load("//defs:package.bzl", "package")
+
 # Blueman - Bluetooth Manager
 # GTK+ Bluetooth manager for easy Bluetooth device management
 
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-
 # USE flags: See use_flags.bzl for available flags
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "blueman",
-    src_uri = "https://github.com/blueman-project/blueman/releases/download/2.3.5/blueman-2.3.5.tar.xz",
+    url = "https://github.com/blueman-project/blueman/releases/download/2.3.5/blueman-2.3.5.tar.xz",
 
     sha256 = "b2d21afdf77a06cd86daf5402406f7d2a53459817e29e0bebc4911d4f0dcfda1",
-    iuse = [
-        "network",
-        "nls",
-        "policykit",
-        "pulseaudio",
-    ],
     use_configure = {
-        "-network": "--disable-network",
-        "-nls": "--disable-nls",
-        "-policykit": "--disable-policykit",
-        "-pulseaudio": "--disable-pulseaudio",
-        "network": "--enable-network",
-        "nls": "--enable-nls",
-        "policykit": "--enable-policykit",
-        "pulseaudio": "--enable-pulseaudio",
+        "network": ("--enable-network", "--disable-network"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "policykit": ("--enable-policykit", "--disable-policykit"),
+        "pulseaudio": ("--enable-pulseaudio", "--disable-pulseaudio"),
     },
     version = "2.3.5",
     description = "GTK+ Bluetooth Manager",

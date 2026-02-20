@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "ruamel-yaml",
     version = "0.16.5",
-    src_uri = "https://files.pythonhosted.org/packages/source/r/ruamel.yaml/ruamel.yaml-0.16.5.tar.gz",
+    url = "https://files.pythonhosted.org/packages/source/r/ruamel.yaml/ruamel.yaml-0.16.5.tar.gz",
     sha256 = "412a6f5cfdc0525dee6a27c08f5415c7fd832a7afcb7a0ed7319628aed23d408",
     deps = [
         "//packages/linux/lang/python:python",

@@ -1,24 +1,21 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package", "binary_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # aria2 - Lightweight multi-protocol download utility
 # =============================================================================
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "aria2",
     version = "1.37.0",
-    src_uri = "https://github.com/aria2/aria2/releases/download/release-1.37.0/aria2-1.37.0.tar.xz",
+    url = "https://github.com/aria2/aria2/releases/download/release-1.37.0/aria2-1.37.0.tar.xz",
     sha256 = "60a420ad7085eb616cb6e2bdf0a7206d68ff3d37fb5a956dc44242eb2f79b66b",
-    signature_required = False,
-
-    use_defaults = ["ssl", "bittorrent", "metalink", "xml"],
 
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "gnutls": ["//packages/linux/system/libs/crypto/gnutls:gnutls"],
-        "xml": ["//packages/linux/system/libs/data/libxml2:libxml2"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "gnutls": "//packages/linux/system/libs/crypto/gnutls:gnutls",
+        "xml": "//packages/linux/system/libs/data/libxml2:libxml2",
     },
-
 
     configure_args = [
         "--with-ca-bundle=/etc/ssl/certs/ca-certificates.crt",

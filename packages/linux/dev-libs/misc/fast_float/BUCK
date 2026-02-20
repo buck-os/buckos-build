@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # fast_float - Fast and exact implementation of the C++ from_chars functions for float and double types
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "fast_float",
     version = "8.0.0",
-    src_uri = "https://github.com/fastfloat/fast_float/archive/refs/tags/v8.0.0.tar.gz",
+    url = "https://github.com/fastfloat/fast_float/archive/refs/tags/v8.0.0.tar.gz",
     sha256 = "f312f2dc34c61e665f4b132c0307d6f70ad9420185fa831911bc24408acf625d",
     description = "Fast and exact implementation of the C++ from_chars functions for number parsing",
     homepage = "https://github.com/fastfloat/fast_float",
     license = "Apache-2.0 OR BSL-1.0 OR MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DFASTFLOAT_TEST=OFF",
         "-DFASTFLOAT_BENCHMARKS=OFF",

@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "openeb",
     version = "3.0.2",
-    src_uri = "https://github.com/prophesee-ai/openeb/archive/refs/tags/3.0.2.tar.gz",
+    url = "https://github.com/prophesee-ai/openeb/archive/refs/tags/3.0.2.tar.gz",
     sha256 = "1a66aaa1703f7c0e66b6f992cbad01ac664b142dc4a7de84bdedeb60a62a0dc8",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
         "-DCOMPILE_PYTHON3_BINDINGS=OFF",

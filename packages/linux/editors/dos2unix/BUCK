@@ -1,21 +1,15 @@
-load("//defs:package_defs.bzl", "download_source", "make_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # dos2unix - Text file format converter between DOS and Unix
 
 make_package(
     name = "dos2unix",
-    src_uri = "https://waterlan.home.xs4all.nl/dos2unix/dos2unix-7.5.2.tar.gz",
+    url = "https://waterlan.home.xs4all.nl/dos2unix/dos2unix-7.5.2.tar.gz",
 
     sha256 = "264742446608442eb48f96c20af6da303cb3a92b364e72cb7e24f88239c4bf3a",
-
-    signature_sha256 = "757d4e7a3b0185079516d83c3f1ba8528bcffbb0ff3b41cd2df2b10cfac57c5a",
-    iuse = ["debug", "nls"],
     use_configure = {
-        "-debug": "--disable-debug",
-        "-nls": "--disable-nls",
-        "debug": "--enable-debug",
-        "nls": "--enable-nls",
+        "debug": ("--enable-debug", "--disable-debug"),
+        "nls": ("--enable-nls", "--disable-nls"),
     },
     version = "7.5.2",
     description = "Text file format converter between DOS and Unix",

@@ -1,10 +1,11 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # xcb-util-keysyms - XCB keysym utilities
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "xcb-util-keysyms",
     version = "0.4.1",
-    src_uri = "https://xcb.freedesktop.org/dist/xcb-util-keysyms-0.4.1.tar.xz",
+    url = "https://xcb.freedesktop.org/dist/xcb-util-keysyms-0.4.1.tar.xz",
     sha256 = "7c260a5294412aed429df1da2f8afd3bd07b7cba3fec772fba15a613a6d5c638",
     description = "XCB keysym utilities",
     homepage = "https://xcb.freedesktop.org/",

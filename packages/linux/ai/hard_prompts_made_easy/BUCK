@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "hard_prompts_made_easy",
     version = "0.0.1",
-    src_uri = "https://github.com/yuxinwenrick/hard-prompts-made-easy/archive/f22a1bec01991d94697304443cacbd66e0167e6b.tar.gz",
+    url = "https://github.com/yuxinwenrick/hard-prompts-made-easy/archive/f22a1bec01991d94697304443cacbd66e0167e6b.tar.gz",
     sha256 = "80326d11bc5dc2f59127e8265fa1de54bacb5a0a8a0b463d46a6524bf725a8db",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

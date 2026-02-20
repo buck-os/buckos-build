@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package", "binary_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # bmon - Bandwidth monitor and rate estimator
@@ -9,15 +9,16 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package", "binary_
 # libconfuse source: https://github.com/libconfuse/libconfuse
 
 # Commented out until libconfuse is available
-# autotools_package(
+# package(
+#     build_rule = "autotools",
 #     name = "bmon",
 #     version = "4.0",
-#     src_uri = "https://github.com/tgraf/bmon/releases/download/v4.0/bmon-4.0.tar.gz",
+#     url = "https://github.com/tgraf/bmon/releases/download/v4.0/bmon-4.0.tar.gz",
 #     sha256 = "02fdc312b8ceeb5786b28bf905f54328f414040ff42f45c83007f24b76cc9f7a",
-#     signature_required = False,
 #
-#     iuse = ["ascii"],
-#     use_defaults = [],
+#
+#
+#
 #
 #     configure_args = [
 #         "--with-ncurses",

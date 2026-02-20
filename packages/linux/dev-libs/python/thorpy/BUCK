@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "thorpy",
     version = "0.0.0",
-    src_uri = "https://github.com/unine-chyn/thorpy/archive/e8f000bd8a5bcc5a11b52f59742024d929751827.tar.gz",
+    url = "https://github.com/unine-chyn/thorpy/archive/e8f000bd8a5bcc5a11b52f59742024d929751827.tar.gz",
     sha256 = "fe6cfe57b2e919686112719d5d9bf3cd9f90f84477da7dc729c244a1a6045d41",
     deps = [
         "//packages/linux/dev-libs/python/pyserial:pyserial",

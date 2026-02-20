@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "swift-concurrency-extras",
     version = "1.0.0",
-    src_uri = "https://github.com/pointfreeco/swift-concurrency-extras/archive/refs/tags/1.0.0.tar.gz",
+    url = "https://github.com/pointfreeco/swift-concurrency-extras/archive/refs/tags/1.0.0.tar.gz",
     sha256 = "b073058e1cb387852de5797f0b9b021c1fd624a1385dd40a1d935276464c528e",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTING=OFF",
     ],
     deps = [

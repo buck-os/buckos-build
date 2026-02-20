@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "go_package")
+load("//defs:package.bzl", "package")
 
 # go-tpm-tools - Go tools for TPM 2.0
 
-go_package(
+package(
+    build_rule = "go",
     name = "go-tpm-tools",
     version = "0.4.4",
-    src_uri = "https://github.com/google/go-tpm-tools/archive/refs/tags/v0.4.4.tar.gz",
+    url = "https://github.com/google/go-tpm-tools/archive/refs/tags/v0.4.4.tar.gz",
     sha256 = "9bc935311f2ad3c48763a0e1c77f777b9a8e3db696c7bfea99946ca2ea45fc6e",
     description = "Go tools for TPM 2.0",
     homepage = "https://github.com/google/go-tpm-tools",

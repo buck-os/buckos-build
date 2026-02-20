@@ -1,18 +1,11 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
 # Firecracker - Secure and fast microVMs
 # Using pre-built binary since Cargo needs network access for git dependencies
 
-download_source(
-    name = "firecracker-bin",
-    src_uri = "https://github.com/firecracker-microvm/firecracker/releases/download/v1.9.1/firecracker-v1.9.1-x86_64.tgz",
-    sha256 = "88d89221063ee4021b539a4fea4567642f4eecfb5d52eec04cd3390833f7f3de",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "firecracker",
-    srcs = [":firecracker-bin"],
     version = "1.9.1",
     description = "Secure and fast microVMs for serverless computing",
     homepage = "https://firecracker-microvm.github.io/",

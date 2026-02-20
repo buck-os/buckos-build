@@ -1,15 +1,16 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
 # xkeyboard-config - X keyboard configuration database
-meson_package(
+package(
+    build_rule = "meson",
     name = "xkeyboard-config",
     version = "2.41",
-    src_uri = "https://xorg.freedesktop.org/archive/individual/data/xkeyboard-config/xkeyboard-config-2.41.tar.xz",
+    url = "https://xorg.freedesktop.org/archive/individual/data/xkeyboard-config/xkeyboard-config-2.41.tar.xz",
     sha256 = "f02cd6b957295e0d50236a3db15825256c92f67ef1f73bf1c77a4b179edf728f",
     description = "X keyboard configuration database",
     homepage = "https://xorg.freedesktop.org/",
     license = "MIT",
-    meson_args = [
+    configure_args = [
         "-Dxorg-rules-symlinks=true",
     ],
     visibility = ["PUBLIC"],

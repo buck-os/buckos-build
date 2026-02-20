@@ -1,14 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "ja4-src",
-    src_uri = "https://github.com/FoxIO-LLC/ja4/archive/refs/tags/ja4-wireshark-plugins-2024.11.08.19.tar.gz",
-    sha256 = "e75e380c90846dab8f781e87df058fa2fbc12d6bac6a4e6c70ec09e3526984af",
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "ja4",
-    srcs = [":ja4-src"],
     version = "2024.11.08.19",
     install_script = """
         mkdir -p $OUT/usr/share/ja4

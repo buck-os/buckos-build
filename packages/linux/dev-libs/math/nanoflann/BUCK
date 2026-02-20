@@ -1,20 +1,19 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "nanoflann",
     version = "1.1.8",
-    iuse = ["examples"],
-    use_cmake = {
-        "-examples": "-DBUILD_EXAMPLES=OFF",
-        "examples": "-DBUILD_EXAMPLES=ON",
+    use_configure = {
+        "examples": ("-DBUILD_EXAMPLES=ON", "-DBUILD_EXAMPLES=OFF"),
     },
-    src_uri = "https://github.com/jlblancoc/nanoflann/archive/refs/tags/v1.1.8.tar.gz",
+    url = "https://github.com/jlblancoc/nanoflann/archive/refs/tags/v1.1.8.tar.gz",
     sha256 = "389be4f08deb13761e8c50f7b1766dcecd0876459414c1cc4aa1d5dbd8031fc7",
     description = "C++ header-only library for KD-Trees and nearest neighbor searches",
     homepage = "https://github.com/jlblancoc/nanoflann",
     license = "BSD",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DNANOFLANN_BUILD_EXAMPLES=OFF",
         "-DNANOFLANN_BUILD_TESTS=OFF",

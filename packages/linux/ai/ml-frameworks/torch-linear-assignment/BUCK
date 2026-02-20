@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "torch-linear-assignment",
     version = "0.0.5",
-    src_uri = "https://github.com/ivan-chai/torch-linear-assignment/archive/refs/tags/0.0.5.tar.gz",
+    url = "https://github.com/ivan-chai/torch-linear-assignment/archive/refs/tags/0.0.5.tar.gz",
     sha256 = "8a12dbeddf31c101ac652fcdc54bf86295a09ed95b96e606457fd93ca4da5ef3",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

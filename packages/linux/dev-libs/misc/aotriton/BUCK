@@ -1,19 +1,12 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package", "gen_pkgconfig")
+load("//defs:package.bzl", "package")
 
 # AOTriton - Ahead-of-Time Triton Compiler for AMD GPUs
 # AOTriton is a compiler that converts Triton kernels into GPU code ahead of time,
 # particularly targeting AMD ROCm GPUs. It's used by PyTorch for optimized attention operations.
 
-download_source(
-    name = "aotriton-src",
-    src_uri = "https://github.com/ROCm/aotriton/archive/9044fe5eb16130e49a0a1f781ea15037353ad542.tar.gz",
-    sha256 = "536feb34725f2ba79def02f626d1a52b80f379046268ad6d6f47ffff49ed577d",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "aotriton",
-    srcs = [":aotriton-src"],
     version = "0.3b",
     description = "Ahead-of-Time Triton compiler for AMD ROCm GPUs",
     homepage = "https://github.com/ROCm/aotriton",

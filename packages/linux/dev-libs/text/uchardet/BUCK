@@ -1,14 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "uchardet",
     version = "0.0.7",
-    src_uri = "https://www.freedesktop.org/software/uchardet/releases/uchardet-0.0.7.tar.xz",
+    url = "https://www.freedesktop.org/software/uchardet/releases/uchardet-0.0.7.tar.xz",
     sha256 = "3fc79408ae1d84b406922fa9319ce005631c95ca0f34b205fad867e8b30e45b1",
     description = "Universal charset detection library",
     homepage = "https://www.freedesktop.org/wiki/Software/uchardet/",
     license = "MPL-1.1",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_BINARY=ON",
     ],

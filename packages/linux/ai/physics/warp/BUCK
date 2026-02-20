@@ -1,16 +1,14 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "warp",
     version = "1.9.1",
-    iuse = ["debug", "x509"],
     use_configure = {
-        "-debug": "--disable-debug",
-        "-x509": "--disable-x509",
-        "debug": "--enable-debug",
-        "x509": "--enable-x509",
+        "debug": ("--enable-debug", "--disable-debug"),
+        "x509": ("--enable-x509", "--disable-x509"),
     },
-    src_uri = "https://github.com/NVIDIA/warp/archive/refs/tags/v1.9.1.tar.gz",
+    url = "https://github.com/NVIDIA/warp/archive/refs/tags/v1.9.1.tar.gz",
     sha256 = "cdcf16c891aaa8337e0bc47787852600174f10ce4841950b226502c815900f8d",
     description = "Python framework for high-performance simulation and graphics",
     homepage = "https://github.com/NVIDIA/warp",

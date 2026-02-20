@@ -44,19 +44,20 @@ This specification defines how to create BuckOS packages for Python projects.
 
 ## Package Type
 
-**`python_package()`** - Builds Python packages with pip/setuptools
+**`package(build_rule = "python")`** - Builds Python packages with pip/setuptools
 
 ## Quick Start
 
 ### Basic Python Package
 
 ```python
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "requests",
     version = "2.31.0",
-    src_uri = "https://pypi.io/packages/source/r/requests/requests-2.31.0.tar.gz",
+    url = "https://pypi.io/packages/source/r/requests/requests-2.31.0.tar.gz",
     sha256 = "942c5a758f98d5505896ef02fb6d8fe39530e8c2fcf1df7f8a5fdcfa42a9b12e",
     deps = [
         "//packages/linux/dev-python:urllib3",
@@ -69,10 +70,11 @@ python_package(
 ### With USE Flags for Extras
 
 ```python
-python_package(
+package(
+    build_rule = "python",
     name = "requests",
     version = "2.31.0",
-    src_uri = "https://pypi.io/packages/source/r/requests/requests-2.31.0.tar.gz",
+    url = "https://pypi.io/packages/source/r/requests/requests-2.31.0.tar.gz",
     sha256 = "...",
     iuse = ["socks", "security"],
     use_defaults = ["security"],
@@ -81,7 +83,7 @@ python_package(
         "security": "security",
     },
     use_deps = {
-        "socks": ["//packages/linux/dev-python:pysocks"],
+        "socks": "//packages/linux/dev-python:pysocks",
     },
 )
 ```
@@ -92,7 +94,7 @@ python_package(
 |-------|------|-------------|
 | `name` | string | Package name (PyPI name) |
 | `version` | string | Package version |
-| `src_uri` | string | Source tarball URL |
+| `url` | string | Source tarball URL |
 | `sha256` | string | SHA-256 checksum |
 
 ## Python-Specific Fields
@@ -115,8 +117,8 @@ use_extras = {
     "http2": "http2",
 }
 use_deps = {
-    "ssl": ["//packages/linux/dev-python:pyopenssl"],
-    "http2": ["//packages/linux/dev-python:h2"],
+    "ssl": "//packages/linux/dev-python:pyopenssl",
+    "http2": "//packages/linux/dev-python:h2",
 }
 ```
 
@@ -184,10 +186,11 @@ The Python eclass automatically provides Python, pip, and setuptools.
 Packages with C code need system library dependencies:
 
 ```python
-python_package(
+package(
+    build_rule = "python",
     name = "pillow",
     version = "10.1.0",
-    src_uri = "https://pypi.io/packages/source/p/pillow/pillow-10.1.0.tar.gz",
+    url = "https://pypi.io/packages/source/p/pillow/pillow-10.1.0.tar.gz",
     sha256 = "...",
     deps = [
         "//packages/linux/media-libs:libjpeg-turbo",
@@ -202,7 +205,8 @@ python_package(
 Specify Python version:
 
 ```python
-python_package(
+package(
+    build_rule = "python",
     name = "legacy-pkg",
     python = "python2.7",  # Default is "python3"
     # ...

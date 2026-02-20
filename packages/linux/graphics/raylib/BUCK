@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "raylib",
     version = "5.5",
-    src_uri = "https://github.com/raysan5/raylib/archive/refs/tags/5.5.tar.gz",
+    url = "https://github.com/raysan5/raylib/archive/refs/tags/5.5.tar.gz",
     sha256 = "aea98ecf5bc5c5e0b789a76de0083a21a70457050ea4cc2aec7566935f5e258e",
-    cmake_args = [
+    configure_args = [
         "-DPLATFORM=Desktop",
         "-DOPENGL_VERSION=3.3",
         "-DBUILD_EXAMPLES=OFF",

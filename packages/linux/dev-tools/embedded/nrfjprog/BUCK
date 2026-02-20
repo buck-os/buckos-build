@@ -1,14 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "nrfjprog-src",
-    src_uri = "https://nsscprodmedia.blob.core.windows.net/prod/software-and-other-downloads/desktop-software/nrf-command-line-tools/sw/versions-10-x-x/10-24-1/nrf-command-line-tools-10.24.1_linux-amd64.tar.gz",
-    sha256 = "764592e87da331021777e89fefe5f799894c01eb27aaca59f2368b0d3ee90a19",
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "nrfjprog",
-    srcs = [":nrfjprog-src"],
     version = "10.24.1",
     install_script = """
         mkdir -p "$OUT/opt/nrfjprog"

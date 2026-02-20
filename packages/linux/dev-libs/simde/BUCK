@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "simde",
     version = "0.8.2",
-    src_uri = "https://github.com/simd-everywhere/simde/archive/refs/tags/v0.8.2.tar.gz",
+    url = "https://github.com/simd-everywhere/simde/archive/refs/tags/v0.8.2.tar.gz",
     sha256 = "ed2a3268658f2f2a9b5367628a85ccd4cf9516460ed8604eed369653d49b25fb",
-    meson_args = [
+    configure_args = [
         "-Dtests=false",
     ],
 )

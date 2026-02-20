@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "valhalla",
     version = "3.5.0",
-    src_uri = "https://github.com/valhalla/valhalla/archive/refs/tags/3.5.0.tar.gz",
+    url = "https://github.com/valhalla/valhalla/archive/refs/tags/3.5.0.tar.gz",
     sha256 = "b4e982667be851f34dd96b89f286eba3d646b0cf0b5eea899995c7bdd619e9c4",
-    cmake_args = [
+    configure_args = [
         "-DENABLE_TOOLS=ON",
         "-DENABLE_DATA_TOOLS=ON",
         "-DENABLE_SERVICES=OFF",

@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "vk-bootstrap",
     version = "1.4.323",
-    src_uri = "https://github.com/charles-lunarg/vk-bootstrap/archive/refs/tags/v1.4.323.tar.gz",
+    url = "https://github.com/charles-lunarg/vk-bootstrap/archive/refs/tags/v1.4.323.tar.gz",
     sha256 = "95f512f2fd992c7df6f7068192975f54efc0ce026f1985b30c976e516a2152aa",
-    cmake_args = [
+    configure_args = [
         "-DVK_BOOTSTRAP_TEST=OFF",
         "-DVK_BOOTSTRAP_INSTALL=ON",
     ],

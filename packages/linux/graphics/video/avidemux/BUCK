@@ -1,45 +1,27 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # Avidemux - Free video editor designed for simple cutting, filtering and encoding tasks
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "avidemux",
     version = "2.8.1",
-    iuse = [
-        "gui",
-        "nls",
-        "nvenc",
-        "opengl",
-        "sdl",
-        "vaapi",
-        "vdpau",
-        "xv",
-    ],
-    use_cmake = {
-        "-gui": "-DENABLE_GUI=OFF",
-        "-nls": "-DENABLE_NLS=OFF",
-        "-nvenc": "-DENABLE_NVENC=OFF",
-        "-opengl": "-DENABLE_OPENGL=OFF",
-        "-sdl": "-DENABLE_SDL=OFF",
-        "-vaapi": "-DENABLE_VAAPI=OFF",
-        "-vdpau": "-DENABLE_VDPAU=OFF",
-        "-xv": "-DENABLE_XV=OFF",
-        "gui": "-DENABLE_GUI=ON",
-        "nls": "-DENABLE_NLS=ON",
-        "nvenc": "-DENABLE_NVENC=ON",
-        "opengl": "-DENABLE_OPENGL=ON",
-        "sdl": "-DENABLE_SDL=ON",
-        "vaapi": "-DENABLE_VAAPI=ON",
-        "vdpau": "-DENABLE_VDPAU=ON",
-        "xv": "-DENABLE_XV=ON",
+    use_configure = {
+        "gui": ("-DENABLE_GUI=ON", "-DENABLE_GUI=OFF"),
+        "nls": ("-DENABLE_NLS=ON", "-DENABLE_NLS=OFF"),
+        "nvenc": ("-DENABLE_NVENC=ON", "-DENABLE_NVENC=OFF"),
+        "opengl": ("-DENABLE_OPENGL=ON", "-DENABLE_OPENGL=OFF"),
+        "sdl": ("-DENABLE_SDL=ON", "-DENABLE_SDL=OFF"),
+        "vaapi": ("-DENABLE_VAAPI=ON", "-DENABLE_VAAPI=OFF"),
+        "vdpau": ("-DENABLE_VDPAU=ON", "-DENABLE_VDPAU=OFF"),
+        "xv": ("-DENABLE_XV=ON", "-DENABLE_XV=OFF"),
     },
-    src_uri = "https://github.com/mean00/avidemux2/releases/download/2.8.1/avidemux_2.8.1.tar.gz",
+    url = "https://github.com/mean00/avidemux2/releases/download/2.8.1/avidemux_2.8.1.tar.gz",
     sha256 = "77d9bdca8683ce57c192b69d207cfab7cf92a7759ce0f63fa37b5c8e42ad3da2",
-    signature_required = False,
     description = "Free video editor for simple cutting, filtering and encoding",
     homepage = "https://github.com/mean00/avidemux2",
     license = "GPL-2.0-or-later",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DFAKEROOT=$OUT",

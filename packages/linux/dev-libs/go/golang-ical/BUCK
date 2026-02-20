@@ -1,11 +1,11 @@
-load("//defs:package_defs.bzl", "go_package")
+load("//defs:package.bzl", "package")
 
-go_package(
+package(
+    build_rule = "go",
     name = "golang-ical",
     version = "0.3.0",
-    src_uri = "https://github.com/arran4/golang-ical/archive/refs/tags/v0.3.0.tar.gz",
+    url = "https://github.com/arran4/golang-ical/archive/refs/tags/v0.3.0.tar.gz",
     sha256 = "0f640b1c5d9b04f7f6860bc1ce508e9eb6070b62d77aa74d1ca2f226d50558e4",
-    signature_required = False,
     description = "iCalendar parser and serializer for Go",
     homepage = "https://github.com/arran4/golang-ical",
     license = "Apache-2.0",

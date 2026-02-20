@@ -1,31 +1,18 @@
-load("//defs:package_defs.bzl","autotools_package", "download_source")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "smartmontools",
-    src_uri = "https://sourceforge.net/projects/smartmontools/files/smartmontools/7.4/smartmontools-7.4.tar.gz",
+    url = "https://sourceforge.net/projects/smartmontools/files/smartmontools/7.4/smartmontools-7.4.tar.gz",
 
     sha256 = "e9a61f641ff96ca95319edfb17948cd297d0cd3342736b2c49c99d4716fb993d",
-    iuse = [
-        "caps",
-        "daemon",
-        "selinux",
-        "static",
-        "systemd",
-        "update-drivedb",
-    ],
     use_configure = {
-        "-caps": "--disable-libcap",
-        "-daemon": "--disable-daemon",
-        "-selinux": "--disable-selinux",
-        "-static": "--disable-static",
-        "-systemd": "--disable-systemd",
-        "-update-drivedb": "--disable-update-drivedb",
-        "caps": "--enable-libcap",
-        "daemon": "--enable-daemon",
-        "selinux": "--enable-selinux",
-        "static": "--enable-static",
-        "systemd": "--enable-systemd",
-        "update-drivedb": "--enable-update-drivedb",
+        "caps": ("--enable-libcap", "--disable-libcap"),
+        "daemon": ("--enable-daemon", "--disable-daemon"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "static": ("--enable-static", "--disable-static"),
+        "systemd": ("--enable-systemd", "--disable-systemd"),
+        "update-drivedb": ("--enable-update-drivedb", "--disable-update-drivedb"),
     },
     version = "7.4",
     description = "Tools for monitoring SMART capable hard disks",

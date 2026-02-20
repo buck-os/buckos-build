@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # GLAD - Multi-Language GL/GLES/EGL/GLX/WGL Loader-Generator
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "glad",
     version = "2.0.5",
-    src_uri = "https://github.com/Dav1dde/glad/archive/refs/tags/v2.0.5.tar.gz",
+    url = "https://github.com/Dav1dde/glad/archive/refs/tags/v2.0.5.tar.gz",
     sha256 = "850351f1960f3fed775f0b696d7f17615f306beb56be38a20423284627626df1",
     description = "Multi-Language GL/GLES/EGL/GLX/WGL Loader-Generator",
     homepage = "https://glad.dav1d.de/",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DGLAD_INSTALL=ON",
     ],

@@ -1,10 +1,11 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # aflplusplus-4 - American Fuzzy Lop plus plus (AFL++)
 # A security-oriented fuzzer that employs genetic algorithms
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "aflplusplus-4",
-    src_uri = "https://github.com/AFLplusplus/AFLplusplus/archive/refs/tags/v4.21c.tar.gz",
+    url = "https://github.com/AFLplusplus/AFLplusplus/archive/refs/tags/v4.21c.tar.gz",
 
     sha256 = "11f7c77d37cff6e7f65ac7cc55bab7901e0c6208e845a38764394d04ed567b30",
     version = "4.21c",

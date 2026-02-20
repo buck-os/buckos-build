@@ -1,12 +1,13 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # fpng - Very fast C++ PNG image reader/writer for 24/32bpp images
 # fpng is optimized for speed over compression ratio
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "fpng",
     version = "1.0.5",
-    src_uri = "https://github.com/richgel999/fpng/archive/6926f5a0a78f22d42b074a0ab8032e07736babd4.tar.gz",
+    url = "https://github.com/richgel999/fpng/archive/6926f5a0a78f22d42b074a0ab8032e07736babd4.tar.gz",
     sha256 = "f57d2f7ddd44fd8a2676afba656e91f2925227742aaf7911937c933782efb444",  # Run: curl -sL <src_uri> | sha256sum
     description = "Very fast C++ PNG image reader/writer for 24/32bpp images",
     homepage = "https://github.com/richgel999/fpng",
@@ -142,7 +143,7 @@ include("${CMAKE_CURRENT_LIST_DIR}/fpngTargets.cmake")
 check_required_components(fpng)
 EOF
     """,
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_TESTS=OFF",

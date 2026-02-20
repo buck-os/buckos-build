@@ -1,14 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "opengv",
     version = "1.0",
-    src_uri = "https://github.com/laurentkneip/opengv/archive/91f4b19c73450833a40e463ad3648aae80b3a7f3.tar.gz",
+    url = "https://github.com/laurentkneip/opengv/archive/91f4b19c73450833a40e463ad3648aae80b3a7f3.tar.gz",
     sha256 = "b03f61ff597a6c16a32b8939c3e49e9f240ae7b4da3358f1430e9743e093d596",
     description = "Library for solving geometric vision problems",
     homepage = "https://github.com/laurentkneip/opengv",
     license = "BSD-3-Clause",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTS=OFF",
         "-DBUILD_PYTHON=OFF",
         "-DBUILD_POSITION_INDEPENDENT_CODE=ON",

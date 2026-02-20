@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "osmnx2",
     version = "2.0.5",
-    src_uri = "https://github.com/gboeing/osmnx/archive/v2.0.5.tar.gz",
+    url = "https://github.com/gboeing/osmnx/archive/v2.0.5.tar.gz",
     sha256 = "78e0f8c801659b7c4e620d2db2f3d5e72f2994bcc1b79b20322119de6660f4db",
     deps = [
         "//packages/linux/dev-libs/python/geopandas:geopandas",
@@ -13,7 +14,6 @@ python_package(
         "//packages/linux/dev-libs/python/requests:requests",
         "//packages/linux/dev-libs/python/shapely:shapely",
     ],
-    iuse = ["visualization", "entropy", "neighbors", "raster"],
     use_extras = {
         "visualization": "visualization",
         "entropy": "entropy",

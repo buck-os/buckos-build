@@ -1,15 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "redfish-schema-src",
-    src_uri = "https://github.com/DMTF/Redfish-Publications/archive/refs/tags/2025.1.tar.gz",
-    sha256 = "e98ab25de27356022733cf7f51c8455888ea332fb172f1356efe3ae11894b47c",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "redfish-schema",
-    srcs = [":redfish-schema-src"],
     version = "2025.1",
     description = "DMTF Redfish JSON Schema files",
     homepage = "https://www.dmtf.org/standards/redfish",

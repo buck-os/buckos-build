@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "pycochleagram",
     version = "0.1",
-    src_uri = "https://github.com/mcdermottlab/pycochleagram/archive/refs/heads/master.tar.gz",
+    url = "https://github.com/mcdermottlab/pycochleagram/archive/refs/heads/master.tar.gz",
     sha256 = "e2cb373fecddf3b3f937af9fdfeab31577da0bbb650e08c0b273dab39979564e",
     deps = [
         "//packages/linux/dev-libs/python/scipy:scipy",

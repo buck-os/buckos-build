@@ -1,15 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "nvtx",
     version = "3.3.0",
-    src_uri = "https://github.com/NVIDIA/NVTX/archive/refs/tags/v3.3.0.tar.gz",
+    url = "https://github.com/NVIDIA/NVTX/archive/refs/tags/v3.3.0.tar.gz",
     sha256 = "67d0cda2f9d19a89684592dab40c0bf2c2b13d5d588e51392076c0890a64b6c0",
     description = "NVIDIA Tools Extension Library - header-only profiling API",
     homepage = "https://github.com/NVIDIA/NVTX",
     license = "Apache-2.0-with-LLVM-Exceptions",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DNVTX3_INSTALL=ON",
     ],

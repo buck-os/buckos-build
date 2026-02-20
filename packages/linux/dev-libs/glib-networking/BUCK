@@ -1,24 +1,21 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "glib-networking",
     version = "2.72.2",
-    iuse = ["gnome", "libproxy", "ssl"],
     use_configure = {
-        "-gnome": "--disable-gnome",
-        "-libproxy": "--disable-libproxy",
-        "-ssl": "--disable-ssl",
-        "gnome": "--enable-gnome",
-        "libproxy": "--enable-libproxy",
-        "ssl": "--enable-ssl",
+        "gnome": ("--enable-gnome", "--disable-gnome"),
+        "libproxy": ("--enable-libproxy", "--disable-libproxy"),
+        "ssl": ("--enable-ssl", "--disable-ssl"),
     },
-    src_uri = "https://download.gnome.org/sources/glib-networking/2.72/glib-networking-{version}.tar.xz",
+    url = "https://download.gnome.org/sources/glib-networking/2.72/glib-networking-{version}.tar.xz",
     sha256 = "cd2a084c7bb91d78e849fb55d40e472f6d8f6862cddc9f12c39149359ba18268",
     deps = [
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/system/libs/crypto/gnutls:gnutls",
     ],
-    meson_args = [
+    configure_args = [
         "-Dgnutls=enabled",
         "-Dopenssl=disabled",
         "-Dlibproxy=disabled",

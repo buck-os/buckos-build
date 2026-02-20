@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "iverilog",
     version = "12.0",
-    src_uri = "https://github.com/steveicarus/iverilog/archive/refs/tags/v12_0.tar.gz",
+    url = "https://github.com/steveicarus/iverilog/archive/refs/tags/v12_0.tar.gz",
     sha256 = "a68cb1ef7c017ef090ebedb2bc3e39ef90ecc70a3400afb4aa94303bc3beaa7d",
     configure_args = [
         "--prefix=/usr",

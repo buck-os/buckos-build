@@ -1,14 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "eigen-9a862140",
     version = "3.4.90",
-    src_uri = "https://gitlab.com/libeigen/eigen/-/archive/9a86214039dd4c477c6308e734843c01b8c87e3c/eigen-9a86214039dd4c477c6308e734843c01b8c87e3c.tar.gz",
+    url = "https://gitlab.com/libeigen/eigen/-/archive/9a86214039dd4c477c6308e734843c01b8c87e3c/eigen-9a86214039dd4c477c6308e734843c01b8c87e3c.tar.gz",
     sha256 = "b950de5194db0625c04339d55c80d4e4d254fc3ed6bdc880285a5cb8b19ed1a1",
     description = "C++ template library for linear algebra (git rev 9a862140)",
     homepage = "https://eigen.tuxfamily.org/",
     license = "MPL-2.0",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTING=OFF",
         "-DEIGEN_BUILD_DOC=OFF",
         "-DEIGEN_BUILD_BLAS=OFF",

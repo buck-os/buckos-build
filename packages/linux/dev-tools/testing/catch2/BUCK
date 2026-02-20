@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # Catch2 - Modern C++ test framework
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "catch2",
     version = "3.5.2",
-    src_uri = "https://github.com/catchorg/Catch2/archive/refs/tags/v3.5.2.tar.gz",
+    url = "https://github.com/catchorg/Catch2/archive/refs/tags/v3.5.2.tar.gz",
     sha256 = "269543a49eb76f40b3f93ff231d4c24c27a7e16c90e47d2e45bcc564de470c6e",
     description = "Modern, C++-native, test framework for unit tests, TDD and BDD",
     homepage = "https://github.com/catchorg/Catch2",
     license = "BSL-1.0",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DCATCH_BUILD_TESTING=OFF",

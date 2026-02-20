@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "suit-generator",
     version = "3.0.0",
-    src_uri = "https://github.com/nrfconnect/suit-generator/archive/refs/tags/v3.0.0.tar.gz",
+    url = "https://github.com/nrfconnect/suit-generator/archive/refs/tags/v3.0.0.tar.gz",
     sha256 = "8cd78869950b69ff6dc7b127ac436fa96c7fbc23d4565a64c3a2b037f67e6156",
     deps = [
         "//packages/linux/dev-libs/python/cbor2:cbor2",

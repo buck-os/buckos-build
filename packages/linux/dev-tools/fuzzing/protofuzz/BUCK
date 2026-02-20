@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "protofuzz",
     version = "0.2",
-    src_uri = "https://github.com/trailofbits/protofuzz/archive/refs/tags/v0.2.tar.gz",
+    url = "https://github.com/trailofbits/protofuzz/archive/refs/tags/v0.2.tar.gz",
     sha256 = "6eb9d88fe13e50b7d386d199b7b116bb5d62a96af2797f57bbd48d71af4f6925",
     deps = [
         "//packages/linux/dev-libs/serialization/protobuf:protobuf",

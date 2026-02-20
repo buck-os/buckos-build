@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # function2 - Improved and configurable drop-in replacement to std::function
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "function2",
     version = "4.2.4",
-    src_uri = "https://github.com/Naios/function2/archive/refs/tags/4.2.4.tar.gz",
+    url = "https://github.com/Naios/function2/archive/refs/tags/4.2.4.tar.gz",
     sha256 = "6081d0f7011ddb8555bd846caf1245d4bce62d83fee1403b9d247b66ed617a67",
     description = "Improved and configurable drop-in replacement to std::function",
     homepage = "https://github.com/Naios/function2",
     license = "BSL-1.0",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
     ],

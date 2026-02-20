@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "srcml",
     version = "1.0.0",
-    src_uri = "https://github.com/srcML/srcML/archive/refs/tags/v1.0.0.tar.gz",
+    url = "https://github.com/srcML/srcML/archive/refs/tags/v1.0.0.tar.gz",
     sha256 = "3ddf33271c3b3953d5e3ecbb14c4f925fc0e609a81250d921d3516537dcffae2",
     description = "Toolkit for source code to srcML (XML) and back",
     homepage = "https://www.srcml.org",
@@ -15,7 +16,7 @@ cmake_package(
         "//packages/linux/dev-libs/boost:boost",
         "//packages/linux/system/libs/data/libxslt:libxslt",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_CLIENT_TESTS=OFF",
         "-DBUILD_LIBSRCML_TESTS=OFF",

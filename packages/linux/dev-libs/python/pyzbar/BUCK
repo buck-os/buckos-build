@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "pyzbar",
     version = "0.1.9",
-    src_uri = "https://github.com/NaturalHistoryMuseum/pyzbar/archive/refs/tags/v0.1.9.tar.gz",
+    url = "https://github.com/NaturalHistoryMuseum/pyzbar/archive/refs/tags/v0.1.9.tar.gz",
     sha256 = "6b84ec4c1f36df590c65b610a7757ef8829f202a7df210d2891e6592a8bee8bb",
     deps = [
         "//packages/linux/media/libs/zbar:zbar",

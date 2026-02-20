@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "cover_vqa",
     version = "0.1",
-    src_uri = "https://github.com/taco-group/cover/archive/3ca4df590060a5ed89ccfbe6353202afa40a7a6e.tar.gz",
+    url = "https://github.com/taco-group/cover/archive/3ca4df590060a5ed89ccfbe6353202afa40a7a6e.tar.gz",
     sha256 = "83562cfd059a9a727c773ca6a99342892559158bf48f3aec40965ea11ff97789",
     deps = [
         "//packages/linux/dev-libs/python/torch:torch",

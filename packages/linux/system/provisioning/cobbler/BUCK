@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "cobbler",
     version = "3.3.3",
-    src_uri = "https://github.com/cobbler/cobbler/archive/refs/tags/v3.3.3.tar.gz",
+    url = "https://github.com/cobbler/cobbler/archive/refs/tags/v3.3.3.tar.gz",
     sha256 = "040e92dc78ebb35ab85c282b68aea92fbd80aa20a9dda2a6684c9388fcc7ddaf",
     deps = [
         "//packages/linux/dev-libs/python/requests:requests",

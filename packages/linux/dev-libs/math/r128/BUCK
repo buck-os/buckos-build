@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "r128",
     version = "1.0",
-    src_uri = "https://github.com/fahickman/r128/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/fahickman/r128/archive/refs/heads/main.tar.gz",
     sha256 = "2986f776ed5006aea941a28354de0957424758fa47c5e502615b85597f5fc2db",
     description = "128-bit signed integer library for C",
     homepage = "https://github.com/fahickman/r128",
@@ -23,7 +24,7 @@ install(TARGETS r128 ARCHIVE DESTINATION lib)
 install(FILES r128.h DESTINATION include)
 EOF
 """,
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
     ],
     visibility = ["PUBLIC"],

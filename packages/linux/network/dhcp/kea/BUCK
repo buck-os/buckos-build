@@ -1,43 +1,26 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "kea",
     version = "2.6.1",
-    src_uri = "https://ftp.isc.org/isc/kea/2.6.1/kea-2.6.1.tar.gz",
+    url = "https://ftp.isc.org/isc/kea/2.6.1/kea-2.6.1.tar.gz",
     sha256 = "d2ce14a91c2e248ad2876e29152d647bcc5e433bc68dafad0ee96ec166fcfad1",
 
-    iuse = [
-        "debug",
-        "kerberos",
-        "mysql",
-        "openssl",
-        "postgres",
-        "postgresql",
-        "shell",
-    ],
-    use_defaults = ["openssl"],
-
     use_deps = {
-        "openssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "mysql": ["//packages/linux/databases/mysql:mysql"],
-        "postgresql": ["//packages/linux/databases/postgresql:postgresql"],
+        "openssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "mysql": "//packages/linux/databases/mysql:mysql",
+        "postgresql": "//packages/linux/databases/postgresql:postgresql",
     },
 
     use_configure = {
-        "-debug": "--disable-debug",
-        "-kerberos": "--disable-kerberos",
-        "-mysql": "--without-mysql",
-        "-openssl": "--without-openssl",
-        "-postgres": "--disable-postgres",
-        "-postgresql": "--without-pgsql",
-        "-shell": "--disable-shell",
-        "debug": "--enable-debug",
-        "kerberos": "--enable-kerberos",
-        "mysql": "--with-mysql",
-        "openssl": "--with-openssl",
-        "postgres": "--enable-postgres",
-        "postgresql": "--with-pgsql",
-        "shell": "--enable-shell",
+        "debug": ("--enable-debug", "--disable-debug"),
+        "kerberos": ("--enable-kerberos", "--disable-kerberos"),
+        "mysql": ("--with-mysql", "--without-mysql"),
+        "openssl": ("--with-openssl", "--without-openssl"),
+        "postgres": ("--enable-postgres", "--disable-postgres"),
+        "postgresql": ("--with-pgsql", "--without-pgsql"),
+        "shell": ("--enable-shell", "--disable-shell"),
     },
 
     configure_args = [

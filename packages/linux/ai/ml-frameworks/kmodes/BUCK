@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "kmodes",
     version = "0.12.2",
-    src_uri = "https://github.com/nicodv/kmodes/archive/refs/tags/0.12.2.tar.gz",
+    url = "https://github.com/nicodv/kmodes/archive/refs/tags/0.12.2.tar.gz",
     sha256 = "50505bd66671523b4736470afbc9f84d6fbb1c2c7acbc56547e7183fa2d86a3b",
     description = "Python implementations of the k-modes and k-prototypes clustering algorithms for clustering categorical data",
     homepage = "https://github.com/nicodv/kmodes",

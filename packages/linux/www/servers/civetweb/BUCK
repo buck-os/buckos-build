@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # CivetWeb - Embedded C/C++ web server
 #
@@ -12,45 +12,31 @@ load("//defs:package_defs.bzl", "cmake_package")
 #   websocket - Enable WebSocket support
 #   ipv6      - Enable IPv6 support
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "civetweb",
     version = "1.15",
-    src_uri = "https://github.com/civetweb/civetweb/archive/refs/tags/v1.15.tar.gz",
+    url = "https://github.com/civetweb/civetweb/archive/refs/tags/v1.15.tar.gz",
     sha256 = "90a533422944ab327a4fbb9969f0845d0dba05354f9cacce3a5005fa59f593b9",
     description = "Embedded C/C++ web server with optional CGI, SSL and Lua support",
     homepage = "https://github.com/civetweb/civetweb",
     license = "MIT",
-    iuse = [
-        "cgi",
-        "cxx",
-        "ipv6",
-        "server",
-        "ssl",
-        "websocket",
-    ],
-    use_defaults = ["ssl", "websocket", "ipv6"],
     deps = [],
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
     },
-    cmake_args = [
+    configure_args = [
         "-DBUILD_SHARED_LIBS=ON",
         "-DCIVETWEB_ENABLE_SERVER_EXECUTABLE=ON",
         "-DCIVETWEB_BUILD_TESTING=OFF",
     ],
-    use_cmake = {
-        "-cgi": "-DCIVETWEB_ENABLE_CGI=OFF",
-        "-cxx": "-DENABLE_CXX=OFF",
-        "-ipv6": "-DCIVETWEB_ENABLE_IPV6=OFF",
-        "-server": "-DENABLE_SERVER=OFF",
-        "-ssl": "-DCIVETWEB_ENABLE_SSL=OFF",
-        "-websocket": "-DCIVETWEB_ENABLE_WEBSOCKETS=OFF",
-        "cgi": "-DCIVETWEB_ENABLE_CGI=ON",
-        "cxx": "-DENABLE_CXX=ON",
-        "ipv6": "-DCIVETWEB_ENABLE_IPV6=ON",
-        "server": "-DENABLE_SERVER=ON",
-        "ssl": "-DCIVETWEB_ENABLE_SSL=ON",
-        "websocket": "-DCIVETWEB_ENABLE_WEBSOCKETS=ON",
+    use_configure = {
+        "cgi": ("-DCIVETWEB_ENABLE_CGI=ON", "-DCIVETWEB_ENABLE_CGI=OFF"),
+        "cxx": ("-DENABLE_CXX=ON", "-DENABLE_CXX=OFF"),
+        "ipv6": ("-DCIVETWEB_ENABLE_IPV6=ON", "-DCIVETWEB_ENABLE_IPV6=OFF"),
+        "server": ("-DENABLE_SERVER=ON", "-DENABLE_SERVER=OFF"),
+        "ssl": ("-DCIVETWEB_ENABLE_SSL=ON", "-DCIVETWEB_ENABLE_SSL=OFF"),
+        "websocket": ("-DCIVETWEB_ENABLE_WEBSOCKETS=ON", "-DCIVETWEB_ENABLE_WEBSOCKETS=OFF"),
     },
     visibility = ["PUBLIC"],
 )

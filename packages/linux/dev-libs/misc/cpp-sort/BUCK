@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # cpp-sort - Sorting algorithms & related tools for C++14
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "cpp-sort",
     version = "1.15.0",
-    src_uri = "https://github.com/Morwenn/cpp-sort/archive/refs/tags/1.15.0.tar.gz",
+    url = "https://github.com/Morwenn/cpp-sort/archive/refs/tags/1.15.0.tar.gz",
     sha256 = "886e813a4b87c6361e9b50c0a66c73b3b812f0ce0b7039ff3991eddce77e0dc7",
     description = "Sorting algorithms & related tools for C++14",
     homepage = "https://github.com/Morwenn/cpp-sort",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCPPSORT_BUILD_TESTING=OFF",
         "-DCPPSORT_BUILD_EXAMPLES=OFF",

@@ -1,21 +1,19 @@
+load("//defs:package.bzl", "package")
+
 # TLP - Linux Advanced Power Management
 # Optimizes battery life on laptops
 
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-
 # USE flags: See use_flags.bzl for available flags
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "tlp",
-    src_uri = "https://github.com/linrunner/TLP/archive/refs/tags/1.6.1.tar.gz",
+    url = "https://github.com/linrunner/TLP/archive/refs/tags/1.6.1.tar.gz",
 
     sha256 = "f7d013691a92ffcf42ef1648565dbc24a33202046d3c8138dad1963a3169a0f5",
-    iuse = ["ppd", "rdw"],
     use_configure = {
-        "-ppd": "--disable-ppd",
-        "-rdw": "--disable-rdw",
-        "ppd": "--enable-ppd",
-        "rdw": "--enable-rdw",
+        "ppd": ("--enable-ppd", "--disable-ppd"),
+        "rdw": ("--enable-rdw", "--disable-rdw"),
     },
     version = "1.6.1",
     description = "Linux Advanced Power Management - optimize laptop battery life",

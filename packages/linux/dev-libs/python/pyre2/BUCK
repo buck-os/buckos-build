@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "pyre2",
     version = "0.3.6",
-    src_uri = "https://github.com/andreasvc/pyre2/archive/refs/tags/v0.3.6.tar.gz",
+    url = "https://github.com/andreasvc/pyre2/archive/refs/tags/v0.3.6.tar.gz",
     sha256 = "6a0a2c70b1ce98d870ce9423368cc83bbacc8a41f6e066296e197a26a842ede7",
     deps = [
         "//packages/linux/dev-libs/text/re2:re2",

@@ -1,14 +1,15 @@
-load("//defs:package_defs.bzl", "cargo_package")
+load("//defs:package.bzl", "package")
 
 # DISABLED: Missing Cargo.lock file and has git dependencies
 # This package requires network access during build to fetch git dependencies.
 # Error: failed to load lockfile for /path/to/source
 #        Detected git dependencies, cargo fetch failed (network isolated)
 # TODO: Either vendor all dependencies including git repos, or provide Cargo.lock
-# cargo_package(
+# package(
+#     build_rule = "cargo",
 #     name = "ar5iv",
 #     version = "0.2.3",
-#     src_uri = "https://github.com/dginev/ar5iv/archive/refs/tags/0.2.3.tar.gz",
+#     url = "https://github.com/dginev/ar5iv/archive/refs/tags/0.2.3.tar.gz",
 #     sha256 = "64926edad8bbb86cfe6bf5a304309686573e3032eb2f581c0df032fbcbb48016",
 #     bins = [
 #         "ar5iv",

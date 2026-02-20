@@ -1,41 +1,22 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # HandBrake - Open-source video transcoder
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "handbrake",
-    src_uri = "https://github.com/HandBrake/HandBrake/releases/download/1.8.0/HandBrake-1.8.0-source.tar.bz2",
+    url = "https://github.com/HandBrake/HandBrake/releases/download/1.8.0/HandBrake-1.8.0-source.tar.bz2",
 
     sha256 = "8b1df7d6aa7aa3c2e12978f3473e301c4b60b4fedc749b75aa6f310b80310cef",
-
-    signature_sha256 = "56cb8ee4892d4c3dbcc00a28802f0134cc65d052da791e46a3459bcd6bffa09b",
-    iuse = [
-        "amf",
-        "fdk",
-        "gui",
-        "libdovi",
-        "numa",
-        "nvenc",
-        "qsv",
-        "x265",
-    ],
     use_configure = {
-        "-amf": "--disable-amf",
-        "-fdk": "--disable-fdk",
-        "-gui": "--disable-gui",
-        "-libdovi": "--disable-libdovi",
-        "-numa": "--disable-numa",
-        "-nvenc": "--disable-nvenc",
-        "-qsv": "--disable-qsv",
-        "-x265": "--disable-x265",
-        "amf": "--enable-amf",
-        "fdk": "--enable-fdk",
-        "gui": "--enable-gui",
-        "libdovi": "--enable-libdovi",
-        "numa": "--enable-numa",
-        "nvenc": "--enable-nvenc",
-        "qsv": "--enable-qsv",
-        "x265": "--enable-x265",
+        "amf": ("--enable-amf", "--disable-amf"),
+        "fdk": ("--enable-fdk", "--disable-fdk"),
+        "gui": ("--enable-gui", "--disable-gui"),
+        "libdovi": ("--enable-libdovi", "--disable-libdovi"),
+        "numa": ("--enable-numa", "--disable-numa"),
+        "nvenc": ("--enable-nvenc", "--disable-nvenc"),
+        "qsv": ("--enable-qsv", "--disable-qsv"),
+        "x265": ("--enable-x265", "--disable-x265"),
     },
     version = "1.8.0",
     description = "Open-source video transcoder",

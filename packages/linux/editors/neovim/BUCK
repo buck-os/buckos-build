@@ -1,5 +1,4 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # neovim - Vim-based text editor (cmake build)
 # USE flags: lua, jemalloc, lto
@@ -8,21 +7,19 @@ load("//defs:use_flags.bzl", "use_dep")
 # Note: Neovim requires additional build dependencies (cmake, gettext, unzip)
 # and runtime dependencies (libuv, msgpack, tree-sitter, etc.)
 # This is a basic configuration that may need adjustment for your environment
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "neovim",
     version = "0.10.2",
-    iuse = ["nvimpager"],
-    use_cmake = {
-        "-nvimpager": "-DENABLE_NVIMPAGER=OFF",
-        "nvimpager": "-DENABLE_NVIMPAGER=ON",
+    use_configure = {
+        "nvimpager": ("-DENABLE_NVIMPAGER=ON", "-DENABLE_NVIMPAGER=OFF"),
     },
-    src_uri = "https://github.com/neovim/neovim/archive/v0.10.2.tar.gz",
+    url = "https://github.com/neovim/neovim/archive/v0.10.2.tar.gz",
     sha256 = "546cb2da9fffbb7e913261344bbf4cf1622721f6c5a67aa77609e976e78b8e89",
-    signature_required = False,
     description = "Hyperextensible Vim-based text editor",
     homepage = "https://neovim.io/",
     license = "Apache-2.0",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DENABLE_JEMALLOC=OFF",

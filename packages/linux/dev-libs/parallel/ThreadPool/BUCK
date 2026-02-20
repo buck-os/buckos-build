@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "ThreadPool",
     version = "1.0.0",
-    src_uri = "https://github.com/progschj/ThreadPool/archive/9a42ec1329f259a5f4881a291db1dcb8f2ad9040.tar.gz",
+    url = "https://github.com/progschj/ThreadPool/archive/9a42ec1329f259a5f4881a291db1dcb8f2ad9040.tar.gz",
     sha256 = "954e0ecdac1aa0da1e0fa78577ff0d352e53094df43762fbc1884f76a7e1dcd2",
     description = "A simple C++11 Thread Pool implementation",
     homepage = "https://github.com/progschj/ThreadPool",
@@ -11,7 +12,7 @@ cmake_package(
     maintainers = ["buckos"],
     deps = [],
     patches = ["CMakeLists.txt"],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_INSTALL_LIBDIR=lib64",

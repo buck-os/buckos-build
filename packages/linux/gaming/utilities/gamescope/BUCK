@@ -1,36 +1,23 @@
+load("//defs:package.bzl", "package")
+
 # Gamescope - SteamOS session compositing window manager
 # Micro-compositor for running games with improved display features
 
-load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
-
 # USE flags: See use_flags.bzl for available flags
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "gamescope",
-    src_uri = "https://github.com/ValveSoftware/gamescope/archive/refs/tags/3.14.24.tar.gz",
+    url = "https://github.com/ValveSoftware/gamescope/archive/refs/tags/3.14.24.tar.gz",
 
     sha256 = "429ef04aab9b3ca5cac76752f59e2219d8326010c0cd9533ad580f65f5bfd3a3",
-    iuse = [
-        "avif",
-        "libei",
-        "pipewire",
-        "sdl",
-        "systemd",
-        "wsi-layer",
-    ],
     use_configure = {
-        "-avif": "--disable-avif",
-        "-libei": "--disable-libei",
-        "-pipewire": "--disable-pipewire",
-        "-sdl": "--disable-sdl",
-        "-systemd": "--disable-systemd",
-        "-wsi-layer": "--disable-wsi-layer",
-        "avif": "--enable-avif",
-        "libei": "--enable-libei",
-        "pipewire": "--enable-pipewire",
-        "sdl": "--enable-sdl",
-        "systemd": "--enable-systemd",
-        "wsi-layer": "--enable-wsi-layer",
+        "avif": ("--enable-avif", "--disable-avif"),
+        "libei": ("--enable-libei", "--disable-libei"),
+        "pipewire": ("--enable-pipewire", "--disable-pipewire"),
+        "sdl": ("--enable-sdl", "--disable-sdl"),
+        "systemd": ("--enable-systemd", "--disable-systemd"),
+        "wsi-layer": ("--enable-wsi-layer", "--disable-wsi-layer"),
     },
     version = "3.14.24",
     description = "SteamOS session compositing window manager",

@@ -1,17 +1,15 @@
+load("//defs:package.bzl", "package")
+
 # dmidecode - DMI Table Decoder
 # Reports BIOS and system information from SMBIOS/DMI tables
 
-load("//defs:package_defs.bzl", "download_source", "make_package")
-
 make_package(
     name = "dmidecode",
-    src_uri = "https://github.com/mirror/dmidecode/archive/refs/tags/dmidecode-3-5.tar.gz",
+    url = "https://github.com/mirror/dmidecode/archive/refs/tags/dmidecode-3-5.tar.gz",
 
     sha256 = "5eb2cdca9b6b40b412b66231ac91ffa32baf2e3b27058c8cb2fd53d60844d04e",
-    iuse = ["selinux"],
     use_configure = {
-        "-selinux": "--disable-selinux",
-        "selinux": "--enable-selinux",
+        "selinux": ("--enable-selinux", "--disable-selinux"),
     },
     version = "3.5",
     description = "DMI/SMBIOS table decoder for BIOS and system information",

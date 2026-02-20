@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "python-trollius",
     version = "2.2",
-    src_uri = "https://github.com/haypo/trollius/archive/trollius-2.2.tar.gz",
+    url = "https://github.com/haypo/trollius/archive/trollius-2.2.tar.gz",
     sha256 = "51606712247fb10e5f2bc9a750c7b72a2fce1300d518b08e26fe1262d0e2d26f",
     deps = [
         "//packages/linux/dev-libs/python/six:six",

@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "sie-nmsg",
     version = "1.2.0",
-    src_uri = "https://mirror.buckos.org/s/sie-nmsg-main.tar.gz",
+    url = "https://mirror.buckos.org/s/sie-nmsg-main.tar.gz",
     sha256 = "724dd4e64d4f88de88a95c42343248e53a93401bf274c67580a30842f7fe1fba",
     configure_args = [],
     deps = [

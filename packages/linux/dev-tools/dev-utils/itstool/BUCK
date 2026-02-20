@@ -1,10 +1,10 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # itstool - ITS-based XML translation tool
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "itstool",
-    src_uri = "https://files.itstool.org/itstool/itstool-2.0.7.tar.bz2",
+    url = "https://files.itstool.org/itstool/itstool-2.0.7.tar.bz2",
 
     sha256 = "6b9a7cd29a12bb95598f5750e8763cee78836a1a207f85b74d8b3275b27e87ca",
     version = "2.0.7",

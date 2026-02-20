@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cargo_package")
+load("//defs:package.bzl", "package")
 
-cargo_package(
+package(
+    build_rule = "cargo",
     name = "codex",
     version = "0.0.0-6eeaf46",
-    src_uri = "https://github.com/openai/codex/archive/6eeaf46ac136f6ea0352641a5daea5006195e09f.tar.gz",
+    url = "https://github.com/openai/codex/archive/6eeaf46ac136f6ea0352641a5daea5006195e09f.tar.gz",
     sha256 = "89f014a97c46106aee35402a37aa9eb34fd0388e4ed9aea9ee0b2eb2f59a6d6d",
     description = "Coding agent CLI from OpenAI that runs locally",
     homepage = "https://github.com/openai/codex",

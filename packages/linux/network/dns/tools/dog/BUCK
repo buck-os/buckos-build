@@ -1,16 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "dog-src",
-    src_uri = "https://github.com/ogham/dog/releases/download/v0.1.0/dog-v0.1.0-x86_64-unknown-linux-gnu.zip",
-    sha256 = "6093525fccf5de5b7ed66f920c9b6d2d16221adde8a44589dc3e4c47245039a0",
-    signature_required = False,
-    strip_components = 0,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "dog",
-    srcs = [":dog-src"],
     version = "0.1.0",
     description = "Command-line DNS client written in Rust",
     homepage = "https://dns.lookup.dog/",

@@ -1,27 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "openjpeg",
     version = "2.5.2",
-    src_uri = "https://github.com/uclouvain/openjpeg/archive/refs/tags/v2.5.2.tar.gz",
+    url = "https://github.com/uclouvain/openjpeg/archive/refs/tags/v2.5.2.tar.gz",
     sha256 = "90e3896fed910c376aaf79cdd98bdfdaf98c6472efd8e1debf0a854938cbda6a",
-    signature_required = False,
     description = "JPEG 2000 codec library",
     homepage = "https://www.openjpeg.org/",
     license = "BSD-2-Clause",
 
     # USE flags this package supports
-    iuse = [
-        "static-libs",  # Build static libraries
-        "png",          # PNG support for conversions
-        "tiff",         # TIFF support for conversions
-        "lcms2",        # Color management support
-        "doc",          # Build documentation
-        "test",         # Build test suite
-    ],
 
     # Default USE flags
-    use_defaults = ["png", "tiff"],
 
     # USE flag -> CMake option mapping (function adds -D and =ON/OFF automatically)
     use_options = {
@@ -34,12 +25,12 @@ cmake_package(
     },
 
     use_deps = {
-        "png": ["//packages/linux/system/libs/image/libpng:libpng"],
-        "tiff": ["//packages/linux/system/libs/image/libtiff:libtiff"],
-        "lcms2": ["//packages/linux/system/libs/color/lcms2:lcms2"],
+        "png": "//packages/linux/system/libs/image/libpng:libpng",
+        "tiff": "//packages/linux/system/libs/image/libtiff:libtiff",
+        "lcms2": "//packages/linux/system/libs/color/lcms2:lcms2",
     },
 
-    cmake_args = [
+    configure_args = [
         "-DBUILD_SHARED_LIBS=ON",
     ],
 

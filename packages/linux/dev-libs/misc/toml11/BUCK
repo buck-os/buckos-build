@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # toml11 - TOML for Modern C++
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "toml11",
     version = "3.8.1",
-    src_uri = "https://github.com/ToruNiina/toml11/archive/refs/tags/v3.8.1.tar.gz",
+    url = "https://github.com/ToruNiina/toml11/archive/refs/tags/v3.8.1.tar.gz",
     sha256 = "6a3d20080ecca5ea42102c078d3415bef80920f6c4ea2258e87572876af77849",
     description = "TOML for Modern C++",
     homepage = "https://github.com/ToruNiina/toml11",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-Dtoml11_BUILD_TEST=OFF",
     ],

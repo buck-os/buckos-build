@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package", "binary_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # netcat (OpenBSD variant) - TCP/UDP networking utility
@@ -8,7 +8,8 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package", "binary_
 # The original OpenBSD src archive is too large (~2GB) for practical use.
 # TODO: Consider using ncat from nmap or netcat-openbsd package from Alpine
 
-binary_package(
+package(
+    build_rule = "binary",
     name = "netcat",
     srcs = [],
     version = "placeholder",

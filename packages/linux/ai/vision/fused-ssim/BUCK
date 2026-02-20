@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
 # Fused SSIM - CUDA-accelerated Structural Similarity Index
 #
@@ -6,10 +6,11 @@ load("//defs:package_defs.bzl", "python_package")
 # It provides a fast, fused implementation of SSIM for GPU-accelerated
 # image quality assessment, commonly used in 3D Gaussian Splatting.
 
-python_package(
+package(
+    build_rule = "python",
     name = "fused-ssim",
     version = "0.0.1",
-    src_uri = "https://github.com/rahul-goel/fused-ssim/archive/d99e3d27513fa3563d98f74fcd40fd429e9e9b0e.tar.gz",
+    url = "https://github.com/rahul-goel/fused-ssim/archive/d99e3d27513fa3563d98f74fcd40fd429e9e9b0e.tar.gz",
     sha256 = "ca4c9acde1abb8d27138a78d0512bb8e33773afadf2b3c3b3f5f044bd5ffc1a6",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

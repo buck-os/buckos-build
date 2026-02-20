@@ -1,15 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "netbench-src",
-    src_uri = "https://github.com/dylanza/netbench/archive/refs/heads/main.tar.gz",
-    sha256 = "206e8381b65692fb2d64a532e11da05051342d00c0547f15f96cd0886b57c96c",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "netbench",
-    srcs = [":netbench-src"],
     version = "main",
     description = "Network benchmark tool with io_uring support",
     homepage = "https://github.com/dylanza/netbench",

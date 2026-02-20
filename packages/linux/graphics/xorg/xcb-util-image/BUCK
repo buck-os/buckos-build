@@ -1,10 +1,11 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # xcb-util-image - XCB image convenience library
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "xcb-util-image",
     version = "0.4.1",
-    src_uri = "https://xcb.freedesktop.org/dist/xcb-util-image-0.4.1.tar.xz",
+    url = "https://xcb.freedesktop.org/dist/xcb-util-image-0.4.1.tar.xz",
     sha256 = "ccad8ee5dadb1271fd4727ad14d9bd77a64e505608766c4e98267d9aede40d3d",
     description = "XCB image convenience library",
     homepage = "https://xcb.freedesktop.org/",

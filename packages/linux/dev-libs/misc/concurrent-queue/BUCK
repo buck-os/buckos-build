@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # concurrent-queue - Thread-safe queue for C++
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "concurrent-queue",
     version = "main",
-    src_uri = "https://github.com/davidstone/concurrent-queue/archive/bc638312d01655e9a1659078f8df8ad4d1c72f48.tar.gz",
+    url = "https://github.com/davidstone/concurrent-queue/archive/bc638312d01655e9a1659078f8df8ad4d1c72f48.tar.gz",
     sha256 = "0dcbf8faa92e6a8cbddd4b3a58e8e32c24e48b927323ab69158d13bb348b0f29",
     description = "A fast multi-producer, multi-consumer lock-based concurrent queue",
     homepage = "https://github.com/davidstone/concurrent-queue",
     license = "BSL-1.0",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
     ],

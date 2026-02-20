@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "jpegli",
     version = "bc19ca2",
-    src_uri = "https://github.com/google/jpegli/archive/bc19ca2393f79bfe0a4a9518f77e4ad33ce1ab7a.tar.gz",
+    url = "https://github.com/google/jpegli/archive/bc19ca2393f79bfe0a4a9518f77e4ad33ce1ab7a.tar.gz",
     sha256 = "56e4ec63dc3a5351117f8508a323ab0a946820d37d3089c7e306ec2b4edac4c8",
     description = "Improved JPEG encoder and decoder, API/ABI compatible with libjpeg62",
     homepage = "https://github.com/google/jpegli",
@@ -13,7 +14,7 @@ cmake_package(
         "//packages/linux/system/libs/image/libjpeg-turbo:libjpeg-turbo",
         "//packages/linux/system/libs/image/libpng:libpng",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DJPEGXL_ENABLE_JPEGLI_LIBJPEG=ON",

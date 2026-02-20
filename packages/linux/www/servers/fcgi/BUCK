@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # FastCGI - Fast Common Gateway Interface library
 #
@@ -7,7 +7,8 @@ load("//defs:package_defs.bzl", "autotools_package")
 #
 # This library provides support for writing FastCGI applications in C/C++.
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "fcgi",
     bdepend = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
@@ -18,12 +19,10 @@ autotools_package(
 autoreconf -fi
 """,
     version = "2.4.2",
-    iuse = ["html"],
     use_configure = {
-        "-html": "--disable-html",
-        "html": "--enable-html",
+        "html": ("--enable-html", "--disable-html"),
     },
-    src_uri = "https://github.com/FastCGI-Archives/fcgi2/archive/refs/tags/2.4.2.tar.gz",
+    url = "https://github.com/FastCGI-Archives/fcgi2/archive/refs/tags/2.4.2.tar.gz",
     sha256 = "1fe83501edfc3a7ec96bb1e69db3fd5ea1730135bd73ab152186fd0b437013bc",
     description = "Fast Common Gateway Interface library",
     homepage = "https://github.com/FastCGI-Archives/fcgi2",

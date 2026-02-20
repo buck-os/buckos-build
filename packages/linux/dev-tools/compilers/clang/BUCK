@@ -1,22 +1,21 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # Clang - C language family frontend for LLVM
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "clang",
     version = "19.1.0",
-    src_uri = "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.0/llvm-project-19.1.0.src.tar.xz",
+    url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.0/llvm-project-19.1.0.src.tar.xz",
     sha256 = "5042522b49945bc560ff9206f25fb87980a9b89b914193ca00d961511ff0673c",
     description = "C language family frontend for LLVM",
     homepage = "https://clang.llvm.org/",
     license = "Apache-2.0",
-    iuse = ["static-analyzer", "tools-extra"],
-    use_defaults = ["static-analyzer", "tools-extra"],
     deps = [
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/libxml2:libxml2",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DLLVM_ENABLE_PROJECTS=clang",
         "-DLLVM_TARGETS_TO_BUILD=X86;AArch64;ARM;WebAssembly",
@@ -26,10 +25,9 @@ cmake_package(
         "-DCLANG_ENABLE_STATIC_ANALYZER=ON",
         "-DBUILD_SHARED_LIBS=ON",
     ],
-    use_cmake = {
+    use_configure = {
+        "static-analyzer": ("-DCLANG_ENABLE_STATIC_ANALYZER=ON", "-DCLANG_ENABLE_STATIC_ANALYZER=OFF"),
         "tools-extra": "-DLLVM_ENABLE_PROJECTS=clang;clang-tools-extra",
-        "static-analyzer": "-DCLANG_ENABLE_STATIC_ANALYZER=ON",
-        "-static-analyzer": "-DCLANG_ENABLE_STATIC_ANALYZER=OFF",
     },
     cmake_source_dir = "llvm",
     visibility = ["PUBLIC"],

@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # Qt6 Transitive Font Dependencies
@@ -29,16 +29,17 @@ MESA_LLVM_DEPS = [
 # =============================================================================
 # Required for kwindowsystem Wayland support
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "plasma-wayland-protocols",
-    src_uri = "https://download.kde.org/stable/plasma-wayland-protocols/plasma-wayland-protocols-1.20.0.tar.xz",
+    url = "https://download.kde.org/stable/plasma-wayland-protocols/plasma-wayland-protocols-1.20.0.tar.xz",
 
     sha256 = "9818bb1462211ce5982e670abf0d964eb11fe1d0c02a1c26084db30695a79d6a",
     version = "1.20.0",
     description = "Plasma Wayland Protocol definitions",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
     ],
@@ -271,16 +272,17 @@ cmake -S "$S" -B "$S/build" \\
     ${CMAKE_EXTRA_ARGS:-}
 """
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kcoreaddons",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kcoreaddons-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kcoreaddons-6.22.0.tar.xz",
 
     sha256 = "843d27cd76ca890c4f352d6f29d2e2b8747883602b63119106b1eb229b95e649",
     version = "6.22.0",
     description = "KDE Core Addons - Utilities and helpers",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -305,16 +307,17 @@ cmake_package(
 )
 
 # KConfig - Configuration system
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kconfig",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kconfig-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kconfig-6.22.0.tar.xz",
 
     sha256 = "bea5cfc35f586f337aa518bae4f445b68977b5e9be785c158af7969bfe345790",
     version = "6.22.0",
     description = "KDE Configuration Framework",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -346,16 +349,17 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
 )
 
 # KI18n - Internationalization
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "ki18n",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/ki18n-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/ki18n-6.22.0.tar.xz",
 
     sha256 = "229a7b22b8c87ced142ca230894f6c25d535a7857314c1d48e180929a5c4a28a",
     version = "6.22.0",
     description = "KDE Internationalization Framework",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -386,16 +390,17 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
 # Additional KF6 libraries required for plasma-desktop
 
 # KArchive - File compression support
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "karchive",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/karchive-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/karchive-6.22.0.tar.xz",
 
     sha256 = "84254bd0a51ff3d5e2fa22bb946309cec508f1fae726a7aea15149260c4db59d",
     version = "6.22.0",
     description = "KDE Archive Framework",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -432,16 +437,17 @@ cmake_package(
 )
 
 # KCodecs - Text encoding
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kcodecs",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kcodecs-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kcodecs-6.22.0.tar.xz",
 
     sha256 = "8c7ab11aa5b6007b3e58e66bcdfdfac2d62d2dede18172f5331ab1f5102d60a3",
     version = "6.22.0",
     description = "KDE Text Encoding Framework",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -471,16 +477,17 @@ cmake_package(
 )
 
 # KGuiAddons - GUI utilities
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kguiaddons",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kguiaddons-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kguiaddons-6.22.0.tar.xz",
 
     sha256 = "b7652bcebebfc8c1fda2893c1aeff4136c586ee77ffc6e589e3634f0e5539eef",
     version = "6.22.0",
     description = "KDE GUI Addons",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -519,16 +526,17 @@ sed -i '/add_subdirectory.*geo-scheme-handler/d' src/CMakeLists.txt || true""",
 )
 
 # KWidgetsAddons - Widget utilities
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kwidgetsaddons",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kwidgetsaddons-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kwidgetsaddons-6.22.0.tar.xz",
 
     sha256 = "e8832ac697054ed3241e8299ba71b8d766579b7e6cb0fd8dd176cad10aec754b",
     version = "6.22.0",
     description = "KDE Widget Addons",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -560,16 +568,17 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
 )
 
 # KDBusAddons - D-Bus utilities
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kdbusaddons",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kdbusaddons-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kdbusaddons-6.22.0.tar.xz",
 
     sha256 = "797f0184cdd197c86c56be2952814d601c2f9ea9ee5e155a50666d649b2830a9",
     version = "6.22.0",
     description = "KDE D-Bus Addons",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -611,16 +620,17 @@ sed -i '/add_subdirectory.*tools/d' src/CMakeLists.txt || true""",
 )
 
 # KItemViews - Item view utilities
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kitemviews",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kitemviews-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kitemviews-6.22.0.tar.xz",
 
     sha256 = "9044204fcdeb60d5a327de18910e2467326f23b4fa837c30855abf358e30efdf",
     version = "6.22.0",
     description = "KDE Item Views Framework",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -651,16 +661,17 @@ cmake_package(
 )
 
 # KItemModels - Item model utilities
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kitemmodels",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kitemmodels-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kitemmodels-6.22.0.tar.xz",
 
     sha256 = "beed81bfe0d42f5f3de2487cb19875dd148547a861601ad56801c258cc68ccd4",
     version = "6.22.0",
     description = "KDE Item Models Framework",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -689,16 +700,17 @@ cmake_package(
 )
 
 # KColorScheme - Color scheme support
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kcolorscheme",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kcolorscheme-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kcolorscheme-6.22.0.tar.xz",
 
     sha256 = "459f6c0c0b72d3a7675b62e6146117357400ecdb4390260df8b4eff859f837da",
     version = "6.22.0",
     description = "KDE Color Scheme Framework",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -734,16 +746,17 @@ cmake_package(
 )
 
 # KConfigWidgets - Configuration widgets
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kconfigwidgets",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kconfigwidgets-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kconfigwidgets-6.22.0.tar.xz",
 
     sha256 = "ccca1496fd41b19343dedd77fa40024c2c2398f6e10c45ddb7e55ffc27c10c10",
     version = "6.22.0",
     description = "KDE Configuration Widgets",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -784,16 +797,17 @@ cmake_package(
 )
 
 # Breeze - KDE visual style (window decorations, cursors, widgets)
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "breeze",
-    src_uri = "https://download.kde.org/stable/plasma/6.2.4/breeze-6.2.4.tar.xz",
+    url = "https://download.kde.org/stable/plasma/6.2.4/breeze-6.2.4.tar.xz",
 
     sha256 = "4d9613896082f336413abb24ef8f8d86513f7e99a4c0bcdf2f45cd7c5bbd7c20",
     version = "6.2.4",
     description = "Breeze visual style for Plasma",
     homepage = "https://kde.org/",
     license = "GPL-2.0+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -844,16 +858,17 @@ cmake_package(
 )
 
 # Breeze Icons - KDE icon theme
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "breeze-icons",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/breeze-icons-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/breeze-icons-6.22.0.tar.xz",
 
     sha256 = "4239c49740b9e67096034224fa63d1a80c7e1b4b53ba5b381b2c2ef5b680930f",
     version = "6.22.0-r1",  # Rebuild with proper version
     description = "Breeze Icon Theme",
     homepage = "https://kde.org/",
     license = "LGPL-3.0+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -904,16 +919,17 @@ ls -la "$DESTDIR/usr/lib64/" | head -10 || true
 )
 
 # KIconThemes - Icon theme support
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kiconthemes",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kiconthemes-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kiconthemes-6.22.0.tar.xz",
 
     sha256 = "814168805171ff7d92dc1735ec6a38af054c7be54f308ba9d94c1a06e80b3cc8",
     version = "6.22.0",
     description = "KDE Icon Themes Framework",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -955,16 +971,17 @@ cmake_package(
 )
 
 # KAuth - Authorization framework
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kauth",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kauth-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kauth-6.22.0.tar.xz",
 
     sha256 = "cf1b28cc01280c86cd6712e8b2fb9656b9b09e50eccca58c5c9ca7f56bb0709f",
     version = "6.22.0",
     description = "KDE Authorization Framework",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -1007,16 +1024,17 @@ sed -i '/add_subdirectory.*examples/d' CMakeLists.txt || true""",
 )
 
 # KCrash - Crash handling
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kcrash",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kcrash-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kcrash-6.22.0.tar.xz",
 
     sha256 = "322d7ca0588c008746e997b398111328767b4bc87318e24a0ededa0c191e700e",
     version = "6.22.0",
     description = "KDE Crash Handler",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -1052,16 +1070,17 @@ cmake_package(
 )
 
 # KWindowSystem - Window system access
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kwindowsystem",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kwindowsystem-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kwindowsystem-6.22.0.tar.xz",
 
     sha256 = "2821da92854e77d4d2accb5b6f26d189a3e62246fc0dcafbd04f1a78090e5195",
     version = "6.22.0",
     description = "KDE Window System Access",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -1143,16 +1162,17 @@ echo "Using native wayland-scanner: $NATIVE_WAYLAND_SCANNER"
 )
 
 # KIdleTime - User idle time detection
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kidletime",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kidletime-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kidletime-6.22.0.tar.xz",
 
     sha256 = "0701ba4c321785ba670f4a9dba54c551ffd476451caba2c77b9f079e8db42a2e",
     version = "6.22.0",
     description = "KDE User Idle Time Detection",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -1226,16 +1246,17 @@ fi
 )
 
 # KNotifications - Desktop notifications
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "knotifications",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/knotifications-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/knotifications-6.22.0.tar.xz",
 
     sha256 = "c49aaef3ccf3dfac73ac07159b3ee0ddbf6e39696e44165d3b0a1ea02a77408c",
     version = "6.22.0",
     description = "KDE Notifications Framework",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -1272,16 +1293,17 @@ cmake_package(
 )
 
 # KCompletion - Text completion
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kcompletion",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kcompletion-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kcompletion-6.22.0.tar.xz",
 
     sha256 = "1bf3244b0ce04da34c0108990ff300e1ade4eb8f03c12709c647a4a8ebe7ff41",
     version = "6.22.0",
     description = "KDE Completion Framework",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -1308,16 +1330,17 @@ cmake_package(
 )
 
 # KJobWidgets - Job progress widgets
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kjobwidgets",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kjobwidgets-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kjobwidgets-6.22.0.tar.xz",
 
     sha256 = "ce864bcdb4dcfd3fcf0afc3e3e2fcb86780c9242252315bc003fb547af7463f0",
     version = "6.22.0",
     description = "KDE Job Widgets",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -1356,16 +1379,17 @@ cmake_package(
 )
 
 # Solid - Hardware integration
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "solid",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/solid-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/solid-6.22.0.tar.xz",
 
     sha256 = "411531542e2abc36a5c446605eaa64c62a00ef7b85148c477ba999b6109b5bf3",
     version = "6.22.0",
     description = "KDE Hardware Integration Framework",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -1400,16 +1424,17 @@ cmake_package(
 )
 
 # KService - Service framework
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kservice",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kservice-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kservice-6.22.0.tar.xz",
 
     sha256 = "3547a6f45c1ab9eefb2a08aac2420f3d0ec4532aba4a0f1dfa5d9d3bf054db8c",
     version = "6.22.0",
     description = "KDE Service Framework",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -1445,16 +1470,17 @@ cmake_package(
 )
 
 # KBookmarks - Bookmarks framework
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kbookmarks",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kbookmarks-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kbookmarks-6.22.0.tar.xz",
 
     sha256 = "a90236ca53de4685af28b6c8643d81b2c0900faf83784bd2da3b52a1fd601a79",
     version = "6.22.0",
     description = "KDE Bookmarks Framework",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -1494,16 +1520,17 @@ cmake_package(
 )
 
 # KIO - I/O Framework (core file access)
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kio",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kio-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kio-6.22.0.tar.xz",
 
     sha256 = "4b03f1a070f78ac2a343f138ac5f8d9bccd1192764aaa45ae49aa7f495992694",
     version = "6.22.0",
     description = "KDE I/O Framework",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -1600,16 +1627,17 @@ cd "$S"
 )
 
 # Sonnet - Spell checking framework
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "sonnet",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/sonnet-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/sonnet-6.22.0.tar.xz",
 
     sha256 = "c8fdc477666e13ee10ffb3fc93831acf030b04a6b672172a2766bf9e81fe80d8",
     version = "6.22.0",
     description = "KDE Spell Checking Framework",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -1656,16 +1684,17 @@ touch src/core/trigrams.qrc || true
 )
 
 # KTextWidgets - Text widget framework
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "ktextwidgets",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/ktextwidgets-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/ktextwidgets-6.22.0.tar.xz",
 
     sha256 = "e961094bc4ad4e51e88b7feac2e914b3813ee4171db940a517fb66917def5cf4",
     version = "6.22.0",
     description = "KDE Text Widget Framework",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -1705,16 +1734,17 @@ cmake_package(
 )
 
 # KXmlGui - XML GUI framework
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kxmlgui",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kxmlgui-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kxmlgui-6.22.0.tar.xz",
 
     sha256 = "063511b8a2c498cdd03a18366ec9182f3f121a4d93668888c9aa2bed49973ac3",
     version = "6.22.0",
     description = "KDE XML GUI Framework",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -1761,16 +1791,17 @@ cmake_package(
 )
 
 # KPty - Pseudo-terminal handling
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kpty",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kpty-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kpty-6.22.0.tar.xz",
 
     sha256 = "e974ae36e609d1fb485782139f8c6aa260fcee8f651da3dd0d175dad1c0b9663",
     version = "6.22.0",
     description = "KDE Pseudo-terminal Library",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -1804,16 +1835,17 @@ cmake_package(
 )
 
 # KParts - Document component framework
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kparts",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kparts-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kparts-6.22.0.tar.xz",
 
     sha256 = "e302ee44891e98fda74872cf3acdde44eb56a625da76339b58f2f5518726230f",
     version = "6.22.0",
     description = "KDE Parts Framework",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -1880,16 +1912,17 @@ cmake_package(
 )
 
 # Syntax Highlighting - Syntax highlighting engine
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "syntax-highlighting",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/syntax-highlighting-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/syntax-highlighting-6.22.0.tar.xz",
 
     sha256 = "50b73ea99413dd988fa34fd169129bcdbfe1dc3b43c48d5f92bbadb2511a728a",
     version = "6.22.0",
     description = "KDE Syntax Highlighting Engine",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -1935,16 +1968,17 @@ sed -i '/Q_INIT_RESOURCE(theme_data)/d' src/lib/repository.cpp || true
 )
 
 # KTextEditor - Full text editor component
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "ktexteditor",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/ktexteditor-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/ktexteditor-6.22.0.tar.xz",
 
     sha256 = "1d9b336a2b26ecc6a1c5b8133eacea69ed786b3eb6f1ec2ad6705c2bea62e1c5",
     version = "6.22.0",
     description = "KDE Text Editor Framework",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -2035,16 +2069,17 @@ sed -i '/chkAutoReloadOnExternalChanges/d' src/dialogs/katedialogs.cpp
 )
 
 # Attica - Content sharing framework
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "attica",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/attica-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/attica-6.22.0.tar.xz",
 
     sha256 = "2274aa28804ba895c422c3fc24cdcc88ff435a9b39a887ceed93a6083d89fe00",
     version = "6.22.0",
     description = "KDE Attica Framework",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -2075,16 +2110,17 @@ cmake_package(
 )
 
 # KGlobalAccel - Global keyboard shortcuts
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kglobalaccel",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kglobalaccel-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kglobalaccel-6.22.0.tar.xz",
 
     sha256 = "332e3be3d0ac2aec8e786419c1e875a1b33ae84b8aada3283639deccc6ffd4d8",
     version = "6.22.0",
     description = "KDE Global Accelerators",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -2125,16 +2161,17 @@ cmake_package(
 )
 
 # KPackage - Package framework
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kpackage",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kpackage-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kpackage-6.22.0.tar.xz",
 
     sha256 = "df9ba0b2d347ba6e2a26e484551ca9ba3f36528116736fa0e95a06a02208006b",
     version = "6.22.0",
     description = "KDE Package Framework",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -2173,16 +2210,17 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
 )
 
 # Kirigami - KDE's lightweight UI framework
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kirigami",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kirigami-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kirigami-6.22.0.tar.xz",
 
     sha256 = "062255655919629c5bdf9a1d30676fb842b1335f352c3fa7698bb81c27e7cdfa",
     version = "6.22.0",
     description = "Kirigami UI Framework",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -2221,16 +2259,17 @@ cmake_package(
 )
 
 # KSvg - SVG rendering
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "ksvg",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/ksvg-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/ksvg-6.22.0.tar.xz",
 
     sha256 = "01f19c937bcceb49b101590edb5e748b56e8e4a0988d88de474fa1fa67ef3ff1",
     version = "6.22.0",
     description = "KDE SVG Framework",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -2273,16 +2312,17 @@ cmake_package(
 )
 
 # KRunner - Krunner framework
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "krunner",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/krunner-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/krunner-6.22.0.tar.xz",
 
     sha256 = "094c6630958f82a44d668b04056f630fbe486f8328149a235ee88073d43b120a",
     version = "6.22.0",
     description = "KDE Runner Framework",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -2321,16 +2361,17 @@ cmake_package(
 )
 
 # Syndication - RSS/Atom feed parser
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "syndication",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/syndication-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/syndication-6.22.0.tar.xz",
 
     sha256 = "faf3a88e6711b06a35edf28c415fd665b5699a7cafee6fed2cb4997f318d8de0",
     version = "6.22.0",
     description = "RSS/Atom feed parser library",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -2362,16 +2403,17 @@ cmake_package(
 )
 
 # KNewStuff - Get Hot New Stuff
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "knewstuff",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/knewstuff-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/knewstuff-6.22.0.tar.xz",
 
     sha256 = "1f6d4e72d8b66ee93eec8268fadb0d1731716f6a82cb2e46f1ef955c4ef6b1b5",
     version = "6.22.0",
     description = "KDE New Stuff Framework",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -2423,16 +2465,17 @@ cmake_package(
 )
 
 # KNotifyConfig - Notification configuration
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "knotifyconfig",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/knotifyconfig-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/knotifyconfig-6.22.0.tar.xz",
 
     sha256 = "14c6864a1e18d06f778d432fb7a186b036e593f372184b97208c7ddddfa39db4",
     version = "6.22.0",
     description = "KDE Notification Configuration",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -2495,16 +2538,17 @@ cmake_package(
 )
 
 # KDocTools - Documentation tools
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kdoctools",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kdoctools-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kdoctools-6.22.0.tar.xz",
 
     sha256 = "d893f2758f9e1d9a529d1b573b3fc413d4c3e0cf4b8573ecee5c99c8d66a3f11",
     version = "6.22.0",
     description = "KDE Documentation Tools",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -2590,16 +2634,17 @@ done
 )
 
 # KCMUtils - KCM utilities
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kcmutils",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kcmutils-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kcmutils-6.22.0.tar.xz",
 
     sha256 = "c6ed2d3be1f0e4efc91abca48afd64ff0c8917fbb6bc3c0b9725c66b3b9e3993",
     version = "6.22.0",
     description = "KDE KCM Utilities",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -2667,16 +2712,17 @@ cmake_package(
 # =============================================================================
 
 # Plasma5Support - Plasma 5 compatibility data engine support
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "plasma5support",
-    src_uri = "https://download.kde.org/stable/plasma/6.2.4/plasma5support-6.2.4.tar.xz",
+    url = "https://download.kde.org/stable/plasma/6.2.4/plasma5support-6.2.4.tar.xz",
 
     sha256 = "233bbdc3f1c0b8acbb710f53c6308359c315b699958f6784b3467f4724f93d8d",
     version = "6.2.4",
     description = "Plasma 5 Support Library",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -2746,16 +2792,17 @@ sed -i '/devicenotifications/d' src/dataengines/CMakeLists.txt || true
 )
 
 # Plasma Desktop
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "plasma-desktop",
-    src_uri = "https://download.kde.org/stable/plasma/6.2.4/plasma-desktop-6.2.4.tar.xz",
+    url = "https://download.kde.org/stable/plasma/6.2.4/plasma-desktop-6.2.4.tar.xz",
 
     sha256 = "81f2ab40cdec332918c90b1b732abb2aa0c0502854e48b8fa06fb82b52924da3",
     version = "6.2.4",
     description = "KDE Plasma Desktop",
     homepage = "https://kde.org/plasma-desktop/",
     license = "GPL-2.0+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -2928,16 +2975,17 @@ done
 )
 
 # KGlobalAccelD - Global Accelerator Daemon (Plasma component)
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kglobalacceld",
-    src_uri = "https://download.kde.org/stable/plasma/6.2.4/kglobalacceld-6.2.4.tar.xz",
+    url = "https://download.kde.org/stable/plasma/6.2.4/kglobalacceld-6.2.4.tar.xz",
 
     sha256 = "d22904e2c8342dbccf7a8197d260cc0df7f5eca5ae659ab81315573db80d367a",
     version = "6.2.4",
     description = "KDE Global Accelerator Daemon",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -3004,16 +3052,17 @@ cmake_package(
 # =============================================================================
 
 # KWayland - Plasma Wayland integration library
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kwayland",
-    src_uri = "https://download.kde.org/stable/plasma/6.2.4/kwayland-6.2.4.tar.xz",
+    url = "https://download.kde.org/stable/plasma/6.2.4/kwayland-6.2.4.tar.xz",
 
     sha256 = "f4fe69978f8e9b0c40058019782f13bfdd770cf545d9325a7b378826f0cd34ac",
     version = "6.2.4",
     description = "Plasma Wayland Client library",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -3052,16 +3101,17 @@ cmake_package(
 )
 
 # KDecoration2 - Window decoration library
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kdecoration2",
-    src_uri = "https://download.kde.org/stable/plasma/6.2.4/kdecoration-6.2.4.tar.xz",
+    url = "https://download.kde.org/stable/plasma/6.2.4/kdecoration-6.2.4.tar.xz",
 
     sha256 = "ac645b4d582d110258694a9e2ea2bf65fbbd4bd58e9de9f9354786397bc4f71a",
     version = "6.2.4",
     description = "KDE Decoration library",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -3097,9 +3147,10 @@ cmake_package(
 )
 
 # KScreenLocker - Screen locker
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kscreenlocker",
-    src_uri = "https://download.kde.org/stable/plasma/6.2.4/kscreenlocker-6.2.4.tar.xz",
+    url = "https://download.kde.org/stable/plasma/6.2.4/kscreenlocker-6.2.4.tar.xz",
 
     sha256 = "129d10c3892222168dbbf80cdbda810ad062c26de51f7cbc2590e655f553cb16",
     version = "6.2.4",
@@ -3107,7 +3158,7 @@ cmake_package(
     homepage = "https://kde.org/",
     license = "GPL-2.0+",
     patches = ["patches/kscreenlocker-6.2.4-optional-x11.patch"],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -3194,16 +3245,17 @@ sed -i '/qCDebug(KSCREENLOCKER) << "Event received"/a\\    (void)event;' ksldapp
 )
 
 # Plasma Activities - Activity manager library
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "plasma-activities",
-    src_uri = "https://download.kde.org/stable/plasma/6.2.4/plasma-activities-6.2.4.tar.xz",
+    url = "https://download.kde.org/stable/plasma/6.2.4/plasma-activities-6.2.4.tar.xz",
 
     sha256 = "7c975d2421e6792e8c3cca5f22611dac55f44e1ec8648df97712f00cbb907ccb",
     version = "6.2.4",
     description = "Plasma Activities library",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -3239,16 +3291,17 @@ cmake_package(
 )
 
 # kactivitymanagerd - Activity manager daemon (required for plasmashell)
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kactivitymanagerd",
-    src_uri = "https://download.kde.org/stable/plasma/6.2.4/kactivitymanagerd-6.2.4.tar.xz",
+    url = "https://download.kde.org/stable/plasma/6.2.4/kactivitymanagerd-6.2.4.tar.xz",
 
     sha256 = "17672c65500c731eeb3c43649cf52ecae115adfd1942c24599055ece3e4a90da",
     version = "6.2.4",
     description = "System service to manage user's activities",
     homepage = "https://kde.org/",
     license = "GPL-2.0+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -3306,16 +3359,17 @@ sed -i 's/connect(KX11Extras::self/\\/\\/connect(KX11Extras::self/' src/service/
 )
 
 # libplasma - Core Plasma library (provides PlasmaQuick)
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "libplasma",
-    src_uri = "https://download.kde.org/stable/plasma/6.2.4/libplasma-6.2.4.tar.xz",
+    url = "https://download.kde.org/stable/plasma/6.2.4/libplasma-6.2.4.tar.xz",
 
     sha256 = "66eda145fb57dcc585db97fd7e543f2cdfc745ceb83c16cbe3d080939f5b1b14",
     version = "6.2.4",
     description = "Core Plasma library",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -3462,16 +3516,17 @@ fi
 )
 
 # Layer Shell Qt - Qt component for Wayland layer shell
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "layer-shell-qt",
-    src_uri = "https://download.kde.org/stable/plasma/6.2.4/layer-shell-qt-6.2.4.tar.xz",
+    url = "https://download.kde.org/stable/plasma/6.2.4/layer-shell-qt-6.2.4.tar.xz",
 
     sha256 = "001897a7d4991a9e95be73152d9513662cc7d8a53211702d906d597b73ced872",
     version = "6.2.4",
     description = "Qt component for Wayland layer-shell protocol",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -3550,16 +3605,17 @@ done
 )
 
 # KWin - Window Manager
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kwin",
-    src_uri = "https://download.kde.org/stable/plasma/6.2.4/kwin-6.2.4.tar.xz",
+    url = "https://download.kde.org/stable/plasma/6.2.4/kwin-6.2.4.tar.xz",
 
     sha256 = "d4b78ebdc9432cb1e224621ac43cfb81b92dbcee034afe90bbeb5b22f218f321",
     version = "6.2.4",
     description = "KWin - KDE Window Manager and Compositor",
     homepage = "https://kde.org/",
     license = "GPL-2.0+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -3666,16 +3722,17 @@ sed -i '/#include <kkeyserver.h>/d' src/tabbox/tabbox.cpp
 # =============================================================================
 
 # KDED - KDE Daemon
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kded",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kded-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kded-6.22.0.tar.xz",
 
     sha256 = "bfe540068c240dcf7451d6f573a452bb085ae536ee9d3fa2aee4065f9772f47d",
     version = "6.22.0",
     description = "KDE Daemon",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -3714,16 +3771,17 @@ cmake_package(
 )
 
 # KDeclarative - KDE Declarative Framework
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kdeclarative",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kdeclarative-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kdeclarative-6.22.0.tar.xz",
 
     sha256 = "055a97da106cdc1f8796cb90cdd262c8f88c41522ef5e86068c3ce7dc28c4be7",
     version = "6.22.0",
     description = "KDE Declarative",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -3763,16 +3821,17 @@ cmake_package(
 )
 
 # KStatusNotifierItem - Status Notifier Item Framework
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kstatusnotifieritem",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kstatusnotifieritem-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kstatusnotifieritem-6.22.0.tar.xz",
 
     sha256 = "53ceda99fec1ddef9865ffb820ce824ce0c83f05ada5b750223abc68a9a5f2a2",
     version = "6.22.0",
     description = "KDE Status Notifier Item",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -3808,16 +3867,17 @@ cmake_package(
 )
 
 # KWallet - Wallet Framework
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kwallet",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kwallet-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kwallet-6.22.0.tar.xz",
 
     sha256 = "10821a461ccb9b481ceedc959b96e601082eb921d5dffb797ab9fbcef725aa06",
     version = "6.22.0",
     description = "KDE Wallet Framework",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -3865,16 +3925,17 @@ cmake_package(
 )
 
 # KUnitConversion - Unit Conversion Framework
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kunitconversion",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kunitconversion-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kunitconversion-6.22.0.tar.xz",
 
     sha256 = "580357277fad7659d33555f25783a6cd27286b73cdd74c781b4989e4f6247b91",
     version = "6.22.0",
     description = "KDE Unit Conversion",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -3902,16 +3963,17 @@ cmake_package(
 )
 
 # QRencode - QR Code encoding library (needed by Prison)
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "qrencode",
-    src_uri = "https://github.com/fukuchi/libqrencode/archive/refs/tags/v4.1.1.tar.gz",
+    url = "https://github.com/fukuchi/libqrencode/archive/refs/tags/v4.1.1.tar.gz",
 
     sha256 = "5385bc1b8c2f20f3b91d258bf8ccc8cf62023935df2d2676b5b67049f31a049c",
     version = "4.1.1",
     description = "QR Code encoding library",
     homepage = "https://github.com/fukuchi/libqrencode",
     license = "LGPL-2.0+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
@@ -3926,16 +3988,17 @@ cmake_package(
 )
 
 # Prison - Barcode Framework
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "prison",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/prison-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/prison-6.22.0.tar.xz",
 
     sha256 = "c40d692607bdadf8dbd5a56761289b1ee96973f048ca3671e760519e2ae4339a",
     version = "6.22.0",
     description = "KDE Barcode Library",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -4001,16 +4064,17 @@ sed -i '/set(CMAKE_MODULE_PATH/a include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/QRenc
 # =============================================================================
 
 # QCoro - C++ Coroutine Library for Qt
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "qcoro",
-    src_uri = "https://github.com/danvratil/qcoro/archive/refs/tags/v0.11.0.tar.gz",
+    url = "https://github.com/danvratil/qcoro/archive/refs/tags/v0.11.0.tar.gz",
 
     sha256 = "9942c5b4c533192f6c5954dc6d10178b3829075e6a621b67df73f0a4b74d8297",
     version = "0.11.0",
     description = "C++ Coroutine Library for Qt",
     homepage = "https://qcoro.dvratil.cz/",
     license = "MIT",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DUSE_QT_VERSION=6",
@@ -4071,16 +4135,17 @@ EOF
 # =============================================================================
 
 # Plasma Activities Stats - Activity Statistics Library
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "plasma-activities-stats",
-    src_uri = "https://download.kde.org/stable/plasma/6.2.4/plasma-activities-stats-6.2.4.tar.xz",
+    url = "https://download.kde.org/stable/plasma/6.2.4/plasma-activities-stats-6.2.4.tar.xz",
 
     sha256 = "c2271850b57b0da6e84e61049c3dd6d60244e47482245672a9c220debf04ccbb",
     version = "6.2.4",
     description = "Plasma Activities Statistics Library",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -4111,16 +4176,17 @@ cmake_package(
 )
 
 # libkscreen - KDE Screen Management Library
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "libkscreen",
-    src_uri = "https://download.kde.org/stable/plasma/6.2.4/libkscreen-6.2.4.tar.xz",
+    url = "https://download.kde.org/stable/plasma/6.2.4/libkscreen-6.2.4.tar.xz",
 
     sha256 = "3cc06d5c561ab4dbedbc548a4655119e861c4ac29e565ff5846273f0c76e9cb4",
     version = "6.2.4",
     description = "KDE Screen Management Library",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -4210,16 +4276,17 @@ fi
 )
 
 # libksysguard - KDE System Monitor Library
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "libksysguard",
-    src_uri = "https://download.kde.org/stable/plasma/6.2.4/libksysguard-6.2.4.tar.xz",
+    url = "https://download.kde.org/stable/plasma/6.2.4/libksysguard-6.2.4.tar.xz",
 
     sha256 = "f799f90efd3b3e0ea17b1969bb0cc5744c7762ea16d128b1b4d31dfa78cc58ae",
     version = "6.2.4",
     description = "KDE System Monitor Library",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -4274,16 +4341,17 @@ cmake_package(
 )
 
 # Plasma Workspace - KDE Plasma Shell and Workspace
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "plasma-workspace",
-    src_uri = "https://download.kde.org/stable/plasma/6.2.4/plasma-workspace-6.2.4.tar.xz",
+    url = "https://download.kde.org/stable/plasma/6.2.4/plasma-workspace-6.2.4.tar.xz",
 
     sha256 = "32aa3bda29d7b76a7dae7e1f8c9789cfe7f609eb878e1a793db4b1490ca3c174",
     version = "6.2.4",
     description = "KDE Plasma Workspace",
     homepage = "https://kde.org/",
     license = "GPL-2.0+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -4448,16 +4516,17 @@ STUB
 )
 
 # plasma-login-manager - KDE Plasma Login Manager (alternative to SDDM)
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "plasma-login-manager",
-    src_uri = "https://github.com/KDE/plasma-login-manager/archive/refs/tags/v6.5.91.tar.gz",
+    url = "https://github.com/KDE/plasma-login-manager/archive/refs/tags/v6.5.91.tar.gz",
 
     sha256 = "4acb80c1e6563f87aad9b5635e2c2a08034616246cd1f1709167d53e3f61ffca",
     version = "6.5.91",
     description = "Plasma Login Manager - display manager for KDE Plasma",
     homepage = "https://invent.kde.org/plasma/plasma-login-manager",
     license = "GPL-2.0-or-later",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTING=OFF",
         "-DCMAKE_BUILD_TYPE=Release",
     ],
@@ -4764,16 +4833,17 @@ filegroup(
 # =============================================================================
 
 # KQuickCharts - KDE Quick Charts Framework
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kquickcharts",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kquickcharts-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kquickcharts-6.22.0.tar.xz",
 
     sha256 = "10e82ca86ae8e22910a1e58db9fc647335e9335bd9fad3c713c39f79479f14a4",
     version = "6.22.0",
     description = "KDE Quick Charts Framework",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -4801,16 +4871,17 @@ cmake_package(
 )
 
 # Plasma Integration - Qt/Plasma integration library
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "plasma-integration",
-    src_uri = "https://download.kde.org/stable/plasma/6.2.4/plasma-integration-6.2.4.tar.xz",
+    url = "https://download.kde.org/stable/plasma/6.2.4/plasma-integration-6.2.4.tar.xz",
 
     sha256 = "8d3d9b022aef411a36aada564931aad4ec81df8b8ef6e3f4091e362522295cc7",
     version = "6.2.4",
     description = "Qt Platform Theme for Plasma",
     homepage = "https://kde.org/",
     license = "LGPL-2.0+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -4884,16 +4955,17 @@ sed -i 's/#include <xcb/#\\/\\/#include <xcb/g' qt6/src/platformtheme/*.cpp 2>/d
 )
 
 # KHolidays - Library for holiday and special event handling
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kholidays",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/kholidays-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/kholidays-6.22.0.tar.xz",
 
     sha256 = "39b7f1c713d6c5ae225bfa18a6dece20ff7a7f4c325a0c6fc4a48cf3e4e0a690",
     version = "6.22.0",
     description = "Library to determine holidays and special events",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -4921,16 +4993,17 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
 )
 
 # Kirigami Addons - Visual end user components for Kirigami
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kirigami-addons",
-    src_uri = "https://download.kde.org/stable/kirigami-addons/kirigami-addons-1.10.0.tar.xz",
+    url = "https://download.kde.org/stable/kirigami-addons/kirigami-addons-1.10.0.tar.xz",
 
     sha256 = "c98f92bf7c452e12f6dc403404215413db3959fe904ad830ead0db6bb09b3d11",
     version = "1.10.0",
     description = "Visual end user components for Kirigami applications",
     homepage = "https://kde.org/",
     license = "LGPL-2.1+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
@@ -4967,16 +5040,17 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
 )
 
 # Milou - Search application built on top of KRunner
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "milou",
-    src_uri = "https://download.kde.org/Attic/plasma/6.2.4/milou-6.2.4.tar.xz",
+    url = "https://download.kde.org/Attic/plasma/6.2.4/milou-6.2.4.tar.xz",
 
     sha256 = "b47a635904a77aa82fb02d96a0261000cc95da01d07498ea9f29d4c0743775f9",
     version = "6.2.4",
     description = "Dedicated search application built on top of KRunner",
     homepage = "https://kde.org/",
     license = "GPL-2 LGPL-2.1",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",

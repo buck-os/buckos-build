@@ -1,7 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # Use GitHub mirror since yoctoproject.org blocks Buck2's user-agent with bot detection
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libfakekey",
     bdepend = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
@@ -11,13 +12,11 @@ autotools_package(
     src_prepare = """
 autoreconf -fi
 """,
-    src_uri = "https://github.com/veyon/libfakekey/archive/refs/tags/0.3.tar.gz",
+    url = "https://github.com/veyon/libfakekey/archive/refs/tags/0.3.tar.gz",
 
     sha256 = "d282fa6481a5b85f71e36e8bad4cfa938cc8eaac4c42ffa27f9203ac634813f4",
-    iuse = ["debug"],
     use_configure = {
-        "-debug": "--disable-debug",
-        "debug": "--enable-debug",
+        "debug": ("--enable-debug", "--disable-debug"),
     },
     version = "0.3",
     description = "Library for faking X keyboard events",

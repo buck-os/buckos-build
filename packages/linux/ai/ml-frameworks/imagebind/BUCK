@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "imagebind-0.1.0",
     version = "0.1.0",
-    src_uri = "https://github.com/facebookresearch/ImageBind/archive/53680b02d7e37b19b124fa37bae4b6c98c38f5be.tar.gz",
+    url = "https://github.com/facebookresearch/ImageBind/archive/53680b02d7e37b19b124fa37bae4b6c98c38f5be.tar.gz",
     sha256 = "1b1c3613d170e669bbe6f6ede277ad41aec0ad7a091b154fdaeffb7f1a1ef393",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "python-dvg-ringbuffer",
     version = "1.0.4",
-    src_uri = "https://github.com/dennis-van-gils/python-dvg-ringbuffer/archive/refs/tags/v1.0.4.tar.gz",
+    url = "https://github.com/dennis-van-gils/python-dvg-ringbuffer/archive/refs/tags/v1.0.4.tar.gz",
     sha256 = "2ad5d920ac4ec35cc26e0472c4c595a670786815da49f5471aaa87af61dee0a8",
     description = "Numpy ring buffer at a fixed memory address to allow for significantly sped up numpy, sigpy, and cupy processing",
     homepage = "https://github.com/dennis-van-gils/python-dvg-ringbuffer",

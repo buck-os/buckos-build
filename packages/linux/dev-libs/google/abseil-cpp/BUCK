@@ -1,27 +1,23 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # abseil-cpp - Google C++ Common Libraries (cmake build)
 # USE flags: static-libs, test
 # Default: none
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "abseil-cpp",
     version = "20240116.2",
-    iuse = ["debug", "test-helpers"],
-    use_cmake = {
-        "-debug": "-DCMAKE_BUILD_TYPE=Release",
-        "-test-helpers": "-DENABLE_TEST_HELPERS=OFF",
-        "debug": "-DCMAKE_BUILD_TYPE=Debug",
-        "test-helpers": "-DENABLE_TEST_HELPERS=ON",
+    use_configure = {
+        "debug": ("-DCMAKE_BUILD_TYPE=Debug", "-DCMAKE_BUILD_TYPE=Release"),
+        "test-helpers": ("-DENABLE_TEST_HELPERS=ON", "-DENABLE_TEST_HELPERS=OFF"),
     },
-    src_uri = "https://github.com/abseil/abseil-cpp/releases/download/20240116.2/abseil-cpp-20240116.2.tar.gz",
+    url = "https://github.com/abseil/abseil-cpp/releases/download/20240116.2/abseil-cpp-20240116.2.tar.gz",
     sha256 = "733726b8c3a6d39a4120d7e45ea8b41a434cdacde401cba500f14236c49b39dc",
-    signature_required = False,
     description = "Abseil C++ Common Libraries",
     homepage = "https://abseil.io/",
     license = "Apache-2.0",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_SHARED_LIBS=ON",
         "-DABSL_BUILD_TESTING=OFF",
         "-DABSL_USE_EXTERNAL_GOOGLETEST=OFF",

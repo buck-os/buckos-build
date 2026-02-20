@@ -1,25 +1,28 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # D3D12 Memory Allocator - Easy to integrate memory allocation library for Direct3D 12
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "d3d12allocator",
     version = "3.0.0",
-    src_uri = "https://github.com/GPUOpen-LibrariesAndSDKs/D3D12MemoryAllocator/archive/refs/tags/v3.0.0.tar.gz",
+    url = "https://github.com/GPUOpen-LibrariesAndSDKs/D3D12MemoryAllocator/archive/refs/tags/v3.0.0.tar.gz",
     sha256 = "bcbcdc6273f599cd1bf2ca651626bffef226d9d13e263369224bede9d9482f83",
     description = "Easy to integrate memory allocation library for Direct3D 12",
     homepage = "https://gpuopen.com/gaming-product/d3d12-memory-allocator/",
     license = "MIT",
-    iuse = [],
-    use_defaults = [],
     deps = [],
-    use_deps = {},
-    cmake_args = [
+    use_deps = {
+
+    },
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=OFF",
         "-DBUILD_DOCUMENTATION=OFF",
         "-DD3D12MA_BUILD_SAMPLE=OFF",
     ],
-    use_cmake = {},
+    use_configure = {
+
+    },
     visibility = ["PUBLIC"],
 )

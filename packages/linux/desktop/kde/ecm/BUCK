@@ -1,15 +1,16 @@
-load("//defs:package_defs.bzl", "download_source", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "extra-cmake-modules",
-    src_uri = "https://download.kde.org/stable/frameworks/6.22/extra-cmake-modules-6.22.0.tar.xz",
+    url = "https://download.kde.org/stable/frameworks/6.22/extra-cmake-modules-6.22.0.tar.xz",
 
     sha256 = "cb83a69571b277c20b3a6567ef0b6f39bf29c43a619282bf4bb076feb4c609a6",
     version = "6.22.0",
     description = "Extra modules and scripts for CMake",
     homepage = "https://invent.kde.org/frameworks/extra-cmake-modules",
     license = "BSD",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DBUILD_TESTING=OFF",
         "-DBUILD_HTML_DOCS=OFF",

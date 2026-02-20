@@ -1,12 +1,13 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "libyuv",
     version = "stable",
-    src_uri = "https://mirror.buckos.org/l/libyuv-stable.tar.gz",
+    url = "https://mirror.buckos.org/l/libyuv-stable.tar.gz",
     sha256 = "cced02b8172d14454d4ac8d83b48034ac93a0123c0169d835ce7cf3a0f10a2d8",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
     ],

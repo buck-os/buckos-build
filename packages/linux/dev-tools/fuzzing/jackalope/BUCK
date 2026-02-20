@@ -1,12 +1,13 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "jackalope",
     version = "d9dc8f4",
-    src_uri = "https://github.com/googleprojectzero/jackalope/archive/d9dc8f446aa9befe412a498da7852b2665cf3aa0.tar.gz",
+    url = "https://github.com/googleprojectzero/jackalope/archive/d9dc8f446aa9befe412a498da7852b2665cf3aa0.tar.gz",
     sha256 = "48609b0ab1d3f02971db5f2e0cca143caadb5e2aee95c66a768a72bcb11074a5",
     description = "Coverage-guided fuzzing framework from Google Project Zero",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_CXX_STANDARD=17",
     ],
     deps = [],

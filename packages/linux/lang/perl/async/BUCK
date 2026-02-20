@@ -1,10 +1,10 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # AnyEvent - The DBI of event loop programming
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "anyevent",
-    src_uri = "https://cpan.metacpan.org/authors/id/M/ML/MLEHMANN/AnyEvent-7.17.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/M/ML/MLEHMANN/AnyEvent-7.17.tar.gz",
 
     sha256 = "50beea689c098fe4aaeb83806c40b9fe7f946d5769acf99f849f099091a4b985",
     version = "7.17",
@@ -23,9 +23,10 @@ autotools_package(
 )
 
 # IO::Async - Asynchronous event-driven programming
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "io-async",
-    src_uri = "https://cpan.metacpan.org/authors/id/P/PE/PEVANS/IO-Async-0.803.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/P/PE/PEVANS/IO-Async-0.803.tar.gz",
 
     sha256 = "dc94ec92296db27fede6c37bba8b9c748c571000db8e61f794198981973c97ce",
     version = "0.803",
@@ -45,9 +46,10 @@ autotools_package(
 )
 
 # POE - Portable multitasking and networking framework
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "poe",
-    src_uri = "https://cpan.metacpan.org/authors/id/B/BI/BINGOS/POE-1.370.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/B/BI/BINGOS/POE-1.370.tar.gz",
 
     sha256 = "57de2b635b15fa3a31a9e55dd51122149e5414e1158ee82235062634ee18a693",
     version = "1.370",
@@ -66,9 +68,10 @@ autotools_package(
 )
 
 # Future - Represent an operation awaiting completion
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "future",
-    src_uri = "https://cpan.metacpan.org/authors/id/P/PE/PEVANS/Future-0.50.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/P/PE/PEVANS/Future-0.50.tar.gz",
 
     sha256 = "c035e3d9e69a3af144b33ac834dee9e65ad360f2a51db9f158dc342ecddd5f44",
     version = "0.50",
@@ -87,9 +90,10 @@ autotools_package(
 )
 
 # Future::AsyncAwait - Deferred subroutine syntax for futures
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "future-asyncawait",
-    src_uri = "https://cpan.metacpan.org/authors/id/P/PE/PEVANS/Future-AsyncAwait-0.66.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/P/PE/PEVANS/Future-AsyncAwait-0.66.tar.gz",
 
     sha256 = "c6a0f4de462bf324b5baca1775d199ec3246a358c13db9b64acbfcdbe6e5ec21",
     version = "0.66",
@@ -109,9 +113,10 @@ autotools_package(
 )
 
 # Coro - The only real threads in perl
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "coro",
-    src_uri = "https://cpan.metacpan.org/authors/id/M/ML/MLEHMANN/Coro-6.57.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/M/ML/MLEHMANN/Coro-6.57.tar.gz",
 
     sha256 = "1928e48033540e11ebf5506986dd101af78d2421d210f96599223b15d51714c6",
     version = "6.57",
@@ -132,9 +137,10 @@ autotools_package(
 )
 
 # EV - Perl interface to libev, a high performance full-featured event loop
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "ev",
-    src_uri = "https://cpan.metacpan.org/authors/id/M/ML/MLEHMANN/EV-4.34.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/M/ML/MLEHMANN/EV-4.34.tar.gz",
 
     sha256 = "1211683dce7b6771f4ab710cc153712bdd77ba6157a13294d0bb73491fd06560",
     version = "4.34",
@@ -155,9 +161,10 @@ autotools_package(
 
 # Mojo::IOLoop - Minimalistic event loop
 # Note: Mojo::IOLoop is part of Mojolicious, using the same source
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "mojo-ioloop",
-    src_uri = "https://cpan.metacpan.org/authors/id/S/SR/SRI/Mojolicious-9.37.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/S/SR/SRI/Mojolicious-9.37.tar.gz",
 
     sha256 = "4fb8a0882ed17f864f7de96b94fab61706f967f919c572dcccede68e588e9810",
     version = "9.37",
@@ -176,9 +183,10 @@ autotools_package(
 )
 
 # Guard - Safe cleanup blocks
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "guard",
-    src_uri = "https://cpan.metacpan.org/authors/id/M/ML/MLEHMANN/Guard-1.023.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/M/ML/MLEHMANN/Guard-1.023.tar.gz",
 
     sha256 = "34c4ddf91fc93d1090d86da14df706d175b1610c67372c01e12ce9555d4dd1dc",
     version = "1.023",

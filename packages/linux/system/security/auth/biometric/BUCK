@@ -1,30 +1,26 @@
+load("//defs:package.bzl", "package")
+
 # Biometric authentication packages
 # Fingerprint readers and related libraries
 
-load("//defs:package_defs.bzl","download_source", "autotools_package", "meson_package", "make_package")
-
 # libfprint - Fingerprint reader library
-meson_package(
+package(
+    build_rule = "meson",
     name = "libfprint",
     version = "1.94.7",
-    iuse = ["examples", "gtk-doc", "introspection"],
-    src_uri = "https://gitlab.freedesktop.org/libfprint/libfprint/-/archive/v1.94.7/libfprint-v1.94.7.tar.gz",
+    url = "https://gitlab.freedesktop.org/libfprint/libfprint/-/archive/v1.94.7/libfprint-v1.94.7.tar.gz",
     sha256 = "6d2cc09c72f86865b49a911690b43e363aed7595b66e6599232a572ccce95342",
-    signature_required = False,
     description = "Library for fingerprint reader support",
     homepage = "https://fprint.freedesktop.org/",
     license = "LGPL-2.1+",
-    meson_args = [
+    configure_args = [
         "-Dudev_rules_dir=/lib/udev/rules.d",
         "-Ddoc=false",
     ],
-    use_meson = {
-        "examples": "-Dgtk-examples=true",
-        "-examples": "-Dgtk-examples=false",
-        "gtk-doc": "-Ddoc=true",
-        "-gtk-doc": "-Ddoc=false",
-        "introspection": "-Dintrospection=true",
-        "-introspection": "-Dintrospection=false",
+    use_configure = {
+        "examples": ("-Dgtk-examples=true", "-Dgtk-examples=false"),
+        "gtk-doc": ("-Ddoc=true", "-Ddoc=false"),
+        "introspection": ("-Dintrospection=true", "-Dintrospection=false"),
     },
     deps = [
         "//packages/linux/dev-libs/glib:glib",
@@ -37,16 +33,16 @@ meson_package(
 )
 
 # fprintd - Fingerprint authentication daemon
-meson_package(
+package(
+    build_rule = "meson",
     name = "fprintd",
     version = "1.94.3",
-    src_uri = "https://gitlab.freedesktop.org/libfprint/fprintd/-/archive/v1.94.3/fprintd-v1.94.3.tar.gz",
+    url = "https://gitlab.freedesktop.org/libfprint/fprintd/-/archive/v1.94.3/fprintd-v1.94.3.tar.gz",
     sha256 = "2413ec9c0be24f6852afde31baa275a2d7fe3a9ee03973af9362ddb97231aedd",
-    signature_required = False,
     description = "Fingerprint authentication daemon",
     homepage = "https://fprint.freedesktop.org/",
     license = "GPL-2.0+",
-    meson_args = [
+    configure_args = [
         "-Dpam_modules_dir=/lib/security",
         "-Dsystemd_system_unit_dir=/usr/lib/systemd/system",
         "-Dgtk_doc=false",
@@ -65,7 +61,7 @@ meson_package(
 # NSS - Network Security Services
 make_package(
     name = "nss",
-    src_uri = "https://ftp.mozilla.org/pub/security/nss/releases/NSS_3_98_RTM/src/nss-3.98.tar.gz",
+    url = "https://ftp.mozilla.org/pub/security/nss/releases/NSS_3_98_RTM/src/nss-3.98.tar.gz",
 
     sha256 = "f549cc33d35c0601674bfacf7c6ad683c187595eb4125b423238d3e9aa4209ce",
     version = "3.98",
@@ -99,7 +95,7 @@ make_package(
 # NSPR - Netscape Portable Runtime
 make_package(
     name = "nspr",
-    src_uri = "https://ftp.mozilla.org/pub/nspr/releases/v4.35/src/nspr-4.35.tar.gz",
+    url = "https://ftp.mozilla.org/pub/nspr/releases/v4.35/src/nspr-4.35.tar.gz",
 
     sha256 = "7ea3297ea5969b5d25a5dd8d47f2443cda88e9ee746301f6e1e1426f8a6abc8f",
     version = "4.35",
@@ -115,16 +111,16 @@ make_package(
 )
 
 # pixman - Pixel manipulation library
-meson_package(
+package(
+    build_rule = "meson",
     name = "pixman",
     version = "0.43.4",
-    src_uri = "https://www.cairographics.org/releases/pixman-0.43.4.tar.gz",
+    url = "https://www.cairographics.org/releases/pixman-0.43.4.tar.gz",
     sha256 = "a0624db90180c7ddb79fc7a9151093dc37c646d8c38d3f232f767cf64b85a226",
-    signature_required = False,
     description = "Pixel manipulation library",
     homepage = "https://www.cairographics.org/",
     license = "MIT",
-    meson_args = [
+    configure_args = [
         "-Dgtk=disabled",
         "-Dlibpng=disabled",
         # Disable x86 SIMD for cross-compilation to non-x86 architectures

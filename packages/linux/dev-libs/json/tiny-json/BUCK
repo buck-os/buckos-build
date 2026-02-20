@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "tiny-json",
     version = "1.0.0",
-    src_uri = "https://github.com/rafagafe/tiny-json/archive/025cdde5f2574290d8b2a8524bc257db2829bb7c.tar.gz",
+    url = "https://github.com/rafagafe/tiny-json/archive/025cdde5f2574290d8b2a8524bc257db2829bb7c.tar.gz",
     sha256 = "af663dcb8a49f472be11864e22b55e6501b4b6bbe7f7b0d8a51a20cfa9b2a522",
     description = "Versatile and easy to use json parser for embedded systems",
     homepage = "https://github.com/rafagafe/tiny-json",
@@ -27,7 +28,7 @@ install(TARGETS tiny-json
 install(FILES tiny-json.h DESTINATION include)
 EOF
 """,
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],
     visibility = ["PUBLIC"],

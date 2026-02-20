@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "ema-pytorch-0.3.0",
     version = "0.3.0",
-    src_uri = "https://github.com/lucidrains/ema-pytorch/archive/refs/tags/0.3.0.tar.gz",
+    url = "https://github.com/lucidrains/ema-pytorch/archive/refs/tags/0.3.0.tar.gz",
     sha256 = "c7ab9f2f4dd04bfa6a551aa3a9e38fe595cc263333cdf651a5238dddaa0a8f8b",
     deps = [
         "//packages/linux/dev-libs/python/beartype:beartype",

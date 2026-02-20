@@ -1,10 +1,11 @@
+load("//defs:package.bzl", "package")
+
 # Password quality and security packages
 # Password strength checking libraries and tools
 
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-
 # libpwquality - Password quality checking library
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libpwquality",
     bdepend = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
@@ -14,17 +15,13 @@ autotools_package(
     src_prepare = """
 autoreconf -fi
 """,
-    src_uri = "https://github.com/libpwquality/libpwquality/releases/download/libpwquality-1.4.5/libpwquality-1.4.5.tar.bz2",
+    url = "https://github.com/libpwquality/libpwquality/releases/download/libpwquality-1.4.5/libpwquality-1.4.5.tar.bz2",
 
     sha256 = "6fcf18b75d305d99d04d2e42982ed5b787a081af2842220ed63287a2d6a10988",
-    iuse = ["pam", "python", "static-libs"],
     use_configure = {
-        "-pam": "--disable-pam",
-        "-python": "--disable-python",
-        "-static-libs": "--disable-static",
-        "pam": "--enable-pam",
-        "python": "--enable-python",
-        "static-libs": "--enable-static",
+        "pam": ("--enable-pam", "--disable-pam"),
+        "python": ("--enable-python", "--disable-python"),
+        "static-libs": ("--enable-static", "--disable-static"),
     },
     version = "1.4.5",
     description = "Password quality checking library",
@@ -48,7 +45,8 @@ autoreconf -fi
 )
 
 # passwdqc - Password quality check tool
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "passwdqc",
     bdepend = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
@@ -58,11 +56,9 @@ autotools_package(
     src_prepare = """
 autoreconf -fi
 """,
-    src_uri = "https://www.openwall.com/passwdqc/passwdqc-2.0.3.tar.gz",
+    url = "https://www.openwall.com/passwdqc/passwdqc-2.0.3.tar.gz",
 
     sha256 = "53b0f4bc49369f06195e9e13abb6cff352d5acb79e861004ec95973896488cf4",
-
-    signature_sha256 = "1a5aa224c63b15c312f8809accc2e193dbe588db3c992c48d3b240c04c3f42f7",
     version = "2.0.3",
     description = "Password strength checking and policy enforcement toolset",
     homepage = "https://www.openwall.com/passwdqc/",

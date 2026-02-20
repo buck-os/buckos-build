@@ -1,44 +1,30 @@
-load("//defs:package_defs.bzl", "meson_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # AccountsService - D-Bus service for accessing user account information
 # =============================================================================
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "accountsservice",
     version = "23.13.9",
-    iuse = [
-        "elogind",
-        "gtk-doc",
-        "introspection",
-        "selinux",
-        "systemd",
-        "vala",
-    ],
-    src_uri = "https://www.freedesktop.org/software/accountsservice/accountsservice-23.13.9.tar.xz",
+    url = "https://www.freedesktop.org/software/accountsservice/accountsservice-23.13.9.tar.xz",
     sha256 = "adda4cdeae24fa0992e7df3ffff9effa7090be3ac233a3edfdf69d5a9c9b924f",
-    signature_required = False,
     description = "D-Bus interface for user account management",
     homepage = "https://www.freedesktop.org/wiki/Software/AccountsService/",
     license = "GPL-3.0-or-later",
     # use_deps: systemd -> system//init/systemd
-    meson_args = [
+    configure_args = [
         "-Dsystemdsystemunitdir=/usr/lib/systemd/system",
         "-Dadmin_group=wheel",
     ],
-    use_meson = {
-        "elogind": "-Delogind=true",
-        "-elogind": "-Delogind=false",
-        "gtk-doc": "-Dgtk_doc=true",
-        "-gtk-doc": "-Dgtk_doc=false",
-        "introspection": "-Dintrospection=true",
-        "-introspection": "-Dintrospection=false",
-        "selinux": "-Dselinux=true",
-        "-selinux": "-Dselinux=false",
-        "systemd": "-Dsystemd=true",
-        "-systemd": "-Dsystemd=false",
-        "vala": "-Dvapi=true",
-        "-vala": "-Dvapi=false",
+    use_configure = {
+        "elogind": ("-Delogind=true", "-Delogind=false"),
+        "gtk-doc": ("-Dgtk_doc=true", "-Dgtk_doc=false"),
+        "introspection": ("-Dintrospection=true", "-Dintrospection=false"),
+        "selinux": ("-Dselinux=true", "-Dselinux=false"),
+        "systemd": ("-Dsystemd=true", "-Dsystemd=false"),
+        "vala": ("-Dvapi=true", "-Dvapi=false"),
     },
     deps = [
         "//packages/linux/dev-libs/glib:glib",
@@ -51,20 +37,19 @@ meson_package(
 # colord - Color management daemon
 # USE flags: systemd, sane, argyllcms, doc, vapi
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "colord",
     version = "1.4.7",
-    src_uri = "https://www.freedesktop.org/software/colord/releases/colord-1.4.7.tar.xz",
+    url = "https://www.freedesktop.org/software/colord/releases/colord-1.4.7.tar.xz",
     sha256 = "de02d9910634ae159547585cec414e450f711c27235453b4f9b38a9f2361a653",
-    signature_sha256 = "d5978308314fa371dc18da192db7182e3710d479d8dcc378f4ccb07b11459b60",
-    signature_required=False,
     description = "System daemon for managing color devices",
     homepage = "https://www.freedesktop.org/software/colord/",
     license = "GPL-2.0-or-later",
     # USE flags: systemd, sane, argyllcms, doc, vapi, test
     # use_deps: systemd -> system//init/systemd
     #           sane -> system//scanning/sane
-    meson_args = [
+    configure_args = [
         "-Dsystemd=false",
         "-Ddaemon_user=colord",
         "-Dvapi=false",
@@ -87,18 +72,17 @@ meson_package(
 # colord-gtk - GTK integration for colord
 # USE flags: vapi, doc, gtk3, gtk4
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "colord-gtk",
     version = "0.3.1",
-    src_uri = "https://www.freedesktop.org/software/colord/releases/colord-gtk-0.3.1.tar.xz",
+    url = "https://www.freedesktop.org/software/colord/releases/colord-gtk-0.3.1.tar.xz",
     sha256 = "c176b889b75630a17f4e3d7ef24c09a3e12368e633496087459c8b53ac3a122d",
-    signature_sha256 = "cca4356e9f4bf1941d19d4ae72881ce144a547944f2263fe6cdd9eab04e24257",
-    signature_required=False,
     description = "GTK integration for colord",
     homepage = "https://www.freedesktop.org/software/colord/",
     license = "LGPL-2.1-or-later",
     # USE flags: vapi, doc, test
-    meson_args = [
+    configure_args = [
         "-Dvapi=false",
         "-Dman=false",
         "-Ddocs=false",

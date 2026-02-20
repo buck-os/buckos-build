@@ -1,16 +1,9 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
-
-download_source(
-    name = "vpnc-scripts-src",
-    src_uri = "https://gitlab.com/openconnect/vpnc-scripts/-/archive/master/vpnc-scripts-master.tar.gz",
-    sha256 = "ea62d561bae690a14023b440b7bb61873af66d074c8432164780b915884a87d7",
-    signature_required = False,
-)
+load("//defs:package.bzl", "package")
 
 # vpnc-scripts are just shell scripts, no compilation needed
-binary_package(
+package(
+    build_rule = "binary",
     name = "vpnc-scripts",
-    srcs = [":vpnc-scripts-src"],
     version = "20231211",
     description = "VPN client connection scripts for routing and DNS",
     homepage = "https://gitlab.com/openconnect/vpnc-scripts",

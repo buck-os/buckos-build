@@ -1,14 +1,13 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "honggfuzz",
-    src_uri = "https://github.com/google/honggfuzz/archive/refs/tags/2.4.tar.gz",
+    url = "https://github.com/google/honggfuzz/archive/refs/tags/2.4.tar.gz",
 
     sha256 = "05c7c5bdf9a4ca2a8956938866c2cef34c008c758fe4cbc0efd3567df2874ed5",
-    iuse = ["clang"],
     use_configure = {
-        "-clang": "--disable-clang",
-        "clang": "--enable-clang",
+        "clang": ("--enable-clang", "--disable-clang"),
     },
     version = "2.4",
     description = "Security-oriented coverage-guided fuzzer with powerful analysis options",

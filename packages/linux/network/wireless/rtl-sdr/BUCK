@@ -1,21 +1,15 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "rtl-sdr",
     version = "2.0.1",
-    src_uri = "https://github.com/osmocom/rtl-sdr/archive/refs/tags/v2.0.1.tar.gz",
+    url = "https://github.com/osmocom/rtl-sdr/archive/refs/tags/v2.0.1.tar.gz",
     sha256 = "ee9b76568cde94674816e99f918b01718f9dd88a1804a3227808c0ef744fbc18",
-    signature_required = False,
-
-    iuse = ["udev", "zerocopy"],
-    use_defaults = [],
-
 
     use_configure = {
-        "-udev": "-DINSTALL_UDEV_RULES=OFF",
-        "-zerocopy": "--disable-zerocopy",
-        "udev": "-DINSTALL_UDEV_RULES=ON",
-        "zerocopy": "--enable-zerocopy",
+        "udev": ("-DINSTALL_UDEV_RULES=ON", "-DINSTALL_UDEV_RULES=OFF"),
+        "zerocopy": ("--enable-zerocopy", "--disable-zerocopy"),
     },
 
     pre_configure = """

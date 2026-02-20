@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "spacy-xx_ent_wiki_sm",
     version = "3.4.0",
-    src_uri = "https://github.com/explosion/spacy-models/releases/download/xx_ent_wiki_sm-3.4.0/xx_ent_wiki_sm-3.4.0.tar.gz",
+    url = "https://github.com/explosion/spacy-models/releases/download/xx_ent_wiki_sm-3.4.0/xx_ent_wiki_sm-3.4.0.tar.gz",
     sha256 = "fddc06f16801fe760bbd9caa727d4887c73b98aa7042c790eb4720a3a90eece1",
     deps = [
         "//packages/linux/ai/nlp/spacy:spacy",

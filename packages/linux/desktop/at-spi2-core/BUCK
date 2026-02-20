@@ -1,17 +1,17 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
 # at-spi2-core - Assistive Technology Service Provider Interface
 # Provides atk-bridge-2.0 for GTK accessibility
-meson_package(
+package(
+    build_rule = "meson",
     name = "at-spi2-core",
     version = "2.52.0",
-    src_uri = "https://download.gnome.org/sources/at-spi2-core/2.52/at-spi2-core-2.52.0.tar.xz",
+    url = "https://download.gnome.org/sources/at-spi2-core/2.52/at-spi2-core-2.52.0.tar.xz",
     sha256 = "0ac3fc8320c8d01fa147c272ba7fa03806389c6b03d3c406d0823e30e35ff5ab",
-    signature_required = False,
     description = "Assistive Technology Service Provider Interface",
     homepage = "https://gitlab.gnome.org/GNOME/at-spi2-core",
     license = "LGPL-2.1+",
-    meson_args = [
+    configure_args = [
         "-Dintrospection=disabled",
         "-Ddocs=false",
         "-Dx11=enabled",

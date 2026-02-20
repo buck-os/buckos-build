@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # strong_type - Named types that are type-safe
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "strong_type",
     version = "15",
-    src_uri = "https://github.com/rollbear/strong_type/archive/refs/tags/v15.tar.gz",
+    url = "https://github.com/rollbear/strong_type/archive/refs/tags/v15.tar.gz",
     sha256 = "d445398d4c4d6795060ac2b60be146b3cd7e6039985244b2d56f9bc333f20bae",
     description = "Named types that are type-safe",
     homepage = "https://github.com/rollbear/strong_type",
     license = "BSL-1.0",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],
     visibility = ["PUBLIC"],

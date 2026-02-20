@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "fairseq_seamless_main",
     version = "0.12.2",
-    src_uri = "https://github.com/facebookresearch/fairseq/archive/refs/heads/seamless_main.tar.gz",
+    url = "https://github.com/facebookresearch/fairseq/archive/refs/heads/seamless_main.tar.gz",
     sha256 = "13da8384a7d98e1e60d696cb55a478b18d911e94def797b1dd1f745d6e453aee",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

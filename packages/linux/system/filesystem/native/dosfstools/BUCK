@@ -1,18 +1,14 @@
-load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "dosfstools",
-    src_uri = "https://github.com/dosfstools/dosfstools/releases/download/v4.2/dosfstools-4.2.tar.gz",
+    url = "https://github.com/dosfstools/dosfstools/releases/download/v4.2/dosfstools-4.2.tar.gz",
 
     sha256 = "64926eebf90092dca21b14259a5301b7b98e7b1943e8a201c7d726084809b527",
-
-    signature_sha256 = "90f58a303fd7c55e02370357054f7207f05c3736f23d9a82cfb4a10acd7d55f9",
-    iuse = ["compat", "iconv"],
     use_configure = {
-        "-compat": "--disable-compat",
-        "-iconv": "--disable-iconv",
-        "compat": "--enable-compat",
-        "iconv": "--enable-iconv",
+        "compat": ("--enable-compat", "--disable-compat"),
+        "iconv": ("--enable-iconv", "--disable-iconv"),
     },
     version = "4.2",
     description = "DOS/FAT filesystem utilities (mkfs.fat, fsck.fat, fatlabel)",
