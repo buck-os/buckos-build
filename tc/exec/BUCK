@@ -1,0 +1,61 @@
+"""
+Execution platform definitions for BuckOS toolchain modes.
+
+Selection via --config tc.mode={host,cross}:
+
+    buck2 build //packages/linux/core:zlib --config tc.mode=host
+    buck2 build //packages/linux/core:zlib --config tc.mode=cross
+
+The :platforms target aggregates available execution platforms and is
+registered in .buckconfig:
+
+    [build]
+    execution_platforms = //tc/exec:platforms
+
+When buckos is a subcell in a monorepo, the monorepo root registers
+buckos execution platforms alongside its own:
+
+    [build]
+    execution_platforms = //exec:platforms, buckos//tc/exec:platforms
+"""
+
+load("//tc:defs.bzl", "buckos_execution_platforms")
+
+# ── Mode config settings ─────────────────────────────────────────────
+#
+# These config_settings let rules select() on tc.mode to choose
+# different toolchain behavior.
+
+config_setting(
+    name = "mode-host",
+    values = {"tc.mode": "host"},
+    visibility = ["PUBLIC"],
+)
+
+config_setting(
+    name = "mode-cross",
+    values = {"tc.mode": "cross"},
+    visibility = ["PUBLIC"],
+)
+
+config_setting(
+    name = "mode-bootstrap",
+    values = {"tc.mode": "bootstrap"},
+    visibility = ["PUBLIC"],
+)
+
+config_setting(
+    name = "mode-prebuilt",
+    values = {"tc.mode": "prebuilt"},
+    visibility = ["PUBLIC"],
+)
+
+# Fallback: when tc.mode is unset, default to host mode.  Rules that
+# use select() on mode-host / mode-cross should include a DEFAULT.
+
+# ── Platform registry ────────────────────────────────────────────────
+
+buckos_execution_platforms(
+    name = "platforms",
+    visibility = ["PUBLIC"],
+)

@@ -1,0 +1,27 @@
+"""
+Bootstrap toolchain instantiation and export.
+
+Provides:
+  :bootstrap-toolchain  — BuildToolchainInfo wrapping Stage 2 output
+  :export               — distributable tar.zst archive of the complete toolchain
+"""
+
+load("//tc:toolchain_rules.bzl", "buckos_bootstrap_toolchain")
+load("//defs/rules:toolchain_export.bzl", "toolchain_export")
+
+buckos_bootstrap_toolchain(
+    name = "bootstrap-toolchain",
+    bootstrap_stage = "//tc/bootstrap/stage1:stage1",
+    visibility = ["PUBLIC"],
+)
+
+# Export the Stage 1 cross-compiler (runs on host, targets buckos).
+# Stage 2 produces native tools for the target system — those can't
+# run on the build host and are used for rootfs content instead.
+toolchain_export(
+    name = "export",
+    stage = "//tc/bootstrap/stage1:stage1",
+    gcc_version = "14.3.0",
+    glibc_version = "2.42",
+    visibility = ["PUBLIC"],
+)

@@ -1,132 +1,92 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package", "binary_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package_defs.bzl", "ebuild_package")
 
 # =============================================================================
-# GCC - GNU Compiler Collection
+# GCC - GNU Compiler Collection (from bootstrap toolchain)
 # =============================================================================
-# USE flags: fortran, objc, go, lto, multilib, graphite, nls
-# Default: fortran, lto
+# Extracts the GCC compiler from the bootstrap toolchain for installation
+# in the rootfs.  Does not build from source — uses the pre-built toolchain.
 
-download_source(
-    name = "gcc-src",
+ebuild_package(
+    name = "gcc",
     src_uri = "https://mirror.buckos.org/g/gcc-14.3.0.tar.gz",
     sha256 = "ace8b8b0dbfe6abfc22f821cb093e195aa5498b7ccf7cd23e4424b9f14afed22",
-    signature_required = False,
-)
-
-binary_package(
-    name = "gcc",
-    srcs = [":gcc-src"],
     version = "14.3.0",
+    category = "lang",
     description = "GNU Compiler Collection - C, C++, and Fortran compilers",
     homepage = "https://gcc.gnu.org/",
     license = "GPL-3.0",
-    install_script = """
-        cd "$SRCS"
 
-        # GCC configure does its own internal testing - don't pass external CFLAGS/LDFLAGS
-        # as they can interfere with the compiler sanity test (especially long -rpath-link)
-        unset CFLAGS
-        unset CXXFLAGS
-        unset LDFLAGS
-        unset CPATH
+    src_configure = "true",
+    src_compile = "true",
 
-        # Find dependency prefixes from DEPS_DIRS
-        GMP_PREFIX=""
-        MPFR_PREFIX=""
-        MPC_PREFIX=""
-        ISL_PREFIX=""
-        for dep in $DEPS_DIRS; do
-            if [ -f "$dep/usr/include/gmp.h" ]; then
-                GMP_PREFIX="$dep/usr"
-                echo "Found GMP at: $GMP_PREFIX"
-            fi
-            if [ -f "$dep/usr/include/mpfr.h" ]; then
-                MPFR_PREFIX="$dep/usr"
-                echo "Found MPFR at: $MPFR_PREFIX"
-            fi
-            if [ -f "$dep/usr/include/mpc.h" ]; then
-                MPC_PREFIX="$dep/usr"
-                echo "Found MPC at: $MPC_PREFIX"
-            fi
-            if [ -f "$dep/usr/include/isl/ctx.h" ]; then
-                ISL_PREFIX="$dep/usr"
-                echo "Found ISL at: $ISL_PREFIX"
+    src_install = '''
+# Extract GCC from bootstrap-toolchain
+mkdir -p "$DESTDIR/usr/bin" "$DESTDIR/usr/lib64" "$DESTDIR/usr/lib" "$DESTDIR/usr/include"
+
+for dep_dir in $DEPS_DIRS; do
+    if [ -f "$dep_dir/tools/.bootstrap-toolchain" ]; then
+        echo "Found bootstrap-toolchain at: $dep_dir"
+        TOOLS="$dep_dir/tools"
+
+        # Copy compiler binaries
+        for bin in gcc g++ cpp gcov gcc-ar gcc-nm gcc-ranlib; do
+            if [ -f "$TOOLS/bin/$bin" ] || [ -f "$TOOLS/bin/x86_64-buckos-linux-gnu-$bin" ]; then
+                src="$TOOLS/bin/$bin"
+                [ -f "$src" ] || src="$TOOLS/bin/x86_64-buckos-linux-gnu-$bin"
+                cp -a "$src" "$DESTDIR/usr/bin/$bin"
+                echo "Installed $bin"
             fi
         done
 
-        # Create build directory (out-of-tree build recommended for GCC)
-        mkdir -p "$WORK/gcc-build"
-        cd "$WORK/gcc-build"
+        # Create standard symlinks
+        cd "$DESTDIR/usr/bin"
+        [ -f gcc ] && ln -sf gcc cc
+        [ -f g++ ] && ln -sf g++ c++
 
-        # Build configure options
-        EXTRA_OPTS=""
-        [ -n "$GMP_PREFIX" ] && EXTRA_OPTS="$EXTRA_OPTS --with-gmp=$GMP_PREFIX"
-        [ -n "$MPFR_PREFIX" ] && EXTRA_OPTS="$EXTRA_OPTS --with-mpfr=$MPFR_PREFIX"
-        [ -n "$MPC_PREFIX" ] && EXTRA_OPTS="$EXTRA_OPTS --with-mpc=$MPC_PREFIX"
-        [ -n "$ISL_PREFIX" ] && EXTRA_OPTS="$EXTRA_OPTS --with-isl=$ISL_PREFIX"
+        # Copy libexec (cc1, cc1plus, collect2, lto-wrapper)
+        if [ -d "$TOOLS/libexec/gcc" ]; then
+            mkdir -p "$DESTDIR/usr/lib/gcc"
+            cp -a "$TOOLS/libexec/gcc"/* "$DESTDIR/usr/lib/gcc/"
+        fi
 
-        # Configure GCC
-        "$SRCS/configure" \\
-            --prefix=/usr \\
-            --libdir=/usr/lib64 \\
-            --libexecdir=/usr/lib \\
-            --enable-languages=c,c++,fortran \\
-            --enable-shared \\
-            --enable-threads=posix \\
-            --enable-__cxa_atexit \\
-            --enable-clocale=gnu \\
-            --enable-gnu-indirect-function \\
-            --enable-linker-build-id \\
-            --enable-lto \\
-            --enable-plugin \\
-            --enable-default-pie \\
-            --enable-default-ssp \\
-            --disable-multilib \\
-            --disable-werror \\
-            --disable-bootstrap \\
-            --disable-libsanitizer \\
-            --with-system-zlib \\
-            --with-linker-hash-style=gnu \\
-            $EXTRA_OPTS
+        # Copy compiler support libraries
+        for lib in libgcc_s.so* libstdc++.so* libgomp.so* libatomic.so* libitm.so* libquadmath.so*; do
+            for f in "$TOOLS/lib/$lib" "$TOOLS/lib64/$lib"; do
+                [ -f "$f" ] && cp -a "$f" "$DESTDIR/usr/lib64/" 2>/dev/null
+            done
+        done
 
-        # Build and install
-        make -j${MAKEOPTS:-$(nproc)}
-        make DESTDIR="$OUT" install
+        # Copy headers (C++ stdlib headers)
+        if [ -d "$TOOLS/include/c++" ]; then
+            cp -a "$TOOLS/include/c++" "$DESTDIR/usr/include/"
+        fi
 
-        # Create compatibility symlinks
-        cd "$OUT/usr/bin"
-        ln -sf gcc cc
-        ln -sf g++ c++
-    """,
-    deps = [
-        "//packages/linux/lang/binutils:binutils",
-        "//packages/linux/system/libs/utility/gmp:gmp",
-        "//packages/linux/system/libs/utility/mpfr:mpfr",
-        "//packages/linux/system/libs/utility/mpc:mpc",
-        "//packages/linux/system/libs/utility/isl:isl",
-        "//packages/linux/core/zlib:zlib",
-    ],
+        break
+    fi
+done
+
+# Verify
+if [ ! -f "$DESTDIR/usr/bin/gcc" ]; then
+    echo "ERROR: gcc not found in bootstrap-toolchain!"
+    exit 1
+fi
+echo "GCC installed from bootstrap-toolchain"
+''',
+
+    depend = ["toolchains//bootstrap:bootstrap-toolchain"],
     visibility = ["PUBLIC"],
 )
 
 # =============================================================================
 # GCC Runtime Libraries - C/C++ runtime for target systems
 # =============================================================================
-# Provides ONLY the runtime libraries (libstdc++, libgcc_s) for installation
-# in target rootfs. Extracts from bootstrap-toolchain and installs to /usr/lib64.
-
-load("//defs:package_defs.bzl", "ebuild_package")
 
 ebuild_package(
     name = "gcc-runtime",
     src_uri = "https://mirror.buckos.org/g/gcc-14.3.0.tar.gz",
-
     sha256 = "ace8b8b0dbfe6abfc22f821cb093e195aa5498b7ccf7cd23e4424b9f14afed22",
-  # Dummy source
     version = "14.3.0",
     category = "lang/runtime",
-    slot = "0",
     description = "GCC runtime libraries (libstdc++, libgcc_s) for C/C++ applications",
     homepage = "https://gcc.gnu.org/",
     license = "GPL-3.0",
@@ -135,26 +95,18 @@ ebuild_package(
     src_compile = "true",
 
     src_install = '''
-# Extract runtime libraries from bootstrap-toolchain and install to /usr/lib64
 mkdir -p "$DESTDIR/usr/lib64"
 
-# Find the bootstrap-toolchain in dependencies
-IFS=':' read -ra DEP_ARRAY <<< "$DEP_BASE_DIRS"
-for dep_dir in "${DEP_ARRAY[@]}"; do
+for dep_dir in $DEPS_DIRS; do
     if [ -f "$dep_dir/tools/.bootstrap-toolchain" ]; then
         echo "Found bootstrap-toolchain at: $dep_dir"
 
-        # Copy libstdc++ runtime libraries
-        if [ -f "$dep_dir/tools/lib/libstdc++.so.6" ]; then
-            cp -a "$dep_dir/tools/lib/libstdc++.so.6"* "$DESTDIR/usr/lib64/"
-            echo "Installed libstdc++.so.6 to /usr/lib64/"
-        fi
-
-        # Copy libgcc_s runtime library
-        if [ -f "$dep_dir/tools/lib/libgcc_s.so.1" ]; then
-            cp -a "$dep_dir/tools/lib/libgcc_s.so.1"* "$DESTDIR/usr/lib64/"
-            echo "Installed libgcc_s.so.1 to /usr/lib64/"
-        fi
+        # Copy runtime libraries
+        for lib in libstdc++.so* libgcc_s.so*; do
+            for f in "$dep_dir/tools/lib/$lib"; do
+                [ -f "$f" ] && cp -a "$f" "$DESTDIR/usr/lib64/"
+            done
+        done
 
         # Create symlinks
         cd "$DESTDIR/usr/lib64"
@@ -165,18 +117,11 @@ for dep_dir in "${DEP_ARRAY[@]}"; do
     fi
 done
 
-# Verify libraries were installed
 if [ ! -f "$DESTDIR/usr/lib64/libstdc++.so.6" ]; then
     echo "ERROR: libstdc++.so.6 not found!"
     exit 1
 fi
-if [ ! -f "$DESTDIR/usr/lib64/libgcc_s.so.1" ]; then
-    echo "ERROR: libgcc_s.so.1 not found!"
-    exit 1
-fi
-
-echo "GCC runtime libraries installed successfully"
-ls -lh "$DESTDIR/usr/lib64/"libstdc++* "$DESTDIR/usr/lib64/"libgcc_s*
+echo "GCC runtime libraries installed"
 ''',
 
     depend = ["toolchains//bootstrap:bootstrap-toolchain"],

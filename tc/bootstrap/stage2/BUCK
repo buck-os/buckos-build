@@ -1,0 +1,447 @@
+"""
+Bootstrap Stage 2: Native tools built with Stage 1 cross-compiler.
+
+Uses the Stage 1 cross-compiler (BootstrapStageInfo) to build native
+tools for the target system via Canadian cross:
+  --build=x86_64-linux-gnu
+  --host=x86_64-buckos-linux-gnu
+  --target=x86_64-buckos-linux-gnu
+"""
+
+load("//defs/rules:source.bzl", "extract_source")
+load("//defs/rules:bootstrap.bzl",
+    "bootstrap_binutils",
+    "bootstrap_gcc",
+    "bootstrap_glibc",
+    "bootstrap_package",
+)
+load(":defs.bzl", "stage2_aggregator")
+
+TARGET_TRIPLE = "x86_64-buckos-linux-gnu"
+
+# ── Source targets for native packages ───────────────────────────────
+# Source targets for bootstrap packages follow the same http_file +
+# extract_source pattern as regular packages.  The package() macro is
+# not used here because bootstrap packages use specialized build rules.
+
+http_file(
+    name = "coreutils-archive",
+    urls = ["https://mirrors.kernel.org/gnu/coreutils/coreutils-9.5.tar.xz"],
+    sha256 = "cd328edeac92f6a665de9f323c93b712af1858bc2e0d88f3f7100469470a1b8a",
+    out = "coreutils-9.5.tar.xz",
+)
+extract_source(name = "coreutils-src", source = ":coreutils-archive")
+
+http_file(
+    name = "bash-archive",
+    urls = ["https://mirrors.kernel.org/gnu/bash/bash-5.3.tar.gz"],
+    sha256 = "0d5cd86965f869a26cf64f4b71be7b96f90a3ba8b3d74e27e8e9d9d5550f31ba",
+    out = "bash-5.3.tar.gz",
+)
+extract_source(name = "bash-src", source = ":bash-archive")
+
+http_file(
+    name = "make-archive",
+    urls = ["https://mirrors.kernel.org/gnu/make/make-4.4.1.tar.gz"],
+    sha256 = "dd16fb1d67bfab79a72f5e8390735c49e3e8e70b4945a15ab1f81ddb78658fb3",
+    out = "make-4.4.1.tar.gz",
+)
+extract_source(name = "make-src", source = ":make-archive")
+
+http_file(
+    name = "sed-archive",
+    urls = ["https://mirrors.kernel.org/gnu/sed/sed-4.9.tar.xz"],
+    sha256 = "6e226b732e1cd739464ad6862bd1a1aba42d7982922da7a53519631d24975181",
+    out = "sed-4.9.tar.xz",
+)
+extract_source(name = "sed-src", source = ":sed-archive")
+
+http_file(
+    name = "grep-archive",
+    urls = ["https://mirrors.kernel.org/gnu/grep/grep-3.11.tar.xz"],
+    sha256 = "1db2aedde89d0dea42b16d9528f894c8d15dae4e190b59aecc78f5a951276eab",
+    out = "grep-3.11.tar.xz",
+)
+extract_source(name = "grep-src", source = ":grep-archive")
+
+http_file(
+    name = "gawk-archive",
+    urls = ["https://mirrors.kernel.org/gnu/gawk/gawk-5.3.0.tar.xz"],
+    sha256 = "ca9c16d3d11d0ff8c69d79dc0b47267e1329a69b39b799895604ed447d3ca90b",
+    out = "gawk-5.3.0.tar.xz",
+)
+extract_source(name = "gawk-src", source = ":gawk-archive")
+
+http_file(
+    name = "findutils-archive",
+    urls = ["https://mirrors.kernel.org/gnu/findutils/findutils-4.9.0.tar.xz"],
+    sha256 = "a2bfb8c09d436770edc59f50fa483e785b161a3b7b9d547573cb08065fd462fe",
+    out = "findutils-4.9.0.tar.xz",
+)
+extract_source(name = "findutils-src", source = ":findutils-archive")
+
+http_file(
+    name = "diffutils-archive",
+    urls = ["https://mirrors.kernel.org/gnu/diffutils/diffutils-3.10.tar.xz"],
+    sha256 = "90e5e93cc724e4ebe12ede80df1634063c7a855692685919bfe60b556c9bd09e",
+    out = "diffutils-3.10.tar.xz",
+)
+extract_source(name = "diffutils-src", source = ":diffutils-archive")
+
+http_file(
+    name = "patch-archive",
+    urls = ["https://mirrors.kernel.org/gnu/patch/patch-2.7.6.tar.xz"],
+    sha256 = "ac610bda97abe0d9f6b7c963255a11dcb196c25e337c61f94e4778d632f1d8fd",
+    out = "patch-2.7.6.tar.xz",
+)
+extract_source(name = "patch-src", source = ":patch-archive")
+
+http_file(
+    name = "tar-archive",
+    urls = ["https://mirrors.kernel.org/gnu/tar/tar-1.35.tar.xz"],
+    sha256 = "4d62ff37342ec7aed748535323930c7cf94acf71c3591882b26a7ea50f3edc16",
+    out = "tar-1.35.tar.xz",
+)
+extract_source(name = "tar-src", source = ":tar-archive")
+
+http_file(
+    name = "gzip-archive",
+    urls = ["https://mirrors.kernel.org/gnu/gzip/gzip-1.14.tar.xz"],
+    sha256 = "01a7b881bd220bfdf615f97b8718f80bdfd3f6add385b993dcf6efd14e8c0ac6",
+    out = "gzip-1.14.tar.xz",
+)
+extract_source(name = "gzip-src", source = ":gzip-archive")
+
+http_file(
+    name = "xz-archive",
+    urls = ["https://github.com/tukaani-project/xz/releases/download/v5.6.3/xz-5.6.3.tar.xz"],
+    sha256 = "db0590629b6f0fa36e74aea5f9731dc6f8df068ce7b7bafa45301832a5eebc3a",
+    out = "xz-5.6.3.tar.xz",
+)
+extract_source(name = "xz-src", source = ":xz-archive")
+
+http_file(
+    name = "bzip2-archive",
+    urls = ["https://mirror.buckos.org/b/bzip2-1.0.8.tar.gz"],
+    sha256 = "ab5a03176ee106d3f0fa90e381da478ddae405918153cca248e682cd0c4a2269",
+    out = "bzip2-1.0.8.tar.gz",
+)
+extract_source(name = "bzip2-src", source = ":bzip2-archive")
+
+# Also need native binutils, gcc, glibc sources — reference stage1 sources
+# via inline version data (same sources, just re-downloaded for stage2 context)
+
+http_file(
+    name = "binutils-archive",
+    urls = ["https://mirror.buckos.org/b/binutils-2.45.1.tar.xz"],
+    sha256 = "5fe101e6fe9d18fdec95962d81ed670fdee5f37e3f48f0bef87bddf862513aa5",
+    out = "binutils-2.45.1.tar.xz",
+)
+extract_source(name = "binutils-src", source = ":binutils-archive")
+
+http_file(
+    name = "gcc-archive",
+    urls = ["https://mirror.buckos.org/g/gcc-14.3.0.tar.gz"],
+    sha256 = "ace8b8b0dbfe6abfc22f821cb093e195aa5498b7ccf7cd23e4424b9f14afed22",
+    out = "gcc-14.3.0.tar.gz",
+)
+extract_source(name = "gcc-src", source = ":gcc-archive")
+
+http_file(
+    name = "glibc-archive",
+    urls = ["https://mirror.buckos.org/g/glibc-2.42.tar.gz"],
+    sha256 = "d4468d3e3267068c1b0623ca6424aac9a28766df774c8d8fb4978127fca7125a",
+    out = "glibc-2.42.tar.gz",
+)
+extract_source(name = "glibc-src", source = ":glibc-archive")
+
+http_file(
+    name = "gmp-archive",
+    urls = ["https://mirror.buckos.org/g/gmp-6.3.0.tar.xz"],
+    sha256 = "a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898",
+    out = "gmp-6.3.0.tar.xz",
+)
+extract_source(name = "gmp-src", source = ":gmp-archive")
+
+http_file(
+    name = "mpfr-archive",
+    urls = ["https://mirror.buckos.org/m/mpfr-4.2.1.tar.xz"],
+    sha256 = "277807353a6726978996945af13e52829e3abd7a9a5b7fb2793894e18f1fcbb2",
+    out = "mpfr-4.2.1.tar.xz",
+)
+extract_source(name = "mpfr-src", source = ":mpfr-archive")
+
+http_file(
+    name = "mpc-archive",
+    urls = ["https://mirror.buckos.org/m/mpc-1.3.1.tar.gz"],
+    sha256 = "ab642492f5cf882b74aa0cb730cd410a81edcdbec895183ce930e706c1c759b8",
+    out = "mpc-1.3.1.tar.gz",
+)
+extract_source(name = "mpc-src", source = ":mpc-archive")
+
+http_file(
+    name = "linux-archive",
+    urls = ["https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.60.tar.xz"],
+    sha256 = "a63096b2147411d683cecbf87622bb2ff4885bac2b3641d3d4f10250c89cdcf8",
+    out = "linux-6.12.60.tar.xz",
+)
+extract_source(name = "linux-src", source = ":linux-archive")
+
+# ── Common configure args for Canadian cross ─────────────────────────
+
+_CANADIAN_CROSS_ARGS = [
+    "--build=x86_64-linux-gnu",
+    "--host=" + TARGET_TRIPLE,
+    "--target=" + TARGET_TRIPLE,
+]
+
+_SIMPLE_CROSS_ARGS = [
+    "--prefix=/usr",
+    "--build=x86_64-linux-gnu",
+    "--host=" + TARGET_TRIPLE,
+]
+
+# ── Native binutils ─────────────────────────────────────────────────
+
+bootstrap_package(
+    name = "native-binutils",
+    source = ":binutils-src",
+    stage = "//tc/bootstrap/stage1:stage1",
+    version = "2.45.1",
+    configure_args = [
+        "--prefix=/usr",
+    ] + _CANADIAN_CROSS_ARGS + [
+        "--enable-default-hash-style=gnu",
+        "--disable-nls",
+        "--disable-werror",
+        "--disable-gdb",
+        "--disable-gdbserver",
+        "--disable-sim",
+    ],
+    build_subdir = "build",
+    license = "GPL-3.0",
+    description = "Native binutils for bootstrap",
+    visibility = ["PUBLIC"],
+)
+
+# ── Native GCC ───────────────────────────────────────────────────────
+# Native GCC is built via bootstrap_gcc with is_cross=False
+
+bootstrap_gcc(
+    name = "native-gcc",
+    source = ":gcc-src",
+    gmp_source = ":gmp-src",
+    mpfr_source = ":mpfr-src",
+    mpc_source = ":mpc-src",
+    prev_stage = "//tc/bootstrap/stage1:stage1",
+    libc_dep = "//tc/bootstrap/stage1:glibc",
+    libc_headers = "//tc/bootstrap/stage1:linux-headers",
+    languages = "c,c++",
+    is_cross = False,
+    with_headers = True,
+    stage_number = 2,
+    extra_configure_args = [
+        "--build=x86_64-linux-gnu",
+        "--host=" + TARGET_TRIPLE,
+        "--target=" + TARGET_TRIPLE,
+    ],
+    visibility = ["PUBLIC"],
+)
+
+# ── Native glibc ─────────────────────────────────────────────────────
+
+bootstrap_package(
+    name = "native-glibc",
+    source = ":glibc-src",
+    stage = "//tc/bootstrap/stage1:stage1",
+    version = "2.42",
+    configure_args = _SIMPLE_CROSS_ARGS + [
+        "--enable-kernel=4.19",
+        "--disable-nscd",
+        "--disable-werror",
+    ],
+    build_subdir = "build",
+    license = "LGPL-2.1+",
+    description = "Native glibc for bootstrap",
+    visibility = ["PUBLIC"],
+)
+
+# ── Native utility packages ─────────────────────────────────────────
+
+bootstrap_package(
+    name = "native-coreutils",
+    source = ":coreutils-src",
+    stage = "//tc/bootstrap/stage1:stage1",
+    version = "9.5",
+    configure_args = _SIMPLE_CROSS_ARGS + [
+        "--enable-no-install-program=kill,uptime",
+    ],
+    license = "GPL-3.0",
+    description = "GNU core utilities",
+    visibility = ["PUBLIC"],
+)
+
+bootstrap_package(
+    name = "native-bash",
+    source = ":bash-src",
+    stage = "//tc/bootstrap/stage1:stage1",
+    version = "5.3",
+    configure_args = _SIMPLE_CROSS_ARGS + [
+        "--without-bash-malloc",
+    ],
+    license = "GPL-3.0",
+    description = "GNU Bourne-Again Shell",
+    visibility = ["PUBLIC"],
+)
+
+bootstrap_package(
+    name = "native-make",
+    source = ":make-src",
+    stage = "//tc/bootstrap/stage1:stage1",
+    version = "4.4.1",
+    configure_args = _SIMPLE_CROSS_ARGS,
+    license = "GPL-3.0",
+    description = "GNU Make",
+    visibility = ["PUBLIC"],
+)
+
+bootstrap_package(
+    name = "native-sed",
+    source = ":sed-src",
+    stage = "//tc/bootstrap/stage1:stage1",
+    version = "4.9",
+    configure_args = _SIMPLE_CROSS_ARGS,
+    license = "GPL-3.0",
+    description = "GNU sed",
+    visibility = ["PUBLIC"],
+)
+
+bootstrap_package(
+    name = "native-grep",
+    source = ":grep-src",
+    stage = "//tc/bootstrap/stage1:stage1",
+    version = "3.11",
+    configure_args = _SIMPLE_CROSS_ARGS,
+    license = "GPL-3.0",
+    description = "GNU grep",
+    visibility = ["PUBLIC"],
+)
+
+bootstrap_package(
+    name = "native-gawk",
+    source = ":gawk-src",
+    stage = "//tc/bootstrap/stage1:stage1",
+    version = "5.3.0",
+    configure_args = _SIMPLE_CROSS_ARGS,
+    license = "GPL-3.0",
+    description = "GNU awk",
+    visibility = ["PUBLIC"],
+)
+
+bootstrap_package(
+    name = "native-findutils",
+    source = ":findutils-src",
+    stage = "//tc/bootstrap/stage1:stage1",
+    version = "4.9.0",
+    configure_args = _SIMPLE_CROSS_ARGS,
+    license = "GPL-3.0",
+    description = "GNU find utilities",
+    visibility = ["PUBLIC"],
+)
+
+bootstrap_package(
+    name = "native-diffutils",
+    source = ":diffutils-src",
+    stage = "//tc/bootstrap/stage1:stage1",
+    version = "3.10",
+    configure_args = _SIMPLE_CROSS_ARGS,
+    license = "GPL-3.0",
+    description = "GNU diff utilities",
+    visibility = ["PUBLIC"],
+)
+
+bootstrap_package(
+    name = "native-patch",
+    source = ":patch-src",
+    stage = "//tc/bootstrap/stage1:stage1",
+    version = "2.7.6",
+    configure_args = _SIMPLE_CROSS_ARGS,
+    license = "GPL-3.0",
+    description = "GNU patch",
+    visibility = ["PUBLIC"],
+)
+
+bootstrap_package(
+    name = "native-tar",
+    source = ":tar-src",
+    stage = "//tc/bootstrap/stage1:stage1",
+    version = "1.35",
+    configure_args = _SIMPLE_CROSS_ARGS,
+    license = "GPL-3.0",
+    description = "GNU tar",
+    visibility = ["PUBLIC"],
+)
+
+bootstrap_package(
+    name = "native-gzip",
+    source = ":gzip-src",
+    stage = "//tc/bootstrap/stage1:stage1",
+    version = "1.14",
+    configure_args = _SIMPLE_CROSS_ARGS,
+    license = "GPL-3.0",
+    description = "GNU gzip",
+    visibility = ["PUBLIC"],
+)
+
+bootstrap_package(
+    name = "native-xz",
+    source = ":xz-src",
+    stage = "//tc/bootstrap/stage1:stage1",
+    version = "5.6.3",
+    configure_args = _SIMPLE_CROSS_ARGS + [
+        "--disable-doc",
+    ],
+    license = "GPL-2.0",
+    description = "XZ compression utilities",
+    visibility = ["PUBLIC"],
+)
+
+# bzip2 doesn't use autotools — uses plain Makefile.
+# Its Makefile hardcodes CC=gcc and uses PREFIX directly (no DESTDIR).
+bootstrap_package(
+    name = "native-bzip2",
+    source = ":bzip2-src",
+    stage = "//tc/bootstrap/stage1:stage1",
+    version = "1.0.8",
+    skip_configure = True,
+    cc_as_make_arg = True,
+    destdir_var = "PREFIX",
+    license = "BSD",
+    description = "bzip2 compression",
+    visibility = ["PUBLIC"],
+)
+
+# ── Stage 2 aggregator ──────────────────────────────────────────────
+
+stage2_aggregator(
+    name = "stage2",
+    native_gcc = ":native-gcc",
+    native_tools = [
+        ":native-binutils",
+        ":native-glibc",
+        ":native-coreutils",
+        ":native-bash",
+        ":native-make",
+        ":native-sed",
+        ":native-grep",
+        ":native-gawk",
+        ":native-findutils",
+        ":native-diffutils",
+        ":native-patch",
+        ":native-tar",
+        ":native-gzip",
+        ":native-xz",
+        ":native-bzip2",
+    ],
+    visibility = ["PUBLIC"],
+)

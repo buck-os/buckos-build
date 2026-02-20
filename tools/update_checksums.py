@@ -239,11 +239,11 @@ def get_failed_targets_from_log(root: Path) -> set[str]:
         output = result.stdout + result.stderr
 
         # Look for signature download failures
-        # Pattern: root//packages/linux/foo/bar:name-src-sig
+        # Pattern: buckos//packages/linux/foo/bar:name-src-sig
         for line in output.split('\n'):
             if '-src-sig' in line and ('404' in line or 'download_file' in line or 'Error' in line):
                 # Extract target path
-                match = re.search(r'(root//[^:]+:[^\s]+)-sig', line)
+                match = re.search(r'(buckos//[^:]+:[^\s]+)-sig', line)
                 if match:
                     # Convert to source name (remove -sig suffix)
                     target = match.group(1)
@@ -254,7 +254,7 @@ def get_failed_targets_from_log(root: Path) -> set[str]:
                         failed.add(name)
 
         # Also try parsing raw output for package names
-        for match in re.finditer(r'root//packages/[^:]+:([^-\s]+)-src-sig', output):
+        for match in re.finditer(r'buckos//packages/[^:]+:([^-\s]+)-src-sig', output):
             failed.add(match.group(1) + '-src')
 
     except Exception as e:

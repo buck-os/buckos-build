@@ -1,0 +1,18 @@
+[cells]
+  toolchains = .
+  buckos = ..
+  prelude = ../prelude
+
+[cell_aliases]
+  config = prelude
+  buck = buckos
+
+[external_cells]
+  prelude = bundled
+
+[build]
+  default_target_platform = buckos//platforms:linux-x86_64
+  execution_platforms = buckos//tc/exec:platforms
+
+[parser]
+  target_platform_detector_spec = target:toolchains//...->buckos//platforms:linux-x86_64

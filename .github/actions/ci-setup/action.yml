@@ -47,5 +47,5 @@ runs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
         elif [ ! -e /dev/kvm ]; then
-          echo "::warning::/dev/kvm not found — integration tests will fail"
+          echo "::warning::/dev/kvm not found -- IMA QEMU tests will be skipped"
         fi

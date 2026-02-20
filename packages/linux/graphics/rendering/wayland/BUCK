@@ -22,18 +22,33 @@ ebuild_package(
     # Build with host toolchain only
     bdepend = [],
     src_prepare = "",
+    exec_bdepend = [
+        "//packages/linux/system/libs/data/expat:expat-host",
+    ],
     src_configure = """
 # Use host compiler for native build
 unset CC CXX AR RANLIB LD STRIP
 unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS
 export CC=gcc
 export CXX=g++
-# Use host pkg-config paths
-export PKG_CONFIG_PATH="/usr/lib64/pkgconfig:/usr/share/pkgconfig"
-# Ensure host include/lib paths are used, link against expat
-export CFLAGS="-I/usr/include"
-export CXXFLAGS="-I/usr/include"
-export LDFLAGS="-L/usr/lib64 -lexpat"
+
+# Find buckos-built expat-host in exec deps
+for dep in $EXEC_DEPS_DIRS; do
+    if [ -f "$dep/usr/lib64/pkgconfig/expat.pc" ]; then
+        export PKG_CONFIG_PATH="$dep/usr/lib64/pkgconfig:$dep/usr/share/pkgconfig"
+        export CFLAGS="-I$dep/usr/include"
+        export LDFLAGS="-L$dep/usr/lib64 -Wl,-rpath,$dep/usr/lib64"
+        echo "Found expat-host at: $dep"
+        break
+    elif [ -f "$dep/usr/lib/pkgconfig/expat.pc" ]; then
+        export PKG_CONFIG_PATH="$dep/usr/lib/pkgconfig:$dep/usr/share/pkgconfig"
+        export CFLAGS="-I$dep/usr/include"
+        export LDFLAGS="-L$dep/usr/lib -Wl,-rpath,$dep/usr/lib"
+        echo "Found expat-host at: $dep"
+        break
+    fi
+done
+
 # Ensure host meson/ninja are in PATH
 export PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
 

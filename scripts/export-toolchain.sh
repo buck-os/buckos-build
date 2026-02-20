@@ -15,7 +15,7 @@ set -euo pipefail
 ARCH="$(uname -m)"
 DEFAULT_OUTPUT_DIR="$HOME/.cache/buckos/toolchains"
 OUTPUT_DIR=""
-TARGET="toolchains//bootstrap:bootstrap-toolchain"
+TARGET="//toolchains/bootstrap:bootstrap-toolchain"
 
 usage() {
     echo "Usage: $0 [--output DIR] [--arch ARCH] [--target TARGET]"
@@ -57,7 +57,7 @@ TARBALL_NAME="bootstrap-toolchain-${ARCH}.tar.zst"
 TARBALL_PATH="${OUTPUT_DIR}/${TARBALL_NAME}"
 
 echo "==> Discovering bootstrap targets..."
-mapfile -t ALL_TARGETS < <(buck2 targets toolchains//bootstrap:)
+mapfile -t ALL_TARGETS < <(buck2 targets //toolchains/bootstrap:)
 
 # Filter out broken targets
 TARGETS=()
@@ -72,7 +72,7 @@ echo "==> Building ${#TARGETS[@]} bootstrap targets (skipped verify targets)..."
 buck2 build "${TARGETS[@]}"
 
 echo "==> Collecting build outputs..."
-mapfile -t BUILD_OUTPUTS < <(buck2 targets --show-output toolchains//bootstrap: 2>/dev/null | awk '{print $2}')
+mapfile -t BUILD_OUTPUTS < <(buck2 targets --show-output //toolchains/bootstrap: 2>/dev/null | awk '{print $2}')
 
 # Collect all outputs into a staging directory
 STAGING_DIR="$(mktemp -d)"

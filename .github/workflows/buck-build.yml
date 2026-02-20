@@ -11,44 +11,51 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  query:
-    name: query tests
+  targets:
+    name: graph parse
     runs-on: ubuntu-latest
-    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/ci-setup
-      - run: uv run pytest -v -m "not slow and not integration"
+      - run: buck2 targets //...
 
-  build:
-    name: build tests
+  bxl:
+    name: bxl graph tests
     runs-on: ubuntu-latest
-    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/ci-setup
-      - run: uv run pytest -v -m "slow and not integration"
+      - name: Run BXL tests
+        run: |
+          failed=0
+          for bxl in tests/graph/test_*.bxl; do
+            name=$(basename "$bxl" .bxl)
+            echo "::group::$name"
+            buck2 bxl "//tests/graph/${name}.bxl:${name}" || failed=1
+            echo "::endgroup::"
+          done
+          exit $failed
 
-  integration:
-    name: integration tests
+  test:
+    name: buck2 test
     runs-on: ubuntu-latest
-    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/ci-setup
-      - run: uv run pytest -v -m "integration"
+      - run: buck2 test //tests:
 
   required:
-    name: all tests pass
-    if: always()
-    needs: [query, build, integration]
+    name: required-checks
     runs-on: ubuntu-latest
+    if: always()
+    needs: [targets, bxl, test]
     steps:
       - run: |
-          results=("${{ needs.query.result }}" "${{ needs.build.result }}" "${{ needs.integration.result }}")
-          for r in "${results[@]}"; do
-            if [ "$r" != "success" ]; then
-              echo "query=${{ needs.query.result }} build=${{ needs.build.result }} integration=${{ needs.integration.result }}"
+          results=("${{ needs.targets.result }}" "${{ needs.bxl.result }}" "${{ needs.test.result }}")
+          names=(targets bxl test)
+          for i in "${!names[@]}"; do
+            if [[ "${results[$i]}" != "success" ]]; then
+              echo "::error::${names[$i]} failed: ${results[$i]}"
               exit 1
             fi
           done

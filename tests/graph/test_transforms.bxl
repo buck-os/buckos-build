@@ -1,0 +1,236 @@
+"""
+BXL graph structure test: transform chain wiring.
+
+Verifies that the package() macro produces the correct chain of
+transform targets: build -> stripped -> stamped -> signed -> alias.
+
+Uses attribute inspection (source, deps, package, actual) rather
+than query.deps() to avoid traversing tool deps that require a
+C++ toolchain.
+
+Run:
+    buck2 bxl //tests/graph:test_transforms.bxl
+"""
+
+def _get_dep_strings(query, target_pattern):
+    """Return a list of strings representing declared deps.
+
+    Inspects: deps (list or select), source, package, actual.
+    Each value is converted to string for substring matching.
+    """
+    target_set = query.eval(target_pattern)
+    dep_strs = []
+    for t in target_set:
+        deps_attr = t.get_attr("deps")
+        if deps_attr != None:
+            dep_strs.append(str(deps_attr))
+        source_attr = t.get_attr("source")
+        if source_attr != None:
+            dep_strs.append(str(source_attr))
+        package_attr = t.get_attr("package")
+        if package_attr != None:
+            dep_strs.append(str(package_attr))
+        actual_attr = t.get_attr("actual")
+        if actual_attr != None:
+            dep_strs.append(str(actual_attr))
+    return dep_strs
+
+def _has_dep_matching(dep_strs, substring):
+    """Check whether any dep string contains the given substring."""
+    for s in dep_strs:
+        if substring in s:
+            return True
+    return False
+
+def _assert(ctx, results, name, condition, msg):
+    """Record a PASS/FAIL result."""
+    if condition:
+        ctx.output.print("PASS: " + name)
+        results.append(True)
+    else:
+        ctx.output.print("FAIL: " + name + " -- " + msg)
+        results.append(False)
+
+def _target_exists_in_pkg(query, pkg_path, target_name):
+    """Return True if target_name exists in the package.
+
+    Queries all targets in the package (e.g. "//pkg:") to avoid
+    query.eval() errors on missing individual targets.
+    """
+    target_set = query.eval(pkg_path + ":")
+    for t in target_set:
+        label = str(t.label)
+        if label.endswith(":" + target_name):
+            return True
+    return False
+
+def _test_transforms_impl(ctx: bxl.Context) -> None:
+    query = ctx.uquery()
+    results = []
+
+    # ================================================================
+    # zlib transform chain: build -> stripped -> stamped -> (signed) -> alias
+    # From zlib BUCK:
+    #   transforms = ["strip", "stamp"]
+    #   use_transforms = {"ima": "ima"}
+    # ================================================================
+
+    pkg = "//packages/linux/core/zlib"
+
+    # ── All expected targets exist ──
+    for suffix in ["zlib-src", "zlib-build", "zlib-stripped", "zlib-stamped", "zlib-signed", "zlib"]:
+        _assert(
+            ctx, results,
+            "target {} exists".format(suffix),
+            _target_exists_in_pkg(query, pkg, suffix),
+            "{}:{} does not exist".format(pkg, suffix),
+        )
+
+    # ── zlib-stripped depends on zlib-build (via package attr) ──
+    stripped_deps = _get_dep_strings(query, "{}:zlib-stripped".format(pkg))
+    _assert(
+        ctx, results,
+        "zlib-stripped depends on zlib-build",
+        _has_dep_matching(stripped_deps, "zlib-build"),
+        "zlib-build not in attrs of zlib-stripped",
+    )
+
+    # ── zlib-stamped depends on zlib-stripped (via package attr) ──
+    stamped_deps = _get_dep_strings(query, "{}:zlib-stamped".format(pkg))
+    _assert(
+        ctx, results,
+        "zlib-stamped depends on zlib-stripped",
+        _has_dep_matching(stamped_deps, "zlib-stripped"),
+        "zlib-stripped not in attrs of zlib-stamped",
+    )
+
+    # ── zlib-signed depends on zlib-stamped (via package attr) ──
+    signed_deps = _get_dep_strings(query, "{}:zlib-signed".format(pkg))
+    _assert(
+        ctx, results,
+        "zlib-signed depends on zlib-stamped",
+        _has_dep_matching(signed_deps, "zlib-stamped"),
+        "zlib-stamped not in attrs of zlib-signed",
+    )
+
+    # ── zlib alias depends on the last transform (zlib-signed) via actual attr ──
+    alias_deps = _get_dep_strings(query, "{}:zlib".format(pkg))
+    _assert(
+        ctx, results,
+        "zlib alias depends on zlib-signed (last transform)",
+        _has_dep_matching(alias_deps, "zlib-signed"),
+        "zlib-signed not in attrs of zlib alias",
+    )
+
+    # ================================================================
+    # musl transform chain: build -> stripped -> alias
+    # From musl BUCK:
+    #   transforms = ["strip"]
+    #   (no use_transforms)
+    # ================================================================
+
+    musl_pkg = "//packages/linux/core/musl"
+
+    # ── musl-stripped depends on musl-build (via package attr) ──
+    musl_stripped_deps = _get_dep_strings(query, "{}:musl-stripped".format(musl_pkg))
+    _assert(
+        ctx, results,
+        "musl-stripped depends on musl-build",
+        _has_dep_matching(musl_stripped_deps, "musl-build"),
+        "musl-build not in attrs of musl-stripped",
+    )
+
+    # ── musl alias depends on musl-stripped (last transform) via actual attr ──
+    musl_alias_deps = _get_dep_strings(query, "{}:musl".format(musl_pkg))
+    _assert(
+        ctx, results,
+        "musl alias depends on musl-stripped (last transform)",
+        _has_dep_matching(musl_alias_deps, "musl-stripped"),
+        "musl-stripped not in attrs of musl alias",
+    )
+
+    # ── musl has no -signed target (no use_transforms for ima) ──
+    musl_signed_exists = _target_exists_in_pkg(query, musl_pkg, "musl-signed")
+    _assert(
+        ctx, results,
+        "musl-signed does not exist (no ima use_transform)",
+        not musl_signed_exists,
+        "musl-signed exists but musl has no use_transforms for ima",
+    )
+
+    # ================================================================
+    # openssl-3.6 transform chain: build -> stripped -> stamped -> signed -> alias
+    # From openssl BUCK:
+    #   transforms = ["strip", "stamp"]
+    #   use_transforms = {"ima": "ima"}
+    # ================================================================
+
+    ossl_pkg = "//packages/linux/system/libs/crypto/openssl"
+
+    ossl_stripped_deps = _get_dep_strings(query, "{}:openssl-3.6-stripped".format(ossl_pkg))
+    _assert(
+        ctx, results,
+        "openssl-3.6-stripped depends on openssl-3.6-build",
+        _has_dep_matching(ossl_stripped_deps, "openssl-3.6-build"),
+        "openssl-3.6-build not in attrs of openssl-3.6-stripped",
+    )
+
+    ossl_stamped_deps = _get_dep_strings(query, "{}:openssl-3.6-stamped".format(ossl_pkg))
+    _assert(
+        ctx, results,
+        "openssl-3.6-stamped depends on openssl-3.6-stripped",
+        _has_dep_matching(ossl_stamped_deps, "openssl-3.6-stripped"),
+        "openssl-3.6-stripped not in attrs of openssl-3.6-stamped",
+    )
+
+    ossl_signed_deps = _get_dep_strings(query, "{}:openssl-3.6-signed".format(ossl_pkg))
+    _assert(
+        ctx, results,
+        "openssl-3.6-signed depends on openssl-3.6-stamped",
+        _has_dep_matching(ossl_signed_deps, "openssl-3.6-stamped"),
+        "openssl-3.6-stamped not in attrs of openssl-3.6-signed",
+    )
+
+    # ================================================================
+    # busybox transform chain: build -> stripped -> stamped -> signed -> alias
+    # From busybox BUCK:
+    #   transforms = ["strip", "stamp"]
+    #   use_transforms = {"ima": "ima"}
+    # ================================================================
+
+    bb_pkg = "//packages/linux/core/busybox"
+
+    bb_stripped_deps = _get_dep_strings(query, "{}:busybox-stripped".format(bb_pkg))
+    _assert(
+        ctx, results,
+        "busybox-stripped depends on busybox-build",
+        _has_dep_matching(bb_stripped_deps, "busybox-build"),
+        "busybox-build not in attrs of busybox-stripped",
+    )
+
+    bb_stamped_deps = _get_dep_strings(query, "{}:busybox-stamped".format(bb_pkg))
+    _assert(
+        ctx, results,
+        "busybox-stamped depends on busybox-stripped",
+        _has_dep_matching(bb_stamped_deps, "busybox-stripped"),
+        "busybox-stripped not in attrs of busybox-stamped",
+    )
+
+    # ── Summary ──
+    passed = 0
+    failed = 0
+    for r in results:
+        if r:
+            passed += 1
+        else:
+            failed += 1
+    ctx.output.print("")
+    ctx.output.print("{} passed, {} failed, {} total".format(passed, failed, passed + failed))
+    if failed > 0:
+        fail("{} assertion(s) failed".format(failed))
+
+test_transforms = bxl_main(
+    doc = "Verify transform chain wiring in migrated packages.",
+    impl = _test_transforms_impl,
+    cli_args = {},
+)

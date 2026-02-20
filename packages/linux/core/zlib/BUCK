@@ -1,38 +1,27 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
-# zlib uses a non-standard configure script that doesn't accept autotools args
-ebuild_package(
+# zlib uses a non-standard configure script that does not accept autotools
+# conventions like --build, --host, or --sysconfdir.  Only --prefix and
+# --libdir are supported.
+package(
     name = "zlib",
-    src_uri = "https://mirror.buckos.org/z/zlib-1.3.1.tar.gz",
-
-    sha256 = "9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23",
+    build_rule = "autotools",
     version = "1.3.1",
-    iuse = ["minizip", "static-libs"],
-    use_defaults = [],
-    description = "A massively spiffy yet delicately unobtrusive compression library",
+    url = "https://mirror.buckos.org/z/zlib-1.3.1.tar.gz",
+    sha256 = "9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23",
+    libraries = ["z"],
+    configure_args = [
+        "--prefix=/usr",
+        "--libdir=/usr/lib64",
+    ],
+    deps = [],
+    patches = glob(["patches/*.patch"]),
+    transforms = ["strip", "stamp"],
+    use_transforms = {"ima": "ima"},
+    # SBOM
+    license = "Zlib",
     homepage = "https://zlib.net/",
-    license = "zlib",
-    category = "core",
-
-    src_prepare = '''
-# Make all files writable in case they're from a read-only cache
-chmod -R u+w . 2>/dev/null || true
-''',
-
-    src_configure = '''
-# zlib's configure only accepts limited options (no --build, --host)
-# Explicitly set AR to avoid "rc" being used (ranlib command)
-AR="${AR:-ar}" ./configure --prefix=/usr --libdir=/usr/lib64
-''',
-
-    src_compile = '''
-make -j${MAKEOPTS:-$(nproc)}
-''',
-
-    src_install = '''
-make DESTDIR="$DESTDIR" install
-''',
-
-    depend = [],
+    description = "A massively spiffy yet delicately unobtrusive compression library",
+    cpe = "cpe:2.3:a:zlib:zlib:1.3.1:*:*:*:*:*:*:*",
     visibility = ["PUBLIC"],
 )

@@ -1,44 +1,27 @@
 [cells]
-  root = .
+  buckos = .
   prelude = prelude
   toolchains = toolchains
-  none = none
 
 [cell_aliases]
   config = prelude
-  ovr_config = prelude
-  fbcode = none
-  fbsource = none
-  fbcode_macros = none
-  buck = none
+  buck = buckos
 
 [external_cells]
   prelude = bundled
 
-[parser]
-  target_platform_detector_spec = target:root//...->prelude//platforms:default \
-    target:prelude//...->prelude//platforms:default \
-    target:toolchains//...->prelude//platforms:default
-
 [build]
-  execution_platforms = root//platforms/execution:local
+  default_target_platform = //platforms:linux-x86_64
+  execution_platforms = //tc/exec:platforms
+
+[parser]
+  target_platform_detector_spec = target:buckos//...->buckos//platforms:linux-x86_64 target:toolchains//...->buckos//platforms:linux-x86_64
 
 [project]
   ignore = .git, buck-out
 
 [buckos]
-
-[use]
-  provenance = false
-  slsa = false
-  ima = false
-  ima_key = //defs/keys:ima-test-key
-
-[use_expand]
-  video_cards = fbdev,vesa
-  input_devices = evdev,libinput
+  patch_registry_enabled = true
 
 [mirror]
-  source_order = vendor,mirror,upstream
-  mirror_type = http
-  mirror_url = https://mirror.buckos.org
+  mode = upstream

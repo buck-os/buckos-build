@@ -1,58 +1,26 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
+load("//defs:package_defs.bzl", "autotools_package")
 
-# libusb - official release tarball includes pre-generated configure
 autotools_package(
     name = "libusb",
-    # No autoreconf needed - tarball has pre-generated configure
     bdepend = [],
     src_prepare = "",
-    # C11 required for <stdatomic.h> used in libusbi.h
-    # IMPORTANT: The C11 stdatomic.h is in lib/gcc/.../include, but the C++ compatibility
-    # stdatomic.h is in include/c++/... and gets searched first. We need to prepend the
-    # correct include path to ensure C code gets the C stdatomic.h, not the C++ one.
     src_configure = """
-# Extract sysroot path from CFLAGS and find the GCC include path
-_SYSROOT=$(echo "$CFLAGS" | grep -oP '(?<=--sysroot=)[^ ]+' | head -1)
-GCC_INCLUDE="$_SYSROOT/lib/gcc/x86_64-buckos-linux-gnu/14.3.0/include"
-echo "Using GCC_INCLUDE=$GCC_INCLUDE"
-export CFLAGS="-std=gnu11 -I$GCC_INCLUDE $CFLAGS"
-./configure \\
-    --build=$CBUILD \\
-    --host=$CHOST \\
-    --prefix=/usr \\
-    --disable-static \\
-    --enable-shared \\
+export CFLAGS="-std=gnu11 $CFLAGS"
+./configure \
+    --build=$CBUILD \
+    --host=$CHOST \
+    --prefix=/usr \
+    --disable-static \
+    --enable-shared \
     --disable-udev
 """,
     src_compile = """
-# Extract sysroot path from CFLAGS and find the GCC include path
-_SYSROOT=$(echo "$CFLAGS" | grep -oP '(?<=--sysroot=)[^ ]+' | head -1)
-GCC_STDATOMIC="$_SYSROOT/lib/gcc/x86_64-buckos-linux-gnu/14.3.0/include/stdatomic.h"
-# Use -include to force include the C11 stdatomic.h before any other includes
-NEW_CFLAGS="-std=gnu11 -include $GCC_STDATOMIC $CFLAGS"
-echo "NEW_CFLAGS=$NEW_CFLAGS"
-make -j${MAKEOPTS:-$(nproc)} CFLAGS="$NEW_CFLAGS"
+make -j${MAKEOPTS:-$(nproc)} CFLAGS="-std=gnu11 $CFLAGS"
 """,
     version = "1.0.27",
-    iuse = [
-        "debug",
-        "examples",
-        "static-libs",
-        "udev",
-    ],
-    use_cmake = {
-        "-debug": "-DCMAKE_BUILD_TYPE=Release",
-        "-examples": "-DBUILD_EXAMPLES=OFF",
-        "-static-libs": "-DBUILD_STATIC_LIBS=OFF",
-        "-udev": "-DENABLE_UDEV=OFF",
-        "debug": "-DCMAKE_BUILD_TYPE=Debug",
-        "examples": "-DBUILD_EXAMPLES=ON",
-        "static-libs": "-DBUILD_STATIC_LIBS=ON",
-        "udev": "-DENABLE_UDEV=ON",
-    },
+    iuse = ["debug", "static-libs", "udev"],
     src_uri = "https://github.com/libusb/libusb/releases/download/v1.0.27/libusb-1.0.27.tar.bz2",
     sha256 = "ffaa41d741a8a3bee244ac8e54a72ea05bf2879663c098c82fc5757853441575",
-    signature_sha256 = "1cd22bbfe4ce382ca9b091e2a6275c48f1c776253815cbb615da295ae0bfe687",
     signature_required = False,
     description = "Library for userspace USB device access",
     homepage = "https://libusb.info/",
@@ -60,7 +28,7 @@ make -j${MAKEOPTS:-$(nproc)} CFLAGS="$NEW_CFLAGS"
     configure_args = [
         "--disable-static",
         "--enable-shared",
-        "--disable-udev",  # Disable udev for initial bootstrap
+        "--disable-udev",
     ],
     deps = [],
     visibility = ["PUBLIC"],

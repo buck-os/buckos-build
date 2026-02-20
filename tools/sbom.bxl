@@ -1,0 +1,437 @@
+"""
+BXL script for SBOM generation.
+
+Walks the configured dependency graph from a root target, extracts
+PackageInfo provider fields (license, src_uri, src_sha256, homepage,
+supplier, description, cpe), and emits an SPDX 2.3 or CycloneDX 1.5
+JSON document.
+
+Usage:
+    buck2 bxl //tools:sbom.bxl -- --target //packages/linux/system:buckos-rootfs --format spdx
+    buck2 bxl //tools:sbom.bxl -- --target //packages/linux/network/curl:curl --format cyclonedx
+"""
+
+load("//defs:providers.bzl", "PackageInfo")
+
+# ── Helpers ──────────────────────────────────────────────────────────
+
+_SPDX_SAFE = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-"
+
+def _sanitize_id(name):
+    """Sanitize a string for use as an SPDX identifier.
+
+    SPDX identifiers allow [a-zA-Z0-9.-] only.
+    """
+    result = ""
+    for c in name.elems():
+        if c in _SPDX_SAFE:
+            result += c
+        else:
+            result += "-"
+    return result
+
+def _extract_pkg_info(analysis_result):
+    """Extract SBOM-relevant fields from an analysis result's PackageInfo.
+
+    Returns a dict with SBOM fields, or None if the target does not
+    provide PackageInfo.
+
+    Buck2 BXL analysis results expose providers via .providers() which
+    returns a provider collection.  The collection supports .get(Key)
+    returning None when the provider is absent.
+    """
+    providers = analysis_result.providers()
+    pkg = providers.get(PackageInfo)
+    if pkg == None:
+        return None
+
+    return {
+        "name": pkg.name,
+        "version": pkg.version,
+        "license": pkg.license,
+        "src_uri": pkg.src_uri,
+        "src_sha256": pkg.src_sha256,
+        "homepage": pkg.homepage,
+        "supplier": pkg.supplier,
+        "description": pkg.description,
+        "cpe": pkg.cpe,
+    }
+
+def _make_spdx_pkg(pkg, idx):
+    """Build an SPDX 2.3 package dict from extracted PackageInfo fields."""
+    spdx_id = "SPDXRef-Package-" + _sanitize_id(pkg["name"])
+
+    checksums = []
+    if pkg["src_sha256"]:
+        checksums.append({
+            "algorithm": "SHA256",
+            "checksumValue": pkg["src_sha256"],
+        })
+
+    download_location = pkg["src_uri"] if pkg["src_uri"] else "NOASSERTION"
+
+    external_refs = []
+    if pkg["cpe"]:
+        external_refs.append({
+            "referenceCategory": "SECURITY",
+            "referenceLocator": pkg["cpe"],
+            "referenceType": "cpe23Type",
+        })
+
+    entry = {
+        "SPDXID": spdx_id,
+        "name": pkg["name"],
+        "versionInfo": pkg["version"],
+        "downloadLocation": download_location,
+        "filesAnalyzed": False,
+        "licenseConcluded": pkg["license"] if pkg["license"] != "UNKNOWN" else "NOASSERTION",
+        "licenseDeclared": pkg["license"] if pkg["license"] != "UNKNOWN" else "NOASSERTION",
+        "copyrightText": "NOASSERTION",
+    }
+
+    if checksums:
+        entry["checksums"] = checksums
+
+    if pkg["supplier"]:
+        entry["supplier"] = pkg["supplier"]
+
+    if pkg["description"]:
+        entry["description"] = pkg["description"]
+
+    if pkg["homepage"]:
+        entry["homepage"] = pkg["homepage"]
+
+    if external_refs:
+        entry["externalRefs"] = external_refs
+
+    return entry
+
+def _make_cyclonedx_component(pkg):
+    """Build a CycloneDX 1.5 component dict from extracted PackageInfo fields."""
+    component = {
+        "type": "library",
+        "name": pkg["name"],
+        "version": pkg["version"],
+    }
+
+    hashes = []
+    if pkg["src_sha256"]:
+        hashes.append({
+            "alg": "SHA-256",
+            "content": pkg["src_sha256"],
+        })
+
+    if hashes:
+        component["hashes"] = hashes
+
+    licenses = []
+    if pkg["license"] and pkg["license"] != "UNKNOWN":
+        licenses.append({
+            "expression": pkg["license"],
+        })
+    if licenses:
+        component["licenses"] = licenses
+
+    if pkg["cpe"]:
+        component["cpe"] = pkg["cpe"]
+
+    if pkg["supplier"]:
+        component["supplier"] = {"name": pkg["supplier"]}
+
+    if pkg["description"]:
+        component["description"] = pkg["description"]
+
+    # Build purl from available info
+    if pkg["name"] and pkg["version"]:
+        component["purl"] = "pkg:generic/{}@{}".format(pkg["name"], pkg["version"])
+
+    if pkg["src_uri"]:
+        component["externalReferences"] = [{
+            "type": "distribution",
+            "url": pkg["src_uri"],
+        }]
+
+    # Use purl as bom-ref for dependency tracking
+    component["bom-ref"] = pkg["name"]
+
+    return component
+
+# ── SPDX 2.3 document builder ───────────────────────────────────────
+
+def _build_spdx_document(root_label, packages, dep_edges):
+    """Build an SPDX 2.3 JSON document structure.
+
+    Args:
+        root_label:  string label of the root target
+        packages:    list of dicts from _extract_pkg_info (deduplicated)
+        dep_edges:   dict mapping package name to list of dep package names
+    """
+    doc_name = "BuckOS-SBOM-" + _sanitize_id(root_label)
+
+    spdx_packages = []
+    for i, pkg in enumerate(packages):
+        spdx_packages.append(_make_spdx_pkg(pkg, i))
+
+    # Relationships
+    relationships = []
+
+    # DESCRIBES: document describes the root
+    if packages:
+        root_pkg = packages[0]
+        relationships.append({
+            "spdxElementId": "SPDXRef-DOCUMENT",
+            "relationshipType": "DESCRIBES",
+            "relatedSpdxElement": "SPDXRef-Package-" + _sanitize_id(root_pkg["name"]),
+        })
+
+    # DEPENDS_ON edges
+    for pkg_name, dep_names in dep_edges.items():
+        from_id = "SPDXRef-Package-" + _sanitize_id(pkg_name)
+        for dep_name in dep_names:
+            to_id = "SPDXRef-Package-" + _sanitize_id(dep_name)
+            relationships.append({
+                "spdxElementId": from_id,
+                "relationshipType": "DEPENDS_ON",
+                "relatedSpdxElement": to_id,
+            })
+
+    document = {
+        "spdxVersion": "SPDX-2.3",
+        "dataLicense": "CC0-1.0",
+        "SPDXID": "SPDXRef-DOCUMENT",
+        "name": doc_name,
+        "documentNamespace": "https://buckos.dev/spdxdocs/" + doc_name,
+        "creationInfo": {
+            "created": "1970-01-01T00:00:00Z",
+            "creators": ["Tool: buckos-sbom-bxl"],
+        },
+        "packages": spdx_packages,
+        "relationships": relationships,
+    }
+
+    return document
+
+# ── CycloneDX 1.5 document builder ──────────────────────────────────
+
+def _build_cyclonedx_document(root_label, packages, dep_edges):
+    """Build a CycloneDX 1.5 JSON document structure.
+
+    Args:
+        root_label:  string label of the root target
+        packages:    list of dicts from _extract_pkg_info (deduplicated)
+        dep_edges:   dict mapping package name to list of dep package names
+    """
+    components = []
+    for pkg in packages:
+        components.append(_make_cyclonedx_component(pkg))
+
+    # Dependencies array
+    dependencies = []
+    for pkg_name, dep_names in dep_edges.items():
+        dependencies.append({
+            "ref": pkg_name,
+            "dependsOn": dep_names,
+        })
+
+    # Also add leaf nodes (packages with no deps in dep_edges)
+    for pkg in packages:
+        if pkg["name"] not in dep_edges:
+            dependencies.append({
+                "ref": pkg["name"],
+                "dependsOn": [],
+            })
+
+    document = {
+        "bomFormat": "CycloneDX",
+        "specVersion": "1.5",
+        "version": 1,
+        "metadata": {
+            "component": {
+                "type": "application",
+                "name": root_label,
+            },
+        },
+        "components": components,
+        "dependencies": dependencies,
+    }
+
+    return document
+
+# ── Graph walking ────────────────────────────────────────────────────
+
+def _collect_packages_from_graph(ctx, target_label):
+    """Walk the configured dependency graph and collect PackageInfo data.
+
+    Returns:
+        packages:    deduplicated list of package info dicts (root first)
+        dep_edges:   dict mapping package name -> list of dep package names
+    """
+    cquery = ctx.cquery()
+
+    # Get the configured target and all its transitive deps
+    target_nodes = cquery.eval(target_label)
+    all_deps = cquery.deps(target_nodes)
+
+    # Collect PackageInfo from each node via analysis
+    packages = []
+    seen_names = {}
+    dep_edges = {}
+
+    for node in all_deps:
+        label = str(node.label)
+
+        # Run analysis to access providers
+        analysis = ctx.analysis(label)
+        pkg_info = _extract_pkg_info(analysis)
+
+        if pkg_info == None:
+            continue
+
+        pkg_name = pkg_info["name"]
+
+        # Deduplicate by package name -- transforms produce the same
+        # PackageInfo.name at multiple points in the chain; keep the
+        # first occurrence.
+        if pkg_name in seen_names:
+            continue
+
+        seen_names[pkg_name] = True
+        packages.append(pkg_info)
+
+        # Collect dependency edges: walk this node's direct deps and
+        # record which ones also carry PackageInfo.
+        node_deps = cquery.deps(cquery.eval(label), 1)
+        dep_pkg_names = []
+        for dep_node in node_deps:
+            dep_label = str(dep_node.label)
+            if dep_label == label:
+                continue
+            dep_analysis = ctx.analysis(dep_label)
+            dep_info = _extract_pkg_info(dep_analysis)
+            if dep_info != None and dep_info["name"] != pkg_name:
+                if dep_info["name"] not in dep_pkg_names:
+                    dep_pkg_names.append(dep_info["name"])
+
+        if dep_pkg_names:
+            dep_edges[pkg_name] = dep_pkg_names
+
+    return packages, dep_edges
+
+# ── Fallback: attribute-based collection ─────────────────────────────
+
+def _collect_packages_from_attrs(ctx, target_label):
+    """Fallback collection via unconfigured query and target attributes.
+
+    Used when cquery/analysis is not available or fails.  Extracts
+    SBOM fields from rule attributes directly.
+
+    Returns:
+        packages:    deduplicated list of package info dicts
+        dep_edges:   empty dict (attribute-based collection cannot resolve
+                     configured dep edges reliably)
+    """
+    query = ctx.uquery()
+    target_nodes = query.eval(target_label)
+    all_deps = query.deps(target_nodes)
+
+    packages = []
+    seen_names = {}
+
+    for node in all_deps:
+        # Try to get SBOM-relevant attributes directly
+        name = node.get_attr("name")
+        version = node.get_attr("version")
+
+        # Skip targets without a version -- they are not package rules
+        if not version:
+            continue
+
+        license_val = node.get_attr("license")
+        src_uri = node.get_attr("src_uri")
+        src_sha256 = node.get_attr("src_sha256")
+        homepage = node.get_attr("homepage")
+        description = node.get_attr("description")
+        cpe = node.get_attr("cpe")
+
+        # Skip if no SBOM metadata at all
+        if not license_val and not src_uri:
+            continue
+
+        if name in seen_names:
+            continue
+        seen_names[name] = True
+
+        packages.append({
+            "name": name if name else str(node.label.name),
+            "version": version if version else "",
+            "license": license_val if license_val else "UNKNOWN",
+            "src_uri": src_uri if src_uri else "",
+            "src_sha256": src_sha256 if src_sha256 else "",
+            "homepage": homepage,
+            "supplier": "Organization: BuckOS",
+            "description": description if description else "",
+            "cpe": cpe,
+        })
+
+    return packages, {}
+
+# ── Main implementation ──────────────────────────────────────────────
+
+def _sbom_impl(ctx):
+    target = ctx.cli_args.target
+    fmt = ctx.cli_args.format
+
+    if not target:
+        ctx.output.print("ERROR: --target is required")
+        return
+
+    if fmt != "spdx" and fmt != "cyclonedx":
+        ctx.output.print("ERROR: --format must be 'spdx' or 'cyclonedx', got '{}'".format(fmt))
+        return
+
+    # Try provider-based collection first (configured graph), fall back
+    # to attribute-based if it fails.
+    packages, dep_edges = _collect_packages_from_graph(ctx, target)
+
+    if not packages:
+        # Fallback to attribute-based collection
+        packages, dep_edges = _collect_packages_from_attrs(ctx, target)
+
+    if not packages:
+        ctx.output.print("WARNING: No packages with SBOM metadata found in dependency graph of " + target)
+        return
+
+    # Build the document
+    if fmt == "spdx":
+        document = _build_spdx_document(target, packages, dep_edges)
+    else:
+        document = _build_cyclonedx_document(target, packages, dep_edges)
+
+    # Emit JSON
+    ctx.output.print(json.encode(document))
+
+# ── BXL entry point ──────────────────────────────────────────────────
+
+sbom = bxl_main(
+    doc = """Generate SBOM (Software Bill of Materials) for a BuckOS target.
+
+    Walks the configured dependency graph from the given root target,
+    extracts SBOM metadata from PackageInfo providers, and emits an
+    SPDX 2.3 or CycloneDX 1.5 JSON document to stdout.
+
+    Examples:
+        buck2 bxl //tools:sbom.bxl -- --target //packages/linux/system:buckos-rootfs --format spdx
+        buck2 bxl //tools:sbom.bxl -- --target //packages/linux/network/curl:curl --format cyclonedx
+    """,
+    impl = _sbom_impl,
+    cli_args = {
+        "target": cli_args.string(
+            default = "",
+            doc = "Root target to generate SBOM for (e.g. //packages/linux/system:buckos-rootfs)",
+        ),
+        "format": cli_args.string(
+            default = "spdx",
+            doc = "Output format: 'spdx' (SPDX 2.3) or 'cyclonedx' (CycloneDX 1.5)",
+        ),
+    },
+)

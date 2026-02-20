@@ -3,6 +3,8 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package")
 # libunwind - Portable C API for determining call-chain of a program
 autotools_package(
     name = "libunwind",
+    # GCC 15 rejects K&R-style empty parameter lists as errors
+    env = {"CFLAGS": "-std=gnu11"},
     src_uri = "https://github.com/libunwind/libunwind/releases/download/v1.8.3/libunwind-1.8.3.tar.gz",
 
     sha256 = "be30d910e67f58d82e753231f1357f326a1a088acf126b21ff77e60aab19b90b",

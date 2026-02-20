@@ -67,12 +67,13 @@ autotools_package(
         "--prefix=/usr",
         "--enable-no-install-program=kill,uptime",
     ],
-    # Force fresh build - cache invalidation 2026-01-30-v2
-    # Fix permissions on man pages that may have been cached as read-only
+    # Prevent man page regeneration — help2man requires running the built
+    # binaries, and make tries to write back into the (read-only) source tree
     src_prepare = """
-echo "Preparing coreutils source..."
 chmod -R u+w . 2>/dev/null || true
+touch man/*.1 2>/dev/null || true
 """,
+    env = {"HELP2MAN": "true"},
     deps = [],
     visibility = ["PUBLIC"],
 )

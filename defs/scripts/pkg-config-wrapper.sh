@@ -88,6 +88,8 @@ case "$*" in
                         # /usr/share/... -> $DEP_ROOT/usr/share/... (for pkgdatadir etc)
                         # Also handle //usr/... (double slash from pc_sysrootdir="/" + /usr)
                         OUTPUT=$(echo "$OUTPUT" | sed -e "s|-I/usr/include|-I$DEP_ROOT/usr/include|g" \
+                                                      -e "s|-I/usr/lib64|-I$DEP_ROOT/usr/lib64|g" \
+                                                      -e "s|-I/usr/lib|-I$DEP_ROOT/usr/lib|g" \
                                                       -e "s|-L/usr/lib64|-L$DEP_ROOT/usr/lib64|g" \
                                                       -e "s|-L/usr/lib|-L$DEP_ROOT/usr/lib|g" \
                                                       -e "s| /usr/include| $DEP_ROOT/usr/include|g" \

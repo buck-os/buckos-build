@@ -5,7 +5,7 @@ Wraps an existing rust-toolchain ebuild_package output in a first-class
 Buck2 toolchain rule returning RustToolchainInfo.
 """
 
-load("@root//defs:toolchain_providers.bzl", "RustToolchainInfo")
+load("@buckos//defs:toolchain_providers.bzl", "RustToolchainInfo")
 
 def _rust_toolchain_impl(ctx):
     output = ctx.attrs.toolchain_package[DefaultInfo].default_outputs[0]

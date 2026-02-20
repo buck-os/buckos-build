@@ -1,137 +1,40 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package_defs.bzl", "download_source", "autotools_package")
 
 # =============================================================================
 # Awesome - Highly configurable tiling window manager
 # =============================================================================
 
-cmake_package(
+autotools_package(
     name = "awesome",
-    version = "4.3",
     src_uri = "https://github.com/awesomeWM/awesome/releases/download/v4.3/awesome-4.3.tar.xz",
+
     sha256 = "78264d6f012350b371e339127aca485260bc0aa935eff578ba75ce1a00e11753",
+
     signature_sha256 = "6afb73289caed82173d56a8e496658fdd338a0dadc436fd074f1261d2cd229fd",
+    iuse = ["dbus", "gnome"],
+    use_configure = {
+        "-dbus": "--disable-dbus",
+        "-gnome": "--disable-gnome",
+        "dbus": "--enable-dbus",
+        "gnome": "--enable-gnome",
+    },
+    version = "4.3",
     description = "Awesome - Highly configurable window manager for X",
     homepage = "https://awesomewm.org/",
     license = "GPL-2.0",
-    # Fix outdated CMakeLists.txt - update cmake_minimum_required and fix check target
     pre_configure = """
-# Update cmake_minimum_required to a modern version (3.5+)
-sed -i 's/cmake_minimum_required(VERSION 2.8)/cmake_minimum_required(VERSION 3.5)/' CMakeLists.txt
-sed -i 's/CMAKE_MINIMUM_REQUIRED(VERSION 2.8)/cmake_minimum_required(VERSION 3.5)/' CMakeLists.txt
-# Also handle any VERSION 3.0 or similar
-sed -i 's/cmake_minimum_required(VERSION 3.0)/cmake_minimum_required(VERSION 3.5)/' CMakeLists.txt
-# Remove the check-examples dependency since busted is not available
-sed -i 's/add_dependencies(check check-qa check-examples)/add_dependencies(check check-qa)/' CMakeLists.txt
-# Disable icon generation - host ImageMagick may not have PNG support
-sed -i 's/add_custom_target(generated_icons ALL DEPENDS/add_custom_target(generated_icons DEPENDS/' CMakeLists.txt
-# Disable awesomerc generation which requires LGI
-sed -i 's/add_dependencies(\${PROJECT_AWE_NAME} generate_awesomerc)/#disabled: generate_awesomerc/' CMakeLists.txt
+mkdir -p build
+cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=/usr \\
+    -DGENERATE_MANPAGES=OFF \\
+    -DGENERATE_DOC=OFF
 """,
-    cmake_args = [
-        "-DCMAKE_INSTALL_PREFIX=/usr",
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DGENERATE_MANPAGES=OFF",
-        "-DGENERATE_DOC=OFF",
-        "-Wno-dev",
+    bdepend = [
+        "//packages/linux/graphics/imagemagick:imagemagick",
+        "//packages/linux/dev-tools/build-systems/cmake:cmake",
     ],
-    # Skip LGI check during build - LGI is needed at runtime but not for building
-    env = {
-        "AWESOME_IGNORE_LGI": "1",
-    },
-    # Custom src_configure to add -fcommon for GCC 10+ compatibility
-    src_configure = """
-# Add -fcommon for GCC 10+ compatibility (Awesome 4.3 has non-extern globals in headers)
-export CFLAGS="$CFLAGS -fcommon"
-
-mkdir -p "$S/build"
-CMAKE_PREFIX_PATH_ARG=""
-if [ -n "${CMAKE_PREFIX_PATH:-}" ]; then
-    CMAKE_PREFIX_PATH_ARG="-DCMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH"
-fi
-
-RPATH_LINK_FLAGS=""
-LINK_DIR_FLAGS=""
-if [ -n "${LIBRARY_PATH:-}" ]; then
-    OLD_IFS="$IFS"
-    IFS=":"
-    for libdir in $LIBRARY_PATH; do
-        if [ -d "$libdir" ]; then
-            RPATH_LINK_FLAGS="${RPATH_LINK_FLAGS:+$RPATH_LINK_FLAGS }-Wl,-rpath-link,$libdir"
-            LINK_DIR_FLAGS="${LINK_DIR_FLAGS:+$LINK_DIR_FLAGS }-L$libdir"
-        fi
-    done
-    IFS="$OLD_IFS"
-fi
-
-CMAKE_LINKER_FLAGS="${LDFLAGS:-} ${RPATH_LINK_FLAGS:-} ${LINK_DIR_FLAGS:-}"
-
-cmake \\
-    -S "$S" \\
-    -B "$S/build" \\
-    -DCMAKE_INSTALL_PREFIX="${EPREFIX:-/usr}" \\
-    -DCMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE:-Release}" \\
-    -DCMAKE_INSTALL_LIBDIR="${LIBDIR:-lib64}" \\
-    -DCMAKE_C_FLAGS="${CFLAGS:-}" \\
-    -DCMAKE_CXX_FLAGS="${CXXFLAGS:-}" \\
-    -DCMAKE_EXE_LINKER_FLAGS="${CMAKE_LINKER_FLAGS:-}" \\
-    -DCMAKE_SHARED_LINKER_FLAGS="${CMAKE_LINKER_FLAGS:-}" \\
-    -DCMAKE_MODULE_LINKER_FLAGS="${CMAKE_LINKER_FLAGS:-}" \\
-    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \\
-    $CMAKE_PREFIX_PATH_ARG \\
-    ${CMAKE_EXTRA_ARGS:-}
-""",
-    iuse = ["dbus"],
-    use_cmake = {
-        "dbus": "-DWITH_DBUS=ON",
-        "-dbus": "-DWITH_DBUS=OFF",
-    },
     deps = [
-        # Lua runtime - Awesome uses LuaJIT
-        "//packages/linux/dev-libs/scripting/luajit:luajit",
-        # Cairo and Pango for rendering
-        "//packages/linux/system/libs/graphics/cairo:cairo",
-        "//packages/linux/fonts/libraries/pango:pango",
-        # Image handling
-        "//packages/linux/desktop/gdk-pixbuf:gdk-pixbuf",
-        # X11 core
-        "//packages/linux/graphics/xorg/libX11:libX11",
-        "//packages/linux/graphics/xorg/libxcb:libxcb",
-        "//packages/linux/graphics/xorg/xorgproto:xorgproto",
-        "//packages/linux/graphics/xorg/libXau:libXau",
-        "//packages/linux/graphics/xorg/libXdmcp:libXdmcp",
-        # X11 extensions
-        "//packages/linux/graphics/xorg/libXext:libXext",
-        "//packages/linux/graphics/xorg/libXrender:libXrender",
-        # XCB utilities
-        "//packages/linux/graphics/xorg/xcb-util:xcb-util",
-        "//packages/linux/graphics/xorg/xcb-util-wm:xcb-util-wm",
-        "//packages/linux/graphics/xorg/xcb-util-keysyms:xcb-util-keysyms",
-        "//packages/linux/graphics/xorg/xcb-util-cursor:xcb-util-cursor",
-        "//packages/linux/graphics/xorg/xcb-util-image:xcb-util-image",
-        "//packages/linux/graphics/xorg/xcb-util-renderutil:xcb-util-renderutil",
-        "//packages/linux/graphics/xorg/xcb-util-xrm:xcb-util-xrm",
-        # Startup notification
-        "//packages/linux/graphics/xorg/startup-notification:startup-notification",
-        # GLib
-        "//packages/linux/dev-libs/glib:glib",
-        # Keyboard handling
-        "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
-        # DBus support
-        "//packages/linux/system/libs/ipc/dbus:dbus",
-        # XDG base directories
-        "//packages/linux/system/libs/freedesktop/libxdg-basedir:libxdg-basedir",
-        # Cairo transitive deps for pkg-config
-        "//packages/linux/system/libs/image/libpng:libpng",
-        "//packages/linux/system/libs/font/fontconfig:fontconfig",
-        "//packages/linux/system/libs/font/freetype:freetype",
-        "//packages/linux/system/security/auth/biometric:pixman",
-        "//packages/linux/system/libs/data/expat:expat",
-        # gdk-pixbuf transitive deps
-        "//packages/linux/desktop/shared-mime-info:shared-mime-info",
-        # Transitive deps
-        "//packages/linux/system/libs/utility/libffi:libffi",
-        "//packages/linux/system/libs/utility/pcre2:pcre2",
-        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/desktop/qt:qt5",
     ],
     visibility = ["PUBLIC"],
 )

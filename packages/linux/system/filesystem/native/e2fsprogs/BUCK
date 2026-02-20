@@ -2,6 +2,8 @@ load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotoo
 
 autotools_package(
     name = "e2fsprogs",
+    # GCC 15: bool is a C23 keyword, can't be typedef'd
+    env = {"CFLAGS": "-std=gnu11"},
     src_uri = "https://mirrors.edge.kernel.org/pub/linux/kernel/people/tytso/e2fsprogs/v1.47.0/e2fsprogs-1.47.0.tar.xz",
 
     sha256 = "144af53f2bbd921cef6f8bea88bb9faddca865da3fbc657cc9b4d2001097d5db",

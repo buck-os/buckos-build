@@ -1,0 +1,204 @@
+"""
+BXL graph structure test: USE flag select() resolution.
+
+Verifies that USE flags gate dependency edges via select() in the
+unconfigured target graph.  The poster-child test: curl declares
+openssl in a select(ssl-on: ...) branch, not unconditionally.
+
+Uses uquery with attribute string inspection rather than cquery.deps()
+to avoid toolchain resolution failures.
+
+Run:
+    buck2 bxl //tests/graph:test_use_flags.bxl
+"""
+
+def _assert(ctx, results, name, condition, msg):
+    """Record a PASS/FAIL result."""
+    if condition:
+        ctx.output.print("PASS: " + name)
+        results.append(True)
+    else:
+        ctx.output.print("FAIL: " + name + " -- " + msg)
+        results.append(False)
+
+def _get_deps_str(query, target_pattern):
+    """Return the string representation of the deps attribute.
+
+    For targets with select(), this includes the full select expression.
+    Returns empty string if the attribute doesn't exist.
+    """
+    target_set = query.eval(target_pattern)
+    for t in target_set:
+        deps_attr = t.get_attr("deps")
+        if deps_attr != None:
+            return str(deps_attr)
+    return ""
+
+def _starts_with(s, prefix):
+    """Check whether string s starts with prefix."""
+    return len(s) >= len(prefix) and s[:len(prefix)] == prefix
+
+def _test_use_flags_impl(ctx: bxl.Context) -> None:
+    results = []
+    uquery = ctx.uquery()
+
+    curl_target = "//packages/linux/system/libs/network/curl:curl-build"
+
+    # ================================================================
+    # USE flag wiring via select() inspection
+    #
+    # In uquery, select() attributes are unresolved.  str() renders
+    # them as:  ["unconditional-dep", ...]+select({"flag-on": [...], ...})
+    #
+    # Unconditional deps appear before the first +select().
+    # USE-gated deps appear only inside select() branches.
+    # ================================================================
+
+    deps_str = _get_deps_str(uquery, curl_target)
+
+    # Split on first "+select(" to separate unconditional from gated.
+    # If no select, the whole string is unconditional.
+    select_marker = "+select("
+    unconditional_part = deps_str
+    has_select = select_marker in deps_str
+    if has_select:
+        # Find the position of the first +select(
+        idx = 0
+        for i in range(len(deps_str)):
+            if deps_str[i:i + len(select_marker)] == select_marker:
+                idx = i
+                break
+        unconditional_part = deps_str[:idx]
+
+    # ── Unconditional deps: zlib and libpsl ──────────────────────
+    _assert(
+        ctx, results,
+        "curl-build has zlib as unconditional dep",
+        "zlib" in unconditional_part,
+        "zlib not found in unconditional part of curl-build deps",
+    )
+
+    _assert(
+        ctx, results,
+        "curl-build has libpsl as unconditional dep",
+        "libpsl" in unconditional_part,
+        "libpsl not found in unconditional part of curl-build deps",
+    )
+
+    # ── USE-gated deps: openssl, nghttp2, libssh2 are NOT unconditional ──
+    _assert(
+        ctx, results,
+        "openssl is NOT unconditional dep of curl-build (gated by ssl)",
+        "openssl" not in unconditional_part,
+        "openssl found in unconditional part of curl-build deps (should be in select)",
+    )
+
+    _assert(
+        ctx, results,
+        "nghttp2 is NOT unconditional dep of curl-build (gated by http2)",
+        "nghttp2" not in unconditional_part,
+        "nghttp2 found in unconditional part of curl-build deps (should be in select)",
+    )
+
+    _assert(
+        ctx, results,
+        "libssh2 is NOT unconditional dep of curl-build (gated by ssh)",
+        "libssh2" not in unconditional_part,
+        "libssh2 found in unconditional part of curl-build deps (should be in select)",
+    )
+
+    # ── USE-gated deps ARE present inside select() branches ──────
+    _assert(
+        ctx, results,
+        "openssl appears in select() branches (ssl USE flag)",
+        has_select and "openssl" in deps_str,
+        "openssl not found in deps_str (select wiring broken)",
+    )
+
+    _assert(
+        ctx, results,
+        "nghttp2 appears in select() branches (http2 USE flag)",
+        has_select and "nghttp2" in deps_str,
+        "nghttp2 not found in deps_str (select wiring broken)",
+    )
+
+    _assert(
+        ctx, results,
+        "libssh2 appears in select() branches (ssh USE flag)",
+        has_select and "libssh2" in deps_str,
+        "libssh2 not found in deps_str (select wiring broken)",
+    )
+
+    # ── select() keys reference the correct constraint values ────
+    _assert(
+        ctx, results,
+        "ssl-on constraint key in curl deps select()",
+        "ssl-on" in deps_str,
+        "ssl-on not found in curl-build deps select keys",
+    )
+
+    _assert(
+        ctx, results,
+        "http2-on constraint key in curl deps select()",
+        "http2-on" in deps_str,
+        "http2-on not found in curl-build deps select keys",
+    )
+
+    _assert(
+        ctx, results,
+        "ssh-on constraint key in curl deps select()",
+        "ssh-on" in deps_str,
+        "ssh-on not found in curl-build deps select keys",
+    )
+
+    # ── Verify USE flag constraint targets exist ─────────────────
+    constraint_targets = [
+        ("//use/constraints:ssl-on", "ssl-on"),
+        ("//use/constraints:ssl-off", "ssl-off"),
+        ("//use/constraints:http2-on", "http2-on"),
+        ("//use/constraints:ima-on", "ima-on"),
+        ("//use/constraints:strip-on", "strip-on"),
+        ("//use/constraints:openssl_slot-3", "openssl_slot-3"),
+        ("//use/constraints:openssl_slot-1.1", "openssl_slot-1.1"),
+    ]
+
+    for target, display_name in constraint_targets:
+        exists = False
+        for _t in uquery.eval(target):
+            exists = True
+        _assert(
+            ctx, results,
+            "{} constraint value exists".format(display_name),
+            exists,
+            "{} not found".format(target),
+        )
+
+    # ── Verify curl-build target exists in unconfigured graph ────
+    curl_exists = False
+    for _t in uquery.eval(curl_target):
+        curl_exists = True
+    _assert(
+        ctx, results,
+        "curl-build target resolves in uquery",
+        curl_exists,
+        "{} does not resolve in uquery".format(curl_target),
+    )
+
+    # ── Summary ──
+    passed = 0
+    failed = 0
+    for r in results:
+        if r:
+            passed += 1
+        else:
+            failed += 1
+    ctx.output.print("")
+    ctx.output.print("{} passed, {} failed, {} total".format(passed, failed, passed + failed))
+    if failed > 0:
+        fail("{} assertion(s) failed".format(failed))
+
+test_use_flags = bxl_main(
+    doc = "Verify USE flag select() wiring controls dependency edges.",
+    impl = _test_use_flags_impl,
+    cli_args = {},
+)

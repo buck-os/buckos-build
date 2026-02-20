@@ -1,0 +1,98 @@
+"""
+BXL graph structure test: target universe validation.
+
+Verifies that the target graph parses successfully, that a reasonable
+number of targets exist, and that core definition cells load cleanly.
+
+Run:
+    buck2 bxl //tests/graph:test_targets.bxl
+"""
+
+def _assert(ctx, results, name, condition, msg):
+    """Record a PASS/FAIL result."""
+    if condition:
+        ctx.output.print("PASS: " + name)
+        results.append(True)
+    else:
+        ctx.output.print("FAIL: " + name + " -- " + msg)
+        results.append(False)
+
+def _test_targets_impl(ctx: bxl.Context) -> None:
+    query = ctx.uquery()
+    results = []
+
+    # ── All targets parse and exceed minimum count ──
+    all_targets = query.eval("//...")
+    count = 0
+    for _t in all_targets:
+        count += 1
+
+    _assert(
+        ctx, results,
+        "all targets parse (>2000 targets)",
+        count > 2000,
+        "expected >2000 targets, got {}; target graph may be broken".format(count),
+    )
+
+    # ── Duplicate check (inherent in BXL set-based queries) ──
+    # BXL query.eval returns a unique target set — duplicates are
+    # impossible.  We still verify the count is sane as a canary.
+    _assert(
+        ctx, results,
+        "target count is sane (no silent duplication)",
+        count < 100000,
+        "unreasonable target count {} suggests duplication or runaway macros".format(count),
+    )
+
+    # ── //defs/... loads without error ──
+    defs_targets = query.eval("//defs/...")
+    defs_count = 0
+    for _t in defs_targets:
+        defs_count += 1
+
+    _assert(
+        ctx, results,
+        "//defs/... resolves without error",
+        defs_count >= 0,
+        "//defs/... query failed",
+    )
+
+    # ── toolchains cell loads without error ──
+    tc_targets = query.eval("toolchains//...")
+    tc_count = 0
+    for _t in tc_targets:
+        tc_count += 1
+
+    _assert(
+        ctx, results,
+        "toolchains//... resolves without error",
+        tc_count >= 0,
+        "toolchains//... query failed",
+    )
+
+    # ── Toolchains cell has at least one target ──
+    _assert(
+        ctx, results,
+        "toolchains//... has targets",
+        tc_count > 0,
+        "toolchains//... returned 0 targets",
+    )
+
+    # ── Summary ──
+    passed = 0
+    failed = 0
+    for r in results:
+        if r:
+            passed += 1
+        else:
+            failed += 1
+    ctx.output.print("")
+    ctx.output.print("{} passed, {} failed, {} total".format(passed, failed, passed + failed))
+    if failed > 0:
+        fail("{} assertion(s) failed".format(failed))
+
+test_targets = bxl_main(
+    doc = "Verify target universe parses and definition cells load cleanly.",
+    impl = _test_targets_impl,
+    cli_args = {},
+)

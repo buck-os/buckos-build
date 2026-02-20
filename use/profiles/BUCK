@@ -1,0 +1,194 @@
+# Named USE flag profiles.
+#
+# Usage:
+#   buck2 build //packages/linux/core:curl ?//use/profiles:minimal
+#   buck2 build //packages/linux/core:curl ?//use/profiles:server
+#   buck2 build //packages/linux/core:curl ?//use/profiles:desktop
+#
+# Individual flags can be overridden on top of a profile:
+#   buck2 build //packages/linux/core:curl ?//use/profiles:minimal ?//use/constraints:http2-on
+
+platform(
+    name = "minimal",
+    constraint_values = [
+        # Enabled
+        "//use/constraints:ipv6-on",
+        "//use/constraints:ssl-on",
+        "//use/constraints:zlib-on",
+        "//use/constraints:strip-on",
+        "//use/constraints:threads-on",
+        "//use/constraints:unicode-on",
+
+        # Disabled
+        "//use/constraints:X-off",
+        "//use/constraints:wayland-off",
+        "//use/constraints:gtk-off",
+        "//use/constraints:qt5-off",
+        "//use/constraints:qt6-off",
+        "//use/constraints:debug-off",
+        "//use/constraints:doc-off",
+        "//use/constraints:examples-off",
+        "//use/constraints:test-off",
+        "//use/constraints:pulseaudio-off",
+        "//use/constraints:pipewire-off",
+        "//use/constraints:alsa-off",
+        "//use/constraints:python-off",
+        "//use/constraints:perl-off",
+        "//use/constraints:ruby-off",
+        "//use/constraints:lua-off",
+        "//use/constraints:opengl-off",
+        "//use/constraints:vulkan-off",
+        "//use/constraints:http2-off",
+        "//use/constraints:brotli-off",
+        "//use/constraints:zstd-off",
+        "//use/constraints:static-off",
+        "//use/constraints:stamp-off",
+        "//use/constraints:ima-off",
+        "//use/constraints:dbus-off",
+        "//use/constraints:cuda-off",
+        "//use/constraints:systemd-off",
+    ],
+)
+
+platform(
+    name = "server",
+    constraint_values = [
+        # Enabled
+        "//use/constraints:ipv6-on",
+        "//use/constraints:ssl-on",
+        "//use/constraints:http2-on",
+        "//use/constraints:zlib-on",
+        "//use/constraints:zstd-on",
+        "//use/constraints:lz4-on",
+        "//use/constraints:strip-on",
+        "//use/constraints:stamp-on",
+        "//use/constraints:static-on",
+        "//use/constraints:acl-on",
+        "//use/constraints:attr-on",
+        "//use/constraints:caps-on",
+        "//use/constraints:hardened-on",
+        "//use/constraints:pie-on",
+        "//use/constraints:ssp-on",
+        "//use/constraints:threads-on",
+        "//use/constraints:pam-on",
+        "//use/constraints:seccomp-on",
+        "//use/constraints:sqlite-on",
+        "//use/constraints:nls-on",
+        "//use/constraints:unicode-on",
+        "//use/constraints:readline-on",
+        "//use/constraints:ncurses-on",
+        "//use/constraints:pcre2-on",
+
+        # Disabled
+        "//use/constraints:X-off",
+        "//use/constraints:wayland-off",
+        "//use/constraints:gtk-off",
+        "//use/constraints:qt5-off",
+        "//use/constraints:qt6-off",
+        "//use/constraints:opengl-off",
+        "//use/constraints:vulkan-off",
+        "//use/constraints:pulseaudio-off",
+        "//use/constraints:pipewire-off",
+        "//use/constraints:alsa-off",
+        "//use/constraints:debug-off",
+        "//use/constraints:cuda-off",
+    ],
+)
+
+platform(
+    name = "desktop",
+    constraint_values = [
+        # Enabled
+        "//use/constraints:X-on",
+        "//use/constraints:wayland-on",
+        "//use/constraints:opengl-on",
+        "//use/constraints:vulkan-on",
+        "//use/constraints:egl-on",
+        "//use/constraints:gtk-on",
+        "//use/constraints:qt5-on",
+        "//use/constraints:pulseaudio-on",
+        "//use/constraints:pipewire-on",
+        "//use/constraints:ipv6-on",
+        "//use/constraints:ssl-on",
+        "//use/constraints:http2-on",
+        "//use/constraints:zlib-on",
+        "//use/constraints:zstd-on",
+        "//use/constraints:brotli-on",
+        "//use/constraints:unicode-on",
+        "//use/constraints:icu-on",
+        "//use/constraints:nls-on",
+        "//use/constraints:dbus-on",
+        "//use/constraints:udev-on",
+        "//use/constraints:ffmpeg-on",
+        "//use/constraints:gstreamer-on",
+        "//use/constraints:cairo-on",
+        "//use/constraints:pango-on",
+        "//use/constraints:threads-on",
+        "//use/constraints:readline-on",
+        "//use/constraints:ncurses-on",
+        "//use/constraints:strip-on",
+        "//use/constraints:cups-on",
+        "//use/constraints:bluetooth-on",
+        "//use/constraints:v4l2-on",
+        "//use/constraints:fontconfig-on",
+
+        # Disabled
+        "//use/constraints:debug-off",
+        "//use/constraints:static-off",
+        "//use/constraints:minimal-off",
+        "//use/constraints:cuda-off",
+    ],
+)
+
+platform(
+    name = "developer",
+    constraint_values = [
+        # Enabled
+        "//use/constraints:debug-on",
+        "//use/constraints:doc-on",
+        "//use/constraints:examples-on",
+        "//use/constraints:test-on",
+        "//use/constraints:python-on",
+        "//use/constraints:perl-on",
+        "//use/constraints:ruby-on",
+        "//use/constraints:ipv6-on",
+        "//use/constraints:ssl-on",
+        "//use/constraints:http2-on",
+        "//use/constraints:zlib-on",
+        "//use/constraints:unicode-on",
+        "//use/constraints:nls-on",
+        "//use/constraints:xml-on",
+        "//use/constraints:json-on",
+        "//use/constraints:yaml-on",
+        "//use/constraints:readline-on",
+        "//use/constraints:ncurses-on",
+        "//use/constraints:threads-on",
+
+        # Disabled
+        "//use/constraints:static-off",
+        "//use/constraints:strip-off",
+    ],
+)
+
+platform(
+    name = "hardened",
+    constraint_values = [
+        # Enabled
+        "//use/constraints:hardened-on",
+        "//use/constraints:pie-on",
+        "//use/constraints:ssp-on",
+        "//use/constraints:caps-on",
+        "//use/constraints:seccomp-on",
+        "//use/constraints:selinux-on",
+        "//use/constraints:acl-on",
+        "//use/constraints:attr-on",
+        "//use/constraints:ssl-on",
+        "//use/constraints:ipv6-on",
+        "//use/constraints:strip-on",
+        "//use/constraints:threads-on",
+
+        # Disabled
+        "//use/constraints:debug-off",
+        "//use/constraints:cuda-off",
+    ],
+)

@@ -210,11 +210,11 @@ fn get_target_info(target: &str, skip_build: bool) -> Result<TargetInfo> {
     let json: serde_json::Value =
         serde_json::from_str(json_str).context("Failed to parse buck2 query output")?;
 
-    // Target may have "root//" prefix in output
+    // Target may have "buckos//" prefix in output
     let target_key = if json.get(target).is_some() {
         target
     } else {
-        &format!("root//{}", target.trim_start_matches("//"))
+        &format!("buckos//{}", target.trim_start_matches("//"))
     };
 
     let target_data = json

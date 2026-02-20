@@ -6,6 +6,8 @@ autotools_package(
 
     sha256 = "3b43dbe33cca0f9a18601ebab56b7852b128ec1a3df3a9b30ccde5e73359e612",
     version = "3.6",
+    # GCC 15 makes -Wincompatible-pointer-types an error
+    env = {"CFLAGS": "-Wno-error=incompatible-pointer-types"},
     description = "Partition manipulation program (parted, partprobe)",
     homepage = "https://www.gnu.org/software/parted/",
     license = "GPL-3.0",
@@ -60,6 +62,7 @@ export CPPFLAGS="${CPPFLAGS:-} $_EXTRA_CPPFLAGS"
 """,
     deps = [
         "//packages/linux/core/util-linux:util-linux",
+        "//packages/linux/system/terminal/ncurses:ncurses",  # termcap for readline
     ],
     visibility = ["PUBLIC"],
 )

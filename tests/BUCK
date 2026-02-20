@@ -1,0 +1,258 @@
+# Test targets — run with: buck2 test //tests:
+
+# ── Provenance stamp unit tests ──────────────────────────────────────
+# Tests defs/scripts/provenance-stamp.sh directly with controlled env.
+# No buck build deps — pure unit test.
+
+sh_test(
+    name = "test-provenance-stamp",
+    test = "test_provenance_stamp.py",
+    labels = ["unit"],
+)
+
+# ── Provenance integration: hello executable ─────────────────────────
+
+sh_test(
+    name = "test-hello-provenance",
+    test = "verify_provenance.py",
+    deps = ["//tests/fixtures/hello:hello"],
+    env = {
+        "OUTPUT_DIR": "$(location //tests/fixtures/hello:hello)",
+        "EXPECT_PROVENANCE": "true",
+        "EXPECT_NAME": "hello",
+        "EXPECT_VERSION": "0.1.0",
+    },
+    labels = ["integration"],
+)
+
+sh_test(
+    name = "test-hello-no-provenance",
+    test = "verify_provenance.py",
+    deps = ["//tests/fixtures/hello:hello-no-stamp"],
+    env = {
+        "OUTPUT_DIR": "$(location //tests/fixtures/hello:hello-no-stamp)",
+        "EXPECT_PROVENANCE": "false",
+    },
+    labels = ["integration"],
+)
+
+# ── Provenance integration: shared library ───────────────────────────
+
+sh_test(
+    name = "test-testlib-provenance",
+    test = "verify_provenance.py",
+    deps = ["//tests/fixtures/testlib:testlib"],
+    env = {
+        "OUTPUT_DIR": "$(location //tests/fixtures/testlib:testlib)",
+        "EXPECT_PROVENANCE": "true",
+        "EXPECT_NAME": "testlib",
+        "EXPECT_VERSION": "0.1.0",
+        "EXPECT_LIB": "true",
+    },
+    labels = ["integration"],
+)
+
+# ── IMA signing ──────────────────────────────────────────────────────
+
+sh_test(
+    name = "test-hello-ima",
+    test = "verify_provenance.py",
+    deps = ["//tests/fixtures/hello:hello-ima"],
+    env = {
+        "OUTPUT_DIR": "$(location //tests/fixtures/hello:hello-ima)",
+        "EXPECT_PROVENANCE": "true",
+        "EXPECT_NAME": "hello",
+        "EXPECT_VERSION": "0.1.0",
+        "EXPECT_IMA": "true",
+    },
+    labels = ["integration"],
+)
+
+# ── IMA QEMU enforcement ────────────────────────────────────────────
+
+sh_test(
+    name = "test-ima-enforce-signed",
+    test = "verify_ima_qemu.py",
+    deps = [
+        "//tests/fixtures/ima-test:ima-kernel",
+        "//tests/fixtures/ima-test:ima-initramfs",
+        "//tests/fixtures/ima-test:ima-disk-signed",
+    ],
+    env = {
+        "KERNEL": "$(location //tests/fixtures/ima-test:ima-kernel)",
+        "INITRAMFS": "$(location //tests/fixtures/ima-test:ima-initramfs)",
+        "DISK": "$(location //tests/fixtures/ima-test:ima-disk-signed)",
+        "CMDLINE_EXTRA": "ima_appraise=enforce ima_test_mode=enforce_signed",
+        "EXPECT_MARKER": "IMA-RESULT:PASS",
+        "EXPECT_TEST_OUTPUT": "IMA-TEST-PASS",
+    },
+    run_test_separately = True,
+    labels = ["vm", "slow"],
+)
+
+sh_test(
+    name = "test-ima-enforce-unsigned",
+    test = "verify_ima_qemu.py",
+    deps = [
+        "//tests/fixtures/ima-test:ima-kernel",
+        "//tests/fixtures/ima-test:ima-initramfs",
+        "//tests/fixtures/ima-test:ima-disk-unsigned",
+    ],
+    env = {
+        "KERNEL": "$(location //tests/fixtures/ima-test:ima-kernel)",
+        "INITRAMFS": "$(location //tests/fixtures/ima-test:ima-initramfs)",
+        "DISK": "$(location //tests/fixtures/ima-test:ima-disk-unsigned)",
+        "CMDLINE_EXTRA": "ima_appraise=enforce ima_test_mode=enforce_unsigned",
+        "EXPECT_MARKER": "IMA-RESULT:PASS",
+        "EXPECT_NO_TEST_OUTPUT": "IMA-TEST-PASS",
+    },
+    run_test_separately = True,
+    labels = ["vm", "slow"],
+)
+
+sh_test(
+    name = "test-ima-noima",
+    test = "verify_ima_qemu.py",
+    deps = [
+        "//tests/fixtures/ima-test:ima-kernel",
+        "//tests/fixtures/ima-test:ima-initramfs",
+        "//tests/fixtures/ima-test:ima-disk-unsigned",
+    ],
+    env = {
+        "KERNEL": "$(location //tests/fixtures/ima-test:ima-kernel)",
+        "INITRAMFS": "$(location //tests/fixtures/ima-test:ima-initramfs)",
+        "DISK": "$(location //tests/fixtures/ima-test:ima-disk-unsigned)",
+        "CMDLINE_EXTRA": "ima_appraise=off ima_test_mode=noima",
+        "EXPECT_MARKER": "IMA-RESULT:PASS",
+        "EXPECT_TEST_OUTPUT": "IMA-TEST-PASS",
+    },
+    run_test_separately = True,
+    labels = ["vm", "slow"],
+)
+
+# ── Build smoke tests ────────────────────────────────────────────────
+
+sh_test(
+    name = "build-smoke-zlib",
+    test = "verify_build_smoke.py",
+    deps = ["//packages/linux/core/zlib:zlib"],
+    env = {
+        "OUTPUT_DIR": "$(location //packages/linux/core/zlib:zlib)",
+        "EXPECT_FILES": "usr/lib64/libz.so:usr/include/zlib.h",
+    },
+    labels = ["build"],
+)
+
+sh_test(
+    name = "build-smoke-ch",
+    test = "verify_build_smoke.py",
+    deps = ["//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor"],
+    env = {
+        "OUTPUT_DIR": "$(location //packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor)",
+    },
+    labels = ["build", "slow"],
+)
+
+# ── Cloud Hypervisor: boot script verification ───────────────────────
+
+sh_test(
+    name = "test-ch-boot-script",
+    test = "verify_ch_boot_script.py",
+    deps = ["//packages/linux/boot/cloud-hypervisor-boot:ch-boot-direct-minimal"],
+    env = {
+        "SCRIPT_DIR": "$(location //packages/linux/boot/cloud-hypervisor-boot:ch-boot-direct-minimal)",
+    },
+    labels = ["build", "slow"],
+)
+
+# ── Cloud Hypervisor: VM boot integration ────────────────────────────
+
+sh_test(
+    name = "test-ch-vm-boot",
+    test = "verify_ch_vm_boot.py",
+    deps = [
+        "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
+        "//packages/linux/kernel/buckos-kernel:buckos-kernel-ch",
+        "//packages/linux/system/cloud-hypervisor:ch-initramfs",
+    ],
+    env = {
+        "CH_BINARY": "$(location //packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor)",
+        "KERNEL": "$(location //packages/linux/kernel/buckos-kernel:buckos-kernel-ch)",
+        "INITRAMFS": "$(location //packages/linux/system/cloud-hypervisor:ch-initramfs)",
+    },
+    run_test_separately = True,
+    labels = ["vm", "slow", "integration"],
+)
+
+# ── Cloud Hypervisor: IMA binary execution ───────────────────────────
+# Reuses the IMA test fixtures (init, cert, disk images) with CH kernel.
+# The CH kernel config includes security.config which has CONFIG_IMA=y.
+
+# Non-IMA: unsigned binary runs when IMA is off
+sh_test(
+    name = "test-ch-ima-noima",
+    test = "verify_ch_ima.py",
+    deps = [
+        "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
+        "//tests/fixtures/ima-test:ima-kernel",
+        "//tests/fixtures/ima-test:ima-initramfs",
+        "//tests/fixtures/ima-test:ima-disk-unsigned",
+    ],
+    env = {
+        "CH_BINARY": "$(location //packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor)",
+        "KERNEL": "$(location //tests/fixtures/ima-test:ima-kernel)",
+        "INITRAMFS": "$(location //tests/fixtures/ima-test:ima-initramfs)",
+        "DISK": "$(location //tests/fixtures/ima-test:ima-disk-unsigned)",
+        "CMDLINE_EXTRA": "ima_appraise=off ima_test_mode=noima",
+        "EXPECT_MARKER": "IMA-RESULT:PASS",
+        "EXPECT_TEST_OUTPUT": "IMA-TEST-PASS",
+    },
+    run_test_separately = True,
+    labels = ["vm", "slow", "integration"],
+)
+
+# IMA enforce: signed binary runs under IMA enforcement
+sh_test(
+    name = "test-ch-ima-enforce-signed",
+    test = "verify_ch_ima.py",
+    deps = [
+        "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
+        "//tests/fixtures/ima-test:ima-kernel",
+        "//tests/fixtures/ima-test:ima-initramfs",
+        "//tests/fixtures/ima-test:ima-disk-signed",
+    ],
+    env = {
+        "CH_BINARY": "$(location //packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor)",
+        "KERNEL": "$(location //tests/fixtures/ima-test:ima-kernel)",
+        "INITRAMFS": "$(location //tests/fixtures/ima-test:ima-initramfs)",
+        "DISK": "$(location //tests/fixtures/ima-test:ima-disk-signed)",
+        "CMDLINE_EXTRA": "ima_appraise=enforce ima_test_mode=enforce_signed",
+        "EXPECT_MARKER": "IMA-RESULT:PASS",
+        "EXPECT_TEST_OUTPUT": "IMA-TEST-PASS",
+    },
+    run_test_separately = True,
+    labels = ["vm", "slow", "integration"],
+)
+
+# IMA enforce: unsigned binary rejected
+sh_test(
+    name = "test-ch-ima-enforce-unsigned",
+    test = "verify_ch_ima.py",
+    deps = [
+        "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
+        "//tests/fixtures/ima-test:ima-kernel",
+        "//tests/fixtures/ima-test:ima-initramfs",
+        "//tests/fixtures/ima-test:ima-disk-unsigned",
+    ],
+    env = {
+        "CH_BINARY": "$(location //packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor)",
+        "KERNEL": "$(location //tests/fixtures/ima-test:ima-kernel)",
+        "INITRAMFS": "$(location //tests/fixtures/ima-test:ima-initramfs)",
+        "DISK": "$(location //tests/fixtures/ima-test:ima-disk-unsigned)",
+        "CMDLINE_EXTRA": "ima_appraise=enforce ima_test_mode=enforce_unsigned",
+        "EXPECT_MARKER": "IMA-RESULT:PASS",
+        "EXPECT_NO_TEST_OUTPUT": "IMA-TEST-PASS",
+    },
+    run_test_separately = True,
+    labels = ["vm", "slow", "integration"],
+)

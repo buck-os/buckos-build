@@ -41,6 +41,11 @@ meson_package(
             "//packages/linux/graphics/xorg/libXdmcp:libXdmcp",
         ],
     },
+    # libXrender headers already define gradient structs; force cairo to skip its
+    # fallback definitions by pretending the XRender functions exist
+    env = {
+        "CFLAGS": "-DHAVE_XRENDERCREATELINEARGRADIENT=1 -DHAVE_XRENDERCREATERADIALGRADIENT=1 -DHAVE_XRENDERCREATECONICALGRADIENT=1 -DHAVE_XRENDERCREATESOLIDFILL=1 -DHAVE_CTIME_R=1",
+    },
     meson_args = [
         "-Dfreetype=enabled",
         "-Dfontconfig=enabled",
@@ -56,6 +61,7 @@ meson_package(
         "//packages/linux/system/libs/font/fontconfig:fontconfig",
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/compression/bzip2:bzip2",  # transitive: freetype links libbz2
     ],
     visibility = ["PUBLIC"],
 )

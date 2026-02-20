@@ -1,0 +1,25 @@
+"""
+Prebuilt toolchain: imports a pre-built bootstrap toolchain archive.
+
+Generate the archive first:
+    buck2 build //tc/bootstrap:export --config tc.mode=bootstrap
+
+Copy to a stable location:
+    cp $(buck2 build //tc/bootstrap:export --config tc.mode=bootstrap --show-output | awk '{print $2}') prebuilt/
+
+Configure in .buckconfig:
+    [buckos]
+    prebuilt_toolchain = prebuilt/buckos-toolchain-x86_64-buckos-linux-gnu.tar.zst
+
+Build with prebuilt toolchain:
+    buck2 build //packages/linux/core/zlib:zlib --config tc.mode=prebuilt
+"""
+
+load("//defs/rules:toolchain_import.bzl", "toolchain_import")
+
+toolchain_import(
+    name = "prebuilt-toolchain",
+    archive = "buckos-toolchain-x86_64-buckos-linux-gnu.tar.zst",
+    target_triple = "x86_64-buckos-linux-gnu",
+    visibility = ["PUBLIC"],
+)

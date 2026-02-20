@@ -1,0 +1,158 @@
+"""
+BXL graph structure test: Cloud Hypervisor target validation.
+
+Migrated from tests/test_cloud_hypervisor.py Tier 1 (query-only tests).
+Verifies CH-related targets exist with correct labels and USE flag resolution.
+"""
+
+CH_TARGET = "buckos//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor"
+
+BOOT_SCRIPT_NAMES = [
+    "ch-boot-debug",
+    "ch-boot-direct",
+    "ch-boot-direct-full",
+    "ch-boot-direct-minimal",
+    "ch-boot-firmware-pvh",
+    "ch-boot-firmware-uefi",
+    "ch-boot-virtiofs",
+    "ch-boot-virtiofs-full",
+]
+
+SYSTEM_IMAGE_NAMES = [
+    "ch-minimal-rootfs",
+    "ch-base-rootfs",
+    "ch-full-rootfs",
+    "ch-initramfs",
+    "ch-initramfs-virtiofs",
+    "ch-minimal-disk",
+    "ch-base-disk",
+    "ch-full-disk",
+    "ch-full-disk-gpt",
+]
+
+def _assert(cond, msg):
+    if not cond:
+        fail(msg)
+
+def _has_match(haystack, needle):
+    for item in haystack:
+        if needle in item:
+            return True
+    return False
+
+def _has_suffix(haystack, suffix):
+    for item in haystack:
+        if item.endswith(suffix):
+            return True
+    return False
+
+def _test_cloud_hypervisor(ctx):
+    passed = 0
+
+    all_nodes = ctx.uquery().eval("buckos//packages/linux/...")
+    all_targets = [str(t.label) for t in all_nodes]
+
+    # -- CH binary target exists --
+    ch_found = False
+    for t in all_targets:
+        if t.endswith(":cloud-hypervisor") and ":cloud-hypervisor-" not in t:
+            ch_found = True
+            break
+    _assert(ch_found, "cloud-hypervisor binary target not found")
+    ctx.output.print("PASS: cloud-hypervisor binary target exists")
+    passed += 1
+
+    # -- Boot script targets --
+    boot_targets = [t for t in all_targets if "cloud-hypervisor-boot:" in t and ":ch-boot-" in t]
+    for name in BOOT_SCRIPT_NAMES:
+        _assert(_has_match(boot_targets, name), "Missing boot script target: " + name)
+    ctx.output.print("PASS: all {} expected boot scripts found (of {} total)".format(
+        len(BOOT_SCRIPT_NAMES), len(boot_targets)))
+    passed += 1
+
+    # -- System image targets --
+    sys_targets = [t for t in all_targets if "system/cloud-hypervisor:" in t]
+    for name in SYSTEM_IMAGE_NAMES:
+        _assert(_has_match(sys_targets, name), "Missing system image target: " + name)
+    ctx.output.print("PASS: all {} expected system images found".format(len(SYSTEM_IMAGE_NAMES)))
+    passed += 1
+
+    # -- Kernel targets --
+    _assert(_has_suffix(all_targets, ":buckos-kernel-ch"), "buckos-kernel-ch not found")
+    _assert(_has_suffix(all_targets, ":buckos-ch-guest"), "buckos-ch-guest not found")
+    ctx.output.print("PASS: CH kernel targets exist")
+    passed += 1
+
+    # -- Labels on CH target --
+    ch_nodes = ctx.uquery().eval(CH_TARGET)
+    for node in ch_nodes:
+        labels_attr = node.get_attr("labels")
+        labels = list(labels_attr) if labels_attr != None else []
+        _assert("buckos:compile" in labels, "CH target missing buckos:compile label")
+        _assert("buckos:build:cargo" in labels, "CH target missing buckos:build:cargo label")
+        ctx.output.print("PASS: CH target has buckos:compile + buckos:build:cargo")
+        passed += 1
+
+        # Provenance labels
+        has_url = False
+        has_sha = False
+        for l in labels:
+            if l.startswith("buckos:url:") and len(l) > len("buckos:url:"):
+                has_url = True
+            if l.startswith("buckos:sha256:") and len(l) > len("buckos:sha256:"):
+                has_sha = True
+        _assert(has_url, "CH target missing buckos:url:* provenance label")
+        _assert(has_sha, "CH target missing buckos:sha256:* provenance label")
+        ctx.output.print("PASS: CH target has provenance labels")
+        passed += 1
+
+    # -- Boot script labels --
+    boot_nodes = ctx.uquery().eval("buckos//packages/linux/boot/cloud-hypervisor-boot/...")
+    boot_with_label = 0
+    for node in boot_nodes:
+        target = str(node.label)
+        if ":ch-boot-" not in target:
+            continue
+        labels_attr = node.get_attr("labels")
+        labels = list(labels_attr) if labels_attr != None else []
+        _assert("buckos:bootscript" in labels, target + " missing buckos:bootscript label")
+        boot_with_label += 1
+    _assert(boot_with_label >= 8, "Expected >=8 labeled boot targets, got {}".format(boot_with_label))
+    ctx.output.print("PASS: {} boot scripts have buckos:bootscript label".format(boot_with_label))
+    passed += 1
+
+    # -- System image labels --
+    image_names = [
+        "ch-minimal-rootfs", "ch-base-rootfs", "ch-full-rootfs",
+        "ch-initramfs", "ch-initramfs-virtiofs",
+        "ch-minimal-disk", "ch-base-disk", "ch-full-disk", "ch-full-disk-gpt",
+    ]
+    image_nodes = ctx.uquery().eval("buckos//packages/linux/system/cloud-hypervisor/...")
+    for node in image_nodes:
+        target = str(node.label)
+        name = target.split(":")[-1] if ":" in target else ""
+        if name not in image_names:
+            continue
+        labels_attr = node.get_attr("labels")
+        labels = list(labels_attr) if labels_attr != None else []
+        _assert("buckos:image" in labels, target + " missing buckos:image label")
+    ctx.output.print("PASS: system image targets have buckos:image label")
+    passed += 1
+
+    # -- USE flag defaults --
+    for node in ch_nodes:
+        use_flags_attr = node.get_attr("use_flags")
+        if use_flags_attr != None:
+            flags = sorted(list(use_flags_attr))
+            _assert(flags == ["io-uring", "kvm"],
+                    "CH default USE flags: expected [io-uring, kvm], got " + str(flags))
+            ctx.output.print("PASS: CH default USE flags are [io-uring, kvm]")
+            passed += 1
+
+    ctx.output.print("")
+    ctx.output.print("{} checks passed".format(passed))
+
+test_cloud_hypervisor = bxl_main(
+    impl = _test_cloud_hypervisor,
+    cli_args = {},
+)

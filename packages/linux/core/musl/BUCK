@@ -1,42 +1,18 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-# musl - has its own configure script, not autotools-based
-autotools_package(
+package(
     name = "musl",
-    # No autotools needed - musl has its own configure
-    bdepend = [],
-    src_prepare = "",
+    build_rule = "autotools",
     version = "1.2.4",
-    src_uri = "https://musl.libc.org/releases/musl-1.2.4.tar.gz",
+    url = "https://musl.libc.org/releases/musl-1.2.4.tar.gz",
     sha256 = "7a35eae33d5372a7c0da1188de798726f68825513b7ae3ebe97aaaa52114f039",
-    signature_sha256 = "4aa4f74cdabd0629d9400c04637ccc311dd120baa137c016e25dfdcb5600a4ad",
-    signature_required = False,
-    description = "musl is a lightweight, fast, simple, free C library",
-    homepage = "https://musl.libc.org/",
+    libraries = ["c"],
+    configure_args = ["--prefix=/usr"],
+    deps = [],
+    patches = glob(["patches/*.patch"]),
+    transforms = ["strip"],
     license = "MIT",
-
-    # USE flags this package supports
-    iuse = [
-        "crypt",
-        "debug",
-        "headers-only",
-        "static-libs",
-    ],
-
-    # Default USE flags
-    use_defaults = [],
-
-    # Conditional configure arguments
-    use_configure = {
-        "-crypt": "--disable-crypt",
-        "-debug": "--disable-debug",
-        "-headers-only": "--disable-headers-only",
-        "-static-libs": "--disable-static",
-        "crypt": "--enable-crypt",
-        "debug": "--enable-debug",
-        "headers-only": "--enable-headers-only",
-        "static-libs": "--enable-static",
-    },
-
+    homepage = "https://musl.libc.org/",
+    description = "musl is a lightweight, fast, simple, free C library",
     visibility = ["PUBLIC"],
 )

@@ -1,28 +1,27 @@
-load("//defs:package_defs.bzl", "ebuild_package")
+load("//defs/rules:transforms.bzl", "stamp_package")
+load("//tests/fixtures:test_package.bzl", "test_c_library")
 
-# Minimal source directory for test shared library
-genrule(
-    name = "testlib-src",
-    srcs = ["testlib.c"],
-    cmd = "mkdir -p $OUT && cp $SRCS $OUT/",
-    out = "src",
+# Compile testlib.c into a shared library install layout with PackageInfo
+test_c_library(
+    name = "testlib-build",
+    src = "testlib.c",
+    pkg_name = "testlib",
+    lib_name = "libtestlib.so",
+    version = "0.1.0",
+)
+
+# Stamped (provenance on)
+stamp_package(
+    name = "testlib",
+    package = ":testlib-build",
+    enabled = True,
     visibility = ["PUBLIC"],
 )
 
-ebuild_package(
-    name = "testlib",
-    source = ":testlib-src",
-    version = "0.1.0",
-    iuse = ["debug", "trace"],
-    use_defaults = ["debug"],
-    use_bootstrap = False,
-    src_configure = "",
-    src_compile = """
-cc -shared -fPIC -o libtestlib.so $S/testlib.c
-""",
-    src_install = """
-install -Dm755 libtestlib.so "$DESTDIR/usr/lib64/libtestlib.so"
-""",
-    depend = [],
+# No stamp (provenance off) — passthrough
+stamp_package(
+    name = "testlib-no-stamp",
+    package = ":testlib-build",
+    enabled = False,
     visibility = ["PUBLIC"],
 )

@@ -16,63 +16,73 @@ meson_package(
         "//packages/linux/graphics/rendering/wayland:wayland",
         "//packages/linux/system/libs/utility/libffi:libffi",
     ],
-    # Native wayland-scanner must run on build machine, use exec_bdepend
-    exec_bdepend = [
+    # wayland-scanner runs on the build machine during meson configure
+    depend = [
         "//packages/linux/graphics/rendering/wayland:wayland-scanner",
     ],
     meson_args = [
         "-Dtests=false",
     ],
     # Set up environment to find native wayland-scanner
-    pre_configure = '''
-# Find native wayland-scanner from exec_bdepends
-IFS=':' read -ra DEP_ARRAY <<< "${EXEC_BDEP_BASE_DIRS:-}"
-SCANNER_PKG_CONFIG_PATH=""
-for dep_dir in "${DEP_ARRAY[@]}"; do
-    if [ -x "$dep_dir/usr/bin/wayland-scanner" ]; then
-        export WAYLAND_SCANNER="$dep_dir/usr/bin/wayland-scanner"
-        SCANNER_DIR="$dep_dir/usr/bin"
-        SCANNER_PKG_CONFIG_PATH="$dep_dir/usr/lib64/pkgconfig"
+    pre_configure = "",
+    src_configure = '''
+# Find native wayland-scanner from CMAKE_PREFIX_PATH
+IFS=";" read -ra PREFIX_DIRS <<< "$CMAKE_PREFIX_PATH"
+for prefix in "${PREFIX_DIRS[@]}"; do
+    if [ -x "$prefix/bin/wayland-scanner" ]; then
+        export WAYLAND_SCANNER="$prefix/bin/wayland-scanner"
+        SCANNER_PKG="$prefix/lib64/pkgconfig"
         echo "Found native wayland-scanner: $WAYLAND_SCANNER"
         break
     fi
 done
+[ -z "${WAYLAND_SCANNER:-}" ] && { echo "ERROR: wayland-scanner not found"; exit 1; }
 
-if [ -z "$WAYLAND_SCANNER" ]; then
-    # Fallback to host wayland-scanner
-    if [ -x "/usr/bin/wayland-scanner" ]; then
-        export WAYLAND_SCANNER="/usr/bin/wayland-scanner"
-        SCANNER_DIR="/usr/bin"
-        SCANNER_PKG_CONFIG_PATH="/usr/lib64/pkgconfig"
-        echo "Using host wayland-scanner: $WAYLAND_SCANNER"
-    else
-        echo "ERROR: Could not find native wayland-scanner" >&2
-        echo "EXEC_BDEP_BASE_DIRS: $EXEC_BDEP_BASE_DIRS" >&2
-        exit 1
-    fi
-fi
+export PATH="$(dirname "$WAYLAND_SCANNER"):$PATH"
+export PKG_CONFIG_PATH_FOR_BUILD="${SCANNER_PKG:-}${PKG_CONFIG_PATH_FOR_BUILD:+:$PKG_CONFIG_PATH_FOR_BUILD}"
 
-# Add scanner to PATH
-export PATH="$SCANNER_DIR:$PATH"
+# The wayland dep's .pc file has wayland_scanner=${bindir}/wayland-scanner
+# which resolves to /usr/bin/wayland-scanner. Meson's find_program() then
+# fails. Set PKG_CONFIG_SYSROOT_DIR to the scanner's prefix so the path
+# resolves correctly, and create an override .pc with the absolute path.
+SCANNER_PREFIX=$(dirname "$(dirname "$WAYLAND_SCANNER")")
+OVERRIDE_PC="$T/pkgconfig"
+mkdir -p "$OVERRIDE_PC"
+cat > "$OVERRIDE_PC/wayland-scanner.pc" << PCEOF
+prefix=$SCANNER_PREFIX
+bindir=\${prefix}/bin
+wayland_scanner=\${bindir}/wayland-scanner
+datarootdir=\${prefix}/share
+pkgdatadir=\${datarootdir}/wayland
 
-# Set PKG_CONFIG_PATH_FOR_BUILD for native package lookups
-if [ -n "$SCANNER_PKG_CONFIG_PATH" ]; then
-    export PKG_CONFIG_PATH_FOR_BUILD="$SCANNER_PKG_CONFIG_PATH${PKG_CONFIG_PATH_FOR_BUILD:+:$PKG_CONFIG_PATH_FOR_BUILD}"
-    echo "PKG_CONFIG_PATH_FOR_BUILD: $PKG_CONFIG_PATH_FOR_BUILD"
-fi
+Name: Wayland Scanner
+Description: Wayland scanner
+Version: 1.23.1
+PCEOF
+# Override must come first in both target and build pkg-config paths
+export PKG_CONFIG_PATH="$OVERRIDE_PC:$PKG_CONFIG_PATH"
+export PKG_CONFIG_PATH_FOR_BUILD="$OVERRIDE_PC:${PKG_CONFIG_PATH_FOR_BUILD:-}"
 
-# Create meson native file
-cat > native.ini << EOF
+cat > native.ini << NEOF
 [binaries]
 wayland-scanner = '$WAYLAND_SCANNER'
 
 [built-in options]
-pkg_config_path = ['$SCANNER_PKG_CONFIG_PATH']
-EOF
-''',
-    src_configure = '''
-rm -rf "${BUILD_DIR:-build}"
+pkg_config_path = ['${SCANNER_PKG:-}']
+NEOF
 
+# The wayland dep's .pc file uses wayland_scanner=${bindir}/wayland-scanner
+# which resolves to /usr/bin/wayland-scanner. meson's find_program() then
+# fails with the absolute path. Patch the source meson.build to use our
+# scanner directly from the native file instead.
+sed -i "s|dep_scanner.get_variable(pkgconfig: 'wayland_scanner', internal: 'wayland_scanner')|'$WAYLAND_SCANNER'|g" meson.build 2>/dev/null || true
+
+cat > native.ini << NEOF
+[binaries]
+wayland-scanner = '$WAYLAND_SCANNER'
+NEOF
+
+rm -rf "${BUILD_DIR:-build}"
 meson setup "${BUILD_DIR:-build}" \
     --prefix="${EPREFIX:-/usr}" \
     --libdir="${LIBDIR:-lib64}" \

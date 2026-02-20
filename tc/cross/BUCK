@@ -1,0 +1,29 @@
+"""
+Cross toolchain: host compiler + buckos-built musl sysroot.
+
+Uses the same cc/c++ from PATH as host mode, but injects --sysroot
+pointing at the output of the musl package.  Binaries compiled with
+this toolchain link against buckos's musl, producing a self-consistent
+rootfs independent of the host libc.
+
+This is the primary mode when buckos is used as a subcell in a
+monorepo.  The monorepo provides the compiler; buckos owns the sysroot.
+
+Usage:
+    buck2 build //packages/linux/core:zlib --config tc.mode=cross
+"""
+
+load("//tc:toolchain_rules.bzl", "buckos_cross_toolchain")
+
+buckos_cross_toolchain(
+    name = "cross-toolchain",
+    cc = "cc",
+    cxx = "c++",
+    ar = "ar",
+    strip_bin = "strip",
+    make = "make",
+    pkg_config = "pkg-config",
+    sysroot = "//packages/linux/core/musl:musl",
+    target_triple = "x86_64-buckos-linux-musl",
+    visibility = ["PUBLIC"],
+)

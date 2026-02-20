@@ -1,0 +1,179 @@
+"""
+BXL graph structure test: dependency edges.
+
+Verifies that migrated packages have the expected dependency
+relationships by inspecting target attributes directly (source,
+deps, package, actual) rather than traversing the full dep graph
+with query.deps(), which pulls in tool deps that require a C++
+toolchain.
+
+Run:
+    buck2 bxl //tests/graph:test_deps.bxl
+"""
+
+def _get_dep_strings(query, target_pattern):
+    """Return a list of strings representing declared deps.
+
+    Inspects: deps (list or select), source, package, actual.
+    Each value is converted to string for substring matching.
+    For select()-wrapped deps, the stringified select includes all
+    branch target labels, so substring matching still works.
+    """
+    target_set = query.eval(target_pattern)
+    dep_strs = []
+    for t in target_set:
+        # 'deps' attribute (list or SelectConcat)
+        deps_attr = t.get_attr("deps")
+        if deps_attr != None:
+            dep_strs.append(str(deps_attr))
+        # 'source' attribute (ProvidersLabel)
+        source_attr = t.get_attr("source")
+        if source_attr != None:
+            dep_strs.append(str(source_attr))
+        # 'package' attribute (transform targets)
+        package_attr = t.get_attr("package")
+        if package_attr != None:
+            dep_strs.append(str(package_attr))
+        # 'actual' attribute (alias targets)
+        actual_attr = t.get_attr("actual")
+        if actual_attr != None:
+            dep_strs.append(str(actual_attr))
+    return dep_strs
+
+def _has_dep_matching(dep_strs, substring):
+    """Check whether any dep string contains the given substring."""
+    for s in dep_strs:
+        if substring in s:
+            return True
+    return False
+
+def _assert(ctx, results, name, condition, msg):
+    """Record a PASS/FAIL result."""
+    if condition:
+        ctx.output.print("PASS: " + name)
+        results.append(True)
+    else:
+        ctx.output.print("FAIL: " + name + " -- " + msg)
+        results.append(False)
+
+def _test_deps_impl(ctx: bxl.Context) -> None:
+    query = ctx.uquery()
+    results = []
+
+    # ── zlib-build depends on zlib-src (via source attr) ──
+    zlib_deps = _get_dep_strings(query, "//packages/linux/core/zlib:zlib-build")
+    _assert(
+        ctx, results,
+        "zlib-build depends on zlib-src",
+        _has_dep_matching(zlib_deps, "zlib-src"),
+        "zlib-src not found in attrs of zlib-build",
+    )
+
+    # ── musl-build depends on musl-src (via source attr) ──
+    musl_deps = _get_dep_strings(query, "//packages/linux/core/musl:musl-build")
+    _assert(
+        ctx, results,
+        "musl-build depends on musl-src",
+        _has_dep_matching(musl_deps, "musl-src"),
+        "musl-src not found in attrs of musl-build",
+    )
+
+    # ── curl-build depends on zlib (via deps attr, may be in select) ──
+    curl_deps = _get_dep_strings(query, "//packages/linux/system/libs/network/curl:curl-build")
+    _assert(
+        ctx, results,
+        "curl-build depends on zlib",
+        _has_dep_matching(curl_deps, "//packages/linux/core/zlib:zlib"),
+        "zlib not found in attrs of curl-build",
+    )
+
+    # ── curl-build depends on libpsl ──
+    _assert(
+        ctx, results,
+        "curl-build depends on libpsl",
+        _has_dep_matching(curl_deps, "libpsl"),
+        "libpsl not found in attrs of curl-build",
+    )
+
+    # ── openssl-3.6 depends on openssl-3.6-src (via source attr) ──
+    ossl36_deps = _get_dep_strings(query, "//packages/linux/system/libs/crypto/openssl:openssl-3.6-build")
+    _assert(
+        ctx, results,
+        "openssl-3.6-build depends on openssl-3.6-src",
+        _has_dep_matching(ossl36_deps, "openssl-3.6-src"),
+        "openssl-3.6-src not found in attrs of openssl-3.6-build",
+    )
+
+    # ── openssl-3.3 depends on openssl-3.3-src (via source attr) ──
+    ossl33_deps = _get_dep_strings(query, "//packages/linux/system/libs/crypto/openssl:openssl-3.3-build")
+    _assert(
+        ctx, results,
+        "openssl-3.3-build depends on openssl-3.3-src",
+        _has_dep_matching(ossl33_deps, "openssl-3.3-src"),
+        "openssl-3.3-src not found in attrs of openssl-3.3-build",
+    )
+
+    # ── openssl-3.6-src and openssl-3.3-src are independent ──
+    _assert(
+        ctx, results,
+        "openssl-3.6-build does not depend on openssl-3.3-src",
+        not _has_dep_matching(ossl36_deps, "openssl-3.3-src"),
+        "openssl-3.3-src found in attrs of openssl-3.6-build (should be independent)",
+    )
+    _assert(
+        ctx, results,
+        "openssl-3.3-build does not depend on openssl-3.6-src",
+        not _has_dep_matching(ossl33_deps, "openssl-3.6-src"),
+        "openssl-3.6-src found in attrs of openssl-3.3-build (should be independent)",
+    )
+
+    # ── openssl default alias points to openssl-3.3 (via actual attr) ──
+    ossl_alias_deps = _get_dep_strings(query, "//packages/linux/system/libs/crypto/openssl:openssl")
+    _assert(
+        ctx, results,
+        "openssl alias depends on openssl-3.3",
+        _has_dep_matching(ossl_alias_deps, "openssl-3.3"),
+        "openssl-3.3 not found in attrs of openssl alias",
+    )
+
+    # ── both openssl slots depend on zlib (via deps attr) ──
+    _assert(
+        ctx, results,
+        "openssl-3.6-build depends on zlib",
+        _has_dep_matching(ossl36_deps, "//packages/linux/core/zlib:zlib"),
+        "zlib not found in attrs of openssl-3.6-build",
+    )
+    _assert(
+        ctx, results,
+        "openssl-3.3-build depends on zlib",
+        _has_dep_matching(ossl33_deps, "//packages/linux/core/zlib:zlib"),
+        "zlib not found in attrs of openssl-3.3-build",
+    )
+
+    # ── busybox-build depends on busybox-src (via source attr) ──
+    bb_deps = _get_dep_strings(query, "//packages/linux/core/busybox:busybox-build")
+    _assert(
+        ctx, results,
+        "busybox-build depends on busybox-src",
+        _has_dep_matching(bb_deps, "busybox-src"),
+        "busybox-src not found in attrs of busybox-build",
+    )
+
+    # ── Summary ──
+    passed = 0
+    failed = 0
+    for r in results:
+        if r:
+            passed += 1
+        else:
+            failed += 1
+    ctx.output.print("")
+    ctx.output.print("{} passed, {} failed, {} total".format(passed, failed, passed + failed))
+    if failed > 0:
+        fail("{} assertion(s) failed".format(failed))
+
+test_deps = bxl_main(
+    doc = "Verify dependency edges in migrated packages.",
+    impl = _test_deps_impl,
+    cli_args = {},
+)

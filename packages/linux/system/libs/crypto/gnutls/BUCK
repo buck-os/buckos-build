@@ -83,12 +83,13 @@ autotools_package(
         "--with-included-unistring",
         "--without-brotli",  # Brotli not commonly needed for TLS
     ],
-    # Patch dlwrap headers to not include brotli when disabled
-    # The headers unconditionally include <brotli/*.h> which fails when brotli isn't installed
+    # brotli dlwrap files unconditionally reference brotli types even when
+    # --without-brotli is set; stub them out so they compile to nothing
     src_prepare = """
-# Guard brotli includes in dlwrap headers
-sed -i 's|#include <brotli/encode.h>|#ifdef HAVE_BROTLI\\n#include <brotli/encode.h>\\n#endif|' lib/dlwrap/brotlienc.h
-sed -i 's|#include <brotli/decode.h>|#ifdef HAVE_BROTLI\\n#include <brotli/decode.h>\\n#endif|' lib/dlwrap/brotlidec.h
+for f in lib/dlwrap/brotlienc.c lib/dlwrap/brotlidec.c \
+         lib/dlwrap/brotlienc.h lib/dlwrap/brotlidec.h; do
+    echo '/* brotli disabled */' > "$f"
+done
 """,
     deps = [
         "//packages/linux/system/libs/crypto/nettle:nettle",

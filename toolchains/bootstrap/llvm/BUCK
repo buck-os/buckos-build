@@ -1,4 +1,4 @@
-load("@root//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("@buckos//defs:package_defs.bzl", "download_source", "ebuild_package")
 
 # =============================================================================
 # LLVM Bootstrap Toolchain
@@ -95,9 +95,9 @@ ln -sf llvm/21 "$DESTDIR/usr/lib/llvm-21"
 echo "LLVM ${PV} installed to /usr/lib/llvm/21"
 ''',
 
-    bdepend = ["toolchains//bootstrap:bootstrap-toolchain"],
+    bdepend = ["//bootstrap:bootstrap-toolchain"],
     depend = [
-        "root//packages/linux/core/zlib:zlib",
+        "@buckos//packages/linux/core/zlib:zlib",
     ],
     use_bootstrap = False,
     visibility = ["PUBLIC"],

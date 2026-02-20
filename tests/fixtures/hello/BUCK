@@ -1,28 +1,36 @@
-load("//defs:package_defs.bzl", "ebuild_package")
+load("//defs/rules:transforms.bzl", "ima_sign_package", "stamp_package")
+load("//tests/fixtures:test_package.bzl", "test_c_binary")
 
-# Minimal source directory for test binary
-genrule(
-    name = "hello-src",
-    srcs = ["hello.c"],
-    cmd = "mkdir -p $OUT && cp $SRCS $OUT/",
-    out = "src",
+# Compile hello.c into an install layout with PackageInfo
+test_c_binary(
+    name = "hello-build",
+    src = "hello.c",
+    pkg_name = "hello",
+    binary_name = "hello",
+    version = "0.1.0",
+)
+
+# Stamped (provenance on)
+stamp_package(
+    name = "hello",
+    package = ":hello-build",
+    enabled = True,
     visibility = ["PUBLIC"],
 )
 
-ebuild_package(
-    name = "hello",
-    source = ":hello-src",
-    version = "0.1.0",
-    iuse = ["debug", "trace"],
-    use_defaults = ["debug"],
-    use_bootstrap = False,
-    src_configure = "",
-    src_compile = """
-cc -o hello $S/hello.c
-""",
-    src_install = """
-install -Dm755 hello "$DESTDIR/usr/bin/hello"
-""",
-    depend = [],
+# No stamp (provenance off) — passthrough
+stamp_package(
+    name = "hello-no-stamp",
+    package = ":hello-build",
+    enabled = False,
+    visibility = ["PUBLIC"],
+)
+
+# Stamped + IMA signed
+ima_sign_package(
+    name = "hello-ima",
+    package = ":hello",
+    enabled = True,
+    signing_key = "//defs/keys:ima-test-key",
     visibility = ["PUBLIC"],
 )

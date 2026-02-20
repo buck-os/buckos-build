@@ -1,70 +1,112 @@
-# IMA enforcement QEMU test fixtures
-#
-# Builds a minimal kernel with IMA support + embedded test cert,
-# plus static test binaries. Used by tests/test_ima_qemu.py.
+load("//defs:package_defs.bzl", "kernel_build")
+load("//tests/fixtures:test_package.bzl", "test_c_binary")
 
-# Static test binary — prints "IMA-TEST-PASS" and exits 0
-genrule(
+# ── Static test binary: prints "IMA-TEST-PASS" and exits 0 ──────────
+
+test_c_binary(
     name = "ima-test-binary",
-    srcs = ["ima-test.c"],
-    cmd = "cc -static -o $OUT $SRCS",
-    out = "ima-test",
+    src = "ima-test.c",
+    pkg_name = "ima-test",
+    binary_name = "ima-test",
+    cflags = ["-static"],
     visibility = ["PUBLIC"],
 )
 
-# Static PID-1 init for QEMU — mounts, loads IMA policy, execs test, reports
-genrule(
+# ── Static PID-1 init for QEMU ──────────────────────────────────────
+
+test_c_binary(
     name = "ima-init",
-    srcs = ["init.c"],
-    cmd = "cc -static -o $OUT $SRCS",
-    out = "init",
+    src = "init.c",
+    pkg_name = "ima-init",
+    binary_name = "init",
+    cflags = ["-static"],
     visibility = ["PUBLIC"],
 )
 
-# Minimal kernel with IMA enforcement + test cert embedded in trusted keyring
-#
-# Uses tinyconfig as base, merges our IMA fragment, embeds the test cert
-# so CONFIG_SYSTEM_TRUSTED_KEYS and CONFIG_IMA_LOAD_X509 work together.
-genrule(
+# ── IMA kernel (tinyconfig + IMA + test cert) ───────────────────────
+
+kernel_build(
     name = "ima-kernel",
-    srcs = ["ima-test-kernel.config"],
-    cmd = """\
-set -e
+    source = "//packages/linux/kernel/src:linux-lts-src",
+    version = "6.12.60",
+    config = "ima-test-kernel.config",
+    config_base = "tinyconfig",
+    inject_files = {
+        "certs/signing_key.pem": "//defs/keys:ima-test-cert",
+    },
+    visibility = ["PUBLIC"],
+)
 
-# Save paths before cd (SRCS/OUT are relative to genrule working dir)
-ORIG_DIR="$PWD"
-BUILD="$TMPDIR/kbuild"
-mkdir -p "$BUILD"
+# ── ext4 disk image with IMA-signed binary ──────────────────────────
 
-# Copy kernel source to writable build dir
-cp -a $(location //packages/linux/kernel/src:linux-lts-src)/. "$BUILD/"
+genrule(
+    name = "ima-disk-signed",
+    out = "disk-signed.img",
+    cmd = """
+        set -e
+        BINARY=$(location :ima-test-binary)/usr/bin/ima-test
+        KEY=$(location //defs/keys:ima-test-key)
+        WORK=$BUCK_SCRATCH_PATH/work
+        mkdir -p "$WORK/empty"
 
-# Embed IMA test cert for CONFIG_SYSTEM_TRUSTED_KEYS
-mkdir -p "$BUILD/certs"
-cp $(location //defs/keys:ima-test-cert) "$BUILD/certs/signing_key.pem"
+        # $OUT is relative — ensure parent dir exists
+        mkdir -p `dirname $OUT`
 
-cd "$BUILD"
+        mke2fs -t ext4 -d "$WORK/empty" "$OUT" 8M 2>/dev/null
 
-# Check for GCC 14+ (C23 breaks kernel bool/true/false)
-GCC_MAJOR=`gcc --version | grep -oE '[0-9]+\\.[0-9]+' | head -1 | cut -d. -f1`
-MAKE_CC=""
-if [ -n "$GCC_MAJOR" ] && [ "$GCC_MAJOR" -ge 14 ] 2>/dev/null; then
-    mkdir -p .cc-wrapper
-    printf '#!/bin/bash\\nexec /usr/bin/gcc "$@" -std=gnu11\\n' > .cc-wrapper/gcc
-    chmod +x .cc-wrapper/gcc
-    MAKE_CC="CC=$BUILD/.cc-wrapper/gcc HOSTCC=$BUILD/.cc-wrapper/gcc"
-fi
+        cp "$BINARY" "$WORK/ima-test"
+        evmctl ima_sign --sigfile --key "$KEY" "$WORK/ima-test" 2>/dev/null || true
 
-# tinyconfig base + our IMA fragment
-make -s $MAKE_CC tinyconfig
-scripts/kconfig/merge_config.sh -m .config "$ORIG_DIR/$SRCS"
-make -s $MAKE_CC olddefconfig
+        printf 'write %s /ima-test\\nset_inode_field /ima-test mode 0100755\\nea_set /ima-test security.ima -f %s\\n' \
+            "$WORK/ima-test" "$WORK/ima-test.sig" > "$WORK/debugfs.cmds"
+        debugfs -w -f "$WORK/debugfs.cmds" "$OUT" 2>/dev/null
+    """,
+    visibility = ["PUBLIC"],
+)
 
-# Build
-make $MAKE_CC -j`nproc` -s bzImage
+# ── ext4 disk image with unsigned binary ─────────────────────────────
 
-cp arch/x86/boot/bzImage "$ORIG_DIR/$OUT"
-""",
-    out = "vmlinuz",
+genrule(
+    name = "ima-disk-unsigned",
+    out = "disk-unsigned.img",
+    cmd = """
+        set -e
+        BINARY=$(location :ima-test-binary)/usr/bin/ima-test
+        WORK=$BUCK_SCRATCH_PATH/work
+        mkdir -p "$WORK/empty"
+        mkdir -p `dirname $OUT`
+
+        mke2fs -t ext4 -d "$WORK/empty" "$OUT" 8M 2>/dev/null
+
+        printf 'write %s /ima-test\\nset_inode_field /ima-test mode 0100755\\n' \
+            "$BINARY" > "$WORK/debugfs.cmds"
+        debugfs -w -f "$WORK/debugfs.cmds" "$OUT" 2>/dev/null
+    """,
+    visibility = ["PUBLIC"],
+)
+
+# ── Initramfs with custom init + IMA cert ────────────────────────────
+
+genrule(
+    name = "ima-initramfs",
+    out = "initramfs.cpio.gz",
+    cmd = """
+        set -e
+        INIT=$(location :ima-init)/usr/bin/init
+        CERT=$(location //defs/keys:ima-test-cert)
+        WORK=$BUCK_SCRATCH_PATH/rootfs
+        mkdir -p "$WORK"/{dev,etc/keys,mnt,proc,sys}
+        mkdir -p `dirname $OUT`
+
+        cp "$INIT" "$WORK/init"
+        chmod 755 "$WORK/init"
+
+        openssl x509 -in "$CERT" -outform DER -out "$WORK/etc/keys/x509_ima.der"
+
+        # Build cpio.gz — use absolute path for output since we cd
+        ABS_OUT=`pwd`/$OUT
+        cd "$WORK"
+        find . -print0 | cpio --null -o -H newc --quiet | gzip > "$ABS_OUT"
+    """,
     visibility = ["PUBLIC"],
 )

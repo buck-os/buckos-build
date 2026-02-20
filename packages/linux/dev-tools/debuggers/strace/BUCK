@@ -2,9 +2,15 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package")
 
 autotools_package(
     name = "strace",
-    version = "6.17",
-    src_uri = "https://strace.io/files/6.17/strace-6.17.tar.xz",
-    sha256 = "0a7c7bedc7efc076f3242a0310af2ae63c292a36dd4236f079e88a93e98cb9c0",
+    env = {"CFLAGS": "-Wno-error"},
+    version = "6.19",
+    src_uri = "https://strace.io/files/6.19/strace-6.19.tar.xz",
+    sha256 = "e076c851eec0972486ec842164fdc54547f9d17abd3d1449de8b120f5d299143",
+    # strace 6.19 lacks a handler for the listns syscall (nr 470) added in
+    # newer kernel headers — fall back to the generic printargs decoder
+    src_prepare = """
+        sed -i 's/SEN(listns)/SEN(printargs)/g' src/linux/generic/syscallent-common.h
+    """,
     signature_required = False,
     description = "System call tracer for Linux",
     homepage = "https://strace.io/",

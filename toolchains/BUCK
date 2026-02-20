@@ -1,5 +1,8 @@
 load("@prelude//toolchains:genrule.bzl", "system_genrule_toolchain")
 load("@prelude//toolchains:cxx.bzl", "system_cxx_toolchain")
+load("@prelude//toolchains:python.bzl", "system_python_bootstrap_toolchain", "system_python_toolchain")
+load("@prelude//tests:test_toolchain.bzl", "noop_test_toolchain")
+load(":noop_re_toolchain.bzl", "noop_remote_test_execution_toolchain")
 
 # Genrule toolchain for basic build commands
 system_genrule_toolchain(
@@ -17,5 +20,30 @@ system_cxx_toolchain(
 toolchain_alias(
     name = "cxx_toolchain",
     actual = ":cxx",
+    visibility = ["PUBLIC"],
+)
+
+# Python toolchain for python_binary targets
+system_python_toolchain(
+    name = "python",
+    visibility = ["PUBLIC"],
+)
+
+# Python bootstrap toolchain for prelude internal tools
+system_python_bootstrap_toolchain(
+    name = "python_bootstrap",
+    visibility = ["PUBLIC"],
+)
+
+# Test toolchain (required by sh_test / python_test)
+noop_test_toolchain(
+    name = "test",
+    visibility = ["PUBLIC"],
+)
+
+# Remote test execution stub (required by sh_test)
+# Local-only builds; no remote execution capability.
+noop_remote_test_execution_toolchain(
+    name = "remote_test_execution",
     visibility = ["PUBLIC"],
 )

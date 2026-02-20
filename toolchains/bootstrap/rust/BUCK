@@ -1,4 +1,4 @@
-load("@root//defs:package_defs.bzl", "download_source", "binary_package", "ebuild_package")
+load("@buckos//defs:package_defs.bzl", "download_source", "binary_package", "ebuild_package")
 load(":rust_toolchain_rule.bzl", "buckos_rust_toolchain")
 
 # =============================================================================
@@ -210,12 +210,12 @@ echo "Version: $($DESTDIR/usr/bin/rustc --version 2>/dev/null || echo 'installed
     bdepend = [
         ":rust-bootstrap",
         # LLVM is optional - Rust can use bundled LLVM
-        # "toolchains//bootstrap/llvm:llvm-toolchain",
-        "toolchains//bootstrap:bootstrap-toolchain",
+        # "//bootstrap/llvm:llvm-toolchain",
+        "//bootstrap:bootstrap-toolchain",
     ],
     depend = [
-        "root//packages/linux/core/zlib:zlib",
-        "root//packages/linux/system/libs/crypto/openssl:openssl",
+        "@buckos//packages/linux/core/zlib:zlib",
+        "@buckos//packages/linux/system/libs/crypto/openssl:openssl",
     ],
     use_bootstrap = False,
     visibility = ["PUBLIC"],

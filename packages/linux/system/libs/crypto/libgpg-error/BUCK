@@ -5,6 +5,9 @@ autotools_package(
     # GnuPG release tarball includes pre-generated configure script
     bdepend = [],
     src_prepare = "",
+    # GCC 15 reserves 'nullptr' as a C23 keyword; force C11 to avoid
+    # conflict with test code that uses nullptr as a variable name
+    env = {"CFLAGS": "-std=gnu11"},
     version = "1.50",
     src_uri = "https://gnupg.org/ftp/gcrypt/libgpg-error/libgpg-error-1.50.tar.bz2",
     sha256 = "69405349e0a633e444a28c5b35ce8f14484684518a508dc48a089992fe93e20a",

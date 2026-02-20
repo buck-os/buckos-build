@@ -209,6 +209,7 @@ done
         # Wayland for qtwayland (qtwaylandscanner host tool)
         "//packages/linux/graphics/rendering/wayland:wayland",
         "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
+        "//packages/linux/system/libs/compression/bzip2:bzip2",  # transitive: freetype links libbz2
     ],
 
     # Create Qt6QuickTools package for cross-compilation
@@ -924,6 +925,7 @@ cmake --build "$S/build" -j${MAKEOPTS:-$(nproc)}
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/system/libs/utility/libffi:libffi",
         "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/system/libs/compression/bzip2:bzip2",  # transitive: freetype links libbz2
     ],
 
     # USE-conditional dependencies
@@ -1020,7 +1022,7 @@ binary_package(
         echo "Using Qt source directory: $QT_DIR"
         cd "$QT_DIR"
         ./configure \
-            -prefix "${PREFIX:-/usr}" \
+            -prefix $PREFIX \
             -opensource \
             -confirm-license \
             -release \

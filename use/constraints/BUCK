@@ -1,0 +1,172 @@
+load(":defs.bzl", "use_flag", "use_expand", "use_expand_multi")
+
+# =============================================================================
+# Core system flags
+# =============================================================================
+
+use_flag("acl")
+use_flag("attr")
+use_flag("brotli")
+use_flag("build")
+use_flag("bzip2")
+use_flag("caps")
+use_flag("dbus")
+use_flag("debug")
+use_flag("doc")
+use_flag("examples")
+use_flag("hardened")
+use_flag("http2")
+use_flag("ima")
+use_flag("ipv6")
+use_flag("nls")
+use_flag("pam")
+use_flag("pie")
+use_flag("provenance")
+use_flag("seccomp")
+use_flag("selinux")
+use_flag("ssl")
+use_flag("ssp")
+use_flag("stamp")
+use_flag("static")
+use_flag("static-libs")
+use_flag("strip")
+use_flag("systemd")
+use_flag("test")
+use_flag("threads")
+use_flag("trace")
+use_flag("udev")
+use_flag("unicode")
+use_flag("zlib")
+use_flag("zstd")
+
+# =============================================================================
+# Graphics / display flags
+# =============================================================================
+
+use_flag("X")
+use_flag("broadway")
+use_flag("cairo")
+use_flag("cloudprint")
+use_flag("colord")
+use_flag("cups")
+use_flag("egl")
+use_flag("glx")
+use_flag("introspection")
+use_flag("opengl")
+use_flag("pango")
+use_flag("vulkan")
+use_flag("wayland")
+use_flag("x11")
+use_flag("xcb")
+
+# =============================================================================
+# Audio / multimedia flags
+# =============================================================================
+
+use_flag("alsa")
+use_flag("ffmpeg")
+use_flag("gstreamer")
+use_flag("jack")
+use_flag("pipewire")
+use_flag("pulseaudio")
+use_flag("v4l2")
+use_flag("video")
+
+# =============================================================================
+# Compression flags
+# =============================================================================
+
+use_flag("lz4")
+use_flag("lzma")
+use_flag("lzo")
+use_flag("snappy")
+
+# =============================================================================
+# Crypto / TLS flags
+# =============================================================================
+
+use_flag("asm")
+use_flag("gnutls")
+use_flag("kerberos")
+use_flag("openssl")
+use_flag("ssh")
+
+# =============================================================================
+# Language / toolkit flags
+# =============================================================================
+
+use_flag("gtk")
+use_flag("gtk-doc")
+use_flag("gui")
+use_flag("icu")
+use_flag("lua")
+use_flag("perl")
+use_flag("python")
+use_flag("qt5")
+use_flag("qt6")
+use_flag("readline")
+use_flag("ruby")
+use_flag("vala")
+
+# =============================================================================
+# Network flags
+# =============================================================================
+
+use_flag("bluetooth")
+use_flag("curl")
+use_flag("ldap")
+use_flag("sasl")
+use_flag("sctp")
+
+# =============================================================================
+# Database flags
+# =============================================================================
+
+use_flag("mysql")
+use_flag("postgres")
+use_flag("sqlite")
+
+# =============================================================================
+# Build / dev flags
+# =============================================================================
+
+use_flag("ccache")
+use_flag("cuda")
+use_flag("embree")
+use_flag("llvm")
+use_flag("minimal")
+use_flag("ncurses")
+use_flag("openmp")
+
+# =============================================================================
+# Misc package-level flags
+# =============================================================================
+
+use_flag("cgi")
+use_flag("dns")
+use_flag("ffi")
+use_flag("fontconfig")
+use_flag("inotify")
+use_flag("json")
+use_flag("kmod")
+use_flag("libcamera")
+use_flag("pcre2")
+use_flag("source")
+use_flag("xml")
+use_flag("yaml")
+
+# =============================================================================
+# USE_EXPAND: single-select slots (pick exactly one)
+# =============================================================================
+
+use_expand("openssl_slot", ["3", "1.1"])
+use_expand("python_slot", ["3.11", "3.12", "3.13"])
+use_expand("llvm_slot", ["17", "18", "19"])
+
+# =============================================================================
+# USE_EXPAND: multi-select (enable any combination)
+# =============================================================================
+
+use_expand_multi("python_targets", ["python3_11", "python3_12", "python3_13"])
+use_expand_multi("video_cards", ["amdgpu", "radeonsi", "intel", "nvidia", "fbdev", "vesa"])
+use_expand_multi("input_devices", ["evdev", "libinput", "wacom"])

@@ -1,0 +1,25 @@
+"""
+Host toolchain: wraps whatever cc/c++/ar/strip/make is on PATH.
+
+Uses the host system sysroot (sysroot = None).  Binaries compiled with
+this toolchain link against the host libc, not the buckos-built one.
+Suitable for quick dev/testing where exact libc matching doesn't matter.
+
+Usage:
+    buck2 build //packages/linux/core:zlib --config tc.mode=host
+"""
+
+load("//tc:toolchain_rules.bzl", "buckos_toolchain")
+
+buckos_toolchain(
+    name = "host-toolchain",
+    cc = "cc",
+    cxx = "c++",
+    ar = "ar",
+    strip_bin = "strip",
+    make = "make",
+    pkg_config = "pkg-config",
+    target_triple = "x86_64-linux-gnu",
+    # No sysroot -- use the host system's default
+    visibility = ["PUBLIC"],
+)

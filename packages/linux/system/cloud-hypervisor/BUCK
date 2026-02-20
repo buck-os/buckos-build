@@ -206,13 +206,13 @@ filegroup(
 rootfs(
     name = "ch-minimal-rootfs",
     packages = [
-        # Core utilities (static — no libc dependency in initramfs)
-        "//packages/linux/core/busybox:busybox-static",
+        # Core utilities
+        "//packages/linux/core/busybox:busybox",
+        "//packages/linux/core/musl:musl",
 
         # CH-specific init scripts
         ":ch-init-scripts",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -225,8 +225,9 @@ rootfs(
 rootfs(
     name = "ch-base-rootfs",
     packages = [
-        # Core utilities (static — no libc dependency in initramfs)
-        "//packages/linux/core/busybox:busybox-static",
+        # Core utilities
+        "//packages/linux/core/busybox:busybox",
+        "//packages/linux/core/musl:musl",
         "//packages/linux/core/util-linux:util-linux",
         "//packages/linux/core/zlib:zlib",
 
@@ -237,7 +238,6 @@ rootfs(
         # CH-specific init scripts
         ":ch-init-scripts",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -279,7 +279,6 @@ rootfs(
         # CH-specific init scripts
         ":ch-init-scripts",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -292,7 +291,6 @@ initramfs(
     rootfs = ":ch-minimal-rootfs",
     compression = "gz",
     init = "/sbin/init",
-    visibility = ["PUBLIC"],
 )
 
 # Initramfs with VirtioFS support for rootfs over virtiofs
@@ -301,7 +299,14 @@ initramfs(
     rootfs = ":ch-base-rootfs",
     compression = "gz",
     init = "/sbin/init",
-    visibility = ["PUBLIC"],
+)
+
+# XZ compressed initramfs (smaller, slower decompression)
+initramfs(
+    name = "ch-initramfs-xz",
+    rootfs = ":ch-minimal-rootfs",
+    compression = "xz",
+    init = "/sbin/init",
 )
 
 # =============================================================================
@@ -317,7 +322,6 @@ raw_disk_image(
     filesystem = "ext4",
     label = "buckos-ch",
     partition_table = False,
-    visibility = ["PUBLIC"],
 )
 
 # Base disk (2GB)
@@ -328,7 +332,6 @@ raw_disk_image(
     filesystem = "ext4",
     label = "buckos-ch",
     partition_table = False,
-    visibility = ["PUBLIC"],
 )
 
 # Full disk (4GB)
@@ -339,7 +342,6 @@ raw_disk_image(
     filesystem = "ext4",
     label = "buckos-ch",
     partition_table = False,
-    visibility = ["PUBLIC"],
 )
 
 # Full disk with GPT partition table (for UEFI boot)
@@ -350,7 +352,6 @@ raw_disk_image(
     filesystem = "ext4",
     label = "buckos-ch",
     partition_table = True,
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -373,6 +374,7 @@ filegroup(
     srcs = [
         ":ch-initramfs",
         ":ch-initramfs-virtiofs",
+        ":ch-initramfs-xz",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],

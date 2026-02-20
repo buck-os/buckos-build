@@ -37,7 +37,18 @@ autotools_package(
     configure_args = [
         "--disable-static",
         "--enable-fts5",
+        "--disable-readline",
     ],
+    # Build library only; skip shell CLI to avoid libtool link ordering
+    # issues with dep library paths under exec platform builds
+    src_compile = "make -j${MAKEOPTS:-$(nproc)} libsqlite3.la",
+    src_install = """
+make install-libLTLIBRARIES install-pkgconfigDATA install-includeHEADERS DESTDIR="$DESTDIR"
+""",
+    # sqlite's configure generates a Makefile that links the shell against
+    # libsqlite3.so from the build dir.  Under exec platform builds the
+    # rpath isn't set correctly causing link failures.  LDFLAGS with -L.
+    # and the CPPFLAGS feature flags ensure both the library and shell build.
     env = {
         "CPPFLAGS": "-DSQLITE_ENABLE_COLUMN_METADATA=1 -DSQLITE_ENABLE_FTS3=1 -DSQLITE_ENABLE_FTS4=1 -DSQLITE_ENABLE_FTS5=1 -DSQLITE_ENABLE_RTREE=1 -DSQLITE_ENABLE_UNLOCK_NOTIFY=1 -DSQLITE_SECURE_DELETE=1",
     },

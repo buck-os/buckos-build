@@ -60,7 +60,7 @@ define_packages() {
                 m4 autoconf automake libtool pkg-config curl tar xz-utils
                 bzip2 gzip lzip zstd file patch unzip util-linux gawk sed grep
                 diffutils findutils coreutils bash gettext texinfo bison flex
-                gperf zlib1g-dev libelf-dev linux-libc-dev git gnupg
+                gperf zlib1g-dev linux-libc-dev git gnupg
                 cargo fd-find ripgrep
                 ima-evm-utils
             )
@@ -71,7 +71,7 @@ define_packages() {
                 m4 autoconf automake libtool pkgconf curl tar xz bzip2 gzip
                 lzip zstd file patch unzip util-linux-core gawk sed grep
                 diffutils findutils coreutils bash gettext texinfo bison flex
-                gperf zlib-devel elfutils-libelf-devel kernel-headers glibc-static git gnupg2
+                gperf zlib-devel kernel-headers glibc-static git gnupg2
                 cargo fd-find ripgrep
                 ima-evm-utils
             )

@@ -28,13 +28,13 @@ load("//defs:patch_registry.bzl", "apply_registry_overrides", "lookup_patches")
 # Bootstrap toolchain target path (for use in package definitions)
 # All packages will use this by default to ensure they link against BuckOS glibc
 # rather than the host system's libraries.
-# Note: Uses toolchains// cell prefix per buck2 cell configuration
+# Note: Uses //toolchains/ cell prefix per buck2 cell configuration
 BOOTSTRAP_TOOLCHAIN = "toolchains//bootstrap:bootstrap-toolchain"
 BOOTSTRAP_TOOLCHAIN_AARCH64 = "toolchains//bootstrap:bootstrap-toolchain-aarch64"
 PREBUILT_BOOTSTRAP_TOOLCHAIN = "//config:prebuilt-bootstrap-toolchain"
 
 # Pre-computed at module level so it reads from the root cell's .buckconfig,
-# not the calling BUCK file's cell (toolchains// has no .buckconfig).
+# not the calling BUCK file's cell (//toolchains/ has no .buckconfig).
 _PREBUILT_TOOLCHAIN_PATH = read_config("buckos", "prebuilt_toolchain_path", "")
 
 # Detect host architecture from host_info()
@@ -59,13 +59,13 @@ def get_bootstrap_toolchain():
     if _is_host_aarch64():
         # On aarch64 host, default to aarch64 toolchain
         return select({
-            "root//platforms:is_x86_64": BOOTSTRAP_TOOLCHAIN,
+            "//platforms:is_x86_64": BOOTSTRAP_TOOLCHAIN,
             "DEFAULT": BOOTSTRAP_TOOLCHAIN_AARCH64,
         })
     else:
         # On x86_64 host, default to x86_64 toolchain
         return select({
-            "root//platforms:is_aarch64": BOOTSTRAP_TOOLCHAIN_AARCH64,
+            "//platforms:is_aarch64": BOOTSTRAP_TOOLCHAIN_AARCH64,
             "DEFAULT": BOOTSTRAP_TOOLCHAIN,
         })
 
@@ -722,6 +722,25 @@ _extract_source = rule(
     },
 )
 
+# Local Source Rule (for test fixtures and local files)
+# -----------------------------------------------------------------------------
+
+def _local_source_impl(ctx: AnalysisContext) -> list[Provider]:
+    """Create a source directory from local files using symlinks."""
+    out = ctx.actions.declare_output(ctx.attrs.name, dir = True)
+    srcs = {}
+    for src in ctx.attrs.srcs:
+        srcs[src.basename] = src
+    ctx.actions.symlinked_dir(out, srcs)
+    return [DefaultInfo(default_output = out)]
+
+local_source = rule(
+    impl = _local_source_impl,
+    attrs = {
+        "srcs": attrs.list(attrs.source()),
+    },
+)
+
 def download_source(
         name: str,
         src_uri: str,
@@ -822,17 +841,24 @@ def download_source(
     if needs_prefix:
         archive_filename = base_pkg + "-" + archive_filename
 
-    # Create http_file for the main archive (using custom rule with proxy support)
+    # Create http_file for the main archive using native prelude rule.
+    # Native http_file provides content-addressed CAS lookup by sha256,
+    # deferred execution, and RE-native download handling.
     archive_target = name + "-archive"
+    _mirror_base = read_config("mirror", "base_url", "")
+    _urls = []
+    if _mirror_base:
+        _urls.append("{}/{}".format(_mirror_base, archive_filename))
+    _urls.append(src_uri)
+
     v_path = get_vendor_path("", archive_filename)
     dl_labels = _download_labels(src_uri = src_uri, sha256 = sha256, signature_required = signature_required, vendor_path = v_path, extra = labels)
-    _http_file_with_proxy(
+
+    native.http_file(
         name = archive_target,
-        urls = [src_uri],
+        urls = _urls,
         sha256 = sha256,
         out = archive_filename,
-        proxy = _get_download_proxy(),
-        labels = dl_labels,
     )
 
     # Create signature download rule if signature_required and signature_sha256 provided
@@ -1032,9 +1058,22 @@ if [ -n "$5" ]; then
     fi
 fi
 
-# Collect variable-length arguments: patches and module sources
-PATCH_COUNT="${7:-0}"
-shift 7 2>/dev/null || shift $#
+# $7 = config_base (e.g., "tinyconfig", "allnoconfig", or empty)
+CONFIG_BASE="$7"
+
+# Collect variable-length arguments: inject files, patches, module sources
+INJECT_COUNT="${8:-0}"
+shift 8 2>/dev/null || shift $#
+INJECT_FILES=()
+for ((i=0; i<INJECT_COUNT; i++)); do
+    INJECT_DEST="$1"
+    INJECT_SRC="$2"
+    shift 2
+    INJECT_FILES+=("$INJECT_DEST:$INJECT_SRC")
+done
+
+PATCH_COUNT="${1:-0}"
+shift
 PATCH_FILES=()
 for ((i=0; i<PATCH_COUNT; i++)); do
     PATCH_FILES+=("$1")
@@ -1083,6 +1122,19 @@ echo "Copying kernel source to build directory: $BUILD_DIR"
 cp -a "$SRC_DIR"/. "$BUILD_DIR/"
 cd "$BUILD_DIR"
 
+# Inject extra files into source tree (cwd is BUILD_DIR)
+if [ ${#INJECT_FILES[@]} -gt 0 ]; then
+    for entry in "${INJECT_FILES[@]}"; do
+        IFS=: read -r dest src <<< "$entry"
+        if [[ "$src" != /* ]]; then
+            src="$OLDPWD/$src"
+        fi
+        mkdir -p "$(dirname "$dest")"
+        cp "$src" "$dest"
+    done
+    echo "Injected ${#INJECT_FILES[@]} file(s) into source tree"
+fi
+
 # Apply patches to kernel source
 if [ ${#PATCH_FILES[@]} -gt 0 ]; then
     echo "Applying ${#PATCH_FILES[@]} patch(es) to kernel source..."
@@ -1112,7 +1164,15 @@ if [ -n "$CROSS_COMPILE" ]; then
 fi
 
 # Apply config
-if [ -n "$CONFIG_PATH" ]; then
+if [ -n "$CONFIG_BASE" ]; then
+    # Start from a base config target (e.g., tinyconfig, allnoconfig)
+    make $MAKE_CC_OVERRIDE $MAKE_ARCH_OPTS $CONFIG_BASE
+    if [ -n "$CONFIG_PATH" ]; then
+        # Merge config fragment on top of base
+        scripts/kconfig/merge_config.sh -m .config "$CONFIG_PATH"
+        make $MAKE_CC_OVERRIDE $MAKE_ARCH_OPTS olddefconfig
+    fi
+elif [ -n "$CONFIG_PATH" ]; then
     cp "$CONFIG_PATH" .config
     # Ensure config is complete with olddefconfig (non-interactive)
     make $MAKE_CC_OVERRIDE $MAKE_ARCH_OPTS olddefconfig
@@ -1121,9 +1181,7 @@ if [ -n "$CONFIG_PATH" ]; then
     HARDWARE_CONFIG="$(dirname "$SRC_DIR")/../../hardware-kernel.config"
     if [ -f "$HARDWARE_CONFIG" ]; then
         echo "Merging hardware-specific kernel config..."
-        # Use kernel's merge script to combine base config with hardware fragment
         scripts/kconfig/merge_config.sh -m .config "$HARDWARE_CONFIG"
-        # Update config with new options (non-interactive)
         make $MAKE_CC_OVERRIDE $MAKE_ARCH_OPTS olddefconfig
     fi
 else
@@ -1223,6 +1281,15 @@ fi
     else:
         cmd.add("")
 
+    # Add config_base (or empty placeholder)
+    cmd.add(ctx.attrs.config_base or "")
+
+    # Add inject file count and dest/src pairs
+    cmd.add(str(len(ctx.attrs.inject_files)))
+    for dest_path, src_file in ctx.attrs.inject_files.items():
+        cmd.add(dest_path)
+        cmd.add(src_file)
+
     # Add patch count and patch file paths
     cmd.add(str(len(ctx.attrs.patches)))
     for patch in ctx.attrs.patches:
@@ -1260,6 +1327,8 @@ _kernel_build_rule = rule(
         "cross_toolchain": attrs.option(attrs.dep(), default = None),  # Cross-toolchain for cross-compilation
         "patches": attrs.list(attrs.source(), default = []),  # Patches to apply to kernel source
         "modules": attrs.list(attrs.dep(), default = []),  # External module sources to build
+        "config_base": attrs.option(attrs.string(), default = None),
+        "inject_files": attrs.dict(attrs.string(), attrs.source(), default = {}),
         "labels": attrs.list(attrs.string(), default = []),
     },
 )
@@ -1274,6 +1343,8 @@ def kernel_build(
         cross_toolchain = None,
         patches = [],
         modules = [],
+        config_base = None,
+        inject_files = {},
         labels = [],
         visibility = []):
     """Build Linux kernel with optional patches and external modules.
@@ -1309,6 +1380,8 @@ def kernel_build(
         cross_toolchain = cross_toolchain,
         patches = merged_patches,
         modules = modules,
+        config_base = config_base,
+        inject_files = inject_files,
         labels = _compile_labels(package_type = "kernel", arch = arch, extra = labels),
         visibility = visibility,
     )
@@ -1558,6 +1631,8 @@ case "$*" in
                     DEP_ROOT="${{DEP_ROOT%/lib/pkgconfig}}"
                     if [ "$DEP_ROOT" != "$pc_dir" ]; then
                         OUTPUT=$(echo "$OUTPUT" | sed -e "s|-I/usr/include|-I$DEP_ROOT/usr/include|g" \
+                                                      -e "s|-I/usr/lib64|-I$DEP_ROOT/usr/lib64|g" \
+                                                      -e "s|-I/usr/lib|-I$DEP_ROOT/usr/lib|g" \
                                                       -e "s|-L/usr/lib64|-L$DEP_ROOT/usr/lib64|g" \
                                                       -e "s|-L/usr/lib|-L$DEP_ROOT/usr/lib|g" \
                                                       -e "s| /usr/include| $DEP_ROOT/usr/include|g" \
@@ -2421,20 +2496,6 @@ INIT_EOF
     fi
 fi
 
-# If init is busybox, wrap it to mount devtmpfs first (busybox init needs /dev/console)
-if [ -L "$WORK/init" ] && [ -x "$WORK/bin/busybox" ]; then
-    REAL_INIT="$(readlink "$WORK/init")"
-    rm -f "$WORK/init"
-    cat > "$WORK/init" << WRAP_EOF
-#!/bin/sh
-/bin/mount -t devtmpfs devtmpfs /dev 2>/dev/null
-/bin/mount -t proc proc /proc 2>/dev/null
-/bin/mount -t sysfs sysfs /sys 2>/dev/null
-exec $REAL_INIT
-WRAP_EOF
-    chmod +x "$WORK/init"
-fi
-
 # Create the cpio archive
 cd "$WORK"
 find . -print0 | cpio --null -o -H newc | {compress_cmd} > "$OUTPUT"
@@ -2697,131 +2758,168 @@ def qemu_boot_script(labels = [], **kwargs):
     )
 
 # =============================================================================
-# Cloud Hypervisor Boot Script Rules
+# Cloud Hypervisor Boot Script Rule
 # =============================================================================
 
-def _ch_run_generator(ctx, boot_mode, kernel_dir = None, initramfs = None,
-                      disk_image = None, firmware = None, extra_env = {}):
-    """Shared helper: run the external CH boot script generator."""
+def _ch_boot_script_impl(ctx: AnalysisContext) -> list[Provider]:
+    """Generate a Cloud Hypervisor boot script with multiple boot modes.
+
+    Uses ctx.actions.write with allow_args=True so artifact paths resolve
+    to actual filesystem paths instead of <build artifact ...> placeholders.
+    """
     boot_script = ctx.actions.declare_output(ctx.attrs.name + ".sh")
-    generator = ctx.attrs._generator[DefaultInfo].default_outputs[0]
 
-    env = {
-        "CH_CPUS": ctx.attrs.cpus,
-        "CH_MEMORY": ctx.attrs.memory,
-        "CH_SERIAL": ctx.attrs.serial_console,
-        "CH_EXTRA_ARGS": " ".join(ctx.attrs.extra_args) if ctx.attrs.extra_args else "",
-    }
-    env.update(extra_env)
+    # Resolve deps
+    kernel_dir = ctx.attrs.kernel[DefaultInfo].default_outputs[0] if ctx.attrs.kernel else None
+    firmware_file = ctx.attrs.firmware[DefaultInfo].default_outputs[0] if ctx.attrs.firmware else None
+    disk_image_file = ctx.attrs.disk_image[DefaultInfo].default_outputs[0] if ctx.attrs.disk_image else None
+    initramfs_file = ctx.attrs.initramfs[DefaultInfo].default_outputs[0] if ctx.attrs.initramfs else None
 
-    cmd = cmd_args([
-        "bash",
-        generator,
+    boot_mode = ctx.attrs.boot_mode
+    memory = ctx.attrs.memory
+    cpus = ctx.attrs.cpus
+    kernel_args = ctx.attrs.kernel_args
+    extra_args = " ".join(ctx.attrs.extra_args) if ctx.attrs.extra_args else ""
+    serial_console = ctx.attrs.serial_console
+    network_mode = ctx.attrs.network_mode
+    tap_name = ctx.attrs.tap_name
+    virtiofs_socket = ctx.attrs.virtiofs_socket
+    virtiofs_tag = ctx.attrs.virtiofs_tag
+    virtiofs_path = ctx.attrs.virtiofs_path
+
+    # Build script lines with cmd_args for artifact paths
+    lines = [
+        "#!/bin/bash",
+        "# Cloud Hypervisor Boot Script for BuckOs",
+        "# Boot mode: " + boot_mode,
+        "",
+        "set -e",
+        "unset CDPATH",
+        "",
+    ]
+
+    # Kernel dir (cmd_args resolves artifact to path)
+    if kernel_dir:
+        lines.append(cmd_args("KERNEL_DIR=\"", kernel_dir, "\"", delimiter = ""))
+        lines.append("")
+        lines.append("# Find kernel image")
+        lines.append("KERNEL=\"\"")
+        lines.append("for k in \"$KERNEL_DIR/boot/vmlinuz\"* \"$KERNEL_DIR/boot/bzImage\" \"$KERNEL_DIR/vmlinuz\"* \"$KERNEL_DIR/vmlinux\"*; do")
+        lines.append("    if [ -f \"$k\" ]; then KERNEL=\"$k\"; break; fi")
+        lines.append("done")
+        lines.append("if [ -z \"$KERNEL\" ]; then echo \"Error: Cannot find kernel in $KERNEL_DIR\"; exit 1; fi")
+        lines.append("echo \"  Kernel: $KERNEL\"")
+
+    # Disk image
+    if disk_image_file:
+        lines.append(cmd_args("DISK_ARGS=\"--disk path=", disk_image_file, "\"", delimiter = ""))
+    else:
+        lines.append("DISK_ARGS=\"\"")
+
+    # Initramfs
+    if initramfs_file:
+        lines.append(cmd_args("INITRAMFS_ARGS=\"--initramfs ", initramfs_file, "\"", delimiter = ""))
+    else:
+        lines.append("INITRAMFS_ARGS=\"\"")
+
+    # Firmware
+    if firmware_file and boot_mode == "firmware":
+        lines.append(cmd_args("FIRMWARE=\"", firmware_file, "\"", delimiter = ""))
+        lines.append("if [ ! -f \"$FIRMWARE\" ]; then echo \"Error: Firmware not found\"; exit 1; fi")
+
+    # Network
+    if network_mode == "tap":
+        lines.append("NET_ARGS=\"--net tap={tap},mac=12:34:56:78:9a:bc\"".format(tap = tap_name))
+    else:
+        lines.append("NET_ARGS=\"\"")
+
+    # VirtioFS / memory
+    if boot_mode == "virtiofs":
+        lines.append("VIRTIOFS_SOCKET=\"{socket}\"".format(socket = virtiofs_socket))
+        lines.append("VIRTIOFS_PATH=\"${{VIRTIOFS_PATH:-{path}}}\"".format(path = virtiofs_path))
+        lines.append("if [ ! -S \"$VIRTIOFS_SOCKET\" ]; then")
+        lines.append("    mkdir -p \"$(dirname \"$VIRTIOFS_SOCKET\")\"")
+        lines.append("    virtiofsd --socket-path=\"$VIRTIOFS_SOCKET\" --shared-dir=\"$VIRTIOFS_PATH\" --cache=auto --sandbox=chroot &")
+        lines.append("    for i in $(seq 1 10); do [ -S \"$VIRTIOFS_SOCKET\" ] && break; sleep 0.5; done")
+        lines.append("    [ -S \"$VIRTIOFS_SOCKET\" ] || { echo \"Error: virtiofsd failed\"; exit 1; }")
+        lines.append("fi")
+        lines.append("FS_ARGS=\"--fs tag={tag},socket=$VIRTIOFS_SOCKET\"".format(tag = virtiofs_tag))
+        lines.append("MEMORY_ARGS=\"size={mem},shared=on\"".format(mem = memory))
+    else:
+        lines.append("FS_ARGS=\"\"")
+        lines.append("MEMORY_ARGS=\"size={mem}\"".format(mem = memory))
+
+    lines.append("")
+    lines.append("echo \"Booting BuckOs with Cloud Hypervisor ({mode})...\"".format(mode = boot_mode))
+    lines.append("")
+
+    # Boot command
+    if boot_mode == "direct":
+        lines.append("exec cloud-hypervisor \\")
+        lines.append("    --cpus boot={cpus} --memory $MEMORY_ARGS \\".format(cpus = cpus))
+        lines.append("    --kernel \"$KERNEL\" $INITRAMFS_ARGS \\")
+        lines.append("    --cmdline \"{kargs}\" \\".format(kargs = kernel_args))
+        lines.append("    $DISK_ARGS $NET_ARGS $FS_ARGS \\")
+        lines.append("    --serial {serial} --console off {extra} \"$@\"".format(
+            serial = serial_console, extra = extra_args))
+    elif boot_mode == "firmware":
+        lines.append("exec cloud-hypervisor \\")
+        lines.append("    --cpus boot={cpus} --memory $MEMORY_ARGS \\".format(cpus = cpus))
+        lines.append("    --kernel \"$FIRMWARE\" \\")
+        lines.append("    $DISK_ARGS $NET_ARGS $FS_ARGS \\")
+        lines.append("    --serial {serial} --console off {extra} \"$@\"".format(
+            serial = serial_console, extra = extra_args))
+    elif boot_mode == "virtiofs":
+        lines.append("exec cloud-hypervisor \\")
+        lines.append("    --cpus boot={cpus} --memory $MEMORY_ARGS \\".format(cpus = cpus))
+        lines.append("    --kernel \"$KERNEL\" $INITRAMFS_ARGS \\")
+        lines.append("    --cmdline \"{kargs} root={tag} rootfstype=virtiofs rw\" \\".format(
+            kargs = kernel_args, tag = virtiofs_tag))
+        lines.append("    $NET_ARGS $FS_ARGS \\")
+        lines.append("    --serial {serial} --console off {extra} \"$@\"".format(
+            serial = serial_console, extra = extra_args))
+    else:
+        lines.append("echo \"Error: Unknown boot mode: {mode}\"".format(mode = boot_mode))
+        lines.append("exit 1")
+
+    lines.append("")
+
+    script, hidden = ctx.actions.write(
         boot_script.as_output(),
-        boot_mode,
-        kernel_dir if kernel_dir else "",
-        initramfs if initramfs else "",
-        disk_image if disk_image else "",
-        firmware if firmware else "",
-    ])
+        lines,
+        is_executable = True,
+        allow_args = True,
+    )
 
-    ctx.actions.run(cmd, env = env, category = "ch_boot_script", identifier = ctx.attrs.name)
-    return [DefaultInfo(default_output = boot_script)]
+    return [DefaultInfo(default_output = script, other_outputs = hidden)]
 
-def _ch_direct_boot_script_impl(ctx: AnalysisContext) -> list[Provider]:
-    """Generate a direct-kernel-boot Cloud Hypervisor boot script."""
-    kernel_dir = ctx.attrs.kernel[DefaultInfo].default_outputs[0]
-    initramfs = ctx.attrs.initramfs[DefaultInfo].default_outputs[0]
-    disk_image = ctx.attrs.disk_image[DefaultInfo].default_outputs[0] if ctx.attrs.disk_image else None
-    return _ch_run_generator(ctx, "direct", kernel_dir = kernel_dir, initramfs = initramfs,
-                             disk_image = disk_image, extra_env = {"CH_KERNEL_ARGS": ctx.attrs.kernel_args})
-
-def _ch_firmware_boot_script_impl(ctx: AnalysisContext) -> list[Provider]:
-    """Generate a firmware-boot Cloud Hypervisor boot script."""
-    firmware = ctx.attrs.firmware[DefaultInfo].default_outputs[0]
-    disk_image = ctx.attrs.disk_image[DefaultInfo].default_outputs[0]
-    return _ch_run_generator(ctx, "firmware", firmware = firmware, disk_image = disk_image)
-
-def _ch_virtiofs_boot_script_impl(ctx: AnalysisContext) -> list[Provider]:
-    """Generate a VirtioFS-boot Cloud Hypervisor boot script."""
-    kernel_dir = ctx.attrs.kernel[DefaultInfo].default_outputs[0]
-    initramfs = ctx.attrs.initramfs[DefaultInfo].default_outputs[0]
-    return _ch_run_generator(ctx, "virtiofs", kernel_dir = kernel_dir, initramfs = initramfs,
-        extra_env = {
-            "CH_KERNEL_ARGS": ctx.attrs.kernel_args,
-            "CH_VIRTIOFS_SOCKET": ctx.attrs.virtiofs_socket,
-            "CH_VIRTIOFS_TAG": ctx.attrs.virtiofs_tag,
-            "CH_VIRTIOFS_PATH": ctx.attrs.virtiofs_path,
-        })
-
-_ch_direct_boot_script_rule = rule(
-    impl = _ch_direct_boot_script_impl,
+_ch_boot_script_rule = rule(
+    impl = _ch_boot_script_impl,
     attrs = {
-        "kernel": attrs.dep(),
-        "initramfs": attrs.dep(),
+        "kernel": attrs.option(attrs.dep(), default = None),
+        "firmware": attrs.option(attrs.dep(), default = None),
         "disk_image": attrs.option(attrs.dep(), default = None),
-        "kernel_args": attrs.string(default = "console=ttyS0 quiet"),
+        "initramfs": attrs.option(attrs.dep(), default = None),
+        "boot_mode": attrs.string(default = "direct"),  # direct, firmware, virtiofs
         "memory": attrs.string(default = "512M"),
         "cpus": attrs.string(default = "2"),
-        "serial_console": attrs.string(default = "tty"),
-        "extra_args": attrs.list(attrs.string(), default = []),
-        "labels": attrs.list(attrs.string(), default = []),
-        "_generator": attrs.dep(default = "//defs/scripts:generate-ch-boot-script"),
-    },
-)
-
-_ch_firmware_boot_script_rule = rule(
-    impl = _ch_firmware_boot_script_impl,
-    attrs = {
-        "firmware": attrs.dep(),
-        "disk_image": attrs.dep(),
-        "memory": attrs.string(default = "512M"),
-        "cpus": attrs.string(default = "2"),
-        "serial_console": attrs.string(default = "tty"),
-        "extra_args": attrs.list(attrs.string(), default = []),
-        "labels": attrs.list(attrs.string(), default = []),
-        "_generator": attrs.dep(default = "//defs/scripts:generate-ch-boot-script"),
-    },
-)
-
-_ch_virtiofs_boot_script_rule = rule(
-    impl = _ch_virtiofs_boot_script_impl,
-    attrs = {
-        "kernel": attrs.dep(),
-        "initramfs": attrs.dep(),
         "kernel_args": attrs.string(default = "console=ttyS0 quiet"),
+        "network_mode": attrs.string(default = "none"),  # none, tap
+        "tap_name": attrs.string(default = "tap0"),
         "virtiofs_socket": attrs.string(default = "/tmp/virtiofs.sock"),
         "virtiofs_tag": attrs.string(default = "rootfs"),
         "virtiofs_path": attrs.string(default = "/tmp/rootfs"),
-        "memory": attrs.string(default = "512M"),
-        "cpus": attrs.string(default = "2"),
         "serial_console": attrs.string(default = "tty"),
         "extra_args": attrs.list(attrs.string(), default = []),
         "labels": attrs.list(attrs.string(), default = []),
-        "_generator": attrs.dep(default = "//defs/scripts:generate-ch-boot-script"),
     },
 )
 
-def ch_direct_boot_script(labels = [], **kwargs):
-    _ch_direct_boot_script_rule(labels = _bootscript_labels(extra = labels), **kwargs)
-
-def ch_firmware_boot_script(labels = [], **kwargs):
-    _ch_firmware_boot_script_rule(labels = _bootscript_labels(extra = labels), **kwargs)
-
-def ch_virtiofs_boot_script(labels = [], **kwargs):
-    _ch_virtiofs_boot_script_rule(labels = _bootscript_labels(extra = labels), **kwargs)
-
-def ch_boot_script(boot_mode = "direct", labels = [], **kwargs):
-    """Backward-compatible dispatcher. Prefer mode-specific macros."""
-    kwargs.pop("boot_mode", None)
-    if boot_mode == "direct":
-        ch_direct_boot_script(labels = labels, **kwargs)
-    elif boot_mode == "firmware":
-        ch_firmware_boot_script(labels = labels, **kwargs)
-    elif boot_mode == "virtiofs":
-        ch_virtiofs_boot_script(labels = labels, **kwargs)
-    else:
-        fail("Unknown CH boot mode: " + boot_mode)
+def ch_boot_script(labels = [], **kwargs):
+    _ch_boot_script_rule(
+        labels = _bootscript_labels(extra = labels),
+        **kwargs
+    )
 
 # =============================================================================
 # Raw Disk Image Rule
@@ -5709,7 +5807,7 @@ def ebuild_package(
         native.genrule(
             name = name,
             out = name,
-            cmd = "cp -a $(location root//config:prebuilt-bootstrap-cache)/" + name + " $OUT",
+            cmd = "cp -a $(location //config:prebuilt-bootstrap-cache)/" + name + " $OUT",
             visibility = kwargs.get("visibility", []),
         )
         return
