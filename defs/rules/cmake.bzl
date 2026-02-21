@@ -47,13 +47,13 @@ def _cmake_configure(ctx, source):
     for key, value in ctx.attrs.env.items():
         cmd.add("--env", "{}={}".format(key, value))
 
-    # CMake arguments
+    # CMake arguments (use = form so argparse doesn't treat -D... as a flag)
     for arg in ctx.attrs.cmake_args:
-        cmd.add("--cmake-arg", arg)
+        cmd.add(cmd_args("--cmake-arg=", arg, delimiter = ""))
 
     # CMake defines (KEY=VALUE strings)
     for define in ctx.attrs.cmake_defines:
-        cmd.add("--cmake-define", define)
+        cmd.add(cmd_args("--cmake-define=", define, delimiter = ""))
 
     # Extra CFLAGS / LDFLAGS — pass as CMAKE_C_FLAGS / CMAKE_EXE_LINKER_FLAGS
     cflags = list(ctx.attrs.extra_cflags)
@@ -70,7 +70,7 @@ def _cmake_configure(ctx, source):
             for lib in pkg.libraries:
                 ldflags.append("-l" + lib)
             if pkg.pkg_config_path:
-                cmd.add("--cmake-define", cmd_args("CMAKE_PREFIX_PATH=", pkg.pkg_config_path, delimiter = ""))
+                cmd.add(cmd_args("--cmake-define=", "CMAKE_PREFIX_PATH=", pkg.pkg_config_path, delimiter = ""))
 
             # Propagate any extra flags the dependency requires consumers to use
             for f in pkg.cflags:
@@ -79,13 +79,13 @@ def _cmake_configure(ctx, source):
                 ldflags.append(f)
 
     if cflags:
-        cmd.add("--cmake-define", cmd_args("CMAKE_C_FLAGS=", cmd_args(cflags, delimiter = " "), delimiter = ""))
+        cmd.add(cmd_args("--cmake-define=", "CMAKE_C_FLAGS=", cmd_args(cflags, delimiter = " "), delimiter = ""))
     if ldflags:
-        cmd.add("--cmake-define", cmd_args("CMAKE_EXE_LINKER_FLAGS=", cmd_args(ldflags, delimiter = " "), delimiter = ""))
+        cmd.add(cmd_args("--cmake-define=", "CMAKE_EXE_LINKER_FLAGS=", cmd_args(ldflags, delimiter = " "), delimiter = ""))
 
     # Configure arguments from the common interface
     for arg in ctx.attrs.configure_args:
-        cmd.add("--cmake-arg", arg)
+        cmd.add(cmd_args("--cmake-arg=", arg, delimiter = ""))
 
     ctx.actions.run(cmd, category = "configure", identifier = ctx.attrs.name)
     return output

@@ -47,13 +47,13 @@ def _meson_setup(ctx, source):
     for key, value in ctx.attrs.env.items():
         cmd.add("--env", "{}={}".format(key, value))
 
-    # Meson arguments
+    # Meson arguments (use = form so argparse doesn't treat -D... as a flag)
     for arg in ctx.attrs.meson_args:
-        cmd.add("--meson-arg", arg)
+        cmd.add(cmd_args("--meson-arg=", arg, delimiter = ""))
 
     # Meson defines (KEY=VALUE strings)
     for define in ctx.attrs.meson_defines:
-        cmd.add("--meson-define", define)
+        cmd.add(cmd_args("--meson-define=", define, delimiter = ""))
 
     # Extra CFLAGS / LDFLAGS — pass as environment-style flags via meson args
     cflags = list(ctx.attrs.extra_cflags)
@@ -80,13 +80,13 @@ def _meson_setup(ctx, source):
                 ldflags.append(f)
 
     if cflags:
-        cmd.add("--meson-define", cmd_args("c_args=", cmd_args(cflags, delimiter = ","), delimiter = ""))
+        cmd.add(cmd_args("--meson-define=", "c_args=", cmd_args(cflags, delimiter = ","), delimiter = ""))
     if ldflags:
-        cmd.add("--meson-define", cmd_args("c_link_args=", cmd_args(ldflags, delimiter = ","), delimiter = ""))
+        cmd.add(cmd_args("--meson-define=", "c_link_args=", cmd_args(ldflags, delimiter = ","), delimiter = ""))
 
     # Configure arguments from the common interface
     for arg in ctx.attrs.configure_args:
-        cmd.add("--meson-arg", arg)
+        cmd.add(cmd_args("--meson-arg=", arg, delimiter = ""))
 
     ctx.actions.run(cmd, category = "configure", identifier = ctx.attrs.name)
     return output
