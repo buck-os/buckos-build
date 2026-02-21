@@ -21,7 +21,6 @@ package(
         "perl": "//packages/linux/lang/perl:perl",
         "ruby": "//packages/linux/lang/ruby:ruby",
         "lua": "//packages/linux/lang/lua:lua",
-        "ncurses": "//packages/linux/system/terminal/ncurses:ncurses",
     },
 
     # Conditional configure arguments
@@ -52,7 +51,7 @@ package(
         "--with-features=huge",
         "--enable-multibyte",
         "--disable-netbeans",
-        "--with-tlib=ncurses",
+        "--with-tlib=ncursesw",
         # Cross-compilation cache variables - vim configure tries to run test
         # programs which can't work when cross-compiling. These are the correct
         # values for modern Linux x86_64 with glibc.
@@ -66,14 +65,19 @@ package(
         "vim_cv_memcpy_handles_overlap=yes",
     ],
 
-    pre_configure = """
-# Vim source is in src directory, need to run configure from there
-cd src
-# Clear any stale config cache from previous builds
-rm -f auto/config.cache
-""",
-
+    pre_configure_cmds = [
+        "rm -f src/auto/config.cache",
+        # Vim's src/configure calls auto/configure relative to CWD.
+        # Create a top-level wrapper that cd's to src/ first.
+        'printf \'#!/bin/sh\\ncd "$(dirname "$0")/src" && exec ./configure "$@"\\n\' > configure && chmod +x configure',
+        # Empty auto/osdef.h — vim's generated declarations conflict with
+        # ncursesw's const-correct headers on GCC 14+.
+        "> src/auto/osdef.h",
+    ],
+    # GCC 14+ requires optimization for _FORTIFY_SOURCE
+    extra_cflags = ["-O2"],
     deps = [
+        "//packages/linux/system/terminal/ncurses:ncurses",
     ],
     visibility = ["PUBLIC"],
 )
