@@ -174,14 +174,11 @@ meson_package(
     pre_configure = """
 # Find native wayland-scanner from exec_bdepend
 WAYLAND_SCANNER=""
-SCANNER_PKG_CONFIG_PATH=""
 IFS=':' read -ra _EXEC_BDEP_ARRAY <<< "${EXEC_BDEP_BASE_DIRS:-}"
 for _dep in "${_EXEC_BDEP_ARRAY[@]}"; do
     if [ -x "$_dep/usr/bin/wayland-scanner" ]; then
         WAYLAND_SCANNER="$_dep/usr/bin/wayland-scanner"
-        SCANNER_PKG_CONFIG_PATH="$_dep/usr/lib64/pkgconfig"
         echo "Found native wayland-scanner: $WAYLAND_SCANNER"
-        echo "Scanner pkg-config path: $SCANNER_PKG_CONFIG_PATH"
         break
     fi
 done
@@ -190,7 +187,6 @@ if [ -z "$WAYLAND_SCANNER" ]; then
     # Fallback to host wayland-scanner
     if [ -x "/usr/bin/wayland-scanner" ]; then
         WAYLAND_SCANNER="/usr/bin/wayland-scanner"
-        SCANNER_PKG_CONFIG_PATH="/usr/lib64/pkgconfig"
         echo "Using host wayland-scanner: $WAYLAND_SCANNER"
     else
         echo "ERROR: No wayland-scanner found, build will fail"
@@ -198,19 +194,31 @@ if [ -z "$WAYLAND_SCANNER" ]; then
     fi
 fi
 
-# Create meson native file for host tools
+# Create a wayland-scanner.pc that points to the actual binary location.
+# The installed .pc file has prefix=/usr which resolves wayland_scanner to
+# /usr/bin/wayland-scanner — a path that doesn't exist in the build tree.
+# Meson reads this variable via get_variable('wayland_scanner') and then
+# calls find_program() with the absolute path, which fails.
+mkdir -p "$S/build-pkgconfig"
+cat > "$S/build-pkgconfig/wayland-scanner.pc" << EOF
+wayland_scanner=$WAYLAND_SCANNER
+
+Name: Wayland Scanner
+Description: Wayland scanner tool
+Version: 1.23.1
+EOF
+
+# Create meson native file for host tools.
+# pkg_config_path tells meson where to find native (build-machine) .pc files;
+# this is needed because env vars don't carry between ebuild phases.
 cat > "$S/native.ini" << EOF
 [binaries]
 wayland-scanner = '$WAYLAND_SCANNER'
 pkg-config = 'pkg-config'
 
 [built-in options]
-pkg_config_path = ['$SCANNER_PKG_CONFIG_PATH']
+pkg_config_path = ['$S/build-pkgconfig', '/usr/lib64/pkgconfig', '/usr/share/pkgconfig']
 EOF
-
-# Set PKG_CONFIG_PATH_FOR_BUILD so meson can find wayland-scanner.pc for build-time dependencies
-export PKG_CONFIG_PATH_FOR_BUILD="$SCANNER_PKG_CONFIG_PATH:/usr/lib64/pkgconfig:/usr/share/pkgconfig"
-echo "PKG_CONFIG_PATH_FOR_BUILD: $PKG_CONFIG_PATH_FOR_BUILD"
 """,
     # Use native file for host tools + cross-file for cross-compilation
     src_configure = """
