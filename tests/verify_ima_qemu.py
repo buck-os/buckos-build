@@ -61,12 +61,13 @@ def main():
         print("SKIP: evmctl not found")
         sys.exit(0)
 
-    # Boot QEMU
+    # Disable QEMU image locking — the disk is readonly and the artifact
+    # in buck-out is shared across concurrent test targets.
     cmd = [
         "qemu-system-x86_64",
         "-kernel", kernel,
         "-initrd", initramfs,
-        "-drive", f"file={disk},format=raw,if=virtio,readonly=on",
+        "-drive", f"file={disk},format=raw,if=virtio,readonly=on,file.locking=off",
         "-append", f"console=ttyS0 panic=-1 {cmdline_extra}",
         "-nographic", "-no-reboot", "-m", "256M",
         "-enable-kvm", "-cpu", "host",
