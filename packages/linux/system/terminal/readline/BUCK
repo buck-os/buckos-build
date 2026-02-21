@@ -22,13 +22,10 @@ package(
         "--enable-shared",
         "--with-curses",
     ],
-
-    # Force readline to link against ncurses/tinfo in the shared library
-    # readline's configure finds ncurses but doesn't propagate it to SHLIB_LIBS
-    src_compile = '''
-make -j${MAKEOPTS:-$(nproc)} SHLIB_LIBS="-lncursesw"
-''',
-
+    # readline's configure finds ncurses but doesn't propagate it to SHLIB_LIBS,
+    # so the shared library lacks DT_NEEDED for ncursesw — consumers get
+    # undefined termcap symbols (tgetent, tputs, etc.) at link time.
+    make_args = ["SHLIB_LIBS=-lncursesw"],
     deps = ["//packages/linux/system/terminal/ncurses:ncurses"],
     visibility = ["PUBLIC"],
 )
