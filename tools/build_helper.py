@@ -251,6 +251,18 @@ def main():
         if prepend:
             os.environ["PATH"] = prepend + ":" + os.environ.get("PATH", "")
 
+        # Auto-detect Python site-packages from dep prefixes so build-time
+        # Python modules (e.g. mako for mesa) are found by custom generators.
+        python_paths = []
+        for bin_dir in args.path_prepend:
+            usr_dir = os.path.dirname(os.path.abspath(bin_dir))
+            for sp in _glob.glob(os.path.join(usr_dir, "lib", "python*", "site-packages")):
+                if os.path.isdir(sp):
+                    python_paths.append(sp)
+        if python_paths:
+            existing = os.environ.get("PYTHONPATH", "")
+            os.environ["PYTHONPATH"] = ":".join(python_paths) + (":" + existing if existing else "")
+
     # Run pre-build commands (e.g. Kconfig setup)
     for cmd_str in args.pre_cmds:
         result = subprocess.run(cmd_str, shell=True, cwd=output_dir)
