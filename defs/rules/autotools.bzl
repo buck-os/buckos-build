@@ -84,6 +84,7 @@ def _src_configure(ctx, source):
         # Propagate include/lib/pkgconfig paths from dependencies.
         # Works with both new-style PackageInfo deps and old-style
         # ebuild_package deps (DefaultInfo only).
+        dep_libs = []
         for dep in ctx.attrs.deps:
             if PackageInfo in dep:
                 prefix = dep[PackageInfo].prefix
@@ -98,7 +99,7 @@ def _src_configure(ctx, source):
             cmd.add(cmd_args("--ldflags=", lib, delimiter = ""))
             if PackageInfo in dep:
                 for libname in dep[PackageInfo].libraries:
-                    cmd.add(cmd_args("--ldflags=", "-l" + libname, delimiter = ""))
+                    dep_libs.append("-l" + libname)
             cmd.add("--pkg-config-path", cmd_args(prefix, format = "{}/usr/lib64/pkgconfig"))
             cmd.add("--pkg-config-path", cmd_args(prefix, format = "{}/usr/lib/pkgconfig"))
             cmd.add("--pkg-config-path", cmd_args(prefix, format = "{}/usr/share/pkgconfig"))
@@ -110,6 +111,13 @@ def _src_configure(ctx, source):
                     cmd.add(cmd_args("--cflags=", f, delimiter = ""))
                 for f in dep[PackageInfo].ldflags:
                     cmd.add(cmd_args("--ldflags=", f, delimiter = ""))
+
+        # Pass dep -l flags via LIBS (not LDFLAGS) so autotools configure
+        # test programs don't fail trying to run binaries linked against
+        # libraries in buck-out paths.  LIBS is appended after LDFLAGS in
+        # the link command, which is the correct position for -l flags.
+        if dep_libs:
+            cmd.add("--env", "LIBS=" + " ".join(dep_libs))
 
     ctx.actions.run(cmd, category = "configure", identifier = ctx.attrs.name)
     return output
@@ -125,11 +133,12 @@ def _dep_env_args(ctx):
     cppflags = []
     cflags = list(ctx.attrs.extra_cflags)
     ldflags = list(ctx.attrs.extra_ldflags)
+    libs = []
     for dep in ctx.attrs.deps:
         if PackageInfo in dep:
             prefix = dep[PackageInfo].prefix
             for libname in dep[PackageInfo].libraries:
-                ldflags.append("-l" + libname)
+                libs.append("-l" + libname)
             for f in dep[PackageInfo].cflags:
                 cflags.append(f)
             for f in dep[PackageInfo].ldflags:
@@ -156,6 +165,8 @@ def _dep_env_args(ctx):
         env_args.append(cmd_args("CFLAGS=", cmd_args(cflags, delimiter = " "), delimiter = ""))
     if ldflags:
         env_args.append(cmd_args("LDFLAGS=", cmd_args(ldflags, delimiter = " "), delimiter = ""))
+    if libs:
+        env_args.append(cmd_args("LIBS=", cmd_args(libs, delimiter = " "), delimiter = ""))
     return env_args, path_dirs
 
 def _src_compile(ctx, configured):
