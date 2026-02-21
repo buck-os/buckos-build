@@ -182,18 +182,20 @@ def main():
         with open(ninja_file, "w") as f:
             f.write(content)
 
-    # Touch autotools-generated files so make doesn't try to regenerate
-    # them.  The copytree preserves timestamps but configure may have
-    # touched dependency files (configure.ac, m4/*) making the generated
-    # outputs appear stale.
-    for pattern in [
-        "aclocal.m4", "configure", "config.h.in", "config.h.in~",
-        "config.status", "config.h", "stamp-h1",
-        "Makefile.in", "*/Makefile.in", "*/*/Makefile.in",
-        "Makefile", "*/Makefile", "*/*/Makefile",
-    ]:
-        for f in _glob.glob(os.path.join(output_dir, pattern)):
-            os.utime(f, None)
+    # Reset all file timestamps to a single instant so make doesn't try
+    # to regenerate autotools/cmake/meson outputs.  The copytree preserves
+    # original timestamps but path rewriting modifies some files, making
+    # others (version.h, aclocal.m4, Makefiles) appear stale.  A uniform
+    # timestamp prevents all spurious rebuilds.
+    import time
+    _now = time.time()
+    _stamp = (_now, _now)
+    for dirpath, _dirnames, filenames in os.walk(output_dir):
+        for fname in filenames:
+            try:
+                os.utime(os.path.join(dirpath, fname), _stamp)
+            except (PermissionError, OSError):
+                pass
 
     # Create a pkg-config wrapper that always passes --define-prefix so
     # .pc files in Buck2 dep directories resolve paths correctly.
