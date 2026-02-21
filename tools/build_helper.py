@@ -7,6 +7,7 @@ initialisation for busybox/kernel builds).
 """
 
 import argparse
+import glob as _glob
 import multiprocessing
 import os
 import shutil
@@ -108,6 +109,19 @@ def main():
             content = content.replace(build_dir, output_dir)
             with open(ninja_file, "w") as f:
                 f.write(content)
+
+    # Touch autotools-generated files so make doesn't try to regenerate
+    # them.  The copytree preserves timestamps but configure may have
+    # touched dependency files (configure.ac, m4/*) making the generated
+    # outputs appear stale.
+    for pattern in [
+        "aclocal.m4", "configure", "config.h.in", "config.h.in~",
+        "config.status", "config.h", "stamp-h1",
+        "Makefile.in", "*/Makefile.in", "*/*/Makefile.in",
+        "Makefile", "*/Makefile", "*/*/Makefile",
+    ]:
+        for f in _glob.glob(os.path.join(output_dir, pattern)):
+            os.utime(f, None)
 
     # Disable host compiler/build caches — Buck2 caches actions itself,
     # and external caches can poison results across build contexts.
