@@ -2,7 +2,7 @@
 
 load("//tests/graph:helpers.bzl", "assert_result", "starts_with", "summarize")
 
-CH_TARGET = "buckos//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor"
+CH_TARGET = "buckos//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor-build"
 
 BOOT_SCRIPT_NAMES = [
     "ch-boot-debug",

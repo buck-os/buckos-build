@@ -372,6 +372,15 @@ def package(
     if build_rule in _label_map:
         _auto_labels.append(_label_map[build_rule])
 
+    # Provenance labels
+    if url:
+        _host = url.split("://")[-1].split("/")[0]
+        _auto_labels.append("buckos:source:" + _host)
+        _auto_labels.append("buckos:url:" + url)
+        _auto_labels.append("buckos:sig:none")
+    if sha256:
+        _auto_labels.append("buckos:sha256:" + sha256)
+
     _all_labels = _auto_labels + build_kwargs.pop("labels", [])
     build_kwargs["labels"] = _all_labels
 
