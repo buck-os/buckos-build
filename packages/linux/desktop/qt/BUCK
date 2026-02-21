@@ -785,12 +785,6 @@ cmake --build "$S/build" -j${MAKEOPTS:-$(nproc)}
         "-DBUILD_qtwebsockets=OFF",
     ],
 
-    # USE-conditional cmake args
-    use_configure = {
-
-    },
-
-    # Base dependencies (always needed)
     deps = [
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/dev-libs/glib:glib",
@@ -798,81 +792,41 @@ cmake --build "$S/build" -j${MAKEOPTS:-$(nproc)}
         "//packages/linux/system/libs/utility/pcre2:pcre2",
         "//packages/linux/system/libs/compression/zstd:zstd",
         "//packages/linux/system/libs/utility/icu:icu",
-        # GUI deps - using system freetype + fontconfig for font support
-        # (bundled harfbuzz, but system_freetype is REQUIRED for fontconfig to work)
         "//packages/linux/system/libs/image/libpng:libpng",
         "//packages/linux/system/libs/image/libjpeg-turbo:libjpeg-turbo",
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
-        # Freetype and Fontconfig - REQUIRED for Qt to find and render system fonts
-        # Qt's fontconfig feature requires system_freetype=ON
         "//packages/linux/system/libs/font/freetype:freetype",
         "//packages/linux/system/libs/font/fontconfig:fontconfig",
-        # Transitive dependencies needed for linking:
-        # - expat: needed by Mesa's libEGL and fontconfig
-        # - libffi: needed by wayland
-        # - openssl: needed by Qt6Network for SSL/TLS
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/system/libs/utility/libffi:libffi",
         "//packages/linux/system/libs/crypto/openssl:openssl",
-        "//packages/linux/system/libs/compression/bzip2:bzip2",  # transitive: freetype links libbz2
+        "//packages/linux/system/libs/compression/bzip2:bzip2",
+        # X11 (from use_deps)
+        "//packages/linux/graphics/xorg/libX11:libX11",
+        "//packages/linux/graphics/xorg/libxcb:libxcb",
+        "//packages/linux/graphics/xorg/xcb-util-cursor:xcb-util-cursor",
+        "//packages/linux/graphics/xorg/xcb-util-image:xcb-util-image",
+        "//packages/linux/graphics/xorg/xcb-util-keysyms:xcb-util-keysyms",
+        "//packages/linux/graphics/xorg/xcb-util-renderutil:xcb-util-renderutil",
+        "//packages/linux/graphics/xorg/xcb-util-wm:xcb-util-wm",
+        "//packages/linux/graphics/xorg/libICE:libICE",
+        "//packages/linux/graphics/xorg/libSM:libSM",
+        # Wayland (from use_deps)
+        "//packages/linux/graphics/rendering/wayland:wayland",
+        "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
+        # OpenGL/Mesa (from use_deps)
+        "//packages/linux/desktop/mesa:mesa",
+        "//packages/linux/core/llvm:llvm",
+        "//packages/linux/dev-libs/elfutils:elfutils",
+        "//packages/linux/system/libs/data/libxml2:libxml2",
+        # SQLite (from use_deps)
+        "//packages/linux/system/libs/database/sqlite:sqlite",
+        # D-Bus (from use_deps)
+        "//packages/linux/system/libs/ipc/dbus:dbus",
+        "//packages/linux/system/init/systemd:systemd",
+        "//packages/linux/system/libs/ipc/libcap:libcap",
     ],
-
-    # USE-conditional dependencies
-    use_deps = {
-        "X": [
-            "//packages/linux/graphics/xorg/libX11:libX11",
-            "//packages/linux/graphics/xorg/libxcb:libxcb",
-            "//packages/linux/graphics/xorg/xcb-util-cursor:xcb-util-cursor",
-            "//packages/linux/graphics/xorg/xcb-util-image:xcb-util-image",
-            "//packages/linux/graphics/xorg/xcb-util-keysyms:xcb-util-keysyms",
-            "//packages/linux/graphics/xorg/xcb-util-renderutil:xcb-util-renderutil",
-            "//packages/linux/graphics/xorg/xcb-util-wm:xcb-util-wm",
-            "//packages/linux/graphics/xorg/libICE:libICE",
-            "//packages/linux/graphics/xorg/libSM:libSM",
-        ],
-        "wayland": [
-            "//packages/linux/graphics/rendering/wayland:wayland",
-            "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
-        ],
-        "opengl": [
-            "//packages/linux/desktop/mesa:mesa",
-            # Mesa's radeonsi driver depends on LLVM and elfutils
-            # LLVM depends on libxml2
-            "//packages/linux/core/llvm:llvm",
-            "//packages/linux/dev-libs/elfutils:elfutils",
-            "//packages/linux/system/libs/data/libxml2:libxml2",
-        ],
-        "ssl": [
-            "//packages/linux/system/libs/crypto/openssl:openssl",
-        ],
-        "sqlite": [
-            "//packages/linux/system/libs/database/sqlite:sqlite",
-        ],
-        "dbus": [
-            "//packages/linux/system/libs/ipc/dbus:dbus",
-            "//packages/linux/system/init/systemd:systemd",  # dbus depends on libsystemd
-            "//packages/linux/system/libs/ipc/libcap:libcap",  # libsystemd depends on libcap
-        ],
-    },
-
-    # Patch Qt6QuickDependencies.cmake to remove Qt6QuickTools requirement
-    # The tools are provided by qt6-native via QT_HOST_PATH
-    src_install = """
-# Run default install
-cmake --install "$S/build" --prefix "$D/usr"
-
-# Patch Qt6QuickDependencies.cmake to remove Qt6QuickTools requirement
-DEPS_FILE="$D/usr/lib/cmake/Qt6Quick/Qt6QuickDependencies.cmake"
-if [ -f "$DEPS_FILE" ]; then
-    echo "Patching $DEPS_FILE to remove Qt6QuickTools requirement..."
-    # Remove the Qt6QuickTools line from __qt_Quick_tool_deps
-    sed -i 's/set(__qt_Quick_tool_deps "Qt6QuickTools\\;6.8.3")/set(__qt_Quick_tool_deps "")/' "$DEPS_FILE"
-    echo "Qt6QuickTools requirement removed from Qt6QuickDependencies.cmake"
-else
-    echo "Warning: $DEPS_FILE not found"
-fi
-""",
 
     visibility = ["PUBLIC"],
 )

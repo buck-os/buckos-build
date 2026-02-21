@@ -9,30 +9,6 @@ package(
     description = "2D graphics library with support for multiple output devices",
     homepage = "https://www.cairographics.org/",
     license = "LGPL-2.1-or-later",
-    use_configure = {
-        "X": ("-Dxlib=enabled", "-Dxlib=disabled"),
-        "glib": ("-Dglib=enabled", "-Dglib=disabled"),
-        "xcb": ("-Dxcb=enabled", "-Dxcb=disabled"),
-    },
-    use_deps = {
-        "glib": [
-            "//packages/linux/dev-libs/glib:glib",
-            "//packages/linux/system/libs/utility/pcre2:pcre2",
-            "//packages/linux/system/libs/utility/libffi:libffi",
-        ],
-        "X": [
-            "//packages/linux/graphics/xorg/libX11:libX11",
-            "//packages/linux/graphics/xorg/libXext:libXext",
-            "//packages/linux/graphics/xorg/libXrender:libXrender",
-            "//packages/linux/graphics/xorg/xorgproto:xorgproto",
-        ],
-        "xcb": [
-            "//packages/linux/graphics/xorg/libxcb:libxcb",
-            "//packages/linux/graphics/xorg/xcb-proto:xcb-proto",
-            "//packages/linux/graphics/xorg/libXau:libXau",
-            "//packages/linux/graphics/xorg/libXdmcp:libXdmcp",
-        ],
-    },
     env = {
         "CFLAGS": "-DHAVE_CTIME_R=1",
     },
@@ -45,6 +21,10 @@ package(
         "-Dtests=disabled",
         "-Dspectre=disabled",
         "--wrap-mode=nofallback",
+        # Enable glib, X11, and xcb support (from silently-ignored use_configure)
+        "-Dglib=enabled",
+        "-Dxlib=enabled",
+        "-Dxcb=enabled",
     ],
     deps = [
         "//packages/linux/system/security/auth/biometric:pixman",
@@ -54,6 +34,20 @@ package(
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/compression/bzip2:bzip2",
         "//packages/linux/system/libs/image/libpng:libpng",
+        # glib support (for cairo-gobject)
+        "//packages/linux/dev-libs/glib:glib",
+        "//packages/linux/system/libs/utility/pcre2:pcre2",
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        # X11 support
+        "//packages/linux/graphics/xorg/libX11:libX11",
+        "//packages/linux/graphics/xorg/libXext:libXext",
+        "//packages/linux/graphics/xorg/libXrender:libXrender",
+        "//packages/linux/graphics/xorg/xorgproto:xorgproto",
+        # xcb support
+        "//packages/linux/graphics/xorg/libxcb:libxcb",
+        "//packages/linux/graphics/xorg/xcb-proto:xcb-proto",
+        "//packages/linux/graphics/xorg/libXau:libXau",
+        "//packages/linux/graphics/xorg/libXdmcp:libXdmcp",
     ],
     visibility = ["PUBLIC"],
 )

@@ -10,144 +10,23 @@ package(
     homepage = "https://pango.gnome.org/",
     license = "LGPL-2.0-or-later",
     configure_args = [
-        "--wrap-mode=nodownload",
+        "--wrap-mode=nofallback",
         "-Dintrospection=disabled",
         "-Dxft=disabled",
         "-Dgtk_doc=false",
         "-Dinstall-tests=false",
         "-Dlibthai=disabled",
         "-Dsysprof=disabled",
-        "--wrap-mode=nofallback",
+        # Enable cairo for pangocairo (required by GTK)
+        "-Dcairo=enabled",
     ],
-    # Custom src_configure to fix cross-compilation: pkg-config wrapper incorrectly
-    # maps transitive deps' include paths to cairo's root. We need to add freetype2's
-    # include subdirectory explicitly so the cairo-ft link test finds ft2build.h.
-    src_configure = """
-# Create a stub help2man BEFORE meson setup so it gets recorded instead of /usr/bin/help2man
-# This is needed because help2man tries to run pango-view --help-all which fails
-# when cross-compiling (can't run aarch64 binary on x86_64 host or vice versa)
-mkdir -p "$T/bin"
-cat > "$T/bin/help2man" << 'HELP2MAN_STUB'
-#!/bin/sh
-# Stub help2man for cross-compilation - generates minimal man page
-output=""
-name=""
-section="1"
-while [ $# -gt 0 ]; do
-    case "$1" in
-        -o) output="$2"; shift 2 ;;
-        --output=*) output="${1#--output=}"; shift ;;
-        --section=*) section="${1#--section=}"; shift ;;
-        --name=*) name="${1#--name=}"; shift ;;
-        -*) shift ;;  # Skip other options
-        *) prog="$1"; shift ;;  # Last arg is the program
-    esac
-done
-if [ -n "$output" ]; then
-    mkdir -p "$(dirname "$output")"
-    progname=$(basename "${prog:-unknown}")
-    cat > "$output" << MANPAGE
-.TH "${progname^^}" "$section"
-.SH NAME
-$progname \- ${name:-program}
-.SH DESCRIPTION
-This man page was generated during cross-compilation.
-MANPAGE
-fi
-exit 0
-HELP2MAN_STUB
-chmod +x "$T/bin/help2man"
-export PATH="$T/bin:$PATH"
-
-# Add freetype2 include subdirectory for cairo-ft link test
-IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
-for _dep in "${_DEP_ARRAY[@]}"; do
-    if [ -d "$_dep/usr/include/freetype2" ]; then
-        export CFLAGS="-isystem $_dep/usr/include/freetype2 ${CFLAGS:-}"
-        export CXXFLAGS="-isystem $_dep/usr/include/freetype2 ${CXXFLAGS:-}"
-    fi
-done
-
-# Standard meson cross-file generation (replicated from meson eclass)
-MESON_CROSS_FILE=""
-if [ "${CROSS_COMPILING:-false}" = "true" ] && [ -n "${CC:-}" ]; then
-    MESON_CROSS_FILE="${BUILD_DIR:-build}/cross-file.ini"
-    mkdir -p "${BUILD_DIR:-build}"
-
-    MESON_C_ARGS=""
-    for flag in ${CFLAGS:-}; do
-        if [ -n "$MESON_C_ARGS" ]; then
-            MESON_C_ARGS="${MESON_C_ARGS}, '${flag}'"
-        else
-            MESON_C_ARGS="'${flag}'"
-        fi
-    done
-
-    MESON_CXX_ARGS=""
-    for flag in ${CXXFLAGS:-}; do
-        if [ -n "$MESON_CXX_ARGS" ]; then
-            MESON_CXX_ARGS="${MESON_CXX_ARGS}, '${flag}'"
-        else
-            MESON_CXX_ARGS="'${flag}'"
-        fi
-    done
-
-    MESON_LINK_ARGS=""
-    for flag in ${LDFLAGS:-}; do
-        if [ -n "$MESON_LINK_ARGS" ]; then
-            MESON_LINK_ARGS="${MESON_LINK_ARGS}, '${flag}'"
-        else
-            MESON_LINK_ARGS="'${flag}'"
-        fi
-    done
-
-    cat > "$MESON_CROSS_FILE" << CROSSEOF
-[binaries]
-c = '${CC}'
-cpp = '${CXX}'
-ar = '${AR:-ar}'
-strip = '${STRIP:-strip}'
-pkgconfig = 'pkg-config'
-
-[built-in options]
-c_args = [${MESON_C_ARGS}]
-cpp_args = [${MESON_CXX_ARGS}]
-c_link_args = [${MESON_LINK_ARGS}]
-cpp_link_args = [${MESON_LINK_ARGS}]
-
-[host_machine]
-system = 'linux'
-cpu_family = 'x86_64'
-cpu = 'x86_64'
-endian = 'little'
-CROSSEOF
-    echo "Generated meson cross-file: $MESON_CROSS_FILE"
-fi
-
-MESON_CMD="meson setup \\"${BUILD_DIR:-build}\\" --prefix=\\"${EPREFIX:-/usr}\\" --libdir=\\"${LIBDIR:-lib64}\\" --buildtype=\\"${MESON_BUILD_TYPE:-release}\\""
-if [ -n "$MESON_CROSS_FILE" ]; then
-    MESON_CMD="$MESON_CMD --cross-file=\\"$MESON_CROSS_FILE\\""
-fi
-MESON_CMD="$MESON_CMD ${MESON_EXTRA_ARGS:-}"
-
-eval $MESON_CMD
-""",
-    use_configure = {
-        "X": ("-Dxft=enabled", "-Dxft=disabled"),
-        "cairo": ("-Dcairo=enabled", "-Dcairo=disabled"),
-        "doc": ("-Dgtk_doc=true", "-Dgtk_doc=false"),
-        "introspection": ("-Dintrospection=enabled", "-Dintrospection=disabled"),
-        "static-libs": ("-Ddefault_library=static", "-Ddefault_library=shared"),
-    },
-    use_deps = {
-        "cairo": "//packages/linux/system/libs/graphics/cairo:cairo",
-    },
     deps = [
         "//packages/linux/dev-libs/glib:glib",
-        # pcre2 is needed for glib's pkg-config (Requires.private: libpcre2-8)
         "//packages/linux/system/libs/utility/pcre2:pcre2",
         "//packages/linux/system/libs/utility/libffi:libffi",
         "//packages/linux/core/zlib:zlib",
+        # cairo for pangocairo
+        "//packages/linux/system/libs/graphics/cairo:cairo",
         # harfbuzz/fontconfig/cairo transitive deps needed for pkg-config
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/system/libs/image/libpng:libpng",
@@ -158,8 +37,6 @@ eval $MESON_CMD
         "//packages/linux/system/libs/font/freetype:freetype",
         "//packages/linux/system/libs/font/fontconfig:fontconfig",
         "//packages/linux/system/libs/font/harfbuzz:harfbuzz",
-        # TEMPORARILY DISABLED for aarch64 (Fix #23 - graphite2 has x86 SSE2 issues)
-        # "//packages/linux/system/libs/font/graphite2:graphite2",
         # X11/xcb transitive deps needed by cairo.pc Requires.private
         "//packages/linux/graphics/xorg/libX11:libX11",
         "//packages/linux/graphics/xorg/libXext:libXext",
