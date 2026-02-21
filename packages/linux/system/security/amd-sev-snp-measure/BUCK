@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "amd-sev-snp-measure",
     version = "0.0.7",
-    src_uri = "https://github.com/virtee/sev-snp-measure/archive/refs/tags/v0.0.7.tar.gz",
+    url = "https://github.com/virtee/sev-snp-measure/archive/refs/tags/v0.0.7.tar.gz",
     sha256 = "f440214d3d957da4413313e3e615d93bb8f1981b19a1f020fef26b762edef979",
     description = "Calculate expected measurement of an AMD SEV/SEV-ES/SEV-SNP guest VM for confidential computing",
     homepage = "https://github.com/virtee/sev-snp-measure",

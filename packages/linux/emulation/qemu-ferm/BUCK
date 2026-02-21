@@ -1,14 +1,15 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "qemu-ferm",
     version = "7.0.50",
-    src_uri = "https://download.qemu.org/qemu-7.0.0.tar.xz",
+    url = "https://download.qemu.org/qemu-7.0.0.tar.xz",
     sha256 = "f6b375c7951f728402798b0baabb2d86478ca53d44cedbefabbe1c46bf46f839",
     description = "QEMU fork for FERM platform - aarch64 system emulator",
     homepage = "https://www.qemu.org/",
     license = "GPL-2.0",
-    meson_args = [
+    configure_args = [
         "-Ddefault_devices=false",
         "-Dsystem=true",
         "-Dlinux_user=false",

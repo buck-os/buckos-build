@@ -1,46 +1,29 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "harfbuzz",
     version = "10.0.1",
-    src_uri = "https://github.com/harfbuzz/harfbuzz/releases/download/10.0.1/harfbuzz-10.0.1.tar.xz",
+    url = "https://github.com/harfbuzz/harfbuzz/releases/download/10.0.1/harfbuzz-10.0.1.tar.xz",
     sha256 = "b2cb13bd351904cb9038f907dc0dee0ae07127061242fe3556b2795c4e9748fc",
-    signature_required = False,
     description = "OpenType text shaping engine",
     homepage = "https://harfbuzz.github.io/",
     license = "MIT",
-    iuse = [
-        "cairo",
-        "debug",
-        "experimental",
-        "glib",
-        "graphite",
-        "icu",
-        "introspection",
-        "static-libs",
-        "truetype",
-    ],
     # TEMPORARILY DISABLED graphite for aarch64 (Fix #23 - graphite2 has x86 SSE2 issues)
-    use_defaults = [],
-    use_meson = {
-        "static-libs": "-Ddefault_library=static",
-        "-static-libs": "-Ddefault_library=shared",
-        "graphite": "-Dgraphite2=enabled",
-        "-graphite": "-Dgraphite2=disabled",
-        "glib": "-Dglib=enabled",
-        "-glib": "-Dglib=disabled",
-        "cairo": "-Dcairo=enabled",
-        "-cairo": "-Dcairo=disabled",
-        "icu": "-Dicu=enabled",
-        "-icu": "-Dicu=disabled",
+    use_configure = {
+        "cairo": ("-Dcairo=enabled", "-Dcairo=disabled"),
+        "glib": ("-Dglib=enabled", "-Dglib=disabled"),
+        "graphite": ("-Dgraphite2=enabled", "-Dgraphite2=disabled"),
+        "icu": ("-Dicu=enabled", "-Dicu=disabled"),
+        "static-libs": ("-Ddefault_library=static", "-Ddefault_library=shared"),
     },
     use_deps = {
-        "graphite": ["//packages/linux/system/libs/font/graphite2:graphite2"],
-        "glib": ["//packages/linux/dev-libs/glib:glib"],
-        "cairo": ["//packages/linux/system/libs/graphics/cairo:cairo"],
-        "icu": ["//packages/linux/system/libs/utility/icu:icu"],
+        "graphite": "//packages/linux/system/libs/font/graphite2:graphite2",
+        "glib": "//packages/linux/dev-libs/glib:glib",
+        "cairo": "//packages/linux/system/libs/graphics/cairo:cairo",
+        "icu": "//packages/linux/system/libs/utility/icu:icu",
     },
-    meson_args = [
+    configure_args = [
         "-Dfreetype=enabled",
         "-Dgobject=disabled",
         "-Dtests=disabled",

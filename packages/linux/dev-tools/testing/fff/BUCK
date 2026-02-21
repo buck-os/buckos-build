@@ -1,15 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "fff",
     version = "1.1",
-    src_uri = "https://github.com/meekrosoft/fff/archive/refs/tags/v1.1.tar.gz",
+    url = "https://github.com/meekrosoft/fff/archive/refs/tags/v1.1.tar.gz",
     sha256 = "510efb70ab17a0035affd170960401921c9cc36ec81002ed00d2bfec6e08f385",
     description = "Fake Function Framework - header-only C/C++ mocking framework",
     homepage = "https://github.com/meekrosoft/fff",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DFFF_UNIT_TESTING=OFF",
         "-DFFF_GENERATE=OFF",

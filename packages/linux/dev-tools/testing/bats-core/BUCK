@@ -1,14 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "bats-core-src",
-    src_uri = "https://github.com/bats-core/bats-core/archive/refs/tags/v1.11.1.tar.gz",
-    sha256 = "5c57ed9616b78f7fd8c553b9bae3c7c9870119edd727ec17dbd1185c599f79d9",
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "bats-core",
-    srcs = [":bats-core-src"],
     version = "1.11.1",
     description = "Bash Automated Testing System",
     homepage = "https://github.com/bats-core/bats-core",

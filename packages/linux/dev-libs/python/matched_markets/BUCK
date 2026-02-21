@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "matched_markets",
     version = "1.0.0",
-    src_uri = "https://github.com/google/matched_markets/archive/5e3cd957d9e3945b0446c94763f2f88b21f03ca5.tar.gz",
+    url = "https://github.com/google/matched_markets/archive/5e3cd957d9e3945b0446c94763f2f88b21f03ca5.tar.gz",
     sha256 = "644d781a477334e9b0762c75c69fac8d9ac02d4c7f83d97919223e15c9cf773a",
     deps = [
         "//packages/linux/dev-libs/python/absl-py:absl-py",

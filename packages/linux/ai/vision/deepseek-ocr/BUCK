@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "deepseek-ocr",
     version = "0.0.1",
-    src_uri = "https://github.com/deepseek-ai/DeepSeek-OCR/archive/2ac6d64a00656693b79c4f759a5e62c1b78bbeb1.tar.gz",
+    url = "https://github.com/deepseek-ai/DeepSeek-OCR/archive/2ac6d64a00656693b79c4f759a5e62c1b78bbeb1.tar.gz",
     sha256 = "be386861a32be6ce0dcff4f78182c676135ee4f7b911d6a8a3a4400191829ba7",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

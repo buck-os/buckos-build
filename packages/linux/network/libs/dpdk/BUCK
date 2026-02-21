@@ -1,19 +1,19 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
 # DPDK 24.11.0 official release checksum from https://fast.dpdk.org/rel/
 # You can verify with: wget https://fast.dpdk.org/rel/dpdk-24.11.tar.xz && sha256sum dpdk-24.11.tar.xz
-meson_package(
+package(
+    build_rule = "meson",
     name = "dpdk",
     version = "24.11.0",
-    src_uri = "https://fast.dpdk.org/rel/dpdk-24.11.tar.xz",
+    url = "https://fast.dpdk.org/rel/dpdk-24.11.tar.xz",
     sha256 = "0b1abc1fda430192ac7eb2ac9f8d83f268a32cd1bb7995b1d6ee8009c67f8f8f",
-    signature_required = False,
 
     description = "Data Plane Development Kit - libraries and drivers for fast packet processing",
     homepage = "https://www.dpdk.org/",
     license = "BSD-3-Clause GPL-2.0",
 
-    meson_args = [
+    configure_args = [
         "-Ddefault_library=shared",
         "-Denable_docs=false",
         "-Denable_kmods=false",
@@ -37,9 +37,6 @@ meson_package(
         "//packages/linux/system/libs/data/json-c:json-c",
         "//packages/linux/system/libs/libelf:libelf",
     ],
-
-    iuse = ["examples", "tests", "kmods"],
-    use_defaults = [],
 
     use_options = {
         "examples": "examples",

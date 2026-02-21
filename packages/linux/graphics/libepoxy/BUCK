@@ -1,12 +1,12 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "libepoxy",
     version = "1.5.10",
-    src_uri = "https://github.com/anholt/libepoxy/archive/1.5.10.tar.gz",
+    url = "https://github.com/anholt/libepoxy/archive/1.5.10.tar.gz",
     sha256 = "a7ced37f4102b745ac86d6a70a9da399cc139ff168ba6b8002b4d8d43c900c15",
-    signature_required = False,
-    meson_args = [
+    configure_args = [
         "-Degl=yes",
         "-Dglx=yes",
         "-Dx11=true",

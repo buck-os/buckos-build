@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "apache-orc",
     version = "1.7.10",
-    src_uri = "https://archive.apache.org/dist/orc/orc-1.7.10/orc-1.7.10.tar.gz",
+    url = "https://archive.apache.org/dist/orc/orc-1.7.10/orc-1.7.10.tar.gz",
     sha256 = "85aef9368dc9bcdffaaf10010b66dfe053ce22f30b64854f63852248164686a3",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_JAVA=OFF",
         "-DBUILD_LIBHDFSPP=OFF",
         "-DBUILD_CPP_TESTS=OFF",

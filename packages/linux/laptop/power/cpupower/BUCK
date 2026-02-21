@@ -1,19 +1,17 @@
+load("//defs:package.bzl", "package")
+
 # cpupower - CPU Frequency Scaling Utilities
 # Tools to examine and tune power saving features
-
-load("//defs:package_defs.bzl","download_source", "make_package")
 
 # USE flags: See use_flags.bzl for available flags
 
 make_package(
     name = "cpupower",
-    src_uri = "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.6.8.tar.xz",
+    url = "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.6.8.tar.xz",
 
     sha256 = "5036c434e11e4b36d8da3f489851f7f829cf785fa7f7887468537a9ea4572416",
-    iuse = ["nls"],
     use_configure = {
-        "-nls": "--disable-nls",
-        "nls": "--enable-nls",
+        "nls": ("--enable-nls", "--disable-nls"),
     },
     version = "6.6.8",
     description = "CPU frequency scaling and power policy utilities",

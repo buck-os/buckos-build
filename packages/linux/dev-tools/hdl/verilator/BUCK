@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "verilator",
     version = "5.030",
-    src_uri = "https://github.com/verilator/verilator/archive/refs/tags/v5.030.tar.gz",
+    url = "https://github.com/verilator/verilator/archive/refs/tags/v5.030.tar.gz",
     sha256 = "b9e7e97257ca3825fcc75acbed792b03c3ec411d6808ad209d20917705407eac",
     configure_args = [
         "--prefix=/usr",

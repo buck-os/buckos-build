@@ -40,10 +40,26 @@ def _go_build(ctx, source):
     for env_arg in toolchain_env_args(ctx):
         cmd.add("--env", env_arg)
 
+    # Inject user-specified environment variables
+    for key, value in ctx.attrs.env.items():
+        cmd.add("--env", "{}={}".format(key, value))
+
     if ctx.attrs.ldflags:
         cmd.add("--ldflags", ctx.attrs.ldflags)
     for arg in ctx.attrs.go_args:
         cmd.add("--go-arg", arg)
+
+    # Explicit binary names to install
+    for b in ctx.attrs.bins:
+        cmd.add("--bin", b)
+
+    # Go packages to build (default: ./...)
+    for pkg in ctx.attrs.packages:
+        cmd.add("--package", pkg)
+
+    # Vendor deps directory
+    if ctx.attrs.vendor_deps:
+        cmd.add("--vendor-dir", ctx.attrs.vendor_deps[DefaultInfo].default_outputs[0])
 
     ctx.actions.run(cmd, category = "go_build", identifier = ctx.attrs.name)
     return output
@@ -94,6 +110,10 @@ go_package = rule(
         # Build configuration
         "go_args": attrs.list(attrs.string(), default = []),
         "ldflags": attrs.string(default = ""),
+        "bins": attrs.list(attrs.string(), default = []),
+        "packages": attrs.list(attrs.string(), default = []),
+        "env": attrs.dict(attrs.string(), attrs.string(), default = {}),
+        "vendor_deps": attrs.option(attrs.dep(), default = None),
         "deps": attrs.list(attrs.dep(), default = []),
         "patches": attrs.list(attrs.source(), default = []),
 
@@ -102,6 +122,7 @@ go_package = rule(
         "extra_cflags": attrs.list(attrs.string(), default = []),
         "extra_ldflags": attrs.list(attrs.string(), default = []),
         "libraries": attrs.list(attrs.string(), default = []),
+        "post_install_cmds": attrs.list(attrs.string(), default = []),
 
         # Labels (metadata-only, for BXL queries)
         "labels": attrs.list(attrs.string(), default = []),

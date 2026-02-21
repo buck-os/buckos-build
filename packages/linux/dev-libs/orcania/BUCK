@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "orcania",
     version = "2.3.2",
-    src_uri = "https://github.com/babelouest/orcania/archive/refs/tags/v2.3.2.tar.gz",
+    url = "https://github.com/babelouest/orcania/archive/refs/tags/v2.3.2.tar.gz",
     sha256 = "fcd93c554afeb694a36ac3c8bd1fa767028b373cb0b94a9396124c4e36d24038",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_SHARED=ON",
         "-DBUILD_STATIC=OFF",
         "-DBUILD_ORCANIA_TESTING=OFF",

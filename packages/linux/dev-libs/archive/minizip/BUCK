@@ -1,51 +1,35 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # minizip - Zip file manipulation library
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "minizip",
     version = "4.0.4",
-    src_uri = "https://github.com/zlib-ng/minizip-ng/archive/refs/tags/4.0.4.tar.gz",
+    url = "https://github.com/zlib-ng/minizip-ng/archive/refs/tags/4.0.4.tar.gz",
     sha256 = "955800fe39f9d830fcb84e60746952f6a48e41093ec7a233c63ad611b5fcfe9f",
     description = "Zip file manipulation library from minizip-ng project",
     homepage = "https://github.com/zlib-ng/minizip-ng",
     license = "Zlib",
-    iuse = [
-        "bzip2",
-        "libbsd",
-        "lzma",
-        "openssl",
-        "static-libs",
-        "zlib",
-        "zstd",
-    ],
-    use_defaults = ["zlib", "zstd"],
     deps = [
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/dev-libs/compression/bzip2:bzip2",
         "//packages/linux/system/libs/compression/zstd:zstd",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DMZ_BUILD_TESTS=OFF",
         "-DMZ_BUILD_UNIT_TESTS=OFF",
     ],
-    use_cmake = {
-        "-bzip2": "-DMZ_BZIP2=OFF",
-        "-libbsd": "-DMZ_LIBBSD=OFF",
-        "-lzma": "-DMZ_LZMA=OFF",
-        "-openssl": "-DMZ_OPENSSL=OFF",
-        "-static-libs": "-DBUILD_STATIC_LIBS=OFF",
-        "-zlib": "-DMZ_ZLIB=OFF",
-        "-zstd": "-DMZ_ZSTD=OFF",
-        "bzip2": "-DMZ_BZIP2=ON",
-        "libbsd": "-DMZ_LIBBSD=ON",
-        "lzma": "-DMZ_LZMA=ON",
-        "openssl": "-DMZ_OPENSSL=ON",
-        "static-libs": "-DBUILD_STATIC_LIBS=ON",
-        "zlib": "-DMZ_ZLIB=ON",
-        "zstd": "-DMZ_ZSTD=ON",
+    use_configure = {
+        "bzip2": ("-DMZ_BZIP2=ON", "-DMZ_BZIP2=OFF"),
+        "libbsd": ("-DMZ_LIBBSD=ON", "-DMZ_LIBBSD=OFF"),
+        "lzma": ("-DMZ_LZMA=ON", "-DMZ_LZMA=OFF"),
+        "openssl": ("-DMZ_OPENSSL=ON", "-DMZ_OPENSSL=OFF"),
+        "static-libs": ("-DBUILD_STATIC_LIBS=ON", "-DBUILD_STATIC_LIBS=OFF"),
+        "zlib": ("-DMZ_ZLIB=ON", "-DMZ_ZLIB=OFF"),
+        "zstd": ("-DMZ_ZSTD=ON", "-DMZ_ZSTD=OFF"),
     },
     visibility = ["PUBLIC"],
 )

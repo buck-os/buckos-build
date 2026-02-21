@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "implot3d",
     version = "0.1",
-    src_uri = "https://github.com/brenocq/implot3d/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/brenocq/implot3d/archive/refs/heads/main.tar.gz",
     sha256 = "16d9a7bfec81c4ee28b051e21435dab7f1cbc8fc9cc4cd23b7cd4fe4ad340cb1",
     description = "3D plotting extension for Dear ImGui",
     homepage = "https://github.com/brenocq/implot3d",
@@ -44,7 +45,7 @@ install(FILES implot3d.h implot3d_internal.h
 )
 EOF
 """,
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],
     visibility = ["PUBLIC"],

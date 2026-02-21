@@ -1,12 +1,13 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "azure-c-shared-utility",
     version = "2022.07.02",
-    src_uri = "https://github.com/Azure/azure-c-shared-utility/archive/refs/tags/LTS_07_2022_Ref02.tar.gz",
+    url = "https://github.com/Azure/azure-c-shared-utility/archive/refs/tags/LTS_07_2022_Ref02.tar.gz",
     sha256 = "cb2146878a705af76ab2fb7e941f15474db04326de4c6095c97f925cf442410b",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-Duse_default_uuid=ON",
         "-Dskip_samples=ON",

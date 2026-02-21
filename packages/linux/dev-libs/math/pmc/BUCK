@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "pmc",
     version = "1.0.0",
-    src_uri = "https://github.com/jingnanshi/pmc/archive/de9fdaa13c76497f69fd1ca7ca82446bd71bf771.tar.gz",
+    url = "https://github.com/jingnanshi/pmc/archive/de9fdaa13c76497f69fd1ca7ca82446bd71bf771.tar.gz",
     sha256 = "3d266477673c29d192da9686053e5c5171722ff7dcc39a4b4db3434b1028054f",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],
     deps = [

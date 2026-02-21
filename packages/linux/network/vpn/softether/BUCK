@@ -1,19 +1,16 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "softether",
     version = "5.02.5181",
-    src_uri = "https://github.com/SoftEtherVPN/SoftEtherVPN/releases/download/5.02.5181/SoftEtherVPN-5.02.5181.tar.xz",
+    url = "https://github.com/SoftEtherVPN/SoftEtherVPN/releases/download/5.02.5181/SoftEtherVPN-5.02.5181.tar.xz",
     sha256 = "2222ef48b3f9102265ef7d27e496ad40a1bd1eaba8093bc5e696b48402c52441",
-    signature_required = False,
-
-    iuse = ["ssl", "readline", "ncurses"],
-    use_defaults = ["ssl", "readline", "ncurses"],
 
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "readline": ["//packages/linux/system/terminal/readline:readline"],
-        "ncurses": ["//packages/linux/system/terminal/ncurses:ncurses"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "readline": "//packages/linux/system/terminal/readline:readline",
+        "ncurses": "//packages/linux/system/terminal/ncurses:ncurses",
     },
 
     use_configure = {},

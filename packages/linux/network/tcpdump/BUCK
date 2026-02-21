@@ -1,25 +1,21 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package", "binary_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # tcpdump - Command-line packet analyzer
 # =============================================================================
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "tcpdump",
     version = "4.99.4",
-    src_uri = "https://www.tcpdump.org/release/tcpdump-4.99.4.tar.gz",
+    url = "https://www.tcpdump.org/release/tcpdump-4.99.4.tar.gz",
     sha256 = "0232231bb2f29d6bf2426e70a08a7e0c63a0d59a9b44863b7f5e2357a6e49fea",
-    signature_sha256 = "b3efd6af511e07163cab94a3144a0a9064bbf8f040ea5a69861cccca441c7bda",
-    signature_required=False,
-
-    use_defaults = ["ssl", "ipv6"],
 
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "caps": ["//packages/linux/system/libs/ipc/libcap:libcap"],
-        "smi": ["//packages/linux/network/libsmi:libsmi"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "caps": "//packages/linux/system/libs/ipc/libcap:libcap",
+        "smi": "//packages/linux/network/libsmi:libsmi",
     },
-
 
     deps = [
         "//packages/linux/network/libs/libpcap:libpcap",

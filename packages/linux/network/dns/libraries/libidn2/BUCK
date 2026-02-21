@@ -1,27 +1,19 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libidn2",
     # GNU release tarball includes pre-generated configure script
     bdepend = [],
     src_prepare = "",
     version = "2.3.7",
-    src_uri = "https://mirrors.kernel.org/gnu/libidn/libidn2-2.3.7.tar.gz",
+    url = "https://mirrors.kernel.org/gnu/libidn/libidn2-2.3.7.tar.gz",
     sha256 = "4c21a791b610b9519b9d0e12b8097bf2f359b12f8dd92647611a929e6bfd7d64",
-    signature_sha256 = "d4e78fc1c5a5c35980be3a04dd864574f450d55921360b0aa19326c75ada4a98",
-    signature_required = False,
-
-    iuse = ["doc", "nls", "static-libs"],
-    use_defaults = [],
-
 
     use_configure = {
-        "-doc": "--disable-doc",
-        "-nls": "--disable-nls",
-        "-static-libs": "--disable-static",
-        "doc": "--enable-doc",
-        "nls": "--enable-nls",
-        "static-libs": "--enable-static",
+        "doc": ("--enable-doc", "--disable-doc"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "static-libs": ("--enable-static", "--disable-static"),
     },
 
     configure_args = [

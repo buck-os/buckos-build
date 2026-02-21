@@ -1,8 +1,9 @@
-load("//defs:package_defs.bzl", "download_source", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "fpnge",
-    src_uri = "https://github.com/veluca93/fpnge/archive/bbc7bdf23e7b85ce46381477e9240c1331d9cf43.tar.gz",
+    url = "https://github.com/veluca93/fpnge/archive/bbc7bdf23e7b85ce46381477e9240c1331d9cf43.tar.gz",
 
     sha256 = "924b54ae457e4c01c07daa794ceae077b0514e3a83b23ef24d94ffdb2786e12f",
     version = "0.1",
@@ -32,7 +33,7 @@ install(TARGETS fpnge
 install(FILES fpnge.h DESTINATION include/fpnge)
 EOF
     """,
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],
     deps = [],

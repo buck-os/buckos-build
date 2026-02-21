@@ -1,42 +1,28 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "gpgme",
     version = "1.23.2",
-    src_uri = "https://www.gnupg.org/ftp/gcrypt/gpgme/gpgme-1.23.2.tar.bz2",
+    url = "https://www.gnupg.org/ftp/gcrypt/gpgme/gpgme-1.23.2.tar.bz2",
     sha256 = "9499e8b1f33cccb6815527a1bc16049d35a6198a6c5fae0185f2bd561bce5224",
-    signature_required = False,
     description = "GnuPG Made Easy - library for accessing GnuPG",
     homepage = "https://www.gnupg.org/related_software/gpgme/",
     license = "LGPL-2.1",
 
     # USE flags: static-libs, cxx, qt5, python, test
-    iuse = [
-        "common-lisp",
-        "cxx",
-        "python",
-        "qt5",
-        "static-libs",
-        "test",
-    ],
-    use_defaults = ["cxx"],
 
     use_configure = {
-        "-common-lisp": "--disable-common-lisp",
-        "-cxx": "--disable-languages=cpp",
-        "-python": "--disable-languages=python",
-        "-qt5": "--disable-languages=qt",
-        "-static-libs": "--disable-static",
-        "common-lisp": "--enable-common-lisp",
-        "cxx": "--enable-languages=cpp",
-        "python": "--enable-languages=python",
-        "qt5": "--enable-languages=qt",
-        "static-libs": "--enable-static",
+        "common-lisp": ("--enable-common-lisp", "--disable-common-lisp"),
+        "cxx": ("--enable-languages=cpp", "--disable-languages=cpp"),
+        "python": ("--enable-languages=python", "--disable-languages=python"),
+        "qt5": ("--enable-languages=qt", "--disable-languages=qt"),
+        "static-libs": ("--enable-static", "--disable-static"),
     },
 
     use_deps = {
-        "qt5": ["//packages/linux/dev-libs/qt5:qt5"],
-        "python": ["//packages/linux/lang/python:python"],
+        "qt5": "//packages/linux/dev-libs/qt5:qt5",
+        "python": "//packages/linux/lang/python:python",
     },
 
     configure_args = [

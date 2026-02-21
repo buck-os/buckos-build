@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "silentcipher",
     version = "1.0.0",
-    src_uri = "https://github.com/sony/silentcipher/archive/refs/tags/release.tar.gz",
+    url = "https://github.com/sony/silentcipher/archive/refs/tags/release.tar.gz",
     sha256 = "cae1cf612dcbd84481f81dfe91aeda69a12fe989c6aebf65c730ebba059285ba",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

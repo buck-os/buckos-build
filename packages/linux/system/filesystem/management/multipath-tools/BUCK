@@ -1,14 +1,13 @@
-load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "multipath-tools",
-    src_uri = "https://github.com/opensvc/multipath-tools/archive/refs/tags/0.9.7.tar.gz",
+    url = "https://github.com/opensvc/multipath-tools/archive/refs/tags/0.9.7.tar.gz",
 
     sha256 = "8f0a7ddc01137d0f90ac3ef5700131dfbd6cf3bbbccdcfa317e8379efa328d59",
-    iuse = ["systemd"],
     use_configure = {
-        "-systemd": "--disable-systemd",
-        "systemd": "--enable-systemd",
+        "systemd": ("--enable-systemd", "--disable-systemd"),
     },
     version = "0.9.7",
     description = "Tools for managing multipath devices",

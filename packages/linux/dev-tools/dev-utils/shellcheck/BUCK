@@ -1,16 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "shellcheck-src",
-    src_uri = "https://github.com/koalaman/shellcheck/releases/download/v0.10.0/shellcheck-v0.10.0.linux.x86_64.tar.xz",
-    sha256 = "6c881ab0698e4e6ea235245f22832860544f17ba386442fe7e9d629f8cbedf87",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "shellcheck",
-    srcs = [":shellcheck-src"],
     version = "0.10.0",
     description = "Shell script static analysis tool",
     homepage = "https://www.shellcheck.net/",

@@ -1,17 +1,9 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-
-download_source(
-    name = "expat-src",
-    src_uri = "https://github.com/libexpat/libexpat/releases/download/R_2_6_3/expat-2.6.3.tar.xz",
-    sha256 = "274db254a6979bde5aad404763a704956940e465843f2a9bd9ed7af22e2c0efc",
-    signature_sha256 = "96bc5f146eb81a4d1a12b841788a88456b6a287c1143eb29ac7cf5c8f0c6a5b5",
-    signature_required = False,
-)
+load("//defs:package.bzl", "package")
 
 # expat-host - Native expat for host builds (used by wayland-scanner, etc.)
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "expat-host",
-    source = ":expat-src",
     version = "2.6.3",
     description = "Stream-oriented XML parser library (host build)",
     homepage = "https://libexpat.github.io/",
@@ -27,20 +19,16 @@ autotools_package(
 )
 
 # expat - official release tarball includes pre-generated configure
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "expat",
     # No autoreconf needed - tarball has pre-generated configure
     bdepend = [],
     src_prepare = "",
-    source = ":expat-src",
-    iuse = ["examples", "static-libs", "unicode"],
     use_configure = {
-        "-examples": "--disable-examples",
-        "-static-libs": "--disable-static",
-        "-unicode": "--disable-unicode",
-        "examples": "--enable-examples",
-        "static-libs": "--enable-static",
-        "unicode": "--enable-unicode",
+        "examples": ("--enable-examples", "--disable-examples"),
+        "static-libs": ("--enable-static", "--disable-static"),
+        "unicode": ("--enable-unicode", "--disable-unicode"),
     },
     version = "2.6.3",
     description = "Stream-oriented XML parser library",

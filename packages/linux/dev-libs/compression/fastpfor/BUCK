@@ -1,15 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "fastpfor",
     version = "0.1.8",
-    src_uri = "https://github.com/lemire/FastPFor/archive/refs/tags/v0.1.8.tar.gz",
+    url = "https://github.com/lemire/FastPFor/archive/refs/tags/v0.1.8.tar.gz",
     sha256 = "95293d1ae028c1264e10d7536801d948573977d535d2ed4e5342d14961ba2411",
     description = "Fast integer compression library",
     homepage = "https://github.com/lemire/FastPFor",
     license = "Apache-2.0",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
     ],

@@ -1,22 +1,19 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package", "binary_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # vnstat - Network traffic monitor and logger
 # =============================================================================
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "vnstat",
     version = "2.12",
-    src_uri = "https://humdi.net/vnstat/vnstat-2.12.tar.gz",
+    url = "https://humdi.net/vnstat/vnstat-2.12.tar.gz",
     sha256 = "b7386b12fc1fc6f47fab31f208b12eda61862e63e229e84e95a6fa80406d2852",
-    signature_sha256 = "6bfbf3f7c49f64701f03df5078145a4468d19d505c35eead7aba859c19e5ef65",
-    signature_required=False,
-
 
     use_deps = {
-        "gd": ["//packages/linux/core/gd"],
+        "gd": "//packages/linux/core/gd",
     },
-
 
     deps = [
         "//packages/linux/system/libs/database/sqlite:sqlite",

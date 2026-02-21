@@ -1,18 +1,11 @@
-load("//defs:package_defs.bzl", "binary_package", "download_source")
+load("//defs:package.bzl", "package")
 
 # sd - Intuitive find-and-replace CLI tool (sed alternative)
 # Using pre-built binary since Cargo needs network access for dependencies
 
-download_source(
-    name = "sd-bin",
-    src_uri = "https://github.com/chmln/sd/releases/download/v1.0.0/sd-v1.0.0-x86_64-unknown-linux-musl.tar.gz",
-    sha256 = "9f42e4fec7848fa8d6eeab7b1090f5c9c9e374c94a9974db6ff33df052c9e132",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "sd",
-    srcs = [":sd-bin"],
     version = "1.0.0",
     description = "Intuitive find-and-replace CLI tool (sed alternative)",
     homepage = "https://github.com/chmln/sd",

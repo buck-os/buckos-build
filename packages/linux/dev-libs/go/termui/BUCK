@@ -1,11 +1,11 @@
-load("//defs:package_defs.bzl", "go_package")
+load("//defs:package.bzl", "package")
 
-go_package(
+package(
+    build_rule = "go",
     name = "go-termui",
     version = "3.1.0",
-    src_uri = "https://github.com/gizak/termui/archive/v3.1.0.tar.gz",
+    url = "https://github.com/gizak/termui/archive/v3.1.0.tar.gz",
     sha256 = "dd441f1a97e5332f1feaea72bd80a121729cc59f91c58af7b1db81638cf03ebc",
-    signature_required = False,
     description = "Go terminal dashboard library",
     homepage = "https://github.com/gizak/termui",
     license = "MIT",

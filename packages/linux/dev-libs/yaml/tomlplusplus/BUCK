@@ -1,12 +1,13 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "tomlplusplus",
     version = "3.4.0",
-    src_uri = "https://github.com/marzer/tomlplusplus/archive/refs/tags/v3.4.0.tar.gz",
+    url = "https://github.com/marzer/tomlplusplus/archive/refs/tags/v3.4.0.tar.gz",
     sha256 = "8517f65938a4faae9ccf8ebb36631a38c1cadfb5efa85d9a72e15b9e97d25155",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DTOMLPLUSPLUS_BUILD_TESTS=OFF",
         "-DTOMLPLUSPLUS_BUILD_EXAMPLES=OFF",

@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "wasmtime-cpp",
     version = "0.27.0",
-    src_uri = "https://github.com/bytecodealliance/wasmtime-cpp/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/bytecodealliance/wasmtime-cpp/archive/refs/heads/main.tar.gz",
     sha256 = "8eeb84dffd083feca2ecc0815ee466a39919375e31cdafe276387306f134edbe",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_CXX_STANDARD=17",
         "-DBUILD_TESTING=OFF",
     ],

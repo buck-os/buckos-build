@@ -1,12 +1,13 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # libmd - Message Digest library (BSD)
 # Provides MD2, MD4, MD5, RIPEMD-160, SHA-1, SHA-2 functions
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libmd",
     version = "1.1.0",
-    src_uri = "https://libbsd.freedesktop.org/releases/libmd-1.1.0.tar.xz",
+    url = "https://libbsd.freedesktop.org/releases/libmd-1.1.0.tar.xz",
     sha256 = "1bd6aa42275313af3141c7cf2e5b964e8b1fd488025caf2f971f43b00776b332",
     description = "Message Digest library providing BSD message digest functions",
     license = "BSD",

@@ -1,21 +1,17 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libconfig",
     # GitHub releases/download tarball includes pre-generated configure script
     bdepend = [],
-    src_uri = "https://github.com/hyperrealm/libconfig/releases/download/v1.7.3/libconfig-1.7.3.tar.gz",
+    url = "https://github.com/hyperrealm/libconfig/releases/download/v1.7.3/libconfig-1.7.3.tar.gz",
 
     sha256 = "545166d6cac037744381d1e9cc5a5405094e7bfad16a411699bcff40bbb31ee7",
-    iuse = ["cxx", "debug", "static-libs"],
     use_configure = {
-        "-cxx": "--disable-cxx",
-        "-debug": "--disable-debug",
-        "-static-libs": "--disable-static",
-        "cxx": "--enable-cxx",
-        "debug": "--enable-debug",
-        "static-libs": "--enable-static",
+        "cxx": ("--enable-cxx", "--disable-cxx"),
+        "debug": ("--enable-debug", "--disable-debug"),
+        "static-libs": ("--enable-static", "--disable-static"),
     },
     version = "1.7.3",
     description = "C/C++ library for processing configuration files",

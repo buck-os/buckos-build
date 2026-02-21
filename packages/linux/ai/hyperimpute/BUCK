@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "hyperimpute",
     version = "0.1.17",
-    src_uri = "https://github.com/vanderschaarlab/hyperimpute/archive/v0.1.17.tar.gz",
+    url = "https://github.com/vanderschaarlab/hyperimpute/archive/v0.1.17.tar.gz",
     sha256 = "04a42eb86d9ac63d714cbf2169bb66de6d7c3a3cdfc2dd7444d685e9452125ee",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

@@ -1,35 +1,25 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # Cppcheck - Static analysis tool for C/C++
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "cppcheck",
     version = "2.13.0",
-    src_uri = "https://github.com/danmar/cppcheck/archive/refs/tags/2.13.0.tar.gz",
+    url = "https://github.com/danmar/cppcheck/archive/refs/tags/2.13.0.tar.gz",
     sha256 = "8229afe1dddc3ed893248b8a723b428dc221ea014fbc76e6289840857c03d450",
     description = "Static analysis tool for C/C++ code",
     homepage = "https://cppcheck.sourceforge.io/",
     license = "GPL-3.0",
-    iuse = [
-        "charts",
-        "gui",
-        "htmlreport",
-        "pcre",
-        "rules",
-    ],
-    use_cmake = {
-        "-charts": "-DENABLE_CHARTS=OFF",
-        "-gui": "-DENABLE_GUI=OFF",
-        "-pcre": "-DENABLE_PCRE=OFF",
-        "charts": "-DENABLE_CHARTS=ON",
-        "gui": "-DENABLE_GUI=ON",
-        "pcre": "-DENABLE_PCRE=ON",
+    use_configure = {
+        "charts": ("-DENABLE_CHARTS=ON", "-DENABLE_CHARTS=OFF"),
+        "gui": ("-DENABLE_GUI=ON", "-DENABLE_GUI=OFF"),
+        "pcre": ("-DENABLE_PCRE=ON", "-DENABLE_PCRE=OFF"),
     },
-    use_defaults = ["htmlreport"],
     deps = [
         "//packages/linux/system/libs/utility/pcre2:pcre2",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DHAVE_RULES=ON",

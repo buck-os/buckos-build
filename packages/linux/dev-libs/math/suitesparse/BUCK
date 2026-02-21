@@ -1,25 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "suitesparse",
     version = "7.6.0",
-    iuse = [
-        "cuda",
-        "lapack",
-        "partition",
-        "tbb",
-    ],
-    use_cmake = {
-        "-cuda": "-DWITH_CUDA=OFF",
-        "-lapack": "-DENABLE_LAPACK=OFF",
-        "-partition": "-DENABLE_PARTITION=OFF",
-        "-tbb": "-DENABLE_TBB=OFF",
-        "cuda": "-DWITH_CUDA=ON",
-        "lapack": "-DENABLE_LAPACK=ON",
-        "partition": "-DENABLE_PARTITION=ON",
-        "tbb": "-DENABLE_TBB=ON",
+    use_configure = {
+        "cuda": ("-DWITH_CUDA=ON", "-DWITH_CUDA=OFF"),
+        "lapack": ("-DENABLE_LAPACK=ON", "-DENABLE_LAPACK=OFF"),
+        "partition": ("-DENABLE_PARTITION=ON", "-DENABLE_PARTITION=OFF"),
+        "tbb": ("-DENABLE_TBB=ON", "-DENABLE_TBB=OFF"),
     },
-    src_uri = "https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/refs/tags/v7.6.0.tar.gz",
+    url = "https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/refs/tags/v7.6.0.tar.gz",
     sha256 = "19cbeb9964ebe439413dd66d82ace1f904adc5f25d8a823c1b48c34bd0d29ea5",
     description = "Suite of sparse matrix algorithms (AMD, CHOLMOD, UMFPACK, SPQR, etc.)",
     homepage = "https://people.engr.tamu.edu/davis/suitesparse.html",
@@ -29,7 +20,7 @@ cmake_package(
         "//packages/linux/dev-libs/math/openblas:openblas",
         "//packages/linux/dev-libs/math/metis:metis",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_STATIC_LIBS=OFF",

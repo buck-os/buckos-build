@@ -1,18 +1,19 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # FTXUI - Functional Terminal (X) User Interface
 # A simple C++ library for terminal based user interfaces
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "ftxui",
     version = "6.1.9",
-    src_uri = "https://github.com/ArthurSonzogni/FTXUI/archive/refs/tags/v6.1.9.tar.gz",
+    url = "https://github.com/ArthurSonzogni/FTXUI/archive/refs/tags/v6.1.9.tar.gz",
     sha256 = "45819c1e54914783d4a1ca5633885035d74146778a1f74e1213cdb7b76340e71",
     description = "C++ Functional Terminal User Interface - A simple cross-platform library for terminal based user interfaces",
     homepage = "https://github.com/ArthurSonzogni/FTXUI",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DFTXUI_BUILD_EXAMPLES=OFF",

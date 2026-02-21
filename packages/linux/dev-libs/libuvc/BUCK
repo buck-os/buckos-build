@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "libuvc",
     version = "0.0.7",
-    src_uri = "https://github.com/libuvc/libuvc/archive/v0.0.7.tar.gz",
+    url = "https://github.com/libuvc/libuvc/archive/v0.0.7.tar.gz",
     sha256 = "7c6ba79723ad5d0ccdfbe6cadcfbd03f9f75b701d7ba96631eb1fd929a86ee72",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TARGET=Static",
         "-DBUILD_EXAMPLE=OFF",
         "-DBUILD_TEST=OFF",

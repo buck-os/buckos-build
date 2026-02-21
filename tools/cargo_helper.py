@@ -11,6 +11,21 @@ import subprocess
 import sys
 
 
+def _can_unshare_net():
+    """Check if unshare --net is available for network isolation."""
+    try:
+        result = subprocess.run(
+            ["unshare", "--net", "true"],
+            capture_output=True, timeout=5,
+        )
+        return result.returncode == 0
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return False
+
+
+_NETWORK_ISOLATED = _can_unshare_net()
+
+
 def _resolve_env_paths(value):
     """Resolve relative Buck2 artifact paths in env values to absolute."""
     parts = []
@@ -44,6 +59,10 @@ def main():
                         help="Extra argument to pass to cargo (repeatable)")
     parser.add_argument("--env", action="append", dest="extra_env", default=[],
                         help="Extra environment variable KEY=VALUE (repeatable)")
+    parser.add_argument("--bin", action="append", dest="bins", default=[],
+                        help="Specific binary name to install (repeatable; default: all executables)")
+    parser.add_argument("--vendor-dir", default=None,
+                        help="Vendor directory containing pre-downloaded dependencies")
     args = parser.parse_args()
 
     if not os.path.isdir(args.source_dir):
@@ -63,6 +82,15 @@ def main():
         if key:
             env[key] = _resolve_env_paths(value)
 
+    # Set up vendored dependencies if provided
+    if args.vendor_dir:
+        vendor_dir = os.path.abspath(args.vendor_dir)
+        cargo_config_dir = os.path.join(args.source_dir, ".cargo")
+        os.makedirs(cargo_config_dir, exist_ok=True)
+        with open(os.path.join(cargo_config_dir, "config.toml"), "a") as f:
+            f.write(f'\n[source.crates-io]\nreplace-with = "vendored-sources"\n\n')
+            f.write(f'[source.vendored-sources]\ndirectory = "{vendor_dir}"\n')
+
     cmd = [
         "cargo", "build",
         "--release",
@@ -74,6 +102,13 @@ def main():
         cmd.extend(["--features", ",".join(args.features)])
 
     cmd.extend(args.cargo_args)
+
+    # Wrap with unshare --net for network isolation (reproducibility)
+    if _NETWORK_ISOLATED:
+        cmd = ["unshare", "--net"] + cmd
+    else:
+        print("⚠ Warning: unshare --net unavailable, building without network isolation",
+              file=sys.stderr)
 
     result = subprocess.run(cmd, env=env)
     if result.returncode != 0:
@@ -95,6 +130,9 @@ def main():
         if os.path.isfile(path) and os.access(path, os.X_OK):
             # Skip build artifacts that aren't real binaries
             if entry.startswith(".") or entry.endswith(".d"):
+                continue
+            # If specific bins were requested, only install those
+            if args.bins and entry not in args.bins:
                 continue
             dest = os.path.join(bin_dir, entry)
             # Use cp to preserve permissions

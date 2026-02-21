@@ -1,31 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "usd-fileformat-plugins",
     version = "1.0.10",
-    src_uri = "https://github.com/adobe/USD-Fileformat-plugins/archive/refs/tags/v1.0.10.tar.gz",
+    url = "https://github.com/adobe/USD-Fileformat-plugins/archive/refs/tags/v1.0.10.tar.gz",
     sha256 = "06f6b71a881bdcb3d9a875bf219c1726312d8363ba4135dd1d926a16922eba8a",
     description = "File format plugins for USD (FBX, glTF, OBJ, PLY, STL)",
     homepage = "https://github.com/adobe/USD-Fileformat-plugins",
     license = "Apache-2.0",
-    iuse = [
-        "fbx",
-        "gltf",
-        "obj",
-        "ply",
-        "stl",
-        "tests",
-    ],
-    use_defaults = [
-        "gltf",
-        "obj",
-        "ply",
-        "stl",
-    ],
     deps = [
         "//packages/linux/dev-libs/compression/zlib:zlib",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DUSD_FILEFORMATS_STANDALONE=ON",

@@ -1,14 +1,8 @@
-load("//defs:package_defs.bzl", "binary_package", "download_source")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "electric-fence-src",
-    src_uri = "https://github.com/kallisti5/ElectricFence/archive/refs/tags/v3.0.tar.gz",
-    sha256 = "a16cd964d2991ca0a384119241d7f310021bdb4d21869e3592c9224d038ff0a5",
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "electric-fence",
-    srcs = [":electric-fence-src"],
     version = "3.0",
     description = "Memory debugger for detecting buffer overruns and use-after-free",
     homepage = "https://github.com/kallisti5/ElectricFence",

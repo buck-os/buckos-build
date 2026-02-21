@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # KDE Applications - Popular KDE apps collection
@@ -148,18 +148,17 @@ _KDE_COMMON_DEPS = [
 # -----------------------------------------------------------------------------
 # Konsole - KDE Terminal Emulator
 # -----------------------------------------------------------------------------
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "konsole",
-    src_uri = "https://download.kde.org/stable/release-service/24.02.0/src/konsole-24.02.0.tar.xz",
+    url = "https://download.kde.org/stable/release-service/24.02.0/src/konsole-24.02.0.tar.xz",
 
     sha256 = "2915edcd856552bd6199efb23dcaf194605ee4fb307c75e27606198253dfdfe0",
-
-    signature_sha256 = "ddb01274b7e2b00bb02bb9c0583efedff15dc5640b456ed812c38b77a8db59d3",
     version = "24.02.0",
     description = "KDE's powerful and customizable terminal emulator",
     homepage = "https://konsole.kde.org/",
     license = "GPL-2.0-or-later",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTING=OFF",
         "-DWITHOUT_X11=ON",
     ],
@@ -206,18 +205,17 @@ fi
 # -----------------------------------------------------------------------------
 # Dolphin - KDE File Manager
 # -----------------------------------------------------------------------------
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "dolphin",
-    src_uri = "https://download.kde.org/stable/release-service/24.02.0/src/dolphin-24.02.0.tar.xz",
+    url = "https://download.kde.org/stable/release-service/24.02.0/src/dolphin-24.02.0.tar.xz",
 
     sha256 = "10ef284597e28f933d8b4ead75d02759a15df4bcc928ed10b54f8065b7431257",
-
-    signature_sha256 = "6be0af1b119ccc198c2a316e676d8e00c61872846e85d7d030398466b10646d4",
     version = "24.02.0",
     description = "KDE's feature-rich file manager with split view support",
     homepage = "https://apps.kde.org/dolphin/",
     license = "GPL-2.0-or-later",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTING=OFF",
         "-DCMAKE_DISABLE_FIND_PACKAGE_PackageKitQt6=ON",
         "-DCMAKE_DISABLE_FIND_PACKAGE_PlasmaActivities=ON",
@@ -248,18 +246,17 @@ sed -i '/kconfig_add_kcfg_files(/{/GENERATE_MOC/!s/kconfig_add_kcfg_files(\\([^ 
 # -----------------------------------------------------------------------------
 # Kate - KDE Advanced Text Editor
 # -----------------------------------------------------------------------------
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kate",
-    src_uri = "https://download.kde.org/stable/release-service/24.02.0/src/kate-24.02.0.tar.xz",
+    url = "https://download.kde.org/stable/release-service/24.02.0/src/kate-24.02.0.tar.xz",
 
     sha256 = "9b1efcccf4e36efcdbc2eada6399cd8128ce187a19182400313062f75ee35f48",
-
-    signature_sha256 = "87f291b7d75cd9db732eba60af5b355b3145b45fb9ce9d0cd194554988d4072a",
     version = "24.02.0",
     description = "KDE's advanced text editor with syntax highlighting and plugins",
     homepage = "https://kate-editor.org/",
     license = "LGPL-2.0-or-later",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTING=OFF",
     ],
     src_prepare = """rm -rf build
@@ -277,18 +274,17 @@ sed -i 's/set(HAVE_X11 TRUE)/set(HAVE_X11 FALSE)/' apps/kate/CMakeLists.txt
 # -----------------------------------------------------------------------------
 # Okular - KDE Document Viewer
 # -----------------------------------------------------------------------------
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "okular",
-    src_uri = "https://download.kde.org/stable/release-service/24.02.0/src/okular-24.02.0.tar.xz",
+    url = "https://download.kde.org/stable/release-service/24.02.0/src/okular-24.02.0.tar.xz",
 
     sha256 = "fc265548f859562c54cd40587ff3c6a1c2d0f7926617951b06e6145d1f42938c",
-
-    signature_sha256 = "a0ee70fa9376250c44e3cea9858556e07f9d94b244cc4469c88f2120109293d2",
     version = "24.02.0",
     description = "KDE's universal document viewer for PDF, EPUB, and more",
     homepage = "https://okular.kde.org/",
     license = "GPL-2.0-or-later",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTING=OFF",
         "-DOKULAR_UI=desktop",
     ],
@@ -304,18 +300,17 @@ cmake_package(
 # -----------------------------------------------------------------------------
 # Gwenview - KDE Image Viewer
 # -----------------------------------------------------------------------------
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "gwenview",
-    src_uri = "https://download.kde.org/stable/release-service/24.02.0/src/gwenview-24.02.0.tar.xz",
+    url = "https://download.kde.org/stable/release-service/24.02.0/src/gwenview-24.02.0.tar.xz",
 
     sha256 = "03606d3cba1520f04556ac92b2aa449f85e7daca36a637162d33c05ec42bb0b4",
-
-    signature_sha256 = "31e33c37ef430d3e84a70b98d0a111b39655a71d6acd880cd7e88e0467ec3f77",
     version = "24.02.0",
     description = "KDE's fast and easy to use image viewer",
     homepage = "https://apps.kde.org/gwenview/",
     license = "GPL-2.0-or-later",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTING=OFF",
         "-DGWENVIEW_SEMANTICINFO_BACKEND=None",
     ],
@@ -332,18 +327,17 @@ cmake_package(
 # -----------------------------------------------------------------------------
 # Ark - KDE Archive Manager
 # -----------------------------------------------------------------------------
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "ark",
-    src_uri = "https://download.kde.org/stable/release-service/24.02.0/src/ark-24.02.0.tar.xz",
+    url = "https://download.kde.org/stable/release-service/24.02.0/src/ark-24.02.0.tar.xz",
 
     sha256 = "ff11fe9352d8aa80207a21f3e024e18b4035cbbe689abaad20a91fe36c455469",
-
-    signature_sha256 = "a4b721ce5f5638e827acbe347328eaf19adc6134bec6f3d72009500f7c88ea4d",
     version = "24.02.0",
     description = "KDE's archive manager for tar, gzip, bzip2, zip, and rar",
     homepage = "https://apps.kde.org/ark/",
     license = "GPL-2.0-or-later",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTING=OFF",
     ],
     src_prepare = "sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true",
@@ -359,18 +353,17 @@ cmake_package(
 # -----------------------------------------------------------------------------
 # Spectacle - KDE Screenshot Tool
 # -----------------------------------------------------------------------------
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "spectacle",
-    src_uri = "https://download.kde.org/stable/release-service/24.02.0/src/spectacle-24.02.0.tar.xz",
+    url = "https://download.kde.org/stable/release-service/24.02.0/src/spectacle-24.02.0.tar.xz",
 
     sha256 = "614b10c990b5c1e2af539c6f60da5cab8d1975b6c17a2c2458a81b95d2e4c3d1",
-
-    signature_sha256 = "459f1563e5c3c0e199bf1a832f0455020e566854515c4d34dac8a6c812b685ac",
     version = "24.02.0",
     description = "KDE's screenshot capture utility with annotation support",
     homepage = "https://apps.kde.org/spectacle/",
     license = "GPL-2.0-or-later",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTING=OFF",
     ],
     src_prepare = "sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true",
@@ -383,18 +376,17 @@ cmake_package(
 # -----------------------------------------------------------------------------
 # KCalc - KDE Calculator
 # -----------------------------------------------------------------------------
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kcalc",
-    src_uri = "https://download.kde.org/stable/release-service/24.02.0/src/kcalc-24.02.0.tar.xz",
+    url = "https://download.kde.org/stable/release-service/24.02.0/src/kcalc-24.02.0.tar.xz",
 
     sha256 = "c19b639d632bee1edf3e9f832e7981f5671a12b464b4678ba52dbb1fff2fc7c5",
-
-    signature_sha256 = "cead90de07d1a4a8662c9f0476b6ed7b9021a172f3b0943026c82ef29c0e0020",
     version = "24.02.0",
     description = "KDE's scientific calculator with mathematical functions",
     homepage = "https://apps.kde.org/kcalc/",
     license = "GPL-2.0-or-later",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTING=OFF",
     ],
     src_prepare = "sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true",
@@ -410,18 +402,17 @@ cmake_package(
 # -----------------------------------------------------------------------------
 # Elisa - KDE Music Player
 # -----------------------------------------------------------------------------
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "elisa",
-    src_uri = "https://download.kde.org/stable/release-service/24.02.0/src/elisa-24.02.0.tar.xz",
+    url = "https://download.kde.org/stable/release-service/24.02.0/src/elisa-24.02.0.tar.xz",
 
     sha256 = "ecb670005aa3bb1dd0f407c2ac0331c703194cfb2b1346492ffc3361b840b8b4",
-
-    signature_sha256 = "822a2d76f1e0548d2981fd4417c764d7da7fcffd5322d95476d5210af3607d9a",
     version = "24.02.0",
     description = "KDE's simple and elegant music player",
     homepage = "https://apps.kde.org/elisa/",
     license = "LGPL-3.0-or-later",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTING=OFF",
     ],
     src_prepare = "sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true",
@@ -434,18 +425,17 @@ cmake_package(
 # -----------------------------------------------------------------------------
 # KDE Connect - Device Integration
 # -----------------------------------------------------------------------------
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kdeconnect",
-    src_uri = "https://download.kde.org/stable/release-service/24.02.0/src/kdeconnect-kde-24.02.0.tar.xz",
+    url = "https://download.kde.org/stable/release-service/24.02.0/src/kdeconnect-kde-24.02.0.tar.xz",
 
     sha256 = "d95c5b3693d14b954fb09a22d2fc1712815aa424740cbf5872c40a59ed424e0d",
-
-    signature_sha256 = "49bc4d4af29a94da8da170bc2f43824cfaf02ce274462a8adc940bd109147dbc",
     version = "24.02.0",
     description = "KDE Connect for seamless phone-computer integration",
     homepage = "https://kdeconnect.kde.org/",
     license = "GPL-2.0-or-later",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTING=OFF",
         "-DEXPERIMENTALAPP_ENABLED=OFF",
     ],
@@ -459,18 +449,17 @@ cmake_package(
 # -----------------------------------------------------------------------------
 # Yakuake - KDE Dropdown Terminal
 # -----------------------------------------------------------------------------
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "yakuake",
-    src_uri = "https://download.kde.org/stable/release-service/24.02.0/src/yakuake-24.02.0.tar.xz",
+    url = "https://download.kde.org/stable/release-service/24.02.0/src/yakuake-24.02.0.tar.xz",
 
     sha256 = "8f0b9b8f25798d0a58ae207e13c8ac55c87e2205fa6c8651b9af3f97c002f6a4",
-
-    signature_sha256 = "7955603911764652c4c069a31302a0887b7a331e2a200a04bd300d57564722ef",
     version = "24.02.0",
     description = "KDE's drop-down terminal emulator based on Konsole",
     homepage = "https://apps.kde.org/yakuake/",
     license = "GPL-2.0-or-later",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTING=OFF",
     ],
     src_prepare = "sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true",
@@ -485,18 +474,17 @@ cmake_package(
 # -----------------------------------------------------------------------------
 # Konversation - KDE IRC Client
 # -----------------------------------------------------------------------------
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "konversation",
-    src_uri = "https://download.kde.org/stable/release-service/24.08.3/src/konversation-24.08.3.tar.xz",
+    url = "https://download.kde.org/stable/release-service/24.08.3/src/konversation-24.08.3.tar.xz",
 
     sha256 = "75f5a64890cfe895214dfefb08705af944b63ea9816c628391ef13ca047cb35b",
-
-    signature_sha256 = "d9b0690da5b60b1465388157b334ba2a46c54c228c6734faef884bcd95cded1e",
     version = "24.08.3",
     description = "KDE's user-friendly IRC client with multiple server support",
     homepage = "https://konversation.kde.org/",
     license = "GPL-2.0-or-later",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTING=OFF",
     ],
     src_prepare = "sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true",
@@ -509,18 +497,17 @@ cmake_package(
 # -----------------------------------------------------------------------------
 # Filelight - Disk Usage Visualizer
 # -----------------------------------------------------------------------------
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "filelight",
-    src_uri = "https://download.kde.org/stable/release-service/24.02.0/src/filelight-24.02.0.tar.xz",
+    url = "https://download.kde.org/stable/release-service/24.02.0/src/filelight-24.02.0.tar.xz",
 
     sha256 = "07f907ebfc5edb3918a3e039a6c11ec5cfc69d0f16859da2c813c998a4c20796",
-
-    signature_sha256 = "1f7b2ddcde0d30c86eeb8e7f60ad8be2663d3c162cbb5ee73f64aae796d2359b",
     version = "24.02.0",
     description = "KDE's graphical disk usage analyzer with sunburst chart",
     homepage = "https://apps.kde.org/filelight/",
     license = "GPL-2.0-or-later",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTING=OFF",
     ],
     src_prepare = "sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true",
@@ -533,18 +520,17 @@ cmake_package(
 # -----------------------------------------------------------------------------
 # KSysGuard - System Monitor
 # -----------------------------------------------------------------------------
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "ksystemstats",
-    src_uri = "https://download.kde.org/stable/plasma/6.0.1/ksystemstats-6.0.1.tar.xz",
+    url = "https://download.kde.org/stable/plasma/6.0.1/ksystemstats-6.0.1.tar.xz",
 
     sha256 = "071afe664c38ec6ab7b292b90e6b55cc2d2beb20be3f8aa53b131682893a5c49",
-
-    signature_sha256 = "1024bebb818c565589c02561303d447983eb3cafed219de4bcf89c61b6bbca6f",
     version = "6.0.1",
     description = "KDE's system statistics daemon for monitoring",
     homepage = "https://kde.org/plasma-desktop/",
     license = "GPL-2.0-or-later",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTING=OFF",
     ],
     src_prepare = "sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true",
@@ -559,18 +545,17 @@ cmake_package(
 # -----------------------------------------------------------------------------
 # Plasma System Monitor
 # -----------------------------------------------------------------------------
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "plasma-systemmonitor",
-    src_uri = "https://download.kde.org/stable/plasma/6.0.1/plasma-systemmonitor-6.0.1.tar.xz",
+    url = "https://download.kde.org/stable/plasma/6.0.1/plasma-systemmonitor-6.0.1.tar.xz",
 
     sha256 = "2f8979978b348d6b71ac078f989dd21ff4e9b6b0d25b5e59a371be500fc99d51",
-
-    signature_sha256 = "98dc098c4fadc4b0748c7b7ac6aab2f049fb4257c15227a1b9b0aa90d8a2b4a0",
     version = "6.0.1",
     description = "KDE Plasma's modern system monitor application",
     homepage = "https://kde.org/plasma-desktop/",
     license = "GPL-2.0-or-later",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTING=OFF",
     ],
     src_prepare = "sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true",
@@ -588,29 +573,22 @@ cmake_package(
 # Commented out: missing dependency //packages/linux/core:kpmcore
 # download_source(
 #     name = "partitionmanager-src",
-#     src_uri = "https://download.kde.org/stable/release-service/24.02.0/src/partitionmanager-24.02.0.tar.xz",
+#     url = "https://download.kde.org/stable/release-service/24.02.0/src/partitionmanager-24.02.0.tar.xz",
 #     sha256 = "e0efff427b2155b09784851fa1645511ffb93629e557e887ec5dacff2fe223a0",
-#     signature_sha256 = "cef892be714501ad9e27d013340d3ae4395aebb8f77ea485ba566108945e93b5",
+#
 # )
 
 # -----------------------------------------------------------------------------
 # KTorrent - BitTorrent Client
 # -----------------------------------------------------------------------------
-download_source(
-    name = "ktorrent-src",
-    src_uri = "https://download.kde.org/stable/release-service/24.02.0/src/ktorrent-24.02.0.tar.xz",
-    sha256 = "03845a7efe778d4dc7ed396f284f09d6707d506d6b3a64039ec64baca589305a",
-    signature_sha256 = "13a60daabef7f87c2d05f83fbccb6d75d862875a0004760ecb65ec175e63d061",
-)
-
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "ktorrent",
-    source = ":ktorrent-src",
     version = "24.02.0",
     description = "KDE's feature-rich BitTorrent client",
     homepage = "https://apps.kde.org/ktorrent/",
     license = "GPL-2.0-or-later",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTING=OFF",
     ],
     src_prepare = "sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true",
@@ -625,22 +603,14 @@ cmake_package(
 # -----------------------------------------------------------------------------
 # Krusader - Twin Panel File Manager
 # -----------------------------------------------------------------------------
-download_source(
-    name = "krusader-src",
-    src_uri = "https://download.kde.org/stable/krusader/2.8.1/krusader-2.8.1.tar.xz",
-    sha256 = "37bf204519d0ab1ba40964af02741bc228f11e97f28c4c518ca05d358df18283",
-    signature_sha256 = "e39bf5ae95d59e87bc24efd24322cb368c35a59368e61fe10ee0b74ff8d3a7b0",
-    signature_required = False,
-)
-
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "krusader",
-    source = ":krusader-src",
     version = "2.8.1",
     description = "KDE's twin-panel (commander style) file manager",
     homepage = "https://krusader.org/",
     license = "GPL-2.0-or-later",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTING=OFF",
     ],
     src_prepare = "sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true",

@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "or-tools",
     version = "9.2",
-    src_uri = "https://github.com/google/or-tools/archive/refs/tags/v9.2.tar.gz",
+    url = "https://github.com/google/or-tools/archive/refs/tags/v9.2.tar.gz",
     sha256 = "5337935ea1fa010bb62cf0fc8bedd6de07dda77bff3db7a0f6a36c84c7bd58db",
     description = "Google OR-Tools optimization toolkit",
     homepage = "https://github.com/google/or-tools",
@@ -14,7 +15,7 @@ cmake_package(
         "//packages/linux/dev-libs/serialization/protobuf:protobuf",
         "//packages/linux/core/zlib:zlib",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_CXX=ON",

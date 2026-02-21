@@ -1,36 +1,22 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # FFTW - Fastest Fourier Transform in the West
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "fftw",
     # Official release tarball includes pre-generated configure script
     bdepend = [],
     src_prepare = "",
     version = "3.3.10",
-    src_uri = "https://www.fftw.org/fftw-3.3.10.tar.gz",
+    url = "https://www.fftw.org/fftw-3.3.10.tar.gz",
     sha256 = "56c932549852cddcfafdab3820b0200c7742675be92179e59e6215b340e26467",
     description = "Fastest Fourier Transform in the West - a C library for computing DFTs",
     homepage = "https://www.fftw.org/",
     license = "GPL-2.0",
-    iuse = [
-        "avx",
-        "avx2",
-        "cpu_flags_arm_neon",
-        "cpu_flags_ppc_altivec",
-        "cpu_flags_x86_fma3",
-        "cpu_flags_x86_fma4",
-        "cpu_flags_x86_sse",
-        "fortran",
-        "mpi",
-        "openmp",
-        "threads",
-        "zbus",
-    ],
-    use_defaults = ["threads", "avx2"],
     deps = [],
     use_deps = {
-        "mpi": ["//packages/linux/network/mpi/openmpi:openmpi"],
+        "mpi": "//packages/linux/network/mpi/openmpi:openmpi",
     },
     configure_args = [
         "--prefix=${PREFIX}",
@@ -39,25 +25,18 @@ autotools_package(
         "--enable-double",
     ],
     use_configure = {
-        "-cpu_flags_arm_neon": "--disable-cpu_flags_arm_neon",
-        "-cpu_flags_ppc_altivec": "--disable-cpu_flags_ppc_altivec",
-        "-cpu_flags_x86_fma3": "--disable-cpu_flags_x86_fma3",
-        "-cpu_flags_x86_fma4": "--disable-cpu_flags_x86_fma4",
-        "-cpu_flags_x86_sse": "--disable-cpu_flags_x86_sse",
-        "-fortran": "--disable-fortran",
-        "-zbus": "--disable-zbus",
         "avx": "--enable-avx",
         "avx2": "--enable-avx2",
-        "cpu_flags_arm_neon": "--enable-cpu_flags_arm_neon",
-        "cpu_flags_ppc_altivec": "--enable-cpu_flags_ppc_altivec",
-        "cpu_flags_x86_fma3": "--enable-cpu_flags_x86_fma3",
-        "cpu_flags_x86_fma4": "--enable-cpu_flags_x86_fma4",
-        "cpu_flags_x86_sse": "--enable-cpu_flags_x86_sse",
-        "fortran": "--enable-fortran",
+        "cpu_flags_arm_neon": ("--enable-cpu_flags_arm_neon", "--disable-cpu_flags_arm_neon"),
+        "cpu_flags_ppc_altivec": ("--enable-cpu_flags_ppc_altivec", "--disable-cpu_flags_ppc_altivec"),
+        "cpu_flags_x86_fma3": ("--enable-cpu_flags_x86_fma3", "--disable-cpu_flags_x86_fma3"),
+        "cpu_flags_x86_fma4": ("--enable-cpu_flags_x86_fma4", "--disable-cpu_flags_x86_fma4"),
+        "cpu_flags_x86_sse": ("--enable-cpu_flags_x86_sse", "--disable-cpu_flags_x86_sse"),
+        "fortran": ("--enable-fortran", "--disable-fortran"),
         "mpi": "--enable-mpi",
         "openmp": "--enable-openmp",
         "threads": "--enable-threads",
-        "zbus": "--enable-zbus",
+        "zbus": ("--enable-zbus", "--disable-zbus"),
     },
     visibility = ["PUBLIC"],
 )

@@ -1,16 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "dnsmasq-src",
-    src_uri = "https://thekelleys.org.uk/dnsmasq/dnsmasq-2.90.tar.xz",
-    sha256 = "8e50309bd837bfec9649a812e066c09b6988b73d749b7d293c06c57d46a109e4",
-    signature_sha256 = "2e3f407edb90caafecb64096d6f4cdba6a995dbbd014af5ad153ac83cace5da8",
-    signature_required=False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "dnsmasq",
-    srcs = [":dnsmasq-src"],
     version = "2.90",
     description = "Lightweight DNS forwarder and DHCP server",
     homepage = "https://thekelleys.org.uk/dnsmasq/doc.html",

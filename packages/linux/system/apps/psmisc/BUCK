@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # psmisc - Utilities using /proc filesystem (fuser, killall, pstree)
 # USE flags: selinux, nls, ipv6
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "psmisc",
     bdepend = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
@@ -35,34 +36,21 @@ distclean:
 EOFMAKEFILE
 """,
     version = "23.7",
-    src_uri = "https://gitlab.com/psmisc/psmisc/-/archive/v23.7/psmisc-v23.7.tar.gz",
+    url = "https://gitlab.com/psmisc/psmisc/-/archive/v23.7/psmisc-v23.7.tar.gz",
     sha256 = "8f2526ce7ac6ef4976454cd63095fa10e467ef745cf33dc4f91df0bd7b10b905",
-    signature_required = False,
     description = "Miscellaneous utilities using /proc (fuser, killall, pstree)",
     homepage = "https://gitlab.com/psmisc/psmisc",
     license = "GPL-2",
-    iuse = [
-        "X",
-        "apparmor",
-        "ipv6",
-        "nls",
-        "selinux",
-    ],
     use_defaults = ["ipv6", "-nls"],  # Disable NLS to avoid po/Makefile issues
     use_deps = {
-        "selinux": ["//packages/linux/system/security/selinux:selinux"],
+        "selinux": "//packages/linux/system/security/selinux:selinux",
     },
     use_configure = {
-        "-X": "--without-x",
-        "-apparmor": "--disable-apparmor",
-        "-ipv6": "--disable-ipv6",
-        "-nls": "--disable-nls",
-        "-selinux": "--disable-selinux",
-        "X": "--with-x",
-        "apparmor": "--enable-apparmor",
-        "ipv6": "--enable-ipv6",
-        "nls": "--enable-nls",
-        "selinux": "--enable-selinux",
+        "X": ("--with-x", "--without-x"),
+        "apparmor": ("--enable-apparmor", "--disable-apparmor"),
+        "ipv6": ("--enable-ipv6", "--disable-ipv6"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
     },
     configure_args = [
         "--prefix=/usr",

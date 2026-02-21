@@ -1,25 +1,21 @@
-load("//defs:package_defs.bzl", "meson_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # Celluloid - Simple GTK+ frontend for mpv
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "celluloid",
     version = "0.27",
-    iuse = ["X", "wayland"],
     use_configure = {
-        "-X": "--without-x",
-        "-wayland": "--disable-wayland",
-        "X": "--with-x",
-        "wayland": "--enable-wayland",
+        "X": ("--with-x", "--without-x"),
+        "wayland": ("--enable-wayland", "--disable-wayland"),
     },
-    src_uri = "https://github.com/celluloid-player/celluloid/releases/download/v0.27/celluloid-0.27.tar.xz",
+    url = "https://github.com/celluloid-player/celluloid/releases/download/v0.27/celluloid-0.27.tar.xz",
     sha256 = "216656c4495bb3ca02dc4ad9cf3da8e8f15c8f80e870eeac8eb1eedab4c3788b",
-    signature_sha256 = "90375ee5df387ee4d35251d25ec9347f1c1ad2192d1bf77391220077fdb951eb",
-    signature_required=False,
     description = "Simple GTK+ frontend for mpv",
     homepage = "https://celluloid-player.github.io/",
     license = "GPL-3.0-or-later",
-    meson_args = [],
+    configure_args = [],
     deps = [
         "//packages/linux/graphics/video/mpv:mpv",
         "//packages/linux/desktop/gtk:gtk4",

@@ -1,21 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "cudnn_frontend",
     version = "1.12.1",
-    src_uri = "https://github.com/NVIDIA/cudnn-frontend/archive/refs/tags/v1.12.1.tar.gz",
+    url = "https://github.com/NVIDIA/cudnn-frontend/archive/refs/tags/v1.12.1.tar.gz",
     sha256 = "93025436f48a69e91a6be8442457e574ac23d4fa2995b3b689adcdd758a2b195",
-    signature_required = False,
     description = "NVIDIA cuDNN Frontend C++ API",
     homepage = "https://github.com/NVIDIA/cudnn-frontend",
     license = "MIT",
 
-    iuse = ["samples", "tests"],
-    use_defaults = [],
-
     deps = [],
 
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_CXX_STANDARD=17",
         "-DCUDNN_FRONTEND_BUILD_SAMPLES=OFF",

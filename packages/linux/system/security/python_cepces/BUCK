@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "python_cepces",
     version = "0.3.6",
-    src_uri = "https://github.com/opensuse/cepces/archive/refs/tags/v0.3.6.tar.gz",
+    url = "https://github.com/opensuse/cepces/archive/refs/tags/v0.3.6.tar.gz",
     sha256 = "603cdbb35108d9266216b6f471355beb7227e86ccb24de154104254ecde01f4b",
     deps = [
         "//packages/linux/dev-libs/python/cryptography:cryptography",

@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "map-matching",
     version = "0.1",
-    src_uri = "https://github.com/jaegs/map-matching/archive/51e04721e739f3176d874bba7eb58f2844d1c93f.tar.gz",
+    url = "https://github.com/jaegs/map-matching/archive/51e04721e739f3176d874bba7eb58f2844d1c93f.tar.gz",
     sha256 = "a9c34055b76f1d7ede262680d5c2751e2aedfc630c2c095156139e4e158e6672",
     deps = [
         "//packages/linux/lang/python:python",

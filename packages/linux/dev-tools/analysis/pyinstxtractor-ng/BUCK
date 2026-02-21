@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "pyinstxtractor-ng",
     version = "2024.04.29",
-    src_uri = "https://github.com/pyinstxtractor/pyinstxtractor-ng/archive/refs/tags/2024.04.29.tar.gz",
+    url = "https://github.com/pyinstxtractor/pyinstxtractor-ng/archive/refs/tags/2024.04.29.tar.gz",
     sha256 = "92fef9180d8d7784eb1394dff07463e6026fa83cd07eabacc78cedc656d77546",
     deps = [
         "//packages/linux/dev-libs/python/pycryptodome:pycryptodome",

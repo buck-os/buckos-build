@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "urdfdom",
     version = "5.0.0",
-    src_uri = "https://github.com/ros/urdfdom/archive/refs/tags/5.0.0.tar.gz",
+    url = "https://github.com/ros/urdfdom/archive/refs/tags/5.0.0.tar.gz",
     sha256 = "31ce32c68312df5c344c5b5a5d4337ca5068aa405634bd2c5ec43be4486b831b",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTING=OFF",
         "-DAPPEND_PROJECT_NAME_TO_INCLUDEDIR=OFF",
     ],

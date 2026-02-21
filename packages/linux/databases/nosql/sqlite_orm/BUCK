@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # sqlite_orm - C++ ORM for SQLite
 #
@@ -12,10 +12,11 @@ load("//defs:package_defs.bzl", "cmake_package")
 # - CRUD operations
 # - Custom types support
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "sqlite_orm",
     version = "1.6",
-    src_uri = "https://github.com/fnc12/sqlite_orm/archive/refs/tags/1.6.tar.gz",
+    url = "https://github.com/fnc12/sqlite_orm/archive/refs/tags/1.6.tar.gz",
     sha256 = "2f1ac922aa564d2a8385515a7d39c7a354df192b370a4713862e41b92bd4e388",
     description = "Header-only C++14 ORM library for SQLite",
     homepage = "https://github.com/fnc12/sqlite_orm",
@@ -23,7 +24,7 @@ cmake_package(
     deps = [
         "//packages/linux/system/libs/database/sqlite:sqlite",
     ],
-    cmake_args = [
+    configure_args = [
         "-DSQLITE_ORM_ENABLE_CXX_17=ON",
         "-DBUILD_TESTING=OFF",
         "-DBUILD_EXAMPLES=OFF",

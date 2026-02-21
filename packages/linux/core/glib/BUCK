@@ -1,19 +1,19 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
 # GLib - Core application building blocks library
 # Provides data structures, threading, event loops, and other utilities
-meson_package(
+package(
+    build_rule = "meson",
     name = "glib",
     version = "2.84.4",
-    src_uri = "https://download.gnome.org/sources/glib/2.84/glib-2.84.4.tar.xz",
+    url = "https://download.gnome.org/sources/glib/2.84/glib-2.84.4.tar.xz",
     sha256 = "8a9ea10943c36fc117e253f80c91e477b673525ae45762942858aef57631bb90",
     description = "Core application building blocks library",
     homepage = "https://wiki.gnome.org/Projects/GLib",
     license = "LGPL-2.1+",
-    iuse = ["nls"],
     # Fix meson options conflict - glib 2.84.4 has both files
     src_prepare = "rm -f meson_options.txt",
-    meson_args = [
+    configure_args = [
         "-Dtests=false",
         "-Dinstalled_tests=false",
         "-Ddocumentation=false",
@@ -31,9 +31,8 @@ meson_package(
         # Cross-compilation settings
         "-Dxattr=false",
     ],
-    use_meson = {
-        "nls": "-Dnls=enabled",
-        "-nls": "-Dnls=disabled",
+    use_configure = {
+        "nls": ("-Dnls=enabled", "-Dnls=disabled"),
     },
     deps = [
         "//packages/linux/core/zlib:zlib",

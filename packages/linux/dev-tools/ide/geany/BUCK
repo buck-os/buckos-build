@@ -1,52 +1,37 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # geany - Lightweight IDE and text editor
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "geany",
     # Official release tarball includes pre-generated configure script
     bdepend = [],
     src_prepare = "",
     version = "2.0",
-    src_uri = "https://download.geany.org/geany-2.0.tar.bz2",
+    url = "https://download.geany.org/geany-2.0.tar.bz2",
     sha256 = "565b4cd2f0311c1e3a167ec71c4a32dba642e0fe554ae5bb6b8177b7a74ccc92",
-    signature_sha256 = "e69a2ee5e35a7532b4908715aee578befa3cb878483f95c3c0f12435dac6563b",
-    signature_required=False,
     description = "Lightweight IDE and text editor using GTK",
     homepage = "https://www.geany.org",
     license = "GPL-2+",
 
     # USE flags this package supports
-    iuse = [
-        "X",
-        "doc",
-        "nls",
-        "plugins",
-        "vte",
-        "wayland",
-    ],
 
     # Default USE flags
-    use_defaults = ["vte", "plugins", "nls"],
 
     # Conditional dependencies
     use_deps = {
+
     },
 
     # Conditional configure arguments
     use_configure = {
-        "-X": "--without-x",
-        "-doc": "--disable-html-docs",
-        "-nls": "--disable-nls",
-        "-plugins": "--disable-plugins",
-        "-vte": "--disable-vte",
-        "-wayland": "--disable-wayland",
-        "X": "--with-x",
-        "doc": "--enable-html-docs",
-        "nls": "--enable-nls",
-        "plugins": "--enable-plugins",
-        "vte": "--enable-vte",
-        "wayland": "--enable-wayland",
+        "X": ("--with-x", "--without-x"),
+        "doc": ("--enable-html-docs", "--disable-html-docs"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "plugins": ("--enable-plugins", "--disable-plugins"),
+        "vte": ("--enable-vte", "--disable-vte"),
+        "wayland": ("--enable-wayland", "--disable-wayland"),
     },
 
     # Base configure arguments (always applied)

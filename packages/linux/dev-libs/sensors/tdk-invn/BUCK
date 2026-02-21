@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "tdk-invn",
     version = "4.4.7",
-    src_uri = "https://github.com/tdk-invn-oss/ultrasonic.soniclib/archive/refs/tags/4.4.7.tar.gz",
+    url = "https://github.com/tdk-invn-oss/ultrasonic.soniclib/archive/refs/tags/4.4.7.tar.gz",
     sha256 = "31b57ea19dbf463bdb2190a8f0551e9b1d79d38246e2e707650479696deb96a6",
-    cmake_args = [
+    configure_args = [
         "-DCHIRP_MAX_NUM_SENSORS=4",
         "-DCHIRP_NUM_BUSES=2",
         "-DINCLUDE_SHASTA_SUPPORT=OFF",

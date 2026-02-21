@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "swift-atomics",
     version = "1.0.2",
-    src_uri = "https://github.com/apple/swift-atomics/archive/refs/tags/1.0.2.tar.gz",
+    url = "https://github.com/apple/swift-atomics/archive/refs/tags/1.0.2.tar.gz",
     sha256 = "c8b88186db4902dc5109340f4a745ea787cb2aa9533c7e6d1e634549f9e527b1",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTING=OFF",
     ],
     deps = [

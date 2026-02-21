@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "diode",
     version = "0.1.0",
-    src_uri = "https://github.com/exclamaforte/diode/archive/6656d0c07ba08fff897afcf179259b856149f633.tar.gz",
+    url = "https://github.com/exclamaforte/diode/archive/6656d0c07ba08fff897afcf179259b856149f633.tar.gz",
     sha256 = "7fe0a098838418ebd5c8706a2ecdee7896d6a21c7ff578000da530e9f817b33e",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

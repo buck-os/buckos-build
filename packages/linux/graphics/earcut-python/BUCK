@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "mapbox-earcut-python",
     version = "0.12.10",
-    src_uri = "https://github.com/skogler/mapbox_earcut_python/archive/refs/tags/v0.12.10.tar.gz",
+    url = "https://github.com/skogler/mapbox_earcut_python/archive/refs/tags/v0.12.10.tar.gz",
     sha256 = "f0884d9d19a404285b53eb9fcecf6cb2a4b12fcd6ef2788dabc242e592d6f09b",
     deps = [
         "//packages/linux/graphics/earcut:earcut",

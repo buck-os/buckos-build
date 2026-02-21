@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "hllm",
     version = "0.1.0",
-    src_uri = "https://github.com/bytedance/HLLM/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/bytedance/HLLM/archive/refs/heads/main.tar.gz",
     sha256 = "88e5980db80c0975ba67591019e5e4dc3238b683ca21b0bd0038156c13ba89a7",
     deps = [
         "//packages/linux/dev-libs/python/accelerate:accelerate",

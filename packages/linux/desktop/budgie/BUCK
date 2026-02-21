@@ -1,16 +1,15 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # Budgie - Modern, elegant desktop
 # =============================================================================
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "budgie-desktop",
-    src_uri = "https://github.com/BuddiesOfBudgie/budgie-desktop/releases/download/v10.9.2/budgie-desktop-v10.9.2.tar.xz",
+    url = "https://github.com/BuddiesOfBudgie/budgie-desktop/releases/download/v10.9.2/budgie-desktop-v10.9.2.tar.xz",
 
     sha256 = "d45fff07a2d370c13c1c7610abe33ac02977c2f1521a26c5dbe8fb2594551b29",
-
-    signature_sha256 = "47f623554b01c567a99cef8086e2da700a1ffe1cc011bfc65ab02da47c876ea4",
     version = "10.9.2",
     description = "Budgie Desktop Environment",
     homepage = "https://buddiesofbudgie.org/",

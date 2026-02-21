@@ -1,15 +1,14 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "nghttp2",
     # GitHub releases/download tarball includes pre-generated configure script
     bdepend = [],
     src_prepare = "",
     version = "1.63.0",
-    src_uri = "https://github.com/nghttp2/nghttp2/releases/download/v1.63.0/nghttp2-1.63.0.tar.xz",
+    url = "https://github.com/nghttp2/nghttp2/releases/download/v1.63.0/nghttp2-1.63.0.tar.xz",
     sha256 = "4879c75dd32a74421b9857924449460b8341796c0613ba114ab2188e4622354b",
-    signature_sha256 = "4b03c1b43eb62696b748c21b2b23a305a7dcbda056bc1cb1bbc2ceabe803ad7a",
-    signature_required = False,
 
     description = "HTTP/2 C library and tools",
     homepage = "https://nghttp2.org/",
@@ -21,42 +20,21 @@ autotools_package(
     # xml - Enable XML support (libxml2)
     # examples - Build example programs
     # hpack-tools - Build HPACK tools
-    iuse = [
-        "debug",
-        "examples",
-        "hpack-tools",
-        "jemalloc",
-        "static-libs",
-        "systemd",
-        "tools",
-        "utils",
-        "xml",
-    ],
-    use_defaults = [],
 
     use_configure = {
-        "-debug": "--disable-debug",
-        "-examples": "--disable-examples",
-        "-hpack-tools": "--disable-hpack-tools",
-        "-jemalloc": "--disable-jemalloc",
-        "-static-libs": "--disable-static",
-        "-systemd": "--disable-systemd",
-        "-tools": "--disable-app",
-        "-utils": "--disable-utils",
-        "-xml": "--disable-libxml2",
-        "debug": "--enable-debug",
-        "examples": "--enable-examples",
-        "hpack-tools": "--enable-hpack-tools",
-        "jemalloc": "--enable-jemalloc",
-        "static-libs": "--enable-static",
-        "systemd": "--enable-systemd",
-        "tools": "--enable-app",
-        "utils": "--enable-utils",
-        "xml": "--enable-libxml2",
+        "debug": ("--enable-debug", "--disable-debug"),
+        "examples": ("--enable-examples", "--disable-examples"),
+        "hpack-tools": ("--enable-hpack-tools", "--disable-hpack-tools"),
+        "jemalloc": ("--enable-jemalloc", "--disable-jemalloc"),
+        "static-libs": ("--enable-static", "--disable-static"),
+        "systemd": ("--enable-systemd", "--disable-systemd"),
+        "tools": ("--enable-app", "--disable-app"),
+        "utils": ("--enable-utils", "--disable-utils"),
+        "xml": ("--enable-libxml2", "--disable-libxml2"),
     },
 
     use_deps = {
-        "xml": ["//packages/linux/system/libs/xml/libxml2:libxml2"],
+        "xml": "//packages/linux/system/libs/xml/libxml2:libxml2",
     },
 
     configure_args = [

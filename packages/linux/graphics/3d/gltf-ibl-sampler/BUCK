@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "gltf-ibl-sampler",
     version = "20240101",
-    src_uri = "https://github.com/KhronosGroup/glTF-IBL-Sampler/archive/4248407b4e4d49bec54f42e62b2743ca483dbc89.tar.gz",
+    url = "https://github.com/KhronosGroup/glTF-IBL-Sampler/archive/4248407b4e4d49bec54f42e62b2743ca483dbc89.tar.gz",
     sha256 = "61dce0479f9f4b9ad815ad49189d6968a9d9c05137acbdc62975660c872d1091",
     deps = [
         "//packages/linux/dev-libs/misc/glslang:glslang",
@@ -12,7 +13,7 @@ cmake_package(
         "//packages/linux/dev-libs/misc/stb:stb",
         "//packages/linux/graphics/vulkan:vulkan",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DIBLSAMPLER_EXPORT_SHADERS=OFF",

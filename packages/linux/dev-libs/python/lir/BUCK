@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "lir",
     version = "0.2.0",
-    src_uri = "https://github.com/lukasalexanderweber/lir/archive/refs/tags/v0.2.0.tar.gz",
+    url = "https://github.com/lukasalexanderweber/lir/archive/refs/tags/v0.2.0.tar.gz",
     sha256 = "ffac62a19b9fdb581c74ae4b8e96834d0baef847cce75443c78feeff1d1045ce",
     deps = [
         "//packages/linux/dev-libs/python/numba:numba",

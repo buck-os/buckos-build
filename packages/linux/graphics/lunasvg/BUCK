@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "lunasvg",
     version = "2.3.9",
-    src_uri = "https://github.com/sammycage/lunasvg/archive/refs/tags/v2.3.9.tar.gz",
+    url = "https://github.com/sammycage/lunasvg/archive/refs/tags/v2.3.9.tar.gz",
     sha256 = "088bc9fd1191a004552c65bdcc260989b83da441b0bdaa965e79d984feba88fa",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_SHARED_LIBS=ON",
         "-DLUNASVG_BUILD_EXAMPLES=OFF",
     ],

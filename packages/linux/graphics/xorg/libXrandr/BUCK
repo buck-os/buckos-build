@@ -1,10 +1,11 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # libXrandr - X RandR extension library
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libXrandr",
     version = "1.5.4",
-    src_uri = "https://xorg.freedesktop.org/archive/individual/lib/libXrandr-1.5.4.tar.xz",
+    url = "https://xorg.freedesktop.org/archive/individual/lib/libXrandr-1.5.4.tar.xz",
     sha256 = "1ad5b065375f4a85915aa60611cc6407c060492a214d7f9daf214be752c3b4d3",
     description = "X RandR extension library",
     homepage = "https://xorg.freedesktop.org/",

@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "poselib",
     version = "2.0.4",
-    src_uri = "https://github.com/vlarsson/poselib/archive/refs/tags/v2.0.4.tar.gz",
+    url = "https://github.com/vlarsson/poselib/archive/refs/tags/v2.0.4.tar.gz",
     sha256 = "caa0c1c9b882f6e36b5ced6f781406ed97d4c1f0f61aa31345ebe54633d67c16",
     description = "Minimal solvers for camera pose estimation",
     homepage = "https://github.com/vlarsson/poselib",
@@ -11,7 +12,7 @@ cmake_package(
     deps = [
         "//packages/linux/dev-libs/eigen3:eigen3",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DWITH_BENCHMARK=OFF",

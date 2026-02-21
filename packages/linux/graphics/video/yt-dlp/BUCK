@@ -1,20 +1,17 @@
-load("//defs:package_defs.bzl", "python_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # yt-dlp - A youtube-dl fork with additional features
 
-python_package(
+package(
+    build_rule = "python",
     name = "yt-dlp",
     version = "2024.08.06",
-    iuse = ["deno", "man"],
     use_configure = {
-        "-deno": "--disable-deno",
-        "-man": "--disable-man",
-        "deno": "--enable-deno",
-        "man": "--enable-man",
+        "deno": ("--enable-deno", "--disable-deno"),
+        "man": ("--enable-man", "--disable-man"),
     },
-    src_uri = "https://github.com/yt-dlp/yt-dlp/releases/download/2024.08.06/yt-dlp.tar.gz",
+    url = "https://github.com/yt-dlp/yt-dlp/releases/download/2024.08.06/yt-dlp.tar.gz",
     sha256 = "e08331fb9a36eba56b4efd074b5b25fbf08413e9cb47009a28ecbffe47150310",
-    signature_required = False,
     description = "A youtube-dl fork with additional features and fixes",
     homepage = "https://github.com/yt-dlp/yt-dlp",
     license = "Unlicense",

@@ -1,10 +1,11 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "decayfitnet",
     version = "1.0.0",
     # Pinned to commit 01daf3e (2023-12-14) - no tagged releases available
-    src_uri = "https://github.com/georg-goetz/DecayFitNet/archive/01daf3e7bbfd637aa1269bbca0cab7f445db0d5d.tar.gz",
+    url = "https://github.com/georg-goetz/DecayFitNet/archive/01daf3e7bbfd637aa1269bbca0cab7f445db0d5d.tar.gz",
     sha256 = "294a88d6ccc563741f169d4d68bc9a7de3ed7e06262daa0c826e0f3f1e94a076",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

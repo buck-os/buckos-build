@@ -1,30 +1,26 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # at - Job scheduling utility
 # USE flags: selinux, pam
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "at",
     bdepend = [
     ],
     version = "3.2.5",
-    src_uri = "https://salsa.debian.org/debian/at/-/archive/release/3.2.5/at-release-3.2.5.tar.gz",
+    url = "https://salsa.debian.org/debian/at/-/archive/release/3.2.5/at-release-3.2.5.tar.gz",
     sha256 = "bd72b2e0666323f4a9d25613880b7a4d5761c8c2fefbf2fac7d5e9564a9d0da4",
-    signature_required = False,
     description = "Delayed job execution and batch processing",
     homepage = "https://salsa.debian.org/debian/at",
     license = "GPL-2+",
-    iuse = ["selinux", "pam"],
-    use_defaults = [],
     use_deps = {
-        "selinux": ["//packages/linux/system/security/selinux:selinux"],
-        "pam": ["//packages/linux/system/security/auth/pam:pam"],
+        "selinux": "//packages/linux/system/security/selinux:selinux",
+        "pam": "//packages/linux/system/security/auth/pam:pam",
     },
     use_configure = {
-        "selinux": "--with-selinux",
-        "-selinux": "--without-selinux",
-        "pam": "--with-pam",
-        "-pam": "--without-pam",
+        "pam": ("--with-pam", "--without-pam"),
+        "selinux": ("--with-selinux", "--without-selinux"),
     },
     configure_args = [
         "--prefix=/usr",

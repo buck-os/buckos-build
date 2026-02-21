@@ -1,45 +1,26 @@
+load("//defs:package.bzl", "package")
+
 # iwd - iNet Wireless Daemon
 # Wireless daemon for Linux optimized for minimal resources
 
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-
 # USE flags: See use_flags.bzl for available flags
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "iwd",
-    src_uri = "https://kernel.org/pub/linux/network/wireless/iwd-2.13.tar.xz",
+    url = "https://kernel.org/pub/linux/network/wireless/iwd-2.13.tar.xz",
 
     sha256 = "5c58d0cc7c2c81540a515a7487330468c61615d23031af47be15f694fbfbc8b3",
-    iuse = [
-        "client",
-        "cpu_flags_x86_aes",
-        "cpu_flags_x86_ssse3",
-        "monitor",
-        "ofono",
-        "selinux",
-        "standalone",
-        "systemd",
-        "wired",
-    ],
     use_configure = {
-        "-client": "--disable-client",
-        "-cpu_flags_x86_aes": "--disable-cpu_flags_x86_aes",
-        "-cpu_flags_x86_ssse3": "--disable-cpu_flags_x86_ssse3",
-        "-monitor": "--disable-monitor",
-        "-ofono": "--disable-ofono",
-        "-selinux": "--disable-selinux",
-        "-standalone": "--disable-standalone",
-        "-systemd": "--disable-systemd",
-        "-wired": "--disable-wired",
-        "client": "--enable-client",
-        "cpu_flags_x86_aes": "--enable-cpu_flags_x86_aes",
-        "cpu_flags_x86_ssse3": "--enable-cpu_flags_x86_ssse3",
-        "monitor": "--enable-monitor",
-        "ofono": "--enable-ofono",
-        "selinux": "--enable-selinux",
-        "standalone": "--enable-standalone",
-        "systemd": "--enable-systemd",
-        "wired": "--enable-wired",
+        "client": ("--enable-client", "--disable-client"),
+        "cpu_flags_x86_aes": ("--enable-cpu_flags_x86_aes", "--disable-cpu_flags_x86_aes"),
+        "cpu_flags_x86_ssse3": ("--enable-cpu_flags_x86_ssse3", "--disable-cpu_flags_x86_ssse3"),
+        "monitor": ("--enable-monitor", "--disable-monitor"),
+        "ofono": ("--enable-ofono", "--disable-ofono"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "standalone": ("--enable-standalone", "--disable-standalone"),
+        "systemd": ("--enable-systemd", "--disable-systemd"),
+        "wired": ("--enable-wired", "--disable-wired"),
     },
     version = "2.13",
     description = "iNet Wireless Daemon for Linux",

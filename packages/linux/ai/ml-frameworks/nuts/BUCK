@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "NUTS",
     version = "1.0",
-    src_uri = "https://github.com/mfouesneau/NUTS/archive/refs/heads/master.tar.gz",
+    url = "https://github.com/mfouesneau/NUTS/archive/refs/heads/master.tar.gz",
     sha256 = "edba7be55451eb450f6755940a37783ff167169d5c5b67cb9f8167b83baabff1",
     deps = [
         "//packages/linux/dev-libs/python/numpy:numpy",

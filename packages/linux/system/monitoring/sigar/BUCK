@@ -1,14 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "sigar",
     version = "1.6.4",
-    src_uri = "https://github.com/hyperic/sigar/archive/refs/tags/sigar-1.6.4.tar.gz",
+    url = "https://github.com/hyperic/sigar/archive/refs/tags/sigar-1.6.4.tar.gz",
     sha256 = "179b04c1eb7e10e50632e1f8c8d25c1bc4d35259f2976bc72686ecfa79a0052e",
     deps = [
         "//packages/linux/system/libs/ipc/libtirpc:libtirpc",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
     ],

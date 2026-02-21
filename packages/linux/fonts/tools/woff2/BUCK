@@ -1,16 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "woff2",
     version = "1.0.2",
-    src_uri = "https://github.com/google/woff2/archive/refs/tags/v1.0.2.tar.gz",
+    url = "https://github.com/google/woff2/archive/refs/tags/v1.0.2.tar.gz",
     sha256 = "add272bb09e6384a4833ffca4896350fdb16e0ca22df68c0384773c67a175594",
-    signature_required = False,
     description = "Reference implementation of the WOFF 2.0 webfont compression format",
     homepage = "https://github.com/google/woff2",
     license = "MIT",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
     ],

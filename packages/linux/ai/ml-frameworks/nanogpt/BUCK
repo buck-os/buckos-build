@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "nanogpt",
     version = "0.0.1",
-    src_uri = "https://github.com/karpathy/nanoGPT/archive/a82b33b525ca9855d705656387698e13eb8e8d4b.tar.gz",
+    url = "https://github.com/karpathy/nanoGPT/archive/a82b33b525ca9855d705656387698e13eb8e8d4b.tar.gz",
     sha256 = "3396e6573921b28638a389a41054b4c85a12465793be1191033c42f141364a74",
     deps = [
         "//packages/linux/dev-libs/python/numpy:numpy",

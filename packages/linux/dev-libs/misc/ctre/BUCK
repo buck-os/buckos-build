@@ -1,18 +1,19 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # ctre - Compile Time Regular Expressions
 # Fast compile-time regular expressions with support for matching/searching/capturing during compile-time or runtime.
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "ctre",
     version = "3.10.0",
-    src_uri = "https://github.com/hanickadot/compile-time-regular-expressions/archive/refs/tags/v3.10.0.tar.gz",
+    url = "https://github.com/hanickadot/compile-time-regular-expressions/archive/refs/tags/v3.10.0.tar.gz",
     sha256 = "b17e6c9a6cc0cea65132f62a6c699cefed952721063569d6339eb3ca471045e6",
     description = "Fast compile-time regular expressions with support for matching/searching/capturing during compile-time or runtime",
     homepage = "https://compile-time.re",
     license = "Apache-2.0",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCTRE_BUILD_TESTS=OFF",
         "-DCTRE_BUILD_PACKAGE=OFF",

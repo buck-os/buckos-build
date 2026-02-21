@@ -1,21 +1,17 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "patchelf",
     # GitHub release tarball includes pre-generated configure script
     version = "0.18.0",
-    src_uri = "https://github.com/NixOS/patchelf/releases/download/0.18.0/patchelf-0.18.0.tar.bz2",
+    url = "https://github.com/NixOS/patchelf/releases/download/0.18.0/patchelf-0.18.0.tar.bz2",
     sha256 = "1952b2a782ba576279c211ee942e341748fdb44997f704dd53def46cd055470b",
-    signature_required = False,
     description = "Utility to modify the dynamic linker and RPATH of ELF executables",
     homepage = "https://github.com/NixOS/patchelf",
     license = "GPL-3",
-
-    iuse = ["static"],
-    use_defaults = [],
     use_configure = {
-        "static": "--enable-static",
-        "-static": "--disable-static",
+        "static": ("--enable-static", "--disable-static"),
     },
 
     visibility = ["PUBLIC"],

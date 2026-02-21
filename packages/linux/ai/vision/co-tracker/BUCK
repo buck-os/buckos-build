@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "co-tracker",
     version = "3.0",
-    src_uri = "https://github.com/facebookresearch/co-tracker/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/facebookresearch/co-tracker/archive/refs/heads/main.tar.gz",
     sha256 = "33a81fefb598c935cb4bd7a7018e7d0c5d0021ae24c971cc1ec48020cc211eab",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

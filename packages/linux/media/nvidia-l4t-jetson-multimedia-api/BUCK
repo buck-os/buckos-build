@@ -1,16 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "nvidia-l4t-jetson-multimedia-api-src",
-    src_uri = "https://repo.download.nvidia.com/jetson/common/pool/main/n/nvidia-l4t-jetson-multimedia-api/nvidia-l4t-jetson-multimedia-api_36.4.3-20250107174145_arm64.deb",
-    sha256 = "c82bb071be5d8b87ab25ba3a57fab7d758e5aab5a538709fd70e911364eeb162",
-    signature_required = False,
-    extract = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "nvidia-l4t-jetson-multimedia-api",
-    srcs = [":nvidia-l4t-jetson-multimedia-api-src"],
     version = "6.2",
     description = "NVIDIA Jetson Multimedia API for video encode/decode and image processing",
     homepage = "https://developer.nvidia.com/embedded/jetson-linux",

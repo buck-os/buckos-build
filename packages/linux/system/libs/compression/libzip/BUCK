@@ -1,41 +1,25 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # libzip - C library for reading, creating, and modifying zip archives
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "libzip",
     version = "1.10.1",
-    iuse = [
-        "bzip2",
-        "gnutls",
-        "lzma",
-        "mbedtls",
-        "ssl",
-        "tools",
-        "zstd",
-    ],
-    use_cmake = {
-        "-bzip2": "-DENABLE_BZIP2=OFF",
-        "-gnutls": "-DENABLE_GNUTLS=OFF",
-        "-lzma": "-DENABLE_LZMA=OFF",
-        "-mbedtls": "-DENABLE_MBEDTLS=OFF",
-        "-ssl": "-DENABLE_SSL=OFF",
-        "-tools": "-DENABLE_TOOLS=OFF",
-        "-zstd": "-DENABLE_ZSTD=OFF",
-        "bzip2": "-DENABLE_BZIP2=ON",
-        "gnutls": "-DENABLE_GNUTLS=ON",
-        "lzma": "-DENABLE_LZMA=ON",
-        "mbedtls": "-DENABLE_MBEDTLS=ON",
-        "ssl": "-DENABLE_SSL=ON",
-        "tools": "-DENABLE_TOOLS=ON",
-        "zstd": "-DENABLE_ZSTD=ON",
+    use_configure = {
+        "bzip2": ("-DENABLE_BZIP2=ON", "-DENABLE_BZIP2=OFF"),
+        "gnutls": ("-DENABLE_GNUTLS=ON", "-DENABLE_GNUTLS=OFF"),
+        "lzma": ("-DENABLE_LZMA=ON", "-DENABLE_LZMA=OFF"),
+        "mbedtls": ("-DENABLE_MBEDTLS=ON", "-DENABLE_MBEDTLS=OFF"),
+        "ssl": ("-DENABLE_SSL=ON", "-DENABLE_SSL=OFF"),
+        "tools": ("-DENABLE_TOOLS=ON", "-DENABLE_TOOLS=OFF"),
+        "zstd": ("-DENABLE_ZSTD=ON", "-DENABLE_ZSTD=OFF"),
     },
-    src_uri = "https://libzip.org/download/libzip-1.10.1.tar.xz",
+    url = "https://libzip.org/download/libzip-1.10.1.tar.xz",
     sha256 = "dc3c8d5b4c8bbd09626864f6bcf93de701540f761d76b85d7c7d710f4bd90318",
-    signature_required = False,
     description = "C library for reading, creating, and modifying zip archives",
     homepage = "https://libzip.org/",
     license = "BSD-3-Clause",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_SHARED_LIBS=ON",
     ],
     deps = [

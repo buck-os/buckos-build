@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # nanogui - Package from third-party
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "nanogui",
     version = "0.2.0",
-    src_uri = "https://github.com/mitsuba-renderer/nanogui/archive/refs/tags/v0.2.0.tar.gz",
+    url = "https://github.com/mitsuba-renderer/nanogui/archive/refs/tags/v0.2.0.tar.gz",
     sha256 = "844859261316ebee70e2cdef1a61d85d135353890493fd39f22675e844b5c109",
     description = "nanogui package",
     homepage = "https://github.com/mitsuba-renderer/nanogui.git",
     license = "as-is",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
     ],

@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "phidget22",
     version = "1.17.20231004",
-    src_uri = "https://www.phidgets.com/downloads/phidget22/libraries/linux/libphidget22/libphidget22-1.17.20231004.tar.gz",
+    url = "https://www.phidgets.com/downloads/phidget22/libraries/linux/libphidget22/libphidget22-1.17.20231004.tar.gz",
     sha256 = "37e384e86b1f8044904c1ff7d00bdb16bb2b2be87a0962848a984981f457acf8",
     deps = [
         "//packages/linux/system/libs/usb:libusb",

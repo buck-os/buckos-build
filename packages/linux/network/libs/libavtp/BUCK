@@ -1,14 +1,15 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "libavtp",
     version = "0.2.0",
-    src_uri = "https://github.com/AVnu/libavtp/archive/refs/tags/v0.2.0.tar.gz",
+    url = "https://github.com/AVnu/libavtp/archive/refs/tags/v0.2.0.tar.gz",
     sha256 = "631f5e704a1b7c8f953ca017a382ad945e75c2952c81813ff355e9ab8071b70e",
     description = "AVTP packetization library for IEEE 1722",
     homepage = "https://github.com/AVnu/libavtp",
     license = "BSD-3-Clause",
-    meson_args = [
+    configure_args = [
         "-Dtests=disabled",
     ],
     visibility = ["PUBLIC"],

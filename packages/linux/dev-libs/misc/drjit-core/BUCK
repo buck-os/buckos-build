@@ -1,15 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # Dr.Jit-Core - A tracing GPU/CPU Just-In-Time-Compiler
 # JIT compiler designed to vectorize and parallelize computation,
 # primarily for differentiable Monte Carlo rendering
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "drjit-core",
     version = "0.0.0+git5cf6d37",
-    src_uri = "https://github.com/mitsuba-renderer/drjit-core/archive/5cf6d3730ebc931863c89071e16979153e802d09.tar.gz",
+    url = "https://github.com/mitsuba-renderer/drjit-core/archive/5cf6d3730ebc931863c89071e16979153e802d09.tar.gz",
     sha256 = "86c687d42d7af8f969c20ce3a6af7d920d64ef391767b9f3f9ee20b51e6eb8a1",  # TODO: Calculate with: wget -qO- <URL> | sha256sum
-    signature_required = False,
     description = "Dr.Jit-Core - A tracing GPU/CPU Just-In-Time-Compiler for parallel computation",
     homepage = "https://github.com/mitsuba-renderer/drjit-core",
     license = "BSD-3-Clause",
@@ -55,7 +55,7 @@ if [ ! -d "ext/nanothread/ext/cmake-defaults" ] || [ ! -d "ext/robin_map/include
 fi
 """,
 
-    cmake_args = [
+    configure_args = [
         "-DBUILD_SHARED_LIBS=ON",
         "-DCMAKE_BUILD_TYPE=Release",
 

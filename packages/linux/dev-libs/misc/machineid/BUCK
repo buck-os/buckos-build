@@ -1,14 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "machineid",
     version = "4d9896e",
-    src_uri = "https://github.com/tarik02/machineid/archive/4d9896ed2ca30ea440633446711fbc833eab0518.tar.gz",
+    url = "https://github.com/tarik02/machineid/archive/4d9896ed2ca30ea440633446711fbc833eab0518.tar.gz",
     sha256 = "746cbb8bdeecc6d2dc9fe1f5458fef12c62b008d24f35c97614e284e569ce087",
     description = "Cross-platform machine ID library",
     homepage = "https://github.com/tarik02/machineid",
     license = "Apache-2.0",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
     ],

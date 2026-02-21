@@ -1,38 +1,29 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "less",
     version = "643",
-    src_uri = "https://www.greenwoodsoftware.com/less/less-643.tar.gz",
+    url = "https://www.greenwoodsoftware.com/less/less-643.tar.gz",
     sha256 = "2911b5432c836fa084c8a2e68f6cd6312372c026a58faaa98862731c8b6052e8",
-    signature_required = False,
     description = "Less is a free, open-source file pager",
     homepage = "https://www.greenwoodsoftware.com/less/",
     license = "GPL-3.0",
 
     # USE flags this package supports
-    iuse = [
-        "ncurses",
-        "pcre",
-        "pcre2",
-    ],
 
     # Default USE flags
-    use_defaults = ["ncurses"],
 
     # Conditional dependencies
     use_deps = {
-        "ncurses": ["//packages/linux/system/terminal/ncurses:ncurses"],
+        "ncurses": "//packages/linux/system/terminal/ncurses:ncurses",
     },
 
     # Conditional configure arguments
     use_configure = {
-        "ncurses": "--with-ncurses",
-        "-ncurses": "--without-ncurses",
-        "pcre": "--with-regex=pcre",
-        "-pcre": "--with-regex=posix",
-        "pcre2": "--with-regex=pcre2",
-        "-pcre2": "--with-regex=posix",
+        "ncurses": ("--with-ncurses", "--without-ncurses"),
+        "pcre": ("--with-regex=pcre", "--with-regex=posix"),
+        "pcre2": ("--with-regex=pcre2", "--with-regex=posix"),
     },
 
     visibility = ["PUBLIC"],

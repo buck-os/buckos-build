@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # cartographer_ros - Package from third-party
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "cartographer_ros",
     version = "1.0.0",
-    src_uri = "https://github.com/cartographer-project/cartographer_ros/archive/refs/tags/1.0.0.tar.gz",
+    url = "https://github.com/cartographer-project/cartographer_ros/archive/refs/tags/1.0.0.tar.gz",
     sha256 = "76a1853805e23ab195c598210c189380570f4c47d501ec70b4fdfdc19824dbf1",
     description = "cartographer_ros package",
     homepage = "https://github.com/cartographer-project/cartographer_ros.git",
     license = "Apache-2.0",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
     ],

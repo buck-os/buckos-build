@@ -1,16 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "maddy-src",
-    src_uri = "https://github.com/foxcpp/maddy/archive/v0.7.1.tar.gz",
-    sha256 = "541288477afb040a04a5cf17a1c3e3b7a81b287dc3a81c844b2d6ad66688c29e",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "maddy",
-    srcs = [":maddy-src"],
     version = "0.7.1",
     description = "Composable all-in-one mail server",
     homepage = "https://maddy.email/",

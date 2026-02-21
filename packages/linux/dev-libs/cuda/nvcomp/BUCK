@@ -1,15 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package", "gen_pkgconfig")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "nvcomp-src",
-    src_uri = "https://developer.download.nvidia.com/compute/nvcomp/redist/nvcomp/linux-x86_64/nvcomp-linux-x86_64-4.2.0.11_cuda12-archive.tar.xz",
-    sha256 = "0e235903b08f0173835b204e9fa90208660c33eb6a986ec178bb05ea891d5119",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "nvcomp",
-    srcs = [":nvcomp-src"],
     version = "4.2.0.11",
     description = "NVIDIA GPU-accelerated data compression library",
     homepage = "https://developer.nvidia.com/nvcomp",

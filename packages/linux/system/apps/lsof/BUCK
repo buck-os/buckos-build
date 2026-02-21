@@ -1,29 +1,25 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # lsof - List open files
 # USE flags: selinux
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "lsof",
     bdepend = [],
     src_prepare = "",
     version = "4.99.3",
-    src_uri = "https://github.com/lsof-org/lsof/releases/download/4.99.3/lsof-4.99.3.tar.gz",
+    url = "https://github.com/lsof-org/lsof/releases/download/4.99.3/lsof-4.99.3.tar.gz",
     sha256 = "86428a8881b0d1147a52058e853c775b83d794f0da685d549b2bfd07063ed1cd",
-    signature_required = False,
     description = "List open files utility",
     homepage = "https://github.com/lsof-org/lsof",
     license = "lsof",
-    iuse = ["rpc", "selinux"],
-    use_defaults = [],
     use_deps = {
-        "selinux": ["//packages/linux/system/security/selinux:selinux"],
+        "selinux": "//packages/linux/system/security/selinux:selinux",
     },
     use_configure = {
-        "-rpc": "--disable-rpc",
-        "-selinux": "--without-selinux",
-        "rpc": "--enable-rpc",
-        "selinux": "--with-selinux",
+        "rpc": ("--enable-rpc", "--disable-rpc"),
+        "selinux": ("--with-selinux", "--without-selinux"),
     },
     configure_args = [
         "--prefix=/usr",

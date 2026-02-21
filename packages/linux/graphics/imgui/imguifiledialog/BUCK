@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "imguifiledialog",
     version = "0.6.4",
-    src_uri = "https://github.com/aiekick/ImGuiFileDialog/archive/refs/tags/v0.6.4.tar.gz",
+    url = "https://github.com/aiekick/ImGuiFileDialog/archive/refs/tags/v0.6.4.tar.gz",
     sha256 = "0cbaf7f2f28cf652aa57ebe877b4a1e14aa370d661bf84c571a4a51e9fd67b6b",
     description = "File dialog for Dear ImGui",
     homepage = "https://github.com/aiekick/ImGuiFileDialog",
@@ -11,7 +12,7 @@ cmake_package(
     deps = [
         "//packages/linux/graphics/imgui:imgui",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
     ],

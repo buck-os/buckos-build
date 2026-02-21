@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "vsgXchange",
     version = "1.1.5",
-    src_uri = "https://github.com/vsg-dev/vsgXchange/archive/refs/tags/v1.1.5.tar.gz",
+    url = "https://github.com/vsg-dev/vsgXchange/archive/refs/tags/v1.1.5.tar.gz",
     sha256 = "8a9e2fe56e047dd462eb0597b53169b6ffc2852d5ce0b7b728d800bdb50d3955",
     description = "VulkanSceneGraph 3rd party data integration library",
     homepage = "https://github.com/vsg-dev/vsgXchange",
@@ -12,7 +13,7 @@ cmake_package(
         "//packages/linux/graphics/rendering/VulkanSceneGraph:VulkanSceneGraph",
         "//packages/linux/graphics/rendering/glslang:glslang",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
     ],

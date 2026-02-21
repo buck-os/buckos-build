@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "parlai",
     version = "1.5.1",
-    src_uri = "https://github.com/facebookresearch/ParlAI/archive/refs/tags/v1.5.1.tar.gz",
+    url = "https://github.com/facebookresearch/ParlAI/archive/refs/tags/v1.5.1.tar.gz",
     sha256 = "164c097de648c5b554b72c7c8282c195098a7d2d125fd2c737b410f1a20b5e20",
     deps = [
         "//packages/linux/dev-libs/python/coloredlogs:coloredlogs",

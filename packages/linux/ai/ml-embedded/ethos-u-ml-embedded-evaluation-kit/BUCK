@@ -1,12 +1,13 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "ethos-u-ml-embedded-evaluation-kit",
     version = "24.11",
     # Note: mlplatform.org redirects to GitLab - using GitHub archive as fallback
-    src_uri = "https://gitlab.arm.com/artificial-intelligence/ethos-u/ml-embedded-evaluation-kit/-/archive/24.11/ml-embedded-evaluation-kit-24.11.tar.gz",
+    url = "https://gitlab.arm.com/artificial-intelligence/ethos-u/ml-embedded-evaluation-kit/-/archive/24.11/ml-embedded-evaluation-kit-24.11.tar.gz",
     sha256 = "1b4fdb7c404b8e4e3991a3410cc91ba19f7c66ac48ef7512b1382dfc0437eb68",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_C_STANDARD=11",
         "-DCMAKE_CXX_STANDARD=17",

@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
 # SciPy - Fundamental algorithms for scientific computing in Python
 #
@@ -8,28 +8,25 @@ load("//defs:package_defs.bzl", "python_package")
 # USE flags:
 #   openblas  - Use OpenBLAS for BLAS/LAPACK
 
-python_package(
+package(
+    build_rule = "python",
     name = "scipy",
     version = "1.13.0",
-    src_uri = "https://github.com/scipy/scipy/releases/download/v1.13.0/scipy-1.13.0.tar.gz",
+    url = "https://github.com/scipy/scipy/releases/download/v1.13.0/scipy-1.13.0.tar.gz",
     sha256 = "58569af537ea29d3f78e5abd18398459f195546bb3be23d16677fb26616cc11e",
     description = "Fundamental algorithms for scientific computing in Python",
     homepage = "https://scipy.org/",
     license = "BSD-3-Clause",
-    iuse = ["fortran", "openblas", "test-rust"],
     use_configure = {
-        "-fortran": "--disable-fortran",
-        "-test-rust": "--disable-test-rust",
-        "fortran": "--enable-fortran",
-        "test-rust": "--enable-test-rust",
+        "fortran": ("--enable-fortran", "--disable-fortran"),
+        "test-rust": ("--enable-test-rust", "--disable-test-rust"),
     },
-    use_defaults = ["openblas"],
     deps = [
         "//packages/linux/lang/python:python",
         "//packages/linux/dev-libs/python/numpy:numpy",
     ],
     use_deps = {
-        "openblas": ["//packages/linux/dev-libs/math/openblas:openblas"],
+        "openblas": "//packages/linux/dev-libs/math/openblas:openblas",
     },
     build_backend = "meson",
     install_cmd = """

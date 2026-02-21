@@ -1,17 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "korte-jvm-src",
-    src_uri = "https://mirror.buckos.org/k/korte-jvm-4.0.10.jar",
-    sha256 = "b9b983817a80dbb5f9b599b508616115c1e8e1e3f1fccc301695f4530792690f",
-    signature_required = False,
-    # JAR is a pre-built binary, no extraction needed
-    extract = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "korte-jvm",
-    srcs = [":korte-jvm-src"],
     version = "4.0.10",
     description = "Korte - Kotlin Template Engine for JVM",
     homepage = "https://korlibs.soywiz.com/",

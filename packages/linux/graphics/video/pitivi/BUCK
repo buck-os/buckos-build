@@ -1,17 +1,17 @@
-load("//defs:package_defs.bzl", "meson_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # Pitivi - Free video editor with a beautiful and intuitive interface
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "pitivi",
     version = "2023.03.0",
-    src_uri = "https://github.com/GNOME/pitivi/archive/refs/tags/2023.03.0.tar.gz",
+    url = "https://github.com/GNOME/pitivi/archive/refs/tags/2023.03.0.tar.gz",
     sha256 = "312cb3c071abf7d6c211986242595cb2a37dc3d45524923de052706357c48129",
-    signature_required = False,
     description = "Free video editor with a beautiful and intuitive interface",
     homepage = "https://pitivi.org/",
     license = "LGPL-2.1-or-later",
-    meson_args = [],
+    configure_args = [],
     deps = [
         "//packages/linux/graphics/video/gstreamer:gstreamer",
         "//packages/linux/graphics/video/gstreamer:gst-plugins-base",

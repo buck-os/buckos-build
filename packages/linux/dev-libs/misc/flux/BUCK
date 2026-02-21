@@ -1,22 +1,21 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # flux - A C++20 library for sequence-oriented programming
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "flux",
     version = "0.4.0",
-    iuse = ["hardened"],
-    use_cmake = {
-        "-hardened": "-DENABLE_HARDENED=OFF",
-        "hardened": "-DENABLE_HARDENED=ON",
+    use_configure = {
+        "hardened": ("-DENABLE_HARDENED=ON", "-DENABLE_HARDENED=OFF"),
     },
-    src_uri = "https://github.com/tcbrindle/flux/archive/refs/tags/v0.4.0.tar.gz",
+    url = "https://github.com/tcbrindle/flux/archive/refs/tags/v0.4.0.tar.gz",
     sha256 = "95e7d9d71c9ee9e89bb24b46ccba77ddfb0a1580630c2faab0b415dacc7c8d56",
     description = "A C++20 library for sequence-oriented programming",
     homepage = "https://github.com/tcbrindle/flux",
     license = "BSL-1.0",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DFLUX_BUILD_TESTS=OFF",
         "-DFLUX_BUILD_EXAMPLES=OFF",

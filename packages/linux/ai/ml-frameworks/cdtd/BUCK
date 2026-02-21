@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "cdtd",
     version = "0.1.0",
-    src_uri = "https://github.com/muellermarkus/cdtd/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/muellermarkus/cdtd/archive/refs/heads/main.tar.gz",
     sha256 = "89689554476560ff0d0219a2ac2c350c90ebabc53e9604c3390450a9c5dbcd7b",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

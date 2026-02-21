@@ -1,12 +1,13 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "lwip-2.2",
     version = "2.2.0",
-    src_uri = "https://download.savannah.gnu.org/releases/lwip/lwip-2.2.0.zip",
+    url = "https://download.savannah.gnu.org/releases/lwip/lwip-2.2.0.zip",
     sha256 = "e12c769be5a1da9a1edf1b8f38d645c6c87d52a26a636172cea4b8c63ec04994",
 
-    cmake_args = [
+    configure_args = [
         "-DBUILD_SHARED_LIBS=ON",
     ],
 

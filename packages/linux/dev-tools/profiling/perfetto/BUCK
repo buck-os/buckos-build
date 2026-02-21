@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # Perfetto - System profiling, app tracing and trace analysis
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "perfetto",
     version = "46.0",
-    src_uri = "https://github.com/google/perfetto/archive/refs/tags/v46.0.tar.gz",
+    url = "https://github.com/google/perfetto/archive/refs/tags/v46.0.tar.gz",
     sha256 = "dfc9b645c020d7a7469bae73d7432545b8005411c8176f46f04875058df0aa97",
     description = "System profiling, app tracing and trace analysis",
     homepage = "https://perfetto.dev/",
@@ -13,7 +14,7 @@ cmake_package(
     deps = [
         "//packages/linux/core/zlib:zlib",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DPERFETTO_BUILD_SDK_ONLY=ON",
     ],

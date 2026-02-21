@@ -1,14 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "incbin-src",
-    src_uri = "https://github.com/graphitemaster/incbin/archive/6e576cae5ab5810f25e2631f2e0b80cbe7dc8cbf.tar.gz",
-    sha256 = "d23582689c46604cad116495dbd8aceb1974b46164114a231e8c8144ae12b230",
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "incbin",
-    srcs = [":incbin-src"],
     version = "20231001",
     description = "Include binary and textual files in C/C++ applications",
     homepage = "https://github.com/graphitemaster/incbin",

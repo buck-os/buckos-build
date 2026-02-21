@@ -1,31 +1,18 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "babl",
-    src_uri = "https://download.gimp.org/babl/0.1/babl-0.1.108.tar.xz",
+    url = "https://download.gimp.org/babl/0.1/babl-0.1.108.tar.xz",
 
     sha256 = "26defe9deaab7ac4d0e076cab49c2a0d6ebd0df0c31fd209925a5f07edee1475",
-    iuse = [
-        "cpu_flags_x86_f16c",
-        "cpu_flags_x86_mmx",
-        "cpu_flags_x86_sse",
-        "introspection",
-        "lcms",
-        "vala",
-    ],
     use_configure = {
-        "-cpu_flags_x86_f16c": "--disable-cpu_flags_x86_f16c",
-        "-cpu_flags_x86_mmx": "--disable-cpu_flags_x86_mmx",
-        "-cpu_flags_x86_sse": "--disable-cpu_flags_x86_sse",
-        "-introspection": "--disable-introspection",
-        "-lcms": "--disable-lcms",
-        "-vala": "--disable-vala",
-        "cpu_flags_x86_f16c": "--enable-cpu_flags_x86_f16c",
-        "cpu_flags_x86_mmx": "--enable-cpu_flags_x86_mmx",
-        "cpu_flags_x86_sse": "--enable-cpu_flags_x86_sse",
-        "introspection": "--enable-introspection",
-        "lcms": "--enable-lcms",
-        "vala": "--enable-vala",
+        "cpu_flags_x86_f16c": ("--enable-cpu_flags_x86_f16c", "--disable-cpu_flags_x86_f16c"),
+        "cpu_flags_x86_mmx": ("--enable-cpu_flags_x86_mmx", "--disable-cpu_flags_x86_mmx"),
+        "cpu_flags_x86_sse": ("--enable-cpu_flags_x86_sse", "--disable-cpu_flags_x86_sse"),
+        "introspection": ("--enable-introspection", "--disable-introspection"),
+        "lcms": ("--enable-lcms", "--disable-lcms"),
+        "vala": ("--enable-vala", "--disable-vala"),
     },
     version = "0.1.108",
     description = "Dynamic pixel format translation library",

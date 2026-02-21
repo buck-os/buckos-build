@@ -1,18 +1,13 @@
-load("//defs:package_defs.bzl","download_source", "make_package")
+load("//defs:package.bzl", "package")
 
 make_package(
     name = "wireless-tools",
     version = "29",
-    src_uri = "https://hewlettpackard.github.io/wireless-tools/wireless_tools.29.tar.gz",
+    url = "https://hewlettpackard.github.io/wireless-tools/wireless_tools.29.tar.gz",
     sha256 = "6fb80935fe208538131ce2c4178221bab1078a1656306bce8909c19887e2e5a1",
-    signature_required = False,
-
-    iuse = ["multicall"],
     use_configure = {
-        "-multicall": "--disable-multicall",
-        "multicall": "--enable-multicall",
+        "multicall": ("--enable-multicall", "--disable-multicall"),
     },
-    use_defaults = [],
 
     make_args = [
         "PREFIX=/usr",

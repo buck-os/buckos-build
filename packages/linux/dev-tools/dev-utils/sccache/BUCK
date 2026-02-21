@@ -1,16 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "sccache-src",
-    src_uri = "https://github.com/mozilla/sccache/releases/download/v0.8.1/sccache-v0.8.1-x86_64-unknown-linux-musl.tar.gz",
-    sha256 = "e0ee621fb16b6940666cd770b091c62cadafd3e062dd12e3a49d9caaff3b795f",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "sccache",
-    srcs = [":sccache-src"],
     version = "0.8.1",
     description = "Shared compilation cache with cloud storage support",
     homepage = "https://github.com/mozilla/sccache",

@@ -1,6 +1,7 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "systemc",
     bdepend = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
@@ -12,16 +13,12 @@ autotools_package(
 autoreconf -fi
 """,
     version = "3.0.1",
-    iuse = ["debug", "examples", "static-libs"],
     use_configure = {
-        "-debug": "--disable-debug",
-        "-examples": "--disable-examples",
-        "-static-libs": "--disable-static",
-        "debug": "--enable-debug",
-        "examples": "--enable-examples",
-        "static-libs": "--enable-static",
+        "debug": ("--enable-debug", "--disable-debug"),
+        "examples": ("--enable-examples", "--disable-examples"),
+        "static-libs": ("--enable-static", "--disable-static"),
     },
-    src_uri = "https://github.com/accellera-official/systemc/archive/refs/tags/3.0.1.tar.gz",
+    url = "https://github.com/accellera-official/systemc/archive/refs/tags/3.0.1.tar.gz",
     sha256 = "d07765d0d2ffd6c01767880d0c6aaf53cd9487975f898c593ffffd713258fcbb",
     configure_args = [
         "--enable-debug",

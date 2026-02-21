@@ -1,37 +1,22 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # containerd - Industry-standard container runtime
 # USE flags: See use_flags.bzl for available flags
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "containerd",
-    src_uri = "https://github.com/containerd/containerd/archive/refs/tags/v1.7.23.tar.gz",
+    url = "https://github.com/containerd/containerd/archive/refs/tags/v1.7.23.tar.gz",
 
     sha256 = "393bfde8ca1766a0bca3441e18eddc3f5a5c8d97ef676bde0d6c9903e1b0ec0c",
-    iuse = [
-        "apparmor",
-        "btrfs",
-        "cri",
-        "device-mapper",
-        "hardened",
-        "seccomp",
-        "selinux",
-    ],
     use_configure = {
-        "-apparmor": "--disable-apparmor",
-        "-btrfs": "--disable-btrfs",
-        "-cri": "--disable-cri",
-        "-device-mapper": "--disable-device-mapper",
-        "-hardened": "--disable-hardening",
-        "-seccomp": "--disable-seccomp",
-        "-selinux": "--disable-selinux",
-        "apparmor": "--enable-apparmor",
-        "btrfs": "--enable-btrfs",
-        "cri": "--enable-cri",
-        "device-mapper": "--enable-device-mapper",
-        "hardened": "--enable-hardening",
-        "seccomp": "--enable-seccomp",
-        "selinux": "--enable-selinux",
+        "apparmor": ("--enable-apparmor", "--disable-apparmor"),
+        "btrfs": ("--enable-btrfs", "--disable-btrfs"),
+        "cri": ("--enable-cri", "--disable-cri"),
+        "device-mapper": ("--enable-device-mapper", "--disable-device-mapper"),
+        "hardened": ("--enable-hardening", "--disable-hardening"),
+        "seccomp": ("--enable-seccomp", "--disable-seccomp"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
     },
     version = "1.7.23",
     description = "Industry-standard container runtime with emphasis on simplicity and portability",

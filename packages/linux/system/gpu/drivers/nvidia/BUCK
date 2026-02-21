@@ -1,20 +1,12 @@
+load("//defs:package.bzl", "package")
+
 # =============================================================================
 # NVIDIA Drivers - Proprietary NVIDIA GPU drivers
 # =============================================================================
 
-load("//defs:package_defs.bzl", "download_source", "binary_package")
-
-download_source(
-    name = "nvidia-drivers-src",
-    src_uri = "https://us.download.nvidia.com/XFree86/Linux-x86_64/580.105.08/NVIDIA-Linux-x86_64-580.105.08.run",
-    sha256 = "d9c6e8188672f3eb74dd04cfa69dd58479fa1d0162c8c28c8d17625763293475",
-    signature_required = False,
-    extract = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "nvidia-drivers",
-    srcs = [":nvidia-drivers-src"],
     version = "580.105.08",
     description = "NVIDIA proprietary GPU drivers for Linux",
     homepage = "https://www.nvidia.com/",

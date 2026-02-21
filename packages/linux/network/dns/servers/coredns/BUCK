@@ -1,16 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "coredns-src",
-    src_uri = "https://github.com/coredns/coredns/releases/download/v1.11.1/coredns_1.11.1_linux_amd64.tgz",
-    sha256 = "f96cdee0934c5c12a28bb0fb080bed688fdd7bfdeae2f64984f02bdec2d65498",
-    signature_required = False,
-    strip_components = 0,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "coredns",
-    srcs = [":coredns-src"],
     version = "1.11.1",
     description = "Cloud-native DNS server written in Go",
     homepage = "https://coredns.io/",

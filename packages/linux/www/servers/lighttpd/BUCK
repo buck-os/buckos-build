@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # lighttpd - Lightweight, fast web server
 #
@@ -10,18 +10,15 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package")
 #   mysql   - Enable MySQL authentication
 #   ldap    - Enable LDAP authentication
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "lighttpd",
     version = "1.4.76",
-    src_uri = "https://download.lighttpd.net/lighttpd/releases-1.4.x/lighttpd-1.4.76.tar.xz",
+    url = "https://download.lighttpd.net/lighttpd/releases-1.4.x/lighttpd-1.4.76.tar.xz",
     sha256 = "8cbf4296e373cfd0cedfe9d978760b5b05c58fdc4048b4e2bcaf0a61ac8f5011",
-    signature_sha256 = "df94919524b9c47e7349cc66bb401fbcba4f6a7a5377b5fba93885e717e9e429",
-    signature_required = False,
     description = "Lightweight, fast web server optimized for high-performance environments",
     homepage = "https://www.lighttpd.net/",
     license = "BSD-3-Clause",
-    iuse = ["ssl", "pcre2", "zlib", "bzip2", "mysql", "ldap"],
-    use_defaults = ["ssl", "pcre2", "zlib", "bzip2"],
     bdepend = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
         "//packages/linux/dev-tools/build-systems/automake:automake",
@@ -31,11 +28,11 @@ autotools_package(
     deps = [
     ],
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "zlib": ["//packages/linux/core/zlib:zlib"],
-        "bzip2": ["//packages/linux/system/libs/compression/bzip2:bzip2"],
-        "pcre2": ["//packages/linux/system/libs/utility/pcre2:pcre2"],
-        "ldap": ["//packages/linux/network/openldap:openldap"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "zlib": "//packages/linux/core/zlib:zlib",
+        "bzip2": "//packages/linux/system/libs/compression/bzip2:bzip2",
+        "pcre2": "//packages/linux/system/libs/utility/pcre2:pcre2",
+        "ldap": "//packages/linux/network/openldap:openldap",
     },
     configure_args = [
         "--prefix=/usr",
@@ -43,18 +40,12 @@ autotools_package(
         "--localstatedir=/var",
     ],
     use_configure = {
-        "ssl": "--with-openssl",
-        "-ssl": "--without-openssl",
-        "pcre2": "--with-pcre2",
-        "-pcre2": "--without-pcre2",
-        "zlib": "--with-zlib",
-        "-zlib": "--without-zlib",
-        "bzip2": "--with-bzip2",
-        "-bzip2": "--without-bzip2",
-        "mysql": "--with-mysql",
-        "-mysql": "--without-mysql",
-        "ldap": "--with-ldap",
-        "-ldap": "--without-ldap",
+        "bzip2": ("--with-bzip2", "--without-bzip2"),
+        "ldap": ("--with-ldap", "--without-ldap"),
+        "mysql": ("--with-mysql", "--without-mysql"),
+        "pcre2": ("--with-pcre2", "--without-pcre2"),
+        "ssl": ("--with-openssl", "--without-openssl"),
+        "zlib": ("--with-zlib", "--without-zlib"),
     },
     post_install = """
 mkdir -p "$DESTDIR/var/log/lighttpd"

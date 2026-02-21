@@ -1,35 +1,23 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # coin - High-level 3D graphics library with C++ API
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "coin",
     version = "4.0.2",
-    iuse = [
-        "debug",
-        "exceptions",
-        "openal",
-        "qch",
-        "threads",
-    ],
-    use_cmake = {
-        "-debug": "-DCMAKE_BUILD_TYPE=Release",
-        "-exceptions": "-DENABLE_EXCEPTIONS=OFF",
-        "-openal": "-DENABLE_OPENAL=OFF",
-        "-qch": "-DENABLE_QCH=OFF",
-        "-threads": "-DENABLE_THREADS=OFF",
-        "debug": "-DCMAKE_BUILD_TYPE=Debug",
-        "exceptions": "-DENABLE_EXCEPTIONS=ON",
-        "openal": "-DENABLE_OPENAL=ON",
-        "qch": "-DENABLE_QCH=ON",
-        "threads": "-DENABLE_THREADS=ON",
+    use_configure = {
+        "debug": ("-DCMAKE_BUILD_TYPE=Debug", "-DCMAKE_BUILD_TYPE=Release"),
+        "exceptions": ("-DENABLE_EXCEPTIONS=ON", "-DENABLE_EXCEPTIONS=OFF"),
+        "openal": ("-DENABLE_OPENAL=ON", "-DENABLE_OPENAL=OFF"),
+        "qch": ("-DENABLE_QCH=ON", "-DENABLE_QCH=OFF"),
+        "threads": ("-DENABLE_THREADS=ON", "-DENABLE_THREADS=OFF"),
     },
-    src_uri = "https://github.com/coin3d/coin/releases/download/v4.0.2/coin-4.0.2-src.tar.gz",
+    url = "https://github.com/coin3d/coin/releases/download/v4.0.2/coin-4.0.2-src.tar.gz",
     sha256 = "bd6bce1efedfdbc8a914bc11a10dd319a16d19c3ccc6979faf5c85e5e94a416e",
-    signature_required = False,
     description = "High-level 3D graphics toolkit on top of OpenGL",
     homepage = "https://github.com/coin3d/coin",
     license = "BSD-3-Clause",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_SHARED_LIBS=ON",
         "-DCOIN_BUILD_DOCUMENTATION=OFF",
         "-DCOIN_BUILD_TESTS=OFF",

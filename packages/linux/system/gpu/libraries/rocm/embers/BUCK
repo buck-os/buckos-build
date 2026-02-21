@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "embers",
     version = "0.0.1",
-    src_uri = "https://github.com/ROCm/embers/archive/397fc46593c261d6693e99bf68e0411c262436ad.tar.gz",
+    url = "https://github.com/ROCm/embers/archive/397fc46593c261d6693e99bf68e0411c262436ad.tar.gz",
     sha256 = "c00087b32d5d201652af4a18ab3cd5f7313383a0b3a2ceb8ce4d87ef3bd1c65b",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_CXX_STANDARD=20",
         "-DBUILD_TESTING=OFF",
     ],

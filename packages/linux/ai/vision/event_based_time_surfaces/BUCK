@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "event_based_time_surfaces",
     version = "0.0.1",
-    src_uri = "https://github.com/shaunirwin/event_based_time_surfaces/archive/88353bcb6d708e446d36bc4dc52d346f68e42251.tar.gz",
+    url = "https://github.com/shaunirwin/event_based_time_surfaces/archive/88353bcb6d708e446d36bc4dc52d346f68e42251.tar.gz",
     sha256 = "ab75d24d1da9116b95371a2f844ecdb9a0ad922bf37d229c269f61d42e98bb9e",
     deps = [
         "//packages/linux/dev-libs/python/numpy:numpy",

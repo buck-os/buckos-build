@@ -1,17 +1,10 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
 # cpp-linenoise - Multi-platform C++ header-only linenoise library
 
-download_source(
-    name = "cpp-linenoise-src",
-    src_uri = "https://github.com/yhirose/cpp-linenoise/archive/4cd89adfbc07cedada1aa32be12991828919d91b.tar.gz",
-    sha256 = "58f5fdee6d2fe325574ea51ff8e9a84691d95c993f6e2ca0cc7bbf65835421a5",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "cpp-linenoise",
-    srcs = [":cpp-linenoise-src"],
     version = "1.0.0",
     description = "Multi-platform C++ header-only linenoise-based readline library",
     homepage = "https://github.com/yhirose/cpp-linenoise",

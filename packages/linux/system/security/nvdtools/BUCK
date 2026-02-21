@@ -1,11 +1,11 @@
-load("//defs:package_defs.bzl", "go_package")
+load("//defs:package.bzl", "package")
 
-go_package(
+package(
+    build_rule = "go",
     name = "nvdtools",
     version = "0.0.0_git20220117",
-    src_uri = "https://github.com/facebookincubator/nvdtools/archive/58af2ab0f9c44a4724799da851aa3f78895dc244.tar.gz",
+    url = "https://github.com/facebookincubator/nvdtools/archive/58af2ab0f9c44a4724799da851aa3f78895dc244.tar.gz",
     sha256 = "7b492da86b97f44da7c2bc807927d7dc2c1ff090c57095b39bf388343655f10b",
-    signature_required = False,
     description = "Collection of tools for working with National Vulnerability Database feeds",
     homepage = "https://github.com/facebookincubator/nvdtools",
     license = "Apache-2.0",

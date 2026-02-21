@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "htm",
     version = "16.3",
-    src_uri = "https://vcgit.hhi.fraunhofer.de/jvet/HTM/-/archive/HTM-16.3/HTM-HTM-16.3.tar.gz",
+    url = "https://vcgit.hhi.fraunhofer.de/jvet/HTM/-/archive/HTM-16.3/HTM-HTM-16.3.tar.gz",
     sha256 = "5eb2a3056b2b3921433cebfec4798da78630fd9e6890910e787b1397eba9e106",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DHIGH_BITDEPTH=ON",
     ],

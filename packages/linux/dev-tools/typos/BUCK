@@ -1,11 +1,11 @@
-load("//defs:package_defs.bzl", "cargo_package")
+load("//defs:package.bzl", "package")
 
-cargo_package(
+package(
+    build_rule = "cargo",
     name = "typos-1.34.0",
     version = "1.34.0",
-    src_uri = "https://github.com/crate-ci/typos/archive/refs/tags/v1.34.0.tar.gz",
+    url = "https://github.com/crate-ci/typos/archive/refs/tags/v1.34.0.tar.gz",
     sha256 = "41695125234174fdae345ccb6b4721dc371eaded1e10c68c43b41eeaba3fa6c1",
-    signature_required = False,
     description = "Source code spell checker",
     homepage = "https://github.com/crate-ci/typos",
     license = "MIT OR Apache-2.0",

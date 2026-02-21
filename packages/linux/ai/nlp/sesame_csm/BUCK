@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "sesame_csm",
     version = "0.1.0",
-    src_uri = "https://github.com/SesameAILabs/csm/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/SesameAILabs/csm/archive/refs/heads/main.tar.gz",
     sha256 = "3a8f850d89da067e7925b97a97539776507f5b55f8a99dcbd3d1b00cf6c8979d",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

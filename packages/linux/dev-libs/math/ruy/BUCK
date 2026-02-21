@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "ruy",
     version = "0.0.0+git20240101",
-    src_uri = "https://github.com/google/ruy/archive/23633b37099b614a2f836ef012cafc8087fdb98c.tar.gz",
+    url = "https://github.com/google/ruy/archive/23633b37099b614a2f836ef012cafc8087fdb98c.tar.gz",
     sha256 = "3e5cb304ee06f7baac302a8d37775424ef13ec016508c3f95e70a9726ce585f2",
-    cmake_args = [
+    configure_args = [
         "-DRUY_MINIMAL_BUILD=ON",
         "-DCMAKE_CXX_STANDARD=14",
         "-DBUILD_TESTING=OFF",

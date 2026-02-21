@@ -87,7 +87,7 @@ This specification defines how package managers should interact with the BuckOS 
 ┌───────────────────────────────────────────────────────────┐
 │                   Integration Layer                        │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────┐    │
-│  │ tooling.bzl │  │ registry.bzl│  │ package_defs.bzl│    │
+│  │ tooling.bzl │  │ registry.bzl│  │  package.bzl    │    │
 │  └─────────────┘  └─────────────┘  └─────────────────┘    │
 └───────────────────────────────────────────────────────────┘
         │               │                │
@@ -106,7 +106,7 @@ This specification defines how package managers should interact with the BuckOS 
 |------|---------|----------------------|
 | `defs/tooling.bzl` | External tool integration | Primary integration point |
 | `defs/registry.bzl` | Central version registry | Version and package queries |
-| `defs/package_defs.bzl` | Package build rules | Build invocation |
+| `defs/package.bzl` | Package build rules | Build invocation |
 | `defs/use_flags.bzl` | USE flag definitions | Flag management |
 | `defs/package_sets.bzl` | Package collections | Set operations |
 | `defs/versions.bzl` | Version management | Version/slot/subslot resolution |
@@ -139,18 +139,17 @@ load("//defs:use_flags.bzl", "use_package")
 use_package(
     name = "package-name",
     version = "1.0.0",
-    src_uri = "https://example.com/package-1.0.0.tar.gz",
+    url = "https://example.com/package-1.0.0.tar.gz",
     sha256 = "abc123...",
 
     # USE flag configuration
     iuse = ["feature1", "feature2", "debug"],
     use_defaults = ["feature1"],
     use_deps = {
-        "feature1": ["//path/to/dep1", "//path/to/dep2"],
+        "feature1": "//path/to/dep1",
     },
     use_configure = {
-        "feature1": "--enable-feature1",
-        "-feature1": "--disable-feature1",
+        "feature1": ("--enable-feature1", "--disable-feature1"),
     },
 
     # Build configuration
@@ -177,13 +176,13 @@ multi_version_package(
         "3.2.0": {
             "slot": "3",
             "status": "stable",
-            "src_uri": "https://...",
+            "url": "https://...",
             "sha256": "...",
         },
         "1.1.1w": {
             "slot": "1.1",
             "status": "stable",
-            "src_uri": "https://...",
+            "url": "https://...",
             "sha256": "...",
         },
     },
@@ -194,9 +193,10 @@ multi_version_package(
 #### 3. Ebuild-Style Package
 
 ```python
-load("//defs:package_defs.bzl", "ebuild_package")
+load("//defs:package.bzl", "package")
 
-ebuild_package(
+package(
+    build_rule = "ebuild",
     name = "complex-package",
     version = "2.0.0",
 
@@ -238,7 +238,7 @@ Package managers MUST extract these attributes:
 |-----------|------|----------|-------------|
 | `name` | string | Yes | Package name |
 | `version` | string | Yes | Package version |
-| `src_uri` | string | Yes | Source download URL |
+| `url` | string | Yes | Source download URL |
 | `sha256` | string | Yes | Source checksum |
 | `iuse` | list | No | Available USE flags |
 | `use_defaults` | list | No | Default enabled flags |
@@ -262,7 +262,7 @@ PackageInfo = provider(fields = [
     "description",    # string: Package description
     "homepage",       # string: Project homepage
     "license",        # string: License identifier
-    "src_uri",        # string: Source URI
+    "url",            # string: Source URL
     "sha256",         # string: SHA256 checksum
     "deps",           # list: Runtime dependencies
     "build_deps",     # list: Build dependencies
@@ -1052,7 +1052,8 @@ load("//defs:eclasses.bzl", "inherit", "ECLASSES", "get_eclass")
 config = inherit(["cmake", "xdg"])
 
 # Use in package definition
-ebuild_package(
+package(
+    build_rule = "ebuild",
     name = "my-app",
     source = ":my-app-src",
     version = "1.0.0",
@@ -1302,7 +1303,8 @@ buckos-build/
 #### Basic Patch Application
 
 ```python
-configure_make_package(
+package(
+    build_rule = "autotools",
     name = "mypackage",
     source = ":mypackage-src",
     version = "1.0",
@@ -1319,7 +1321,7 @@ configure_make_package(
 use_package(
     name = "openssl",
     version = "3.2.0",
-    src_uri = "...",
+    url = "...",
     sha256 = "...",
     iuse = ["bindist", "ktls"],
     use_patches = {

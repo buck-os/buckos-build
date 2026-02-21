@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "insightface",
     version = "0.7",
-    src_uri = "https://github.com/deepinsight/insightface/archive/refs/tags/v0.7.tar.gz",
+    url = "https://github.com/deepinsight/insightface/archive/refs/tags/v0.7.tar.gz",
     sha256 = "1e7b8904d693eb1b2f838b7a771f73577712ec3026ee98ab7354ffa7bf9cfb96",
     deps = [
         "//packages/linux/dev-libs/python/numpy:numpy",

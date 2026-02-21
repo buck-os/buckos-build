@@ -1,36 +1,21 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # LLDB - LLVM debugger
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "lldb",
     version = "19.1.0",
-    iuse = [
-        "debug",
-        "debuginfod",
-        "libedit",
-        "lzma",
-        "ncurses",
-        "python",
-        "xml",
-    ],
-    use_cmake = {
-        "-debug": "-DCMAKE_BUILD_TYPE=Release",
-        "-debuginfod": "-DENABLE_DEBUGINFOD=OFF",
-        "-libedit": "-DENABLE_LIBEDIT=OFF",
-        "-lzma": "-DENABLE_LZMA=OFF",
-        "-ncurses": "-DENABLE_NCURSES=OFF",
-        "-python": "-DENABLE_PYTHON=OFF",
-        "-xml": "-DENABLE_XML=OFF",
-        "debug": "-DCMAKE_BUILD_TYPE=Debug",
-        "debuginfod": "-DENABLE_DEBUGINFOD=ON",
-        "libedit": "-DENABLE_LIBEDIT=ON",
-        "lzma": "-DENABLE_LZMA=ON",
-        "ncurses": "-DENABLE_NCURSES=ON",
-        "python": "-DENABLE_PYTHON=ON",
-        "xml": "-DENABLE_XML=ON",
+    use_configure = {
+        "debug": ("-DCMAKE_BUILD_TYPE=Debug", "-DCMAKE_BUILD_TYPE=Release"),
+        "debuginfod": ("-DENABLE_DEBUGINFOD=ON", "-DENABLE_DEBUGINFOD=OFF"),
+        "libedit": ("-DENABLE_LIBEDIT=ON", "-DENABLE_LIBEDIT=OFF"),
+        "lzma": ("-DENABLE_LZMA=ON", "-DENABLE_LZMA=OFF"),
+        "ncurses": ("-DENABLE_NCURSES=ON", "-DENABLE_NCURSES=OFF"),
+        "python": ("-DENABLE_PYTHON=ON", "-DENABLE_PYTHON=OFF"),
+        "xml": ("-DENABLE_XML=ON", "-DENABLE_XML=OFF"),
     },
-    src_uri = "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.0/llvm-project-19.1.0.src.tar.xz",
+    url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.0/llvm-project-19.1.0.src.tar.xz",
     sha256 = "5042522b49945bc560ff9206f25fb87980a9b89b914193ca00d961511ff0673c",
     description = "Next generation, high-performance debugger",
     homepage = "https://lldb.llvm.org/",
@@ -42,7 +27,7 @@ cmake_package(
         "//packages/linux/system/libs/ncurses:ncurses",
         "//packages/linux/dev-libs/libffi:libffi",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DLLVM_ENABLE_PROJECTS=clang;lldb",
         "-DLLVM_TARGETS_TO_BUILD=X86;AArch64;ARM",

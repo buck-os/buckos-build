@@ -1,15 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "xcdat",
     version = "0.2.0",
-    src_uri = "https://github.com/kampersanda/xcdat/archive/refs/tags/v0.2.0.tar.gz",
+    url = "https://github.com/kampersanda/xcdat/archive/refs/tags/v0.2.0.tar.gz",
     sha256 = "3430a8bcfcb159e9e354fb3b201961ef13ee79a163af08bb2c279724147f2013",
     description = "Fast compressed trie dictionary library",
     homepage = "https://github.com/kampersanda/xcdat",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_CXX_STANDARD=17",
     ],

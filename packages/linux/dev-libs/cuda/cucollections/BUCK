@@ -1,18 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # cuCollections - GPU-accelerated concurrent data structures
 # Header-only library providing GPU-accelerated data structures similar to STL
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "cucollections",
     version = "0.0.1",
-    src_uri = "https://github.com/NVIDIA/cuCollections/archive/a4fb98500fc29401983e7d668c2ba12a5c86e7bf.tar.gz",
+    url = "https://github.com/NVIDIA/cuCollections/archive/a4fb98500fc29401983e7d668c2ba12a5c86e7bf.tar.gz",
     sha256 = "794db0e37f184376fee352d93bbc42422601babc71291904f2595265e8036e1b",
-    signature_required = False,
 
     deps = [],
 
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_CXX_STANDARD=17",
         "-DCMAKE_CUDA_STANDARD=17",

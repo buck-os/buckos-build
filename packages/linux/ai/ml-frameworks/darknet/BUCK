@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # Darknet - Open Source Neural Networks in C
 #
@@ -16,23 +16,22 @@ load("//defs:package_defs.bzl", "cmake_package")
 # which are not included in BuckOS. For CUDA builds, install CUDA
 # toolkit separately and set CUDA_HOME.
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "darknet",
     version = "0.2.5.4",
-    src_uri = "https://github.com/AlexeyAB/darknet/archive/8a0bf84c19e38214219dbd3345f04ce778426c57.tar.gz",
+    url = "https://github.com/AlexeyAB/darknet/archive/8a0bf84c19e38214219dbd3345f04ce778426c57.tar.gz",
     sha256 = "0818431443f921027344b032cd2fb265356efc18ddcd525b821555b83e68c7e4",
     description = "Open Source Neural Networks in C - YOLO object detection framework",
     homepage = "https://github.com/AlexeyAB/darknet",
     license = "YOLO",
-    iuse = ["cuda", "cudnn", "opencv", "openmp"],
-    use_defaults = ["opencv", "openmp"],
     deps = [
         "//packages/linux/dev-libs/misc/stb:stb",
     ],
     use_deps = {
-        "opencv": ["//packages/linux/ai/vision/opencv:opencv"],
+        "opencv": "//packages/linux/ai/vision/opencv:opencv",
     },
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DUSE_CMAKE_LIBS=ON",
@@ -44,13 +43,10 @@ cmake_package(
         "-DBUILD_USELIB_TRACK=OFF",
         "-DENABLE_CSHARP_WRAPPER=OFF",
     ],
-    use_cmake = {
-        "cuda": "-DENABLE_CUDA=ON",
-        "-cuda": "-DENABLE_CUDA=OFF",
-        "cudnn": "-DENABLE_CUDNN=ON",
-        "-cudnn": "-DENABLE_CUDNN=OFF",
-        "opencv": "-DENABLE_OPENCV=ON",
-        "-opencv": "-DENABLE_OPENCV=OFF",
+    use_configure = {
+        "cuda": ("-DENABLE_CUDA=ON", "-DENABLE_CUDA=OFF"),
+        "cudnn": ("-DENABLE_CUDNN=ON", "-DENABLE_CUDNN=OFF"),
+        "opencv": ("-DENABLE_OPENCV=ON", "-DENABLE_OPENCV=OFF"),
     },
     visibility = ["PUBLIC"],
 )

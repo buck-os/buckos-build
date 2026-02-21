@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "rocm_composable_kernel",
     version = "7.1.1",
-    src_uri = "https://github.com/ROCm/composable_kernel/archive/refs/tags/rocm-7.1.1.tar.gz",
+    url = "https://github.com/ROCm/composable_kernel/archive/refs/tags/rocm-7.1.1.tar.gz",
     sha256 = "e1174a4b6faa12ef31dac0324547fd49aca09fee380bd89ecd49a44bb34b72cc",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_INSTALL_PREFIX=/opt/rocm",
         "-DCK_ENABLE_INT8=ON",

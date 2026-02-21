@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "pynvvideocodec",
     version = "2.0.2",
-    src_uri = "https://api.ngc.nvidia.com/v2/resources/org/nvidia/pynvvideocodec/2.0.2/files?redirect=true&path=PyNvVideoCodec_2.0.2.zip",
+    url = "https://api.ngc.nvidia.com/v2/resources/org/nvidia/pynvvideocodec/2.0.2/files?redirect=true&path=PyNvVideoCodec_2.0.2.zip",
     sha256 = "c677121159e95c0f80ded2e70677326328945ce35031c39164ef895d9b1feb64",
     deps = [
         "//packages/linux/lang/python:python",

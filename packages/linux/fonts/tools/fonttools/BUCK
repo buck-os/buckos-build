@@ -1,16 +1,14 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "fonttools",
     version = "4.50.0",
-    iuse = ["native-extensions"],
     use_configure = {
-        "-native-extensions": "--disable-native-extensions",
-        "native-extensions": "--enable-native-extensions",
+        "native-extensions": ("--enable-native-extensions", "--disable-native-extensions"),
     },
-    src_uri = "https://github.com/fonttools/fonttools/archive/refs/tags/4.50.0.tar.gz",
+    url = "https://github.com/fonttools/fonttools/archive/refs/tags/4.50.0.tar.gz",
     sha256 = "f28563055b337ce03e7207add33b135eaf0a3de7e91469cb4f4d11b689722d99",
-    signature_required = False,
     description = "Library for manipulating fonts in Python",
     homepage = "https://github.com/fonttools/fonttools",
     license = "MIT",

@@ -1,16 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # gRPC - High performance RPC framework
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "grpc",
     version = "1.60.0",
-    src_uri = "https://github.com/grpc/grpc/archive/refs/tags/v1.60.0.tar.gz",
+    url = "https://github.com/grpc/grpc/archive/refs/tags/v1.60.0.tar.gz",
     sha256 = "437068b8b777d3b339da94d3498f1dc20642ac9bfa76db43abdd522186b1542b",
     description = "High performance, open source universal RPC framework",
     homepage = "https://grpc.io/",
     license = "Apache-2.0",
-    iuse = ["python"],
     deps = [
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/crypto/openssl:openssl",
@@ -20,9 +20,9 @@ cmake_package(
         "//packages/linux/dev-libs/text/re2:re2",
     ],
     use_deps = {
-        "python": ["//packages/linux/lang/python:python"],
+        "python": "//packages/linux/lang/python:python",
     },
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DgRPC_BUILD_TESTS=OFF",

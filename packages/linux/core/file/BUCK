@@ -1,6 +1,7 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "file",
     # Official release tarball includes pre-generated configure script
     bdepend = [],
@@ -95,54 +96,33 @@ echo "=== Building main file package ==="
 make -j${MAKEOPTS:-$(nproc)} FILE_COMPILE="$NATIVE_BUILD_DIR/src/file"
 """,
     version = "5.45",
-    src_uri = "https://astron.com/pub/file/file-5.45.tar.gz",
+    url = "https://astron.com/pub/file/file-5.45.tar.gz",
     sha256 = "fc97f51029bb0e2c9f4e3bffefdaf678f0e039ee872b9de5c002a6d09c784d82",
-    signature_sha256 = "34af47be1584ed99529c21a916444bbce4caf1ca289b241d8e649f7fdd9e3ec6",
-    signature_required=False,
     description = "File type identification utility",
     homepage = "https://www.darwinsys.com/file/",
     license = "BSD-2-Clause",
 
     # USE flags this package supports
-    iuse = [
-        "bzip2",
-        "lzip",
-        "lzma",
-        "python",
-        "seccomp",
-        "static-libs",
-        "zlib",
-        "zstd",
-    ],
 
     # Default USE flags
-    use_defaults = ["zlib"],
 
     # Conditional dependencies
     use_deps = {
-        "zlib": ["//packages/linux/core/zlib:zlib"],
-        "bzip2": ["//packages/linux/system/libs/compression/bzip2:bzip2"],
-        "lzma": ["//packages/linux/system/libs/compression/xz:xz"],
+        "zlib": "//packages/linux/core/zlib:zlib",
+        "bzip2": "//packages/linux/system/libs/compression/bzip2:bzip2",
+        "lzma": "//packages/linux/system/libs/compression/xz:xz",
     },
 
     # Conditional configure arguments
     use_configure = {
-        "-bzip2": "--disable-bzlib",
-        "-lzip": "--disable-lzip",
-        "-lzma": "--disable-xzlib",
-        "-python": "--disable-python",
-        "-seccomp": "--disable-seccomp",
-        "-static-libs": "--disable-static",
-        "-zlib": "--disable-zlib",
-        "-zstd": "--without-zstd",
-        "bzip2": "--enable-bzlib",
-        "lzip": "--enable-lzip",
-        "lzma": "--enable-xzlib",
-        "python": "--enable-python",
-        "seccomp": "--enable-seccomp",
-        "static-libs": "--enable-static",
-        "zlib": "--enable-zlib",
-        "zstd": "--with-zstd",
+        "bzip2": ("--enable-bzlib", "--disable-bzlib"),
+        "lzip": ("--enable-lzip", "--disable-lzip"),
+        "lzma": ("--enable-xzlib", "--disable-xzlib"),
+        "python": ("--enable-python", "--disable-python"),
+        "seccomp": ("--enable-seccomp", "--disable-seccomp"),
+        "static-libs": ("--enable-static", "--disable-static"),
+        "zlib": ("--enable-zlib", "--disable-zlib"),
+        "zstd": ("--with-zstd", "--without-zstd"),
     },
 
     visibility = ["PUBLIC"],

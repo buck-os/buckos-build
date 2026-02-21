@@ -1,43 +1,32 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # Embree - High Performance Ray Tracing Kernels from Intel
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "embree",
     version = "4.3.1",
-    src_uri = "https://github.com/embree/embree/archive/refs/tags/v4.3.1.tar.gz",
+    url = "https://github.com/embree/embree/archive/refs/tags/v4.3.1.tar.gz",
     sha256 = "824edcbb7a8cd393c5bdb7a16738487b21ecc4e1d004ac9f761e934f97bb02a4",
     description = "High Performance Ray Tracing Kernels",
     homepage = "https://www.embree.org/",
     license = "Apache-2.0",
-    iuse = [
-        "compact-polys",
-        "ispc",
-        "raymask",
-        "ssp",
-        "tbb",
-    ],
-    use_defaults = ["tbb"],
     deps = [],
     use_deps = {
-        "tbb": ["//packages/linux/dev-libs/misc/tbb:tbb"],
+        "tbb": "//packages/linux/dev-libs/misc/tbb:tbb",
     },
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DEMBREE_TUTORIALS=OFF",
         "-DEMBREE_ISPC_SUPPORT=OFF",
         "-DEMBREE_TASKING_SYSTEM=TBB",
     ],
-    use_cmake = {
-        "-compact-polys": "-DENABLE_COMPACT_POLYS=OFF",
-        "-ispc": "-DEMBREE_ISPC_SUPPORT=OFF",
-        "-raymask": "-DENABLE_RAYMASK=OFF",
-        "-ssp": "-DENABLE_SSP=OFF",
-        "compact-polys": "-DENABLE_COMPACT_POLYS=ON",
-        "ispc": "-DEMBREE_ISPC_SUPPORT=ON",
-        "raymask": "-DENABLE_RAYMASK=ON",
-        "ssp": "-DENABLE_SSP=ON",
+    use_configure = {
+        "compact-polys": ("-DENABLE_COMPACT_POLYS=ON", "-DENABLE_COMPACT_POLYS=OFF"),
+        "ispc": ("-DEMBREE_ISPC_SUPPORT=ON", "-DEMBREE_ISPC_SUPPORT=OFF"),
+        "raymask": ("-DENABLE_RAYMASK=ON", "-DENABLE_RAYMASK=OFF"),
+        "ssp": ("-DENABLE_SSP=ON", "-DENABLE_SSP=OFF"),
     },
     visibility = ["PUBLIC"],
 )

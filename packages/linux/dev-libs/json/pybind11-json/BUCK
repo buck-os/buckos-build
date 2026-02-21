@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "pybind11_json",
     version = "0.2.14",
-    src_uri = "https://github.com/pybind/pybind11_json/archive/refs/tags/0.2.14.tar.gz",
+    url = "https://github.com/pybind/pybind11_json/archive/refs/tags/0.2.14.tar.gz",
     sha256 = "bc4ad7e308add59886a961c21f3ba431e43fe7faa2ef5bd9925c66d042d28cde",
     description = "Automatic conversion between nlohmann::json and pybind11",
     homepage = "https://github.com/pybind/pybind11_json",
@@ -12,7 +13,7 @@ cmake_package(
         "//packages/linux/dev-libs/python/pybind11:pybind11",
         "//packages/linux/dev-libs/json/nlohmann-json:nlohmann-json",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTS=OFF",
     ],

@@ -1,18 +1,11 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
 # Bazel - Fast, scalable, multi-language and extensible build system
 # Using prebuilt binary since Bazel requires Bazel to build itself
 
-download_source(
-    name = "bazel-src",
-    src_uri = "https://github.com/bazelbuild/bazel/releases/download/7.0.2/bazel-7.0.2-linux-x86_64",
-    sha256 = "1ca5d63a30244788ff9a5b7c35584f57111a68c82bbff2929ec7b2e99f35c7a8",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "bazel",
-    srcs = [":bazel-src"],
     version = "7.0.2",
     description = "Fast, scalable, multi-language and extensible build system",
     homepage = "https://bazel.build/",

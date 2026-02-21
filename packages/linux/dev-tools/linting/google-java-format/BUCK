@@ -1,17 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "google-java-format-src",
-    src_uri = "https://github.com/google/google-java-format/releases/download/v1.23.0/google-java-format-1.23.0-all-deps.jar",
-    sha256 = "7c6375ac24b4825be6bbe61900e8b58b1a3e8944a1367a8363210f9ed2d08570",
-    signature_required = False,
-    # JAR is a pre-built binary, no extraction needed
-    extract = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "google-java-format",
-    srcs = [":google-java-format-src"],
     version = "1.23.0",
     description = "Java source code formatter that follows Google Java Style",
     homepage = "https://github.com/google/google-java-format",

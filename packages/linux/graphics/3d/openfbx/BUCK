@@ -1,15 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "openfbx",
     version = "82a43d9",
-    src_uri = "https://github.com/nem0/OpenFBX/archive/82a43d9191f2250145fddc219b4083667c33f2a5.tar.gz",
+    url = "https://github.com/nem0/OpenFBX/archive/82a43d9191f2250145fddc219b4083667c33f2a5.tar.gz",
     sha256 = "2cf64fd1d53157e58d37ec0253f829b3797ab07d86491888e27dfcff729c3f2d",
     description = "Lightweight open source FBX importer",
     homepage = "https://github.com/nem0/OpenFBX",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_POSITION_INDEPENDENT_CODE=ON",
         "-DCMAKE_CXX_STANDARD=11",

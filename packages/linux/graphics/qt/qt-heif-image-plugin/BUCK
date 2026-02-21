@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "qt-heif-image-plugin",
     version = "0.3.4",
-    src_uri = "https://github.com/jakar/qt-heif-image-plugin/archive/refs/tags/0.3.4.tar.gz",
+    url = "https://github.com/jakar/qt-heif-image-plugin/archive/refs/tags/0.3.4.tar.gz",
     sha256 = "734193a3b40f7c1c71d6a8fee7ec3ccad2586eb7b65526007bbea847a64a9c2a",
-    cmake_args = [
+    configure_args = [
         "-DQT_NO_KEYWORDS=ON",
     ],
     deps = [

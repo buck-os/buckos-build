@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "spacy-pl_core_news_md",
     version = "3.7.0",
-    src_uri = "https://github.com/explosion/spacy-models/releases/download/pl_core_news_md-3.7.0/pl_core_news_md-3.7.0.tar.gz",
+    url = "https://github.com/explosion/spacy-models/releases/download/pl_core_news_md-3.7.0/pl_core_news_md-3.7.0.tar.gz",
     sha256 = "690ab68c3912f69900fe01006d73dcaf28bbcf548d35edfd6eea54d506741c13",
     deps = [
         "//packages/linux/ai/nlp/spacy:spacy",

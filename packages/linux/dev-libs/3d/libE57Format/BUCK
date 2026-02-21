@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "libE57Format",
     version = "3.2.0",
-    src_uri = "https://github.com/asmaloney/libE57Format/archive/refs/tags/v3.2.0.tar.gz",
+    url = "https://github.com/asmaloney/libE57Format/archive/refs/tags/v3.2.0.tar.gz",
     sha256 = "afe4de960ba486760702127d8f3dc537c9b5921af7cfb2a75177fe2f80956e89",
     description = "Library to read and write E57 files (3D point cloud data format)",
     homepage = "https://github.com/asmaloney/libE57Format",
@@ -11,7 +12,7 @@ cmake_package(
     deps = [
         "//packages/linux/dev-libs/xerces-c:xerces-c",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DE57_BUILD_SHARED=OFF",
         "-DE57_BUILD_TEST=OFF",

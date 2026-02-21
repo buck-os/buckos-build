@@ -1,11 +1,11 @@
-load("//defs:package_defs.bzl", "go_package")
+load("//defs:package.bzl", "package")
 
-go_package(
+package(
+    build_rule = "go",
     name = "prometheus-common",
     version = "0.60.0",
-    src_uri = "https://github.com/prometheus/common/archive/v0.60.0.tar.gz",
+    url = "https://github.com/prometheus/common/archive/v0.60.0.tar.gz",
     sha256 = "4ee8049b9cf324dfd4419441698a0b42172926aea08873d8020ee48f7eb36edb",
-    signature_required = False,
     description = "Prometheus common Go libraries",
     homepage = "https://github.com/prometheus/common",
     license = "Apache-2.0",

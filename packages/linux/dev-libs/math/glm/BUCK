@@ -1,17 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "glm",
     version = "0.9.9.8",
-    iuse = ["cpu_flags_x86_ssse3"],
-    use_cmake = {
-        "-cpu_flags_x86_ssse3": "-DENABLE_CPU_FLAGS_X86_SSSE3=OFF",
-        "cpu_flags_x86_ssse3": "-DENABLE_CPU_FLAGS_X86_SSSE3=ON",
+    use_configure = {
+        "cpu_flags_x86_ssse3": ("-DENABLE_CPU_FLAGS_X86_SSSE3=ON", "-DENABLE_CPU_FLAGS_X86_SSSE3=OFF"),
     },
-    src_uri = "https://github.com/g-truc/glm/archive/refs/tags/0.9.9.8.tar.gz",
+    url = "https://github.com/g-truc/glm/archive/refs/tags/0.9.9.8.tar.gz",
     sha256 = "7d508ab72cb5d43227a3711420f06ff99b0a0cb63ee2f93631b162bfe1fe9592",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DGLM_TEST_ENABLE=OFF",
     ],

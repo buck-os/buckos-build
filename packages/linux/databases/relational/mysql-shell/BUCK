@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # MySQL Shell - Interactive command-line client for MySQL
 #
@@ -9,33 +9,31 @@ load("//defs:package_defs.bzl", "cmake_package")
 #   python    - Enable Python scripting support
 #   ssl       - Enable SSL/TLS support
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "mysql-shell",
     version = "8.0.33",
-    src_uri = "https://github.com/mysql/mysql-shell/archive/refs/tags/8.0.33.tar.gz",
+    url = "https://github.com/mysql/mysql-shell/archive/refs/tags/8.0.33.tar.gz",
     sha256 = "79a40e9d8ee5b1e6d41558ea5a322cc7b620fa72306d19cf1ea05db3bffce4fc",
     description = "Interactive command-line client for MySQL with scripting capabilities",
     homepage = "https://dev.mysql.com/doc/mysql-shell/8.0/en/",
     license = "GPL-2.0",
-    iuse = ["python", "ssl"],
-    use_defaults = ["ssl"],
     deps = [
         "//packages/linux/databases/mysql:mysql",
         "//packages/linux/dev-libs/misc/protobuf:protobuf",
         "//packages/linux/core/zlib:zlib",
     ],
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "python": ["//packages/linux/lang/python:python"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "python": "//packages/linux/lang/python:python",
     },
-    cmake_args = [
+    configure_args = [
         "-DMYSQL_SOURCE_DIR=/usr",
         "-DMYSQL_BUILD_DIR=/usr",
         "-DHAVE_V8=0",
     ],
-    use_cmake = {
-        "python": "-DHAVE_PYTHON=1",
-        "-python": "-DHAVE_PYTHON=0",
+    use_configure = {
+        "python": ("-DHAVE_PYTHON=1", "-DHAVE_PYTHON=0"),
     },
     visibility = ["PUBLIC"],
 )

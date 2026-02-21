@@ -1,28 +1,24 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # dtc - Device Tree Compiler
 # =============================================================================
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "dtc",
     version = "1.7.2",
-    iuse = ["python", "static-libs", "yaml"],
     use_configure = {
-        "-python": "--disable-python",
-        "-static-libs": "--disable-static",
-        "-yaml": "--disable-yaml",
-        "python": "--enable-python",
-        "static-libs": "--enable-static",
-        "yaml": "--enable-yaml",
+        "python": ("--enable-python", "--disable-python"),
+        "static-libs": ("--enable-static", "--disable-static"),
+        "yaml": ("--enable-yaml", "--disable-yaml"),
     },
-    src_uri = "https://git.kernel.org/pub/scm/utils/dtc/dtc.git/snapshot/dtc-1.7.2.tar.gz",
+    url = "https://git.kernel.org/pub/scm/utils/dtc/dtc.git/snapshot/dtc-1.7.2.tar.gz",
     sha256 = "8f1486962f093f28a2f79f01c1fd82f144ef640ceabe555536d43362212ceb7c",
-    signature_required = False,
     description = "Device Tree Compiler and libfdt library",
     homepage = "https://git.kernel.org/pub/scm/utils/dtc/dtc.git",
     license = "GPL-2.0-or-later AND BSD-2-Clause",
-    meson_args = [
+    configure_args = [
         "-Dtools=true",
         "-Dyaml=disabled",
         "-Dvalgrind=disabled",

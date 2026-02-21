@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # bc7enc_rdo - Fast BC1-7 GPU texture encoders with Rate Distortion Optimization
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "bc7enc_rdo",
     version = "1.0.0",
-    src_uri = "https://github.com/richgel999/bc7enc_rdo/archive/e6990bc11829c072d9f9e37296f3335072aab4e4.tar.gz",
+    url = "https://github.com/richgel999/bc7enc_rdo/archive/e6990bc11829c072d9f9e37296f3335072aab4e4.tar.gz",
     sha256 = "cba9fddbf045a0fd9f2118b894bb2a2731e88f728c5717b3b1d4771fb3bd6528",
     description = "Fast BC1-7 GPU texture encoders with Rate Distortion Optimization (RDO)",
     homepage = "https://github.com/richgel999/bc7enc_rdo",
     license = "Apache-2.0 MIT Zlib",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=OFF",
         "-DSUPPORT_BC7E=FALSE",

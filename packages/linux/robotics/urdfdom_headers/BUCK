@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "urdfdom_headers",
     version = "1.1.2",
-    src_uri = "https://github.com/ros/urdfdom_headers/archive/refs/tags/1.1.2.tar.gz",
+    url = "https://github.com/ros/urdfdom_headers/archive/refs/tags/1.1.2.tar.gz",
     sha256 = "7602e37c6715fbf4cec3f0ded1e860157796423dc79da062a0e5ccb1226dc8e6",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTING=OFF",
     ],
     deps = [],

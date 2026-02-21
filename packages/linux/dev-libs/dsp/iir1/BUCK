@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "iir1",
     version = "1.9.4",
-    src_uri = "https://github.com/berndporr/iir1/archive/refs/tags/1.9.4.tar.gz",
+    url = "https://github.com/berndporr/iir1/archive/refs/tags/1.9.4.tar.gz",
     sha256 = "67d0982356f33fd37522e4711cda12f70a981a9c83de332386f89de3d7601d2b",
-    cmake_args = [
+    configure_args = [
         "-DIIR1_BUILD_TESTING=OFF",
         "-DIIR1_BUILD_DEMO=OFF",
     ],

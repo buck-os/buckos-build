@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "mesh_surface_floodfill",
     version = "1.0.0",
-    src_uri = "https://github.com/skanti/generate-watertight-meshes-and-sdf-grids/archive/refs/heads/master.tar.gz",
+    url = "https://github.com/skanti/generate-watertight-meshes-and-sdf-grids/archive/refs/heads/master.tar.gz",
     sha256 = "d5dbd39e86026a4ce74cd514817af5dd04a5aa4cd89961e782ecbc868094653d",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_CUDA_ARCHITECTURES=all",
         "-DCMAKE_CXX_STANDARD=17",
     ],

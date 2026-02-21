@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "marigold",
     version = "0.1.1",
-    src_uri = "https://github.com/prs-eth/marigold/archive/refs/tags/v0.1.1.tar.gz",
+    url = "https://github.com/prs-eth/marigold/archive/refs/tags/v0.1.1.tar.gz",
     sha256 = "bb68569f29d6b7d04fda7d4efaa54a57653e4a7a7fff94e77a9b5658ff88f7a2",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

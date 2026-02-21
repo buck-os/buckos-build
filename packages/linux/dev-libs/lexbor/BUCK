@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "lexbor",
     version = "2.5.0",
-    src_uri = "https://github.com/lexbor/lexbor/archive/refs/tags/v2.5.0.tar.gz",
+    url = "https://github.com/lexbor/lexbor/archive/refs/tags/v2.5.0.tar.gz",
     sha256 = "d89060bb2fb6f7d0e0f399495155dd15e06697aa2c6568eab70ecd4a43084ba9",
-    cmake_args = [
+    configure_args = [
         "-DLEXBOR_BUILD_SHARED=ON",
         "-DLEXBOR_BUILD_STATIC=ON",
         "-DLEXBOR_WITHOUT_THREADS=ON",

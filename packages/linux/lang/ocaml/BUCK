@@ -1,5 +1,4 @@
-load("//defs:package_defs.bzl", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # OCaml - Functional programming language
@@ -7,33 +6,21 @@ load("//defs:use_flags.bzl", "use_dep")
 
 # OCaml uses its own custom configure script (not autotools)
 # Do NOT run autoreconf or it will break the build
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "ocaml",
     version = "5.1.1",
-    src_uri = "https://github.com/ocaml/ocaml/archive/refs/tags/5.1.1.tar.gz",
+    url = "https://github.com/ocaml/ocaml/archive/refs/tags/5.1.1.tar.gz",
     sha256 = "57f7b382b3d71198413ede405d95ef3506f1cdc480cda1dca1e26b37cb090e17",
-    signature_required = False,
     description = "OCaml is an industrial-strength functional programming language",
     homepage = "https://ocaml.org/",
     license = "LGPL-2.1-or-later WITH OCaml-LGPL-linking-exception",
-    iuse = [
-        "emacs",
-        "flambda",
-        "latex",
-        "ocamlopt",
-        "xemacs",
-    ],
     use_configure = {
-        "-emacs": "--disable-emacs",
-        "-flambda": "--disable-flambda",
-        "-latex": "--disable-latex",
-        "-ocamlopt": "--disable-ocamlopt",
-        "-xemacs": "--disable-xemacs",
-        "emacs": "--enable-emacs",
-        "flambda": "--enable-flambda",
-        "latex": "--enable-latex",
-        "ocamlopt": "--enable-ocamlopt",
-        "xemacs": "--enable-xemacs",
+        "emacs": ("--enable-emacs", "--disable-emacs"),
+        "flambda": ("--enable-flambda", "--disable-flambda"),
+        "latex": ("--enable-latex", "--disable-latex"),
+        "ocamlopt": ("--enable-ocamlopt", "--disable-ocamlopt"),
+        "xemacs": ("--enable-xemacs", "--disable-xemacs"),
     },
     configure_args = [
         "--prefix=/usr",

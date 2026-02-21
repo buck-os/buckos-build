@@ -1,17 +1,16 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # libX11 - Core X11 client library
 # The main X11 library that applications link against
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libX11",
     version = "1.8.7",
-    src_uri = "https://xorg.freedesktop.org/archive/individual/lib/libX11-1.8.7.tar.xz",
+    url = "https://xorg.freedesktop.org/archive/individual/lib/libX11-1.8.7.tar.xz",
     sha256 = "05f267468e3c851ae2b5c830bcf74251a90f63f04dd7c709ca94dc155b7e99ee",
     description = "Core X11 client library",
     homepage = "https://xorg.freedesktop.org/",
     license = "MIT",
-    iuse = ["ipv6", "static-libs"],
-    use_defaults = ["ipv6"],
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc",
@@ -21,10 +20,8 @@ autotools_package(
         "--enable-malloc0returnsnull=no",
     ],
     use_configure = {
-        "ipv6": "--enable-ipv6",
-        "-ipv6": "--disable-ipv6",
-        "static-libs": "--enable-static",
-        "-static-libs": "--disable-static",
+        "ipv6": ("--enable-ipv6", "--disable-ipv6"),
+        "static-libs": ("--enable-static", "--disable-static"),
     },
     # Remove .la files that cause libtool path issues
     src_install = "make DESTDIR=\"$DESTDIR\" install && find \"$DESTDIR\" -name '*.la' -delete",

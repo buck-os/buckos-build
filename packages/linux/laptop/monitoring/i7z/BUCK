@@ -1,21 +1,19 @@
+load("//defs:package.bzl", "package")
+
 # i7z - Intel i7 CPU reporting tool
 # Real time reporting of CPU frequency, C-states for Intel i7 processors
 
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-
 # USE flags: See use_flags.bzl for available flags
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "i7z",
-    src_uri = "https://github.com/ajaiantilal/i7z/archive/5023138d7c35c4667c938b853e5ea89737334e92.tar.gz",
+    url = "https://github.com/ajaiantilal/i7z/archive/5023138d7c35c4667c938b853e5ea89737334e92.tar.gz",
 
     sha256 = "e127bddf850e7febd39cef2d2b13dca5fe19cc2a1bb1099d72b683be5d8bd1c0",
-    iuse = ["policykit", "qt6"],
     use_configure = {
-        "-policykit": "--disable-policykit",
-        "-qt6": "--disable-qt6",
-        "policykit": "--enable-policykit",
-        "qt6": "--enable-qt6",
+        "policykit": ("--enable-policykit", "--disable-policykit"),
+        "qt6": ("--enable-qt6", "--disable-qt6"),
     },
     version = "93_p20131012",
     description = "Real-time reporting of Intel Core CPU frequency and C-states",

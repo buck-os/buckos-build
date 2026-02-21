@@ -1,6 +1,7 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libusb",
     bdepend = [],
     src_prepare = "",
@@ -18,10 +19,8 @@ export CFLAGS="-std=gnu11 $CFLAGS"
 make -j${MAKEOPTS:-$(nproc)} CFLAGS="-std=gnu11 $CFLAGS"
 """,
     version = "1.0.27",
-    iuse = ["debug", "static-libs", "udev"],
-    src_uri = "https://github.com/libusb/libusb/releases/download/v1.0.27/libusb-1.0.27.tar.bz2",
+    url = "https://github.com/libusb/libusb/releases/download/v1.0.27/libusb-1.0.27.tar.bz2",
     sha256 = "ffaa41d741a8a3bee244ac8e54a72ea05bf2879663c098c82fc5757853441575",
-    signature_required = False,
     description = "Library for userspace USB device access",
     homepage = "https://libusb.info/",
     license = "LGPL-2.1",

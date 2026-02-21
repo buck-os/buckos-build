@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "go_package")
+load("//defs:package.bzl", "package")
 
-go_package(
+package(
+    build_rule = "go",
     name = "pkcs7",
     version = "0.0.0-33d05740",
-    src_uri = "https://github.com/mozilla-services/pkcs7/archive/33d05740a3526e382af6395d3513e73d4e66d1cb.tar.gz",
+    url = "https://github.com/mozilla-services/pkcs7/archive/33d05740a3526e382af6395d3513e73d4e66d1cb.tar.gz",
     sha256 = "bfbe29274ed4c9e7724440275bf0117f7c2ce9b5b34a4cd11909b6073f23467d",
     description = "PKCS7 implementation for parsing and creating signed and enveloped messages",
     homepage = "https://github.com/mozilla-services/pkcs7",

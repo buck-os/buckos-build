@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "titlestylist",
     version = "1.0",
-    src_uri = "https://github.com/jind11/TitleStylist/archive/refs/heads/master.tar.gz",
+    url = "https://github.com/jind11/TitleStylist/archive/refs/heads/master.tar.gz",
     sha256 = "34ec9dd6177d65fa89b58e76d26912912e341f9b0bebe250abced311e0f84fcd",
     deps = [
         "//packages/linux/lang/python:python3",

@@ -1,15 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "google-psp-src",
-    src_uri = "https://github.com/google/psp/archive/8ac5fc19be57fbff18f44bb0b1d8e91c34b7260a.tar.gz",
-    sha256 = "16b409bdc077d7c7c0e74cec234100af282e4103c64ffa32e61c32111e642ab9",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "google-psp",
-    srcs = [":google-psp-src"],
     version = "0.0.1",
     description = "PSP (Per-flow Security Protocol) tools for packet encryption and decryption",
     homepage = "https://github.com/google/psp",

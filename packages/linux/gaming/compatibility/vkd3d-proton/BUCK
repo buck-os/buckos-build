@@ -1,30 +1,21 @@
+load("//defs:package.bzl", "package")
+
 # VKD3D-Proton - DirectX 12 to Vulkan translation layer
 # Fork of VKD3D optimized for Proton/Wine gaming
 
-load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
-
 # USE flags: See use_flags.bzl for available flags
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "vkd3d-proton",
-    src_uri = "https://github.com/HansKristian-Work/vkd3d-proton/archive/refs/tags/v2.13.tar.gz",
+    url = "https://github.com/HansKristian-Work/vkd3d-proton/archive/refs/tags/v2.13.tar.gz",
 
     sha256 = "b0af3e1ece3094fcb26e677bad1932475f1fdccb019aab06a7c4a8cb23542a4d",
-    iuse = [
-        "crossdev-mingw",
-        "debug",
-        "extras",
-        "strip",
-    ],
     use_configure = {
-        "-crossdev-mingw": "--disable-crossdev-mingw",
-        "-debug": "--disable-debug",
-        "-extras": "--disable-extras",
-        "-strip": "--disable-strip",
-        "crossdev-mingw": "--enable-crossdev-mingw",
-        "debug": "--enable-debug",
-        "extras": "--enable-extras",
-        "strip": "--enable-strip",
+        "crossdev-mingw": ("--enable-crossdev-mingw", "--disable-crossdev-mingw"),
+        "debug": ("--enable-debug", "--disable-debug"),
+        "extras": ("--enable-extras", "--disable-extras"),
+        "strip": ("--enable-strip", "--disable-strip"),
     },
     version = "2.13",
     description = "DirectX 12 to Vulkan translation layer for Wine/Proton",

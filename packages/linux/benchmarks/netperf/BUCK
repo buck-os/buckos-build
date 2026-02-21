@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # netperf - Network performance benchmark
 #
@@ -6,7 +6,8 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package")
 #   histogram - Enable histogram support
 #   demo      - Enable demo mode
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "netperf",
     # No autoreconf needed - tarball has pre-generated configure
     # autoreconf fails with: AC_CHECK_SA_LEN macro undefined
@@ -14,24 +15,19 @@ autotools_package(
 # No prepare needed - use pre-generated configure
 """,
     version = "2.7.0",
-    src_uri = "https://github.com/HewlettPackard/netperf/archive/refs/tags/netperf-2.7.0.tar.gz",
+    url = "https://github.com/HewlettPackard/netperf/archive/refs/tags/netperf-2.7.0.tar.gz",
     sha256 = "4569bafa4cca3d548eb96a486755af40bd9ceb6ab7c6abd81cc6aa4875007c4e",
-    signature_required = False,
     description = "Network performance benchmark - measures various network metrics",
     homepage = "https://github.com/HewlettPackard/netperf",
     license = "HP",
-    iuse = ["histogram", "demo"],
-    use_defaults = ["histogram", "demo"],
     deps = [],
     env = {
         "CFLAGS": "-O2 -std=gnu89 -fcommon -Wno-error -Wno-strict-prototypes -Wno-function-conversion",
     },
     configure_args = [],
     use_configure = {
-        "histogram": "--enable-histogram",
-        "-histogram": "--disable-histogram",
-        "demo": "--enable-demo",
-        "-demo": "--disable-demo",
+        "demo": ("--enable-demo", "--disable-demo"),
+        "histogram": ("--enable-histogram", "--disable-histogram"),
     },
     visibility = ["PUBLIC"],
 )

@@ -1,13 +1,12 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "click",
     version = "8.1.7",
-    iuse = ["examples"],
     use_configure = {
-        "-examples": "--disable-examples",
-        "examples": "--enable-examples",
+        "examples": ("--enable-examples", "--disable-examples"),
     },
-    src_uri = "https://github.com/pallets/click/archive/refs/tags/8.1.7.tar.gz",
+    url = "https://github.com/pallets/click/archive/refs/tags/8.1.7.tar.gz",
     sha256 = "89251974dba8552b4e22990ca34adfb93a47ba7deb27fe7358a6661a09ca8793",
 )

@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "rudalle",
     version = "1.1.3",
-    src_uri = "https://files.pythonhosted.org/packages/0b/0a/198c29b772028acb7c2bd7c34a4115439162325af51dbb9aada3b2dabcfd/rudalle-1.1.3.tar.gz",
+    url = "https://files.pythonhosted.org/packages/0b/0a/198c29b772028acb7c2bd7c34a4115439162325af51dbb9aada3b2dabcfd/rudalle-1.1.3.tar.gz",
     sha256 = "ae724e2832ecbe3304d874d72cfa5d6260140e03ae14042c0bb18b8c52c80d0f",
     deps = [
         "//packages/linux/ai/vision/taming-transformers:taming-transformers",

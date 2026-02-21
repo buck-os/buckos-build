@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "vmtouch",
     version = "1.3.1",
-    src_uri = "https://github.com/hoytech/vmtouch/archive/refs/tags/v1.3.1.tar.gz",
+    url = "https://github.com/hoytech/vmtouch/archive/refs/tags/v1.3.1.tar.gz",
     sha256 = "d57b7b3ae1146c4516429ab7d6db6f2122401db814ddd9cdaad10980e9c8428c",
     description = "Portable file system cache diagnostics and control",
     homepage = "https://github.com/hoytech/vmtouch",

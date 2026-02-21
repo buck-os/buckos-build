@@ -1,30 +1,23 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "kismet",
     version = "2023.07.R1",
-    src_uri = "https://www.kismetwireless.net/code/kismet-2023-07-R1.tar.xz",
+    url = "https://www.kismetwireless.net/code/kismet-2023-07-R1.tar.xz",
     sha256 = "f08548e26ca65fa1e567b1debbea1ca4d0e7206bddb96a4f639c90171873e8f7",
-    signature_required = False,
-
-    iuse = ["ssl", "python", "ncurses", "sqlite"],
-    use_defaults = ["ssl", "ncurses", "sqlite"],
 
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "ncurses": ["//packages/linux/system/terminal/ncurses:ncurses"],
-        "sqlite": ["//packages/linux/system/libs/database/sqlite:sqlite"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "ncurses": "//packages/linux/system/terminal/ncurses:ncurses",
+        "sqlite": "//packages/linux/system/libs/database/sqlite:sqlite",
     },
 
     use_configure = {
-        "ssl": "--enable-libwebsockets",
-        "-ssl": "--disable-libwebsockets",
-        "python": "--enable-python-tools",
-        "-python": "--disable-python-tools",
-        "ncurses": "--enable-panel",
-        "-ncurses": "--disable-panel",
-        "sqlite": "--enable-sqlite",
-        "-sqlite": "--disable-sqlite",
+        "ncurses": ("--enable-panel", "--disable-panel"),
+        "python": ("--enable-python-tools", "--disable-python-tools"),
+        "sqlite": ("--enable-sqlite", "--disable-sqlite"),
+        "ssl": ("--enable-libwebsockets", "--disable-libwebsockets"),
     },
 
     configure_args = [

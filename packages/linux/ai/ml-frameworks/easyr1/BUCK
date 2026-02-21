@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "easyr1",
     version = "0.3.3.dev0",
-    src_uri = "https://github.com/hiyouga/EasyR1/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/hiyouga/EasyR1/archive/refs/heads/main.tar.gz",
     sha256 = "6f93cf0372fe6b2cfd1ca01dc71189e5ee327c3e61ac0f8f2f5655c9441e7b3e",
     deps = [
         "//packages/linux/lang/python:python",

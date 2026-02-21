@@ -1,12 +1,13 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "tflite-micro",
     version = "2024.12",
-    src_uri = "https://github.com/tensorflow/tflite-micro/archive/b63a3ac97861aa8e4df0ae8b69229463424ccf8e.tar.gz",
+    url = "https://github.com/tensorflow/tflite-micro/archive/b63a3ac97861aa8e4df0ae8b69229463424ccf8e.tar.gz",
     sha256 = "a6819642a9d9912280dfb5990dded9fbad9df3a37aa4f44f1b23265bc7b1441d",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],
     visibility = ["PUBLIC"],

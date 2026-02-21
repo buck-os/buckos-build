@@ -1,25 +1,16 @@
-load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "dmraid",
-    src_uri = "https://people.redhat.com/~heinzm/sw/dmraid/src/dmraid-1.0.0.rc16-3.tar.bz2",
+    url = "https://people.redhat.com/~heinzm/sw/dmraid/src/dmraid-1.0.0.rc16-3.tar.bz2",
 
     sha256 = "93421bd169d71ff5e7d2db95b62b030bfa205a12010b6468dcdef80337d6fbd8",
-    iuse = [
-        "intel-led",
-        "led",
-        "mini",
-        "static",
-    ],
     use_configure = {
-        "-intel-led": "--disable-intel-led",
-        "-led": "--disable-led",
-        "-mini": "--disable-mini",
-        "-static": "--disable-static",
-        "intel-led": "--enable-intel-led",
-        "led": "--enable-led",
-        "mini": "--enable-mini",
-        "static": "--enable-static",
+        "intel-led": ("--enable-intel-led", "--disable-intel-led"),
+        "led": ("--enable-led", "--disable-led"),
+        "mini": ("--enable-mini", "--disable-mini"),
+        "static": ("--enable-static", "--disable-static"),
     },
     version = "1.0.0.rc16",
     description = "Device-mapper RAID activation tool for BIOS RAID sets",

@@ -1,15 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "antlr4-cpp-src",
-    src_uri = "https://github.com/antlr/antlr4/archive/refs/tags/4.13.2.tar.gz",
-    sha256 = "9f18272a9b32b622835a3365f850dd1063d60f5045fb1e12ce475ae6e18a35bb",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "antlr4-cpp",
-    srcs = [":antlr4-cpp-src"],
     version = "4.13.2",
     description = "ANTLR4 C++ Runtime",
     homepage = "https://www.antlr.org/",

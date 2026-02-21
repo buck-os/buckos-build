@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "flip",
     version = "1.7",
-    src_uri = "https://github.com/NVlabs/flip/archive/b475eb4bf394ab877c42166c9eb0a84a02cc5b14.tar.gz",
+    url = "https://github.com/NVlabs/flip/archive/b475eb4bf394ab877c42166c9eb0a84a02cc5b14.tar.gz",
     sha256 = "576e9ed6e9674da8eb5af59f20abea7ce0c0d7c1f533b61cb97df4cdc71b7782",
-    cmake_args = [
+    configure_args = [
         "-DFLIP_ENABLE_CUDA=OFF",
         "-DCMAKE_BUILD_TYPE=Release",
     ],

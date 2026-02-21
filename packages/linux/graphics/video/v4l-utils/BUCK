@@ -1,18 +1,17 @@
-load("//defs:package_defs.bzl", "meson_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # v4l-utils - Video4Linux utilities
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "v4l-utils",
     version = "1.26.1",
-    src_uri = "https://linuxtv.org/downloads/v4l-utils/v4l-utils-1.26.1.tar.xz",
+    url = "https://linuxtv.org/downloads/v4l-utils/v4l-utils-1.26.1.tar.xz",
     sha256 = "4a71608c0ef7df2931176989e6d32b445c0bdc1030a2376d929c8ca6e550ec4e",
-    signature_sha256 = "1b1360d428f2e8154dce5f454efb01a22c1b5bbdcf2572e658db0e64f8bfc5b7",
-    signature_required=False,
     description = "Video4Linux userspace tools and libraries",
     homepage = "https://linuxtv.org/wiki/index.php/V4l-utils",
     license = "GPL-2.0-or-later LGPL-2.1-or-later",
-    meson_args = [
+    configure_args = [
         "-Dgconv=disabled",
         "-Ddoxygen-doc=disabled",
         "-Ddoxygen-html=false",

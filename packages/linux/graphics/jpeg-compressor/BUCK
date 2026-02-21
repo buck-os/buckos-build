@@ -1,14 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "rg-jpeg-compressor",
     version = "aeb7d3b",
-    src_uri = "https://github.com/richgel999/jpeg-compressor/archive/aeb7d3b463aa8228b87a28013c15ee50a7e6fcf3.tar.gz",
+    url = "https://github.com/richgel999/jpeg-compressor/archive/aeb7d3b463aa8228b87a28013c15ee50a7e6fcf3.tar.gz",
     sha256 = "aa614c78c5de48ec393a166ec1cd0a1ccd1a675f8c4819d91480e8b64f340177",
     description = "Public domain JPEG compressor and decompressor",
     homepage = "https://github.com/richgel999/jpeg-compressor",
     license = "Public Domain",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_X64=ON",
     ],
     deps = [],

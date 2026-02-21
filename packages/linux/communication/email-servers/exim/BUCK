@@ -1,16 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "exim-src",
-    src_uri = "https://github.com/Exim/exim/archive/refs/tags/exim-4.98.tar.gz",
-    sha256 = "efc6648d6f5d5890bddd99c6e73b46d793e85e4958732e935fa28d964551862b",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "exim",
-    srcs = [":exim-src"],
     version = "4.98",
     description = "Highly configurable mail transfer agent",
     homepage = "https://www.exim.org/",

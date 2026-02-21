@@ -1,17 +1,14 @@
-load("//defs:package_defs.bzl", "go_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
-go_package(
+package(
+    build_rule = "go",
     name = "yq",
     version = "4.44.3",
-    iuse = ["yq-symlink"],
     use_configure = {
-        "-yq-symlink": "--disable-yq-symlink",
-        "yq-symlink": "--enable-yq-symlink",
+        "yq-symlink": ("--enable-yq-symlink", "--disable-yq-symlink"),
     },
-    src_uri = "https://github.com/mikefarah/yq/archive/refs/tags/v4.44.3.tar.gz",
+    url = "https://github.com/mikefarah/yq/archive/refs/tags/v4.44.3.tar.gz",
     sha256 = "ea950f5622480fc0ff3708c52589426a737cd4ec887a52922a74efa1be8f2fbf",
-    signature_required = False,
     description = "Command-line YAML/JSON/XML processor with jq-like syntax",
     homepage = "https://github.com/mikefarah/yq",
     license = "MIT",

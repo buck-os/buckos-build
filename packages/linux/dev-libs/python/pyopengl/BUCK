@@ -1,14 +1,13 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "pyopengl",
     version = "3.1.5",
-    iuse = ["tk"],
     use_configure = {
-        "-tk": "--disable-tk",
-        "tk": "--enable-tk",
+        "tk": ("--enable-tk", "--disable-tk"),
     },
-    src_uri = "https://files.pythonhosted.org/packages/source/P/PyOpenGL/PyOpenGL-3.1.5.tar.gz",
+    url = "https://files.pythonhosted.org/packages/source/P/PyOpenGL/PyOpenGL-3.1.5.tar.gz",
     sha256 = "4107ba0d0390da5766a08c242cf0cf3404c377ed293c5f6d701e457c57ba3424",
     deps = [],
 )

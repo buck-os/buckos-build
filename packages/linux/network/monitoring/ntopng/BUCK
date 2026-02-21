@@ -1,24 +1,21 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # ntopng - Network traffic analysis tool
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "ntopng",
     version = "6.0",
-    src_uri = "https://github.com/ntop/ntopng/archive/refs/tags/6.0.tar.gz",
+    url = "https://github.com/ntop/ntopng/archive/refs/tags/6.0.tar.gz",
     sha256 = "937e3dea081f68cb8d85e0a925f5277f6a358d65ba45e90e215f0fc36d2401ac",
-    signature_required = False,
-
 
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
     },
 
     use_configure = {
-        "mysql": "--with-mysql",
-        "-mysql": "--without-mysql",
-        "geoip": "--enable-geoip",
-        "-geoip": "--disable-geoip",
+        "geoip": ("--enable-geoip", "--disable-geoip"),
+        "mysql": ("--with-mysql", "--without-mysql"),
     },
 
     configure_args = [

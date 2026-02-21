@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "rocshmem",
     version = "1.6",
-    src_uri = "https://github.com/ROCm/rocSHMEM/archive/refs/tags/v1.6.tar.gz",
+    url = "https://github.com/ROCm/rocSHMEM/archive/refs/tags/v1.6.tar.gz",
     sha256 = "af0fa4982fc81d12fc6bad77c7e2d77b7bba410def02e4494acca2c8648ecd6e",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_CXX_STANDARD=20",
         "-DBUILD_EXAMPLES=OFF",
         "-DBUILD_FUNCTIONAL_TESTS=OFF",

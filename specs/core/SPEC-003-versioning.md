@@ -91,7 +91,7 @@ Each package has a designated default version that's used when no specific versi
 defs/
 ├── versions.bzl      # Version management rules and utilities
 ├── registry.bzl      # Central version registry
-└── package_defs.bzl  # Base package rules
+└── package.bzl       # Base package rules
 
 packages/
 └── category/
@@ -114,13 +114,13 @@ multi_version_package(
         "3.2.0": {
             "slot": "3",
             "keywords": ["stable"],
-            "src_uri": "https://www.openssl.org/source/openssl-3.2.0.tar.gz",
+            "url": "https://www.openssl.org/source/openssl-3.2.0.tar.gz",
             "sha256": "14c826f07c7e433706fb5c69fa9e25dab95684844b4c962a2cf1bf183eb4690e",
         },
         "1.1.1w": {
             "slot": "1.1",
             "keywords": ["stable"],
-            "src_uri": "https://www.openssl.org/source/openssl-1.1.1w.tar.gz",
+            "url": "https://www.openssl.org/source/openssl-1.1.1w.tar.gz",
             "sha256": "cf3098950cb4d853ad95c0841f1f9c6d3dc102dccfcacd521d93925208b76ac8",
             "configure_args": ["--prefix=/usr/lib/openssl-1.1"],
         },
@@ -152,7 +152,7 @@ versioned_package(
     version = "3.12.1",
     slot = "3.12",
     keywords = ["stable"],
-    src_uri = "https://www.python.org/ftp/python/3.12.1/Python-3.12.1.tar.xz",
+    url = "https://www.python.org/ftp/python/3.12.1/Python-3.12.1.tar.xz",
     sha256 = "...",
     configure_args = [...],
     deps = [...],
@@ -163,7 +163,7 @@ versioned_package(
     version = "2.7.18",
     slot = "2.7",
     keywords = ["masked"],
-    src_uri = "https://www.python.org/ftp/python/2.7.18/Python-2.7.18.tar.xz",
+    url = "https://www.python.org/ftp/python/2.7.18/Python-2.7.18.tar.xz",
     sha256 = "...",
     configure_args = [...],  # Python 2 has different options
     deps = [...],
@@ -175,15 +175,16 @@ versioned_package(
 For full control, define each version manually with aliases:
 
 ```python
-load("//defs:package_defs.bzl", "download_source", "configure_make_package")
+load("//defs:package.bzl", "package")
+load("//defs:package.bzl", "download_source")
 
 # Version 3.2.0
 download_source(name = "openssl-3.2.0-src", ...)
-configure_make_package(name = "openssl-3.2.0", ...)
+package(build_rule = "autotools", name = "openssl-3.2.0", ...)
 
 # Version 1.1.1w
 download_source(name = "openssl-1.1.1w-src", ...)
-configure_make_package(name = "openssl-1.1.1w", ...)
+package(build_rule = "autotools", name = "openssl-1.1.1w", ...)
 
 # Slot aliases
 alias(name = "openssl:3", actual = ":openssl-3.2.0")
@@ -389,7 +390,8 @@ The system handles complex version strings:
 
 Before:
 ```python
-configure_make_package(
+package(
+    build_rule = "autotools",
     name = "zlib",
     version = "1.3.1",
     ...

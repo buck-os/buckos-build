@@ -1,54 +1,31 @@
+load("//defs:package.bzl", "package")
+
 # =============================================================================
 # nftables - Modern Linux packet filtering framework
 # =============================================================================
 
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "nftables",
     version = "1.0.9",
-    src_uri = "https://www.netfilter.org/projects/nftables/files/nftables-1.0.9.tar.xz",
+    url = "https://www.netfilter.org/projects/nftables/files/nftables-1.0.9.tar.xz",
     sha256 = "a3c304cd9ba061239ee0474f9afb938a9bb99d89b960246f66f0c3a0a85e14cd",
-    signature_sha256 = "d07c88a9b5e8510c4af787caabb108b69dd53885939c135ef8cfe12bab79fe2f",
-    signature_required=False,
-
-    iuse = [
-        "debug",
-        "doc",
-        "gmp",
-        "json",
-        "libedit",
-        "python",
-        "readline",
-        "static-libs",
-        "xtables",
-    ],
-    use_defaults = ["json", "readline"],
 
     use_deps = {
-        "readline": ["//packages/linux/system/terminal/readline:readline"],
-        "python": ["//packages/linux/lang/python:python"],
+        "readline": "//packages/linux/system/terminal/readline:readline",
+        "python": "//packages/linux/lang/python:python",
     },
 
     use_configure = {
-        "-debug": "--disable-debug",
-        "-doc": "--disable-man-doc",
-        "-gmp": "--disable-gmp",
-        "-json": "--without-json",
-        "-libedit": "--disable-libedit",
-        "-python": "--disable-python",
-        "-readline": "--without-readline",
-        "-static-libs": "--disable-static",
-        "-xtables": "--disable-xtables",
-        "debug": "--enable-debug",
-        "doc": "--enable-man-doc",
-        "gmp": "--enable-gmp",
-        "json": "--with-json",
-        "libedit": "--enable-libedit",
-        "python": "--enable-python",
-        "readline": "--with-readline",
-        "static-libs": "--enable-static",
-        "xtables": "--enable-xtables",
+        "debug": ("--enable-debug", "--disable-debug"),
+        "doc": ("--enable-man-doc", "--disable-man-doc"),
+        "gmp": ("--enable-gmp", "--disable-gmp"),
+        "json": ("--with-json", "--without-json"),
+        "libedit": ("--enable-libedit", "--disable-libedit"),
+        "python": ("--enable-python", "--disable-python"),
+        "readline": ("--with-readline", "--without-readline"),
+        "static-libs": ("--enable-static", "--disable-static"),
+        "xtables": ("--enable-xtables", "--disable-xtables"),
     },
 
     configure_args = [

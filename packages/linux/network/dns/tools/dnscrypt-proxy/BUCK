@@ -1,15 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "dnscrypt-proxy-src",
-    src_uri = "https://github.com/DNSCrypt/dnscrypt-proxy/releases/download/2.1.5/dnscrypt-proxy-linux_x86_64-2.1.5.tar.gz",
-    sha256 = "eeb5e78e8930cd5ef8e332a4ee2730d02a19bb5097221a56d15ae4b582f4abd2",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "dnscrypt-proxy",
-    srcs = [":dnscrypt-proxy-src"],
     version = "2.1.5",
     description = "Flexible DNS proxy with encrypted DNS protocols support",
     homepage = "https://dnscrypt.info/",

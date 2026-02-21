@@ -1,16 +1,9 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
 # salt - Infrastructure automation and configuration management
-download_source(
-    name = "salt-src",
-    src_uri = "https://github.com/saltstack/salt/releases/download/v3007.0/salt-3007.0.tar.gz",
-    sha256 = "41bf84e71fc655bf8a4b52eb440d0621ae961096a086d20e132e1512e2eddff8",
-    signature_sha256 = "305bf3019e3f1362534747c80c45d9526189f90ddf46cb8e7d8f6499bc4df1da",
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "salt",
-    srcs = [":salt-src"],
     version = "3007.0",
     description = "Infrastructure automation and configuration management",
     homepage = "https://saltproject.io",

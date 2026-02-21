@@ -1,37 +1,22 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "opus",
     # Xiph release tarball includes pre-generated configure script
     bdepend = [],
     src_prepare = "",
-    src_uri = "https://downloads.xiph.org/releases/opus/opus-1.5.2.tar.gz",
+    url = "https://downloads.xiph.org/releases/opus/opus-1.5.2.tar.gz",
 
     sha256 = "65c1d2f78b9f2fb20082c38cbe47c951ad5839345876e46941612ee87f9a7ce1",
-    iuse = [
-        "custom-modes",
-        "debug",
-        "deep-plc",
-        "dred",
-        "hardened",
-        "osce",
-        "static-libs",
-    ],
     use_configure = {
-        "-custom-modes": "--disable-custom-modes",
-        "-debug": "--disable-debug",
-        "-deep-plc": "--disable-deep-plc",
-        "-dred": "--disable-dred",
-        "-hardened": "--disable-hardening",
-        "-osce": "--disable-osce",
-        "-static-libs": "--disable-static",
-        "custom-modes": "--enable-custom-modes",
-        "debug": "--enable-debug",
-        "deep-plc": "--enable-deep-plc",
-        "dred": "--enable-dred",
-        "hardened": "--enable-hardening",
-        "osce": "--enable-osce",
-        "static-libs": "--enable-static",
+        "custom-modes": ("--enable-custom-modes", "--disable-custom-modes"),
+        "debug": ("--enable-debug", "--disable-debug"),
+        "deep-plc": ("--enable-deep-plc", "--disable-deep-plc"),
+        "dred": ("--enable-dred", "--disable-dred"),
+        "hardened": ("--enable-hardening", "--disable-hardening"),
+        "osce": ("--enable-osce", "--disable-osce"),
+        "static-libs": ("--enable-static", "--disable-static"),
     },
     version = "1.5.2",
     description = "Opus interactive audio codec library",

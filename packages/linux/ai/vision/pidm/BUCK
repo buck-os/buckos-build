@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "pidm",
     version = "0.0.1",
-    src_uri = "https://github.com/ankanbhunia/pidm/archive/f769c6256020fa196d7193ae959163a5f6cbed9d.tar.gz",
+    url = "https://github.com/ankanbhunia/pidm/archive/f769c6256020fa196d7193ae959163a5f6cbed9d.tar.gz",
     sha256 = "22d213832d3913850d12d8b6b80b8cddccfc170a00c48ae9933b67d14a395875",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

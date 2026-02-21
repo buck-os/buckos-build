@@ -1,35 +1,27 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # flex - official release tarball includes pre-generated configure
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "flex",
     # No autoreconf needed - tarball has pre-generated configure
     bdepend = [],
     src_prepare = "",
     version = "2.6.4",
-    src_uri = "https://github.com/westes/flex/releases/download/v2.6.4/flex-2.6.4.tar.gz",
+    url = "https://github.com/westes/flex/releases/download/v2.6.4/flex-2.6.4.tar.gz",
     sha256 = "e87aae032bf07c26f85ac0ed3250998c37621d95f8bd748b31f15b33c45ee995",
-    signature_sha256 = "c61ccc11286e1eb2ceeb0f0a8f8437e86f1e41840991566351f438de7eb5a9a2",
-    signature_required=False,
     description = "Fast lexical analyzer generator",
     homepage = "https://github.com/westes/flex",
     license = "BSD-2-Clause",
 
     # USE flags this package supports
-    iuse = [
-        "nls",
-        "static-libs",
-    ],
 
     # Default USE flags
-    use_defaults = ["nls"],
 
     # Conditional configure arguments
     use_configure = {
-        "nls": "--enable-nls",
-        "-nls": "--disable-nls",
-        "static-libs": "--enable-static",
-        "-static-libs": "--disable-static",
+        "nls": ("--enable-nls", "--disable-nls"),
+        "static-libs": ("--enable-static", "--disable-static"),
     },
 
     visibility = ["PUBLIC"],

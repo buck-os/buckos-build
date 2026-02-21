@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "librsvg",
     version = "2.60.0",
-    src_uri = "https://download.gnome.org/sources/librsvg/2.60/librsvg-2.60.0.tar.xz",
+    url = "https://download.gnome.org/sources/librsvg/2.60/librsvg-2.60.0.tar.xz",
     sha256 = "0b6ffccdf6e70afc9876882f5d2ce9ffcf2c713cbaaf1ad90170daa752e1eec3",
     description = "SVG rendering library written in Rust",
     homepage = "https://wiki.gnome.org/Projects/LibRsvg",
@@ -18,28 +19,15 @@ meson_package(
         "//packages/linux/system/libs/font/freetype:freetype",
         "//packages/linux/system/libs/font/fontconfig:fontconfig",
     ],
-    iuse = [
-        "gtk-doc",
-        "introspection",
-        "pixbuf-loader",
-        "vala",
-    ],
     use_configure = {
-        "-gtk-doc": "--disable-gtk-doc",
-        "gtk-doc": "--enable-gtk-doc",
+        "gtk-doc": ("--enable-gtk-doc", "--disable-gtk-doc"),
+        "introspection": ("-Dintrospection=enabled", "-Dintrospection=disabled"),
+        "pixbuf-loader": ("-Dpixbuf-loader=enabled", "-Dpixbuf-loader=disabled"),
+        "vala": ("-Dvala=enabled", "-Dvala=disabled"),
     },
-    use_defaults = [],
-    meson_args = [
+    configure_args = [
         "-Ddocs=disabled",
         "-Dtests=false",
     ],
-    use_meson = {
-        "introspection": "-Dintrospection=enabled",
-        "-introspection": "-Dintrospection=disabled",
-        "pixbuf-loader": "-Dpixbuf-loader=enabled",
-        "-pixbuf-loader": "-Dpixbuf-loader=disabled",
-        "vala": "-Dvala=enabled",
-        "-vala": "-Dvala=disabled",
-    },
     visibility = ["PUBLIC"],
 )

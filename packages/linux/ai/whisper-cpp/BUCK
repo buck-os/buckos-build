@@ -1,3 +1,5 @@
+load("//defs:package.bzl", "package")
+
 # =============================================================================
 # whisper.cpp - Speech recognition in C/C++
 # =============================================================================
@@ -18,19 +20,16 @@
 #
 # =============================================================================
 
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
-
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "whisper-cpp",
     version = "1.7.2",
-    src_uri = "https://github.com/ggerganov/whisper.cpp/archive/refs/tags/v1.7.2.tar.gz",
+    url = "https://github.com/ggerganov/whisper.cpp/archive/refs/tags/v1.7.2.tar.gz",
     sha256 = "d48e1b5b6ee18b931e98ac791eba838f83eb3b81bb8917db37fe9a79fa5e3ccb",
-    signature_required = False,
     description = "Port of OpenAI's Whisper speech recognition model in C/C++",
     homepage = "https://github.com/ggerganov/whisper.cpp",
     license = "MIT",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DGGML_NATIVE=ON",
         "-DGGML_OPENMP=ON",

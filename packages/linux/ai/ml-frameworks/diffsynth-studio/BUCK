@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "diffsynth-studio",
     version = "1.1.8",
-    src_uri = "https://github.com/modelscope/diffsynth-studio/archive/refs/tags/v1.1.8.tar.gz",
+    url = "https://github.com/modelscope/diffsynth-studio/archive/refs/tags/v1.1.8.tar.gz",
     sha256 = "178ac041138e476e38ace75b8f8a8478a76b251116dfebfbefaf0b1bd1a71299",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

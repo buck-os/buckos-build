@@ -1,15 +1,16 @@
-load("//defs:package_defs.bzl", "download_source", "meson_package")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "kanshi",
-    src_uri = "https://github.com/emersion/kanshi/archive/refs/tags/v1.2.0.tar.gz",
+    url = "https://github.com/emersion/kanshi/archive/refs/tags/v1.2.0.tar.gz",
 
     sha256 = "144428b9e79209b853c4b38a5efb6f16d581a2b9cb96e419b3b0a0f5914bcad4",
     version = "1.2.0",
     description = "Dynamic display configuration for Wayland",
     homepage = "https://sr.ht/~emersion/kanshi/",
     license = "MIT",
-    meson_args = [],
+    configure_args = [],
     deps = [
         "//packages/linux/system/libs/utility/libffi:libffi",
         "//packages/linux/graphics/rendering/wayland:wayland",

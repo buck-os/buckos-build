@@ -1,15 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "imgui-docking",
     version = "1.91.4",
-    src_uri = "https://github.com/ocornut/imgui/archive/refs/tags/v1.91.4-docking.tar.gz",
+    url = "https://github.com/ocornut/imgui/archive/refs/tags/v1.91.4-docking.tar.gz",
     sha256 = "7405bdaf304b77d6d03e6d17d1f31ca3586fa0c65a466fa1dd71b6ca6a222023",
     description = "Dear ImGui with docking branch - Bloat-free Graphical User interface for C++ with minimal dependencies",
     homepage = "https://github.com/ocornut/imgui",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
     ],

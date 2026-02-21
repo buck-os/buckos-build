@@ -1,22 +1,21 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # PJSIP - Open source SIP stack
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "pjsip",
     version = "2.14",
-    src_uri = "https://github.com/pjsip/pjproject/archive/refs/tags/2.14.tar.gz",
+    url = "https://github.com/pjsip/pjproject/archive/refs/tags/2.14.tar.gz",
     sha256 = "5805c1171acab4af9684d7ad096dcb92f71fc42809852144e97e1413468c9981",
     description = "Open source SIP stack and media stack",
     homepage = "https://www.pjsip.org/",
     license = "GPL-2.0",
-    iuse = ["ssl", "opus", "speex", "video"],
-    use_defaults = ["ssl", "opus"],
     deps = [],
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "opus": ["//packages/linux/system/libs/audio/opus:opus"],
-        "speex": ["//packages/linux/system/libs/audio/speex:speex"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "opus": "//packages/linux/system/libs/audio/opus:opus",
+        "speex": "//packages/linux/system/libs/audio/speex:speex",
     },
     configure_args = [
         "--prefix=${PREFIX}",

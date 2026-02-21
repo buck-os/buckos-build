@@ -1,17 +1,9 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
 # AWS Lambda RIE is a single binary file, not an archive
-download_source(
-    name = "aws-lambda-rie-src",
-    src_uri = "https://github.com/aws/aws-lambda-runtime-interface-emulator/releases/download/v1.27/aws-lambda-rie-x86_64",
-    sha256 = "b8c5c8a6aef19029b37aa9e61ecf509a5ff8c25f03b6cd0c5b96e60d9a2ef728",
-    signature_required = False,
-    extract = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "aws-lambda-rie",
-    srcs = [":aws-lambda-rie-src"],
     version = "1.27",
     description = "AWS Lambda Runtime Interface Emulator",
     homepage = "https://github.com/aws/aws-lambda-runtime-interface-emulator",

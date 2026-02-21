@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "semgrep",
     version = "1.128.0",
-    src_uri = "https://github.com/semgrep/semgrep/archive/refs/tags/v1.128.0.tar.gz",
+    url = "https://github.com/semgrep/semgrep/archive/refs/tags/v1.128.0.tar.gz",
     sha256 = "98431c43c3bee3494049f27d3c44ea8fcd15f852edf45b046e4c8e137ac47ba6",
     description = "Lightweight static analysis for many languages",
     homepage = "https://semgrep.dev",

@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # libmysqlclient - MySQL C client library
 #
@@ -15,36 +15,29 @@ load("//defs:package_defs.bzl", "cmake_package")
 #   zstd      - Enable zstd compression
 #   static    - Build static library
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "libmysqlclient",
     version = "8.3.0",
-    src_uri = "https://dev.mysql.com/get/Downloads/MySQL-8.3/mysql-8.3.0.tar.gz",
+    url = "https://dev.mysql.com/get/Downloads/MySQL-8.3/mysql-8.3.0.tar.gz",
     sha256 = "1f21495a0b7a82b24a453d52e2153a814b3ca704eccf999766d545bce52f386e",
-    signature_required = False,
     description = "MySQL C client library",
     homepage = "https://dev.mysql.com/doc/c-api/8.3/en/",
     license = "GPL-2.0",
 
     # USE flags this package supports
-    iuse = [
-        "ssl",
-        "zlib",
-        "zstd",
-        "static",
-    ],
 
     # Default enabled flags
-    use_defaults = ["ssl", "zlib"],
 
     # Conditional dependencies based on USE flags
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "zlib": ["//packages/linux/core/zlib:zlib"],
-        "zstd": ["//packages/linux/system/libs/compression/zstd:zstd"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "zlib": "//packages/linux/core/zlib:zlib",
+        "zstd": "//packages/linux/system/libs/compression/zstd:zstd",
     },
 
     # Base CMake arguments (always applied)
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         # Only build the client library, not the server
@@ -62,15 +55,11 @@ cmake_package(
     ],
 
     # CMake options based on USE flags
-    use_cmake = {
-        "ssl": "-DWITH_SSL=system",
-        "-ssl": "-DWITH_SSL=OFF",
-        "zlib": "-DWITH_ZLIB=system",
-        "-zlib": "-DWITH_ZLIB=bundled",
-        "zstd": "-DWITH_ZSTD=system",
-        "-zstd": "-DWITH_ZSTD=bundled",
-        "static": "-DBUILD_SHARED_LIBS=OFF",
-        "-static": "-DBUILD_SHARED_LIBS=ON",
+    use_configure = {
+        "ssl": ("-DWITH_SSL=system", "-DWITH_SSL=OFF"),
+        "static": ("-DBUILD_SHARED_LIBS=OFF", "-DBUILD_SHARED_LIBS=ON"),
+        "zlib": ("-DWITH_ZLIB=system", "-DWITH_ZLIB=bundled"),
+        "zstd": ("-DWITH_ZSTD=system", "-DWITH_ZSTD=bundled"),
     },
 
     # Base dependencies (always required)

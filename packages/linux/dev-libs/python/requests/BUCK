@@ -1,16 +1,14 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "requests",
     version = "2.32.3",
-    iuse = ["socks5", "test-rust"],
     use_configure = {
-        "-socks5": "--disable-socks5",
-        "-test-rust": "--disable-test-rust",
-        "socks5": "--enable-socks5",
-        "test-rust": "--enable-test-rust",
+        "socks5": ("--enable-socks5", "--disable-socks5"),
+        "test-rust": ("--enable-test-rust", "--disable-test-rust"),
     },
-    src_uri = "https://github.com/psf/requests/archive/refs/tags/v2.32.3.tar.gz",
+    url = "https://github.com/psf/requests/archive/refs/tags/v2.32.3.tar.gz",
     sha256 = "f665576fc02d02e7b7f21630b915d70c14288f48decf76fad89b16a9f3975c42",
     deps = [
         "//packages/linux/dev-libs/python/certifi:certifi",

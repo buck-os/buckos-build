@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "unitree_sdk2",
     version = "2.0.2",
-    src_uri = "https://mirror.buckos.org/u/unitree_sdk2-2.0.2.tar.gz",
+    url = "https://mirror.buckos.org/u/unitree_sdk2-2.0.2.tar.gz",
     sha256 = "8128514cccd840623fd47d655bdde29353ae5365d6940ec737f6fd61e8de366c",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_EXAMPLES=OFF",
     ],
 )

@@ -1,21 +1,19 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # varnish - High-performance HTTP accelerator
 #
 # USE flags:
 #   jemalloc  - Use jemalloc memory allocator (optional)
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "varnish",
     version = "7.5.0",
-    src_uri = "https://varnish-cache.org/_downloads/varnish-7.5.0.tgz",
+    url = "https://varnish-cache.org/_downloads/varnish-7.5.0.tgz",
     sha256 = "fca61b983139e1aac61c4546d12a1a3ab9807dbb1d8314571e3148c93ff72b5d",
-    signature_required = False,
     description = "High-performance HTTP accelerator",
     homepage = "https://varnish-cache.org/",
     license = "BSD-2-Clause",
-    iuse = ["jemalloc"],
-    use_defaults = [],
     bdepend = [
         "//packages/linux/dev-tools/documentation/sphinx:sphinx",
     ],
@@ -25,7 +23,7 @@ autotools_package(
         "//packages/linux/system/terminal/ncurses:ncurses",
     ],
     use_deps = {
-        "jemalloc": ["//packages/linux/dev-libs/allocators/jemalloc:jemalloc"],
+        "jemalloc": "//packages/linux/dev-libs/allocators/jemalloc:jemalloc",
     },
     configure_args = [
         "--prefix=/usr",
@@ -33,8 +31,7 @@ autotools_package(
         "--localstatedir=/var",
     ],
     use_configure = {
-        "jemalloc": "--with-jemalloc",
-        "-jemalloc": "--without-jemalloc",
+        "jemalloc": ("--with-jemalloc", "--without-jemalloc"),
     },
     visibility = ["PUBLIC"],
 )

@@ -1,20 +1,12 @@
-load("//defs:package_defs.bzl", "download_source", "cargo_workspace_package")
+load("//defs:package_defs.bzl", "cargo_workspace_package")
 
 # Download BuckOS source from GitHub (shared across workspace members)
 # Using 0.0.3 tag with NVMe partition naming fix
-download_source(
-    name = "buckos-src",
-    src_uri = "https://github.com/hodgesds/buckos/archive/refs/tags/0.0.3.tar.gz",
-    sha256 = "554533d05a90d8fbb0d81775ed9396edb70364531df596867f4dd139a8abec2b",
-    signature_required = False,
-)
-
 # BuckOS CLI - Command-line interface for BuckOS management
 # Build v2: Using /lib64 library path fix
 cargo_workspace_package(
     name = "buckos-cli",
-    workspace_source = ":buckos-src",
-    member = "buckos",  # Package name is "buckos", binary is "buckos-cli"
+    workspace_member = "buckos",  # Package name is "buckos", binary is "buckos-cli"
     version = "0.0.3",
     bins = ["buckos-cli"],
     description = "BuckOS command-line interface for system management",

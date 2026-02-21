@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "redfish-validator",
     version = "1.4.1",
-    src_uri = "https://github.com/DMTF/Redfish-Service-Validator/archive/refs/tags/1.4.1.tar.gz",
+    url = "https://github.com/DMTF/Redfish-Service-Validator/archive/refs/tags/1.4.1.tar.gz",
     sha256 = "518434332bf45451cc7be74a72301b51d201326a020d715d7c58437478a0140a",
     deps = [
         "//packages/linux/dev-libs/python/beautifulsoup4:beautifulsoup4",

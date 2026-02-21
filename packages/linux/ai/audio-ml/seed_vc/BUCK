@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "seed_vc",
     version = "501179d",
-    src_uri = "https://github.com/plachtaa/seed-vc/archive/501179d1bbc8ec20f8eacdcb381770638052bd22.tar.gz",
+    url = "https://github.com/plachtaa/seed-vc/archive/501179d1bbc8ec20f8eacdcb381770638052bd22.tar.gz",
     sha256 = "c9e60128d00133aa585e701a06331167eec7f214dbfabbd17ad1ee93be809ef9",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

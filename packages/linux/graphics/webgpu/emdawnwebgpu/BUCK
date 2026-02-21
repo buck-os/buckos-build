@@ -1,15 +1,11 @@
-load("//defs:package_defs.bzl", "binary_package", "download_source")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "emdawnwebgpu-src",
-    src_uri = "https://github.com/google/dawn/releases/download/v20251030.221451/emdawnwebgpu_pkg-v20251030.221451.zip",
-    sha256 = "982b087dbff01e67e8faf946a7c85e10fb302f44813522bb4070755ae248169d",
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "emdawnwebgpu",
-    srcs = [":emdawnwebgpu-src"],
     version = "20251030.221451",
+    url = "https://github.com/google/dawn/releases/download/v20251030.221451/emdawnwebgpu_pkg-v20251030.221451.zip",
+    sha256 = "982b087dbff01e67e8faf946a7c85e10fb302f44813522bb4070755ae248169d",
     description = "Emscripten Dawn WebGPU - header-only WebGPU bindings from Google Dawn",
     homepage = "https://dawn.googlesource.com/dawn/",
     license = "BSD-3-Clause",
@@ -36,7 +32,7 @@ binary_package(
 
         # Fallback: find and copy any webgpu headers
         if [ ! "$(ls -A $OUT/usr/include/webgpu 2>/dev/null)" ]; then
-            find "$SRCS" -name "*.h" -path "*webgpu*" -exec cp {} "$OUT/usr/include/webgpu/" \\;
+            find "$SRCS" -name "*.h" -path "*webgpu*" -exec cp {} "$OUT/usr/include/webgpu/" \;
         fi
     """,
     deps = [],

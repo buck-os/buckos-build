@@ -1,15 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "table-and-graph-libs",
     version = "0.0.1",
-    src_uri = "https://github.com/tdulcet/Table-and-Graph-Libs/archive/9db5a657e5630a196da6fdd7a18c10fb7442d846.tar.gz",
+    url = "https://github.com/tdulcet/Table-and-Graph-Libs/archive/9db5a657e5630a196da6fdd7a18c10fb7442d846.tar.gz",
     sha256 = "fef6613b810ae270adbc6a4784189c37b04610b51c67673e2cd429f714a61e52",
     description = "Header-only C++ library for outputting text tables and graphs",
     homepage = "https://github.com/tdulcet/Table-and-Graph-Libs",
     license = "GPL-3.0",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],
     visibility = ["PUBLIC"],

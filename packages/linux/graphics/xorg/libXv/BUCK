@@ -1,10 +1,11 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # libXv - X Video extension library
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libXv",
     version = "1.0.12",
-    src_uri = "https://xorg.freedesktop.org/archive/individual/lib/libXv-1.0.12.tar.xz",
+    url = "https://xorg.freedesktop.org/archive/individual/lib/libXv-1.0.12.tar.xz",
     sha256 = "aaf7fa09f689f7a2000fe493c0d64d1487a1210db154053e9e2336b860c63848",
     description = "X Video extension library",
     homepage = "https://xorg.freedesktop.org/",

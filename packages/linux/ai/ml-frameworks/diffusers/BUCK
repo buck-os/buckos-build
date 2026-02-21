@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "diffusers",
     version = "0.35.0",
-    src_uri = "https://github.com/huggingface/diffusers/archive/refs/tags/v0.35.0.tar.gz",
+    url = "https://github.com/huggingface/diffusers/archive/refs/tags/v0.35.0.tar.gz",
     sha256 = "f8b2f0bb73388fa455627d436ef9f5d7cd1d903300be629aa2e4b511d3553273",
     deps = [
         "//packages/linux/dev-libs/python/filelock:filelock",

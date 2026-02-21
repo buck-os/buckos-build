@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "nccl-tests",
     version = "2.17.8",
-    src_uri = "https://github.com/NVIDIA/nccl-tests/archive/refs/tags/v2.17.8.tar.gz",
+    url = "https://github.com/NVIDIA/nccl-tests/archive/refs/tags/v2.17.8.tar.gz",
     sha256 = "89e44e7f93d136f22f40d44fdd315f5d1dcc487c921d9fc2fce8e4dd7b17f869",
     configure_args = [],
     make_args = [

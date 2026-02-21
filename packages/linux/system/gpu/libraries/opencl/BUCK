@@ -1,3 +1,5 @@
+load("//defs:package.bzl", "package")
+
 # =============================================================================
 # OpenCL - Open Computing Language support
 # =============================================================================
@@ -7,19 +9,17 @@
 #
 # =============================================================================
 
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
-
 # OpenCL headers
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "opencl-headers",
     version = "2024.05.08",
-    src_uri = "https://github.com/KhronosGroup/OpenCL-Headers/archive/refs/tags/v2024.05.08.tar.gz",
+    url = "https://github.com/KhronosGroup/OpenCL-Headers/archive/refs/tags/v2024.05.08.tar.gz",
     sha256 = "3c3dd236d35f4960028f4f58ce8d963fb63f3d50251d1e9854b76f1caab9a309",
-    signature_required = False,
     description = "OpenCL API headers",
     homepage = "https://www.khronos.org/opencl/",
     license = "Apache-2.0",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
     ],
     labels = ["buckos:hw:opencl"],
@@ -27,16 +27,16 @@ cmake_package(
 )
 
 # OpenCL ICD Loader
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "opencl-icd-loader",
     version = "2024.05.08",
-    src_uri = "https://github.com/KhronosGroup/OpenCL-ICD-Loader/archive/refs/tags/v2024.05.08.tar.gz",
+    url = "https://github.com/KhronosGroup/OpenCL-ICD-Loader/archive/refs/tags/v2024.05.08.tar.gz",
     sha256 = "eb2c9fde125ffc58f418d62ad83131ba686cccedcb390cc7e6bb81cc5ef2bd4f",
-    signature_required = False,
     description = "OpenCL Installable Client Driver (ICD) Loader",
     homepage = "https://www.khronos.org/opencl/",
     license = "Apache-2.0",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_INSTALL_LIBDIR=lib64",
         "-DOPENCL_ICD_LOADER_BUILD_TESTING=OFF",

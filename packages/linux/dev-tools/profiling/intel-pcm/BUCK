@@ -1,15 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "intel-pcm",
     version = "202409",
-    src_uri = "https://github.com/intel/pcm/archive/refs/tags/202409.tar.gz",
+    url = "https://github.com/intel/pcm/archive/refs/tags/202409.tar.gz",
     sha256 = "cb8e40528940967a62e16eb6371317b8cd74d3d7bab20aa78e0c5f885146ee38",
     description = "Intel Performance Counter Monitor - CPU performance monitoring tools",
     homepage = "https://github.com/intel/pcm",
     license = "BSD-3-Clause",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DPCM_USE_PERF=ON",
     ],

@@ -1,31 +1,29 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # spdlog - Fast C++ logging library
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "spdlog",
     version = "1.13.0",
-    src_uri = "https://github.com/gabime/spdlog/archive/refs/tags/v1.13.0.tar.gz",
+    url = "https://github.com/gabime/spdlog/archive/refs/tags/v1.13.0.tar.gz",
     sha256 = "534f2ee1a4dcbeb22249856edfb2be76a1cf4f708a20b0ac2ed090ee24cfdbc9",
     description = "Fast C++ logging library",
     homepage = "https://github.com/gabime/spdlog",
     license = "MIT",
-    iuse = ["fmt_external"],
-    use_defaults = ["fmt_external"],
     deps = [],
     use_deps = {
-        "fmt_external": ["//packages/linux/dev-libs/misc/fmt:fmt"],
+        "fmt_external": "//packages/linux/dev-libs/misc/fmt:fmt",
     },
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DSPDLOG_BUILD_SHARED=ON",
         "-DSPDLOG_BUILD_EXAMPLE=OFF",
         "-DSPDLOG_BUILD_TESTS=OFF",
         "-DSPDLOG_BUILD_BENCH=OFF",
     ],
-    use_cmake = {
-        "fmt_external": "-DSPDLOG_FMT_EXTERNAL=ON",
-        "-fmt_external": "-DSPDLOG_FMT_EXTERNAL=OFF",
+    use_configure = {
+        "fmt_external": ("-DSPDLOG_FMT_EXTERNAL=ON", "-DSPDLOG_FMT_EXTERNAL=OFF"),
     },
     visibility = ["PUBLIC"],
 )

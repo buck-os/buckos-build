@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "cosyvoice",
     version = "0.1.0",
-    src_uri = "https://github.com/FunAudioLLM/CosyVoice/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/FunAudioLLM/CosyVoice/archive/refs/heads/main.tar.gz",
     sha256 = "fd7dcb2409a7f1af6a6bb664c9969ca5c346f2ef971c6c523977aa0e10837f16",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

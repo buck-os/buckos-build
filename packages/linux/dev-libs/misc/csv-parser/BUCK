@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # Vince's CSV Parser - A modern C++ CSV parser
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "csv-parser",
     version = "2.3.0",
-    src_uri = "https://github.com/vincentlaucsb/csv-parser/archive/refs/tags/2.3.0.tar.gz",
+    url = "https://github.com/vincentlaucsb/csv-parser/archive/refs/tags/2.3.0.tar.gz",
     sha256 = "27b8ac51aa58b9a4debd8ccfb44738c8583a2e874da42f56bbdf3764b75f3af5",
     description = "A modern, fast C++ CSV parser with features for large files and flexible formats",
     homepage = "https://github.com/vincentlaucsb/csv-parser",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DCMAKE_CXX_STANDARD=17",

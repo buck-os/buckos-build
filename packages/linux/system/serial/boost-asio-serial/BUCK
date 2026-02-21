@@ -1,24 +1,20 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # boost-asio-serial - Boost.Asio serial port extension
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "boost-asio-serial",
     version = "1.1.0",
-    src_uri = "https://mirror.buckos.org/s/serial-port-master.tar.gz",
+    url = "https://mirror.buckos.org/s/serial-port-master.tar.gz",
     sha256 = "122faff471af5867b3582fe8b3bb02838c63e4a520e9bbee46699347c3d23a7b",
-    signature_required = False,
     description = "Serial port library using Boost.Asio",
     homepage = "https://github.com/fedetft/serial-port",
     license = "Boost-1.0",
-    iuse = ["examples", "static-libs"],
-    use_defaults = [],
-    use_cmake = {
-        "examples": "-DBUILD_EXAMPLES=ON",
-        "-examples": "-DBUILD_EXAMPLES=OFF",
-        "static-libs": "-DBUILD_SHARED_LIBS=OFF",
-        "-static-libs": "-DBUILD_SHARED_LIBS=ON",
+    use_configure = {
+        "examples": ("-DBUILD_EXAMPLES=ON", "-DBUILD_EXAMPLES=OFF"),
+        "static-libs": ("-DBUILD_SHARED_LIBS=OFF", "-DBUILD_SHARED_LIBS=ON"),
     },
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],
     deps = [

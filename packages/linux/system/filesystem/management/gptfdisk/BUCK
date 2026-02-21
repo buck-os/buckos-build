@@ -1,16 +1,14 @@
-load("//defs:package_defs.bzl", "autotools_package", "download_source")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "gptfdisk",
-    src_uri = "https://sourceforge.net/projects/gptfdisk/files/gptfdisk/1.0.9/gptfdisk-1.0.9.tar.gz",
+    url = "https://sourceforge.net/projects/gptfdisk/files/gptfdisk/1.0.9/gptfdisk-1.0.9.tar.gz",
 
     sha256 = "dafead2693faeb8e8b97832b23407f6ed5b3219bc1784f482dd855774e2d50c2",
-    iuse = ["ncurses", "static"],
     use_configure = {
-        "-ncurses": "--without-ncurses",
-        "-static": "--disable-static",
-        "ncurses": "--with-ncurses",
-        "static": "--enable-static",
+        "ncurses": ("--with-ncurses", "--without-ncurses"),
+        "static": ("--enable-static", "--disable-static"),
     },
     version = "1.0.9",
     description = "GPT partitioning tools (gdisk, sgdisk, cgdisk, fixparts)",

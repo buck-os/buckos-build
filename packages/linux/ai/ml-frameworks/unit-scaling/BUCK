@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "unit-scaling",
     version = "0.1.0",
-    src_uri = "https://github.com/graphcore-research/unit-scaling/archive/92f94ed65b548ca97ed43e82c24cc53d316c78ba.tar.gz",
+    url = "https://github.com/graphcore-research/unit-scaling/archive/92f94ed65b548ca97ed43e82c24cc53d316c78ba.tar.gz",
     sha256 = "7d97ea7a1e74c76be62bff585c41ef1c97ee204420e5e2f5ff572170b404fc85",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

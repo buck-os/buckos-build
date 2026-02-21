@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # spawn-fcgi - Spawn FastCGI processes
 #
@@ -9,7 +9,8 @@ load("//defs:package_defs.bzl", "autotools_package")
 #
 # Originally part of lighttpd, now maintained as a separate project.
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "spawn-fcgi",
     bdepend = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
@@ -20,7 +21,7 @@ autotools_package(
 autoreconf -fi
 """,
     version = "1.6.5",
-    src_uri = "https://github.com/lighttpd/spawn-fcgi/archive/refs/tags/spawn-fcgi-1.6.5.tar.gz",
+    url = "https://github.com/lighttpd/spawn-fcgi/archive/refs/tags/spawn-fcgi-1.6.5.tar.gz",
     sha256 = "5b2ea0fd9e3384be91173d69c722bea3cee56288751b0fc271f3f7830817d3b6",
     description = "Utility to spawn FastCGI processes",
     homepage = "https://redmine.lighttpd.net/projects/spawn-fcgi",

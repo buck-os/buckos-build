@@ -1,43 +1,29 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # LAPACK - Linear Algebra PACKage
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "lapack",
     version = "3.12.0",
-    src_uri = "https://github.com/Reference-LAPACK/lapack/archive/refs/tags/v3.12.0.tar.gz",
+    url = "https://github.com/Reference-LAPACK/lapack/archive/refs/tags/v3.12.0.tar.gz",
     sha256 = "eac9570f8e0ad6f30ce4b963f4f033f0f643e7c3912fc9ee6cd99120675ad48b",
     description = "Linear Algebra PACKage - routines for solving systems of linear equations",
     homepage = "https://www.netlib.org/lapack/",
     license = "BSD-3-Clause",
-    iuse = [
-        "cblas",
-        "deprecated",
-        "eselect-ldso",
-        "flexiblas",
-        "index64",
-        "lapacke",
-    ],
-    use_defaults = ["cblas", "lapacke"],
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_TESTING=OFF",
     ],
-    use_cmake = {
-        "-cblas": "-DCBLAS=OFF",
-        "-deprecated": "-DENABLE_DEPRECATED=OFF",
-        "-eselect-ldso": "-DENABLE_ESELECT_LDSO=OFF",
-        "-flexiblas": "-DENABLE_FLEXIBLAS=OFF",
-        "-index64": "-DENABLE_INDEX64=OFF",
-        "-lapacke": "-DLAPACKE=OFF",
-        "cblas": "-DCBLAS=ON",
-        "deprecated": "-DENABLE_DEPRECATED=ON",
-        "eselect-ldso": "-DENABLE_ESELECT_LDSO=ON",
-        "flexiblas": "-DENABLE_FLEXIBLAS=ON",
-        "index64": "-DENABLE_INDEX64=ON",
-        "lapacke": "-DLAPACKE=ON",
+    use_configure = {
+        "cblas": ("-DCBLAS=ON", "-DCBLAS=OFF"),
+        "deprecated": ("-DENABLE_DEPRECATED=ON", "-DENABLE_DEPRECATED=OFF"),
+        "eselect-ldso": ("-DENABLE_ESELECT_LDSO=ON", "-DENABLE_ESELECT_LDSO=OFF"),
+        "flexiblas": ("-DENABLE_FLEXIBLAS=ON", "-DENABLE_FLEXIBLAS=OFF"),
+        "index64": ("-DENABLE_INDEX64=ON", "-DENABLE_INDEX64=OFF"),
+        "lapacke": ("-DLAPACKE=ON", "-DLAPACKE=OFF"),
     },
     visibility = ["PUBLIC"],
 )

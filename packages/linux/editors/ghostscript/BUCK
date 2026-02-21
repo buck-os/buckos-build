@@ -1,10 +1,10 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # ghostscript - PostScript and PDF interpreter
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "ghostscript",
-    src_uri = "https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs10030/ghostscript-10.03.0.tar.xz",
+    url = "https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs10030/ghostscript-10.03.0.tar.xz",
 
     sha256 = "f25ff491a726d883f0b0f9c8af9b895c674cf77cddd814aa3824b3223f439ee5",
     version = "10.03.0",

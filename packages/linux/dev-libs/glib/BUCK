@@ -1,45 +1,26 @@
-load("//defs:package_defs.bzl", "meson_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "glib",
     version = "2.80.0",
-    iuse = [
-        "debug",
-        "elf",
-        "introspection",
-        "selinux",
-        "static-libs",
-        "sysprof",
-        "systemtap",
-        "xattr",
-    ],
     # use_meson for meson option mapping (not use_configure which is for autotools)
-    use_meson = {
-        "-debug": "-Dglib_debug=disabled",
-        "-elf": "-Dlibelf=disabled",
-        "-introspection": "-Dintrospection=disabled",
-        "-selinux": "-Dselinux=disabled",
-        "-static-libs": "-Ddefault_library=shared",
-        "-sysprof": "-Dsysprof=disabled",
-        "-systemtap": "-Dsystemtap=false",
-        "-xattr": "-Dxattr=false",
-        "debug": "-Dglib_debug=enabled",
-        "elf": "-Dlibelf=enabled",
-        "introspection": "-Dintrospection=enabled",
-        "selinux": "-Dselinux=enabled",
-        "static-libs": "-Ddefault_library=both",
-        "sysprof": "-Dsysprof=enabled",
-        "systemtap": "-Dsystemtap=true",
-        "xattr": "-Dxattr=true",
+    use_configure = {
+        "debug": ("-Dglib_debug=enabled", "-Dglib_debug=disabled"),
+        "elf": ("-Dlibelf=enabled", "-Dlibelf=disabled"),
+        "introspection": ("-Dintrospection=enabled", "-Dintrospection=disabled"),
+        "selinux": ("-Dselinux=enabled", "-Dselinux=disabled"),
+        "static-libs": ("-Ddefault_library=both", "-Ddefault_library=shared"),
+        "sysprof": ("-Dsysprof=enabled", "-Dsysprof=disabled"),
+        "systemtap": ("-Dsystemtap=true", "-Dsystemtap=false"),
+        "xattr": ("-Dxattr=true", "-Dxattr=false"),
     },
-    src_uri = "https://download.gnome.org/sources/glib/2.80/glib-2.80.0.tar.xz",
+    url = "https://download.gnome.org/sources/glib/2.80/glib-2.80.0.tar.xz",
     sha256 = "8228a92f92a412160b139ae68b6345bd28f24434a7b5af150ebe21ff587a561d",
-    signature_required = False,
     description = "Low-level core library for GNOME projects",
     homepage = "https://wiki.gnome.org/Projects/GLib",
     license = "LGPL-2.1+",
-    meson_args = [
+    configure_args = [
         "-Dgtk_doc=false",
         "-Dtests=false",
         "-Ddtrace=false",

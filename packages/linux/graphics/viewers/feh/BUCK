@@ -1,11 +1,11 @@
-load("//defs:package_defs.bzl", "make_package")
+load("//defs:package.bzl", "package")
 
-make_package(
+package(
+    build_rule = "autotools",
     name = "feh",
     version = "3.10.2",
-    src_uri = "https://feh.finalrewind.org/feh-3.10.2.tar.bz2",
+    url = "https://feh.finalrewind.org/feh-3.10.2.tar.bz2",
     sha256 = "5f94a77de25c5398876f0cf431612d782b842f4db154d2139b778c8f196e8969",
-    signature_sha256 = "e29957b4e34144b351c43f8ff5fb9df18d3863dd60ecad48304d24ca28ea1e23",
     description = "Fast and light imlib2-based image viewer",
     homepage = "https://feh.finalrewind.org/",
     license = "MIT",

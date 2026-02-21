@@ -1,19 +1,11 @@
+load("//defs:package.bzl", "package")
+
 # Heroic Games Launcher
 # Open source GOG and Epic Games Launcher for Linux
 
-load("//defs:package_defs.bzl", "binary_package", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
-
-download_source(
-    name = "heroic-src",
-    src_uri = "https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher/releases/download/v2.15.2/heroic-2.15.2.tar.xz",
-    sha256 = "974c03d22d11f8a761c089629557370b8f3f2258b9ad957443bdad26409ab128",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "heroic",
-    srcs = [":heroic-src"],
     version = "2.15.2",
     description = "GOG and Epic Games Launcher for Linux",
     homepage = "https://heroicgameslauncher.com/",

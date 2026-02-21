@@ -41,10 +41,22 @@ def _cargo_build(ctx, source):
     for env_arg in toolchain_env_args(ctx):
         cmd.add("--env", env_arg)
 
+    # Inject user-specified environment variables
+    for key, value in ctx.attrs.env.items():
+        cmd.add("--env", "{}={}".format(key, value))
+
     for feat in ctx.attrs.features:
         cmd.add("--feature", feat)
     for arg in ctx.attrs.cargo_args:
         cmd.add("--cargo-arg", arg)
+
+    # Explicit binary names to install
+    for b in ctx.attrs.bins:
+        cmd.add("--bin", b)
+
+    # Vendor deps directory
+    if ctx.attrs.vendor_deps:
+        cmd.add("--vendor-dir", ctx.attrs.vendor_deps[DefaultInfo].default_outputs[0])
 
     ctx.actions.run(cmd, category = "cargo_build", identifier = ctx.attrs.name)
     return output
@@ -95,6 +107,9 @@ cargo_package = rule(
         # Build configuration
         "features": attrs.list(attrs.string(), default = []),
         "cargo_args": attrs.list(attrs.string(), default = []),
+        "bins": attrs.list(attrs.string(), default = []),
+        "env": attrs.dict(attrs.string(), attrs.string(), default = {}),
+        "vendor_deps": attrs.option(attrs.dep(), default = None),
         "deps": attrs.list(attrs.dep(), default = []),
         "patches": attrs.list(attrs.source(), default = []),
 
@@ -103,6 +118,7 @@ cargo_package = rule(
         "extra_cflags": attrs.list(attrs.string(), default = []),
         "extra_ldflags": attrs.list(attrs.string(), default = []),
         "libraries": attrs.list(attrs.string(), default = []),
+        "post_install_cmds": attrs.list(attrs.string(), default = []),
 
         # Labels (metadata-only, for BXL queries)
         "labels": attrs.list(attrs.string(), default = []),

@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # autodiff - Automatic differentiation library for C++
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "autodiff",
     version = "1.0.1",
-    src_uri = "https://github.com/autodiff/autodiff/archive/refs/tags/v1.0.1.tar.gz",
+    url = "https://github.com/autodiff/autodiff/archive/refs/tags/v1.0.1.tar.gz",
     sha256 = "63f2c8aaf940fbb1d1e7098b1d6c08794da0194eec3faf773f3123dc7233838c",
     description = "Automatic differentiation library for C++",
     homepage = "https://autodiff.github.io/",
@@ -13,7 +14,7 @@ cmake_package(
     deps = [
         "//packages/linux/dev-libs/math/eigen:eigen",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_CXX_STANDARD=17",
         "-DAUTODIFF_BUILD_TESTS=OFF",

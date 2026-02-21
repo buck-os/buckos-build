@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "entmax",
     version = "1.1",
-    src_uri = "https://github.com/deep-spin/entmax/archive/refs/tags/v1.1.tar.gz",
+    url = "https://github.com/deep-spin/entmax/archive/refs/tags/v1.1.tar.gz",
     sha256 = "537b936cc10891901a9849afc3d9f16ad7ffad6efb3b209f444911186820d14e",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

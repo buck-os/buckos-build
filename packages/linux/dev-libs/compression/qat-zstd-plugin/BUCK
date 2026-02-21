@@ -1,14 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "qat-zstd-plugin-src",
-    src_uri = "https://github.com/intel/qat-zstd-plugin/archive/3ef18c7cf122539613c1d956670f744864b8a0bc.tar.gz",
-    sha256 = "b7a783bdd115f07e2fd42d1d8cb20c72f255c65cb434d0507df14ba8eda67744",
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "qat-zstd-plugin",
-    srcs = [":qat-zstd-plugin-src"],
     version = "0.0.1",
     description = "Intel QAT ZSTD Plugin - Hardware acceleration for ZSTD compression",
     homepage = "https://github.com/intel/qat-zstd-plugin",

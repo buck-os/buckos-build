@@ -1,16 +1,13 @@
-load("//defs:package_defs.bzl","download_source", "make_package")
+load("//defs:package.bzl", "package")
 
 make_package(
     name = "lynis",
-    src_uri = "https://github.com/CISOfy/lynis/archive/refs/tags/3.0.9.tar.gz",
+    url = "https://github.com/CISOfy/lynis/archive/refs/tags/3.0.9.tar.gz",
 
     sha256 = "520eb76aee5d350c2a7265414bae302077cd70ed5a0aaf61dec9e43a968b1727",
-    iuse = ["cron", "systemd"],
     use_configure = {
-        "-cron": "--disable-cron",
-        "-systemd": "--disable-systemd",
-        "cron": "--enable-cron",
-        "systemd": "--enable-systemd",
+        "cron": ("--enable-cron", "--disable-cron"),
+        "systemd": ("--enable-systemd", "--disable-systemd"),
     },
     version = "3.0.9",
     description = "Security auditing tool for Unix/Linux systems",

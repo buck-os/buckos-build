@@ -1,25 +1,16 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "flac",
-    src_uri = "https://downloads.xiph.org/releases/flac/flac-1.4.3.tar.xz",
+    url = "https://downloads.xiph.org/releases/flac/flac-1.4.3.tar.xz",
 
     sha256 = "6c58e69cd22348f441b861092b825e591d0b822e106de6eb0ee4d05d27205b70",
-    iuse = [
-        "cxx",
-        "debug",
-        "ogg",
-        "static-libs",
-    ],
     use_configure = {
-        "-cxx": "--disable-cxx",
-        "-debug": "--disable-debug",
-        "-ogg": "--disable-ogg",
-        "-static-libs": "--disable-static",
-        "cxx": "--enable-cxx",
-        "debug": "--enable-debug",
-        "ogg": "--enable-ogg",
-        "static-libs": "--enable-static",
+        "cxx": ("--enable-cxx", "--disable-cxx"),
+        "debug": ("--enable-debug", "--disable-debug"),
+        "ogg": ("--enable-ogg", "--disable-ogg"),
+        "static-libs": ("--enable-static", "--disable-static"),
     },
     version = "1.4.3",
     description = "Free Lossless Audio Codec library",

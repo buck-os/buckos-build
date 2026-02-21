@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # cppcodec - Header-only C++ library for base64/base32/hex encoding
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "cppcodec",
     version = "0.2",
-    src_uri = "https://github.com/tplgy/cppcodec/archive/refs/tags/v0.2.tar.gz",
+    url = "https://github.com/tplgy/cppcodec/archive/refs/tags/v0.2.tar.gz",
     sha256 = "0edaea2a9d9709d456aa99a1c3e17812ed130f9ef2b5c2d152c230a5cbc5c482",
     description = "Header-only C++ library for base64/base32/hex encoding",
     homepage = "https://github.com/tplgy/cppcodec",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
     ],

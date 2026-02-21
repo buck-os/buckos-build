@@ -1,17 +1,16 @@
-load("//defs:package_defs.bzl", "download_source", "meson_package")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "mako",
-    src_uri = "https://github.com/emersion/mako/releases/download/v1.8.0/mako-1.8.0.tar.gz",
+    url = "https://github.com/emersion/mako/releases/download/v1.8.0/mako-1.8.0.tar.gz",
 
     sha256 = "f20ff74925d6876fc243c49cb45cdb849afd55611aa1640471020d191823e3bb",
-
-    signature_sha256 = "25cd25f756181625d4835dcd2167ce9f9985eb043260e2a750df59ec5eb0f4d7",
     version = "1.8.0",
     description = "A lightweight notification daemon for Wayland",
     homepage = "https://github.com/emersion/mako",
     license = "MIT",
-    meson_args = [],
+    configure_args = [],
     deps = [
         "//packages/linux/system/libs/utility/libffi:libffi",
         "//packages/linux/graphics/rendering/wayland:wayland",

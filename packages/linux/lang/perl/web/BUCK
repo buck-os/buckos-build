@@ -1,10 +1,10 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # Mojolicious - Real-time web framework
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "mojolicious",
-    src_uri = "https://cpan.metacpan.org/authors/id/S/SR/SRI/Mojolicious-9.37.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/S/SR/SRI/Mojolicious-9.37.tar.gz",
 
     sha256 = "4fb8a0882ed17f864f7de96b94fab61706f967f919c572dcccede68e588e9810",
     version = "9.37",
@@ -23,9 +23,10 @@ autotools_package(
 )
 
 # Dancer2 - Lightweight web application framework
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "dancer2",
-    src_uri = "https://cpan.metacpan.org/authors/id/C/CR/CROMEDOME/Dancer2-1.1.0.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/C/CR/CROMEDOME/Dancer2-1.1.0.tar.gz",
 
     sha256 = "d67c3fad08ab23699eafc62555927e849da428a042c9b8d1a52a9f1b41b9cb65",
     version = "1.1.0",
@@ -48,9 +49,10 @@ autotools_package(
 )
 
 # Catalyst::Runtime - The Elegant MVC Web Application Framework
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "catalyst-runtime",
-    src_uri = "https://cpan.metacpan.org/authors/id/J/JJ/JJNAPIORK/Catalyst-Runtime-5.90131.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/J/JJ/JJNAPIORK/Catalyst-Runtime-5.90131.tar.gz",
 
     sha256 = "9d641efacf0f9935e6ecb98f5a3b476c961b1f819bd2f8f23a647d1d867e1849",
     version = "5.90131",
@@ -72,9 +74,10 @@ autotools_package(
 )
 
 # Plack - Perl Superglue for Web frameworks and Web Servers (PSGI toolkit)
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "plack",
-    src_uri = "https://cpan.metacpan.org/authors/id/M/MI/MIYAGAWA/Plack-1.0051.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/M/MI/MIYAGAWA/Plack-1.0051.tar.gz",
 
     sha256 = "bebde91c42298ed6ec8e6c82b21433a1b49aa39412c247f3905b80f955acf77b",
     version = "1.0051",
@@ -96,9 +99,10 @@ autotools_package(
 )
 
 # CGI - Handle Common Gateway Interface requests and responses
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "cgi",
-    src_uri = "https://cpan.metacpan.org/authors/id/L/LE/LEEJO/CGI-4.64.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/L/LE/LEEJO/CGI-4.64.tar.gz",
 
     sha256 = "39bd8e40ce00cdab39e0a2bc71abd2bbe451d1d97bc7e54e41a2e199eb6226e7",
     version = "4.64",
@@ -117,9 +121,10 @@ autotools_package(
 )
 
 # URI - Uniform Resource Identifiers
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "uri",
-    src_uri = "https://cpan.metacpan.org/authors/id/O/OA/OALDERS/URI-5.21.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/O/OA/OALDERS/URI-5.21.tar.gz",
 
     sha256 = "96265860cd61bde16e8415dcfbf108056de162caa0ac37f81eb695c9d2e0ab77",
     version = "5.21",
@@ -138,9 +143,10 @@ autotools_package(
 )
 
 # HTML::Parser - HTML parser class
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "html-parser",
-    src_uri = "https://cpan.metacpan.org/authors/id/O/OA/OALDERS/HTML-Parser-3.82.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/O/OA/OALDERS/HTML-Parser-3.82.tar.gz",
 
     sha256 = "5b1f20dd0e471a049c13a53d0fcd0442f58518889180536c6f337112c9a430d8",
     version = "3.82",
@@ -160,9 +166,10 @@ autotools_package(
 )
 
 # HTML::Tree - Build and search HTML trees
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "html-tree",
-    src_uri = "https://cpan.metacpan.org/authors/id/K/KE/KENTNL/HTML-Tree-5.07.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/K/KE/KENTNL/HTML-Tree-5.07.tar.gz",
 
     sha256 = "f0374db84731c204b86c1d5b90975fef0d30a86bd9def919343e554e31a9dbbf",
     version = "5.07",
@@ -182,9 +189,10 @@ autotools_package(
 )
 
 # Template - Template Toolkit - Perl template processing system
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "template-toolkit",
-    src_uri = "https://cpan.metacpan.org/authors/id/T/TO/TODDR/Template-Toolkit-3.102.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/T/TO/TODDR/Template-Toolkit-3.102.tar.gz",
 
     sha256 = "d161c89dee9b213a7c55709ea782e2dd5923dbd1215b9576612889e6e74a2e06",
     version = "3.102",
@@ -203,9 +211,10 @@ autotools_package(
 )
 
 # Web::Scraper - Web Scraping Toolkit using HTML and CSS Selectors
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "web-scraper",
-    src_uri = "https://cpan.metacpan.org/authors/id/M/MI/MIYAGAWA/Web-Scraper-0.38.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/M/MI/MIYAGAWA/Web-Scraper-0.38.tar.gz",
 
     sha256 = "f95b6e5f8d7feebe116d05bf59a2b7cf1a51ed9d30bca80123430ec4567543bf",
     version = "0.38",
@@ -227,9 +236,10 @@ autotools_package(
 )
 
 # Starman - High-performance preforking PSGI/Plack web server
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "starman",
-    src_uri = "https://cpan.metacpan.org/authors/id/M/MI/MIYAGAWA/Starman-0.4017.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/M/MI/MIYAGAWA/Starman-0.4017.tar.gz",
 
     sha256 = "6ffab915f323f60089e3ebf852b9b9707d6917266df8afd7370fac04bfdfee4e",
     version = "0.4017",
@@ -249,9 +259,10 @@ autotools_package(
 )
 
 # Twiggy - AnyEvent HTTP server for PSGI
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "twiggy",
-    src_uri = "https://cpan.metacpan.org/authors/id/M/MI/MIYAGAWA/Twiggy-0.1026.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/M/MI/MIYAGAWA/Twiggy-0.1026.tar.gz",
 
     sha256 = "4d91ea6ed9ae9a8ef4314dc2a7cf52eb026b365be68386b35ea6864dfac57f9e",
     version = "0.1026",
@@ -272,9 +283,10 @@ autotools_package(
 )
 
 # Cookie::Baker - Cookie string generator / parser
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "cookie-baker",
-    src_uri = "https://cpan.metacpan.org/authors/id/K/KA/KAZEBURO/Cookie-Baker-0.11.tar.gz",
+    url = "https://cpan.metacpan.org/authors/id/K/KA/KAZEBURO/Cookie-Baker-0.11.tar.gz",
 
     sha256 = "59275f474e07c0aa3611e3e684b894e7db913333d8214420be63f12ec18cd7ab",
     version = "0.11",

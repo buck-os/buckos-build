@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "go_package")
+load("//defs:package.bzl", "package")
 
-go_package(
+package(
+    build_rule = "go",
     name = "go-attestation",
     version = "0.0.0-56f6aee",
-    src_uri = "https://github.com/google/go-attestation/archive/56f6aee65f04c87386c43d2e84e4baabe9d321df.tar.gz",
+    url = "https://github.com/google/go-attestation/archive/56f6aee65f04c87386c43d2e84e4baabe9d321df.tar.gz",
     sha256 = "e65d66cee82e2acbfa18b49cce65e86dc2e64e4d319439fc277603e1f8fe9530",
     description = "Go library for TPM-based attestation",
     homepage = "https://github.com/google/go-attestation",

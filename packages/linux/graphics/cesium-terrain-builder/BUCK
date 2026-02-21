@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # Cesium Terrain Builder - Tools for creating terrain tiles for Cesium
 #
@@ -7,10 +7,11 @@ load("//defs:package_defs.bzl", "cmake_package")
 # The tools can be used to create terrain tiles from GeoTIFF data, GDAL raster
 # formats, and other geospatial data sources.
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "cesium-terrain-builder",
     version = "0.4.1",
-    src_uri = "https://mirror.buckos.org/c/cesium-terrain-builder-v0.4.1.tar.gz",
+    url = "https://mirror.buckos.org/c/cesium-terrain-builder-v0.4.1.tar.gz",
     sha256 = "41c2155c9ceb2c2946a260efe5840b2d5a696df05b7a0cc1703f7fd098469e94",
     description = "Tools for creating terrain tiles for Cesium - converts geospatial data to Cesium terrain format",
     homepage = "https://github.com/ruanqizhen/cesium-terrain-builder",
@@ -25,7 +26,7 @@ cmake_package(
 
         # Note: Threads library (pthread) is provided by system toolchain
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         # Tile size - according to spec should always be 65

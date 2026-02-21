@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "optimum-quanto",
     version = "0.2.7",
-    src_uri = "https://github.com/huggingface/optimum-quanto/archive/refs/tags/v0.2.7.tar.gz",
+    url = "https://github.com/huggingface/optimum-quanto/archive/refs/tags/v0.2.7.tar.gz",
     sha256 = "0a579ed9049ff3c05f33a7624dd2c3d27af750476e7562717eca3fb8506e4532",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

@@ -1,14 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "whereami-src",
-    src_uri = "https://github.com/gpakosz/whereami/archive/ba364cd54fd431c76c045393b6522b4bff547f50.tar.gz",
-    sha256 = "1d8744177f37e8386ec2f6c5992592399040cb93535ed4fd253e1976f889a744",
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "whereami",
-    srcs = [":whereami-src"],
     version = "2024.01",
     description = "Locate the current executable and module on the file system",
     homepage = "https://github.com/gpakosz/whereami",

@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "spacy-en_core_web_trf",
     version = "3.4.0",
-    src_uri = "https://github.com/explosion/spacy-models/releases/download/en_core_web_trf-3.4.0/en_core_web_trf-3.4.0.tar.gz",
+    url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_trf-3.4.0/en_core_web_trf-3.4.0.tar.gz",
     sha256 = "244279712bec3465cc3a8b020debb39923310efe738dac2f4380960c53dfaa2c",
     deps = [
         "//packages/linux/ai/nlp/spacy:spacy",

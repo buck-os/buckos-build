@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "sps",
     version = "0.6.0",
-    src_uri = "https://github.com/IssamLaradji/sps/archive/refs/heads/master.tar.gz",
+    url = "https://github.com/IssamLaradji/sps/archive/refs/heads/master.tar.gz",
     sha256 = "9372a41aebbca3a26f4259020383b73e5d143b92c7acd65246321d32aa11ab44",
     deps = [
         "//packages/linux/dev-libs/python/numpy:numpy",

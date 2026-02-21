@@ -1,19 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # cpuinfo - CPU information detection library
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "cpuinfo",
     version = "0.0.0+git20250109",
-    src_uri = "https://github.com/pytorch/cpuinfo/archive/c61fe919607bbc534d7a5a5707bdd7041e72c5ff.tar.gz",
+    url = "https://github.com/pytorch/cpuinfo/archive/c61fe919607bbc534d7a5a5707bdd7041e72c5ff.tar.gz",
     sha256 = "84ade42f13c935885e84b3cb895f4413e856adc900b95b1da0920b44179cbfd5",
     description = "CPU information detection library with cross-platform support",
     homepage = "https://github.com/pytorch/cpuinfo",
     license = "BSD-2-Clause",
-    iuse = ["tools", "benchmarks"],
-    use_defaults = [],
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCPUINFO_BUILD_UNIT_TESTS=OFF",
         "-DCPUINFO_BUILD_MOCK_TESTS=OFF",
@@ -25,7 +24,7 @@ cmake_package(
         "benchmarks": "CPUINFO_BUILD_BENCHMARKS",
     },
     use_deps = {
-        "benchmarks": ["//packages/linux/dev-libs/misc/benchmark:benchmark"],
+        "benchmarks": "//packages/linux/dev-libs/misc/benchmark:benchmark",
     },
     visibility = ["PUBLIC"],
 )

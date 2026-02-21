@@ -1,40 +1,25 @@
-load("//defs:package_defs.bzl", "meson_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # zathura - Document viewer with vim-like interface
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "zathura",
     version = "0.5.4",
-    iuse = [
-        "X",
-        "landlock",
-        "man",
-        "seccomp",
-        "synctex",
-        "wayland",
-    ],
     use_configure = {
-        "-X": "--without-x",
-        "-landlock": "--disable-landlock",
-        "-man": "--disable-man",
-        "-seccomp": "--disable-seccomp",
-        "-synctex": "--disable-synctex",
-        "-wayland": "--disable-wayland",
-        "X": "--with-x",
-        "landlock": "--enable-landlock",
-        "man": "--enable-man",
-        "seccomp": "--enable-seccomp",
-        "synctex": "--enable-synctex",
-        "wayland": "--enable-wayland",
+        "X": ("--with-x", "--without-x"),
+        "landlock": ("--enable-landlock", "--disable-landlock"),
+        "man": ("--enable-man", "--disable-man"),
+        "seccomp": ("--enable-seccomp", "--disable-seccomp"),
+        "synctex": ("--enable-synctex", "--disable-synctex"),
+        "wayland": ("--enable-wayland", "--disable-wayland"),
     },
-    src_uri = "https://pwmt.org/projects/zathura/download/zathura-0.5.4.tar.xz",
+    url = "https://pwmt.org/projects/zathura/download/zathura-0.5.4.tar.xz",
     sha256 = "a3037f7aa94d4096bfd97069f62ffcdca9f06431e8663548c1cd6b945c556f32",
-    signature_required = False,
     description = "Document viewer with vim-like interface",
     homepage = "https://pwmt.org/projects/zathura",
     license = "Zlib",
-    meson_args = [
+    configure_args = [
         "-Dprefix=/usr",
     ],
     deps = [

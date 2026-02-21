@@ -1,14 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "ompl",
     version = "1.5.0",
-    src_uri = "https://github.com/ompl/ompl/archive/refs/tags/1.5.0.tar.gz",
+    url = "https://github.com/ompl/ompl/archive/refs/tags/1.5.0.tar.gz",
     sha256 = "a7df8611b7823ef44c731f02897571adfc23551e85c6618d926e7720004267a5",
     description = "Open Motion Planning Library - motion planning algorithms",
     homepage = "https://ompl.kavrakilab.org",
     license = "BSD",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DOMPL_BUILD_DEMOS=OFF",
         "-DOMPL_BUILD_TESTS=OFF",

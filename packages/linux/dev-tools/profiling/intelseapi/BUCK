@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "intelseapi",
     version = "61c271d",
-    src_uri = "https://github.com/intel/IntelSEAPI/archive/61c271d36516e57f50a5e4600af8d6d1d34ce667.tar.gz",
+    url = "https://github.com/intel/IntelSEAPI/archive/61c271d36516e57f50a5e4600af8d6d1d34ce667.tar.gz",
     sha256 = "05853791bd904ca5c6d16f8db094402828bb4c8610d1c1cd852170afcbf61122",
-    cmake_args = [
+    configure_args = [
         "-DJDK=OFF",
         "-DCO_PILOT=OFF",
     ],

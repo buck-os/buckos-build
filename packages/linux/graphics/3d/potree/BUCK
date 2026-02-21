@@ -1,14 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "potree",
     version = "1.7",
-    src_uri = "https://github.com/potree/PotreeConverter/archive/refs/tags/1.7.tar.gz",
+    url = "https://github.com/potree/PotreeConverter/archive/refs/tags/1.7.tar.gz",
     sha256 = "4f9a3f362fec1ac5225ee9367c51057d29d6b2055b7f477964be5844cac7cb6a",
     deps = [
         "//packages/linux/dev-libs/serialization/cereal:cereal",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DSHARED=OFF",
     ],

@@ -1,8 +1,9 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # wolfSSL - Embedded SSL/TLS library
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "wolfssl",
     bdepend = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
@@ -13,28 +14,22 @@ autotools_package(
 autoreconf -fi
 """,
     version = "5.7.4",
-    src_uri = "https://github.com/wolfSSL/wolfssl/archive/refs/tags/v5.7.4-stable.tar.gz",
+    url = "https://github.com/wolfSSL/wolfssl/archive/refs/tags/v5.7.4-stable.tar.gz",
     sha256 = "6c70f6fab34e2f963a255c3637c0c6f7250df2d1ef7c34eebca4f8e8d7323399",
     description = "Lightweight embedded SSL/TLS library",
     homepage = "https://www.wolfssl.com/",
     license = "GPL-2",
-    iuse = ["static-libs", "asm", "ipv6", "cryptodev", "ocsp", "tls13"],
-    use_defaults = ["asm", "ipv6", "tls13"],
     use_configure = {
-        "static-libs": "--enable-static",
-        "-static-libs": "--disable-static",
-        "asm": "--enable-asm",
-        "-asm": "--disable-asm",
-        "ipv6": "--enable-ipv6",
-        "-ipv6": "--disable-ipv6",
-        "cryptodev": "--enable-cryptodev",
-        "-cryptodev": "--disable-cryptodev",
-        "ocsp": "--enable-ocsp",
-        "-ocsp": "--disable-ocsp",
-        "tls13": "--enable-tls13",
-        "-tls13": "--disable-tls13",
+        "asm": ("--enable-asm", "--disable-asm"),
+        "cryptodev": ("--enable-cryptodev", "--disable-cryptodev"),
+        "ipv6": ("--enable-ipv6", "--disable-ipv6"),
+        "ocsp": ("--enable-ocsp", "--disable-ocsp"),
+        "static-libs": ("--enable-static", "--disable-static"),
+        "tls13": ("--enable-tls13", "--disable-tls13"),
     },
-    use_deps = {},
+    use_deps = {
+
+    },
     configure_args = [
         "--enable-shared",
         "--enable-opensslextra",

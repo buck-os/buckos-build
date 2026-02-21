@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # fcgiwrap - Simple FastCGI wrapper for CGI scripts
 #
@@ -8,7 +8,8 @@ load("//defs:package_defs.bzl", "autotools_package")
 # It's especially useful for hosting legacy CGI scripts or git repositories
 # over HTTP.
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "fcgiwrap",
     # Disable -Werror for implicit-fallthrough warning
     env = {"CFLAGS": "-O2 -Wno-implicit-fallthrough"},
@@ -22,15 +23,13 @@ autotools_package(
 autoreconf -fiv
 """,
     version = "1.1.0",
-    iuse = ["systemd"],
     use_configure = {
-        "-systemd": "--without-systemd",
-        "systemd": "--with-systemd",
+        "systemd": ("--with-systemd", "--without-systemd"),
     },
     use_deps = {
-        "systemd": ["//packages/linux/system/init/systemd:systemd"],
+        "systemd": "//packages/linux/system/init/systemd:systemd",
     },
-    src_uri = "https://github.com/gnosek/fcgiwrap/archive/refs/tags/1.1.0.tar.gz",
+    url = "https://github.com/gnosek/fcgiwrap/archive/refs/tags/1.1.0.tar.gz",
     sha256 = "4c7de0db2634c38297d5fcef61ab4a3e21856dd7247d49c33d9b19542bd1c61f",
     description = "Simple FastCGI wrapper for CGI scripts",
     homepage = "https://github.com/gnosek/fcgiwrap",

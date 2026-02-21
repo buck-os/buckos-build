@@ -1,55 +1,34 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # x265 - HEVC/H.265 encoder
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "x265",
     version = "3.5",
-    src_uri = "https://bitbucket.org/multicoreware/x265_git/downloads/x265_3.5.tar.gz",
+    url = "https://bitbucket.org/multicoreware/x265_git/downloads/x265_3.5.tar.gz",
     sha256 = "e70a3335cacacbba0b3a20ec6fecd6783932288ebc8163ad74bcc9606477cae8",
     description = "HEVC/H.265 encoder",
     homepage = "https://www.videolan.org/developers/x265.html",
     license = "GPL-2",
-    iuse = [
-        "10bit",
-        "12bit",
-        "asm",
-        "cli",
-        "cpu_flags_ppc_vsx2",
-        "numa",
-        "pic",
-        "shared",
-        "static",
-        "vmaf",
-    ],
-    use_defaults = ["cli", "shared", "asm", "pic"],
     deps = [],
     use_deps = {
-        "numa": ["//packages/linux/system/libs/numa:numactl"],
+        "numa": "//packages/linux/system/libs/numa:numactl",
     },
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DENABLE_TESTS=OFF",
     ],
-    use_cmake = {
-        "-10bit": "-DHIGH_BIT_DEPTH=OFF",
-        "-asm": "-DENABLE_ASSEMBLY=OFF",
-        "-cli": "-DENABLE_CLI=OFF",
-        "-cpu_flags_ppc_vsx2": "-DENABLE_CPU_FLAGS_PPC_VSX2=OFF",
-        "-numa": "-DENABLE_LIBNUMA=OFF",
-        "-pic": "-DENABLE_PIC=OFF",
-        "-shared": "-DENABLE_SHARED=OFF",
-        "-static": "-DSTATIC_LINK_CRT=OFF",
-        "-vmaf": "-DENABLE_VMAF=OFF",
-        "10bit": "-DHIGH_BIT_DEPTH=ON",
-        "asm": "-DENABLE_ASSEMBLY=ON",
-        "cli": "-DENABLE_CLI=ON",
-        "cpu_flags_ppc_vsx2": "-DENABLE_CPU_FLAGS_PPC_VSX2=ON",
-        "numa": "-DENABLE_LIBNUMA=ON",
-        "pic": "-DENABLE_PIC=ON",
-        "shared": "-DENABLE_SHARED=ON",
-        "static": "-DSTATIC_LINK_CRT=ON",
-        "vmaf": "-DENABLE_VMAF=ON",
+    use_configure = {
+        "10bit": ("-DHIGH_BIT_DEPTH=ON", "-DHIGH_BIT_DEPTH=OFF"),
+        "asm": ("-DENABLE_ASSEMBLY=ON", "-DENABLE_ASSEMBLY=OFF"),
+        "cli": ("-DENABLE_CLI=ON", "-DENABLE_CLI=OFF"),
+        "cpu_flags_ppc_vsx2": ("-DENABLE_CPU_FLAGS_PPC_VSX2=ON", "-DENABLE_CPU_FLAGS_PPC_VSX2=OFF"),
+        "numa": ("-DENABLE_LIBNUMA=ON", "-DENABLE_LIBNUMA=OFF"),
+        "pic": ("-DENABLE_PIC=ON", "-DENABLE_PIC=OFF"),
+        "shared": ("-DENABLE_SHARED=ON", "-DENABLE_SHARED=OFF"),
+        "static": ("-DSTATIC_LINK_CRT=ON", "-DSTATIC_LINK_CRT=OFF"),
+        "vmaf": ("-DENABLE_VMAF=ON", "-DENABLE_VMAF=OFF"),
     },
     # x265 source is in a subdirectory
     source_subdir = "source",

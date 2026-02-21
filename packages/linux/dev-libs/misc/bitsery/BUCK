@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # bitsery - Header only C++ binary serialization library
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "bitsery",
     version = "5.2.3",
-    src_uri = "https://github.com/fraillt/bitsery/archive/refs/tags/v5.2.3.tar.gz",
+    url = "https://github.com/fraillt/bitsery/archive/refs/tags/v5.2.3.tar.gz",
     sha256 = "896d82ab4ccea9899ff2098aa69ad6d25e524ee1d4c747ce3232d0afe3cd05a5",
     description = "Header only C++ binary serialization library",
     homepage = "https://github.com/fraillt/bitsery",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],
     visibility = ["PUBLIC"],

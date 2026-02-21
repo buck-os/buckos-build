@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "simple_binary_package")
+load("//defs:package.bzl", "package")
 
-simple_binary_package(
+simple_package(
+    build_rule = "binary",
     name = "ispc",
     version = "1.29.1",
-    src_uri = "https://github.com/ispc/ispc/releases/download/v1.29.1/ispc-v1.29.1-linux.tar.gz",
+    url = "https://github.com/ispc/ispc/releases/download/v1.29.1/ispc-v1.29.1-linux.tar.gz",
     sha256 = "fdcad97d1b491a604dca009d78212d1c98a5b1d2e1f8cdcbf2f063d79dafd07d",
     description = "Intel SPMD Program Compiler",
     homepage = "https://ispc.github.io/",

@@ -1,14 +1,15 @@
-load("//defs:package_defs.bzl", "cargo_package")
+load("//defs:package.bzl", "package")
 
 # DISABLED: Cargo workspace issue - the tarball is missing workspace members (packit/Cargo.toml)
 # This package likely requires git submodules or a different source approach.
 # Error: failed to load manifest for workspace member `/path/to/source/kernel`
 #        failed to read `/path/to/source/packit/Cargo.toml`
 # TODO: Either use git clone with submodules or find a complete source tarball
-# cargo_package(
+# package(
+#     build_rule = "cargo",
 #     name = "svsm",
 #     version = "2025.08-devel",
-#     src_uri = "https://github.com/coconut-svsm/svsm/archive/v2025.08-devel.tar.gz",
+#     url = "https://github.com/coconut-svsm/svsm/archive/v2025.08-devel.tar.gz",
 #     sha256 = "8d7c7e5a73ba0f320e0238769d4009fb658eeba33089ddebe84aea105a02d27e",
 #     bins = [
 #         "igvmbuilder",

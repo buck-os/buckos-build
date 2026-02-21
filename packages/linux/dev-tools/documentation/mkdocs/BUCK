@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
 # MkDocs - Project documentation with Markdown
 
-python_package(
+package(
+    build_rule = "python",
     name = "mkdocs",
     version = "1.5.3",
-    src_uri = "https://github.com/mkdocs/mkdocs/archive/refs/tags/1.5.3.tar.gz",
+    url = "https://github.com/mkdocs/mkdocs/archive/refs/tags/1.5.3.tar.gz",
     sha256 = "1542e09f0c07aca03629337a25ca198f67bb8139380ada9ab3b5adaa5205419b",
     description = "Project documentation with Markdown",
     homepage = "https://www.mkdocs.org/",

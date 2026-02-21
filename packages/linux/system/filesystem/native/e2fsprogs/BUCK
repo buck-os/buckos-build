@@ -1,33 +1,20 @@
-load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "e2fsprogs",
     # GCC 15: bool is a C23 keyword, can't be typedef'd
     env = {"CFLAGS": "-std=gnu11"},
-    src_uri = "https://mirrors.edge.kernel.org/pub/linux/kernel/people/tytso/e2fsprogs/v1.47.0/e2fsprogs-1.47.0.tar.xz",
+    url = "https://mirrors.edge.kernel.org/pub/linux/kernel/people/tytso/e2fsprogs/v1.47.0/e2fsprogs-1.47.0.tar.xz",
 
     sha256 = "144af53f2bbd921cef6f8bea88bb9faddca865da3fbc657cc9b4d2001097d5db",
-    iuse = [
-        "archive",
-        "cron",
-        "fuse",
-        "nls",
-        "static-libs",
-        "tools",
-    ],
     use_configure = {
-        "-archive": "--disable-archive",
-        "-cron": "--disable-cron",
-        "-fuse": "--disable-fuse",
-        "-nls": "--disable-nls",
-        "-static-libs": "--disable-static",
-        "-tools": "--disable-tools",
-        "archive": "--enable-archive",
-        "cron": "--enable-cron",
-        "fuse": "--enable-fuse",
-        "nls": "--enable-nls",
-        "static-libs": "--enable-static",
-        "tools": "--enable-tools",
+        "archive": ("--enable-archive", "--disable-archive"),
+        "cron": ("--enable-cron", "--disable-cron"),
+        "fuse": ("--enable-fuse", "--disable-fuse"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "static-libs": ("--enable-static", "--disable-static"),
+        "tools": ("--enable-tools", "--disable-tools"),
     },
     version = "1.47.0",
     description = "Ext2/3/4 filesystem utilities (mke2fs, e2fsck, tune2fs, etc.)",

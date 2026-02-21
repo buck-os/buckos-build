@@ -1,30 +1,26 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # SVT-AV1 - Scalable Video Technology for AV1 encoder
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "svt-av1",
     version = "2.0.0",
-    src_uri = "https://gitlab.com/AOMediaCodec/SVT-AV1/-/archive/v2.0.0/SVT-AV1-v2.0.0.tar.gz",
+    url = "https://gitlab.com/AOMediaCodec/SVT-AV1/-/archive/v2.0.0/SVT-AV1-v2.0.0.tar.gz",
     sha256 = "1ff917e2c866bd35dc9c35fd416575a4fbb0a2605878465e1a0e838dbd882082",
     description = "Scalable Video Technology for AV1 encoder",
     homepage = "https://gitlab.com/AOMediaCodec/SVT-AV1",
     license = "BSD-2-Clause",
-    iuse = ["asm", "native", "examples"],
-    use_defaults = ["asm"],
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_TESTING=OFF",
     ],
-    use_cmake = {
-        "asm": "-DENABLE_ASM=ON",
-        "-asm": "-DENABLE_ASM=OFF",
-        "native": "-DNATIVE=ON",
-        "-native": "-DNATIVE=OFF",
-        "examples": "-DBUILD_APPS=ON",
-        "-examples": "-DBUILD_APPS=OFF",
+    use_configure = {
+        "asm": ("-DENABLE_ASM=ON", "-DENABLE_ASM=OFF"),
+        "examples": ("-DBUILD_APPS=ON", "-DBUILD_APPS=OFF"),
+        "native": ("-DNATIVE=ON", "-DNATIVE=OFF"),
     },
     visibility = ["PUBLIC"],
 )

@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 LIBCXX_VERSION = "18.1.8"
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "libcxx",
     version = LIBCXX_VERSION,
-    src_uri = "https://github.com/llvm/llvm-project/releases/download/llvmorg-{}/llvm-project-{}.src.tar.xz".format(LIBCXX_VERSION, LIBCXX_VERSION),
+    url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-{}/llvm-project-{}.src.tar.xz".format(LIBCXX_VERSION, LIBCXX_VERSION),
     sha256 = "0b58557a6d32ceee97c8d533a59b9212d87e0fc4d2833924eb6c611247db2f2a",
     description = "LLVM libc++ C++ Standard Library",
     homepage = "https://libcxx.llvm.org/",
@@ -27,7 +28,7 @@ cmake -G Ninja -S "$S/runtimes" -B "$S/build" \
     -DLIBUNWIND_ENABLE_SHARED=ON \
     -DLIBUNWIND_ENABLE_STATIC=ON
 """,
-    cmake_args = [],
+    configure_args = [],
     deps = [
         "//packages/linux/core/llvm:llvm",
     ],

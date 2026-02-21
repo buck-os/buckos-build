@@ -1,43 +1,32 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # GFXReconstruct - Graphics API capture and replay tools for Vulkan and D3D12
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "gfxreconstruct",
     version = "1.0.4",
-    src_uri = "https://github.com/LunarG/gfxreconstruct/archive/refs/tags/v1.0.4.tar.gz",
+    url = "https://github.com/LunarG/gfxreconstruct/archive/refs/tags/v1.0.4.tar.gz",
     sha256 = "ac4e59a7b7416599d91c742d45accd64c4a3378871c9f2234dd576ed6281e749",
     description = "Tools for capture and replay of Vulkan and D3D12 graphics API calls",
     homepage = "https://github.com/LunarG/gfxreconstruct",
     license = "MIT",
     maintainers = ["buckos"],
-    iuse = [
-        "X",
-        "d3d12",
-        "lz4",
-        "openxr",
-        "wayland",
-        "xcb",
-        "xlib",
-        "zstd",
-    ],
-    use_cmake = {
-        "-X": "-DENABLE_X=OFF",
-        "X": "-DENABLE_X=ON",
+    use_configure = {
+        "X": ("-DENABLE_X=ON", "-DENABLE_X=OFF"),
     },
-    use_defaults = ["wayland", "xcb", "xlib", "lz4", "zstd"],
     deps = [
         "//packages/linux/dev-libs/json/nlohmann-json:nlohmann-json",
         "//packages/linux/system/libs/compression/zlib:zlib",
     ],
     use_deps = {
-        "lz4": ["//packages/linux/dev-libs/compression/lz4:lz4"],
-        "zstd": ["//packages/linux/system/libs/compression/zstd:zstd"],
-        "xcb": ["//packages/linux/graphics/xorg/libxcb:libxcb"],
-        "wayland": ["//packages/linux/graphics/rendering/wayland:wayland"],
-        "xlib": ["//packages/linux/graphics/xorg/lib/libx11:libx11"],
+        "lz4": "//packages/linux/dev-libs/compression/lz4:lz4",
+        "zstd": "//packages/linux/system/libs/compression/zstd:zstd",
+        "xcb": "//packages/linux/graphics/xorg/libxcb:libxcb",
+        "wayland": "//packages/linux/graphics/rendering/wayland:wayland",
+        "xlib": "//packages/linux/graphics/xorg/lib/libx11:libx11",
     },
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_WERROR=OFF",

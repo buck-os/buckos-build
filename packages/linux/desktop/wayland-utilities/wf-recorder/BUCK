@@ -1,20 +1,19 @@
-load("//defs:package_defs.bzl", "download_source", "meson_package")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "wf-recorder",
-    src_uri = "https://github.com/ammen99/wf-recorder/releases/download/v0.5.0/wf-recorder-0.5.0.tar.xz",
+    url = "https://github.com/ammen99/wf-recorder/releases/download/v0.5.0/wf-recorder-0.5.0.tar.xz",
 
     sha256 = "50b30569f9ecf4f6ba5ba76c422b7af652b4fbc7cae86c25e19ecbe669fca327",
-    iuse = ["pipewire"],
-    use_meson = {
-        "-pipewire": "-Dpipewire=disabled",
-        "pipewire": "-Dpipewire=enabled",
+    use_configure = {
+        "pipewire": ("-Dpipewire=enabled", "-Dpipewire=disabled"),
     },
     version = "0.5.0",
     description = "Screen recorder for wlroots-based compositors",
     homepage = "https://github.com/ammen99/wf-recorder",
     license = "MIT",
-    meson_args = [],
+    configure_args = [],
     deps = [
         "//packages/linux/system/libs/utility/libffi:libffi",
         "//packages/linux/graphics/rendering/wayland:wayland",

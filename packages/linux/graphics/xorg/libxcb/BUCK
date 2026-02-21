@@ -1,19 +1,16 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # libxcb - X C Bindings library
 # Low-level X11 protocol library, modern replacement for Xlib protocol handling
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libxcb",
     version = "1.16",
-    iuse = ["selinux", "xkb"],
-    use_defaults = ["xkb"],
     use_configure = {
-        "-selinux": "--disable-selinux",
-        "-xkb": "--disable-xkb",
-        "selinux": "--enable-selinux",
-        "xkb": "--enable-xkb",
+        "selinux": [("--disable-selinux", "--enable-selinux")],
+        "xkb": [("--disable-xkb", "--enable-xkb")],
     },
-    src_uri = "https://xorg.freedesktop.org/archive/individual/lib/libxcb-1.16.tar.xz",
+    url = "https://xorg.freedesktop.org/archive/individual/lib/libxcb-1.16.tar.xz",
     sha256 = "4348566aa0fbf196db5e0a576321c65966189210cb51328ea2bb2be39c711d71",
     description = "X C Bindings library",
     homepage = "https://xcb.freedesktop.org/",

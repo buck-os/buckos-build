@@ -1,22 +1,19 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # Hyprland - Dynamic tiling Wayland compositor
 # =============================================================================
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "hyprland",
-    src_uri = "https://github.com/hyprwm/Hyprland/releases/download/v0.36.0/source-v0.36.0.tar.gz",
+    url = "https://github.com/hyprwm/Hyprland/releases/download/v0.36.0/source-v0.36.0.tar.gz",
 
     sha256 = "8e44c379794663accf928458b5e363ed248d56fc5f267e6b3759146fdf1229bb",
-    iuse = ["X", "qtutils", "systemd"],
     use_configure = {
-        "-X": "--without-x",
-        "-qtutils": "--disable-qtutils",
-        "-systemd": "--disable-systemd",
-        "X": "--with-x",
-        "qtutils": "--enable-qtutils",
-        "systemd": "--enable-systemd",
+        "X": ("--with-x", "--without-x"),
+        "qtutils": ("--enable-qtutils", "--disable-qtutils"),
+        "systemd": ("--enable-systemd", "--disable-systemd"),
     },
     version = "0.36.0",
     description = "Hyprland - Dynamic tiling Wayland compositor",

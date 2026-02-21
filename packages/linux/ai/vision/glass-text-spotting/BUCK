@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "glass-text-spotting",
     version = "0.1",
-    src_uri = "https://github.com/amazon-science/glass-text-spotting/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/amazon-science/glass-text-spotting/archive/refs/heads/main.tar.gz",
     sha256 = "ee28d3faa99f053b69c0e9a62b589bcd79068284022d6a9e979ff6b05a16faed",
     deps = [
         "//packages/linux/dev-libs/python/numpy:numpy",

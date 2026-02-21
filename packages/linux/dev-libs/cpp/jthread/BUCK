@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "simple_binary_package")
+load("//defs:package.bzl", "package")
 
 # jthread - C++20 std::jthread reference implementation (header-only)
 
-simple_binary_package(
+simple_package(
+    build_rule = "binary",
     name = "jthread",
     version = "1.0.0",
-    src_uri = "https://github.com/josuttis/jthread/archive/0fa8d394254886c555d6faccd0a3de819b7d47f8.tar.gz",
+    url = "https://github.com/josuttis/jthread/archive/0fa8d394254886c555d6faccd0a3de819b7d47f8.tar.gz",
     sha256 = "d3a20e0c1b2758c4545b0a97490afa2986e39c8b4387c3dba2007def742cbeb0",
     description = "C++20 std::jthread and std::stop_token reference implementation",
     homepage = "https://github.com/josuttis/jthread",

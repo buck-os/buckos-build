@@ -1,16 +1,17 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # cpu_features - A cross-platform C library to retrieve CPU features at runtime
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "cpu_features",
     version = "0.10.1",
-    src_uri = "https://github.com/google/cpu_features/archive/refs/tags/v0.10.1.tar.gz",
+    url = "https://github.com/google/cpu_features/archive/refs/tags/v0.10.1.tar.gz",
     sha256 = "52639b380fced11d738f8b151dbfee63fb94957731d07f1966c812e5b90cbad4",
     description = "A cross-platform C library to retrieve CPU features (such as available instructions) at runtime",
     homepage = "https://github.com/google/cpu_features",
     license = "Apache-2.0",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_TESTING=OFF",

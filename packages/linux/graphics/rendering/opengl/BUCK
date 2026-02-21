@@ -1,21 +1,20 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # opengl - Package from third-party
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "opengl",
     version = "1.7.0",
-    iuse = ["X"],
-    use_cmake = {
-        "-X": "-DENABLE_X=OFF",
-        "X": "-DENABLE_X=ON",
+    use_configure = {
+        "X": ("-DENABLE_X=ON", "-DENABLE_X=OFF"),
     },
-    src_uri = "https://gitlab.freedesktop.org/glvnd/libglvnd/-/archive/v1.7.0/libglvnd-v1.7.0.tar.gz",
+    url = "https://gitlab.freedesktop.org/glvnd/libglvnd/-/archive/v1.7.0/libglvnd-v1.7.0.tar.gz",
     sha256 = "2b6e15b06aafb4c0b6e2348124808cbd9b291c647299eaaba2e3202f51ff2f3d",
     description = "opengl package",
     license = "unknown",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
     ],

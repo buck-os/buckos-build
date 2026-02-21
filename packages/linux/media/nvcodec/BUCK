@@ -1,3 +1,5 @@
+load("//defs:package.bzl", "package")
+
 # =============================================================================
 # nvcodec - NVIDIA Video Codec SDK
 # =============================================================================
@@ -6,18 +8,9 @@
 # - Video Decoder API (CUVID)
 # - Video Encoder API (NVENC)
 
-load("//defs:package_defs.bzl", "download_source", "binary_package", "gen_pkgconfig_headeronly")
-
-download_source(
-    name = "nvcodec-src",
-    src_uri = "https://github.com/FFmpeg/nv-codec-headers/releases/download/n12.2.72.0/nv-codec-headers-12.2.72.0.tar.gz",
-    sha256 = "c295a2ba8a06434d4bdc5c2208f8a825285210d71d91d572329b2c51fd0d4d03",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "nvcodec",
-    srcs = [":nvcodec-src"],
     version = "12.2.72",
     description = "NVIDIA Video Codec SDK headers for hardware video encode/decode",
     homepage = "https://developer.nvidia.com/video-codec-sdk",

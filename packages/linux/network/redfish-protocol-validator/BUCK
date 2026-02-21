@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "redfish-protocol-validator",
     version = "1.0.8",
-    src_uri = "https://github.com/DMTF/Redfish-Protocol-Validator/archive/refs/tags/1.0.8.tar.gz",
+    url = "https://github.com/DMTF/Redfish-Protocol-Validator/archive/refs/tags/1.0.8.tar.gz",
     sha256 = "8911ccf9555913926a39f8c7294f742db8d098ed42487a3aa4a3e4c780a33990",
     deps = [
         "//packages/linux/dev-libs/python/aenum:aenum",

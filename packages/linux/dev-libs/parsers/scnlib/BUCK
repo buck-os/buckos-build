@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "scnlib",
     version = "4.0.1",
-    src_uri = "https://github.com/eliaskosunen/scnlib/archive/refs/tags/v4.0.1.tar.gz",
+    url = "https://github.com/eliaskosunen/scnlib/archive/refs/tags/v4.0.1.tar.gz",
     sha256 = "ece17b26840894cc57a7127138fe4540929adcb297524dec02c490c233ff46a7",
-    cmake_args = [
+    configure_args = [
         "-DSCN_DISABLE_REGEX=ON",
         "-DSCN_DISABLE_IOSTREAM=ON",
         "-DSCN_DISABLE_LOCALE=ON",

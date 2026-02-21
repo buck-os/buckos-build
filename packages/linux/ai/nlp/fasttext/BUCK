@@ -1,12 +1,13 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "fasttext",
     version = "0.9.2",
-    src_uri = "https://github.com/facebookresearch/fastText/archive/refs/tags/v0.9.2.tar.gz",
+    url = "https://github.com/facebookresearch/fastText/archive/refs/tags/v0.9.2.tar.gz",
     sha256 = "7ea4edcdb64bfc6faaaec193ef181bdc108ee62bb6a04e48b2e80b639a99e27e",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],
     visibility = ["PUBLIC"],

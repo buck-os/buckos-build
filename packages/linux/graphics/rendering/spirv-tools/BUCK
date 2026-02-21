@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # SPIRV-Tools - API and commands for processing SPIR-V modules
 #
@@ -6,10 +6,11 @@ load("//defs:package_defs.bzl", "cmake_package")
 # modules. The project includes an assembler, binary module parser, disassembler,
 # validator, and optimizer for SPIR-V.
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "spirv-tools",
     version = "2024.1",
-    src_uri = "https://github.com/KhronosGroup/SPIRV-Tools/archive/refs/tags/v2024.1.tar.gz",
+    url = "https://github.com/KhronosGroup/SPIRV-Tools/archive/refs/tags/v2024.1.tar.gz",
     sha256 = "137780e2a8b5c722888f9ec0fb553e6e92f38a0a5c7fcdad9b715152448b9d82",
     description = "API and commands for processing SPIR-V modules - assembler, parser, disassembler, validator, and optimizer",
     homepage = "https://github.com/KhronosGroup/SPIRV-Tools",
@@ -19,7 +20,7 @@ cmake_package(
         # TODO: Add spirv-headers package dependency when available
         # "//packages/linux/graphics/rendering/spirv-headers:spirv-headers",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         # Disable tests and executables for lighter build

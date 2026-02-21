@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # Eternal Terminal - Remote shell that reconnects without interrupting the session
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "eternal-terminal",
     version = "6.2.8",
-    src_uri = "https://github.com/MisterTea/EternalTerminal/archive/refs/tags/et-v6.2.8.tar.gz",
+    url = "https://github.com/MisterTea/EternalTerminal/archive/refs/tags/et-v6.2.8.tar.gz",
     sha256 = "6c1a23a2fe9229a882622378126d4482ae67328a5ca8ef660f14034401711764",
     description = "Remote shell that automatically reconnects without interrupting the session",
     homepage = "https://eternalterminal.dev/",
@@ -15,7 +16,7 @@ cmake_package(
         "//packages/linux/dev-libs/serialization/protobuf:protobuf",
         "//packages/linux/core/zlib:zlib",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
         "-DDISABLE_VCPKG=ON",

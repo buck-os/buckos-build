@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "jolt_physics",
     version = "1.1.0",
-    src_uri = "https://github.com/jrouwe/JoltPhysics/archive/refs/tags/v1.1.0.tar.gz",
+    url = "https://github.com/jrouwe/JoltPhysics/archive/refs/tags/v1.1.0.tar.gz",
     sha256 = "0a1256fcb4de9f6782eae1a3625efed5136c8919d1f223773d4cd569aafdf62c",
-    cmake_args = [
+    configure_args = [
         "-DTARGET_UNIT_TESTS=OFF",
         "-DTARGET_HELLO_WORLD=OFF",
         "-DTARGET_PERFORMANCE_TEST=OFF",

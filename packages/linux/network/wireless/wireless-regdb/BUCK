@@ -1,16 +1,12 @@
-load("//defs:package_defs.bzl","download_source", "make_package")
+load("//defs:package.bzl", "package")
 
 # wireless-regdb contains pre-built regulatory.db files
 # We skip the build phase and just install the pre-built files
 make_package(
     name = "wireless-regdb",
     version = "2024.01.23",
-    src_uri = "https://www.kernel.org/pub/software/network/wireless-regdb/wireless-regdb-2024.01.23.tar.xz",
+    url = "https://www.kernel.org/pub/software/network/wireless-regdb/wireless-regdb-2024.01.23.tar.xz",
     sha256 = "c8a61c9acf76fa7eb4239e89f640dee3e87098d9f69b4d3518c9c60fc6d20c55",
-    signature_required = False,
-
-    iuse = [],
-    use_defaults = [],
 
     # Skip build - the tarball already contains pre-built regulatory.db files
     src_compile = """

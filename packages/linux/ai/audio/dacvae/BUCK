@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "dacvae",
     version = "1.0.0",
-    src_uri = "https://github.com/facebookresearch/dacvae/archive/414c20785fc3a28373073ea8ef7a1316eeeaca6e.tar.gz",
+    url = "https://github.com/facebookresearch/dacvae/archive/414c20785fc3a28373073ea8ef7a1316eeeaca6e.tar.gz",
     sha256 = "7b9fac32d968807a879d6d30e37c6fcbb0f6586638d70200ea3ff787d90bbb3f",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

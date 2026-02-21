@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "fast-krippendorff",
     version = "0.8.2",
-    src_uri = "https://github.com/pln-fing-udelar/fast-krippendorff/archive/refs/tags/v0.8.2.tar.gz",
+    url = "https://github.com/pln-fing-udelar/fast-krippendorff/archive/refs/tags/v0.8.2.tar.gz",
     sha256 = "d223d7c0680e0f16f8f35410c7b2c9c6ab429477a3665d195f1fa453e98f8bda",
     deps = [
         "//packages/linux/dev-libs/python/numpy:numpy",

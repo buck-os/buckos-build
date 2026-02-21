@@ -1,25 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "libftdi",
     version = "1.5",
-    iuse = [
-        "cxx",
-        "examples",
-        "python",
-        "tools",
-    ],
-    use_cmake = {
-        "-cxx": "-DENABLE_CXX=OFF",
-        "-examples": "-DBUILD_EXAMPLES=OFF",
-        "-python": "-DENABLE_PYTHON=OFF",
-        "-tools": "-DENABLE_TOOLS=OFF",
-        "cxx": "-DENABLE_CXX=ON",
-        "examples": "-DBUILD_EXAMPLES=ON",
-        "python": "-DENABLE_PYTHON=ON",
-        "tools": "-DENABLE_TOOLS=ON",
+    use_configure = {
+        "cxx": ("-DENABLE_CXX=ON", "-DENABLE_CXX=OFF"),
+        "examples": ("-DBUILD_EXAMPLES=ON", "-DBUILD_EXAMPLES=OFF"),
+        "python": ("-DENABLE_PYTHON=ON", "-DENABLE_PYTHON=OFF"),
+        "tools": ("-DENABLE_TOOLS=ON", "-DENABLE_TOOLS=OFF"),
     },
-    src_uri = "https://www.intra2net.com/en/developer/libftdi/download/libftdi1-1.5.tar.bz2",
+    url = "https://www.intra2net.com/en/developer/libftdi/download/libftdi1-1.5.tar.bz2",
     sha256 = "7c7091e9c86196148bd41177b4590dccb1510bfe6cea5bf7407ff194482eb049",
     description = "Library to program and control the FTDI USB controllers",
     homepage = "https://www.intra2net.com/en/developer/libftdi/",
@@ -27,7 +18,7 @@ cmake_package(
     deps = [
         "//packages/linux/system/libs/libusb:libusb",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DSTATICLIBS=ON",
         "-DFTDIPP=OFF",

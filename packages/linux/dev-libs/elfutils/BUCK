@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # elfutils - Libraries/utilities to handle ELF objects
@@ -7,12 +7,12 @@ load("//defs:package_defs.bzl", "autotools_package")
 # Provides libelf, libdw, and utilities for working with ELF binaries.
 # Required by mesa's radeonsi driver for shader debugging info.
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "elfutils",
     version = "0.194",
-    src_uri = "https://sourceware.org/elfutils/ftp/0.194/elfutils-0.194.tar.bz2",
+    url = "https://sourceware.org/elfutils/ftp/0.194/elfutils-0.194.tar.bz2",
     sha256 = "09e2ff033d39baa8b388a2d7fbc5390bfde99ae3b7c67c7daaf7433fbcf0f01e",
-    signature_required = False,
     description = "Libraries/utilities to handle ELF objects (libelf, libdw)",
     homepage = "https://sourceware.org/elfutils/",
     license = "GPL-2+ LGPL-3+",

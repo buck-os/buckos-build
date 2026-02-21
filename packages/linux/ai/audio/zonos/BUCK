@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "zonos",
     version = "0.1.0",
-    src_uri = "https://github.com/zyphra/zonos/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/zyphra/zonos/archive/refs/heads/main.tar.gz",
     sha256 = "480f82d645c0ecb25b22d3d90ab4c8a887a1d42859bca3c5066403639fac1a4e",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

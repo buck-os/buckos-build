@@ -1,14 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "opus_exp_bwe",
     version = "exp_bwe",
-    src_uri = "https://gitlab.xiph.org/xiph/opus/-/archive/313930b654a475e019db9791ffada265302d1a2f/opus-313930b654a475e019db9791ffada265302d1a2f.tar.gz",
+    url = "https://gitlab.xiph.org/xiph/opus/-/archive/313930b654a475e019db9791ffada265302d1a2f/opus-313930b654a475e019db9791ffada265302d1a2f.tar.gz",
     sha256 = "52fa60f3649a9194575e46ce50838c18cf759a4fdf30e1c95d5c097419b299f9",
     description = "Experimental Opus codec with bandwidth estimation features",
     homepage = "https://gitlab.xiph.org/xiph/opus",
     license = "BSD-3-Clause",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DOPUS_BUILD_SHARED_LIBRARY=ON",
         "-DOPUS_CUSTOM_MODES=ON",

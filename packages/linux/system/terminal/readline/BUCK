@@ -1,27 +1,21 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # readline - GNU Readline library for command line editing
 # Uses traditional autotools (configure/make), not cmake
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "readline",
     version = "8.3",
-    src_uri = "https://ftp.gnu.org/gnu/readline/readline-8.3.tar.gz",
+    url = "https://ftp.gnu.org/gnu/readline/readline-8.3.tar.gz",
     sha256 = "fe5383204467828cd495ee8d1d3c037a7eba1389c22bc6a041f627976f9061cc",
-    signature_required = False,
     description = "GNU Readline library for command line editing",
     homepage = "https://tiswww.case.edu/php/chet/readline/rltop.html",
     license = "GPL-3.0-or-later",
 
-    iuse = ["static-libs", "unicode"],
-
-    use_defaults = ["unicode"],
-
     use_configure = {
-        "-static-libs": "--disable-static",
-        "-unicode": "--disable-multibyte",
-        "static-libs": "--enable-static",
-        "unicode": "--enable-multibyte",
+        "static-libs": ("--enable-static", "--disable-static"),
+        "unicode": ("--enable-multibyte", "--disable-multibyte"),
     },
 
     configure_args = [

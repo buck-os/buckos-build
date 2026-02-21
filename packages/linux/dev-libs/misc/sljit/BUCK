@@ -1,14 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "sljit",
     version = "0.0.20250107",
-    src_uri = "https://github.com/zherczeg/sljit/archive/7779da89dc7e00a540712fcb859b762d4eca2a26.tar.gz",
+    url = "https://github.com/zherczeg/sljit/archive/7779da89dc7e00a540712fcb859b762d4eca2a26.tar.gz",
     sha256 = "9e86bb4c12e00f37383a391e8f2614adc4c092fcb7f45753b9c548669b310586",
     description = "Platform-independent low-level JIT compiler",
     homepage = "https://zherczeg.github.io/sljit/",
     license = "BSD-2-Clause",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_SHARED_LIBS=OFF",
     ],
     pre_configure = """

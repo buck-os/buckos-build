@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # glslang - Khronos reference front-end for GLSL, ESSL, and HLSL, and sample SPIR-V generator
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "glslang",
     version = "15.3.0",
-    src_uri = "https://github.com/KhronosGroup/glslang/archive/refs/tags/15.3.0.tar.gz",
+    url = "https://github.com/KhronosGroup/glslang/archive/refs/tags/15.3.0.tar.gz",
     sha256 = "c6c21fe1873c37e639a6a9ac72d857ab63a5be6893a589f34e09a6c757174201",
     description = "Khronos reference front-end for GLSL and ESSL, and sample SPIR-V generator",
     homepage = "https://github.com/KhronosGroup/glslang",
     license = "BSD-3-Clause",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DENABLE_GLSLANG_BINARIES=ON",

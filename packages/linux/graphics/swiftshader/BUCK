@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "swiftshader",
     version = "2024.01.07",
-    src_uri = "https://github.com/google/swiftshader/archive/8b4cf1c2491d56cf9eda153b5455e4b295732b7c.tar.gz",
+    url = "https://github.com/google/swiftshader/archive/8b4cf1c2491d56cf9eda153b5455e4b295732b7c.tar.gz",
     sha256 = "eeb94e98cf508536a574a3ebfbd195017f3ccfe947cf85118b057c642ade28d1",
-    cmake_args = [
+    configure_args = [
         "-DSWIFTSHADER_BUILD_TESTS=OFF",
         "-DSWIFTSHADER_BUILD_SAMPLES=OFF",
         "-DSWIFTSHADER_WARNINGS_AS_ERRORS=OFF",

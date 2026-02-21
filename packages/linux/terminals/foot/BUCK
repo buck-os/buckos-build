@@ -1,12 +1,11 @@
-load("//defs:package_defs.bzl", "download_source", "meson_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "foot",
-    src_uri = "https://codeberg.org/dnkl/foot/archive/1.16.2.tar.gz",
+    url = "https://codeberg.org/dnkl/foot/archive/1.16.2.tar.gz",
 
     sha256 = "0e02af376e5f4a96eeb90470b7ad2e79a1d660db2a7d1aa772be43c7db00e475",
-    iuse = ["grapheme-clustering"],
     version = "1.16.2",
     description = "Fast, lightweight and minimalistic Wayland terminal emulator",
     homepage = "https://codeberg.org/dnkl/foot",
@@ -19,7 +18,7 @@ meson_package(
     exec_bdepend = [
         "//packages/linux/graphics/rendering/wayland:wayland-scanner",
     ],
-    meson_args = [
+    configure_args = [
         "-Ddocs=disabled",
         "-Dterminfo=disabled",
         "-Dtests=false",
@@ -85,9 +84,8 @@ meson setup "${BUILD_DIR:-build}" \\
     $NATIVE_FILE_ARG \\
     ${MESON_EXTRA_ARGS:-}
 """,
-    use_meson = {
-        "grapheme-clustering": "-Dgrapheme-clustering=enabled",
-        "-grapheme-clustering": "-Dgrapheme-clustering=disabled",
+    use_configure = {
+        "grapheme-clustering": ("-Dgrapheme-clustering=enabled", "-Dgrapheme-clustering=disabled"),
     },
     deps = [
         "//packages/linux/system/libs/utility/libffi:libffi",

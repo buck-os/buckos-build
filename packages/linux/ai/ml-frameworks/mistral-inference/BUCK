@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "mistral-inference",
     version = "1.1.0",
-    src_uri = "https://github.com/mistralai/mistral-inference/archive/refs/tags/v1.1.0.tar.gz",
+    url = "https://github.com/mistralai/mistral-inference/archive/refs/tags/v1.1.0.tar.gz",
     sha256 = "36c37a6af57bde9c3f75e7efafb1fbe6827e70454bbf43641df0b22beb48be23",
     deps = [
         "//packages/linux/ai/ml-frameworks/xformers:xformers",

@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "ns3",
     version = "3.44",
-    src_uri = "https://gitlab.com/nsnam/ns-3-dev/-/archive/ns-3.44/ns-3-dev-ns-3.44.tar.gz",
+    url = "https://gitlab.com/nsnam/ns-3-dev/-/archive/ns-3.44/ns-3-dev-ns-3.44.tar.gz",
     sha256 = "14539f7e73d54788514597c03f110d2cf9a251386543bd389b28bf9ab122e58e",
-    cmake_args = [
+    configure_args = [
         "-DNS3_EXAMPLES=OFF",
         "-DNS3_TESTS=OFF",
         "-DNS3_LOG=OFF",

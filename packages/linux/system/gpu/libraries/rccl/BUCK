@@ -1,16 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "rccl",
     version = "6.2.0",
-    iuse = ["roctracer"],
-    use_cmake = {
-        "-roctracer": "-DENABLE_ROCTRACER=OFF",
-        "roctracer": "-DENABLE_ROCTRACER=ON",
+    use_configure = {
+        "roctracer": ("-DENABLE_ROCTRACER=ON", "-DENABLE_ROCTRACER=OFF"),
     },
-    src_uri = "https://github.com/ROCm/rccl/archive/refs/tags/rocm-6.2.0.tar.gz",
+    url = "https://github.com/ROCm/rccl/archive/refs/tags/rocm-6.2.0.tar.gz",
     sha256 = "a29c94ea3b9c1a0121d7b1450cb01a697f9f9132169632312b9b0bf744d3c0e3",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTS=OFF",
         "-DBUILD_SHARED_LIBS=ON",
         "-DENABLE_MSCCLPP=OFF",

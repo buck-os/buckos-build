@@ -1,15 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "gulrak_filesystem",
     version = "1.5.0",
-    src_uri = "https://github.com/gulrak/filesystem/archive/refs/tags/v1.5.0.tar.gz",
+    url = "https://github.com/gulrak/filesystem/archive/refs/tags/v1.5.0.tar.gz",
     sha256 = "eb6f3b0739908ad839cde68885d70e7324db191b9fad63d9915beaa40444d9cb",
     description = "Header-only C++11/C++14/C++17 filesystem implementation",
     homepage = "https://github.com/gulrak/filesystem",
     license = "MIT",
     maintainers = ["buckos"],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DGHC_FILESYSTEM_BUILD_TESTING=OFF",
         "-DGHC_FILESYSTEM_BUILD_EXAMPLES=OFF",

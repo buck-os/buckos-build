@@ -1,10 +1,11 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # libXau - X Authorization library
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libXau",
     version = "1.0.11",
-    src_uri = "https://xorg.freedesktop.org/archive/individual/lib/libXau-1.0.11.tar.xz",
+    url = "https://xorg.freedesktop.org/archive/individual/lib/libXau-1.0.11.tar.xz",
     sha256 = "f3fa3282f5570c3f6bd620244438dbfbdd580fc80f02f549587a0f8ab329bbeb",
     description = "X Authorization library",
     homepage = "https://xorg.freedesktop.org/",

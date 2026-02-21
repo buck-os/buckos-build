@@ -1,8 +1,9 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "verilog-eval",
-    src_uri = "https://github.com/NVlabs/verilog-eval/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/NVlabs/verilog-eval/archive/refs/heads/main.tar.gz",
 
     sha256 = "26043d72e0ccd743742be93047c8e16af22c10ed05af05686b029d82cb63a635",
     version = "2.0.0",

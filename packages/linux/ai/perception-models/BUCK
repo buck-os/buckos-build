@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "perception_models",
     version = "1.0.0",
-    src_uri = "https://github.com/facebookresearch/perception_models/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/facebookresearch/perception_models/archive/refs/heads/main.tar.gz",
     sha256 = "d41428146200a19d4411f69a020f524666e8a7f2239cdc1351faa8b9baa70a0b",
     deps = [
         "//packages/linux/dev-libs/python/numpy:numpy",

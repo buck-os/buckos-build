@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package", "download_source")
+load("//defs:package.bzl", "package")
 
 # cdrkit - CD/DVD command line tools
 # A fork of cdrtools providing wodim (CD/DVD writer), genisoimage (ISO image creator), and icedax (CD audio ripper)
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "cdrkit",
     version = "1.1.11",
-    src_uri = "https://deb.debian.org/debian/pool/main/c/cdrkit/cdrkit_1.1.11.orig.tar.gz",
+    url = "https://deb.debian.org/debian/pool/main/c/cdrkit/cdrkit_1.1.11.orig.tar.gz",
     sha256 = "d1c030756ecc182defee9fe885638c1785d35a2c2a297b4604c0e0dcc78e47da",
     description = "CD/DVD command line tools (wodim, genisoimage, icedax)",
     homepage = "https://packages.debian.org/sid/cdrkit",
     license = "GPL-2.0",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_INSTALL_PREFIX=/usr",
     ],

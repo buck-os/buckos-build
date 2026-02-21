@@ -1,26 +1,23 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # Google Benchmark - A microbenchmark support library
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "benchmark",
     version = "1.8.3",
-    iuse = ["debug", "libpfm", "tools"],
-    use_cmake = {
-        "-debug": "-DCMAKE_BUILD_TYPE=Release",
-        "-libpfm": "-DENABLE_LIBPFM=OFF",
-        "-tools": "-DENABLE_TOOLS=OFF",
-        "debug": "-DCMAKE_BUILD_TYPE=Debug",
-        "libpfm": "-DENABLE_LIBPFM=ON",
-        "tools": "-DENABLE_TOOLS=ON",
+    use_configure = {
+        "debug": ("-DCMAKE_BUILD_TYPE=Debug", "-DCMAKE_BUILD_TYPE=Release"),
+        "libpfm": ("-DENABLE_LIBPFM=ON", "-DENABLE_LIBPFM=OFF"),
+        "tools": ("-DENABLE_TOOLS=ON", "-DENABLE_TOOLS=OFF"),
     },
-    src_uri = "https://github.com/google/benchmark/archive/refs/tags/v1.8.3.tar.gz",
+    url = "https://github.com/google/benchmark/archive/refs/tags/v1.8.3.tar.gz",
     sha256 = "6bc180a57d23d4d9515519f92b0c83d61b05b5bab188961f36ac7b06b0d9e9ce",
     description = "A microbenchmark support library from Google",
     homepage = "https://github.com/google/benchmark",
     license = "Apache-2.0",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DBENCHMARK_ENABLE_TESTING=OFF",

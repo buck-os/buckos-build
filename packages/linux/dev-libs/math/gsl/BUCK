@@ -1,23 +1,20 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # GSL - GNU Scientific Library
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "gsl",
     # GNU release tarball includes pre-generated configure script
     bdepend = [],
     src_prepare = "",
     version = "2.8",
-    iuse = ["cblas-external", "deprecated", "static-libs"],
     use_configure = {
-        "-cblas-external": "--disable-cblas-external",
-        "-deprecated": "--disable-deprecated",
-        "-static-libs": "--disable-static",
-        "cblas-external": "--enable-cblas-external",
-        "deprecated": "--enable-deprecated",
-        "static-libs": "--enable-static",
+        "cblas-external": ("--enable-cblas-external", "--disable-cblas-external"),
+        "deprecated": ("--enable-deprecated", "--disable-deprecated"),
+        "static-libs": ("--enable-static", "--disable-static"),
     },
-    src_uri = "https://ftp.gnu.org/gnu/gsl/gsl-2.8.tar.gz",
+    url = "https://ftp.gnu.org/gnu/gsl/gsl-2.8.tar.gz",
     sha256 = "6a99eeed15632c6354895b1dd542ed5a855c0f15d9ad1326c6fe2b2c9e423190",
     description = "GNU Scientific Library - numerical library for C and C++ programmers",
     homepage = "https://www.gnu.org/software/gsl/",

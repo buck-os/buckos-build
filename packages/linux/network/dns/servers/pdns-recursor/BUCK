@@ -1,49 +1,26 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "pdns-recursor",
     version = "5.0.2",
-    src_uri = "https://downloads.powerdns.com/releases/pdns-recursor-5.0.2.tar.bz2",
+    url = "https://downloads.powerdns.com/releases/pdns-recursor-5.0.2.tar.bz2",
     sha256 = "a90e8b61fdc181b596144c35920118ca71c3b95f46658cce7e8222750de45ca9",
-    signature_sha256 = "b9444894682b941186912b10df117371182f9d248563644a4cfb94d61ba30ce9",
-    signature_required=False,
-
-    iuse = [
-        "debug",
-        "dns-over-tls",
-        "dnstap",
-        "lua",
-        "snmp",
-        "sodium",
-        "ssl",
-        "systemd",
-        "valgrind",
-    ],
-    use_defaults = ["ssl", "dnstap", "lua", "sodium"],
 
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
     },
 
     use_configure = {
-        "-debug": "--disable-debug",
-        "-dns-over-tls": "--disable-dns-over-tls",
-        "-dnstap": "--disable-dnstap",
-        "-lua": "--without-lua",
-        "-snmp": "--disable-snmp",
-        "-sodium": "--without-libsodium",
-        "-ssl": "--disable-dns-over-tls",
-        "-systemd": "--disable-systemd",
-        "-valgrind": "--disable-valgrind",
-        "debug": "--enable-debug",
-        "dns-over-tls": "--enable-dns-over-tls",
-        "dnstap": "--enable-dnstap",
-        "lua": "--with-lua=luajit",
-        "snmp": "--enable-snmp",
-        "sodium": "--with-libsodium",
-        "ssl": "--enable-dns-over-tls",
-        "systemd": "--enable-systemd",
-        "valgrind": "--enable-valgrind",
+        "debug": ("--enable-debug", "--disable-debug"),
+        "dns-over-tls": ("--enable-dns-over-tls", "--disable-dns-over-tls"),
+        "dnstap": ("--enable-dnstap", "--disable-dnstap"),
+        "lua": ("--with-lua=luajit", "--without-lua"),
+        "snmp": ("--enable-snmp", "--disable-snmp"),
+        "sodium": ("--with-libsodium", "--without-libsodium"),
+        "ssl": ("--enable-dns-over-tls", "--disable-dns-over-tls"),
+        "systemd": ("--enable-systemd", "--disable-systemd"),
+        "valgrind": ("--enable-valgrind", "--disable-valgrind"),
     },
 
     configure_args = [

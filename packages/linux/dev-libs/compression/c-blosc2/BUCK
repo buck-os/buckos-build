@@ -1,25 +1,24 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # C-Blosc2 - A fast, compressed, persistent binary data store library for C
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "c-blosc2",
     version = "2.17.1",
-    src_uri = "https://github.com/Blosc/c-blosc2/archive/refs/tags/v2.17.1.tar.gz",
+    url = "https://github.com/Blosc/c-blosc2/archive/refs/tags/v2.17.1.tar.gz",
     sha256 = "53c6ed1167683502f5db69d212106e782180548ca5495745eb580e796b7f7505",
     description = "A fast, compressed, persistent binary data store library for C",
     homepage = "https://blosc.org",
     license = "BSD-3-Clause",
-    iuse = ["cli", "plugins", "zlib", "zstd", "avx2", "avx512"],
-    use_defaults = ["zlib", "zstd", "avx2"],
     deps = [
         "//packages/linux/dev-libs/compression/lz4:lz4",
     ],
     use_deps = {
-        "zlib": ["//packages/linux/core/zlib:zlib"],
-        "zstd": ["//packages/linux/system/libs/compression/zstd:zstd"],
+        "zlib": "//packages/linux/core/zlib:zlib",
+        "zstd": "//packages/linux/system/libs/compression/zstd:zstd",
     },
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_STATIC=OFF",
@@ -31,25 +30,11 @@ cmake_package(
         "-DPREFER_EXTERNAL_LZ4=ON",
         "-DDEACTIVATE_IPP=ON",
     ],
-    use_cmake = {
-        "cli": "-DBUILD_CLI=ON",
-        "-cli": "-DBUILD_CLI=OFF",
-        "plugins": "-DBUILD_PLUGINS=ON",
-        "-plugins": "-DBUILD_PLUGINS=OFF",
-        "zlib": [
-            "-DDEACTIVATE_ZLIB=OFF",
-            "-DPREFER_EXTERNAL_ZLIB=ON",
-        ],
-        "-zlib": "-DDEACTIVATE_ZLIB=ON",
-        "zstd": [
-            "-DDEACTIVATE_ZSTD=OFF",
-            "-DPREFER_EXTERNAL_ZSTD=ON",
-        ],
-        "-zstd": "-DDEACTIVATE_ZSTD=ON",
-        "avx2": "-DDEACTIVATE_AVX2=OFF",
-        "-avx2": "-DDEACTIVATE_AVX2=ON",
-        "avx512": "-DDEACTIVATE_AVX512=OFF",
-        "-avx512": "-DDEACTIVATE_AVX512=ON",
+    use_configure = {
+        "avx2": ("-DDEACTIVATE_AVX2=OFF", "-DDEACTIVATE_AVX2=ON"),
+        "avx512": ("-DDEACTIVATE_AVX512=OFF", "-DDEACTIVATE_AVX512=ON"),
+        "cli": ("-DBUILD_CLI=ON", "-DBUILD_CLI=OFF"),
+        "plugins": ("-DBUILD_PLUGINS=ON", "-DBUILD_PLUGINS=OFF"),
     },
     visibility = ["PUBLIC"],
 )

@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "xtl",
     version = "0.7.7",
-    src_uri = "https://github.com/xtensor-stack/xtl/archive/refs/tags/0.7.7.tar.gz",
+    url = "https://github.com/xtensor-stack/xtl/archive/refs/tags/0.7.7.tar.gz",
     sha256 = "44fb99fbf5e56af5c43619fc8c29aa58e5fad18f3ba6e7d9c55c111b62df1fbb",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTING=OFF",
     ],
     deps = [],

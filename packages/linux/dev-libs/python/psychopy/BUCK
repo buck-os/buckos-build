@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "psychopy",
     version = "2025.2.4",
-    src_uri = "https://files.pythonhosted.org/packages/fe/df/2cd23a91d446de9da2d15391b04da1c7acc68d5c6811cc6ded247cbfb876/psychopy-2025.2.4.tar.gz",
+    url = "https://files.pythonhosted.org/packages/fe/df/2cd23a91d446de9da2d15391b04da1c7acc68d5c6811cc6ded247cbfb876/psychopy-2025.2.4.tar.gz",
     sha256 = "95fed12362c7cbfe4ed842dbf349f53de1bf13b1ee3fa68b6c2b38bbf43eaa1e",
     deps = [
         "//packages/linux/dev-libs/python/pillow:pillow",

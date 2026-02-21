@@ -1,22 +1,21 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # pbzip2 - Parallel bzip2 compression
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "pbzip2",
     version = "1.1.13",
-    src_uri = "https://launchpad.net/pbzip2/1.1/1.1.13/+download/pbzip2-1.1.13.tar.gz",
+    url = "https://launchpad.net/pbzip2/1.1/1.1.13/+download/pbzip2-1.1.13.tar.gz",
     sha256 = "8fd13eaaa266f7ee91f85c1ea97c86d9c9cc985969db9059cdebcb1e1b7bdbe6",
-    signature_required = False,
     description = "Parallel implementation of bzip2 for multi-processor systems",
     homepage = "http://compression.ca/pbzip2/",
     license = "BSD",
-    iuse = ["static"],
-    use_defaults = [],
     use_configure = {
-        "-static": "--disable-static",
-        "static": "--enable-static",
+        "static": ("--enable-static", "--disable-static"),
     },
-    use_deps = {},
+    use_deps = {
+
+    },
     configure_args = [],
     src_configure = "true",  # Makefile-only build, no configure script
 

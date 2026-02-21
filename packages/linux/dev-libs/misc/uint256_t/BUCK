@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "simple_binary_package")
+load("//defs:package.bzl", "package")
 
-simple_binary_package(
+simple_package(
+    build_rule = "binary",
     name = "uint256_t",
     version = "master",
-    src_uri = "https://github.com/calccrypto/uint256_t/archive/refs/heads/master.tar.gz",
+    url = "https://github.com/calccrypto/uint256_t/archive/refs/heads/master.tar.gz",
     sha256 = "60f2fe965b05f46e80d79f1ab9ab112bb1a88813c53555a490b90880778bf0d8",
     extract_to = "/usr/include",
     deps = [

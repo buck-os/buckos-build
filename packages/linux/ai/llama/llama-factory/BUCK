@@ -1,11 +1,11 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "llama-factory",
     version = "0.9.4",
-    src_uri = "https://github.com/hiyouga/LLaMA-Factory/archive/refs/tags/v0.9.4.tar.gz",
+    url = "https://github.com/hiyouga/LLaMA-Factory/archive/refs/tags/v0.9.4.tar.gz",
     sha256 = "2ce772945da1c7c28964e23d8bae429222749a4e9df47191e2159e3f72f638fd",
-    signature_required = False,
     description = "Unified Efficient Fine-Tuning of 100+ LLMs",
     homepage = "https://github.com/hiyouga/LLaMA-Factory",
     license = "Apache-2.0",

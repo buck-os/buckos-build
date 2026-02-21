@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "unidepth",
     version = "0.1",
-    src_uri = "https://github.com/lpiccinelli-eth/unidepth/archive/8d8cfe4c7ee15297099983607febf0d4f32eb3d6.tar.gz",
+    url = "https://github.com/lpiccinelli-eth/unidepth/archive/8d8cfe4c7ee15297099983607febf0d4f32eb3d6.tar.gz",
     sha256 = "95972d5430d10fb54e024cae6717fb45d1c28af548ff188c95545343f09e087c",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

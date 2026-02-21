@@ -1,16 +1,16 @@
-load("//defs:package_defs.bzl", "download_source", "meson_package")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "bubblewrap",
-    src_uri = "https://github.com/containers/bubblewrap/releases/download/v0.8.0/bubblewrap-0.8.0.tar.xz",
+    url = "https://github.com/containers/bubblewrap/releases/download/v0.8.0/bubblewrap-0.8.0.tar.xz",
 
     sha256 = "957ad1149db9033db88e988b12bcebe349a445e1efc8a9b59ad2939a113d333a",
-    iuse = [],
     version = "0.8.0",
     description = "Unprivileged sandboxing tool using user namespaces",
     homepage = "https://github.com/containers/bubblewrap",
     license = "LGPL-2.0+",
-    meson_args = [
+    configure_args = [
         "-Dman=disabled",
     ],
     bdepend = [

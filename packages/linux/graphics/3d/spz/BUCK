@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "spz",
     version = "bf30541",
-    src_uri = "https://github.com/nianticlabs/spz/archive/bf305418722bb0663a3074f3828699df44b8c1d2.tar.gz",
+    url = "https://github.com/nianticlabs/spz/archive/bf305418722bb0663a3074f3828699df44b8c1d2.tar.gz",
     sha256 = "4f7439ab5d08bbdbb350f2987f1fb1fdd44f3ff6cefdb8ea68a862d05f75be59",
     description = "Compressed 3D Gaussian splat file format library",
     homepage = "https://github.com/nianticlabs/spz",
@@ -44,7 +45,7 @@ install(FILES
 )
 EOF
 """,
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
     ],

@@ -1,12 +1,11 @@
-load("//defs:package_defs.bzl", "cargo_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
-cargo_package(
+package(
+    build_rule = "cargo",
     name = "delta",
     version = "0.18.2",
-    src_uri = "https://github.com/dandavison/delta/archive/refs/tags/0.18.2.tar.gz",
+    url = "https://github.com/dandavison/delta/archive/refs/tags/0.18.2.tar.gz",
     sha256 = "64717c3b3335b44a252b8e99713e080cbf7944308b96252bc175317b10004f02",
-    signature_required = False,
     description = "Syntax-highlighting pager for git and diff output",
     homepage = "https://github.com/dandavison/delta",
     license = "MIT",

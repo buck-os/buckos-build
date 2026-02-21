@@ -1,30 +1,19 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "ode",
     version = "0.16.5",
-    iuse = [
-        "debug",
-        "double-precision",
-        "examples",
-        "gyroscopic",
-        "static-libs",
-    ],
-    use_cmake = {
-        "-debug": "-DCMAKE_BUILD_TYPE=Release",
-        "-double-precision": "-DENABLE_DOUBLE_PRECISION=OFF",
-        "-examples": "-DBUILD_EXAMPLES=OFF",
-        "-gyroscopic": "-DENABLE_GYROSCOPIC=OFF",
-        "-static-libs": "-DBUILD_STATIC_LIBS=OFF",
-        "debug": "-DCMAKE_BUILD_TYPE=Debug",
-        "double-precision": "-DENABLE_DOUBLE_PRECISION=ON",
-        "examples": "-DBUILD_EXAMPLES=ON",
-        "gyroscopic": "-DENABLE_GYROSCOPIC=ON",
-        "static-libs": "-DBUILD_STATIC_LIBS=ON",
+    use_configure = {
+        "debug": ("-DCMAKE_BUILD_TYPE=Debug", "-DCMAKE_BUILD_TYPE=Release"),
+        "double-precision": ("-DENABLE_DOUBLE_PRECISION=ON", "-DENABLE_DOUBLE_PRECISION=OFF"),
+        "examples": ("-DBUILD_EXAMPLES=ON", "-DBUILD_EXAMPLES=OFF"),
+        "gyroscopic": ("-DENABLE_GYROSCOPIC=ON", "-DENABLE_GYROSCOPIC=OFF"),
+        "static-libs": ("-DBUILD_STATIC_LIBS=ON", "-DBUILD_STATIC_LIBS=OFF"),
     },
-    src_uri = "https://bitbucket.org/odedevs/ode/downloads/ode-0.16.5.tar.gz",
+    url = "https://bitbucket.org/odedevs/ode/downloads/ode-0.16.5.tar.gz",
     sha256 = "ba875edd164570958795eeaa70f14853bfc34cc9871f8adde8da47e12bd54679",
-    cmake_args = [
+    configure_args = [
         "-DODE_WITH_LIBCCD=ON",
         "-DODE_WITH_LIBCCD_SYSTEM=ON",
         "-DODE_DOUBLE_PRECISION=ON",

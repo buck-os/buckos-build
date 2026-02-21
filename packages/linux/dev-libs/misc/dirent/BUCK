@@ -1,14 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # dirent - Dirent API for Microsoft Windows
 # This is a header-only library that provides Windows compatibility for POSIX dirent.h
 # Note: On Linux, the native dirent.h is available in glibc, but this package
 # may be useful for cross-platform projects or Windows emulation.
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "dirent",
     version = "1.23.2",
-    src_uri = "https://github.com/tronkko/dirent/archive/refs/tags/1.23.2.tar.gz",
+    url = "https://github.com/tronkko/dirent/archive/refs/tags/1.23.2.tar.gz",
     sha256 = "f72d39e3c39610b6901e391b140aa69b51e0eb99216939ed5e547b5dad03afb1",  # Placeholder - needs actual checksum
     description = "C/C++ library for directory traversal on Windows (header-only)",
     homepage = "https://github.com/tronkko/dirent",
@@ -16,7 +17,7 @@ cmake_package(
     maintainers = ["buckos"],
     deps = [],
     patches = ["CMakeLists.txt"],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_INSTALL_LIBDIR=lib64",

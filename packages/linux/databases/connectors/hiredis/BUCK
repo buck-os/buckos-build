@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # hiredis - Minimalistic C client for Redis
 #
@@ -12,33 +12,27 @@ load("//defs:package_defs.bzl", "cmake_package")
 #   examples  - Build example programs
 #   static    - Build static library
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "hiredis",
     version = "1.2.0",
-    src_uri = "https://github.com/redis/hiredis/archive/refs/tags/v1.2.0.tar.gz",
+    url = "https://github.com/redis/hiredis/archive/refs/tags/v1.2.0.tar.gz",
     sha256 = "82ad632d31ee05da13b537c124f819eb88e18851d9cb0c30ae0552084811588c",
-    signature_required = False,
     description = "Minimalistic C client library for Redis",
     homepage = "https://github.com/redis/hiredis",
     license = "BSD-3-Clause",
 
     # USE flags this package supports
-    iuse = [
-        "ssl",
-        "examples",
-        "static",
-    ],
 
     # Default enabled flags
-    use_defaults = ["ssl"],
 
     # Conditional dependencies based on USE flags
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
     },
 
     # Base CMake arguments (always applied)
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DENABLE_SSL=ON",
@@ -46,13 +40,10 @@ cmake_package(
     ],
 
     # CMake options based on USE flags
-    use_cmake = {
-        "ssl": "-DENABLE_SSL=ON",
-        "-ssl": "-DENABLE_SSL=OFF",
-        "examples": "-DENABLE_EXAMPLES=ON",
-        "-examples": "-DENABLE_EXAMPLES=OFF",
-        "static": "-DBUILD_SHARED_LIBS=OFF",
-        "-static": "-DBUILD_SHARED_LIBS=ON",
+    use_configure = {
+        "examples": ("-DENABLE_EXAMPLES=ON", "-DENABLE_EXAMPLES=OFF"),
+        "ssl": ("-DENABLE_SSL=ON", "-DENABLE_SSL=OFF"),
+        "static": ("-DBUILD_SHARED_LIBS=OFF", "-DBUILD_SHARED_LIBS=ON"),
     },
 
     # Base dependencies (always required)

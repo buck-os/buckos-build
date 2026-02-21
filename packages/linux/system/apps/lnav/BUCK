@@ -1,42 +1,29 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # lnav - Advanced log file viewer with query support
 # USE flags: ncurses, readline, sqlite, pcre2
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "lnav",
     version = "0.12.3",
-    src_uri = "https://github.com/tstack/lnav/releases/download/v0.12.3/lnav-0.12.3.tar.gz",
+    url = "https://github.com/tstack/lnav/releases/download/v0.12.3/lnav-0.12.3.tar.gz",
     sha256 = "db5eee92aa00ce0b0614186c918a11db2fe6c06104fb615ad82cbea295ea6dac",
-    signature_required = False,
     description = "Advanced log file viewer with query support",
     homepage = "https://lnav.org/",
     license = "BSD-2-Clause",
-    iuse = [
-        "ncurses",
-        "pcap",
-        "pcre2",
-        "readline",
-        "sqlite",
-    ],
-    use_defaults = ["ncurses", "readline", "sqlite", "pcre2"],
     use_deps = {
-        "ncurses": ["//packages/linux/system/terminal/ncurses:ncurses"],
-        "readline": ["//packages/linux/system/terminal/readline:readline"],
-        "sqlite": ["//packages/linux/system/libs/database/sqlite:sqlite"],
-        "pcre2": ["//packages/linux/system/libs/utility/pcre2:pcre2"],
+        "ncurses": "//packages/linux/system/terminal/ncurses:ncurses",
+        "readline": "//packages/linux/system/terminal/readline:readline",
+        "sqlite": "//packages/linux/system/libs/database/sqlite:sqlite",
+        "pcre2": "//packages/linux/system/libs/utility/pcre2:pcre2",
     },
     use_configure = {
-        "-ncurses": "--without-ncurses",
-        "-pcap": "--disable-pcap",
-        "-pcre2": "--without-pcre2",
-        "-readline": "--without-readline",
-        "-sqlite": "--without-sqlite3",
-        "ncurses": "--with-ncurses",
-        "pcap": "--enable-pcap",
-        "pcre2": "--with-pcre2",
-        "readline": "--with-readline",
-        "sqlite": "--with-sqlite3",
+        "ncurses": ("--with-ncurses", "--without-ncurses"),
+        "pcap": ("--enable-pcap", "--disable-pcap"),
+        "pcre2": ("--with-pcre2", "--without-pcre2"),
+        "readline": ("--with-readline", "--without-readline"),
+        "sqlite": ("--with-sqlite3", "--without-sqlite3"),
     },
     configure_args = [],
     deps = [

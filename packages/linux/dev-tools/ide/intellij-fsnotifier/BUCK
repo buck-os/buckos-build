@@ -1,11 +1,11 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "intellij-fsnotifier",
     version = "2025.3.1.1",
-    src_uri = "https://github.com/JetBrains/intellij-community/archive/refs/tags/idea/2025.3.1.1.tar.gz",
+    url = "https://github.com/JetBrains/intellij-community/archive/refs/tags/idea/2025.3.1.1.tar.gz",
     sha256 = "9ccf2ab20ec33c8d4758ef7ebde2a92fce28e89a524246009279d9df257598db",
-    signature_required = False,
     description = "Native filesystem watcher for IntelliJ IDEA",
     homepage = "https://github.com/JetBrains/intellij-community",
     license = "Apache-2.0",

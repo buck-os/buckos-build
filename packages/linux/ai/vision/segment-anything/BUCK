@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "segment-anything",
     version = "1.0",
-    src_uri = "https://github.com/facebookresearch/segment-anything/archive/dca509fe793f601edb92606367a655c15ac00fdf.tar.gz",
+    url = "https://github.com/facebookresearch/segment-anything/archive/dca509fe793f601edb92606367a655c15ac00fdf.tar.gz",
     sha256 = "b693c2358e9e1c63589a322b1baa6a6dc384df0013ff455d933d9a8e23549dab",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

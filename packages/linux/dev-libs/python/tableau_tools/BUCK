@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "tableau_tools",
     version = "6.0.0",
-    src_uri = "https://files.pythonhosted.org/packages/8c/ea/4a2d4febcfcfbc37ebbec96579bc4fccd0bc25a9894f7e2127d72a3a0494/tableau_tools-6.0.0.tar.gz",
+    url = "https://files.pythonhosted.org/packages/8c/ea/4a2d4febcfcfbc37ebbec96579bc4fccd0bc25a9894f7e2127d72a3a0494/tableau_tools-6.0.0.tar.gz",
     sha256 = "c06bf5887ab28c140ea3f4bff6196b5c7a9af63dfbeba4c371c269e35c39607b",
     deps = [
         "//packages/linux/dev-libs/python/requests:requests",

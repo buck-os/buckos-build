@@ -1,3 +1,5 @@
+load("//defs:package.bzl", "package")
+
 # =============================================================================
 # NVIDIA CUTLASS v4 - CUDA Templates for Linear Algebra Subroutines
 # =============================================================================
@@ -7,18 +9,9 @@
 # programming model. It incorporates strategies for hierarchical decomposition
 # and data movement similar to those used to implement cuBLAS and cuDNN.
 
-load("//defs:package_defs.bzl", "download_source", "binary_package", "gen_pkgconfig_headeronly")
-
-download_source(
-    name = "cutlass4-src",
-    src_uri = "https://github.com/NVIDIA/cutlass/archive/refs/tags/v4.2.1.tar.gz",
-    sha256 = "",  # TODO: Add SHA256 checksum after download
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "cutlass4",
-    srcs = [":cutlass4-src"],
     version = "4.2.1",
     description = "NVIDIA CUTLASS v4 - CUDA Templates for Linear Algebra Subroutines and Tensor Operations",
     homepage = "https://github.com/NVIDIA/cutlass",

@@ -1,3 +1,5 @@
+load("//defs:package.bzl", "package")
+
 # =============================================================================
 # FAAD2 - Freeware Advanced Audio Decoder
 # =============================================================================
@@ -25,18 +27,17 @@
 #
 # =============================================================================
 
-load("//defs:package_defs.bzl", "cmake_package")
-
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "faad2",
     version = "2.11.1",
-    src_uri = "https://github.com/knik0/faad2/archive/refs/tags/2.11.1.tar.gz",
+    url = "https://github.com/knik0/faad2/archive/refs/tags/2.11.1.tar.gz",
     sha256 = "72dbc0494de9ee38d240f670eccf2b10ef715fd0508c305532ca3def3225bb06",
     description = "Freeware Advanced Audio (AAC) Decoder including SBR decoding",
     homepage = "https://github.com/knik0/faad2",
     license = "GPL-2.0",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
     ],

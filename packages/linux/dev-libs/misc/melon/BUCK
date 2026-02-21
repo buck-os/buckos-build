@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "melon",
     version = "1.0.0-alpha.1",
-    src_uri = "https://github.com/fhamonic/melon/archive/refs/tags/v1.0.0-alpha.1.tar.gz",
+    url = "https://github.com/fhamonic/melon/archive/refs/tags/v1.0.0-alpha.1.tar.gz",
     sha256 = "370f6bb1fddc68f1ab771c8b659fed6d9dc8da51290897ed72fd87589143220c",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_CXX_STANDARD=20",
     ],
     deps = [

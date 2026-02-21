@@ -1,23 +1,20 @@
+load("//defs:package.bzl", "package")
+
 # powertop - Power consumption analysis tool
 # Diagnose issues with power consumption and power management
 
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-
 # USE flags: See use_flags.bzl for available flags
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "powertop",
-    src_uri = "https://github.com/fenrus75/powertop/archive/refs/tags/v2.15.tar.gz",
+    url = "https://github.com/fenrus75/powertop/archive/refs/tags/v2.15.tar.gz",
 
     sha256 = "e58ab3fd7b8ff5f4dd0d17f11848817e7d83c0a6918145ac81de03b5dccf8f49",
-    iuse = ["X", "nls", "unicode"],
     use_configure = {
-        "-X": "--without-x",
-        "-nls": "--disable-nls",
-        "-unicode": "--disable-unicode",
-        "X": "--with-x",
-        "nls": "--enable-nls",
-        "unicode": "--enable-unicode",
+        "X": ("--with-x", "--without-x"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "unicode": ("--enable-unicode", "--disable-unicode"),
     },
     version = "2.15",
     description = "Power consumption and power management diagnosis tool",

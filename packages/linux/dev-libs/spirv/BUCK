@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # SPIRV-Headers - Machine-readable files for the SPIR-V Registry
@@ -7,16 +7,16 @@ load("//defs:package_defs.bzl", "cmake_package")
 # Required by spirv-tools. Provides SPIR-V headers, grammar files, and
 # instruction/type definitions used for processing SPIR-V shaders.
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "spirv-headers",
     version = "1.4.335.0",
-    src_uri = "https://github.com/KhronosGroup/SPIRV-Headers/archive/vulkan-sdk-1.4.335.0.tar.gz",
+    url = "https://github.com/KhronosGroup/SPIRV-Headers/archive/vulkan-sdk-1.4.335.0.tar.gz",
     sha256 = "1c47ca6342ebe86f57b46b8dbeb266fa655a1ca8e10d07e45370ff2d9c36312e",
-    signature_required = False,
     description = "Machine-readable files for the SPIR-V Registry",
     homepage = "https://github.com/KhronosGroup/SPIRV-Headers",
     license = "MIT",
-    cmake_args = [
+    configure_args = [
         "-DSPIRV_HEADERS_ENABLE_TESTS=OFF",
         "-DSPIRV_HEADERS_ENABLE_INSTALL=ON",
     ],
@@ -31,12 +31,12 @@ cmake_package(
 # Required by mesa 26.0.0 for SPIR-V shader compilation.
 # Provides spirv-opt, spirv-val, spirv-link and other shader tools.
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "spirv-tools",
     version = "1.4.335.0",
-    src_uri = "https://github.com/KhronosGroup/SPIRV-Tools/archive/vulkan-sdk-1.4.335.0.tar.gz",
+    url = "https://github.com/KhronosGroup/SPIRV-Tools/archive/vulkan-sdk-1.4.335.0.tar.gz",
     sha256 = "8b3d5637061b52675e506ffa1100740031e38bdd96b8177978acfd898a705da2",
-    signature_required = False,
     description = "Provides an API and commands for processing SPIR-V modules",
     homepage = "https://github.com/KhronosGroup/SPIRV-Tools",
     license = "Apache-2.0",
@@ -52,7 +52,7 @@ for dep_dir in "${DEP_ARRAY[@]}"; do
     fi
 done
 ''',
-    cmake_args = [
+    configure_args = [
         "-DSPIRV_WERROR=OFF",
         "-DSPIRV_SKIP_TESTS=ON",
         "-DSPIRV_TOOLS_BUILD_STATIC=OFF",

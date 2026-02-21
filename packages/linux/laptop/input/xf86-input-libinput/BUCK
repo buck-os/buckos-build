@@ -1,13 +1,14 @@
+load("//defs:package.bzl", "package")
+
 # xf86-input-libinput - X.Org libinput input driver
 # Generic input driver for the X.Org server based on libinput
 
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-
 # USE flags: See use_flags.bzl for available flags
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "xf86-input-libinput",
-    src_uri = "https://xorg.freedesktop.org/releases/individual/driver/xf86-input-libinput-1.4.0.tar.xz",
+    url = "https://xorg.freedesktop.org/releases/individual/driver/xf86-input-libinput-1.4.0.tar.xz",
 
     sha256 = "3a3d14cd895dc75b59ae2783b888031956a0bac7a1eff16d240dbb9d5df3e398",
     version = "1.4.0",

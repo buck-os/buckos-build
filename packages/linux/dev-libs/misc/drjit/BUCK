@@ -1,19 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # Dr.Jit - A Just-In-Time-Compiler for Differentiable Rendering
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "drjit",
     version = "1.2.0",
-    src_uri = "https://github.com/mitsuba-renderer/drjit/archive/refs/tags/v1.2.0.tar.gz",
+    url = "https://github.com/mitsuba-renderer/drjit/archive/refs/tags/v1.2.0.tar.gz",
     sha256 = "8f7ae4fd6ffc826c3430c2cfc4243bd610fe86537b22a7608cf5481d7286b86d",
     description = "Just-in-time compiler for differentiable rendering and numerical computation",
     homepage = "https://github.com/mitsuba-renderer/drjit",
     license = "BSD-3-Clause",
-    iuse = ["llvm", "cuda", "autodiff", "python"],
-    use_defaults = ["llvm", "autodiff"],
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_CXX_STANDARD=17",
         "-DDRJIT_ENABLE_TESTS=OFF",

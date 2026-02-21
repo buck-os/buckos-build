@@ -1,34 +1,23 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # libpcap - Packet capture library
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libpcap",
     # Official release tarball includes pre-generated configure script
     bdepend = [],
     src_prepare = "",
     version = "1.10.5",
-    src_uri = "https://www.tcpdump.org/release/libpcap-1.10.5.tar.gz",
+    url = "https://www.tcpdump.org/release/libpcap-1.10.5.tar.gz",
     sha256 = "37ced90a19a302a7f32e458224a00c365c117905c2cd35ac544b6880a81488f0",
     description = "Library for network traffic capture",
     homepage = "https://www.tcpdump.org/",
     license = "BSD-3-Clause",
-    iuse = [
-        "bluetooth",
-        "dbus",
-        "netlink",
-        "netmap",
-        "rdma",
-        "remote",
-        "static-libs",
-        "usb",
-        "yydebug",
-    ],
-    use_defaults = [],
     deps = [],
     use_deps = {
-        "dbus": ["//packages/linux/system/libs/ipc/dbus:dbus"],
-        "usb": ["//packages/linux/core/libusb"],
+        "dbus": "//packages/linux/system/libs/ipc/dbus:dbus",
+        "usb": "//packages/linux/core/libusb",
     },
     configure_args = [
         "--prefix=/usr",
@@ -36,24 +25,15 @@ autotools_package(
         "--enable-ipv6",
     ],
     use_configure = {
-        "-bluetooth": "--disable-bluetooth",
-        "-dbus": "--disable-dbus",
-        "-netlink": "--disable-netlink",
-        "-netmap": "--disable-netmap",
-        "-rdma": "--disable-rdma",
-        "-remote": "--disable-remote",
-        "-static-libs": "--disable-static",
-        "-usb": "--disable-usb",
-        "-yydebug": "--disable-yydebug",
-        "bluetooth": "--enable-bluetooth",
-        "dbus": "--enable-dbus",
-        "netlink": "--enable-netlink",
-        "netmap": "--enable-netmap",
-        "rdma": "--enable-rdma",
-        "remote": "--enable-remote",
-        "static-libs": "--enable-static",
-        "usb": "--enable-usb",
-        "yydebug": "--enable-yydebug",
+        "bluetooth": ("--enable-bluetooth", "--disable-bluetooth"),
+        "dbus": ("--enable-dbus", "--disable-dbus"),
+        "netlink": ("--enable-netlink", "--disable-netlink"),
+        "netmap": ("--enable-netmap", "--disable-netmap"),
+        "rdma": ("--enable-rdma", "--disable-rdma"),
+        "remote": ("--enable-remote", "--disable-remote"),
+        "static-libs": ("--enable-static", "--disable-static"),
+        "usb": ("--enable-usb", "--disable-usb"),
+        "yydebug": ("--enable-yydebug", "--disable-yydebug"),
     },
     visibility = ["PUBLIC"],
 )

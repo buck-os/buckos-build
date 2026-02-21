@@ -1,18 +1,16 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # SMPlayer - Complete front-end for MPlayer/mpv
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "smplayer",
-    src_uri = "https://github.com/smplayer-dev/smplayer/releases/download/v23.12.0/smplayer-23.12.0.tar.bz2",
+    url = "https://github.com/smplayer-dev/smplayer/releases/download/v23.12.0/smplayer-23.12.0.tar.bz2",
 
     sha256 = "f3bea9ff2dd71cb7e71c080624135629f92789971797e9bac385930aa73e093e",
-    iuse = ["bidi", "debug"],
     use_configure = {
-        "-bidi": "--disable-bidi",
-        "-debug": "--disable-debug",
-        "bidi": "--enable-bidi",
-        "debug": "--enable-debug",
+        "bidi": ("--enable-bidi", "--disable-bidi"),
+        "debug": ("--enable-debug", "--disable-debug"),
     },
     version = "23.12.0",
     description = "Complete front-end for MPlayer and mpv",

@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "pe-parse",
     version = "1.3.0",
-    src_uri = "https://github.com/trailofbits/pe-parse/archive/refs/tags/v1.3.0.tar.gz",
+    url = "https://github.com/trailofbits/pe-parse/archive/refs/tags/v1.3.0.tar.gz",
     sha256 = "80cecf712183d83c804248b214ff94ca69aaec8cb502c28c9523f3fabd7d355f",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_COMMAND_LINE_TOOLS=OFF",
         "-DPEPARSE_ENABLE_TESTING=OFF",

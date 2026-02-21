@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "hstk",
     version = "4.6.6.0",
-    src_uri = "https://github.com/hammer-space/hstk/archive/refs/tags/release-4.6.6.0.tar.gz",
+    url = "https://github.com/hammer-space/hstk/archive/refs/tags/release-4.6.6.0.tar.gz",
     sha256 = "8a2ea55c5bd4f08af375b401e6dc88f625f193e146605b059885d1b899a45ad3",
     deps = [
         "//packages/linux/lang/python:python",

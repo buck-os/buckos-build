@@ -1,30 +1,21 @@
+load("//defs:package.bzl", "package")
+
 # UPower - Power device enumeration and information
 # Abstraction for enumerating power devices, listening to events, and querying history
 
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-
 # USE flags: See use_flags.bzl for available flags
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "upower",
-    src_uri = "https://gitlab.freedesktop.org/upower/upower/-/archive/v1.90.2/upower-v1.90.2.tar.gz",
+    url = "https://gitlab.freedesktop.org/upower/upower/-/archive/v1.90.2/upower-v1.90.2.tar.gz",
 
     sha256 = "5c4e736648f0c89d2368fbbe1e6fc0598a1565c4b435bade1d65e890259fb759",
-    iuse = [
-        "introspection",
-        "ios",
-        "policykit",
-        "selinux",
-    ],
     use_configure = {
-        "-introspection": "--disable-introspection",
-        "-ios": "--disable-ios",
-        "-policykit": "--disable-policykit",
-        "-selinux": "--disable-selinux",
-        "introspection": "--enable-introspection",
-        "ios": "--enable-ios",
-        "policykit": "--enable-policykit",
-        "selinux": "--enable-selinux",
+        "introspection": ("--enable-introspection", "--disable-introspection"),
+        "ios": ("--enable-ios", "--disable-ios"),
+        "policykit": ("--enable-policykit", "--disable-policykit"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
     },
     version = "1.90.2",
     description = "Power device abstraction and battery information daemon",

@@ -1,17 +1,15 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "pango",
     version = "1.52.2",
-    src_uri = "https://download.gnome.org/sources/pango/1.52/pango-1.52.2.tar.xz",
+    url = "https://download.gnome.org/sources/pango/1.52/pango-1.52.2.tar.xz",
     sha256 = "d0076afe01082814b853deec99f9349ece5f2ce83908b8e58ff736b41f78a96b",
-    signature_required = False,
     description = "Library for layout and rendering of text",
     homepage = "https://pango.gnome.org/",
     license = "LGPL-2.0-or-later",
-    iuse = ["static-libs", "introspection", "cairo", "X", "doc"],
-    use_defaults = ["cairo"],
-    meson_args = [
+    configure_args = [
         "--wrap-mode=nodownload",
         "-Dintrospection=disabled",
         "-Dxft=disabled",
@@ -60,7 +58,6 @@ exit 0
 HELP2MAN_STUB
 chmod +x "$T/bin/help2man"
 export PATH="$T/bin:$PATH"
-
 
 # Add freetype2 include subdirectory for cairo-ft link test
 IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
@@ -135,20 +132,15 @@ MESON_CMD="$MESON_CMD ${MESON_EXTRA_ARGS:-}"
 
 eval $MESON_CMD
 """,
-    use_meson = {
-        "static-libs": "-Ddefault_library=static",
-        "-static-libs": "-Ddefault_library=shared",
-        "introspection": "-Dintrospection=enabled",
-        "-introspection": "-Dintrospection=disabled",
-        "cairo": "-Dcairo=enabled",
-        "-cairo": "-Dcairo=disabled",
-        "X": "-Dxft=enabled",
-        "-X": "-Dxft=disabled",
-        "doc": "-Dgtk_doc=true",
-        "-doc": "-Dgtk_doc=false",
+    use_configure = {
+        "X": ("-Dxft=enabled", "-Dxft=disabled"),
+        "cairo": ("-Dcairo=enabled", "-Dcairo=disabled"),
+        "doc": ("-Dgtk_doc=true", "-Dgtk_doc=false"),
+        "introspection": ("-Dintrospection=enabled", "-Dintrospection=disabled"),
+        "static-libs": ("-Ddefault_library=static", "-Ddefault_library=shared"),
     },
     use_deps = {
-        "cairo": ["//packages/linux/system/libs/graphics/cairo:cairo"],
+        "cairo": "//packages/linux/system/libs/graphics/cairo:cairo",
     },
     deps = [
         "//packages/linux/dev-libs/glib:glib",

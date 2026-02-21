@@ -1,25 +1,20 @@
-load("//defs:package_defs.bzl", "download_source", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "bpfilter",
-    src_uri = "https://github.com/facebook/bpfilter/archive/refs/tags/v0.6.0.tar.gz",
+    url = "https://github.com/facebook/bpfilter/archive/refs/tags/v0.6.0.tar.gz",
 
     sha256 = "2ef67624381b9a32a6be99f3a6362faeb8576290bf6ffaa7e24952d5693e4d9a",
     version = "0.6.0",
     description = "BPF-based packet filtering framework",
     homepage = "https://github.com/facebook/bpfilter",
     license = "GPL-2.0",
-    iuse = [
-        "docs",
-        "tests",
-    ],
-    use_cmake = {
-        "-docs": "-DNO_DOCS=ON",
-        "-tests": "-DNO_TESTS=ON",
-        "docs": "-DNO_DOCS=OFF",
-        "tests": "-DNO_TESTS=OFF",
+    use_configure = {
+        "docs": ("-DNO_DOCS=OFF", "-DNO_DOCS=ON"),
+        "tests": ("-DNO_TESTS=OFF", "-DNO_TESTS=ON"),
     },
-    cmake_args = [
+    configure_args = [
         "-DNO_CHECKS=ON",
         "-DNO_BENCHMARKS=ON",
     ],

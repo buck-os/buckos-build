@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "aiogrpc",
     version = "1.8",
-    src_uri = "https://github.com/hubo1016/aiogrpc/archive/v1.8.tar.gz",
+    url = "https://github.com/hubo1016/aiogrpc/archive/v1.8.tar.gz",
     sha256 = "03797a29a82c9a3be43127d286237a98fd98bbe13d73ee469f51ed1e9804c9fe",
     deps = [
         "//packages/linux/dev-libs/rpc/grpc:grpc",

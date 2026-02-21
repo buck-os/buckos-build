@@ -1,14 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "tosa_tools",
     version = "2025.11.0",
-    src_uri = "https://gitlab.arm.com/tosa/tosa-tools/-/archive/v2025.11.0/tosa-tools-v2025.11.0.tar.gz",
+    url = "https://gitlab.arm.com/tosa/tosa-tools/-/archive/v2025.11.0/tosa-tools-v2025.11.0.tar.gz",
     sha256 = "e219eb95f1a80d9a5b882fea2c7003f221cf6eefe6385f776521351735f109fc",
     description = "TOSA serialization library and reference model",
     homepage = "https://gitlab.arm.com/tosa/tosa-tools",
     license = "Apache-2.0",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTS=OFF",
         "-DTOSA_ENABLE_PROJECTS=serialization",

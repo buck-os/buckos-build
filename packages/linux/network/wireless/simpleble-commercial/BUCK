@@ -1,13 +1,13 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "simpleble-commercial",
     version = "0.10.4",
-    src_uri = "https://github.com/simpleble/simpleble/archive/refs/tags/v0.10.4.tar.gz",
+    url = "https://github.com/simpleble/simpleble/archive/refs/tags/v0.10.4.tar.gz",
     sha256 = "ef03efd60e10601e98adc730734ee345740bf032cbf744e63071e969898069a3",
-    signature_required = False,
 
-    cmake_args = [
+    configure_args = [
         "-DSIMPLEBLE_PLAIN=OFF",
         "-DSIMPLEBLE_TEST=OFF",
         "-DSIMPLEBLE_EXAMPLES=OFF",

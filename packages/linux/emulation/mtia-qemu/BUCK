@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "mtia-qemu",
     version = "9.2.0",
-    src_uri = "https://download.qemu.org/qemu-9.2.0.tar.xz",
+    url = "https://download.qemu.org/qemu-9.2.0.tar.xz",
     sha256 = "f859f0bc65e1f533d040bbe8c92bcfecee5af2c921a6687c652fb44d089bd894",
-    meson_args = [
+    configure_args = [
         "-Ddefault_devices=false",
         "-Dsoftmmu=true",
         "-Dlinux_user=false",

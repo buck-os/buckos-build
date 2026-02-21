@@ -1,32 +1,19 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
 # -----------------------------------------------------------------------------
 # OpenRC - Dependency-based init system
 # -----------------------------------------------------------------------------
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "openrc",
     version = "0.54.2",
-    iuse = [
-        "audit",
-        "bash",
-        "debug",
-        "netifrc",
-        "newnet",
-        "pam",
-        "s6",
-        "selinux",
-        "sysv-utils",
-        "sysvinit",
-        "unicode",
-    ],
-    src_uri = "https://github.com/OpenRC/openrc/archive/refs/tags/0.54.2.tar.gz",
+    url = "https://github.com/OpenRC/openrc/archive/refs/tags/0.54.2.tar.gz",
     sha256 = "1075c7793c0479a65810984036dc7c82142e934b19310edeb397db8939bf526c",
-    signature_required = False,
     description = "Dependency-based init system that works with sysvinit",
     homepage = "https://github.com/OpenRC/openrc",
     license = "BSD-2-Clause",
-    meson_args = [
+    configure_args = [
         "-Dbranding=BuckOs Linux",
         "-Dnewnet=false",
         "-Daudit=disabled",

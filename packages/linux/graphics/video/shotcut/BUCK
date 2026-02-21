@@ -1,22 +1,20 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # Shotcut - Free, open source, cross-platform video editor
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "shotcut",
     version = "24.06.26",
-    iuse = ["debug"],
-    use_cmake = {
-        "-debug": "-DCMAKE_BUILD_TYPE=Release",
-        "debug": "-DCMAKE_BUILD_TYPE=Debug",
+    use_configure = {
+        "debug": ("-DCMAKE_BUILD_TYPE=Debug", "-DCMAKE_BUILD_TYPE=Release"),
     },
-    src_uri = "https://github.com/mltframework/shotcut/archive/refs/tags/v24.06.26.tar.gz",
+    url = "https://github.com/mltframework/shotcut/archive/refs/tags/v24.06.26.tar.gz",
     sha256 = "cd7a90228df954ad1e706940795abf9aff657c7686ce82092f009f9befec7e0b",
-    signature_required = False,
     description = "Free, open source, cross-platform video editor",
     homepage = "https://www.shotcut.org/",
     license = "GPL-3.0-or-later",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DSHOTCUT_VERSION=24.06.26",

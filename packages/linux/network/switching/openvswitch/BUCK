@@ -1,42 +1,28 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # Open vSwitch - Production quality multilayer virtual switch
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "openvswitch",
     version = "3.3.0",
-    src_uri = "https://www.openvswitch.org/releases/openvswitch-3.3.0.tar.gz",
+    url = "https://www.openvswitch.org/releases/openvswitch-3.3.0.tar.gz",
     sha256 = "1afcb81fb947c0be885866995d6c088e61df43561115789206a2b33f7bc1b05f",
     description = "Production quality multilayer virtual switch",
     homepage = "https://www.openvswitch.org/",
     license = "Apache-2.0",
-    iuse = [
-        "debug",
-        "dpdk",
-        "modules",
-        "monitor",
-        "ssl",
-        "unwind",
-        "valgrind",
-    ],
     use_configure = {
-        "-debug": "--disable-debug",
-        "-modules": "--disable-modules",
-        "-monitor": "--disable-monitor",
-        "-unwind": "--disable-unwind",
-        "-valgrind": "--disable-valgrind",
-        "debug": "--enable-debug",
-        "modules": "--enable-modules",
-        "monitor": "--enable-monitor",
-        "unwind": "--enable-unwind",
-        "valgrind": "--enable-valgrind",
+        "debug": ("--enable-debug", "--disable-debug"),
+        "modules": ("--enable-modules", "--disable-modules"),
+        "monitor": ("--enable-monitor", "--disable-monitor"),
+        "unwind": ("--enable-unwind", "--disable-unwind"),
+        "valgrind": ("--enable-valgrind", "--disable-valgrind"),
     },
-    use_defaults = ["ssl"],
     deps = [
         "//packages/linux/lang/python:python",
     ],
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
     },
     configure_args = [
         "--prefix=${PREFIX}",

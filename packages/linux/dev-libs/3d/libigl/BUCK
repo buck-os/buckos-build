@@ -1,19 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "libigl",
     version = "2.3.0",
-    iuse = ["static-libs"],
-    use_cmake = {
-        "-static-libs": "-DBUILD_STATIC_LIBS=OFF",
-        "static-libs": "-DBUILD_STATIC_LIBS=ON",
+    use_configure = {
+        "static-libs": ("-DBUILD_STATIC_LIBS=ON", "-DBUILD_STATIC_LIBS=OFF"),
     },
-    src_uri = "https://github.com/libigl/libigl/archive/refs/tags/v2.3.0.tar.gz",
+    url = "https://github.com/libigl/libigl/archive/refs/tags/v2.3.0.tar.gz",
     sha256 = "9d6de3bdb9c1cfc61a0a0616fd96d14ef8465995600328c196fa672ee4579b70",
     description = "Simple C++ geometry processing library",
     homepage = "https://libigl.github.io/",
     license = "MPL-2.0",
-    cmake_args = [
+    configure_args = [
         "-DLIBIGL_USE_STATIC_LIBRARY=OFF",
         "-DLIBIGL_BUILD_TESTS=OFF",
         "-DLIBIGL_BUILD_TUTORIALS=OFF",

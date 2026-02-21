@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "nanothread",
     version = "0.0.1",
-    src_uri = "https://github.com/mitsuba-renderer/nanothread/archive/dd8d5f23a13c38d4d2a72f276f862c82b4ad35cc.tar.gz",
+    url = "https://github.com/mitsuba-renderer/nanothread/archive/dd8d5f23a13c38d4d2a72f276f862c82b4ad35cc.tar.gz",
     sha256 = "e6f859ce49d24e2f9104c459e95eededd1ad7d4039f762a92c25560861627c39",
-    cmake_args = [
+    configure_args = [
         "-DNANOTHREAD_STATIC=ON",
         "-DNANOTHREAD_ENABLE_TESTS=OFF",
     ],

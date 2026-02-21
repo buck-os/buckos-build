@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "pinocchio",
     version = "3.5.0",
-    src_uri = "https://github.com/stack-of-tasks/pinocchio/archive/refs/tags/v3.5.0.tar.gz",
+    url = "https://github.com/stack-of-tasks/pinocchio/archive/refs/tags/v3.5.0.tar.gz",
     sha256 = "d183bc33d7efec676aa0652d6a9420842961af3f5b1305c82b3a820a2ab8b63d",
     description = "A fast and flexible implementation of Rigid Body Dynamics algorithms and their analytical derivatives",
     homepage = "https://github.com/stack-of-tasks/pinocchio",
@@ -12,7 +13,7 @@ cmake_package(
         "//packages/linux/dev-libs/misc/boost:boost",
         "//packages/linux/dev-libs/eigen3:eigen3",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_PYTHON_INTERFACE=OFF",

@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "pycparser",
     version = "2.18",
-    src_uri = "https://github.com/eliben/pycparser/archive/release_v2.18.tar.gz",
+    url = "https://github.com/eliben/pycparser/archive/release_v2.18.tar.gz",
     sha256 = "d5ead0f43ac5a8dd89e8475ada557037bbeb7ed709491861e84356ef17a3f8ac",
     deps = [],
     maintainers = ["buckos"],

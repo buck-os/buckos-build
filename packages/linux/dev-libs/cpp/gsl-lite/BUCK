@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "gsl-lite",
     version = "0.40.0",
-    src_uri = "https://github.com/gsl-lite/gsl-lite/archive/refs/tags/v0.40.0.tar.gz",
+    url = "https://github.com/gsl-lite/gsl-lite/archive/refs/tags/v0.40.0.tar.gz",
     sha256 = "65af4ec8a1050dac4f1ca4622881bb02a9c3978a9baec289fb56e25412d6cac7",
-    cmake_args = [
+    configure_args = [
         "-DGSL_LITE_OPT_BUILD_TESTS=OFF",
         "-DGSL_LITE_OPT_BUILD_EXAMPLES=OFF",
     ],

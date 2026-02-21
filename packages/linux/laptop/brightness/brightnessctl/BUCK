@@ -1,13 +1,14 @@
+load("//defs:package.bzl", "package")
+
 # brightnessctl - Read and control device brightness
 # A program to read and control device brightness on Linux
 
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-
 # USE flags: See use_flags.bzl for available flags
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "brightnessctl",
-    src_uri = "https://github.com/Hummer12007/brightnessctl/archive/refs/tags/0.5.1.tar.gz",
+    url = "https://github.com/Hummer12007/brightnessctl/archive/refs/tags/0.5.1.tar.gz",
 
     sha256 = "a68869e23f56ac4f2e28f1783002810ddbf10f95e1af9b48b2912fb169f46994",
     version = "0.5.1",

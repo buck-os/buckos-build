@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # Proxygen - Facebook's C++ HTTP Libraries
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "proxygen",
     version = "2024.01.01.00",
-    src_uri = "https://github.com/facebook/proxygen/archive/refs/tags/v2024.01.01.00.tar.gz",
+    url = "https://github.com/facebook/proxygen/archive/refs/tags/v2024.01.01.00.tar.gz",
     sha256 = "4d65fc89771fc6be738bcde13442e16cd4f7ebcf4cb70c9888d0d10d7a694d46",
     description = "Facebook's C++ HTTP Libraries",
     homepage = "https://github.com/facebook/proxygen",
@@ -21,7 +22,7 @@ cmake_package(
         "//packages/linux/system/libs/crypto/openssl:openssl",
         "//packages/linux/core/zlib:zlib",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_TESTS=OFF",

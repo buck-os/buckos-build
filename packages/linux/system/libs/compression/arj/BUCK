@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl","download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # arj - ARJ archive utility
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "arj",
-    src_uri = "https://downloads.sourceforge.net/arj/arj-3.10.22.tar.gz",
+    url = "https://downloads.sourceforge.net/arj/arj-3.10.22.tar.gz",
 
     sha256 = "589e4c9bccc8669e7b6d8d6fcd64e01f6a2c21fe10aad56a83304ecc3b96a7db",
     version = "3.10.22",

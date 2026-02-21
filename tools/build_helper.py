@@ -14,6 +14,21 @@ import subprocess
 import sys
 
 
+def _can_unshare_net():
+    """Check if unshare --net is available for network isolation."""
+    try:
+        result = subprocess.run(
+            ["unshare", "--net", "true"],
+            capture_output=True, timeout=5,
+        )
+        return result.returncode == 0
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return False
+
+
+_NETWORK_ISOLATED = _can_unshare_net()
+
+
 def _resolve_env_paths(value):
     """Resolve relative Buck2 artifact paths in env values to absolute."""
     parts = []
@@ -108,6 +123,13 @@ def main():
             cmd.append(f"{key}={_resolve_env_paths(value)}")
         else:
             cmd.append(arg)
+
+    # Wrap with unshare --net for network isolation (reproducibility)
+    if _NETWORK_ISOLATED:
+        cmd = ["unshare", "--net"] + cmd
+    else:
+        print("⚠ Warning: unshare --net unavailable, building without network isolation",
+              file=sys.stderr)
 
     result = subprocess.run(cmd)
     if result.returncode != 0:

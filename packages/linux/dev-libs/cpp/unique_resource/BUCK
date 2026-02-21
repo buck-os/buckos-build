@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "unique_resource",
     version = "0.0.1",
-    src_uri = "https://github.com/okdshin/unique_resource/archive/22f857bf18105a7b99d8a3b28f5afe30d2dbe6fa.tar.gz",
+    url = "https://github.com/okdshin/unique_resource/archive/22f857bf18105a7b99d8a3b28f5afe30d2dbe6fa.tar.gz",
     sha256 = "fe0315b7c52ef8e645a916f6ebdf29b07d97cc9a940b12d623d2bc179f9b9e23",
     description = "General RAII wrapper for exclusive ownership resource management",
     homepage = "https://github.com/okdshin/unique_resource",
@@ -25,7 +26,7 @@ install(TARGETS unique_resource EXPORT unique_resourceTargets)
 install(EXPORT unique_resourceTargets DESTINATION lib/cmake/unique_resource)
 EOF
 """,
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],
     visibility = ["PUBLIC"],

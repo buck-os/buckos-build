@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "isobmff",
     version = "1.0.0",
-    src_uri = "https://github.com/DigiDNA/ISOBMFF/archive/59bb0f99ea3a21ab8823dd22e3bc935788ddabd3.tar.gz",
+    url = "https://github.com/DigiDNA/ISOBMFF/archive/59bb0f99ea3a21ab8823dd22e3bc935788ddabd3.tar.gz",
     sha256 = "f1e912d0103bf02e3c19bcd42fd2ea8e8c56f1ed8e77b31f95585c8c990e6abe",
     description = "C++ library for parsing ISO Base Media File Format (ISOBMFF)",
     homepage = "https://github.com/DigiDNA/ISOBMFF",
@@ -95,7 +96,7 @@ include("${CMAKE_CURRENT_LIST_DIR}/ISOBMFFTargets.cmake")
 check_required_components(ISOBMFF)
 EOF
     """,
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
     ],

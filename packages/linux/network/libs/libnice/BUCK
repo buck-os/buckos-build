@@ -1,27 +1,18 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "libnice",
     version = "0.1.19",
-    iuse = [
-        "gnutls",
-        "gtk-doc",
-        "introspection",
-        "upnp",
-    ],
     use_configure = {
-        "-gnutls": "--without-gnutls",
-        "-gtk-doc": "--disable-gtk-doc",
-        "-introspection": "--disable-introspection",
-        "-upnp": "--disable-upnp",
-        "gnutls": "--with-gnutls",
-        "gtk-doc": "--enable-gtk-doc",
-        "introspection": "--enable-introspection",
-        "upnp": "--enable-upnp",
+        "gnutls": ("--with-gnutls", "--without-gnutls"),
+        "gtk-doc": ("--enable-gtk-doc", "--disable-gtk-doc"),
+        "introspection": ("--enable-introspection", "--disable-introspection"),
+        "upnp": ("--enable-upnp", "--disable-upnp"),
     },
-    src_uri = "https://libnice.freedesktop.org/releases/libnice-0.1.19.tar.gz",
+    url = "https://libnice.freedesktop.org/releases/libnice-0.1.19.tar.gz",
     sha256 = "6747af710998cf708a2e8ceef51cccd181373d94201dd4b8d40797a070ed47cc",
-    meson_args = [
+    configure_args = [
         "-Dgstreamer=disabled",
         "-Dgupnp=disabled",
         "-Dgtk_doc=disabled",

@@ -1,18 +1,15 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "luajit",
     version = "2.1.0-beta3",
-    iuse = ["lua52compat", "static-libs"],
     use_configure = {
-        "-lua52compat": "--disable-lua52compat",
-        "-static-libs": "--disable-static",
-        "lua52compat": "--enable-lua52compat",
-        "static-libs": "--enable-static",
+        "lua52compat": ("--enable-lua52compat", "--disable-lua52compat"),
+        "static-libs": ("--enable-static", "--disable-static"),
     },
-    src_uri = "https://github.com/LuaJIT/LuaJIT/archive/refs/tags/v2.1.0-beta3.tar.gz",
+    url = "https://github.com/LuaJIT/LuaJIT/archive/refs/tags/v2.1.0-beta3.tar.gz",
     sha256 = "409f7fe570d3c16558e594421c47bdd130238323c9d6fd6c83dedd2aaeb082a8",
-    signature_required = False,
     description = "Just-In-Time Compiler for Lua",
     homepage = "https://luajit.org/",
     license = "MIT",

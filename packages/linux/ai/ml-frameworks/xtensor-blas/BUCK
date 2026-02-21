@@ -1,14 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "xtensor-blas",
     version = "0.21.0",
-    src_uri = "https://github.com/xtensor-stack/xtensor-blas/archive/refs/tags/0.21.0.tar.gz",
+    url = "https://github.com/xtensor-stack/xtensor-blas/archive/refs/tags/0.21.0.tar.gz",
     sha256 = "89ce6eceb47018f3b557945468502593e0bf0e5a816548aad8ac22247c8198b1",
     deps = [
         "//packages/linux/dev-libs/math/xtensor:xtensor",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTS=OFF",
     ],

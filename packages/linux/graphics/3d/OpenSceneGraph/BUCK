@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # OpenSceneGraph - Package from third-party
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "OpenSceneGraph",
     version = "3.6.5",
-    src_uri = "https://github.com/openscenegraph/OpenSceneGraph/archive/refs/tags/OpenSceneGraph-3.6.5.tar.gz",
+    url = "https://github.com/openscenegraph/OpenSceneGraph/archive/refs/tags/OpenSceneGraph-3.6.5.tar.gz",
     sha256 = "aea196550f02974d6d09291c5d83b51ca6a03b3767e234a8c0e21322927d1e12",
     description = "OpenSceneGraph package",
     homepage = "https://github.com/openscenegraph/openscenegraph.git",
     license = "LGPL",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
     ],

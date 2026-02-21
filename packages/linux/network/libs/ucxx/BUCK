@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "ucxx",
     version = "0.43.00",
-    src_uri = "https://github.com/rapidsai/ucxx/archive/refs/tags/v0.43.00.tar.gz",
+    url = "https://github.com/rapidsai/ucxx/archive/refs/tags/v0.43.00.tar.gz",
     sha256 = "8b693b0bf3dfbcf2b8fce11095dfb2f396d940cfb9ee56ad93d7c9988b554d59",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTS=OFF",
         "-DBUILD_BENCHMARKS=OFF",
         "-DBUILD_EXAMPLES=OFF",

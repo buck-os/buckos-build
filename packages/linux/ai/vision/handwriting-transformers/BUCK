@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "handwriting-transformers",
     version = "main",
-    src_uri = "https://github.com/ankanbhunia/Handwriting-Transformers/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/ankanbhunia/Handwriting-Transformers/archive/refs/heads/main.tar.gz",
     sha256 = "5ccde226b125e120d7185a487937d4cd2aaaa24769673935ed1c4be2b8bb6fc7",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

@@ -1,12 +1,12 @@
-load("//defs:package_defs.bzl", "cargo_package")
+load("//defs:package.bzl", "package")
 
 # serialport-rs - Rust library for serial port access
-cargo_package(
+package(
+    build_rule = "cargo",
     name = "serialport-rs",
     version = "4.5.1",
-    src_uri = "https://github.com/serialport/serialport-rs/archive/refs/tags/v4.5.1.tar.gz",
+    url = "https://github.com/serialport/serialport-rs/archive/refs/tags/v4.5.1.tar.gz",
     sha256 = "87c15473f9174b393c716ccd081971fb908cb419aa5514620f3341a77aa25a02",
-    signature_required = False,
     description = "Rust library providing access to serial ports",
     homepage = "https://gitlab.com/susurrus/serialport-rs",
     license = "MPL-2.0",

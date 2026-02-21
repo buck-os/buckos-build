@@ -1,16 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "cjson",
     version = "1.7.17",
-    src_uri = "https://github.com/DaveGamble/cJSON/archive/refs/tags/v1.7.17.tar.gz",
+    url = "https://github.com/DaveGamble/cJSON/archive/refs/tags/v1.7.17.tar.gz",
     sha256 = "c91d1eeb7175c50d49f6ba2a25e69b46bd05cffb798382c19bfb202e467ec51c",
-    signature_required = False,
     description = "Ultralightweight JSON parser in ANSI C",
     homepage = "https://github.com/DaveGamble/cJSON",
     license = "MIT",
-    cmake_args = [
+    configure_args = [
         "-DENABLE_CJSON_TEST=OFF",
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_SHARED_AND_STATIC_LIBS=OFF",

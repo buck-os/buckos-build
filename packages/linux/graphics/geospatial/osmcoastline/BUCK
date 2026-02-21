@@ -1,14 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "osmcoastline",
     version = "2.2.4",
-    src_uri = "https://github.com/osmcode/osmcoastline/archive/refs/tags/v2.2.4.tar.gz",
+    url = "https://github.com/osmcode/osmcoastline/archive/refs/tags/v2.2.4.tar.gz",
     sha256 = "7a399661b46e4e700b11d6a5163ec7bdc8ad49f0837b524f1f2535cca7b9ee43",
     description = "Tool for extracting coastline data from OpenStreetMap planet file",
     homepage = "https://osmcode.org/osmcoastline",
     license = "GPL-3.0",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],
     deps = [

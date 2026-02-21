@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # FlatCC - FlatBuffers Compiler and Library for C
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "flatcc",
     version = "0.5.3",
-    src_uri = "https://github.com/dvidelabs/flatcc/archive/refs/tags/v0.5.3.tar.gz",
+    url = "https://github.com/dvidelabs/flatcc/archive/refs/tags/v0.5.3.tar.gz",
     sha256 = "d7519a97569ebdc9d12b162be0f9861fdc2724244f68595264a411ac48e4e983",
     description = "FlatBuffers compiler and library for C",
     homepage = "https://github.com/dvidelabs/flatcc",
     license = "Apache-2.0",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DFLATCC_INSTALL=ON",
         "-DFLATCC_TEST=OFF",
@@ -19,4 +20,3 @@ cmake_package(
     ],
     visibility = ["PUBLIC"],
 )
-

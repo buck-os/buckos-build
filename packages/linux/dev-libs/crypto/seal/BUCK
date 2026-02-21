@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "seal",
     version = "3.6.6",
-    src_uri = "https://github.com/microsoft/SEAL/archive/refs/tags/v3.6.6.tar.gz",
+    url = "https://github.com/microsoft/SEAL/archive/refs/tags/v3.6.6.tar.gz",
     sha256 = "85a63188a5ccc8d61b0adbb92e84af9b7223fc494d33260fa17a121433790a0e",
-    cmake_args = [
+    configure_args = [
         "-DSEAL_USE_CXX17=ON",
         "-DSEAL_USE_MSGSL=OFF",
         "-DSEAL_USE_ZLIB=OFF",

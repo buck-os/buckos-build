@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "vggsfm",
     version = "2.0.0",
-    src_uri = "https://github.com/facebookresearch/vggsfm/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/facebookresearch/vggsfm/archive/refs/heads/main.tar.gz",
     sha256 = "ac35bf66bfd9557a1d03a8164edec872937b6fca432111ad4a348ec2c76ca57c",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

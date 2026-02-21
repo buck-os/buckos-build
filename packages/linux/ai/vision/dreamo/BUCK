@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "dreamo",
     version = "0.0.0",
-    src_uri = "https://github.com/bytedance/DreamO/archive/1ec6e680975655bfcdf833f17b28affc3fde921d.tar.gz",
+    url = "https://github.com/bytedance/DreamO/archive/1ec6e680975655bfcdf833f17b28affc3fde921d.tar.gz",
     sha256 = "6bfcba06ecfe577aa30498c812b7c760d4c337cc3210b111efdea16fa7ebc034",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

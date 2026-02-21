@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "png",
     version = "1.6.37",
-    src_uri = "https://github.com/glennrp/libpng/archive/refs/tags/v1.6.37.tar.gz",
+    url = "https://github.com/glennrp/libpng/archive/refs/tags/v1.6.37.tar.gz",
     sha256 = "ca74a0dace179a8422187671aee97dd3892b53e168627145271cad5b5ac81307",
-    cmake_args = [
+    configure_args = [
         "-DPNG_SHARED=ON",
         "-DPNG_STATIC=OFF",
         "-DPNG_TESTS=OFF",

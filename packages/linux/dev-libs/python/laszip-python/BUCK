@@ -1,15 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "laszip-python",
     version = "0.1.0",
-    src_uri = "https://github.com/tmontaigu/laszip-python/archive/refs/tags/0.1.0.tar.gz",
+    url = "https://github.com/tmontaigu/laszip-python/archive/refs/tags/0.1.0.tar.gz",
     sha256 = "dce4144037add79bc4a029f4eeefcaf644d5bd36dc8c8f08732b1a23fb3b7bba",
     deps = [
         "//packages/linux/dev-libs/laszip:laszip",
         "//packages/linux/dev-libs/python/pybind11:pybind11",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],
     visibility = ["PUBLIC"],

@@ -1,49 +1,27 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # ncurses - Console display library
 # Uses traditional autotools (configure/make), not cmake
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "ncurses",
     version = "6.5",
-    src_uri = "https://ftp.gnu.org/gnu/ncurses/ncurses-6.5.tar.gz",
+    url = "https://ftp.gnu.org/gnu/ncurses/ncurses-6.5.tar.gz",
     sha256 = "136d91bc269a9a5785e5f9e980bc76ab57428f604ce3e5a5a90cebc767971cc6",
-    signature_required = False,
     description = "Console display library",
     homepage = "https://www.gnu.org/software/ncurses/",
     license = "MIT",
 
-    iuse = [
-        "ada",
-        "cxx",
-        "debug",
-        "gpm",
-        "minimal",
-        "profile",
-        "static-libs",
-        "tinfo",
-        "trace",
-    ],
-
-    use_defaults = [],
-
     use_configure = {
-        "-ada": "--without-ada",
-        "-cxx": "--without-cxx --without-cxx-binding",
-        "-debug": "--without-debug",
-        "-gpm": "--without-gpm",
-        "-profile": "--without-profile",
-        "-static-libs": "--with-shared --without-normal",
-        "-tinfo": "--without-termlib",
-        "-trace": "--without-trace",
-        "ada": "--with-ada",
-        "cxx": "--with-cxx --with-cxx-binding --with-cxx-shared",
-        "debug": "--with-debug",
-        "gpm": "--with-gpm",
-        "profile": "--with-profile",
-        "static-libs": "--with-normal",
-        "tinfo": "--with-termlib",
-        "trace": "--with-trace",
+        "ada": ("--with-ada", "--without-ada"),
+        "cxx": ("--with-cxx --with-cxx-binding --with-cxx-shared", "--without-cxx --without-cxx-binding"),
+        "debug": ("--with-debug", "--without-debug"),
+        "gpm": ("--with-gpm", "--without-gpm"),
+        "profile": ("--with-profile", "--without-profile"),
+        "static-libs": ("--with-normal", "--with-shared --without-normal"),
+        "tinfo": ("--with-termlib", "--without-termlib"),
+        "trace": ("--with-trace", "--without-trace"),
     },
 
     configure_args = [

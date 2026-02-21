@@ -1,12 +1,13 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "onednn",
     version = "3.7.1",
-    src_uri = "https://github.com/uxlfoundation/onednn/archive/refs/tags/v3.7.1.tar.gz",
+    url = "https://github.com/uxlfoundation/onednn/archive/refs/tags/v3.7.1.tar.gz",
     sha256 = "580f56abe12f2bd9d628a47586b00c516d410b086d7227a800aedc4891f4e93a",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DONEDNN_BUILD_TESTS=OFF",
         "-DONEDNN_BUILD_EXAMPLES=OFF",

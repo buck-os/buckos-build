@@ -1,14 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "o3de",
     version = "2107.1",
-    src_uri = "https://github.com/o3de/o3de/archive/refs/tags/2107.1.tar.gz",
+    url = "https://github.com/o3de/o3de/archive/refs/tags/2107.1.tar.gz",
     sha256 = "712164ada56f53da48ba02ae7433dc5dc3b965a36e5c3d41d8d5f3f54e2620d6",
     description = "Open 3D Engine - AAA-capable, cross-platform 3D engine",
     homepage = "https://o3de.org/",
     license = "Apache-2.0",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DLY_DISABLE_TEST_MODULES=ON",
         "-DLY_PROJECTS=",

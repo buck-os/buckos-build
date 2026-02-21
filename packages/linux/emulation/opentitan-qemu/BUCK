@@ -1,14 +1,15 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "opentitan-qemu",
     version = "9.2.0-2025-02-05",
-    src_uri = "https://github.com/lowRISC/qemu/archive/refs/tags/v9.2.0-2025-02-05.tar.gz",
+    url = "https://github.com/lowRISC/qemu/archive/refs/tags/v9.2.0-2025-02-05.tar.gz",
     sha256 = "90048d822f0f64ddb0b541683f437a09dc4c12b235b6be51fb57eca62aa125ba",
     description = "QEMU fork for OpenTitan/lowRISC Ibex platform emulation",
     homepage = "https://github.com/lowRISC/qemu",
     license = "GPL-2.0",
-    meson_args = [
+    configure_args = [
         "-Ddefault_devices=false",
         "-Dsystem=true",
         "-Dlinux_user=false",

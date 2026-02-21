@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "spacy-en_core_web_lg",
     version = "3.5.0",
-    src_uri = "https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.5.0/en_core_web_lg-3.5.0.tar.gz",
+    url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.5.0/en_core_web_lg-3.5.0.tar.gz",
     sha256 = "29732c8167e444686e0d8716d6b09123f3fa2d32baf7dbd2d8bc6c1b2c1b6945",
     deps = [
         "//packages/linux/ai/nlp/spacy:spacy",

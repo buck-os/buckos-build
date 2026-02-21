@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "storir",
     version = "master",
-    src_uri = "https://github.com/SRPOL-AUI/storir/archive/refs/heads/master.tar.gz",
+    url = "https://github.com/SRPOL-AUI/storir/archive/refs/heads/master.tar.gz",
     sha256 = "217378ecad5248ab630a39f1887f686cc2782340b4eddcaf55484efdf94b9ef6",
     deps = [
         "//packages/linux/dev-libs/python/numpy:numpy",

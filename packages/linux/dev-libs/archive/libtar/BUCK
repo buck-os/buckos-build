@@ -1,8 +1,9 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # libtar - C library for manipulating POSIX tar files
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libtar",
     bdepend = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
@@ -13,13 +14,11 @@ autotools_package(
 autoreconf -fi
 """,
     version = "1.2.20",
-    src_uri = "https://github.com/tklauser/libtar/archive/refs/tags/v1.2.20.tar.gz",
+    url = "https://github.com/tklauser/libtar/archive/refs/tags/v1.2.20.tar.gz",
     sha256 = "3152fc61cf03c82efbf99645596efdadba297eac3e85a52ae189902a072c9a16",
     description = "C library for manipulating POSIX tar files",
     homepage = "https://github.com/tklauser/libtar",
     license = "BSD-3-Clause",
-    iuse = ["zlib"],
-    use_defaults = ["zlib"],
     deps = [
         "//packages/linux/core/zlib:zlib",
     ],
@@ -28,8 +27,7 @@ autoreconf -fi
         "--disable-static",
     ],
     use_configure = {
-        "zlib": "--with-zlib",
-        "-zlib": "--without-zlib",
+        "zlib": ("--with-zlib", "--without-zlib"),
     },
     visibility = ["PUBLIC"],
 )

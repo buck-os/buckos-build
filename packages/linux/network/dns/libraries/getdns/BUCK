@@ -1,67 +1,33 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "getdns",
     version = "1.7.3",
-    src_uri = "https://getdnsapi.net/releases/getdns-1-7-3/getdns-1.7.3.tar.gz",
+    url = "https://getdnsapi.net/releases/getdns-1-7-3/getdns-1.7.3.tar.gz",
     sha256 = "f1404ca250f02e37a118aa00cf0ec2cbe11896e060c6d369c6761baea7d55a2c",
-    signature_sha256 = "35349bed8a80c7df0a3263bebb36ea89c32ac4849607deb10ad460677a9d5253",
-    signature_required = False,
-
-    iuse = [
-        "examples",
-        "getdns-query",
-        "getdns-server-mon",
-        "gnutls",
-        "idn",
-        "libev",
-        "libevent",
-        "libuv",
-        "minimal",
-        "ssl",
-        "static-libs",
-        "stubby",
-        "unbound",
-    ],
-    use_cmake = {
-        "-examples": "-DBUILD_EXAMPLES=OFF",
-        "-getdns-query": "-DENABLE_GETDNS_QUERY=OFF",
-        "-getdns-server-mon": "-DENABLE_GETDNS_SERVER_MON=OFF",
-        "-gnutls": "-DENABLE_GNUTLS=OFF",
-        "-libev": "-DENABLE_LIBEV=OFF",
-        "-libevent": "-DENABLE_LIBEVENT=OFF",
-        "-libuv": "-DENABLE_LIBUV=OFF",
-        "-minimal": "-DENABLE_MINIMAL=OFF",
-        "-static-libs": "-DBUILD_STATIC_LIBS=OFF",
-        "-unbound": "-DENABLE_UNBOUND=OFF",
-        "examples": "-DBUILD_EXAMPLES=ON",
-        "getdns-query": "-DENABLE_GETDNS_QUERY=ON",
-        "getdns-server-mon": "-DENABLE_GETDNS_SERVER_MON=ON",
-        "gnutls": "-DENABLE_GNUTLS=ON",
-        "libev": "-DENABLE_LIBEV=ON",
-        "libevent": "-DENABLE_LIBEVENT=ON",
-        "libuv": "-DENABLE_LIBUV=ON",
-        "minimal": "-DENABLE_MINIMAL=ON",
-        "static-libs": "-DBUILD_STATIC_LIBS=ON",
-        "unbound": "-DENABLE_UNBOUND=ON",
+    use_configure = {
+        "examples": ("-DBUILD_EXAMPLES=ON", "-DBUILD_EXAMPLES=OFF"),
+        "getdns-query": ("-DENABLE_GETDNS_QUERY=ON", "-DENABLE_GETDNS_QUERY=OFF"),
+        "getdns-server-mon": ("-DENABLE_GETDNS_SERVER_MON=ON", "-DENABLE_GETDNS_SERVER_MON=OFF"),
+        "gnutls": ("-DENABLE_GNUTLS=ON", "-DENABLE_GNUTLS=OFF"),
+        "libev": ("-DENABLE_LIBEV=ON", "-DENABLE_LIBEV=OFF"),
+        "libevent": ("-DENABLE_LIBEVENT=ON", "-DENABLE_LIBEVENT=OFF"),
+        "libuv": ("-DENABLE_LIBUV=ON", "-DENABLE_LIBUV=OFF"),
+        "minimal": ("-DENABLE_MINIMAL=ON", "-DENABLE_MINIMAL=OFF"),
+        "static-libs": ("-DBUILD_STATIC_LIBS=ON", "-DBUILD_STATIC_LIBS=OFF"),
+        "unbound": ("-DENABLE_UNBOUND=ON", "-DENABLE_UNBOUND=OFF"),
+        "idn": ("-DUSE_LIBIDN2=ON", "-DUSE_LIBIDN2=OFF"),
+        "ssl": ("-DUSE_OPENSSL=ON", "-DUSE_OPENSSL=OFF"),
+        "stubby": ("-DBUILD_STUBBY=ON", "-DBUILD_STUBBY=OFF"),
     },
-    use_defaults = ["ssl", "idn"],
 
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "idn": ["//packages/linux/network/dns/libraries/libidn2:libidn2"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "idn": "//packages/linux/network/dns/libraries/libidn2:libidn2",
     },
 
-    use_configure = {
-        "ssl": "-DUSE_OPENSSL=ON",
-        "-ssl": "-DUSE_OPENSSL=OFF",
-        "idn": "-DUSE_LIBIDN2=ON",
-        "-idn": "-DUSE_LIBIDN2=OFF",
-        "stubby": "-DBUILD_STUBBY=ON",
-        "-stubby": "-DBUILD_STUBBY=OFF",
-    },
-
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DENABLE_STUB_ONLY=OFF",

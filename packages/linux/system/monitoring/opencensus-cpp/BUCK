@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # opencensus-cpp - Package from third-party
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "opencensus-cpp",
     version = "0.4.0",
-    src_uri = "https://github.com/census-instrumentation/opencensus-cpp/archive/refs/tags/v0.4.0.tar.gz",
+    url = "https://github.com/census-instrumentation/opencensus-cpp/archive/refs/tags/v0.4.0.tar.gz",
     sha256 = "93a187065da4db8fdfd9f5c7b29f60c6d6830bb002590f14fd350d490234d134",
     description = "opencensus-cpp package",
     homepage = "https://github.com/census-instrumentation/opencensus-cpp.git",
     license = "Apache License 2.0",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
     ],

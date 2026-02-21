@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "dinov2",
     version = "0.0.1",
-    src_uri = "https://github.com/facebookresearch/dinov2/archive/b194f00db6136677fc8a4cc2ef2168f7699dfba2.tar.gz",
+    url = "https://github.com/facebookresearch/dinov2/archive/b194f00db6136677fc8a4cc2ef2168f7699dfba2.tar.gz",
     sha256 = "d679cb1bd644cde72cc4adf496b2a8c1644cdc7d8ee6d0defdcda40dc4795f6f",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

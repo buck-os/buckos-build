@@ -1,48 +1,36 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # librdkafka - Apache Kafka C/C++ client library
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "librdkafka",
     version = "2.3.0",
-    src_uri = "https://github.com/confluentinc/librdkafka/archive/refs/tags/v2.3.0.tar.gz",
+    url = "https://github.com/confluentinc/librdkafka/archive/refs/tags/v2.3.0.tar.gz",
     sha256 = "2d49c35c77eeb3d42fa61c43757fcbb6a206daa560247154e60642bcdcc14d12",
     description = "Apache Kafka C/C++ client library",
     homepage = "https://github.com/confluentinc/librdkafka",
     license = "BSD-2-Clause",
-    iuse = [
-        "lz4",
-        "sasl",
-        "ssl",
-        "static-libs",
-        "zstd",
-    ],
-    use_defaults = ["ssl", "zstd", "lz4"],
     deps = [
         "//packages/linux/core/zlib:zlib",
     ],
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "zstd": ["//packages/linux/system/libs/compression/zstd:zstd"],
-        "lz4": ["//packages/linux/system/libs/compression/lz4:lz4"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "zstd": "//packages/linux/system/libs/compression/zstd:zstd",
+        "lz4": "//packages/linux/system/libs/compression/lz4:lz4",
     },
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DRDKAFKA_BUILD_EXAMPLES=OFF",
         "-DRDKAFKA_BUILD_TESTS=OFF",
     ],
-    use_cmake = {
-        "-lz4": "-DWITH_LZ4_EXT=OFF",
-        "-sasl": "-DWITH_SASL=OFF",
-        "-ssl": "-DWITH_SSL=OFF",
-        "-static-libs": "-DBUILD_STATIC_LIBS=OFF",
-        "-zstd": "-DWITH_ZSTD=OFF",
-        "lz4": "-DWITH_LZ4_EXT=ON",
-        "sasl": "-DWITH_SASL=ON",
-        "ssl": "-DWITH_SSL=ON",
-        "static-libs": "-DBUILD_STATIC_LIBS=ON",
-        "zstd": "-DWITH_ZSTD=ON",
+    use_configure = {
+        "lz4": ("-DWITH_LZ4_EXT=ON", "-DWITH_LZ4_EXT=OFF"),
+        "sasl": ("-DWITH_SASL=ON", "-DWITH_SASL=OFF"),
+        "ssl": ("-DWITH_SSL=ON", "-DWITH_SSL=OFF"),
+        "static-libs": ("-DBUILD_STATIC_LIBS=ON", "-DBUILD_STATIC_LIBS=OFF"),
+        "zstd": ("-DWITH_ZSTD=ON", "-DWITH_ZSTD=OFF"),
     },
     visibility = ["PUBLIC"],
 )

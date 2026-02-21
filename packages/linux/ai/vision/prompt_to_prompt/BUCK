@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "prompt_to_prompt",
     version = "0.1.0",
-    src_uri = "https://github.com/google/prompt-to-prompt/archive/8186230a8ece64c2953271659aa858ec6d02a5cf.tar.gz",
+    url = "https://github.com/google/prompt-to-prompt/archive/8186230a8ece64c2953271659aa858ec6d02a5cf.tar.gz",
     sha256 = "05e567a276a2ede9063c6c3810f829804bc8757b3c987b798fb9b084fd5f4f64",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "nsjail",
     version = "3.0",
-    src_uri = "https://github.com/google/nsjail/archive/refs/tags/3.0.tar.gz",
+    url = "https://github.com/google/nsjail/archive/refs/tags/3.0.tar.gz",
     sha256 = "cfa66d3ed136b2e221752287b95e544915e8a6760aa866f023b604d14a374919",
     description = "A light-weight process isolation tool using Linux namespaces and seccomp-bpf",
     homepage = "https://github.com/google/nsjail",

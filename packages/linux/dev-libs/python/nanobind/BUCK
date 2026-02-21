@@ -1,12 +1,13 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "nanobind",
     version = "2.8.0",
-    src_uri = "https://github.com/wjakob/nanobind/archive/refs/tags/v2.8.0.tar.gz",
+    url = "https://github.com/wjakob/nanobind/archive/refs/tags/v2.8.0.tar.gz",
     sha256 = "17506f1ef5c92491183ab28242fa4f658d9625fe4f91ccd1d1358cb6e5f5acb6",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DNB_TEST=OFF",
     ],

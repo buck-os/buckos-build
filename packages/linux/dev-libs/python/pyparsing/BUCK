@@ -1,14 +1,13 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "pyparsing",
     version = "2.2.1",
-    iuse = ["examples"],
     use_configure = {
-        "-examples": "--disable-examples",
-        "examples": "--enable-examples",
+        "examples": ("--enable-examples", "--disable-examples"),
     },
-    src_uri = "https://github.com/pyparsing/pyparsing/archive/refs/tags/pyparsing_2.2.1.tar.gz",
+    url = "https://github.com/pyparsing/pyparsing/archive/refs/tags/pyparsing_2.2.1.tar.gz",
     sha256 = "25cafba8e402f775b58cee0924ef5359c5bc3ba3e8e8b038d0f92674c8a47a79",
     description = "Python parsing module",
     homepage = "https://github.com/pyparsing/pyparsing",

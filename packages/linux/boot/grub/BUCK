@@ -1,60 +1,33 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # USE flags: See use_flags.bzl for available flags
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "grub",
-    src_uri = "https://mirrors.kernel.org/gnu/grub/grub-2.12.tar.xz",
+    url = "https://mirrors.kernel.org/gnu/grub/grub-2.12.tar.xz",
 
     sha256 = "f3c97391f7c4eaa677a78e090c7e97e6dc47b16f655f04683ebd37bef7fe0faa",
-
-    signature_sha256 = "062b2e02b82326be39c3883f242d75b63d5a4b5dbe98e5d6657db4e22d479af3",
     version = "2.12",
     description = "GNU GRUB is a Multiboot boot loader",
     homepage = "https://www.gnu.org/software/grub/",
     license = "GPL-3.0",
-    iuse = [
-        "branding",
-        "device-mapper",
-        "efiemu",
-        "fonts",
-        "libzfs",
-        "mount",
-        "nls",
-        "protect",
-        "sdl",
-        "splash",
-        "themes",
-        "truetype",
-    ],
     use_configure = {
-        "-branding": "--disable-branding",
-        "-device-mapper": "--disable-device-mapper",
-        "-efiemu": "--disable-efiemu",
-        "-fonts": "--disable-fonts",
-        "-libzfs": "--disable-libzfs",
-        "-mount": "--disable-mount",
-        "-nls": "--disable-nls",
-        "-protect": "--disable-protect",
-        "-sdl": "--disable-sdl",
-        "-themes": "--disable-themes",
-        "-truetype": "--disable-truetype",
-        "branding": "--enable-branding",
-        "device-mapper": "--enable-device-mapper",
-        "efiemu": "--enable-efiemu",
-        "fonts": "--enable-fonts",
-        "libzfs": "--enable-libzfs",
-        "mount": "--enable-mount",
-        "nls": "--enable-nls",
-        "protect": "--enable-protect",
-        "sdl": "--enable-sdl",
-        "themes": "--enable-themes",
-        "truetype": "--enable-truetype",
+        "branding": ("--enable-branding", "--disable-branding"),
+        "device-mapper": ("--enable-device-mapper", "--disable-device-mapper"),
+        "efiemu": ("--enable-efiemu", "--disable-efiemu"),
+        "fonts": ("--enable-fonts", "--disable-fonts"),
+        "libzfs": ("--enable-libzfs", "--disable-libzfs"),
+        "mount": ("--enable-mount", "--disable-mount"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "protect": ("--enable-protect", "--disable-protect"),
+        "sdl": ("--enable-sdl", "--disable-sdl"),
+        "themes": ("--enable-themes", "--disable-themes"),
+        "truetype": ("--enable-truetype", "--disable-truetype"),
     },
-    use_defaults = ["device-mapper"],
     use_deps = {
-        "splash": ["//packages/linux/media/image/imagemagick:imagemagick"],
-        "device-mapper": ["//packages/linux/system/security/cryptsetup:lvm2"],
+        "splash": "//packages/linux/media/image/imagemagick:imagemagick",
+        "device-mapper": "//packages/linux/system/security/cryptsetup:lvm2",
     },
     pre_configure = """
 # Create extra_deps.lst to avoid build error (from Gentoo ebuild)
@@ -188,22 +161,19 @@ chmod +x "$DESTDIR/etc/grub.d/01_buckos_header"
 # GRUB for BIOS systems
 # USE flags: See use_flags.bzl for available flags
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "grub-bios",
-    src_uri = "https://mirrors.kernel.org/gnu/grub/grub-2.12.tar.xz",
+    url = "https://mirrors.kernel.org/gnu/grub/grub-2.12.tar.xz",
 
     sha256 = "f3c97391f7c4eaa677a78e090c7e97e6dc47b16f655f04683ebd37bef7fe0faa",
-
-    signature_sha256 = "062b2e02b82326be39c3883f242d75b63d5a4b5dbe98e5d6657db4e22d479af3",
     version = "2.12",
     description = "GNU GRUB for BIOS systems",
     homepage = "https://www.gnu.org/software/grub/",
     license = "GPL-3.0",
-    iuse = ["splash", "device-mapper"],
-    use_defaults = ["device-mapper"],
     use_deps = {
-        "splash": ["//packages/linux/media/image/imagemagick:imagemagick"],
-        "device-mapper": ["//packages/linux/system/security/cryptsetup:lvm2"],
+        "splash": "//packages/linux/media/image/imagemagick:imagemagick",
+        "device-mapper": "//packages/linux/system/security/cryptsetup:lvm2",
     },
     pre_configure = """
 # Create extra_deps.lst to avoid build error (from Gentoo ebuild)

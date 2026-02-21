@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "swift-semantic-versioning",
     version = "3.0.0",
-    src_uri = "https://github.com/AlexanderNey/SemanticVersioning/archive/refs/tags/v3.0.0.tar.gz",
+    url = "https://github.com/AlexanderNey/SemanticVersioning/archive/refs/tags/v3.0.0.tar.gz",
     sha256 = "fe2ce9f18bd3fa184ad414c743243f64f6091b9f48aacbb5609b148b4a7952e7",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTING=OFF",
     ],
     deps = [

@@ -1,19 +1,14 @@
+load("//defs:package.bzl", "package")
+
 # =============================================================================
 # ferm - For Easy Rule Making (firewall rule generator)
 # =============================================================================
 
-load("//defs:package_defs.bzl", "make_package")
-
 make_package(
     name = "ferm",
     version = "2.7",
-    src_uri = "http://ferm.foo-projects.org/download/2.7/ferm-2.7.tar.xz",
+    url = "http://ferm.foo-projects.org/download/2.7/ferm-2.7.tar.xz",
     sha256 = "c00d910d5394e69675608eb5ee0f504d5cfda41e990a2d9a91baac6df93e3f92",
-    signature_sha256 = "a7135d5545c9864d4c66be9234107f53259cbca36afc9d7a77a69de69f6a18b3",
-    signature_required = False,
-
-    iuse = ["ipv6"],
-    use_defaults = ["ipv6"],
 
     # ferm uses a plain Makefile, no configure script
     src_configure = ":",

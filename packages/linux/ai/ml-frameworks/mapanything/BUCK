@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "mapanything",
     version = "1.0",
-    src_uri = "https://mirror.buckos.org/m/mapanything-main.tar.gz",
+    url = "https://mirror.buckos.org/m/mapanything-main.tar.gz",
     sha256 = "3fa072e86afe02eecbe21e0477f2b7c9b64f972e3326b0f101ffb1411fed71de",
     description = "Universal Feed-Forward Metric 3D Reconstruction",
     homepage = "https://github.com/facebookresearch/map-anything",

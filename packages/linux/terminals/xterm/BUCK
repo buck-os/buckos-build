@@ -1,52 +1,32 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "xterm",
     # Official release tarball includes pre-generated configure script
     bdepend = [],
     src_prepare = "",
     version = "390",
-    src_uri = "https://invisible-mirror.net/archives/xterm/xterm-390.tgz",
+    url = "https://invisible-mirror.net/archives/xterm/xterm-390.tgz",
     sha256 = "75117c3cc5174a09c425ef106e69404d72f5ef05e03a5da00aaf15792d6f9c0f",
-    signature_sha256 = "145ef8fed6045745ef25cbc56d598127046659eaa8f73bd9f5fb1093c44876a9",
-    signature_required=False,
     description = "Terminal emulator for the X Window System",
     homepage = "https://invisible-island.net/xterm/",
     license = "MIT",
 
     # USE flags this package supports
-    iuse = [
-        "256-color",
-        "Xaw3d",
-        "openpty",
-        "sixel",
-        "toolbar",
-        "truetype",
-        "unicode",
-        "xinerama",
-    ],
 
     # Default USE flags
-    use_defaults = ["truetype", "256-color"],
 
     # Conditional configure arguments
     use_configure = {
-        "-256-color": "--disable-256-color",
-        "-Xaw3d": "--disable-Xaw3d",
-        "-openpty": "--disable-openpty",
-        "-sixel": "--disable-sixel",
-        "-toolbar": "--disable-toolbar",
-        "-truetype": "--disable-freetype",
-        "-unicode": "--disable-unicode",
-        "-xinerama": "--disable-xinerama",
-        "256-color": "--enable-256-color",
-        "Xaw3d": "--enable-Xaw3d",
-        "openpty": "--enable-openpty",
-        "sixel": "--enable-sixel",
-        "toolbar": "--enable-toolbar",
-        "truetype": "--enable-freetype",
-        "unicode": "--enable-unicode",
-        "xinerama": "--enable-xinerama",
+        "256-color": ("--enable-256-color", "--disable-256-color"),
+        "Xaw3d": ("--enable-Xaw3d", "--disable-Xaw3d"),
+        "openpty": ("--enable-openpty", "--disable-openpty"),
+        "sixel": ("--enable-sixel", "--disable-sixel"),
+        "toolbar": ("--enable-toolbar", "--disable-toolbar"),
+        "truetype": ("--enable-freetype", "--disable-freetype"),
+        "unicode": ("--enable-unicode", "--disable-unicode"),
+        "xinerama": ("--enable-xinerama", "--disable-xinerama"),
     },
 
     configure_args = [

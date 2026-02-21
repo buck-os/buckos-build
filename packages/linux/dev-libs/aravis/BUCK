@@ -1,31 +1,18 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "aravis",
     version = "0.8.30",
-    iuse = [
-        "fast-heartbeat",
-        "gstreamer",
-        "introspection",
-        "packet-socket",
-        "usb",
-        "viewer",
-    ],
     use_configure = {
-        "-fast-heartbeat": "--disable-fast-heartbeat",
-        "-gstreamer": "--disable-gstreamer",
-        "-introspection": "--disable-introspection",
-        "-packet-socket": "--disable-packet-socket",
-        "-usb": "--disable-usb",
-        "-viewer": "--disable-viewer",
-        "fast-heartbeat": "--enable-fast-heartbeat",
-        "gstreamer": "--enable-gstreamer",
-        "introspection": "--enable-introspection",
-        "packet-socket": "--enable-packet-socket",
-        "usb": "--enable-usb",
-        "viewer": "--enable-viewer",
+        "fast-heartbeat": ("--enable-fast-heartbeat", "--disable-fast-heartbeat"),
+        "gstreamer": ("--enable-gstreamer", "--disable-gstreamer"),
+        "introspection": ("--enable-introspection", "--disable-introspection"),
+        "packet-socket": ("--enable-packet-socket", "--disable-packet-socket"),
+        "usb": ("--enable-usb", "--disable-usb"),
+        "viewer": ("--enable-viewer", "--disable-viewer"),
     },
-    src_uri = "https://github.com/AravisProject/aravis/releases/download/{version}/aravis-{version}.tar.xz",
+    url = "https://github.com/AravisProject/aravis/releases/download/{version}/aravis-{version}.tar.xz",
     sha256 = "40380f06fa04524a7875bd456e5a5ea78b2c058fa84b5598bc6e0642fcef00b0",
     deps = [
         "//packages/linux/dev-libs/glib:glib",
@@ -33,7 +20,7 @@ meson_package(
         "//packages/linux/system/libs/data/libxml2:libxml2",
         "//packages/linux/core/zlib:zlib",
     ],
-    meson_args = [
+    configure_args = [
         "-Dviewer=disabled",
         "-Dgst-plugin=disabled",
         "-Ddocumentation=disabled",

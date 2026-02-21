@@ -1,17 +1,15 @@
+load("//defs:package.bzl", "package")
+
 # hdparm - Hard Disk Parameters
 # Get/set SATA/IDE device parameters including power management
 
-load("//defs:package_defs.bzl","download_source", "make_package")
-
 make_package(
     name = "hdparm",
-    src_uri = "https://downloads.sourceforge.net/project/hdparm/hdparm/hdparm-9.65.tar.gz",
+    url = "https://downloads.sourceforge.net/project/hdparm/hdparm/hdparm-9.65.tar.gz",
 
     sha256 = "d14929f910d060932e717e9382425d47c2e7144235a53713d55a94f7de535a4b",
-    iuse = ["static"],
     use_configure = {
-        "-static": "--disable-static",
-        "static": "--enable-static",
+        "static": ("--enable-static", "--disable-static"),
     },
     version = "9.65",
     description = "Get/set SATA/IDE device parameters and power management",

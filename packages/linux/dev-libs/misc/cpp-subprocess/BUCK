@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # cpp-subprocess - Subprocessing with Modern C++
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "cpp-subprocess",
     version = "2.0",
-    src_uri = "https://github.com/arun11299/cpp-subprocess/archive/4025693decacaceb9420efedbf4967a04cb028e7.tar.gz",
+    url = "https://github.com/arun11299/cpp-subprocess/archive/4025693decacaceb9420efedbf4967a04cb028e7.tar.gz",
     sha256 = "1e6a9f13cfefcaaf71f94a8969a4509ef0ae8c169413e52cab74b247009568c9",
     description = "Subprocess library for C++ similar to Python subprocess module",
     homepage = "https://github.com/arun11299/cpp-subprocess",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DSUBPROCESS_TESTS=OFF",
         "-DSUBPROCESS_INSTALL=ON",

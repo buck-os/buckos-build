@@ -1,47 +1,29 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # libavif - Library for encoding and decoding AVIF files
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "libavif",
     version = "1.3.0",
-    src_uri = "https://github.com/AOMediaCodec/libavif/archive/v1.3.0.tar.gz",
+    url = "https://github.com/AOMediaCodec/libavif/archive/v1.3.0.tar.gz",
     sha256 = "0a545e953cc049bf5bcf4ee467306a2f113a75110edf59e61248873101cd26c1",
     description = "Library for encoding and decoding AVIF files",
     homepage = "https://github.com/AOMediaCodec/libavif",
     license = "BSD-2-Clause",
-    iuse = [
-        "aom",
-        "dav1d",
-        "examples",
-        "extras",
-        "gdk-pixbuf",
-        "libyuv",
-        "rav1e",
-        "shared",
-        "static",
-        "svt-av1",
-        "tests",
-    ],
-    use_cmake = {
-        "-extras": "-DENABLE_EXTRAS=OFF",
-        "-gdk-pixbuf": "-DENABLE_GDK_PIXBUF=OFF",
-        "-libyuv": "-DENABLE_LIBYUV=OFF",
-        "-rav1e": "-DENABLE_RAV1E=OFF",
-        "-svt-av1": "-DENABLE_SVT_AV1=OFF",
-        "extras": "-DENABLE_EXTRAS=ON",
-        "gdk-pixbuf": "-DENABLE_GDK_PIXBUF=ON",
-        "libyuv": "-DENABLE_LIBYUV=ON",
-        "rav1e": "-DENABLE_RAV1E=ON",
-        "svt-av1": "-DENABLE_SVT_AV1=ON",
+    use_configure = {
+        "extras": ("-DENABLE_EXTRAS=ON", "-DENABLE_EXTRAS=OFF"),
+        "gdk-pixbuf": ("-DENABLE_GDK_PIXBUF=ON", "-DENABLE_GDK_PIXBUF=OFF"),
+        "libyuv": ("-DENABLE_LIBYUV=ON", "-DENABLE_LIBYUV=OFF"),
+        "rav1e": ("-DENABLE_RAV1E=ON", "-DENABLE_RAV1E=OFF"),
+        "svt-av1": ("-DENABLE_SVT_AV1=ON", "-DENABLE_SVT_AV1=OFF"),
     },
-    use_defaults = ["shared", "aom", "dav1d"],
     deps = [],
     use_deps = {
-        "aom": ["//packages/linux/media/video/libaom:libaom"],
-        "dav1d": ["//packages/linux/media/video/dav1d:dav1d"],
+        "aom": "//packages/linux/media/video/libaom:libaom",
+        "dav1d": "//packages/linux/media/video/dav1d:dav1d",
     },
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=${PREFIX}",
     ],
     use_options = {

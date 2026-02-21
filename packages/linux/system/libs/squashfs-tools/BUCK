@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "make_package", "download_source")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # squashfs-tools - Create and extract SquashFS filesystems
@@ -8,17 +8,9 @@ load("//defs:package_defs.bzl", "make_package", "download_source")
 
 make_package(
     name = "squashfs-tools",
-    src_uri = "https://github.com/plougher/squashfs-tools/archive/refs/tags/4.6.1.tar.gz",
+    url = "https://github.com/plougher/squashfs-tools/archive/refs/tags/4.6.1.tar.gz",
 
     sha256 = "9c4974e07c61547dae14af4ed1f358b7d04618ae194e54d6be72ee126f0d2f53",
-    iuse = [
-        "debug",
-        "lz4",
-        "lzma",
-        "lzo",
-        "xattr",
-        "zstd",
-    ],
     use_make = {
         "lz4": "LZ4_SUPPORT=1",
         "-lz4": "LZ4_SUPPORT=0",
@@ -31,7 +23,6 @@ make_package(
         "zstd": "ZSTD_SUPPORT=1",
         "-zstd": "ZSTD_SUPPORT=0",
     },
-    use_defaults = ["lz4", "lzma", "lzo", "xattr", "zstd"],
     version = "4.6.1",
     description = "Tools for creating and extracting SquashFS filesystems",
     homepage = "https://github.com/plougher/squashfs-tools",

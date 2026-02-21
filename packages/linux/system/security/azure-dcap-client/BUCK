@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "azure-dcap-client",
     version = "1.12.3",
-    src_uri = "https://github.com/microsoft/Azure-DCAP-Client/archive/refs/tags/1.12.3.tar.gz",
+    url = "https://github.com/microsoft/Azure-DCAP-Client/archive/refs/tags/1.12.3.tar.gz",
     sha256 = "2002b3fbd1e907ad0db7b9d26ad18744b0521aa7144610fd550a7ac38582e288",
     configure_args = [],
     deps = [

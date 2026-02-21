@@ -1,19 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "lvgl",
     version = "9.3.0",
-    src_uri = "https://github.com/lvgl/lvgl/archive/refs/tags/v9.3.0.tar.gz",
+    url = "https://github.com/lvgl/lvgl/archive/refs/tags/v9.3.0.tar.gz",
     sha256 = "4933becfd3603b29158a5d04138139582836ef2bc17beb6c39dccda9cb0d32e7",
     description = "Light and Versatile Graphics Library",
     homepage = "https://lvgl.io",
     license = "MIT",
-    iuse = [
-        "sdl",
-    ],
-    use_defaults = [],
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DLV_CONF_SKIP=1",
@@ -30,7 +27,7 @@ cmake_package(
         "sdl": ["LV_USE_SDL=1", "LV_SDL_INCLUDE_PATH=<SDL.h>"],
     },
     use_deps = {
-        "sdl": ["//packages/linux/system/libs/multimedia/sdl2:sdl2"],
+        "sdl": "//packages/linux/system/libs/multimedia/sdl2:sdl2",
     },
     visibility = ["PUBLIC"],
 )

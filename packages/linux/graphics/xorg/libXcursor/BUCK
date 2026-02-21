@@ -1,10 +1,11 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # libXcursor - X Cursor library
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libXcursor",
     version = "1.2.2",
-    src_uri = "https://xorg.freedesktop.org/archive/individual/lib/libXcursor-1.2.2.tar.xz",
+    url = "https://xorg.freedesktop.org/archive/individual/lib/libXcursor-1.2.2.tar.xz",
     sha256 = "53d071bd2cc56e517a30998d5e685c8a74556ddada43c6985d14da9a023a88ee",
     description = "X Cursor library",
     homepage = "https://xorg.freedesktop.org/",

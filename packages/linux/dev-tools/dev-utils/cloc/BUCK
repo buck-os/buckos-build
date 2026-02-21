@@ -1,17 +1,9 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # cloc - Count lines of code
-download_source(
-    name = "cloc-src",
-    src_uri = "https://github.com/AlDanial/cloc/releases/download/v2.06/cloc-2.06.tar.gz",
-    sha256 = "27b6b007a5d482e5f50b23984cbe10f6a9f26e1052e9c7e010edfdcf879dc554",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "cloc",
-    srcs = [":cloc-src"],
     version = "2.06",
     description = "Count blank lines, comment lines, and physical lines of source code",
     homepage = "https://github.com/AlDanial/cloc",

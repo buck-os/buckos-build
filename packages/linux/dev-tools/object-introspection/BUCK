@@ -1,15 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "object-introspection",
     version = "3e8464e",
-    src_uri = "https://github.com/facebookexperimental/object-introspection/archive/3e8464e691ade3c3318a9e0fb82778bb80fca1da.tar.gz",
+    url = "https://github.com/facebookexperimental/object-introspection/archive/3e8464e691ade3c3318a9e0fb82778bb80fca1da.tar.gz",
     sha256 = "e387e63466b07cb2014ce98e624cb6f57b240095ebc2b26baf4982672abc4041",
-    signature_required = False,
     description = "Memory profiling and introspection tool for C++ objects",
     homepage = "https://github.com/facebookexperimental/object-introspection",
     license = "Apache-2.0",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DWITH_TESTS=OFF",
         "-DFORCE_BOOST_STATIC=OFF",

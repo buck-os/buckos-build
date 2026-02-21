@@ -1,15 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "raddebugger-src",
-    src_uri = "https://github.com/EpicGames/raddebugger/archive/refs/heads/master.tar.gz",
-    sha256 = "9e3ec922f018f549f024ab5e9dfe45da1f9457816c5086a6f8364e53395acbb0",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "raddebugger",
-    srcs = [":raddebugger-src"],
     version = "master",
     description = "RAD Debugger - native debugger for Windows and Linux",
     homepage = "https://github.com/EpicGames/raddebugger",

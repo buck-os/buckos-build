@@ -1,18 +1,14 @@
-load("//defs:package_defs.bzl", "simple_package")
+load("//defs:package.bzl", "package")
 
 simple_package(
     name = "libtomcrypt",
     version = "1.18.2",
-    iuse = ["gmp", "libtommath", "tomsfastmath"],
     use_configure = {
-        "-gmp": "--disable-gmp",
-        "-libtommath": "--disable-libtommath",
-        "-tomsfastmath": "--disable-tomsfastmath",
-        "gmp": "--enable-gmp",
-        "libtommath": "--enable-libtommath",
-        "tomsfastmath": "--enable-tomsfastmath",
+        "gmp": ("--enable-gmp", "--disable-gmp"),
+        "libtommath": ("--enable-libtommath", "--disable-libtommath"),
+        "tomsfastmath": ("--enable-tomsfastmath", "--disable-tomsfastmath"),
     },
-    src_uri = "https://github.com/libtom/libtomcrypt/releases/download/v1.18.2/crypt-1.18.2.tar.xz",
+    url = "https://github.com/libtom/libtomcrypt/releases/download/v1.18.2/crypt-1.18.2.tar.xz",
     sha256 = "96ad4c3b8336050993c5bc2cf6c057484f2b0f9f763448151567fbab5e767b84",
     description = "Comprehensive, modular and portable cryptographic toolkit",
     homepage = "https://www.libtom.net/LibTomCrypt/",

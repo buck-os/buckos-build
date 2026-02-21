@@ -1,16 +1,17 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # FarmHash - Family of hash functions from Google
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "farmhash",
     version = "master",
-    src_uri = "https://github.com/google/farmhash/archive/refs/heads/master.tar.gz",
+    url = "https://github.com/google/farmhash/archive/refs/heads/master.tar.gz",
     sha256 = "88a7846c155001bc5d3a716cac2b696bdd558b9b3daca643104fb32dcb1bef75",
     description = "Family of hash functions from Google",
     homepage = "https://github.com/google/farmhash",
     license = "MIT",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
     ],

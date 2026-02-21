@@ -1,18 +1,16 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # giflib - Library to handle, display and manipulate GIF images
 # Based on Gentoo media-libs/giflib-5.2.2.ebuild
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "giflib",
     version = "5.2.2",
-    iuse = ["static-libs"],
     use_configure = {
-        "-static-libs": "--disable-static",
-        "static-libs": "--enable-static",
+        "static-libs": ("--enable-static", "--disable-static"),
     },
-    src_uri = "https://github.com/sailfishos-mirror/giflib/archive/refs/tags/5.2.2.tar.gz",
+    url = "https://github.com/sailfishos-mirror/giflib/archive/refs/tags/5.2.2.tar.gz",
     sha256 = "d61f8ca6736d44a53888894858e085cf9266883c98dbbcd9ca0f222b13699190",
-    signature_required = False,
     description = "Library to handle, display and manipulate GIF images",
     homepage = "https://sourceforge.net/projects/giflib/",
     license = "MIT",

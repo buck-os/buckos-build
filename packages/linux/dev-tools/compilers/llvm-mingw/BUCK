@@ -1,14 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "llvm-mingw-src",
-    src_uri = "https://github.com/mstorsjo/llvm-mingw/releases/download/20231017/llvm-mingw-20231017-msvcrt-ubuntu-20.04-x86_64.tar.xz",
-    sha256 = "256de631a9d0048a69a5b1768f0f409ba19db46ecdde9829559956f908241667",
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "llvm-mingw",
-    srcs = [":llvm-mingw-src"],
     version = "20231017",
     install_script = """
         mkdir -p "$OUT/opt/llvm-mingw"

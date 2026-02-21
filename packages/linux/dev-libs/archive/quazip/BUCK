@@ -1,29 +1,27 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # QuaZip - Qt/C++ wrapper for ZIP/UNZIP package
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "quazip",
     version = "1.4",
-    src_uri = "https://github.com/stachenov/quazip/archive/refs/tags/v1.4.tar.gz",
+    url = "https://github.com/stachenov/quazip/archive/refs/tags/v1.4.tar.gz",
     sha256 = "79633fd3a18e2d11a7d5c40c4c79c1786ba0c74b59ad752e8429746fe1781dd6",
     description = "Qt/C++ wrapper for the ZIP/UNZIP package",
     homepage = "https://github.com/stachenov/quazip",
     license = "LGPL-2.1-or-later WITH Qt-LGPL-exception-1.1",
-    iuse = ["bzip2", "qt5", "qt6"],
-    use_defaults = ["qt6"],
     deps = [
         "//packages/linux/core/zlib:zlib",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DQUAZIP_INSTALL=ON",
         "-DQUAZIP_ENABLE_TESTS=OFF",
     ],
-    use_cmake = {
-        "-bzip2": "-DENABLE_BZIP2=OFF",
-        "bzip2": "-DENABLE_BZIP2=ON",
+    use_configure = {
+        "bzip2": ("-DENABLE_BZIP2=ON", "-DENABLE_BZIP2=OFF"),
         "qt5": "-DQUAZIP_QT_MAJOR_VERSION=5",
         "qt6": "-DQUAZIP_QT_MAJOR_VERSION=6",
     },

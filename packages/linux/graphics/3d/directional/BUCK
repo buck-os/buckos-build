@@ -1,14 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "directional",
     version = "2.0.0",
-    src_uri = "https://github.com/avaxman/directional/archive/refs/tags/v2.0.0.tar.gz",
+    url = "https://github.com/avaxman/directional/archive/refs/tags/v2.0.0.tar.gz",
     sha256 = "0beb01d0a7c977acf642f7b4f73ca0498069e085723b2b29e07fea6ed81a3c8e",
     description = "Directional field processing library for 3D meshes",
     homepage = "https://avaxman.github.io/Directional",
     license = "MPL-2.0",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],
     deps = [

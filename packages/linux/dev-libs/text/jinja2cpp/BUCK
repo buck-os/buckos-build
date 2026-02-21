@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "jinja2cpp",
     version = "1.3.2",
-    src_uri = "https://github.com/jinja2cpp/Jinja2Cpp/archive/refs/tags/1.3.2.tar.gz",
+    url = "https://github.com/jinja2cpp/Jinja2Cpp/archive/refs/tags/1.3.2.tar.gz",
     sha256 = "227afb9d16eb1a47c3f3ca10c2f589dd2791c5d8b4767c73e26a0b8997e4c03e",
     description = "Jinja2 C++ template engine implementation",
     homepage = "https://github.com/jinja2cpp/Jinja2Cpp",
@@ -13,7 +14,7 @@ cmake_package(
         "//packages/linux/dev-libs/misc/fmt:fmt",
         "//packages/linux/dev-libs/json/rapidjson:rapidjson",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DJINJA2CPP_BUILD_TESTS=OFF",
         "-DJINJA2CPP_STRICT_WARNINGS=OFF",

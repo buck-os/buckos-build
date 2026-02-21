@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "table_transformer",
     version = "1.0.0",
-    src_uri = "https://github.com/microsoft/table-transformer/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/microsoft/table-transformer/archive/refs/heads/main.tar.gz",
     sha256 = "162f78b71c0a511952ee5a3510a1c131744e6ed51eb832d853687af5f44c068f",
     description = "Table detection and structure recognition using transformers",
     homepage = "https://github.com/microsoft/table-transformer",

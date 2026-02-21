@@ -1,11 +1,11 @@
-load("//defs:package_defs.bzl", "cargo_package")
+load("//defs:package.bzl", "package")
 
-cargo_package(
+package(
+    build_rule = "cargo",
     name = "satty",
     version = "0.12.0",
-    src_uri = "https://github.com/gabm/Satty/archive/v0.12.0.tar.gz",
+    url = "https://github.com/gabm/Satty/archive/v0.12.0.tar.gz",
     sha256 = "42403b36e7babe245de2bebc78d4bebab68aeaa4594b28bb9d83f44808e52920",
-    signature_required = False,
     description = "A screenshot annotation tool inspired by Swappy",
     homepage = "https://github.com/gabm/Satty",
     license = "MPL-2.0",

@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "zerobus",
     version = "0.2.0",
-    src_uri = "https://github.com/databricks/zerobus-sdk-py/archive/refs/tags/v0.2.0.tar.gz",
+    url = "https://github.com/databricks/zerobus-sdk-py/archive/refs/tags/v0.2.0.tar.gz",
     sha256 = "ebd63d735f29f017ac7a6d936e35c5d4ac41d469ee7da98ee38004759fa65890",
     deps = [
         "//packages/linux/dev-libs/python/requests:requests",

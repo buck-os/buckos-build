@@ -1,3 +1,5 @@
+load("//defs:package.bzl", "package")
+
 # =============================================================================
 # llama.cpp - LLM inference in C/C++
 # =============================================================================
@@ -18,19 +20,16 @@
 #
 # =============================================================================
 
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
-
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "llama-cpp",
     version = "b4154",
-    src_uri = "https://github.com/ggerganov/llama.cpp/archive/refs/tags/b4154.tar.gz",
+    url = "https://github.com/ggerganov/llama.cpp/archive/refs/tags/b4154.tar.gz",
     sha256 = "0fbaaf63d10108c0b49eb9aa99bd908bac04c3b301addb2d6da3b27a980da1e1",
-    signature_required = False,
     description = "LLM inference in C/C++ with minimal dependencies",
     homepage = "https://github.com/ggerganov/llama.cpp",
     license = "MIT",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DGGML_NATIVE=OFF",
         "-DGGML_OPENMP=ON",

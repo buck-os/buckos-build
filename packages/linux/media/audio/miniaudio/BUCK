@@ -1,19 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # miniaudio - Single file audio playback and capture library
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "miniaudio",
     version = "0.11.23",
-    src_uri = "https://github.com/mackron/miniaudio/archive/0.11.23.tar.gz",
+    url = "https://github.com/mackron/miniaudio/archive/0.11.23.tar.gz",
     sha256 = "1062155cc5882b55c48cb37f57a4dc783669e83ae0838535c62b206eeb1587a6",
     description = "Single file audio playback and capture library written in C",
     homepage = "https://miniaud.io/",
     license = "MIT-0",
-    iuse = ["shared", "static"],
-    use_defaults = ["shared"],
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=${PREFIX}",
     ],
     use_options = {

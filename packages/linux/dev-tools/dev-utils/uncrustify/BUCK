@@ -1,20 +1,19 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # uncrustify - Code beautifier (cmake build)
 # USE flags: test
 # Default: none
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "uncrustify",
     version = "0.78.1",
-    src_uri = "https://github.com/uncrustify/uncrustify/archive/refs/tags/uncrustify-0.78.1.tar.gz",
+    url = "https://github.com/uncrustify/uncrustify/archive/refs/tags/uncrustify-0.78.1.tar.gz",
     sha256 = "ecaf4c0adca14c36dfffa30bc28e69865115ecd602c90eb16a8cddccb41caad2",
-    signature_required = False,
     description = "Source code beautifier for C, C++, C#, ObjectiveC, D, Java, Pawn and VALA",
     homepage = "https://uncrustify.sourceforge.net/",
     license = "GPL-2+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],
     visibility = ["PUBLIC"],

@@ -1,14 +1,13 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "websocketpp",
     version = "0.8.2",
-    iuse = ["examples"],
-    use_cmake = {
-        "-examples": "-DBUILD_EXAMPLES=OFF",
-        "examples": "-DBUILD_EXAMPLES=ON",
+    use_configure = {
+        "examples": ("-DBUILD_EXAMPLES=ON", "-DBUILD_EXAMPLES=OFF"),
     },
-    src_uri = "https://github.com/zaphoyd/websocketpp/archive/refs/tags/0.8.2.tar.gz",
+    url = "https://github.com/zaphoyd/websocketpp/archive/refs/tags/0.8.2.tar.gz",
     sha256 = "6ce889d85ecdc2d8fa07408d6787e7352510750daa66b5ad44aacb47bea76755",
     description = "C++ WebSocket library",
     homepage = "https://github.com/zaphoyd/websocketpp",
@@ -16,7 +15,7 @@ cmake_package(
     deps = [
         "//packages/linux/dev-libs/boost:boost",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTS=OFF",
         "-DBUILD_EXAMPLES=OFF",

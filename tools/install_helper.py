@@ -45,6 +45,8 @@ def main():
                         help="Extra environment variable KEY=VALUE (repeatable)")
     parser.add_argument("--path-prepend", action="append", dest="path_prepend", default=[],
                         help="Directory to prepend to PATH (repeatable, resolved to absolute)")
+    parser.add_argument("--post-cmd", action="append", dest="post_cmds", default=[],
+                        help="Shell command to run in prefix dir after install (repeatable)")
     args = parser.parse_args()
 
     build_dir = os.path.abspath(args.build_dir)
@@ -85,6 +87,14 @@ def main():
     if result.returncode != 0:
         print(f"error: make install failed with exit code {result.returncode}", file=sys.stderr)
         sys.exit(1)
+
+    # Run post-install commands (e.g. ldconfig, cleanup)
+    for cmd_str in args.post_cmds:
+        result = subprocess.run(cmd_str, shell=True, cwd=prefix)
+        if result.returncode != 0:
+            print(f"error: post-cmd failed with exit code {result.returncode}: {cmd_str}",
+                  file=sys.stderr)
+            sys.exit(1)
 
 
 if __name__ == "__main__":

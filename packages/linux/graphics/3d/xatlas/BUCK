@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "xatlas",
     version = "f700c77",
-    src_uri = "https://github.com/jpcy/xatlas/archive/f700c7790aaa030e794b52ba7791a05c085faf0c.tar.gz",
+    url = "https://github.com/jpcy/xatlas/archive/f700c7790aaa030e794b52ba7791a05c085faf0c.tar.gz",
     sha256 = "57b56dbedab3bf0a487e4c0ed3cc3fe79210d4a008d59a8326af59196a3487eb",
     pre_configure = """
 cat > CMakeLists.txt << 'EOF'

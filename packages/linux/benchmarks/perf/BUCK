@@ -1,5 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # perf - Linux performance analysis tool
 #
@@ -8,16 +7,9 @@ load("//defs:use_flags.bzl", "use_dep")
 #   python   - Enable Python scripting
 #   libbpf   - Enable BPF support
 
-download_source(
-    name = "perf-src",
-    src_uri = "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.6.10.tar.xz",
-    sha256 = "9ee627e4c109aec7fca3eda5898e81d201af2c7eb2f7d9d7d94c1f0e1205546c",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "perf",
-    srcs = [":perf-src"],
     version = "6.6.10",
     description = "Linux perf tool - performance analysis and benchmarking",
     homepage = "https://perf.wiki.kernel.org/",

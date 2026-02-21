@@ -1,15 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "protozero",
     version = "1.7.1",
-    src_uri = "https://github.com/mapbox/protozero/archive/refs/tags/v1.7.1.tar.gz",
+    url = "https://github.com/mapbox/protozero/archive/refs/tags/v1.7.1.tar.gz",
     sha256 = "27e0017d5b3ba06d646a3ec6391d5ccc8500db821be480aefd2e4ddc3de5ff99",
     description = "Minimalist protocol buffer decoder and encoder in C++",
     homepage = "https://github.com/mapbox/protozero",
     license = "BSD-2",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
         "-DWERROR=OFF",

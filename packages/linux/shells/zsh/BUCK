@@ -1,57 +1,36 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "zsh",
     version = "5.9",
     # Use official release tarball instead of GitHub archive - it includes pre-generated configure
-    src_uri = "https://www.zsh.org/pub/zsh-5.9.tar.xz",
+    url = "https://www.zsh.org/pub/zsh-5.9.tar.xz",
     sha256 = "9b8d1ecedd5b5e81fbf1918e876752a7dd948e05c1a0dba10ab863842d45acd5",
-    signature_required = False,
     description = "A very advanced and programmable command interpreter (shell)",
     homepage = "https://www.zsh.org/",
     license = "MIT",
 
     # USE flags this package supports
-    iuse = [
-        "caps",
-        "debug",
-        "doc",
-        "examples",
-        "gdbm",
-        "maildir",
-        "pcre",
-        "static",
-        "valgrind",
-    ],
 
     # Default USE flags
-    use_defaults = ["pcre"],
 
     # Conditional configure arguments
     use_configure = {
-        "-caps": "--disable-libcap",
-        "-debug": "--disable-debug",
-        "-doc": "--disable-doc",
-        "-examples": "--disable-examples",
-        "-gdbm": "--disable-gdbm",
-        "-maildir": "--disable-maildir",
-        "-pcre": "--disable-pcre",
-        "-static": "--enable-dynamic",
-        "-valgrind": "--disable-valgrind",
-        "caps": "--enable-libcap",
-        "debug": "--enable-debug",
-        "doc": "--enable-doc",
-        "examples": "--enable-examples",
-        "gdbm": "--enable-gdbm",
-        "maildir": "--enable-maildir",
-        "pcre": "--enable-pcre",
-        "static": "--disable-dynamic",
-        "valgrind": "--enable-valgrind",
+        "caps": ("--enable-libcap", "--disable-libcap"),
+        "debug": ("--enable-debug", "--disable-debug"),
+        "doc": ("--enable-doc", "--disable-doc"),
+        "examples": ("--enable-examples", "--disable-examples"),
+        "gdbm": ("--enable-gdbm", "--disable-gdbm"),
+        "maildir": ("--enable-maildir", "--disable-maildir"),
+        "pcre": ("--enable-pcre", "--disable-pcre"),
+        "static": ("--disable-dynamic", "--enable-dynamic"),
+        "valgrind": ("--enable-valgrind", "--disable-valgrind"),
     },
 
     # Conditional dependencies
     use_deps = {
-        "pcre": ["//packages/linux/system/libs/utility/pcre2:pcre2"],
+        "pcre": "//packages/linux/system/libs/utility/pcre2:pcre2",
     },
 
     # Base configure arguments (always applied)

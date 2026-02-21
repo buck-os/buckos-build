@@ -1,26 +1,22 @@
-load("//defs:package_defs.bzl", "meson_package", "cmake_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # libva - Video Acceleration API
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "libva",
     version = "2.21.0",
-    iuse = ["X", "glx", "wayland"],
-    use_cmake = {
-        "-X": "-DENABLE_X=OFF",
-        "-glx": "-DENABLE_GLX=OFF",
-        "-wayland": "-DENABLE_WAYLAND=OFF",
-        "X": "-DENABLE_X=ON",
-        "glx": "-DENABLE_GLX=ON",
-        "wayland": "-DENABLE_WAYLAND=ON",
+    use_configure = {
+        "X": ("-DENABLE_X=ON", "-DENABLE_X=OFF"),
+        "glx": ("-DENABLE_GLX=ON", "-DENABLE_GLX=OFF"),
+        "wayland": ("-DENABLE_WAYLAND=ON", "-DENABLE_WAYLAND=OFF"),
     },
-    src_uri = "https://github.com/intel/libva/archive/refs/tags/2.21.0.tar.gz",
+    url = "https://github.com/intel/libva/archive/refs/tags/2.21.0.tar.gz",
     sha256 = "f7c3fffef3f04eb146e036dad2587d852bfb70e4926d014bf437244915ef7425",
-    signature_required = False,
     description = "Video Acceleration API for Linux",
     homepage = "https://github.com/intel/libva",
     license = "MIT",
-    meson_args = [
+    configure_args = [
         "-Dwith_x11=no",
         "-Dwith_wayland=no",
         "-Dwith_glx=no",
@@ -34,16 +30,16 @@ meson_package(
 )
 
 # libva-utils - VA-API utilities
-meson_package(
+package(
+    build_rule = "meson",
     name = "libva-utils",
     version = "2.21.0",
-    src_uri = "https://github.com/intel/libva-utils/archive/refs/tags/2.21.0.tar.gz",
+    url = "https://github.com/intel/libva-utils/archive/refs/tags/2.21.0.tar.gz",
     sha256 = "15ca12bd11c7001c04af5079512754fea6ba8d79151b9f07908c99b27622714e",
-    signature_required = False,
     description = "VA-API utilities and examples",
     homepage = "https://github.com/intel/libva-utils",
     license = "MIT",
-    meson_args = [
+    configure_args = [
         "-Dtests=false",
     ],
     deps = [
@@ -54,12 +50,12 @@ meson_package(
 )
 
 # Intel Media Driver for VAAPI
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "intel-media-driver",
     version = "24.2.5",
-    src_uri = "https://github.com/intel/media-driver/archive/refs/tags/intel-media-24.2.5.tar.gz",
+    url = "https://github.com/intel/media-driver/archive/refs/tags/intel-media-24.2.5.tar.gz",
     sha256 = "dec2210c1f824a721e4ea6f66f5899e300801b3e7fae232d3f8a94db38c2edd1",
-    signature_required = False,
     description = "Intel Media Driver for VAAPI (Gen8+ graphics)",
     homepage = "https://github.com/intel/media-driver",
     license = "MIT BSD-3-Clause",
@@ -70,7 +66,7 @@ if [ -d "media-driver-intel-media-24.2.5" ]; then
     rmdir media-driver-intel-media-24.2.5 2>/dev/null || true
 fi
 """,
-    cmake_args = [],
+    configure_args = [],
     deps = [
         ":libva",
         "//packages/linux/desktop/libdrm:libdrm",

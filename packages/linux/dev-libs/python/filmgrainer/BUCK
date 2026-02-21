@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "filmgrainer",
     version = "2026.01.18",
-    src_uri = "https://github.com/larspontoppidan/filmgrainer/archive/12963e548cf180f29da63de6dc34d2ee41b5c1db.tar.gz",
+    url = "https://github.com/larspontoppidan/filmgrainer/archive/12963e548cf180f29da63de6dc34d2ee41b5c1db.tar.gz",
     sha256 = "ea4aa53df3f79217a89b6ef985fbdd1ddee232ba5e9a27036c228658fd07cd0a",
     deps = [
         "//packages/linux/dev-libs/python/numpy:numpy",

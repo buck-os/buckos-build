@@ -1,14 +1,13 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "urwid",
     version = "2.0.1",
-    iuse = ["examples"],
     use_configure = {
-        "-examples": "--disable-examples",
-        "examples": "--enable-examples",
+        "examples": ("--enable-examples", "--disable-examples"),
     },
-    src_uri = "https://github.com/urwid/urwid/archive/refs/tags/release-2.0.1.tar.gz",
+    url = "https://github.com/urwid/urwid/archive/refs/tags/release-2.0.1.tar.gz",
     sha256 = "0ff4fea10999827d10db1214be901c4d70c95398f9b8bc567d5bf8c51a9adf28",
     description = "A full-featured console user interface library for Python",
     homepage = "https://github.com/urwid/urwid",

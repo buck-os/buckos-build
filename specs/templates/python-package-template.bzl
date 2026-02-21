@@ -1,14 +1,15 @@
 """
-Template for python_package with USE flags
+Template for package(build_rule = "python") with USE flags
 Based on PACKAGE-SPEC-005: Python Packages
 """
 
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "PACKAGE_NAME",
     version = "VERSION",
-    src_uri = "SOURCE_URL",
+    url = "SOURCE_URL",
     sha256 = "SHA256_CHECKSUM",
 
     # Python interpreter (default is python3)

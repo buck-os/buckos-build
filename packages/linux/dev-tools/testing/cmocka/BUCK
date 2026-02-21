@@ -1,22 +1,21 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # CMocka - Unit testing framework for C
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "cmocka",
     version = "1.1.3",
-    iuse = ["examples"],
-    use_cmake = {
-        "-examples": "-DBUILD_EXAMPLES=OFF",
-        "examples": "-DBUILD_EXAMPLES=ON",
+    use_configure = {
+        "examples": ("-DBUILD_EXAMPLES=ON", "-DBUILD_EXAMPLES=OFF"),
     },
-    src_uri = "https://github.com/clibs/cmocka/archive/refs/tags/cmocka-1.1.3.tar.gz",
+    url = "https://github.com/clibs/cmocka/archive/refs/tags/cmocka-1.1.3.tar.gz",
     sha256 = "c241cf7a42ef7aec90a7080e6ffe5c39f0616012b635bdaa31e884ae1fee86e4",
     description = "Unit testing framework for C with support for mock objects",
     homepage = "https://cmocka.org/",
     license = "Apache-2.0",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DWITH_STATIC_LIB=OFF",

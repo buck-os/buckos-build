@@ -1,24 +1,23 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # Apache HTTP Server - The most popular web server
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "apache",
     version = "2.4.59",
-    src_uri = "https://archive.apache.org/dist/httpd/httpd-2.4.59.tar.bz2",
+    url = "https://archive.apache.org/dist/httpd/httpd-2.4.59.tar.bz2",
     sha256 = "ec51501ec480284ff52f637258135d333230a7d229c3afa6f6c2f9040e321323",
     description = "The Apache HTTP Server - most popular web server",
     homepage = "https://httpd.apache.org/",
     license = "Apache-2.0",
-    iuse = ["ssl", "http2", "proxy", "rewrite", "cgi"],
-    use_defaults = ["ssl", "http2", "rewrite"],
     deps = [
         "//packages/linux/system/libs/utility/pcre2:pcre2",
         "//packages/linux/dev-libs/misc/apr:apr",
         "//packages/linux/dev-libs/misc/apr-util:apr-util",
     ],
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
     },
     configure_args = [
         "--prefix=${PREFIX}",
@@ -26,16 +25,11 @@ autotools_package(
         "--enable-mods-shared=all",
     ],
     use_configure = {
-        "ssl": "--enable-ssl",
-        "-ssl": "--disable-ssl",
-        "http2": "--enable-http2",
-        "-http2": "--disable-http2",
-        "proxy": "--enable-proxy",
-        "-proxy": "--disable-proxy",
-        "rewrite": "--enable-rewrite",
-        "-rewrite": "--disable-rewrite",
-        "cgi": "--enable-cgi",
-        "-cgi": "--disable-cgi",
+        "cgi": ("--enable-cgi", "--disable-cgi"),
+        "http2": ("--enable-http2", "--disable-http2"),
+        "proxy": ("--enable-proxy", "--disable-proxy"),
+        "rewrite": ("--enable-rewrite", "--disable-rewrite"),
+        "ssl": ("--enable-ssl", "--disable-ssl"),
     },
     visibility = ["PUBLIC"],
 )

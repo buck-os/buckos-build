@@ -1,21 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "gflags",
     version = "2.2.2",
-    iuse = ["static-libs"],
-    use_cmake = {
-        "-static-libs": "-DBUILD_STATIC_LIBS=OFF",
-        "static-libs": "-DBUILD_STATIC_LIBS=ON",
+    use_configure = {
+        "static-libs": ("-DBUILD_STATIC_LIBS=ON", "-DBUILD_STATIC_LIBS=OFF"),
     },
-    src_uri = "https://github.com/gflags/gflags/archive/refs/tags/v2.2.2.tar.gz",
+    url = "https://github.com/gflags/gflags/archive/refs/tags/v2.2.2.tar.gz",
     sha256 = "34af2f15cf7367513b352bdcd2493ab14ce43692d2dcd9dfc499492966c64dcf",
-    signature_required = False,
     description = "C++ library for commandline flags processing",
     homepage = "https://gflags.github.io/gflags/",
     license = "BSD-3-Clause",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_STATIC_LIBS=OFF",
         "-DBUILD_TESTING=OFF",

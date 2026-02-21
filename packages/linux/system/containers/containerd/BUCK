@@ -1,36 +1,20 @@
-load("//defs:package_defs.bzl", "simple_package")
+load("//defs:package.bzl", "package")
 
 # containerd - An industry-standard container runtime
 
 simple_package(
     name = "containerd",
     version = "1.7.13",
-    iuse = [
-        "apparmor",
-        "btrfs",
-        "cri",
-        "device-mapper",
-        "hardened",
-        "seccomp",
-        "selinux",
-    ],
     use_configure = {
-        "-apparmor": "--disable-apparmor",
-        "-btrfs": "--disable-btrfs",
-        "-cri": "--disable-cri",
-        "-device-mapper": "--disable-device-mapper",
-        "-hardened": "--disable-hardening",
-        "-seccomp": "--disable-seccomp",
-        "-selinux": "--disable-selinux",
-        "apparmor": "--enable-apparmor",
-        "btrfs": "--enable-btrfs",
-        "cri": "--enable-cri",
-        "device-mapper": "--enable-device-mapper",
-        "hardened": "--enable-hardening",
-        "seccomp": "--enable-seccomp",
-        "selinux": "--enable-selinux",
+        "apparmor": ("--enable-apparmor", "--disable-apparmor"),
+        "btrfs": ("--enable-btrfs", "--disable-btrfs"),
+        "cri": ("--enable-cri", "--disable-cri"),
+        "device-mapper": ("--enable-device-mapper", "--disable-device-mapper"),
+        "hardened": ("--enable-hardening", "--disable-hardening"),
+        "seccomp": ("--enable-seccomp", "--disable-seccomp"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
     },
-    src_uri = "https://github.com/containerd/containerd/releases/download/v1.7.13/containerd-1.7.13-linux-amd64.tar.gz",
+    url = "https://github.com/containerd/containerd/releases/download/v1.7.13/containerd-1.7.13-linux-amd64.tar.gz",
     sha256 = "c2371c009dd8b7738663333d91e5ab50d204f8bcae24201f45d59060d12c3a23",
     description = "An open and reliable container runtime",
     homepage = "https://containerd.io/",

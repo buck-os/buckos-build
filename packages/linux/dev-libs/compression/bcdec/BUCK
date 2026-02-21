@@ -1,14 +1,8 @@
-load("//defs:package_defs.bzl", "binary_package", "download_source")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "bcdec-src",
-    src_uri = "https://github.com/iOrange/bcdec/archive/refs/heads/main.tar.gz",
-    sha256 = "37563d7e0daead648bd6360db86226c849fc66e48ad833a565294cbcb5080132",
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "bcdec",
-    srcs = [":bcdec-src"],
     version = "0.0.0",
     install_script = """
 # GitHub archive extracts to bcdec-main/ subdirectory

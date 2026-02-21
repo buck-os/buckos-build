@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "simple_package")
+load("//defs:package.bzl", "package")
 
 # Redis - In-memory data structure store
 #
@@ -13,29 +13,19 @@ load("//defs:package_defs.bzl", "simple_package")
 simple_package(
     name = "redis",
     version = "7.4.1",
-    src_uri = "https://github.com/redis/redis/archive/refs/tags/7.4.1.tar.gz",
+    url = "https://github.com/redis/redis/archive/refs/tags/7.4.1.tar.gz",
     sha256 = "e85fd212307c8b453ae9361e882b6c1cefcc6a988a6f135faf7ef770a13bb05d",
     description = "In-memory data structure store, used as database, cache, and message broker",
     homepage = "https://redis.io/",
     license = "BSD-3-Clause",
-    iuse = [
-        "jemalloc",
-        "selinux",
-        "ssl",
-        "systemd",
-        "tcmalloc",
-    ],
     use_configure = {
-        "-selinux": "--disable-selinux",
-        "-tcmalloc": "--disable-tcmalloc",
-        "selinux": "--enable-selinux",
-        "tcmalloc": "--enable-tcmalloc",
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "tcmalloc": ("--enable-tcmalloc", "--disable-tcmalloc"),
     },
-    use_defaults = ["jemalloc"],
     deps = [],
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "jemalloc": ["//packages/linux/dev-libs/allocators/jemalloc:jemalloc"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "jemalloc": "//packages/linux/dev-libs/allocators/jemalloc:jemalloc",
     },
     build_env = {
         "PREFIX": "/usr",

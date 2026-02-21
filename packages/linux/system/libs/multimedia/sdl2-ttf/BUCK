@@ -1,18 +1,15 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "sdl2-ttf",
-    src_uri = "https://github.com/libsdl-org/SDL_ttf/releases/download/release-2.22.0/SDL2_ttf-2.22.0.tar.gz",
+    url = "https://github.com/libsdl-org/SDL_ttf/releases/download/release-2.22.0/SDL2_ttf-2.22.0.tar.gz",
 
     sha256 = "d48cbd1ce475b9e178206bf3b72d56b66d84d44f64ac05803328396234d67723",
-    iuse = ["X", "harfbuzz", "static-libs"],
     use_configure = {
-        "-X": "--without-x",
-        "-harfbuzz": "--disable-harfbuzz",
-        "-static-libs": "--disable-static",
-        "X": "--with-x",
-        "harfbuzz": "--enable-harfbuzz",
-        "static-libs": "--enable-static",
+        "X": ("--with-x", "--without-x"),
+        "harfbuzz": ("--enable-harfbuzz", "--disable-harfbuzz"),
+        "static-libs": ("--enable-static", "--disable-static"),
     },
     version = "2.22.0",
     description = "SDL2 TrueType font rendering library",

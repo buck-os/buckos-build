@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cargo_package")
+load("//defs:package.bzl", "package")
 
-cargo_package(
+package(
+    build_rule = "cargo",
     name = "py-spy",
     version = "0.3.14",
-    src_uri = "https://github.com/benfred/py-spy/archive/v0.3.14.tar.gz",
+    url = "https://github.com/benfred/py-spy/archive/v0.3.14.tar.gz",
     sha256 = "c01da8b74be0daba79781cfc125ffcd3df3a0d090157fe0081c71da2f6057905",
     bins = ["py-spy"],
     deps = [

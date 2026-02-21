@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "lion-pytorch",
     version = "0.1.2",
-    src_uri = "https://github.com/lucidrains/lion-pytorch/archive/refs/tags/0.1.2.tar.gz",
+    url = "https://github.com/lucidrains/lion-pytorch/archive/refs/tags/0.1.2.tar.gz",
     sha256 = "12d3e6a40fb2d315ec2d3618e34116e548c6f7480bb03e6aad814d96fd708c6d",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

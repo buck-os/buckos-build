@@ -1,17 +1,9 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # Pandoc is distributed as a pre-built binary due to Haskell compilation complexity
-download_source(
-    name = "pandoc-src",
-    src_uri = "https://github.com/jgm/pandoc/releases/download/3.5/pandoc-3.5-linux-amd64.tar.gz",
-    sha256 = "a46b448ad9e7e5bd898a0606a2a67acbf4bc7714b24dc68931e9a47d7b807015",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "pandoc",
-    srcs = [":pandoc-src"],
     version = "3.5",
     description = "Universal document converter supporting markdown, HTML, LaTeX, and more",
     homepage = "https://pandoc.org/",

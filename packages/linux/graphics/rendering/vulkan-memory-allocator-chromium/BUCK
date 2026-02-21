@@ -1,15 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "vulkan-memory-allocator-chromium",
     version = "3.0.0",
-    src_uri = "https://mirror.buckos.org/v/vulkan-memory-allocator-5e49f57.tar.gz",
+    url = "https://mirror.buckos.org/v/vulkan-memory-allocator-5e49f57.tar.gz",
     sha256 = "813b01b89a19356727c6ecfce8330406da803b2700e756c0b50de5f2dd784f10",
     description = "Vulkan Memory Allocator - Chromium fork",
     homepage = "https://chromium.googlesource.com/external/github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DVMA_BUILD_DOCUMENTATION=OFF",
         "-DVMA_BUILD_SAMPLE=OFF",

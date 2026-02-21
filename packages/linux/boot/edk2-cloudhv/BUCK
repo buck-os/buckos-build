@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "make_package")
+load("//defs:package.bzl", "package")
 
 # EDK2 Cloud Hypervisor Firmware (CLOUDHV)
 #
@@ -15,9 +15,8 @@ load("//defs:package_defs.bzl", "make_package")
 make_package(
     name = "edk2-cloudhv",
     version = "202411",
-    src_uri = "https://github.com/tianocore/edk2/archive/refs/tags/edk2-stable202411.tar.gz",
+    url = "https://github.com/tianocore/edk2/archive/refs/tags/edk2-stable202411.tar.gz",
     sha256 = "FIXME",
-    signature_required = False,
     description = "UEFI firmware for Cloud Hypervisor (EDK2 CLOUDHV)",
     homepage = "https://github.com/tianocore/edk2",
     license = "BSD-2-Clause",

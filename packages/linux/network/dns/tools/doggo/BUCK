@@ -1,15 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "doggo-src",
-    src_uri = "https://github.com/mr-karan/doggo/releases/download/v1.1.2/doggo_1.1.2_Linux_x86_64.tar.gz",
-    sha256 = "187d2a23402427aed8ab7c6fa704ffc1534bd594535c64f318f8904229f00647",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "doggo",
-    srcs = [":doggo-src"],
     version = "1.1.2",
     description = "Modern command-line DNS client (like dig) with colors and more",
     homepage = "https://doggo.mrkaran.dev/",

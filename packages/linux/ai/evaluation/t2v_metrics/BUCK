@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "t2v_metrics",
     version = "1.2",
-    src_uri = "https://mirror.buckos.org/t/t2v_metrics-main.tar.gz",
+    url = "https://mirror.buckos.org/t/t2v_metrics-main.tar.gz",
     sha256 = "02cb8f477ce073e34a5eccc0341c5df1376ee1f5dc0e9a3b58a033d748916e8f",
     description = "Evaluating Text-to-Visual Generation with Image-to-Text Generation",
     homepage = "https://github.com/linzhiqiu/t2v_metrics",

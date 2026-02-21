@@ -1,40 +1,25 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # x264 - H.264/MPEG-4 AVC encoder
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "x264",
     # x264 has its own configure script (not autoconf)
     version = "0.164.3108",
-    src_uri = "https://code.videolan.org/videolan/x264/-/archive/stable/x264-stable.tar.bz2",
+    url = "https://code.videolan.org/videolan/x264/-/archive/stable/x264-stable.tar.bz2",
     sha256 = "740126cb48549ca4e2f09b4ae13beed592d5b54744044e38f28662fd96d0ba56",
     description = "H.264/MPEG-4 AVC encoder",
     homepage = "https://www.videolan.org/developers/x264.html",
     license = "GPL-2",
-    iuse = [
-        "asm",
-        "avs",
-        "cli",
-        "cpu_flags_ppc_altivec",
-        "ffms",
-        "gpac",
-        "interlaced",
-        "lavf",
-        "lsmash",
-        "opencl",
-        "shared",
-        "static",
-        "threads",
-    ],
-    use_defaults = ["cli", "shared", "asm"],
     deps = [],
     # nasm is needed when asm is enabled (x86/x86_64 optimizations)
     use_bdepend = {
         "asm": ["//packages/linux/dev-tools/assemblers/nasm:nasm"],
     },
     use_deps = {
-        "opencl": ["//packages/linux/dev-libs/opencl:opencl"],
-        "lavf": ["//packages/linux/media/video/ffmpeg:ffmpeg"],
+        "opencl": "//packages/linux/dev-libs/opencl:opencl",
+        "lavf": "//packages/linux/media/video/ffmpeg:ffmpeg",
     },
     configure_args = [
         "--prefix=${PREFIX}",
@@ -42,32 +27,19 @@ autotools_package(
         "--disable-swscale",
     ],
     use_configure = {
-        "-asm": "--disable-asm",
-        "-avs": "--disable-avs",
-        "-cli": "--disable-cli",
-        "-cpu_flags_ppc_altivec": "--disable-cpu_flags_ppc_altivec",
-        "-ffms": "--disable-ffms",
-        "-gpac": "--disable-gpac",
-        "-interlaced": "--disable-interlaced",
-        "-lavf": "--disable-lavf",
-        "-lsmash": "--disable-lsmash",
-        "-opencl": "--disable-opencl",
-        "-shared": "--disable-shared",
-        "-static": "--disable-static",
-        "-threads": "--disable-threads",
-        "asm": "--enable-asm",
-        "avs": "--enable-avs",
-        "cli": "--enable-cli",
-        "cpu_flags_ppc_altivec": "--enable-cpu_flags_ppc_altivec",
-        "ffms": "--enable-ffms",
-        "gpac": "--enable-gpac",
-        "interlaced": "--enable-interlaced",
-        "lavf": "--enable-lavf",
-        "lsmash": "--enable-lsmash",
-        "opencl": "--enable-opencl",
-        "shared": "--enable-shared",
-        "static": "--enable-static",
-        "threads": "--enable-threads",
+        "asm": ("--enable-asm", "--disable-asm"),
+        "avs": ("--enable-avs", "--disable-avs"),
+        "cli": ("--enable-cli", "--disable-cli"),
+        "cpu_flags_ppc_altivec": ("--enable-cpu_flags_ppc_altivec", "--disable-cpu_flags_ppc_altivec"),
+        "ffms": ("--enable-ffms", "--disable-ffms"),
+        "gpac": ("--enable-gpac", "--disable-gpac"),
+        "interlaced": ("--enable-interlaced", "--disable-interlaced"),
+        "lavf": ("--enable-lavf", "--disable-lavf"),
+        "lsmash": ("--enable-lsmash", "--disable-lsmash"),
+        "opencl": ("--enable-opencl", "--disable-opencl"),
+        "shared": ("--enable-shared", "--disable-shared"),
+        "static": ("--enable-static", "--disable-static"),
+        "threads": ("--enable-threads", "--disable-threads"),
     },
     # Override src_configure because x264 has a non-standard configure script
     # that doesn't accept standard autotools arguments like --build, --mandir, etc.

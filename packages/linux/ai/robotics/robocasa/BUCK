@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "robocasa",
     version = "0.2.0+git20251218",
-    src_uri = "https://github.com/robocasa/robocasa/archive/756598a5be52e052339bb2d957426e39015c2afb.tar.gz",
+    url = "https://github.com/robocasa/robocasa/archive/756598a5be52e052339bb2d957426e39015c2afb.tar.gz",
     sha256 = "589934abd0c8e8d766fb972b209c9655c1a43dd4cb2b09c9bf1805ff3bb94a6b",
     deps = [
         "//packages/linux/dev-libs/python/h5py:h5py",

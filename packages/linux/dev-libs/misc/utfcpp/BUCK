@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # utfcpp - UTF-8 with C++ in a Portable Way
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "utfcpp",
     version = "4.0.5",
-    src_uri = "https://github.com/nemtrif/utfcpp/archive/refs/tags/v4.0.5.tar.gz",
+    url = "https://github.com/nemtrif/utfcpp/archive/refs/tags/v4.0.5.tar.gz",
     sha256 = "ffc668a310e77607d393f3c18b32715f223da1eac4c4d6e0579a11df8e6b59cf",
     description = "UTF-8 with C++ in a Portable Way",
     homepage = "https://github.com/nemtrif/utfcpp",
     license = "BSL-1.0",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DUTF8_TESTS=OFF",
         "-DUTF8_SAMPLES=OFF",

@@ -1,23 +1,20 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package", "binary_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # nmap - Network exploration tool and security scanner
 # =============================================================================
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "nmap",
     version = "7.94",
-    src_uri = "https://nmap.org/dist/nmap-7.94.tar.bz2",
+    url = "https://nmap.org/dist/nmap-7.94.tar.bz2",
     sha256 = "d71be189eec43d7e099bac8571509d316c4577ca79491832ac3e1217bc8f92cc",
-    signature_required = False,
-
-    use_defaults = ["ssl", "ipv6"],
 
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "lua": ["//packages/linux/lang/lua:lua"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "lua": "//packages/linux/lang/lua:lua",
     },
-
 
     configure_args = [
         "--with-libpcap",

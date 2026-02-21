@@ -1,11 +1,11 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "git",
     version = "2.43.0",
-    src_uri = "https://mirrors.edge.kernel.org/pub/software/scm/git/git-2.43.0.tar.xz",
+    url = "https://mirrors.edge.kernel.org/pub/software/scm/git/git-2.43.0.tar.xz",
     sha256 = "5446603e73d911781d259e565750dcd277a42836c8e392cac91cf137aa9b76ec",
-    signature_required = False,
     # GCC 15 exposes C23 unreachable() which conflicts with git's own macro
     env = {"CFLAGS": "-std=gnu17"},
     description = "Fast, scalable, distributed revision control system",
@@ -13,38 +13,25 @@ autotools_package(
     license = "GPL-2",
 
     # USE flags this package supports
-    iuse = [
-        "curl",
-        "perl",
-        "python",
-        "pcre2",
-        "nls",
-    ],
 
     # Default USE flags
-    use_defaults = ["curl", "perl", "python", "pcre2"],
 
     # Conditional dependencies
     use_deps = {
-        "curl": ["//packages/linux/system/libs/network/curl:curl"],
-        "perl": ["//packages/linux/lang/perl:perl"],
-        "python": ["//packages/linux/lang/python:python"],
-        "pcre2": ["//packages/linux/system/libs/utility/pcre2:pcre2"],
-        "nls": ["//packages/linux/dev-libs/misc/gettext:gettext"],
+        "curl": "//packages/linux/system/libs/network/curl:curl",
+        "perl": "//packages/linux/lang/perl:perl",
+        "python": "//packages/linux/lang/python:python",
+        "pcre2": "//packages/linux/system/libs/utility/pcre2:pcre2",
+        "nls": "//packages/linux/dev-libs/misc/gettext:gettext",
     },
 
     # Conditional configure arguments
     use_configure = {
-        "curl": "--with-curl",
-        "-curl": "--without-curl",
-        "perl": "--with-perl=/usr/bin/perl",
-        "-perl": "--without-perl",
-        "python": "--with-python=/usr/bin/python3",
-        "-python": "--without-python",
-        "pcre2": "--with-libpcre2",
-        "-pcre2": "--without-libpcre2",
-        "nls": "--enable-nls",
-        "-nls": "--disable-nls",
+        "curl": ("--with-curl", "--without-curl"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "pcre2": ("--with-libpcre2", "--without-libpcre2"),
+        "perl": ("--with-perl=/usr/bin/perl", "--without-perl"),
+        "python": ("--with-python=/usr/bin/python3", "--without-python"),
     },
 
     # Base configure arguments (always applied)

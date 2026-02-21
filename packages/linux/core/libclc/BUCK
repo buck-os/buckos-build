@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # libclc - OpenCL C Library
@@ -93,19 +93,19 @@ done
 cmake --build "$S/build" -j${MAKEOPTS:-$(nproc)}
 """
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "libclc",
     version = "21.1.6",
     # Uses the same LLVM monorepo source
-    src_uri = "https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.6/llvm-project-21.1.6.src.tar.xz",
+    url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.6/llvm-project-21.1.6.src.tar.xz",
     sha256 = "ae67086eb04bed7ca11ab880349b5f1ab6f50e1b88cda376eaf8a845b935762b",
-    signature_required = False,
     description = "OpenCL C library - part of LLVM",
     homepage = "https://libclc.llvm.org/",
     license = "Apache-2.0 WITH LLVM-exception",
     src_configure = LIBCLC_SRC_CONFIGURE,
     src_compile = LIBCLC_SRC_COMPILE,
-    cmake_args = [],
+    configure_args = [],
     deps = [
         "//packages/linux/core/llvm:llvm",
         # Transitive deps of LLVM needed for LD_LIBRARY_PATH

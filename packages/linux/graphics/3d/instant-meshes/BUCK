@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "instant-meshes",
     version = "1.0",
-    src_uri = "https://github.com/wjakob/instant-meshes/archive/refs/heads/master.zip",
+    url = "https://github.com/wjakob/instant-meshes/archive/refs/heads/master.zip",
     sha256 = "1f7652c0f88b20f8b4b037b9ff319d1ac31786e3fe167c3f3edd6507d3e927f8",
     description = "Interactive field-aligned mesh generator",
     homepage = "https://github.com/wjakob/instant-meshes",
@@ -13,7 +14,7 @@ cmake_package(
         "//packages/linux/dev-libs/misc/tbb:tbb",
         "//packages/linux/graphics/rendering/glfw:glfw",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
     ],

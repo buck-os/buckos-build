@@ -1,3 +1,5 @@
+load("//defs:package.bzl", "package")
+
 # =============================================================================
 # FDK-AAC - Fraunhofer FDK AAC Codec Library
 # =============================================================================
@@ -29,23 +31,19 @@
 #
 # =============================================================================
 
-load("//defs:package_defs.bzl", "cmake_package")
-
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "fdk-aac",
     version = "2.0.3",
-    src_uri = "https://github.com/mstorsjo/fdk-aac/archive/refs/tags/v2.0.3.tar.gz",
+    url = "https://github.com/mstorsjo/fdk-aac/archive/refs/tags/v2.0.3.tar.gz",
     sha256 = "e25671cd96b10bad896aa42ab91a695a9e573395262baed4e4a2ff178d6a3a78",
     description = "Fraunhofer FDK AAC Codec Library - High quality AAC encoder and decoder",
     homepage = "https://github.com/mstorsjo/fdk-aac",
     license = "FDK-AAC",  # Custom Fraunhofer license, compatible with redistribution
-    iuse = ["example", "examples"],
-    use_cmake = {
-        "-examples": "-DBUILD_EXAMPLES=OFF",
-        "examples": "-DBUILD_EXAMPLES=ON",
+    use_configure = {
+        "examples": ("-DBUILD_EXAMPLES=ON", "-DBUILD_EXAMPLES=OFF"),
     },
-    use_defaults = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_PROGRAMS=OFF",

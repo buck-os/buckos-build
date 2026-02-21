@@ -1,15 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "google-breakpad-src",
-    src_uri = "https://github.com/google/breakpad/archive/refs/tags/v2022.07.12.tar.gz",
-    sha256 = "f834f3553e72f0f7f30775af2fe1b6a08b718c38c1c97edc421400473d24c96b",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "google-breakpad",
-    srcs = [":google-breakpad-src"],
     version = "2022.07.12",
     description = "Google Breakpad - crash reporting library",
     homepage = "https://chromium.googlesource.com/breakpad/breakpad",

@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "FovVideoVDP",
     version = "1.2.2",
-    src_uri = "https://github.com/gfxdisp/FovVideoVDP/archive/v1.2.2.tar.gz",
+    url = "https://github.com/gfxdisp/FovVideoVDP/archive/v1.2.2.tar.gz",
     sha256 = "e864567c0e46c02d37cfe9ca264cd4fd53d5231c0ec15ebb0420cd202209ad44",
     deps = [
         "//packages/linux/dev-libs/python/numpy:numpy",

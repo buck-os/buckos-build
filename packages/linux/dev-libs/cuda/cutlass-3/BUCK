@@ -1,18 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "cutlass-3",
     version = "3.9.2",
-    src_uri = "https://github.com/NVIDIA/cutlass/archive/refs/tags/v3.9.2.tar.gz",
+    url = "https://github.com/NVIDIA/cutlass/archive/refs/tags/v3.9.2.tar.gz",
     sha256 = "4b97bd6cece9701664eec3a634a1f2f2061d85bf76d843fa5799e1a692b4db0d",
-    signature_required = False,
     description = "CUDA Templates for Linear Algebra Subroutines",
     homepage = "https://github.com/NVIDIA/cutlass",
     license = "BSD-3-Clause",
-    iuse = ["examples", "tests", "tools"],
-    use_defaults = [],
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_CXX_STANDARD=17",
         "-DCMAKE_CUDA_STANDARD=17",

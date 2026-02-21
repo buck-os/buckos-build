@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "onepose",
     version = "1.0",
-    src_uri = "https://github.com/developer0hye/onepose/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/developer0hye/onepose/archive/refs/heads/main.tar.gz",
     sha256 = "d828a7be09f93f7a8ca663e3fe2ff13adb80177abafab32d1385c03414ac385e",
     deps = [
         "//packages/linux/dev-libs/python/opencv-python:opencv-python",

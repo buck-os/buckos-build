@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "scx-backports",
     version = "main",
-    src_uri = "https://github.com/sched-ext/scx-backports/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/sched-ext/scx-backports/archive/refs/heads/main.tar.gz",
     sha256 = "1e0fb6c8f6d58544b85827e417b29d5768812119a8c92f0781ab38e5f1ed99eb",
-    meson_args = [
+    configure_args = [
         "-Denable_rust=false",
         "-Denable_stress=false",
         "-Dsystemd=disabled",
@@ -23,13 +24,11 @@ meson_package(
         "//packages/linux/system/libs/ipc/libseccomp:libseccomp",
         "//packages/linux/dev-tools/parsers/jq:jq",
     ],
-    iuse = ["rust", "systemd"],
-    use_defaults = [],
     use_options = {
         "rust": "enable_rust",
         "systemd": "systemd",
     },
     use_deps = {
-        "systemd": ["//packages/linux/system/init/systemd:systemd"],
+        "systemd": "//packages/linux/system/init/systemd:systemd",
     },
 )

@@ -1,15 +1,16 @@
-load("//defs:package_defs.bzl", "download_source", "meson_package")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "inih",
-    src_uri = "https://github.com/benhoyt/inih/archive/refs/tags/r58.tar.gz",
+    url = "https://github.com/benhoyt/inih/archive/refs/tags/r58.tar.gz",
 
     sha256 = "e79216260d5dffe809bda840be48ab0eec7737b2bb9f02d2275c1b46344ea7b7",
     version = "58",
     description = "Simple .INI file parser in C, good for embedded systems",
     homepage = "https://github.com/benhoyt/inih",
     license = "BSD",
-    meson_args = [
+    configure_args = [
         "-Ddistro_install=true",
         "-Dwith_INIReader=true",
     ],

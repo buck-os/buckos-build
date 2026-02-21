@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # lager - C++ library for value-oriented unidirectional data-flow
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "lager",
     version = "0.1.1",
-    src_uri = "https://github.com/arximboldi/lager/archive/refs/tags/v0.1.1.tar.gz",
+    url = "https://github.com/arximboldi/lager/archive/refs/tags/v0.1.1.tar.gz",
     sha256 = "9e4743c3fe2c95c1653c3fd088a2200108f09d758725697831852dc91d15d174",
     description = "C++ library for value-oriented unidirectional data-flow",
     homepage = "https://sinusoid.es/lager/",
@@ -14,7 +15,7 @@ cmake_package(
         "//packages/linux/dev-libs/misc/immer:immer",
         "//packages/linux/dev-libs/misc/zug:zug",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-Dlager_BUILD_TESTS=OFF",
         "-Dlager_BUILD_EXAMPLES=OFF",

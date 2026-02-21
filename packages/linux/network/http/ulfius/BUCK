@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "ulfius",
     version = "2.7.12",
-    src_uri = "https://github.com/babelouest/ulfius/archive/v2.7.12.tar.gz",
+    url = "https://github.com/babelouest/ulfius/archive/v2.7.12.tar.gz",
     sha256 = "20a359eeb30f1807ef68e4b6329fca5a06167eef1f0faaae3d2e0e8e4406bd70",
-    cmake_args = [
+    configure_args = [
         "-DU_DISABLE_GNUTLS=ON",
         "-DU_DISABLE_JANSSON=ON",
         "-DU_DISABLE_WEBSOCKET=ON",

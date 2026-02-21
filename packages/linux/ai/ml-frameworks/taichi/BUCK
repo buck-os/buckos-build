@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "taichi",
     version = "1.7.1",
-    src_uri = "https://github.com/taichi-dev/taichi/archive/refs/tags/v1.7.1.tar.gz",
+    url = "https://github.com/taichi-dev/taichi/archive/refs/tags/v1.7.1.tar.gz",
     sha256 = "be6d602bad75e0564c6f62406a68130eedeb1b318ef7b8dc38fe2f48ddfc33c9",
     description = "High-performance parallel programming language for graphics and compute",
     homepage = "https://taichi-lang.org/",
@@ -14,7 +15,7 @@ cmake_package(
         "//packages/linux/dev-libs/python/pybind11:pybind11",
         "//packages/linux/dev-libs/misc/llvm:llvm",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DTI_WITH_VULKAN=OFF",

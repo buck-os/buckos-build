@@ -1,31 +1,22 @@
-load("//defs:package_defs.bzl", "download_source", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "bpftrace",
-    src_uri = "https://github.com/bpftrace/bpftrace/archive/refs/tags/v0.24.2.tar.gz",
+    url = "https://github.com/bpftrace/bpftrace/archive/refs/tags/v0.24.2.tar.gz",
 
     sha256 = "e0514aa3e1a032b0b2de2cf3c281bfee9b9e80509498e70ed78786bbd64db373",
     version = "0.24.2",
     description = "High-level tracing language for Linux using BPF",
     homepage = "https://github.com/bpftrace/bpftrace",
     license = "Apache-2.0",
-    iuse = [
-        "libfuzzer",
-        "man",
-        "static-libs",
-        "tests",
-    ],
-    use_cmake = {
-        "-libfuzzer": "-DENABLE_LIBFUZZER=OFF",
-        "-man": "-DBUILD_MAN=OFF",
-        "-static-libs": "-DSTATIC_LINKING=OFF",
-        "-tests": "-DBUILD_TESTING=OFF",
-        "libfuzzer": "-DENABLE_LIBFUZZER=ON",
-        "man": "-DBUILD_MAN=ON",
-        "static-libs": "-DSTATIC_LINKING=ON",
-        "tests": "-DBUILD_TESTING=ON",
+    use_configure = {
+        "libfuzzer": ("-DENABLE_LIBFUZZER=ON", "-DENABLE_LIBFUZZER=OFF"),
+        "man": ("-DBUILD_MAN=ON", "-DBUILD_MAN=OFF"),
+        "static-libs": ("-DSTATIC_LINKING=ON", "-DSTATIC_LINKING=OFF"),
+        "tests": ("-DBUILD_TESTING=ON", "-DBUILD_TESTING=OFF"),
     },
-    cmake_args = [
+    configure_args = [
         "-DUSE_SYSTEM_BPF_BCC=ON",
         "-DBUILD_FUZZ=OFF",
     ],

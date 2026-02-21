@@ -1,0 +1,19 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "meson",
+    name = "libliftoff",
+    version = "0.4.1",
+    url = "https://gitlab.freedesktop.org/emersion/libliftoff/-/archive/v0.4.1/libliftoff-v0.4.1.tar.gz",
+    sha256 = "44ec5cfdd0df040d1023d4d6a48b23c31f21ce61ee2347da9e1ca244fe24dd1c",
+    description = "Lightweight KMS plane library",
+    homepage = "https://gitlab.freedesktop.org/emersion/libliftoff",
+    license = "MIT",
+    configure_args = [
+        "-Dwerror=false",  # Disable -Werror for GCC 14 compatibility
+    ],
+    deps = [
+        "//packages/linux/desktop/libdrm:libdrm",
+    ],
+    visibility = ["PUBLIC"],
+)

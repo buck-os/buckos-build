@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "simple_binary_package")
+load("//defs:package.bzl", "package")
 
-simple_binary_package(
+package(
+    build_rule = "binary",
     name = "vk_bindings",
     version = "5.7",
-    src_uri = "https://github.com/powervr-graphics/Native_SDK/archive/refs/tags/R21.1-v5.7.tar.gz",
+    url = "https://github.com/powervr-graphics/Native_SDK/archive/refs/tags/R21.1-v5.7.tar.gz",
     sha256 = "020b35d829309e537b1612fd253cd40e51b68fa565d68cd723ee41473d17f55a",
     description = "Header-only Vulkan utility for driver- and device-specific function pointers",
     homepage = "https://powervr-graphics.github.io/",

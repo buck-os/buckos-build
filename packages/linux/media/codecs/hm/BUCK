@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "hm",
     version = "17.0",
-    src_uri = "https://vcgit.hhi.fraunhofer.de/jvet/HM/-/archive/HM-17.0/HM-HM-17.0.tar.gz",
+    url = "https://vcgit.hhi.fraunhofer.de/jvet/HM/-/archive/HM-17.0/HM-HM-17.0.tar.gz",
     sha256 = "061947189ad1aa807beefb175a842e795086625d1fad0d0ca779989f34b8cadf",
-    cmake_args = [
+    configure_args = [
         "-DHIGH_BITDEPTH=ON",
     ],
 )

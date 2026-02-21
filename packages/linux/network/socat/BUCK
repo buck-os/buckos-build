@@ -1,24 +1,21 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package", "binary_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # socat - Multipurpose relay for bidirectional data transfer
 # =============================================================================
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "socat",
     version = "1.8.0.0",
-    src_uri = "http://www.dest-unreach.org/socat/download/socat-1.8.0.0.tar.bz2",
+    url = "http://www.dest-unreach.org/socat/download/socat-1.8.0.0.tar.bz2",
     sha256 = "e1de683dd22ee0e3a6c6bbff269abe18ab0c9d7eb650204f125155b9005faca7",
-    signature_required = False,
-
-    use_defaults = ["ssl", "ipv6"],
 
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "readline": ["//packages/linux/system/terminal/readline:readline"],
-        "tcpwrap": ["//packages/linux/network/tcp-wrappers:tcp-wrappers"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "readline": "//packages/linux/system/terminal/readline:readline",
+        "tcpwrap": "//packages/linux/network/tcp-wrappers:tcp-wrappers",
     },
-
 
     deps = [
     ],

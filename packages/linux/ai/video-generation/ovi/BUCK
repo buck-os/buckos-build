@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "ovi",
     version = "0.0.1",
-    src_uri = "https://github.com/character-ai/ovi/archive/9306ea67abf586c410216d33e15141a002cbe786.tar.gz",
+    url = "https://github.com/character-ai/ovi/archive/9306ea67abf586c410216d33e15141a002cbe786.tar.gz",
     sha256 = "f509ac3357929e289a811970ba16e1cf91bdc719e89b84cf8ac3eff72993edaf",
     deps = [
         "//packages/linux/dev-libs/python/numpy:numpy",

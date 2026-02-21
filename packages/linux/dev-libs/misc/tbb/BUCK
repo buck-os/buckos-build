@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # Intel Threading Building Blocks (oneTBB)
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "tbb",
     version = "2021.11.0",
-    src_uri = "https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.11.0.tar.gz",
+    url = "https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.11.0.tar.gz",
     sha256 = "782ce0cab62df9ea125cdea253a50534862b563f1d85d4cda7ad4e77550ac363",
     description = "Intel Threading Building Blocks - parallel programming library",
     homepage = "https://github.com/oneapi-src/oneTBB",
     license = "Apache-2.0",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DTBB_TEST=OFF",

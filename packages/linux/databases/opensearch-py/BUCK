@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "opensearch-py",
     version = "3.0.0",
-    src_uri = "https://github.com/opensearch-project/opensearch-py/archive/refs/tags/v3.0.0.tar.gz",
+    url = "https://github.com/opensearch-project/opensearch-py/archive/refs/tags/v3.0.0.tar.gz",
     sha256 = "eb91d48be37feb57b9ac70571a10b587e7177854e1272bad429d037cfd0b28a6",
     deps = [
         "//packages/linux/dev-libs/python/urllib3:urllib3",

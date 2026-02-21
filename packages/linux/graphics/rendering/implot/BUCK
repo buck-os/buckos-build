@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "implot",
     version = "0.17",
-    src_uri = "https://github.com/epezent/implot/archive/refs/tags/v0.17.tar.gz",
+    url = "https://github.com/epezent/implot/archive/refs/tags/v0.17.tar.gz",
     sha256 = "0aa3ff4fb97e553608e6758e77980eedf01745628fe6c025e647f941ae674127",
     description = "Immediate Mode Plotting library for Dear ImGui",
     homepage = "https://github.com/epezent/implot",
@@ -11,7 +12,7 @@ cmake_package(
     deps = [
         "//packages/linux/graphics/rendering/imgui:imgui",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
     ],

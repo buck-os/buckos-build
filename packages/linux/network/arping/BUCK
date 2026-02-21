@@ -1,15 +1,15 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # arping - Send ARP requests to identify hosts on a network
 # =============================================================================
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "arping",
     version = "2.24",
-    src_uri = "https://github.com/ThomasHabets/arping/archive/refs/tags/arping-2.24.tar.gz",
+    url = "https://github.com/ThomasHabets/arping/archive/refs/tags/arping-2.24.tar.gz",
     sha256 = "e443f65a44e247b27da8177decac31aa84336d5de87eab44fc02e33e7ba0b251",
-    signature_required = False,
     description = "Send ARP requests to identify hosts on a network",
     homepage = "https://github.com/ThomasHabets/arping",
     license = "GPL-2.0-or-later",

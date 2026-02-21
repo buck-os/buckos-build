@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "dashaggrid",
     version = "2.0.0",
-    src_uri = "https://github.com/plotly/dash-ag-grid/archive/refs/tags/v2.0.0.tar.gz",
+    url = "https://github.com/plotly/dash-ag-grid/archive/refs/tags/v2.0.0.tar.gz",
     sha256 = "8069cc73c0afab67ef541100cbdbf0043a290c7597a4922634677704ac68f5fb",
     deps = [
         "//packages/linux/dev-libs/python/dash:dash",

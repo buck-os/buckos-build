@@ -1,45 +1,26 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # keepassxc - Cross-platform password manager
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "keepassxc",
     version = "2.7.7",
-    iuse = [
-        "X",
-        "autotype",
-        "browser",
-        "keeshare",
-        "keyring",
-        "network",
-        "ssh-agent",
-        "yubikey",
-    ],
-    use_cmake = {
-        "-X": "-DENABLE_X=OFF",
-        "-autotype": "-DENABLE_AUTOTYPE=OFF",
-        "-browser": "-DENABLE_BROWSER=OFF",
-        "-keeshare": "-DENABLE_KEESHARE=OFF",
-        "-keyring": "-DENABLE_KEYRING=OFF",
-        "-network": "-DENABLE_NETWORK=OFF",
-        "-ssh-agent": "-DENABLE_SSH_AGENT=OFF",
-        "-yubikey": "-DENABLE_YUBIKEY=OFF",
-        "X": "-DENABLE_X=ON",
-        "autotype": "-DENABLE_AUTOTYPE=ON",
-        "browser": "-DENABLE_BROWSER=ON",
-        "keeshare": "-DENABLE_KEESHARE=ON",
-        "keyring": "-DENABLE_KEYRING=ON",
-        "network": "-DENABLE_NETWORK=ON",
-        "ssh-agent": "-DENABLE_SSH_AGENT=ON",
-        "yubikey": "-DENABLE_YUBIKEY=ON",
+    use_configure = {
+        "X": ("-DENABLE_X=ON", "-DENABLE_X=OFF"),
+        "autotype": ("-DENABLE_AUTOTYPE=ON", "-DENABLE_AUTOTYPE=OFF"),
+        "browser": ("-DENABLE_BROWSER=ON", "-DENABLE_BROWSER=OFF"),
+        "keeshare": ("-DENABLE_KEESHARE=ON", "-DENABLE_KEESHARE=OFF"),
+        "keyring": ("-DENABLE_KEYRING=ON", "-DENABLE_KEYRING=OFF"),
+        "network": ("-DENABLE_NETWORK=ON", "-DENABLE_NETWORK=OFF"),
+        "ssh-agent": ("-DENABLE_SSH_AGENT=ON", "-DENABLE_SSH_AGENT=OFF"),
+        "yubikey": ("-DENABLE_YUBIKEY=ON", "-DENABLE_YUBIKEY=OFF"),
     },
-    src_uri = "https://github.com/keepassxreboot/keepassxc/releases/download/2.7.7/keepassxc-2.7.7-src.tar.xz",
+    url = "https://github.com/keepassxreboot/keepassxc/releases/download/2.7.7/keepassxc-2.7.7-src.tar.xz",
     sha256 = "58fc45ae98e4b3ffb052103014f5b97a41fefd17102c7f56073934dd3a82ee67",
-    signature_sha256 = "254d8f3febf9a037dccbc3c4d34ad0a629ecb981b6ccb13509782ac04342193d",
-    signature_required = False,
     description = "Cross-platform community-driven port of KeePass",
     homepage = "https://keepassxc.org",
     license = "GPL-3+",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DWITH_XC_BROWSER=ON",

@@ -1,42 +1,29 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # LightDM - Cross-desktop display manager
 # =============================================================================
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "lightdm",
     bdepend = [
         "//packages/linux/dev-tools/dev-utils/intltool:intltool",
     ],
     src_prepare = "",
-    src_uri = "https://github.com/canonical/lightdm/releases/download/1.32.0/lightdm-1.32.0.tar.xz",
+    url = "https://github.com/canonical/lightdm/releases/download/1.32.0/lightdm-1.32.0.tar.xz",
 
     sha256 = "12f5ab432748f0387c7cf8b94430495a558a035a4f8465e5181af6faff133e4b",
-
-    signature_sha256 = "8ff9d803e6d19e6d4553ceeec0adaa31d068b4f86a90319a6f0899d63899fba3",
     version = "1.32.0",
     description = "LightDM - A lightweight display manager",
     homepage = "https://github.com/canonical/lightdm",
     license = "GPL-3.0",
-    iuse = ["X", "gtk", "introspection", "vala", "pam"],
-    use_defaults = ["X", "gtk", "pam"],
     use_configure = {
-        # X11 support
-        "X": "--with-x",
-        "-X": "--without-x",
-        # GTK greeter support
-        "gtk": "--enable-gtk3",
-        "-gtk": "--disable-gtk3",
-        # GObject introspection
-        "introspection": "--enable-introspection",
-        "-introspection": "--disable-introspection",
-        # Vala bindings
-        "vala": "--enable-vala",
-        "-vala": "--disable-vala",
-        # PAM authentication
-        "pam": "--enable-pam",
-        "-pam": "--disable-pam",
+        "X": ("--with-x", "--without-x"),
+        "gtk": ("--enable-gtk3", "--disable-gtk3"),
+        "introspection": ("--enable-introspection", "--disable-introspection"),
+        "pam": ("--enable-pam", "--disable-pam"),
+        "vala": ("--enable-vala", "--disable-vala"),
     },
     use_deps = {
         # X11 dependencies

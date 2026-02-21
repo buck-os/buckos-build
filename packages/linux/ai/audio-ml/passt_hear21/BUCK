@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "passt_hear21",
     version = "0.0.23",
-    src_uri = "https://github.com/kkoutini/passt_hear21/archive/refs/tags/0.0.23.tar.gz",
+    url = "https://github.com/kkoutini/passt_hear21/archive/refs/tags/0.0.23.tar.gz",
     sha256 = "9a8466724058af5e896ed92822388deb0b1f6a48a2cb7fc1a4a1c3a3fafee5ea",
     deps = [
         "//packages/linux/ai/ml-frameworks/timm:timm",

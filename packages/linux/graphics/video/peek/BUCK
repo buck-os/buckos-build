@@ -1,22 +1,20 @@
-load("//defs:package_defs.bzl", "meson_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # Peek - Simple animated GIF screen recorder
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "peek",
     version = "1.5.1",
-    iuse = ["keybinder"],
     use_configure = {
-        "-keybinder": "--disable-keybinder",
-        "keybinder": "--enable-keybinder",
+        "keybinder": ("--enable-keybinder", "--disable-keybinder"),
     },
-    src_uri = "https://github.com/phw/peek/archive/refs/tags/1.5.1.tar.gz",
+    url = "https://github.com/phw/peek/archive/refs/tags/1.5.1.tar.gz",
     sha256 = "d2b52297d3941db2f10ad4dd00a6d5606728c0fee6af5f1594a036f88e478237",
-    signature_required = False,
     description = "Simple animated GIF screen recorder with an easy to use interface",
     homepage = "https://github.com/phw/peek",
     license = "GPL-3.0-or-later",
-    meson_args = [
+    configure_args = [
         "-Denable-filechoosernative=true",
         "-Dwith-gettext=true",
     ],

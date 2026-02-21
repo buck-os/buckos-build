@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "lerobot",
     version = "0.1.0",
-    src_uri = "https://files.pythonhosted.org/packages/2e/a2/2c04103e737097030018bd4f2971ae70ec7b8adfa5afcada8d5b4373358a/lerobot-0.1.0.tar.gz",
+    url = "https://files.pythonhosted.org/packages/2e/a2/2c04103e737097030018bd4f2971ae70ec7b8adfa5afcada8d5b4373358a/lerobot-0.1.0.tar.gz",
     sha256 = "2a5a3cd93b5eeb86245974882928d45ab764d5313810add9b01f24440ccddbee",
     deps = [
         "//packages/linux/dev-libs/python/torch:torch",

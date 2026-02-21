@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "valijson",
     version = "1.0.6",
-    src_uri = "https://github.com/tristanpenman/valijson/archive/refs/tags/v1.0.6.tar.gz",
+    url = "https://github.com/tristanpenman/valijson/archive/refs/tags/v1.0.6.tar.gz",
     sha256 = "bf0839de19510ff7792d8a8aca94ea11a288775726b36c4c9a2662651870f8da",
-    cmake_args = [
+    configure_args = [
         "-Dvalijson_BUILD_EXAMPLES=OFF",
         "-Dvalijson_BUILD_TESTS=OFF",
         "-DVALIJSON_USE_EXCEPTIONS=ON",

@@ -1,18 +1,15 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # iperf - Network bandwidth measurement tool
 # =============================================================================
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "iperf",
     version = "3.16",
-    src_uri = "https://github.com/esnet/iperf/archive/refs/tags/3.16.tar.gz",
+    url = "https://github.com/esnet/iperf/archive/refs/tags/3.16.tar.gz",
     sha256 = "be859e7168d0c867029e7013a8de273a169b4842ec7c24cd6570af75d5080aa3",
-    signature_required = False,
-
-    iuse = ["ssl", "static-libs", "sctp"],
-    use_defaults = ["ssl"],
 
     bdepend = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
@@ -25,16 +22,13 @@ autoreconf -fi
 """,
 
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
     },
 
     use_configure = {
-        "ssl": "--with-openssl=/usr",
-        "-ssl": "--without-openssl",
-        "static-libs": "--enable-static",
-        "-static-libs": "--disable-static",
-        "sctp": "--enable-sctp",
-        "-sctp": "--disable-sctp",
+        "sctp": ("--enable-sctp", "--disable-sctp"),
+        "ssl": ("--with-openssl=/usr", "--without-openssl"),
+        "static-libs": ("--enable-static", "--disable-static"),
     },
 
     configure_args = [

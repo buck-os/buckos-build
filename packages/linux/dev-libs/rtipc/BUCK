@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "rtipc",
     version = "1.0.1",
-    src_uri = "https://mirror.buckos.org/r/rtipc-1.0.1.tar.gz",
+    url = "https://mirror.buckos.org/r/rtipc-1.0.1.tar.gz",
     sha256 = "94dc35aff192ca82da2b8f160421be92b573423f364e1e5af952d8b268c61512",
-    cmake_args = [
+    configure_args = [
         "-DDEBUG=OFF",
     ],
     deps = [

@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "go_package")
+load("//defs:package.bzl", "package")
 
-go_package(
+package(
+    build_rule = "go",
     name = "trivy",
     version = "0.53.0",
-    src_uri = "https://github.com/aquasecurity/trivy/archive/refs/tags/v0.53.0.tar.gz",
+    url = "https://github.com/aquasecurity/trivy/archive/refs/tags/v0.53.0.tar.gz",
     sha256 = "958a5f2ea846f102ca14d3c0627b04117f85c5b35b30ac68119184d13faa791e",
     description = "Security scanner for containers, Kubernetes, and infrastructure",
     homepage = "https://github.com/aquasecurity/trivy",

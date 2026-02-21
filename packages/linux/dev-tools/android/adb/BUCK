@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "adb",
     version = "1.3.0",
-    src_uri = "https://github.com/google/python-adb/archive/refs/tags/1.3.0.tar.gz",
+    url = "https://github.com/google/python-adb/archive/refs/tags/1.3.0.tar.gz",
     sha256 = "8e68e2ed8fa4d73f07df1581670aad0dbe549b764dd7848c6e61ea0c3f009bba",
     deps = [
         "//packages/linux/dev-libs/python/libusb1:libusb1",

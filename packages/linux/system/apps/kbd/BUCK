@@ -1,46 +1,28 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # kbd - Keyboard and console utilities
 # USE flags: pam, nls
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "kbd",
     version = "2.6.4",
-    src_uri = "https://www.kernel.org/pub/linux/utils/kbd/kbd-2.6.4.tar.xz",
+    url = "https://www.kernel.org/pub/linux/utils/kbd/kbd-2.6.4.tar.xz",
     sha256 = "519f8d087aecca7e0a33cd084bef92c066eb19731666653dcc70c9d71aa40926",
-    signature_required = False,
     description = "Keyboard and console utilities",
     homepage = "https://kbd-project.org/",
     license = "GPL-2.0-or-later",
-    iuse = [
-        "bzip2",
-        "lzma",
-        "nls",
-        "pam",
-        "selinux",
-        "vlock",
-        "zlib",
-        "zstd",
-    ],
-    use_defaults = [],
     use_deps = {
-        "pam": ["//packages/linux/system/security:linux-pam"],
+        "pam": "//packages/linux/system/security:linux-pam",
     },
     use_configure = {
-        "-bzip2": "--without-bzip2",
-        "-lzma": "--without-lzma",
-        "-nls": "--disable-nls",
-        "-selinux": "--disable-selinux",
-        "-vlock": "--disable-vlock",
-        "-zlib": "--without-zlib",
-        "-zstd": "--without-zstd",
-        "bzip2": "--with-bzip2",
-        "lzma": "--with-lzma",
-        "nls": "--enable-nls",
-        "selinux": "--enable-selinux",
-        "vlock": "--enable-vlock",
-        "zlib": "--with-zlib",
-        "zstd": "--with-zstd",
+        "bzip2": ("--with-bzip2", "--without-bzip2"),
+        "lzma": ("--with-lzma", "--without-lzma"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "vlock": ("--enable-vlock", "--disable-vlock"),
+        "zlib": ("--with-zlib", "--without-zlib"),
+        "zstd": ("--with-zstd", "--without-zstd"),
     },
     configure_args = [
         "--prefix=/usr",

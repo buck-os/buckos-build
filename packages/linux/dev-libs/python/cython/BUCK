@@ -1,16 +1,15 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
 # Cython - C-Extensions for Python
 
-python_package(
+package(
+    build_rule = "python",
     name = "cython",
     version = "3.0.8",
-    iuse = ["test-full"],
     use_configure = {
-        "-test-full": "--disable-test-full",
-        "test-full": "--enable-test-full",
+        "test-full": ("--enable-test-full", "--disable-test-full"),
     },
-    src_uri = "https://github.com/cython/cython/releases/download/3.0.8/Cython-3.0.8.tar.gz",
+    url = "https://github.com/cython/cython/releases/download/3.0.8/Cython-3.0.8.tar.gz",
     sha256 = "8333423d8fd5765e7cceea3a9985dd1e0a5dfeb2734629e1a2ed2d6233d39de6",
     description = "C-Extensions for Python",
     homepage = "https://cython.org/",

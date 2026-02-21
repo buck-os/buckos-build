@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # cpp-terminal - Package from third-party
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "cpp-terminal",
     version = "0.1.0",
-    src_uri = "https://github.com/jupyter-xeus/cpp-terminal/archive/refs/tags/v0.1.0.tar.gz",
+    url = "https://github.com/jupyter-xeus/cpp-terminal/archive/refs/tags/v0.1.0.tar.gz",
     sha256 = "37615b2747acee8237ae065cb219aa244a82da1ea2c795bee36ec1b9bbc546c9",
     description = "cpp-terminal package",
     homepage = "https://github.com/jupyter-xeus/cpp-terminal",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
     ],

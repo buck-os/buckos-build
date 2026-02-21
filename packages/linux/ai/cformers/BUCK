@@ -1,11 +1,11 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "cformers",
     version = "0.0.1",
-    src_uri = "https://github.com/nolanoorg/cformers/archive/afa8b155e3b6c68cf6d100b93769ae61ff31927c.tar.gz",
+    url = "https://github.com/nolanoorg/cformers/archive/afa8b155e3b6c68cf6d100b93769ae61ff31927c.tar.gz",
     sha256 = "1871e3c79ca3e4114fd5aa26f3899bb49212b9d32ec90621ec3508274bec0dbf",
-    signature_required = False,
     description = "C/C++ implementation for running transformer models",
     homepage = "https://github.com/nolanoorg/cformers",
     license = "MIT",

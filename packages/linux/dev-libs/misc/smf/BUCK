@@ -1,18 +1,11 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package", "gen_pkgconfig_headeronly")
+load("//defs:package.bzl", "package")
 
 # SMF - State Machine Framework from Zephyr RTOS
 # A hierarchical state machine library originally from Zephyr OS
 
-download_source(
-    name = "smf-src",
-    src_uri = "https://github.com/zephyrproject-rtos/zephyr/archive/refs/tags/v3.3.0.tar.gz",
-    sha256 = "4370d2348a4d1092fa6f0be8a8146ea26fc740b7d3e07d587d178061bf566222",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "smf",
-    srcs = [":smf-src"],
     version = "3.3.0",
     description = "State Machine Framework - hierarchical state machine library from Zephyr RTOS (headers only)",
     homepage = "https://docs.zephyrproject.org/latest/services/smf/index.html",

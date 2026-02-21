@@ -1,16 +1,13 @@
-load("//defs:package_defs.bzl","download_source", "make_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # discount - C implementation of Markdown
 make_package(
     name = "discount",
-    src_uri = "https://github.com/Orc/discount/archive/refs/tags/v3.0.0d.tar.gz",
+    url = "https://github.com/Orc/discount/archive/refs/tags/v3.0.0d.tar.gz",
 
     sha256 = "0ed8cc27ac5d46dc6a8beedd5e5673ac8b466a6474bdb7d35f37c815f670385f",
-    iuse = ["minimal"],
     use_configure = {
-        "-minimal": "--disable-minimal",
-        "minimal": "--enable-minimal",
+        "minimal": ("--enable-minimal", "--disable-minimal"),
     },
     version = "3.0.0d",
     description = "C implementation of John Gruber's Markdown",

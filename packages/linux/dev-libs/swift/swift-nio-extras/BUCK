@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "swift-nio-extras",
     version = "1.10.2",
-    src_uri = "https://github.com/apple/swift-nio-extras/archive/refs/tags/1.10.2.tar.gz",
+    url = "https://github.com/apple/swift-nio-extras/archive/refs/tags/1.10.2.tar.gz",
     sha256 = "2f37596dcf26532b867aee3dbd8c5354108a076174751f4e6a72a0b6506df05e",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTING=OFF",
     ],
     deps = [

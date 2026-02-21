@@ -1,20 +1,12 @@
+load("//defs:package.bzl", "package")
+
 # =============================================================================
 # CUDA Toolkit - NVIDIA CUDA development toolkit
 # =============================================================================
 
-load("//defs:package_defs.bzl", "download_source", "binary_package", "gen_pkgconfig")
-
-download_source(
-    name = "cuda-toolkit-src",
-    src_uri = "https://developer.download.nvidia.com/compute/cuda/13.0.2/local_installers/cuda_13.0.2_580.95.05_linux.run",
-    sha256 = "81a5d0d0870ba2022efb0a531dcc60adbdc2bbff7b3ef19d6fd6d8105406c775",
-    signature_required = False,
-    extract = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "cuda-toolkit",
-    srcs = [":cuda-toolkit-src"],
     version = "13.0.2",
     description = "NVIDIA CUDA Toolkit for GPU computing",
     homepage = "https://developer.nvidia.com/cuda-toolkit",

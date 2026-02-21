@@ -1,43 +1,24 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "libssh",
     version = "0.9.8",
-    iuse = [
-        "debug",
-        "examples",
-        "gssapi",
-        "mbedtls",
-        "pcap",
-        "server",
-        "sftp",
-        "static-libs",
-        "zlib",
-    ],
-    use_cmake = {
-        "-debug": "-DCMAKE_BUILD_TYPE=Release",
-        "-examples": "-DBUILD_EXAMPLES=OFF",
-        "-gssapi": "-DENABLE_GSSAPI=OFF",
-        "-mbedtls": "-DENABLE_MBEDTLS=OFF",
-        "-pcap": "-DENABLE_PCAP=OFF",
-        "-server": "-DENABLE_SERVER=OFF",
-        "-sftp": "-DENABLE_SFTP=OFF",
-        "-static-libs": "-DBUILD_STATIC_LIBS=OFF",
-        "-zlib": "-DENABLE_ZLIB=OFF",
-        "debug": "-DCMAKE_BUILD_TYPE=Debug",
-        "examples": "-DBUILD_EXAMPLES=ON",
-        "gssapi": "-DENABLE_GSSAPI=ON",
-        "mbedtls": "-DENABLE_MBEDTLS=ON",
-        "pcap": "-DENABLE_PCAP=ON",
-        "server": "-DENABLE_SERVER=ON",
-        "sftp": "-DENABLE_SFTP=ON",
-        "static-libs": "-DBUILD_STATIC_LIBS=ON",
-        "zlib": "-DENABLE_ZLIB=ON",
+    use_configure = {
+        "debug": ("-DCMAKE_BUILD_TYPE=Debug", "-DCMAKE_BUILD_TYPE=Release"),
+        "examples": ("-DBUILD_EXAMPLES=ON", "-DBUILD_EXAMPLES=OFF"),
+        "gssapi": ("-DENABLE_GSSAPI=ON", "-DENABLE_GSSAPI=OFF"),
+        "mbedtls": ("-DENABLE_MBEDTLS=ON", "-DENABLE_MBEDTLS=OFF"),
+        "pcap": ("-DENABLE_PCAP=ON", "-DENABLE_PCAP=OFF"),
+        "server": ("-DENABLE_SERVER=ON", "-DENABLE_SERVER=OFF"),
+        "sftp": ("-DENABLE_SFTP=ON", "-DENABLE_SFTP=OFF"),
+        "static-libs": ("-DBUILD_STATIC_LIBS=ON", "-DBUILD_STATIC_LIBS=OFF"),
+        "zlib": ("-DENABLE_ZLIB=ON", "-DENABLE_ZLIB=OFF"),
     },
-    src_uri = "https://www.libssh.org/files/0.9/libssh-0.9.8.tar.xz",
+    url = "https://www.libssh.org/files/0.9/libssh-0.9.8.tar.xz",
     sha256 = "9f834b732341d428d67bbe835b7d10ae97ccf25d6f5bd0288fa51ae683f2e7cd",
 
-    cmake_args = [
+    configure_args = [
         "-DWITH_ZLIB=ON",
         "-DWITH_SFTP=ON",
         "-DWITH_SERVER=ON",

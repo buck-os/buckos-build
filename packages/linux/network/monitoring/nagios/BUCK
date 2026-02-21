@@ -1,29 +1,23 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # nagios - Network monitoring system
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "nagios",
     version = "4.5.0",
-    src_uri = "https://github.com/NagiosEnterprises/nagioscore/releases/download/nagios-4.5.0/nagios-4.5.0.tar.gz",
+    url = "https://github.com/NagiosEnterprises/nagioscore/releases/download/nagios-4.5.0/nagios-4.5.0.tar.gz",
     sha256 = "164e05daed1adf72640b323453b6c13f4d13d90e56a95c7cdd8dccf8519e9be0",
-    signature_required = False,
-
-    iuse = ["ssl", "perl", "web"],
-    use_defaults = ["ssl", "perl", "web"],
 
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "perl": ["//packages/linux/lang/perl:perl"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "perl": "//packages/linux/lang/perl:perl",
     },
 
     use_configure = {
-        "ssl": "--with-ssl=/usr",
-        "-ssl": "--without-ssl",
-        "perl": "--enable-embedded-perl",
-        "-perl": "--disable-embedded-perl",
-        "web": "--with-httpd-conf=/etc/apache2/conf.d",
-        "-web": "--without-httpd-conf",
+        "perl": ("--enable-embedded-perl", "--disable-embedded-perl"),
+        "ssl": ("--with-ssl=/usr", "--without-ssl"),
+        "web": ("--with-httpd-conf=/etc/apache2/conf.d", "--without-httpd-conf"),
     },
 
     configure_args = [

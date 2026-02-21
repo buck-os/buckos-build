@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "tor",
     version = "0.4.7.13",
-    src_uri = "https://dist.torproject.org/tor-0.4.7.13.tar.gz",
+    url = "https://dist.torproject.org/tor-0.4.7.13.tar.gz",
     sha256 = "2079172cce034556f110048e26083ce9bea751f3154b0ad2809751815b11ea9d",
 
     deps = [
@@ -12,22 +13,16 @@ autotools_package(
         "//packages/linux/core/zlib:zlib",
     ],
 
-    iuse = ["systemd", "zstd", "lzma"],
-    use_defaults = [],
-
     use_deps = {
-        "systemd": ["//packages/linux/system/init/systemd:systemd"],
-        "zstd": ["//packages/linux/system/libs/compression/zstd:zstd"],
-        "lzma": ["//packages/linux/system/libs/compression/xz-utils:xz-utils"],
+        "systemd": "//packages/linux/system/init/systemd:systemd",
+        "zstd": "//packages/linux/system/libs/compression/zstd:zstd",
+        "lzma": "//packages/linux/system/libs/compression/xz-utils:xz-utils",
     },
 
     use_configure = {
-        "systemd": "--enable-systemd",
-        "-systemd": "--disable-systemd",
-        "zstd": "--enable-zstd",
-        "-zstd": "--disable-zstd",
-        "lzma": "--enable-lzma",
-        "-lzma": "--disable-lzma",
+        "lzma": ("--enable-lzma", "--disable-lzma"),
+        "systemd": ("--enable-systemd", "--disable-systemd"),
+        "zstd": ("--enable-zstd", "--disable-zstd"),
     },
 
     configure_args = [

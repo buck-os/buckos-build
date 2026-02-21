@@ -1,11 +1,11 @@
-load("//defs:package_defs.bzl", "cargo_package")
+load("//defs:package.bzl", "package")
 
-cargo_package(
+package(
+    build_rule = "cargo",
     name = "zenoh",
     version = "1.5.0",
-    src_uri = "https://github.com/eclipse-zenoh/zenoh/archive/refs/tags/1.5.0.tar.gz",
+    url = "https://github.com/eclipse-zenoh/zenoh/archive/refs/tags/1.5.0.tar.gz",
     sha256 = "c1b02cd7412a0cfdb195a21dbb7e65ded71c1fd9062a1a1e290003520e17ca28",
-    signature_required = False,
     description = "Zero overhead pub/sub, store/query and compute protocol",
     homepage = "https://zenoh.io/",
     license = "EPL-2.0 OR Apache-2.0",

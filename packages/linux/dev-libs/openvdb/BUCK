@@ -1,31 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # openvdb - Sparse volume data structure and tools
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "openvdb",
     version = "11.0.0",
-    iuse = [
-        "",
-        "1))-compat",
-        "2))-compat",
-        "abi$((OPENVDB_ABI",
-        "abi${OPENVDB_ABI}-compat",
-        "alembic",
-        "ax",
-        "blosc",
-        "cuda",
-        "examples",
-        "jpeg",
-        "nanovdb",
-        "numpy",
-        "openexr",
-        "pdal",
-        "png",
-        "python",
-        "static-libs",
-        "utils",
-        "zlib",
-    ],
     use_cmake = {
         "": "-DENABLE_=ON",
         "-": "-DENABLE_=OFF",
@@ -68,13 +47,12 @@ cmake_package(
         "utils": "-DENABLE_UTILS=ON",
         "zlib": "-DENABLE_ZLIB=ON",
     },
-    src_uri = "https://github.com/AcademySoftwareFoundation/openvdb/archive/v11.0.0.tar.gz",
+    url = "https://github.com/AcademySoftwareFoundation/openvdb/archive/v11.0.0.tar.gz",
     sha256 = "6314ff1db057ea90050763e7b7d7ed86d8224fcd42a82cdbb9c515e001b96c74",
-    signature_required = False,
     description = "Sparse volume data structure and tools",
     homepage = "https://www.openvdb.org/",
     license = "MPL-2.0",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_SHARED_LIBS=ON",
         "-DOPENVDB_BUILD_BINARIES=OFF",
         "-DOPENVDB_BUILD_PYTHON_MODULE=OFF",

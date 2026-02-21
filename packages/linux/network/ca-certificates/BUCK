@@ -1,19 +1,12 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package", "binary_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # CA Certificates - Root CA certificates bundle
 # =============================================================================
 
-download_source(
-    name = "ca-certificates-src",
-    src_uri = "https://curl.se/ca/cacert.pem",
-    sha256 = "f1407d974c5ed87d544bd931a278232e13925177e239fca370619aba63c757b4",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "ca-certificates",
-    srcs = [":ca-certificates-src"],
     version = "2025.12.01",
     description = "Common CA certificates PEM files",
     homepage = "https://curl.se/docs/caextract.html",

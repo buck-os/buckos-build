@@ -1,10 +1,11 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # xcb-util-cursor - XCB cursor library
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "xcb-util-cursor",
     version = "0.1.5",
-    src_uri = "https://xcb.freedesktop.org/dist/xcb-util-cursor-0.1.5.tar.xz",
+    url = "https://xcb.freedesktop.org/dist/xcb-util-cursor-0.1.5.tar.xz",
     sha256 = "0caf99b0d60970f81ce41c7ba694e5eaaf833227bb2cbcdb2f6dc9666a663c57",
     description = "XCB cursor library",
     homepage = "https://xcb.freedesktop.org/",

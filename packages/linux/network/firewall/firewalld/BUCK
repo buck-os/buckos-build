@@ -1,32 +1,24 @@
+load("//defs:package.bzl", "package")
+
 # =============================================================================
 # firewalld - Dynamic firewall daemon with D-Bus interface
 # =============================================================================
 
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "firewalld",
     version = "2.1.2",
-    src_uri = "https://github.com/firewalld/firewalld/releases/download/v2.1.2/firewalld-2.1.2.tar.bz2",
+    url = "https://github.com/firewalld/firewalld/releases/download/v2.1.2/firewalld-2.1.2.tar.bz2",
     sha256 = "94323ebff87185721caa6bff80699132f15131af73b9bcedc45e60b1827c91c5",
-    signature_required = False,
-
-    iuse = [
-        "gui",
-        "iptables",
-        "nftables",
-        "selinux",
-    ],
     use_defaults = ["iptables"],  # Use iptables until nftables package is enabled
 
     use_deps = {
         # "nftables": ["//packages/linux/network/firewall/nftables:nftables"],  # TODO: Enable when nftables package is available
-        "iptables": ["//packages/linux/network/firewall/iptables:iptables"],
+        "iptables": "//packages/linux/network/firewall/iptables:iptables",
     },
 
     use_configure = {
-        "-selinux": "--disable-selinux",
-        "selinux": "--enable-selinux",
+        "selinux": ("--enable-selinux", "--disable-selinux"),
     },
 
     configure_args = [

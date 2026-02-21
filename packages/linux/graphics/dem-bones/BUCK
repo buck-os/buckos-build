@@ -1,35 +1,33 @@
-load("//defs:package_defs.bzl", "download_source", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # Dem Bones - Smooth Skinning Decomposition with Rigid Bones
 # An automated algorithm to extract Linear Blend Skinning (LBS) with bone
 # transformations from example meshes
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "dem-bones",
-    src_uri = "https://github.com/electronicarts/dem-bones/archive/refs/tags/v1.2.1.tar.gz",
+    url = "https://github.com/electronicarts/dem-bones/archive/refs/tags/v1.2.1.tar.gz",
 
     sha256 = "095c69216d40071a8b9a578112d67bce928df84ecb1274c3d4cc6c7cc2413c59",
     version = "1.2.1",
     description = "Smooth Skinning Decomposition with Rigid Bones - automated LBS extraction from animated meshes",
     homepage = "https://github.com/electronicarts/dem-bones",
     license = "BSD-3-Clause",
-    iuse = ["alembic", "openmp"],
-    use_defaults = ["openmp"],
     deps = [
         "//packages/linux/dev-libs/eigen:eigen",
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/data/libxml2:libxml2",
     ],
     use_deps = {
-        "alembic": ["//packages/linux/dev-libs/alembic:alembic"],
+        "alembic": "//packages/linux/dev-libs/alembic:alembic",
     },
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=OFF",
     ],
-    use_cmake = {
-        "openmp": "-DCMAKE_C_FLAGS=-fopenmp",
-        "-openmp": "-DCMAKE_C_FLAGS=",
+    use_configure = {
+        "openmp": ("-DCMAKE_C_FLAGS=-fopenmp", "-DCMAKE_C_FLAGS="),
     },
     env = {
         "CMAKE_CXX_FLAGS": "-O3 -D_GLIBCXX_USE_CXX11_ABI=0",

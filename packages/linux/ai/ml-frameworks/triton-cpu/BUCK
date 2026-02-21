@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "triton-cpu",
     version = "0.0.1",
-    src_uri = "https://github.com/meta-pytorch/triton-cpu/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/meta-pytorch/triton-cpu/archive/refs/heads/main.tar.gz",
     sha256 = "c3959e69b9e5418565ce7e5812f521ede0d895ffea37cf7f43067a92da6bb6ef",
-    cmake_args = [
+    configure_args = [
         "-DTRITON_BUILD_PYTHON_MODULE=ON",
         "-DTRITON_BUILD_PROTON=OFF",
         "-DTRITON_BUILD_UT=OFF",
@@ -16,5 +17,4 @@ cmake_package(
         "//packages/linux/core/llvm:llvm",
         "//packages/linux/dev-libs/python/pybind11:pybind11",
     ],
-    signature_required = False,
 )

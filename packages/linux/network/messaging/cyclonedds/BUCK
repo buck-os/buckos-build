@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "cyclonedds",
     version = "0.10.5",
-    src_uri = "https://github.com/eclipse-cyclonedds/cyclonedds/archive/refs/tags/0.10.5.tar.gz",
+    url = "https://github.com/eclipse-cyclonedds/cyclonedds/archive/refs/tags/0.10.5.tar.gz",
     sha256 = "ec3ec898c52b02f939a969cd1a276e219420e5e8419b21cea276db35b4821848",
-    cmake_args = [
+    configure_args = [
         "-DENABLE_SHM=OFF",
         "-DBUILD_TESTING=OFF",
         "-DBUILD_DDSPERF=OFF",

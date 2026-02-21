@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "flash-roberta",
     version = "0.1",
-    src_uri = "https://github.com/iliaschalkidis/flash-roberta/archive/3cf035071f5d956c5a89fce7c8366fdccaab6c37.tar.gz",
+    url = "https://github.com/iliaschalkidis/flash-roberta/archive/3cf035071f5d956c5a89fce7c8366fdccaab6c37.tar.gz",
     sha256 = "b1e874e0ae30f9384e08e54c72872dc47528c9dac3264e65e0e1e9f350459a0d",
     description = "Hugging Face RoBERTa with Flash Attention 2",
     homepage = "https://github.com/iliaschalkidis/flash-roberta",

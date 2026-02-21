@@ -1,14 +1,15 @@
 """
-Template for meson_package with USE flags
+Template for package(build_rule = "meson") with USE flags
 Based on PACKAGE-SPEC-002: Build System Packages (Meson)
 """
 
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "PACKAGE_NAME",
     version = "VERSION",
-    src_uri = "SOURCE_URL",
+    url = "SOURCE_URL",
     sha256 = "SHA256_CHECKSUM",
 
     # USE flags this package supports
@@ -32,7 +33,7 @@ meson_package(
     },
 
     # Static Meson arguments (always applied)
-    meson_args = [
+    configure_args = [
         # Example: "-Dselinux=disabled",
         # Note: --prefix=/usr is automatic
         # Note: --buildtype=release is automatic

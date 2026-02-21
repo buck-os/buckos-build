@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # moodycamel::ReaderWriterQueue - Lock-free SPSC queue
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "readerwriterqueue",
     version = "1.0.6",
-    src_uri = "https://github.com/cameron314/readerwriterqueue/archive/refs/tags/v1.0.6.tar.gz",
+    url = "https://github.com/cameron314/readerwriterqueue/archive/refs/tags/v1.0.6.tar.gz",
     sha256 = "fc68f55bbd49a8b646462695e1777fb8f2c0b4f342d5e6574135211312ba56c1",
     description = "A fast single-producer, single-consumer lock-free queue",
     homepage = "https://github.com/cameron314/readerwriterqueue",
     license = "BSD-2-Clause",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],
     visibility = ["PUBLIC"],

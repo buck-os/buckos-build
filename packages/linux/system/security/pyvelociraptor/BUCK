@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "pyvelociraptor",
     version = "0.1.9",
-    src_uri = "https://github.com/Velocidex/pyvelociraptor/archive/02c0a89c908d334d84e3e71ca0bc1a7c02b651db.tar.gz",
+    url = "https://github.com/Velocidex/pyvelociraptor/archive/02c0a89c908d334d84e3e71ca0bc1a7c02b651db.tar.gz",
     sha256 = "d4d4b78ff32d7711414b7f31ff34b30b2b16ed30a0b3e10ca40761a15e6e1558",
     deps = [
         "//packages/linux/dev-libs/python/grpcio:grpcio",

@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # doctest - Fast C++ testing framework
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "doctest",
     version = "2.4.11",
-    src_uri = "https://github.com/doctest/doctest/archive/refs/tags/v2.4.11.tar.gz",
+    url = "https://github.com/doctest/doctest/archive/refs/tags/v2.4.11.tar.gz",
     sha256 = "632ed2c05a7f53fa961381497bf8069093f0d6628c5f26286161fbd32a560186",
     description = "Fast C++ single-header testing framework",
     homepage = "https://github.com/doctest/doctest",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DDOCTEST_WITH_TESTS=OFF",
     ],

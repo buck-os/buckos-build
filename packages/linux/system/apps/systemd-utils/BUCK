@@ -1,25 +1,14 @@
-load("//defs:package_defs.bzl", "meson_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # systemd-utils - Standalone systemd utilities
 # USE flags: (meson build system with many options)
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "systemd-utils",
     version = "255",
-    iuse = [
-        "acl",
-        "boot",
-        "kernel-install",
-        "kmod",
-        "selinux",
-        "sysusers",
-        "tmpfiles",
-        "udev",
-        "ukify",
-    ],
-    src_uri = "https://github.com/systemd/systemd/archive/refs/tags/v255.tar.gz",
+    url = "https://github.com/systemd/systemd/archive/refs/tags/v255.tar.gz",
     sha256 = "28854ffb2cb5f9e07fcbdbaf1e03a80b3462a12edeef84893ca2f37b22e4491e",
-    signature_required = False,
     description = "Standalone systemd utilities (udevd, tmpfiles, etc.)",
     homepage = "https://systemd.io",
     license = "LGPL-2.1+",
@@ -28,7 +17,7 @@ meson_package(
     exclude_patterns = ["*/units/system-systemd*", "*/test/fuzz/fuzz-unit-file/*"],
 
     # Note: Don't include -Dprefix as it's set automatically by meson_package
-    meson_args = [
+    configure_args = [
         "-Dsysconfdir=/etc",
         "-Dlocalstatedir=/var",
         "-Dmode=release",
@@ -42,23 +31,15 @@ meson_package(
         "-Dlink-udev-shared=false",
         "-Dlink-systemctl-shared=false",
     ],
-    use_meson = {
-        "acl": "-Dacl=enabled",
-        "-acl": "-Dacl=disabled",
-        "boot": "-Dgnu-efi=enabled",
-        "-boot": "-Dgnu-efi=disabled",
-        "kernel-install": "-Dkernel-install=true",
-        "-kernel-install": "-Dkernel-install=false",
-        "kmod": "-Dkmod=enabled",
-        "-kmod": "-Dkmod=disabled",
-        "selinux": "-Dselinux=enabled",
-        "-selinux": "-Dselinux=disabled",
-        "tmpfiles": "-Dtmpfiles=true",
-        "-tmpfiles": "-Dtmpfiles=false",
-        "sysusers": "-Dsysusers=true",
-        "-sysusers": "-Dsysusers=false",
-        "ukify": "-Dukify=enabled",
-        "-ukify": "-Dukify=disabled",
+    use_configure = {
+        "acl": ("-Dacl=enabled", "-Dacl=disabled"),
+        "boot": ("-Dgnu-efi=enabled", "-Dgnu-efi=disabled"),
+        "kernel-install": ("-Dkernel-install=true", "-Dkernel-install=false"),
+        "kmod": ("-Dkmod=enabled", "-Dkmod=disabled"),
+        "selinux": ("-Dselinux=enabled", "-Dselinux=disabled"),
+        "sysusers": ("-Dsysusers=true", "-Dsysusers=false"),
+        "tmpfiles": ("-Dtmpfiles=true", "-Dtmpfiles=false"),
+        "ukify": ("-Dukify=enabled", "-Dukify=disabled"),
     },
     deps = [
         "//packages/linux/system/libs/ipc/libcap:libcap",

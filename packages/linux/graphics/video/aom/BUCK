@@ -1,17 +1,17 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # aom - AV1 codec library from Alliance for Open Media
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "aom",
     version = "3.10.0",
-    src_uri = "https://github.com/libsdl-org/aom/archive/refs/tags/v3.10.0.tar.gz",
+    url = "https://github.com/libsdl-org/aom/archive/refs/tags/v3.10.0.tar.gz",
     sha256 = "d1f2bd34b61ff1e58e72946825accd5f5fc23212055bf78161f6fa5b6d93b925",
-    signature_required = False,
     description = "AV1 codec library from Alliance for Open Media",
     homepage = "https://aomedia.org/",
     license = "BSD-2-Clause",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DBUILD_SHARED_LIBS=ON",

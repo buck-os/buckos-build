@@ -1,15 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "schbench-src",
-    src_uri = "https://github.com/masoncl/schbench/archive/6300b8f3a8922c61ea6bb2cdfa1901a42c0cc6fc.tar.gz",
-    sha256 = "760f87a93af99690b6a12fa47fdbaa49e3396d23e2b0622004e2696c19fa47d8",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "schbench",
-    srcs = [":schbench-src"],
     version = "0.0.1",
     description = "Scheduler benchmark and stress test tool",
     homepage = "https://github.com/masoncl/schbench",

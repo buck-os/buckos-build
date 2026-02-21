@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "nvdiffrast",
     version = "0.3.3",
-    src_uri = "https://github.com/NVlabs/nvdiffrast/archive/refs/tags/v0.3.3.tar.gz",
+    url = "https://github.com/NVlabs/nvdiffrast/archive/refs/tags/v0.3.3.tar.gz",
     sha256 = "0d61d557ec190fcee6ad643d93c869df1a46f96e26ac53cc0f1f5056c02440d5",
     deps = [
         "//packages/linux/dev-libs/python/numpy:numpy",

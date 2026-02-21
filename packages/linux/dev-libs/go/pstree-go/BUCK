@@ -1,11 +1,11 @@
-load("//defs:package_defs.bzl", "go_package")
+load("//defs:package.bzl", "package")
 
-go_package(
+package(
+    build_rule = "go",
     name = "pstree-go",
     version = "0.1.0",
-    src_uri = "https://github.com/sbinet/pstree/archive/refs/heads/master.tar.gz",
+    url = "https://github.com/sbinet/pstree/archive/refs/heads/master.tar.gz",
     sha256 = "df2fa4241a9a6ead3ada27c1f65e8cf9ec2fd34042f6a92475f45ab20dc0f140",
-    signature_required = False,
     description = "Go package to retrieve the process tree from a given PID",
     homepage = "https://github.com/sbinet/pstree",
     license = "BSD-3-Clause",

@@ -1,12 +1,13 @@
-load("//defs:package_defs.bzl", "cargo_package")
+load("//defs:package.bzl", "package")
 
 # DISABLED: Download URL returns 404 - tag v0.9.1 doesn't exist
 # Error: curl: (22) The requested URL returned error: 404
 # TODO: Find correct version/tag or use different source URL
-# cargo_package(
+# package(
+#     build_rule = "cargo",
 #     name = "wasi-tools",
 #     version = "0.9.1",
-#     src_uri = "https://github.com/WebAssembly/WASI/archive/refs/tags/v0.9.1.tar.gz",
+#     url = "https://github.com/WebAssembly/WASI/archive/refs/tags/v0.9.1.tar.gz",
 #     sha256 = "2786b6b1b79965e313f2c289c12075b9ed700d41844810c51afda10ee329576b",
 #     description = "WASI witx parser and validator CLI tool",
 #     homepage = "https://github.com/WebAssembly/WASI",

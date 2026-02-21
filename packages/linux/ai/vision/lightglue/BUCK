@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "lightglue",
     version = "0.0",
-    src_uri = "https://github.com/cvg/LightGlue/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/cvg/LightGlue/archive/refs/heads/main.tar.gz",
     sha256 = "e5bb4b07604f057b6b498a1418a242f489fd31c3876a7a761f519d18af15fc93",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

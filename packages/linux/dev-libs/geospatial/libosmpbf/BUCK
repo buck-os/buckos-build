@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "libosmpbf",
     version = "1.3.3",
-    src_uri = "https://github.com/scrosby/OSM-binary/archive/refs/tags/v1.3.3.tar.gz",
+    url = "https://github.com/scrosby/OSM-binary/archive/refs/tags/v1.3.3.tar.gz",
     sha256 = "a109f338ce6a8438a8faae4627cd08599d0403b8977c185499de5c17b92d0798",
     deps = [
         "//packages/linux/dev-libs/serialization/protobuf:protobuf",

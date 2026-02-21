@@ -1,35 +1,23 @@
-load("//defs:package_defs.bzl", "meson_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # GDK-Pixbuf - Image loading library
-meson_package(
+package(
+    build_rule = "meson",
     name = "gdk-pixbuf",
     version = "2.42.12",
-    iuse = [
-        "gif",
-        "gtk-doc",
-        "introspection",
-        "jpeg",
-        "tiff",
-    ],
     use_configure = {
-        "-gif": "-Dgif=disabled",
-        "-gtk-doc": "-Dgtk_doc=false",
-        "-introspection": "-Dintrospection=disabled",
-        "-jpeg": "-Djpeg=disabled",
-        "-tiff": "-Dtiff=disabled",
-        "gif": "-Dgif=enabled",
-        "gtk-doc": "-Dgtk_doc=true",
-        "introspection": "-Dintrospection=enabled",
-        "jpeg": "-Djpeg=enabled",
-        "tiff": "-Dtiff=enabled",
+        "gif": ("-Dgif=enabled", "-Dgif=disabled"),
+        "gtk-doc": ("-Dgtk_doc=true", "-Dgtk_doc=false"),
+        "introspection": ("-Dintrospection=enabled", "-Dintrospection=disabled"),
+        "jpeg": ("-Djpeg=enabled", "-Djpeg=disabled"),
+        "tiff": ("-Dtiff=enabled", "-Dtiff=disabled"),
     },
-    src_uri = "https://download.gnome.org/sources/gdk-pixbuf/2.42/gdk-pixbuf-2.42.12.tar.xz",
+    url = "https://download.gnome.org/sources/gdk-pixbuf/2.42/gdk-pixbuf-2.42.12.tar.xz",
     sha256 = "b9505b3445b9a7e48ced34760c3bcb73e966df3ac94c95a148cb669ab748e3c7",
-    signature_required = False,
     description = "Image loading library for GTK+",
     homepage = "https://gitlab.gnome.org/GNOME/gdk-pixbuf",
     license = "LGPL-2.1+",
-    meson_args = [
+    configure_args = [
         "-Dintrospection=disabled",
         "-Dinstalled_tests=false",
         "-Dgtk_doc=false",

@@ -1,34 +1,21 @@
+load("//defs:package.bzl", "package")
+
 # irqbalance - IRQ Load Balancing Daemon
 # Distributes hardware interrupts across processors for optimal power and performance
 
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "irqbalance",
-    src_uri = "https://github.com/Irqbalance/irqbalance/archive/refs/tags/v1.9.3.tar.gz",
+    url = "https://github.com/Irqbalance/irqbalance/archive/refs/tags/v1.9.3.tar.gz",
 
     sha256 = "8d698799251ea8518f342f36be26f2f092df51189f6777db33116d40cf0dae6c",
-    iuse = [
-        "caps",
-        "numa",
-        "selinux",
-        "systemd",
-        "thermal",
-        "tui",
-    ],
     use_configure = {
-        "-caps": "--disable-libcap",
-        "-numa": "--disable-numa",
-        "-selinux": "--disable-selinux",
-        "-systemd": "--disable-systemd",
-        "-thermal": "--disable-thermal",
-        "-tui": "--disable-tui",
-        "caps": "--enable-libcap",
-        "numa": "--enable-numa",
-        "selinux": "--enable-selinux",
-        "systemd": "--enable-systemd",
-        "thermal": "--enable-thermal",
-        "tui": "--enable-tui",
+        "caps": ("--enable-libcap", "--disable-libcap"),
+        "numa": ("--enable-numa", "--disable-numa"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "systemd": ("--enable-systemd", "--disable-systemd"),
+        "thermal": ("--enable-thermal", "--disable-thermal"),
+        "tui": ("--enable-tui", "--disable-tui"),
     },
     version = "1.9.3",
     description = "IRQ load balancing daemon for SMP systems",

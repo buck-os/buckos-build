@@ -1,43 +1,24 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "bind-tools",
     version = "9.18.24",
-    src_uri = "https://downloads.isc.org/isc/bind9/9.18.24/bind-9.18.24.tar.xz",
+    url = "https://downloads.isc.org/isc/bind9/9.18.24/bind-9.18.24.tar.xz",
     sha256 = "709d73023c9115ddad3bab65b6c8c79a590196d0d114f5d0ca2533dbd52ddf66",
-    signature_sha256 = "d69191fd021bd68280077f03f586942cf2027ae7683be08aeb244bc58530e625",
-    signature_required=False,
-
-    iuse = [
-        "caps",
-        "doc",
-        "gssapi",
-        "idn",
-        "libedit",
-        "readline",
-        "ssl",
-        "xml",
-    ],
-    use_defaults = ["ssl", "idn"],
 
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "idn": ["//packages/linux/network/dns/libraries/libidn2:libidn2"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "idn": "//packages/linux/network/dns/libraries/libidn2:libidn2",
     },
 
     use_configure = {
-        "-caps": "--disable-libcap",
-        "-doc": "--disable-documentation",
-        "-gssapi": "--without-gssapi",
-        "-libedit": "--disable-libedit",
-        "-readline": "--without-readline",
-        "-xml": "--disable-xml",
-        "caps": "--enable-libcap",
-        "doc": "--enable-documentation",
-        "gssapi": "--with-gssapi",
-        "libedit": "--enable-libedit",
-        "readline": "--with-readline",
-        "xml": "--enable-xml",
+        "caps": ("--enable-libcap", "--disable-libcap"),
+        "doc": ("--enable-documentation", "--disable-documentation"),
+        "gssapi": ("--with-gssapi", "--without-gssapi"),
+        "libedit": ("--enable-libedit", "--disable-libedit"),
+        "readline": ("--with-readline", "--without-readline"),
+        "xml": ("--enable-xml", "--disable-xml"),
     },
 
     configure_args = [

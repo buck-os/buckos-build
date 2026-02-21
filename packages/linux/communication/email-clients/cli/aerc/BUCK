@@ -1,16 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "aerc-src",
-    src_uri = "https://github.com/rjarry/aerc/archive/refs/tags/0.18.2.tar.gz",
-    sha256 = "78408b3fe7a4991a6097c961c348fb7583af52dff80cbfcd99808415cf3d7586",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "aerc",
-    srcs = [":aerc-src"],
     version = "0.18.2",
     visibility = ["PUBLIC"],
 )

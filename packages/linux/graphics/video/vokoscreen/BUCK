@@ -1,17 +1,17 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # vokoscreenNG - User-friendly screencast creator
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "vokoscreen",
     version = "4.2.0",
-    src_uri = "https://github.com/vkohaupt/vokoscreenNG/archive/refs/tags/4.2.0.tar.gz",
+    url = "https://github.com/vkohaupt/vokoscreenNG/archive/refs/tags/4.2.0.tar.gz",
     sha256 = "5f74fc575ae18e8e62f13f891d79c1c720077f6b630085a02f7576c223cb431c",
-    signature_required = False,
     description = "User-friendly screencast creator to record videos from screen",
     homepage = "https://linuxecke.volkoh.de/vokoscreen/vokoscreen.html",
     license = "GPL-2.0-or-later",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_INSTALL_PREFIX=/usr",
     ],

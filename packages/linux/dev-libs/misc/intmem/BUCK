@@ -1,15 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "intmem",
     version = "0.0.1",
-    src_uri = "https://github.com/aguinet/intmem/archive/e33d5c5b2f1c451b3400bbac6cb097c63657c8b2.tar.gz",
+    url = "https://github.com/aguinet/intmem/archive/e33d5c5b2f1c451b3400bbac6cb097c63657c8b2.tar.gz",
     sha256 = "d420b217f3194cce020c0a963b3701ddae8ff330b47b7e0aa112c07770123759",
     description = "Header-only C++ library for endianness-aware memory access",
     homepage = "https://github.com/aguinet/intmem",
     license = "Unlicense",
     maintainers = ["buckos"],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
     ],

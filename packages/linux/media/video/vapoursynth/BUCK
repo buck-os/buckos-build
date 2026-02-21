@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "vapoursynth",
     version = "R72",
-    src_uri = "https://github.com/vapoursynth/vapoursynth/archive/refs/tags/R72.tar.gz",
+    url = "https://github.com/vapoursynth/vapoursynth/archive/refs/tags/R72.tar.gz",
     sha256 = "650f77feebfd08842b521273f59e0c88f7ba9d7cb5f151d89b79b8dfdd4ce633",
     configure_args = [
         "--disable-static",

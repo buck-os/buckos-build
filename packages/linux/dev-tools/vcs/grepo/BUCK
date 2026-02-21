@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "simple_binary_package")
+load("//defs:package.bzl", "package")
 
-simple_binary_package(
+simple_package(
+    build_rule = "binary",
     name = "grepo",
     version = "2.61",
-    src_uri = "https://gerrit.googlesource.com/git-repo/+archive/refs/tags/v2.61.tar.gz",
+    url = "https://gerrit.googlesource.com/git-repo/+archive/refs/tags/v2.61.tar.gz",
     sha256 = "fc26388fbcd7f93a27423da0968e5b1c335f0afee4870dec2f2f84d58140f253",  # Dynamic: googlesource archive
     bins = ["repo"],
     deps = [

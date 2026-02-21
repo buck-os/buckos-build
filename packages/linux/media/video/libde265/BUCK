@@ -1,54 +1,32 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # libde265 - Open H.265 HEVC decoder
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "libde265",
     version = "1.0.15",
-    src_uri = "https://github.com/strukturag/libde265/releases/download/v1.0.15/libde265-1.0.15.tar.gz",
+    url = "https://github.com/strukturag/libde265/releases/download/v1.0.15/libde265-1.0.15.tar.gz",
     sha256 = "00251986c29d34d3af7117ed05874950c875dd9292d016be29d3b3762666511d",
     description = "Open H.265 HEVC decoder",
     homepage = "https://www.libde265.org/",
     license = "LGPL-3",
-    iuse = [
-        "cpu_flags_arm_neon",
-        "cpu_flags_arm_thumb",
-        "debug",
-        "dec265",
-        "enc265",
-        "sdl",
-        "sherlock265",
-        "sse",
-        "sse4",
-        "tools",
-    ],
-    use_defaults = ["sse", "sse4", "tools"],
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
     ],
-    use_cmake = {
-        "-cpu_flags_arm_neon": "-DENABLE_CPU_FLAGS_ARM_NEON=OFF",
-        "-cpu_flags_arm_thumb": "-DENABLE_CPU_FLAGS_ARM_THUMB=OFF",
-        "-debug": "-DCMAKE_BUILD_TYPE=Release",
-        "-dec265": "-DBUILD_DEC265=OFF",
-        "-enc265": "-DENABLE_ENC265=OFF",
-        "-sdl": "-DENABLE_SDL=OFF",
-        "-sherlock265": "-DBUILD_SHERLOCK265=OFF",
-        "-sse": "-DENABLE_SSE=OFF",
-        "-sse4": "-DENABLE_SSE4_1=OFF",
-        "-tools": "-DBUILD_PROGRAMS=OFF",
-        "cpu_flags_arm_neon": "-DENABLE_CPU_FLAGS_ARM_NEON=ON",
-        "cpu_flags_arm_thumb": "-DENABLE_CPU_FLAGS_ARM_THUMB=ON",
-        "debug": "-DCMAKE_BUILD_TYPE=Debug",
-        "dec265": "-DBUILD_DEC265=ON",
-        "enc265": "-DENABLE_ENC265=ON",
-        "sdl": "-DENABLE_SDL=ON",
-        "sherlock265": "-DBUILD_SHERLOCK265=ON",
-        "sse": "-DENABLE_SSE=ON",
-        "sse4": "-DENABLE_SSE4_1=ON",
-        "tools": "-DBUILD_PROGRAMS=ON",
+    use_configure = {
+        "cpu_flags_arm_neon": ("-DENABLE_CPU_FLAGS_ARM_NEON=ON", "-DENABLE_CPU_FLAGS_ARM_NEON=OFF"),
+        "cpu_flags_arm_thumb": ("-DENABLE_CPU_FLAGS_ARM_THUMB=ON", "-DENABLE_CPU_FLAGS_ARM_THUMB=OFF"),
+        "debug": ("-DCMAKE_BUILD_TYPE=Debug", "-DCMAKE_BUILD_TYPE=Release"),
+        "dec265": ("-DBUILD_DEC265=ON", "-DBUILD_DEC265=OFF"),
+        "enc265": ("-DENABLE_ENC265=ON", "-DENABLE_ENC265=OFF"),
+        "sdl": ("-DENABLE_SDL=ON", "-DENABLE_SDL=OFF"),
+        "sherlock265": ("-DBUILD_SHERLOCK265=ON", "-DBUILD_SHERLOCK265=OFF"),
+        "sse": ("-DENABLE_SSE=ON", "-DENABLE_SSE=OFF"),
+        "sse4": ("-DENABLE_SSE4_1=ON", "-DENABLE_SSE4_1=OFF"),
+        "tools": ("-DBUILD_PROGRAMS=ON", "-DBUILD_PROGRAMS=OFF"),
     },
     visibility = ["PUBLIC"],
 )

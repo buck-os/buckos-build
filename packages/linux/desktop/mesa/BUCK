@@ -1,15 +1,15 @@
-load("//defs:package_defs.bzl", "download_source", "meson_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # Mesa - OpenGL and Vulkan implementation
 # =============================================================================
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "mesa",
     version = "26.0.0",
-    src_uri = "https://archive.mesa3d.org/mesa-26.0.0.tar.xz",
+    url = "https://archive.mesa3d.org/mesa-26.0.0.tar.xz",
     sha256 = "2a44e98e64d5c36cec64633de2d0ec7eff64703ee25b35364ba8fcaa84f33f72",
-    signature_required = False,
     description = "Mesa 3D Graphics Library - OpenGL and Vulkan",
     homepage = "https://www.mesa3d.org/",
     license = "MIT",
@@ -51,9 +51,7 @@ if [ -d src/amd/common/nir ] && [ -f src/amd/common/ac_nir.h ]; then
     rm -f src/amd/common/ac_nir_opt_outputs.c
 fi
 ''',
-    iuse = ["X", "wayland", "vulkan", "llvm"],
     # llvm enables radeonsi for AMD GPUs (requires LLVM 15+)
-    use_defaults = ["wayland", "llvm"],
     # Python mako is needed for code generation
     # wayland provides wayland-scanner needed during build
     bdepend = [
@@ -403,23 +401,10 @@ meson setup "${BUILD_DIR:-build}" \
     $CROSS_FILE_ARG \
     ${MESON_EXTRA_ARGS:-}
 ''',
-    use_meson = {
-        # X11 support: enable GLX and X11 platform
-        "X": "-Dplatforms=x11,wayland -Dglx=dri",
-        "-X": "-Dplatforms=wayland -Dglx=disabled",
-        # Vulkan drivers (Intel, AMD, software lavapipe)
-        "vulkan": "-Dvulkan-drivers=intel,intel_hasvk,amd",
-        "-vulkan": "-Dvulkan-drivers=",
-        # LLVM support - enables llvmpipe and radeonsi
-        # Driver set for AMD hardware (mesa 26.0.0):
-        # - radeonsi: AMD GCN/RDNA (requires LLVM)
-        # - llvmpipe: LLVM-accelerated software rendering
-        # - virgl: Virtual GPU (QEMU/VirtIO)
-        # Note: Intel drivers (iris/crocus) disabled as they require
-        # SPIRV-LLVM-Translator in mesa 26.0.0 which we don't have yet
-        # amd-use-llvm is required per Gentoo ebuild for AMD+LLVM builds
-        "llvm": "-Dllvm=enabled -Damd-use-llvm=true -Dgallium-drivers=radeonsi,llvmpipe,virgl",
-        "-llvm": "-Dllvm=disabled -Dgallium-drivers=softpipe,virgl",
+    use_configure = {
+        "X": ("-Dplatforms=x11,wayland -Dglx=dri", "-Dplatforms=wayland -Dglx=disabled"),
+        "llvm": ("-Dllvm=enabled -Damd-use-llvm=true -Dgallium-drivers=radeonsi,llvmpipe,virgl", "-Dllvm=disabled -Dgallium-drivers=softpipe,virgl"),
+        "vulkan": ("-Dvulkan-drivers=intel,intel_hasvk,amd", "-Dvulkan-drivers="),
     },
     use_deps = {
         # X11 dependencies for GLX and DRI
@@ -440,7 +425,7 @@ meson setup "${BUILD_DIR:-build}" \
             "//packages/linux/core/libclc:libclc",
         ],
     },
-    meson_args = [
+    configure_args = [
         # Core features for mesa 26.0.0
         "-Degl=enabled",
         "-Dgbm=enabled",
@@ -470,16 +455,16 @@ meson setup "${BUILD_DIR:-build}" \
 # virglrenderer - Virtual 3D GPU for QEMU
 # =============================================================================
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "virglrenderer",
     version = "1.2.0",
-    src_uri = "https://gitlab.freedesktop.org/virgl/virglrenderer/-/archive/virglrenderer-1.2.0/virglrenderer-virglrenderer-1.2.0.tar.bz2",
+    url = "https://gitlab.freedesktop.org/virgl/virglrenderer/-/archive/virglrenderer-1.2.0/virglrenderer-virglrenderer-1.2.0.tar.bz2",
     sha256 = "47a64189492a754685a430c713ac6700f4b1c3e7b871e87889ddb96e4d65e8ab",
-    signature_required = False,
     description = "Library to implement a virtual 3D GPU used by qemu",
     homepage = "https://virgil3d.github.io/",
     license = "MIT",
-    meson_args = [
+    configure_args = [
         "-Dplatforms=egl",
         "-Dvulkan=false",
         "-Dtests=false",

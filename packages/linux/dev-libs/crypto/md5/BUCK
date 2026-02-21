@@ -1,11 +1,11 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "md5",
     version = "04d0d68",
-    src_uri = "https://github.com/BZFlag-Dev/bzflag/archive/04d0d68acb4960fc056f0c9b662abe82d373e540.tar.gz",
+    url = "https://github.com/BZFlag-Dev/bzflag/archive/04d0d68acb4960fc056f0c9b662abe82d373e540.tar.gz",
     sha256 = "4b87db0e598902caa7f562442bf0f5028b75e7317a403663190cc9f76f52e251",
-    signature_required = False,
     description = "MD5 hash implementation from bzflag",
     homepage = "https://github.com/BZFlag-Dev/bzflag",
     license = "RSA-MD",
@@ -27,7 +27,7 @@ install(TARGETS md5 LIBRARY DESTINATION lib)
 install(FILES src/md5/md5.h DESTINATION include/md5)
 EOF
 """,
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
     ],

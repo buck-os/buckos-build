@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "tabrep",
     version = "0.1.0",
-    src_uri = "https://github.com/jacobyhsi/tabrep/archive/a605a0bfceac7db8a71c893c79e133525976ad7d.tar.gz",
+    url = "https://github.com/jacobyhsi/tabrep/archive/a605a0bfceac7db8a71c893c79e133525976ad7d.tar.gz",
     sha256 = "31c8b7a8e53d224760ba1a0f39f21fcdab40de27cae0ae11b3c2eff9da060664",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

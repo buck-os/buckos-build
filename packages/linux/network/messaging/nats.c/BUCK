@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # NATS C Client - C client for NATS messaging system
 #
@@ -11,33 +11,30 @@ load("//defs:package_defs.bzl", "cmake_package")
 #   ssl       - Enable TLS/SSL support
 #   streaming - Enable NATS Streaming support
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "nats.c",
     version = "3.8.2",
-    src_uri = "https://github.com/nats-io/nats.c/archive/refs/tags/v3.8.2.tar.gz",
+    url = "https://github.com/nats-io/nats.c/archive/refs/tags/v3.8.2.tar.gz",
     sha256 = "083ee03cf5a413629d56272e88ad3229720c5006c286e8180c9e5b745c10f37d",
     description = "C client library for the NATS messaging system",
     homepage = "https://github.com/nats-io/nats.c",
     license = "Apache-2.0",
-    iuse = ["ssl", "streaming"],
-    use_defaults = ["ssl"],
     deps = [
         "//packages/linux/dev-libs/serialization/protobuf:protobuf",
     ],
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
     },
-    cmake_args = [
+    configure_args = [
         "-DNATS_BUILD_STREAMING=ON",
         "-DNATS_BUILD_EXAMPLES=OFF",
         "-DNATS_BUILD_LIBEVENT=OFF",
         "-DNATS_BUILD_LIBUV=OFF",
     ],
-    use_cmake = {
-        "ssl": "-DNATS_BUILD_WITH_TLS=ON",
-        "-ssl": "-DNATS_BUILD_WITH_TLS=OFF",
-        "streaming": "-DNATS_BUILD_STREAMING=ON",
-        "-streaming": "-DNATS_BUILD_STREAMING=OFF",
+    use_configure = {
+        "ssl": ("-DNATS_BUILD_WITH_TLS=ON", "-DNATS_BUILD_WITH_TLS=OFF"),
+        "streaming": ("-DNATS_BUILD_STREAMING=ON", "-DNATS_BUILD_STREAMING=OFF"),
     },
     visibility = ["PUBLIC"],
 )

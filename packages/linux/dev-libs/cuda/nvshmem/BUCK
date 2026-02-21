@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "nvshmem",
     version = "3.4.5",
-    src_uri = "https://github.com/NVIDIA/nvshmem/archive/refs/tags/v3.4.5-0.tar.gz",
+    url = "https://github.com/NVIDIA/nvshmem/archive/refs/tags/v3.4.5-0.tar.gz",
     sha256 = "74047b0b572d677a6c072c9e5486514d19fe7dff1252a2548ee08ce8d68b6bc5",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DCMAKE_CUDA_ARCHITECTURES=70;75;80;86;89;90",

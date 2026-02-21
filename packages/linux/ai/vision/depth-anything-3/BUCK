@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "depth-anything-3",
     version = "0.0.0",
-    src_uri = "https://github.com/bytedance-seed/depth-anything-3/archive/44dd68f6f24539427bf6eab72738833935d61e66.tar.gz",
+    url = "https://github.com/bytedance-seed/depth-anything-3/archive/44dd68f6f24539427bf6eab72738833935d61e66.tar.gz",
     sha256 = "32c7293541d020cd2832a73dde8248794b31b038ed2ec925d3d12f539a96cc38",
     deps = [
         "//packages/linux/dev-libs/python/numpy:numpy",

@@ -1,49 +1,25 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libreswan",
     version = "4.12",
-    src_uri = "https://download.libreswan.org/libreswan-4.12.tar.gz",
+    url = "https://download.libreswan.org/libreswan-4.12.tar.gz",
     sha256 = "ae85abe415f7becf4b6a2b9897e1712f27e5aac9c35dfbdddbcce0ad7dfd99f7",
-    signature_sha256 = "a6a339ea32c7fc504f5cd6ad08bcfa54e3c0aba0f329643961015ac2a94b668e",
-    signature_required = False,
-
-    iuse = [
-        "caps",
-        "curl",
-        "dnssec",
-        "ikev1",
-        "labeled-ipsec",
-        "ldap",
-        "networkmanager",
-        "pam",
-        "seccomp",
-        "selinux",
-        "ssl",
-        "systemd",
-    ],
-    use_defaults = ["ssl", "curl", "systemd"],
 
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "curl": ["//packages/linux/system/libs/network/curl:curl"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "curl": "//packages/linux/system/libs/network/curl:curl",
     },
 
     use_configure = {
-        "-caps": "--disable-libcap",
-        "-ikev1": "--disable-ikev1",
-        "-ldap": "--disable-ldap",
-        "-networkmanager": "--disable-networkmanager",
-        "-pam": "--disable-pam",
-        "-seccomp": "--disable-seccomp",
-        "-selinux": "--disable-selinux",
-        "caps": "--enable-libcap",
-        "ikev1": "--enable-ikev1",
-        "ldap": "--enable-ldap",
-        "networkmanager": "--enable-networkmanager",
-        "pam": "--enable-pam",
-        "seccomp": "--enable-seccomp",
-        "selinux": "--enable-selinux",
+        "caps": ("--enable-libcap", "--disable-libcap"),
+        "ikev1": ("--enable-ikev1", "--disable-ikev1"),
+        "ldap": ("--enable-ldap", "--disable-ldap"),
+        "networkmanager": ("--enable-networkmanager", "--disable-networkmanager"),
+        "pam": ("--enable-pam", "--disable-pam"),
+        "seccomp": ("--enable-seccomp", "--disable-seccomp"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
     },
 
     skip_configure = True,

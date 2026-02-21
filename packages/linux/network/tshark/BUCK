@@ -1,24 +1,22 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package", "binary_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # tshark - Command-line network protocol analyzer (Wireshark CLI)
 # =============================================================================
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "tshark",
     version = "4.2.3",
-    src_uri = "https://www.wireshark.org/download/src/all-versions/wireshark-4.2.3.tar.xz",
+    url = "https://www.wireshark.org/download/src/all-versions/wireshark-4.2.3.tar.xz",
     sha256 = "958bd5996f543d91779b1a4e7e952dcd7b0245fe82194202c3333a8f78795811",
-    signature_required = False,
-
 
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "lua": ["//packages/linux/dev-tools/lua"],
-        "zlib": ["//packages/linux/core/zlib:zlib"],
-        "nghttp2": ["//packages/linux/system/libs/network/nghttp2:nghttp2"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "lua": "//packages/linux/dev-tools/lua",
+        "zlib": "//packages/linux/core/zlib:zlib",
+        "nghttp2": "//packages/linux/system/libs/network/nghttp2:nghttp2",
     },
-
 
     configure_args = [
         "--disable-wireshark",

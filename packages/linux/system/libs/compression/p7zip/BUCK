@@ -1,28 +1,19 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # p7zip - 7-Zip file archiver port for Unix systems
 
 # p7zip uses a Makefile, not autotools
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "p7zip",
-    src_uri = "https://github.com/p7zip-project/p7zip/archive/refs/tags/v17.05.tar.gz",
+    url = "https://github.com/p7zip-project/p7zip/archive/refs/tags/v17.05.tar.gz",
 
     sha256 = "d2788f892571058c08d27095c22154579dfefb807ebe357d145ab2ddddefb1a6",
-    iuse = [
-        "abi_x86_x32",
-        "natspec",
-        "pch",
-        "rar",
-    ],
     use_configure = {
-        "-abi_x86_x32": "--disable-abi_x86_x32",
-        "-natspec": "--disable-natspec",
-        "-pch": "--disable-pch",
-        "-rar": "--disable-rar",
-        "abi_x86_x32": "--enable-abi_x86_x32",
-        "natspec": "--enable-natspec",
-        "pch": "--enable-pch",
-        "rar": "--enable-rar",
+        "abi_x86_x32": ("--enable-abi_x86_x32", "--disable-abi_x86_x32"),
+        "natspec": ("--enable-natspec", "--disable-natspec"),
+        "pch": ("--enable-pch", "--disable-pch"),
+        "rar": ("--enable-rar", "--disable-rar"),
     },
     version = "17.05",
     description = "7-Zip file archiver port for Unix systems",

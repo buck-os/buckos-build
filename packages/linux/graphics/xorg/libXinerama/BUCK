@@ -1,10 +1,11 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # libXinerama - Xinerama extension library
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libXinerama",
     version = "1.1.5",
-    src_uri = "https://xorg.freedesktop.org/archive/individual/lib/libXinerama-1.1.5.tar.xz",
+    url = "https://xorg.freedesktop.org/archive/individual/lib/libXinerama-1.1.5.tar.xz",
     sha256 = "5094d1f0fcc1828cb1696d0d39d9e866ae32520c54d01f618f1a3c1e30c2085c",
     description = "Xinerama extension library for multi-monitor",
     homepage = "https://xorg.freedesktop.org/",

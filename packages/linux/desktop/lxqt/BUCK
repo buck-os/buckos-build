@@ -1,28 +1,19 @@
-load("//defs:package_defs.bzl", "download_source", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # LXQt - Lightweight Qt desktop
 # =============================================================================
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "lxqt-session",
-    src_uri = "https://github.com/lxqt/lxqt-session/releases/download/1.4.0/lxqt-session-1.4.0.tar.xz",
+    url = "https://github.com/lxqt/lxqt-session/releases/download/1.4.0/lxqt-session-1.4.0.tar.xz",
 
     sha256 = "9dcdc846601f1972d01429f2203d36976088edcca5c166eef2b21ad73fcef656",
-
-    signature_sha256 = "47581a5b959f754af56d371bd8ee24ee0988841c1c5a8f97ec5961ac84d33296",
-    iuse = ["X", "wayland", "udev", "pulseaudio"],
-    use_defaults = ["X", "udev"],
-    use_cmake = {
-        # X11 support
-        "X": "-DWITH_X11=ON",
-        "-X": "-DWITH_X11=OFF",
-        # Wayland support
-        "wayland": "-DWITH_WAYLAND=ON",
-        "-wayland": "-DWITH_WAYLAND=OFF",
-        # udev for device detection
-        "-udev": "-DENABLE_UDEV=OFF",
-        "udev": "-DENABLE_UDEV=ON",
+    use_configure = {
+        "X": ("-DWITH_X11=ON", "-DWITH_X11=OFF"),
+        "udev": ("-DENABLE_UDEV=ON", "-DENABLE_UDEV=OFF"),
+        "wayland": ("-DWITH_WAYLAND=ON", "-DWITH_WAYLAND=OFF"),
     },
     use_deps = {
         # X11 dependencies
@@ -47,7 +38,7 @@ cmake_package(
     description = "LXQt Session Manager",
     homepage = "https://lxqt-project.org/",
     license = "LGPL-2.1",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
     ],
     deps = [
@@ -56,32 +47,21 @@ cmake_package(
     visibility = ["PUBLIC"],
 )
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "lxqt-panel",
-    src_uri = "https://github.com/lxqt/lxqt-panel/releases/download/1.4.0/lxqt-panel-1.4.0.tar.xz",
+    url = "https://github.com/lxqt/lxqt-panel/releases/download/1.4.0/lxqt-panel-1.4.0.tar.xz",
 
     sha256 = "0e660c0397c96a28f0fcf316b20c72d203c85793a884e1487b3b14e3790defc9",
-
-    signature_sha256 = "79f221529ee8d52cd5e173db280555f53c844f79073688286ca09ddcfba89eef",
     version = "1.4.0",
     description = "LXQt Panel",
     homepage = "https://lxqt-project.org/",
     license = "LGPL-2.1",
-    iuse = ["X", "wayland", "pulseaudio", "sensors"],
-    use_defaults = ["X"],
-    use_cmake = {
-        # X11 support
-        "X": "-DWITH_X11=ON",
-        "-X": "-DWITH_X11=OFF",
-        # Wayland support
-        "wayland": "-DWITH_WAYLAND=ON",
-        "-wayland": "-DWITH_WAYLAND=OFF",
-        # Pulseaudio volume control
-        "pulseaudio": "-DVOLUME_USE_PULSEAUDIO=ON",
-        "-pulseaudio": "-DVOLUME_USE_PULSEAUDIO=OFF",
-        # Hardware sensors
-        "sensors": "-DSENSORS_PLUGIN=ON",
-        "-sensors": "-DSENSORS_PLUGIN=OFF",
+    use_configure = {
+        "X": ("-DWITH_X11=ON", "-DWITH_X11=OFF"),
+        "pulseaudio": ("-DVOLUME_USE_PULSEAUDIO=ON", "-DVOLUME_USE_PULSEAUDIO=OFF"),
+        "sensors": ("-DSENSORS_PLUGIN=ON", "-DSENSORS_PLUGIN=OFF"),
+        "wayland": ("-DWITH_WAYLAND=ON", "-DWITH_WAYLAND=OFF"),
     },
     use_deps = {
         # X11 dependencies
@@ -98,7 +78,7 @@ cmake_package(
             "//packages/linux/audio/daemons/pulseaudio:pulseaudio",
         ],
     },
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
     ],
     deps = [

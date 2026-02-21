@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package", "autotools_package", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # Qt6 - Cross-platform application framework (required for KDE Plasma 6)
@@ -16,28 +16,14 @@ load("//defs:package_defs.bzl", "download_source", "binary_package", "autotools_
 #   sqlite    - Enable SQLite support
 #   vulkan    - Enable Vulkan support
 
-download_source(
-    name = "qt6-src",
-    src_uri = "https://download.qt.io/official_releases/qt/6.8/6.8.3/single/qt-everywhere-src-6.8.3.tar.xz",
-    sha256 = "cdd3a69967208276bb01af7ace7dba0ba53e679f886a4cbe624225c60fb73f2c",
-    signature_required = False,
-)
-
-download_source(
-    name = "qt5compat-src",
-    src_uri = "https://download.qt.io/official_releases/qt/6.8/6.8.3/submodules/qt5compat-everywhere-src-6.8.3.tar.xz",
-    sha256 = "54b9c84bff34b423dd8c472862ce1009753ff505e418b4ef33907416da16b82e",
-    signature_required = False,
-)
-
 # =============================================================================
 # Qt6 Native - Minimal build for host tools (syncqt, moc, rcc, etc.)
 # Used when cross-compiling Qt6 for aarch64/other architectures
 # =============================================================================
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "qt6-native",
-    source = ":qt6-src",
     version = "6.8.3",
     description = "Qt6 native host tools for cross-compilation",
     homepage = "https://www.qt.io/",
@@ -115,7 +101,7 @@ done
 
     # Minimal build - only qtbase for host tools
     # Disable ALL optional modules to avoid dependency cascades
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DINSTALL_BINDIR=lib64/qt6/bin",
@@ -254,9 +240,9 @@ echo "Created Qt6QuickTools CMake package for cross-compilation"
     visibility = ["PUBLIC"],
 )
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "qt6",
-    source = ":qt6-src",
     version = "6.8.3",
     description = "Qt6 - Cross-platform application framework",
     homepage = "https://www.qt.io/",
@@ -697,25 +683,12 @@ cmake --build "$S/build" -j${MAKEOPTS:-$(nproc)}
 """,
 
     # USE flags this package supports
-    iuse = [
-        "X",
-        "wayland",
-        "opengl",
-        "eglfs",
-        "dbus",
-        "widgets",
-        "cups",
-        "ssl",
-        "sqlite",
-        "vulkan",
-    ],
 
     # Default USE flags - Wayland-focused, no X11
     # OpenGL enabled via EGL+GLES2 for Wayland (Mesa)
     # dbus is required for KDE Frameworks
-    use_defaults = ["wayland", "widgets", "ssl", "sqlite", "dbus", "opengl"],
 
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DINSTALL_BINDIR=lib64/qt6/bin",
@@ -809,95 +782,8 @@ cmake --build "$S/build" -j${MAKEOPTS:-$(nproc)}
     ],
 
     # USE-conditional cmake args
-    use_cmake = {
-        "X": [
-            "-DQT_FEATURE_xcb=ON",
-            "-DQT_FEATURE_system_xcb_xinput=ON",
-            "-DQT_FEATURE_xkbcommon_x11=ON",
-        ],
-        "-X": [
-            "-DQT_FEATURE_xcb=OFF",
-            "-DQT_FEATURE_system_xcb_xinput=OFF",
-            "-DQT_FEATURE_xkbcommon_x11=OFF",
-            "-DQT_FEATURE_xlib=OFF",
-        ],
-        "wayland": [
-            "-DQT_FEATURE_wayland=ON",
-            "-DBUILD_qtwayland=ON",
-        ],
-        "-wayland": [
-            "-DQT_FEATURE_wayland=OFF",
-            "-DBUILD_qtwayland=OFF",
-        ],
-        "opengl": [
-            # Use OpenGL ES 2 + EGL for Wayland (our mesa is Wayland-only, no GLX)
-            "-DINPUT_opengl=es2",
-            "-DQT_FEATURE_egl=ON",
-            "-DQT_FEATURE_opengles2=ON",
-            "-DQT_FEATURE_opengl=ON",
-            # Force EGL/GLESv2 to be found without running tests (cross-compilation)
-            # These cache variables pre-populate the find_package results
-            "-DHAVE_EGL=TRUE",
-            "-DHAVE_GLESv2=TRUE",
-            "-DEGL_FOUND=TRUE",
-            "-DGLESv2_FOUND=TRUE",
-            # Disable desktop OpenGL which requires GLX/libGL (we only have GLES)
-            "-DQT_FEATURE_opengl_desktop=OFF",
-            # Help CMake find EGL/GLES from Mesa by checking system paths
-            "-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=BOTH",
-            "-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH",
-            "-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH",
-        ],
-        "-opengl": [
-            "-DINPUT_opengl=no",
-            "-DQT_FEATURE_opengl=OFF",
-            "-DQT_FEATURE_egl=OFF",
-        ],
-        "eglfs": [
-            "-DQT_FEATURE_eglfs=ON",
-        ],
-        "-eglfs": [
-            "-DQT_FEATURE_eglfs=OFF",
-        ],
-        "dbus": [
-            "-DQT_FEATURE_dbus=ON",
-        ],
-        "-dbus": [
-            "-DQT_FEATURE_dbus=OFF",
-        ],
-        "widgets": [
-            "-DQT_FEATURE_widgets=ON",
-        ],
-        "-widgets": [
-            "-DQT_FEATURE_widgets=OFF",
-        ],
-        "cups": [
-            "-DQT_FEATURE_cups=ON",
-        ],
-        "-cups": [
-            "-DQT_FEATURE_cups=OFF",
-        ],
-        "ssl": [
-            "-DQT_FEATURE_openssl=ON",
-            "-DQT_FEATURE_openssl_linked=ON",
-        ],
-        "-ssl": [
-            "-DQT_FEATURE_openssl=OFF",
-        ],
-        "sqlite": [
-            "-DQT_FEATURE_sql=ON",
-            "-DQT_FEATURE_sql_sqlite=ON",
-            "-DQT_FEATURE_system_sqlite=ON",
-        ],
-        "-sqlite": [
-            "-DQT_FEATURE_sql_sqlite=OFF",
-        ],
-        "vulkan": [
-            "-DQT_FEATURE_vulkan=ON",
-        ],
-        "-vulkan": [
-            "-DQT_FEATURE_vulkan=OFF",
-        ],
+    use_configure = {
+
     },
 
     # Base dependencies (always needed)
@@ -991,16 +877,9 @@ fi
 # Qt5 - Cross-platform application framework (legacy)
 # =============================================================================
 
-download_source(
-    name = "qt5-src",
-    src_uri = "https://download.qt.io/archive/qt/5.15/5.15.12/single/qt-everywhere-opensource-src-5.15.12.tar.xz",
-    sha256 = "93f2c0889ee2e9cdf30c170d353c3f829de5f29ba21c119167dee5995e48ccce",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "qt5",
-    srcs = [":qt5-src"],
     version = "5.15.12",
     description = "Cross-platform application framework",
     homepage = "https://www.qt.io/",
@@ -1050,9 +929,10 @@ binary_package(
 # polkit-qt - Qt wrapper around polkit-1 client libraries
 # =============================================================================
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "polkit-qt",
-    src_uri = "https://download.kde.org/stable/polkit-qt-1/polkit-qt-1-0.200.0.tar.xz",
+    url = "https://download.kde.org/stable/polkit-qt-1/polkit-qt-1-0.200.0.tar.xz",
 
     sha256 = "5d3b611c062d2b76a93750bb10c907bfd21d1ff08d0a15dc2cf63e278e1677fb",
     version = "0.200.0",
@@ -1111,8 +991,8 @@ cmake -S "$S" -B "$S/build" \\
     -DQT_NO_PACKAGE_VERSION_CHECK=TRUE
 """,
 
-    cmake_args = [],
-    
+    configure_args = [],
+
     deps = [
         ":qt6",
         "//packages/linux/dev-libs/glib:glib",
@@ -1122,6 +1002,6 @@ cmake -S "$S" -B "$S/build" \\
         "//packages/linux/system/libs/utility/libffi:libffi",
         "//packages/linux/core/zlib:zlib",
     ],
-    
+
     visibility = ["PUBLIC"],
 )

@@ -1,15 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "bash-preexec-src",
-    src_uri = "https://github.com/rcaloras/bash-preexec/archive/refs/heads/master.tar.gz",
-    sha256 = "51d8972b9156da17c560f6dd3af129b7bd0ddecf42d3cda5300d7184b4ba9f82",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "bash-preexec",
-    srcs = [":bash-preexec-src"],
     version = "0.5.0",
     description = "preexec and precmd hook functions for Bash in the style of Zsh",
     homepage = "https://github.com/rcaloras/bash-preexec",

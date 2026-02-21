@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # Percona XtraBackup - Open source hot backup utility for MySQL
 #
@@ -10,16 +10,15 @@ load("//defs:package_defs.bzl", "cmake_package")
 #   ssl       - Enable SSL/TLS support
 #   zstd      - Enable Zstandard compression support
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "percona-xtrabackup",
     version = "8.0.35-31",
-    src_uri = "https://github.com/percona/percona-xtrabackup/archive/refs/tags/percona-xtrabackup-8.0.35-31.tar.gz",
+    url = "https://github.com/percona/percona-xtrabackup/archive/refs/tags/percona-xtrabackup-8.0.35-31.tar.gz",
     sha256 = "5ecd6ca5152913c7f5f605065943dc0706be6a7f66c7a935ceac3fe64a7b7560",
     description = "Open source hot backup utility for MySQL-based servers",
     homepage = "https://www.percona.com/software/mysql-database/percona-xtrabackup",
     license = "GPL-2.0",
-    iuse = ["ssl", "zstd"],
-    use_defaults = ["ssl", "zstd"],
     deps = [
         "//packages/linux/databases/mysql:mysql",
         "//packages/linux/dev-libs/misc/libaio:libaio",
@@ -28,10 +27,10 @@ cmake_package(
         "//packages/linux/dev-libs/compression/lz4:lz4",
     ],
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "zstd": ["//packages/linux/system/libs/compression/zstd:zstd"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "zstd": "//packages/linux/system/libs/compression/zstd:zstd",
     },
-    cmake_args = [
+    configure_args = [
         "-DBUILD_CONFIG=xtrabackup_release",
         "-DWITH_BOOST=/usr/include",
         "-DDOWNLOAD_BOOST=0",

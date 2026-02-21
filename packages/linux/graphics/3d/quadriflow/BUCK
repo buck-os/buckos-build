@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "quadriflow",
     version = "810b7a0",
-    src_uri = "https://github.com/hjwdzh/quadriflow/archive/810b7a0967c35b0dc85b4464e3835e26a756c967.tar.gz",
+    url = "https://github.com/hjwdzh/quadriflow/archive/810b7a0967c35b0dc85b4464e3835e26a756c967.tar.gz",
     sha256 = "3b222d1b4f94889f64c4e970ce6b10e4147c69f2d36a1f0d4c94989bea5b58b0",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_OPENMP=ON",
         "-DBUILD_FREE_LICENSE=ON",
     ],

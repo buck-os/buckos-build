@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "comfyui",
     version = "0.3.44",
-    src_uri = "https://github.com/comfyanonymous/ComfyUI/archive/v0.3.44.tar.gz",
+    url = "https://github.com/comfyanonymous/ComfyUI/archive/v0.3.44.tar.gz",
     sha256 = "d69fab2195531da312b08f9ed920d088b3964839aa6392509fd7c1f2e4c95ff9",
     deps = [
         "//packages/linux/dev-libs/python/torch:torch",

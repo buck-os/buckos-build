@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "kernel_bench",
     version = "0.0.1",
-    src_uri = "https://github.com/scalingintelligence/kernelbench/archive/88df56b931a0ecafc3ac3b321275addaa078407c.tar.gz",
+    url = "https://github.com/scalingintelligence/kernelbench/archive/88df56b931a0ecafc3ac3b321275addaa078407c.tar.gz",
     sha256 = "9757a2534d0ae127a91b4d548fc5546a65b422b513e2674e5e16c46995f5fdc4",
     description = "A benchmark for evaluating kernel performance with ML workloads",
     homepage = "https://github.com/scalingintelligence/kernelbench",

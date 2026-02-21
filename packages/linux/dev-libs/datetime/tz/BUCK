@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # date (Howard Hinnant's date library) - A date and time library based on the C++11/14/17 <chrono> header
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "tz",
     version = "3.0.1",
-    src_uri = "https://github.com/HowardHinnant/date/archive/refs/tags/v3.0.1.tar.gz",
+    url = "https://github.com/HowardHinnant/date/archive/refs/tags/v3.0.1.tar.gz",
     sha256 = "7a390f200f0ccd207e8cff6757e04817c1a0aec3e327b006b7eb451c57ee3538",
     description = "A date and time library based on the C++11/14/17 <chrono> header",
     homepage = "https://github.com/HowardHinnant/date",
@@ -13,7 +14,7 @@ cmake_package(
     deps = [
         "//packages/linux/core/libcurl:curl",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TZ_LIB=ON",
         "-DUSE_SYSTEM_TZ_DB=ON",

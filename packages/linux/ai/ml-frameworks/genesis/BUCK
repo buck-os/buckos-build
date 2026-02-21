@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "genesis",
     version = "0.3.4",
-    src_uri = "https://github.com/genesis-embodied-ai/genesis/archive/refs/tags/v0.3.4.tar.gz",
+    url = "https://github.com/genesis-embodied-ai/genesis/archive/refs/tags/v0.3.4.tar.gz",
     sha256 = "3a8aafc5b105457f4fd48e35de78c6eb7757698325bd5a1ace507e2623cdf408",
     deps = [
         "//packages/linux/dev-libs/python:python3",

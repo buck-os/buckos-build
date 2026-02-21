@@ -1,14 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "structured_spdlog",
     version = "1.9.2",
-    src_uri = "https://github.com/bobhansen/structured_spdlog/archive/0cbd31e1507ec3b70b43a129a180842d52dc67d2.tar.gz",
+    url = "https://github.com/bobhansen/structured_spdlog/archive/0cbd31e1507ec3b70b43a129a180842d52dc67d2.tar.gz",
     sha256 = "891e7fc155abe9de45e860ec2f0082cde2ae644e22083f4b755bc7cbced1fd11",
     deps = [
         "//packages/linux/dev-libs/misc/fmt:fmt",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DSPDLOG_FMT_EXTERNAL=ON",
         "-DSPDLOG_BUILD_EXAMPLE=OFF",

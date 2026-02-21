@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "go_package")
+load("//defs:package.bzl", "package")
 
-go_package(
+package(
+    build_rule = "go",
     name = "vmware-vic",
     version = "1.5.2",
-    src_uri = "https://github.com/vmware/vic/archive/refs/tags/v1.5.2.tar.gz",
+    url = "https://github.com/vmware/vic/archive/refs/tags/v1.5.2.tar.gz",
     sha256 = "63be2839d8a3b2ef4e9e0221e334cead5c6ce26383d1d227e9bc20ed7d17aeda",
     bins = [
         "vic-machine-linux",

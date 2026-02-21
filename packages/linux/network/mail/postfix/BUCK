@@ -1,23 +1,21 @@
-load("//defs:package_defs.bzl", "simple_package")
+load("//defs:package.bzl", "package")
 
 # Postfix - Fast, easy to administer, secure mail server
 
 simple_package(
     name = "postfix",
     version = "3.8.5",
-    src_uri = "https://de.postfix.org/ftpmirror/official/postfix-3.8.5.tar.gz",
+    url = "https://de.postfix.org/ftpmirror/official/postfix-3.8.5.tar.gz",
     sha256 = "f3e827a2b2e410359ad25d31341970434ab07e36139f9a2ef93981b0ec564c85",
     description = "Fast, easy to administer, secure mail server",
     homepage = "https://www.postfix.org/",
     license = "IPL-1.0",
-    iuse = ["ssl", "sasl", "ldap", "mysql", "pgsql"],
-    use_defaults = ["ssl"],
     deps = [],
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "ldap": ["//packages/linux/system/security/auth/directory:openldap"],
-        "mysql": ["//packages/linux/databases/mysql:mysql"],
-        "pgsql": ["//packages/linux/databases/postgresql:postgresql"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "ldap": "//packages/linux/system/security/auth/directory:openldap",
+        "mysql": "//packages/linux/databases/mysql:mysql",
+        "pgsql": "//packages/linux/databases/postgresql:postgresql",
     },
     build_commands = [
         "make makefiles CCARGS='-DUSE_TLS -DUSE_SASL_AUTH' AUXLIBS='-lssl -lcrypto'",

@@ -1,28 +1,24 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # monit - Process supervisor and monitoring tool
 # USE flags: ssl, pam
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "monit",
     version = "5.34.3",
-    src_uri = "https://mmonit.com/monit/dist/monit-5.34.3.tar.gz",
+    url = "https://mmonit.com/monit/dist/monit-5.34.3.tar.gz",
     sha256 = "669d8b95ddec124d1444ba5264f67fdeae8e90e53b2929719f4750fc5ff3ba60",
-    signature_required = False,
     description = "Utility for monitoring and managing Unix systems",
     homepage = "https://mmonit.com/monit/",
     license = "GPL-3.0",
-    iuse = ["ssl", "pam"],
-    use_defaults = ["ssl"],
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "pam": ["//packages/linux/system/security/auth/pam:pam"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "pam": "//packages/linux/system/security/auth/pam:pam",
     },
     use_configure = {
-        "ssl": "--with-ssl-dir=/usr",
-        "-ssl": "--without-ssl",
-        "pam": "--with-pam",
-        "-pam": "--without-pam",
+        "pam": ("--with-pam", "--without-pam"),
+        "ssl": ("--with-ssl-dir=/usr", "--without-ssl"),
     },
     configure_args = [
         "--prefix=/usr",

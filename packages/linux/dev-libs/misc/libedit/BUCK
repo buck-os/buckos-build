@@ -1,15 +1,13 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libedit",
-    src_uri = "https://thrysoee.dk/editline/libedit-20230828-3.1.tar.gz",
+    url = "https://thrysoee.dk/editline/libedit-20230828-3.1.tar.gz",
 
     sha256 = "4ee8182b6e569290e7d1f44f0f78dac8716b35f656b76528f699c69c98814dad",
-    iuse = ["static-libs"],
     use_configure = {
-        "-static-libs": "--disable-static",
-        "static-libs": "--enable-static",
+        "static-libs": ("--enable-static", "--disable-static"),
     },
     version = "3.1.20230828",
     description = "BSD-licensed readline replacement",

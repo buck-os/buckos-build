@@ -1,10 +1,11 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # MATE - Traditional GNOME 2-style desktop
 # =============================================================================
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "mate-panel",
     bdepend = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
@@ -18,17 +19,13 @@ NOCONFIGURE=1 ./autogen.sh
         "--disable-gtk-doc",
         "--disable-gtk-doc-html",
     ],
-    src_uri = "https://pub.mate-desktop.org/releases/1.28/mate-panel-1.28.1.tar.xz",
+    url = "https://pub.mate-desktop.org/releases/1.28/mate-panel-1.28.1.tar.xz",
 
     sha256 = "5133c64f5969ae8eeebe6e8bba450dea792cb0be06d9ae1c36e8569d2f8524ba",
-    iuse = ["X", "introspection", "wayland"],
     use_configure = {
-        "-X": "--without-x",
-        "-introspection": "--disable-introspection",
-        "-wayland": "--disable-wayland",
-        "X": "--with-x",
-        "introspection": "--enable-introspection",
-        "wayland": "--enable-wayland",
+        "X": ("--with-x", "--without-x"),
+        "introspection": ("--enable-introspection", "--disable-introspection"),
+        "wayland": ("--enable-wayland", "--disable-wayland"),
     },
     version = "1.28.1",
     description = "MATE Panel",
@@ -40,7 +37,8 @@ NOCONFIGURE=1 ./autogen.sh
     visibility = ["PUBLIC"],
 )
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "marco",
     bdepend = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
@@ -54,7 +52,7 @@ NOCONFIGURE=1 ./autogen.sh
         "--disable-gtk-doc",
         "--disable-gtk-doc-html",
     ],
-    src_uri = "https://pub.mate-desktop.org/releases/1.28/marco-1.28.1.tar.xz",
+    url = "https://pub.mate-desktop.org/releases/1.28/marco-1.28.1.tar.xz",
 
     sha256 = "2496e5e40ee980cd6849493ac3e0f8fd0dec8b81c674da8d9ba19a577f0ac2e1",
     version = "1.28.1",

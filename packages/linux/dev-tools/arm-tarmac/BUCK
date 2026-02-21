@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # Arm Tarmac Trace Utilities - Tools for analyzing Tarmac trace files
@@ -13,12 +13,12 @@ load("//defs:package_defs.bzl", "download_source", "autotools_package")
 #   - tarmac-profile: Generate per-function profiling reports
 #   - tarmac-vcd: Convert traces to IEEE 1364 Value Change Dump format
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "arm-tarmac",
     version = "0.0.1",
-    src_uri = "https://github.com/ARM-software/tarmac-trace-utilities/archive/e9b24783c2be2a47aaf5f85e6bbd54f1fa8e7122.tar.gz",
+    url = "https://github.com/ARM-software/tarmac-trace-utilities/archive/e9b24783c2be2a47aaf5f85e6bbd54f1fa8e7122.tar.gz",
     sha256 = "ec238d3e61ee8c1e445e274890b094fbf5f0ba02c6d0bb024d489f2bfb630728",
-    signature_required = False,
     description = "Arm Tarmac Trace Utilities - tools to analyze trace files in Tarmac format",
     homepage = "https://github.com/ARM-software/tarmac-trace-utilities",
     license = "Apache-2.0",

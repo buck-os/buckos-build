@@ -1,31 +1,17 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "grep",
-    src_uri = "https://mirrors.kernel.org/gnu/grep/grep-3.11.tar.xz",
+    url = "https://mirrors.kernel.org/gnu/grep/grep-3.11.tar.xz",
 
     sha256 = "1db2aedde89d0dea42b16d9528f894c8d15dae4e190b59aecc78f5a951276eab",
-
-    signature_sha256 = "89ec23ffd59b68822732dc8204fc89883c3af30a90ae390feb94346d9d09a589",
-    iuse = [
-        "egrep-fgrep",
-        "nls",
-        "pcre",
-        "static",
-        "test-full",
-    ],
     use_configure = {
-        "-egrep-fgrep": "--disable-egrep-fgrep",
-        "-nls": "--disable-nls",
-        "-pcre": "--disable-pcre",
-        "-static": "--disable-static",
-        "-test-full": "--disable-test-full",
-        "egrep-fgrep": "--enable-egrep-fgrep",
-        "nls": "--enable-nls",
-        "pcre": "--enable-pcre",
-        "static": "--enable-static",
-        "test-full": "--enable-test-full",
+        "egrep-fgrep": ("--enable-egrep-fgrep", "--disable-egrep-fgrep"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "pcre": ("--enable-pcre", "--disable-pcre"),
+        "static": ("--enable-static", "--disable-static"),
+        "test-full": ("--enable-test-full", "--disable-test-full"),
     },
     version = "3.11",
     description = "GNU grep searches for patterns in files",

@@ -1,15 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "ethos-u-core-driver",
     version = "23.02",
     # Note: mlplatform.org moved to GitLab
-    src_uri = "https://gitlab.arm.com/artificial-intelligence/ethos-u/ethos-u-core-driver/-/archive/23.02/ethos-u-core-driver-23.02.tar.gz",
+    url = "https://gitlab.arm.com/artificial-intelligence/ethos-u/ethos-u-core-driver/-/archive/23.02/ethos-u-core-driver-23.02.tar.gz",
     sha256 = "baa6a40212eb3bbe5b471c5da0856ca350b8a418296ddcd07c8d136c4029024c",
     description = "Arm Ethos-U NPU core driver",
     homepage = "https://gitlab.arm.com/artificial-intelligence/ethos-u/ethos-u-core-driver",
     license = "Apache-2.0",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DETHOSU_LOG_SEVERITY=warning",
         "-DETHOSU_TARGET_NPU_CONFIG=ethos-u55-128",

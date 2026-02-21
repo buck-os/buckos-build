@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "smol-v",
     version = "2024.01",
-    src_uri = "https://github.com/aras-p/smol-v/archive/refs/heads/master.tar.gz",
+    url = "https://github.com/aras-p/smol-v/archive/refs/heads/master.tar.gz",
     sha256 = "356b607211ebb8e2ff2ce0f0a295eabd1e40d8ab3717408b889ebe3aed39286a",
     description = "SPIR-V compression library for smaller Vulkan shaders",
     homepage = "https://github.com/aras-p/smol-v",
@@ -39,7 +40,7 @@ install(TARGETS smol-v
 install(FILES source/smolv.h DESTINATION include)
 EOF
     """,
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],
     labels = ["buckos:hw:vulkan"],

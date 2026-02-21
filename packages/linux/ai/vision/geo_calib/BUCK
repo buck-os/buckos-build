@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "geo_calib",
     version = "1.0",
-    src_uri = "https://github.com/cvg/GeoCalib/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/cvg/GeoCalib/archive/refs/heads/main.tar.gz",
     sha256 = "ca1f94d321a618fc7d2a76ae1bbb5b580643848aac542acb3928b2388eecef1f",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

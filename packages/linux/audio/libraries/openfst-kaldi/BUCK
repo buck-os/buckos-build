@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "openfst-kaldi",
     version = "1.6.7",
-    src_uri = "https://www.openfst.org/twiki/pub/FST/FstDownload/openfst-1.6.7.tar.gz",
+    url = "https://www.openfst.org/twiki/pub/FST/FstDownload/openfst-1.6.7.tar.gz",
     sha256 = "e21a486d827cde6a592c8e91721e4540ad01a5ae35a60423cf17be4d716017f7",
     configure_args = [
         "--enable-static",

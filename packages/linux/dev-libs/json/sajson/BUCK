@@ -1,15 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "sajson",
     version = "8e893214",
-    src_uri = "https://github.com/chadaustin/sajson/archive/8e8932148a2e4dcd1209a0438ec84acedf165077.tar.gz",
+    url = "https://github.com/chadaustin/sajson/archive/8e8932148a2e4dcd1209a0438ec84acedf165077.tar.gz",
     sha256 = "4371abb2e91151c585882baa8209c7f983f253ca4d17343e29315551b72dd23a",
     description = "Lightweight, extremely high-performance JSON parser for C++11",
     homepage = "https://github.com/chadaustin/sajson",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DSAJSON_BUILD_TESTS=OFF",
         "-DSAJSON_BUILD_EXAMPLES=OFF",

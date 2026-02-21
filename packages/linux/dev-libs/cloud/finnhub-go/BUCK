@@ -1,11 +1,11 @@
-load("//defs:package_defs.bzl", "go_package")
+load("//defs:package.bzl", "package")
 
-go_package(
+package(
+    build_rule = "go",
     name = "finnhub-go",
     version = "2.0.17",
-    src_uri = "https://github.com/Finnhub-Stock-API/finnhub-go/archive/v2.0.17.tar.gz",
+    url = "https://github.com/Finnhub-Stock-API/finnhub-go/archive/v2.0.17.tar.gz",
     sha256 = "beaffe92ae96a6aafc540d95c98e3f4866121c45b6162da513c64ed59e9c2223",
-    signature_required = False,
     description = "Go client for Finnhub Stock API",
     homepage = "https://github.com/Finnhub-Stock-API/finnhub-go",
     license = "Apache-2.0",

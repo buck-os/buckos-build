@@ -1,14 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "motion-search",
     version = "4dddefdb",
-    src_uri = "https://github.com/facebookresearch/motion-search/archive/4dddefdb7aa0c1555b8432f935498da71bf44c6d.tar.gz",
+    url = "https://github.com/facebookresearch/motion-search/archive/4dddefdb7aa0c1555b8432f935498da71bf44c6d.tar.gz",
     sha256 = "4c6c0921a510e3e4bc3b43d67d777487be4af6d6c9ebe5b9c822fc59886de25f",
     description = "Compute motion search for video complexity estimation",
     homepage = "https://github.com/facebookresearch/motion-search",
     license = "BSD-3-Clause",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
     ],

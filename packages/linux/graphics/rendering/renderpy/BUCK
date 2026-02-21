@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "renderpy",
     version = "0.0.1",
-    src_uri = "https://github.com/liu115/renderpy/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/liu115/renderpy/archive/refs/heads/main.tar.gz",
     sha256 = "4c0531e23c6db42563ffb2a4995df33f411ef15f813c8a2d09141a4e8106d23a",
     deps = [
         "//packages/linux/graphics/opencv:opencv",

@@ -1,17 +1,16 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # Qt - Cross-platform application framework
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "qt",
     version = "6.6.2",
-    src_uri = "https://mirror.buckos.org/q/qt-everywhere-src-6.6.2.tar.xz",
+    url = "https://mirror.buckos.org/q/qt-everywhere-src-6.6.2.tar.xz",
     sha256 = "3c1e42b3073ade1f7adbf06863c01e2c59521b7cc2349df2f74ecd7ebfcb922d",
     description = "Cross-platform application development framework",
     homepage = "https://www.qt.io/",
     license = "LGPL-3.0 GPL-3.0",
-    iuse = ["x11", "wayland", "opengl", "vulkan", "cups", "dbus"],
-    use_defaults = ["x11", "opengl", "dbus"],
     deps = [
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/crypto/openssl:openssl",
@@ -30,29 +29,23 @@ cmake_package(
         "wayland": [
             "//packages/linux/graphics/wayland/wayland:wayland",
         ],
-        "vulkan": ["//packages/linux/graphics/vulkan/vulkan-loader:vulkan-loader"],
-        "cups": ["//packages/linux/network/printing/cups:cups"],
-        "dbus": ["//packages/linux/system/libs/dbus:dbus"],
+        "vulkan": "//packages/linux/graphics/vulkan/vulkan-loader:vulkan-loader",
+        "cups": "//packages/linux/network/printing/cups:cups",
+        "dbus": "//packages/linux/system/libs/dbus:dbus",
     },
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DQT_BUILD_TESTS=OFF",
         "-DQT_BUILD_EXAMPLES=OFF",
     ],
-    use_cmake = {
-        "x11": "-DFEATURE_xcb=ON",
-        "-x11": "-DFEATURE_xcb=OFF",
-        "wayland": "-DFEATURE_wayland=ON",
-        "-wayland": "-DFEATURE_wayland=OFF",
-        "opengl": "-DFEATURE_opengl=ON",
-        "-opengl": "-DFEATURE_opengl=OFF",
-        "vulkan": "-DFEATURE_vulkan=ON",
-        "-vulkan": "-DFEATURE_vulkan=OFF",
-        "cups": "-DFEATURE_cups=ON",
-        "-cups": "-DFEATURE_cups=OFF",
-        "dbus": "-DFEATURE_dbus=ON",
-        "-dbus": "-DFEATURE_dbus=OFF",
+    use_configure = {
+        "cups": ("-DFEATURE_cups=ON", "-DFEATURE_cups=OFF"),
+        "dbus": ("-DFEATURE_dbus=ON", "-DFEATURE_dbus=OFF"),
+        "opengl": ("-DFEATURE_opengl=ON", "-DFEATURE_opengl=OFF"),
+        "vulkan": ("-DFEATURE_vulkan=ON", "-DFEATURE_vulkan=OFF"),
+        "wayland": ("-DFEATURE_wayland=ON", "-DFEATURE_wayland=OFF"),
+        "x11": ("-DFEATURE_xcb=ON", "-DFEATURE_xcb=OFF"),
     },
     visibility = ["PUBLIC"],
 )

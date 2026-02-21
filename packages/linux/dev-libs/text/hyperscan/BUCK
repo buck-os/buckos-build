@@ -1,34 +1,31 @@
-load("//defs:package_defs.bzl", "cmake_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # Hyperscan - High-performance regular expression matching library
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "hyperscan",
     version = "5.4.2",
-    src_uri = "https://github.com/intel/hyperscan/archive/refs/tags/v5.4.2.tar.gz",
+    url = "https://github.com/intel/hyperscan/archive/refs/tags/v5.4.2.tar.gz",
     sha256 = "32b0f24b3113bbc46b6bfaa05cf7cf45840b6b59333d078cc1f624e4c40b2b99",
     description = "High-performance multiple regex matching library",
     homepage = "https://www.hyperscan.io/",
     license = "BSD-3-Clause",
-    iuse = ["static-libs", "debug"],
-    use_defaults = [],
     deps = [
         "//packages/linux/dev-libs/boost:boost",
     ],
     bdepend = [
         "//packages/linux/dev-libs/boost:boost",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_EXAMPLES=OFF",
         "-DBUILD_BENCHMARKS=OFF",
     ],
-    use_cmake = {
-        "static-libs": "-DBUILD_STATIC_LIBS=ON",
-        "-static-libs": "-DBUILD_STATIC_LIBS=OFF",
+    use_configure = {
         "debug": "-DCMAKE_BUILD_TYPE=Debug",
+        "static-libs": ("-DBUILD_STATIC_LIBS=ON", "-DBUILD_STATIC_LIBS=OFF"),
     },
     visibility = ["PUBLIC"],
 )

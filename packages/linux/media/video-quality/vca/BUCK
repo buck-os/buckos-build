@@ -1,14 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "vca",
     version = "stable",
-    src_uri = "https://github.com/cd-athena/vca/archive/refs/heads/master.tar.gz",
+    url = "https://github.com/cd-athena/vca/archive/refs/heads/master.tar.gz",
     sha256 = "5911e70388b7ecc291f34a5122a1f817173fb68a39a494691381cf5a8bbe2fb7",
     description = "Video Complexity Analyzer",
     homepage = "https://github.com/cd-athena/vca",
     license = "GPL-3.0",
-    cmake_args = [
+    configure_args = [
         "-DENABLE_NASM=ON",
         "-DENABLE_PERFORMANCE_TEST=OFF",
         "-DENABLE_TEST=OFF",

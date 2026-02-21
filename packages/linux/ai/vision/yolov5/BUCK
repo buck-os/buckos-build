@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "yolov5",
     version = "7.0.11",
-    src_uri = "https://github.com/fcakyon/yolov5-pip/archive/refs/tags/7.0.11.tar.gz",
+    url = "https://github.com/fcakyon/yolov5-pip/archive/refs/tags/7.0.11.tar.gz",
     sha256 = "c64f2a6710eefcc33910bbf0b94289f8a7ac16747863d0237c7e605220eafb48",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

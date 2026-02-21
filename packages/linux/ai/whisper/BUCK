@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "whisper",
     version = "20231117",
-    src_uri = "https://github.com/openai/whisper/archive/refs/tags/v20231117.tar.gz",
+    url = "https://github.com/openai/whisper/archive/refs/tags/v20231117.tar.gz",
     sha256 = "b0f8b8d3b485fad2c423ba7f8b95eded067aad11ed3165828aad819d168cac06",
     deps = [
         "//packages/linux/dev-libs/python/numba:numba",

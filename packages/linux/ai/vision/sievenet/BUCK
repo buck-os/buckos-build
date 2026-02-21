@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "sievenet",
     version = "a5e2263",
-    src_uri = "https://github.com/levindabhi/SieveNet/archive/a5e2263acf28b52a551d4e139328957cf454e7e8.tar.gz",
+    url = "https://github.com/levindabhi/SieveNet/archive/a5e2263acf28b52a551d4e139328957cf454e7e8.tar.gz",
     sha256 = "3bae6aad4e2f7d92658459a28cf197393b569761f3ae85dae9d74e39ff0b3365",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

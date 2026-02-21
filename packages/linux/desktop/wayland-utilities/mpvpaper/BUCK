@@ -1,15 +1,16 @@
-load("//defs:package_defs.bzl", "download_source", "meson_package")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "mpvpaper",
-    src_uri = "https://github.com/GhostNaN/mpvpaper/archive/1.6.tar.gz",
+    url = "https://github.com/GhostNaN/mpvpaper/archive/1.6.tar.gz",
 
     sha256 = "2a66b2dcabc864c544de2344fd4d8ce23984e4540c4b0d4befae2dc83393f090",
     version = "1.6",
     description = "A video wallpaper program for wlroots compositors",
     homepage = "https://github.com/GhostNaN/mpvpaper",
     license = "GPL-3.0",
-    meson_args = [],
+    configure_args = [],
     deps = [
         "//packages/linux/system/libs/utility/libffi:libffi",
         "//packages/linux/graphics/rendering/wayland:wayland",
