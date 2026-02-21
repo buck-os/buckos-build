@@ -5,6 +5,7 @@ Runs meson setup with specified source dir, build dir, and arguments.
 """
 
 import argparse
+import glob as _glob
 import os
 import subprocess
 import sys
@@ -106,6 +107,21 @@ def main():
         prepend = ":".join(os.path.abspath(p) for p in args.path_prepend if os.path.isdir(p))
         if prepend:
             env["PATH"] = prepend + ":" + env["PATH"]
+
+        # Auto-detect Python site-packages from dep prefixes so build-time
+        # Python modules (e.g. mako for mesa) are found without manual
+        # PYTHONPATH wiring.  --path-prepend dirs are {prefix}/usr/bin;
+        # derive {prefix}/usr/lib/python*/site-packages from them.
+        python_paths = []
+        for bin_dir in args.path_prepend:
+            usr_dir = os.path.dirname(os.path.abspath(bin_dir))
+            for sp in _glob.glob(os.path.join(usr_dir, "lib", "python*", "site-packages")):
+                if os.path.isdir(sp):
+                    python_paths.append(sp)
+        if python_paths:
+            existing = env.get("PYTHONPATH", "")
+            env["PYTHONPATH"] = ":".join(python_paths) + (":" + existing if existing else "")
+
     for entry in args.extra_env:
         key, _, value = entry.partition("=")
         if key:
