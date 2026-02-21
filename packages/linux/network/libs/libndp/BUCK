@@ -11,12 +11,10 @@ package(
     description = "Library for Neighbor Discovery Protocol",
     homepage = "https://github.com/jpirko/libndp",
     license = "LGPL-2.1",
-    # libndp uses autogen.sh, needs autotools to generate configure
-    pre_configure = """
-if [ ! -f configure ]; then
-    ./autogen.sh
-fi
-""",
+    pre_configure_cmds = [
+        # Source ships without configure — generate it via autoreconf.
+        "autoreconf -fi",
+    ],
     configure_args = [
         "--disable-static",
     ],
