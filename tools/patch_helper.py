@@ -21,14 +21,16 @@ def main():
                         help="Patch file to apply (repeatable, applied in order)")
     parser.add_argument("--strip", type=int, default=1,
                         help="Strip N leading path components from patch paths (default: 1)")
+    parser.add_argument("--cmd", action="append", dest="cmds", default=[],
+                        help="Shell command to run in source dir after patches (repeatable)")
     args = parser.parse_args()
 
     if not os.path.isdir(args.source_dir):
         print(f"error: source directory not found: {args.source_dir}", file=sys.stderr)
         sys.exit(1)
 
-    if not args.patches:
-        print(f"error: no patches specified", file=sys.stderr)
+    if not args.patches and not args.cmds:
+        print(f"error: no patches or commands specified", file=sys.stderr)
         sys.exit(1)
 
     # Copy source to output
@@ -57,6 +59,28 @@ def main():
                 print(result.stderr, file=sys.stderr)
             sys.exit(1)
         print(f"applied: {os.path.basename(patch_file)}")
+
+    # Run shell commands in the output directory
+    # Set S to the output dir for compatibility with ebuild-style src_prepare scripts
+    cmd_env = os.environ.copy()
+    cmd_env["S"] = os.path.abspath(args.output_dir)
+    for shell_cmd in args.cmds:
+        result = subprocess.run(
+            ["bash", "-e", "-c", shell_cmd],
+            cwd=args.output_dir,
+            env=cmd_env,
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            print(f"error: command failed: {shell_cmd}", file=sys.stderr)
+            if result.stdout:
+                print(result.stdout, file=sys.stderr)
+            if result.stderr:
+                print(result.stderr, file=sys.stderr)
+            sys.exit(1)
+        if result.stdout:
+            print(result.stdout, end="")
 
 
 if __name__ == "__main__":
