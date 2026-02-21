@@ -68,6 +68,9 @@ def _src_configure(ctx, source):
     if ctx.attrs.skip_configure:
         cmd.add("--skip-configure")
     else:
+        # Default prefix for FHS layout
+        cmd.add("--configure-arg=--prefix=/usr")
+
         # Configure arguments (use = syntax so argparse handles --prefix=... values)
         for arg in ctx.attrs.configure_args:
             cmd.add(cmd_args("--configure-arg=", arg, delimiter = ""))
