@@ -106,9 +106,11 @@ def _src_compile(ctx, configured, source):
     cmd.add("--output-dir", output.as_output())
     cmd.add("--build-system", "ninja")
 
-    # Ensure source dir is available — cmake out-of-tree builds reference
-    # it in build.ninja for compilation commands.
+    # Ensure source dir and dep artifacts are available — cmake
+    # out-of-tree builds reference them in build.ninja.
     cmd.add(cmd_args(hidden = source))
+    for dep in ctx.attrs.deps:
+        cmd.add(cmd_args(hidden = dep[DefaultInfo].default_outputs))
 
     # Inject toolchain CC/CXX/AR
     for env_arg in toolchain_env_args(ctx):
