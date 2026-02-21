@@ -276,6 +276,9 @@ cmake -S "$S" -B "$S/build" \\
     -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \\
     -DWITH_X11=OFF \\
     -DBUILD_PYTHON_BINDINGS=OFF \\
+    -DCMAKE_DISABLE_FIND_PACKAGE_Python3=ON \\
+    -DCMAKE_DISABLE_FIND_PACKAGE_Shiboken6=ON \\
+    -DCMAKE_DISABLE_FIND_PACKAGE_PySide6=ON \\
     $CMAKE_PREFIX_PATH_ARG \\
     $EGL_GLES_ARGS \\
     ${CMAKE_EXTRA_ARGS:-}
@@ -550,9 +553,13 @@ package(
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
         "-DBUILD_DESIGNERPLUGIN=OFF",
+        "-DCMAKE_DISABLE_FIND_PACKAGE_Python3=ON",
+        "-DBUILD_PYTHON_BINDINGS=OFF",
     ],
     src_prepare = """
-sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true""",
+sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true
+# Disable Python/Shiboken bindings - not needed for cross-compilation
+sed -i '/find_package.*Shiboken/d; /find_package.*PySide/d' CMakeLists.txt || true""",
     src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
     src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
