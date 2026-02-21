@@ -36,7 +36,7 @@ def main():
     os.environ["RUSTC_WRAPPER"] = ""
 
     # Pin timestamps for reproducible builds.
-    os.environ.setdefault("SOURCE_DATE_EPOCH", "0")
+    os.environ.setdefault("SOURCE_DATE_EPOCH", "315576000")
 
     build_tree = os.path.abspath(args.build_tree)
     output_dir = os.path.abspath(args.output_dir)

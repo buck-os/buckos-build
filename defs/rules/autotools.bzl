@@ -19,7 +19,7 @@ inputs haven't changed.
 """
 
 load("//defs:providers.bzl", "PackageInfo")
-load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_env_args")
+load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_env_args", "toolchain_extra_cflags", "toolchain_extra_ldflags")
 
 # ── Phase helpers ─────────────────────────────────────────────────────
 
@@ -75,6 +75,12 @@ def _src_configure(ctx, source):
         for arg in ctx.attrs.configure_args:
             cmd.add(cmd_args("--configure-arg=", arg, delimiter = ""))
 
+        # Toolchain-injected CFLAGS / LDFLAGS (e.g. -fuse-ld=mold)
+        for flag in toolchain_extra_cflags(ctx):
+            cmd.add(cmd_args("--cflags=", flag, delimiter = ""))
+        for flag in toolchain_extra_ldflags(ctx):
+            cmd.add(cmd_args("--ldflags=", flag, delimiter = ""))
+
         # Extra CFLAGS / LDFLAGS from this package's attrs
         for flag in ctx.attrs.extra_cflags:
             cmd.add(cmd_args("--cflags=", flag, delimiter = ""))
@@ -122,8 +128,8 @@ def _dep_env_args(ctx):
     pkg_config_paths = []
     path_dirs = []
     cppflags = []
-    cflags = list(ctx.attrs.extra_cflags)
-    ldflags = list(ctx.attrs.extra_ldflags)
+    cflags = list(toolchain_extra_cflags(ctx)) + list(ctx.attrs.extra_cflags)
+    ldflags = list(toolchain_extra_ldflags(ctx)) + list(ctx.attrs.extra_ldflags)
     libs = []
     for dep in ctx.attrs.deps:
         if PackageInfo in dep:

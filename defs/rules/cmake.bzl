@@ -13,7 +13,7 @@ inputs haven't changed.
 """
 
 load("//defs:providers.bzl", "PackageInfo")
-load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_env_args")
+load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_env_args", "toolchain_extra_cflags", "toolchain_extra_ldflags")
 
 # ── Phase helpers ─────────────────────────────────────────────────────
 
@@ -62,8 +62,8 @@ def _cmake_configure(ctx, source):
         cmd.add(cmd_args("--cmake-define=", define, delimiter = ""))
 
     # Extra CFLAGS / LDFLAGS — pass as CMAKE_C_FLAGS / CMAKE_EXE_LINKER_FLAGS
-    cflags = list(ctx.attrs.extra_cflags)
-    ldflags = list(ctx.attrs.extra_ldflags)
+    cflags = list(toolchain_extra_cflags(ctx)) + list(ctx.attrs.extra_cflags)
+    ldflags = list(toolchain_extra_ldflags(ctx)) + list(ctx.attrs.extra_ldflags)
 
     # Propagate flags, pkg-config paths, and cmake prefix paths from dependencies
     pkg_config_paths = []

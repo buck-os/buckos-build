@@ -42,6 +42,8 @@ BuildToolchainInfo = provider(fields = [
     "pkg_config",       # RunInfo
     "target_triple",    # str
     "sysroot",          # artifact | None: buckos-built sysroot (musl/glibc headers + libs)
+    "extra_cflags",     # list[str]: toolchain-injected CFLAGS (e.g. hardening flags)
+    "extra_ldflags",    # list[str]: toolchain-injected LDFLAGS (e.g. -fuse-ld=mold)
 ])
 
 BootstrapStageInfo = provider(fields = [

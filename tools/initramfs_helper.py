@@ -19,7 +19,7 @@ def main():
     args = parser.parse_args()
 
     # Pin timestamps for reproducible builds.
-    os.environ.setdefault("SOURCE_DATE_EPOCH", "0")
+    os.environ.setdefault("SOURCE_DATE_EPOCH", "315576000")
 
     if not os.path.isdir(args.root_dir):
         print(f"error: root directory not found: {args.root_dir}", file=sys.stderr)
@@ -29,7 +29,7 @@ def main():
     os.makedirs(output_dir, exist_ok=True)
 
     # Normalize file timestamps in root dir so cpio embeds deterministic mtimes.
-    epoch = int(os.environ.get("SOURCE_DATE_EPOCH", "0"))
+    epoch = int(os.environ.get("SOURCE_DATE_EPOCH", "315576000"))
     stamp = (epoch, epoch)
     for dirpath, _dirnames, filenames in os.walk(args.root_dir):
         for fname in filenames:
@@ -67,7 +67,7 @@ def main():
         print(f"error: cpio exited with code {cpio_proc.returncode}", file=sys.stderr)
         sys.exit(1)
 
-    epoch = int(os.environ.get("SOURCE_DATE_EPOCH", "0"))
+    epoch = int(os.environ.get("SOURCE_DATE_EPOCH", "315576000"))
     with gzip.GzipFile(args.output, "wb", mtime=epoch) as f:
         f.write(cpio_data)
 

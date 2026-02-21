@@ -1400,7 +1400,7 @@ if [ -n "$PHASES_CONTENT" ]; then
         echo 'export CCACHE_DISABLE=1'
         echo 'export RUSTC_WRAPPER=""'
         echo 'export CARGO_BUILD_RUSTC_WRAPPER=""'
-        echo 'export SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-0}"'
+        echo 'export SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-315576000}"'
         [ -n "$TOOLCHAIN_PATH" ] && echo "export TOOLCHAIN_PATH=\"$TOOLCHAIN_PATH\""
         [ -n "$DEP_PATH" ] && echo "export DEP_PATH=\"$DEP_PATH\""
         # Export phase script paths (needed for bootstrap builds that use env -i)

@@ -49,3 +49,11 @@ def toolchain_env_args(ctx):
     result.append(cmd_args("CXX=", cmd_args(tc.cxx.args, delimiter = " "), delimiter = ""))
     result.append(cmd_args("AR=", cmd_args(tc.ar.args, delimiter = " "), delimiter = ""))
     return result
+
+def toolchain_extra_cflags(ctx):
+    """Return toolchain-injected CFLAGS (e.g. hardening flags)."""
+    return ctx.attrs._toolchain[BuildToolchainInfo].extra_cflags
+
+def toolchain_extra_ldflags(ctx):
+    """Return toolchain-injected LDFLAGS (e.g. -fuse-ld=mold)."""
+    return ctx.attrs._toolchain[BuildToolchainInfo].extra_ldflags

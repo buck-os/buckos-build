@@ -13,7 +13,7 @@ inputs haven't changed.
 """
 
 load("//defs:providers.bzl", "PackageInfo")
-load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_env_args")
+load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_env_args", "toolchain_extra_cflags", "toolchain_extra_ldflags")
 
 # ── Phase helpers ─────────────────────────────────────────────────────
 
@@ -65,8 +65,8 @@ def _meson_setup(ctx, source):
         cmd.add(cmd_args("--meson-define=", define, delimiter = ""))
 
     # Extra CFLAGS / LDFLAGS — pass as environment-style flags via meson args
-    cflags = list(ctx.attrs.extra_cflags)
-    ldflags = list(ctx.attrs.extra_ldflags)
+    cflags = list(toolchain_extra_cflags(ctx)) + list(ctx.attrs.extra_cflags)
+    ldflags = list(toolchain_extra_ldflags(ctx)) + list(ctx.attrs.extra_ldflags)
 
     # Propagate flags and pkg-config paths from dependencies.
     # Note: dep libraries (-l flags) are NOT passed here — meson discovers

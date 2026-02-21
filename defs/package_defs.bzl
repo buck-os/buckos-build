@@ -1516,7 +1516,7 @@ export RUSTC_WRAPPER=""
 # Pin timestamps for reproducible builds.  Many build systems embed
 # __DATE__/__TIME__ or query the system clock.  SOURCE_DATE_EPOCH is
 # the standard mechanism to override this.
-export SOURCE_DATE_EPOCH="${{SOURCE_DATE_EPOCH:-0}}"
+export SOURCE_DATE_EPOCH="${{SOURCE_DATE_EPOCH:-315576000}}"
 
 # Ensure CC/CXX are set to proper compiler names
 # This handles ccache/sccache setups where CC might be inherited as just the wrapper name
@@ -3154,7 +3154,7 @@ set -e
 # Deterministic build environment — prevent ccache interference and
 # pin timestamps so identical inputs always produce identical ISOs.
 export CCACHE_DISABLE=1
-export SOURCE_DATE_EPOCH="${{SOURCE_DATE_EPOCH:-0}}"
+export SOURCE_DATE_EPOCH="${{SOURCE_DATE_EPOCH:-315576000}}"
 
 ISO_OUT="$1"
 KERNEL_SRC="$2"
