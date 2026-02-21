@@ -273,10 +273,11 @@ def _should_use_host_toolchain():
         return False
 
     # Auto-detect external monorepo integration
-    # If buckos cell is explicitly defined, we're imported into another project
-    # In standalone mode, there's no "buckos" cell - it's just the root
+    # If buckos cell points to a subdirectory (not "."), we're imported into
+    # another project.  "buckos = ." means this IS the buckos project
+    # (standalone mode), not that it's imported.
     buckos_cell = read_config("cells", "buckos", "")
-    if buckos_cell:
+    if buckos_cell and buckos_cell != ".":
         return True
 
     # Default: use bootstrap toolchain (standalone mode)

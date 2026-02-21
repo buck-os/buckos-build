@@ -85,6 +85,8 @@ def main():
                         help="Extra environment variable KEY=VALUE (repeatable)")
     parser.add_argument("--prefix-path", action="append", dest="prefix_paths", default=[],
                         help="Directory to add to CMAKE_PREFIX_PATH (repeatable)")
+    parser.add_argument("--path-prepend", action="append", dest="path_prepend", default=[],
+                        help="Directory to prepend to PATH (repeatable, resolved to absolute)")
     args = parser.parse_args()
 
     if not os.path.isdir(args.source_dir):
@@ -108,6 +110,10 @@ def main():
         key, _, value = entry.partition("=")
         if key:
             env[key] = _resolve_env_paths(value)
+    if args.path_prepend:
+        prepend = ":".join(os.path.abspath(p) for p in args.path_prepend if os.path.isdir(p))
+        if prepend:
+            env["PATH"] = prepend + ":" + env.get("PATH", "")
     if args.cc:
         env["CC"] = _resolve_env_paths(args.cc)
     if args.cxx:
