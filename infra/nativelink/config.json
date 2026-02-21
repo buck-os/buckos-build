@@ -1,6 +1,7 @@
 {
-  "stores": {
-    "CAS_MAIN": {
+  "stores": [
+    {
+      "name": "CAS_MAIN",
       "filesystem": {
         "content_path": "/data/cas/content",
         "temp_path": "/data/cas/tmp",
@@ -9,7 +10,8 @@
         }
       }
     },
-    "AC_MAIN": {
+    {
+      "name": "AC_MAIN",
       "filesystem": {
         "content_path": "/data/ac/content",
         "temp_path": "/data/ac/tmp",
@@ -18,7 +20,7 @@
         }
       }
     }
-  },
+  ],
   "servers": [
     {
       "listener": {
@@ -28,21 +30,21 @@
       },
       "services": {
         "cas": {
-          "main": {
+          "": {
             "cas_store": "CAS_MAIN"
           }
         },
         "ac": {
-          "main": {
+          "": {
             "ac_store": "AC_MAIN"
           }
         },
         "capabilities": {
-          "main": {}
+          "": {}
         },
         "bytestream": {
           "cas_stores": {
-            "main": "CAS_MAIN"
+            "": "CAS_MAIN"
           }
         }
       }

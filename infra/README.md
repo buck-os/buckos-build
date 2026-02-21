@@ -36,7 +36,7 @@ cas_address = grpc://localhost:50051
 tls = false
 
 [buck2]
-default_allow_cache_uploads = true
+default_allow_cache_upload = true
 ```
 
 ## Verify
