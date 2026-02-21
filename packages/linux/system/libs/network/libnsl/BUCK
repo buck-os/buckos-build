@@ -1,86 +1,23 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
-# libnsl - Public client interface for NIS(YP) in a IPv6 ready version
-ebuild_package(
+package(
+    build_rule = "autotools",
     name = "libnsl",
-    src_uri = "https://github.com/thkukuk/libnsl/releases/download/v2.0.1/libnsl-2.0.1.tar.xz",
-
+    url = "https://github.com/thkukuk/libnsl/releases/download/v2.0.1/libnsl-2.0.1.tar.xz",
     sha256 = "5c9e470b232a7acd3433491ac5221b4832f0c71318618dc6aa04dd05ffcd8fd9",
-    iuse = ["static-libs"],
-    use_configure = {
-        "-static-libs": "--disable-static",
-        "static-libs": "--enable-static",
-    },
     version = "2.0.1",
-    category = "system/libs/network",
-    slot = "0/3",
     description = "Public client interface for NIS(YP) in a IPv6 ready version",
     homepage = "https://github.com/thkukuk/libnsl",
     license = "LGPL-2.1+",
-
-    src_configure = '''
-# The framework sets PKG_CONFIG_LIBDIR to point to dependency pkgconfig directories
-# libtirpc provides a .pc file, so pkg-config will find it automatically
-echo "PKG_CONFIG_LIBDIR=$PKG_CONFIG_LIBDIR"
-
-# Verify libtirpc is available via pkg-config (from the buck dependency)
-if ! pkg-config --exists libtirpc; then
-    echo "ERROR: libtirpc not found via pkg-config"
-    echo "This means the libtirpc dependency may not have installed its .pc file"
-    pkg-config --debug --exists libtirpc 2>&1 | head -20 || true
-    exit 1
-fi
-
-echo "Found libtirpc via pkg-config:"
-echo "  CFLAGS: $(pkg-config --cflags libtirpc)"
-echo "  LIBS: $(pkg-config --libs libtirpc)"
-
-./configure \
-    --prefix=/usr \
-    --libdir=/usr/lib64 \
-    --build="${CBUILD:-$(gcc -dumpmachine)}" \
-    --host="${CHOST:-$(gcc -dumpmachine)}" \
-    --enable-shared \
-    --disable-static
-''',
-
-    src_compile = '''
-# Fix libtool .la files with absolute host paths (CLAUDE.md #8)
-# Create writable copies with cleared dependency_libs
-for la_file in $(find . -name "*.la" 2>/dev/null); do
-    if [ -f "$la_file" ] && [ ! -w "$la_file" ]; then
-        echo "Making $la_file writable and clearing dependency_libs"
-        chmod +w "$la_file"
-        sed -i "s/^dependency_libs=.*/dependency_libs=''/" "$la_file"
-    fi
-done
-
-# Also check dependency .la files
-IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
-for _dep in "${_DEP_ARRAY[@]}"; do
-    for la_file in $(find "$_dep" -name "*.la" 2>/dev/null); do
-        if [ -f "$la_file" ] && [ ! -w "$la_file" ]; then
-            echo "Copying and fixing $la_file"
-            # Create a local copy
-            local_la="$(basename "$la_file")"
-            cp "$la_file" "./$local_la"
-            chmod +w "./$local_la"
-            sed -i "s/^dependency_libs=.*/dependency_libs=''/" "./$local_la"
-            sed -i "s|^libdir=.*|libdir='$(dirname "$la_file")'|" "./$local_la"
-        fi
-    done
-done
-
-# Pass LDFLAGS on command line to override Makefile variables
-make -j${MAKEOPTS:-$(nproc)} LDFLAGS="${LDFLAGS:-}"
-''',
-
-    src_install = '''
-make DESTDIR="$DESTDIR" install
-find "$DESTDIR" -name '*.la' -delete
-''',
-
-    bdepend = [
+    configure_args = [
+        "--libdir=/usr/lib64",
+        "--enable-shared",
+        "--disable-static",
+    ],
+    post_install_cmds = [
+        "find . -name '*.la' -delete",
+    ],
+    deps = [
         "//packages/linux/system/libs/ipc/libtirpc:libtirpc",
     ],
     visibility = ["PUBLIC"],

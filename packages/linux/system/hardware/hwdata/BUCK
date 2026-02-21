@@ -4,17 +4,19 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "hwdata",
-    bdepend = [],
-    src_prepare = "",
-    src_configure = "./configure --prefix=/usr --sysconfdir=/etc --datadir=/usr/share",
     url = "https://github.com/vcrhonek/hwdata/archive/refs/tags/v0.391.tar.gz",
-
     sha256 = "620fe1c22922a3d1bd1062424e9cc6b954acea2f83b72ff0cb45144981cb1975",
     version = "0.391",
     description = "Hardware identification and configuration data",
     homepage = "https://github.com/vcrhonek/hwdata",
     license = "GPL-2+",
-    deps = [
+    configure_args = [
+        "--sysconfdir=/etc",
+        "--datadir=/usr/share",
     ],
+    # hwdata's Makefile regenerates Makefile.inc from configure when
+    # timestamps are stale (build_helper touches configure).  Touch it
+    # so make doesn't try to re-run ./configure and exit 1.
+    pre_build_cmds = ["touch Makefile.inc"],
     visibility = ["PUBLIC"],
 )
