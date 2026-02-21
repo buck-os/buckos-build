@@ -150,6 +150,14 @@ def _merge_private_registry(name, patches, configure_args, extra_cflags):
 
     return all_patches, all_configure_args, all_cflags
 
+def _split_flag_value(value):
+    """Split a space-separated flag string into a list, pass lists through."""
+    if type(value) == "list":
+        return value
+    if type(value) == "string" and " " in value:
+        return value.split(" ")
+    return value
+
 def _normalize_use_configure(use_configure):
     """Normalize old-style +/- USE configure to new tuple format.
 
@@ -159,7 +167,8 @@ def _normalize_use_configure(use_configure):
     New format:
         {"ssl": ("--with-ssl", "--without-ssl")}
 
-    Also handles the already-correct tuple format passthrough.
+    Also handles the already-correct tuple format passthrough,
+    and splits space-separated multi-flag strings into lists.
     """
     result = {}
     negative_keys = {}
@@ -168,15 +177,18 @@ def _normalize_use_configure(use_configure):
     for key, value in use_configure.items():
         if key.startswith("-"):
             flag = key[1:]  # strip the "-" prefix
-            negative_keys[flag] = value
+            negative_keys[flag] = _split_flag_value(value)
 
     # Second pass: build normalized dict
     for key, value in use_configure.items():
         if key.startswith("-"):
             continue  # skip, handled via positive key
         if type(value) == "tuple":
-            result[key] = value  # already normalized
+            on_val = _split_flag_value(value[0])
+            off_val = _split_flag_value(value[1]) if len(value) > 1 else None
+            result[key] = (on_val, off_val) if off_val != None else (on_val,)
         else:
+            value = _split_flag_value(value)
             off_arg = negative_keys.get(key)
             if off_arg:
                 result[key] = (value, off_arg)

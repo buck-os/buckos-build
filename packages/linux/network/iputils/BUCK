@@ -16,13 +16,11 @@ package(
         "tracepath": ("-DBUILD_TRACEPATH=true", "-DBUILD_TRACEPATH=false"),
     },
 
-    use_deps = {
-        "caps": "//packages/linux/system/libs/ipc/libcap:libcap",
-    },
-
     configure_args = [],
 
-    deps = [],
+    deps = [
+        "//packages/linux/system/libs/ipc/libcap:libcap",
+    ],
 
     description = "Network monitoring tools including ping",
     homepage = "https://github.com/iputils/iputils",

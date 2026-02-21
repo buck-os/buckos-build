@@ -44,12 +44,20 @@ def use_dep(flag, dep):
 def use_configure_arg(flag, on_arg, off_arg = None):
     """Conditional configure arg based on a USE flag.
 
-    Returns a list with the on_arg when enabled, [off_arg] or [] when disabled.
+    on_arg / off_arg can be a string or a list of strings.
+    Returns a list with the arg(s) when the condition matches.
     Concatenate with + into a configure_args list."""
+    on_list = on_arg if type(on_arg) == "list" else [on_arg]
+    if off_arg == None:
+        off_list = []
+    elif type(off_arg) == "list":
+        off_list = off_arg
+    else:
+        off_list = [off_arg]
     return select({
-        "//use/constraints:{}-on".format(flag): [on_arg],
-        "//use/constraints:{}-off".format(flag): [off_arg] if off_arg else [],
-        "DEFAULT": [off_arg] if off_arg else [],
+        "//use/constraints:{}-on".format(flag): on_list,
+        "//use/constraints:{}-off".format(flag): off_list,
+        "DEFAULT": off_list,
     })
 
 def use_feature(flag, feature):
