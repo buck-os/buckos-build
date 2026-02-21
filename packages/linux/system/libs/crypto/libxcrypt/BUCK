@@ -1,53 +1,26 @@
 load("//defs:package.bzl", "package")
 
-# libxcrypt - Extended crypt library
-# Provides libcrypt.so.2 for password hashing functions
-
 package(
     build_rule = "autotools",
     name = "libxcrypt",
-    # GitHub releases/download tarball includes pre-generated configure script
-    bdepend = [],
-    src_prepare = "",
     version = "4.4.38",
-    use_configure = {
-        "compat": ("--enable-compat", "--disable-compat"),
-        "headers-only": ("--enable-headers-only", "--disable-headers-only"),
-        "static-libs": ("--enable-static", "--disable-static"),
-        "system": ("--enable-system", "--disable-system"),
-    },
     url = "https://github.com/besser82/libxcrypt/releases/download/v4.4.38/libxcrypt-4.4.38.tar.xz",
     sha256 = "80304b9c306ea799327f01d9a7549bdb28317789182631f1b54f4511b4206dd6",
     description = "Extended crypt library for descrypt, md5crypt, bcrypt, and others",
     homepage = "https://github.com/besser82/libxcrypt",
     license = "LGPL-2.1+",
+    use_configure = {
+        "static-libs": ("--enable-static", "--disable-static"),
+    },
     configure_args = [
         "--disable-werror",
-        "--enable-obsolete-api=glibc",  # Enable compatibility with glibc's crypt API
-        "--enable-hashes=all",  # Enable all hash algorithms
+        "--disable-dependency-tracking",
+        "--enable-obsolete-api=glibc",
+        "--enable-hashes=all",
     ],
-    post_install = """
-# Remove man pages that conflict with sys-apps/man-pages
-rm -f "$DESTDIR/usr/share/man/man3/crypt.3" "$DESTDIR/usr/share/man/man3/crypt_r.3" 2>/dev/null || true
-
-# libxcrypt provides libcrypt.so.1, but we need to create libcrypt.so.2 symlink
-# for compatibility with packages built against glibc's libcrypt
-# The ABI is compatible for basic crypt functions
-if [ -f "$DESTDIR/usr/lib64/libcrypt.so.1" ]; then
-    cd "$DESTDIR/usr/lib64"
-    ln -sf libcrypt.so.1 libcrypt.so.2
-    echo "✓ Created libcrypt.so.2 -> libcrypt.so.1 compatibility symlink"
-elif [ -f "$DESTDIR/usr/lib/libcrypt.so.1" ]; then
-    cd "$DESTDIR/usr/lib"
-    ln -sf libcrypt.so.1 libcrypt.so.2
-    echo "✓ Created libcrypt.so.2 -> libcrypt.so.1 compatibility symlink"
-else
-    echo "ERROR: libcrypt.so.1 not found"
-    find "$DESTDIR" -name "libcrypt*"
-    exit 1
-fi
-
-echo "✓ libxcrypt installed successfully"
-""",
+    post_install_cmds = [
+        # Create libcrypt.so.2 symlink for glibc compat
+        "cd usr/lib64 2>/dev/null && ln -sf libcrypt.so.1 libcrypt.so.2 || cd usr/lib && ln -sf libcrypt.so.1 libcrypt.so.2 || true",
+    ],
     visibility = ["PUBLIC"],
 )
