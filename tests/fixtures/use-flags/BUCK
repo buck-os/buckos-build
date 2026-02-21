@@ -11,6 +11,9 @@
 #   1. use_defaults
 #   2. [use] section
 #   3. [use.PKGNAME] section
+#
+# These fixtures use a local dummy source (export_file) so that
+# graph-level analysis and buck2 test work without network access.
 
 load("//defs:package_defs.bzl",
     "autotools_package",
@@ -19,13 +22,26 @@ load("//defs:package_defs.bzl",
     "cargo_package",
     "go_package",
 )
+load("//defs/rules:source.bzl", "extract_source")
+
+# Local dummy source archive shared by all fixtures
+export_file(
+    name = "dummy-archive",
+    src = "dummy-src.tar.gz",
+    visibility = ["//tests/..."],
+)
+
+extract_source(
+    name = "dummy-src",
+    source = ":dummy-archive",
+    visibility = ["//tests/..."],
+)
 
 # --- autotools: use_configure → EXTRA_ECONF ---
 autotools_package(
     name = "test-use-flags",
     version = "1.0.0",
-    src_uri = "https://example.com/test-use-flags-1.0.0.tar.gz",
-    sha256 = "0000000000000000000000000000000000000000000000000000000000000000",
+    source = ":dummy-src",
     iuse = ["ssl", "zstd", "debug"],
     use_defaults = ["ssl"],
     use_configure = {
@@ -48,8 +64,7 @@ autotools_package(
 cmake_package(
     name = "test-cmake-use",
     version = "1.0.0",
-    src_uri = "https://example.com/test-cmake-use-1.0.0.tar.gz",
-    sha256 = "0000000000000000000000000000000000000000000000000000000000000000",
+    source = ":dummy-src",
     iuse = ["ssl", "zstd", "debug"],
     use_defaults = ["ssl"],
     use_options = {
@@ -68,8 +83,7 @@ cmake_package(
 meson_package(
     name = "test-meson-use",
     version = "1.0.0",
-    src_uri = "https://example.com/test-meson-use-1.0.0.tar.gz",
-    sha256 = "0000000000000000000000000000000000000000000000000000000000000000",
+    source = ":dummy-src",
     iuse = ["ssl", "zstd", "debug"],
     use_defaults = ["ssl"],
     use_options = {
@@ -88,8 +102,7 @@ meson_package(
 cargo_package(
     name = "test-cargo-use",
     version = "1.0.0",
-    src_uri = "https://example.com/test-cargo-use-1.0.0.tar.gz",
-    sha256 = "0000000000000000000000000000000000000000000000000000000000000000",
+    source = ":dummy-src",
     iuse = ["ssl", "zstd", "debug"],
     use_defaults = ["ssl"],
     use_features = {
@@ -108,8 +121,7 @@ cargo_package(
 go_package(
     name = "test-go-use",
     version = "1.0.0",
-    src_uri = "https://example.com/test-go-use-1.0.0.tar.gz",
-    sha256 = "0000000000000000000000000000000000000000000000000000000000000000",
+    source = ":dummy-src",
     iuse = ["ssl", "zstd", "debug"],
     use_defaults = ["ssl"],
     use_tags = {

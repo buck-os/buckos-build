@@ -6,7 +6,7 @@ into BuckOS. This enables hybrid systems where some packages come from
 Fedora's RPM ecosystem while others are built natively.
 
 Features:
-- Download and verify RPM packages
+- Download and verify RPM packages via native http_file
 - Extract RPM contents with automatic FHS mapping
 - Handle RPM dependencies (translation to Buck targets)
 - Support for multiple Fedora versions
@@ -33,58 +33,6 @@ load("//defs:distro_constraints.bzl",
      "DISTRO_FEDORA",
      "get_distro_constraints")
 load("//defs:use_flags.bzl", "get_effective_use")
-
-def _get_download_proxy():
-    """Get the HTTP proxy for downloading sources from .buckconfig."""
-    return read_config("download", "proxy", "")
-
-# =============================================================================
-# RPM DOWNLOAD AND VERIFICATION
-# =============================================================================
-
-def _rpm_download_impl(ctx):
-    """Download and verify an RPM package."""
-    output = ctx.actions.declare_output("rpm", dir = True)
-
-    # Download RPM
-    rpm_file = ctx.actions.declare_output("package.rpm")
-
-    # Build proxy args for curl
-    proxy = ctx.attrs.proxy
-    proxy_arg = "--proxy {}".format(proxy) if proxy else ""
-
-    ctx.actions.run(
-        [
-            "sh", "-c",
-            """
-            set -e
-            mkdir -p $(dirname {output})
-            curl -L {proxy_arg} -o {output} {uri}
-
-            # Verify checksum if provided
-            if [ -n "{sha256}" ]; then
-                echo "{sha256}  {output}" | sha256sum -c -
-            fi
-            """.format(
-                output = rpm_file.as_output(),
-                uri = ctx.attrs.rpm_uri,
-                sha256 = ctx.attrs.sha256 or "",
-                proxy_arg = proxy_arg,
-            ),
-        ],
-        category = "rpm_download",
-    )
-
-    return [DefaultInfo(default_output = rpm_file)]
-
-rpm_download = rule(
-    impl = _rpm_download_impl,
-    attrs = {
-        "rpm_uri": attrs.string(doc = "URL to RPM package"),
-        "sha256": attrs.string(default = "", doc = "Expected SHA256 checksum"),
-        "proxy": attrs.string(default = "", doc = "HTTP proxy URL for downloads"),
-    },
-)
 
 # =============================================================================
 # RPM EXTRACTION
@@ -177,13 +125,14 @@ def rpm_package(
     if compat_tags == None:
         compat_tags = [DISTRO_FEDORA]
 
-    # Download RPM
+    # Download RPM via native http_file
     download_target = "{}-download".format(name)
-    rpm_download(
+    rpm_filename = rpm_uri.split("/")[-1]
+    native.http_file(
         name = download_target,
-        rpm_uri = rpm_uri,
+        urls = [rpm_uri],
         sha256 = sha256 or "",
-        proxy = _get_download_proxy(),
+        out = rpm_filename,
         visibility = ["//{}:".format(native.package_name())],
     )
 
