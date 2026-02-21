@@ -125,7 +125,11 @@ package(
     src_configure = LLVM_SRC_CONFIGURE,
     src_compile = LLVM_SRC_COMPILE,
     configure_args = LLVM_CMAKE_ARGS,
-    deps = use_dep(LLVM_USE_DEPS, LLVM_USE_DEFAULTS) + [
+    use_deps = {
+        "zlib": "//packages/linux/core/zlib:zlib",
+        "ffi": "//packages/linux/system/libs/utility/libffi:libffi",
+    },
+    deps = [
         "//packages/linux/system/terminal/ncurses:ncurses",
         "//packages/linux/system/libs/data/libxml2:libxml2",
     ],

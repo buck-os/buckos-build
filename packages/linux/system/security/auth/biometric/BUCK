@@ -59,8 +59,10 @@ package(
 )
 
 # NSS - Network Security Services
-make_package(
+package(
     name = "nss",
+    build_rule = "autotools",
+    skip_configure = True,
     url = "https://ftp.mozilla.org/pub/security/nss/releases/NSS_3_98_RTM/src/nss-3.98.tar.gz",
 
     sha256 = "f549cc33d35c0601674bfacf7c6ad683c187595eb4125b423238d3e9aa4209ce",
@@ -93,8 +95,10 @@ make_package(
 )
 
 # NSPR - Netscape Portable Runtime
-make_package(
+package(
     name = "nspr",
+    build_rule = "autotools",
+    skip_configure = True,
     url = "https://ftp.mozilla.org/pub/nspr/releases/v4.35/src/nspr-4.35.tar.gz",
 
     sha256 = "7ea3297ea5969b5d25a5dd8d47f2443cda88e9ee746301f6e1e1426f8a6abc8f",

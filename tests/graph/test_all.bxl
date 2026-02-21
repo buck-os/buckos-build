@@ -1,0 +1,58 @@
+"""
+BXL graph structure test: combined runner for all graph tests.
+
+Runs every graph test suite and aggregates results.
+
+Run:
+    buck2 bxl buckos//tests/graph/test_all.bxl:test_all
+"""
+
+load("//tests/graph:test_deps_impl.bzl", test_deps_run = "run")
+load("//tests/graph:test_use_flags_impl.bzl", test_use_flags_run = "run")
+load("//tests/graph:test_transforms_impl.bzl", test_transforms_run = "run")
+load("//tests/graph:test_labels_impl.bzl", test_labels_run = "run", test_label_coverage_run = "run_coverage")
+load("//tests/graph:test_versions_impl.bzl", test_versions_run = "run")
+load("//tests/graph:test_targets_impl.bzl", test_targets_run = "run")
+load("//tests/graph:test_provenance_impl.bzl", test_provenance_run = "run")
+load("//tests/graph:test_graph_impl.bzl", test_graph_run = "run")
+load("//tests/graph:test_cloud_hypervisor_impl.bzl", test_cloud_hypervisor_run = "run")
+
+_SUITES = [
+    ("test_deps", test_deps_run),
+    ("test_use_flags", test_use_flags_run),
+    ("test_transforms", test_transforms_run),
+    ("test_labels", test_labels_run),
+    ("test_label_coverage", test_label_coverage_run),
+    ("test_versions", test_versions_run),
+    ("test_targets", test_targets_run),
+    ("test_provenance", test_provenance_run),
+    ("test_graph", test_graph_run),
+    ("test_cloud_hypervisor", test_cloud_hypervisor_run),
+]
+
+def _impl(ctx):
+    total_passed = 0
+    total_failed = 0
+
+    for name, run_fn in _SUITES:
+        ctx.output.print("=" * 60)
+        ctx.output.print("Running: " + name)
+        ctx.output.print("=" * 60)
+        passed, failed = run_fn(ctx)
+        total_passed += passed
+        total_failed += failed
+        ctx.output.print("")
+
+    ctx.output.print("=" * 60)
+    ctx.output.print("TOTAL: {} passed, {} failed, {} total".format(
+        total_passed, total_failed, total_passed + total_failed))
+    ctx.output.print("=" * 60)
+
+    if total_failed > 0:
+        fail("{} assertion(s) failed across all test suites".format(total_failed))
+
+test_all = bxl_main(
+    doc = "Run all graph structure tests.",
+    impl = _impl,
+    cli_args = {},
+)

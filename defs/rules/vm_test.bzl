@@ -7,6 +7,8 @@ ExternalRunnerTestInfo so `buck2 test` drives the QEMU invocation via
 tools/vm_test_runner.py.
 """
 
+load("//defs:providers.bzl", "KernelInfo")
+
 _SUCCESS_MARKER = "VM_TEST_PASSED"
 
 def _vm_test_impl(ctx):
@@ -29,7 +31,10 @@ def _vm_test_impl(ctx):
     )
 
     # -- 2. Resolve kernel image --------------------------------------------
-    kernel_out = ctx.attrs.kernel[DefaultInfo].default_outputs[0]
+    if KernelInfo in ctx.attrs.kernel:
+        kernel_out = ctx.attrs.kernel[KernelInfo].bzimage
+    else:
+        kernel_out = ctx.attrs.kernel[DefaultInfo].default_outputs[0]
 
     # -- 3. Resolve rootfs directory ----------------------------------------
     rootfs_out = ctx.attrs.rootfs[DefaultInfo].default_outputs[0]

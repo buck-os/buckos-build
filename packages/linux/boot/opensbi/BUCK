@@ -4,8 +4,9 @@ load("//defs:package.bzl", "package")
 # Disabled on x86_64 host - needs cross-compilation toolchain
 # Error: gcc: error: unrecognized argument in option '-mcmodel=medany'
 
-simple_package(
+package(
     name = "opensbi",
+    build_rule = "autotools",
     version = "1.2",
     url = "https://github.com/riscv-software-src/opensbi/archive/refs/tags/v1.2.tar.gz",
     sha256 = "8fcbce598a73acc2c7f7d5607d46b9d5107d3ecbede8f68f42631dcfc25ef2b2",

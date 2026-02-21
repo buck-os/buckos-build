@@ -7,8 +7,10 @@ load("//defs:package.bzl", "package")
 # The original 'light' project is archived. Use acpilight instead.
 # USE flags: See use_flags.bzl for available flags
 
-make_package(
+package(
     name = "light",
+    build_rule = "autotools",
+    skip_configure = True,
     url = "https://gitlab.com/wavexx/acpilight/-/archive/v1.2/acpilight-v1.2.tar.bz2",
 
     sha256 = "0b80cbe7edaf48307fc26dbb34c260ec9ed0c19c56743291e5a7cc23044ff9ae",

@@ -1,7 +1,8 @@
 # Linux Kernel Packages for BuckOS
 #
 # The BuckOS kernel system provides:
-# - Modular configuration fragments for easy customization
+# - Decomposed build rules (config, headers, build, btf, modules_install)
+# - Modular configuration fragments with USE flag integration via select()
 # - Pre-built kernel variants for different use cases
 # - Easy extension for custom kernels
 #
@@ -11,9 +12,10 @@
 #   buckos-kernel-server  - Server-optimized configuration
 #   buckos-kernel-vm      - Optimized for VM guests
 #
-# Build commands:
-#   buck2 build kernel//buckos-kernel
-#   buck2 build kernel//configs:buckos-default
+# Decomposed targets:
+#   linux-headers         - Installed kernel headers (glibc/musl depend on this)
+#   linux-btf             - vmlinux.h for BPF CO-RE programs
+#   linux-modules         - Installed modules with out-of-tree merging
 
 # Export legacy kernel config for backward compatibility
 export_file(
@@ -30,9 +32,23 @@ alias(
     visibility = ["PUBLIC"],
 )
 
-# Alias for linux-headers (many packages expect this)
+# Alias for linux-headers (glibc/musl/BPF depend on this)
 alias(
     name = "linux-headers",
-    actual = "//packages/linux/kernel/src:linux-src",
+    actual = "//packages/linux/kernel/buckos-kernel:linux-headers",
+    visibility = ["PUBLIC"],
+)
+
+# Alias for BTF headers (sched_ext schedulers, BPF CO-RE programs)
+alias(
+    name = "linux-btf",
+    actual = "//packages/linux/kernel/buckos-kernel:linux-btf",
+    visibility = ["PUBLIC"],
+)
+
+# Alias for installed modules
+alias(
+    name = "linux-modules",
+    actual = "//packages/linux/kernel/buckos-kernel:linux-modules",
     visibility = ["PUBLIC"],
 )

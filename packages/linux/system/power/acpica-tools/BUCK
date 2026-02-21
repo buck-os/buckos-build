@@ -3,8 +3,10 @@ load("//defs:package.bzl", "package")
 # acpica-tools - ACPI Component Architecture Tools
 # ACPI table compiler and debugging tools
 
-make_package(
+package(
     name = "acpica-tools",
+    build_rule = "autotools",
+    skip_configure = True,
     url = "https://github.com/acpica/acpica/archive/refs/tags/R2024_12_12.tar.gz",
 
     sha256 = "adde693d2486d77940bef81acb45fec1ca285266ecbc4d10c5cd058bca19dc07",

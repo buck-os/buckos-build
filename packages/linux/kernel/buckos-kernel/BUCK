@@ -1,132 +1,156 @@
-load("//defs:package_defs.bzl", "kernel_build")
+load("//defs/rules:kernel.bzl", "kernel_build", "kernel_btf_headers", "kernel_headers", "kernel_modules_install")
 
-# BuckOS Default Kernel
+# BuckOS Default Kernel — Decomposed Build
 #
-# This is the official BuckOS kernel package, built with a comprehensive
-# configuration that supports most common hardware and use cases.
+# The kernel build is decomposed into discrete cacheable rules:
+#   :linux-headers     — installed kernel headers (glibc/musl/BPF depend on this)
+#   :buckos-kernel     — vmlinux + bzImage + modules (the expensive compile)
+#   :linux-btf         — vmlinux.h for BPF CO-RE programs (sched_ext schedulers)
+#   :linux-modules     — installed modules with optional out-of-tree merging
 #
-# Features:
-# - Linux 6.17.10 Stable kernel
-# - Broad hardware support (x86_64)
-# - Multiple filesystems (ext4, XFS, Btrfs, NTFS, etc.)
-# - Full networking stack with modern features (BBR, nftables)
-# - Virtualization support (KVM host and VirtIO guest)
-# - Container support (cgroups v2, namespaces)
-# - Security features (AppArmor, SELinux, TPM)
-#
-# For custom kernel configurations, see the examples or create your own
-# kernel_config with specific fragments.
+# Config is produced in //packages/linux/kernel/configs:buckos-default
+# with USE flag integration via select() for debug/ima/lockdown/apparmor.
 #
 # Available kernel versions:
 # - Mainline: 6.18 (kernel//src:linux-mainline-src)
 # - Stable: 6.17.10 (default, kernel//src:linux-stable-src)
 # - LTS: 6.12.60 (kernel//src:linux-lts-src)
 
+# ── Headers (early — glibc/musl depend on this, not vmlinux) ────────
+
+kernel_headers(
+    name = "linux-headers",
+    source = "//packages/linux/kernel/src:linux-src",
+    config = "//packages/linux/kernel/configs:buckos-default",
+    version = "6.17.10",
+    visibility = ["PUBLIC"],
+)
+
+# ── Default kernel build ─────────────────────────────────────────────
+
 kernel_build(
     name = "buckos-kernel",
     source = "//packages/linux/kernel/src:linux-src",
+    config = "//packages/linux/kernel/configs:buckos-default",
     version = "6.17.10",
-    config_dep = "//packages/linux/kernel/configs:buckos-default",
+    labels = ["buckos:compile", "buckos:build:kbuild"],
     visibility = ["PUBLIC"],
 )
 
-# Minimal kernel variant
-# Smaller footprint, fewer drivers, faster boot
+# ── BTF headers (vmlinux.h for BPF CO-RE / sched_ext) ───────────────
+
+kernel_btf_headers(
+    name = "linux-btf",
+    kernel = ":buckos-kernel",
+    visibility = ["PUBLIC"],
+)
+
+# ── Installed modules ────────────────────────────────────────────────
+
+kernel_modules_install(
+    name = "linux-modules",
+    kernel = ":buckos-kernel",
+    version = "6.17.10",
+    extra_modules = [
+        # Out-of-tree modules listed here, e.g.:
+        # "//packages/linux/drivers/nvidia:nvidia-ko",
+    ],
+    visibility = ["PUBLIC"],
+)
+
+# ── Kernel variants ──────────────────────────────────────────────────
+
+# Minimal kernel
 kernel_build(
     name = "buckos-kernel-minimal",
     source = "//packages/linux/kernel/src:linux-src",
+    config = "//packages/linux/kernel/configs:buckos-minimal",
     version = "6.17.10",
-    config_dep = "//packages/linux/kernel/configs:buckos-minimal",
+    labels = ["buckos:compile", "buckos:build:kbuild"],
     visibility = ["PUBLIC"],
 )
 
-# Server kernel variant
-# Optimized for server workloads
+# Server kernel
 kernel_build(
     name = "buckos-kernel-server",
     source = "//packages/linux/kernel/src:linux-src",
+    config = "//packages/linux/kernel/configs:buckos-server",
     version = "6.17.10",
-    config_dep = "//packages/linux/kernel/configs:buckos-server",
+    labels = ["buckos:compile", "buckos:build:kbuild"],
     visibility = ["PUBLIC"],
 )
 
 # VM Guest kernel
-# Optimized for running inside virtual machines
 kernel_build(
     name = "buckos-kernel-vm",
     source = "//packages/linux/kernel/src:linux-src",
+    config = "//packages/linux/kernel/configs:buckos-vm-guest",
     version = "6.17.10",
-    config_dep = "//packages/linux/kernel/configs:buckos-vm-guest",
+    labels = ["buckos:compile", "buckos:build:kbuild"],
     visibility = ["PUBLIC"],
 )
 
-# Defconfig kernel (for development/testing)
+# Defconfig kernel (development/testing)
 kernel_build(
     name = "buckos-kernel-defconfig",
     source = "//packages/linux/kernel/src:linux-src",
+    config = "//packages/linux/kernel/configs:buckos-minimal",
     version = "6.17.10",
+    labels = ["buckos:compile", "buckos:build:kbuild"],
     visibility = ["PUBLIC"],
 )
 
 # Live CD/USB kernel
-# Full graphics support (i915, amdgpu, nouveau) for desktop environments
-# Optimized for live system booting and hardware detection
 kernel_build(
     name = "buckos-kernel-live",
     source = "//packages/linux/kernel/src:linux-src",
+    config = "//packages/linux/kernel/configs:buckos-live",
     version = "6.17.10",
-    config_dep = "//packages/linux/kernel/configs:buckos-live",
+    labels = ["buckos:compile", "buckos:build:kbuild"],
     visibility = ["PUBLIC"],
 )
 
 # Cloud Hypervisor Guest kernel
-# Optimized for running inside Cloud Hypervisor VMs
-# Includes: PVH boot, VirtioFS, vsock, virtio-mem, hardware RNG
-# Excludes: Physical hardware drivers (GPU, USB, SATA) not needed in VMs
 kernel_build(
     name = "buckos-kernel-ch",
     source = "//packages/linux/kernel/src:linux-src",
+    config = "//packages/linux/kernel/configs:buckos-ch-guest",
     version = "6.17.10",
-    config_dep = "//packages/linux/kernel/configs:buckos-ch-guest",
+    labels = ["buckos:compile", "buckos:build:kbuild"],
     visibility = ["PUBLIC"],
 )
 
-# =============================================================================
-# ARM64 (aarch64) Kernel Variants
-# =============================================================================
+# ── ARM64 variants ───────────────────────────────────────────────────
 
-# ARM64 default kernel
-# General purpose ARM64 kernel with virtio and cloud support
 kernel_build(
     name = "buckos-kernel-aarch64",
     source = "//packages/linux/kernel/src:linux-src",
+    config = "//packages/linux/kernel/configs:buckos-aarch64-default",
     version = "6.17.10",
-    config_dep = "//packages/linux/kernel/configs:buckos-aarch64-default",
     arch = "aarch64",
     cross_toolchain = "toolchains//bootstrap:cross-toolchain-aarch64",
+    labels = ["buckos:compile", "buckos:build:kbuild", "buckos:arch:aarch64"],
     visibility = ["PUBLIC"],
 )
 
-# ARM64 cloud kernel
-# Optimized for AWS Graviton, Azure Ampere, and other cloud ARM64 instances
 kernel_build(
     name = "buckos-kernel-aarch64-cloud",
     source = "//packages/linux/kernel/src:linux-src",
+    config = "//packages/linux/kernel/configs:buckos-aarch64-cloud",
     version = "6.17.10",
-    config_dep = "//packages/linux/kernel/configs:buckos-aarch64-cloud",
     arch = "aarch64",
     cross_toolchain = "toolchains//bootstrap:cross-toolchain-aarch64",
+    labels = ["buckos:compile", "buckos:build:kbuild", "buckos:arch:aarch64"],
     visibility = ["PUBLIC"],
 )
 
-# ARM64 minimal kernel
-# Minimal configuration for QEMU testing
 kernel_build(
     name = "buckos-kernel-aarch64-minimal",
     source = "//packages/linux/kernel/src:linux-src",
+    config = "//packages/linux/kernel/configs:buckos-aarch64-minimal",
     version = "6.17.10",
-    config_dep = "//packages/linux/kernel/configs:buckos-aarch64-minimal",
     arch = "aarch64",
     cross_toolchain = "toolchains//bootstrap:cross-toolchain-aarch64",
+    labels = ["buckos:compile", "buckos:build:kbuild", "buckos:arch:aarch64"],
     visibility = ["PUBLIC"],
 )

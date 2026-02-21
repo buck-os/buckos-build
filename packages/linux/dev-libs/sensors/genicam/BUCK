@@ -1,9 +1,12 @@
 load("//defs:package.bzl", "package")
+load("//defs:package_defs.bzl", "gen_pkgconfig")
 
 package(
     build_rule = "binary",
     name = "genicam",
     version = "3.4.0",
+    local_only = True,
+    filename = "GenICam_Package_2022.06.tar.gz",
     description = "GenICam reference implementation - standard for machine vision cameras",
     homepage = "https://www.emva.org/standards-technology/genicam/",
     license = "GenICam-License",

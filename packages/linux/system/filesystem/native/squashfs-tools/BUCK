@@ -1,7 +1,9 @@
 load("//defs:package.bzl", "package")
 
-make_package(
+package(
     name = "squashfs-tools",
+    build_rule = "autotools",
+    skip_configure = True,
     version = "4.6.1",
     url = "https://github.com/plougher/squashfs-tools/archive/refs/tags/4.6.1.tar.gz",
     sha256 = "9c4974e07c61547dae14af4ed1f358b7d04618ae194e54d6be72ee126f0d2f53",

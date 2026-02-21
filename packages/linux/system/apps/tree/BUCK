@@ -2,8 +2,10 @@ load("//defs:package.bzl", "package")
 
 # tree - List directory contents in tree format
 
-make_package(
+package(
     name = "tree",
+    build_rule = "autotools",
+    skip_configure = True,
     version = "2.1.1",
     url = "https://gitlab.com/OldManProgrammer/unix-tree/-/archive/2.1.1/unix-tree-2.1.1.tar.gz",
     sha256 = "bcd2a0327ad40592a9c43e09a4d2ef834e6f17aa9a59012a5fb1007950b5eced",

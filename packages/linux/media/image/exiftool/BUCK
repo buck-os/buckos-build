@@ -1,7 +1,9 @@
 load("//defs:package.bzl", "package")
 
-make_package(
+package(
     name = "exiftool",
+    build_rule = "autotools",
+    skip_configure = True,
     version = "13.36",
     url = "https://github.com/exiftool/exiftool/archive/refs/tags/13.36.tar.gz",
     sha256 = "f70ecbcdccc18268d4d3c290faf8cf73b1cf128e3e7f8671e24d6604cae4dc73",

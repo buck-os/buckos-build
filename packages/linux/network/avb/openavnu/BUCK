@@ -1,7 +1,9 @@
 load("//defs:package.bzl", "package")
 
-make_package(
+package(
     name = "openavnu",
+    build_rule = "autotools",
+    skip_configure = True,
     version = "0.0.1",
     url = "https://github.com/Avnu/OpenAvnu/archive/refs/heads/master.tar.gz",
     sha256 = "f91cef1814e9f215662365d3f54fa739300dafc36262fb53767128810d945602",

@@ -1,4 +1,5 @@
 load("//defs:package.bzl", "package")
+load("//defs:package_defs.bzl", "gen_pkgconfig_headeronly")
 
 # =============================================================================
 # nvcodec - NVIDIA Video Codec SDK
@@ -12,6 +13,8 @@ package(
     build_rule = "binary",
     name = "nvcodec",
     version = "12.2.72",
+    local_only = True,
+    filename = "nv-codec-headers-12.2.72.0.tar.gz",
     description = "NVIDIA Video Codec SDK headers for hardware video encode/decode",
     homepage = "https://developer.nvidia.com/video-codec-sdk",
     license = "NVIDIA",

@@ -1,9 +1,12 @@
 load("//defs:package.bzl", "package")
+load("//defs:package_defs.bzl", "gen_pkgconfig")
 
 package(
     build_rule = "binary",
     name = "nvbit",
     version = "1.7.6",
+    local_only = True,
+    filename = "nvbit-Linux-x86_64-1.7.6.tar.bz2",
     description = "NVidia Binary Instrumentation Tool for dynamic GPU analysis",
     homepage = "https://github.com/NVlabs/NVBit",
     license = "NVIDIA EULA",

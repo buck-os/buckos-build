@@ -5,8 +5,10 @@ load("//defs:package.bzl", "package")
 
 # USE flags: See use_flags.bzl for available flags
 
-make_package(
+package(
     name = "laptop-mode-tools",
+    build_rule = "autotools",
+    skip_configure = True,
     url = "https://github.com/rickysarraf/laptop-mode-tools/archive/refs/tags/1.74.tar.gz",
 
     sha256 = "df269e9449fdfab61ec11d6c009dc9a46a0ccf79b6d97fc886cc789cadac9867",

@@ -3,8 +3,10 @@ load("//defs:package.bzl", "package")
 # x86_energy_perf_policy - Energy Performance Bias Configuration
 # Sets CPU energy performance policy on x86 processors
 
-make_package(
+package(
     name = "x86_energy_perf_policy",
+    build_rule = "autotools",
+    skip_configure = True,
     url = "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.6.8.tar.xz",
 
     sha256 = "5036c434e11e4b36d8da3f489851f7f829cf785fa7f7887468537a9ea4572416",

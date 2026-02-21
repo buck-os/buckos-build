@@ -4,8 +4,10 @@ load("//defs:package.bzl", "package")
 # pciutils - PCI Utilities (lspci, setpci)
 # =============================================================================
 
-make_package(
+package(
     name = "pciutils",
+    build_rule = "autotools",
+    skip_configure = True,
     version = "3.10.0",
     url = "https://github.com/pciutils/pciutils/archive/refs/tags/v3.10.0.tar.gz",
     sha256 = "e579d87f1afe2196db7db648857023f80adb500e8194c4488c8b47f9a238c1c6",

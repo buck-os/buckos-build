@@ -1,8 +1,10 @@
 load("//defs:package.bzl", "package")
 
 # NOTE: Using intel/minigbm GitHub mirror as chromium.googlesource blocks CI/CD
-make_package(
+package(
     name = "minigbm",
+    build_rule = "autotools",
+    skip_configure = True,
     url = "https://github.com/intel/minigbm/archive/refs/heads/master.tar.gz",
 
     sha256 = "8244c0eea5c9fb39a8f8bf8c8e7522b171a83cb6bf2c402719d86ab5bb0dc87a",

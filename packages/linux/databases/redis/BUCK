@@ -10,8 +10,9 @@ load("//defs:package.bzl", "package")
 #   systemd   - Enable systemd integration
 #   jemalloc  - Use jemalloc memory allocator (recommended)
 
-simple_package(
+package(
     name = "redis",
+    build_rule = "autotools",
     version = "7.4.1",
     url = "https://github.com/redis/redis/archive/refs/tags/7.4.1.tar.gz",
     sha256 = "e85fd212307c8b453ae9361e882b6c1cefcc6a988a6f135faf7ef770a13bb05d",

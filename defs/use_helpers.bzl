@@ -52,6 +52,17 @@ def use_configure_arg(flag, on_arg, off_arg = None):
         "DEFAULT": [off_arg] if off_arg else [],
     })
 
+def use_feature(flag, feature):
+    """Conditional cargo feature based on a USE flag.
+
+    Returns a list with the feature when the flag is on, empty list when off.
+    Concatenate with + into a features list."""
+    return select({
+        "//use/constraints:{}-on".format(flag): [feature],
+        "//use/constraints:{}-off".format(flag): [],
+        "DEFAULT": [],
+    })
+
 def use_expand_select(expand_name, value_map):
     """Single-select USE_EXPAND: map each possible value to a result.
 

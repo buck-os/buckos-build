@@ -1,7 +1,9 @@
 load("//defs:package.bzl", "package")
 
-make_package(
+package(
     name = "pcimem",
+    build_rule = "autotools",
+    skip_configure = True,
     version = "1.0.0",
     url = "https://github.com/billfarrow/pcimem/archive/refs/heads/master.tar.gz",
 

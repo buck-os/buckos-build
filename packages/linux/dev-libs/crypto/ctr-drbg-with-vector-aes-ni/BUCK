@@ -1,7 +1,9 @@
 load("//defs:package.bzl", "package")
 
-make_package(
+package(
     name = "ctr-drbg-with-vector-aes-ni",
+    build_rule = "autotools",
+    skip_configure = True,
     version = "20231015",
     url = "https://github.com/aws-samples/ctr-drbg-with-vector-aes-ni/archive/dc6e4ebae380a0f3ea708dfc87bc0a27af03e189.tar.gz",
     sha256 = "46288595b050eec4456350625566037dee78ef481254c78a5dbd5b8ac1b9ec57",

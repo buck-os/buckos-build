@@ -3,8 +3,10 @@ load("//defs:package.bzl", "package")
 # cpufrequtils - CPU Frequency Utilities
 # Tools for managing CPU frequency scaling
 
-make_package(
+package(
     name = "cpufrequtils",
+    build_rule = "autotools",
+    skip_configure = True,
     url = "https://kernel.org/pub/linux/utils/kernel/cpufreq/cpufrequtils-008.tar.xz",
 
     sha256 = "a2149db551f83112209b1a8e79bd50d386979bbf64edbc69126f4e0b4f0a4cab",

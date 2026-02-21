@@ -3,12 +3,13 @@
 # v3: Use host dracut with complete sysroot
 set -e
 
-KERNEL_DIR="$1"
+KERNEL_SRC="$1"
 DRACUT_DIR="$2"
 ROOTFS_DIR="$3"
 OUTPUT="$(realpath -m "$4")"
 KVER="${5:-}"
 COMPRESS="${6:-gzip}"
+MODULES_DIR="${7:-}"
 
 mkdir -p "$(dirname "$OUTPUT")"
 
@@ -24,12 +25,14 @@ cp -a "$ROOTFS_DIR"/* "$SYSROOT"/ 2>/dev/null || true
 # Overlay dracut package
 cp -a "$DRACUT_DIR"/* "$SYSROOT"/ 2>/dev/null || true
 
-# Install kernel modules
+# Install kernel modules (explicit modules dir or legacy kernel dir)
 mkdir -p "$SYSROOT/lib/modules"
-if [ -d "$KERNEL_DIR/lib/modules" ]; then
-    cp -a "$KERNEL_DIR/lib/modules"/* "$SYSROOT/lib/modules"/
-elif [ -d "$KERNEL_DIR/modules" ]; then
-    cp -a "$KERNEL_DIR/modules"/* "$SYSROOT/lib/modules"/
+if [ -n "$MODULES_DIR" ] && [ -d "$MODULES_DIR" ]; then
+    cp -a "$MODULES_DIR"/* "$SYSROOT/lib/modules"/
+elif [ -d "$KERNEL_SRC/lib/modules" ]; then
+    cp -a "$KERNEL_SRC/lib/modules"/* "$SYSROOT/lib/modules"/
+elif [ -d "$KERNEL_SRC/modules" ]; then
+    cp -a "$KERNEL_SRC/modules"/* "$SYSROOT/lib/modules"/
 fi
 
 # Find kernel version if not provided
@@ -42,8 +45,8 @@ echo "Using kernel version: $KVER"
 # Ensure kernel modules directory exists
 if [ ! -d "$SYSROOT/lib/modules/$KVER" ]; then
     echo "WARNING: Kernel modules not found at $SYSROOT/lib/modules/$KVER"
-    echo "Checking kernel dir structure..."
-    ls -la "$KERNEL_DIR/" || true
+    echo "Checking kernel source structure..."
+    ls -la "$KERNEL_SRC/" || true
     ls -la "$SYSROOT/lib/modules/" || true
     # Continue anyway - dracut might work without modules if they're built-in
 fi

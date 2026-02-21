@@ -1,15 +1,39 @@
 # BXL graph structure tests.
 #
-# Run with:
-#   buck2 bxl //tests/graph:test_deps.bxl
-#   buck2 bxl //tests/graph:test_use_flags.bxl
-#   buck2 bxl //tests/graph:test_transforms.bxl
-#   buck2 bxl //tests/graph:test_labels.bxl
-#   buck2 bxl //tests/graph:test_labels.bxl:test_label_coverage
-#   buck2 bxl //tests/graph:test_versions.bxl
-#   buck2 bxl //tests/graph:test_targets.bxl
-#   buck2 bxl //tests/graph:test_provenance.bxl
-#   buck2 bxl //tests/graph:test_graph.bxl
+# Run all tests:
+#   buck2 bxl buckos//tests/graph/test_all.bxl:test_all
+#
+# Run individually:
+#   buck2 bxl buckos//tests/graph/test_deps.bxl:test_deps
+#   buck2 bxl buckos//tests/graph/test_use_flags.bxl:test_use_flags
+#   buck2 bxl buckos//tests/graph/test_transforms.bxl:test_transforms
+#   buck2 bxl buckos//tests/graph/test_labels.bxl:test_labels
+#   buck2 bxl buckos//tests/graph/test_labels.bxl:test_label_coverage
+#   buck2 bxl buckos//tests/graph/test_versions.bxl:test_versions
+#   buck2 bxl buckos//tests/graph/test_targets.bxl:test_targets
+#   buck2 bxl buckos//tests/graph/test_provenance.bxl:test_provenance
+#   buck2 bxl buckos//tests/graph/test_graph.bxl:test_graph
+#   buck2 bxl buckos//tests/graph/test_cloud_hypervisor.bxl:test_cloud_hypervisor
+#
+# Static analysis (no buck2 needed):
+#   python3 tests/graph/verify_package_completeness.py
+#   buck2 test //tests/graph:test-package-completeness
+
+# ── Static analysis: package() completeness check ────────────────────
+
+sh_test(
+    name = "test-package-completeness",
+    test = "verify_package_completeness.py",
+    labels = ["graph"],
+)
+
+# ── BXL test file exports ────────────────────────────────────────────
+
+export_file(
+    name = "test_all.bxl",
+    src = "test_all.bxl",
+    visibility = ["PUBLIC"],
+)
 
 export_file(
     name = "test_deps.bxl",

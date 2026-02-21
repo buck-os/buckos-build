@@ -2,8 +2,10 @@ load("//defs:package.bzl", "package")
 
 # USE flags: See use_flags.bzl for available flags
 
-make_package(
+package(
     name = "postfix",
+    build_rule = "autotools",
+    skip_configure = True,
     url = "https://de.postfix.org/ftpmirror/official/postfix-3.9.0.tar.gz",
 
     sha256 = "56f5e420e7c25455a4e96c19b672f80f9a0a35fb5becc9247c9e3d5dcc617f34",

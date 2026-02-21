@@ -52,3 +52,31 @@ BootstrapStageInfo = provider(fields = [
     "sysroot",          # artifact
     "target_triple",    # str
 ])
+
+# ── Kernel providers ────────────────────────────────────────────────
+
+KernelInfo = provider(fields = [
+    "vmlinux",          # artifact: uncompressed kernel ELF (with BTF if CONFIG_DEBUG_INFO_BTF=y)
+    "bzimage",          # artifact: compressed bootable image
+    "modules_dir",      # artifact: built module tree (lib/modules/<version>/)
+    "build_tree",       # artifact: full build tree for out-of-tree module compilation
+    "module_symvers",   # artifact: Module.symvers for module ABI checking
+    "config",           # artifact: the finalized .config
+    "headers",          # artifact: installed kernel headers tree
+    "version",          # str: kernel version string (e.g. 6.12.0-buckos)
+])
+
+KernelHeadersInfo = provider(fields = [
+    "headers",          # artifact: installed headers tree (usr/include/)
+    "version",          # str: kernel version string
+])
+
+KernelConfigInfo = provider(fields = [
+    "config",           # artifact: finalized .config file
+    "version",          # str: kernel version string
+])
+
+KernelBtfInfo = provider(fields = [
+    "vmlinux_h",        # artifact: vmlinux.h generated from kernel BTF data (for BPF CO-RE)
+    "version",          # str: kernel version string
+])

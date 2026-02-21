@@ -3,8 +3,10 @@ load("//defs:package.bzl", "package")
 # baselayout - Filesystem baselayout and target system init scripts
 # USE flags: (minimal package)
 
-make_package(
+package(
     name = "baselayout",
+    build_rule = "autotools",
+    skip_configure = True,
     version = "2.9",
     url = "https://gitweb.gentoo.org/proj/baselayout.git/snapshot/baselayout-2.9.tar.gz",
     sha256 = "a4391267c964fdfc7c0ccfcdc599308de0d288e59d7c2cd517853d29d7cab5b7",

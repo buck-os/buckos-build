@@ -8,7 +8,7 @@ package(
     src_prepare = "",
     # GCC 15 reserves 'nullptr' as a C23 keyword; force C11 to avoid
     # conflict with test code that uses nullptr as a variable name
-    env = {"CFLAGS": "-std=gnu11"},
+    extra_cflags = ["-std=gnu11"],
     version = "1.50",
     url = "https://gnupg.org/ftp/gcrypt/libgpg-error/libgpg-error-1.50.tar.bz2",
     sha256 = "69405349e0a633e444a28c5b35ce8f14484684518a508dc48a089992fe93e20a",
@@ -23,67 +23,17 @@ package(
         "doc": ("--enable-doc", "--disable-doc"),
         "nls": ("--enable-nls", "--disable-nls"),
         "static-libs": ("--enable-static", "--disable-static"),
-        "threads": ("--enable-threads", "--disable-threads"),
-    },
-
-    use_deps = {
-
     },
 
     configure_args = [
         "--enable-shared",
+        "--enable-threads",
     ],
 
-    # For cross-compilation, libgpg-error needs the lock-obj specification
-    # since it can't run test programs to determine mutex size.
-    # We create a symlink from x86_64-unknown-linux-gnu to our triplet.
-    src_configure = """
-# For cross-compilation, create a symlink for our host triplet to the
-# pre-generated lock-obj file that ships with libgpg-error.
-# The configure script looks for lock-obj-pub.$host.h where $host is
-# the canonicalized host triplet (e.g., x86_64-buckos-linux-gnu).
-
-_HOST="${CHOST:-x86_64-buckos-linux-gnu}"
-_ARCH="${_HOST%%-*}"  # Extract arch (x86_64)
-
-echo "Setting up lock-obj for cross-compilation (host: $_HOST, arch: $_ARCH)"
-
-# Create symlinks for our custom triplet to use the standard lock-obj files
-if [ "$_ARCH" = "x86_64" ]; then
-    if [ -f "src/syscfg/lock-obj-pub.x86_64-unknown-linux-gnu.h" ]; then
-        ln -sf "lock-obj-pub.x86_64-unknown-linux-gnu.h" "src/syscfg/lock-obj-pub.${_HOST}.h"
-        echo "Created symlink: lock-obj-pub.${_HOST}.h -> lock-obj-pub.x86_64-unknown-linux-gnu.h"
-    elif [ -f "src/syscfg/lock-obj-pub.x86_64-pc-linux-gnu.h" ]; then
-        ln -sf "lock-obj-pub.x86_64-pc-linux-gnu.h" "src/syscfg/lock-obj-pub.${_HOST}.h"
-        echo "Created symlink: lock-obj-pub.${_HOST}.h -> lock-obj-pub.x86_64-pc-linux-gnu.h"
-    fi
-elif [ "$_ARCH" = "aarch64" ]; then
-    if [ -f "src/syscfg/lock-obj-pub.aarch64-unknown-linux-gnu.h" ]; then
-        ln -sf "lock-obj-pub.aarch64-unknown-linux-gnu.h" "src/syscfg/lock-obj-pub.${_HOST}.h"
-        echo "Created symlink: lock-obj-pub.${_HOST}.h -> lock-obj-pub.aarch64-unknown-linux-gnu.h"
-    fi
-fi
-
-# List what we have for debugging
-echo "Available lock-obj files:"
-ls -la src/syscfg/lock-obj-pub.*gnu*.h 2>/dev/null | head -5
-
-# Run configure with standard options
-./configure \\
-    --prefix=/usr \\
-    --libdir=/usr/lib64 \\
-    --host="$_HOST" \\
-    --enable-shared \\
-    ${USE_CONFIGURE_ARGS:-}
-""",
-
-    pre_configure = """
-# Available USE flags:
-# - static-libs: Build static libraries
-# - nls: Native language support
-# - doc: Build documentation
-# - threads: Enable thread support
-""",
+    # NOTE: Cross-compilation requires a lock-obj symlink for the
+    # buckos triplet. If cross builds fail, add a patch that creates:
+    #   src/syscfg/lock-obj-pub.x86_64-buckos-linux-gnu.h ->
+    #     lock-obj-pub.x86_64-unknown-linux-gnu.h
 
     deps = [],
     visibility = ["PUBLIC"],

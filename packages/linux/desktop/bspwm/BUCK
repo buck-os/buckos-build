@@ -4,8 +4,10 @@ load("//defs:package.bzl", "package")
 # bspwm - Binary space partitioning window manager
 # =============================================================================
 
-make_package(
+package(
     name = "bspwm",
+    build_rule = "autotools",
+    skip_configure = True,
     url = "https://github.com/baskerville/bspwm/archive/refs/tags/0.9.10.tar.gz",
 
     sha256 = "0d0f5e465b9c27a5c2143c86189392fa297fad55253b9ed8f6854473d3928f8f",

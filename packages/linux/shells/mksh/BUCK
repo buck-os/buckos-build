@@ -2,8 +2,10 @@ load("//defs:package.bzl", "package")
 
 # mksh - MirBSD Korn Shell
 # Using GitHub mirror since www.mirbsd.org returns 503
-make_package(
+package(
     name = "mksh",
+    build_rule = "autotools",
+    skip_configure = True,
     url = "https://github.com/MirBSD/mksh/archive/refs/tags/mksh-R59c.tar.gz",
 
     sha256 = "e5942607eb930ba6ce3303c4a0db0733371f210c9ce6d5d4b9cc202c76360343",

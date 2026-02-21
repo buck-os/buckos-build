@@ -2,8 +2,10 @@ load("//defs:package.bzl", "package")
 
 # dos2unix - Text file format converter between DOS and Unix
 
-make_package(
+package(
     name = "dos2unix",
+    build_rule = "autotools",
+    skip_configure = True,
     url = "https://waterlan.home.xs4all.nl/dos2unix/dos2unix-7.5.2.tar.gz",
 
     sha256 = "264742446608442eb48f96c20af6da303cb3a92b364e72cb7e24f88239c4bf3a",

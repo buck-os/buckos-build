@@ -1,7 +1,9 @@
 load("//defs:package.bzl", "package")
 
-make_package(
+package(
     name = "argon2",
+    build_rule = "autotools",
+    skip_configure = True,
     version = "20190702",
     use_configure = {
         "static-libs": ("--enable-static", "--disable-static"),

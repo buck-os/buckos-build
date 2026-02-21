@@ -12,8 +12,10 @@ load("//defs:package.bzl", "package")
 # Note: EDK2 is a complex build that requires specific toolchain setup.
 # This package builds only the CLOUDHV platform target.
 
-make_package(
+package(
     name = "edk2-cloudhv",
+    build_rule = "autotools",
+    skip_configure = True,
     version = "202411",
     url = "https://github.com/tianocore/edk2/archive/refs/tags/edk2-stable202411.tar.gz",
     sha256 = "FIXME",

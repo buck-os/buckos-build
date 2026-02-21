@@ -2,8 +2,10 @@ load("//defs:package.bzl", "package")
 
 # Tree-sitter - Parser generator tool and incremental parsing library
 
-make_package(
+package(
     name = "tree-sitter",
+    build_rule = "autotools",
+    skip_configure = True,
     version = "0.25.8",
     url = "https://github.com/tree-sitter/tree-sitter/archive/refs/tags/v0.25.8.tar.gz",
     sha256 = "178b575244d967f4920a4642408dc4edf6de96948d37d7f06e5b78acee9c0b4e",

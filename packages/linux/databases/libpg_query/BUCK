@@ -1,7 +1,9 @@
 load("//defs:package.bzl", "package")
 
-make_package(
+package(
     name = "libpg_query",
+    build_rule = "autotools",
+    skip_configure = True,
     version = "15-4.2.3",
     url = "https://github.com/pganalyze/libpg_query/archive/refs/tags/15-4.2.3.tar.gz",
     sha256 = "8b820d63442b1677ce4f0df2a95b3fafdbc520a82901def81217559ec4df9e6b",

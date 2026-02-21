@@ -13,6 +13,8 @@ package(
     build_rule = "binary",
     name = "chromium",
     version = "126.0.6478.126",
+    url = "https://commondatastorage.googleapis.com/chromium-browser-official/chromium-126.0.6478.126.tar.xz",
+    sha256 = "5d5206637e659f03e006cd8b6b269c49c0c2c697d10517e14dbcea851831e143",
     description = "Open-source web browser from Google - fast, secure, and customizable",
     homepage = "https://www.chromium.org/",
     license = "BSD-3-Clause",
@@ -65,18 +67,14 @@ exec /usr/lib/chromium/chrome "$@"
 WRAPPER
         chmod +x "$OUT/usr/bin/chromium"
     """,
-    deps = use_dep(
-        {
-            "glib": ["//packages/linux/dev-libs/glib:glib"],
-            "gtk": ["//packages/linux/desktop/gtk:gtk3"],
-            # TODO: nss and nspr packages need to be created
-            # "nss": ["//packages/linux/network/nss:nss"],
-            # "nspr": ["//packages/linux/network/nspr:nspr"],
-            "python": ["//packages/linux/lang/python:python"],
-            "nodejs": ["//packages/linux/lang/nodejs:nodejs"],
-            "gn": ["//packages/linux/dev-tools/build-systems/gn:gn"],
-        },
-        ["glib", "gtk", "python", "nodejs", "gn"],
-    ),
+    use_deps = {
+        "glib": "//packages/linux/dev-libs/glib:glib",
+        "gtk": "//packages/linux/desktop/gtk:gtk3",
+        "python": "//packages/linux/lang/python:python",
+    },
+    deps = [
+        "//packages/linux/lang/nodejs:nodejs",
+        "//packages/linux/dev-tools/build-systems/gn:gn",
+    ],
     visibility = ["PUBLIC"],
 )

@@ -1,6 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/rules:kernel.bzl", "kernel_config")
+load("//defs:use_helpers.bzl", "use_bool")
 
-# Export individual config fragments
+# ── Individual config fragment exports ───────────────────────────────
+
 export_file(
     name = "base",
     src = "base.config",
@@ -43,66 +45,41 @@ export_file(
     visibility = ["PUBLIC"],
 )
 
-# Pre-built merged configs for common use cases
-
-# Full BuckOS default configuration
-# Includes all fragments for maximum hardware compatibility
-kernel_config(
-    name = "buckos-default",
-    fragments = [
-        "base.config",
-        "filesystem.config",
-        "network.config",
-        "hardware.config",
-        "virtualization.config",
-        "security.config",
-    ],
+export_file(
+    name = "sched-ext",
+    src = "sched-ext.config",
+    default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],
 )
 
-# Minimal configuration
-# Only base + filesystem + essential hardware
-kernel_config(
-    name = "buckos-minimal",
-    fragments = [
-        "base.config",
-        "filesystem.config",
-        "hardware.config",
-    ],
+export_file(
+    name = "debug-fragment",
+    src = "debug.config",
+    default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],
 )
 
-# Server configuration
-# Full config without desktop graphics
-kernel_config(
-    name = "buckos-server",
-    fragments = [
-        "base.config",
-        "filesystem.config",
-        "network.config",
-        "hardware.config",
-        "virtualization.config",
-        "security.config",
-    ],
+export_file(
+    name = "ima-fragment",
+    src = "ima.config",
+    default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],
 )
 
-# Virtual machine guest configuration
-kernel_config(
-    name = "buckos-vm-guest",
-    fragments = [
-        "base.config",
-        "filesystem.config",
-        "network.config",
-        "virtualization.config",
-        "security.config",
-    ],
+export_file(
+    name = "lockdown-fragment",
+    src = "lockdown.config",
+    default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],
 )
 
-# Live CD/USB configuration
-# Full config with graphics drivers (i915, amdgpu, nouveau) for desktop use
-# Built-in: loop, sr, piix, iso9660, squashfs, overlayfs for initramfs boot
+export_file(
+    name = "apparmor-fragment",
+    src = "apparmor.config",
+    default_target_platform = "//platforms:linux-target",
+    visibility = ["PUBLIC"],
+)
+
 export_file(
     name = "live",
     src = "live.config",
@@ -110,15 +87,6 @@ export_file(
     visibility = ["PUBLIC"],
 )
 
-kernel_config(
-    name = "buckos-live",
-    fragments = [
-        "live.config",
-    ],
-    visibility = ["PUBLIC"],
-)
-
-# Cloud Hypervisor guest configuration
 export_file(
     name = "cloud-hypervisor",
     src = "cloud-hypervisor.config",
@@ -126,10 +94,110 @@ export_file(
     visibility = ["PUBLIC"],
 )
 
-# Cloud Hypervisor optimized guest kernel configuration
-# Combines base system configs with Cloud Hypervisor-specific optimizations
+# ── Pre-built merged configs with USE flag integration ───────────────
+#
+# Kconfig fragments compose via select().  Different profiles produce
+# different .configs through the same rule.  BXL can introspect which
+# fragments are active under any profile without building.
+
+kernel_config(
+    name = "buckos-default",
+    source = "//packages/linux/kernel/src:linux-src",
+    version = "6.17.10",
+    defconfig = "x86_64_defconfig",
+    fragments = [
+        "base.config",
+        "filesystem.config",
+        "network.config",
+        "hardware.config",
+        "virtualization.config",
+        "security.config",
+        "sched-ext.config",
+    ] + select({
+        "//use/constraints:debug-on": ["debug.config"],
+        "//use/constraints:debug-off": [],
+        "DEFAULT": [],
+    }) + select({
+        "//use/constraints:ima-on": ["ima.config"],
+        "//use/constraints:ima-off": [],
+        "DEFAULT": [],
+    }) + select({
+        "//use/constraints:lockdown-on": ["lockdown.config"],
+        "//use/constraints:lockdown-off": [],
+        "DEFAULT": [],
+    }) + select({
+        "//use/constraints:apparmor-on": ["apparmor.config"],
+        "//use/constraints:apparmor-off": [],
+        "DEFAULT": [],
+    }),
+    labels = ["buckos:config"],
+    visibility = ["PUBLIC"],
+)
+
+kernel_config(
+    name = "buckos-minimal",
+    source = "//packages/linux/kernel/src:linux-src",
+    version = "6.17.10",
+    defconfig = "x86_64_defconfig",
+    fragments = [
+        "base.config",
+        "filesystem.config",
+        "hardware.config",
+    ],
+    labels = ["buckos:config"],
+    visibility = ["PUBLIC"],
+)
+
+kernel_config(
+    name = "buckos-server",
+    source = "//packages/linux/kernel/src:linux-src",
+    version = "6.17.10",
+    defconfig = "x86_64_defconfig",
+    fragments = [
+        "base.config",
+        "filesystem.config",
+        "network.config",
+        "hardware.config",
+        "virtualization.config",
+        "security.config",
+        "sched-ext.config",
+    ],
+    labels = ["buckos:config"],
+    visibility = ["PUBLIC"],
+)
+
+kernel_config(
+    name = "buckos-vm-guest",
+    source = "//packages/linux/kernel/src:linux-src",
+    version = "6.17.10",
+    defconfig = "x86_64_defconfig",
+    fragments = [
+        "base.config",
+        "filesystem.config",
+        "network.config",
+        "virtualization.config",
+        "security.config",
+    ],
+    labels = ["buckos:config"],
+    visibility = ["PUBLIC"],
+)
+
+kernel_config(
+    name = "buckos-live",
+    source = "//packages/linux/kernel/src:linux-src",
+    version = "6.17.10",
+    fragments = [
+        "live.config",
+    ],
+    labels = ["buckos:config"],
+    visibility = ["PUBLIC"],
+)
+
 kernel_config(
     name = "buckos-ch-guest",
+    source = "//packages/linux/kernel/src:linux-src",
+    version = "6.17.10",
+    defconfig = "x86_64_defconfig",
     fragments = [
         "base.config",
         "filesystem.config",
@@ -138,12 +206,11 @@ kernel_config(
         "security.config",
         "cloud-hypervisor.config",
     ],
+    labels = ["buckos:config"],
     visibility = ["PUBLIC"],
 )
 
-# =============================================================================
-# ARM64 (aarch64) Kernel Configurations
-# =============================================================================
+# ── ARM64 Configs ────────────────────────────────────────────────────
 
 export_file(
     name = "aarch64-base",
@@ -159,21 +226,26 @@ export_file(
     visibility = ["PUBLIC"],
 )
 
-# Default ARM64 configuration (for VMs and general use)
 kernel_config(
     name = "buckos-aarch64-default",
+    source = "//packages/linux/kernel/src:linux-src",
+    version = "6.17.10",
+    arch = "aarch64",
     fragments = [
         "aarch64-base.config",
         "filesystem.config",
         "network.config",
         "security.config",
     ],
+    labels = ["buckos:config"],
     visibility = ["PUBLIC"],
 )
 
-# ARM64 Cloud configuration (AWS Graviton, Azure Ampere, etc.)
 kernel_config(
     name = "buckos-aarch64-cloud",
+    source = "//packages/linux/kernel/src:linux-src",
+    version = "6.17.10",
+    arch = "aarch64",
     fragments = [
         "aarch64-base.config",
         "aarch64-cloud.config",
@@ -181,15 +253,19 @@ kernel_config(
         "network.config",
         "security.config",
     ],
+    labels = ["buckos:config"],
     visibility = ["PUBLIC"],
 )
 
-# ARM64 Minimal configuration (QEMU testing)
 kernel_config(
     name = "buckos-aarch64-minimal",
+    source = "//packages/linux/kernel/src:linux-src",
+    version = "6.17.10",
+    arch = "aarch64",
     fragments = [
         "aarch64-base.config",
         "filesystem.config",
     ],
+    labels = ["buckos:config"],
     visibility = ["PUBLIC"],
 )

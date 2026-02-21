@@ -2,8 +2,9 @@ load("//defs:package.bzl", "package")
 
 # node_exporter - Prometheus exporter for hardware and OS metrics
 
-simple_package(
+package(
     name = "node-exporter",
+    build_rule = "autotools",
     version = "1.7.0",
     url = "https://github.com/prometheus/node_exporter/archive/refs/tags/v1.7.0.tar.gz",
     sha256 = "5da1dcc3608db663fc1949042c6f3ec29184c9414c37c0e2bdfe9b19fd5d75c7",

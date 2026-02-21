@@ -1,7 +1,9 @@
 load("//defs:package.bzl", "package")
+load("//defs:package_defs.bzl", "gen_pkgconfig")
 
-simple_package(
+package(
     name = "picohttpparser",
+    build_rule = "autotools",
     version = "1.0",
     url = "https://github.com/h2o/picohttpparser/archive/refs/heads/master.tar.gz",
     sha256 = "69f6f59dcc0c73138273f56f7348f566c4cdb92daf046ef6b712a2cac89029ce",

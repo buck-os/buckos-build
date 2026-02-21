@@ -1,4 +1,5 @@
 load("//defs:package.bzl", "package")
+load("//defs:package_defs.bzl", "gen_pkgconfig")
 
 # =============================================================================
 # CUDA Toolkit - NVIDIA CUDA development toolkit
@@ -8,6 +9,8 @@ package(
     build_rule = "binary",
     name = "cuda-toolkit",
     version = "13.0.2",
+    local_only = True,
+    filename = "cuda_13.0.2_linux.run",
     description = "NVIDIA CUDA Toolkit for GPU computing",
     homepage = "https://developer.nvidia.com/cuda-toolkit",
     license = "NVIDIA CUDA EULA",

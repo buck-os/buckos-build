@@ -2,8 +2,9 @@ load("//defs:package.bzl", "package")
 
 # containerd - An industry-standard container runtime
 
-simple_package(
+package(
     name = "containerd",
+    build_rule = "autotools",
     version = "1.7.13",
     use_configure = {
         "apparmor": ("--enable-apparmor", "--disable-apparmor"),

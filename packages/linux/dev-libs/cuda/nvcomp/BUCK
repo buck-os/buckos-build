@@ -1,9 +1,12 @@
 load("//defs:package.bzl", "package")
+load("//defs:package_defs.bzl", "gen_pkgconfig")
 
 package(
     build_rule = "binary",
     name = "nvcomp",
     version = "4.2.0.11",
+    local_only = True,
+    filename = "nvcomp-4.2.0.11-Linux-x86_64.tar.gz",
     description = "NVIDIA GPU-accelerated data compression library",
     homepage = "https://developer.nvidia.com/nvcomp",
     license = "NVIDIA SDK",

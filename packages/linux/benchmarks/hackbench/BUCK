@@ -4,8 +4,10 @@ load("//defs:package.bzl", "package")
 #
 # USE flags: (minimal flags for this benchmark)
 
-make_package(
+package(
     name = "hackbench",
+    build_rule = "autotools",
+    skip_configure = True,
     version = "2.6",
     url = "https://git.kernel.org/pub/scm/utils/rt-tests/rt-tests.git/snapshot/rt-tests-2.6.tar.gz",
     sha256 = "6a9449c11a9ccb37e6c86082bf904337dda928fdcd69f6bd4a4c6567e071ae6d",

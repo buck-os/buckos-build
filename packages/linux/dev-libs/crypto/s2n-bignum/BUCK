@@ -5,8 +5,10 @@ load("//defs:package.bzl", "package")
 # All routines are written in pure machine code with separate versions for x86_64 and aarch64.
 # Each function is accompanied by machine-checked formal proofs.
 
-make_package(
+package(
     name = "s2n-bignum",
+    build_rule = "autotools",
+    skip_configure = True,
     version = "0.0.1",
     url = "https://mirror.buckos.org/s/s2n-bignum-main.tar.gz",
     sha256 = "a00cf1d6ed65c895d29a57f40d32f9c8a98cb4480092e785d7d0528518fb2f97",

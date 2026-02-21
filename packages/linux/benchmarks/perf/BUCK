@@ -11,6 +11,8 @@ package(
     build_rule = "binary",
     name = "perf",
     version = "6.6.10",
+    url = "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.6.10.tar.xz",
+    sha256 = "9ee627e4c109aec7fca3eda5898e81d201af2c7eb2f7d9d7d94c1f0e1205546c",
     description = "Linux perf tool - performance analysis and benchmarking",
     homepage = "https://perf.wiki.kernel.org/",
     license = "GPL-2.0",
@@ -22,11 +24,8 @@ package(
         mkdir -p $OUT/usr/bin
         cp perf $OUT/usr/bin/
     """,
-    deps = use_dep(
-        {
-            "zlib": ["//packages/linux/core/zlib:zlib"],
-        },
-        ["zlib"],
-    ),
+    use_deps = {
+        "zlib": "//packages/linux/core/zlib:zlib",
+    },
     visibility = ["PUBLIC"],
 )

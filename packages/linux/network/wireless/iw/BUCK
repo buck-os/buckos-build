@@ -1,7 +1,9 @@
 load("//defs:package.bzl", "package")
 
-make_package(
+package(
     name = "iw",
+    build_rule = "autotools",
+    skip_configure = True,
     version = "6.7",
     url = "https://www.kernel.org/pub/software/network/iw/iw-6.7.tar.xz",
     sha256 = "aacf49c266b29d500d73086798a1c652e760c19126a8599fd811850430789a35",

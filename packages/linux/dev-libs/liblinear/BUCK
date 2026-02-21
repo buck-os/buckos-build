@@ -1,7 +1,10 @@
 load("//defs:package.bzl", "package")
+load("//defs:package_defs.bzl", "gen_pkgconfig")
 
-make_package(
+package(
     name = "liblinear",
+    build_rule = "autotools",
+    skip_configure = True,
     version = "1.94",
     url = "https://github.com/cjlin1/liblinear/archive/refs/tags/v194.tar.gz",
     sha256 = "cce039e66cb82c77e7e816c42f2c1808fcb8df6a1050c94999c419cd20be9f55",

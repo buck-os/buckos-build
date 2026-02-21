@@ -82,7 +82,6 @@ acct_group_package = rule(
         "gid": attrs.int(),
         "description": attrs.string(default = ""),
         "deps": attrs.list(attrs.dep(), default = []),
-        "visibility": attrs.option(attrs.list(attrs.string()), default = None),
     },
 )
 
@@ -153,6 +152,5 @@ acct_user_package = rule(
         "groups": attrs.list(attrs.string(), default = []),
         "description": attrs.string(default = ""),
         "deps": attrs.list(attrs.dep(), default = []),
-        "visibility": attrs.option(attrs.list(attrs.string()), default = None),
     },
 )

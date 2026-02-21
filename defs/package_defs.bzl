@@ -3,6 +3,7 @@ Package build rules for BuckOs Linux Distribution.
 Similar to Gentoo's ebuild system but using Buck2.
 """
 
+load("//defs:providers.bzl", "KernelInfo")
 load("//defs:eclasses.bzl", "ECLASSES", "inherit")
 load("//defs:use_flags.bzl",
      "get_effective_use",
@@ -2538,12 +2539,26 @@ def initramfs(labels = [], **kwargs):
         **kwargs
     )
 
+def _get_kernel_image(dep):
+    """Extract boot image from KernelInfo or legacy install directory."""
+    if KernelInfo in dep:
+        return dep[KernelInfo].bzimage
+    return dep[DefaultInfo].default_outputs[0]
+
 def _dracut_initramfs_impl(ctx: AnalysisContext) -> list[Provider]:
     """Create an initramfs using dracut with dmsquash-live module for live boot."""
     initramfs_file = ctx.actions.declare_output(ctx.attrs.name + ".img")
 
-    # Get kernel directory (contains vmlinuz and lib/modules)
-    kernel_dir = ctx.attrs.kernel[DefaultInfo].default_outputs[0]
+    # Get kernel image (may be file from KernelInfo or legacy install dir)
+    kernel_image = _get_kernel_image(ctx.attrs.kernel)
+
+    # Modules directory: explicit dep > KernelInfo.modules_dir > legacy (shell fallback)
+    if ctx.attrs.modules:
+        modules_dir = ctx.attrs.modules[DefaultInfo].default_outputs[0]
+    elif KernelInfo in ctx.attrs.kernel:
+        modules_dir = ctx.attrs.kernel[KernelInfo].modules_dir
+    else:
+        modules_dir = None
 
     # Get dracut package
     dracut_dir = ctx.attrs.dracut[DefaultInfo].default_outputs[0]
@@ -2560,16 +2575,20 @@ def _dracut_initramfs_impl(ctx: AnalysisContext) -> list[Provider]:
     # Compression
     compress = ctx.attrs.compression
 
+    cmd = cmd_args([
+        create_script,
+        kernel_image,
+        dracut_dir,
+        rootfs_dir,
+        initramfs_file.as_output(),
+        kver,
+        compress,
+    ])
+    if modules_dir:
+        cmd.add(modules_dir)
+
     ctx.actions.run(
-        cmd_args([
-            create_script,
-            kernel_dir,
-            dracut_dir,
-            rootfs_dir,
-            initramfs_file.as_output(),
-            kver,
-            compress,
-        ]),
+        cmd,
         category = "dracut_initramfs",
         identifier = ctx.attrs.name,
     )
@@ -2580,6 +2599,7 @@ _dracut_initramfs_rule = rule(
     impl = _dracut_initramfs_impl,
     attrs = {
         "kernel": attrs.dep(),
+        "modules": attrs.option(attrs.dep(), default = None),
         "dracut": attrs.dep(),
         "rootfs": attrs.dep(),
         "create_script": attrs.dep(default = "//defs/scripts:create-dracut-initramfs"),
@@ -2601,7 +2621,7 @@ def _qemu_boot_script_impl(ctx: AnalysisContext) -> list[Provider]:
     boot_script = ctx.actions.declare_output(ctx.attrs.name + ".sh")
 
     # Get kernel and initramfs
-    kernel_dir = ctx.attrs.kernel[DefaultInfo].default_outputs[0]
+    kernel_image = _get_kernel_image(ctx.attrs.kernel)
     initramfs_file = ctx.attrs.initramfs[DefaultInfo].default_outputs[0]
 
     # QEMU options
@@ -2630,7 +2650,7 @@ def _qemu_boot_script_impl(ctx: AnalysisContext) -> list[Provider]:
         "generate_qemu_script.sh",
         """#!/bin/bash
 set -e
-KERNEL_DIR="$1"
+KERNEL_SRC="$1"
 INITRAMFS="$2"
 OUTPUT="$3"
 
@@ -2664,25 +2684,21 @@ fi
 cd "$PROJECT_ROOT"
 
 # Paths to built artifacts (relative to project root)
-KERNEL_DIR="KERNEL_DIR_PLACEHOLDER"
+KERNEL_SRC="KERNEL_SRC_PLACEHOLDER"
 INITRAMFS="INITRAMFS_PLACEHOLDER"
 
-# Find kernel image
+# Find kernel image (file = KernelInfo.bzimage, directory = legacy install dir)
 KERNEL=""
-for k in "$KERNEL_DIR/boot/vmlinuz"* "$KERNEL_DIR/boot/bzImage" "$KERNEL_DIR/vmlinuz"*; do
-    if [ -f "$k" ]; then
-        KERNEL="$k"
-        break
-    fi
-done
+if [ -f "$KERNEL_SRC" ]; then
+    KERNEL="$KERNEL_SRC"
+else
+    for k in "$KERNEL_SRC/boot/vmlinuz"* "$KERNEL_SRC/boot/bzImage" "$KERNEL_SRC/vmlinuz"*; do
+        if [ -f "$k" ]; then KERNEL="$k"; break; fi
+    done
+fi
 
 if [ -z "$KERNEL" ]; then
-    echo "Error: Cannot find kernel image in $KERNEL_DIR"
-    echo "Searched patterns:"
-    echo "  $KERNEL_DIR/boot/vmlinuz*"
-    echo "  $KERNEL_DIR/boot/bzImage"
-    echo "  $KERNEL_DIR/vmlinuz*"
-    echo "Project root: $PROJECT_ROOT"
+    echo "Error: Cannot find kernel image from $KERNEL_SRC"
     exit 1
 fi
 
@@ -2707,7 +2723,7 @@ echo ""
 SCRIPT_EOF
 
 # Replace placeholders with actual paths
-sed -i "s|KERNEL_DIR_PLACEHOLDER|$KERNEL_DIR|g" "$OUTPUT"
+sed -i "s|KERNEL_SRC_PLACEHOLDER|$KERNEL_SRC|g" "$OUTPUT"
 sed -i "s|INITRAMFS_PLACEHOLDER|$INITRAMFS|g" "$OUTPUT"
 chmod +x "$OUTPUT"
 """.format(
@@ -2724,7 +2740,7 @@ chmod +x "$OUTPUT"
     cmd = cmd_args([
         "bash",
         generator_script,
-        kernel_dir,
+        kernel_image,
         initramfs_file,
         boot_script.as_output(),
     ])
@@ -2770,7 +2786,7 @@ def _ch_boot_script_impl(ctx: AnalysisContext) -> list[Provider]:
     boot_script = ctx.actions.declare_output(ctx.attrs.name + ".sh")
 
     # Resolve deps
-    kernel_dir = ctx.attrs.kernel[DefaultInfo].default_outputs[0] if ctx.attrs.kernel else None
+    kernel_image = _get_kernel_image(ctx.attrs.kernel) if ctx.attrs.kernel else None
     firmware_file = ctx.attrs.firmware[DefaultInfo].default_outputs[0] if ctx.attrs.firmware else None
     disk_image_file = ctx.attrs.disk_image[DefaultInfo].default_outputs[0] if ctx.attrs.disk_image else None
     initramfs_file = ctx.attrs.initramfs[DefaultInfo].default_outputs[0] if ctx.attrs.initramfs else None
@@ -2798,16 +2814,19 @@ def _ch_boot_script_impl(ctx: AnalysisContext) -> list[Provider]:
         "",
     ]
 
-    # Kernel dir (cmd_args resolves artifact to path)
-    if kernel_dir:
-        lines.append(cmd_args("KERNEL_DIR=\"", kernel_dir, "\"", delimiter = ""))
+    # Kernel image (cmd_args resolves artifact to path)
+    if kernel_image:
+        lines.append(cmd_args("KERNEL_SRC=\"", kernel_image, "\"", delimiter = ""))
         lines.append("")
-        lines.append("# Find kernel image")
+        lines.append("# Find kernel image (file = KernelInfo.bzimage, directory = legacy)")
         lines.append("KERNEL=\"\"")
-        lines.append("for k in \"$KERNEL_DIR/boot/vmlinuz\"* \"$KERNEL_DIR/boot/bzImage\" \"$KERNEL_DIR/vmlinuz\"* \"$KERNEL_DIR/vmlinux\"*; do")
-        lines.append("    if [ -f \"$k\" ]; then KERNEL=\"$k\"; break; fi")
-        lines.append("done")
-        lines.append("if [ -z \"$KERNEL\" ]; then echo \"Error: Cannot find kernel in $KERNEL_DIR\"; exit 1; fi")
+        lines.append("if [ -f \"$KERNEL_SRC\" ]; then KERNEL=\"$KERNEL_SRC\"")
+        lines.append("else")
+        lines.append("    for k in \"$KERNEL_SRC/boot/vmlinuz\"* \"$KERNEL_SRC/boot/bzImage\" \"$KERNEL_SRC/vmlinuz\"* \"$KERNEL_SRC/vmlinux\"*; do")
+        lines.append("        if [ -f \"$k\" ]; then KERNEL=\"$k\"; break; fi")
+        lines.append("    done")
+        lines.append("fi")
+        lines.append("if [ -z \"$KERNEL\" ]; then echo \"Error: Cannot find kernel from $KERNEL_SRC\"; exit 1; fi")
         lines.append("echo \"  Kernel: $KERNEL\"")
 
     # Disk image
@@ -3145,8 +3164,16 @@ def _iso_image_impl(ctx: AnalysisContext) -> list[Provider]:
     iso_file = ctx.actions.declare_output(ctx.attrs.name + ".iso")
 
     # Get kernel and initramfs
-    kernel_dir = ctx.attrs.kernel[DefaultInfo].default_outputs[0]
+    kernel_image = _get_kernel_image(ctx.attrs.kernel)
     initramfs_file = ctx.attrs.initramfs[DefaultInfo].default_outputs[0]
+
+    # Modules directory: explicit dep > KernelInfo.modules_dir > legacy (shell fallback)
+    if ctx.attrs.modules:
+        modules_dir = ctx.attrs.modules[DefaultInfo].default_outputs[0]
+    elif KernelInfo in ctx.attrs.kernel:
+        modules_dir = ctx.attrs.kernel[KernelInfo].modules_dir
+    else:
+        modules_dir = None
 
     # Optional rootfs for live system
     rootfs_dir = None
@@ -3259,9 +3286,10 @@ LABEL recovery
 set -e
 
 ISO_OUT="$1"
-KERNEL_DIR="$2"
+KERNEL_SRC="$2"
 INITRAMFS="$3"
 ROOTFS_DIR="$4"
+MODULES_DIR="$5"
 BOOT_MODE="{boot_mode}"
 VOLUME_LABEL="{volume_label}"
 EFI_BOOT_FILE="{efi_boot_file}"
@@ -3277,17 +3305,18 @@ mkdir -p "$WORK/boot/grub"
 mkdir -p "$WORK/isolinux"
 mkdir -p "$WORK/EFI/BOOT"
 
-# Find and copy kernel
+# Find kernel image (file = KernelInfo.bzimage, directory = legacy install dir)
 KERNEL=""
-for k in "$KERNEL_DIR/boot/vmlinuz"* "$KERNEL_DIR/boot/bzImage" "$KERNEL_DIR/boot/Image" "$KERNEL_DIR/vmlinuz"* "$KERNEL_DIR/Image"*; do
-    if [ -f "$k" ]; then
-        KERNEL="$k"
-        break
-    fi
-done
+if [ -f "$KERNEL_SRC" ]; then
+    KERNEL="$KERNEL_SRC"
+else
+    for k in "$KERNEL_SRC/boot/vmlinuz"* "$KERNEL_SRC/boot/bzImage" "$KERNEL_SRC/boot/Image" "$KERNEL_SRC/vmlinuz"* "$KERNEL_SRC/Image"*; do
+        if [ -f "$k" ]; then KERNEL="$k"; break; fi
+    done
+fi
 
 if [ -z "$KERNEL" ]; then
-    echo "Error: Cannot find kernel image in $KERNEL_DIR"
+    echo "Error: Cannot find kernel image from $KERNEL_SRC"
     exit 1
 fi
 
@@ -3327,13 +3356,19 @@ if [ -n "{include_rootfs}" ] && [ -d "$ROOTFS_DIR" ]; then
         [ "$_ima_applied" -gt 0 ] && echo "Applied security.ima to $_ima_applied files"
     fi
 
-    # Copy kernel modules from kernel build to rootfs
-    if [ -d "$KERNEL_DIR/lib/modules" ]; then
-        echo "Copying kernel modules to rootfs..."
+    # Copy kernel modules to rootfs (explicit modules dir or legacy kernel dir)
+    _MOD_SRC=""
+    if [ -n "$MODULES_DIR" ] && [ -d "$MODULES_DIR" ]; then
+        _MOD_SRC="$MODULES_DIR"
+    elif [ -d "$KERNEL_SRC/lib/modules" ]; then
+        _MOD_SRC="$KERNEL_SRC/lib/modules"
+    fi
+    if [ -n "$_MOD_SRC" ]; then
+        echo "Copying kernel modules from $_MOD_SRC to rootfs..."
         mkdir -p "$ROOTFS_WORK/lib/modules"
-        cp -a "$KERNEL_DIR/lib/modules/." "$ROOTFS_WORK/lib/modules/"
+        cp -a "$_MOD_SRC/." "$ROOTFS_WORK/lib/modules/"
         # Run depmod to generate modules.dep
-        KVER=$(ls "$KERNEL_DIR/lib/modules" | head -1)
+        KVER=$(ls "$_MOD_SRC" | head -1)
         if [ -n "$KVER" ] && command -v depmod >/dev/null 2>&1; then
             echo "Running depmod for kernel $KVER..."
             depmod -b "$ROOTFS_WORK" "$KVER" 2>/dev/null || true
@@ -3593,14 +3628,16 @@ ls -lh "$ISO_OUT"
     )
 
     rootfs_arg = rootfs_dir if rootfs_dir else ""
+    modules_arg = modules_dir if modules_dir else ""
 
     cmd = cmd_args([
         "bash",
         script,
         iso_file.as_output(),
-        kernel_dir,
+        kernel_image,
         initramfs_file,
         rootfs_arg,
+        modules_arg,
     ])
 
     # Write version to a file that contributes to action cache key
@@ -3624,6 +3661,7 @@ _iso_image_rule = rule(
     attrs = {
         "kernel": attrs.dep(),
         "initramfs": attrs.dep(),
+        "modules": attrs.option(attrs.dep(), default = None),
         "rootfs": attrs.option(attrs.dep(), default = None),
         "boot_mode": attrs.string(default = "hybrid"),  # bios, efi, or hybrid
         "volume_label": attrs.string(default = "BUCKOS"),

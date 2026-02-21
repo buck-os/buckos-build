@@ -1,10 +1,10 @@
 load("//defs:package_defs.bzl", "cargo_workspace_package")
 
-# Download BuckOS source from GitHub (shared across workspace members)
 # BuckOS Installer - Graphical installer for live environment
 cargo_workspace_package(
     name = "buckos-installer",
-    workspace_member = "buckos-installer",
+    workspace_source = "//packages/linux/apps/buckos-tools:buckos-src",
+    member = "buckos-installer",
     version = "0.0.1",
     bins = ["buckos-installer"],
     description = "Graphical installer for BuckOS",
