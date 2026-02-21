@@ -6,42 +6,15 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "psmisc",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-        "//packages/linux/dev-libs/misc/gettext:gettext",
-    ],
-    src_prepare = """
-autoreconf -fiv
-""",
-    # Create a stub po/Makefile after configure to avoid NLS build issues
-    src_configure = """
-./configure \\
-    --build=$CBUILD \\
-    --host=$CHOST \\
-    --target=$CHOST \\
-    --prefix=/usr \\
-    --disable-nls \\
-    --disable-apparmor \\
-    --enable-ipv6 \\
-    --without-x
-
-# Create a stub po/Makefile to replace the broken one
-cat > po/Makefile << 'EOFMAKEFILE'
-all:
-install:
-clean:
-distclean:
-EOFMAKEFILE
-""",
     version = "23.7",
     url = "https://gitlab.com/psmisc/psmisc/-/archive/v23.7/psmisc-v23.7.tar.gz",
     sha256 = "8f2526ce7ac6ef4976454cd63095fa10e467ef745cf33dc4f91df0bd7b10b905",
     description = "Miscellaneous utilities using /proc (fuser, killall, pstree)",
     homepage = "https://gitlab.com/psmisc/psmisc",
     license = "GPL-2",
-    use_defaults = ["ipv6", "-nls"],  # Disable NLS to avoid po/Makefile issues
+    pre_configure_cmds = [
+        "autoreconf -fiv",
+    ],
     use_deps = {
         "selinux": "//packages/linux/system/security/selinux:selinux",
     },
@@ -52,11 +25,16 @@ EOFMAKEFILE
         "nls": ("--enable-nls", "--disable-nls"),
         "selinux": ("--enable-selinux", "--disable-selinux"),
     },
-    configure_args = [
-        "--prefix=/usr",
+    # Stub po/Makefile to avoid broken NLS build when --disable-nls
+    pre_build_cmds = [
+        "mkdir -p po && printf 'all:\\ninstall:\\nclean:\\ndistclean:\\n' > po/Makefile",
     ],
     deps = [
         "//packages/linux/system/terminal/ncurses:ncurses",
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+        "//packages/linux/dev-libs/misc/gettext:gettext",
     ],
     visibility = ["PUBLIC"],
 )

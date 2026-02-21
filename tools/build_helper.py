@@ -182,6 +182,35 @@ def main():
         with open(ninja_file, "w") as f:
             f.write(content)
 
+    # Rewrite stale absolute paths in autotools Makefiles.  configure
+    # embeds the build directory in generated Makefiles (e.g. references
+    # to man page sources, libtool scripts).  After copytree these point
+    # at the old "configured" directory which won't exist in later phases.
+    for pattern in ["Makefile", "**/Makefile", "**/Makefile.in"]:
+        for fpath in _glob.glob(os.path.join(output_dir, pattern), recursive=True):
+            try:
+                with open(fpath, "r") as f:
+                    fc = f.read()
+                if build_dir in fc:
+                    fc = fc.replace(build_dir, output_dir)
+                    with open(fpath, "w") as f:
+                        f.write(fc)
+            except (UnicodeDecodeError, PermissionError):
+                pass
+
+    # Also rewrite libtool and config.status which embed build dir paths
+    for pattern in ["libtool", "config.status", "**/libtool"]:
+        for fpath in _glob.glob(os.path.join(output_dir, pattern), recursive=True):
+            try:
+                with open(fpath, "r") as f:
+                    fc = f.read()
+                if build_dir in fc:
+                    fc = fc.replace(build_dir, output_dir)
+                    with open(fpath, "w") as f:
+                        f.write(fc)
+            except (UnicodeDecodeError, PermissionError):
+                pass
+
     # Reset all file timestamps to a single instant so make doesn't try
     # to regenerate autotools/cmake/meson outputs.  The copytree preserves
     # original timestamps but path rewriting modifies some files, making

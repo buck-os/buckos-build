@@ -41,27 +41,14 @@ package(
         "--without-tests",
     ],
 
-    src_install = '''
-make DESTDIR="$DESTDIR" install
-
-# Create symlinks for non-wide character versions
-cd "$DESTDIR/usr/lib64"
-for lib in ncurses form panel menu; do
-    ln -sf lib${lib}w.so lib${lib}.so 2>/dev/null || true
-    ln -sf lib${lib}w.a lib${lib}.a 2>/dev/null || true
-done
-
-# tinfo compatibility
-ln -sf libncursesw.so libtinfo.so 2>/dev/null || true
-ln -sf libncursesw.so libtinfow.so 2>/dev/null || true
-
-# Create pkg-config symlinks
-cd "$DESTDIR/usr/lib64/pkgconfig"
-for pc in ncurses form panel menu; do
-    ln -sf ${pc}w.pc ${pc}.pc 2>/dev/null || true
-done
-ln -sf ncursesw.pc tinfo.pc 2>/dev/null || true
-''',
+    post_install_cmds = [
+        # Non-wide compatibility symlinks
+        "cd usr/lib64 && for lib in ncurses form panel menu; do ln -sf lib${lib}w.so lib${lib}.so; done",
+        # tinfo compatibility
+        "cd usr/lib64 && ln -sf libncursesw.so libtinfo.so && ln -sf libncursesw.so libtinfow.so",
+        # pkg-config symlinks
+        "cd usr/lib64/pkgconfig && for pc in ncurses form panel menu; do ln -sf ${pc}w.pc ${pc}.pc; done && ln -sf ncursesw.pc tinfo.pc",
+    ],
 
     deps = [],
 
