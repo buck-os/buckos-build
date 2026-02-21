@@ -1824,6 +1824,23 @@ filegroup(
 # Downloads from GitHub to get the full buckos-build repository
 # The buckos CLI expects /var/db/repos/buckos-build with defs/ and packages/ directories
 # Also downloads buck2 prebuilt binary for building packages
+
+# TODO: Pin to a specific commit archive and add sha256 for reproducibility.
+# The main branch tarball changes on every push.
+http_file(
+    name = "buckos-build-tarball",
+    urls = ["https://github.com/buck-os/buckos-build/archive/refs/heads/main.tar.gz"],
+    sha256 = "",
+    out = "buckos-build-main.tar.gz",
+)
+
+http_file(
+    name = "buck2-prebuilt",
+    urls = ["https://github.com/facebook/buck2/releases/download/2026-01-02/buck2-x86_64-unknown-linux-gnu.zst"],
+    sha256 = "",
+    out = "buck2-x86_64-unknown-linux-gnu.zst",
+)
+
 genrule(
     name = "buckos-repo-gen",
     out = "buckos-repo",
@@ -1834,9 +1851,7 @@ mkdir -p "$OUT/usr/bin"
 # Without this, the assemble script recursively processes thousands of directories
 mkdir -p "$OUT/etc"
 
-# Download the buckos-build tarball from GitHub
-TARBALL=`mktemp`
-curl -sL "https://github.com/buck-os/buckos-build/archive/refs/heads/main.tar.gz" -o "$TARBALL"
+TARBALL="$(location :buckos-build-tarball)"
 # Extract defs/ directory (required by buckos CLI)
 tar -xzf "$TARBALL" --strip-components=1 -C "$OUT/var/db/repos/buckos-build" "buckos-build-main/defs"
 # Extract config/ directory (Fedora build flags and other config)
@@ -1851,7 +1866,6 @@ tar -xzf "$TARBALL" --strip-components=1 -C "$OUT/var/db/repos/buckos-build" "bu
 # Extract packages/linux directory
 mkdir -p "$OUT/var/db/repos/buckos-build/packages"
 tar -xzf "$TARBALL" --strip-components=2 -C "$OUT/var/db/repos/buckos-build/packages" "buckos-build-main/packages/linux"
-rm -f "$TARBALL"
 
 # Create symlink for buck-out to use tmpfs (avoids filling overlay RAM)
 ln -s /tmp/buck-out "$OUT/var/db/repos/buckos-build/buck-out"
@@ -1859,12 +1873,9 @@ ln -s /tmp/buck-out "$OUT/var/db/repos/buckos-build/buck-out"
 # Create install/ directory (installer generates install/BUCK dynamically)
 mkdir -p "$OUT/var/db/repos/buckos-build/install"
 
-# Download buck2 prebuilt static binary (x86_64)
-BUCK2_ZST=`mktemp`
-curl -sL "https://github.com/facebook/buck2/releases/download/2026-01-02/buck2-x86_64-unknown-linux-gnu.zst" -o "$BUCK2_ZST"
-zstd -d "$BUCK2_ZST" -o "$OUT/usr/bin/buck2"
+# Extract buck2 prebuilt static binary (x86_64)
+zstd -d "$(location :buck2-prebuilt)" -o "$OUT/usr/bin/buck2"
 chmod +x "$OUT/usr/bin/buck2"
-rm -f "$BUCK2_ZST"
 """,
     visibility = ["PUBLIC"],
 )

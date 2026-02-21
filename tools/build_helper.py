@@ -83,6 +83,11 @@ def main():
         shutil.rmtree(output_dir)
     shutil.copytree(build_dir, output_dir, symlinks=True)
 
+    # Disable host compiler/build caches — Buck2 caches actions itself,
+    # and external caches can poison results across build contexts.
+    os.environ["CCACHE_DISABLE"] = "1"
+    os.environ["RUSTC_WRAPPER"] = ""
+
     # Apply extra environment variables
     for entry in args.extra_env:
         key, _, value = entry.partition("=")

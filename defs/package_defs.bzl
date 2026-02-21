@@ -497,155 +497,10 @@ def _collect_dep_dirs(deps: list) -> list:
     return dep_dirs
 
 # -----------------------------------------------------------------------------
-# Signature Download Rule (tries .sig, .asc, .sign extensions)
+# Source Extraction Rule (used with http_file for downloads)
+# Signature downloads also use http_file — the macro constructs candidate URLs
+# (.sig, .asc, .sign) and http_file tries them in order, falling back on 404.
 # -----------------------------------------------------------------------------
-
-def _http_file_with_proxy_impl(ctx: AnalysisContext) -> list[Provider]:
-    """Download a file using configurable multi-source resolution.
-
-    Source order is controlled by [mirror] source_order in .buckconfig.
-    The external fetch_source.sh script handles vendor, mirror,
-    and upstream backends.
-    """
-    out_file = ctx.actions.declare_output(ctx.attrs.out)
-
-    # Get the external fetch script
-    fetch_script = ctx.attrs._fetch_script[DefaultInfo].default_outputs[0]
-
-    cmd = cmd_args([
-        "bash",
-        fetch_script,
-        out_file.as_output(),
-        ctx.attrs.urls[0],
-        ctx.attrs.sha256,
-    ])
-
-    ctx.actions.run(
-        cmd,
-        category = "http_file",
-        identifier = ctx.attrs.name,
-        local_only = True,
-        env = _get_download_env(),
-    )
-
-    return [DefaultInfo(default_output = out_file)]
-
-_http_file_with_proxy = rule(
-    impl = _http_file_with_proxy_impl,
-    attrs = {
-        "urls": attrs.list(attrs.string(), doc = "URLs to download from"),
-        "sha256": attrs.string(doc = "Expected SHA256 checksum"),
-        "out": attrs.string(doc = "Output filename"),
-        "proxy": attrs.string(default = "", doc = "HTTP proxy URL (legacy, now read from env)"),
-        "_fetch_script": attrs.dep(default = "//defs/scripts:fetch-source"),
-        "labels": attrs.list(attrs.string(), default = []),
-    },
-)
-
-def _download_signature_impl(ctx: AnalysisContext) -> list[Provider]:
-    """Download GPG signature, trying multiple extensions, checking for vendored signature first."""
-    out_file = ctx.actions.declare_output(ctx.attrs.out)
-
-    # Calculate vendor path for signature using configurable vendor directory
-    vendor_path = get_vendor_path(ctx.label.package, ctx.attrs.out)
-
-    # Get vendor configuration
-    prefer_vendored = "true" if _get_vendor_prefer() else "false"
-    require_vendored = "true" if _get_vendor_require() else "false"
-
-    # Create a wrapper script that checks vendored first, then falls back to download script
-    wrapper_content = """#!/bin/bash
-set -e
-OUT_FILE="$1"
-BASE_URL="$2"
-EXPECTED_SHA256="$3"
-PROXY="$4"
-VENDOR_PATH="$5"
-PREFER_VENDORED="$6"
-REQUIRE_VENDORED="$7"
-DOWNLOAD_SCRIPT="$8"
-
-# Function to verify SHA256
-verify_sha256() {
-    local file="$1"
-    local expected="$2"
-    if [ -n "$expected" ]; then
-        local actual=$(sha256sum "$file" | cut -d' ' -f1)
-        if [ "$actual" != "$expected" ]; then
-            return 1
-        fi
-    fi
-    return 0
-}
-
-# Check for vendored signature if prefer_vendored is enabled
-if [ "$PREFER_VENDORED" = "true" ] && [ -n "$VENDOR_PATH" ]; then
-    # Find the repo root (walk up until we find .buckconfig)
-    REPO_ROOT="$PWD"
-    while [ ! -f "$REPO_ROOT/.buckconfig" ] && [ "$REPO_ROOT" != "/" ]; do
-        REPO_ROOT="$(dirname "$REPO_ROOT")"
-    done
-
-    VENDORED_FILE="$REPO_ROOT/$VENDOR_PATH"
-    if [ -f "$VENDORED_FILE" ]; then
-        echo "Found vendored signature: $VENDORED_FILE"
-        if verify_sha256 "$VENDORED_FILE" "$EXPECTED_SHA256"; then
-            echo "SHA256 verified, using vendored signature"
-            cp "$VENDORED_FILE" "$OUT_FILE"
-            exit 0
-        else
-            echo "WARNING: Vendored signature checksum mismatch, falling back to download"
-        fi
-    fi
-fi
-
-# If require_vendored is set, fail if we get here
-if [ "$REQUIRE_VENDORED" = "true" ]; then
-    echo "ERROR: Vendored signature required but not found or invalid: $VENDOR_PATH" >&2
-    echo "Run: ./tools/vendor-sources --target <target> to vendor sources" >&2
-    exit 1
-fi
-
-# Fall back to original download script
-exec bash "$DOWNLOAD_SCRIPT" "$OUT_FILE" "$BASE_URL" "$EXPECTED_SHA256" "$PROXY"
-"""
-
-    wrapper_script = ctx.actions.write("download_sig_wrapper.sh", wrapper_content, is_executable = True)
-    download_script = ctx.attrs._download_script[DefaultInfo].default_outputs[0]
-
-    cmd = cmd_args([
-        "bash",
-        wrapper_script,
-        out_file.as_output(),
-        ctx.attrs.src_uri,
-        ctx.attrs.sha256,
-        ctx.attrs.proxy,
-        vendor_path,
-        prefer_vendored,
-        require_vendored,
-        download_script,
-    ])
-
-    ctx.actions.run(
-        cmd,
-        category = "download_signature",
-        identifier = ctx.attrs.name,
-        local_only = True,  # Network access needed (unless vendored)
-        env = _get_download_env(),
-    )
-
-    return [DefaultInfo(default_output = out_file)]
-
-_download_signature = rule(
-    impl = _download_signature_impl,
-    attrs = {
-        "src_uri": attrs.string(doc = "Base URL of the source archive (extension will be appended)"),
-        "sha256": attrs.string(doc = "Expected SHA256 of the signature file"),
-        "out": attrs.string(doc = "Output filename"),
-        "proxy": attrs.string(default = "", doc = "HTTP proxy URL for downloads"),
-        "_download_script": attrs.dep(default = "//defs/scripts:download-signature"),
-    },
-)
 
 # Source Extraction Rule (used with http_file for downloads)
 # -----------------------------------------------------------------------------
@@ -862,19 +717,19 @@ def download_source(
         out = archive_filename,
     )
 
-    # Create signature download rule if signature_required and signature_sha256 provided
-    # This rule tries .sig, .asc, .sign extensions automatically
+    # Create signature http_file if signature_required and signature_sha256 provided.
+    # http_file tries URLs in order, falling back on download failure (404).
     sig_target = None
     if signature_required and not signature_sha256:
         fail("signature_required=True but signature_sha256 not provided for {}. Run ./tools/update_checksums.py".format(name))
     if signature_required and signature_sha256:
         sig_target = name + "-sig"
-        _download_signature(
+        _sig_urls = [src_uri + ext for ext in [".sig", ".asc", ".sign"]]
+        native.http_file(
             name = sig_target,
-            src_uri = src_uri,
+            urls = _sig_urls,
             sha256 = signature_sha256,
             out = archive_filename + ".sig",
-            proxy = _get_download_proxy(),
         )
 
     # Create extraction rule
@@ -4735,30 +4590,6 @@ tc-fix-gcc15-c23() {
     return 1
 }
 
-# Fetch a git submodule from URL to target directory
-# Usage: fetch_submodule <url> <target_dir> <verify_file>
-# Example: fetch_submodule "https://github.com/foo/bar/archive/main.tar.gz" "ext/bar" "ext/bar/Makefile"
-fetch_submodule() {
-    local url="$1"
-    local target="$2"
-    local check_file="$3"
-
-    if [ ! -f "$check_file" ]; then
-        echo "Fetching submodule to $target..."
-        rm -rf "$target"
-        mkdir -p "$target"
-        local tmpfile="/tmp/submodule_$(basename "$target").tar.gz"
-        wget -q "$url" -O "$tmpfile"
-        tar --strip-components=1 -xf "$tmpfile" -C "$target"
-        rm -f "$tmpfile"
-        if [ ! -f "$check_file" ]; then
-            echo "ERROR: Failed to fetch submodule - $check_file not found"
-            return 1
-        fi
-        echo "Successfully fetched submodule to $target"
-    fi
-    return 0
-}
 '''
 
 def tc_export(vars: list[str] = ["CC", "CXX", "LD", "AR", "RANLIB", "NM"]) -> str:
@@ -5178,85 +5009,6 @@ if [ -n "${EBUILD_DEBUG:-}" ]; then
     echo "=========================="
 fi
 
-# Try to download binary package from mirror before building from source
-# Enabled when BUCKOS_BINARY_MIRROR environment variable is set
-# Mirror structure: $MIRROR/index.json and $MIRROR/<first-letter>/<package>.tar.gz
-# Example: export BUCKOS_BINARY_MIRROR=file:///tmp/buckos-mirror
-# Example: export BUCKOS_BINARY_MIRROR=https://mirror.buckos.org
-# Set BUCKOS_PREFER_BINARIES=false to disable binary downloads
-BUCKOS_PROXY="@@PROXY@@"
-CURL_PROXY_ARGS=""
-WGET_PROXY_ARGS=""
-if [ -n "$BUCKOS_PROXY" ]; then
-    CURL_PROXY_ARGS="--proxy $BUCKOS_PROXY"
-    WGET_PROXY_ARGS="-e http_proxy=$BUCKOS_PROXY -e https_proxy=$BUCKOS_PROXY"
-fi
-if [ -n "$BUCKOS_BINARY_MIRROR" ] && [ "${BUCKOS_PREFER_BINARIES:-true}" = "true" ]; then
-    echo "Checking binary mirror ($BUCKOS_BINARY_MIRROR) for @@NAME@@-@@VERSION@@..."
-
-    # Simple binary download logic without complex config hash calculation
-    # Query index.json and find matching package by name/version
-    INDEX_URL="$BUCKOS_BINARY_MIRROR/index.json"
-
-    if curl $CURL_PROXY_ARGS -f -s "$INDEX_URL" -o /tmp/mirror-index-$$.json 2>/dev/null || wget $WGET_PROXY_ARGS -q "$INDEX_URL" -O /tmp/mirror-index-$$.json 2>/dev/null; then
-        # Find package in index using python3 or fallback to grep
-        if command -v python3 &>/dev/null; then
-            PACKAGE_INFO=$(python3 -c "
-import json, sys
-try:
-    with open('/tmp/mirror-index-$$.json') as f:
-        index = json.load(f)
-    packages = index.get('by_name', {}).get('@@NAME@@', [])
-    # Find matching version
-    for pkg in packages:
-        if pkg.get('version') == '@@VERSION@@':
-            print(pkg.get('filename', ''))
-            print(pkg.get('config_hash', ''))
-            break
-except: pass
-" 2>/dev/null)
-
-            if [ -n "$PACKAGE_INFO" ]; then
-                FILENAME=$(echo "$PACKAGE_INFO" | head -1)
-                CONFIG_HASH=$(echo "$PACKAGE_INFO" | tail -1)
-
-                if [ -n "$FILENAME" ]; then
-                    FIRST_LETTER=$(echo "@@NAME@@" | cut -c1 | tr '[:upper:]' '[:lower:]')
-                    PACKAGE_URL="$BUCKOS_BINARY_MIRROR/$FIRST_LETTER/$FILENAME"
-                    HASH_URL="$PACKAGE_URL.sha256"
-
-                    echo "Downloading binary: $FILENAME..."
-
-                    # Download package and hash
-                    if (curl $CURL_PROXY_ARGS -f -s "$PACKAGE_URL" -o /tmp/pkg-$$.tar.gz && curl $CURL_PROXY_ARGS -f -s "$HASH_URL" -o /tmp/pkg-$$.tar.gz.sha256) || \
-                       (wget $WGET_PROXY_ARGS -q "$PACKAGE_URL" -O /tmp/pkg-$$.tar.gz && wget $WGET_PROXY_ARGS -q "$HASH_URL" -O /tmp/pkg-$$.tar.gz.sha256); then
-
-                        # Verify SHA256
-                        EXPECTED_HASH=$(head -1 /tmp/pkg-$$.tar.gz.sha256 | awk '{print $1}')
-                        if command -v sha256sum &>/dev/null; then
-                            ACTUAL_HASH=$(sha256sum /tmp/pkg-$$.tar.gz | awk '{print $1}')
-                        elif command -v shasum &>/dev/null; then
-                            ACTUAL_HASH=$(shasum -a 256 /tmp/pkg-$$.tar.gz | awk '{print $1}')
-                        fi
-
-                        if [ "$EXPECTED_HASH" = "$ACTUAL_HASH" ]; then
-                            echo "Binary verified, extracting to $_EBUILD_DESTDIR..."
-                            mkdir -p "$_EBUILD_DESTDIR"
-                            tar -xzf /tmp/pkg-$$.tar.gz -C "$_EBUILD_DESTDIR" --strip-components=0
-                            rm -f /tmp/pkg-$$.tar.gz /tmp/pkg-$$.tar.gz.sha256 /tmp/mirror-index-$$.json
-                            echo "Binary package installed successfully from mirror"
-                            exit 0
-                        else
-                            echo "Warning: SHA256 mismatch, falling back to source build"
-                        fi
-                    fi
-                fi
-            fi
-        fi
-        rm -f /tmp/mirror-index-$$.json /tmp/pkg-$$.tar.gz /tmp/pkg-$$.tar.gz.sha256 2>/dev/null || true
-    fi
-fi
-
 # Extract patch files from command line arguments
 # Patches will be applied before building, so we can use relative paths
 PATCH_FILES=()
@@ -5396,46 +5148,6 @@ gcc-min-version() {
     local min="$1"
     local cur=$(gcc-major-version)
     [ -n "$cur" ] && [ "$cur" -ge "$min" ] 2>/dev/null
-}
-
-# Fetch a git submodule from URL to target directory
-# Usage: fetch_submodule <url> <target_dir> <verify_file>
-fetch_submodule() {
-    local url="$1"
-    local target="$2"
-    local check_file="$3"
-
-    if [ ! -f "$check_file" ]; then
-        echo "Fetching submodule to $target from $url..."
-        rm -rf "$target"
-        mkdir -p "$target"
-        local tmpfile="/tmp/submodule_$(basename "$target").tar.gz"
-
-        # Build curl proxy args from environment
-        local curl_proxy_args=""
-        if [ -n "${http_proxy:-}" ]; then
-            curl_proxy_args="--proxy $http_proxy"
-        elif [ -n "${https_proxy:-}" ]; then
-            curl_proxy_args="--proxy $https_proxy"
-        elif [ -n "${BUCKOS_PROXY:-}" ]; then
-            curl_proxy_args="--proxy $BUCKOS_PROXY"
-        fi
-
-        # Use curl with -L to follow redirects, -f to fail on HTTP errors
-        if ! curl -fsSL $curl_proxy_args "$url" -o "$tmpfile"; then
-            echo "ERROR: Failed to download $url"
-            return 1
-        fi
-
-        tar --strip-components=1 -xf "$tmpfile" -C "$target"
-        rm -f "$tmpfile"
-        if [ ! -f "$check_file" ]; then
-            echo "ERROR: Failed to fetch submodule - $check_file not found"
-            return 1
-        fi
-        echo "Successfully fetched submodule to $target"
-    fi
-    return 0
 }
 
 # Error handler
@@ -5604,7 +5316,6 @@ source "$FRAMEWORK_SCRIPT"
     script_content = script_content.replace("@@BOOTSTRAP_STAGE@@", bootstrap_stage)
     script_content = script_content.replace("@@BUILD_THREADS@@", build_threads)
     script_content = script_content.replace("@@RUN_TESTS@@", "yes" if ctx.attrs.run_tests else "")
-    script_content = script_content.replace("@@PROXY@@", _get_download_proxy())
     script_content = script_content.replace("@@PROVENANCE_ENABLED@@", "true" if provenance_enabled else "false")
     script_content = script_content.replace("@@SLSA_ENABLED@@", "true" if slsa_enabled else "false")
     script_content = script_content.replace("@@PKG_TYPE@@", ctx.attrs.package_type)
@@ -7317,8 +7028,9 @@ def cargo_lock_deps(
 def cargo_package(
         name: str,
         version: str,
-        src_uri: str,
-        sha256: str,
+        src_uri: str | None = None,
+        sha256: str | None = None,
+        source: str | None = None,
         bins: list[str] = [],
         cargo_args: list[str] = [],
         deps: list[str] = [],
@@ -7388,18 +7100,24 @@ def cargo_package(
     # Apply platform-specific constraints (Linux packages only build on Linux, etc.)
     kwargs = _apply_platform_constraints(kwargs)
 
-    src_name = name + "-src"
-
-    download_source(
-        name = src_name,
-        src_uri = src_uri,
-        sha256 = sha256,
-        signature_sha256 = signature_sha256,
-        signature_required = signature_required,
-        gpg_key = gpg_key,
-        gpg_keyring = gpg_keyring,
-        exclude_patterns = exclude_patterns,
-    )
+    # Handle source - either use provided source or create one from src_uri
+    if source:
+        src_target = source
+    else:
+        if not src_uri or not sha256:
+            fail("Either 'source' or both 'src_uri' and 'sha256' must be provided")
+        src_name = name + "-src"
+        download_source(
+            name = src_name,
+            src_uri = src_uri,
+            sha256 = sha256,
+            signature_sha256 = signature_sha256,
+            signature_required = signature_required,
+            gpg_key = gpg_key,
+            gpg_keyring = gpg_keyring,
+            exclude_patterns = exclude_patterns,
+        )
+        src_target = ":" + src_name
 
     # Download vendor tarball if provided (for offline cargo builds with git deps)
     vendor_tarball_target = None
@@ -7529,7 +7247,7 @@ fi
 
     ebuild_package_rule(
         name = name,
-        source = ":" + src_name,
+        source = src_target,
         version = version,
         package_type = "cargo",
         src_prepare = src_prepare,
@@ -8164,8 +7882,9 @@ def go_sum_deps(
 def go_package(
         name: str,
         version: str,
-        src_uri: str,
-        sha256: str,
+        src_uri: str | None = None,
+        sha256: str | None = None,
+        source: str | None = None,
         bins: list[str] = [],
         packages: list[str] = ["."],
         deps: list[str] = [],
@@ -8230,18 +7949,24 @@ def go_package(
     # Apply platform-specific constraints (Linux packages only build on Linux, etc.)
     kwargs = _apply_platform_constraints(kwargs)
 
-    src_name = name + "-src"
-
-    download_source(
-        name = src_name,
-        src_uri = src_uri,
-        sha256 = sha256,
-        signature_sha256 = signature_sha256,
-        signature_required = signature_required,
-        gpg_key = gpg_key,
-        gpg_keyring = gpg_keyring,
-        exclude_patterns = exclude_patterns,
-    )
+    # Handle source - either use provided source or create one from src_uri
+    if source:
+        src_target = source
+    else:
+        if not src_uri or not sha256:
+            fail("Either 'source' or both 'src_uri' and 'sha256' must be provided")
+        src_name = name + "-src"
+        download_source(
+            name = src_name,
+            src_uri = src_uri,
+            sha256 = sha256,
+            signature_sha256 = signature_sha256,
+            signature_required = signature_required,
+            gpg_key = gpg_key,
+            gpg_keyring = gpg_keyring,
+            exclude_patterns = exclude_patterns,
+        )
+        src_target = ":" + src_name
 
     # Calculate effective USE flags if USE flags are specified
     effective_use = []
@@ -8371,7 +8096,7 @@ echo "Go library compiled successfully (no binaries to install)"
 
     ebuild_package_rule(
         name = name,
-        source = ":" + src_name,
+        source = src_target,
         version = version,
         package_type = "go",
         src_prepare = src_prepare,
@@ -10726,68 +10451,26 @@ def bootstrap_package(
 
 MavenArtifactInfo = provider(fields = ["group_id", "artifact_id", "version", "jar_path"])
 
-def _maven_artifact_download_impl(ctx: AnalysisContext) -> list[Provider]:
-    """Download a single Maven artifact from Maven Central."""
-    out_jar = ctx.actions.declare_output(ctx.attrs.artifact_id + "-" + ctx.attrs.version + ".jar")
-
-    group_path = ctx.attrs.group_id.replace(".", "/")
-    url = "https://repo1.maven.org/maven2/{}/{}/{}/{}-{}.jar".format(
-        group_path,
-        ctx.attrs.artifact_id,
-        ctx.attrs.version,
-        ctx.attrs.artifact_id,
-        ctx.attrs.version,
-    )
-
-    script_content = """#!/bin/bash
-set -e
-URL="$1"
-OUT="$2"
-SHA256="$3"
-
-PROXY_ARGS=""
-if [ -n "${{http_proxy:-}}" ]; then
-    PROXY_ARGS="--proxy $http_proxy"
-elif [ -n "${{https_proxy:-}}" ]; then
-    PROXY_ARGS="--proxy $https_proxy"
-fi
-
-curl -fsSL $PROXY_ARGS -o "$OUT" "$URL"
-
-if [ -n "$SHA256" ] && [ "$SHA256" != "TODO" ]; then
-    ACTUAL=$(sha256sum "$OUT" | cut -d' ' -f1)
-    if [ "$ACTUAL" != "$SHA256" ]; then
-        echo "SHA256 mismatch for $URL"
-        echo "  Expected: $SHA256"
-        echo "  Actual:   $ACTUAL"
-        exit 1
-    fi
-fi
-"""
-    script = ctx.actions.write("download-maven.sh", script_content, is_executable = True)
-    ctx.actions.run(
-        cmd_args(["bash", script, url, out_jar.as_output(), ctx.attrs.sha256]),
-        category = "maven_download",
-        identifier = "{}:{}:{}".format(ctx.attrs.group_id, ctx.attrs.artifact_id, ctx.attrs.version),
-    )
-
+def _maven_artifact_info_impl(ctx: AnalysisContext) -> list[Provider]:
+    """Thin wrapper that forwards the http_file JAR and attaches MavenArtifactInfo."""
+    jar = ctx.attrs.jar[DefaultInfo].default_outputs[0]
     return [
-        DefaultInfo(default_output = out_jar),
+        DefaultInfo(default_output = jar),
         MavenArtifactInfo(
             group_id = ctx.attrs.group_id,
             artifact_id = ctx.attrs.artifact_id,
             version = ctx.attrs.version,
-            jar_path = out_jar,
+            jar_path = jar,
         ),
     ]
 
-_maven_artifact_download = rule(
-    impl = _maven_artifact_download_impl,
+_maven_artifact_info = rule(
+    impl = _maven_artifact_info_impl,
     attrs = {
+        "jar": attrs.dep(doc = "http_file dependency for the JAR"),
         "group_id": attrs.string(),
         "artifact_id": attrs.string(),
         "version": attrs.string(),
-        "sha256": attrs.string(default = "TODO"),
     },
 )
 
@@ -10862,12 +10545,26 @@ def maven_artifact(
             sha256 = "abc123...",
         )
     """
-    _maven_artifact_download(
+    group_path = group_id.replace(".", "/")
+    jar_filename = "{}-{}.jar".format(artifact_id, version)
+    url = "https://repo1.maven.org/maven2/{}/{}/{}/{}".format(
+        group_path, artifact_id, version, jar_filename,
+    )
+
+    jar_target = name + "-jar"
+    native.http_file(
+        name = jar_target,
+        urls = [url],
+        sha256 = sha256,
+        out = jar_filename,
+    )
+
+    _maven_artifact_info(
         name = name,
+        jar = ":" + jar_target,
         group_id = group_id,
         artifact_id = artifact_id,
         version = version,
-        sha256 = sha256,
         visibility = visibility,
     )
 

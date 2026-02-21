@@ -57,5 +57,6 @@ config_setting(
 
 buckos_execution_platforms(
     name = "platforms",
+    remote_cache_enabled = read_config("buckos", "remote_cache", "") == "true",
     visibility = ["PUBLIC"],
 )

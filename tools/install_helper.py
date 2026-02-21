@@ -56,6 +56,11 @@ def main():
         print(f"error: build directory not found: {build_dir}", file=sys.stderr)
         sys.exit(1)
 
+    # Disable host compiler/build caches — Buck2 caches actions itself,
+    # and external caches can poison results across build contexts.
+    os.environ["CCACHE_DISABLE"] = "1"
+    os.environ["RUSTC_WRAPPER"] = ""
+
     # Apply extra environment variables
     for entry in args.extra_env:
         key, _, value = entry.partition("=")

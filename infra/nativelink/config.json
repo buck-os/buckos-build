@@ -1,0 +1,53 @@
+{
+  "stores": [
+    {
+      "name": "CAS_MAIN",
+      "filesystem": {
+        "content_path": "/data/cas/content",
+        "temp_path": "/data/cas/tmp",
+        "eviction_policy": {
+          "max_bytes": 2199023255552
+        }
+      }
+    },
+    {
+      "name": "AC_MAIN",
+      "filesystem": {
+        "content_path": "/data/ac/content",
+        "temp_path": "/data/ac/tmp",
+        "eviction_policy": {
+          "max_bytes": 214748364800
+        }
+      }
+    }
+  ],
+  "servers": [
+    {
+      "listener": {
+        "http": {
+          "socket_address": "0.0.0.0:50051"
+        }
+      },
+      "services": {
+        "cas": {
+          "": {
+            "cas_store": "CAS_MAIN"
+          }
+        },
+        "ac": {
+          "": {
+            "ac_store": "AC_MAIN"
+          }
+        },
+        "capabilities": {
+          "": {}
+        },
+        "bytestream": {
+          "cas_stores": {
+            "": "CAS_MAIN"
+          }
+        }
+      }
+    }
+  ]
+}

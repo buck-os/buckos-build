@@ -1,4 +1,39 @@
 load("//defs:package.bzl", "package")
+load("//defs/rules:source.bzl", "extract_source")
+
+# Source archive
+http_file(
+    name = "google-breakpad-archive",
+    urls = ["https://github.com/google/breakpad/archive/refs/tags/v2022.07.12.tar.gz"],
+    sha256 = "f834f3553e72f0f7f30775af2fe1b6a08b718c38c1c97edc421400473d24c96b",
+    out = "google-breakpad-2022.07.12.tar.gz",
+)
+
+extract_source(
+    name = "google-breakpad-src",
+    source = ":google-breakpad-archive",
+)
+
+# Linux syscall support header required by breakpad at build time.
+# TODO: Pin to a specific commit and add sha256 for reproducibility.
+http_file(
+    name = "lss-header",
+    urls = ["https://raw.githubusercontent.com/chromium/linux-syscall-support/main/linux_syscall_support.h"],
+    sha256 = "",
+    out = "linux_syscall_support.h",
+)
+
+# Merge the LSS header into the breakpad source tree
+genrule(
+    name = "google-breakpad-patched-src",
+    out = "breakpad-src",
+    cmd = """
+mkdir -p "$OUT"
+cp -a "$(location :google-breakpad-src)"/. "$OUT/"
+mkdir -p "$OUT/src/third_party/lss"
+cp "$(location :lss-header)" "$OUT/src/third_party/lss/linux_syscall_support.h"
+""",
+)
 
 package(
     build_rule = "binary",
@@ -6,27 +41,14 @@ package(
     version = "2022.07.12",
     url = "https://github.com/google/breakpad/archive/refs/tags/v2022.07.12.tar.gz",
     sha256 = "f834f3553e72f0f7f30775af2fe1b6a08b718c38c1c97edc421400473d24c96b",
+    source = ":google-breakpad-patched-src",
     description = "Google Breakpad - crash reporting library",
     homepage = "https://chromium.googlesource.com/breakpad/breakpad",
     license = "BSD-3-Clause",
     install_script = """
         cd "$SRCS"
 
-        # Breakpad needs linux-syscall-support headers
-        # Download the full LSS header from upstream
-        mkdir -p src/third_party/lss
-
-        # Try to download the official LSS header from Chromium
-        if ! curl -sSL "https://chromium.googlesource.com/linux-syscall-support/+/refs/heads/main/linux_syscall_support.h?format=TEXT" 2>/dev/null | base64 -d > src/third_party/lss/linux_syscall_support.h; then
-            # Fallback: try GitHub mirror
-            if ! curl -sSL "https://raw.githubusercontent.com/chromium/linux-syscall-support/main/linux_syscall_support.h" \
-                -o src/third_party/lss/linux_syscall_support.h 2>/dev/null; then
-                echo "ERROR: Failed to download linux_syscall_support.h"
-                exit 1
-            fi
-        fi
-
-        # Verify the header was downloaded properly
+        # Verify the LSS header was included (pre-downloaded via http_file)
         if [ ! -s src/third_party/lss/linux_syscall_support.h ] || [ $(wc -l < src/third_party/lss/linux_syscall_support.h) -lt 100 ]; then
             echo "ERROR: linux_syscall_support.h appears to be incomplete or empty"
             exit 1

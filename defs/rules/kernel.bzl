@@ -57,7 +57,7 @@ def _kernel_config_impl(ctx):
         cmd.add("--defconfig", ctx.attrs.defconfig)
 
     if ctx.attrs.localversion:
-        cmd.add("--localversion", ctx.attrs.localversion)
+        cmd.add("--localversion=" + ctx.attrs.localversion)
 
     if arch.cross_compile:
         cmd.add("--cross-compile", arch.cross_compile)
@@ -177,6 +177,12 @@ def _kernel_build_impl(ctx):
     if arch.cross_compile:
         cmd.add("--cross-compile", arch.cross_compile)
 
+    if ctx.attrs.kcflags:
+        cmd.add("--kcflags", ctx.attrs.kcflags)
+
+    for flag in ctx.attrs.make_flags:
+        cmd.add("--make-flag", flag)
+
     for target in ctx.attrs.targets:
         cmd.add("--target", target)
 
@@ -237,6 +243,8 @@ kernel_build = rule(
         "config": attrs.dep(providers = [KernelConfigInfo]),
         "version": attrs.string(),
         "targets": attrs.list(attrs.string(), default = ["vmlinux", "bzImage", "modules"]),
+        "kcflags": attrs.string(default = ""),
+        "make_flags": attrs.list(attrs.string(), default = []),
         "arch": attrs.string(default = "x86_64"),
         "cross_toolchain": attrs.option(attrs.dep(), default = None),
         "patches": attrs.list(attrs.source(), default = []),

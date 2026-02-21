@@ -113,9 +113,10 @@ kernel_build(
 # Cloud Hypervisor Guest kernel
 kernel_build(
     name = "buckos-kernel-ch",
-    source = "//packages/linux/kernel/src:linux-src",
+    source = "//packages/linux/kernel/src:linux-mainline-src",
     config = "//packages/linux/kernel/configs:buckos-ch-guest",
-    version = "6.17.10",
+    version = "6.18",
+    kcflags = "-Wno-error -Wno-unterminated-string-initialization",
     labels = ["buckos:compile", "buckos:build:kbuild"],
     visibility = ["PUBLIC"],
 )

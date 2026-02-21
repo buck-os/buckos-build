@@ -48,6 +48,10 @@ def main():
                         help="Kernel version string for install layout")
     parser.add_argument("--patch", action="append", dest="patches", default=[],
                         help="Patch file to apply before build (repeatable)")
+    parser.add_argument("--kcflags", default="",
+                        help="Extra KCFLAGS to pass to make")
+    parser.add_argument("--make-flag", action="append", dest="make_flags", default=[],
+                        help="Extra make variable (KEY=VALUE, repeatable)")
     args = parser.parse_args()
 
     source_dir = os.path.abspath(args.source_dir)
@@ -95,12 +99,15 @@ def main():
         f"ARCH={args.arch}",
         f"-j{jobs}",
         "WERROR=0",
-        "KCFLAGS=-Wno-unterminated-string-initialization",
     ]
+    if args.kcflags:
+        make_cmd.append(f"KCFLAGS={args.kcflags}")
     if args.cross_compile:
         make_cmd.append(f"CROSS_COMPILE={args.cross_compile}")
     if cc_override:
         make_cmd.extend(cc_override)
+    for flag in args.make_flags:
+        make_cmd.append(flag)
 
     # Run olddefconfig first to ensure config is complete
     print("Running: make olddefconfig")

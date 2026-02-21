@@ -125,6 +125,12 @@ def main():
     configure = os.path.join(output_dir, args.configure_script)
 
     env = os.environ.copy()
+
+    # Disable host compiler/build caches — Buck2 caches actions itself,
+    # and external caches can poison results across build contexts.
+    env["CCACHE_DISABLE"] = "1"
+    env["RUSTC_WRAPPER"] = ""
+
     if args.cc:
         env["CC"] = args.cc
     if args.cxx:

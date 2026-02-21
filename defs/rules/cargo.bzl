@@ -36,10 +36,6 @@ def _cargo_build(ctx, source):
     cmd.add("--source-dir", source)
     cmd.add("--output-dir", output.as_output())
 
-    # Disable host sccache — buck2 caches actions itself, and sccache
-    # fails with SUN_LEN when the working directory path is long.
-    cmd.add("--env", "RUSTC_WRAPPER=")
-
     # Inject toolchain CC/CXX/AR
     for env_arg in toolchain_env_args(ctx):
         cmd.add("--env", env_arg)
