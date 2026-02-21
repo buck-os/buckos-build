@@ -106,6 +106,8 @@ kernel_build(
     source = "//packages/linux/kernel/src:linux-src",
     config = "//packages/linux/kernel/configs:buckos-live",
     version = "6.17.10",
+    # GCC 15 trips -Werror=address in libbpf tools (hashmap__find NULL check)
+    patches = ["fix-libbpf-werror-address.patch"],
     labels = ["buckos:compile", "buckos:build:kbuild"],
     visibility = ["PUBLIC"],
 )
