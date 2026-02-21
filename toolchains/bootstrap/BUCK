@@ -356,6 +356,11 @@ ebuild_package(
     patches = [],
 
     src_prepare = '''
+# GCC 14's libiberty/obstack.c expects the struct layout from GCC's bundled
+# include/obstack.h, but the host compiler picks up the system header first.
+# glibc >=2.41 changed the obstack struct which breaks compilation.
+cp include/obstack.h libiberty/obstack.h
+
 # Link GMP, MPFR, MPC into the GCC source tree (in-tree build)
 # Dependencies are passed via DEP_BASE_DIRS environment variable (colon-separated)
 
@@ -969,6 +974,13 @@ ebuild_package(
 # Fix file that causes issues with glibc-2.39+
 sed '/thread_header =/s/@.*@/gthr-posix.h/' \
     -i libgcc/Makefile.in libstdc++-v3/include/Makefile.in || true
+
+# GCC 14's libiberty/obstack.c expects the struct layout from GCC's bundled
+# include/obstack.h, but the host compiler picks up the system header first.
+# glibc >=2.41 changed the obstack struct (removed chunkfun.extra/plain union,
+# renamed _OBSTACK_SIZE_T) which breaks compilation.  Copy the bundled header
+# into libiberty/ so it's found via -I$(srcdir) before the system header.
+cp include/obstack.h libiberty/obstack.h
 
 # NOTE: libcody is required for C++ support (cc1plus needs libcody.a)
 # We keep it and ensure it's built before the main gcc build in src_compile

@@ -250,6 +250,16 @@ def _bootstrap_gcc_impl(ctx):
             "-i libgcc/Makefile.in libstdc++-v3/include/Makefile.in 2>/dev/null || true && ",
         )
 
+    # GCC 14's libiberty/obstack.c expects the struct layout from GCC's
+    # bundled include/obstack.h, but the host compiler picks up the system
+    # header first.  glibc ≥2.41 changed the obstack struct (removed the
+    # chunkfun.extra/plain union, renamed _OBSTACK_SIZE_T) which breaks
+    # compilation.  Copy the bundled header into libiberty/ so it's found
+    # via -I$(srcdir) before the system header.
+    script_body.add(
+        "cp include/obstack.h libiberty/obstack.h && ",
+    )
+
     script_body.add("true")
     prepare_script.add(script_body)
     ctx.actions.run(prepare_script, category = "src_prepare", identifier = ctx.attrs.name)
