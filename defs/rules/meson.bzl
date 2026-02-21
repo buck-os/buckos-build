@@ -36,7 +36,12 @@ def _meson_setup(ctx, source):
     """Run meson setup with toolchain env and dep flags."""
     output = ctx.actions.declare_output("configured", dir = True)
     cmd = cmd_args(ctx.attrs._meson_tool[RunInfo])
-    cmd.add("--source-dir", source)
+
+    # Support source subdirectory (e.g. zstd keeps meson.build in build/meson/)
+    if ctx.attrs.source_subdir:
+        cmd.add("--source-dir", cmd_args(source, "/", ctx.attrs.source_subdir, delimiter = ""))
+    else:
+        cmd.add("--source-dir", source)
     cmd.add("--build-dir", output.as_output())
 
     # Inject toolchain CC/CXX/AR
@@ -191,6 +196,7 @@ meson_package = rule(
         "configure_args": attrs.list(attrs.string(), default = []),
         "meson_args": attrs.list(attrs.string(), default = []),
         "meson_defines": attrs.list(attrs.string(), default = []),
+        "source_subdir": attrs.string(default = ""),
         "make_args": attrs.list(attrs.string(), default = []),
         "post_install_cmds": attrs.list(attrs.string(), default = []),
         "env": attrs.dict(attrs.string(), attrs.string(), default = {}),

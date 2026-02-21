@@ -119,7 +119,7 @@ _IGNORED_FIELDS = [
     "install_args",
     "python",
     "rdepend",
-    "source_subdir",
+    # "source_subdir" is now forwarded to meson/cmake rules
     "src_prepare",
     "src_subdir",
     "subdir",
