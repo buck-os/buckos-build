@@ -14,6 +14,20 @@
 #   buck2 bxl buckos//tests/graph/test_provenance.bxl:test_provenance
 #   buck2 bxl buckos//tests/graph/test_graph.bxl:test_graph
 #   buck2 bxl buckos//tests/graph/test_cloud_hypervisor.bxl:test_cloud_hypervisor
+#
+# Static analysis (no buck2 needed):
+#   python3 tests/graph/verify_package_completeness.py
+#   buck2 test //tests/graph:test-package-completeness
+
+# ── Static analysis: package() completeness check ────────────────────
+
+sh_test(
+    name = "test-package-completeness",
+    test = "verify_package_completeness.py",
+    labels = ["graph"],
+)
+
+# ── BXL test file exports ────────────────────────────────────────────
 
 export_file(
     name = "test_all.bxl",

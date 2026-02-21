@@ -22,7 +22,7 @@ All intermediate targets are visible and independently buildable:
 """
 
 load("//defs:empty_registry.bzl", "PATCH_REGISTRY")
-load("//defs:use_helpers.bzl", "use_bool", "use_configure_arg", "use_dep")
+load("//defs:use_helpers.bzl", "use_bool", "use_configure_arg", "use_dep", "use_feature")
 load("//defs/rules:autotools.bzl", "autotools_package")
 load("//defs/rules:binary.bzl", "binary_package")
 load("//defs/rules:cargo.bzl", "cargo_package")
@@ -77,7 +77,6 @@ _IGNORED_FIELDS = [
     "post_install",
     "category",
     "slot",
-    "local_only",
     "bootstrap_sysroot",
     "bootstrap_stage",
     "use_cmake",
@@ -166,8 +165,9 @@ def package(
         name,
         build_rule,
         version,
-        url,
-        sha256,
+        url = None,
+        sha256 = None,
+        local_only = False,
         filename = None,
         strip_components = 1,
         format = None,
@@ -175,6 +175,7 @@ def package(
         use_transforms = {},
         use_deps = {},
         use_configure = {},
+        use_features = {},
         patches = [],
         configure_args = [],
         extra_cflags = [],
@@ -187,8 +188,11 @@ def package(
         build_rule:        Build system name: "autotools", "cmake", "meson",
                            "cargo", "go", "python", or "binary".
         version:           Upstream version string.
-        url:               Upstream source URL.
-        sha256:            Source archive sha256.
+        url:               Upstream source URL.  Optional when local_only=True.
+        sha256:            Source archive sha256.  Optional when local_only=True.
+        local_only:        If True, package has no public download URL
+                           (vendor/proprietary).  Requires filename and
+                           mirror.mode=vendor (or explicit source).
         filename:          Archive filename.  Defaults to the basename of url.
         strip_components:  tar strip-components (default: 1).
         format:            Override archive format auto-detection.
@@ -220,6 +224,13 @@ def package(
     for field in _IGNORED_FIELDS:
         build_kwargs.pop(field, None)
 
+    # -- 0a. Validate url/sha256 vs local_only --------------------------------
+    if local_only:
+        if "source" not in build_kwargs and not filename:
+            fail("local_only package '{}' requires 'filename' (no url to derive it from)".format(name))
+    elif url == None:
+        fail("package '{}' requires 'url' (or set local_only = True)".format(name))
+
     # -- 1. Merge private patch registry ------------------------------------
     all_patches, all_configure_args, all_cflags = _merge_private_registry(
         name,
@@ -229,7 +240,7 @@ def package(
     )
 
     # -- 1b. Auto-create source targets from inline parameters --------------
-    _filename = filename or url.rsplit("/", 1)[-1]
+    _filename = filename or (url.rsplit("/", 1)[-1] if url else None)
 
     if "source" not in build_kwargs:
         _mode = read_config("mirror", "mode", "upstream")
@@ -240,6 +251,15 @@ def package(
             native.export_file(
                 name = name + "-archive",
                 src = "{}/{}".format(_vendor_dir, _filename),
+            )
+        elif local_only:
+            # Stub target that exists in the graph but fails at build time.
+            # Allows graph queries (buck2 targets //...) to succeed while
+            # making it clear the package needs vendor mode to build.
+            native.genrule(
+                name = name + "-archive",
+                out = _filename,
+                cmd = "echo 'ERROR: local_only package \"{}\" requires mirror.mode=vendor (or provide source explicitly)' >&2 && exit 1".format(name),
             )
         else:
             _urls = []
@@ -264,8 +284,10 @@ def package(
 
     # Auto-populate SBOM fields unless explicitly overridden
     build_kwargs.setdefault("version", version)
-    build_kwargs.setdefault("src_uri", url)
-    build_kwargs.setdefault("src_sha256", sha256)
+    if url != None:
+        build_kwargs.setdefault("src_uri", url)
+    if sha256 != None:
+        build_kwargs.setdefault("src_sha256", sha256)
 
     # -- 2. Normalize and resolve USE-conditional deps ----------------------
     normalized_use_deps = _normalize_use_deps(use_deps)
@@ -281,8 +303,17 @@ def package(
         else:
             all_configure_args += use_configure_arg(flag, args)
 
+    # -- 4. Resolve USE-conditional cargo features ---------------------------
+    if use_features:
+        all_features = list(build_kwargs.pop("features", []))
+        for flag, feature in use_features.items():
+            all_features += use_feature(flag, feature)
+        build_kwargs["features"] = all_features
+
     # -- Auto-inject labels ------------------------------------------------
     _auto_labels = ["buckos:compile"]
+    if local_only:
+        _auto_labels.append("buckos:local_only")
     _label_map = {
         "autotools": "buckos:build:autotools",
         "binary": "buckos:build:binary",
