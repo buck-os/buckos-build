@@ -25,6 +25,15 @@ MESA_LLVM_DEPS = [
 ]
 
 # =============================================================================
+# Qt6 Runtime Dependencies (for host tools like qtpaths during cmake configure)
+# =============================================================================
+# Qt6Core links against ICU.  Host tools (qtpaths) need ICU in
+# LD_LIBRARY_PATH since the cmake rule only exposes direct deps.
+QT6_RUNTIME_DEPS = [
+    "//packages/linux/system/libs/utility/icu:icu",
+]
+
+# =============================================================================
 # Plasma Wayland Protocols
 # =============================================================================
 # Required for kwindowsystem Wayland support
@@ -302,7 +311,7 @@ package(
         # Mesa provides EGL/GLESv2 for Qt6Gui
         "//packages/linux/desktop/mesa:mesa",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -344,7 +353,7 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
         "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
         # Qt6Core depends on zstd
         "//packages/linux/system/libs/compression/zstd:zstd",
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -380,7 +389,7 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
         # Qt6Gui needs xkbcommon
         "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -432,7 +441,7 @@ package(
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
         "//packages/linux/system/libs/crypto/openssl:openssl",  # For encrypted 7zip archives
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -472,7 +481,7 @@ package(
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -521,7 +530,7 @@ sed -i '/add_subdirectory.*geo-scheme-handler/d' src/CMakeLists.txt || true""",
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -563,7 +572,7 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -615,7 +624,7 @@ sed -i '/add_subdirectory.*tools/d' src/CMakeLists.txt || true""",
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -656,7 +665,7 @@ package(
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -695,7 +704,7 @@ package(
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -741,7 +750,7 @@ package(
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -792,7 +801,7 @@ package(
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -853,7 +862,7 @@ package(
         "//packages/linux/system/libs/utility/libffi:libffi",
         "//packages/linux/system/init/eudev:eudev",
         "//packages/linux/system/libs/crypto/openssl:openssl",
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -914,7 +923,7 @@ ls -la "$DESTDIR/usr/lib64/" | head -10 || true
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -966,7 +975,7 @@ package(
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
         "//packages/linux/system/libs/crypto/openssl:openssl",  # karchive depends on openssl
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -1019,7 +1028,7 @@ sed -i '/add_subdirectory.*examples/d' CMakeLists.txt || true""",
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/init/eudev:eudev",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -1065,7 +1074,7 @@ package(
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -1157,7 +1166,7 @@ echo "Using native wayland-scanner: $NATIVE_WAYLAND_SCANNER"
         "//packages/linux/graphics/xorg/libXau:libXau",
         "//packages/linux/graphics/xorg/libXdmcp:libXdmcp",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -1237,7 +1246,7 @@ fi
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     # Native wayland-scanner needed for generating protocol headers during cross-compilation
     exec_bdepend = [
         "//packages/linux/graphics/rendering/wayland:wayland-scanner",
@@ -1288,7 +1297,7 @@ package(
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -1324,7 +1333,7 @@ package(
         "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
         "//packages/linux/desktop/mesa:mesa",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
     visibility = ["PUBLIC"],
 )
@@ -1374,7 +1383,7 @@ package(
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/audio/libraries:libcanberra",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -1419,7 +1428,7 @@ package(
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -1465,7 +1474,7 @@ package(
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -1515,7 +1524,7 @@ package(
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -1622,7 +1631,7 @@ cd "$S"
         # breeze-icons for kiconthemes
         ":breeze-icons",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -1679,7 +1688,7 @@ touch src/core/trigrams.qrc || true
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -1729,7 +1738,7 @@ package(
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -1786,7 +1795,7 @@ package(
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -1830,7 +1839,7 @@ package(
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -1907,7 +1916,7 @@ package(
         "//packages/linux/system/libs/audio/libogg:libogg",
         "//packages/linux/dev-tools/build-systems/libtool:libtool",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -1963,7 +1972,7 @@ sed -i '/Q_INIT_RESOURCE(theme_data)/d' src/lib/repository.cpp || true
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/crypto/openssl:openssl",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -2064,7 +2073,7 @@ sed -i '/chkAutoReloadOnExternalChanges/d' src/dialogs/katedialogs.cpp
         "//packages/linux/system/libs/audio/libogg:libogg",
         "//packages/linux/dev-tools/build-systems/libtool:libtool",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -2105,7 +2114,7 @@ package(
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -2156,7 +2165,7 @@ package(
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -2205,7 +2214,7 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
         "//packages/linux/system/libs/crypto/openssl:openssl",  # karchive depends on openssl
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -2254,7 +2263,7 @@ package(
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -2307,7 +2316,7 @@ package(
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -2356,7 +2365,7 @@ package(
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
         "//packages/linux/system/libs/crypto/openssl:openssl",  # karchive depends on openssl
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -2398,7 +2407,7 @@ package(
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -2460,7 +2469,7 @@ package(
         # OpenSSL needed for Qt6Network linking
         "//packages/linux/system/libs/crypto/openssl:openssl",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -2533,7 +2542,7 @@ package(
         "//packages/linux/system/libs/audio/libogg:libogg",
         "//packages/linux/dev-tools/build-systems/libtool:libtool",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -2629,7 +2638,7 @@ done
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -2703,7 +2712,7 @@ package(
         "//packages/linux/system/libs/audio/libogg:libogg",
         "//packages/linux/dev-tools/build-systems/libtool:libtool",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -2787,7 +2796,7 @@ sed -i '/devicenotifications/d' src/dataengines/CMakeLists.txt || true
         "//packages/linux/system/libs/audio/libogg:libogg",
         "//packages/linux/dev-tools/build-systems/libtool:libtool",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -2970,7 +2979,7 @@ done
         # keyboard KCM requires xkbfile
         "//packages/linux/graphics/xorg/libxkbfile:libxkbfile",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -3043,7 +3052,7 @@ package(
         "//packages/linux/system/libs/audio/libogg:libogg",  # transitive dep of libvorbis
         "//packages/linux/dev-tools/build-systems/libtool:libtool",  # libltdl for libcanberra
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -3095,7 +3104,7 @@ package(
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/system/libs/image/libpng:libpng",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
     visibility = ["PUBLIC"],
 )
@@ -3141,7 +3150,7 @@ package(
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/system/libs/image/libpng:libpng",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
     visibility = ["PUBLIC"],
 )
@@ -3239,7 +3248,7 @@ sed -i '/qCDebug(KSCREENLOCKER) << "Event received"/a\\    (void)event;' ksldapp
         "//packages/linux/core/util-linux:util-linux",  # For KIO (libmount)
         "//packages/linux/system/security/auth/pam:pam",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
     visibility = ["PUBLIC"],
 )
@@ -3285,7 +3294,7 @@ package(
         "//packages/linux/system/libs/crypto/openssl:openssl",
         "//packages/linux/dev-libs/boost:boost",  # boost/container/flat_set.hpp for activitymodel
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
     visibility = ["PUBLIC"],
 )
@@ -3354,7 +3363,7 @@ sed -i 's/connect(KX11Extras::self/\\/\\/connect(KX11Extras::self/' src/service/
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/system/init/eudev:eudev",
         "//packages/linux/system/libs/utility/libffi:libffi",
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -3510,7 +3519,7 @@ fi
         "//packages/linux/graphics/xorg/libXext:libXext",
         "//packages/linux/graphics/xorg/xorgproto:xorgproto",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
     visibility = ["PUBLIC"],
 )
@@ -3600,7 +3609,7 @@ done
         "//packages/linux/system/libs/image/libpng:libpng",
         "//packages/linux/system/libs/crypto/openssl:openssl",  # For Qt6Network
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -3713,7 +3722,7 @@ sed -i '/#include <kkeyserver.h>/d' src/tabbox/tabbox.cpp
         "//packages/linux/system/libs/input/mtdev:mtdev",  # transitive dep of libinput
         "//packages/linux/system/libs/compression/bzip2:bzip2",  # transitive dep of freetype (BZ2_bzDecompress)
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -3765,7 +3774,7 @@ package(
         "//packages/linux/graphics/rendering/wayland:wayland",
         "//packages/linux/system/init/eudev:eudev",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
     visibility = ["PUBLIC"],
 )
@@ -3815,7 +3824,7 @@ package(
         "//packages/linux/graphics/rendering/wayland:wayland",
         "//packages/linux/system/init/eudev:eudev",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
     visibility = ["PUBLIC"],
 )
@@ -3861,7 +3870,7 @@ package(
         "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
         ":plasma-wayland-protocols",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
     visibility = ["PUBLIC"],
 )
@@ -3919,7 +3928,7 @@ package(
         "//packages/linux/graphics/rendering/wayland:wayland",
         "//packages/linux/system/init/eudev:eudev",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
     visibility = ["PUBLIC"],
 )
@@ -3957,7 +3966,7 @@ package(
         "//packages/linux/system/libs/ipc/libcap:libcap",  # libsystemd depends on libcap
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
     visibility = ["PUBLIC"],
 )
@@ -4055,7 +4064,7 @@ sed -i '/set(CMAKE_MODULE_PATH/a include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/QRenc
         "//packages/linux/graphics/rendering/wayland:wayland",
         "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -4125,7 +4134,7 @@ EOF
         "//packages/linux/system/libs/ipc/libcap:libcap",  # libsystemd depends on libcap
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
     visibility = ["PUBLIC"],
 )
@@ -4170,7 +4179,7 @@ package(
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/system/init/eudev:eudev",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
     visibility = ["PUBLIC"],
 )
@@ -4267,7 +4276,7 @@ fi
         "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
         "//packages/linux/system/init/eudev:eudev",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     # Native wayland-scanner needed for generating protocol headers during cross-compilation
     exec_bdepend = [
         "//packages/linux/graphics/rendering/wayland:wayland-scanner",
@@ -4335,7 +4344,7 @@ package(
         "//packages/linux/system/libs/crypto/openssl:openssl",
         "//packages/linux/system/init/eudev:eudev",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
     visibility = ["PUBLIC"],
 )
@@ -4510,7 +4519,7 @@ STUB
         # Fontconfig for font rendering
         "//packages/linux/system/libs/font/fontconfig:fontconfig",
         "//packages/linux/system/libs/font/freetype:freetype",
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
     visibility = ["PUBLIC"],
 )
@@ -4671,7 +4680,7 @@ cmake --build "$S/build" -j${MAKEOPTS:-$(nproc)}
         "//packages/linux/system/security/auth/pam:pam",
         "//packages/linux/system/init/systemd:systemd",
         "//packages/linux/desktop/mesa:mesa",  # For EGL/GLESv2
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     post_install = """
 # Create PAM configuration for plasmalogin
 mkdir -p "$DESTDIR/etc/pam.d"
@@ -4866,7 +4875,7 @@ package(
         "//packages/linux/system/init/systemd:systemd",
         "//packages/linux/system/libs/ipc/libcap:libcap",
         "//packages/linux/system/libs/compression/zstd:zstd",
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -4950,7 +4959,7 @@ sed -i 's/#include <xcb/#\\/\\/#include <xcb/g' qt6/src/platformtheme/*.cpp 2>/d
         "//packages/linux/system/libs/ipc/libcap:libcap",
         "//packages/linux/system/init/eudev:eudev",
         "//packages/linux/system/libs/compression/zstd:zstd",
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -4988,7 +4997,7 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
         "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
         "//packages/linux/system/libs/utility/libffi:libffi",
         "//packages/linux/system/libs/compression/zstd:zstd",
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -5035,7 +5044,7 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
         "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
         "//packages/linux/system/libs/utility/libffi:libffi",
         "//packages/linux/system/libs/compression/zstd:zstd",
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )
 
@@ -5086,6 +5095,6 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
         "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
         "//packages/linux/system/libs/utility/libffi:libffi",
         "//packages/linux/system/libs/compression/zstd:zstd",
-    ] + QT6_FONT_DEPS + MESA_LLVM_DEPS,
+    ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     visibility = ["PUBLIC"],
 )

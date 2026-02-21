@@ -15,7 +15,6 @@ package(
     use_configure = {
         "nls": ("--enable-nls", "--disable-nls"),
         "static-libs": ("--enable-static", "--disable-static"),
-        "threads": ("--enable-threads=posix", "--disable-threads"),
     },
     use_deps = {
         "nls": "//packages/linux/dev-libs/misc/gettext:gettext",
@@ -23,6 +22,7 @@ package(
     configure_args = [
         "--prefix=/usr",
         "--enable-shared",
+        "--enable-threads=posix",
     ],
     post_install = """
 # Remove .la files to avoid libtool path issues in dependent packages
