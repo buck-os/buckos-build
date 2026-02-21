@@ -32,17 +32,23 @@ def _install(ctx, source):
     """Run install_script with SRC pointing to source and OUT to output prefix."""
     output = ctx.actions.declare_output("installed", dir = True)
 
-    # Write the install script to a file
+    # Write a wrapper that sets SRCS/OUT from positional args then sources
+    # the user script.  This ensures output.as_output() appears in cmd_args
+    # so Buck2 can track the declared output.
+    wrapper = ctx.actions.write("wrapper.sh", """\
+#!/bin/bash
+set -e
+export SRCS="$1"; shift
+export OUT="$1"; shift
+export PV="$1"; shift
+source "$1"
+""", is_executable = True)
+
     script = ctx.actions.write("install.sh", ctx.attrs.install_script, is_executable = True)
 
-    cmd = cmd_args("bash", "-e", script)
+    cmd = cmd_args("bash", "-e", wrapper, source, output.as_output(), ctx.attrs.version, script)
 
-    # Set environment: SRCS = source dir, OUT = output prefix
-    env = {
-        "SRCS": cmd_args(source),
-        "OUT": cmd_args(output.as_output()),
-        "PV": ctx.attrs.version,
-    }
+    env = {}
 
     # Inject toolchain CC/CXX/AR
     for env_arg in toolchain_env_args(ctx):

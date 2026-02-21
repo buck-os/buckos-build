@@ -10,13 +10,27 @@ package(
     sha256 = "6fb80935fe208538131ce2c4178221bab1078a1656306bce8909c19887e2e5a1",
 
     install_script = """
-cd "$SRCS"
+mkdir -p "$OUT"
+
+# Copy source to writable location (Buck2 sources are read-only)
+BUILD=$(mktemp -d)
+cp -a "$SRCS"/. "$BUILD/"
+cd "$BUILD"
+
+# No-op ldconfig — make install tries to run it but we're not root
+mkdir -p "$BUILD/.bin"
+printf '#!/bin/sh\\n' > "$BUILD/.bin/ldconfig"
+chmod +x "$BUILD/.bin/ldconfig"
+export PATH="$BUILD/.bin:$PATH"
+
 make -j$(nproc) PREFIX=/usr
-make install PREFIX=/usr \
-    INSTALL_DIR="$OUT/usr/sbin" \
-    INSTALL_LIB="$OUT/usr/lib" \
-    INSTALL_INC="$OUT/usr/include" \
-    INSTALL_MAN="$OUT/usr/share/man"
+
+# Install manually
+mkdir -p "$OUT/usr/sbin" "$OUT/usr/lib" "$OUT/usr/include"
+install -m 755 iwconfig iwlist iwpriv iwspy iwgetid iwevent ifrename "$OUT/usr/sbin/"
+install -m 755 libiw.so.29 "$OUT/usr/lib/"
+install -m 644 iwlib.h wireless.h "$OUT/usr/include/"
+ln -s libiw.so.29 "$OUT/usr/lib/libiw.so"
 """,
 
     description = "Tools for manipulating Linux Wireless Extensions (iwconfig, iwlist, etc.)",
