@@ -77,14 +77,10 @@ CACHE_EOF
 
     src_compile = '''
 # Create a dummy help2man if not available on the host
-# This avoids cross-compilation issues where help2man tries to run
-# the target binaries to generate documentation
 if ! command -v help2man >/dev/null 2>&1; then
     mkdir -p "$T/bin"
     cat > "$T/bin/help2man" << 'HELP2MAN_STUB'
 #!/bin/sh
-# Stub help2man for cross-compilation
-# Just create an empty man page
 output=""
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -102,6 +98,11 @@ HELP2MAN_STUB
     chmod +x "$T/bin/help2man"
     export PATH="$T/bin:$PATH"
 fi
+
+# Prevent make from trying to regenerate aclocal.m4 — the tarball ships
+# with pre-generated files but the Makefile has a dependency on aclocal-1.16
+# which is what we are building.
+touch aclocal.m4 configure Makefile.in */Makefile.in */*/Makefile.in 2>/dev/null || true
 
 make -j${MAKEOPTS:-$(nproc)}
 ''',
