@@ -88,6 +88,8 @@ def main():
                         help="Argument to pass to ./configure (repeatable)")
     parser.add_argument("--cflags", action="append", dest="cflags", default=[],
                         help="CFLAGS value (repeatable, joined with spaces)")
+    parser.add_argument("--cppflags", action="append", dest="cppflags", default=[],
+                        help="CPPFLAGS value (repeatable, joined with spaces)")
     parser.add_argument("--ldflags", action="append", dest="ldflags", default=[],
                         help="LDFLAGS value (repeatable, joined with spaces)")
     parser.add_argument("--pkg-config-path", action="append", dest="pkg_config_paths", default=[],
@@ -147,6 +149,8 @@ def main():
         env["CXX"] = args.cxx
     if args.cflags:
         env["CFLAGS"] = _resolve_env_paths(" ".join(args.cflags))
+    if args.cppflags:
+        env["CPPFLAGS"] = _resolve_env_paths(" ".join(args.cppflags))
     if args.ldflags:
         env["LDFLAGS"] = _resolve_env_paths(" ".join(args.ldflags))
     if args.pkg_config_paths:

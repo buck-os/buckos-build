@@ -24,27 +24,29 @@ package(
     description = "Linux kernel module handling tools (modprobe, insmod, rmmod, lsmod, depmod)",
     homepage = "https://git.kernel.org/pub/scm/utils/kernel/kmod/kmod.git",
     license = "LGPL-2.1-or-later",
-    use_bootstrap = True,  # Use cross-compiler to link against buckos glibc
+    # Git snapshot tarball has no configure script
+    pre_configure_cmds = [
+        # Stub gtk-doc.make so automake doesn't error on missing doc infra
+        "mkdir -p libkmod/docs && touch libkmod/docs/gtk-doc.make",
+        "autoreconf -fiv",
+    ],
     configure_args = [
         "--with-xz",
         "--with-zlib",
         "--with-zstd",
-        # "--with-openssl",  # Disabled - adds dependency, not critical for basic use
-        # Tools are enabled by default (no --disable-tools)
     ],
-    post_install = """
-# Create compatibility symlinks in /usr/sbin (merged-usr: /sbin -> usr/sbin)
-mkdir -p $DESTDIR/usr/sbin
-for tool in insmod rmmod lsmod modprobe modinfo depmod; do
-    ln -sf ../bin/kmod $DESTDIR/usr/sbin/$tool
-done
-# Remove .la files to avoid libtool path issues in dependent packages
-find $DESTDIR -name "*.la" -delete
-""",
+    post_install_cmds = [
+        # Merged-usr symlinks: /sbin -> usr/sbin
+        "mkdir -p usr/sbin && for tool in insmod rmmod lsmod modprobe modinfo depmod; do ln -sf ../bin/kmod usr/sbin/$tool; done",
+    ],
     deps = [
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/compression/xz:xz",
         "//packages/linux/system/libs/compression/zstd:zstd",
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+        "//packages/linux/dev-libs/misc/gettext:gettext",
     ],
     visibility = ["PUBLIC"],
 )
@@ -59,22 +61,26 @@ package(
     description = "Linux kernel module handling tools (static build for initramfs)",
     homepage = "https://git.kernel.org/pub/scm/utils/kernel/kmod/kmod.git",
     license = "LGPL-2.1-or-later",
+    pre_configure_cmds = [
+        "autoreconf -fiv",
+    ],
     configure_args = [
         "--with-xz",
         "--with-zlib",
         "--with-zstd",
     ],
     make_args = ["LDFLAGS=-all-static"],
-    post_install = """
-mkdir -p $DESTDIR/sbin
-for tool in insmod rmmod lsmod modprobe modinfo depmod; do
-    ln -sf ../usr/bin/kmod $DESTDIR/sbin/$tool
-done
-""",
+    post_install_cmds = [
+        "mkdir -p sbin && for tool in insmod rmmod lsmod modprobe modinfo depmod; do ln -sf ../usr/bin/kmod sbin/$tool; done",
+    ],
     deps = [
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/compression/xz:xz",
         "//packages/linux/system/libs/compression/zstd:zstd",
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+        "//packages/linux/dev-libs/misc/gettext:gettext",
     ],
     visibility = ["PUBLIC"],
 )

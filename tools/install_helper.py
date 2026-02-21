@@ -153,6 +153,13 @@ def main():
         print(f"error: make install failed with exit code {result.returncode}", file=sys.stderr)
         sys.exit(1)
 
+    # Remove libtool .la files — they embed absolute build-time paths that
+    # break when consumed from Buck2 dep directories.  Modern pkg-config and
+    # cmake handle transitive deps without them.
+    import glob as _glob
+    for la in _glob.glob(os.path.join(prefix, "**", "*.la"), recursive=True):
+        os.remove(la)
+
     # Run post-install commands (e.g. ldconfig, cleanup)
     for cmd_str in args.post_cmds:
         result = subprocess.run(cmd_str, shell=True, cwd=prefix)

@@ -27,11 +27,8 @@ package(
         "--disable-lynx",
         "--enable-null",
     ],
-    # For aarch64: libvorbis contains vector math symbols that require libmvec
-    # Add libmvec to LIBS so it gets linked when linking against libvorbis
-    src_compile = '''
-make -j${MAKEOPTS:-$(nproc)} ${EXTRA_EMAKE:-} LIBS="${LIBS:-} -lmvec"
-''',
+    # libvorbis uses vector math symbols requiring libmvec
+    make_args = ["LIBS=-lmvec"],
     deps = [
         "//packages/linux/dev-tools/build-systems/libtool:libtool",
         "//packages/linux/system/libs/audio/libogg:libogg",

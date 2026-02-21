@@ -92,6 +92,7 @@ def _src_configure(ctx, source):
             inc = cmd_args(prefix, format = "-I{}/usr/include")
             lib64 = cmd_args(prefix, format = "-L{}/usr/lib64")
             lib = cmd_args(prefix, format = "-L{}/usr/lib")
+            cmd.add(cmd_args("--cppflags=", inc, delimiter = ""))
             cmd.add(cmd_args("--cflags=", inc, delimiter = ""))
             cmd.add(cmd_args("--ldflags=", lib64, delimiter = ""))
             cmd.add(cmd_args("--ldflags=", lib, delimiter = ""))
@@ -121,6 +122,7 @@ def _dep_env_args(ctx):
     """
     pkg_config_paths = []
     path_dirs = []
+    cppflags = []
     cflags = list(ctx.attrs.extra_cflags)
     ldflags = list(ctx.attrs.extra_ldflags)
     for dep in ctx.attrs.deps:
@@ -134,7 +136,9 @@ def _dep_env_args(ctx):
                 ldflags.append(f)
         else:
             prefix = dep[DefaultInfo].default_outputs[0]
-        cflags.append(cmd_args(prefix, format = "-I{}/usr/include"))
+        inc = cmd_args(prefix, format = "-I{}/usr/include")
+        cppflags.append(inc)
+        cflags.append(inc)
         ldflags.append(cmd_args(prefix, format = "-L{}/usr/lib64"))
         ldflags.append(cmd_args(prefix, format = "-L{}/usr/lib"))
         pkg_config_paths.append(cmd_args(prefix, format = "{}/usr/lib64/pkgconfig"))
@@ -146,6 +150,8 @@ def _dep_env_args(ctx):
     env_args = []
     if pkg_config_paths:
         env_args.append(cmd_args("PKG_CONFIG_PATH=", cmd_args(pkg_config_paths, delimiter = ":"), delimiter = ""))
+    if cppflags:
+        env_args.append(cmd_args("CPPFLAGS=", cmd_args(cppflags, delimiter = " "), delimiter = ""))
     if cflags:
         env_args.append(cmd_args("CFLAGS=", cmd_args(cflags, delimiter = " "), delimiter = ""))
     if ldflags:

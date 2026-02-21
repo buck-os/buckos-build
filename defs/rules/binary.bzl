@@ -38,8 +38,10 @@ def _install(ctx, source):
     wrapper = ctx.actions.write("wrapper.sh", """\
 #!/bin/bash
 set -e
-export SRCS="$1"; shift
-export OUT="$1"; shift
+# Resolve to absolute paths so install scripts that cd still work.
+_resolve() { [[ "$1" = /* ]] && echo "$1" || echo "$PWD/$1"; }
+export SRCS="$(_resolve "$1")"; shift
+export OUT="$(_resolve "$1")"; shift
 export PV="$1"; shift
 source "$1"
 """, is_executable = True)
