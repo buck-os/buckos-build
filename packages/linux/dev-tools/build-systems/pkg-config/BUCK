@@ -3,9 +3,6 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "pkg-config",
-    # Freedesktop release tarball includes pre-generated configure script
-    bdepend = [],
-    src_prepare = "",
     version = "0.29.2",
     url = "https://pkgconfig.freedesktop.org/releases/pkg-config-0.29.2.tar.gz",
     sha256 = "6fc69c01688c9458a57eb9a1664c9aba372ccda420a02bf4429fe610e7e7d591",
@@ -13,14 +10,11 @@ package(
     homepage = "https://www.freedesktop.org/wiki/Software/pkg-config/",
     license = "GPL-2+",
 
-    # USE flags this package supports
-
-    # Default USE flags
-
-    # Conditional configure arguments
+    configure_args = [
+        "--with-internal-glib",
+    ],
     use_configure = {
         "host-tool": ("--enable-host-tool", "--disable-host-tool"),
-        "internal-glib": ("--with-internal-glib", "--without-internal-glib"),
     },
 
     # Force C17 to avoid C23 bool keyword conflict in bundled glib
