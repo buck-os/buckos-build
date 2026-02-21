@@ -36,17 +36,19 @@ def _install(ctx, source):
     script = ctx.actions.write("install.sh", ctx.attrs.install_script, is_executable = True)
 
     cmd = cmd_args("bash", "-e", script)
-    cmd.hidden([source, output.as_output()])
 
-    # Set environment: SRC = source dir, OUT = output prefix
+    # Set environment: SRCS = source dir, OUT = output prefix
     env = {
-        "SRC": source,
-        "OUT": output.as_output(),
+        "SRCS": cmd_args(source),
+        "OUT": cmd_args(output.as_output()),
+        "PV": ctx.attrs.version,
     }
 
     # Inject toolchain CC/CXX/AR
     for env_arg in toolchain_env_args(ctx):
-        key, _, value = env_arg.partition("=") if hasattr(env_arg, "partition") else ("", "", "")
+        parts = env_arg.split("=", 1) if type(env_arg) == "string" else []
+        if len(parts) == 2:
+            env[parts[0]] = parts[1]
 
     # Inject user-specified environment variables
     for key, value in ctx.attrs.env.items():
