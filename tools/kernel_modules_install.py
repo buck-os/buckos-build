@@ -30,6 +30,14 @@ def main():
                         help="Path to extra .ko file or directory of .ko files (repeatable)")
     args = parser.parse_args()
 
+    # Disable host compiler/build caches — Buck2 caches actions itself,
+    # and external caches can poison results across build contexts.
+    os.environ["CCACHE_DISABLE"] = "1"
+    os.environ["RUSTC_WRAPPER"] = ""
+
+    # Pin timestamps for reproducible builds.
+    os.environ.setdefault("SOURCE_DATE_EPOCH", "0")
+
     build_tree = os.path.abspath(args.build_tree)
     output_dir = os.path.abspath(args.output_dir)
     version = args.version

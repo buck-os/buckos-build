@@ -1508,6 +1508,16 @@ PKGCONFIG_WRAPPER_EOF
     echo "Installed pkg-config wrapper at $WORK/bin/pkg-config"
 fi
 
+# Disable host compiler/build caches — Buck2 caches actions itself,
+# and external caches can poison results across build contexts.
+export CCACHE_DISABLE=1
+export RUSTC_WRAPPER=""
+
+# Pin timestamps for reproducible builds.  Many build systems embed
+# __DATE__/__TIME__ or query the system clock.  SOURCE_DATE_EPOCH is
+# the standard mechanism to override this.
+export SOURCE_DATE_EPOCH="${{SOURCE_DATE_EPOCH:-0}}"
+
 # Ensure CC/CXX are set to proper compiler names
 # This handles ccache/sccache setups where CC might be inherited as just the wrapper name
 # Meson and other build systems need proper compiler names like "gcc" or "ccache gcc"
@@ -3141,6 +3151,11 @@ LABEL recovery
         """#!/bin/bash
 set -e
 
+# Deterministic build environment — prevent ccache interference and
+# pin timestamps so identical inputs always produce identical ISOs.
+export CCACHE_DISABLE=1
+export SOURCE_DATE_EPOCH="${{SOURCE_DATE_EPOCH:-0}}"
+
 ISO_OUT="$1"
 KERNEL_SRC="$2"
 INITRAMFS="$3"
@@ -3232,13 +3247,18 @@ if [ -n "{include_rootfs}" ] && [ -d "$ROOTFS_DIR" ]; then
     fi
 
     if command -v mksquashfs >/dev/null 2>&1; then
-        mksquashfs "$ROOTFS_WORK" "$WORK/live/filesystem.squashfs" -comp xz -no-progress
+        mksquashfs "$ROOTFS_WORK" "$WORK/live/filesystem.squashfs" -comp xz -no-progress -all-root
     else
         echo "Warning: mksquashfs not found, skipping rootfs inclusion"
     fi
 
     rm -rf "$ROOTFS_WORK"
 fi
+
+# Pin all file timestamps in the staging tree for reproducibility.
+# xorriso, genisoimage, and mkisofs all record file mtimes in the ISO
+# metadata.  Without this, identical content produces different ISOs.
+find "$WORK" -exec touch -h -d @"$SOURCE_DATE_EPOCH" {{}} + 2>/dev/null || true
 
 # Create the ISO image based on boot mode
 echo "Creating ISO image with boot mode: $BOOT_MODE"
@@ -3317,7 +3337,7 @@ EARLYCFG
             # Create EFI boot image file
             dd if=/dev/zero of="$WORK/boot/efi.img" bs=1M count=10
             if command -v mkfs.vfat >/dev/null 2>&1; then
-                mkfs.vfat "$WORK/boot/efi.img"
+                mkfs.vfat -i 0x42554B4F "$WORK/boot/efi.img"
             elif command -v mformat >/dev/null 2>&1; then
                 mformat -i "$WORK/boot/efi.img" -F ::
             fi
@@ -3362,7 +3382,7 @@ EARLYCFG
             # Create EFI boot image file
             dd if=/dev/zero of="$WORK/boot/efi.img" bs=1M count=10
             if command -v mkfs.vfat >/dev/null 2>&1; then
-                mkfs.vfat "$WORK/boot/efi.img"
+                mkfs.vfat -i 0x42554B4F "$WORK/boot/efi.img"
             elif command -v mformat >/dev/null 2>&1; then
                 mformat -i "$WORK/boot/efi.img" -F ::
             else

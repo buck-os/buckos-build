@@ -35,6 +35,14 @@ def main():
     parser.add_argument("--hostcc", default="", help="HOSTCC override")
     args = parser.parse_args()
 
+    # Disable host compiler/build caches — Buck2 caches actions itself,
+    # and external caches can poison results across build contexts.
+    os.environ["CCACHE_DISABLE"] = "1"
+    os.environ["RUSTC_WRAPPER"] = ""
+
+    # Pin timestamps for reproducible builds.
+    os.environ.setdefault("SOURCE_DATE_EPOCH", "0")
+
     source_dir = os.path.abspath(args.source_dir)
     output_config = os.path.abspath(args.output)
 

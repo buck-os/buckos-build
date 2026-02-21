@@ -18,12 +18,29 @@ def main():
     parser.add_argument("--output", required=True, help="Output file path (cpio.gz)")
     args = parser.parse_args()
 
+    # Pin timestamps for reproducible builds.
+    os.environ.setdefault("SOURCE_DATE_EPOCH", "0")
+
     if not os.path.isdir(args.root_dir):
         print(f"error: root directory not found: {args.root_dir}", file=sys.stderr)
         sys.exit(1)
 
     output_dir = os.path.dirname(os.path.abspath(args.output))
     os.makedirs(output_dir, exist_ok=True)
+
+    # Normalize file timestamps in root dir so cpio embeds deterministic mtimes.
+    epoch = int(os.environ.get("SOURCE_DATE_EPOCH", "0"))
+    stamp = (epoch, epoch)
+    for dirpath, _dirnames, filenames in os.walk(args.root_dir):
+        for fname in filenames:
+            try:
+                os.utime(os.path.join(dirpath, fname), stamp)
+            except (PermissionError, OSError):
+                pass
+        try:
+            os.utime(dirpath, stamp)
+        except (PermissionError, OSError):
+            pass
 
     # Use find | cpio to build the archive, then gzip it.
     # cpio -o -H newc is the standard initramfs format.
@@ -50,7 +67,8 @@ def main():
         print(f"error: cpio exited with code {cpio_proc.returncode}", file=sys.stderr)
         sys.exit(1)
 
-    with gzip.open(args.output, "wb") as f:
+    epoch = int(os.environ.get("SOURCE_DATE_EPOCH", "0"))
+    with gzip.GzipFile(args.output, "wb", mtime=epoch) as f:
         f.write(cpio_data)
 
     size_kb = os.path.getsize(args.output) // 1024

@@ -17,6 +17,14 @@ TARGET_TRIPLE = "x86_64-buckos-linux-gnu"
 
 # ── Shared helpers ───────────────────────────────────────────────────
 
+# Deterministic build prologue for raw shell scripts that bypass Python
+# helpers.  Sets CCACHE_DISABLE + SOURCE_DATE_EPOCH so the bootstrap
+# GCC/glibc builds are reproducible.
+_DETERMINISM_PROLOGUE = (
+    "export CCACHE_DISABLE=1 RUSTC_WRAPPER='' && " +
+    "export SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH:-0} && "
+)
+
 def _env_args(cmd, env_dict):
     """Append --env KEY=VALUE flags to a cmd_args."""
     for k, v in env_dict.items():
@@ -204,7 +212,7 @@ def _bootstrap_gcc_impl(ctx):
     # Resolve artifact paths to absolute before cd
     src_prepared = ctx.actions.declare_output("src_prepared", dir = True)
     prepare_script = cmd_args("/bin/bash", "-ce")
-    script_body = cmd_args("PROJECT_ROOT=$PWD && ", delimiter = "")
+    script_body = cmd_args(_DETERMINISM_PROLOGUE, "PROJECT_ROOT=$PWD && ", delimiter = "")
     if ctx.attrs.gmp_source:
         gmp_src = ctx.attrs.gmp_source[DefaultInfo].default_outputs[0]
         script_body.add(cmd_args("GMP_ABS=$PROJECT_ROOT/", gmp_src, " && ", delimiter = ""))
@@ -269,7 +277,7 @@ def _bootstrap_gcc_impl(ctx):
     conf_script = cmd_args("/bin/bash", "-ce")
 
     # Resolve artifact paths to absolute BEFORE cd (Buck2 paths are relative to project root)
-    conf_body = cmd_args("PROJECT_ROOT=$PWD && ", delimiter = "")
+    conf_body = cmd_args(_DETERMINISM_PROLOGUE, "PROJECT_ROOT=$PWD && ", delimiter = "")
     if ctx.attrs.libc_headers:
         headers_dir = ctx.attrs.libc_headers[DefaultInfo].default_outputs[0]
         conf_body.add(cmd_args("HEADERS_ABS=$PROJECT_ROOT/", headers_dir, " && ", delimiter = ""))
@@ -414,6 +422,7 @@ def _bootstrap_gcc_impl(ctx):
     built = ctx.actions.declare_output("built", dir = True)
     compile_script = cmd_args("/bin/bash", "-ce")
     compile_body = cmd_args(
+        _DETERMINISM_PROLOGUE,
         "PROJECT_ROOT=$PWD && ",
         "cp -a ", configured, "/. ", built.as_output(), "/ && ",
         "cd ", built.as_output(), "/build && ",
@@ -454,6 +463,7 @@ def _bootstrap_gcc_impl(ctx):
     installed = ctx.actions.declare_output("installed", dir = True)
     install_script = cmd_args("/bin/bash", "-ce")
     install_body = cmd_args(
+        _DETERMINISM_PROLOGUE,
         "PROJECT_ROOT=$PWD && ",
         "BUILD_DIR=$PROJECT_ROOT/", built, "/build && ",
         "INSTALL_DIR=$PROJECT_ROOT/", installed.as_output(), " && ",
@@ -589,6 +599,7 @@ def _bootstrap_glibc_impl(ctx):
     prepared = ctx.actions.declare_output("prepared", dir = True)
     prep_script = cmd_args("/bin/bash", "-ce")
     prep_body = cmd_args(
+        _DETERMINISM_PROLOGUE,
         "cp -a ", source, "/. ", prepared.as_output(), "/ && ",
         "find ", prepared.as_output(), " -name 'libc_sigaction.c' ",
         "-exec sed -i 's/eh_frame,\\\\\"a\\\\\"/eh_frame,\\\\\"aw\\\\\"/g' {} + ",
@@ -601,7 +612,7 @@ def _bootstrap_glibc_impl(ctx):
     # Resolve artifact paths to absolute before any cd
     configured = ctx.actions.declare_output("configured", dir = True)
     conf_script = cmd_args("/bin/bash", "-ce")
-    conf_body = cmd_args("PROJECT_ROOT=$PWD && ", delimiter = "")
+    conf_body = cmd_args(_DETERMINISM_PROLOGUE, "PROJECT_ROOT=$PWD && ", delimiter = "")
     conf_body.add(cmd_args("COMPILER_ABS=$PROJECT_ROOT/", compiler_dir, " && ", delimiter = ""))
     conf_body.add(cmd_args("HEADERS_ABS=$PROJECT_ROOT/", headers_dir, " && ", delimiter = ""))
     if binutils_dir:
@@ -671,6 +682,7 @@ def _bootstrap_glibc_impl(ctx):
     built = ctx.actions.declare_output("built", dir = True)
     compile_script = cmd_args("/bin/bash", "-ce")
     compile_body = cmd_args(
+        _DETERMINISM_PROLOGUE,
         "PROJECT_ROOT=$PWD && ",
         delimiter = "",
     )
@@ -694,6 +706,7 @@ def _bootstrap_glibc_impl(ctx):
     installed = ctx.actions.declare_output("installed", dir = True)
     install_script = cmd_args("/bin/bash", "-ce")
     install_body = cmd_args(
+        _DETERMINISM_PROLOGUE,
         "PROJECT_ROOT=$PWD && ",
         delimiter = "",
     )

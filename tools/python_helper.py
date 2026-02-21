@@ -59,6 +59,15 @@ def main():
     cmd.append(os.path.abspath(args.source_dir))
 
     env = os.environ.copy()
+
+    # Disable host compiler/build caches — Buck2 caches actions itself,
+    # and external caches can poison results across build contexts.
+    env["CCACHE_DISABLE"] = "1"
+    env["RUSTC_WRAPPER"] = ""
+
+    # Pin timestamps for reproducible builds.
+    env.setdefault("SOURCE_DATE_EPOCH", "0")
+
     for entry in args.extra_env:
         key, _, value = entry.partition("=")
         if key:

@@ -69,6 +69,14 @@ def main():
         print(f"error: source directory not found: {source_dir}", file=sys.stderr)
         sys.exit(1)
 
+    # Disable host compiler/build caches — Buck2 caches actions itself,
+    # and external caches can poison results across build contexts.
+    os.environ["CCACHE_DISABLE"] = "1"
+    os.environ["RUSTC_WRAPPER"] = ""
+
+    # Pin timestamps for reproducible builds.
+    os.environ.setdefault("SOURCE_DATE_EPOCH", "0")
+
     # Copy source to writable build directory
     print(f"Copying kernel source to build tree: {build_tree_out}")
     if os.path.exists(build_tree_out):
@@ -92,6 +100,12 @@ def main():
 
     # Detect GCC 14+ and set up wrapper
     cc_override = _gcc14_workaround(build_tree_out)
+
+    # Pin kbuild non-deterministic variables so identical source + config
+    # always produces identical output.
+    os.environ.setdefault("KBUILD_BUILD_TIMESTAMP", "Thu Jan  1 00:00:00 UTC 1970")
+    os.environ.setdefault("KBUILD_BUILD_USER", "buckos")
+    os.environ.setdefault("KBUILD_BUILD_HOST", "buckos")
 
     # Build make command
     make_cmd = [

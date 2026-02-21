@@ -104,6 +104,15 @@ def main():
     os.chmod(wrapper, 0o755)
 
     env = os.environ.copy()
+
+    # Disable host compiler/build caches — Buck2 caches actions itself,
+    # and external caches can poison results across build contexts.
+    env["CCACHE_DISABLE"] = "1"
+    env["RUSTC_WRAPPER"] = ""
+
+    # Pin timestamps for reproducible builds.
+    env.setdefault("SOURCE_DATE_EPOCH", "0")
+
     env["PATH"] = wrapper_dir + ":" + env.get("PATH", "")
     if args.path_prepend:
         prepend = ":".join(os.path.abspath(p) for p in args.path_prepend if os.path.isdir(p))

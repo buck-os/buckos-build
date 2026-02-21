@@ -1395,10 +1395,12 @@ if [ -n "$PHASES_CONTENT" ]; then
         echo "#!/bin/bash"
         echo "# Explicitly set PATH to ensure toolchain binaries are found"
         echo "export PATH=\"$PATH\""
-        # Disable sccache/ccache rustc wrappers — Buck2 handles caching and
-        # the sccache Unix socket path inside buck-out exceeds SUN_LEN.
+        # Disable host compiler/build caches — Buck2 handles caching and
+        # external caches can poison results across build contexts.
+        echo 'export CCACHE_DISABLE=1'
         echo 'export RUSTC_WRAPPER=""'
         echo 'export CARGO_BUILD_RUSTC_WRAPPER=""'
+        echo 'export SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-0}"'
         [ -n "$TOOLCHAIN_PATH" ] && echo "export TOOLCHAIN_PATH=\"$TOOLCHAIN_PATH\""
         [ -n "$DEP_PATH" ] && echo "export DEP_PATH=\"$DEP_PATH\""
         # Export phase script paths (needed for bootstrap builds that use env -i)

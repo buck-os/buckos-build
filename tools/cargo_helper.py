@@ -83,6 +83,9 @@ def main():
     env["CCACHE_DISABLE"] = "1"
     env["RUSTC_WRAPPER"] = ""
 
+    # Pin timestamps for reproducible builds.
+    env.setdefault("SOURCE_DATE_EPOCH", "0")
+
     for entry in args.extra_env:
         key, _, value = entry.partition("=")
         if key:

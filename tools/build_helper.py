@@ -241,14 +241,15 @@ def main():
                         FileNotFoundError):
                     pass
 
-    # Reset all file timestamps to a single instant so make doesn't try
-    # to regenerate autotools/cmake/meson outputs.  The copytree preserves
-    # original timestamps but path rewriting modifies some files, making
-    # others (version.h, aclocal.m4, Makefiles) appear stale.  A uniform
-    # timestamp prevents all spurious rebuilds.
-    import time
-    _now = time.time()
-    _stamp = (_now, _now)
+    # Reset all file timestamps to a single fixed instant so make doesn't
+    # try to regenerate autotools/cmake/meson outputs.  The copytree
+    # preserves original timestamps but path rewriting modifies some
+    # files, making others (version.h, aclocal.m4, Makefiles) appear
+    # stale.  A uniform timestamp prevents all spurious rebuilds.
+    # Use SOURCE_DATE_EPOCH (default 0) for reproducibility — time.time()
+    # changes between runs and invalidates downstream caches.
+    _epoch = float(os.environ.get("SOURCE_DATE_EPOCH", "0"))
+    _stamp = (_epoch, _epoch)
     for dirpath, _dirnames, filenames in os.walk(output_dir):
         for fname in filenames:
             try:
@@ -270,6 +271,11 @@ def main():
     # and external caches can poison results across build contexts.
     os.environ["CCACHE_DISABLE"] = "1"
     os.environ["RUSTC_WRAPPER"] = ""
+
+    # Pin timestamps for reproducible builds.  Many build systems embed
+    # __DATE__/__TIME__ or query the system clock.  SOURCE_DATE_EPOCH is
+    # the standard mechanism to override this.
+    os.environ.setdefault("SOURCE_DATE_EPOCH", "0")
 
     # Apply extra environment variables
     for entry in args.extra_env:
