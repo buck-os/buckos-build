@@ -64,7 +64,17 @@ def main():
 
     os.makedirs(args.build_dir, exist_ok=True)
 
+    # Create a pkg-config wrapper that always passes --define-prefix so
+    # .pc files in Buck2 dep directories resolve paths correctly.
+    import tempfile
+    wrapper_dir = tempfile.mkdtemp(prefix="pkgconf-wrapper-")
+    wrapper = os.path.join(wrapper_dir, "pkg-config")
+    with open(wrapper, "w") as f:
+        f.write('#!/bin/sh\nexec /usr/bin/pkg-config --define-prefix "$@"\n')
+    os.chmod(wrapper, 0o755)
+
     env = os.environ.copy()
+    env["PATH"] = wrapper_dir + ":" + env.get("PATH", "")
     for entry in args.extra_env:
         key, _, value = entry.partition("=")
         if key:

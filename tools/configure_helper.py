@@ -124,6 +124,15 @@ def main():
 
     configure = os.path.join(output_dir, args.configure_script)
 
+    # Create a pkg-config wrapper that always passes --define-prefix so
+    # .pc files in Buck2 dep directories resolve paths correctly.
+    wrapper_dir = os.path.join(output_dir, ".pkgconf-wrapper")
+    os.makedirs(wrapper_dir, exist_ok=True)
+    wrapper = os.path.join(wrapper_dir, "pkg-config")
+    with open(wrapper, "w") as f:
+        f.write('#!/bin/sh\nexec /usr/bin/pkg-config --define-prefix "$@"\n')
+    os.chmod(wrapper, 0o755)
+
     env = os.environ.copy()
 
     # Disable host compiler/build caches — Buck2 caches actions itself,
@@ -149,6 +158,9 @@ def main():
         prepend = ":".join(os.path.abspath(p) for p in args.path_prepend if os.path.isdir(p))
         if prepend:
             env["PATH"] = prepend + ":" + env.get("PATH", os.environ.get("PATH", ""))
+
+    # Prepend pkg-config wrapper to PATH
+    env["PATH"] = wrapper_dir + ":" + env.get("PATH", os.environ.get("PATH", ""))
 
     # Run pre-configure commands (e.g. autoreconf, libtoolize)
     for cmd_str in args.pre_cmds:

@@ -123,6 +123,16 @@ def main():
         for f in _glob.glob(os.path.join(output_dir, pattern)):
             os.utime(f, None)
 
+    # Create a pkg-config wrapper that always passes --define-prefix so
+    # .pc files in Buck2 dep directories resolve paths correctly.
+    wrapper_dir = os.path.join(output_dir, ".pkgconf-wrapper")
+    os.makedirs(wrapper_dir, exist_ok=True)
+    wrapper = os.path.join(wrapper_dir, "pkg-config")
+    with open(wrapper, "w") as f:
+        f.write('#!/bin/sh\nexec /usr/bin/pkg-config --define-prefix "$@"\n')
+    os.chmod(wrapper, 0o755)
+    os.environ["PATH"] = wrapper_dir + ":" + os.environ.get("PATH", "")
+
     # Disable host compiler/build caches — Buck2 caches actions itself,
     # and external caches can poison results across build contexts.
     os.environ["CCACHE_DISABLE"] = "1"

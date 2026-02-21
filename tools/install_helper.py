@@ -72,6 +72,16 @@ def main():
         print(f"error: build directory not found: {build_dir}", file=sys.stderr)
         sys.exit(1)
 
+    # Create a pkg-config wrapper that always passes --define-prefix so
+    # .pc files in Buck2 dep directories resolve paths correctly.
+    import tempfile
+    wrapper_dir = tempfile.mkdtemp(prefix="pkgconf-wrapper-")
+    wrapper = os.path.join(wrapper_dir, "pkg-config")
+    with open(wrapper, "w") as f:
+        f.write('#!/bin/sh\nexec /usr/bin/pkg-config --define-prefix "$@"\n')
+    os.chmod(wrapper, 0o755)
+    os.environ["PATH"] = wrapper_dir + ":" + os.environ.get("PATH", "")
+
     # Disable host compiler/build caches — Buck2 caches actions itself,
     # and external caches can poison results across build contexts.
     os.environ["CCACHE_DISABLE"] = "1"
