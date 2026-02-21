@@ -137,9 +137,9 @@ def main():
         content = content.replace(build_dir, output_dir)
         with open(cmake_cache, "w") as f:
             f.write(content)
-        # Rewrite cmake_install.cmake files
-        for pattern in ["cmake_install.cmake", "*/cmake_install.cmake"]:
-            for fpath in _glob.glob(os.path.join(output_dir, pattern)):
+        # Rewrite cmake_install.cmake files at any depth
+        for pattern in ["cmake_install.cmake", "**/cmake_install.cmake"]:
+            for fpath in _glob.glob(os.path.join(output_dir, pattern), recursive=True):
                 try:
                     with open(fpath, "r") as f:
                         fc = f.read()

@@ -40,57 +40,15 @@ package(
     description = "Provides an API and commands for processing SPIR-V modules",
     homepage = "https://github.com/KhronosGroup/SPIRV-Tools",
     license = "Apache-2.0",
-    # Pre-configure: Set up SPIRV-Headers path from dependencies
-    pre_configure = '''
-# Find spirv-headers installation directory
-IFS=':' read -ra DEP_ARRAY <<< "$DEP_BASE_DIRS"
-for dep_dir in "${DEP_ARRAY[@]}"; do
-    if [ -d "$dep_dir/usr/include/spirv" ]; then
-        SPIRV_HEADERS_DIR="$dep_dir/usr"
-        echo "Found SPIRV-Headers: $SPIRV_HEADERS_DIR"
-        break
-    fi
-done
-''',
     configure_args = [
         "-DSPIRV_WERROR=OFF",
         "-DSPIRV_SKIP_TESTS=ON",
         "-DSPIRV_TOOLS_BUILD_STATIC=OFF",
     ],
-    # Need to tell CMake where to find spirv-headers
-    src_configure = '''
-# Find spirv-headers installation directory
-IFS=':' read -ra DEP_ARRAY <<< "$DEP_BASE_DIRS"
-SPIRV_HEADERS_DIR=""
-for dep_dir in "${DEP_ARRAY[@]}"; do
-    if [ -d "$dep_dir/usr/include/spirv" ]; then
-        SPIRV_HEADERS_DIR="$dep_dir/usr"
-        echo "Found SPIRV-Headers: $SPIRV_HEADERS_DIR"
-        break
-    fi
-done
-
-if [ -z "$SPIRV_HEADERS_DIR" ]; then
-    echo "ERROR: Could not find SPIRV-Headers in dependencies"
-    exit 1
-fi
-
-# Configure with CMake
-mkdir -p "${BUILD_DIR:-build}"
-cd "${BUILD_DIR:-build}"
-
-cmake .. \
-    -DCMAKE_INSTALL_PREFIX="${EPREFIX:-/usr}" \
-    -DCMAKE_INSTALL_LIBDIR="${LIBDIR:-lib64}" \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DSPIRV-Headers_SOURCE_DIR="$SPIRV_HEADERS_DIR" \
-    -DSPIRV_WERROR=OFF \
-    -DSPIRV_SKIP_TESTS=ON \
-    -DSPIRV_TOOLS_BUILD_STATIC=OFF \
-    -DCMAKE_C_FLAGS="${CFLAGS:-} -DNDEBUG" \
-    -DCMAKE_CXX_FLAGS="${CXXFLAGS:-} -DNDEBUG" \
-    ${CMAKE_EXTRA_ARGS:-}
-''',
+    # SPIRV-Tools expects a source-dir-style path, not find_package()
+    cmake_dep_defines = {
+        "SPIRV-Headers_SOURCE_DIR": ":spirv-headers",
+    },
     deps = [
         ":spirv-headers",
     ],

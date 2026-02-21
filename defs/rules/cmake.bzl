@@ -59,7 +59,7 @@ def _cmake_configure(ctx, source):
     cflags = list(ctx.attrs.extra_cflags)
     ldflags = list(ctx.attrs.extra_ldflags)
 
-    # Propagate flags and pkg-config paths from dependencies
+    # Propagate flags, pkg-config paths, and cmake prefix paths from dependencies
     pkg_config_paths = []
     for dep in ctx.attrs.deps:
         if PackageInfo in dep:
@@ -84,12 +84,23 @@ def _cmake_configure(ctx, source):
         pkg_config_paths.append(cmd_args(prefix, format = "{}/usr/lib/pkgconfig"))
         pkg_config_paths.append(cmd_args(prefix, format = "{}/usr/share/pkgconfig"))
 
+        # Add dep prefix to CMAKE_PREFIX_PATH for find_package()
+        cmd.add("--prefix-path", cmd_args(prefix, format = "{}/usr"))
+
     if cflags:
         cmd.add(cmd_args("--cmake-define=", "CMAKE_C_FLAGS=", cmd_args(cflags, delimiter = " "), delimiter = ""))
     if ldflags:
         cmd.add(cmd_args("--cmake-define=", "CMAKE_EXE_LINKER_FLAGS=", cmd_args(ldflags, delimiter = " "), delimiter = ""))
     if pkg_config_paths:
         cmd.add("--env", cmd_args("PKG_CONFIG_PATH=", cmd_args(pkg_config_paths, delimiter = ":"), delimiter = ""))
+
+    # Pass dep prefix paths as cmake defines (e.g. SPIRV-Headers_SOURCE_DIR)
+    for var_name, dep in ctx.attrs.cmake_dep_defines.items():
+        if PackageInfo in dep:
+            dep_prefix = dep[PackageInfo].prefix
+        else:
+            dep_prefix = dep[DefaultInfo].default_outputs[0]
+        cmd.add(cmd_args("--cmake-define=", var_name, "=", dep_prefix, "/usr", delimiter = ""))
 
     # Configure arguments from the common interface
     for arg in ctx.attrs.configure_args:
@@ -208,6 +219,7 @@ cmake_package = rule(
         "configure_args": attrs.list(attrs.string(), default = []),
         "cmake_args": attrs.list(attrs.string(), default = []),
         "cmake_defines": attrs.list(attrs.string(), default = []),
+        "cmake_dep_defines": attrs.dict(attrs.string(), attrs.dep(), default = {}),
         "make_args": attrs.list(attrs.string(), default = []),
         "post_install_cmds": attrs.list(attrs.string(), default = []),
         "env": attrs.dict(attrs.string(), attrs.string(), default = {}),

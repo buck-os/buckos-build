@@ -81,6 +81,8 @@ def main():
                         help="CMake define as KEY=VALUE (repeatable)")
     parser.add_argument("--env", action="append", dest="extra_env", default=[],
                         help="Extra environment variable KEY=VALUE (repeatable)")
+    parser.add_argument("--prefix-path", action="append", dest="prefix_paths", default=[],
+                        help="Directory to add to CMAKE_PREFIX_PATH (repeatable)")
     args = parser.parse_args()
 
     if not os.path.isdir(args.source_dir):
@@ -117,8 +119,18 @@ def main():
         "-G", "Ninja",
     ]
 
+    # Build CMAKE_PREFIX_PATH from dep prefixes so find_package() works
+    if args.prefix_paths:
+        resolved = [os.path.abspath(p) for p in args.prefix_paths]
+        cmd.append("-DCMAKE_PREFIX_PATH=" + ";".join(resolved))
+
     for define in args.cmake_defines:
-        cmd.append(f"-D{define}")
+        # Resolve relative buck-out paths in define values to absolute
+        if "=" in define:
+            key, _, value = define.partition("=")
+            cmd.append(f"-D{key}={_resolve_env_paths(value)}")
+        else:
+            cmd.append(f"-D{define}")
 
     cmd.extend(args.cmake_args)
 
