@@ -1,43 +1,49 @@
 load("//defs:package.bzl", "package")
 
+# bzip2 doesn't have a configure script and its Makefile doesn't support
+# DESTDIR.  Two make invocations are needed: one for the shared library
+# (with -fPIC) and one for the static library and binaries.
 package(
     name = "bzip2",
-    build_rule = "autotools",
-    skip_configure = True,
+    build_rule = "binary",
     version = "1.0.8",
     url = "https://mirrors.kernel.org/sourceware/bzip2/bzip2-1.0.8.tar.gz",
     sha256 = "ab5a03176ee106d3f0fa90e381da478ddae405918153cca248e682cd0c4a2269",
     description = "High-quality block-sorting file compressor",
     homepage = "https://sourceware.org/bzip2/",
     license = "bzip2-1.0.6",
-    # Build both static library and shared library
-    src_compile = """
-# Build shared library first (needs -fPIC)
-# Preserve existing CFLAGS/LDFLAGS for cross-compilation sysroot flags
-make -j$MAKE_JOBS CC="${CC:-gcc}" CFLAGS="${CFLAGS:-} -fPIC -O2 -g -D_FILE_OFFSET_BITS=64" LDFLAGS="${LDFLAGS:-}" PREFIX=/usr -f Makefile-libbz2_so
+    libraries = ["bz2"],
+    install_script = """
+mkdir -p "$OUT"
+
+BUILD=$(mktemp -d)
+cp -a "$SRCS"/. "$BUILD/"
+cd "$BUILD"
+
+CC="${CC:-gcc}"
+
+# Build shared library (needs -fPIC)
+make -j$(nproc) CC="$CC" CFLAGS="-fPIC -O2 -g -D_FILE_OFFSET_BITS=64" PREFIX=/usr -f Makefile-libbz2_so
+
 # Save shared library object files
 mkdir -p sharedobj
 mv *.o sharedobj/ 2>/dev/null || true
+
 # Build static library and binaries
-make -j$MAKE_JOBS CC="${CC:-gcc}" CFLAGS="${CFLAGS:-} -O2 -g -D_FILE_OFFSET_BITS=64" LDFLAGS="${LDFLAGS:-}" PREFIX=/usr libbz2.a bzip2 bzip2recover
-# Restore shared library files
+make -j$(nproc) CC="$CC" CFLAGS="-O2 -g -D_FILE_OFFSET_BITS=64" PREFIX=/usr libbz2.a bzip2 bzip2recover
+
+# Restore shared object files
 mv sharedobj/*.o . 2>/dev/null || true
 rmdir sharedobj 2>/dev/null || true
-""",
-    src_install = """
-# Install binaries and static lib
-make PREFIX="$DESTDIR/usr" install
+
+# Install
+make PREFIX="$OUT/usr" install
 
 # Install shared library
-install -Dm755 libbz2.so.1.0.8 "$DESTDIR/usr/lib/libbz2.so.1.0.8"
-ln -sf libbz2.so.1.0.8 "$DESTDIR/usr/lib/libbz2.so.1.0"
-ln -sf libbz2.so.1.0.8 "$DESTDIR/usr/lib/libbz2.so.1"
-ln -sf libbz2.so.1.0.8 "$DESTDIR/usr/lib/libbz2.so"
-
-# Remove static library if not requested
-if [ "${USE_static_libs}" != "1" ]; then
-    rm -f "$DESTDIR/usr/lib/libbz2.a"
-fi
+install -Dm755 libbz2.so.1.0.8 "$OUT/usr/lib/libbz2.so.1.0.8"
+ln -sf libbz2.so.1.0.8 "$OUT/usr/lib/libbz2.so.1.0"
+ln -sf libbz2.so.1.0.8 "$OUT/usr/lib/libbz2.so.1"
+ln -sf libbz2.so.1.0.8 "$OUT/usr/lib/libbz2.so"
 """,
     deps = [],
     visibility = ["PUBLIC"],
