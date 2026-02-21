@@ -246,9 +246,10 @@ def main():
     # preserves original timestamps but path rewriting modifies some
     # files, making others (version.h, aclocal.m4, Makefiles) appear
     # stale.  A uniform timestamp prevents all spurious rebuilds.
-    # Use SOURCE_DATE_EPOCH (default 0) for reproducibility — time.time()
+    # Use SOURCE_DATE_EPOCH for reproducibility — time.time()
     # changes between runs and invalidates downstream caches.
-    _epoch = float(os.environ.get("SOURCE_DATE_EPOCH", "0"))
+    # Default 315576000 (1980-01-01) avoids gzip/zip timestamp errors.
+    _epoch = float(os.environ.get("SOURCE_DATE_EPOCH", "315576000"))
     _stamp = (_epoch, _epoch)
     for dirpath, _dirnames, filenames in os.walk(output_dir):
         for fname in filenames:
@@ -275,7 +276,7 @@ def main():
     # Pin timestamps for reproducible builds.  Many build systems embed
     # __DATE__/__TIME__ or query the system clock.  SOURCE_DATE_EPOCH is
     # the standard mechanism to override this.
-    os.environ.setdefault("SOURCE_DATE_EPOCH", "0")
+    os.environ.setdefault("SOURCE_DATE_EPOCH", "315576000")
 
     # Apply extra environment variables
     for entry in args.extra_env:

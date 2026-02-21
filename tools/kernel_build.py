@@ -75,7 +75,7 @@ def main():
     os.environ["RUSTC_WRAPPER"] = ""
 
     # Pin timestamps for reproducible builds.
-    os.environ.setdefault("SOURCE_DATE_EPOCH", "0")
+    os.environ.setdefault("SOURCE_DATE_EPOCH", "315576000")
 
     # Copy source to writable build directory
     print(f"Copying kernel source to build tree: {build_tree_out}")

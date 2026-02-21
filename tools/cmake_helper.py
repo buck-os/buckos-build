@@ -112,7 +112,7 @@ def main():
     env["RUSTC_WRAPPER"] = ""
 
     # Pin timestamps for reproducible builds.
-    env.setdefault("SOURCE_DATE_EPOCH", "0")
+    env.setdefault("SOURCE_DATE_EPOCH", "315576000")
 
     env["PATH"] = wrapper_dir + ":" + env.get("PATH", "")
     for entry in args.extra_env:

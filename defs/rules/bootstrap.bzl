@@ -22,7 +22,7 @@ TARGET_TRIPLE = "x86_64-buckos-linux-gnu"
 # GCC/glibc builds are reproducible.
 _DETERMINISM_PROLOGUE = (
     "export CCACHE_DISABLE=1 RUSTC_WRAPPER='' && " +
-    "export SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH:-0} && "
+    "export SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH:-315576000} && "
 )
 
 def _env_args(cmd, env_dict):

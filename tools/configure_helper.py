@@ -146,7 +146,7 @@ def main():
     # Pin timestamps for reproducible builds.  Many build systems (autotools,
     # cmake, meson, kernel) embed __DATE__/__TIME__ or query the system clock.
     # SOURCE_DATE_EPOCH is the standard mechanism to override this.
-    env.setdefault("SOURCE_DATE_EPOCH", "0")
+    env.setdefault("SOURCE_DATE_EPOCH", "315576000")
 
     if args.cc:
         env["CC"] = args.cc
