@@ -255,11 +255,14 @@ for dep_dir in "${DEP_ARRAY[@]}"; do
             fi
         done
 
-        # Copy libraries
+        # Copy libraries (rustlib tree and shared libs like librustc_driver)
         mkdir -p "$DESTDIR/tools/lib"
         if [ -d "$dep_dir/usr/lib/rustlib" ]; then
             cp -a "$dep_dir/usr/lib/rustlib" "$DESTDIR/tools/lib/"
         fi
+        for so in "$dep_dir"/usr/lib/*.so*; do
+            [ -e "$so" ] && cp -a "$so" "$DESTDIR/tools/lib/"
+        done
         break
     fi
 done

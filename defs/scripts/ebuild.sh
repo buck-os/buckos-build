@@ -1043,6 +1043,8 @@ for dep_dir in "${DEP_DIRS_ARRAY[@]}"; do
 done
 if [ -n "$RUST_TOOLCHAIN_DIR" ]; then
     export PATH="$RUST_TOOLCHAIN_DIR/bin:$PATH"
+    # rustc dynamically links librustc_driver — make sure it's findable
+    export LD_LIBRARY_PATH="$RUST_TOOLCHAIN_DIR/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
     # Set CARGO_HOME if not already set
     if [ -z "$CARGO_HOME" ]; then
         export CARGO_HOME="$T/cargo"
