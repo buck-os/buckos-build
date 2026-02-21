@@ -1,137 +1,38 @@
 load("//defs:package.bzl", "package")
 
-# =============================================================================
-# LLVM - Low Level Virtual Machine
-# =============================================================================
-#
-# USE flags this package supports:
-# - zlib: Enable zlib compression support
-# - zstd: Enable zstd compression support
-# - ffi: Enable libffi support
-# - doc: Build documentation
-# - examples: Build examples
-# - test: Build test suite
-# - benchmarks: Build benchmarks
-# - debug: Debug build type
-#
-# Default USE flags: zlib, ffi
-
-# USE flag configuration
-LLVM_IUSE = ["zlib", "zstd", "ffi", "doc", "examples", "test", "benchmarks", "debug"]
-LLVM_USE_DEFAULTS = ["zlib", "ffi"]
-
-# Resolve USE-based dependencies
-LLVM_USE_DEPS = {
-    "zlib": ["//packages/linux/core/zlib:zlib"],
-    "ffi": ["//packages/linux/system/libs/utility/libffi:libffi"],
-}
-
-# Common CMake arguments for all LLVM versions
-LLVM_CMAKE_ARGS = [
-    # Build type - USE flag: debug
-    "-DCMAKE_BUILD_TYPE=Release",
-    "-DLLVM_ENABLE_PROJECTS=clang",
-    "-DLLVM_ENABLE_RUNTIMES=",
-    "-DLLVM_BUILD_LLVM_DYLIB=ON",
-    "-DLLVM_LINK_LLVM_DYLIB=ON",
-    "-DLLVM_ENABLE_RTTI=ON",
-    # USE flag: ffi
-    "-DLLVM_ENABLE_FFI=ON",
-    # USE flag: zlib
-    "-DLLVM_ENABLE_ZLIB=ON",
-    # USE flag: zstd
-    "-DLLVM_ENABLE_ZSTD=OFF",
-    # USE flag: benchmarks
-    "-DLLVM_INCLUDE_BENCHMARKS=OFF",
-    # USE flag: examples
-    "-DLLVM_INCLUDE_EXAMPLES=OFF",
-    # USE flag: test
-    "-DLLVM_INCLUDE_TESTS=OFF",
-    # USE flag: doc
-    "-DLLVM_INCLUDE_DOCS=OFF",
-    # Include AMDGPU target for mesa radeonsi driver
-    "-DLLVM_TARGETS_TO_BUILD=AMDGPU;X86;AArch64;ARM;WebAssembly;BPF",
-    "-DLLVM_INSTALL_UTILS=ON",
-]
-
-# Custom configure that handles llvm/ subdirectory
-LLVM_SRC_CONFIGURE = """
-# LLVM has CMakeLists.txt in llvm/ subdirectory
-# Wipe build directory to force reconfigure
-rm -rf "$S/build"
-mkdir -p "$S/build"
-
-# Build rpath-link flags for transitive shared library dependencies
-_EXTRA_LDFLAGS=""
-IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
-for _dep in "${_DEP_ARRAY[@]}"; do
-    for _libdir in "$_dep/usr/lib64" "$_dep/usr/lib" "$_dep/lib64" "$_dep/lib"; do
-        if [ -d "$_libdir" ]; then
-            _EXTRA_LDFLAGS="$_EXTRA_LDFLAGS -Wl,-rpath-link,$_libdir"
-        fi
-    done
-done
-export LDFLAGS="${LDFLAGS:-} $_EXTRA_LDFLAGS"
-echo "LDFLAGS=$LDFLAGS"
-
-cmake \\
-    -S "$S/llvm" \\
-    -B "$S/build" \\
-    -DCMAKE_INSTALL_PREFIX="${EPREFIX:-/usr}" \\
-    -DCMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE:-Release}" \\
-    -DCMAKE_INSTALL_LIBDIR="${LIBDIR:-lib64}" \\
-    -DCMAKE_C_FLAGS="${CFLAGS:-}" \\
-    -DCMAKE_CXX_FLAGS="${CXXFLAGS:-}" \\
-    -DCMAKE_EXE_LINKER_FLAGS="${LDFLAGS:-}" \\
-    -DCMAKE_SHARED_LINKER_FLAGS="${LDFLAGS:-}" \\
-    -DCMAKE_MODULE_LINKER_FLAGS="${LDFLAGS:-}" \\
-    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \\
-    ${CMAKE_EXTRA_ARGS:-}
-"""
-
-# Custom compile with rpath-link for transitive deps
-LLVM_SRC_COMPILE = """
-# Build rpath-link flags for transitive shared library dependencies
-_EXTRA_LDFLAGS=""
-IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
-for _dep in "${_DEP_ARRAY[@]}"; do
-    for _libdir in "$_dep/usr/lib64" "$_dep/usr/lib" "$_dep/lib64" "$_dep/lib"; do
-        if [ -d "$_libdir" ]; then
-            _EXTRA_LDFLAGS="$_EXTRA_LDFLAGS -Wl,-rpath-link,$_libdir"
-        fi
-    done
-done
-export LDFLAGS="${LDFLAGS:-} $_EXTRA_LDFLAGS"
-echo "LDFLAGS=$LDFLAGS"
-
-cmake --build "$S/build" -j${MAKEOPTS:-$(nproc)}
-"""
-
-# =============================================================================
-# LLVM 21.1.6 (Latest - Default)
-# =============================================================================
+# LLVM monorepo has CMakeLists.txt in the llvm/ subdirectory
 package(
     build_rule = "cmake",
     name = "llvm",
     version = "21.1.6",
-    use_configure = {
-        "debug": ("-DCMAKE_BUILD_TYPE=Debug", "-DCMAKE_BUILD_TYPE=Release"),
-    },
     url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.6/llvm-project-21.1.6.src.tar.xz",
     sha256 = "ae67086eb04bed7ca11ab880349b5f1ab6f50e1b88cda376eaf8a845b935762b",
     description = "Low Level Virtual Machine - compiler infrastructure",
     homepage = "https://llvm.org/",
     license = "Apache-2.0 WITH LLVM-exception",
-    src_configure = LLVM_SRC_CONFIGURE,
-    src_compile = LLVM_SRC_COMPILE,
-    configure_args = LLVM_CMAKE_ARGS,
-    use_deps = {
-        "zlib": "//packages/linux/core/zlib:zlib",
-        "ffi": "//packages/linux/system/libs/utility/libffi:libffi",
-    },
+    source_subdir = "llvm",
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DLLVM_ENABLE_PROJECTS=clang",
+        "-DLLVM_ENABLE_RUNTIMES=",
+        "-DLLVM_BUILD_LLVM_DYLIB=ON",
+        "-DLLVM_LINK_LLVM_DYLIB=ON",
+        "-DLLVM_ENABLE_RTTI=ON",
+        "-DLLVM_ENABLE_FFI=ON",
+        "-DLLVM_ENABLE_ZLIB=ON",
+        "-DLLVM_ENABLE_ZSTD=OFF",
+        "-DLLVM_INCLUDE_BENCHMARKS=OFF",
+        "-DLLVM_INCLUDE_EXAMPLES=OFF",
+        "-DLLVM_INCLUDE_TESTS=OFF",
+        "-DLLVM_INCLUDE_DOCS=OFF",
+        "-DLLVM_TARGETS_TO_BUILD=AMDGPU;X86;AArch64;ARM;WebAssembly;BPF",
+        "-DLLVM_INSTALL_UTILS=ON",
+    ],
     deps = [
         "//packages/linux/system/terminal/ncurses:ncurses",
         "//packages/linux/system/libs/data/libxml2:libxml2",
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/utility/libffi:libffi",
     ],
     visibility = ["PUBLIC"],
 )

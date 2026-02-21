@@ -10,83 +10,20 @@ package(
     version = "256.7",
     url = "https://github.com/systemd/systemd/archive/refs/tags/v256.7.tar.gz",
     sha256 = "896d76ff65c88f5fd9e42f90d152b0579049158a163431dd77cdc57748b1d7b0",
-    # Exclude test/fuzz files and unit files with escaped characters in names
-    # The \x2d in filenames causes Buck2 path relativization errors
-    # Note: The backslash in filenames needs to be matched literally
-    exclude_patterns = [
-        "*/test/fuzz/*",
-        "*system-systemd?x2d*",  # Match system-systemd\x2d* (? matches the backslash)
+    pre_configure_cmds = [
+        # Stub out test/fuzz meson.build (exclude_patterns dropped those files)
+        "mkdir -p test/fuzz && printf 'fuzz_sanitizers = []\\nfuzz_testsdir = '\"'\"'test/fuzz'\"'\"'\\n' > test/fuzz/meson.build",
+        # Remove unit file entries with \\x2d in names (Buck2 can't handle escaped paths)
+        "perl -i -0777 -pe 's/\\{[^{}]*x2dcryptsetup[^{}]*\\},?\\s*//gs' units/meson.build",
+        "perl -i -0777 -pe 's/\\{[^{}]*x2dveritysetup[^{}]*\\},?\\s*//gs' units/meson.build",
+        # Skip dbus_exporter which tries to run cross-compiled binary
+        "sed -i 's/if not meson.is_cross_build()/if false/' meson.build",
+        # Disable SystemTap tracing - sysroot has old sys/sdt.h
+        "sed -i 's/#if HAVE_SYS_SDT_H/#if 0/' src/udev/udev-trace.h",
     ],
-    # Create stub meson.build for excluded test/fuzz directory
-    # Remove references to excluded unit files with escaped names
-    src_prepare = """
-        mkdir -p test/fuzz
-        cat > test/fuzz/meson.build << 'FUZZ_STUB'
-# Stub - fuzz tests excluded from build
-fuzz_sanitizers = []
-fuzz_testsdir = 'test/fuzz'
-FUZZ_STUB
-
-        # Remove multi-line dict entries referencing excluded unit files with \\x2d in names
-        # These files are excluded from extraction because Buck2 can't handle the escaped paths
-        # The entries look like: { 'file' : 'system-systemd\\x2dcryptsetup.slice', 'conditions' : [...], },
-        # Use perl for multi-line regex to delete entire dict blocks
-        perl -i -0777 -pe "s/\\{[^{}]*x2dcryptsetup[^{}]*\\},?\\s*//gs" units/meson.build
-        perl -i -0777 -pe "s/\\{[^{}]*x2dveritysetup[^{}]*\\},?\\s*//gs" units/meson.build
-
-        # CROSS-COMPILATION FIX: Skip dbus_exporter which tries to run cross-compiled binary
-        # The meson.build has 'if not meson.is_cross_build()' but meson doesn't detect cross-build
-        # because we're not using a meson cross-file. Patch to always skip this step.
-        sed -i "s/if not meson.is_cross_build()/if false  # disabled for cross-build/" meson.build
-
-        # Disable SystemTap tracing - sysroot has old sys/sdt.h without STAP_PROBEV support
-        sed -i 's/#if HAVE_SYS_SDT_H/#if 0 \/\/ HAVE_SYS_SDT_H disabled - old sdt.h/' src/udev/udev-trace.h
-    """,
     description = "System and service manager",
     homepage = "https://systemd.io/",
     license = "GPL-2.0-or-later LGPL-2.1-or-later",
-    # TEMPORARILY DISABLED acl for aarch64 cross-compilation (Fix #26 - acl/libattr linking issue)
-    # Note: audit disabled for now due to build issues with C11 atomics
-    use_deps = {
-        "pam": "//packages/linux/system/security/auth/pam:pam",
-        "acl": "//packages/linux/system/libs/ipc/acl:acl",
-        "audit": "//packages/linux/system/security/audit:audit",
-    },
-    use_configure = {
-        "apparmor": ("-Dapparmor=enabled", "-Dapparmor=disabled"),
-        "audit": ("-Daudit=enabled", "-Daudit=disabled"),
-        "boot": ("-Dbootloader=enabled", "-Dbootloader=disabled"),
-        "bpf": ("-Dbpf-framework=enabled", "-Dbpf-framework=disabled"),
-        "cgroup-hybrid": ("-Ddefault-hierarchy=hybrid", "-Ddefault-hierarchy=unified"),
-        "cryptsetup": ("-Dlibcryptsetup=enabled", "-Dlibcryptsetup=disabled"),
-        "curl": ("-Dlibcurl=enabled", "-Dlibcurl=disabled"),
-        "dns-over-tls": ("-Ddns-over-tls=true", "-Ddns-over-tls=false"),
-        "elfutils": ("-Delfutils=enabled", "-Delfutils=disabled"),
-        "fido2": ("-Dlibfido2=enabled", "-Dlibfido2=disabled"),
-        "gnutls": ("-Dgnutls=enabled", "-Dgnutls=disabled"),
-        "homed": ("-Dhomed=enabled", "-Dhomed=disabled"),
-        "http": ("-Dmicrohttpd=enabled", "-Dmicrohttpd=disabled"),
-        "idn": ("-Dlibidn2=enabled", "-Dlibidn2=disabled"),
-        "importd": ("-Dimportd=enabled", "-Dimportd=disabled"),
-        "iptables": ("-Dlibiptc=enabled", "-Dlibiptc=disabled"),
-        "kernel-install": ("-Dkernel-install=true", "-Dkernel-install=false"),
-        "kmod": ("-Dkmod=enabled", "-Dkmod=disabled"),
-        "lzma": ("-Dxz=enabled", "-Dxz=disabled"),
-        "openssl": ("-Dopenssl=enabled", "-Dopenssl=disabled"),
-        "passwdqc": ("-Dpasswdqc=enabled", "-Dpasswdqc=disabled"),
-        "pcre": ("-Dpcre2=enabled", "-Dpcre2=disabled"),
-        "pkcs11": ("-Dp11kit=enabled", "-Dp11kit=disabled"),
-        "policykit": ("-Dpolkit=enabled", "-Dpolkit=disabled"),
-        "pwquality": ("-Dpwquality=enabled", "-Dpwquality=disabled"),
-        "qrcode": ("-Dqrencode=enabled", "-Dqrencode=disabled"),
-        "resolvconf": ("-Dresolve=true", "-Dresolve=false"),
-        "seccomp": ("-Dseccomp=enabled", "-Dseccomp=disabled"),
-        "sysv-utils": ("-Dsysvinit-path=/etc/init.d", "-Dsysvinit-path="),
-        "tpm": ("-Dtpm2=enabled", "-Dtpm2=disabled"),
-        "ukify": ("-Dukify=enabled", "-Dukify=disabled"),
-        "vanilla": ("-Dmode=vanilla", "-Dmode=release"),
-        "xkb": ("-Dxkbcommon=enabled", "-Dxkbcommon=disabled"),
-    },
     configure_args = [
         "-Dsysconfdir=/etc",
         "-Dmode=release",
@@ -145,89 +82,67 @@ FUZZ_STUB
         "-Dportabled=false",
         "-Dsysext=false",
         "-Duserdb=false",
-        # Use PAM and ACL if enabled (feature type: enabled/disabled/auto)
+        # USE-derived off defaults (all USE flags default to off)
         "-Dpam=auto",
         "-Dacl=auto",
+        "-Dapparmor=disabled",
+        "-Daudit=disabled",
+        "-Dbootloader=disabled",
+        "-Dbpf-framework=disabled",
+        "-Ddefault-hierarchy=unified",
+        "-Dlibcryptsetup=disabled",
+        "-Dlibcurl=disabled",
+        "-Ddns-over-tls=false",
+        "-Delfutils=disabled",
+        "-Dlibfido2=disabled",
+        "-Dgnutls=disabled",
+        "-Dhomed=disabled",
+        "-Dmicrohttpd=disabled",
+        "-Dlibidn2=disabled",
+        "-Dimportd=disabled",
+        "-Dlibiptc=disabled",
+        "-Dkernel-install=false",
+        "-Dkmod=enabled",  # kmod in deps
+        "-Dxz=enabled",  # xz in deps
+        "-Dopenssl=enabled",  # openssl in deps
+        "-Dseccomp=enabled",  # libseccomp in deps
+        "-Dpasswdqc=disabled",
+        "-Dpcre2=disabled",
+        "-Dp11kit=disabled",
+        "-Dpolkit=disabled",
+        "-Dpwquality=disabled",
+        "-Dqrencode=disabled",
+        "-Dresolve=false",
+        "-Dsysvinit-path=",
+        "-Dtpm2=disabled",
+        "-Dukify=disabled",
+        "-Dxkbcommon=disabled",
     ],
-    bdepend = [
-        "//packages/linux/dev-tools/dev-utils/gperf:gperf",  # Perfect hash generator (build-time)
-        "//packages/linux/lang/python:python",  # Python for meson
-        "//packages/linux/lang/python/jinja2:jinja2",  # Jinja2 templating (required by meson)
-        "//packages/linux/lang/python/jinja2:markupsafe",  # Required by jinja2
+    post_install_cmds = [
+        # Create /sbin/udevd symlink for compatibility
+        "mkdir -p sbin && ln -sf /usr/bin/udevadm sbin/udevd",
+        # Create /sbin/init symlink to systemd
+        "ln -sf /usr/lib/systemd/systemd sbin/init",
     ],
-    src_install = """
-# Use meson install but then verify/fix binaries
-meson install -C build --destdir "$DESTDIR"
-
-# WORKAROUND: meson install truncates binaries on aarch64 cross-compile
-# Manually copy the main binaries to ensure they're not corrupted
-echo "Verifying and fixing systemd binaries..."
-for bin in systemd systemctl journalctl; do
-    SRC="build/$bin"
-    if [ -f "$SRC" ]; then
-        # Find where meson installed it
-        INSTALLED=$(find "$DESTDIR" -name "$bin" -type f 2>/dev/null | head -1)
-        if [ -n "$INSTALLED" ]; then
-            SRC_SIZE=$(stat -c%s "$SRC")
-            INST_SIZE=$(stat -c%s "$INSTALLED")
-            if [ "$SRC_SIZE" != "$INST_SIZE" ]; then
-                echo "  Fixing truncated $bin: $INST_SIZE -> $SRC_SIZE bytes"
-                cp -f "$SRC" "$INSTALLED"
-            else
-                echo "  OK: $bin ($SRC_SIZE bytes)"
-            fi
-        fi
-    fi
-done
-
-# Fix hardcoded build paths in systemd TEXT files only
-# Meson's find_program() resolves dependencies to their build-time paths
-# (e.g. /data/.../buck-out/.../util-linux/__util-linux__/util-linux/bin/mount)
-# These must be converted to runtime paths (e.g. /bin/mount)
-# IMPORTANT: Skip ELF binaries - sed corrupts them by changing file size
-echo "Fixing hardcoded build paths in systemd text files..."
-fix_count=0
-find "$DESTDIR" -type f | while read -r f; do
-    # Skip ELF binaries (magic bytes: 7f 45 4c 46)
-    if head -c 4 "$f" 2>/dev/null | grep -q $'\\x7fELF'; then
-        continue
-    fi
-    if grep -q 'buck-out' "$f" 2>/dev/null; then
-        # Pattern: <anything>/buck-out/<anything>/__<target>__/<output-dir>/<actual-path>
-        # Replace with: /<actual-path>
-        sed -i -E 's|[^ "=]*/buck-out/[^ "=]*__[^/]+__/[^/]+/|/|g' "$f"
-        fix_count=$((fix_count + 1))
-        echo "  Fixed: ${f#$DESTDIR}"
-    fi
-done
-echo "Fixed hardcoded build paths in $fix_count files"
-
-# Create /sbin/udevd symlink for compatibility
-# systemd's udevd is accessed via udevadm (multi-call binary like busybox)
-mkdir -p "$DESTDIR/sbin"
-ln -sf /usr/bin/udevadm "$DESTDIR/sbin/udevd"
-
-# Create /sbin/init symlink to systemd
-ln -sf /usr/lib/systemd/systemd "$DESTDIR/sbin/init"
-""",
     deps = [
         "//packages/linux/core/util-linux:util-linux",  # libmount, libblkid
         "//packages/linux/core/zlib:zlib",
-        "//packages/linux/system/libs/ipc/libseccomp:libseccomp",  # Required for seccomp support
-        "//packages/linux/system/libs/compression/lz4:lz4",  # For lz4 compression
-        "//packages/linux/system/libs/compression/xz:xz",  # For liblzma (xz compression)
-        "//packages/linux/system/libs/compression/zstd:zstd",  # For zstd compression
-        "//packages/linux/system/libs/ipc/libcap:libcap",  # Required - POSIX capabilities
-        "//packages/linux/system/libs/kmod:kmod",  # For systemd-modules-load
-        # cryptsetup/LUKS disabled for now (popt build issue)
-        # "//packages/linux/system/filesystem/management/cryptsetup:cryptsetup",
-        # "//packages/linux/system/security/cryptsetup:lvm2",  # devmapper
-        # Note: eudev removed - systemd builds its own libudev
+        "//packages/linux/system/libs/ipc/libseccomp:libseccomp",
+        "//packages/linux/system/libs/compression/lz4:lz4",
+        "//packages/linux/system/libs/compression/xz:xz",
+        "//packages/linux/system/libs/compression/zstd:zstd",
+        "//packages/linux/system/libs/ipc/libcap:libcap",
+        "//packages/linux/system/libs/kmod:kmod",
         "//packages/linux/system/libs/crypto/openssl:openssl",
         "//packages/linux/system/libs/crypto/libxcrypt:libxcrypt",
-        "//packages/linux/system/libs/ipc/attr:attr",  # libattr needed by libacl
+        "//packages/linux/system/libs/ipc/attr:attr",
         "//packages/linux/system/libs/data/json-c:json-c",
         "//packages/linux/system/libs/crypto/argon2:argon2",
+        # Build-time tools (from bdepend)
+        "//packages/linux/dev-tools/dev-utils/gperf:gperf",
+        # jinja2/markupsafe for meson templates (host python via PYTHONPATH auto-detect)
+        "//packages/linux/lang/python/jinja2:jinja2",
+        "//packages/linux/lang/python/jinja2:markupsafe",
     ],
     visibility = ["PUBLIC"],
 )

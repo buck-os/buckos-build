@@ -1,69 +1,58 @@
-# Privilege escalation packages
-# PolicyKit and related authorization tools
+load("//defs:package.bzl", "package")
 
-load("//defs:package_defs.bzl", "download_source", "ebuild_package", "gen_pkgconfig", "meson_package", "autotools_package")
+# Duktape - Embeddable JavaScript engine (for polkit)
+package(
+    build_rule = "autotools",
+    name = "duktape",
+    version = "2.7.0",
+    url = "https://duktape.org/duktape-2.7.0.tar.xz",
+    sha256 = "90f8d2fa8b5567c6899830ddef2c03f3c27960b11aca222fa17aa7ac613c2890",
+    description = "Embeddable JavaScript engine",
+    homepage = "https://duktape.org/",
+    license = "MIT",
+    skip_configure = True,
+    make_args = [
+        "-f", "Makefile.sharedlibrary",
+        "INSTALL_PREFIX=/usr",
+    ],
+    post_install_cmds = [
+        # Install headers and fix symlinks
+        "mkdir -p usr/include usr/lib usr/lib64/pkgconfig",
+        "cp -f usr/lib/libduktape.so* usr/lib64/ 2>/dev/null || true",
+        "cd usr/lib64 && ln -sf libduktape.so.207.20700 libduktape.so.207 && ln -sf libduktape.so.207 libduktape.so",
+        # Generate pkg-config file
+        "printf 'prefix=/usr\\nlibdir=${prefix}/lib64\\nincludedir=${prefix}/include\\n\\nName: duktape\\nDescription: Embeddable JavaScript engine\\nVersion: 2.7.0\\nLibs: -L${libdir} -lduktape -lm\\nCflags: -I${includedir}\\n' > usr/lib64/pkgconfig/duktape.pc",
+    ],
+    visibility = ["PUBLIC"],
+)
 
 # PolicyKit - Authorization framework
-# NOTE: systemd session tracking is hardcoded in meson_args for libsystemd-login support
-meson_package(
+package(
+    build_rule = "meson",
     name = "polkit",
     version = "124",
-    iuse = [
-        "examples",
-        "gtk",
-        "introspection",
-        "kde",
-        "nls",
-        "pam",
-        "selinux",
-        "systemd",
-    ],
-    use_defaults = ["systemd"],  # Default to systemd for KDE live CD
-    src_uri = "https://github.com/polkit-org/polkit/archive/refs/tags/124/polkit-124.tar.gz",
+    url = "https://github.com/polkit-org/polkit/archive/refs/tags/124/polkit-124.tar.gz",
     sha256 = "72457d96a0538fd03a3ca96a6bf9b7faf82184d4d67c793eb759168e4fd49e20",
-    signature_required = False,
     description = "Application-level authorization toolkit",
     homepage = "https://github.com/polkit-org/polkit",
     license = "LGPL-2.0+",
-    src_prepare = """
-# Fix meson.build bug: systemd_dep used outside its definition scope (line 222)
-# When systemdsystemunitdir is set, systemd_dep is never defined, causing build failure
-sed -i '222s|.*systemd_sysusers_dir.*|  systemd_sysusers_dir = '"'"'/usr/lib/sysusers.d'"'"'|' meson.build
-""",
-    meson_args = [
+    pre_configure_cmds = [
+        # Fix meson.build: systemd_dep used outside its scope when systemdsystemunitdir is set
+        "sed -i '222s|.*systemd_sysusers_dir.*|  systemd_sysusers_dir = '\"'\"'/usr/lib/sysusers.d'\"'\"'|' meson.build",
+    ],
+    configure_args = [
         "-Djs_engine=duktape",
         "-Dpam_module_dir=/lib/security",
         "-Dpam_include=system-auth",
         "-Dman=false",
         "-Dtests=false",
-        # Must set to relative path - pkg-config returns absolute path into dep's build dir
         "-Dsystemdsystemunitdir=/usr/lib/systemd/system",
+        # Defaults for disabled USE flags
+        "-Dsession_tracking=libsystemd-login",
+        "-Dexamples=false",
+        "-Dgtk_doc=false",
+        "-Dintrospection=false",
     ],
-    src_install = """
-# Run default meson install
-meson install -C "${BUILD_DIR:-build}" --destdir="$DESTDIR"
-
-# Fix DBus service file path - move from nested buck-out path to correct location
-if [ -d "$DESTDIR/data/buckos-build/buck-out" ]; then
-    DBUS_SERVICE_FILE=$(find "$DESTDIR/data" -name "org.freedesktop.PolicyKit1.service" 2>/dev/null | head -1)
-    if [ -n "$DBUS_SERVICE_FILE" ]; then
-        mkdir -p "$DESTDIR/usr/share/dbus-1/system-services"
-        mv "$DBUS_SERVICE_FILE" "$DESTDIR/usr/share/dbus-1/system-services/"
-        # Clean up nested directory
-        rm -rf "$DESTDIR/data"
-    fi
-fi
-""",
-    use_meson = {
-        "systemd": "-Dsession_tracking=libsystemd-login",
-        "-systemd": "-Dsession_tracking=ConsoleKit",
-        "examples": "-Dexamples=true",
-        "-examples": "-Dexamples=false",
-        "gtk": "-Dgtk_doc=true",
-        "-gtk": "-Dgtk_doc=false",
-        "introspection": "-Dintrospection=true",
-        "-introspection": "-Dintrospection=false",
-    },
     deps = [
         "//packages/linux/system/libs/ipc/dbus:dbus",
         "//packages/linux/dev-libs/glib:glib",
@@ -74,40 +63,7 @@ fi
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/system/libs/ipc/libcap:libcap",
+        "//packages/linux/system/init/systemd:systemd",
     ],
-    use_deps = {
-        "systemd": ["//packages/linux/system/init/systemd:systemd"],
-    },
-    visibility = ["PUBLIC"],
-)
-
-# Duktape - Embeddable JavaScript engine (for polkit)
-ebuild_package(
-    name = "duktape",
-    src_uri = "https://duktape.org/duktape-2.7.0.tar.xz",
-
-    sha256 = "90f8d2fa8b5567c6899830ddef2c03f3c27960b11aca222fa17aa7ac613c2890",
-    version = "2.7.0",
-    description = "Embeddable JavaScript engine",
-    homepage = "https://duktape.org/",
-    license = "MIT",
-    src_compile = """
-make -f Makefile.sharedlibrary INSTALL_PREFIX=/usr
-""",
-    src_install = """
-mkdir -p "$DESTDIR/usr/lib" "$DESTDIR/usr/include"
-cp libduktape.so* "$DESTDIR/usr/lib/"
-# Create unversioned symlink for linking
-cd "$DESTDIR/usr/lib"
-ln -sf libduktape.so.207.20700 libduktape.so.207
-ln -sf libduktape.so.207 libduktape.so
-cd -
-cp src/duktape.h src/duk_config.h "$DESTDIR/usr/include/"
-""" + gen_pkgconfig(
-        name = "duktape",
-        description = "Embeddable JavaScript engine",
-        destvar = "DESTDIR",
-        libdir = "lib",
-    ),
     visibility = ["PUBLIC"],
 )

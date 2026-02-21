@@ -2,7 +2,7 @@ load("//defs:package.bzl", "package")
 
 # GTK3 - GIMP Toolkit version 3
 package(
-    build_rule = "autotools",
+    build_rule = "meson",
     name = "gtk3",
     version = "3.24.41",
     url = "https://download.gnome.org/sources/gtk+/3.24/gtk+-3.24.41.tar.xz",
@@ -10,60 +10,29 @@ package(
     description = "Multi-platform toolkit for creating graphical user interfaces",
     homepage = "https://www.gtk.org/",
     license = "LGPL-2.1+",
-    use_configure = {
-        "X": ("-Dx11-backend=true", "-Dx11-backend=false"),
-        "broadway": ("-Dbroadway-backend=true", "-Dbroadway-backend=false"),
-        "cloudprint": ("-Dcloudproviders=true", "-Dcloudproviders=false"),
-        "colord": ("-Dcolord=yes", "-Dcolord=no"),
-        "cups": ("-Dprint-backends=cups", "-Dprint-backends=file"),
-        "demos": ("-Ddemos=true", "-Ddemos=false"),
-        "doc": ("-Dgtk_doc=true", "-Dgtk_doc=false"),
-        "examples": ("-Dexamples=true", "-Dexamples=false"),
-        "introspection": ("-Dintrospection=true", "-Dintrospection=false"),
-        "test": ("-Dtests=true", "-Dtests=false"),
-        "wayland": ("-Dwayland-backend=true", "-Dwayland-backend=false"),
-    },
-    use_deps = {
-        "wayland": ["//packages/linux/system/libs/utility/libffi:libffi", "//packages/linux/graphics/rendering/wayland:wayland"],
-        "cups": "//packages/linux/system/printing/cups:cups",
-        "colord": "//packages/linux/system/color/colord:colord",
-    },
-    src_configure = """
-# Force reconfigure to use at-spi2-core's atk instead of separate atk
-rm -rf build
-meson setup build --prefix=/usr \
-    --libdir=/usr/lib64 \
-    -Dintrospection=false \
-    -Dx11_backend=true \
-    -Dwayland_backend=true \
-    -Dbroadway_backend=false \
-    -Dprint_backends=file \
-    -Dcloudproviders=false \
-    -Dcolord=no \
-    -Dgtk_doc=false \
-    -Dtests=false \
-    -Dexamples=false \
-    -Ddemos=false
-""",
-    src_compile = """
-meson compile -C build -j${MAKEOPTS:-$(nproc)}
-""",
-    src_install = """
-DESTDIR="$DESTDIR" meson install -C build --no-rebuild
-""",
+    configure_args = [
+        "-Dintrospection=false",
+        "-Dx11_backend=true",
+        "-Dwayland_backend=true",
+        "-Dbroadway_backend=false",
+        "-Dprint_backends=file",
+        "-Dcloudproviders=false",
+        "-Dcolord=no",
+        "-Dgtk_doc=false",
+        "-Dtests=false",
+        "-Dexamples=false",
+        "-Ddemos=false",
+    ],
     deps = [
         "//packages/linux/dev-libs/glib:glib",
-        # glib's transitive deps needed for pkg-config
         "//packages/linux/system/libs/utility/pcre2:pcre2",
         "//packages/linux/system/libs/utility/libffi:libffi",
         "//packages/linux/core/zlib:zlib",
-        # Cairo and its transitive deps
         "//packages/linux/system/libs/graphics/cairo:cairo",
         "//packages/linux/system/security/auth/biometric:pixman",
         "//packages/linux/system/libs/font/fontconfig:fontconfig",
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/system/libs/image/libpng:libpng",
-        # X11 deps for cairo and GTK
         "//packages/linux/graphics/xorg/libX11:libX11",
         "//packages/linux/graphics/xorg/libXext:libXext",
         "//packages/linux/graphics/xorg/libXrender:libXrender",
@@ -79,31 +48,24 @@ DESTDIR="$DESTDIR" meson install -C build --no-rebuild
         "//packages/linux/graphics/xorg/xcb-proto:xcb-proto",
         "//packages/linux/graphics/xorg/libXau:libXau",
         "//packages/linux/graphics/xorg/libXdmcp:libXdmcp",
-        # Pango transitive deps
         "//packages/linux/system/libs/compression/brotli:brotli",
         "//packages/linux/system/libs/compression/bzip2:bzip2",
         "//packages/linux/system/libs/font/fribidi:fribidi",
         "//packages/linux/system/libs/font/harfbuzz:harfbuzz",
-        # gdk-pixbuf transitive deps
         "//packages/linux/desktop/shared-mime-info:shared-mime-info",
         "//packages/linux/system/libs/data/libxml2:libxml2",
         "//packages/linux/system/libs/image/libjpeg-turbo:libjpeg-turbo",
         "//packages/linux/system/libs/image/libtiff:libtiff",
-        # OpenGL/EGL deps
         "//packages/linux/graphics/libepoxy:libepoxy",
         "//packages/linux/desktop/mesa:mesa",
-        # Accessibility (at-spi2-core >= 2.46 includes atk)
         "//packages/linux/desktop/at-spi2-core:at-spi2-core",
         "//packages/linux/graphics/xorg/libXtst:libXtst",
         "//packages/linux/system/libs/ipc/dbus:dbus",
         "//packages/linux/system/init/systemd:systemd",
         "//packages/linux/system/security/capabilities:libcap",
-        # Input
         "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
-        # Wayland
         "//packages/linux/graphics/rendering/wayland:wayland",
         "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
-        # GTK deps
         "//packages/linux/system/libs/font/freetype:freetype",
         "//packages/linux/fonts/libraries/pango:pango",
         "//packages/linux/desktop/gdk-pixbuf:gdk-pixbuf",
@@ -113,7 +75,7 @@ DESTDIR="$DESTDIR" meson install -C build --no-rebuild
 
 # GTK4 - GIMP Toolkit version 4
 package(
-    build_rule = "autotools",
+    build_rule = "meson",
     name = "gtk4",
     version = "4.14.1",
     url = "https://download.gnome.org/sources/gtk/4.14/gtk-4.14.1.tar.xz",
@@ -121,34 +83,22 @@ package(
     description = "Multi-platform toolkit for creating graphical user interfaces (GTK4)",
     homepage = "https://www.gtk.org/",
     license = "LGPL-2.1+",
-    use_configure = {
-        "X": ("-Dx11-backend=true", "-Dx11-backend=false"),
-        "broadway": ("-Dbroadway-backend=true", "-Dbroadway-backend=false"),
-        "cloudprint": ("-Dcloudproviders=enabled", "-Dcloudproviders=disabled"),
-        "colord": ("-Dcolord=enabled", "-Dcolord=disabled"),
-        "cups": ("-Dprint-cups=enabled", "-Dprint-cups=disabled"),
-        "demos": ("-Dbuild-demos=true", "-Dbuild-demos=false"),
-        "doc": ("-Dgtk_doc=true", "-Dgtk_doc=false"),
-        "examples": ("-Dbuild-examples=true", "-Dbuild-examples=false"),
-        "gstreamer": ("-Dmedia-gstreamer=enabled", "-Dmedia-gstreamer=disabled"),
-        "introspection": ("-Dintrospection=enabled", "-Dintrospection=disabled"),
-        "test": ("-Dbuild-tests=true", "-Dbuild-tests=false"),
-        "vulkan": ("-Dvulkan=enabled", "-Dvulkan=disabled"),
-        "wayland": ("-Dwayland-backend=true", "-Dwayland-backend=false"),
-    },
-    use_deps = {
-        "wayland": ["//packages/linux/system/libs/utility/libffi:libffi", "//packages/linux/graphics/rendering/wayland:wayland"],
-        "gstreamer": "//packages/linux/graphics/video/gstreamer:gstreamer",
-        "colord": "//packages/linux/system/color/colord:colord",
-        "cups": "//packages/linux/system/printing/cups:cups",
-    },
-    pre_configure = """
-mkdir -p build
-cd build
-# USE flags: introspection, X, wayland, broadway, vulkan, gstreamer, cloudprint, colord, cups, doc, test, examples, demos
-meson setup .. --prefix=/usr \
-    $CONFIGURE_ARGS
-""",
+    configure_args = [
+        # USE-derived off defaults
+        "-Dx11-backend=false",
+        "-Dbroadway-backend=false",
+        "-Dcloudproviders=disabled",
+        "-Dcolord=disabled",
+        "-Dprint-cups=disabled",
+        "-Dbuild-demos=false",
+        "-Dgtk_doc=false",
+        "-Dbuild-examples=false",
+        "-Dmedia-gstreamer=disabled",
+        "-Dintrospection=disabled",
+        "-Dbuild-tests=false",
+        "-Dvulkan=disabled",
+        "-Dwayland-backend=false",
+    ],
     deps = [
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/system/libs/font/freetype:freetype",
