@@ -39,25 +39,15 @@ package(
         "--enable-shared",
     ],
 
-    src_prepare = """
-# GitHub archive doesn't include pre-generated configure script
-autoreconf -fiv
-""",
+    pre_configure_cmds = [
+        # GitHub archive doesn't include pre-generated configure script.
+        "autoreconf -fi",
+    ],
 
-    pre_configure = """
-# Available USE flags:
-# - static-libs: Build static libraries
-# - openssl: Enable OpenSSL interoperability
-# - doc: Build documentation
-# - asm: Enable assembly optimizations
-# - gmp: Enable public-key crypto (requires GMP)
-""",
-
-    bdepend = [
+    deps = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
         "//packages/linux/dev-tools/build-systems/automake:automake",
         "//packages/linux/dev-tools/build-systems/libtool:libtool",
     ],
-    deps = [],
     visibility = ["PUBLIC"],
 )
