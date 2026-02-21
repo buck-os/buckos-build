@@ -59,29 +59,37 @@ def _cmake_configure(ctx, source):
     cflags = list(ctx.attrs.extra_cflags)
     ldflags = list(ctx.attrs.extra_ldflags)
 
-    # Propagate include/lib dirs and library names from dependencies
+    # Propagate flags and pkg-config paths from dependencies
+    pkg_config_paths = []
     for dep in ctx.attrs.deps:
         if PackageInfo in dep:
             pkg = dep[PackageInfo]
-            for d in pkg.include_dirs:
-                cflags.append(cmd_args("-I", d, delimiter = ""))
-            for d in pkg.lib_dirs:
-                ldflags.append(cmd_args("-L", d, delimiter = ""))
+            prefix = pkg.prefix
             for lib in pkg.libraries:
                 ldflags.append("-l" + lib)
             if pkg.pkg_config_path:
-                cmd.add(cmd_args("--cmake-define=", "CMAKE_PREFIX_PATH=", pkg.pkg_config_path, delimiter = ""))
-
-            # Propagate any extra flags the dependency requires consumers to use
+                pkg_config_paths.append(pkg.pkg_config_path)
             for f in pkg.cflags:
                 cflags.append(f)
             for f in pkg.ldflags:
                 ldflags.append(f)
+        else:
+            prefix = dep[DefaultInfo].default_outputs[0]
+
+        # Derive standard include/lib/pkgconfig paths from dep prefix
+        cflags.append(cmd_args(prefix, format = "-I{}/usr/include"))
+        ldflags.append(cmd_args(prefix, format = "-L{}/usr/lib64"))
+        ldflags.append(cmd_args(prefix, format = "-L{}/usr/lib"))
+        pkg_config_paths.append(cmd_args(prefix, format = "{}/usr/lib64/pkgconfig"))
+        pkg_config_paths.append(cmd_args(prefix, format = "{}/usr/lib/pkgconfig"))
+        pkg_config_paths.append(cmd_args(prefix, format = "{}/usr/share/pkgconfig"))
 
     if cflags:
         cmd.add(cmd_args("--cmake-define=", "CMAKE_C_FLAGS=", cmd_args(cflags, delimiter = " "), delimiter = ""))
     if ldflags:
         cmd.add(cmd_args("--cmake-define=", "CMAKE_EXE_LINKER_FLAGS=", cmd_args(ldflags, delimiter = " "), delimiter = ""))
+    if pkg_config_paths:
+        cmd.add("--env", cmd_args("PKG_CONFIG_PATH=", cmd_args(pkg_config_paths, delimiter = ":"), delimiter = ""))
 
     # Configure arguments from the common interface
     for arg in ctx.attrs.configure_args:

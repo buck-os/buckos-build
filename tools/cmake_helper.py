@@ -11,7 +11,21 @@ import sys
 
 
 def _resolve_env_paths(value):
-    """Resolve relative Buck2 artifact paths in env values to absolute."""
+    """Resolve relative Buck2 artifact paths in env values to absolute.
+
+    Handles: bare paths, -I/path, -L/path, --flag=path, and
+    colon-separated paths (PKG_CONFIG_PATH).
+    """
+    # Handle colon-separated path lists (PKG_CONFIG_PATH)
+    if ":" in value and not value.startswith("-"):
+        resolved = []
+        for p in value.split(":"):
+            if p and os.path.exists(p):
+                resolved.append(os.path.abspath(p))
+            elif p:
+                resolved.append(p)
+        return ":".join(resolved)
+
     parts = []
     for token in value.split():
         if token.startswith("--") and "=" in token:
