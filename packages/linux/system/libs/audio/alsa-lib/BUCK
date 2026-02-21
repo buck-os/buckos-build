@@ -3,9 +3,6 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "alsa-lib",
-    # ALSA project release tarball includes pre-generated configure script
-    bdepend = [],
-    src_prepare = "",
     version = "1.2.12",
     url = "https://www.alsa-project.org/files/pub/lib/alsa-lib-1.2.12.tar.bz2",
     sha256 = "4868cd908627279da5a634f468701625be8cc251d84262c7e5b6a218391ad0d2",
@@ -21,6 +18,13 @@ package(
     use_deps = {
         "python": "//packages/linux/lang/python:python",
     },
+    pre_configure_cmds = [
+        # Configure creates `ln -sf . include/alsa` (symlink to ".") which
+        # Buck2's artifact cache cannot store.  Replace with per-file
+        # relative symlinks that achieve the same include path resolution.
+        "sed -i '/ln -sf \\. .*include\\/alsa/d' configure",
+        "mkdir -p include/alsa && for f in include/*; do test \"$f\" != include/alsa && ln -sf \"../$(basename \"$f\")\" \"include/alsa/$(basename \"$f\")\"; done",
+    ],
     configure_args = ["--prefix=/usr"],
     deps = [],
     visibility = ["PUBLIC"],
