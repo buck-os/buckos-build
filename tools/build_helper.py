@@ -211,6 +211,36 @@ def main():
             except (UnicodeDecodeError, PermissionError):
                 pass
 
+    # Comprehensive rewrite of stale build-dir paths in cmake artefacts.
+    # CMake embeds the build directory in many generated files: syncqt
+    # args, AutogenInfo.json, precompiled-header wrappers, response
+    # files, etc.  Rather than maintaining an ever-growing allowlist,
+    # walk the tree and fix every text file that references the old path.
+    # Skip known binary extensions to avoid corrupting object files.
+    _BINARY_EXTS = frozenset((
+        ".o", ".a", ".so", ".gch", ".pcm", ".pch", ".d",
+        ".png", ".jpg", ".gif", ".ico", ".gz", ".xz", ".bz2",
+        ".wasm", ".pyc", ".qm",
+    ))
+    if os.path.isfile(cmake_cache) or os.path.isfile(ninja_file):
+        for dirpath, _dirnames, filenames in os.walk(output_dir):
+            for fname in filenames:
+                if os.path.splitext(fname)[1] in _BINARY_EXTS:
+                    continue
+                fpath = os.path.join(dirpath, fname)
+                if os.path.islink(fpath):
+                    continue  # skip symlinks (may be dangling)
+                try:
+                    with open(fpath, "r") as f:
+                        fc = f.read()
+                    if build_dir in fc:
+                        fc = fc.replace(build_dir, output_dir)
+                        with open(fpath, "w") as f:
+                            f.write(fc)
+                except (UnicodeDecodeError, PermissionError, IsADirectoryError,
+                        FileNotFoundError):
+                    pass
+
     # Reset all file timestamps to a single instant so make doesn't try
     # to regenerate autotools/cmake/meson outputs.  The copytree preserves
     # original timestamps but path rewriting modifies some files, making
