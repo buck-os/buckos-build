@@ -1,0 +1,28 @@
+load("//defs:package.bzl", "package")
+
+# GameMode - Optimize Linux system performance for gaming
+# Developed by Feral Interactive
+
+# GameMode - Optimize Linux system performance on demand
+
+package(
+    build_rule = "meson",
+    name = "gamemode",
+    url = "https://github.com/FeralInteractive/gamemode/archive/refs/tags/1.8.2.tar.gz",
+
+    sha256 = "2b4a20894822caf04767af6a1601130d6b718fc30b8a77895607341b1674740f",
+    version = "1.8.2",
+    description = "Optimize Linux system performance on demand",
+    homepage = "https://github.com/FeralInteractive/gamemode",
+    license = "BSD-3-Clause",
+    # Meson options for gamemode
+    configure_args = [
+        "-Dwith-sd-bus-provider=no-daemon",
+        "-Dwith-pam-renicing=false",
+        "-Dwith-examples=false",
+    ],
+    deps = [
+        "//packages/linux/system/libs/ipc/dbus:dbus",
+    ],
+    visibility = ["PUBLIC"],
+)
