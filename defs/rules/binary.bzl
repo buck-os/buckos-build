@@ -103,8 +103,11 @@ def _dep_env_args(ctx):
         env["LDFLAGS"] = cmd_args(ldflags, delimiter = " ")
     if dep_base_dirs:
         env["DEP_BASE_DIRS"] = cmd_args(dep_base_dirs, delimiter = ":")
-    if lib_dirs:
-        env["LD_LIBRARY_PATH"] = cmd_args(lib_dirs, delimiter = ":")
+    # NOTE: Do NOT set LD_LIBRARY_PATH for binary packages.
+    # Binary packages run install scripts on the HOST, and host binaries
+    # (bash, cp, mkdir, etc.) will crash if LD_LIBRARY_PATH points to
+    # cross-compiled libraries. The lib_dirs are still available via
+    # DEP_BASE_DIRS if the install script needs them.
 
     return env, path_dirs
 

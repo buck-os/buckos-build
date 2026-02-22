@@ -2,13 +2,42 @@ load("//defs:package.bzl", "package")
 
 # Steam - Digital distribution platform by Valve
 # The most popular PC gaming platform
+#
+# Downloads the official Steam installer from Valve's CDN and extracts it.
+# The installer bootstraps itself on first run to download the full client.
+
+# Download the .deb file
+http_file(
+    name = "steam-deb",
+    urls = ["https://cdn.cloudflare.steamstatic.com/client/installer/steam.deb"],
+    sha256 = "b44634a6a604ca7c8b23809d0f2a921a0348bb2081c8cb8944116d0799872b70",
+    out = "steam.deb",
+)
+
+# Extract .deb (ar archive) to get the data
+genrule(
+    name = "steam-extracted",
+    srcs = [":steam-deb"],
+    out = "extracted",
+    bash = """
+        set -e
+        mkdir -p $OUT
+        # Copy deb to scratch, extract there, then copy results
+        cp "$SRCS" "$BUCK_SCRATCH_PATH/steam.deb"
+        cd "$BUCK_SCRATCH_PATH"
+        ar x steam.deb
+        tar xf data.tar.* || tar xf data.tar
+        cp -a usr "$OUT/" 2>/dev/null || true
+        cp -a etc "$OUT/" 2>/dev/null || true
+    """,
+)
 
 package(
     build_rule = "binary",
     name = "steam",
-    version = "1.0.0.79",
-    local_only = True,
-    filename = "steam-1.0.0.79.tar.gz",
+    version = "1.0.0.81",
+    local_only = True,  # Using custom source target
+    source = ":steam-extracted",
     description = "Valve's digital software delivery system",
     homepage = "https://store.steampowered.com/",
     license = "Proprietary",
@@ -16,23 +45,31 @@ package(
 #!/bin/bash
 set -e
 
-# Source is already extracted to $SRCS
-mkdir -p "$OUT/opt/steam"
+mkdir -p "$OUT"
 
-# Copy files carefully
-find "$SRCS" -maxdepth 1 -mindepth 1 -print0 | xargs -0 -I{} cp -a {} "$OUT/opt/steam/" || cp -a "$SRCS"/* "$OUT/opt/steam/"
+# Copy usr tree from extracted .deb
+if [ -d "$SRCS/usr" ]; then
+    cp -a "$SRCS/usr" "$OUT/"
+fi
 
-# Create desktop entry
-mkdir -p "$OUT/usr/share/applications"
-printf '%s\\n' '[Desktop Entry]' 'Name=Steam' 'Comment=Application for managing and playing games on Steam' 'Exec=/opt/steam/steam' 'Icon=steam' 'Terminal=false' 'Type=Application' 'Categories=Game;' > "$OUT/usr/share/applications/steam.desktop"
-
-# Create symlink
+# Steam installs to /usr/lib/steam and /usr/games
+# Create /usr/bin symlink for convenience
 mkdir -p "$OUT/usr/bin"
-ln -sf /opt/steam/steam "$OUT/usr/bin/steam"
+if [ -f "$OUT/usr/games/steam" ]; then
+    ln -sf ../games/steam "$OUT/usr/bin/steam"
+fi
 
 # Install udev rules for Steam controller support
 mkdir -p "$OUT/usr/lib/udev/rules.d"
-printf '%s\\n' '# Steam Controller' 'KERNEL=="hidraw*", ATTRS{idVendor}=="28de", MODE="0660", TAG+="uaccess"' '# Steam Deck' 'KERNEL=="hidraw*", ATTRS{idVendor}=="28de", ATTRS{idProduct}=="1205", MODE="0660", TAG+="uaccess"' > "$OUT/usr/lib/udev/rules.d/70-steam-controller.rules"
+cat > "$OUT/usr/lib/udev/rules.d/70-steam-controller.rules" << 'EOF'
+# Steam Controller
+KERNEL=="hidraw*", ATTRS{idVendor}=="28de", MODE="0660", TAG+="uaccess"
+# Steam Deck
+KERNEL=="hidraw*", ATTRS{idVendor}=="28de", ATTRS{idProduct}=="1205", MODE="0660", TAG+="uaccess"
+# HTC Vive
+KERNEL=="hidraw*", ATTRS{idVendor}=="0bb4", MODE="0660", TAG+="uaccess"
+KERNEL=="hidraw*", ATTRS{idVendor}=="28de", ATTRS{idProduct}=="2000", MODE="0660", TAG+="uaccess"
+EOF
     """,
     deps = [],
     visibility = ["PUBLIC"],

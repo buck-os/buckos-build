@@ -15,12 +15,12 @@ package(
     description = "Optimize Linux system performance on demand",
     homepage = "https://github.com/FeralInteractive/gamemode",
     license = "BSD-3-Clause",
+    # Meson options for gamemode
     configure_args = [
         "-Dwith-sd-bus-provider=no-daemon",
-        "-Dwith-pam-group=games",
+        "-Dwith-pam-renicing=false",
+        "-Dwith-examples=false",
     ],
-    deps = [
-        "//packages/linux/core/glibc:glibc",
-    ],
+    deps = [],
     visibility = ["PUBLIC"],
 )
