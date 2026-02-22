@@ -1,111 +1,103 @@
-load("//defs:package.bzl", "package")
-
 # firefox - Mozilla Firefox web browser
-
-package(
-    build_rule = "mozbuild",
-    name = "firefox",
-    version = "147.0.4",
-    url = "https://archive.mozilla.org/pub/firefox/releases/147.0.4/source/firefox-147.0.4.source.tar.xz",
-    sha256 = "bc0742ac62b177987d3312352194d4a088396ccf7b02e94be88f8072d82e94f7",
-    description = "Mozilla Firefox web browser - fast, private, and secure",
-    homepage = "https://www.mozilla.org/firefox/",
-    license = "MPL-2.0",
-    # Python 3.14 compatibility patches (applied via patch_helper before configure)
-    pre_configure_cmds = [
-        # Fix ast.Str removal in Python 3.14 (arg.s -> arg.value)
-        "sed -i 's/kwarg_dict\\[name\\] = arg\\.s/kwarg_dict[name] = arg.value/' python/mach/mach/command_util.py",
-        # Fix site.py relative_to() ValueError with Python 3.14
-        """python3 << 'PYEOF'
-import pathlib
-p = pathlib.Path('python/mach/mach/site.py')
-src = p.read_text()
-old = '        relative_path = path.relative_to(data_path)'
-new = '''        try:
-            relative_path = path.relative_to(data_path)
-        except ValueError:
-            import sys as _sys
-            relative_path = Path("lib/python{}.{}/site-packages".format(
-                _sys.version_info.major, _sys.version_info.minor))'''
-p.write_text(src.replace(old, new, 1))
-PYEOF""",
-    ],
-    mozconfig_options = [
-        "--enable-application=browser",
-        "--enable-official-branding",
-        "--enable-optimize",
-        "--disable-debug",
-        "--prefix=/usr",
-        "--libdir=/usr/lib",
-        "--enable-audio-backends=alsa",
-        "--enable-system-ffi",
-        "--with-libclang-path=/usr/lib64",
-        "--without-wasm-sandboxed-libraries",
-        "--enable-linker=mold",
-    ],
-    deps = [
-        # Build tools (uses host python3 — packaged Python can't run from buck-out)
-        "//packages/linux/lang/rust:rust",
-        "//packages/linux/lang/nodejs:nodejs",
-        # GTK3 and full transitive dep tree (pkg-config resolves Requires: chains)
-        "//packages/linux/desktop/gtk:gtk3",
-        "//packages/linux/core/glib:glib",
-        "//packages/linux/dev-libs/glib:glib",
-        "//packages/linux/fonts/libraries/pango:pango",
-        "//packages/linux/system/libs/graphics/cairo:cairo",
-        "//packages/linux/desktop/gdk-pixbuf:gdk-pixbuf",
-        "//packages/linux/desktop/atk:atk",
-        "//packages/linux/desktop/at-spi2-core:at-spi2-core",
-        "//packages/linux/desktop/mesa:mesa",
-        "//packages/linux/desktop/shared-mime-info:shared-mime-info",
-        # X11 / Wayland
-        "//packages/linux/graphics/xorg/libX11:libX11",
-        "//packages/linux/graphics/xorg/libxcb:libxcb",
-        "//packages/linux/graphics/xorg/xcb-proto:xcb-proto",
-        "//packages/linux/graphics/xorg/xorgproto:xorgproto",
-        "//packages/linux/graphics/xorg/libXext:libXext",
-        "//packages/linux/graphics/xorg/libXrender:libXrender",
-        "//packages/linux/graphics/xorg/libXdmcp:libXdmcp",
-        "//packages/linux/graphics/xorg/libXau:libXau",
-        "//packages/linux/graphics/xorg/libXi:libXi",
-        "//packages/linux/graphics/xorg/libXrandr:libXrandr",
-        "//packages/linux/graphics/xorg/libXcursor:libXcursor",
-        "//packages/linux/graphics/xorg/libXfixes:libXfixes",
-        "//packages/linux/graphics/xorg/libXcomposite:libXcomposite",
-        "//packages/linux/graphics/xorg/libXdamage:libXdamage",
-        "//packages/linux/graphics/xorg/libXinerama:libXinerama",
-        "//packages/linux/graphics/xorg/libXtst:libXtst",
-        "//packages/linux/graphics/xorg/libICE:libICE",
-        "//packages/linux/graphics/xorg/libSM:libSM",
-        "//packages/linux/graphics/xorg/xtrans:xtrans",
-        "//packages/linux/graphics/libepoxy:libepoxy",
-        "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
-        "//packages/linux/desktop/libdrm:libdrm",
-        "//packages/linux/graphics/rendering/wayland:wayland",
-        "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
-        # Fonts / text
-        "//packages/linux/system/libs/font/freetype:freetype",
-        "//packages/linux/system/libs/font/fontconfig:fontconfig",
-        "//packages/linux/system/libs/font/harfbuzz:harfbuzz",
-        "//packages/linux/system/libs/font/fribidi:fribidi",
-        # Image / pixel
-        "//packages/linux/system/libs/image/libpng:libpng",
-        "//packages/linux/system/libs/image/libjpeg-turbo:libjpeg-turbo",
-        "//packages/linux/system/libs/image/libtiff:libtiff",
-        "//packages/linux/system/security/auth/biometric:pixman",
-        # System libraries
-        "//packages/linux/system/libs/utility/libffi:libffi",
-        "//packages/linux/system/libs/utility/pcre2:pcre2",
-        "//packages/linux/system/libs/audio/alsa-lib:alsa-lib",
-        "//packages/linux/system/libs/ipc/dbus:dbus",
-        "//packages/linux/system/libs/data/expat:expat",
-        "//packages/linux/system/libs/data/libxml2:libxml2",
-        "//packages/linux/system/libs/compression/brotli:brotli",
-        "//packages/linux/system/libs/compression/bzip2:bzip2",
-        "//packages/linux/system/init/systemd:systemd",
-        "//packages/linux/system/security/capabilities:libcap",
-        "//packages/linux/core/zlib:zlib",
-        "//packages/linux/system/terminal/ncurses:ncurses",
-    ],
-    visibility = ["PUBLIC"],
-)
+# Disabled: mozbuild rule not yet implemented
+#
+# load("//defs:package.bzl", "package")
+#
+# package(
+#     build_rule = "mozbuild",
+#     name = "firefox",
+#     version = "147.0.4",
+#     url = "https://archive.mozilla.org/pub/firefox/releases/147.0.4/source/firefox-147.0.4.source.tar.xz",
+#     sha256 = "bc0742ac62b177987d3312352194d4a088396ccf7b02e94be88f8072d82e94f7",
+#     description = "Mozilla Firefox web browser - fast, private, and secure",
+#     homepage = "https://www.mozilla.org/firefox/",
+#     license = "MPL-2.0",
+#     pre_configure_cmds = [
+#         "sed -i 's/kwarg_dict\\[name\\] = arg\\.s/kwarg_dict[name] = arg.value/' python/mach/mach/command_util.py",
+#         """python3 << 'PYEOF'
+# import pathlib
+# p = pathlib.Path('python/mach/mach/site.py')
+# src = p.read_text()
+# old = '        relative_path = path.relative_to(data_path)'
+# new = '''        try:
+#             relative_path = path.relative_to(data_path)
+#         except ValueError:
+#             import sys as _sys
+#             relative_path = Path("lib/python{}.{}/site-packages".format(
+#                 _sys.version_info.major, _sys.version_info.minor))'''
+# p.write_text(src.replace(old, new, 1))
+# PYEOF""",
+#     ],
+#     mozconfig_options = [
+#         "--enable-application=browser",
+#         "--enable-official-branding",
+#         "--enable-optimize",
+#         "--disable-debug",
+#         "--prefix=/usr",
+#         "--libdir=/usr/lib",
+#         "--enable-audio-backends=alsa",
+#         "--enable-system-ffi",
+#         "--with-libclang-path=/usr/lib64",
+#         "--without-wasm-sandboxed-libraries",
+#         "--enable-linker=mold",
+#     ],
+#     deps = [
+#         "//packages/linux/lang/rust:rust",
+#         "//packages/linux/lang/nodejs:nodejs",
+#         "//packages/linux/desktop/gtk:gtk3",
+#         "//packages/linux/core/glib:glib",
+#         "//packages/linux/dev-libs/glib:glib",
+#         "//packages/linux/fonts/libraries/pango:pango",
+#         "//packages/linux/system/libs/graphics/cairo:cairo",
+#         "//packages/linux/desktop/gdk-pixbuf:gdk-pixbuf",
+#         "//packages/linux/desktop/atk:atk",
+#         "//packages/linux/desktop/at-spi2-core:at-spi2-core",
+#         "//packages/linux/desktop/mesa:mesa",
+#         "//packages/linux/desktop/shared-mime-info:shared-mime-info",
+#         "//packages/linux/graphics/xorg/libX11:libX11",
+#         "//packages/linux/graphics/xorg/libxcb:libxcb",
+#         "//packages/linux/graphics/xorg/xcb-proto:xcb-proto",
+#         "//packages/linux/graphics/xorg/xorgproto:xorgproto",
+#         "//packages/linux/graphics/xorg/libXext:libXext",
+#         "//packages/linux/graphics/xorg/libXrender:libXrender",
+#         "//packages/linux/graphics/xorg/libXdmcp:libXdmcp",
+#         "//packages/linux/graphics/xorg/libXau:libXau",
+#         "//packages/linux/graphics/xorg/libXi:libXi",
+#         "//packages/linux/graphics/xorg/libXrandr:libXrandr",
+#         "//packages/linux/graphics/xorg/libXcursor:libXcursor",
+#         "//packages/linux/graphics/xorg/libXfixes:libXfixes",
+#         "//packages/linux/graphics/xorg/libXcomposite:libXcomposite",
+#         "//packages/linux/graphics/xorg/libXdamage:libXdamage",
+#         "//packages/linux/graphics/xorg/libXinerama:libXinerama",
+#         "//packages/linux/graphics/xorg/libXtst:libXtst",
+#         "//packages/linux/graphics/xorg/libICE:libICE",
+#         "//packages/linux/graphics/xorg/libSM:libSM",
+#         "//packages/linux/graphics/xorg/xtrans:xtrans",
+#         "//packages/linux/graphics/libepoxy:libepoxy",
+#         "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
+#         "//packages/linux/desktop/libdrm:libdrm",
+#         "//packages/linux/graphics/rendering/wayland:wayland",
+#         "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
+#         "//packages/linux/system/libs/font/freetype:freetype",
+#         "//packages/linux/system/libs/font/fontconfig:fontconfig",
+#         "//packages/linux/system/libs/font/harfbuzz:harfbuzz",
+#         "//packages/linux/system/libs/font/fribidi:fribidi",
+#         "//packages/linux/system/libs/image/libpng:libpng",
+#         "//packages/linux/system/libs/image/libjpeg-turbo:libjpeg-turbo",
+#         "//packages/linux/system/libs/image/libtiff:libtiff",
+#         "//packages/linux/system/security/auth/biometric:pixman",
+#         "//packages/linux/system/libs/utility/libffi:libffi",
+#         "//packages/linux/system/libs/utility/pcre2:pcre2",
+#         "//packages/linux/system/libs/audio/alsa-lib:alsa-lib",
+#         "//packages/linux/system/libs/ipc/dbus:dbus",
+#         "//packages/linux/system/libs/data/expat:expat",
+#         "//packages/linux/system/libs/data/libxml2:libxml2",
+#         "//packages/linux/system/libs/compression/brotli:brotli",
+#         "//packages/linux/system/libs/compression/bzip2:bzip2",
+#         "//packages/linux/system/init/systemd:systemd",
+#         "//packages/linux/system/security/capabilities:libcap",
+#         "//packages/linux/core/zlib:zlib",
+#         "//packages/linux/system/terminal/ncurses:ncurses",
+#     ],
+#     visibility = ["PUBLIC"],
+# )

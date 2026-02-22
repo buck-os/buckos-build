@@ -128,7 +128,7 @@ _KDE_COMMON_DEPS = [
     "//packages/linux/system/libs/font/fontconfig:fontconfig",
     "//packages/linux/desktop/mesa:mesa",
     # Mesa's radeonsi driver depends on LLVM and elfutils; LLVM depends on libxml2
-    "//packages/linux/core/llvm:llvm",
+    # "//packages/linux/core/llvm:llvm",  # disabled: long build, not needed yet
     "//packages/linux/dev-libs/elfutils:elfutils",
     "//packages/linux/system/libs/data/libxml2:libxml2",
     "//packages/linux/desktop/libdrm:libdrm",
@@ -251,8 +251,6 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
 # Disable X11 (Wayland-only build)
 sed -i 's/set(HAVE_X11 TRUE)/set(HAVE_X11 FALSE)/' apps/kate/CMakeLists.txt
 """],
-    src_configure = _KDE_HOST_LD_SETUP + """export CXXFLAGS="$CXXFLAGS -Wno-error=unused-but-set-variable"
-""" + _KDE_APP_CMAKE_CONFIGURE,
     deps = _KDE_COMMON_DEPS,
     visibility = ["PUBLIC"],
 )

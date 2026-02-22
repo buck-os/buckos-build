@@ -19,7 +19,7 @@ QT6_FONT_DEPS = [
 # These must be added to all packages that link against Mesa's EGL/OpenGL
 # so the linker can resolve these symbols during linking.
 MESA_LLVM_DEPS = [
-    "//packages/linux/core/llvm:llvm",
+    # "//packages/linux/core/llvm:llvm",  # disabled: long build, not needed yet
     "//packages/linux/dev-libs/elfutils:elfutils",
     "//packages/linux/system/libs/data/libxml2:libxml2",
 ]
@@ -67,7 +67,12 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     deps = [
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
-        "//packages/linux/graphics/rendering/wayland:wayland",
+                "//packages/linux/graphics/rendering/wayland:wayland",
+                "//packages/linux/graphics/rendering/wayland:wayland-scanner",
+                "//packages/linux/graphics/rendering/wayland:wayland-scanner",
+                "//packages/linux/graphics/rendering/wayland:wayland-scanner",
+                "//packages/linux/graphics/rendering/wayland:wayland-scanner",
+                "//packages/linux/graphics/rendering/wayland:wayland-scanner"
     ],
     visibility = ["PUBLIC"],
 )
@@ -312,8 +317,6 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     # Comment out ecm_install_po_files_as_qm to skip translations - Qt6LinguistTools not available
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -349,8 +352,6 @@ package(
 
 sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true
 """],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -392,8 +393,6 @@ package(
 
 sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true
 """],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -436,8 +435,6 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     # Patch CMakeLists.txt to disable zstd and translations
     pre_configure_cmds = ["sed -i '/pkg_check_modules.*libzstd/d' CMakeLists.txt && sed -i 's/set(HAVE_ZSTD.*/set(HAVE_ZSTD FALSE)/' CMakeLists.txt && sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -478,8 +475,6 @@ package(
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -526,8 +521,6 @@ package(
 sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt && \
 sed -i '/add_subdirectory.*geo-scheme-handler/d' src/CMakeLists.txt || true
 """],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -575,8 +568,6 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
 # Disable Python/Shiboken bindings - not needed for cross-compilation
 sed -i '/find_package.*Shiboken/d; /find_package.*PySide/d' CMakeLists.txt || true
 """],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -615,8 +606,6 @@ package(
         "-DBUILD_TESTING=OFF",
         "-DWITH_X11=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -659,8 +648,6 @@ package(
         "-DBUILD_DESIGNERPLUGIN=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -698,8 +685,6 @@ package(
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -739,8 +724,6 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     # Disable translations - Qt6LinguistTools not available
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -785,8 +768,6 @@ package(
         "-DBUILD_DESIGNERPLUGIN=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -838,8 +819,6 @@ package(
         "-DBUILD_QT6=ON",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -908,21 +887,6 @@ sed -i '/add_library.*breeze-icons-rcc/d' icons/CMakeLists.txt || true
 sed -i 's/BreezeIcons COMPONENTS icons/BreezeIcons/' CMakeLists.txt || true
 
 """],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + """
-# Build the KF6BreezeIcons library
-cmake --build "$S/build" -j${MAKEOPTS:-$(nproc)} --target KF6BreezeIcons || echo "Target build may have failed"
-# Try full build, ignore errors from qrc
-cmake --build "$S/build" -j${MAKEOPTS:-$(nproc)} || echo "Full build may have failed, continuing"
-echo "Build complete, checking library:"
-ls -la "$S/build/bin/" | grep -i breeze || true
-""",
-    src_install = """
-# Run cmake install
-DESTDIR="$DESTDIR" cmake --install "$S/build"
-echo "Breeze icons installed"
-ls -la "$DESTDIR/usr/lib64/" | head -10 || true
-""",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -960,8 +924,6 @@ package(
         "-DBUILD_DESIGNERPLUGIN=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -1020,8 +982,6 @@ package(
 sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt && \
 sed -i '/add_subdirectory.*examples/d' CMakeLists.txt || true
 """],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -1067,8 +1027,6 @@ package(
         # Disable X11 - we're Wayland-only
         "-DWITH_X11=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -1119,39 +1077,6 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
 # Keep QML module enabled for Plasma shell
 
 """],
-    src_configure = """
-# Find native wayland-scanner from exec_bdepend and set PKG_CONFIG_PATH
-NATIVE_WAYLAND_SCANNER=""
-SCANNER_PKG_CONFIG_PATH=""
-IFS=':' read -ra _EXEC_BDEP_ARRAY <<< "${EXEC_BDEP_BASE_DIRS:-}"
-for _dep in "${_EXEC_BDEP_ARRAY[@]}"; do
-    if [ -x "$_dep/usr/bin/wayland-scanner" ]; then
-        NATIVE_WAYLAND_SCANNER="$_dep/usr/bin/wayland-scanner"
-        SCANNER_PKG_CONFIG_PATH="$_dep/usr/lib64/pkgconfig:$_dep/usr/share/pkgconfig"
-        echo "Found native wayland-scanner: $NATIVE_WAYLAND_SCANNER"
-        echo "Scanner PKG_CONFIG_PATH: $SCANNER_PKG_CONFIG_PATH"
-        break
-    fi
-done
-
-if [ -z "$NATIVE_WAYLAND_SCANNER" ]; then
-    echo "ERROR: Native wayland-scanner not found in exec_bdepend"
-    exit 1
-fi
-
-# Add scanner pkg-config path so FindWayland.cmake can find wayland-scanner.pc and pkgdatadir
-export PKG_CONFIG_PATH="${SCANNER_PKG_CONFIG_PATH}:${PKG_CONFIG_PATH:-}"
-echo "PKG_CONFIG_PATH: $PKG_CONFIG_PATH"
-
-# Pass WaylandScanner_EXECUTABLE to CMake
-export CMAKE_EXTRA_ARGS="-DWaylandScanner_EXECUTABLE=$NATIVE_WAYLAND_SCANNER ${CMAKE_EXTRA_ARGS:-}"
-echo "Using native wayland-scanner: $NATIVE_WAYLAND_SCANNER"
-
-""" + KDE_ZSTD_LDFLAGS + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
-    exec_bdepend = [
-        "//packages/linux/graphics/rendering/wayland:wayland-scanner",
-    ],
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -1213,38 +1138,6 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
 sed -i '/add_subdirectory.*examples/d' CMakeLists.txt || true
 """],
     # Find native wayland-scanner from exec_bdepend before configure
-    pre_configure = """
-# Find native wayland-scanner from exec_bdepend
-WAYLAND_SCANNER=""
-SCANNER_PKG_CONFIG_PATH=""
-IFS=':' read -ra _EXEC_BDEP_ARRAY <<< "${EXEC_BDEP_BASE_DIRS:-}"
-for _dep in "${_EXEC_BDEP_ARRAY[@]}"; do
-    if [ -x "$_dep/usr/bin/wayland-scanner" ]; then
-        WAYLAND_SCANNER="$_dep/usr/bin/wayland-scanner"
-        SCANNER_PKG_CONFIG_PATH="$_dep/usr/lib64/pkgconfig"
-        echo "Found native wayland-scanner: $WAYLAND_SCANNER"
-        echo "Scanner pkg-config path: $SCANNER_PKG_CONFIG_PATH"
-        # Add to CMAKE_PREFIX_PATH and PKG_CONFIG_PATH so CMake can find it
-        export CMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH:+$CMAKE_PREFIX_PATH:}$_dep/usr"
-        export PKG_CONFIG_PATH="${SCANNER_PKG_CONFIG_PATH}:${PKG_CONFIG_PATH:-}"
-        break
-    fi
-done
-
-if [ -z "$WAYLAND_SCANNER" ]; then
-    echo "ERROR: No wayland-scanner found in exec_bdepend"
-    exit 1
-fi
-""",
-    src_configure = KDE_HOST_LD_SETUP + """
-# Wipe build directory to ensure CMake picks up the correct wayland-scanner
-if [ -d "$S/build" ]; then
-    echo "Wiping build directory for clean CMake configuration..."
-    rm -rf "$S/build"
-fi
-
-""" + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -1269,9 +1162,6 @@ fi
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     # Native wayland-scanner needed for generating protocol headers during cross-compilation
-    exec_bdepend = [
-        "//packages/linux/graphics/rendering/wayland:wayland-scanner",
-    ],
     visibility = ["PUBLIC"],
 )
 
@@ -1292,8 +1182,6 @@ package(
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -1340,8 +1228,6 @@ package(
         "-DBUILD_DESIGNERPLUGIN=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -1377,8 +1263,6 @@ package(
         "-DWITH_X11=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -1426,8 +1310,6 @@ package(
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -1471,8 +1353,6 @@ package(
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -1517,8 +1397,6 @@ package(
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -1601,8 +1479,6 @@ fi
 cd "$S"
 
 """],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -1691,8 +1567,6 @@ sed -i '/trigrams\.qrc/d' src/core/CMakeLists.txt || true
 touch src/core/trigrams.qrc || true
 
 """],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -1737,8 +1611,6 @@ package(
         "-DBUILD_DESIGNERPLUGIN=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -1786,8 +1658,6 @@ package(
         "-DBUILD_DESIGNERPLUGIN=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -1842,8 +1712,6 @@ package(
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -1886,8 +1754,6 @@ package(
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -1979,8 +1845,6 @@ sed -i '/Q_INIT_RESOURCE(syntax_data)/d' src/lib/repository.cpp || true
 sed -i '/Q_INIT_RESOURCE(theme_data)/d' src/lib/repository.cpp || true
 
 """],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -2046,8 +1910,6 @@ sed -i '/cbCycleBookmarks/d' src/dialogs/katedialogs.cpp
 sed -i '/chkAutoReloadOnExternalChanges/d' src/dialogs/katedialogs.cpp
 
 """],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -2123,8 +1985,6 @@ package(
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -2167,8 +2027,6 @@ package(
         "-DWITH_X11=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -2219,8 +2077,6 @@ package(
 
 sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true
 """],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -2267,8 +2123,6 @@ package(
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -2315,8 +2169,6 @@ package(
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -2369,8 +2221,6 @@ package(
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -2418,8 +2268,6 @@ package(
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -2462,8 +2310,6 @@ package(
         "-DCMAKE_CXX_STANDARD=20",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -2522,8 +2368,6 @@ package(
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -2613,46 +2457,6 @@ sed -i '/all-l10n.xml/,/)/d' src/CMakeLists.txt || true
 mkdir -p src/customization/xsl
 touch src/customization/xsl/all-l10n.xml
 """],
-    src_configure = KDE_HOST_LD_SETUP + """
-# Force CMake to find cross-compiled libxslt/libexslt instead of host's
-XSLT_DEP_PATH=$(echo "$CMAKE_PREFIX_PATH" | tr ';' '\\n' | grep libxslt | head -1 || echo "")
-if [ -n "$XSLT_DEP_PATH" ]; then
-    export CMAKE_EXTRA_ARGS="${CMAKE_EXTRA_ARGS:-} -DLIBXSLT_INCLUDE_DIR=$XSLT_DEP_PATH/include -DLIBXSLT_EXSLT_LIBRARY=$XSLT_DEP_PATH/lib64/libexslt.so -DLIBXSLT_LIBRARY=$XSLT_DEP_PATH/lib64/libxslt.so"
-fi
-XML2_DEP_PATH=$(echo "$CMAKE_PREFIX_PATH" | tr ';' '\\n' | grep libxml2 | head -1 || echo "")
-if [ -n "$XML2_DEP_PATH" ]; then
-    export CMAKE_EXTRA_ARGS="${CMAKE_EXTRA_ARGS:-} -DLIBXML2_INCLUDE_DIR=$XML2_DEP_PATH/include/libxml2 -DLIBXML2_LIBRARY=$XML2_DEP_PATH/lib64/libxml2.so"
-fi
-# Also add include_directories to CMakeLists.txt for libxml2 (needed for #include <libxml/...>)
-if [ -n "$XML2_DEP_PATH" ] && [ -f CMakeLists.txt ]; then
-    echo "include_directories($XML2_DEP_PATH/include/libxml2)" >> CMakeLists.txt
-fi
-if [ -n "$XSLT_DEP_PATH" ] && [ -f CMakeLists.txt ]; then
-    echo "include_directories($XSLT_DEP_PATH/include)" >> CMakeLists.txt
-fi
-""" + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + """
-# Build will fail on executables (zstd linking), but library will succeed
-cmake --build "$S/build" -j${MAKEOPTS:-$(nproc)} || {
-    # Check if the main library built successfully
-    if ! find "$S/build" -name "libKF6DocTools.so*" | grep -q .; then
-        echo "ERROR: kdoctools library failed to build"
-        exit 1
-    fi
-    echo "Library built successfully, executables failed (expected in cross-compilation)"
-}
-# Create dummy all-l10n.xml file for installation (docbookl10nhelper can't run during cross-compile)
-mkdir -p "$S/build/src/customization/xsl"
-echo '<?xml version="1.0" encoding="utf-8"?><dummy/>' > "$S/build/src/customization/xsl/all-l10n.xml"
-# Create dummy executables for installation (fail zstd linking in cross-compilation)
-mkdir -p "$S/build/bin"
-for exe in meinproc6 checkXML6 docbookl10nhelper; do
-    if [ ! -f "$S/build/bin/$exe" ]; then
-        touch "$S/build/bin/$exe"
-        chmod +x "$S/build/bin/$exe"
-    fi
-done
-""",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -2698,8 +2502,6 @@ package(
         "-DBUILD_DESIGNERPLUGIN=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -2783,8 +2585,6 @@ sed -i 's/find_package(KSysGuard CONFIG REQUIRED)/# find_package(KSysGuard CONFI
 sed -i '/devicenotifications/d' src/dataengines/CMakeLists.txt || true
 
 """],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -2904,8 +2704,6 @@ for _dep in "${_DEP_ARRAY[@]}"; do
 done
 
 """],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -3043,8 +2841,6 @@ package(
         "-DWITH_X11=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -3124,8 +2920,6 @@ package(
         "-DCMAKE_SKIP_INSTALL_RPATH=TRUE",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -3170,8 +2964,6 @@ package(
         "-DHAVE_GLESv2=TRUE",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -3227,9 +3019,6 @@ sed -i 's/COMPONENTS DBus Widgets Quick Test/COMPONENTS DBus Widgets Quick Test 
 sed -i '/qCDebug(KSCREENLOCKER) << "Event received"/a\\    (void)event;' ksldapp.cpp
 
 """],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + """export CXXFLAGS="$CXXFLAGS -Wno-error=unused-but-set-variable -Wno-error=unused-parameter"
-""" + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -3316,8 +3105,6 @@ package(
         "-DHAVE_GLESv2=TRUE",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -3369,8 +3156,6 @@ sed -i 's/#include <KX11Extras>/\\/\\/#include <KX11Extras>/' src/service/Resour
 sed -i 's/connect(KX11Extras::self/\\/\\/connect(KX11Extras::self/' src/service/Resources.cpp || true
 
 """],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -3471,43 +3256,6 @@ sed -i '/find_package(ECM/a\\include_directories(BEFORE SYSTEM "${CMAKE_SOURCE_D
 sed -i '/isPlatformX11.*{/,/^    }/d' src/plasma/private/theme_p.cpp
 
 """],
-    src_configure = """
-# Find native wayland-scanner from exec_bdepend
-WAYLAND_SCANNER=""
-SCANNER_PKG_CONFIG_PATH=""
-IFS=':' read -ra _EXEC_BDEP_ARRAY <<< "${EXEC_BDEP_BASE_DIRS:-}"
-for _dep in "${_EXEC_BDEP_ARRAY[@]}"; do
-    if [ -x "$_dep/usr/bin/wayland-scanner" ]; then
-        WAYLAND_SCANNER="$_dep/usr/bin/wayland-scanner"
-        SCANNER_PKG_CONFIG_PATH="$_dep/usr/lib64/pkgconfig:$_dep/usr/share/pkgconfig"
-        echo "Found native wayland-scanner: $WAYLAND_SCANNER"
-        echo "Scanner pkg-config path: $SCANNER_PKG_CONFIG_PATH"
-        # Add to CMAKE_PREFIX_PATH and PKG_CONFIG_PATH so CMake can find it
-        export CMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH:+$CMAKE_PREFIX_PATH:}$_dep/usr"
-        export PKG_CONFIG_PATH="${SCANNER_PKG_CONFIG_PATH}:${PKG_CONFIG_PATH:-}"
-        break
-    fi
-done
-
-if [ -z "$WAYLAND_SCANNER" ]; then
-    echo "ERROR: Native wayland-scanner not found in exec_bdepend"
-    exit 1
-fi
-
-# Pass WaylandScanner_EXECUTABLE to CMake
-export CMAKE_EXTRA_ARGS="-DWaylandScanner_EXECUTABLE=$WAYLAND_SCANNER ${CMAKE_EXTRA_ARGS:-}"
-
-# Wipe build directory to ensure CMake picks up the correct wayland-scanner
-if [ -d "$S/build" ]; then
-    echo "Wiping build directory for clean CMake configuration..."
-    rm -rf "$S/build"
-fi
-
-""" + KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
-    exec_bdepend = [
-        "//packages/linux/graphics/rendering/wayland:wayland-scanner",
-    ],
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -3602,43 +3350,7 @@ sed -i 's/^add_library(LayerShellQtInterface)/add_library(LayerShellQtInterface 
 
 """],
     # Prepend native wayland-scanner to PATH and set CMAKE var
-    src_configure = """
-# Find native wayland-scanner from exec_bdepend
-NATIVE_WAYLAND_SCANNER=""
-IFS=':' read -ra _EXEC_BDEP_ARRAY <<< "${EXEC_BDEP_BASE_DIRS:-}"
-for _dep in "${_EXEC_BDEP_ARRAY[@]}"; do
-    if [ -x "$_dep/usr/bin/wayland-scanner" ]; then
-        NATIVE_WAYLAND_SCANNER="$_dep/usr/bin/wayland-scanner"
-        echo "Found native wayland-scanner: $NATIVE_WAYLAND_SCANNER"
-        break
-    fi
-done
-
-if [ -z "$NATIVE_WAYLAND_SCANNER" ]; then
-    echo "ERROR: Native wayland-scanner not found in exec_bdepend"
-    exit 1
-fi
-
-# Pass WaylandScanner_EXECUTABLE on cmake command line to override find_program()
-# This must be done before find_package(WaylandScanner) runs in layer-shell-qt's CMakeLists.txt
-export CMAKE_EXTRA_ARGS="-DWaylandScanner_EXECUTABLE=$NATIVE_WAYLAND_SCANNER ${CMAKE_EXTRA_ARGS:-}"
-echo "Using native wayland-scanner: $NATIVE_WAYLAND_SCANNER"
-""" + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = """
-# Find and set native wayland-scanner for compile phase
-IFS=':' read -ra _EXEC_BDEP_ARRAY <<< "${EXEC_BDEP_BASE_DIRS:-}"
-for _dep in "${_EXEC_BDEP_ARRAY[@]}"; do
-    if [ -x "$_dep/usr/bin/wayland-scanner" ]; then
-        export WAYLAND_SCANNER="$_dep/usr/bin/wayland-scanner"
-        export PATH="$_dep/usr/bin:$PATH"
-        break
-    fi
-done
-""" + KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     # Need native wayland-scanner for cross-compilation
-    exec_bdepend = [
-        "//packages/linux/graphics/rendering/wayland:wayland-scanner",
-    ],
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -3714,9 +3426,6 @@ bool OrientationSensor::isEnabled() const { return false; }
 #include "moc_orientationsensor.cpp"
 SENSOR_CPP
 """],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + """export CXXFLAGS="$CXXFLAGS -Wno-error=unused-but-set-variable -Wno-error=unused-parameter"
-""" + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -3825,8 +3534,6 @@ package(
         "-DCMAKE_DISABLE_FIND_PACKAGE_KF6DocTools=ON",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -3873,8 +3580,6 @@ package(
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -3924,8 +3629,6 @@ package(
         "-DWITHOUT_X11=ON",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -3976,8 +3679,6 @@ package(
         "-DCMAKE_DISABLE_FIND_PACKAGE_KF6DocTools=ON",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true\nsed -i '/find_package(Qca-qt6/d' CMakeLists.txt || true\nsed -i '/ki18n_install/d' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -4027,8 +3728,6 @@ package(
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -4095,8 +3794,6 @@ package(
         "-DCMAKE_DISABLE_FIND_PACKAGE_ZXing=ON",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -4174,8 +3871,6 @@ endfunction()
 EOF
 
 """],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/dev-libs/glib:glib",
@@ -4214,8 +3909,6 @@ package(
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -4276,38 +3969,6 @@ sed -i '/add_subdirectory.*backendlauncher/d' src/CMakeLists.txt || true
 
 """],
     # Find native wayland-scanner from exec_bdepend before configure
-    pre_configure = """
-# Find native wayland-scanner from exec_bdepend
-WAYLAND_SCANNER=""
-SCANNER_PKG_CONFIG_PATH=""
-IFS=':' read -ra _EXEC_BDEP_ARRAY <<< "${EXEC_BDEP_BASE_DIRS:-}"
-for _dep in "${_EXEC_BDEP_ARRAY[@]}"; do
-    if [ -x "$_dep/usr/bin/wayland-scanner" ]; then
-        WAYLAND_SCANNER="$_dep/usr/bin/wayland-scanner"
-        SCANNER_PKG_CONFIG_PATH="$_dep/usr/lib64/pkgconfig"
-        echo "Found native wayland-scanner: $WAYLAND_SCANNER"
-        echo "Scanner pkg-config path: $SCANNER_PKG_CONFIG_PATH"
-        # Add to CMAKE_PREFIX_PATH and PKG_CONFIG_PATH so CMake can find it
-        export CMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH:+$CMAKE_PREFIX_PATH:}$_dep/usr"
-        export PKG_CONFIG_PATH="${SCANNER_PKG_CONFIG_PATH}:${PKG_CONFIG_PATH:-}"
-        break
-    fi
-done
-
-if [ -z "$WAYLAND_SCANNER" ]; then
-    echo "ERROR: No wayland-scanner found in exec_bdepend"
-    exit 1
-fi
-""",
-    src_configure = KDE_HOST_LD_SETUP + """
-# Wipe build directory to ensure CMake picks up the correct wayland-scanner
-if [ -d "$S/build" ]; then
-    echo "Wiping build directory for clean CMake configuration..."
-    rm -rf "$S/build"
-fi
-
-""" + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -4334,9 +3995,6 @@ fi
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     # Native wayland-scanner needed for generating protocol headers during cross-compilation
-    exec_bdepend = [
-        "//packages/linux/graphics/rendering/wayland:wayland-scanner",
-    ],
     visibility = ["PUBLIC"],
 )
 
@@ -4362,8 +4020,6 @@ package(
         "-DENABLE_KAUTH_HELPER=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true\nsed -i 's/find_package(Sensors REQUIRED)/find_package(Sensors)/' CMakeLists.txt || true\nsed -i 's/find_package(libpcap REQUIRED)/find_package(libpcap)/' CMakeLists.txt || true\nsed -i '/add_subdirectory(nvidia)/d' processcore/plugins/CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -4482,8 +4138,6 @@ cat > kcms/krdb/krdb_export.h << 'STUB'
 STUB
 
 """],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -4614,106 +4268,6 @@ sed -i '/ki18n_install/d' CMakeLists.txt 2>/dev/null || true
 
 """],
     # Custom src_configure to handle EGL/GLESv2 cross-compilation
-    src_configure = """
-# Set LD_LIBRARY_PATH for Qt6 tools (qtpaths, moc, rcc) during CMake configure
-HOST_LD_PATH=""
-IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
-for _dep in "${_DEP_ARRAY[@]}"; do
-    for _libdir in "$_dep/usr/lib64" "$_dep/usr/lib"; do
-        if [ -d "$_libdir" ]; then
-            if ls "$_libdir"/libc.so* >/dev/null 2>&1; then continue; fi
-            HOST_LD_PATH="${HOST_LD_PATH:+$HOST_LD_PATH:}$_libdir"
-        fi
-    done
-done
-if [ -n "$HOST_LD_PATH" ]; then
-    export LD_LIBRARY_PATH="$HOST_LD_PATH"
-fi
-
-mkdir -p "$S/build"
-CMAKE_PREFIX_PATH_ARG=""
-if [ -n "${CMAKE_PREFIX_PATH:-}" ]; then
-    CMAKE_PREFIX_PATH_ARG="-DCMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH"
-fi
-
-# Build rpath-link flags from DEP_BASE_DIRS
-RPATH_LINK_FLAGS=""
-for _dep in "${_DEP_ARRAY[@]}"; do
-    for _libdir in "$_dep/usr/lib64" "$_dep/usr/lib"; do
-        if [ -d "$_libdir" ]; then
-            RPATH_LINK_FLAGS="${RPATH_LINK_FLAGS:+$RPATH_LINK_FLAGS }-Wl,-rpath-link,$_libdir"
-        fi
-    done
-done
-
-# Create EGL/GLESv2 targets for Qt6Gui (cross-compilation requires explicit targets)
-MESA_PATH=$(echo "$CMAKE_PREFIX_PATH" | tr ';' '\\n' | grep mesa || echo "")
-cat > "$S/build/egl_gles_targets.cmake" << 'TARGETS_EOF'
-set(COMPILER_HAS_HIDDEN_VISIBILITY TRUE CACHE BOOL "" FORCE)
-set(COMPILER_HAS_HIDDEN_INLINE_VISIBILITY TRUE CACHE BOOL "" FORCE)
-set(COMPILER_HAS_DEPRECATED TRUE CACHE BOOL "" FORCE)
-TARGETS_EOF
-
-if [ -n "$MESA_PATH" ]; then
-    EGL_LIB="$MESA_PATH/lib64/libEGL.so"
-    GLES_LIB="$MESA_PATH/lib64/libGLESv2.so"
-    EGL_INC="$MESA_PATH/include"
-    if [ -f "$EGL_LIB" ] && [ -f "$GLES_LIB" ]; then
-        cat >> "$S/build/egl_gles_targets.cmake" << EOF
-# Skip try_compile tests for EGL/GLESv2 since we're cross-compiling
-set(HAVE_EGL TRUE CACHE BOOL "EGL works" FORCE)
-set(HAVE_GLESv2 TRUE CACHE BOOL "GLESv2 works" FORCE)
-set(EGL_FOUND TRUE CACHE BOOL "EGL found" FORCE)
-set(EGL_LIBRARY "$EGL_LIB" CACHE FILEPATH "EGL library" FORCE)
-set(EGL_INCLUDE_DIR "$EGL_INC" CACHE PATH "EGL include" FORCE)
-set(GLESv2_FOUND TRUE CACHE BOOL "GLESv2 found" FORCE)
-set(GLESv2_LIBRARY "$GLES_LIB" CACHE FILEPATH "GLESv2 library" FORCE)
-set(GLESv2_INCLUDE_DIR "$EGL_INC" CACHE PATH "GLESv2 include" FORCE)
-if(NOT TARGET EGL::EGL)
-    add_library(EGL::EGL SHARED IMPORTED GLOBAL)
-    set_target_properties(EGL::EGL PROPERTIES IMPORTED_LOCATION "$EGL_LIB" INTERFACE_INCLUDE_DIRECTORIES "$EGL_INC")
-endif()
-if(NOT TARGET GLESv2::GLESv2)
-    add_library(GLESv2::GLESv2 SHARED IMPORTED GLOBAL)
-    set_target_properties(GLESv2::GLESv2 PROPERTIES IMPORTED_LOCATION "$GLES_LIB" INTERFACE_INCLUDE_DIRECTORIES "$EGL_INC")
-endif()
-EOF
-    fi
-fi
-
-cmake -S "$S" -B "$S/build" \\
-    $CMAKE_PREFIX_PATH_ARG \\
-    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \\
-    -DCMAKE_C_COMPILER="${CC}" \\
-    -DCMAKE_CXX_COMPILER="${CXX}" \\
-    -DCMAKE_C_FLAGS="${CFLAGS:-}" \\
-    -DCMAKE_CXX_FLAGS="${CXXFLAGS:-}" \\
-    -DCMAKE_EXE_LINKER_FLAGS="${LDFLAGS:-} ${RPATH_LINK_FLAGS:-} -Wl,--copy-dt-needed-entries" \\
-    -DCMAKE_SHARED_LINKER_FLAGS="${LDFLAGS:-} ${RPATH_LINK_FLAGS:-} -Wl,--copy-dt-needed-entries" \\
-    -DCMAKE_MODULE_LINKER_FLAGS="${LDFLAGS:-} ${RPATH_LINK_FLAGS:-} -Wl,--copy-dt-needed-entries" \\
-    -DCMAKE_PROJECT_INCLUDE="$S/build/egl_gles_targets.cmake" \\
-    -DCMAKE_INSTALL_PREFIX=/usr \\
-    -DBUILD_TESTING=OFF \\
-    -DCMAKE_BUILD_TYPE=Release \\
-    -DCMAKE_DISABLE_FIND_PACKAGE_Qt6LinguistTools=ON
-""",
-    src_compile = """
-# Set LD_LIBRARY_PATH for Qt6 tools during compile
-HOST_LD_PATH=""
-IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
-for _dep in "${_DEP_ARRAY[@]}"; do
-    for _libdir in "$_dep/usr/lib64" "$_dep/usr/lib"; do
-        if [ -d "$_libdir" ]; then
-            if ls "$_libdir"/libc.so* >/dev/null 2>&1; then continue; fi
-            HOST_LD_PATH="${HOST_LD_PATH:+$HOST_LD_PATH:}$_libdir"
-        fi
-    done
-done
-if [ -n "$HOST_LD_PATH" ]; then
-    export LD_LIBRARY_PATH="$HOST_LD_PATH"
-fi
-cmake --build "$S/build" -j${MAKEOPTS:-$(nproc)}
-""",
     deps = [
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":plasma-workspace",
@@ -4749,7 +4303,7 @@ cmake --build "$S/build" -j${MAKEOPTS:-$(nproc)}
         "//packages/linux/system/init/systemd:systemd",
         "//packages/linux/desktop/mesa:mesa",  # For EGL/GLESv2
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    post_install = """
+    post_install_cmds = ["""
 # Create PAM configuration for plasmalogin
 mkdir -p "$DESTDIR/etc/pam.d"
 cat > "$DESTDIR/etc/pam.d/plasmalogin" << 'PAMEOF'
@@ -4784,7 +4338,7 @@ Restart=always
 [Install]
 Alias=display-manager.service
 SERVICEEOF
-""",
+"""],
     visibility = ["PUBLIC"],
 )
 
@@ -4926,8 +4480,6 @@ package(
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -4984,8 +4536,6 @@ sed -i 's/#include <X11/#\\/\\/#include <X11/g' qt6/src/platformtheme/*.cpp 2>/d
 sed -i 's/#include <xcb/#\\/\\/#include <xcb/g' qt6/src/platformtheme/*.cpp 2>/dev/null || true
 
 """],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -5054,8 +4604,6 @@ package(
 sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true
 
 """],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -5094,8 +4642,6 @@ package(
 sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true
 
 """],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
@@ -5143,8 +4689,6 @@ package(
 sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true
 
 """],
-    src_configure = KDE_ZSTD_LDFLAGS + KDE_HOST_LD_SETUP + KDE_CMAKE_CONFIGURE,
-    src_compile = KDE_HOST_LD_SETUP + "cmake --build \"$S/build\" -j${MAKEOPTS:-$(nproc)}\n",
     deps = [
         "//packages/linux/desktop/qt:qt6",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
