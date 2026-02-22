@@ -2,8 +2,13 @@ load("//defs:package.bzl", "package")
 
 # Wine - Windows compatibility layer
 # Run Windows applications on Linux
-
-# USE flags: See use_flags.bzl for available flags
+#
+# USE flags:
+#   x11      - Enable X11 support (default: disabled)
+#   wayland  - Enable Wayland support (default: enabled)
+#   vulkan   - Enable Vulkan support (default: disabled, requires vulkan-loader)
+#   opengl   - Enable OpenGL support (default: disabled, requires 32-bit EGL)
+#   unwind   - Enable libunwind for stack traces (default: disabled, ABI issues)
 
 package(
     build_rule = "autotools",
@@ -15,16 +20,20 @@ package(
     description = "Compatibility layer for running Windows applications",
     homepage = "https://www.winehq.org/",
     license = "LGPL-2.1",
+    use_configure = {
+        "x11": ("--with-x", "--without-x"),
+        "wayland": ("--with-wayland", "--without-wayland"),
+        "vulkan": ("--with-vulkan", "--without-vulkan"),
+        "opengl": ("--with-opengl", "--without-opengl"),
+        "unwind": ("--with-unwind", "--without-unwind"),
+    },
     configure_args = [
         "--prefix=/usr",
         "--libdir=/usr/lib",
-        "--with-x",
-        "--with-wayland",
-        "--with-vulkan",
+        "--enable-win64",  # 64-bit only mode (no WoW64/32-bit support)
         "--with-pthread",
         "--with-freetype",
         "--with-fontconfig",
-        "--with-opengl",
         "--without-oss",
         "--disable-tests",
     ],

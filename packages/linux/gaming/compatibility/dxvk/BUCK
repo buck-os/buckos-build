@@ -2,51 +2,43 @@ load("//defs:package.bzl", "package")
 
 # DXVK - DirectX 9/10/11 to Vulkan translation layer
 # Dramatically improves game performance in Wine/Proton
-
-# USE flags: See use_flags.bzl for available flags
+#
+# NOTE: DXVK requires MinGW-w64 cross-compiler to build Windows DLLs.
+# This package downloads pre-built binaries from the official releases.
 
 package(
-    build_rule = "autotools",
+    build_rule = "binary",
     name = "dxvk",
-    url = "https://github.com/doitsujin/dxvk/archive/refs/tags/v2.4.1.tar.gz",
-
-    sha256 = "aa6b95f6c80dab704fa15df5b22b5f5a4931687c0bdab190f32fe666f6c0a707",
-    use_configure = {
-        "crossdev-mingw": ("--enable-crossdev-mingw", "--disable-crossdev-mingw"),
-        "d3d10": ("--enable-d3d10", "--disable-d3d10"),
-        "d3d11": ("--enable-d3d11", "--disable-d3d11"),
-        "d3d8": ("--enable-d3d8", "--disable-d3d8"),
-        "d3d9": ("--enable-d3d9", "--disable-d3d9"),
-        "dxgi": ("--enable-dxgi", "--disable-dxgi"),
-        "strip": ("--enable-strip", "--disable-strip"),
-    },
-    version = "2.4.1",
+    version = "2.5.3",
+    url = "https://github.com/doitsujin/dxvk/releases/download/v2.5.3/dxvk-2.5.3.tar.gz",
+    sha256 = "d8e6ef7d1168095165e1f8a98c7d5a4485b080467bb573d2a9ef3e3d79ea1eb8",
     description = "DirectX 9/10/11 to Vulkan translation layer for Wine",
     homepage = "https://github.com/doitsujin/dxvk",
     license = "Zlib",
-    configure_args = [],
-    post_install_cmds = ["""
+    install_script = """
 #!/bin/bash
 set -e
 
-cd "$SRC_DIR"
+# DXVK releases contain pre-built DLLs
+mkdir -p "$OUT/usr/share/dxvk/x64"
+mkdir -p "$OUT/usr/share/dxvk/x32"
 
-# Compile and install 64-bit
-meson compile -C build64
-DESTDIR="$DESTDIR" meson install -C build64
+# Copy 64-bit DLLs
+if [ -d "$SRCS/x64" ]; then
+    cp -a "$SRCS/x64"/*.dll "$OUT/usr/share/dxvk/x64/" 2>/dev/null || true
+fi
 
-# Compile and install 32-bit if available
-if [ -d build32 ]; then
-    meson compile -C build32
-    DESTDIR="$DESTDIR" meson install -C build32
+# Copy 32-bit DLLs
+if [ -d "$SRCS/x32" ]; then
+    cp -a "$SRCS/x32"/*.dll "$OUT/usr/share/dxvk/x32/" 2>/dev/null || true
 fi
 
 # Create setup script for Wine prefixes
-mkdir -p "$DESTDIR/usr/bin"
-cat > "$DESTDIR/usr/bin/setup_dxvk" << 'EOF'
+mkdir -p "$OUT/usr/bin"
+cat > "$OUT/usr/bin/setup_dxvk" << 'SCRIPT'
 #!/bin/bash
 # Install DXVK to a Wine prefix
-# Usage: setup_dxvk [install|uninstall] [--symlink]
+# Usage: setup_dxvk [install|uninstall]
 
 set -e
 
@@ -57,18 +49,21 @@ DXVK_PATH="/usr/share/dxvk"
 if [ "$ACTION" = "install" ]; then
     echo "Installing DXVK to $PREFIX..."
 
-    # Create system32 and syswow64 directories
     mkdir -p "$PREFIX/drive_c/windows/system32"
     mkdir -p "$PREFIX/drive_c/windows/syswow64"
 
-    # Copy 64-bit DLLs
+    # Copy 64-bit DLLs to system32
     for dll in d3d9 d3d10core d3d11 dxgi; do
-        cp "$DXVK_PATH/x64/$dll.dll" "$PREFIX/drive_c/windows/system32/" 2>/dev/null || true
+        if [ -f "$DXVK_PATH/x64/$dll.dll" ]; then
+            cp "$DXVK_PATH/x64/$dll.dll" "$PREFIX/drive_c/windows/system32/"
+        fi
     done
 
-    # Copy 32-bit DLLs
+    # Copy 32-bit DLLs to syswow64
     for dll in d3d9 d3d10core d3d11 dxgi; do
-        cp "$DXVK_PATH/x32/$dll.dll" "$PREFIX/drive_c/windows/syswow64/" 2>/dev/null || true
+        if [ -f "$DXVK_PATH/x32/$dll.dll" ]; then
+            cp "$DXVK_PATH/x32/$dll.dll" "$PREFIX/drive_c/windows/syswow64/"
+        fi
     done
 
     echo "DXVK installed successfully"
@@ -79,13 +74,14 @@ elif [ "$ACTION" = "uninstall" ]; then
         rm -f "$PREFIX/drive_c/windows/syswow64/$dll.dll"
     done
     echo "DXVK removed"
+else
+    echo "Usage: setup_dxvk [install|uninstall]"
+    exit 1
 fi
-EOF
-chmod +x "$DESTDIR/usr/bin/setup_dxvk"
-    """],
-    deps = [
-        "//packages/linux/gaming/compatibility/wine:wine",
-    ],
+SCRIPT
+chmod +x "$OUT/usr/bin/setup_dxvk"
+    """,
+    deps = [],
     labels = ["buckos:hw:vulkan"],
     visibility = ["PUBLIC"],
 )

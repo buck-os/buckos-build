@@ -61,10 +61,9 @@ package(
             ln -sf ../../lib64/python3.12/lib-dynload "$DESTDIR/usr/lib/python3.12/lib-dynload"
         fi
     """, """
-        # Create lib-dynload symlink
-        if [ -d "$DESTDIR/usr/lib64/python3.12/lib-dynload" ] && [ ! -e "$DESTDIR/usr/lib/python3.12/lib-dynload" ]; then
-            ln -sf ../../lib64/python3.12/lib-dynload "$DESTDIR/usr/lib/python3.12/lib-dynload"
-        fi
+        # Install setuptools to provide distutils compatibility (removed in Python 3.12)
+        # This is required by meson's python module for path discovery
+        "$DESTDIR/usr/bin/pip3" install --quiet --target="$DESTDIR/usr/lib/python3.12/site-packages" setuptools || true
     """],
 
     visibility = ["PUBLIC"],

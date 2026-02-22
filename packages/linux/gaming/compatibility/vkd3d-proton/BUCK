@@ -2,45 +2,40 @@ load("//defs:package.bzl", "package")
 
 # VKD3D-Proton - DirectX 12 to Vulkan translation layer
 # Fork of VKD3D optimized for Proton/Wine gaming
-
-# USE flags: See use_flags.bzl for available flags
+#
+# NOTE: VKD3D-Proton requires MinGW-w64 cross-compiler to build Windows DLLs.
+# This package downloads pre-built binaries from the official releases.
 
 package(
-    build_rule = "autotools",
+    build_rule = "binary",
     name = "vkd3d-proton",
-    url = "https://github.com/HansKristian-Work/vkd3d-proton/archive/refs/tags/v2.13.tar.gz",
-
-    sha256 = "b0af3e1ece3094fcb26e677bad1932475f1fdccb019aab06a7c4a8cb23542a4d",
-    use_configure = {
-        "crossdev-mingw": ("--enable-crossdev-mingw", "--disable-crossdev-mingw"),
-        "debug": ("--enable-debug", "--disable-debug"),
-        "extras": ("--enable-extras", "--disable-extras"),
-        "strip": ("--enable-strip", "--disable-strip"),
-    },
-    version = "2.13",
+    version = "2.14.1",
+    url = "https://github.com/HansKristian-Work/vkd3d-proton/releases/download/v2.14.1/vkd3d-proton-2.14.1.tar.zst",
+    sha256 = "ac70ccfe01d610b51ca67a0a44e4f24f5da29c665facc0c2faf47e0818d23168",
     description = "DirectX 12 to Vulkan translation layer for Wine/Proton",
     homepage = "https://github.com/HansKristian-Work/vkd3d-proton",
     license = "LGPL-2.1",
-    configure_args = [],
-    post_install_cmds = ["""
+    install_script = """
 #!/bin/bash
 set -e
 
-cd "$SRC_DIR"
+# VKD3D-Proton releases contain pre-built DLLs
+mkdir -p "$OUT/usr/share/vkd3d-proton/x64"
+mkdir -p "$OUT/usr/share/vkd3d-proton/x32"
 
-# Compile and install 64-bit
-meson compile -C build64
-DESTDIR="$DESTDIR" meson install -C build64
+# Copy 64-bit DLLs
+if [ -d "$SRCS/x64" ]; then
+    cp -a "$SRCS/x64"/*.dll "$OUT/usr/share/vkd3d-proton/x64/" 2>/dev/null || true
+fi
 
-# Compile and install 32-bit if available
-if [ -d build32 ]; then
-    meson compile -C build32
-    DESTDIR="$DESTDIR" meson install -C build32
+# Copy 32-bit DLLs
+if [ -d "$SRCS/x32" ]; then
+    cp -a "$SRCS/x32"/*.dll "$OUT/usr/share/vkd3d-proton/x32/" 2>/dev/null || true
 fi
 
 # Create setup script for Wine prefixes
-mkdir -p "$DESTDIR/usr/bin"
-cat > "$DESTDIR/usr/bin/setup_vkd3d_proton" << 'EOF'
+mkdir -p "$OUT/usr/bin"
+cat > "$OUT/usr/bin/setup_vkd3d_proton" << 'SCRIPT'
 #!/bin/bash
 # Install VKD3D-Proton to a Wine prefix
 # Usage: setup_vkd3d_proton [install|uninstall]
@@ -54,17 +49,22 @@ VKD3D_PATH="/usr/share/vkd3d-proton"
 if [ "$ACTION" = "install" ]; then
     echo "Installing VKD3D-Proton to $PREFIX..."
 
-    # Create system32 and syswow64 directories
     mkdir -p "$PREFIX/drive_c/windows/system32"
     mkdir -p "$PREFIX/drive_c/windows/syswow64"
 
-    # Copy 64-bit DLLs
-    cp "$VKD3D_PATH/x64/d3d12.dll" "$PREFIX/drive_c/windows/system32/" 2>/dev/null || true
-    cp "$VKD3D_PATH/x64/d3d12core.dll" "$PREFIX/drive_c/windows/system32/" 2>/dev/null || true
+    # Copy 64-bit DLLs to system32
+    for dll in d3d12 d3d12core; do
+        if [ -f "$VKD3D_PATH/x64/$dll.dll" ]; then
+            cp "$VKD3D_PATH/x64/$dll.dll" "$PREFIX/drive_c/windows/system32/"
+        fi
+    done
 
-    # Copy 32-bit DLLs
-    cp "$VKD3D_PATH/x32/d3d12.dll" "$PREFIX/drive_c/windows/syswow64/" 2>/dev/null || true
-    cp "$VKD3D_PATH/x32/d3d12core.dll" "$PREFIX/drive_c/windows/syswow64/" 2>/dev/null || true
+    # Copy 32-bit DLLs to syswow64
+    for dll in d3d12 d3d12core; do
+        if [ -f "$VKD3D_PATH/x32/$dll.dll" ]; then
+            cp "$VKD3D_PATH/x32/$dll.dll" "$PREFIX/drive_c/windows/syswow64/"
+        fi
+    done
 
     echo "VKD3D-Proton installed successfully"
 elif [ "$ACTION" = "uninstall" ]; then
@@ -74,13 +74,14 @@ elif [ "$ACTION" = "uninstall" ]; then
     rm -f "$PREFIX/drive_c/windows/syswow64/d3d12.dll"
     rm -f "$PREFIX/drive_c/windows/syswow64/d3d12core.dll"
     echo "VKD3D-Proton removed"
+else
+    echo "Usage: setup_vkd3d_proton [install|uninstall]"
+    exit 1
 fi
-EOF
-chmod +x "$DESTDIR/usr/bin/setup_vkd3d_proton"
-    """],
-    deps = [
-        "//packages/linux/gaming/compatibility/wine:wine",
-    ],
+SCRIPT
+chmod +x "$OUT/usr/bin/setup_vkd3d_proton"
+    """,
+    deps = [],
     labels = ["buckos:hw:vulkan"],
     visibility = ["PUBLIC"],
 )

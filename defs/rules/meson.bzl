@@ -75,6 +75,7 @@ def _meson_setup(ctx, source):
     # them via pkg-config.  Putting -l flags in LDFLAGS breaks meson's
     # C compiler sanity check (test binaries can't find .so files at runtime).
     pkg_config_paths = []
+    lib_paths = []  # For LD_LIBRARY_PATH (dep tools need shared libs)
     for dep in ctx.attrs.deps:
         if PackageInfo in dep:
             pkg = dep[PackageInfo]
@@ -101,6 +102,9 @@ def _meson_setup(ctx, source):
         pkg_config_paths.append(cmd_args(prefix, format = "{}/usr/share/pkgconfig"))
         cmd.add("--path-prepend", cmd_args(prefix, format = "{}/usr/bin"))
         cmd.add("--path-prepend", cmd_args(prefix, format = "{}/usr/sbin"))
+        # Collect lib paths for LD_LIBRARY_PATH (dep tools need shared libs)
+        lib_paths.append(cmd_args(prefix, format = "{}/usr/lib64"))
+        lib_paths.append(cmd_args(prefix, format = "{}/usr/lib"))
 
     if cflags:
         cmd.add("--env", cmd_args("CFLAGS=", cmd_args(cflags, delimiter = " "), delimiter = ""))
@@ -108,6 +112,8 @@ def _meson_setup(ctx, source):
         cmd.add("--env", cmd_args("LDFLAGS=", cmd_args(ldflags, delimiter = " "), delimiter = ""))
     if pkg_config_paths:
         cmd.add("--env", cmd_args("PKG_CONFIG_PATH=", cmd_args(pkg_config_paths, delimiter = ":"), delimiter = ""))
+    if lib_paths:
+        cmd.add("--env", cmd_args("LD_LIBRARY_PATH=", cmd_args(lib_paths, delimiter = ":"), delimiter = ""))
 
     # Configure arguments from the common interface
     for arg in ctx.attrs.configure_args:
@@ -126,7 +132,10 @@ def _src_compile(ctx, configured, source):
 
     # Ensure source dir and dep artifacts are available — meson
     # out-of-tree builds reference them in build.ninja.
+    # Also set LD_LIBRARY_PATH so build tools (glslang, etc.) can find
+    # shared libs from deps at runtime.
     cmd.add(cmd_args(hidden = source))
+    lib_paths = []
     for dep in ctx.attrs.deps:
         cmd.add(cmd_args(hidden = dep[DefaultInfo].default_outputs))
         if PackageInfo in dep:
@@ -135,6 +144,10 @@ def _src_compile(ctx, configured, source):
             prefix = dep[DefaultInfo].default_outputs[0]
         cmd.add("--path-prepend", cmd_args(prefix, format = "{}/usr/bin"))
         cmd.add("--path-prepend", cmd_args(prefix, format = "{}/usr/sbin"))
+        lib_paths.append(cmd_args(prefix, format = "{}/usr/lib64"))
+        lib_paths.append(cmd_args(prefix, format = "{}/usr/lib"))
+    if lib_paths:
+        cmd.add("--env", cmd_args("LD_LIBRARY_PATH=", cmd_args(lib_paths, delimiter = ":"), delimiter = ""))
 
     # Inject toolchain CC/CXX/AR
     for env_arg in toolchain_env_args(ctx):

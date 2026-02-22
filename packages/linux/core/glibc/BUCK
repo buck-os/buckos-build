@@ -84,9 +84,11 @@ echo "glibc installation complete"
 echo "Generating C.UTF-8 locale..."
 mkdir -p "$DESTDIR/usr/lib/locale"
 
-# Use localedef from the cross-glibc to generate C.UTF-8
-if [ -x "$CROSS_GLIBC/usr/bin/localedef" ]; then
-    "$CROSS_GLIBC/usr/bin/localedef" \
+# Use HOST localedef to generate C.UTF-8 (cross-glibc's localedef may not work
+# on the host due to ABI differences and LD_LIBRARY_PATH conflicts)
+if command -v localedef >/dev/null 2>&1; then
+    # Clear LD_LIBRARY_PATH to avoid loading cross-glibc libs which crash
+    env -u LD_LIBRARY_PATH localedef \
         --prefix="$DESTDIR" \
         -i C -f UTF-8 C.UTF-8 2>/dev/null || \
     echo "Warning: localedef failed, C.UTF-8 may not be available"
