@@ -205,6 +205,9 @@ if [[ -d "$SRCS" ]]; then
         chmod -R u+w "$_WRITABLE"
         # Restore execute bits on autotools scripts (Buck2 artifacts may strip them)
         find "$_WRITABLE" -type f \\( -name 'configure' -o -name 'config.guess' -o -name 'config.sub' -o -name 'install-sh' -o -name 'depcomp' -o -name 'missing' -o -name 'compile' -o -name 'ltmain.sh' -o -name 'mkinstalldirs' -o -name 'config.status' \\) -exec chmod +x {} + 2>/dev/null || true
+        # Touch autotools-generated files so make doesn't try to regenerate
+        # them (Buck2 normalises timestamps, making sources look newer).
+        find "$_WRITABLE" -type f \\( -name 'configure' -o -name 'configure.sh' -o -name 'aclocal.m4' -o -name 'config.h.in' -o -name 'Makefile.in' -o -name '*.info' -o -name '*.1' \\) -exec touch {} + 2>/dev/null || true
     fi
     export SRCS="$_WRITABLE"
     export S="$_WRITABLE"

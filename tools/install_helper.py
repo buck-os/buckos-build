@@ -129,6 +129,18 @@ def main():
     prefix = os.path.abspath(args.prefix)
     os.makedirs(prefix, exist_ok=True)
 
+    # Reset all file timestamps in the build tree to a uniform instant.
+    # Buck2 normalises artifact timestamps after the build phase, so make
+    # install can see stale dependencies and try to regenerate files.
+    _epoch = float(os.environ.get("SOURCE_DATE_EPOCH", "315576000"))
+    _stamp = (_epoch, _epoch)
+    for dirpath, _dirnames, filenames in os.walk(build_dir):
+        for fname in filenames:
+            try:
+                os.utime(os.path.join(dirpath, fname), _stamp)
+            except (PermissionError, OSError):
+                pass
+
     if args.build_system == "ninja":
         # Ninja uses DESTDIR as an env var, not a command-line arg
         os.environ[args.destdir_var] = prefix
@@ -165,6 +177,9 @@ def main():
         os.remove(la)
 
     # Run post-install commands (e.g. ldconfig, cleanup)
+    # Set DESTDIR so legacy scripts that reference $DESTDIR work correctly.
+    os.environ["DESTDIR"] = prefix
+    os.environ["OUT"] = prefix
     for cmd_str in args.post_cmds:
         result = subprocess.run(cmd_str, shell=True, cwd=prefix)
         if result.returncode != 0:

@@ -88,6 +88,19 @@ def _resolve_env_paths(value):
     return " ".join(parts)
 
 
+def _rewrite_file(fpath, old, new):
+    """Replace old with new in fpath, preserving the original mtime."""
+    stat = os.stat(fpath)
+    with open(fpath, "r") as f:
+        fc = f.read()
+    if old not in fc:
+        return
+    fc = fc.replace(old, new)
+    with open(fpath, "w") as f:
+        f.write(fc)
+    os.utime(fpath, (stat.st_atime, stat.st_mtime))
+
+
 def main():
     parser = argparse.ArgumentParser(description="Run make or ninja build")
     parser.add_argument("--build-dir", required=True, help="Build directory")
@@ -128,37 +141,27 @@ def main():
     # copytree these paths are stale.  Do string replacement in all
     # relevant files and suppress cmake's auto-regeneration (the source
     # dir isn't available as a build action input).
+    #
+    # IMPORTANT: after rewriting a file we restore its original mtime so
+    # make doesn't think the file changed and try to regenerate downstream
+    # outputs (man pages, info files, Makefile.in, etc.).
     cmake_cache = os.path.join(output_dir, "CMakeCache.txt")
     ninja_file = os.path.join(output_dir, "build.ninja")
     if os.path.isfile(cmake_cache):
-        # Rewrite paths in CMakeCache.txt
-        with open(cmake_cache, "r") as f:
-            content = f.read()
-        content = content.replace(build_dir, output_dir)
-        with open(cmake_cache, "w") as f:
-            f.write(content)
-        # Rewrite cmake_install.cmake files at any depth
+        _rewrite_file(cmake_cache, build_dir, output_dir)
         for pattern in ["cmake_install.cmake", "**/cmake_install.cmake"]:
             for fpath in _glob.glob(os.path.join(output_dir, pattern), recursive=True):
                 try:
-                    with open(fpath, "r") as f:
-                        fc = f.read()
-                    if build_dir in fc:
-                        fc = fc.replace(build_dir, output_dir)
-                        with open(fpath, "w") as f:
-                            f.write(fc)
+                    _rewrite_file(fpath, build_dir, output_dir)
                 except (UnicodeDecodeError, PermissionError):
                     pass
         # Rewrite build.ninja and suppress cmake regeneration.
-        # Ninja's RERUN_CMAKE rule would try to access the source dir
-        # which isn't available in the build action.
         if os.path.isfile(ninja_file):
+            import re
+            stat = os.stat(ninja_file)
             with open(ninja_file, "r") as f:
                 content = f.read()
             content = content.replace(build_dir, output_dir)
-            # Remove cmake regeneration rules so ninja doesn't try to
-            # re-run cmake (which would fail without the source dir).
-            import re
             content = re.sub(
                 r'^build build\.ninja:.*?(?=\n(?:build |$))',
                 '# cmake regeneration suppressed by build_helper',
@@ -166,14 +169,14 @@ def main():
             )
             with open(ninja_file, "w") as f:
                 f.write(content)
+            os.utime(ninja_file, (stat.st_atime, stat.st_mtime))
     elif os.path.isfile(ninja_file):
-        # Meson / plain ninja — string replacement + suppress regeneration
+        import re
+        stat = os.stat(ninja_file)
         with open(ninja_file, "r") as f:
             content = f.read()
         if build_dir in content:
             content = content.replace(build_dir, output_dir)
-        # Suppress meson regeneration (source dir not available in build action)
-        import re
         content = re.sub(
             r'^build build\.ninja:.*?(?=\n(?:build |$))',
             '# meson regeneration suppressed by build_helper',
@@ -181,42 +184,18 @@ def main():
         )
         with open(ninja_file, "w") as f:
             f.write(content)
+        os.utime(ninja_file, (stat.st_atime, stat.st_mtime))
 
-    # Rewrite stale absolute paths in autotools Makefiles.  configure
-    # embeds the build directory in generated Makefiles (e.g. references
-    # to man page sources, libtool scripts).  After copytree these point
-    # at the old "configured" directory which won't exist in later phases.
-    for pattern in ["Makefile", "**/Makefile", "**/Makefile.in"]:
+    # Rewrite stale absolute paths in autotools Makefiles, libtool, config.status.
+    for pattern in ["Makefile", "**/Makefile", "**/Makefile.in",
+                     "libtool", "config.status", "**/libtool"]:
         for fpath in _glob.glob(os.path.join(output_dir, pattern), recursive=True):
             try:
-                with open(fpath, "r") as f:
-                    fc = f.read()
-                if build_dir in fc:
-                    fc = fc.replace(build_dir, output_dir)
-                    with open(fpath, "w") as f:
-                        f.write(fc)
+                _rewrite_file(fpath, build_dir, output_dir)
             except (UnicodeDecodeError, PermissionError):
                 pass
 
-    # Also rewrite libtool and config.status which embed build dir paths
-    for pattern in ["libtool", "config.status", "**/libtool"]:
-        for fpath in _glob.glob(os.path.join(output_dir, pattern), recursive=True):
-            try:
-                with open(fpath, "r") as f:
-                    fc = f.read()
-                if build_dir in fc:
-                    fc = fc.replace(build_dir, output_dir)
-                    with open(fpath, "w") as f:
-                        f.write(fc)
-            except (UnicodeDecodeError, PermissionError):
-                pass
-
-    # Comprehensive rewrite of stale build-dir paths in cmake artefacts.
-    # CMake embeds the build directory in many generated files: syncqt
-    # args, AutogenInfo.json, precompiled-header wrappers, response
-    # files, etc.  Rather than maintaining an ever-growing allowlist,
-    # walk the tree and fix every text file that references the old path.
-    # Skip known binary extensions to avoid corrupting object files.
+    # Comprehensive rewrite of stale build-dir paths in cmake/meson artefacts.
     _BINARY_EXTS = frozenset((
         ".o", ".a", ".so", ".gch", ".pcm", ".pch", ".d",
         ".png", ".jpg", ".gif", ".ico", ".gz", ".xz", ".bz2",
@@ -229,14 +208,9 @@ def main():
                     continue
                 fpath = os.path.join(dirpath, fname)
                 if os.path.islink(fpath):
-                    continue  # skip symlinks (may be dangling)
+                    continue
                 try:
-                    with open(fpath, "r") as f:
-                        fc = f.read()
-                    if build_dir in fc:
-                        fc = fc.replace(build_dir, output_dir)
-                        with open(fpath, "w") as f:
-                            f.write(fc)
+                    _rewrite_file(fpath, build_dir, output_dir)
                 except (UnicodeDecodeError, PermissionError, IsADirectoryError,
                         FileNotFoundError):
                     pass
@@ -246,9 +220,6 @@ def main():
     # preserves original timestamps but path rewriting modifies some
     # files, making others (version.h, aclocal.m4, Makefiles) appear
     # stale.  A uniform timestamp prevents all spurious rebuilds.
-    # Use SOURCE_DATE_EPOCH for reproducibility — time.time()
-    # changes between runs and invalidates downstream caches.
-    # Default 315576000 (1980-01-01) avoids gzip/zip timestamp errors.
     _epoch = float(os.environ.get("SOURCE_DATE_EPOCH", "315576000"))
     _stamp = (_epoch, _epoch)
     for dirpath, _dirnames, filenames in os.walk(output_dir):

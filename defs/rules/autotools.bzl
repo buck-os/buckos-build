@@ -193,6 +193,12 @@ def _src_compile(ctx, configured):
     for key, value in ctx.attrs.env.items():
         cmd.add("--env", "{}={}".format(key, value))
 
+    # Suppress autotools regeneration — build_helper.py resets all timestamps
+    # to epoch, so make thinks generated files (configure, Makefile.in) are stale.
+    # Override the autotools tool variables so make uses `true` (no-op) instead
+    # of trying to run aclocal/automake/autoconf which may not be available.
+    for var in ["ACLOCAL=true", "AUTOMAKE=true", "AUTOCONF=true", "AUTOHEADER=true", "MAKEINFO=true"]:
+        cmd.add(cmd_args("--make-arg=", var, delimiter = ""))
     for pre_cmd in ctx.attrs.pre_build_cmds:
         cmd.add("--pre-cmd", pre_cmd)
     for arg in ctx.attrs.make_args:
@@ -230,6 +236,9 @@ def _src_install(ctx, built):
 
     if ctx.attrs.install_prefix_var:
         cmd.add("--destdir-var", ctx.attrs.install_prefix_var)
+    # Suppress autotools regeneration during install (same as compile phase)
+    for var in ["ACLOCAL=true", "AUTOMAKE=true", "AUTOCONF=true", "AUTOHEADER=true", "MAKEINFO=true"]:
+        cmd.add(cmd_args("--make-arg=", var, delimiter = ""))
     for arg in ctx.attrs.make_args:
         cmd.add(cmd_args("--make-arg=", arg, delimiter = ""))
 

@@ -2,7 +2,7 @@
 """Universal archive extractor.
 
 Supports: .tar.gz, .tgz, .tar.xz, .txz, .tar.bz2, .tbz2, .tar.zst,
-          .tar.lz, .tar.lz4, .tar, .zip
+          .tar.lz, .tar.lz4, .tar, .zip, .whl
 
 Auto-detects format from filename. --format overrides detection.
 Uses Python tarfile/zipfile for natively supported formats; pipes through
@@ -31,6 +31,7 @@ _FORMATS = {
     "tar.lz4": (None,     "lz4"),
     "tar":     ("r:",     None),
     "zip":     (None,     None),    # handled separately
+    "whl":     (None,     None),    # Python wheels are zip files
 }
 
 
@@ -41,7 +42,7 @@ def detect_format(path):
     for fmt in ("tar.gz", "tar.xz", "tar.bz2", "tar.zst", "tar.lz4", "tar.lz"):
         if name.endswith("." + fmt):
             return fmt
-    for fmt in ("tgz", "txz", "tbz2", "tar", "zip"):
+    for fmt in ("tgz", "txz", "tbz2", "tar", "zip", "whl"):
         if name.endswith("." + fmt):
             return fmt
     return None
@@ -170,7 +171,7 @@ def main():
 
     os.makedirs(args.output, exist_ok=True)
 
-    if fmt == "zip":
+    if fmt in ("zip", "whl"):
         extract_zip(args.archive, args.output, args.strip_components)
     else:
         tar_mode, decompressor = _FORMATS[fmt]

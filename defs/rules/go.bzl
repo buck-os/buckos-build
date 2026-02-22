@@ -15,9 +15,9 @@ load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_env_args")
 # ── Phase helpers ─────────────────────────────────────────────────────
 
 def _src_prepare(ctx, source):
-    """Apply patches.  Separate action so unpatched source stays cached."""
-    if not ctx.attrs.patches:
-        return source  # No patches — zero-cost passthrough
+    """Apply patches and pre_configure_cmds.  Separate action so unpatched source stays cached."""
+    if not ctx.attrs.patches and not ctx.attrs.pre_configure_cmds:
+        return source  # No patches or cmds — zero-cost passthrough
 
     output = ctx.actions.declare_output("prepared", dir = True)
     cmd = cmd_args(ctx.attrs._patch_tool[RunInfo])
@@ -25,6 +25,8 @@ def _src_prepare(ctx, source):
     cmd.add("--output-dir", output.as_output())
     for p in ctx.attrs.patches:
         cmd.add("--patch", p)
+    for c in ctx.attrs.pre_configure_cmds:
+        cmd.add("--cmd", c)
 
     ctx.actions.run(cmd, category = "prepare", identifier = ctx.attrs.name)
     return output
@@ -112,6 +114,7 @@ go_package = rule(
         "ldflags": attrs.string(default = ""),
         "bins": attrs.list(attrs.string(), default = []),
         "packages": attrs.list(attrs.string(), default = []),
+        "pre_configure_cmds": attrs.list(attrs.string(), default = []),
         "env": attrs.dict(attrs.string(), attrs.string(), default = {}),
         "vendor_deps": attrs.option(attrs.dep(), default = None),
         "deps": attrs.list(attrs.dep(), default = []),

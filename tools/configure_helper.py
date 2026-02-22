@@ -202,6 +202,11 @@ def main():
                 if "aclocal-" in os.path.basename(d):
                     env["ACLOCAL_AUTOMAKE_DIR"] = d
                     break
+            # Include host system aclocal dir for m4 macros from
+            # host-installed packages (e.g. pkg.m4 from pkg-config)
+            host_aclocal = "/usr/share/aclocal"
+            if os.path.isdir(host_aclocal) and host_aclocal not in aclocal_dirs:
+                aclocal_dirs.append(host_aclocal)
             # ACLOCAL_PATH adds extra search directories
             env["ACLOCAL_PATH"] = ":".join(aclocal_dirs)
 
