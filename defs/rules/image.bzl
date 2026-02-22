@@ -7,10 +7,10 @@ Assembly rules that take rootfs/kernel/initramfs deps and produce images.
 load("//defs:providers.bzl", "KernelInfo", "Stage3Info")
 
 def _get_kernel_image(dep):
-    """Extract boot image from KernelInfo or legacy install directory."""
-    if KernelInfo in dep:
-        return dep[KernelInfo].bzimage
-    return dep[DefaultInfo].default_outputs[0]
+    """Extract boot image from KernelInfo provider."""
+    if KernelInfo not in dep:
+        fail("kernel dep must provide KernelInfo")
+    return dep[KernelInfo].bzimage
 
 # =============================================================================
 # RAW DISK IMAGE
@@ -243,7 +243,7 @@ def _iso_image_impl(ctx: AnalysisContext) -> list[Provider]:
     kernel_image = _get_kernel_image(ctx.attrs.kernel)
     initramfs_file = ctx.attrs.initramfs[DefaultInfo].default_outputs[0]
 
-    # Modules directory: explicit dep > KernelInfo.modules_dir > legacy (shell fallback)
+    # Modules directory: explicit dep > KernelInfo.modules_dir
     if ctx.attrs.modules:
         modules_dir = ctx.attrs.modules[DefaultInfo].default_outputs[0]
     elif KernelInfo in ctx.attrs.kernel:
@@ -386,22 +386,8 @@ mkdir -p "$WORK/boot/grub"
 mkdir -p "$WORK/isolinux"
 mkdir -p "$WORK/EFI/BOOT"
 
-# Find kernel image (file = KernelInfo.bzimage, directory = legacy install dir)
-KERNEL=""
-if [ -f "$KERNEL_SRC" ]; then
-    KERNEL="$KERNEL_SRC"
-else
-    for k in "$KERNEL_SRC/boot/vmlinuz"* "$KERNEL_SRC/boot/bzImage" "$KERNEL_SRC/boot/Image" "$KERNEL_SRC/vmlinuz"* "$KERNEL_SRC/Image"*; do
-        if [ -f "$k" ]; then KERNEL="$k"; break; fi
-    done
-fi
-
-if [ -z "$KERNEL" ]; then
-    echo "Error: Cannot find kernel image from $KERNEL_SRC"
-    exit 1
-fi
-
-cp "$KERNEL" "$WORK/boot/vmlinuz"
+# Kernel image comes from KernelInfo.bzimage — always a file
+cp "$KERNEL_SRC" "$WORK/boot/vmlinuz"
 cp "$INITRAMFS" "$WORK/boot/initramfs.img"
 
 # Create GRUB configuration
@@ -437,12 +423,10 @@ if [ -n "{include_rootfs}" ] && [ -d "$ROOTFS_DIR" ]; then
         [ "$_ima_applied" -gt 0 ] && echo "Applied security.ima to $_ima_applied files"
     fi
 
-    # Copy kernel modules to rootfs (explicit modules dir or legacy kernel dir)
+    # Copy kernel modules to rootfs
     _MOD_SRC=""
     if [ -n "$MODULES_DIR" ] && [ -d "$MODULES_DIR" ]; then
         _MOD_SRC="$MODULES_DIR"
-    elif [ -d "$KERNEL_SRC/lib/modules" ]; then
-        _MOD_SRC="$KERNEL_SRC/lib/modules"
     fi
     if [ -n "$_MOD_SRC" ]; then
         echo "Copying kernel modules from $_MOD_SRC to rootfs..."

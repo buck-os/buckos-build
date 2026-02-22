@@ -354,12 +354,6 @@ filegroup(
     visibility = ["PUBLIC"],
 )
 
-filegroup(
-    name = "init-lightweight",
-    srcs = [
-    ],
-    visibility = ["PUBLIC"],
-)
 
 # =============================================================================
 # Desktop environment aliases

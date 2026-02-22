@@ -25,14 +25,6 @@ package(
     homepage = "https://github.com/cloud-hypervisor/rust-hypervisor-firmware",
     license = "Apache-2.0",
     # Build the firmware binary
-    cargo_args = [
-        "--release",
-        "--target",
-        "x86_64-unknown-none",
-    ],
-    bins = [
-        "hypervisor-fw",
-    ],
     # Custom install to place in cloud-hypervisor directory
     post_install_cmds = ["""\
 mkdir -p "$D/usr/share/cloud-hypervisor"

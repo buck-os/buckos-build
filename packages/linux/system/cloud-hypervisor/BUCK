@@ -215,6 +215,7 @@ rootfs(
         # CH-specific init scripts
         ":ch-init-scripts",
     ],
+    labels = ["buckos:image"],
 )
 
 # =============================================================================
@@ -240,6 +241,7 @@ rootfs(
         # CH-specific init scripts
         ":ch-init-scripts",
     ],
+    labels = ["buckos:image"],
 )
 
 # =============================================================================
@@ -281,6 +283,7 @@ rootfs(
         # CH-specific init scripts
         ":ch-init-scripts",
     ],
+    labels = ["buckos:image"],
 )
 
 # =============================================================================
@@ -293,6 +296,7 @@ initramfs(
     rootfs = ":ch-minimal-rootfs",
     compression = "gz",
     init = "/sbin/init",
+    labels = ["buckos:image"],
 )
 
 # Initramfs with VirtioFS support for rootfs over virtiofs
@@ -301,6 +305,7 @@ initramfs(
     rootfs = ":ch-base-rootfs",
     compression = "gz",
     init = "/sbin/init",
+    labels = ["buckos:image"],
 )
 
 # XZ compressed initramfs (smaller, slower decompression)
@@ -309,6 +314,7 @@ initramfs(
     rootfs = ":ch-minimal-rootfs",
     compression = "xz",
     init = "/sbin/init",
+    labels = ["buckos:image"],
 )
 
 # =============================================================================
@@ -324,6 +330,7 @@ raw_disk_image(
     filesystem = "ext4",
     label = "buckos-ch",
     partition_table = False,
+    labels = ["buckos:image"],
 )
 
 # Base disk (2GB)
@@ -334,6 +341,7 @@ raw_disk_image(
     filesystem = "ext4",
     label = "buckos-ch",
     partition_table = False,
+    labels = ["buckos:image"],
 )
 
 # Full disk (4GB)
@@ -344,6 +352,7 @@ raw_disk_image(
     filesystem = "ext4",
     label = "buckos-ch",
     partition_table = False,
+    labels = ["buckos:image"],
 )
 
 # Full disk with GPT partition table (for UEFI boot)
@@ -354,6 +363,7 @@ raw_disk_image(
     filesystem = "ext4",
     label = "buckos-ch",
     partition_table = True,
+    labels = ["buckos:image"],
 )
 
 # =============================================================================

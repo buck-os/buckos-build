@@ -17,13 +17,19 @@ def _has_label_prefix(labels, prefix):
     return False
 
 def _has_provenance(labels):
-    """Check that labels contain full provenance: url, source, sha256|vendor, sig."""
+    """Check that labels contain full provenance: url, source, sha256|vendor, sig.
+
+    Remote packages: url + source + (sha256|vendor) + sig
+    Vendor packages: vendor + sig (no URL, archive is local)
+    """
     has_url = _has_label_prefix(labels, "buckos:url:")
     has_source = _has_label_prefix(labels, "buckos:source:")
     has_sha256 = _has_label_prefix(labels, "buckos:sha256:")
     has_vendor = _has_label_prefix(labels, "buckos:vendor:")
     has_sig = _has_label_prefix(labels, "buckos:sig:")
-    return has_url and has_source and (has_sha256 or has_vendor) and has_sig
+    remote_ok = has_url and has_source and (has_sha256 or has_vendor) and has_sig
+    vendor_ok = has_vendor and has_sig
+    return remote_ok or vendor_ok
 
 def run(ctx):
     """Verify provenance label completeness, coverage, and format.

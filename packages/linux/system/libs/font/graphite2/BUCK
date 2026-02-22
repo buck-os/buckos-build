@@ -12,41 +12,10 @@ package(
     description = "Reimplementation of the SIL Graphite text processing engine",
     homepage = "https://graphite.sil.org/",
     license = "LGPL-2.1",
-    # For aarch64: Disable x86-specific optimizations (SSE2)
-    src_configure = '''
-# Detect target architecture
-TARGET_ARCH="${CHOST:-$(${CC:-gcc} -dumpmachine)}"
-
-# Add architecture-specific CMake flags
-ARCH_CMAKE_ARGS=""
-case "$TARGET_ARCH" in
-    aarch64*|arm64*)
-        # Disable x86 SIMD on ARM
-        ARCH_CMAKE_ARGS="-DDISABLE_TRACING=ON"
-        # Filter out any x86-specific flags from CFLAGS and CXXFLAGS
-        export CFLAGS=$(echo "$CFLAGS" | sed 's/-msse[0-9]*//g; s/-mmmx//g; s/-mfpmath=sse//g; s/  */ /g')
-        export CXXFLAGS=$(echo "$CXXFLAGS" | sed 's/-msse[0-9]*//g; s/-mmmx//g; s/-mfpmath=sse//g; s/  */ /g')
-        ;;
-esac
-
-# Wipe build directory to ensure clean configuration
-rm -rf "$S/build"
-mkdir -p "$S/build"
-cd "$S/build"
-
-cmake "$S" \
-    -DCMAKE_INSTALL_PREFIX=/usr \
-    -DCMAKE_INSTALL_LIBDIR=lib64 \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
-    -DCMAKE_C_FLAGS="$CFLAGS" \
-    -DCMAKE_CXX_FLAGS="$CXXFLAGS" \
-    -DGRAPHITE2_TESTS=OFF \
-    -DBUILD_TESTING=OFF \
-    $ARCH_CMAKE_ARGS \
-    ${CMAKE_ARGS:-}
-''',
-    configure_args = [],
+    configure_args = [
+        "-DGRAPHITE2_TESTS=OFF",
+        "-DBUILD_TESTING=OFF",
+    ],
     deps = [
         "//packages/linux/system/libs/font/freetype:freetype",
         "//packages/linux/core/zlib:zlib",

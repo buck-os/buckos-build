@@ -25,18 +25,6 @@ package(
     ],
     # Custom phases for waf build system
     # Samba's waf configure wrapper script generates a Makefile
-    src_configure = '''
-# talloc uses waf - the configure script is a shell wrapper around waf
-./configure \
-    --prefix=/usr \
-    --sysconfdir=/etc \
-    --libdir=/usr/lib64 \
-    --disable-python
-''',
-    src_compile = '''
-# waf generates a Makefile, so we can use make
-make -j${MAKEOPTS:-$(nproc)}
-''',
     deps = [
     ],
     visibility = ["PUBLIC"],

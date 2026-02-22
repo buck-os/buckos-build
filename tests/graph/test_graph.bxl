@@ -8,9 +8,9 @@ Run:
 load("//tests/graph:test_graph_impl.bzl", "run")
 
 def _impl(ctx):
-    passed, failed = run(ctx)
+    passed, failed, details = run(ctx)
     if failed > 0:
-        fail("{} assertion(s) failed".format(failed))
+        fail("{} assertion(s) failed\n{}".format(failed, details))
 
 test_graph = bxl_main(
     doc = "Cross-reference label assignment on compile, prebuilt, image, bootscript, and config targets.",

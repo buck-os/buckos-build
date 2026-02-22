@@ -9,10 +9,10 @@ Two variants:
 load("//defs:providers.bzl", "KernelInfo")
 
 def _get_kernel_image(dep):
-    """Extract boot image from KernelInfo or legacy install directory."""
-    if KernelInfo in dep:
-        return dep[KernelInfo].bzimage
-    return dep[DefaultInfo].default_outputs[0]
+    """Extract boot image from KernelInfo provider."""
+    if KernelInfo not in dep:
+        fail("kernel dep must provide KernelInfo")
+    return dep[KernelInfo].bzimage
 
 def _initramfs_impl(ctx):
     """Create an initramfs cpio archive from a rootfs."""

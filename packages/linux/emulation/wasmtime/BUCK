@@ -6,16 +6,6 @@ package(
     version = "28.0.0",
     url = "https://github.com/bytecodealliance/wasmtime/archive/refs/tags/v28.0.0.tar.gz",
     sha256 = "6fc7899c6ee838cb8f0596231313004d979bf788f7121b8895cec64256bdf65f",
-    bins = [
-        "wasmtime",
-    ],
-    cargo_args = [
-        "-p",
-        "wasmtime-cli",
-        "--no-default-features",
-        "--features",
-        "cranelift,pooling-allocator,wat,parallel-compilation,cache,addr2line,demangle",
-    ],
     env = {
         "RUSTFLAGS": "-A elided_named_lifetimes",
     },

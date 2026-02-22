@@ -28,22 +28,6 @@ package(
     ],
     # Custom phases for waf build system
     # Samba's waf configure wrapper script generates a Makefile
-    src_configure = '''
-# ldb uses waf - ./configure is a wrapper around waf configure
-./configure \\
-    --prefix=/usr \\
-    --sysconfdir=/etc \\
-    --localstatedir=/var \\
-    --libdir=/usr/lib64 \\
-    --bundled-libraries=NONE \\
-    --builtin-libraries=replace \\
-    --with-modulesdir=/usr/lib/ldb/modules \\
-    ${EXTRA_ECONF:-}
-''',
-    src_compile = '''
-# waf generates a Makefile, so we can use make
-make -j${MAKEOPTS:-$(nproc)}
-''',
     deps = [
         "//packages/linux/system/libs/talloc:talloc",
         "//packages/linux/system/security/auth/directory:tdb",

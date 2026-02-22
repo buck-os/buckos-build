@@ -8,9 +8,9 @@ Run:
 load("//tests/graph:test_transforms_impl.bzl", "run")
 
 def _impl(ctx):
-    passed, failed = run(ctx)
+    passed, failed, details = run(ctx)
     if failed > 0:
-        fail("{} assertion(s) failed".format(failed))
+        fail("{} assertion(s) failed\n{}".format(failed, details))
 
 test_transforms = bxl_main(
     doc = "Verify transform chain wiring in migrated packages.",

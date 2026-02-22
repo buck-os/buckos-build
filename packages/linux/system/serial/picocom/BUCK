@@ -9,13 +9,9 @@ package(
     description = "Minimal serial communications program",
     homepage = "https://github.com/npat-efault/picocom",
     license = "GPL-2.0-or-later",
-    src_configure = "true",
-    src_compile = '''
-make VERSION="3.1" CPPFLAGS="-DVERSION_STR=\\\"3.1\\\" -DHIGH_BAUD -DTTY_Q_SZ=0 -DUSE_FLOCK" -j${MAKEOPTS:-$(nproc)}
-''',
-    src_install = """
+    post_install_cmds = ["""
 install -Dm755 picocom "$DESTDIR/usr/bin/picocom"
 install -Dm644 picocom.1 "$DESTDIR/usr/share/man/man1/picocom.1"
-""",
+"""],
     visibility = ["PUBLIC"],
 )

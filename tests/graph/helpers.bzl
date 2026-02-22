@@ -4,10 +4,10 @@ def assert_result(ctx, results, name, condition, msg):
     """Record a PASS/FAIL result."""
     if condition:
         ctx.output.print("PASS: " + name)
-        results.append(True)
+        results.append(("PASS", name, ""))
     else:
         ctx.output.print("FAIL: " + name + " -- " + msg)
-        results.append(False)
+        results.append(("FAIL", name, msg))
 
 def starts_with(s, prefix):
     """Check whether string s starts with prefix."""
@@ -64,14 +64,16 @@ def target_has_label(query, target_pattern, label):
     return False
 
 def summarize(ctx, results):
-    """Print summary and return (passed, failed) tuple."""
+    """Print summary and return (passed, failed, fail_details) tuple."""
     passed = 0
     failed = 0
-    for r in results:
-        if r:
+    fail_lines = []
+    for status, name, msg in results:
+        if status == "PASS":
             passed += 1
         else:
             failed += 1
+            fail_lines.append("FAIL: " + name + " -- " + msg)
     ctx.output.print("")
     ctx.output.print("{} passed, {} failed, {} total".format(passed, failed, passed + failed))
-    return (passed, failed)
+    return (passed, failed, "\n".join(fail_lines))

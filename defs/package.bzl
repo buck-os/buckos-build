@@ -54,82 +54,6 @@ _TRANSFORM_MAP = {
     "ima": (ima_sign_package, "signed"),
 }
 
-# Fields that are accepted by package() for documentation/compat but
-# silently dropped before forwarding to the build rule.
-_IGNORED_FIELDS = [
-    "signature_required",
-    "signature_sha256",
-    "gpg_key",
-    "gpg_keyring",
-    "iuse",
-    "use_defaults",
-    "compat_tags",
-    "maintainers",
-    "exec_bdepend",
-    "bdepend",
-    "depend",
-    "pdepend",
-    "src_unpack",
-    "src_test",
-    "run_tests",
-    "pre_configure",
-    "src_configure",
-    "src_compile",
-    "src_install",
-    "post_install",
-    "category",
-    "slot",
-    "bootstrap_sysroot",
-    "bootstrap_stage",
-    "use_cmake",
-    "use_meson",
-    "use_cargo",
-    # Legacy make_package kwargs
-    "make_install_args",
-    "config_in_options",
-    "cc_as_make_arg",
-    "destvar",
-    "use_make",
-    # Legacy simple_package / binary kwargs
-    "build_commands",
-    "bins",
-    "extract_to",
-    "build_cmd",
-    "install_cmd",
-    "build_env",
-    "install_cmds",
-    "libs",
-    "libdir",
-    "srcs",
-    "src",
-    "packages",
-    "cargo_args",
-    # Legacy python kwargs
-    "build_backend",
-    "python_deps",
-    "extras",
-    # Legacy cmake kwargs
-    "use_options",
-    "cmake_source_dir",
-    # Legacy build system kwargs
-    "autoreconf",
-    "autoreconf_args",
-    "configure_flags",
-    "extra_sources",
-    "go_build_args",
-    "install_args",
-    "python",
-    "rdepend",
-    # "source_subdir" is now forwarded to meson/cmake rules
-    "src_prepare",
-    "src_subdir",
-    "subdir",
-    "use_bdepend",
-    "use_bootstrap",
-    "use_extras",
-    # Buck2 built-in (not a rule attr)
-    "default_target_platform",
-]
 
 def _merge_private_registry(name, patches, configure_args, extra_cflags):
     """Merge public args with private patch registry entries.
@@ -151,104 +75,7 @@ def _merge_private_registry(name, patches, configure_args, extra_cflags):
 
     return all_patches, all_configure_args, all_cflags
 
-def _split_flag_value(value):
-    """Split a space-separated flag string into a list, pass lists through."""
-    if type(value) == "list":
-        return value
-    if type(value) == "string" and " " in value:
-        return value.split(" ")
-    return value
 
-def _normalize_use_configure(use_configure):
-    """Normalize old-style +/- USE configure to new tuple format.
-
-    Old format:
-        {"ssl": "--with-ssl", "-ssl": "--without-ssl"}
-
-    New format:
-        {"ssl": ("--with-ssl", "--without-ssl")}
-
-    Also handles the already-correct tuple format passthrough,
-    and splits space-separated multi-flag strings into lists.
-    """
-    result = {}
-    negative_keys = {}
-
-    # First pass: collect negative keys
-    for key, value in use_configure.items():
-        if key.startswith("-"):
-            flag = key[1:]  # strip the "-" prefix
-            negative_keys[flag] = _split_flag_value(value)
-
-    # Second pass: build normalized dict
-    for key, value in use_configure.items():
-        if key.startswith("-"):
-            continue  # skip, handled via positive key
-        if type(value) == "tuple":
-            on_val = _split_flag_value(value[0])
-            off_val = _split_flag_value(value[1]) if len(value) > 1 else None
-            result[key] = (on_val, off_val) if off_val != None else (on_val,)
-        else:
-            value = _split_flag_value(value)
-            off_arg = negative_keys.get(key)
-            if off_arg:
-                result[key] = (value, off_arg)
-            else:
-                result[key] = value  # on-arg only, no off-arg
-
-    return result
-
-def _normalize_use_deps(use_deps):
-    """Normalize old-style use_deps to new format.
-
-    Handles two old patterns:
-
-    1. List values:
-        {"ssl": ["//path:openssl"]}  ->  {"ssl": "//path:openssl"}
-
-    2. Negative flag keys (Gentoo-style):
-        {"systemd": "//path:systemd", "-systemd": "//path:eudev"}
-        ->  {"systemd": ("//path:systemd", "//path:eudev")}
-
-    A tuple value means (on_dep, off_dep) — include on_dep when flag is
-    on, off_dep when flag is off.
-    """
-
-    # First pass: unwrap single-element lists
-    unwrapped = {}
-    for key, value in use_deps.items():
-        if type(value) == "list":
-            if len(value) == 1:
-                unwrapped[key] = value[0]
-            elif len(value) > 1:
-                unwrapped[key] = value[0]
-            # empty list = no dep, skip
-        else:
-            unwrapped[key] = value
-
-    # Second pass: pair positive and negative keys
-    negative_keys = {}
-    for key, value in unwrapped.items():
-        if key.startswith("-"):
-            negative_keys[key[1:]] = value
-
-    result = {}
-    for key, value in unwrapped.items():
-        if key.startswith("-"):
-            continue  # handled via positive key lookup
-        off_dep = negative_keys.get(key)
-        if off_dep:
-            result[key] = (value, off_dep)
-        else:
-            result[key] = value
-
-    # Handle negative keys without a matching positive key
-    for neg_flag, dep in negative_keys.items():
-        if neg_flag not in result:
-            # No positive key — dep only when flag is off
-            result[neg_flag] = (None, dep)
-
-    return result
 
 def package(
         name,
@@ -293,15 +120,14 @@ def package(
                            enabled = use_bool(flag), so it exists in the
                            graph unconditionally but is a zero-cost
                            passthrough when the flag is off.
-        use_deps:          Dict mapping USE flag name to a dep target
-                           (or list of dep targets for backwards compat).
-                           Each is expanded via use_dep() and appended to
-                           the deps list.
-        use_configure:     Dict mapping USE flag name to either a single
-                           string (on-arg only), a tuple of two strings
-                           (on-arg, off-arg), or old-style separate +/-
-                           keys.  Expanded via use_configure_arg() and
-                           appended to configure_args.
+        use_deps:          Dict mapping USE flag name to a dep target,
+                           a list of dep targets, or a tuple of
+                           (on_dep, off_dep).  Appended to deps via
+                           select().
+        use_configure:     Dict mapping USE flag name to a string
+                           (on-arg only), a list, or a tuple of
+                           (on-arg, off-arg).  Expanded via
+                           use_configure_arg() into configure_args.
         patches:           Public patches from the package directory.
         configure_args:    Static configure arguments.
         extra_cflags:      Extra CFLAGS.
@@ -310,11 +136,7 @@ def package(
                            license, etc.).
     """
 
-    # -- 0. Strip ignored fields -----------------------------------------------
-    for field in _IGNORED_FIELDS:
-        build_kwargs.pop(field, None)
-
-    # -- 0a. Validate url/sha256 vs local_only --------------------------------
+    # -- 0. Validate url/sha256 vs local_only ---------------------------------
     if local_only:
         if "source" not in build_kwargs and not filename:
             fail("local_only package '{}' requires 'filename' (no url to derive it from)".format(name))
@@ -337,10 +159,24 @@ def package(
         _mirror_base = read_config("mirror", "base_url", "")
         _vendor_dir = read_config("mirror", "vendor_dir", "")
 
+        # Provenance labels for download targets
+        _dl_labels = ["buckos:download"]
+        if url:
+            _dl_host = url.split("://")[-1].split("/")[0]
+            _dl_labels.append("buckos:source:" + _dl_host)
+            _dl_labels.append("buckos:url:" + url)
+            _dl_labels.append("buckos:sig:none")
+        if sha256:
+            _dl_labels.append("buckos:sha256:" + sha256)
+        if local_only and not url:
+            _dl_labels.append("buckos:vendor:" + name)
+            _dl_labels.append("buckos:sig:none")
+
         if _mode == "vendor" and _vendor_dir:
             native.export_file(
                 name = name + "-archive",
                 src = "{}/{}".format(_vendor_dir, _filename),
+                labels = _dl_labels,
             )
         elif local_only:
             # Stub target that exists in the graph but fails at build time.
@@ -350,6 +186,7 @@ def package(
                 name = name + "-archive",
                 out = _filename,
                 cmd = "echo 'ERROR: local_only package \"{}\" requires mirror.mode=vendor (or provide source explicitly)' >&2 && exit 1".format(name),
+                labels = _dl_labels,
             )
         else:
             _urls = []
@@ -362,6 +199,7 @@ def package(
                 urls = _urls,
                 sha256 = sha256,
                 out = _filename,
+                labels = _dl_labels,
             )
 
         extract_source(
@@ -380,35 +218,30 @@ def package(
     if sha256 != None:
         build_kwargs.setdefault("src_sha256", sha256)
 
-    # -- 2. Normalize and resolve USE-conditional deps ----------------------
-    normalized_use_deps = _normalize_use_deps(use_deps)
+    # -- 2. Resolve USE-conditional deps -------------------------------------
     raw_deps = build_kwargs.pop("deps", [])
     all_deps = raw_deps if type(raw_deps) == "Select" else list(raw_deps)
-    for flag, dep in normalized_use_deps.items():
+    for flag, dep in use_deps.items():
         if type(dep) == "tuple":
+            # (on_dep, off_dep) — select between them
             on_dep, off_dep = dep
-            if on_dep and off_dep:
-                # Both on and off deps: select between them
-                all_deps += select({
-                    "//use/constraints:{}-on".format(flag): [on_dep],
-                    "//use/constraints:{}-off".format(flag): [off_dep],
-                    "DEFAULT": [off_dep],
-                })
-            elif on_dep:
-                all_deps += use_dep(flag, on_dep)
-            else:
-                # off_dep only: include when flag is off
-                all_deps += select({
-                    "//use/constraints:{}-on".format(flag): [],
-                    "//use/constraints:{}-off".format(flag): [off_dep],
-                    "DEFAULT": [off_dep],
-                })
+            all_deps += select({
+                "//use/constraints:{}-on".format(flag): [on_dep] if type(on_dep) == "string" else (on_dep or []),
+                "//use/constraints:{}-off".format(flag): [off_dep] if type(off_dep) == "string" else (off_dep or []),
+                "DEFAULT": [off_dep] if type(off_dep) == "string" else (off_dep or []),
+            })
+        elif type(dep) == "list":
+            # Multiple deps gated on a single flag
+            all_deps += select({
+                "//use/constraints:{}-on".format(flag): dep,
+                "//use/constraints:{}-off".format(flag): [],
+                "DEFAULT": [],
+            })
         else:
             all_deps += use_dep(flag, dep)
 
-    # -- 3. Normalize and resolve USE-conditional configure args ------------
-    normalized_use_configure = _normalize_use_configure(use_configure)
-    for flag, args in normalized_use_configure.items():
+    # -- 3. Resolve USE-conditional configure args ----------------------------
+    for flag, args in use_configure.items():
         if type(args) == "tuple" and len(args) == 2:
             all_configure_args += use_configure_arg(flag, args[0], args[1])
         else:
@@ -447,16 +280,21 @@ def package(
     if sha256:
         _auto_labels.append("buckos:sha256:" + sha256)
 
+    # USE flag labels: declare available flags (buckos:iuse:FLAG)
+    _all_use_flags = {}
+    for flag in use_deps.keys():
+        _all_use_flags[flag] = True
+    for flag in use_configure.keys():
+        _all_use_flags[flag] = True
+    for flag in use_features.keys():
+        _all_use_flags[flag] = True
+    for flag in use_transforms.keys():
+        _all_use_flags[flag] = True
+    for flag in _all_use_flags.keys():
+        _auto_labels.append("buckos:iuse:" + flag)
+
     _all_labels = _auto_labels + build_kwargs.pop("labels", [])
     build_kwargs["labels"] = _all_labels
-
-    # -- Remap old kwarg names to new rule attrs ----------------------------
-    # cmake_args -> configure_args (cmake rule accepts both)
-    if "cmake_args" in build_kwargs and build_rule == "cmake":
-        # cmake_args are specific cmake flags; keep configure_args separate
-        pass
-    if "meson_args" in build_kwargs and build_rule == "meson":
-        pass
 
     # -- 4. Create the build target -----------------------------------------
     build_target = name + "-build"

@@ -33,14 +33,17 @@ _SUITES = [
 def _impl(ctx):
     total_passed = 0
     total_failed = 0
+    all_details = []
 
     for name, run_fn in _SUITES:
         ctx.output.print("=" * 60)
         ctx.output.print("Running: " + name)
         ctx.output.print("=" * 60)
-        passed, failed = run_fn(ctx)
+        passed, failed, details = run_fn(ctx)
         total_passed += passed
         total_failed += failed
+        if details:
+            all_details.append("[" + name + "]\n" + details)
         ctx.output.print("")
 
     ctx.output.print("=" * 60)
@@ -49,7 +52,8 @@ def _impl(ctx):
     ctx.output.print("=" * 60)
 
     if total_failed > 0:
-        fail("{} assertion(s) failed across all test suites".format(total_failed))
+        fail("{} assertion(s) failed across all test suites\n{}".format(
+            total_failed, "\n".join(all_details)))
 
 test_all = bxl_main(
     doc = "Run all graph structure tests.",

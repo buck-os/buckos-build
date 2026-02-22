@@ -13,14 +13,14 @@ Run:
 load("//tests/graph:test_labels_impl.bzl", "run", "run_coverage")
 
 def _impl(ctx):
-    passed, failed = run(ctx)
+    passed, failed, details = run(ctx)
     if failed > 0:
-        fail("{} assertion(s) failed".format(failed))
+        fail("{} assertion(s) failed\n{}".format(failed, details))
 
 def _coverage_impl(ctx):
-    passed, failed = run_coverage(ctx)
+    passed, failed, details = run_coverage(ctx)
     if failed > 0:
-        fail("{} assertion(s) failed".format(failed))
+        fail("{} assertion(s) failed\n{}".format(failed, details))
 
 test_labels = bxl_main(
     doc = "Verify buckos:compile and buckos:build:* labels on migrated packages.",

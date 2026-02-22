@@ -1,7 +1,7 @@
 """
-Package Set system for BuckOs Linux Distribution.
+Package sets for BuckOS.
 
-Similar to Gentoo's system profiles and package sets, this provides:
+Provides:
 - Predefined package collections for common use cases
 - System profiles (minimal, server, desktop, developer, embedded)
 - Hierarchical set inheritance

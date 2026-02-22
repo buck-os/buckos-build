@@ -43,25 +43,14 @@ package(
 
     # Conditional configure arguments
     use_configure = {
-        # Enabled flags
-        "ssl": "--with-ssl=/usr",
-        "gnutls": "--with-gnutls",
-        "http2": "--with-nghttp2",
-        "ipv6": "--enable-ipv6",
-        "zstd": "--with-zstd",
-        "brotli": "--with-brotli",
-        "ldap": "--enable-ldap",
-        "debug": "--enable-debug",
-
-        # Disabled flags (prefix with -)
-        "-ssl": "--without-ssl",
-        "-gnutls": "--without-gnutls",
-        "-http2": "--without-nghttp2",
-        "-ipv6": "--disable-ipv6",
-        "-zstd": "--without-zstd",
-        "-brotli": "--without-brotli",
-        "-ldap": "--disable-ldap",
-        "-debug": "--disable-debug",
+        "ssl": ("--with-ssl=/usr", "--without-ssl"),
+        "gnutls": ("--with-gnutls", "--without-gnutls"),
+        "http2": ("--with-nghttp2", "--without-nghttp2"),
+        "ipv6": ("--enable-ipv6", "--disable-ipv6"),
+        "zstd": ("--with-zstd", "--without-zstd"),
+        "brotli": ("--with-brotli", "--without-brotli"),
+        "ldap": ("--enable-ldap", "--disable-ldap"),
+        "debug": ("--enable-debug", "--disable-debug"),
     },
 
     # Package metadata
@@ -93,10 +82,8 @@ package(
         "brotli": "//packages/linux/system/libs/compression/brotli:brotli",
     },
     use_configure = {
-        "ssl": "--with-ssl=/usr",
-        "-ssl": "--without-ssl",
-        "gnutls": "--with-gnutls",
-        "-gnutls": "--without-gnutls",
+        "ssl": ("--with-ssl=/usr", "--without-ssl"),
+        "gnutls": ("--with-gnutls", "--without-gnutls"),
         "http2": "--with-nghttp2",
         "brotli": "--with-brotli",
     },

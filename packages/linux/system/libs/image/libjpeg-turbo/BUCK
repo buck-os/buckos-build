@@ -9,76 +9,10 @@ package(
     description = "JPEG image codec with SIMD acceleration",
     homepage = "https://libjpeg-turbo.org/",
     license = "IJG",
-
-    # USE flags this package supports
     use_configure = {
         "cpu_flags_arm_neon": ("-DENABLE_CPU_FLAGS_ARM_NEON=ON", "-DENABLE_CPU_FLAGS_ARM_NEON=OFF"),
     },
-
-    # Default USE flags
-
-    # USE flag -> CMake option mapping (function adds -D and =ON/OFF automatically)
-    use_options = {
-        "static-libs": "ENABLE_STATIC",
-        "jpeg7": "WITH_JPEG7",
-        "jpeg8": "WITH_JPEG8",
-        "java": "WITH_JAVA",
-        "simd": "WITH_SIMD",
-    },
-
-    # use_deps = {
-    #     "java": ["//packages/linux/lang/openjdk:openjdk"],  # TODO: not packaged yet
-    # },
-
-    # For aarch64: CMake auto-detects x86 SIMD which fails
-    # Need to explicitly set architecture-specific SIMD settings
-    src_configure = '''
-# Detect target architecture
-TARGET_ARCH="${CHOST:-$(${CC:-gcc} -dumpmachine)}"
-
-# Set architecture-specific CMake flags
-ARCH_CMAKE_ARGS=""
-case "$TARGET_ARCH" in
-    aarch64*|arm64*)
-        # For ARM: enable ARM NEON, disable x86 SIMD
-        ARCH_CMAKE_ARGS="-DWITH_SIMD=ON -DREQUIRE_SIMD=OFF -DNEON_INTRINSICS=ON"
-        ;;
-    x86_64*|amd64*)
-        # For x86_64: default SSE2 SIMD
-        ARCH_CMAKE_ARGS="-DWITH_SIMD=ON"
-        ;;
-    *)
-        # For other architectures: disable SIMD
-        ARCH_CMAKE_ARGS="-DWITH_SIMD=OFF"
-        ;;
-esac
-
-# Wipe build directory to ensure clean configuration
-rm -rf "$S/build"
-mkdir -p "$S/build"
-cd "$S/build"
-
-# For cross-compilation: tell CMake we're cross-compiling
-CMAKE_CROSS_ARGS=""
-case "$TARGET_ARCH" in
-    aarch64*|arm64*)
-        CMAKE_CROSS_ARGS="-DCMAKE_SYSTEM_NAME=Linux -DCMAKE_SYSTEM_PROCESSOR=aarch64"
-        ;;
-esac
-
-cmake "$S" \
-    -DCMAKE_INSTALL_PREFIX=/usr \
-    -DCMAKE_INSTALL_LIBDIR=lib64 \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DENABLE_SHARED=ON \
-    $CMAKE_CROSS_ARGS \
-    $ARCH_CMAKE_ARGS \
-    ${CMAKE_ARGS:-}
-''',
-
     configure_args = [],
-
     deps = [],
-
     visibility = ["PUBLIC"],
 )

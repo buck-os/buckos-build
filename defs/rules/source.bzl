@@ -36,6 +36,7 @@ extract_source = rule(
         "strip_components": attrs.int(default = 1),
         "format": attrs.option(attrs.string(), default = None),
         "exclude_patterns": attrs.list(attrs.string(), default = []),
+        "labels": attrs.list(attrs.string(), default = []),
         "_extract_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:extract"),
         ),

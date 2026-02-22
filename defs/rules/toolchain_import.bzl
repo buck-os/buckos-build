@@ -53,6 +53,7 @@ toolchain_import = rule(
     attrs = {
         "archive": attrs.source(),
         "target_triple": attrs.string(default = "x86_64-buckos-linux-gnu"),
+        "labels": attrs.list(attrs.string(), default = []),
         "_unpack_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:toolchain_unpack"),
         ),

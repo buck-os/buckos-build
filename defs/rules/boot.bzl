@@ -5,10 +5,10 @@ boot script rules: generate QEMU and Cloud Hypervisor boot scripts.
 load("//defs:providers.bzl", "KernelInfo")
 
 def _get_kernel_image(dep):
-    """Extract boot image from KernelInfo or legacy install directory."""
-    if KernelInfo in dep:
-        return dep[KernelInfo].bzimage
-    return dep[DefaultInfo].default_outputs[0]
+    """Extract boot image from KernelInfo provider."""
+    if KernelInfo not in dep:
+        fail("kernel dep must provide KernelInfo")
+    return dep[KernelInfo].bzimage
 
 def _qemu_boot_script_impl(ctx):
     """Generate a QEMU boot script for testing."""
@@ -40,7 +40,7 @@ def _qemu_boot_script_impl(ctx):
         "generate_qemu_script.sh",
         """#!/bin/bash
 set -e
-KERNEL_SRC="$1"
+KERNEL="$1"
 INITRAMFS="$2"
 OUTPUT="$3"
 
@@ -72,22 +72,8 @@ fi
 
 cd "$PROJECT_ROOT"
 
-KERNEL_SRC="KERNEL_SRC_PLACEHOLDER"
+KERNEL="KERNEL_SRC_PLACEHOLDER"
 INITRAMFS="INITRAMFS_PLACEHOLDER"
-
-KERNEL=""
-if [ -f "$KERNEL_SRC" ]; then
-    KERNEL="$KERNEL_SRC"
-else
-    for k in "$KERNEL_SRC/boot/vmlinuz"* "$KERNEL_SRC/boot/bzImage" "$KERNEL_SRC/vmlinuz"*; do
-        if [ -f "$k" ]; then KERNEL="$k"; break; fi
-    done
-fi
-
-if [ -z "$KERNEL" ]; then
-    echo "Error: Cannot find kernel image from $KERNEL_SRC"
-    exit 1
-fi
 
 echo "Booting BuckOs with QEMU..."
 echo "  Kernel: $KERNEL"
@@ -109,7 +95,7 @@ echo ""
     "$@"
 SCRIPT_EOF
 
-sed -i "s|KERNEL_SRC_PLACEHOLDER|$KERNEL_SRC|g" "$OUTPUT"
+sed -i "s|KERNEL_SRC_PLACEHOLDER|$KERNEL|g" "$OUTPUT"
 sed -i "s|INITRAMFS_PLACEHOLDER|$INITRAMFS|g" "$OUTPUT"
 chmod +x "$OUTPUT"
 """.format(
@@ -189,17 +175,7 @@ def _ch_boot_script_impl(ctx):
     ]
 
     if kernel_image:
-        lines.append(cmd_args("KERNEL_SRC=\"", kernel_image, "\"", delimiter = ""))
-        lines.append("")
-        lines.append("# Find kernel image (file = KernelInfo.bzimage, directory = legacy)")
-        lines.append("KERNEL=\"\"")
-        lines.append("if [ -f \"$KERNEL_SRC\" ]; then KERNEL=\"$KERNEL_SRC\"")
-        lines.append("else")
-        lines.append("    for k in \"$KERNEL_SRC/boot/vmlinuz\"* \"$KERNEL_SRC/boot/bzImage\" \"$KERNEL_SRC/boot/Image\" \"$KERNEL_SRC/vmlinuz\"* \"$KERNEL_SRC/vmlinux\"*; do")
-        lines.append("        if [ -f \"$k\" ]; then KERNEL=\"$k\"; break; fi")
-        lines.append("    done")
-        lines.append("fi")
-        lines.append("if [ -z \"$KERNEL\" ]; then echo \"Error: Cannot find kernel from $KERNEL_SRC\"; exit 1; fi")
+        lines.append(cmd_args("KERNEL=\"", kernel_image, "\"", delimiter = ""))
         lines.append("echo \"  Kernel: $KERNEL\"")
 
     if disk_image_file:

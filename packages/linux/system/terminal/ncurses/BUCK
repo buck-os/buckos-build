@@ -15,11 +15,11 @@ package(
 
     use_configure = {
         "ada": ("--with-ada", "--without-ada"),
-        "cxx": ("--with-cxx --with-cxx-binding --with-cxx-shared", "--without-cxx --without-cxx-binding"),
+        "cxx": (["--with-cxx", "--with-cxx-binding", "--with-cxx-shared"], ["--without-cxx", "--without-cxx-binding"]),
         "debug": ("--with-debug", "--without-debug"),
         "gpm": ("--with-gpm", "--without-gpm"),
         "profile": ("--with-profile", "--without-profile"),
-        "static-libs": ("--with-normal", "--with-shared --without-normal"),
+        "static-libs": ("--with-normal", ["--with-shared", "--without-normal"]),
         "tinfo": ("--with-termlib", "--without-termlib"),
         "trace": ("--with-trace", "--without-trace"),
     },

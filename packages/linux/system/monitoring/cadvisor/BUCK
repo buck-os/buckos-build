@@ -9,18 +9,12 @@ package(
     description = "Analyzes resource usage and performance characteristics of running containers",
     homepage = "https://github.com/google/cadvisor",
     license = "Apache-2.0",
-    bins = ["cadvisor"],
     # cadvisor/cmd is a separate Go module - build from there
-    packages = ["."],
     # Build from the cmd subdirectory which has its own go.mod
-    src_compile = '''
-cd cmd
-go build -o "$T/cadvisor" .
-''',
-    src_install = '''
+    post_install_cmds = ["""
 mkdir -p "$DESTDIR/usr/bin"
 cp "$T/cadvisor" "$DESTDIR/usr/bin/"
-''',
+"""],
     deps = [
         "//packages/linux/lang/go:go",
     ],

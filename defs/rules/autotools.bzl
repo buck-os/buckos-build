@@ -88,8 +88,6 @@ def _src_configure(ctx, source):
             cmd.add(cmd_args("--ldflags=", flag, delimiter = ""))
 
         # Propagate include/lib/pkgconfig paths from dependencies.
-        # Works with both new-style PackageInfo deps and old-style
-        # ebuild_package deps (DefaultInfo only).
         for dep in ctx.attrs.deps:
             if PackageInfo in dep:
                 prefix = dep[PackageInfo].prefix

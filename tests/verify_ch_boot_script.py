@@ -49,25 +49,25 @@ def main():
     else:
         print("PASS: no unresolved artifact references")
 
-    # KERNEL_SRC variable present
-    if "KERNEL_SRC=" in content:
-        print("PASS: KERNEL_SRC variable present")
+    # KERNEL variable present
+    if "KERNEL=" in content:
+        print("PASS: KERNEL variable present")
     else:
-        print("FAIL: KERNEL_SRC variable missing")
+        print("FAIL: KERNEL variable missing")
         failed += 1
 
-    # KERNEL_SRC is not empty or a placeholder
-    m = re.search(r'KERNEL_SRC="([^"]*)"', content)
+    # KERNEL is not empty or a placeholder
+    m = re.search(r'KERNEL="([^"]*)"', content)
     if m:
         val = m.group(1)
         if val and "PLACEHOLDER" not in val:
-            print("PASS: KERNEL_SRC has resolved value")
+            print("PASS: KERNEL has resolved value")
         else:
-            print(f"FAIL: KERNEL_SRC unresolved: {val}")
+            print(f"FAIL: KERNEL unresolved: {val}")
             failed += 1
-    elif "KERNEL_SRC=" in content:
+    elif "KERNEL=" in content:
         # Non-quoted assignment
-        print("PASS: KERNEL_SRC assigned (non-quoted)")
+        print("PASS: KERNEL assigned (non-quoted)")
 
     sys.exit(1 if failed else 0)
 

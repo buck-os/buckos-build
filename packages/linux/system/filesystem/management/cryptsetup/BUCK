@@ -31,8 +31,7 @@ package(
         "--disable-external-tokens",  # Disable external token handlers
     ],
     use_deps = {
-        "systemd": "//packages/linux/system/init/systemd:systemd",
-        "-systemd": "//packages/linux/system/init/eudev:eudev",
+        "systemd": ("//packages/linux/system/init/systemd:systemd", "//packages/linux/system/init/eudev:eudev"),
     },
     deps = [
         "//packages/linux/core/util-linux:util-linux",

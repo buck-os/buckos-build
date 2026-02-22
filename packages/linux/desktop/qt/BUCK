@@ -32,7 +32,7 @@ package(
     license = "LGPL-3.0-or-later OR GPL-3.0-or-later",
 
     # Extract qt5compat module into source tree
-    src_prepare = '''
+    pre_configure_cmds = ['''
 # Qt5Compat not included in native build (not needed for host tools)
 echo "Qt5Compat not included in native build"
 
@@ -46,215 +46,7 @@ if [ -f "$S/qttools/src/CMakeLists.txt" ]; then
     echo "qdoc and linguist disabled in qttools"
     grep -n -E "(qdoc|linguist)" "$S/qttools/src/CMakeLists.txt" || true
 fi
-''',
-
-    # Force clean reconfigure to ensure feature flags take effect
-    pre_configure = '''
-rm -rf "${S}/build"
-
-# Build PKG_CONFIG_PATH from all dependency pkg-config directories for Wayland
-export PKG_CONFIG_PATH=""
-IFS=':' read -ra DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
-for dep_dir in "${DEP_ARRAY[@]}"; do
-    for pc_dir in "$dep_dir/usr/lib64/pkgconfig" "$dep_dir/usr/lib/pkgconfig" "$dep_dir/usr/share/pkgconfig"; do
-        if [ -d "$pc_dir" ]; then
-            PKG_CONFIG_PATH="${PKG_CONFIG_PATH:+$PKG_CONFIG_PATH:}$pc_dir"
-        fi
-    done
-done
-echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
-
-# Workaround for Qt CMake WrapHarfbuzz including transitive dependency paths with wrong prefix
-# pkg-config returns absolute paths like /usr/include/freetype2 which get prefixed incorrectly
-# Create symlinks from harfbuzz's and freetype's include dirs to missing dependency headers
-for dep_dir in "${DEP_ARRAY[@]}"; do
-    # Fix harfbuzz -> freetype2
-    if [ -d "$dep_dir/usr/include/harfbuzz" ] && [ ! -d "$dep_dir/usr/include/freetype2" ]; then
-        for ft_dir in "${DEP_ARRAY[@]}"; do
-            if [ -d "$ft_dir/usr/include/freetype2" ]; then
-                echo "Creating freetype2 symlink in harfbuzz include directory"
-                ln -sf "$ft_dir/usr/include/freetype2" "$dep_dir/usr/include/freetype2"
-                break
-            fi
-        done
-    fi
-    # Fix harfbuzz -> libpng16 (through freetype2)
-    if [ -d "$dep_dir/usr/include/harfbuzz" ] && [ ! -d "$dep_dir/usr/include/libpng16" ]; then
-        for png_dir in "${DEP_ARRAY[@]}"; do
-            if [ -d "$png_dir/usr/include/libpng16" ]; then
-                echo "Creating libpng16 symlink in harfbuzz include directory"
-                ln -sf "$png_dir/usr/include/libpng16" "$dep_dir/usr/include/libpng16"
-                break
-            fi
-        done
-    fi
-    # Fix freetype -> libpng16
-    if [ -d "$dep_dir/usr/include/freetype2" ] && [ ! -d "$dep_dir/usr/include/libpng16" ]; then
-        for png_dir in "${DEP_ARRAY[@]}"; do
-            if [ -d "$png_dir/usr/include/libpng16" ]; then
-                echo "Creating libpng16 symlink in freetype include directory"
-                ln -sf "$png_dir/usr/include/libpng16" "$dep_dir/usr/include/libpng16"
-                break
-            fi
-        done
-    fi
-done
-''',
-
-    # Minimal build - only qtbase for host tools
-    # Disable ALL optional modules to avoid dependency cascades
-    configure_args = [
-        "-DCMAKE_INSTALL_PREFIX=/usr",
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DINSTALL_BINDIR=lib64/qt6/bin",
-        "-DINSTALL_LIBDIR=lib64",
-        "-DINSTALL_ARCHDATADIR=lib64/qt6",
-        "-DQT_FEATURE_gui=ON",   # Need for qtshadertools (qsb tool)
-        "-DQT_FEATURE_widgets=OFF",
-        "-DQT_FEATURE_dbus=ON",  # Need for Qt6DBusTools (qdbuscpp2xml, qdbusxml2cpp) used by KDE
-        "-DQT_FEATURE_network=OFF",
-        "-DQT_FEATURE_sql=OFF",
-        "-DQT_FEATURE_testlib=OFF",
-        "-DQT_FEATURE_xml=OFF",
-        "-DQT_FEATURE_zstd=OFF",
-        "-DQT_FEATURE_icu=OFF",
-        # Disable X11/OpenGL for minimal native build
-        "-DQT_FEATURE_xcb=OFF",
-        "-DQT_FEATURE_opengl=OFF",
-        "-DINPUT_opengl=no",
-        "-DQT_FEATURE_libinput=OFF",  # Disable libinput support (no libinput package available)
-        "-DCMAKE_DISABLE_FIND_PACKAGE_ICU=ON",
-        "-DCMAKE_DISABLE_FIND_PACKAGE_WrapZSTD=ON",
-        "-DQT_BUILD_EXAMPLES=OFF",
-        "-DQT_BUILD_TESTS=OFF",
-        "-DQT_FORCE_FIND_TOOLS=OFF",  # Don't search for external tools, build our own
-        "-DQT_BUILD_TOOLS_BY_DEFAULT=ON",  # Ensure tools packages (Qt6*Tools) are created
-        # Disable ALL optional Qt modules - only build qtbase
-        "-DBUILD_qtwayland=ON",  # Need qtwaylandscanner host tool for cross-compiling qtwayland
-        "-DBUILD_qtdoc=OFF",
-        "-DBUILD_qttranslations=OFF",
-        "-DBUILD_qtimageformats=OFF",
-        "-DBUILD_qtlanguageserver=OFF",
-        "-DBUILD_qtshadertools=ON",  # Need for qsb (Qt Shader Baker) host tool
-        "-DBUILD_qtsvg=OFF",
-        "-DBUILD_qtdeclarative=ON",  # Need for qmltyperegistrar host tool
-        "-DBUILD_qtquicktimeline=OFF",
-        "-DBUILD_qtquick3d=OFF",
-        "-DBUILD_qtmultimedia=OFF",
-        "-DBUILD_qt3d=OFF",
-        "-DBUILD_qtactiveqt=OFF",
-        "-DBUILD_qtcharts=OFF",
-        "-DBUILD_qtcoap=OFF",
-        "-DBUILD_qtconnectivity=OFF",
-        "-DBUILD_qtdatavis3d=OFF",
-        "-DBUILD_qtgraphs=OFF",
-        "-DBUILD_qtgrpc=OFF",
-        "-DBUILD_qtwebsockets=OFF",
-        "-DBUILD_qthttpserver=OFF",
-        "-DBUILD_qtserialport=OFF",
-        "-DBUILD_qtpositioning=OFF",
-        "-DBUILD_qtlocation=OFF",
-        "-DBUILD_qtlottie=OFF",
-        "-DBUILD_qtmqtt=OFF",
-        "-DBUILD_qtnetworkauth=OFF",
-        "-DBUILD_qtopcua=OFF",
-        "-DBUILD_qtquick3dphysics=OFF",
-        "-DBUILD_qtquickeffectmaker=OFF",
-        "-DBUILD_qtremoteobjects=OFF",
-        "-DBUILD_qtscxml=OFF",
-        "-DBUILD_qtsensors=OFF",
-        "-DBUILD_qtserialbus=OFF",
-        "-DBUILD_qtspeech=OFF",
-        "-DBUILD_qtwebengine=OFF",
-        "-DBUILD_qtwebview=OFF",
-        "-DBUILD_qtvirtualkeyboard=OFF",
-        # Only build qtbase for host tools
-        "-DQT_HOST_PATH=",
-    ],
-
-    # Minimal deps for native build
-    # GUI feature enabled for qtshadertools (qsb tool)
-    # X11 and OpenGL disabled for minimal native build
-    # DBus enabled for Qt6DBusTools needed by KDE
-    deps = [
-        "//packages/linux/core/zlib:zlib",
-        "//packages/linux/system/libs/utility/pcre2:pcre2",
-        "//packages/linux/dev-libs/glib:glib",
-        # Minimal GUI deps for qtshadertools
-        "//packages/linux/system/libs/image/libpng:libpng",
-        "//packages/linux/system/libs/image/libjpeg-turbo:libjpeg-turbo",
-        # Platform libraries for Unix GUI backend
-        "//packages/linux/system/libs/font/fontconfig:fontconfig",
-        "//packages/linux/system/libs/font/freetype:freetype",
-        "//packages/linux/system/libs/font/harfbuzz:harfbuzz",
-        "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
-        "//packages/linux/desktop/libdrm:libdrm",
-        "//packages/linux/system/libs/data/expat:expat",
-        # DBus for Qt6DBusTools (also needs systemd for libsystemd)
-        "//packages/linux/system/libs/ipc/dbus:dbus",
-        "//packages/linux/system/init/systemd:systemd",
-        "//packages/linux/system/libs/ipc/libcap:libcap",  # systemd depends on libcap
-        # Wayland for qtwayland (qtwaylandscanner host tool)
-        "//packages/linux/graphics/rendering/wayland:wayland",
-        "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
-        "//packages/linux/system/libs/compression/bzip2:bzip2",  # transitive: freetype links libbz2
-    ],
-
-    # Create Qt6QuickTools package for cross-compilation
-    src_install = """
-# Run default install
-cmake --install "$S/build" --prefix "$D/usr"
-
-# Create Qt6QuickTools package (wrapper for qtdeclarative tools used in cross-compilation)
-TOOLS_CMAKE_DIR="$D/usr/lib64/cmake/Qt6QuickTools"
-mkdir -p "$TOOLS_CMAKE_DIR"
-
-# Create Qt6QuickToolsConfig.cmake
-cat > "$TOOLS_CMAKE_DIR/Qt6QuickToolsConfig.cmake" << 'EOF'
-set(Qt6QuickTools_FOUND TRUE)
-set(Qt6QuickTools_VERSION "6.8.3")
-
-# Import qmltyperegistrar and other tools
-if(NOT TARGET Qt6::qmltyperegistrar)
-    add_executable(Qt6::qmltyperegistrar IMPORTED)
-    set_target_properties(Qt6::qmltyperegistrar PROPERTIES
-        IMPORTED_LOCATION "${CMAKE_CURRENT_LIST_DIR}/../../../lib64/qt6/bin/qmltyperegistrar"
-    )
-endif()
-EOF
-
-# Create Qt6QuickToolsConfigVersion.cmake
-cat > "$TOOLS_CMAKE_DIR/Qt6QuickToolsConfigVersion.cmake" << 'EOF'
-set(PACKAGE_VERSION "6.8.3")
-if(PACKAGE_VERSION VERSION_LESS PACKAGE_FIND_VERSION)
-    set(PACKAGE_VERSION_COMPATIBLE FALSE)
-else()
-    set(PACKAGE_VERSION_COMPATIBLE TRUE)
-    if(PACKAGE_FIND_VERSION STREQUAL PACKAGE_VERSION)
-        set(PACKAGE_VERSION_EXACT TRUE)
-    endif()
-endif()
-EOF
-
-echo "Created Qt6QuickTools CMake package for cross-compilation"
-""",
-
-    visibility = ["PUBLIC"],
-)
-
-package(
-    build_rule = "cmake",
-    name = "qt6",
-    url = "https://download.qt.io/official_releases/qt/6.8/6.8.3/single/qt-everywhere-src-6.8.3.tar.xz",
-    sha256 = "cdd3a69967208276bb01af7ace7dba0ba53e679f886a4cbe624225c60fb73f2c",
-    version = "6.8.3",
-    description = "Qt6 - Cross-platform application framework",
-    homepage = "https://www.qt.io/",
-    license = "LGPL-3.0-or-later OR GPL-3.0-or-later",
-
-    # src_prepare: Patch Qt's CMakeLists.txt to define EGL and GLESv2 targets for cross-compilation
-    # NOTE: qt5compat is already included in the Qt "single" tarball, no need to extract it
-    src_prepare = """
+''', """
 # Qt5Compat is already included in the qt-everywhere-src tarball
 echo "Qt5Compat already included in Qt single tarball"
 
@@ -392,299 +184,137 @@ if [ "${CROSS_COMPILING:-false}" = "true" ]; then
 else
     echo "Native build: Keeping all Qt modules"
 fi
-""",
+"""],
 
-    # Add native Qt6 as exec_bdepend for cross-compilation host tools
-    exec_bdepend = [
-        ":qt6-native",
+    # Force clean reconfigure to ensure feature flags take effect
+
+    # Minimal build - only qtbase for host tools
+    # Disable ALL optional modules to avoid dependency cascades
+    configure_args = [
+        "-DCMAKE_INSTALL_PREFIX=/usr",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DINSTALL_BINDIR=lib64/qt6/bin",
+        "-DINSTALL_LIBDIR=lib64",
+        "-DINSTALL_ARCHDATADIR=lib64/qt6",
+        "-DQT_FEATURE_gui=ON",   # Need for qtshadertools (qsb tool)
+        "-DQT_FEATURE_widgets=OFF",
+        "-DQT_FEATURE_dbus=ON",  # Need for Qt6DBusTools (qdbuscpp2xml, qdbusxml2cpp) used by KDE
+        "-DQT_FEATURE_network=OFF",
+        "-DQT_FEATURE_sql=OFF",
+        "-DQT_FEATURE_testlib=OFF",
+        "-DQT_FEATURE_xml=OFF",
+        "-DQT_FEATURE_zstd=OFF",
+        "-DQT_FEATURE_icu=OFF",
+        # Disable X11/OpenGL for minimal native build
+        "-DQT_FEATURE_xcb=OFF",
+        "-DQT_FEATURE_opengl=OFF",
+        "-DINPUT_opengl=no",
+        "-DQT_FEATURE_libinput=OFF",  # Disable libinput support (no libinput package available)
+        "-DCMAKE_DISABLE_FIND_PACKAGE_ICU=ON",
+        "-DCMAKE_DISABLE_FIND_PACKAGE_WrapZSTD=ON",
+        "-DQT_BUILD_EXAMPLES=OFF",
+        "-DQT_BUILD_TESTS=OFF",
+        "-DQT_FORCE_FIND_TOOLS=OFF",  # Don't search for external tools, build our own
+        "-DQT_BUILD_TOOLS_BY_DEFAULT=ON",  # Ensure tools packages (Qt6*Tools) are created
+        # Disable ALL optional Qt modules - only build qtbase
+        "-DBUILD_qtwayland=ON",  # Need qtwaylandscanner host tool for cross-compiling qtwayland
+        "-DBUILD_qtdoc=OFF",
+        "-DBUILD_qttranslations=OFF",
+        "-DBUILD_qtimageformats=OFF",
+        "-DBUILD_qtlanguageserver=OFF",
+        "-DBUILD_qtshadertools=ON",  # Need for qsb (Qt Shader Baker) host tool
+        "-DBUILD_qtsvg=OFF",
+        "-DBUILD_qtdeclarative=ON",  # Need for qmltyperegistrar host tool
+        "-DBUILD_qtquicktimeline=OFF",
+        "-DBUILD_qtquick3d=OFF",
+        "-DBUILD_qtmultimedia=OFF",
+        "-DBUILD_qt3d=OFF",
+        "-DBUILD_qtactiveqt=OFF",
+        "-DBUILD_qtcharts=OFF",
+        "-DBUILD_qtcoap=OFF",
+        "-DBUILD_qtconnectivity=OFF",
+        "-DBUILD_qtdatavis3d=OFF",
+        "-DBUILD_qtgraphs=OFF",
+        "-DBUILD_qtgrpc=OFF",
+        "-DBUILD_qtwebsockets=OFF",
+        "-DBUILD_qthttpserver=OFF",
+        "-DBUILD_qtserialport=OFF",
+        "-DBUILD_qtpositioning=OFF",
+        "-DBUILD_qtlocation=OFF",
+        "-DBUILD_qtlottie=OFF",
+        "-DBUILD_qtmqtt=OFF",
+        "-DBUILD_qtnetworkauth=OFF",
+        "-DBUILD_qtopcua=OFF",
+        "-DBUILD_qtquick3dphysics=OFF",
+        "-DBUILD_qtquickeffectmaker=OFF",
+        "-DBUILD_qtremoteobjects=OFF",
+        "-DBUILD_qtscxml=OFF",
+        "-DBUILD_qtsensors=OFF",
+        "-DBUILD_qtserialbus=OFF",
+        "-DBUILD_qtspeech=OFF",
+        "-DBUILD_qtwebengine=OFF",
+        "-DBUILD_qtwebview=OFF",
+        "-DBUILD_qtvirtualkeyboard=OFF",
+        # Only build qtbase for host tools
+        "-DQT_HOST_PATH=",
     ],
 
+    # Minimal deps for native build
+    # GUI feature enabled for qtshadertools (qsb tool)
+    # X11 and OpenGL disabled for minimal native build
+    # DBus enabled for Qt6DBusTools needed by KDE
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+                "//packages/linux/system/libs/utility/pcre2:pcre2",
+                "//packages/linux/dev-libs/glib:glib",
+                # Minimal GUI deps for qtshadertools
+        "//packages/linux/system/libs/image/libpng:libpng",
+                "//packages/linux/system/libs/image/libjpeg-turbo:libjpeg-turbo",
+                # Platform libraries for Unix GUI backend
+        "//packages/linux/system/libs/font/fontconfig:fontconfig",
+                "//packages/linux/system/libs/font/freetype:freetype",
+                "//packages/linux/system/libs/font/harfbuzz:harfbuzz",
+                "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
+                "//packages/linux/desktop/libdrm:libdrm",
+                "//packages/linux/system/libs/data/expat:expat",
+                # DBus for Qt6DBusTools (also needs systemd for libsystemd)
+        "//packages/linux/system/libs/ipc/dbus:dbus",
+                "//packages/linux/system/init/systemd:systemd",
+                "//packages/linux/system/libs/ipc/libcap:libcap",
+                # systemd depends on libcap
+        # Wayland for qtwayland (qtwaylandscanner host tool)
+        "//packages/linux/graphics/rendering/wayland:wayland",
+                "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
+                "//packages/linux/system/libs/compression/bzip2:bzip2",
+                # transitive: freetype links libbz2,
+                ":qt6-native"
+    ],
+
+    # Create Qt6QuickTools package for cross-compilation
+
+    visibility = ["PUBLIC"],
+)
+
+package(
+    build_rule = "cmake",
+    name = "qt6",
+    url = "https://download.qt.io/official_releases/qt/6.8/6.8.3/single/qt-everywhere-src-6.8.3.tar.xz",
+    sha256 = "cdd3a69967208276bb01af7ace7dba0ba53e679f886a4cbe624225c60fb73f2c",
+    version = "6.8.3",
+    description = "Qt6 - Cross-platform application framework",
+    homepage = "https://www.qt.io/",
+    license = "LGPL-3.0-or-later OR GPL-3.0-or-later",
+
+    # src_prepare: Patch Qt's CMakeLists.txt to define EGL and GLESv2 targets for cross-compilation
+    # NOTE: qt5compat is already included in the Qt "single" tarball, no need to extract it
+
+    # Add native Qt6 as exec_bdepend for cross-compilation host tools
+
     # Custom src_configure: Set QT_HOST_PATH for cross-compilation
-    src_configure = """
-# Build PKG_CONFIG_PATH from all dependency pkg-config directories
-# This is required for Qt to find fontconfig/freetype/harfbuzz via pkg-config
-export PKG_CONFIG_PATH=""
-IFS=':' read -ra DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
-for dep_dir in "${DEP_ARRAY[@]}"; do
-    for pc_dir in "$dep_dir/usr/lib64/pkgconfig" "$dep_dir/usr/lib/pkgconfig" "$dep_dir/usr/share/pkgconfig"; do
-        if [ -d "$pc_dir" ]; then
-            PKG_CONFIG_PATH="${PKG_CONFIG_PATH:+$PKG_CONFIG_PATH:}$pc_dir"
-        fi
-    done
-done
-echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
-
-# Workaround for Qt CMake WrapHarfbuzz including transitive dependency paths with wrong prefix
-# pkg-config returns absolute paths like /usr/include/freetype2 which get prefixed incorrectly
-# Create symlinks from harfbuzz's and freetype's include dirs to missing dependency headers
-for dep_dir in "${DEP_ARRAY[@]}"; do
-    # Fix harfbuzz -> freetype2
-    if [ -d "$dep_dir/usr/include/harfbuzz" ] && [ ! -d "$dep_dir/usr/include/freetype2" ]; then
-        for ft_dir in "${DEP_ARRAY[@]}"; do
-            if [ -d "$ft_dir/usr/include/freetype2" ]; then
-                echo "Creating freetype2 symlink in harfbuzz include directory"
-                ln -sf "$ft_dir/usr/include/freetype2" "$dep_dir/usr/include/freetype2"
-                break
-            fi
-        done
-    fi
-    # Fix harfbuzz -> libpng16 (through freetype2)
-    if [ -d "$dep_dir/usr/include/harfbuzz" ] && [ ! -d "$dep_dir/usr/include/libpng16" ]; then
-        for png_dir in "${DEP_ARRAY[@]}"; do
-            if [ -d "$png_dir/usr/include/libpng16" ]; then
-                echo "Creating libpng16 symlink in harfbuzz include directory"
-                ln -sf "$png_dir/usr/include/libpng16" "$dep_dir/usr/include/libpng16"
-                break
-            fi
-        done
-    fi
-    # Fix freetype -> libpng16
-    if [ -d "$dep_dir/usr/include/freetype2" ] && [ ! -d "$dep_dir/usr/include/libpng16" ]; then
-        for png_dir in "${DEP_ARRAY[@]}"; do
-            if [ -d "$png_dir/usr/include/libpng16" ]; then
-                echo "Creating libpng16 symlink in freetype include directory"
-                ln -sf "$png_dir/usr/include/libpng16" "$dep_dir/usr/include/libpng16"
-                break
-            fi
-        done
-    fi
-    # Fix fontconfig -> freetype2
-    if [ -d "$dep_dir/usr/include/fontconfig" ] && [ ! -d "$dep_dir/usr/include/freetype2" ]; then
-        for ft_dir in "${DEP_ARRAY[@]}"; do
-            if [ -d "$ft_dir/usr/include/freetype2" ]; then
-                echo "Creating freetype2 symlink in fontconfig include directory"
-                ln -sf "$ft_dir/usr/include/freetype2" "$dep_dir/usr/include/freetype2"
-                break
-            fi
-        done
-    fi
-done
-
-# For cross-compilation: find native Qt6 from exec_bdepend (EXEC_BDEP_BASE_DIRS)
-QT_HOST_PATH_ARG=""
-if [ -n "${EXEC_BDEP_BASE_DIRS:-}" ] && [ "${CROSS_COMPILING:-false}" = "true" ]; then
-    IFS=':' read -ra HOST_ARRAY <<< "$EXEC_BDEP_BASE_DIRS"
-    for host_dir in "${HOST_ARRAY[@]}"; do
-        if [ -d "$host_dir/usr/lib64/qt6" ]; then
-            QT_HOST_PATH="$host_dir/usr"
-            QT_HOST_PATH_ARG="-DQT_HOST_PATH=$QT_HOST_PATH"
-            echo "Found Qt6 native tools at: $QT_HOST_PATH"
-            break
-        fi
-    done
-
-    # Debug: print what we found
-    if [ -z "$QT_HOST_PATH_ARG" ]; then
-        echo "WARNING: Could not find Qt6 native tools in EXEC_BDEP_BASE_DIRS"
-        echo "EXEC_BDEP_BASE_DIRS=$EXEC_BDEP_BASE_DIRS"
-        for host_dir in "${HOST_ARRAY[@]}"; do
-            echo "  Checked: $host_dir/usr/lib64/qt6"
-        done
-    fi
-fi
-
-# For cross-compilation: Build CMAKE_BUILD_RPATH and linker flags from all dependency lib dirs
-# This makes binaries built during the build phase able to find dependency .so files
-_CMAKE_BUILD_RPATH=""
-_CMAKE_LINKER_FLAGS=""
-if [ "${CROSS_COMPILING:-false}" = "true" ]; then
-    echo "Cross-compiling: Building CMAKE_BUILD_RPATH from dependencies..."
-    IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
-    for _dep in "${_DEP_ARRAY[@]}"; do
-        for _libdir in "$_dep/usr/lib64" "$_dep/usr/lib"; do
-            if [ -d "$_libdir" ]; then
-                _CMAKE_BUILD_RPATH="${_CMAKE_BUILD_RPATH:+$_CMAKE_BUILD_RPATH:}$_libdir"
-                _CMAKE_LINKER_FLAGS="$_CMAKE_LINKER_FLAGS -Wl,-rpath-link,$_libdir"
-            fi
-        done
-    done
-    # Export LDFLAGS and CMAKE linker flags as environment variables
-    # CMake honors these env vars in addition to -D arguments
-    export LDFLAGS="${LDFLAGS:-} $_CMAKE_LINKER_FLAGS"
-    export CMAKE_EXE_LINKER_FLAGS="$_CMAKE_LINKER_FLAGS"
-    export CMAKE_SHARED_LINKER_FLAGS="$_CMAKE_LINKER_FLAGS"
-    export CMAKE_MODULE_LINKER_FLAGS="$_CMAKE_LINKER_FLAGS"
-    echo "CMAKE_BUILD_RPATH: $_CMAKE_BUILD_RPATH"
-    echo "Exported LDFLAGS and CMAKE linker flags with rpath-link"
-fi
-
-# Find freetype and fontconfig paths for CMake - required for Qt to find system fonts
-# Qt's fontconfig feature requires system_freetype to be enabled, so we need both libraries
-# CMake's FindFontconfig and FindFreetype can't find them in cross-compilation sysroot
-FONT_CMAKE_ARGS=""
-IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
-
-# Find freetype (REQUIRED for fontconfig to work in Qt)
-_FT_INCLUDE=""
-_FT_LIB=""
-for _dep in "${_DEP_ARRAY[@]}"; do
-    if [ -f "$_dep/usr/include/freetype2/freetype/freetype.h" ]; then
-        _FT_INCLUDE="$_dep/usr/include/freetype2"
-        echo "Found freetype includes: $_FT_INCLUDE"
-    fi
-    if [ -f "$_dep/usr/lib64/libfreetype.so" ]; then
-        _FT_LIB="$_dep/usr/lib64/libfreetype.so"
-        echo "Found freetype library: $_FT_LIB"
-    elif [ -f "$_dep/usr/lib/libfreetype.so" ]; then
-        _FT_LIB="$_dep/usr/lib/libfreetype.so"
-        echo "Found freetype library: $_FT_LIB"
-    fi
-done
-if [ -n "${_FT_INCLUDE:-}" ] && [ -n "${_FT_LIB:-}" ]; then
-    FONT_CMAKE_ARGS="$FONT_CMAKE_ARGS -DFREETYPE_INCLUDE_DIR_freetype2=$_FT_INCLUDE"
-    FONT_CMAKE_ARGS="$FONT_CMAKE_ARGS -DFREETYPE_INCLUDE_DIR_ft2build=$_FT_INCLUDE"
-    FONT_CMAKE_ARGS="$FONT_CMAKE_ARGS -DFREETYPE_LIBRARY_RELEASE=$_FT_LIB"
-    echo "Setting freetype CMake args"
-else
-    echo "WARNING: Could not find freetype in dependencies - Qt fonts may not work!"
-fi
-
-# Find fontconfig (depends on freetype being found first)
-_FC_INCLUDE=""
-_FC_LIB=""
-for _dep in "${_DEP_ARRAY[@]}"; do
-    if [ -f "$_dep/usr/include/fontconfig/fontconfig.h" ]; then
-        _FC_INCLUDE="$_dep/usr/include"
-        echo "Found fontconfig includes: $_FC_INCLUDE"
-    fi
-    if [ -f "$_dep/usr/lib64/libfontconfig.so" ]; then
-        _FC_LIB="$_dep/usr/lib64/libfontconfig.so"
-        echo "Found fontconfig library: $_FC_LIB"
-    elif [ -f "$_dep/usr/lib/libfontconfig.so" ]; then
-        _FC_LIB="$_dep/usr/lib/libfontconfig.so"
-        echo "Found fontconfig library: $_FC_LIB"
-    fi
-done
-if [ -n "${_FC_INCLUDE:-}" ] && [ -n "${_FC_LIB:-}" ]; then
-    FONT_CMAKE_ARGS="$FONT_CMAKE_ARGS -DFontconfig_INCLUDE_DIR=$_FC_INCLUDE -DFontconfig_LIBRARY=$_FC_LIB"
-    echo "Setting fontconfig CMake args"
-else
-    echo "WARNING: Could not find fontconfig in dependencies - Qt will not have font support!"
-fi
-
-echo "FONT_CMAKE_ARGS: $FONT_CMAKE_ARGS"
-
-# Run cmake configure with QT_HOST_PATH if cross-compiling
-rm -rf "${BUILD_DIR:-build}"
-mkdir -p "${BUILD_DIR:-build}"
-cd "${BUILD_DIR:-build}"
-
-# Find EGL/GLESv2 paths from Mesa in dependencies
-EGL_CMAKE_ARGS=""
-for _dep in "${_DEP_ARRAY[@]}"; do
-    if [ -f "$_dep/usr/lib64/libEGL.so" ] && [ -f "$_dep/usr/lib64/libGLESv2.so" ]; then
-        MESA_PREFIX="$_dep/usr"
-        echo "Found Mesa at: $MESA_PREFIX"
-        echo "EGL: $MESA_PREFIX/lib64/libEGL.so"
-        echo "GLESv2: $MESA_PREFIX/lib64/libGLESv2.so"
-
-        # Pass library paths directly to CMake FindEGL/FindGLESv2
-        EGL_CMAKE_ARGS="$EGL_CMAKE_ARGS -DEGL_INCLUDE_DIR=$MESA_PREFIX/include"
-        EGL_CMAKE_ARGS="$EGL_CMAKE_ARGS -DEGL_LIBRARY=$MESA_PREFIX/lib64/libEGL.so"
-        EGL_CMAKE_ARGS="$EGL_CMAKE_ARGS -DGLESv2_INCLUDE_DIR=$MESA_PREFIX/include"
-        EGL_CMAKE_ARGS="$EGL_CMAKE_ARGS -DGLESv2_LIBRARY=$MESA_PREFIX/lib64/libGLESv2.so"
-        EGL_CMAKE_ARGS="$EGL_CMAKE_ARGS -DOPENGL_egl_LIBRARY=$MESA_PREFIX/lib64/libEGL.so"
-        EGL_CMAKE_ARGS="$EGL_CMAKE_ARGS -DOPENGL_gles2_LIBRARY=$MESA_PREFIX/lib64/libGLESv2.so"
-        EGL_CMAKE_ARGS="$EGL_CMAKE_ARGS -DOPENGL_INCLUDE_DIR=$MESA_PREFIX/include"
-        # Force Qt to recognize we have EGL/GLES using FEATURE_ variables
-        EGL_CMAKE_ARGS="$EGL_CMAKE_ARGS -DFEATURE_egl=ON"
-        EGL_CMAKE_ARGS="$EGL_CMAKE_ARGS -DFEATURE_opengles2=ON"
-        EGL_CMAKE_ARGS="$EGL_CMAKE_ARGS -DFEATURE_opengl=ON"
-        # Also set QT_FEATURE_ for internal cmake cache
-        EGL_CMAKE_ARGS="$EGL_CMAKE_ARGS -DQT_FEATURE_egl=ON"
-        EGL_CMAKE_ARGS="$EGL_CMAKE_ARGS -DQT_FEATURE_opengles2=ON"
-        EGL_CMAKE_ARGS="$EGL_CMAKE_ARGS -DQT_FEATURE_opengl=ON"
-        # Skip OpenGL test compilation - trust our pre-defined targets from src_prepare
-        EGL_CMAKE_ARGS="$EGL_CMAKE_ARGS -DOpenGL_GL_PREFERENCE=GLVND"
-        EGL_CMAKE_ARGS="$EGL_CMAKE_ARGS -DQT_INTERNAL_NO_CONFIGURE_CHECKS=ON"
-        # Set OpenGL_DIR for CMake's FindOpenGL
-        EGL_CMAKE_ARGS="$EGL_CMAKE_ARGS -DOpenGL_DIR=$MESA_PREFIX/lib64/cmake/OpenGL"
-        EGL_CMAKE_ARGS="$EGL_CMAKE_ARGS -DOpenGL_ROOT=$MESA_PREFIX"
-        # Explicitly set the EGL/GLES library location for WrapOpenGL
-        EGL_CMAKE_ARGS="$EGL_CMAKE_ARGS -DOpenGL_EGL_LIBRARY=$MESA_PREFIX/lib64/libEGL.so"
-        EGL_CMAKE_ARGS="$EGL_CMAKE_ARGS -DOpenGL_GLESv2_LIBRARY=$MESA_PREFIX/lib64/libGLESv2.so"
-        # Set the pkg-config path for EGL/GLES detection
-        export PKG_CONFIG_PATH="$MESA_PREFIX/lib64/pkgconfig:${PKG_CONFIG_PATH:-}"
-        break
-    fi
-done
-echo "EGL_CMAKE_ARGS: $EGL_CMAKE_ARGS"
-
-# Prevent CMake from finding host libraries during cross-compilation
-if [ "${CROSS_COMPILING:-false}" = "true" ]; then
-    echo "Cross-compiling: Ignoring host library paths in CMake"
-
-    # Build CMake arguments - pass RPATH and linker flags for build-time linking
-    cmake "$S" \
-        -DCMAKE_INSTALL_PREFIX="${EPREFIX:-/usr}" \
-        -DCMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE:-Release}" \
-        -DCMAKE_IGNORE_PATH="/usr;/usr/lib;/usr/lib64;/lib;/lib64" \
-        -DCMAKE_BUILD_RPATH="${_CMAKE_BUILD_RPATH}" \
-        -DCMAKE_BUILD_RPATH_USE_ORIGIN=TRUE \
-        -DCMAKE_EXE_LINKER_FLAGS="$_CMAKE_LINKER_FLAGS" \
-        -DCMAKE_SHARED_LINKER_FLAGS="$_CMAKE_LINKER_FLAGS" \
-        -DCMAKE_MODULE_LINKER_FLAGS="$_CMAKE_LINKER_FLAGS" \
-        $FONT_CMAKE_ARGS \
-        $EGL_CMAKE_ARGS \
-        $QT_HOST_PATH_ARG \
-        ${CMAKE_ARGS:-}
-else
-    cmake "$S" \
-        -DCMAKE_INSTALL_PREFIX="${EPREFIX:-/usr}" \
-        -DCMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE:-Release}" \
-        $FONT_CMAKE_ARGS \
-        $EGL_CMAKE_ARGS \
-        $QT_HOST_PATH_ARG \
-        ${CMAKE_ARGS:-}
-fi
-""",
 
     # Custom src_compile: Qt6 builds host tools (rcc, moc, etc.) that need to find
     # shared libraries from our dependencies at runtime. Set LD_LIBRARY_PATH from
     # LIBRARY_PATH so host tools can find libraries like libdouble-conversion.
-    src_compile = """
-# For cross-compilation: Re-export LDFLAGS (doesn't persist from src_configure)
-if [ "${CROSS_COMPILING:-false}" = "true" ]; then
-    _CMAKE_LINKER_FLAGS=""
-    IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
-    for _dep in "${_DEP_ARRAY[@]}"; do
-        for _libdir in "$_dep/usr/lib64" "$_dep/usr/lib"; do
-            if [ -d "$_libdir" ]; then
-                _CMAKE_LINKER_FLAGS="$_CMAKE_LINKER_FLAGS -Wl,-rpath-link,$_libdir"
-            fi
-        done
-    done
-    export LDFLAGS="${LDFLAGS:-} $_CMAKE_LINKER_FLAGS"
-    echo "src_compile: Exported LDFLAGS for cross-compilation linking"
-fi
-
-# Set LD_LIBRARY_PATH for host tools built during Qt6 compilation
-# Host tools (rcc, moc, etc.) are linked against dep libraries and need them at runtime.
-# Build LD_LIBRARY_PATH from DEP_BASE_DIRS (more reliable than LIBRARY_PATH).
-HOST_LD_PATH=""
-IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
-for _dep in "${_DEP_ARRAY[@]}"; do
-    for _libdir in "$_dep/usr/lib64" "$_dep/usr/lib"; do
-        if [ -d "$_libdir" ]; then
-            # Skip paths with cross-compiled glibc (would break host tools)
-            if ls "$_libdir"/libc.so* >/dev/null 2>&1; then
-                continue
-            fi
-            HOST_LD_PATH="${HOST_LD_PATH:+$HOST_LD_PATH:}$_libdir"
-        fi
-    done
-done
-# Also add Qt6's own build output lib dir (for libQt6Core.so etc. needed by later tools)
-if [ -d "$S/build/lib64" ]; then
-    HOST_LD_PATH="${HOST_LD_PATH:+$HOST_LD_PATH:}$S/build/lib64"
-fi
-if [ -n "$HOST_LD_PATH" ]; then
-    export LD_LIBRARY_PATH="$HOST_LD_PATH"
-    echo "Set LD_LIBRARY_PATH for Qt6 host tools: $LD_LIBRARY_PATH"
-fi
-
-cmake --build "$S/build" -j${MAKEOPTS:-$(nproc)}
-""",
 
     # USE flags this package supports
 

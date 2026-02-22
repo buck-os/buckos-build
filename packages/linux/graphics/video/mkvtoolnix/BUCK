@@ -13,9 +13,9 @@ package(
     license = "GPL-2.0-only",
     use_configure = {
         "dbus": ("--enable-dbus", "--disable-dbus"),
-        "debug": ("--disable-optimization --enable-debug", "--enable-optimization --disable-debug"),
+        "debug": (["--disable-optimization", "--enable-debug"], ["--enable-optimization", "--disable-debug"]),
         "dvd": ("--enable-dvd", "--disable-dvd"),
-        "gui": ("--enable-gui --with-qt6", "--disable-gui"),
+        "gui": (["--enable-gui", "--with-qt6"], "--disable-gui"),
         "nls": ("--enable-nls", "--disable-nls"),
         "pch": ("--enable-pch", "--disable-pch"),
     },

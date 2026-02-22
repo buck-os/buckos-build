@@ -96,357 +96,102 @@ def kernel_config(labels = [], **kwargs):
 # ── kernel_build ─────────────────────────────────────────────────────
 
 def _kernel_build_impl(ctx: AnalysisContext) -> list[Provider]:
-    """Build Linux kernel with custom configuration."""
-    install_dir = ctx.actions.declare_output(ctx.attrs.name, dir = True)
+    """Build Linux kernel with custom configuration.
+
+    Uses tools/kernel_build.py to produce individual artifacts.
+    Returns DefaultInfo (bzimage) + KernelInfo.
+    """
+    # Declare individual output artifacts per KernelInfo contract
+    bzimage = ctx.actions.declare_output("bzimage")
+    vmlinux = ctx.actions.declare_output("vmlinux")
+    modules_dir = ctx.actions.declare_output("modules", dir = True)
+    build_tree = ctx.actions.declare_output("build-tree", dir = True)
+    symvers = ctx.actions.declare_output("Module.symvers")
+    config_out = ctx.actions.declare_output("config")
+    headers = ctx.actions.declare_output("headers", dir = True)
+
     src_dir = ctx.attrs.source[DefaultInfo].default_outputs[0]
 
-    # Kernel config - can be a source file or output from kernel_config
+    # Kernel config — source file or output from kernel_config
     config_file = None
     if ctx.attrs.config:
         config_file = ctx.attrs.config
     elif ctx.attrs.config_dep:
         config_file = ctx.attrs.config_dep[DefaultInfo].default_outputs[0]
 
-    script = ctx.actions.write(
-        "build_kernel.sh",
-        """#!/bin/bash
-set -e
-unset CDPATH
-# Live kernel: loop, sr, piix, iso9660, squashfs, overlayfs built-in
+    # Architecture mapping
+    arch_map = {
+        "x86_64": ("x86", "arch/x86/boot/bzImage"),
+        "aarch64": ("arm64", "arch/arm64/boot/Image"),
+    }
+    kernel_arch, image_path = arch_map.get(ctx.attrs.arch, ("x86", "arch/x86/boot/bzImage"))
 
-# Arguments:
-# $1 = install directory (output)
-# $2 = source directory (input)
-# $3 = build scratch directory (output, for writable build)
-# $4 = target architecture (x86_64 or aarch64)
-# $5 = config file (optional)
-# $6 = cross-toolchain directory (optional, for cross-compilation)
+    # Cross-compile prefix
+    cross_compile = ""
+    if ctx.attrs.cross_toolchain and ctx.attrs.arch == "aarch64":
+        cross_compile = "aarch64-buckos-linux-gnu-"
 
-# Save absolute paths before changing directory
-SRC_DIR="$(cd "$2" && pwd)"
+    # Build command via Python helper
+    cmd = cmd_args(ctx.attrs._kernel_build_tool[RunInfo])
+    cmd.add("--source-dir", src_dir)
+    cmd.add("--build-tree-out", build_tree.as_output())
+    cmd.add("--vmlinux-out", vmlinux.as_output())
+    cmd.add("--bzimage-out", bzimage.as_output())
+    cmd.add("--modules-dir-out", modules_dir.as_output())
+    cmd.add("--symvers-out", symvers.as_output())
+    cmd.add("--config-out", config_out.as_output())
+    cmd.add("--headers-out", headers.as_output())
+    cmd.add("--arch", kernel_arch)
+    cmd.add("--image-path", image_path)
+    cmd.add("--version", ctx.attrs.version)
 
-# Build scratch directory - passed from Buck2 for hermetic builds
-BUILD_DIR="$3"
-
-# Target architecture
-TARGET_ARCH="$4"
-
-# Cross-toolchain directory (optional)
-CROSS_TOOLCHAIN_DIR="$6"
-
-# Set up cross-toolchain PATH if provided
-if [ -n "$CROSS_TOOLCHAIN_DIR" ] && [ -d "$CROSS_TOOLCHAIN_DIR" ]; then
-    # Look for toolchain bin directories
-    for subdir in $(find "$CROSS_TOOLCHAIN_DIR" -type d -name bin 2>/dev/null); do
-        export PATH="$subdir:$PATH"
-    done
-    echo "Cross-toolchain added to PATH"
-fi
-
-# Set architecture-specific variables
-case "$TARGET_ARCH" in
-    aarch64)
-        KERNEL_ARCH="arm64"
-        KERNEL_IMAGE="arch/arm64/boot/Image"
-        # Try buckos cross-compiler first, then standard prefix
-        if command -v aarch64-buckos-linux-gnu-gcc >/dev/null 2>&1; then
-            CROSS_COMPILE="aarch64-buckos-linux-gnu-"
-        else
-            CROSS_COMPILE="aarch64-linux-gnu-"
-        fi
-        ;;
-    x86_64|*)
-        KERNEL_ARCH="x86"
-        KERNEL_IMAGE="arch/x86/boot/bzImage"
-        CROSS_COMPILE=""
-        ;;
-esac
-
-echo "Building kernel for $TARGET_ARCH (ARCH=$KERNEL_ARCH, image=$KERNEL_IMAGE)"
-
-# Convert install paths to absolute
-if [[ "$1" = /* ]]; then
-    INSTALL_BASE="$1"
-else
-    INSTALL_BASE="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
-fi
-
-export INSTALL_PATH="$INSTALL_BASE/boot"
-export INSTALL_MOD_PATH="$INSTALL_BASE"
-mkdir -p "$INSTALL_PATH"
-
-if [ -n "$5" ]; then
-    # Convert config path to absolute if it's relative
-    if [[ "$5" = /* ]]; then
-        CONFIG_PATH="$5"
-    else
-        CONFIG_PATH="$(pwd)/$5"
-    fi
-fi
-
-# $7 = config_base (e.g., "tinyconfig", "allnoconfig", or empty)
-CONFIG_BASE="$7"
-
-# Collect variable-length arguments: inject files, patches, module sources
-INJECT_COUNT="${8:-0}"
-shift 8 2>/dev/null || shift $#
-INJECT_FILES=()
-for ((i=0; i<INJECT_COUNT; i++)); do
-    INJECT_DEST="$1"
-    INJECT_SRC="$2"
-    shift 2
-    INJECT_FILES+=("$INJECT_DEST:$INJECT_SRC")
-done
-
-PATCH_COUNT="${1:-0}"
-shift
-PATCH_FILES=()
-for ((i=0; i<PATCH_COUNT; i++)); do
-    PATCH_FILES+=("$1")
-    shift
-done
-
-MODULE_COUNT="${1:-0}"
-shift
-MODULE_DIRS=()
-for ((i=0; i<MODULE_COUNT; i++)); do
-    MODULE_DIRS+=("$1")
-    shift
-done
-
-# Copy source to writable build directory (buck2 inputs are read-only)
-# BUILD_DIR is passed as $3 from Buck2 for hermetic, deterministic builds
-mkdir -p "$BUILD_DIR"
-
-# Check if we need to force GNU11 standard for GCC 14+ (C23 conflicts with kernel's bool/true/false)
-# GCC 14+ defaults to C23 where bool/true/false are keywords, breaking older kernel code
-CC_BIN="${CC:-gcc}"
-CC_VER=$($CC_BIN --version 2>/dev/null | head -1)
-echo "Compiler version: $CC_VER"
-MAKE_CC_OVERRIDE=""
-if echo "$CC_VER" | grep -iq gcc; then
-    # Extract version number - handles "gcc (GCC) 15.2.1" or "gcc (Fedora 14.2.1-6) 14.2.1" formats
-    GCC_MAJOR=$(echo "$CC_VER" | grep -oE '[0-9]+\.[0-9]+' | head -1 | cut -d. -f1)
-    echo "Detected GCC major version: $GCC_MAJOR"
-    if [ -n "$GCC_MAJOR" ] && [ "$GCC_MAJOR" -ge 14 ] 2>/dev/null; then
-        echo "GCC 14+ detected, creating wrapper to append -std=gnu11"
-        # Create a gcc wrapper that appends -std=gnu11 as the LAST argument
-        # This ensures it overrides any -std= flags set by kernel Makefiles
-        WRAPPER_DIR="$(cd "$BUILD_DIR" && pwd)/.cc-wrapper"
-        mkdir -p "$WRAPPER_DIR"
-        cat > "$WRAPPER_DIR/gcc" << 'WRAPPER'
-#!/bin/bash
-exec /usr/bin/gcc "$@" -std=gnu11
-WRAPPER
-        chmod +x "$WRAPPER_DIR/gcc"
-        # Pass CC explicitly on make command line with absolute path
-        MAKE_CC_OVERRIDE="CC=$WRAPPER_DIR/gcc HOSTCC=$WRAPPER_DIR/gcc"
-        echo "Will use: $MAKE_CC_OVERRIDE"
-    fi
-fi
-echo "Copying kernel source to build directory: $BUILD_DIR"
-cp -a "$SRC_DIR"/. "$BUILD_DIR/"
-cd "$BUILD_DIR"
-
-# Inject extra files into source tree (cwd is BUILD_DIR)
-if [ ${#INJECT_FILES[@]} -gt 0 ]; then
-    for entry in "${INJECT_FILES[@]}"; do
-        IFS=: read -r dest src <<< "$entry"
-        if [[ "$src" != /* ]]; then
-            src="$OLDPWD/$src"
-        fi
-        mkdir -p "$(dirname "$dest")"
-        cp "$src" "$dest"
-    done
-    echo "Injected ${#INJECT_FILES[@]} file(s) into source tree"
-fi
-
-# Apply patches to kernel source
-if [ ${#PATCH_FILES[@]} -gt 0 ]; then
-    echo "Applying ${#PATCH_FILES[@]} patch(es) to kernel source..."
-    for patch_file in "${PATCH_FILES[@]}"; do
-        if [ -n "$patch_file" ]; then
-            echo "  Applying $(basename "$patch_file")..."
-            if [[ "$patch_file" != /* ]]; then
-                patch_file="$OLDPWD/$patch_file"
-            fi
-            patch -p1 < "$patch_file" || { echo "Patch failed: $patch_file"; exit 1; }
-        fi
-    done
-    echo "All patches applied successfully"
-fi
-
-# Set up cross-compilation if building for different architecture
-MAKE_ARCH_OPTS="ARCH=$KERNEL_ARCH"
-if [ -n "$CROSS_COMPILE" ]; then
-    # Check if cross-compiler is available
-    if command -v "${CROSS_COMPILE}gcc" >/dev/null 2>&1; then
-        MAKE_ARCH_OPTS="$MAKE_ARCH_OPTS CROSS_COMPILE=$CROSS_COMPILE"
-        echo "Cross-compiling with $CROSS_COMPILE"
-    else
-        echo "Warning: Cross-compiler ${CROSS_COMPILE}gcc not found, attempting native build"
-        CROSS_COMPILE=""
-    fi
-fi
-
-# Apply config
-if [ -n "$CONFIG_BASE" ]; then
-    # Start from a base config target (e.g., tinyconfig, allnoconfig)
-    make $MAKE_CC_OVERRIDE $MAKE_ARCH_OPTS $CONFIG_BASE
-    if [ -n "$CONFIG_PATH" ]; then
-        # Merge config fragment on top of base
-        scripts/kconfig/merge_config.sh -m .config "$CONFIG_PATH"
-        make $MAKE_CC_OVERRIDE $MAKE_ARCH_OPTS olddefconfig
-    fi
-elif [ -n "$CONFIG_PATH" ]; then
-    cp "$CONFIG_PATH" .config
-    # Ensure config is complete with olddefconfig (non-interactive)
-    make $MAKE_CC_OVERRIDE $MAKE_ARCH_OPTS olddefconfig
-
-    # If hardware-specific config fragment exists, merge it
-    HARDWARE_CONFIG="$(dirname "$SRC_DIR")/../../hardware-kernel.config"
-    if [ -f "$HARDWARE_CONFIG" ]; then
-        echo "Merging hardware-specific kernel config..."
-        scripts/kconfig/merge_config.sh -m .config "$HARDWARE_CONFIG"
-        make $MAKE_CC_OVERRIDE $MAKE_ARCH_OPTS olddefconfig
-    fi
-else
-    make $MAKE_CC_OVERRIDE $MAKE_ARCH_OPTS defconfig
-fi
-
-# Build kernel
-# -Wno-unterminated-string-initialization: suppresses ACPI driver warnings about truncated strings
-# GCC wrapper (if GCC 14+) appends -std=gnu11 to all compilations via CC override
-KCFLAGS_EXTRA="${KCFLAGS_EXTRA:--Wno-unterminated-string-initialization}"
-make $MAKE_CC_OVERRIDE $MAKE_ARCH_OPTS -j${MAKEOPTS:-$(nproc)} WERROR=0 KCFLAGS="$KCFLAGS_EXTRA"
-
-# Manual install to avoid system kernel-install scripts that try to write to /boot, run dracut, etc.
-# Get kernel release version
-KRELEASE=$(make $MAKE_CC_OVERRIDE $MAKE_ARCH_OPTS -s kernelrelease)
-echo "Installing kernel version: $KRELEASE"
-
-# Install kernel image
-mkdir -p "$INSTALL_PATH"
-cp "$KERNEL_IMAGE" "$INSTALL_PATH/vmlinuz-$KRELEASE"
-cp System.map "$INSTALL_PATH/System.map-$KRELEASE"
-cp .config "$INSTALL_PATH/config-$KRELEASE"
-
-# Install modules
-make $MAKE_CC_OVERRIDE $MAKE_ARCH_OPTS INSTALL_MOD_PATH="$INSTALL_BASE" modules_install
-
-# Install headers (useful for out-of-tree modules)
-mkdir -p "$INSTALL_BASE/usr/src/linux-$KRELEASE"
-make $MAKE_CC_OVERRIDE $MAKE_ARCH_OPTS INSTALL_HDR_PATH="$INSTALL_BASE/usr" headers_install
-
-# Build and install external kernel modules
-if [ ${#MODULE_DIRS[@]} -gt 0 ]; then
-    echo "Building ${#MODULE_DIRS[@]} external module(s)..."
-    for mod_src_dir in "${MODULE_DIRS[@]}"; do
-        if [ -n "$mod_src_dir" ] && [ -d "$mod_src_dir" ]; then
-            # Convert to absolute path
-            if [[ "$mod_src_dir" != /* ]]; then
-                mod_src_dir="$(cd "$mod_src_dir" && pwd)"
-            fi
-
-            MOD_NAME=$(basename "$mod_src_dir")
-            echo "  Building external module: $MOD_NAME"
-
-            # Copy module source to writable location (Buck2 inputs are read-only)
-            MOD_BUILD="$BUILD_DIR/.modules/$MOD_NAME"
-            mkdir -p "$MOD_BUILD"
-            cp -a "$mod_src_dir"/. "$MOD_BUILD/"
-            chmod -R u+w "$MOD_BUILD"
-
-            # Build module against our kernel tree
-            make $MAKE_CC_OVERRIDE $MAKE_ARCH_OPTS \
-                -C "$BUILD_DIR" M="$MOD_BUILD" -j${MAKEOPTS:-$(nproc)} modules
-
-            # Install module .ko files
-            mkdir -p "$INSTALL_BASE/lib/modules/$KRELEASE/extra"
-            find "$MOD_BUILD" -name '*.ko' -exec \
-                install -m 644 {} "$INSTALL_BASE/lib/modules/$KRELEASE/extra/" \;
-
-            echo "  Installed module: $MOD_NAME"
-        fi
-    done
-    echo "All external modules built and installed"
-fi
-
-# Run depmod to generate module dependency metadata
-if command -v depmod >/dev/null 2>&1; then
-    echo "Running depmod for $KRELEASE..."
-    depmod -b "$INSTALL_BASE" "$KRELEASE" 2>/dev/null || true
-fi
-""",
-        is_executable = True,
-    )
-
-    # Declare a scratch directory for the kernel build (Buck2 inputs are read-only)
-    # Using a declared output ensures deterministic paths instead of /tmp or $$
-    build_scratch_dir = ctx.actions.declare_output(ctx.attrs.name + "-build-scratch", dir = True)
-
-    # Build command arguments
-    cmd = cmd_args([
-        "bash",
-        script,
-        install_dir.as_output(),
-        src_dir,
-        build_scratch_dir.as_output(),
-        ctx.attrs.arch,  # Target architecture
-    ])
-
-    # Add config file if present, otherwise add empty string placeholder
     if config_file:
-        cmd.add(config_file)
-    else:
-        cmd.add("")
+        cmd.add("--config", config_file)
 
-    # Add cross-toolchain directory if present, otherwise empty placeholder
+    if ctx.attrs.config_base:
+        cmd.add("--config-base", ctx.attrs.config_base)
+
+    if cross_compile:
+        cmd.add("--cross-compile", cross_compile)
+
     if ctx.attrs.cross_toolchain:
         toolchain_dir = ctx.attrs.cross_toolchain[DefaultInfo].default_outputs[0]
-        cmd.add(toolchain_dir)
-    else:
-        cmd.add("")
+        cmd.add("--cross-toolchain-dir", toolchain_dir)
 
-    # Add config_base (or empty placeholder)
-    cmd.add(ctx.attrs.config_base or "")
-
-    # Add inject file count and dest/src pairs
-    cmd.add(str(len(ctx.attrs.inject_files)))
-    for dest_path, src_file in ctx.attrs.inject_files.items():
-        cmd.add(dest_path)
-        cmd.add(src_file)
-
-    # Add patch count and patch file paths
-    cmd.add(str(len(ctx.attrs.patches)))
-    for patch in ctx.attrs.patches:
-        cmd.add(patch)
-
-    # Add module count and module source directories
-    cmd.add(str(len(ctx.attrs.modules)))
-    for mod in ctx.attrs.modules:
-        mod_dir = mod[DefaultInfo].default_outputs[0]
-        cmd.add(mod_dir)
-
-    # Ensure all attributes contribute to the action cache key
-    cache_key = ctx.actions.write(
-        "cache_key.txt",
-        "version={}\n".format(ctx.attrs.version),
-    )
-    cmd.add(cmd_args(hidden = [cache_key]))
-
-    env = {}
     if ctx.attrs.kcflags:
-        env["KCFLAGS_EXTRA"] = ctx.attrs.kcflags
+        cmd.add("--kcflags", ctx.attrs.kcflags)
+
+    for patch in ctx.attrs.patches:
+        cmd.add("--patch", patch)
+
+    for dest_path, src_file in ctx.attrs.inject_files.items():
+        cmd.add("--inject-file", cmd_args(dest_path, ":", src_file, delimiter = ""))
+
+    for mod in ctx.attrs.modules:
+        cmd.add("--external-module", mod[DefaultInfo].default_outputs[0])
 
     ctx.actions.run(
         cmd,
-        env = env,
         category = "kernel",
         identifier = ctx.attrs.name,
     )
 
-    return [DefaultInfo(default_output = install_dir)]
+    return [
+        DefaultInfo(
+            default_output = bzimage,
+            other_outputs = [vmlinux, modules_dir, build_tree, symvers, config_out, headers],
+        ),
+        KernelInfo(
+            vmlinux = vmlinux,
+            bzimage = bzimage,
+            modules_dir = modules_dir,
+            build_tree = build_tree,
+            module_symvers = symvers,
+            config = config_out,
+            headers = headers,
+            version = ctx.attrs.version,
+        ),
+    ]
 
 _kernel_build_rule = rule(
     impl = _kernel_build_impl,
@@ -455,14 +200,17 @@ _kernel_build_rule = rule(
         "version": attrs.string(),
         "config": attrs.option(attrs.source(), default = None),
         "config_dep": attrs.option(attrs.dep(), default = None),
-        "arch": attrs.string(default = "x86_64"),  # Target architecture: x86_64 or aarch64
-        "cross_toolchain": attrs.option(attrs.dep(), default = None),  # Cross-toolchain for cross-compilation
-        "patches": attrs.list(attrs.source(), default = []),  # Patches to apply to kernel source
-        "modules": attrs.list(attrs.dep(), default = []),  # External module sources to build
+        "arch": attrs.string(default = "x86_64"),
+        "cross_toolchain": attrs.option(attrs.dep(), default = None),
+        "patches": attrs.list(attrs.source(), default = []),
+        "modules": attrs.list(attrs.dep(), default = []),
         "config_base": attrs.option(attrs.string(), default = None),
         "inject_files": attrs.dict(attrs.string(), attrs.source(), default = {}),
         "kcflags": attrs.option(attrs.string(), default = None),
         "labels": attrs.list(attrs.string(), default = []),
+        "_kernel_build_tool": attrs.default_only(
+            attrs.exec_dep(default = "//tools:kernel_build"),
+        ),
     },
 )
 
@@ -580,29 +328,25 @@ def kernel_headers(name, source, version = "", config = None, labels = [], visib
 def _kernel_btf_headers_impl(ctx: AnalysisContext) -> list[Provider]:
     """Generate vmlinux.h from a built kernel (for BPF CO-RE / sched_ext)."""
     install_dir = ctx.actions.declare_output(ctx.attrs.name, dir = True)
-    kernel_dir = ctx.attrs.kernel[DefaultInfo].default_outputs[0]
+
+    if KernelInfo not in ctx.attrs.kernel:
+        fail("kernel dep must provide KernelInfo")
+    vmlinux = ctx.attrs.kernel[KernelInfo].vmlinux
 
     script = ctx.actions.write(
         "gen_btf.sh",
         """#!/bin/bash
 set -e
-KERNEL_DIR="$2"
 OUT="$1"
+VMLINUX="$2"
 mkdir -p "$OUT/usr/include/linux"
 
-# Find vmlinux with BTF info
-VMLINUX=""
-for candidate in "$KERNEL_DIR"/boot/vmlinuz-* "$KERNEL_DIR"/boot/vmlinux-*; do
-    [ -f "$candidate" ] && VMLINUX="$candidate" && break
-done
-
-if [ -z "$VMLINUX" ]; then
-    echo "Warning: vmlinux not found, creating empty vmlinux.h"
+if [ ! -s "$VMLINUX" ]; then
+    echo "Warning: vmlinux empty or missing, creating empty vmlinux.h"
     touch "$OUT/usr/include/linux/vmlinux.h"
     exit 0
 fi
 
-# Generate vmlinux.h using bpftool if available
 if command -v bpftool >/dev/null 2>&1; then
     bpftool btf dump file "$VMLINUX" format c > "$OUT/usr/include/linux/vmlinux.h" 2>/dev/null || \
         touch "$OUT/usr/include/linux/vmlinux.h"
@@ -614,7 +358,7 @@ fi
         is_executable = True,
     )
 
-    cmd = cmd_args(["bash", script, install_dir.as_output(), kernel_dir])
+    cmd = cmd_args(["bash", script, install_dir.as_output(), vmlinux])
     ctx.actions.run(cmd, category = "kernel_btf", identifier = ctx.attrs.name)
 
     return [DefaultInfo(default_output = install_dir)]
@@ -640,36 +384,36 @@ def kernel_btf_headers(name, kernel, labels = [], visibility = []):
 def _kernel_modules_install_impl(ctx: AnalysisContext) -> list[Provider]:
     """Install kernel modules with optional extra out-of-tree modules."""
     install_dir = ctx.actions.declare_output(ctx.attrs.name, dir = True)
-    kernel_dir = ctx.attrs.kernel[DefaultInfo].default_outputs[0]
+
+    if KernelInfo not in ctx.attrs.kernel:
+        fail("kernel dep must provide KernelInfo")
+    ki = ctx.attrs.kernel[KernelInfo]
+    modules_src = ki.modules_dir
 
     script = ctx.actions.write(
         "install_modules.sh",
         """#!/bin/bash
 set -e
-KERNEL_DIR="$2"
 OUT="$1"
-VERSION="$3"
-shift 3
+MODULES_SRC="$2"
+shift 2
 
-# Copy in-tree modules from kernel build
-if [ -d "$KERNEL_DIR/lib/modules" ]; then
-    mkdir -p "$OUT/lib"
-    cp -a "$KERNEL_DIR/lib/modules" "$OUT/lib/"
+# Copy modules from kernel build (modules_dir contains <krelease>/...)
+if [ -d "$MODULES_SRC" ]; then
+    mkdir -p "$OUT/lib/modules"
+    cp -a "$MODULES_SRC/." "$OUT/lib/modules/"
 fi
 
 # Install extra out-of-tree modules
+KRELEASE=$(ls "$OUT/lib/modules/" 2>/dev/null | head -1)
 for mod_dir in "$@"; do
-    if [ -d "$mod_dir" ]; then
-        KRELEASE=$(ls "$OUT/lib/modules/" 2>/dev/null | head -1)
-        if [ -n "$KRELEASE" ]; then
-            mkdir -p "$OUT/lib/modules/$KRELEASE/extra"
-            find "$mod_dir" -name '*.ko' -exec cp {} "$OUT/lib/modules/$KRELEASE/extra/" \;
-        fi
+    if [ -d "$mod_dir" ] && [ -n "$KRELEASE" ]; then
+        mkdir -p "$OUT/lib/modules/$KRELEASE/extra"
+        find "$mod_dir" -name '*.ko' -exec cp {} "$OUT/lib/modules/$KRELEASE/extra/" \\;
     fi
 done
 
 # Run depmod if modules exist
-KRELEASE=$(ls "$OUT/lib/modules/" 2>/dev/null | head -1)
 if [ -n "$KRELEASE" ] && command -v depmod >/dev/null 2>&1; then
     depmod -b "$OUT" "$KRELEASE" 2>/dev/null || true
 fi
@@ -677,7 +421,7 @@ fi
         is_executable = True,
     )
 
-    cmd = cmd_args(["bash", script, install_dir.as_output(), kernel_dir, ctx.attrs.version])
+    cmd = cmd_args(["bash", script, install_dir.as_output(), modules_src])
     for mod in ctx.attrs.extra_modules:
         cmd.add(mod[DefaultInfo].default_outputs[0])
 

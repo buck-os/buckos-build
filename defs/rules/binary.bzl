@@ -156,12 +156,7 @@ export SRCS="$(_resolve "$1")"; shift
 export OUT="$(_resolve "$1")"; shift
 export PV="$1"; shift
 
-# Source ebuild helpers if available
-if [[ -n "${_EBUILD_HELPERS:-}" && -f "$_EBUILD_HELPERS" ]]; then
-    source "$_EBUILD_HELPERS"
-fi
-
-# Backward compat: export old ebuild env vars
+# Standard build env vars available to install_script
 export DESTDIR="$OUT"
 export S="$SRCS"
 export WORKDIR="$(_resolve "${BUCK_SCRATCH_PATH:-$(mktemp -d)}")"
@@ -236,10 +231,6 @@ source "$_INSTALL_SCRIPT"
         env[key] = value
     if dep_paths:
         env["_DEP_BIN_PATHS"] = cmd_args(dep_paths, delimiter = ":")
-
-    # Inject ebuild helpers path
-    if ctx.attrs._ebuild_helpers:
-        env["_EBUILD_HELPERS"] = ctx.attrs._ebuild_helpers
 
     # Inject user-specified environment variables (last — overrides everything)
     for key, value in ctx.attrs.env.items():
@@ -324,9 +315,6 @@ binary_package = rule(
         # Tool deps (hidden — resolved automatically)
         "_patch_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:patch_helper"),
-        ),
-        "_ebuild_helpers": attrs.default_only(
-            attrs.source(default = "//tools:ebuild_helpers.sh"),
         ),
     } | TOOLCHAIN_ATTRS,
 )

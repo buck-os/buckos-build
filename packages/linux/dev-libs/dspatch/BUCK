@@ -10,7 +10,7 @@ package(
     configure_args = [
         "-Dcpp_std=c++17",
     ],
-    src_prepare = '''
+    pre_configure_cmds = ['''
 # Extract fast_any submodule
 mkdir -p "$S/include/fast_any"
 if [ -f "../__fast_any-src__/fast_any-src" ]; then
@@ -18,6 +18,5 @@ if [ -f "../__fast_any-src__/fast_any-src" ]; then
 elif [ -d "../__fast_any-src__" ]; then
     cp -r "../__fast_any-src__"/* "$S/include/fast_any/"
 fi
-''',
-    extra_sources = [":fast_any-src"],
+'''],
 )

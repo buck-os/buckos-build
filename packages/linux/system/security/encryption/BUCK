@@ -16,8 +16,6 @@ package(
     description = "Simple, modern, secure file encryption tool with small explicit keys",
     homepage = "https://age-encryption.org/",
     license = "BSD-3-Clause",
-    packages = ["./cmd/age", "./cmd/age-keygen"],
-    bins = ["age", "age-keygen"],
     deps = [
         "//packages/linux/lang/go:go",
     ],
@@ -37,14 +35,6 @@ package(
     description = "Rust implementation of the age encryption tool",
     homepage = "https://github.com/str4d/rage",
     license = "Apache-2.0 OR MIT",
-    cargo_args = [
-        "--all-features",
-    ],
-    bins = [
-        "rage",
-        "rage-keygen",
-        "rage-mount",
-    ],
     deps = [
         "//packages/linux/lang/rust:rust",
     ],
@@ -254,8 +244,6 @@ package(
     description = "Encrypted overlay filesystem written in Go",
     homepage = "https://nuetzlich.net/gocryptfs/",
     license = "MIT",
-    packages = [".", "./gocryptfs-xray"],
-    bins = ["gocryptfs", "gocryptfs-xray"],
     deps = [
         "//packages/linux/lang/go:go",
         "//packages/linux/system/libs/crypto/openssl:openssl",
@@ -276,8 +264,6 @@ package(
     description = "Tool for managing Linux native filesystem encryption",
     homepage = "https://github.com/google/fscrypt",
     license = "Apache-2.0",
-    packages = ["./cmd/fscrypt"],
-    bins = ["fscrypt"],
     deps = [
         "//packages/linux/lang/go:go",
         ":linux-pam",
@@ -371,8 +357,6 @@ package(
     description = "Simple and flexible tool for managing secrets",
     homepage = "https://github.com/getsops/sops",
     license = "MPL-2.0",
-    packages = ["./cmd/sops"],
-    bins = ["sops"],
     deps = [
         "//packages/linux/lang/go:go",
     ],
@@ -442,11 +426,6 @@ package(
     description = "YubiKey plugin for age",
     homepage = "https://github.com/str4d/age-plugin-yubikey",
     license = "Apache-2.0 OR MIT",
-    cargo_args = [
-    ],
-    bins = [
-        "age-plugin-yubikey",
-    ],
     deps = [
         "//packages/linux/lang/rust:rust",
         ":pcsc-lite",
@@ -509,11 +488,6 @@ package(
     description = "Command-line frontend for Sequoia, a modern OpenPGP implementation",
     homepage = "https://sequoia-pgp.org/",
     license = "GPL-2.0+",
-    cargo_args = [
-    ],
-    bins = [
-        "sq",
-    ],
     deps = [
         "//packages/linux/lang/rust:rust",
         "//packages/linux/system/libs/crypto/openssl:openssl",
