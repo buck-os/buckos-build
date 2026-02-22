@@ -1,33 +1,48 @@
-load("//defs:package_defs.bzl", "download_source")
+load("//defs/rules:source.bzl", "extract_source")
 
 # Linux Kernel Source Packages
 # Updated: 2025-12-06
 
 # Mainline - Latest development kernel
-download_source(
-    name = "linux-6.18-src",
-    src_uri = "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.18.tar.xz",
+http_file(
+    name = "linux-6.18-archive",
+    urls = ["https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.18.tar.xz"],
     sha256 = "9106a4605da9e31ff17659d958782b815f9591ab308d03b0ee21aad6c7dced4b",
-    signature_required = False,
+    out = "linux-6.18.tar.xz",
+)
+
+extract_source(
+    name = "linux-6.18-src",
+    source = ":linux-6.18-archive",
     visibility = ["PUBLIC"],
 )
 
 # Stable - Latest stable kernel
-download_source(
-    name = "linux-6.17-src",
-    src_uri = "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.17.10.tar.xz",
+http_file(
+    name = "linux-6.17-archive",
+    urls = ["https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.17.10.tar.xz"],
     sha256 = "fa7f344f3a50dad0af2e0066d51bd3b9183fd24587861042343ded3d1fd5c8cd",
-    signature_required = False,
+    out = "linux-6.17.10.tar.xz",
+)
+
+extract_source(
+    name = "linux-6.17-src",
+    source = ":linux-6.17-archive",
     visibility = ["PUBLIC"],
 )
 
 # LTS - Long Term Support (6.12.x series)
 # Supported until December 2026
-download_source(
-    name = "linux-6.12-src",
-    src_uri = "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.60.tar.xz",
+http_file(
+    name = "linux-6.12-archive",
+    urls = ["https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.60.tar.xz"],
     sha256 = "a63096b2147411d683cecbf87622bb2ff4885bac2b3641d3d4f10250c89cdcf8",
-    signature_required = False,
+    out = "linux-6.12.60.tar.xz",
+)
+
+extract_source(
+    name = "linux-6.12-src",
+    source = ":linux-6.12-archive",
     visibility = ["PUBLIC"],
 )
 

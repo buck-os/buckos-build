@@ -1,66 +1,41 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
 # pam - Pluggable Authentication Modules
-ebuild_package(
+package(
     name = "pam",
-    src_uri = "https://github.com/linux-pam/linux-pam/releases/download/v1.6.1/Linux-PAM-1.6.1.tar.xz",
-
-    sha256 = "f8923c740159052d719dbfc2a2f81942d68dd34fcaf61c706a02c9b80feeef8e",
-
-    signature_sha256 = "ef0e0597974d988c9f25f5a155e001b9dcb972618a4a166b8acefac1f5357303",
-    iuse = [
-        "audit",
-        "berkdb",
-        "debug",
-        "elogind",
-        "examples",
-        "nis",
-        "nls",
-        "selinux",
-        "systemd",
-    ],
-    use_configure = {
-        "-audit": "--disable-audit",
-        "-berkdb": "--disable-berkdb",
-        "-debug": "--disable-debug",
-        "-elogind": "--disable-elogind",
-        "-examples": "--disable-examples",
-        "-nis": "--disable-nis",
-        "-nls": "--disable-nls",
-        "-selinux": "--disable-selinux",
-        "-systemd": "--disable-systemd",
-        "audit": "--enable-audit",
-        "berkdb": "--enable-berkdb",
-        "debug": "--enable-debug",
-        "elogind": "--enable-elogind",
-        "examples": "--enable-examples",
-        "nis": "--enable-nis",
-        "nls": "--enable-nls",
-        "selinux": "--enable-selinux",
-        "systemd": "--enable-systemd",
-    },
+    build_rule = "binary",
     version = "1.6.1",
-    category = "system/security/auth",
-    slot = "0",
+    url = "https://github.com/linux-pam/linux-pam/releases/download/v1.6.1/Linux-PAM-1.6.1.tar.xz",
+    sha256 = "f8923c740159052d719dbfc2a2f81942d68dd34fcaf61c706a02c9b80feeef8e",
     description = "Pluggable Authentication Modules",
     homepage = "https://github.com/linux-pam/linux-pam",
     license = "BSD-3-Clause",
-
-    src_configure = '''
+    use_configure = {
+        "audit": ("--enable-audit", "--disable-audit"),
+        "berkdb": ("--enable-berkdb", "--disable-berkdb"),
+        "debug": ("--enable-debug", "--disable-debug"),
+        "elogind": ("--enable-elogind", "--disable-elogind"),
+        "examples": ("--enable-examples", "--disable-examples"),
+        "nis": ("--enable-nis", "--disable-nis"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "systemd": ("--enable-systemd", "--disable-systemd"),
+    },
+    install_script = '''
 # For cross-compilation: --build is the build machine, --host is the target
 BUILD_SYSTEM=$(./build-aux/config.guess 2>/dev/null || echo x86_64-pc-linux-gnu)
 HOST_SYSTEM=${CHOST:-$(${CC:-gcc} -dumpmachine)}
 
-./configure \\
-    --prefix=/usr \\
-    --sysconfdir=/etc \\
-    --libdir=/usr/lib \\
-    --sbindir=/usr/sbin \\
-    --enable-securedir=/lib/security \\
-    --enable-pie \\
-    --disable-nls \\
-    --disable-db \\
-    --build=$BUILD_SYSTEM \\
+./configure \
+    --prefix=/usr \
+    --sysconfdir=/etc \
+    --libdir=/usr/lib \
+    --sbindir=/usr/sbin \
+    --enable-securedir=/lib/security \
+    --enable-pie \
+    --disable-nls \
+    --disable-db \
+    --build=$BUILD_SYSTEM \
     --host=$HOST_SYSTEM
 
 # PAM upstream bug: bigcrypt helper is missing @EXE_CFLAGS@ (PIE flags)
@@ -68,13 +43,9 @@ HOST_SYSTEM=${CHOST:-$(${CC:-gcc} -dumpmachine)}
 # cross-linker (which defaults to -pie via --enable-default-pie specs)
 # rejects the non-PIC relocations.
 sed -i 's/^bigcrypt_CFLAGS = .*/& $(EXE_CFLAGS)/' modules/pam_unix/Makefile
-''',
 
-    src_compile = '''
 make -j${MAKEOPTS:-$(nproc)}
-''',
 
-    src_install = '''
 make DESTDIR="$DESTDIR" install
 
 # Remove libtool .la files to prevent host path contamination
@@ -163,8 +134,7 @@ session  required pam_unix.so
 session  required pam_loginuid.so
 SYSTEMDUSER
 ''',
-
-    depend = [
+    deps = [
         "//packages/linux/system/libs/ipc/libtirpc:libtirpc",
         "//packages/linux/system/libs/network/libnsl:libnsl",
         "//packages/linux/system/libs/crypto/libxcrypt:libxcrypt",  # libcrypt.so.2 for password hashing

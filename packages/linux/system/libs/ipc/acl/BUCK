@@ -1,25 +1,19 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
-ebuild_package(
+package(
     name = "acl",
-    src_uri = "https://download.savannah.nongnu.org/releases/acl/acl-2.3.2.tar.xz",
-
-    sha256 = "97203a72cae99ab89a067fe2210c1cbf052bc492b479eca7d226d9830883b0bd",
-    iuse = ["nls", "static-libs"],
-    use_configure = {
-        "-nls": "--disable-nls",
-        "-static-libs": "--disable-static",
-        "nls": "--enable-nls",
-        "static-libs": "--enable-static",
-    },
+    build_rule = "binary",
     version = "2.3.2",
-    category = "system/libs/ipc",
-    slot = "0",
+    url = "https://download.savannah.nongnu.org/releases/acl/acl-2.3.2.tar.xz",
+    sha256 = "97203a72cae99ab89a067fe2210c1cbf052bc492b479eca7d226d9830883b0bd",
     description = "Access Control List library",
     homepage = "https://github.com/sailfishos-mirror/acl",
     license = "LGPL-2.1",
-
-    src_configure = '''
+    use_configure = {
+        "nls": ("--enable-nls", "--disable-nls"),
+        "static-libs": ("--enable-static", "--disable-static"),
+    },
+    install_script = '''
 # Set LDFLAGS and LIBS to find attr from dependencies, not host
 _EXTRA_LDFLAGS=""
 _ATTR_LIB=""
@@ -42,11 +36,11 @@ if [ -n "$_ATTR_LIB" ]; then
     export LIBS="${LIBS:-} $_ATTR_LIB"
 fi
 
-./configure \\
-    --prefix=/usr \\
-    --build=$(./build-aux/config.guess 2>/dev/null || echo x86_64-pc-linux-gnu) \\
-    --host=${CHOST:-$(${CC:-gcc} -dumpmachine)} \\
-    --disable-static \\
+./configure \
+    --prefix=/usr \
+    --build=$(./build-aux/config.guess 2>/dev/null || echo x86_64-pc-linux-gnu) \
+    --host=${CHOST:-$(${CC:-gcc} -dumpmachine)} \
+    --disable-static \
     --disable-nls
 
 # Patch the Makefile to remove -lattr (which searches host paths) and only use explicit path
@@ -54,9 +48,7 @@ if [ -f Makefile ]; then
     sed -i 's/^LIBS = -lattr /LIBS = /' Makefile
     echo "Patched Makefile to remove -lattr and use only explicit libattr path"
 fi
-''',
 
-    src_compile = '''
 # Build list of all dependency lib directories
 _LIB_DIRS=""
 IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
@@ -80,20 +72,14 @@ if [ -n "$_LIB_DIRS" ]; then
 fi
 
 make -j${MAKEOPTS:-$(nproc)}
-''',
 
-    src_install = '''
 make DESTDIR="$DESTDIR" install
 ''',
-
-    bdepend = [
+    deps = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
         "//packages/linux/dev-tools/build-systems/automake:automake",
         "//packages/linux/dev-tools/build-systems/libtool:libtool",
         "//packages/linux/dev-libs/misc/gettext:gettext",
-        "//packages/linux/system/libs/ipc/attr:attr",
-    ],
-    rdepend = [
         "//packages/linux/system/libs/ipc/attr:attr",
     ],
     visibility = ["PUBLIC"],

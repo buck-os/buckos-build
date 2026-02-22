@@ -1,67 +1,59 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
-load("//defs:eclasses.bzl", "inherit")
+load("//defs:package.bzl", "package")
 
 # Autoconf cannot use autotools_package because it would create a circular dependency
 # (autotools eclass depends on autoconf). Build it manually instead.
-ebuild_package(
+package(
+    build_rule = "binary",
     name = "autoconf",
     # NOTE: autoconf is a bootstrap package - it cannot depend on autotools
     # because that would create a circular dependency. The tarball ships with
     # a pre-generated configure script, so we don't need autoreconf.
-    src_uri = "https://mirrors.kernel.org/gnu/autoconf/autoconf-2.72.tar.xz",
-
-    sha256 = "ba885c1319578d6c94d46e9b0dceb4014caafe2490e437a0dbca3f270a223f5a",
-
-    signature_sha256 = "66930207a5e2e5edf7a135aca43c2f38a98333717d4b10be3f0b96566aadaa55",
     version = "2.72",
-    category = "dev-tools/build-systems",
-    slot = "0",
+    url = "https://mirrors.kernel.org/gnu/autoconf/autoconf-2.72.tar.xz",
+    sha256 = "ba885c1319578d6c94d46e9b0dceb4014caafe2490e437a0dbca3f270a223f5a",
     description = "Automatic configure script builder",
     homepage = "https://www.gnu.org/software/autoconf/",
     license = "GPL-3+",
+    install_script = '''
+        cd $SRCS
 
-    src_configure = '''
-# Pre-set cache variable to skip filesystem character test that creates
-# files with backslashes in their names (Buck2 cannot handle these paths)
-ac_cv_unsupported_fs_chars='\"<>\\\\|' ./configure \\
-    --prefix=/usr \\
-    --build=$(./build-aux/config.guess 2>/dev/null || echo x86_64-pc-linux-gnu) \\
-    --host=${CHOST:-$(${CC:-gcc} -dumpmachine)} \\
-    --mandir=/usr/share/man \\
-    --infodir=/usr/share/info \\
-    --datadir=/usr/share \\
-    --sysconfdir=/etc \\
-    --localstatedir=/var \\
-    --libdir=/usr/lib64 \\
-    --disable-doc
-''',
+        # Pre-set cache variable to skip filesystem character test that creates
+        # files with backslashes in their names (Buck2 cannot handle these paths)
+        ac_cv_unsupported_fs_chars='"<>\\\\|' ./configure \
+            --prefix=/usr \
+            --build=$(./build-aux/config.guess 2>/dev/null || echo x86_64-pc-linux-gnu) \
+            --host=${CHOST:-$(${CC:-gcc} -dumpmachine)} \
+            --mandir=/usr/share/man \
+            --infodir=/usr/share/info \
+            --datadir=/usr/share \
+            --sysconfdir=/etc \
+            --localstatedir=/var \
+            --libdir=/usr/lib64 \
+            --disable-doc
 
-    src_compile = '''
-# Clean any pre-existing frozen files that may cause format mismatches
-find . -name '*.m4f' -delete 2>/dev/null || true
+        # Clean any pre-existing frozen files that may cause format mismatches
+        find . -name '*.m4f' -delete 2>/dev/null || true
 
-# Build with MAKEINFO=true to skip documentation (reduces build time)
-make -j${MAKEOPTS:-$(nproc)} MAKEINFO=true
-''',
+        # Build with MAKEINFO=true to skip documentation (reduces build time)
+        make -j${MAKEOPTS:-$(nproc)} MAKEINFO=true
 
-    src_install = '''
-make DESTDIR="$DESTDIR" install
+        make DESTDIR="$OUT" install
 
-# Create wrapper scripts that set the correct data directory
-# autom4te has /usr/share/autoconf hardcoded, but in Buck2 builds we need
-# to use the package's own share directory
-BINDIR="$DESTDIR/usr/bin"
-DATADIR="$DESTDIR/usr/share/autoconf"
+        # Create wrapper scripts that set the correct data directory
+        # autom4te has /usr/share/autoconf hardcoded, but in Buck2 builds we need
+        # to use the package's own share directory
+        BINDIR="$OUT/usr/bin"
+        DATADIR="$OUT/usr/share/autoconf"
 
-# Patch autom4te.cfg to remove hardcoded paths - the wrapper will set them dynamically
-# The config file has lines like: args: --prepend-include '/usr/share/autoconf'
-# We replace /usr/share/autoconf with a placeholder that will be expanded by the wrapper
-sed -i "s|--prepend-include '/usr/share/autoconf'|--prepend-include '\\\$AC_MACRODIR'|g" "$DATADIR/autom4te.cfg"
+        # Patch autom4te.cfg to remove hardcoded paths - the wrapper will set them dynamically
+        # The config file has lines like: args: --prepend-include '/usr/share/autoconf'
+        # We replace /usr/share/autoconf with a placeholder that will be expanded by the wrapper
+        sed -i "s|--prepend-include '/usr/share/autoconf'|--prepend-include '\\\$AC_MACRODIR'|g" "$DATADIR/autom4te.cfg"
 
-# Create a wrapper for autom4te that uses -B to prepend the correct include path
-if [ -f "$BINDIR/autom4te" ]; then
-    mv "$BINDIR/autom4te" "$BINDIR/autom4te.real"
-    cat > "$BINDIR/autom4te" << 'WRAPPER_EOF'
+        # Create a wrapper for autom4te that uses -B to prepend the correct include path
+        if [ -f "$BINDIR/autom4te" ]; then
+            mv "$BINDIR/autom4te" "$BINDIR/autom4te.real"
+            cat > "$BINDIR/autom4te" << 'WRAPPER_EOF'
 #!/bin/sh
 # Wrapper to set correct data directory for autom4te
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -72,13 +64,13 @@ export trailer_m4="$DATA_DIR/autoconf/trailer.m4"
 # Use -B to prepend the correct include directory
 exec "$SCRIPT_DIR/autom4te.real" -B "$DATA_DIR" "$@"
 WRAPPER_EOF
-    chmod +x "$BINDIR/autom4te"
-fi
+            chmod +x "$BINDIR/autom4te"
+        fi
 
-# Create a wrapper for autoconf that sets the correct autom4te and trailer_m4
-if [ -f "$BINDIR/autoconf" ]; then
-    mv "$BINDIR/autoconf" "$BINDIR/autoconf.real"
-    cat > "$BINDIR/autoconf" << 'WRAPPER_EOF'
+        # Create a wrapper for autoconf that sets the correct autom4te and trailer_m4
+        if [ -f "$BINDIR/autoconf" ]; then
+            mv "$BINDIR/autoconf" "$BINDIR/autoconf.real"
+            cat > "$BINDIR/autoconf" << 'WRAPPER_EOF'
 #!/bin/sh
 # Wrapper to set correct paths for autoconf
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -89,14 +81,14 @@ export trailer_m4="$DATA_DIR/autoconf/trailer.m4"
 export AUTOM4TE="$SCRIPT_DIR/autom4te"
 exec "$SCRIPT_DIR/autoconf.real" "$@"
 WRAPPER_EOF
-    chmod +x "$BINDIR/autoconf"
-fi
+            chmod +x "$BINDIR/autoconf"
+        fi
 
-# Similarly wrap autoheader and autoreconf
-for tool in autoheader autoreconf autoupdate autoscan ifnames; do
-    if [ -f "$BINDIR/$tool" ]; then
-        mv "$BINDIR/$tool" "$BINDIR/${tool}.real"
-        cat > "$BINDIR/$tool" << WRAPPER_EOF
+        # Similarly wrap autoheader and autoreconf
+        for tool in autoheader autoreconf autoupdate autoscan ifnames; do
+            if [ -f "$BINDIR/$tool" ]; then
+                mv "$BINDIR/$tool" "$BINDIR/${tool}.real"
+                cat > "$BINDIR/$tool" << WRAPPER_EOF
 #!/bin/sh
 # Wrapper to set correct paths for $tool
 SCRIPT_DIR="\$(cd "\$(dirname "\$0")" && pwd)"
@@ -107,21 +99,20 @@ export trailer_m4="\$DATA_DIR/autoconf/trailer.m4"
 export AUTOM4TE="\$SCRIPT_DIR/autom4te"
 exec "\$SCRIPT_DIR/${tool}.real" "\$@"
 WRAPPER_EOF
-        chmod +x "$BINDIR/$tool"
-    fi
-done
+                chmod +x "$BINDIR/$tool"
+            fi
+        done
 
-# Also patch the .real scripts to replace hardcoded @include arrays with dynamic paths
-for script in autoscan.real autoupdate.real; do
-    if [ -f "$BINDIR/$script" ]; then
-        # Replace hardcoded @include with dynamic version using AC_MACRODIR env var
-        # Use # as delimiter since | appears in the replacement text (|| operator)
-        sed -i "s#my @include = ('/usr/share/autoconf');#my @include = (\$ENV{'AC_MACRODIR'} // '/usr/share/autoconf');#g" "$BINDIR/$script"
-    fi
-done
-''',
-
+        # Also patch the .real scripts to replace hardcoded @include arrays with dynamic paths
+        for script in autoscan.real autoupdate.real; do
+            if [ -f "$BINDIR/$script" ]; then
+                # Replace hardcoded @include with dynamic version using AC_MACRODIR env var
+                # Use # as delimiter since | appears in the replacement text (|| operator)
+                sed -i "s#my @include = ('/usr/share/autoconf');#my @include = (\$ENV{'AC_MACRODIR'} // '/usr/share/autoconf');#g" "$BINDIR/$script"
+            fi
+        done
+    ''',
     # No dependencies - autoconf is a bootstrap package
-    depend = [],
+    deps = [],
     visibility = ["PUBLIC"],
 )

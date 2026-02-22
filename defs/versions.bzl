@@ -31,8 +31,7 @@ Example usage:
     ]
 """
 
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
-load("//defs:eclasses.bzl", "inherit")
+load("//defs:package.bzl", "package")
 
 # ============================================================================
 # VERSION COMPARISON UTILITIES
@@ -399,49 +398,49 @@ def versioned_package(
     # Version-specific target name
     versioned_name = "{}-{}".format(name, version)
 
-    # Create source download if needed
+    # Build package kwargs
+    pkg_kwargs = {
+        "name": versioned_name,
+        "build_rule": "autotools",
+        "version": version,
+        "description": kwargs.get("description", ""),
+        "homepage": kwargs.get("homepage", ""),
+        "license": kwargs.get("license", ""),
+        "visibility": kwargs.get("visibility", ["PUBLIC"]),
+    }
+
+    # Source: url+sha256 or pre-built source target
     if src_uri and sha256:
-        download_source(
-            name = versioned_name + "-src",
-            src_uri = src_uri,
-            sha256 = sha256,
-        )
-        source = ":" + versioned_name + "-src"
+        pkg_kwargs["url"] = src_uri
+        pkg_kwargs["sha256"] = sha256
+    elif source:
+        pkg_kwargs["source"] = source
 
-    # Use autotools eclass for build
-    eclass_config = inherit(["autotools"])
+    # Configure and make args
+    if kwargs.get("configure_args"):
+        pkg_kwargs["configure_args"] = kwargs["configure_args"]
+    if kwargs.get("make_args"):
+        pkg_kwargs["make_args"] = kwargs["make_args"]
 
-    # Set environment variables for autotools eclass
-    env = dict(kwargs.get("env", {}))
-    if "configure_args" in kwargs and kwargs["configure_args"]:
-        env["EXTRA_ECONF"] = " ".join(kwargs["configure_args"])
-    if "make_args" in kwargs and kwargs["make_args"]:
-        env["EXTRA_EMAKE"] = " ".join(kwargs["make_args"])
+    # Pre-configure commands
+    pre_configure = kwargs.get("pre_configure", "")
+    if pre_configure:
+        pkg_kwargs["pre_configure_cmds"] = [pre_configure]
 
-    # Build src_install with optional post_install appended
-    src_install = eclass_config["src_install"]
+    # Post-install commands
     post_install = kwargs.get("post_install", "")
     if post_install:
-        src_install += "\n" + post_install
+        pkg_kwargs["post_install_cmds"] = [post_install]
 
-    # Create the versioned package using ebuild_package
-    ebuild_package(
-        name = versioned_name,
-        source = source,
-        version = version,
-        src_configure = eclass_config["src_configure"],
-        src_compile = eclass_config["src_compile"],
-        src_install = src_install,
-        rdepend = kwargs.get("deps", []),
-        bdepend = kwargs.get("bdepend", kwargs.get("build_deps", [])),
-        maintainers = kwargs.get("maintainers", []),
-        env = env,
-        src_prepare = kwargs.get("pre_configure", ""),
-        description = kwargs.get("description", ""),
-        homepage = kwargs.get("homepage", ""),
-        license = kwargs.get("license", ""),
-        visibility = kwargs.get("visibility", ["PUBLIC"]),
-    )
+    # Dependencies (merge deps and bdepend)
+    deps = list(kwargs.get("deps", []))
+    bdeps = kwargs.get("bdepend", kwargs.get("build_deps", []))
+    if bdeps:
+        deps = deps + list(bdeps)
+    if deps:
+        pkg_kwargs["deps"] = deps
+
+    package(**pkg_kwargs)
 
     # Create slot alias (if requested)
     # Note: Buck target names can't contain ':', so we use '-slot-' as separator

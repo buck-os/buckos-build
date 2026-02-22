@@ -1,96 +1,56 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package", "gen_pkgconfig")
+load("//defs:package.bzl", "package")
 
 # glew - OpenGL Extension Wrangler Library
 # NOTE: GLEW is specifically for GLX (X11 OpenGL). It does NOT support Wayland.
 # For Wayland OpenGL, use libepoxy or direct EGL calls instead.
-ebuild_package(
+package(
     name = "glew",
-    src_uri = "https://github.com/nigels-com/glew/releases/download/glew-2.2.0/glew-2.2.0.tgz",
-
-    sha256 = "d4fc82893cfb00109578d0a1a2337fb8ca335b3ceccf97b97e5cc7f08e4353e1",
+    build_rule = "binary",
     version = "2.2.0",
+    url = "https://github.com/nigels-com/glew/releases/download/glew-2.2.0/glew-2.2.0.tgz",
+    sha256 = "d4fc82893cfb00109578d0a1a2337fb8ca335b3ceccf97b97e5cc7f08e4353e1",
     description = "OpenGL Extension Wrangler Library (GLX/X11 only)",
     homepage = "http://glew.sourceforge.net/",
     license = "BSD-3-Clause",
+    install_script = """
+mkdir -p "$OUT"
+BUILD=$(mktemp -d)
+cp -a "$SRCS"/. "$BUILD/"
+cd "$BUILD"
 
-    # GLEW supports X11/GLX or OSMesa (off-screen). No Wayland support.
-    iuse = [
-        "X",
-        "egl",
-        "egl-only",
-        "osmesa",
-        "static-libs",
-    ],
-    use_configure = {
-        "-egl-only": "--disable-egl-only",
-        "-static-libs": "--disable-static",
-        "egl-only": "--enable-egl-only",
-        "static-libs": "--enable-static",
-    },
-    use_defaults = ["egl"],  # EGL is most portable default
-
-    use_deps = {
-        "X": [
-            "//packages/linux/graphics/xorg/libX11:libX11",
-            "//packages/linux/graphics/xorg/libXext:libXext",
-            "//packages/linux/desktop/mesa:mesa",
-        ],
-        "egl": [
-            "//packages/linux/desktop/mesa:mesa",
-        ],
-        "osmesa": [
-            "//packages/linux/desktop/mesa:mesa",
-        ],
-    },
-
-    src_compile = """
 mkdir -p lib
 
-# Determine which backend to use
-if [ "${USE_X}" = "1" ]; then
-    echo "Building GLEW with X11/GLX support..."
-    make -j${MAKEOPTS:-$(nproc)} SYSTEM=linux-egl GLEW_DEST=/usr
-elif [ "${USE_egl}" = "1" ]; then
-    echo "Building GLEW with EGL support (no X11)..."
-    make -j${MAKEOPTS:-$(nproc)} SYSTEM=linux-egl GLEW_DEST=/usr GLEW_NO_GLX=1
-elif [ "${USE_osmesa}" = "1" ]; then
-    echo "Building GLEW with OSMesa support..."
-    make -j${MAKEOPTS:-$(nproc)} SYSTEM=linux GLEW_DEST=/usr GLEW_OSMESA=1 GLEW_NO_GLX=1
-else
-    # No backend - build headers-only stub library
-    echo "Building GLEW stub library (headers only)..."
-    cat > glew_stub.c << 'STUBEOF'
-/* Minimal GLEW stub for header-only usage */
-#define GLEW_STATIC
-#define GLEW_NO_GLU
-int glewInit(void) { return 0; }
-int glewIsSupported(const char* name) { return 0; }
-const char* glewGetErrorString(int error) { return ""; }
-const char* glewGetString(int name) { return ""; }
-STUBEOF
-    cc -O2 -fPIC -c glew_stub.c -o glew_stub.o
-    ar rcs lib/libGLEW.a glew_stub.o
-fi
-""",
+# Build with EGL support (no X11)
+echo "Building GLEW with EGL support (no X11)..."
+make -j$(nproc) SYSTEM=linux-egl GLEW_DEST=/usr GLEW_NO_GLX=1
 
-    src_install = """
-mkdir -p "$DESTDIR/usr/lib64" "$DESTDIR/usr/include/GL"
+mkdir -p "$OUT/usr/lib64" "$OUT/usr/include/GL"
 
 # Install library
-if [ -f lib/libGLEW.so.* ]; then
-    cp -P lib/libGLEW.so* "$DESTDIR/usr/lib64/"
+if ls lib/libGLEW.so.* 1>/dev/null 2>&1; then
+    cp -P lib/libGLEW.so* "$OUT/usr/lib64/"
 fi
 if [ -f lib/libGLEW.a ]; then
-    cp lib/libGLEW.a "$DESTDIR/usr/lib64/"
+    cp lib/libGLEW.a "$OUT/usr/lib64/"
 fi
 
 # Install headers
-cp include/GL/*.h "$DESTDIR/usr/include/GL/"
-""" + gen_pkgconfig(
-        name = "glew",
-        description = "OpenGL Extension Wrangler Library",
-        libs = "-lGLEW",
-        destvar = "DESTDIR",
-    ),
+cp include/GL/*.h "$OUT/usr/include/GL/"
+
+# Generate pkg-config file
+mkdir -p "$OUT/usr/lib64/pkgconfig"
+cat > "$OUT/usr/lib64/pkgconfig/glew.pc" << EOF
+prefix=/usr
+exec_prefix=\${prefix}
+libdir=\${prefix}/lib64
+includedir=\${prefix}/include
+
+Name: glew
+Description: OpenGL Extension Wrangler Library
+Version: $PV
+Libs: -lGLEW
+Cflags: -I\${includedir}
+EOF
+""",
     visibility = ["PUBLIC"],
 )

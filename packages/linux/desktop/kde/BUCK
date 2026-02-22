@@ -4416,6 +4416,8 @@ package(
     description = "KDE Plasma Workspace",
     homepage = "https://kde.org/",
     license = "GPL-2.0+",
+    # Exclude broken self-referencing symlink that buck2 can't materialize
+    exclude_patterns = ["*/autotests/testdata/default/symlinktoitself/*"],
     configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",

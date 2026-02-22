@@ -1,5 +1,4 @@
 load("//defs:package.bzl", "package")
-load("//defs:package_defs.bzl", "gen_pkgconfig")
 
 # =============================================================================
 # ROCm - AMD ROCm platform for GPU computing
@@ -60,13 +59,22 @@ cat > "$OUT/etc/udev/rules.d/70-rocm.rules" << 'EOF'
 # ROCm device rules
 SUBSYSTEM=="kfd", KERNEL=="kfd", TAG+="uaccess", GROUP="render", MODE="0660"
 EOF
-""" + gen_pkgconfig(
-        name = "rocm",
-        description = "AMD ROCm Platform",
-        libs = "-L/opt/rocm/lib -lamdhip64",
-        cflags = "-I/opt/rocm/include",
-        prefix = "/opt/rocm",
-    ),
+
+# Generate pkg-config file
+mkdir -p "$OUT/opt/rocm/lib64/pkgconfig"
+cat > "$OUT/opt/rocm/lib64/pkgconfig/rocm.pc" << EOF
+prefix=/opt/rocm
+exec_prefix=\${prefix}
+libdir=\${prefix}/lib64
+includedir=\${prefix}/include
+
+Name: rocm
+Description: AMD ROCm Platform
+Version: $PV
+Libs: -L/opt/rocm/lib -lamdhip64
+Cflags: -I/opt/rocm/include
+EOF
+""",
     deps = [
         "//packages/linux/system/gpu/drivers/amd:amd-drivers",
     ],

@@ -1,57 +1,37 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
-ebuild_package(
+package(
     name = "attr",
-    src_uri = "https://download.savannah.nongnu.org/releases/attr/attr-2.5.2.tar.xz",
-
-    sha256 = "f2e97b0ab7ce293681ab701915766190d607a1dba7fae8a718138150b700a70b",
-    iuse = ["debug", "nls", "static-libs"],
-    use_configure = {
-        "-debug": "--disable-debug",
-        "-nls": "--disable-nls",
-        "-static-libs": "--disable-static",
-        "debug": "--enable-debug",
-        "nls": "--enable-nls",
-        "static-libs": "--enable-static",
-    },
+    build_rule = "binary",
     version = "2.5.2",
-    category = "system/libs/ipc",
-    slot = "0",
+    url = "https://download.savannah.nongnu.org/releases/attr/attr-2.5.2.tar.xz",
+    sha256 = "f2e97b0ab7ce293681ab701915766190d607a1dba7fae8a718138150b700a70b",
     description = "Extended attribute support library",
     homepage = "https://savannah.nongnu.org/projects/attr/",
     license = "LGPL-2.1",
-
-    src_prepare = '''
-# Release tarball includes configure - no autoreconf needed
-# Just patch to disable NLS if not wanted
-true
-''',
-
-    src_configure = '''
+    use_configure = {
+        "debug": ("--enable-debug", "--disable-debug"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "static-libs": ("--enable-static", "--disable-static"),
+    },
+    install_script = '''
 # For cross-compilation: --build is the build machine, --host is the target
 # Use config.guess to detect build system, and $CHOST or gcc for target
 BUILD_SYSTEM=$(./build-aux/config.guess 2>/dev/null || echo x86_64-pc-linux-gnu)
 HOST_SYSTEM=${CHOST:-$(${CC:-gcc} -dumpmachine)}
 
-./configure \\
-    --prefix=/usr \\
-    --libdir=/usr/lib64 \\
-    --build=$BUILD_SYSTEM \\
-    --host=$HOST_SYSTEM \\
-    --disable-static \\
+./configure \
+    --prefix=/usr \
+    --libdir=/usr/lib64 \
+    --build=$BUILD_SYSTEM \
+    --host=$HOST_SYSTEM \
+    --disable-static \
     --disable-nls
-''',
 
-    src_compile = '''
 make -j${MAKEOPTS:-$(nproc)}
-''',
 
-    src_install = '''
 make DESTDIR="$DESTDIR" install
 ''',
-
-    # No bdepend needed - configure is pre-generated
-    bdepend = [],
-    depend = [],
+    deps = [],
     visibility = ["PUBLIC"],
 )

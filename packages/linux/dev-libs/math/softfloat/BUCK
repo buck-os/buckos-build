@@ -1,30 +1,32 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
-ebuild_package(
+package(
     name = "softfloat",
+    build_rule = "binary",
     version = "3e",
-    src_uri = "https://www.jhauser.us/arithmetic/SoftFloat-3e.zip",
-
+    url = "https://www.jhauser.us/arithmetic/SoftFloat-3e.zip",
     sha256 = "21130ce885d35c1fe73fc1e1bf2244178167e05c6747cad5f450cc991714c746",
-    src_configure = ":",
-    src_compile = """
-        # Source extracts to SoftFloat-3e/ subdirectory
-        if [ ! -d SoftFloat-3e/build/Linux-x86_64-GCC ]; then
-            echo "Error: SoftFloat-3e/build/Linux-x86_64-GCC directory not found"
-            echo "Available directories:"
-            find . -type d -name "*x86*" -o -name "*GCC*" -o -name "*Linux*" | head -20
-            exit 1
-        fi
-        cd SoftFloat-3e/build/Linux-x86_64-GCC
-        # Override COMPILE_C since Makefile defaults to just 'c' not '$(CC)'
-        # Use CC env var with gcc fallback
-        : ${CC:=gcc}
-        make SOURCE_DIR=../../source CC="$CC" COMPILE_C='$(CC) -c -fPIC -Werror-implicit-function-declaration -DSOFTFLOAT_FAST_INT64 -DSOFTFLOAT_ROUND_ODD -DINLINE_LEVEL=5 -DSOFTFLOAT_FAST_DIV32TO16 -DSOFTFLOAT_FAST_DIV64TO32 -I. -I../../source/8086-SSE -I../../source/include'
-    """,
-    src_install = """
-        mkdir -p "$DESTDIR/usr/lib" "$DESTDIR/usr/include/softfloat"
-        cp SoftFloat-3e/build/Linux-x86_64-GCC/softfloat.a "$DESTDIR/usr/lib/libsoftfloat.a"
-        cp SoftFloat-3e/source/include/*.h "$DESTDIR/usr/include/softfloat/"
-    """,
+    description = "Berkeley SoftFloat IEEE floating-point arithmetic library",
+    license = "BSD-3-Clause",
+    install_script = """
+mkdir -p "$OUT"
+BUILD=$(mktemp -d)
+cp -a "$SRCS"/. "$BUILD/"
+cd "$BUILD"
+
+# Source extracts to SoftFloat-3e/ subdirectory
+if [ ! -d SoftFloat-3e/build/Linux-x86_64-GCC ]; then
+    echo "Error: SoftFloat-3e/build/Linux-x86_64-GCC directory not found"
+    find . -type d -name "*x86*" -o -name "*GCC*" -o -name "*Linux*" | head -20
+    exit 1
+fi
+cd SoftFloat-3e/build/Linux-x86_64-GCC
+# Override COMPILE_C since Makefile defaults to just 'c' not '$(CC)'
+make SOURCE_DIR=../../source CC="${CC:-gcc}" COMPILE_C='$(CC) -c -fPIC -Werror-implicit-function-declaration -DSOFTFLOAT_FAST_INT64 -DSOFTFLOAT_ROUND_ODD -DINLINE_LEVEL=5 -DSOFTFLOAT_FAST_DIV32TO16 -DSOFTFLOAT_FAST_DIV64TO32 -I. -I../../source/8086-SSE -I../../source/include'
+
+mkdir -p "$OUT/usr/lib" "$OUT/usr/include/softfloat"
+cp softfloat.a "$OUT/usr/lib/libsoftfloat.a"
+cp ../../source/include/*.h "$OUT/usr/include/softfloat/"
+""",
     visibility = ["PUBLIC"],
 )

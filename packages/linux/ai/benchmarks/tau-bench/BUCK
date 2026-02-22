@@ -1,32 +1,21 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
-ebuild_package(
+package(
     name = "tau-bench",
-    src_uri = "https://github.com/sierra-research/tau-bench/archive/refs/heads/main.tar.gz",
-
-    sha256 = "831f7850609f44f0f6905a467dd38c1507773b4818398354015f76d5fd4815ee",
+    build_rule = "binary",
     version = "0.1.0",
+    url = "https://github.com/sierra-research/tau-bench/archive/refs/heads/main.tar.gz",
+    sha256 = "831f7850609f44f0f6905a467dd38c1507773b4818398354015f76d5fd4815ee",
     description = "A benchmark for evaluating tool-augmented agents on realistic tasks",
     homepage = "https://github.com/sierra-research/tau-bench",
     license = "MIT",
-    src_compile = """
-        python3 -m pip install --no-deps --target="$S/install" .
+    install_script = """
+        cd "$SRCS"
+        mkdir -p "$OUT/usr/lib/python3.12/site-packages"
+        python3 -m pip install --no-deps --target="$OUT/usr/lib/python3.12/site-packages" .
     """,
-    src_install = """
-        mkdir -p "$DESTDIR/usr/lib/python3.12/site-packages"
-        cp -r "$S/install"/* "$DESTDIR/usr/lib/python3.12/site-packages/"
-    """,
-    bdepend = [
+    deps = [
         "//packages/linux/lang/python:python",
-    ],
-    rdepend = [
-        "//packages/linux/dev-libs/python/anthropic:anthropic",
-        "//packages/linux/dev-libs/python/litellm:litellm",
-        "//packages/linux/dev-libs/python/mistralai:mistralai",
-        "//packages/linux/dev-libs/python/numpy:numpy",
-        "//packages/linux/dev-libs/python/openai:openai",
-        "//packages/linux/dev-libs/python/tenacity:tenacity",
-        "//packages/linux/dev-libs/python/termcolor:termcolor",
     ],
     visibility = ["PUBLIC"],
 )

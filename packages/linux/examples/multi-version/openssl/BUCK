@@ -10,7 +10,6 @@ Slots:
 - "1.0": OpenSSL 1.0.x series (legacy)
 """
 
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
 load("//defs:versions.bzl", "multi_version_package", "versioned_package", "register_package_versions", "slot_dep", "version_dep")
 
 # ============================================================================
@@ -93,20 +92,14 @@ _common_configure_args = [
 # NOTE: These examples are disabled - OpenSSL uses its own Configure script (Perl-based),
 # not autotools. See core//openssl for a working implementation.
 #
-# download_source(
-#     name = "openssl-3.2.0-src",
-#     ...
-# )
-# autotools_package(
+# package(
 #     name = "openssl-3.2.0",
+#     build_rule = "autotools",
 #     ...
 # )
-# download_source(
-#     name = "openssl-1.1.1w-src",
-#     ...
-# )
-# autotools_package(
+# package(
 #     name = "openssl-1.1.1w",
+#     build_rule = "autotools",
 #     ...
 # )
 
@@ -135,8 +128,9 @@ _common_configure_args = [
 # ============================================================================
 
 # Example: A package that needs OpenSSL 1.1.x for compatibility
-# autotools_package(
+# package(
 #     name = "legacy-app",
+#     build_rule = "autotools",
 #     ...
 #     deps = [
 #         # Use slot dependency for OpenSSL 1.1
@@ -147,8 +141,9 @@ _common_configure_args = [
 # )
 
 # Example: A package that needs any OpenSSL 3.x
-# autotools_package(
+# package(
 #     name = "modern-app",
+#     build_rule = "autotools",
 #     ...
 #     deps = [
 #         ":openssl:3",

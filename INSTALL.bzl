@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "rootfs")
+load("//defs/rules:rootfs.bzl", "rootfs")
 
 rootfs(
     name = "installer-rootfs",

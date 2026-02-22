@@ -1,35 +1,30 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
-ebuild_package(
+package(
     name = "noto-fonts",
-    src_uri = "https://github.com/notofonts/notofonts.github.io/archive/refs/tags/noto-monthly-release-24.3.1.tar.gz",
-
-    sha256 = "abcef824e61aa99626b6ad331c1cba875f28b3d87cc9ff8c87d46d55fe344369",
+    build_rule = "binary",
     version = "24.3.1",
+    url = "https://github.com/notofonts/notofonts.github.io/archive/refs/tags/noto-monthly-release-24.3.1.tar.gz",
+    sha256 = "abcef824e61aa99626b6ad331c1cba875f28b3d87cc9ff8c87d46d55fe344369",
     description = "Google Noto fonts - beautiful and free fonts for all languages",
     homepage = "https://www.google.com/get/noto/",
     license = "OFL-1.1",
-    src_install = """
+    install_script = """
 # Create font directories
-dodir /usr/share/fonts/noto
-dodir /usr/share/fonts/noto-emoji
+mkdir -p "$DESTDIR/usr/share/fonts/noto"
+mkdir -p "$DESTDIR/usr/share/fonts/noto-emoji"
 
 # Install main Noto fonts (Sans and Serif for Latin)
 find . -name "NotoSans-*.ttf" -o -name "NotoSerif-*.ttf" | while read font; do
-    insinto /usr/share/fonts/noto
-    doins "$font"
+    install -m 0644 "$font" "$DESTDIR/usr/share/fonts/noto/"
 done
 
 # Install Noto Mono
 find . -name "NotoSansMono-*.ttf" | while read font; do
-    insinto /usr/share/fonts/noto
-    doins "$font"
+    install -m 0644 "$font" "$DESTDIR/usr/share/fonts/noto/"
 done
-
-# Install documentation
-dodoc README.md LICENSE 2>/dev/null || true
 """,
-    rdepend = [
+    deps = [
         "//packages/linux/system/libs/font/fontconfig:fontconfig",
     ],
     visibility = ["PUBLIC"],

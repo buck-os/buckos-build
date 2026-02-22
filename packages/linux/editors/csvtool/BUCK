@@ -1,23 +1,20 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # csvtool - Command-line CSV processor
-ebuild_package(
+package(
     name = "csvtool",
-    src_uri = "https://github.com/Chris00/ocaml-csv/archive/refs/tags/2.4.tar.gz",
-
-    sha256 = "14b1173d2a64053e06571cbe4a86fa4be4b48ea190d1f0c389ce34fd9800c665",
+    build_rule = "binary",
     version = "2.4",
+    url = "https://github.com/Chris00/ocaml-csv/archive/refs/tags/2.4.tar.gz",
+    sha256 = "14b1173d2a64053e06571cbe4a86fa4be4b48ea190d1f0c389ce34fd9800c665",
     description = "Command-line tool for handling CSV files",
     homepage = "https://github.com/Chris00/ocaml-csv",
     license = "LGPL-2.1+",
-    src_compile = """
+    install_script = """
 dune build
-""",
-    src_install = """
 dune install --prefix=${DESTDIR}/usr
 """,
-    bdepend = [
+    deps = [
         "//packages/linux/lang/ocaml:ocaml",
     ],
     visibility = ["PUBLIC"],

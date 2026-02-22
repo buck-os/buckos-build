@@ -64,6 +64,18 @@ def main():
     # Set S to the output dir for compatibility with ebuild-style src_prepare scripts
     cmd_env = os.environ.copy()
     cmd_env["S"] = os.path.abspath(args.output_dir)
+    cmd_env["WORKDIR"] = cmd_env.get("BUCK_SCRATCH_PATH", os.path.abspath(args.output_dir))
+
+    # Resolve relative buck-out paths in DEP_BASE_DIRS to absolute
+    if "DEP_BASE_DIRS" in cmd_env and cmd_env["DEP_BASE_DIRS"]:
+        resolved = []
+        for p in cmd_env["DEP_BASE_DIRS"].split(":"):
+            p = p.strip()
+            if p and not os.path.isabs(p):
+                resolved.append(os.path.abspath(p))
+            else:
+                resolved.append(p)
+        cmd_env["DEP_BASE_DIRS"] = ":".join(resolved)
     for shell_cmd in args.cmds:
         result = subprocess.run(
             ["bash", "-e", "-c", shell_cmd],

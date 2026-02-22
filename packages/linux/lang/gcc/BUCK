@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "ebuild_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # GCC - GNU Compiler Collection (from bootstrap toolchain)
@@ -6,22 +6,18 @@ load("//defs:package_defs.bzl", "ebuild_package")
 # Extracts the GCC compiler from the bootstrap toolchain for installation
 # in the rootfs.  Does not build from source — uses the pre-built toolchain.
 
-ebuild_package(
+package(
+    build_rule = "binary",
     name = "gcc",
-    src_uri = "https://mirror.buckos.org/g/gcc-14.3.0.tar.gz",
-    sha256 = "ace8b8b0dbfe6abfc22f821cb093e195aa5498b7ccf7cd23e4424b9f14afed22",
     version = "14.3.0",
-    category = "lang",
+    url = "https://mirror.buckos.org/g/gcc-14.3.0.tar.gz",
+    sha256 = "ace8b8b0dbfe6abfc22f821cb093e195aa5498b7ccf7cd23e4424b9f14afed22",
     description = "GNU Compiler Collection - C, C++, and Fortran compilers",
     homepage = "https://gcc.gnu.org/",
     license = "GPL-3.0",
-
-    src_configure = "true",
-    src_compile = "true",
-
-    src_install = '''
+    install_script = """
 # Extract GCC from bootstrap-toolchain
-mkdir -p "$DESTDIR/usr/bin" "$DESTDIR/usr/lib64" "$DESTDIR/usr/lib" "$DESTDIR/usr/include"
+mkdir -p "$OUT/usr/bin" "$OUT/usr/lib64" "$OUT/usr/lib" "$OUT/usr/include"
 
 IFS=':' read -ra _deps <<< "$DEP_BASE_DIRS"
 for dep_dir in "${_deps[@]}"; do
@@ -34,20 +30,20 @@ for dep_dir in "${_deps[@]}"; do
             if [ -f "$TOOLS/bin/$bin" ] || [ -f "$TOOLS/bin/x86_64-buckos-linux-gnu-$bin" ]; then
                 src="$TOOLS/bin/$bin"
                 [ -f "$src" ] || src="$TOOLS/bin/x86_64-buckos-linux-gnu-$bin"
-                cp -a "$src" "$DESTDIR/usr/bin/$bin"
+                cp -a "$src" "$OUT/usr/bin/$bin"
                 echo "Installed $bin"
             fi
         done
 
         # Create standard symlinks
-        cd "$DESTDIR/usr/bin"
+        cd "$OUT/usr/bin"
         [ -f gcc ] && ln -sf gcc cc
         [ -f g++ ] && ln -sf g++ c++
 
         # Copy libexec (cc1, cc1plus, collect2, lto-wrapper)
         if [ -d "$TOOLS/libexec/gcc" ]; then
-            mkdir -p "$DESTDIR/usr/lib/gcc"
-            cp -a "$TOOLS/libexec/gcc"/* "$DESTDIR/usr/lib/gcc/"
+            mkdir -p "$OUT/usr/lib/gcc"
+            cp -a "$TOOLS/libexec/gcc"/* "$OUT/usr/lib/gcc/"
         fi
 
         # Copy compiler support libraries — glob in the library directory
@@ -57,12 +53,12 @@ for dep_dir in "${_deps[@]}"; do
                  "$TOOLS"/lib64/libgcc_s.so* "$TOOLS"/lib64/libstdc++.so* \
                  "$TOOLS"/lib64/libgomp.so* "$TOOLS"/lib64/libatomic.so* \
                  "$TOOLS"/lib64/libitm.so* "$TOOLS"/lib64/libquadmath.so*; do
-            [ -f "$f" ] && cp -a "$f" "$DESTDIR/usr/lib64/" 2>/dev/null
+            [ -f "$f" ] && cp -a "$f" "$OUT/usr/lib64/" 2>/dev/null
         done
 
         # Copy headers (C++ stdlib headers)
         if [ -d "$TOOLS/include/c++" ]; then
-            cp -a "$TOOLS/include/c++" "$DESTDIR/usr/include/"
+            cp -a "$TOOLS/include/c++" "$OUT/usr/include/"
         fi
 
         break
@@ -70,14 +66,13 @@ for dep_dir in "${_deps[@]}"; do
 done
 
 # Verify
-if [ ! -f "$DESTDIR/usr/bin/gcc" ]; then
+if [ ! -f "$OUT/usr/bin/gcc" ]; then
     echo "ERROR: gcc not found in bootstrap-toolchain!"
     exit 1
 fi
 echo "GCC installed from bootstrap-toolchain"
-''',
-
-    depend = ["toolchains//bootstrap:bootstrap-toolchain"],
+""",
+    deps = ["toolchains//bootstrap:bootstrap-toolchain"],
     visibility = ["PUBLIC"],
 )
 
@@ -85,21 +80,17 @@ echo "GCC installed from bootstrap-toolchain"
 # GCC Runtime Libraries - C/C++ runtime for target systems
 # =============================================================================
 
-ebuild_package(
+package(
+    build_rule = "binary",
     name = "gcc-runtime",
-    src_uri = "https://mirror.buckos.org/g/gcc-14.3.0.tar.gz",
-    sha256 = "ace8b8b0dbfe6abfc22f821cb093e195aa5498b7ccf7cd23e4424b9f14afed22",
     version = "14.3.0",
-    category = "lang/runtime",
+    url = "https://mirror.buckos.org/g/gcc-14.3.0.tar.gz",
+    sha256 = "ace8b8b0dbfe6abfc22f821cb093e195aa5498b7ccf7cd23e4424b9f14afed22",
     description = "GCC runtime libraries (libstdc++, libgcc_s) for C/C++ applications",
     homepage = "https://gcc.gnu.org/",
     license = "GPL-3.0",
-
-    src_configure = "true",
-    src_compile = "true",
-
-    src_install = '''
-mkdir -p "$DESTDIR/usr/lib64"
+    install_script = """
+mkdir -p "$OUT/usr/lib64"
 
 IFS=':' read -ra _deps <<< "$DEP_BASE_DIRS"
 for dep_dir in "${_deps[@]}"; do
@@ -109,11 +100,11 @@ for dep_dir in "${_deps[@]}"; do
         # Copy runtime libraries — glob in the library directory so the
         # wildcard expands against actual files, not the cwd.
         for f in "$dep_dir"/tools/lib/libstdc++.so* "$dep_dir"/tools/lib/libgcc_s.so*; do
-            [ -f "$f" ] && cp -a "$f" "$DESTDIR/usr/lib64/"
+            [ -f "$f" ] && cp -a "$f" "$OUT/usr/lib64/"
         done
 
         # Create symlinks
-        cd "$DESTDIR/usr/lib64"
+        cd "$OUT/usr/lib64"
         [ -f libstdc++.so.6 ] && ln -sf libstdc++.so.6 libstdc++.so
         [ -f libgcc_s.so.1 ] && ln -sf libgcc_s.so.1 libgcc_s.so
 
@@ -121,13 +112,12 @@ for dep_dir in "${_deps[@]}"; do
     fi
 done
 
-if [ ! -f "$DESTDIR/usr/lib64/libstdc++.so.6" ]; then
+if [ ! -f "$OUT/usr/lib64/libstdc++.so.6" ]; then
     echo "ERROR: libstdc++.so.6 not found!"
     exit 1
 fi
 echo "GCC runtime libraries installed"
-''',
-
-    depend = ["toolchains//bootstrap:bootstrap-toolchain"],
+""",
+    deps = ["toolchains//bootstrap:bootstrap-toolchain"],
     visibility = ["PUBLIC"],
 )

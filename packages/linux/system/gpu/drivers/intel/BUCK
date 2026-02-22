@@ -7,38 +7,38 @@
 #
 # =============================================================================
 
-load("//defs:package_defs.bzl", "download_source", "ebuild_package", "meson_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # Intel GPU firmware
-ebuild_package(
+package(
+    build_rule = "binary",
     name = "intel-firmware",
-    src_uri = "https://cdn.kernel.org/pub/linux/kernel/firmware/linux-firmware-20241017.tar.gz",
-
-    sha256 = "830b66d0934d205969c472a4d5feb1ce2ed659ccebe81a78214098a982ac93cd",
     version = "20241017",
+    url = "https://cdn.kernel.org/pub/linux/kernel/firmware/linux-firmware-20241017.tar.gz",
+    sha256 = "830b66d0934d205969c472a4d5feb1ce2ed659ccebe81a78214098a982ac93cd",
     description = "Intel GPU firmware files",
     homepage = "https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git",
     license = "Intel",
-    src_install = """
+    install_script = """
 # Install Intel GPU firmware
-mkdir -p "$DESTDIR/usr/lib/firmware/i915"
-cp -r i915/* "$DESTDIR/usr/lib/firmware/i915/"
+mkdir -p "$OUT/usr/lib/firmware/i915"
+cp -r i915/* "$OUT/usr/lib/firmware/i915/"
 
 # Install Intel DMC firmware
-mkdir -p "$DESTDIR/usr/lib/firmware/intel"
-cp -r intel/* "$DESTDIR/usr/lib/firmware/intel/" 2>/dev/null || true
+mkdir -p "$OUT/usr/lib/firmware/intel"
+cp -r intel/* "$OUT/usr/lib/firmware/intel/" 2>/dev/null || true
 """,
     labels = ["buckos:firmware", "buckos:hw:gpu"],
     visibility = ["PUBLIC"],
 )
 
 # Intel GPU tools
-meson_package(
+package(
+    build_rule = "meson",
     name = "intel-gpu-tools",
     version = "1.28",
-    src_uri = "https://gitlab.freedesktop.org/drm/igt-gpu-tools/-/archive/v1.28/igt-gpu-tools-v1.28.tar.gz",
+    url = "https://gitlab.freedesktop.org/drm/igt-gpu-tools/-/archive/v1.28/igt-gpu-tools-v1.28.tar.gz",
     sha256 = "ba15b321c5a90da629baf326912c9c0406a903719040eb4959e0af1197935133",
-    signature_required = False,
     description = "Intel GPU debugging and testing tools",
     homepage = "https://gitlab.freedesktop.org/drm/igt-gpu-tools",
     license = "MIT",

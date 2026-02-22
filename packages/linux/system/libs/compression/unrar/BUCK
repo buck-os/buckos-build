@@ -1,18 +1,18 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # unrar - RAR archive extractor
 # Use GitHub mirror since www.rarlab.com often times out
 # Upgraded to 7.0.9 as 6.2.12 is not available on GitHub mirrors
-ebuild_package(
+package(
     name = "unrar",
-    src_uri = "https://github.com/aawc/unrar/archive/refs/tags/v7.0.9.tar.gz",
-
-    sha256 = "6dd89a09514923cbff0e112f33584dc6de0d21ecd30ad1ed19c213a4f3947695",
+    build_rule = "binary",
     version = "7.0.9",
+    url = "https://github.com/aawc/unrar/archive/refs/tags/v7.0.9.tar.gz",
+    sha256 = "6dd89a09514923cbff0e112f33584dc6de0d21ecd30ad1ed19c213a4f3947695",
     description = "RAR archive extractor",
     homepage = "https://www.rarlab.com/rar_add.htm",
     license = "unRAR",
-    src_prepare = """
+    install_script = """
 # Source extracts to unrar-src/ or unrar-7.0.9/ subdirectory - move contents up
 for subdir in unrar-src unrar-7.0.9; do
     if [ -d "$subdir" ]; then
@@ -22,11 +22,9 @@ for subdir in unrar-src unrar-7.0.9; do
         break
     fi
 done
-""",
-    src_compile = """
+
 make -f makefile
-""",
-    src_install = """
+
 make -f makefile install DESTDIR="$DESTDIR"
 """,
     visibility = ["PUBLIC"],

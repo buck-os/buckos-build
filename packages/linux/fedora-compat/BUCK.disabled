@@ -17,7 +17,7 @@ load("//defs:rpm_package.bzl",
      "rpm_package",
      "fedora_rpm_url",
      "RPM_DEPENDENCY_MAP")
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # EXAMPLE 1: RPM Package (Fedora-only)
@@ -47,41 +47,28 @@ rpm_package(
 
 # Example of a package built from source that works in both
 # BuckOS-native and Fedora compatibility modes
-autotools_package(
+package(
     name = "curl-compat",
+    build_rule = "autotools",
     version = "8.5.0",
-    src_uri = "https://curl.se/download/curl-8.5.0.tar.xz",
+    url = "https://curl.se/download/curl-8.5.0.tar.xz",
     sha256 = "42ab8db9e20d8290a3b633e7fbb3cec15db34df65fd1015ef8ac1dae50b7d043",
-
-    # This package supports both BuckOS native and Fedora modes
-    compat_tags = ["buckos-native", "fedora"],
-
-    # USE flags work the same in both modes
-    iuse = ["ssl", "http2", "ipv6", "zlib", "zstd"],
-    use_defaults = ["ssl", "http2", "ipv6", "zlib"],
-
     use_configure = {
-        "ssl": "--with-openssl",
-        "-ssl": "--without-ssl",
-        "http2": "--with-nghttp2",
-        "ipv6": "--enable-ipv6",
-        "-ipv6": "--disable-ipv6",
-        "zlib": "--with-zlib",
-        "zstd": "--with-zstd",
-        # When USE=fedora, add FHS-specific configure args automatically
+        "ssl": ("--with-openssl", "--without-ssl"),
+        "http2": ("--with-nghttp2",),
+        "ipv6": ("--enable-ipv6", "--disable-ipv6"),
+        "zlib": ("--with-zlib",),
+        "zstd": ("--with-zstd",),
     },
-
     use_deps = {
-        "ssl": ["system//libs/crypto/openssl:openssl"],
-        "http2": ["//packages/linux/system/libs/network/nghttp2:nghttp2"],
-        "zlib": ["//packages/linux/core/zlib:zlib"],
-        "zstd": ["//packages/linux/core/zstd:zstd"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "http2": "//packages/linux/system/libs/network/nghttp2:nghttp2",
+        "zlib": "//packages/linux/core/zlib:zlib",
+        "zstd": "//packages/linux/core/zstd:zstd",
     },
-
     description = "Command line tool for transferring data with URL syntax",
     homepage = "https://curl.se/",
     license = "MIT",
-    maintainers = ["network-team"],
     visibility = ["PUBLIC"],
 )
 

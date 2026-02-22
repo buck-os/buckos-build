@@ -767,24 +767,18 @@ mkdir -p build && cd build
 # Configure with cross compiler - use /usr prefix for final system
 echo "rootsbindir=/usr/sbin" > configparms
 
-# Find headers from dependency directories (linux-headers provides them)
-# TOOLCHAIN_INCLUDE is set by the build system from bdepend directories
-HEADERS_BASE="${TOOLCHAIN_INCLUDE%%:*}"  # Get first path from colon-separated list
-# Convert relative path to absolute - paths are relative to project root
-# The script runs from source dir which is under buck-out/v2/gen/.../
-if [[ "$HEADERS_BASE" != /* ]]; then
-    # Navigate up from current dir to find buck-out at project root
-    PROJECT_ROOT="${S%/buck-out/*}"
-    HEADERS_BASE="$PROJECT_ROOT/$HEADERS_BASE"
-fi
-# Headers are installed to /usr/include within the dependency output
-HEADERS_PATH="$HEADERS_BASE/usr/include"
+# Find kernel headers from DEP_BASE_DIRS
+HEADERS_PATH=""
+IFS=':' read -ra _GLIBC_DEPS <<< "${DEP_BASE_DIRS:-}"
+for _dep in "${_GLIBC_DEPS[@]}"; do
+    if [ -d "$_dep/usr/include/linux" ]; then
+        HEADERS_PATH="$_dep/usr/include"
+        break
+    fi
+done
 if [ -z "$HEADERS_PATH" ] || [ ! -d "$HEADERS_PATH" ]; then
-    echo "ERROR: Could not find kernel headers." >&2
-    echo "  TOOLCHAIN_INCLUDE=$TOOLCHAIN_INCLUDE" >&2
-    echo "  HEADERS_BASE=$HEADERS_BASE" >&2
-    echo "  HEADERS_PATH=$HEADERS_PATH" >&2
-    echo "  S=$S" >&2
+    echo "ERROR: Could not find kernel headers in DEP_BASE_DIRS." >&2
+    echo "  DEP_BASE_DIRS=$DEP_BASE_DIRS" >&2
     exit 1
 fi
 echo "Using kernel headers from: $HEADERS_PATH"
@@ -1001,23 +995,19 @@ export CXXFLAGS_FOR_BUILD="-O2 -std=gnu++11"
 # configure
 BUCKOS_TARGET="x86_64-buckos-linux-gnu"
 
-# Find the sysroot from dependencies (where glibc was installed)
-# TOOLCHAIN_ROOT is set by the build system from bdepend directories
+# Find the sysroot from DEP_BASE_DIRS (where glibc was installed)
 BUILD_SYSROOT=""
-if [ -n "$TOOLCHAIN_ROOT" ]; then
-    IFS=':' read -ra SYSROOT_DIRS <<< "$TOOLCHAIN_ROOT"
-    for dir in "${SYSROOT_DIRS[@]}"; do
-        # Find glibc sysroot
-        if [ -z "$BUILD_SYSROOT" ] && [ -d "$dir/usr/lib64" ] && [ -f "$dir/usr/lib64/libc.so.6" ]; then
-            BUILD_SYSROOT="$dir"
-            echo "Found glibc sysroot: $BUILD_SYSROOT"
-        fi
-    done
-fi
+IFS=':' read -ra _GCC2_DEPS <<< "${DEP_BASE_DIRS:-}"
+for dir in "${_GCC2_DEPS[@]}"; do
+    if [ -z "$BUILD_SYSROOT" ] && [ -d "$dir/usr/lib64" ] && [ -f "$dir/usr/lib64/libc.so.6" ]; then
+        BUILD_SYSROOT="$dir"
+        echo "Found glibc sysroot: $BUILD_SYSROOT"
+    fi
+done
 
 if [ -z "$BUILD_SYSROOT" ]; then
-    echo "ERROR: Could not find glibc sysroot in TOOLCHAIN_ROOT" >&2
-    echo "TOOLCHAIN_ROOT=$TOOLCHAIN_ROOT" >&2
+    echo "ERROR: Could not find glibc sysroot in DEP_BASE_DIRS" >&2
+    echo "DEP_BASE_DIRS=$DEP_BASE_DIRS" >&2
     exit 1
 fi
 
@@ -1577,23 +1567,22 @@ package(
     description = "Core utilities for bootstrap",
     homepage = "https://www.gnu.org/software/coreutils/",
     license = "GPL-3.0",
-    install_script = """# Copy source to writable location for out-of-tree build
-cp -a "$SRCS" "$WORKDIR/src"
+    install_script = """# wrapper.sh already copies source to writable $WORKDIR/src
 mkdir -p "$WORKDIR/build"
 # Prevent autotools regeneration — timestamps get skewed by cp -a
-find "$WORKDIR/src" -name 'aclocal.m4' -exec touch {} +
-find "$WORKDIR/src" -name 'configure' -exec touch {} +
-find "$WORKDIR/src" -name 'config.h.in' -exec touch {} +
-find "$WORKDIR/src" -name 'Makefile.in' -exec touch {} +
+find "$SRCS" -name 'aclocal.m4' -exec touch {} +
+find "$SRCS" -name 'configure' -exec touch {} +
+find "$SRCS" -name 'config.h.in' -exec touch {} +
+find "$SRCS" -name 'Makefile.in' -exec touch {} +
 
 # configure
 cd "$WORKDIR/build"
 
 BUCKOS_TARGET="x86_64-buckos-linux-gnu"
-"$WORKDIR/src/configure" \
+"$SRCS/configure" \
     --prefix=/tools \
     --host=$BUCKOS_TARGET \
-    --build=$("$WORKDIR/src/build-aux/config.guess") \
+    --build=$("$SRCS/build-aux/config.guess") \
     --enable-install-program=hostname \
     --enable-no-install-program=kill,uptime
 
@@ -1673,23 +1662,22 @@ package(
     description = "Stream editor for bootstrap",
     homepage = "https://www.gnu.org/software/sed/",
     license = "GPL-3.0",
-    install_script = """# Copy source to writable location for out-of-tree build
-cp -a "$SRCS" "$WORKDIR/src"
+    install_script = """# wrapper.sh already copies source to writable $WORKDIR/src
 mkdir -p "$WORKDIR/build"
 # Prevent autotools regeneration — timestamps get skewed by cp -a
-find "$WORKDIR/src" -name 'aclocal.m4' -exec touch {} +
-find "$WORKDIR/src" -name 'configure' -exec touch {} +
-find "$WORKDIR/src" -name 'config.h.in' -exec touch {} +
-find "$WORKDIR/src" -name 'Makefile.in' -exec touch {} +
+find "$SRCS" -name 'aclocal.m4' -exec touch {} +
+find "$SRCS" -name 'configure' -exec touch {} +
+find "$SRCS" -name 'config.h.in' -exec touch {} +
+find "$SRCS" -name 'Makefile.in' -exec touch {} +
 
 # configure
 cd "$WORKDIR/build"
 
 BUCKOS_TARGET="x86_64-buckos-linux-gnu"
-"$WORKDIR/src/configure" \
+"$SRCS/configure" \
     --prefix=/tools \
     --host=$BUCKOS_TARGET \
-    --build=$("$WORKDIR/src/build-aux/config.guess")
+    --build=$("$SRCS/build-aux/config.guess")
 
 # build
 make -j$MAKE_JOBS
@@ -2101,7 +2089,7 @@ package(
     license = "GPL-2.0",
     install_script = """# configure
 BUCKOS_TARGET="x86_64-buckos-linux-gnu"
-CFLAGS="$CFLAGS -std=gnu17"  # Force C17 for old glib code compatibility
+CFLAGS="$CFLAGS -std=gnu17 -Wno-error"  # Force C17 for old glib code, suppress -Werror
 ./configure \
     --prefix=/tools \
     --host=$BUCKOS_TARGET \
@@ -4682,23 +4670,22 @@ package(
     description = "Core utilities for aarch64 bootstrap",
     homepage = "https://www.gnu.org/software/coreutils/",
     license = "GPL-3.0",
-    install_script = """# Copy source to writable location for out-of-tree build
-cp -a "$SRCS" "$WORKDIR/src"
+    install_script = """# wrapper.sh already copies source to writable $WORKDIR/src
 mkdir -p "$WORKDIR/build"
 # Prevent autotools regeneration — timestamps get skewed by cp -a
-find "$WORKDIR/src" -name 'aclocal.m4' -exec touch {} +
-find "$WORKDIR/src" -name 'configure' -exec touch {} +
-find "$WORKDIR/src" -name 'config.h.in' -exec touch {} +
-find "$WORKDIR/src" -name 'Makefile.in' -exec touch {} +
+find "$SRCS" -name 'aclocal.m4' -exec touch {} +
+find "$SRCS" -name 'configure' -exec touch {} +
+find "$SRCS" -name 'config.h.in' -exec touch {} +
+find "$SRCS" -name 'Makefile.in' -exec touch {} +
 
 # configure
 cd "$WORKDIR/build"
 
 BUCKOS_TARGET="aarch64-buckos-linux-gnu"
-"$WORKDIR/src/configure" \
+"$SRCS/configure" \
     --prefix=/tools \
     --host=$BUCKOS_TARGET \
-    --build=$("$WORKDIR/src/build-aux/config.guess") \
+    --build=$("$SRCS/build-aux/config.guess") \
     --enable-install-program=hostname \
     --enable-no-install-program=kill,uptime
 
@@ -4756,23 +4743,22 @@ package(
     description = "Stream editor for aarch64 bootstrap",
     homepage = "https://www.gnu.org/software/sed/",
     license = "GPL-3.0",
-    install_script = """# Copy source to writable location for out-of-tree build
-cp -a "$SRCS" "$WORKDIR/src"
+    install_script = """# wrapper.sh already copies source to writable $WORKDIR/src
 mkdir -p "$WORKDIR/build"
 # Prevent autotools regeneration — timestamps get skewed by cp -a
-find "$WORKDIR/src" -name 'aclocal.m4' -exec touch {} +
-find "$WORKDIR/src" -name 'configure' -exec touch {} +
-find "$WORKDIR/src" -name 'config.h.in' -exec touch {} +
-find "$WORKDIR/src" -name 'Makefile.in' -exec touch {} +
+find "$SRCS" -name 'aclocal.m4' -exec touch {} +
+find "$SRCS" -name 'configure' -exec touch {} +
+find "$SRCS" -name 'config.h.in' -exec touch {} +
+find "$SRCS" -name 'Makefile.in' -exec touch {} +
 
 # configure
 cd "$WORKDIR/build"
 
 BUCKOS_TARGET="aarch64-buckos-linux-gnu"
-"$WORKDIR/src/configure" \
+"$SRCS/configure" \
     --prefix=/tools \
     --host=$BUCKOS_TARGET \
-    --build=$("$WORKDIR/src/build-aux/config.guess")
+    --build=$("$SRCS/build-aux/config.guess")
 
 # build
 make -j$MAKE_JOBS
@@ -5082,7 +5068,7 @@ package(
     license = "GPL-2.0",
     install_script = """# configure
 BUCKOS_TARGET="aarch64-buckos-linux-gnu"
-CFLAGS="$CFLAGS -std=gnu17"  # Force C17 for old glib code compatibility
+CFLAGS="$CFLAGS -std=gnu17 -Wno-error"  # Force C17 for old glib code, suppress -Werror
 
 # Provide cache variables for glib's cross-compilation tests
 # These values are correct for AArch64 Linux

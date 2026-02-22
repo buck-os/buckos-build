@@ -1,5 +1,4 @@
 load("//defs:package.bzl", "package")
-load("//defs:package_defs.bzl", "gen_pkgconfig")
 
 # ARM CMSIS-NN - Neural Network library for Cortex-M processors
 # Optimized kernels for neural network operations on embedded devices
@@ -51,12 +50,22 @@ package(
         # Install headers
         mkdir -p "$OUT/usr/include/cmsis-nn"
         cp -r ../Include/* "$OUT/usr/include/cmsis-nn/"
-    """ + gen_pkgconfig(
-        name = "cmsis-nn",
-        description = "CMSIS Neural Network Library",
-        libs = "-lcmsis-nn",
-        cflags = "-I${includedir}/cmsis-nn",
-    ),
+
+        # Generate pkg-config file
+        mkdir -p "$OUT/usr/lib64/pkgconfig"
+        cat > "$OUT/usr/lib64/pkgconfig/cmsis-nn.pc" << EOF
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${prefix}/lib64
+includedir=${prefix}/include
+
+Name: cmsis-nn
+Description: CMSIS Neural Network Library
+Version: $PV
+Libs: -lcmsis-nn
+Cflags: -I${includedir}/cmsis-nn
+EOF
+    """,
     deps = [],
     visibility = ["PUBLIC"],
 )

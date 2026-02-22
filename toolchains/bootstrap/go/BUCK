@@ -1,4 +1,5 @@
-load("@buckos//defs:package_defs.bzl", "download_source", "binary_package", "ebuild_package")
+load("@buckos//defs:package.bzl", "package")
+load("@buckos//defs/rules:source.bzl", "extract_source")
 load(":go_toolchain_rule.bzl", "buckos_go_toolchain")
 
 # =============================================================================
@@ -17,24 +18,12 @@ load(":go_toolchain_rule.bzl", "buckos_go_toolchain")
 # =============================================================================
 # Go 1.23.x is used to bootstrap Go 1.25.x
 
-download_source(
-    name = "go-bootstrap-src",
-    src_uri = "https://go.dev/dl/go1.23.6.linux-amd64.tar.gz",
-    sha256 = "9379441ea310de000f33a4dc767bd966e72ab2826270e038e78b2c53c2e7802d",
-    signature_required = False,
-)
-
-download_source(
-    name = "go-bootstrap-src-aarch64",
-    src_uri = "https://go.dev/dl/go1.23.6.linux-arm64.tar.gz",
-    sha256 = "561c780e8f4a8955d32bf72e46af0b5ee5e0debe1e4633df9a03781878219202",
-    signature_required = False,
-)
-
-binary_package(
+package(
     name = "go-bootstrap",
-    srcs = [":go-bootstrap-src"],
+    build_rule = "binary",
     version = "1.23.6",
+    url = "https://go.dev/dl/go1.23.6.linux-amd64.tar.gz",
+    sha256 = "9379441ea310de000f33a4dc767bd966e72ab2826270e038e78b2c53c2e7802d",
     description = "Go bootstrap compiler (stage 0) for building Go from source",
     homepage = "https://go.dev/",
     license = "BSD-3-Clause",
@@ -49,10 +38,12 @@ binary_package(
     visibility = ["PUBLIC"],
 )
 
-binary_package(
+package(
     name = "go-bootstrap-aarch64",
-    srcs = [":go-bootstrap-src-aarch64"],
+    build_rule = "binary",
     version = "1.23.6",
+    url = "https://go.dev/dl/go1.23.6.linux-arm64.tar.gz",
+    sha256 = "561c780e8f4a8955d32bf72e46af0b5ee5e0debe1e4633df9a03781878219202",
     description = "Go bootstrap compiler (stage 0) for aarch64",
     homepage = "https://go.dev/",
     license = "BSD-3-Clause",
@@ -72,85 +63,81 @@ binary_package(
 # =============================================================================
 # Build Go from source using the bootstrap Go compiler
 
-download_source(
-    name = "go-native-src",
-    src_uri = "https://go.dev/dl/go1.25.5.src.tar.gz",
+# Shared source archive for all go-native variants
+http_file(
+    name = "go-native-archive",
+    urls = ["https://go.dev/dl/go1.25.5.src.tar.gz"],
     sha256 = "22a5fd0a91efcd28a1b0537106b9959b2804b61f59c3758b51e8e5429c1a954f",
-    signature_required = False,
+    out = "go1.25.5.src.tar.gz",
 )
 
-ebuild_package(
+extract_source(
+    name = "go-native-src",
+    source = ":go-native-archive",
+)
+
+package(
     name = "go-native",
-    source = ":go-native-src",
+    build_rule = "binary",
+    local_only = True,
     version = "1.25.5",
-    category = "toolchain/bootstrap",
-    slot = "0",
+    source = ":go-native-src",
     description = "Go programming language - built from source",
     homepage = "https://go.dev/",
     license = "BSD-3-Clause",
-    bootstrap_stage = "stage2",
+    install_script = """
+export CGO_ENABLED=0
 
-    env = {
-        # Disable CGO during bootstrap to avoid C compiler dependency during Go build
-        # CGO will work in the final toolchain when building Go packages
-        "CGO_ENABLED": "0",
-    },
-
-    src_configure = '''
 # Find go-bootstrap in dependencies
 GOROOT_BOOTSTRAP=""
-IFS=':' read -ra DEPS <<< "$DEP_BASE_DIRS"
-for dep in "${DEPS[@]}"; do
-    if [ -x "$dep/tools/go-bootstrap/bin/go" ]; then
-        GOROOT_BOOTSTRAP="$dep/tools/go-bootstrap"
+IFS=':' read -ra DEP_PATHS <<< "${_DEP_BIN_PATHS:-}"
+for p in "${DEP_PATHS[@]}"; do
+    dep_root="${p%/usr/bin}"
+    dep_root="${dep_root%/usr/sbin}"
+    if [ -x "$dep_root/tools/go-bootstrap/bin/go" ]; then
+        GOROOT_BOOTSTRAP="$dep_root/tools/go-bootstrap"
         break
     fi
 done
 
 if [ -z "$GOROOT_BOOTSTRAP" ]; then
     echo "ERROR: Could not find go-bootstrap in dependencies"
-    echo "Searched in: $DEP_BASE_DIRS"
     exit 1
 fi
 
 export GOROOT_BOOTSTRAP
 echo "Using GOROOT_BOOTSTRAP=$GOROOT_BOOTSTRAP"
 echo "Bootstrap Go version: $($GOROOT_BOOTSTRAP/bin/go version)"
-''',
 
-    src_compile = '''
 # Build Go from source
-cd src
+cd $SRCS/src
 GOROOT_FINAL=/usr/lib/go ./make.bash
-''',
 
-    src_install = '''
+cd $SRCS
+
 # Install Go to /usr/lib/go (standard FHS location)
-mkdir -p "$DESTDIR/usr/lib/go"
+mkdir -p "$OUT/usr/lib/go"
 
 # Copy essential directories
 for dir in bin pkg src lib misc; do
     if [ -d "$dir" ]; then
-        cp -r "$dir" "$DESTDIR/usr/lib/go/"
+        cp -r "$dir" "$OUT/usr/lib/go/"
     fi
 done
 
 # Copy VERSION file and other important files
-cp -f VERSION* "$DESTDIR/usr/lib/go/" 2>/dev/null || true
-cp -f go.env "$DESTDIR/usr/lib/go/" 2>/dev/null || true
+cp -f VERSION* "$OUT/usr/lib/go/" 2>/dev/null || true
+cp -f go.env "$OUT/usr/lib/go/" 2>/dev/null || true
 
 # Create symlinks in /usr/bin using relative paths
-mkdir -p "$DESTDIR/usr/bin"
-ln -sf ../lib/go/bin/go "$DESTDIR/usr/bin/go"
-ln -sf ../lib/go/bin/gofmt "$DESTDIR/usr/bin/gofmt"
+mkdir -p "$OUT/usr/bin"
+ln -sf ../lib/go/bin/go "$OUT/usr/bin/go"
+ln -sf ../lib/go/bin/gofmt "$OUT/usr/bin/gofmt"
 
 echo "Go $PV installed to /usr/lib/go"
-echo "Version: $($DESTDIR/usr/lib/go/bin/go version 2>/dev/null || echo 'installed')"
-''',
-
-    bdepend = [":go-bootstrap"],
-    depend = [],
-    use_bootstrap = False,  # Don't add C/C++ bootstrap, Go builds itself
+echo "Version: $($OUT/usr/lib/go/bin/go version 2>/dev/null || echo 'installed')"
+    """,
+    deps = [":go-bootstrap"],
     visibility = ["PUBLIC"],
 )
 
@@ -160,56 +147,51 @@ echo "Version: $($DESTDIR/usr/lib/go/bin/go version 2>/dev/null || echo 'install
 # This target provides Go for package builds.
 # It aggregates go-native and sets up the /tools directory structure.
 
-ebuild_package(
+package(
     name = "go-toolchain",
-    source = ":go-native-src",  # Dummy source
+    build_rule = "binary",
+    local_only = True,
     version = "1.25.5",
-    category = "toolchain/bootstrap",
-    slot = "0",
+    source = ":go-native-src",
     description = "Go toolchain for BuckOS package builds",
     homepage = "https://go.dev/",
     license = "BSD-3-Clause",
-
-    src_configure = "true",
-    src_compile = "true",
-
-    src_install = '''
+    install_script = """
 # Copy Go from go-native to tools directory structure
-mkdir -p "$DESTDIR/tools"
+mkdir -p "$OUT/tools"
 
-IFS=':' read -ra DEP_ARRAY <<< "$DEP_BASE_DIRS"
-for dep_dir in "${DEP_ARRAY[@]}"; do
-    if [ -x "$dep_dir/usr/lib/go/bin/go" ]; then
-        echo "Found Go at: $dep_dir/usr/lib/go"
+IFS=':' read -ra DEP_PATHS <<< "${_DEP_BIN_PATHS:-}"
+for p in "${DEP_PATHS[@]}"; do
+    dep_root="${p%/usr/bin}"
+    dep_root="${dep_root%/usr/sbin}"
+    if [ -x "$dep_root/usr/lib/go/bin/go" ]; then
+        echo "Found Go at: $dep_root/usr/lib/go"
         # Copy the entire Go installation
-        cp -a "$dep_dir/usr/lib/go" "$DESTDIR/tools/"
+        cp -a "$dep_root/usr/lib/go" "$OUT/tools/"
 
         # Create symlinks in tools/bin for PATH
-        mkdir -p "$DESTDIR/tools/bin"
-        ln -sf ../go/bin/go "$DESTDIR/tools/bin/go"
-        ln -sf ../go/bin/gofmt "$DESTDIR/tools/bin/gofmt"
+        mkdir -p "$OUT/tools/bin"
+        ln -sf ../go/bin/go "$OUT/tools/bin/go"
+        ln -sf ../go/bin/gofmt "$OUT/tools/bin/gofmt"
         break
     fi
 done
 
-if [ ! -x "$DESTDIR/tools/go/bin/go" ]; then
+if [ ! -x "$OUT/tools/go/bin/go" ]; then
     echo "ERROR: Could not find go-native output"
     exit 1
 fi
 
 # Create marker file
-cat > "$DESTDIR/tools/.go-toolchain" << 'EOF'
+cat > "$OUT/tools/.go-toolchain" << 'MARKER'
 BuckOS Go Toolchain
 Go version: 1.25.5
 Built from source with go-bootstrap 1.23.6
-EOF
+MARKER
 
 echo "Go toolchain assembled in /tools"
-''',
-
-    bdepend = [":go-native"],
-    depend = [],
-    use_bootstrap = False,
+    """,
+    deps = [":go-native"],
     visibility = ["PUBLIC"],
 )
 
@@ -218,78 +200,68 @@ echo "Go toolchain assembled in /tools"
 # =============================================================================
 # Build Go from source for aarch64 using the aarch64 bootstrap Go compiler
 
-ebuild_package(
+package(
     name = "go-native-aarch64",
-    source = ":go-native-src",
+    build_rule = "binary",
+    local_only = True,
     version = "1.25.5",
-    category = "toolchain/bootstrap",
-    slot = "0",
+    source = ":go-native-src",
     description = "Go programming language for aarch64 - built from source",
     homepage = "https://go.dev/",
     license = "BSD-3-Clause",
-    # Go is self-hosting - no C compiler needed (CGO_ENABLED=0)
+    install_script = """
+export CGO_ENABLED=0
 
-    env = {
-        # Disable CGO during bootstrap to avoid C compiler dependency during Go build
-        # CGO will work in the final toolchain when building Go packages
-        "CGO_ENABLED": "0",
-    },
-
-    src_configure = '''
 # Find go-bootstrap in dependencies
 GOROOT_BOOTSTRAP=""
-IFS=':' read -ra DEPS <<< "$DEP_BASE_DIRS"
-for dep in "${DEPS[@]}"; do
-    if [ -x "$dep/tools/go-bootstrap/bin/go" ]; then
-        GOROOT_BOOTSTRAP="$dep/tools/go-bootstrap"
+IFS=':' read -ra DEP_PATHS <<< "${_DEP_BIN_PATHS:-}"
+for p in "${DEP_PATHS[@]}"; do
+    dep_root="${p%/usr/bin}"
+    dep_root="${dep_root%/usr/sbin}"
+    if [ -x "$dep_root/tools/go-bootstrap/bin/go" ]; then
+        GOROOT_BOOTSTRAP="$dep_root/tools/go-bootstrap"
         break
     fi
 done
 
 if [ -z "$GOROOT_BOOTSTRAP" ]; then
     echo "ERROR: Could not find go-bootstrap in dependencies"
-    echo "Searched in: $DEP_BASE_DIRS"
     exit 1
 fi
 
 export GOROOT_BOOTSTRAP
 echo "Using GOROOT_BOOTSTRAP=$GOROOT_BOOTSTRAP"
 echo "Bootstrap Go version: $($GOROOT_BOOTSTRAP/bin/go version)"
-''',
 
-    src_compile = '''
 # Build Go from source
-cd src
+cd $SRCS/src
 GOROOT_FINAL=/usr/lib/go ./make.bash
-''',
 
-    src_install = '''
+cd $SRCS
+
 # Install Go to /usr/lib/go (standard FHS location)
-mkdir -p "$DESTDIR/usr/lib/go"
+mkdir -p "$OUT/usr/lib/go"
 
 # Copy essential directories
 for dir in bin pkg src lib misc; do
     if [ -d "$dir" ]; then
-        cp -r "$dir" "$DESTDIR/usr/lib/go/"
+        cp -r "$dir" "$OUT/usr/lib/go/"
     fi
 done
 
 # Copy VERSION file and other important files
-cp -f VERSION* "$DESTDIR/usr/lib/go/" 2>/dev/null || true
-cp -f go.env "$DESTDIR/usr/lib/go/" 2>/dev/null || true
+cp -f VERSION* "$OUT/usr/lib/go/" 2>/dev/null || true
+cp -f go.env "$OUT/usr/lib/go/" 2>/dev/null || true
 
 # Create symlinks in /usr/bin using relative paths
-mkdir -p "$DESTDIR/usr/bin"
-ln -sf ../lib/go/bin/go "$DESTDIR/usr/bin/go"
-ln -sf ../lib/go/bin/gofmt "$DESTDIR/usr/bin/gofmt"
+mkdir -p "$OUT/usr/bin"
+ln -sf ../lib/go/bin/go "$OUT/usr/bin/go"
+ln -sf ../lib/go/bin/gofmt "$OUT/usr/bin/gofmt"
 
 echo "Go $PV (aarch64) installed to /usr/lib/go"
-echo "Version: $($DESTDIR/usr/lib/go/bin/go version 2>/dev/null || echo 'installed')"
-''',
-
-    bdepend = [":go-bootstrap-aarch64"],
-    depend = [],
-    use_bootstrap = False,  # Don't add C/C++ bootstrap, Go builds itself
+echo "Version: $($OUT/usr/lib/go/bin/go version 2>/dev/null || echo 'installed')"
+    """,
+    deps = [":go-bootstrap-aarch64"],
     visibility = ["PUBLIC"],
 )
 
@@ -298,56 +270,51 @@ echo "Version: $($DESTDIR/usr/lib/go/bin/go version 2>/dev/null || echo 'install
 # =============================================================================
 # This target provides Go for aarch64 package builds.
 
-ebuild_package(
+package(
     name = "go-toolchain-aarch64",
-    source = ":go-native-src",  # Dummy source
+    build_rule = "binary",
+    local_only = True,
     version = "1.25.5",
-    category = "toolchain/bootstrap",
-    slot = "0",
+    source = ":go-native-src",
     description = "Go toolchain for BuckOS aarch64 package builds",
     homepage = "https://go.dev/",
     license = "BSD-3-Clause",
-
-    src_configure = "true",
-    src_compile = "true",
-
-    src_install = '''
+    install_script = """
 # Copy Go from go-native-aarch64 to tools directory structure
-mkdir -p "$DESTDIR/tools"
+mkdir -p "$OUT/tools"
 
-IFS=':' read -ra DEP_ARRAY <<< "$DEP_BASE_DIRS"
-for dep_dir in "${DEP_ARRAY[@]}"; do
-    if [ -x "$dep_dir/usr/lib/go/bin/go" ]; then
-        echo "Found Go at: $dep_dir/usr/lib/go"
+IFS=':' read -ra DEP_PATHS <<< "${_DEP_BIN_PATHS:-}"
+for p in "${DEP_PATHS[@]}"; do
+    dep_root="${p%/usr/bin}"
+    dep_root="${dep_root%/usr/sbin}"
+    if [ -x "$dep_root/usr/lib/go/bin/go" ]; then
+        echo "Found Go at: $dep_root/usr/lib/go"
         # Copy the entire Go installation
-        cp -a "$dep_dir/usr/lib/go" "$DESTDIR/tools/"
+        cp -a "$dep_root/usr/lib/go" "$OUT/tools/"
 
         # Create symlinks in tools/bin for PATH
-        mkdir -p "$DESTDIR/tools/bin"
-        ln -sf ../go/bin/go "$DESTDIR/tools/bin/go"
-        ln -sf ../go/bin/gofmt "$DESTDIR/tools/bin/gofmt"
+        mkdir -p "$OUT/tools/bin"
+        ln -sf ../go/bin/go "$OUT/tools/bin/go"
+        ln -sf ../go/bin/gofmt "$OUT/tools/bin/gofmt"
         break
     fi
 done
 
-if [ ! -x "$DESTDIR/tools/go/bin/go" ]; then
+if [ ! -x "$OUT/tools/go/bin/go" ]; then
     echo "ERROR: Could not find go-native-aarch64 output"
     exit 1
 fi
 
 # Create marker file
-cat > "$DESTDIR/tools/.go-toolchain" << 'EOF'
+cat > "$OUT/tools/.go-toolchain" << 'MARKER'
 BuckOS Go Toolchain (aarch64)
 Go version: 1.25.5
 Built from source with go-bootstrap-aarch64 1.23.6
-EOF
+MARKER
 
 echo "Go toolchain (aarch64) assembled in /tools"
-''',
-
-    bdepend = [":go-native-aarch64"],
-    depend = [],
-    use_bootstrap = False,
+    """,
+    deps = [":go-native-aarch64"],
     visibility = ["PUBLIC"],
 )
 
@@ -370,4 +337,3 @@ buckos_go_toolchain(
     version = "1.25.5",
     visibility = ["PUBLIC"],
 )
-

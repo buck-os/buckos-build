@@ -1,101 +1,79 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package", "cargo_package")
-load("//defs:eclasses.bzl", "inherit")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # Container Networking
 # =============================================================================
 
 # cni-plugins - Container Network Interface plugins
-ebuild_package(
+package(
+    build_rule = "binary",
     name = "cni-plugins",
-    src_uri = "https://github.com/containernetworking/plugins/archive/refs/tags/v1.4.1.tar.gz",
-
-    sha256 = "f8e7055bc77bbd1e978157c2dcb53836f5f4d9d582f7bc2dffdd78997a267f96",
-    iuse = ["hardened"],
-    use_configure = {
-        "-hardened": "--disable-hardening",
-        "hardened": "--enable-hardening",
-    },
     version = "1.4.1",
+    url = "https://github.com/containernetworking/plugins/archive/refs/tags/v1.4.1.tar.gz",
+    sha256 = "f8e7055bc77bbd1e978157c2dcb53836f5f4d9d582f7bc2dffdd78997a267f96",
     description = "Standard CNI network plugins for container networking",
     homepage = "https://github.com/containernetworking/plugins",
     license = "Apache-2.0",
-    src_compile = """
+    install_script = """
 export CGO_ENABLED=0
 ./build_linux.sh
+mkdir -p "$OUT/usr/lib/cni"
+install -m 755 bin/* "$OUT/usr/lib/cni/"
 """,
-    src_install = """
-mkdir -p "$DESTDIR/usr/lib/cni"
-install -m 755 bin/* "$DESTDIR/usr/lib/cni/"
-""",
-    bdepend = [
+    deps = [
         "//packages/linux/lang/go:go",
     ],
     visibility = ["PUBLIC"],
 )
 
 # netavark - Container network stack
-ebuild_package(
+package(
+    build_rule = "cargo",
     name = "netavark",
-    src_uri = "https://github.com/containers/netavark/archive/refs/tags/v1.14.0.tar.gz",
-
-    sha256 = "d2ded5412e5037e84f79a28c774378c864aa6f6e43023dd88891c70cfaf963ef",
     version = "1.14.0",
+    url = "https://github.com/containers/netavark/archive/refs/tags/v1.14.0.tar.gz",
+    sha256 = "d2ded5412e5037e84f79a28c774378c864aa6f6e43023dd88891c70cfaf963ef",
     description = "Container network stack for Podman",
     homepage = "https://github.com/containers/netavark",
     license = "Apache-2.0",
-    src_configure = inherit(["cargo"])["src_configure"],
-    src_compile = inherit(["cargo"])["src_compile"],
-    src_install = """
-mkdir -p "$DESTDIR/usr/libexec/podman"
-install -m 755 target/release/netavark "$DESTDIR/usr/libexec/podman/"
+    install_script = """
+mkdir -p "$OUT/usr/libexec/podman"
+install -m 755 target/release/netavark "$OUT/usr/libexec/podman/"
 """,
-    bdepend = inherit(["cargo"])["bdepend"] + [
+    deps = [
         "//packages/linux/dev-libs/serialization/protobuf:protobuf",
     ],
     visibility = ["PUBLIC"],
 )
 
 # aardvark-dns - DNS server for container networks
-ebuild_package(
+package(
+    build_rule = "cargo",
     name = "aardvark-dns",
-    src_uri = "https://github.com/containers/aardvark-dns/archive/refs/tags/v1.14.0.tar.gz",
-
-    sha256 = "d46f170e0439fc97e15bb31d63b7464192f74809b0d54064383e6a0b592d8cfd",
     version = "1.14.0",
+    url = "https://github.com/containers/aardvark-dns/archive/refs/tags/v1.14.0.tar.gz",
+    sha256 = "d46f170e0439fc97e15bb31d63b7464192f74809b0d54064383e6a0b592d8cfd",
     description = "Authoritative DNS server for container records",
     homepage = "https://github.com/containers/aardvark-dns",
     license = "Apache-2.0",
-    src_configure = inherit(["cargo"])["src_configure"],
-    src_compile = inherit(["cargo"])["src_compile"],
-    src_install = """
-mkdir -p "$DESTDIR/usr/libexec/podman"
-install -m 755 target/release/aardvark-dns "$DESTDIR/usr/libexec/podman/"
+    install_script = """
+mkdir -p "$OUT/usr/libexec/podman"
+install -m 755 target/release/aardvark-dns "$OUT/usr/libexec/podman/"
 """,
-    bdepend = inherit(["cargo"])["bdepend"],
     visibility = ["PUBLIC"],
 )
 
 # slirp4netns - User-mode networking for unprivileged network namespaces
-ebuild_package(
+package(
+    build_rule = "autotools",
     name = "slirp4netns",
-    src_uri = "https://github.com/rootless-containers/slirp4netns/archive/refs/tags/v1.2.3.tar.gz",
-
-    sha256 = "acce648fab8fe5f113c41a8fd6d20177708519b4ddaa60f845e1998a17b22ca5",
     version = "1.2.3",
+    url = "https://github.com/rootless-containers/slirp4netns/archive/refs/tags/v1.2.3.tar.gz",
+    sha256 = "acce648fab8fe5f113c41a8fd6d20177708519b4ddaa60f845e1998a17b22ca5",
     description = "User-mode networking for unprivileged network namespaces",
     homepage = "https://github.com/rootless-containers/slirp4netns",
     license = "GPL-2.0",
-    src_configure = """
-./configure --prefix=/usr
-""",
-    src_compile = """
-make
-""",
-    src_install = """
-make install DESTDIR="$DESTDIR"
-""",
-    rdepend = [
+    deps = [
         "//packages/linux/dev-libs/glib:glib",
         # TODO: libslirp package needs to be created
         # "//packages/linux/system/libs/network/libslirp:libslirp",

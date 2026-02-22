@@ -1,5 +1,4 @@
 load("//defs:package.bzl", "package")
-load("//defs:package_defs.bzl", "gen_pkgconfig")
 
 # =============================================================================
 # CUDA Toolkit - NVIDIA CUDA development toolkit
@@ -86,14 +85,22 @@ export CUDA_HOME=/usr/local/cuda
 export PATH=$CUDA_HOME/bin:$PATH
 export LD_LIBRARY_PATH=$CUDA_HOME/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
 EOF
-""" + gen_pkgconfig(
-        name = "cuda",
-        description = "NVIDIA CUDA Toolkit",
-        libs = "-L${libdir} -lcudart",
-        cflags = "-I${includedir}",
-        prefix = "/usr/local/cuda",
-        libdir = "${prefix}/lib64",
-    ),
+
+# Generate pkg-config file
+mkdir -p "$OUT/usr/local/cuda/lib64/pkgconfig"
+cat > "$OUT/usr/local/cuda/lib64/pkgconfig/cuda.pc" << EOF
+prefix=/usr/local/cuda
+exec_prefix=\${prefix}
+libdir=\${prefix}/lib64
+includedir=\${prefix}/include
+
+Name: cuda
+Description: NVIDIA CUDA Toolkit
+Version: $PV
+Libs: -L\${libdir} -lcudart
+Cflags: -I\${includedir}
+EOF
+""",
     deps = [
         "//packages/linux/system/gpu/drivers/nvidia:nvidia-drivers",
     ],

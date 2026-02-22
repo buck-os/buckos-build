@@ -83,6 +83,12 @@ python_binary(
 )
 
 python_binary(
+    name = "mozbuild_helper",
+    main = "mozbuild_helper.py",
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
     name = "sysroot_merge",
     main = "sysroot_merge.py",
     visibility = ["PUBLIC"],
@@ -139,5 +145,11 @@ python_binary(
 export_file(
     name = "sbom.bxl",
     src = "sbom.bxl",
+    visibility = ["PUBLIC"],
+)
+
+export_file(
+    name = "ebuild_helpers.sh",
+    src = "ebuild_helpers.sh",
     visibility = ["PUBLIC"],
 )

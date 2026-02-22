@@ -1,24 +1,20 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # puppet - Configuration management tool
-ebuild_package(
+package(
+    build_rule = "binary",
     name = "puppet",
-    src_uri = "https://downloads.puppetlabs.com/puppet/puppet-8.4.0.tar.gz",
-
-    sha256 = "6e528cbcf499fd03f01a362a5a6a7d7e908def2b169d6794e6cf8b2dd1193f8d",
-
-    signature_sha256 = "7f56b2a37a73ae5aeee51019cd626edbe0e35275703a00b1458107868b642c7d",
     version = "8.4.0",
+    url = "https://downloads.puppetlabs.com/puppet/puppet-8.4.0.tar.gz",
+    sha256 = "6e528cbcf499fd03f01a362a5a6a7d7e908def2b169d6794e6cf8b2dd1193f8d",
     description = "Configuration management and automation tool",
     homepage = "https://puppet.com",
     license = "Apache-2.0",
-    src_compile = """
+    install_script = """
 gem build puppet.gemspec
+gem install --install-dir "$OUT/usr/lib/ruby/gems" puppet-*.gem
 """,
-    src_install = """
-gem install --install-dir "$DESTDIR/usr/lib/ruby/gems" puppet-*.gem
-""",
-    rdepend = [
+    deps = [
         "//packages/linux/lang/ruby:ruby",
     ],
     visibility = ["PUBLIC"],

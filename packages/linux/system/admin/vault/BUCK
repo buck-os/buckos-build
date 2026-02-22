@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # vault - Secrets management tool
 # NOTE: Disabled - HashiCorp Vault has complex build requirements and version-specific
@@ -6,27 +6,20 @@ load("//defs:package_defs.bzl", "download_source", "ebuild_package", "autotools_
 # incompatible with newer Go versions. Consider using prebuilt binaries or waiting
 # for HashiCorp to update their build system.
 #
-# download_source(
-#     name = "vault-src",
-#     src_uri = "https://github.com/hashicorp/vault/archive/refs/tags/v1.15.5.tar.gz",
-#     sha256 = "af94206c1d50dea04d606dc39485c94075fa2df3104e9507e9fcd5b3b62f8790",
-#     signature_required = False,
-# )
-#
-# ebuild_package(
+# package(
+#     build_rule = "binary",
 #     name = "vault",
-#     source = ":vault-src",
 #     version = "1.15.5",
+#     url = "https://github.com/hashicorp/vault/archive/refs/tags/v1.15.5.tar.gz",
+#     sha256 = "af94206c1d50dea04d606dc39485c94075fa2df3104e9507e9fcd5b3b62f8790",
 #     description = "Secrets management and data protection tool",
 #     homepage = "https://www.vaultproject.io",
 #     license = "BUSL-1.1",
-#     src_compile = """
+#     install_script = """
 # make dev
+# install -Dm755 bin/vault "$OUT/usr/bin/vault"
 # """,
-#     src_install = """
-# install -Dm755 bin/vault "$DESTDIR/usr/bin/vault"
-# """,
-#     bdepend = [
+#     deps = [
 #         "//packages/linux/lang/go:go",
 #     ],
 #     visibility = ["PUBLIC"],

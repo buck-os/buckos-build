@@ -1,5 +1,4 @@
 load("//defs:package.bzl", "package")
-load("//defs:package_defs.bzl", "gen_pkgconfig_headeronly")
 
 # =============================================================================
 # cuda-api-wrappers - Thin C++-flavored wrappers for the CUDA APIs
@@ -104,11 +103,21 @@ endif()
 EOF
 
 echo "cuda-api-wrappers headers installed successfully"
-""" + gen_pkgconfig_headeronly(
-        name = "cuda-api-wrappers",
-        description = "Thin C++-flavored wrappers for the CUDA APIs",
-        requires = "cuda",
-    ),
+
+# Generate pkg-config file
+mkdir -p "$OUT/usr/lib/pkgconfig"
+cat > "$OUT/usr/lib/pkgconfig/cuda-api-wrappers.pc" << EOF
+prefix=/usr
+exec_prefix=${prefix}
+includedir=${prefix}/include
+
+Name: cuda-api-wrappers
+Description: Thin C++-flavored wrappers for the CUDA APIs
+Version: $PV
+Requires: cuda
+Cflags: -I${includedir}
+EOF
+""",
     deps = [
         "//packages/linux/system/gpu/libraries/cuda-toolkit:cuda-toolkit",
     ],

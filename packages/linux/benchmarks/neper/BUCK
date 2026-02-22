@@ -1,24 +1,24 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
-ebuild_package(
+package(
+    build_rule = "binary",
     name = "neper",
-    src_uri = "https://github.com/google/neper/archive/859fd82edc08b0714b027e2a217dbe77b9fc0f5f.tar.gz",
-
-    sha256 = "cd3c590805d96c536d99e43d6f80f83b1ae8a2f53cf1eba0be965b0869dd15bf",
     version = "0.0.1_git20240101",
-    category = "benchmarks",
+    url = "https://github.com/google/neper/archive/859fd82edc08b0714b027e2a217dbe77b9fc0f5f.tar.gz",
+    sha256 = "cd3c590805d96c536d99e43d6f80f83b1ae8a2f53cf1eba0be965b0869dd15bf",
     description = "Linux networking performance tool with multi-thread and multi-flow support",
     homepage = "https://github.com/google/neper",
     license = "Apache-2.0",
+    install_script = """
+mkdir -p "$OUT"
+BUILD=$(mktemp -d)
+cp -a "$SRCS"/. "$BUILD/"
+cd "$BUILD"
 
-    src_compile = '''
 make -j${MAKEOPTS:-$(nproc)} CC="${CC:-gcc}" CFLAGS="-std=c99 -Wall -O3 -g -D_GNU_SOURCE -DNO_LIBNUMA"
-''',
 
-    src_install = '''
-mkdir -p "$DESTDIR/usr/bin"
-cp tcp_rr tcp_stream tcp_crr udp_rr udp_stream psp_stream psp_crr psp_rr "$DESTDIR/usr/bin/"
-''',
-
+mkdir -p "$OUT/usr/bin"
+cp tcp_rr tcp_stream tcp_crr udp_rr udp_stream psp_stream psp_crr psp_rr "$OUT/usr/bin/"
+""",
     visibility = ["PUBLIC"],
 )

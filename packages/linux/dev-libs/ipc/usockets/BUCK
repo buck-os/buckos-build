@@ -1,35 +1,31 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
-ebuild_package(
+package(
     name = "usockets",
-    src_uri = "https://github.com/uNetworking/uSockets/archive/refs/tags/v0.8.8.tar.gz",
-
-    sha256 = "d14d2efe1df767dbebfb8d6f5b52aa952faf66b30c822fbe464debaa0c5c0b17",
+    build_rule = "binary",
     version = "0.8.8",
+    url = "https://github.com/uNetworking/uSockets/archive/refs/tags/v0.8.8.tar.gz",
+    sha256 = "d14d2efe1df767dbebfb8d6f5b52aa952faf66b30c822fbe464debaa0c5c0b17",
     description = "Tiny evented I/O library for Linux and other platforms",
     homepage = "https://github.com/uNetworking/uSockets",
     license = "Apache-2.0",
-
-    src_compile = """
-make WITH_LIBUV=1 WITH_OPENSSL=1 -j${MAKEOPTS:-$(nproc)}
-""",
-
-    src_install = """
-install -d "$DESTDIR/usr/lib64"
-install -m644 uSockets.a "$DESTDIR/usr/lib64/libuSockets.a"
-install -d "$DESTDIR/usr/include/usockets"
-cp -r src/*.h "$DESTDIR/usr/include/usockets/"
-""",
-
-    bdepend = [
+    deps = [
         "//packages/linux/system/libs/utility/libuv:libuv",
         "//packages/linux/system/libs/crypto/openssl:openssl",
         "//packages/linux/core/zlib:zlib",
     ],
-    rdepend = [
-        "//packages/linux/system/libs/utility/libuv:libuv",
-        "//packages/linux/system/libs/crypto/openssl:openssl",
-        "//packages/linux/core/zlib:zlib",
-    ],
+    install_script = """
+mkdir -p "$OUT"
+BUILD=$(mktemp -d)
+cp -a "$SRCS"/. "$BUILD/"
+cd "$BUILD"
+
+make WITH_LIBUV=1 WITH_OPENSSL=1 -j$(nproc)
+
+install -d "$OUT/usr/lib64"
+install -m644 uSockets.a "$OUT/usr/lib64/libuSockets.a"
+install -d "$OUT/usr/include/usockets"
+cp -r src/*.h "$OUT/usr/include/usockets/"
+""",
     visibility = ["PUBLIC"],
 )

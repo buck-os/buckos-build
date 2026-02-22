@@ -1,17 +1,17 @@
 load("//defs:package.bzl", "package")
-load("//defs:package_defs.bzl", "gen_pkgconfig")
 
 package(
     name = "picohttpparser",
-    build_rule = "autotools",
+    build_rule = "binary",
     version = "1.0",
     url = "https://github.com/h2o/picohttpparser/archive/refs/heads/master.tar.gz",
     sha256 = "69f6f59dcc0c73138273f56f7348f566c4cdb92daf046ef6b712a2cac89029ce",
-    src_configure = """
-# picohttpparser doesn't use configure, skip this phase
-true
-""",
-    src_compile = """
+    install_script = """
+mkdir -p "$OUT"
+BUILD=$(mktemp -d)
+cp -a "$SRCS"/. "$BUILD/"
+cd "$BUILD"
+
 # Build static library
 $CC $CFLAGS -c picohttpparser.c -o picohttpparser.o
 $AR rcs libpicohttpparser.a picohttpparser.o
@@ -21,21 +21,30 @@ $CC $CFLAGS -fPIC -c picohttpparser.c -o picohttpparser_shared.o
 $CC -shared -o libpicohttpparser.so.1.0 picohttpparser_shared.o
 ln -sf libpicohttpparser.so.1.0 libpicohttpparser.so.1
 ln -sf libpicohttpparser.so.1 libpicohttpparser.so
-""",
-    src_install = """
+
 # Install libraries
-mkdir -p "$DESTDIR/usr/lib"
-cp libpicohttpparser.a "$DESTDIR/usr/lib/"
-cp libpicohttpparser.so* "$DESTDIR/usr/lib/"
+mkdir -p "$OUT/usr/lib"
+cp libpicohttpparser.a "$OUT/usr/lib/"
+cp libpicohttpparser.so* "$OUT/usr/lib/"
 
 # Install headers
-mkdir -p "$DESTDIR/usr/include"
-cp picohttpparser.h "$DESTDIR/usr/include/"
-""" + gen_pkgconfig(
-        name = "picohttpparser",
-        description = "Tiny, primitive, fast HTTP request/response parser",
-        destvar = "DESTDIR",
-        libdir = "lib",
-    ),
+mkdir -p "$OUT/usr/include"
+cp picohttpparser.h "$OUT/usr/include/"
+
+# Generate pkg-config file
+mkdir -p "$OUT/usr/lib/pkgconfig"
+cat > "$OUT/usr/lib/pkgconfig/picohttpparser.pc" << EOF
+prefix=/usr
+exec_prefix=\${prefix}
+libdir=\${prefix}/lib
+includedir=\${prefix}/include
+
+Name: picohttpparser
+Description: Tiny, primitive, fast HTTP request/response parser
+Version: $PV
+Libs: -L\${libdir} -lpicohttpparser
+Cflags: -I\${includedir}
+EOF
+""",
     visibility = ["PUBLIC"],
 )

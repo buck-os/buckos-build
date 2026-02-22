@@ -393,7 +393,7 @@ rootfs(
 
 Example:
 ```python
-load("//defs:package_defs.bzl", "download_source", "configure_make_package")
+load("//defs:package.bzl", "package")
 
 download_source(
     name = "newpkg-src",

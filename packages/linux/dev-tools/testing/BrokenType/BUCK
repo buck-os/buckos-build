@@ -1,26 +1,20 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
-ebuild_package(
+package(
+    build_rule = "binary",
     name = "BrokenType",
-    src_uri = "https://github.com/googleprojectzero/BrokenType/archive/cf49a52b8e35b7d684fc8bc6b2ea8b923c177c2e.tar.gz",
-
-    sha256 = "00640d97ba9e3204eaa9db2f24996c99cd3f49c3ead6aecd07c9d6ea4773dbaf",
     version = "0.0.1",
-    category = "dev-tools/testing",
+    url = "https://github.com/googleprojectzero/BrokenType/archive/cf49a52b8e35b7d684fc8bc6b2ea8b923c177c2e.tar.gz",
+    sha256 = "00640d97ba9e3204eaa9db2f24996c99cd3f49c3ead6aecd07c9d6ea4773dbaf",
     description = "Font rasterization fuzzing tools from Google Project Zero",
     homepage = "https://github.com/googleprojectzero/brokentype",
     license = "Apache-2.0",
-
-    src_compile = '''
-cd ttf-otf-mutator
-make -f Makefile.linux -j${MAKEOPTS:-$(nproc)}
-''',
-
-    src_install = '''
-mkdir -p "$DESTDIR/usr/bin"
-cp ttf-otf-mutator/mutator "$DESTDIR/usr/bin/ttf-otf-mutator"
-chmod +x "$DESTDIR/usr/bin/ttf-otf-mutator"
-''',
-
+    install_script = '''
+        cd $SRCS/ttf-otf-mutator
+        make -f Makefile.linux -j${MAKEOPTS:-$(nproc)}
+        mkdir -p "$OUT/usr/bin"
+        cp mutator "$OUT/usr/bin/ttf-otf-mutator"
+        chmod +x "$OUT/usr/bin/ttf-otf-mutator"
+    ''',
     visibility = ["PUBLIC"],
 )

@@ -1,29 +1,26 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
-ebuild_package(
+package(
     name = "gorilla_main",
-    src_uri = "https://github.com/ShishirPatil/gorilla/archive/5e24ad9702825a96a5a01a2e6a62226d9aea1b99.tar.gz",
-
-    sha256 = "8522ca3e96a7220903288820f7c7c204be99954452b9027dd485ea9013db9de8",
+    build_rule = "binary",
     version = "main",
+    url = "https://github.com/ShishirPatil/gorilla/archive/5e24ad9702825a96a5a01a2e6a62226d9aea1b99.tar.gz",
+    sha256 = "8522ca3e96a7220903288820f7c7c204be99954452b9027dd485ea9013db9de8",
     description = "Berkeley Function Calling Leaderboard - Comprehensive evaluation of function-calling capabilities for LLMs",
     homepage = "https://gorilla.cs.berkeley.edu/leaderboard.html",
     license = "Apache-2.0",
-    src_compile = """
-        cd berkeley-function-call-leaderboard
-        python3 -m pip install --no-deps --target="$S/install" .
-    """,
-    src_install = """
-        mkdir -p "$DESTDIR/usr/lib/python3.12/site-packages"
-        cp -r "$S/install"/* "$DESTDIR/usr/lib/python3.12/site-packages/"
+    install_script = """
+        cd "$SRCS/berkeley-function-call-leaderboard"
+        mkdir -p "$OUT/usr/lib/python3.12/site-packages"
+        python3 -m pip install --no-deps --target="$OUT/usr/lib/python3.12/site-packages" .
 
         # Install bfcl command
-        if [ -d "$S/install/bin" ]; then
-            mkdir -p "$DESTDIR/usr/bin"
-            cp -r "$S/install/bin"/* "$DESTDIR/usr/bin/"
+        if [ -d "$OUT/usr/lib/python3.12/site-packages/bin" ]; then
+            mkdir -p "$OUT/usr/bin"
+            cp -r "$OUT/usr/lib/python3.12/site-packages/bin"/* "$OUT/usr/bin/"
         fi
     """,
-    bdepend = [
+    deps = [
         "//packages/linux/lang/python:python",
     ],
     visibility = ["PUBLIC"],

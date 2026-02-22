@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # libltdl - Portable dlopen wrapper library
@@ -6,23 +6,19 @@ load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 # libltdl is the runtime library component of GNU Libtool, providing a
 # portable interface to dlopen/dlsym across different platforms.
 
-ebuild_package(
+package(
     name = "libltdl",
-    src_uri = "https://mirror.buckos.org/l/libtool-2.4.7.tar.xz",
-
-    sha256 = "4f7f217f057ce655ff22559ad221a0fd8ef84ad1fc5fcb6990cecc333aa1635d",
+    build_rule = "binary",
     version = "2.4.7",
-    category = "system/libs/libltdl",
+    url = "https://mirror.buckos.org/l/libtool-2.4.7.tar.xz",
+    sha256 = "4f7f217f057ce655ff22559ad221a0fd8ef84ad1fc5fcb6990cecc333aa1635d",
     description = "Portable dlopen wrapper library from GNU Libtool",  # rebuild-v7
     homepage = "https://www.gnu.org/software/libtool/",
     license = "LGPL-2+",
-
-    src_prepare = """
+    install_script = """
 # Make all files writable
 chmod -R u+w . 2>/dev/null || true
-""",
 
-    src_configure = """
 # Configure libltdl standalone to generate config.h and ltdl.h
 cd libltdl
 
@@ -31,15 +27,12 @@ if [ "${CROSS_COMPILING:-false}" = "true" ] && [ -n "${CHOST:-}" ]; then
     CROSS_ARGS="--host=${CHOST}"
 fi
 
-./configure \\
-    --prefix=/usr \\
-    --libdir=/usr/lib64 \\
+./configure \
+    --prefix=/usr \
+    --libdir=/usr/lib64 \
     $CROSS_ARGS
-""",
 
-    src_compile = """
 # Let make compile - it uses the full CC path from configure
-cd libltdl
 make -j${MAKEOPTS:-$(nproc)}
 
 # Now manually link a shared library from the PIC objects.
@@ -70,8 +63,8 @@ const lt_dlsymlist lt_preloaded_symbols[] = { {0, (void *)0} };
 SYMEOF
 $CC_FULL -fPIC -c lt_preloaded_symbols.c -o lt_preloaded_symbols.o
 
-$CC_FULL -shared -Wl,-soname,libltdl.so.7 \\
-    $CORE_OBJS $LOADER_OBJS lt_preloaded_symbols.o \\
+$CC_FULL -shared -Wl,-soname,libltdl.so.7 \
+    $CORE_OBJS $LOADER_OBJS lt_preloaded_symbols.o \
     -ldl -o libltdl.so.7.3.2
 
 ln -sf libltdl.so.7.3.2 libltdl.so.7
@@ -81,10 +74,6 @@ echo "Built shared library:"
 ls -la libltdl.so*
 file libltdl.so.7.3.2
 nm -D libltdl.so.7.3.2 2>/dev/null | grep 'lt_dl' | head -10 || true
-""",
-
-    src_install = """
-cd libltdl
 
 mkdir -p "$DESTDIR/usr/lib64"
 mkdir -p "$DESTDIR/usr/include"
@@ -116,7 +105,6 @@ Libs: -L${libdir} -lltdl
 Cflags: -I${includedir}
 PCEOF
 """,
-
-    depend = [],
+    deps = [],
     visibility = ["PUBLIC"],
 )

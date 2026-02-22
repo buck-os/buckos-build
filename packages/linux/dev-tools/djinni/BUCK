@@ -1,5 +1,4 @@
 load("//defs:package.bzl", "package")
-load("//defs:package_defs.bzl", "sbt_package")
 
 # =============================================================================
 # Djinni - Cross-language type declaration and interface binding generator
@@ -9,33 +8,22 @@ load("//defs:package_defs.bzl", "sbt_package")
 # It's designed to connect C++ with either Java or Objective-C for
 # cross-platform mobile development.
 
-# Maven dependencies for offline builds (like go_sum_deps)
-# TODO: Add actual dependencies from build.sbt when available
-# maven_deps(
-#     name = "djinni-deps",
-#     artifacts = [
-#         # ("org.scala-lang", "scala-library", "2.10.7", "sha256..."),
-#         # ("com.lihaoyi", "fastparse_2.10", "0.3.7", "sha256..."),
-#         # Add more dependencies as needed
-#     ],
-# )
-
-sbt_package(
+package(
+    build_rule = "binary",
     name = "djinni",
     version = "1.0",
-    src_uri = "https://github.com/dropbox/djinni/archive/3aa304c155ac6b601688c6ad721e51c2dad7b443.tar.gz",
+    url = "https://github.com/dropbox/djinni/archive/3aa304c155ac6b601688c6ad721e51c2dad7b443.tar.gz",
     sha256 = "91967ee7e52f05be293c96653255119bb2adca00e50f19d962b8a5ae3fefec85",
     description = "Tool for generating cross-language type declarations and interface bindings",
     homepage = "https://github.com/dropbox/djinni",
     license = "Apache-2.0",
-
-    # Use the bundled SBT script in the source
-    build_cmd = "cd src && ./support/sbt compile stage",
-
-    # Optional: Enable offline builds once maven_deps is populated
-    # maven_deps_target = ":djinni-deps",
-
     install_script = """
+        cd $SRCS
+
+        # Build using the bundled SBT script
+        cd src && ./support/sbt compile stage
+        cd ..
+
         # Install the staged executable and libraries
         mkdir -p "$OUT/usr/lib/djinni"
         if [ -d src/target/universal/stage ]; then
@@ -68,6 +56,5 @@ WRAPPER_EOF
         cp README.md "$OUT/usr/share/doc/djinni/" 2>/dev/null || true
         cp LICENSE "$OUT/usr/share/doc/djinni/" 2>/dev/null || true
     """,
-
     visibility = ["PUBLIC"],
 )

@@ -22,6 +22,8 @@ def _extract_source_impl(ctx):
     cmd.add("--strip-components", str(ctx.attrs.strip_components))
     if ctx.attrs.format:
         cmd.add("--format", ctx.attrs.format)
+    for pattern in ctx.attrs.exclude_patterns:
+        cmd.add("--exclude", pattern)
 
     ctx.actions.run(cmd, category = "extract", identifier = ctx.attrs.name)
 
@@ -33,6 +35,7 @@ extract_source = rule(
         "source": attrs.dep(),
         "strip_components": attrs.int(default = 1),
         "format": attrs.option(attrs.string(), default = None),
+        "exclude_patterns": attrs.list(attrs.string(), default = []),
         "_extract_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:extract"),
         ),

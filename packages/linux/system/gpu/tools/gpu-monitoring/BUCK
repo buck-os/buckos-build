@@ -7,40 +7,15 @@
 #
 # =============================================================================
 
-load("//defs:package_defs.bzl", "download_source", "cmake_package", "ebuild_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # nvtop - GPU process monitoring
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "nvtop",
     version = "3.1.0",
-    iuse = [
-        "unicode",
-        "video_cards_amdgpu",
-        "video_cards_freedreno",
-        "video_cards_intel",
-        "video_cards_nvidia",
-        "video_cards_panfrost",
-        "video_cards_panthor",
-    ],
-    use_cmake = {
-        "-unicode": "-DENABLE_UNICODE=OFF",
-        "-video_cards_amdgpu": "-DENABLE_VIDEO_CARDS_AMDGPU=OFF",
-        "-video_cards_freedreno": "-DENABLE_VIDEO_CARDS_FREEDRENO=OFF",
-        "-video_cards_intel": "-DENABLE_VIDEO_CARDS_INTEL=OFF",
-        "-video_cards_nvidia": "-DENABLE_VIDEO_CARDS_NVIDIA=OFF",
-        "-video_cards_panfrost": "-DENABLE_VIDEO_CARDS_PANFROST=OFF",
-        "-video_cards_panthor": "-DENABLE_VIDEO_CARDS_PANTHOR=OFF",
-        "unicode": "-DENABLE_UNICODE=ON",
-        "video_cards_amdgpu": "-DENABLE_VIDEO_CARDS_AMDGPU=ON",
-        "video_cards_freedreno": "-DENABLE_VIDEO_CARDS_FREEDRENO=ON",
-        "video_cards_intel": "-DENABLE_VIDEO_CARDS_INTEL=ON",
-        "video_cards_nvidia": "-DENABLE_VIDEO_CARDS_NVIDIA=ON",
-        "video_cards_panfrost": "-DENABLE_VIDEO_CARDS_PANFROST=ON",
-        "video_cards_panthor": "-DENABLE_VIDEO_CARDS_PANTHOR=ON",
-    },
-    src_uri = "https://github.com/Syllo/nvtop/archive/refs/tags/3.1.0.tar.gz",
+    url = "https://github.com/Syllo/nvtop/archive/refs/tags/3.1.0.tar.gz",
     sha256 = "9481c45c136163574f1f16d87789859430bc90a1dc62f181b269b5edd92f01f3",
-    signature_required = False,
     description = "GPU process monitoring tool (htop-like for GPUs)",
     homepage = "https://github.com/Syllo/nvtop",
     license = "GPL-3.0",
@@ -60,27 +35,20 @@ cmake_package(
 )
 
 # gpu-burn - GPU stress testing (requires CUDA toolkit - disabled until CUDA is packaged)
-# download_source(
-#     name = "gpu-burn-src",
-#     src_uri = "https://github.com/wilicc/gpu-burn/archive/refs/heads/master.tar.gz",
-#     sha256 = "3d2e53753c8917c99f09bf40ab1141667775d5a1cc073ccad9039c3bbeb2a445",
-#     signature_required = False,
-# )
-#
-# ebuild_package(
+# package(
+#     build_rule = "binary",
 #     name = "gpu-burn",
-#     source = ":gpu-burn-src",
 #     version = "master",
+#     url = "https://github.com/wilicc/gpu-burn/archive/refs/heads/master.tar.gz",
+#     sha256 = "3d2e53753c8917c99f09bf40ab1141667775d5a1cc073ccad9039c3bbeb2a445",
 #     description = "GPU stress testing and burn-in tool",
 #     homepage = "https://github.com/wilicc/gpu-burn",
 #     license = "BSD-2-Clause",
-#     bdepend = ["//packages/linux/system/gpu/cuda:cuda-toolkit"],  # TODO: add CUDA package
-#     src_compile = """
+#     install_script = """
 # make
+# make install DESTDIR="$OUT"
 # """,
-#     src_install = """
-# make install DESTDIR="$DESTDIR"
-# """,
+#     deps = ["//packages/linux/system/gpu/cuda:cuda-toolkit"],  # TODO: add CUDA package
 #     env = {
 #         "CFLAGS": "-O2 -march=x86-64 -pipe",
 #         "CUDA_PATH": "/usr/local/cuda",

@@ -1,82 +1,59 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
-ebuild_package(
+package(
+    build_rule = "binary",
     name = "markupsafe",
-    src_uri = "https://files.pythonhosted.org/packages/b2/97/5d42485e71dfc078108a86d6de8fa46db44a1a9295e89c5d6d4a06e23a62/markupsafe-3.0.2.tar.gz",
-
-    sha256 = "ee55d3edf80167e48ea11a923c7386f4669df67d7994554387f84e7d8b0a2bf0",
-    iuse = ["native-extensions"],
-    use_configure = {
-        "-native-extensions": "--disable-native-extensions",
-        "native-extensions": "--enable-native-extensions",
-    },
     version = "3.0.2",
+    url = "https://files.pythonhosted.org/packages/b2/97/5d42485e71dfc078108a86d6de8fa46db44a1a9295e89c5d6d4a06e23a62/markupsafe-3.0.2.tar.gz",
+    sha256 = "ee55d3edf80167e48ea11a923c7386f4669df67d7994554387f84e7d8b0a2bf0",
     description = "Safely add untrusted strings to HTML/XML markup",
     homepage = "https://palletsprojects.com/p/markupsafe/",
     license = "BSD-3-Clause",
-    src_compile = """
-        # Pure Python install - copy package directly to avoid pip/setuptools deps
-        true
-    """,
-    src_install = """
-        mkdir -p "$DESTDIR/usr/lib/python3.12/site-packages"
-        cp -r "$S/src/markupsafe" "$DESTDIR/usr/lib/python3.12/site-packages/"
-    """,
-    bdepend = [
+    install_script = """
+mkdir -p "$OUT/usr/lib/python3.12/site-packages"
+cp -r "$SRCS/src/markupsafe" "$OUT/usr/lib/python3.12/site-packages/"
+""",
+    deps = [
         "//packages/linux/lang/python:python",
     ],
     visibility = ["PUBLIC"],
 )
 
-ebuild_package(
+package(
+    build_rule = "binary",
     name = "jinja2",
-    src_uri = "https://files.pythonhosted.org/packages/df/bf/f7da0350254c0ed7c72f3e33cef02e048281fec7ecec5f032d4aac52226b/jinja2-3.1.6.tar.gz",
-
-    sha256 = "0137fb05990d35f1275a587e9aee6d56da821fc83491a0fb838183be43f66d6d",
     version = "3.1.6",
+    url = "https://files.pythonhosted.org/packages/df/bf/f7da0350254c0ed7c72f3e33cef02e048281fec7ecec5f032d4aac52226b/jinja2-3.1.6.tar.gz",
+    sha256 = "0137fb05990d35f1275a587e9aee6d56da821fc83491a0fb838183be43f66d6d",
     description = "A modern and designer-friendly templating language for Python",
     homepage = "https://palletsprojects.com/p/jinja/",
     license = "BSD-3-Clause",
-    src_compile = """
-        # Pure Python install - copy package directly to avoid pip/setuptools deps
-        true
-    """,
-    src_install = """
-        mkdir -p "$DESTDIR/usr/lib/python3.12/site-packages"
-        cp -r "$S/src/jinja2" "$DESTDIR/usr/lib/python3.12/site-packages/"
-    """,
-    bdepend = [
+    install_script = """
+mkdir -p "$OUT/usr/lib/python3.12/site-packages"
+cp -r "$SRCS/src/jinja2" "$OUT/usr/lib/python3.12/site-packages/"
+""",
+    deps = [
         "//packages/linux/lang/python:python",
-        ":markupsafe",
-    ],
-    rdepend = [
         ":markupsafe",
     ],
     visibility = ["PUBLIC"],
 )
 
-ebuild_package(
+package(
+    build_rule = "binary",
     name = "python-mako",
-    src_uri = "https://files.pythonhosted.org/packages/5f/d9/8518279534ed7dace1795d5a47e49d5299dd0994eed1053996402a8902f9/mako-1.3.8.tar.gz",
-
-    sha256 = "577b97e414580d3e088d47c2dbbe9594aa7a5146ed2875d4dfa9075af2dd3cc8",
     version = "1.3.8",
+    url = "https://files.pythonhosted.org/packages/5f/d9/8518279534ed7dace1795d5a47e49d5299dd0994eed1053996402a8902f9/mako-1.3.8.tar.gz",
+    sha256 = "577b97e414580d3e088d47c2dbbe9594aa7a5146ed2875d4dfa9075af2dd3cc8",
     description = "A Python templating language",
     homepage = "https://www.makotemplates.org/",
     license = "MIT",
-    src_compile = """
-        # Pure Python install - copy package directly to avoid pip/setuptools deps
-        true
-    """,
-    src_install = """
-        mkdir -p "$DESTDIR/usr/lib/python3.12/site-packages"
-        cp -r "$S/mako" "$DESTDIR/usr/lib/python3.12/site-packages/"
-    """,
-    bdepend = [
+    install_script = """
+mkdir -p "$OUT/usr/lib/python3.12/site-packages"
+cp -r "$SRCS/mako" "$OUT/usr/lib/python3.12/site-packages/"
+""",
+    deps = [
         "//packages/linux/lang/python:python",
-        ":markupsafe",
-    ],
-    rdepend = [
         ":markupsafe",
     ],
     visibility = ["PUBLIC"],

@@ -1,16 +1,17 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
-ebuild_package(
+package(
+    build_rule = "binary",
     name = "trec-eval",
     version = "9.0.8",
-    src_uri = "https://github.com/usnistgov/trec_eval/archive/refs/tags/v9.0.8.tar.gz",
-
+    url = "https://github.com/usnistgov/trec_eval/archive/refs/tags/v9.0.8.tar.gz",
     sha256 = "c3994a73103ec842e12df693749584a45814c35c36dcc15f38984bd463566ba1",
-    src_configure = ":",
-    src_compile = 'make CC="${CC:-gcc}" CFLAGS="$CFLAGS -DVERSIONID=\'\\\"9.0.8\\\"\'"',
-    src_install = """
-        mkdir -p "$DESTDIR/usr/bin"
-        cp trec_eval "$DESTDIR/usr/bin/"
+    description = "TREC evaluation tool for information retrieval",
+    install_script = """
+        cd $SRCS
+        make CC="${CC:-gcc}" CFLAGS="$CFLAGS -DVERSIONID='\\\"9.0.8\\\"'"
+        mkdir -p "$OUT/usr/bin"
+        cp trec_eval "$OUT/usr/bin/"
     """,
     visibility = ["PUBLIC"],
 )

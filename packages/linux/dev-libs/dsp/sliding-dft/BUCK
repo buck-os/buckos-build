@@ -1,14 +1,7 @@
 load("//defs:package.bzl", "package")
-load("//defs:package_defs.bzl", "download_source")
 
 VERSION = "0.0.1"
 COMMIT = "13e0121253c73f2e85e418a3ae960463c0fbf31f"
-
-download_source(
-    name = "sliding-dft-src",
-    src_uri = "https://github.com/bronsonp/SlidingDFT/archive/{}.tar.gz".format(COMMIT),
-    sha256 = "99d0bb8ed569a3b24ba7e914f0b9ef3178fa255d32388b3a4831875f5b678a85",
-)
 
 package(
     build_rule = "binary",
@@ -16,7 +9,6 @@ package(
     version = VERSION,
     url = "https://github.com/bronsonp/SlidingDFT/archive/{}.tar.gz".format(COMMIT),
     sha256 = "99d0bb8ed569a3b24ba7e914f0b9ef3178fa255d32388b3a4831875f5b678a85",
-    source = ":sliding-dft-src",
     install_script = """
         mkdir -p "$OUT/usr/include"
         # Search in the source directory which contains the extracted files

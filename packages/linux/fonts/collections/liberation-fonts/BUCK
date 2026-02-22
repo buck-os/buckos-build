@@ -1,24 +1,15 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
-ebuild_package(
+package(
     name = "liberation-fonts",
-    src_uri = "https://github.com/liberationfonts/liberation-fonts/files/7261482/liberation-fonts-ttf-2.1.5.tar.gz",
-
-    sha256 = "7191c669bf38899f73a2094ed00f7b800553364f90e2637010a69c0e268f25d0",
-    iuse = ["X", "fontforge"],
-    use_configure = {
-        "-X": "--without-x",
-        "-fontforge": "--disable-fontforge",
-        "X": "--with-x",
-        "fontforge": "--enable-fontforge",
-    },
+    build_rule = "binary",
     version = "2.1.5",
+    url = "https://github.com/liberationfonts/liberation-fonts/files/7261482/liberation-fonts-ttf-2.1.5.tar.gz",
+    sha256 = "7191c669bf38899f73a2094ed00f7b800553364f90e2637010a69c0e268f25d0",
     description = "Liberation fonts - metrically compatible with Arial, Times New Roman, Courier New",
     homepage = "https://github.com/liberationfonts/liberation-fonts",
     license = "OFL-1.1",
-    src_configure = "true",
-    src_compile = "true",
-    src_install = """
+    install_script = """
 mkdir -p "$DESTDIR/usr/share/fonts/liberation"
 for font in *.ttf; do
     if [ -f "$font" ]; then
@@ -26,7 +17,7 @@ for font in *.ttf; do
     fi
 done
 """,
-    rdepend = [
+    deps = [
         "//packages/linux/system/libs/font/fontconfig:fontconfig",
     ],
     visibility = ["PUBLIC"],

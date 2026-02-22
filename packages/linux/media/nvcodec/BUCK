@@ -1,5 +1,4 @@
 load("//defs:package.bzl", "package")
-load("//defs:package_defs.bzl", "gen_pkgconfig_headeronly")
 
 # =============================================================================
 # nvcodec - NVIDIA Video Codec SDK
@@ -48,14 +47,24 @@ elif [ -d Interface ]; then
     cp -r Interface/*.h "$OUT/usr/include/"
 else
     # Fallback: copy any .h files we find
-    find . -name "*.h" -exec cp {} "$OUT/usr/include/" \;
+    find . -name "*.h" -exec cp {} "$OUT/usr/include/" \\;
 fi
 
 echo "nvcodec headers installed successfully"
-""" + gen_pkgconfig_headeronly(
-        name = "nvcodec",
-        description = "NVIDIA Video Codec SDK",
-    ),
+
+# Generate pkg-config file
+mkdir -p "$OUT/usr/lib/pkgconfig"
+cat > "$OUT/usr/lib/pkgconfig/nvcodec.pc" << EOF
+prefix=/usr
+exec_prefix=${prefix}
+includedir=${prefix}/include
+
+Name: nvcodec
+Description: NVIDIA Video Codec SDK
+Version: $PV
+Cflags: -I${includedir}
+EOF
+""",
     visibility = ["PUBLIC"],
     labels = ["buckos:hw:cuda"],
 )

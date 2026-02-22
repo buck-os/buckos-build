@@ -1,5 +1,4 @@
 load("//defs:package.bzl", "package")
-load("//defs:package_defs.bzl", "gen_pkgconfig")
 
 package(
     build_rule = "binary",
@@ -34,11 +33,21 @@ package(
                 ln -sf "/opt/genicam/lib/$(basename "$lib")" "$OUT/usr/lib64/"
             fi
         done
-    """ + gen_pkgconfig(
-        name = "genicam",
-        description = "GenICam reference implementation for machine vision cameras",
-        libs = "-L/opt/genicam/lib -lGenApi_gcc48_v3_4 -lGCBase_gcc48_v3_4",
-        cflags = "-I${includedir}/genicam",
-    ),
+
+        # Generate pkg-config file
+        mkdir -p "$OUT/usr/lib64/pkgconfig"
+        cat > "$OUT/usr/lib64/pkgconfig/genicam.pc" << EOF
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${prefix}/lib64
+includedir=${prefix}/include
+
+Name: genicam
+Description: GenICam reference implementation for machine vision cameras
+Version: $PV
+Libs: -L/opt/genicam/lib -lGenApi_gcc48_v3_4 -lGCBase_gcc48_v3_4
+Cflags: -I${includedir}/genicam
+EOF
+    """,
     visibility = ["PUBLIC"],
 )

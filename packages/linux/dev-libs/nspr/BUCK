@@ -1,42 +1,34 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
 # NSPR - Netscape Portable Runtime
 # Cross-platform abstraction for system-level functions
 # NSPR - has its own configure, doesn't use standard autotools
-ebuild_package(
+package(
     name = "nspr",
-    # No autoreconf needed - tarball has pre-generated configure in nspr/ subdir
-    bdepend = [],
-    src_prepare = "",
-    src_uri = "https://archive.mozilla.org/pub/nspr/releases/v4.36/src/nspr-4.36.tar.gz",
-
-    sha256 = "55dec317f1401cd2e5dba844d340b930ab7547f818179a4002bce62e6f1c6895",
-    iuse = ["debug"],
-    use_configure = {
-        "-debug": "--disable-debug",
-        "debug": "--enable-debug",
-    },
+    build_rule = "binary",
     version = "4.36",
+    url = "https://archive.mozilla.org/pub/nspr/releases/v4.36/src/nspr-4.36.tar.gz",
+    sha256 = "55dec317f1401cd2e5dba844d340b930ab7547f818179a4002bce62e6f1c6895",
     description = "Netscape Portable Runtime - cross-platform abstraction library",
     homepage = "https://www.mozilla.org/projects/nspr/",
     license = "MPL-2.0 OR GPL-2 OR LGPL-2.1",
-    # NSPR configure is in nspr/ subdirectory
-    src_configure = """
+    install_script = """
+mkdir -p "$OUT"
+BUILD=$(mktemp -d)
+cp -a "$SRCS"/. "$BUILD/"
+cd "$BUILD"
+
+# NSPR configure is in nspr/ subdirectory
 cd nspr
-./configure \\
-    --prefix=/usr \\
-    --libdir=/usr/lib64 \\
-    --enable-64bit \\
-    --disable-debug \\
+./configure \
+    --prefix=/usr \
+    --libdir=/usr/lib64 \
+    --enable-64bit \
+    --disable-debug \
     --enable-optimize
-""",
-    src_compile = """
-cd nspr
-make -j${MAKEOPTS:-$(nproc)}
-""",
-    src_install = """
-cd nspr
-make DESTDIR="$DESTDIR" install
+
+make -j$(nproc)
+make DESTDIR="$OUT" install
 """,
     visibility = ["PUBLIC"],
 )

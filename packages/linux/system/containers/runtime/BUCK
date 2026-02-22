@@ -1,80 +1,48 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # Core Container Runtimes
 # =============================================================================
 
 # runc - OCI container runtime
-ebuild_package(
+package(
+    build_rule = "binary",
     name = "runc",
-    src_uri = "https://github.com/opencontainers/runc/releases/download/v1.1.12/runc.tar.xz",
-
-    sha256 = "47d9e34500e478d860512b3b646724ee4b9e638692122ddaa82af417668ca4d7",
-
-    signature_sha256 = "15e8eb638234ae56eede9f92ede33f010437c4cdb96f73d34315435dbafde9fc",
-    iuse = [
-        "apparmor",
-        "hardened",
-        "kmem",
-        "seccomp",
-        "selinux",
-    ],
-    use_configure = {
-        "-apparmor": "--disable-apparmor",
-        "-hardened": "--disable-hardening",
-        "-kmem": "--disable-kmem",
-        "-seccomp": "--disable-seccomp",
-        "-selinux": "--disable-selinux",
-        "apparmor": "--enable-apparmor",
-        "hardened": "--enable-hardening",
-        "kmem": "--enable-kmem",
-        "seccomp": "--enable-seccomp",
-        "selinux": "--enable-selinux",
-    },
     version = "1.1.12",
+    url = "https://github.com/opencontainers/runc/releases/download/v1.1.12/runc.tar.xz",
+    sha256 = "47d9e34500e478d860512b3b646724ee4b9e638692122ddaa82af417668ca4d7",
     description = "CLI tool for spawning and running containers according to the OCI specification",
     homepage = "https://github.com/opencontainers/runc",
     license = "Apache-2.0",
-    src_compile = """
+    install_script = """
 export CGO_ENABLED=1
 export BUILDTAGS="seccomp"
 make BUILDTAGS="$BUILDTAGS" runc
+mkdir -p "$OUT/usr/bin"
+install -m 755 runc "$OUT/usr/bin/runc"
 """,
-    src_install = """
-mkdir -p "$DESTDIR/usr/bin"
-install -m 755 runc "$DESTDIR/usr/bin/runc"
-""",
-    rdepend = [
+    deps = [
         "//packages/linux/system/libs/ipc/libseccomp:libseccomp",
-    ],
-    bdepend = [
         "//packages/linux/lang/go:go",
     ],
     visibility = ["PUBLIC"],
 )
 
 # crun - Fast and lightweight OCI runtime
-ebuild_package(
+package(
+    build_rule = "autotools",
     name = "crun",
-    src_uri = "https://github.com/containers/crun/releases/download/1.14.4/crun-1.14.4.tar.xz",
-
-    sha256 = "fd6af195a73ae9bf3aea1a6c976a914492324c828542f35a7f1570a659f2e512",
-
-    signature_sha256 = "17a21e6d26d2c45d6bfa00d9553a66e3e5555096ae8c9da65a06db1fad4cd407",
     version = "1.14.4",
+    url = "https://github.com/containers/crun/releases/download/1.14.4/crun-1.14.4.tar.xz",
+    sha256 = "fd6af195a73ae9bf3aea1a6c976a914492324c828542f35a7f1570a659f2e512",
     description = "Fast and lightweight fully featured OCI runtime and C library",
     homepage = "https://github.com/containers/crun",
     license = "GPL-2.0-or-later",
-    src_configure = """
-./configure --prefix=/usr --disable-systemd --with-python-bindings=no
-""",
-    src_compile = """
-make
-""",
-    src_install = """
-make install DESTDIR="$DESTDIR"
-""",
-    rdepend = [
+    configure_args = [
+        "--disable-systemd",
+        "--with-python-bindings=no",
+    ],
+    deps = [
         "//packages/linux/system/libs/ipc/libseccomp:libseccomp",
         "//packages/linux/system/libs/ipc/libcap:libcap",
         "//packages/linux/system/libs/data/yajl:yajl",
@@ -83,22 +51,20 @@ make install DESTDIR="$DESTDIR"
 )
 
 # conmon - Container monitor
-ebuild_package(
+package(
+    build_rule = "binary",
     name = "conmon",
-    src_uri = "https://github.com/containers/conmon/archive/refs/tags/v2.1.10.tar.gz",
-
-    sha256 = "455fabcbd4a5a5dc5e05374a71b62dc0b08ee865c2ba398e9dc9acac1ea1836a",
     version = "2.1.10",
+    url = "https://github.com/containers/conmon/archive/refs/tags/v2.1.10.tar.gz",
+    sha256 = "455fabcbd4a5a5dc5e05374a71b62dc0b08ee865c2ba398e9dc9acac1ea1836a",
     description = "OCI container runtime monitor",
     homepage = "https://github.com/containers/conmon",
     license = "Apache-2.0",
-    src_compile = """
+    install_script = """
 make PREFIX=/usr
+make PREFIX=/usr DESTDIR="$OUT" install
 """,
-    src_install = """
-make PREFIX=/usr DESTDIR="$DESTDIR" install
-""",
-    rdepend = [
+    deps = [
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/system/libs/ipc/libseccomp:libseccomp",
     ],

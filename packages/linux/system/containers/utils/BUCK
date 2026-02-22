@@ -1,156 +1,142 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # Container Utilities
 # =============================================================================
 
 # umoci - OCI image tool
-ebuild_package(
+package(
+    build_rule = "binary",
     name = "umoci",
-    src_uri = "https://github.com/opencontainers/umoci/releases/download/v0.4.7/umoci.tar.xz",
-
-    sha256 = "693a3780937c785de8f6dd233786c1ea870bbe8ccba2f6f1e20339329394743b",
-
-    signature_sha256 = "8694e13c7f4f38fefa2fdea774d9f55d8d7179ae53d9f838a40d78bca9e43d0a",
     version = "0.4.7",
+    url = "https://github.com/opencontainers/umoci/releases/download/v0.4.7/umoci.tar.xz",
+    sha256 = "693a3780937c785de8f6dd233786c1ea870bbe8ccba2f6f1e20339329394743b",
     description = "Modify Open Container images",
     homepage = "https://github.com/opencontainers/umoci",
     license = "Apache-2.0",
-    src_compile = """
+    install_script = """
 make
+mkdir -p "$OUT/usr/bin"
+install -m 755 build/umoci "$OUT/usr/bin/umoci"
 """,
-    src_install = """
-mkdir -p "$DESTDIR/usr/bin"
-install -m 755 build/umoci "$DESTDIR/usr/bin/umoci"
-""",
-    bdepend = [
+    deps = [
         "//packages/linux/lang/go:go",
     ],
     visibility = ["PUBLIC"],
 )
 
 # dive - Explore container image layers
-ebuild_package(
+package(
+    build_rule = "binary",
     name = "dive",
-    src_uri = "https://github.com/wagoodman/dive/archive/refs/tags/v0.12.0.tar.gz",
-
-    sha256 = "2b69b8d28220c66e2575a782a370a0c05077936ae3ce69180525412fcca09230",
     version = "0.12.0",
+    url = "https://github.com/wagoodman/dive/archive/refs/tags/v0.12.0.tar.gz",
+    sha256 = "2b69b8d28220c66e2575a782a370a0c05077936ae3ce69180525412fcca09230",
     description = "A tool for exploring container image layer contents",
     homepage = "https://github.com/wagoodman/dive",
     license = "MIT",
-    src_compile = """
+    install_script = """
 export CGO_ENABLED=0
 export GOFLAGS="-buildvcs=false"
 go build -o dive-bin -ldflags="-s -w -X main.version=0.12.0" .
+mkdir -p "$OUT/usr/bin"
+install -m 755 dive-bin "$OUT/usr/bin/dive"
 """,
-    src_install = """
-mkdir -p "$DESTDIR/usr/bin"
-install -m 755 dive-bin "$DESTDIR/usr/bin/dive"
-""",
-    bdepend = [
+    deps = [
         "//packages/linux/lang/go:go",
     ],
     visibility = ["PUBLIC"],
 )
 
 # ctop - Container metrics viewer
-ebuild_package(
+package(
+    build_rule = "binary",
     name = "ctop",
-    src_uri = "https://github.com/bcicen/ctop/archive/refs/tags/v0.7.7.tar.gz",
-
-    sha256 = "0db439f2030af73ad5345884b08a33a762c3b41b30604223dd0ebddde72d2741",
     version = "0.7.7",
+    url = "https://github.com/bcicen/ctop/archive/refs/tags/v0.7.7.tar.gz",
+    sha256 = "0db439f2030af73ad5345884b08a33a762c3b41b30604223dd0ebddde72d2741",
     description = "Top-like interface for container metrics",
     homepage = "https://github.com/bcicen/ctop",
     license = "MIT",
-    src_compile = """
+    install_script = """
 export CGO_ENABLED=0
 go build -o ctop -ldflags="-s -w" .
+mkdir -p "$OUT/usr/bin"
+install -m 755 ctop "$OUT/usr/bin/ctop"
 """,
-    src_install = """
-mkdir -p "$DESTDIR/usr/bin"
-install -m 755 ctop "$DESTDIR/usr/bin/ctop"
-""",
-    bdepend = [
+    deps = [
         "//packages/linux/lang/go:go",
     ],
     visibility = ["PUBLIC"],
 )
 
 # lazydocker - Terminal UI for docker and docker-compose (works with podman)
-ebuild_package(
+package(
+    build_rule = "binary",
     name = "lazydocker",
-    src_uri = "https://github.com/jesseduffield/lazydocker/archive/refs/tags/v0.23.1.tar.gz",
-
-    sha256 = "3f0b8ca1c721191e543d5992d822b41c13e3561bb5e761695031f8ddb961a137",
     version = "0.23.1",
+    url = "https://github.com/jesseduffield/lazydocker/archive/refs/tags/v0.23.1.tar.gz",
+    sha256 = "3f0b8ca1c721191e543d5992d822b41c13e3561bb5e761695031f8ddb961a137",
     description = "Terminal UI for docker and docker-compose",
     homepage = "https://github.com/jesseduffield/lazydocker",
     license = "MIT",
-    src_compile = """
+    install_script = """
 export CGO_ENABLED=0
 go build -o lazydocker -ldflags="-s -w" .
+mkdir -p "$OUT/usr/bin"
+install -m 755 lazydocker "$OUT/usr/bin/lazydocker"
 """,
-    src_install = """
-mkdir -p "$DESTDIR/usr/bin"
-install -m 755 lazydocker "$DESTDIR/usr/bin/lazydocker"
-""",
-    bdepend = [
+    deps = [
         "//packages/linux/lang/go:go",
     ],
     visibility = ["PUBLIC"],
 )
 
 # trivy - Security scanner for containers
-ebuild_package(
+package(
+    build_rule = "binary",
     name = "trivy",
-    src_uri = "https://github.com/aquasecurity/trivy/archive/refs/tags/v0.50.1.tar.gz",
-
-    sha256 = "1b5acce5580a401998946d9eeb2aaa0312f243c001809a83eb9557efda628d2d",
     version = "0.50.1",
+    url = "https://github.com/aquasecurity/trivy/archive/refs/tags/v0.50.1.tar.gz",
+    sha256 = "1b5acce5580a401998946d9eeb2aaa0312f243c001809a83eb9557efda628d2d",
     description = "Vulnerability scanner for containers and other artifacts",
     homepage = "https://github.com/aquasecurity/trivy",
     license = "Apache-2.0",
-    src_compile = """
+    install_script = """
 export CGO_ENABLED=0
 go build -o trivy -ldflags="-s -w -X main.version=0.50.1" ./cmd/trivy
-""",
-    src_install = """
-mkdir -p "$DESTDIR/usr/bin"
-install -m 755 trivy "$DESTDIR/usr/bin/trivy"
+mkdir -p "$OUT/usr/bin"
+install -m 755 trivy "$OUT/usr/bin/trivy"
 
 # Install completions
-mkdir -p "$DESTDIR/usr/share/bash-completion/completions"
-./trivy completion bash > "$DESTDIR/usr/share/bash-completion/completions/trivy" || true
+mkdir -p "$OUT/usr/share/bash-completion/completions"
+./trivy completion bash > "$OUT/usr/share/bash-completion/completions/trivy" || true
 """,
-    bdepend = [
+    deps = [
         "//packages/linux/lang/go:go",
     ],
     visibility = ["PUBLIC"],
 )
 
 # docker-credential-helpers - Credential helpers for container registries
-ebuild_package(
+package(
+    build_rule = "binary",
     name = "docker-credential-helpers",
-    src_uri = "https://github.com/docker/docker-credential-helpers/archive/refs/tags/v0.8.1.tar.gz",
-
-    sha256 = "c9006b2acf159d54fd00a1713422ab70914dae87270b4f44d05edab526199e20",
     version = "0.8.1",
+    url = "https://github.com/docker/docker-credential-helpers/archive/refs/tags/v0.8.1.tar.gz",
+    sha256 = "c9006b2acf159d54fd00a1713422ab70914dae87270b4f44d05edab526199e20",
     description = "Credential helpers for container registries",
     homepage = "https://github.com/docker/docker-credential-helpers",
     license = "MIT",
-    src_compile = """
+    install_script = """
 # Build only 'pass' backend directly - Makefile's pass target also builds secretservice
 # secretservice requires CGO and libsecret which we don't have
 export CGO_ENABLED=0
 go build -trimpath -ldflags="-s -w" -o docker-credential-pass ./pass/cmd/
+mkdir -p "$OUT/usr/bin"
+install -m 755 docker-credential-pass "$OUT/usr/bin/"
 """,
-    src_install = """
-mkdir -p "$DESTDIR/usr/bin"
-install -m 755 docker-credential-pass "$DESTDIR/usr/bin/"
-""",
-    bdepend = [
+    deps = [
         "//packages/linux/lang/go:go",
     ],
     visibility = ["PUBLIC"],

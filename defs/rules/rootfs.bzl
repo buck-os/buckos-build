@@ -1,13 +1,8 @@
 """
-rootfs + initramfs rules for BuckOS.
-
-rootfs assembles packages into a root filesystem.  Takes a list of deps
-(each having DefaultInfo with a prefix directory), merges their contents
-into a single root with merged-usr layout, account merging, and ldconfig.
-
-initramfs builds a cpio archive from a rootfs directory, suitable for
-booting as a Linux initramfs.
+rootfs rule: assemble a root filesystem from packages.
 """
+
+load("//defs:providers.bzl", "KernelInfo")
 
 # ── rootfs rule ──────────────────────────────────────────────────────
 
@@ -15,13 +10,10 @@ def _rootfs_impl(ctx):
     """Assemble a root filesystem from packages."""
     rootfs_dir = ctx.actions.declare_output(ctx.attrs.name, dir = True)
 
-    # Collect all package directories from deps.
-    # Each dep contributes its DefaultInfo default_output (the install prefix).
+    # Collect all package outputs (explicit list only, no auto-resolution)
     pkg_dirs = []
     for pkg in ctx.attrs.packages:
-        default_outputs = pkg[DefaultInfo].default_outputs[0]s
-        for output in default_outputs:
-            pkg_dirs.append(output)
+        pkg_dirs.append(pkg[DefaultInfo].default_outputs[0])
 
     # The assembly script is the battle-tested logic from the existing
     # rootfs implementation: merged-usr layout, merged-bin, acct-user/
@@ -53,6 +45,8 @@ merge_package() {
     # Check if this looks like a package directory (has usr/, lib/, bin/, etc.)
     # If it does, merge its contents directly
     if [ -d "$src/usr" ] || [ -d "$src/bin" ] || [ -d "$src/lib" ] || [ -d "$src/etc" ]; then
+        # Handle merged-usr: if package has /bin, /sbin, or /lib and destination has them as symlinks,
+        # copy the contents into the symlink target instead of trying to replace the symlink
         # Use tar to properly merge directory trees (handles nested directories correctly)
         # --keep-directory-symlink preserves symlinks like /lib -> /usr/lib
         tar -C "$src" -c . | tar -C "$dst" -x --keep-directory-symlink 2>/dev/null || true
@@ -96,6 +90,7 @@ if [ -d "$ROOTFS/lib" ] && [ ! -L "$ROOTFS/lib" ]; then
 fi
 
 # Fix /var/run and /var/lock symlinks: if they ended up as directories, move contents and recreate symlinks
+# This handles cases where packages create /var/run/* before baselayout's symlink is applied
 if [ -d "$ROOTFS/var/run" ] && [ ! -L "$ROOTFS/var/run" ]; then
     mkdir -p "$ROOTFS/run"
     cp -a "$ROOTFS/var/run/"* "$ROOTFS/run/" 2>/dev/null || true
@@ -111,10 +106,15 @@ if [ -d "$ROOTFS/var/lock" ] && [ ! -L "$ROOTFS/var/lock" ]; then
     echo "Fixed /var/lock symlink (was directory, moved contents to /run/lock)"
 fi
 
-# Fix merged-bin layout: systemd recommends /usr/sbin -> bin (merged-bin)
+# Note: lib64 handling removed - on x86_64, /lib64/ld-linux-x86-64.so.2 must exist
+# aarch64-specific builds should handle lib64 merging in their own assembly if needed
+
+# Fix merged-bin layout: systemd now recommends /usr/sbin -> bin (merged-bin)
+# This eliminates the "unmerged-bin" taint
 # Merge /usr/sbin into /usr/bin and create symlink
 if [ -d "$ROOTFS/usr/sbin" ] && [ ! -L "$ROOTFS/usr/sbin" ]; then
     mkdir -p "$ROOTFS/usr/bin"
+    # Move all binaries from /usr/sbin to /usr/bin
     cp -a "$ROOTFS/usr/sbin/"* "$ROOTFS/usr/bin/" 2>/dev/null || true
     rm -rf "$ROOTFS/usr/sbin"
     ln -s bin "$ROOTFS/usr/sbin"
@@ -128,6 +128,7 @@ if [ -L "$ROOTFS/sbin" ]; then
 fi
 
 # Create compatibility symlinks for /bin -> /usr/bin
+# Many scripts expect common utilities in /bin (especially /bin/sh)
 for cmd in sh bash; do
     if [ -f "$ROOTFS/usr/bin/$cmd" ] && [ ! -e "$ROOTFS/bin/$cmd" ]; then
         ln -sf ../usr/bin/$cmd "$ROOTFS/bin/$cmd"
@@ -139,6 +140,7 @@ chmod 1777 "$ROOTFS/tmp"
 chmod 755 "$ROOTFS/root"
 
 # Automatically merge acct-user and acct-group files into /etc/passwd, /etc/group, /etc/shadow
+# This processes all installed acct-user and acct-group packages
 if [ -d "$ROOTFS/usr/share/acct-group" ] || [ -d "$ROOTFS/usr/share/acct-user" ]; then
     echo "Merging system users and groups from acct packages..."
 
@@ -147,6 +149,7 @@ if [ -d "$ROOTFS/usr/share/acct-group" ] || [ -d "$ROOTFS/usr/share/acct-user" ]
         for group_file in "$ROOTFS/usr/share/acct-group"/*.group; do
             if [ -f "$group_file" ]; then
                 group_name=$(cut -d: -f1 "$group_file")
+                # Only add if not already in /etc/group
                 if ! grep -q "^${group_name}:" "$ROOTFS/etc/group" 2>/dev/null; then
                     cat "$group_file" >> "$ROOTFS/etc/group"
                     echo "  Added group: $group_name"
@@ -160,6 +163,7 @@ if [ -d "$ROOTFS/usr/share/acct-group" ] || [ -d "$ROOTFS/usr/share/acct-user" ]
         for passwd_file in "$ROOTFS/usr/share/acct-user"/*.passwd; do
             if [ -f "$passwd_file" ]; then
                 user_name=$(cut -d: -f1 "$passwd_file")
+                # Only add if not already in /etc/passwd
                 if ! grep -q "^${user_name}:" "$ROOTFS/etc/passwd" 2>/dev/null; then
                     cat "$passwd_file" >> "$ROOTFS/etc/passwd"
                     echo "  Added user: $user_name"
@@ -171,6 +175,7 @@ if [ -d "$ROOTFS/usr/share/acct-group" ] || [ -d "$ROOTFS/usr/share/acct-user" ]
         for shadow_file in "$ROOTFS/usr/share/acct-user"/*.shadow; do
             if [ -f "$shadow_file" ]; then
                 user_name=$(cut -d: -f1 "$shadow_file")
+                # Only add if not already in /etc/shadow
                 if [ -f "$ROOTFS/etc/shadow" ]; then
                     if ! grep -q "^${user_name}:" "$ROOTFS/etc/shadow" 2>/dev/null; then
                         cat "$shadow_file" >> "$ROOTFS/etc/shadow"
@@ -186,25 +191,32 @@ if [ -d "$ROOTFS/usr/share/acct-group" ] || [ -d "$ROOTFS/usr/share/acct-user" ]
             [ -f "$groups_file" ] || continue
             user_name=$(basename "$groups_file" .groups)
 
+            # Read supplementary groups (comma-separated)
             supp_groups=$(cat "$groups_file")
             [ -n "$supp_groups" ] || continue
 
+            # Process each group
             IFS=',' read -ra GROUP_ARRAY <<< "$supp_groups"
             for group_name in "${GROUP_ARRAY[@]}"; do
+                # Check if group exists
                 if ! grep -q "^${group_name}:" "$ROOTFS/etc/group" 2>/dev/null; then
                     continue
                 fi
 
+                # Check if user already in group (avoid duplicates)
                 if grep -q "^${group_name}:.*[:,]${user_name}\\(,\\|[[:space:]]\\|\$\\)" "$ROOTFS/etc/group" 2>/dev/null; then
                     continue
                 fi
 
+                # Use awk to append user to group members - more reliable than sed
                 awk -F: -v group="$group_name" -v user="$user_name" '
                 BEGIN { OFS=":" }
                 $1 == group {
+                    # If members list is empty, just add the user
                     if ($4 == "") {
                         $4 = user
                     } else {
+                        # Otherwise append with comma
                         $4 = $4 "," user
                     }
                 }
@@ -219,9 +231,12 @@ if [ -d "$ROOTFS/usr/share/acct-group" ] || [ -d "$ROOTFS/usr/share/acct-user" ]
 fi
 
 # Run ldconfig to generate dynamic linker cache (ld.so.cache)
+# This ensures shared libraries are found at boot time
 if [ -f "$ROOTFS/etc/ld.so.conf" ]; then
     ldconfig -r "$ROOTFS" 2>/dev/null || true
 fi
+
+# Note: C.UTF-8 locale is built into glibc and doesn't need generation
 """
 
     script = ctx.actions.write("assemble.sh", script_content, is_executable = True)
@@ -285,144 +300,14 @@ shift
 
     return [DefaultInfo(default_output = rootfs_dir)]
 
-rootfs = rule(
+_rootfs_rule = rule(
     impl = _rootfs_impl,
     attrs = {
         "packages": attrs.list(attrs.dep()),
         "version": attrs.string(default = "1"),
+        "labels": attrs.list(attrs.string(), default = []),
     },
 )
 
-# ── initramfs rule ───────────────────────────────────────────────────
-
-def _initramfs_impl(ctx):
-    """Create an initramfs cpio archive from a rootfs."""
-    # Determine compression command and output suffix
-    compression = ctx.attrs.compression
-    if compression == "xz":
-        compress_cmd = "xz -9 --check=crc32"
-    elif compression == "lz4":
-        compress_cmd = "lz4 -l -9"
-    elif compression == "zstd":
-        compress_cmd = "zstd -19"
-    else:
-        # Default to gzip
-        compress_cmd = "gzip -9"
-
-    initramfs_file = ctx.actions.declare_output(ctx.attrs.name + ".cpio." + compression)
-
-    rootfs_dir = ctx.attrs.rootfs[DefaultInfo].default_outputs[0]
-
-    init_path = ctx.attrs.init if ctx.attrs.init else "/sbin/init"
-
-    init_script_src = None
-    if ctx.attrs.init_script:
-        init_script_src = ctx.attrs.init_script[DefaultInfo].default_outputs[0]
-
-    script = ctx.actions.write(
-        "create_initramfs.sh",
-        """\
-#!/bin/bash
-set -e
-
-ROOTFS="$1"
-OUTPUT="$(realpath -m "$2")"
-INIT_PATH="{init_path}"
-INIT_SCRIPT="$3"
-mkdir -p "$(dirname "$OUTPUT")"
-
-# Create a temporary directory for initramfs modifications
-WORK=$(mktemp -d)
-trap "rm -rf $WORK" EXIT
-
-# Copy rootfs to work directory
-cp -a "$ROOTFS"/* "$WORK"/
-
-# Fix aarch64 library paths - merge lib64 into lib and create symlinks
-if [ -d "$WORK/lib64" ] && [ ! -L "$WORK/lib64" ]; then
-    mkdir -p "$WORK/lib"
-    cp -a "$WORK/lib64/"* "$WORK/lib/" 2>/dev/null || true
-    rm -rf "$WORK/lib64"
-    ln -sf lib "$WORK/lib64"
-fi
-if [ -d "$WORK/usr/lib64" ] && [ ! -L "$WORK/usr/lib64" ]; then
-    mkdir -p "$WORK/usr/lib"
-    cp -a "$WORK/usr/lib64/"* "$WORK/usr/lib/" 2>/dev/null || true
-    rm -rf "$WORK/usr/lib64"
-    ln -sf lib "$WORK/usr/lib64"
-fi
-
-# Install custom init script if provided
-if [ -n "$INIT_SCRIPT" ] && [ -f "$INIT_SCRIPT" ]; then
-    mkdir -p "$(dirname "$WORK$INIT_PATH")"
-    cp "$INIT_SCRIPT" "$WORK$INIT_PATH"
-    chmod +x "$WORK$INIT_PATH"
-elif [ ! -e "$WORK$INIT_PATH" ]; then
-    # Try to find busybox or create a minimal init
-    if [ -x "$WORK/bin/busybox" ]; then
-        mkdir -p "$WORK/sbin"
-        ln -sf /bin/busybox "$WORK/sbin/init"
-    elif [ -x "$WORK/bin/sh" ]; then
-        cat > "$WORK/sbin/init" << 'INIT_EOF'
-#!/bin/sh
-mount -t proc proc /proc
-mount -t sysfs sysfs /sys
-mount -t devtmpfs devtmpfs /dev 2>/dev/null || true
-exec /bin/sh
-INIT_EOF
-        chmod +x "$WORK/sbin/init"
-    fi
-fi
-
-# CRITICAL: Create /init at root for kernel to find
-if [ ! -e "$WORK/init" ]; then
-    if [ -e "$WORK$INIT_PATH" ]; then
-        ln -sf "$INIT_PATH" "$WORK/init"
-    elif [ -x "$WORK/sbin/init" ]; then
-        ln -sf /sbin/init "$WORK/init"
-    elif [ -x "$WORK/bin/sh" ]; then
-        cat > "$WORK/init" << 'INIT_EOF'
-#!/bin/sh
-mount -t proc proc /proc
-mount -t sysfs sysfs /sys
-mount -t devtmpfs devtmpfs /dev 2>/dev/null || true
-exec /bin/sh
-INIT_EOF
-        chmod +x "$WORK/init"
-    fi
-fi
-
-# Create the cpio archive
-cd "$WORK"
-find . -print0 | cpio --null -o -H newc | {compress_cmd} > "$OUTPUT"
-
-echo "Created initramfs: $OUTPUT"
-""".format(init_path = init_path, compress_cmd = compress_cmd),
-        is_executable = True,
-    )
-
-    cmd = cmd_args([
-        "bash",
-        script,
-        rootfs_dir,
-        initramfs_file.as_output(),
-        init_script_src if init_script_src else "",
-    ])
-
-    ctx.actions.run(
-        cmd,
-        category = "initramfs",
-        identifier = ctx.attrs.name,
-    )
-
-    return [DefaultInfo(default_output = initramfs_file)]
-
-initramfs = rule(
-    impl = _initramfs_impl,
-    attrs = {
-        "rootfs": attrs.dep(),
-        "compression": attrs.string(default = "gz"),
-        "init": attrs.string(default = "/sbin/init"),
-        "init_script": attrs.option(attrs.dep(), default = None),
-    },
-)
+def rootfs(labels = [], **kwargs):
+    _rootfs_rule(labels = labels, **kwargs)

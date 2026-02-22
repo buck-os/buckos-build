@@ -1,11 +1,11 @@
 # Test fixtures for USE flag resolution via .buckconfig
 #
 # Covers all build system macros and their USE flag plumbing:
-#   autotools  → EXTRA_ECONF       (use_configure)
-#   cmake      → CMAKE_EXTRA_ARGS  (use_options → use_cmake_options)
-#   meson      → MESON_EXTRA_ARGS  (use_options → use_meson_options)
-#   cargo      → CARGO_BUILD_FLAGS (use_features → use_cargo_args)
-#   go         → GO_BUILD_FLAGS    (use_tags → use_go_build_args)
+#   autotools  → configure_args    (use_configure)
+#   cmake      → cmake_args        (use_configure)
+#   meson      → meson_args        (use_configure)
+#   cargo      → features          (use_features)
+#   go         → configure_args    (use_configure)
 #
 # Resolution order:
 #   1. use_defaults
@@ -15,13 +15,7 @@
 # These fixtures use a local dummy source (export_file) so that
 # graph-level analysis and buck2 test work without network access.
 
-load("//defs:package_defs.bzl",
-    "autotools_package",
-    "cmake_package",
-    "meson_package",
-    "cargo_package",
-    "go_package",
-)
+load("//defs:package.bzl", "package")
 load("//defs/rules:source.bzl", "extract_source")
 
 # Local dummy source archive shared by all fixtures
@@ -37,100 +31,97 @@ extract_source(
     visibility = ["//tests/..."],
 )
 
-# --- autotools: use_configure → EXTRA_ECONF ---
-autotools_package(
+# --- autotools: use_configure → configure_args ---
+package(
     name = "test-use-flags",
+    build_rule = "autotools",
     version = "1.0.0",
+    local_only = True,
     source = ":dummy-src",
-    iuse = ["ssl", "zstd", "debug"],
-    use_defaults = ["ssl"],
     use_configure = {
-        "ssl": "--with-ssl",
-        "-ssl": "--without-ssl",
-        "zstd": "--with-zstd",
-        "-zstd": "--without-zstd",
-        "debug": "--enable-debug",
-        "-debug": "--disable-debug",
+        "ssl": ("--with-ssl", "--without-ssl"),
+        "zstd": ("--with-zstd", "--without-zstd"),
+        "debug": ("--enable-debug", "--disable-debug"),
     },
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "zstd": ["//packages/linux/system/libs/compression/zstd:zstd"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "zstd": "//packages/linux/system/libs/compression/zstd:zstd",
     },
     description = "Test fixture for autotools USE flag resolution",
     visibility = ["PUBLIC"],
 )
 
-# --- cmake: use_options → CMAKE_EXTRA_ARGS (use_cmake_options) ---
-cmake_package(
+# --- cmake: use_configure → cmake_args ---
+package(
     name = "test-cmake-use",
+    build_rule = "cmake",
     version = "1.0.0",
+    local_only = True,
     source = ":dummy-src",
-    iuse = ["ssl", "zstd", "debug"],
-    use_defaults = ["ssl"],
-    use_options = {
-        "ssl": "WITH_SSL",
-        "zstd": "WITH_ZSTD",
-        "debug": "ENABLE_DEBUG",
+    use_configure = {
+        "ssl": ("-DWITH_SSL=ON", "-DWITH_SSL=OFF"),
+        "zstd": ("-DWITH_ZSTD=ON", "-DWITH_ZSTD=OFF"),
+        "debug": ("-DENABLE_DEBUG=ON", "-DENABLE_DEBUG=OFF"),
     },
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
     },
     description = "Test fixture for cmake USE flag resolution",
     visibility = ["PUBLIC"],
 )
 
-# --- meson: use_options → MESON_EXTRA_ARGS (use_meson_options) ---
-meson_package(
+# --- meson: use_configure → meson_args ---
+package(
     name = "test-meson-use",
+    build_rule = "meson",
     version = "1.0.0",
+    local_only = True,
     source = ":dummy-src",
-    iuse = ["ssl", "zstd", "debug"],
-    use_defaults = ["ssl"],
-    use_options = {
-        "ssl": "ssl",
-        "zstd": "zstd",
-        "debug": "debug",
+    use_configure = {
+        "ssl": ("-Dssl=enabled", "-Dssl=disabled"),
+        "zstd": ("-Dzstd=enabled", "-Dzstd=disabled"),
+        "debug": ("-Ddebug=true", "-Ddebug=false"),
     },
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
     },
     description = "Test fixture for meson USE flag resolution",
     visibility = ["PUBLIC"],
 )
 
-# --- cargo: use_features → CARGO_BUILD_FLAGS (use_cargo_args) ---
-cargo_package(
+# --- cargo: use_features ---
+package(
     name = "test-cargo-use",
+    build_rule = "cargo",
     version = "1.0.0",
+    local_only = True,
     source = ":dummy-src",
-    iuse = ["ssl", "zstd", "debug"],
-    use_defaults = ["ssl"],
     use_features = {
         "ssl": "openssl-tls",
         "zstd": "zstd-compression",
         "debug": "debug-mode",
     },
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
     },
     description = "Test fixture for cargo USE flag resolution",
     visibility = ["PUBLIC"],
 )
 
-# --- go: use_tags → GO_BUILD_FLAGS (use_go_build_args) ---
-go_package(
+# --- go: use_configure ---
+package(
     name = "test-go-use",
+    build_rule = "go",
     version = "1.0.0",
+    local_only = True,
     source = ":dummy-src",
-    iuse = ["ssl", "zstd", "debug"],
-    use_defaults = ["ssl"],
-    use_tags = {
-        "ssl": "with_ssl",
-        "zstd": "with_zstd",
-        "debug": "debug",
+    use_configure = {
+        "ssl": "-tags=with_ssl",
+        "zstd": "-tags=with_zstd",
+        "debug": "-tags=debug",
     },
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
     },
     description = "Test fixture for go USE flag resolution",
     visibility = ["PUBLIC"],

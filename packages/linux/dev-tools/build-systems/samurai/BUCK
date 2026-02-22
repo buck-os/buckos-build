@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # samurai - ninja-compatible build tool written in C
@@ -6,25 +6,20 @@ load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 # A lightweight ninja alternative. Much smaller codebase (~1.2k lines of C)
 # compared to ninja (~20k+ lines of C++).
 
-ebuild_package(
+package(
+    build_rule = "binary",
     name = "samurai",
-    src_uri = "https://mirror.buckos.org/s/samurai-1.2.tar.gz",
-
-    sha256 = "FIXME",
     version = "1.2",
-    category = "dev-tools/build-systems",
+    url = "https://mirror.buckos.org/s/samurai-1.2.tar.gz",
+    sha256 = "FIXME",
     description = "ninja-compatible build tool written in C",
     homepage = "https://github.com/michaelforney/samurai",
     license = "ISC Apache-2.0 MIT",
-
-    src_compile = """
-make CC="${CC:-gcc}" CFLAGS="${CFLAGS:--O2}" -j${MAKEOPTS:-$(nproc)}
-""",
-
-    src_install = """
-make DESTDIR="$DESTDIR" PREFIX=/usr install
-""",
-
-    depend = [],
+    install_script = """
+        cd $SRCS
+        make CC="${CC:-gcc}" CFLAGS="${CFLAGS:--O2}" -j${MAKEOPTS:-$(nproc)}
+        make DESTDIR="$OUT" PREFIX=/usr install
+    """,
+    deps = [],
     visibility = ["PUBLIC"],
 )

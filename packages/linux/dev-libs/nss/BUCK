@@ -1,171 +1,101 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
 # NSS - Network Security Services
 # Mozilla's PKI crypto library
-ebuild_package(
+package(
     name = "nss",
-    src_uri = "https://archive.mozilla.org/pub/security/nss/releases/NSS_3_104_RTM/src/nss-3.104.tar.gz",
-
-    sha256 = "e2763223622d1e76b98a43030873856f248af0a41b03b2fa2ca06a91bc50ac8e",
-    iuse = [
-        "cacert",
-        "cpu_flags_ppc_altivec",
-        "cpu_flags_ppc_vsx",
-        "test-full",
-        "utils",
-    ],
-    use_configure = {
-        "-cacert": "--disable-cacert",
-        "-cpu_flags_ppc_altivec": "--disable-cpu_flags_ppc_altivec",
-        "-cpu_flags_ppc_vsx": "--disable-cpu_flags_ppc_vsx",
-        "-test-full": "--disable-test-full",
-        "-utils": "--disable-utils",
-        "cacert": "--enable-cacert",
-        "cpu_flags_ppc_altivec": "--enable-cpu_flags_ppc_altivec",
-        "cpu_flags_ppc_vsx": "--enable-cpu_flags_ppc_vsx",
-        "test-full": "--enable-test-full",
-        "utils": "--enable-utils",
-    },
+    build_rule = "binary",
     version = "3.104",
+    url = "https://archive.mozilla.org/pub/security/nss/releases/NSS_3_104_RTM/src/nss-3.104.tar.gz",
+    sha256 = "e2763223622d1e76b98a43030873856f248af0a41b03b2fa2ca06a91bc50ac8e",
     description = "Mozilla's Network Security Services implementing PKI support",
     homepage = "https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS",
     license = "MPL-2.0 OR GPL-2 OR LGPL-2.1",
-
-    # USE flags for optional features
-    use_flags = ["zlib", "sqlite"],
-
-    src_prepare = """
-        cd nss
-    """,
-    src_configure = """
-        # NSS uses make-based build system
-        export BUILD_OPT=1
-        export NSS_ENABLE_WERROR=0
-        export NSDISTMODE=copy
-        export NSS_DISABLE_GTESTS=1
-        export USE_64=1
-    """,
-    src_compile = """
-        cd nss
-
-        # Save dependency locations before cleaning environment
-        NSPR_INC=""
-        NSPR_LIB=""
-        ZLIB_INC=""
-        ZLIB_LIB=""
-        SQLITE_INC=""
-        SQLITE_LIB=""
-        for dep_dir in $(echo $DEP_BASE_DIRS | tr ':' ' '); do
-            if [ -d "$dep_dir/usr/include/nspr" ]; then
-                NSPR_INC="$dep_dir/usr/include/nspr"
-                # Check lib64 first (64-bit systems), then lib
-                if [ -f "$dep_dir/usr/lib64/libnspr4.so" ]; then
-                    NSPR_LIB="$dep_dir/usr/lib64"
-                elif [ -f "$dep_dir/usr/lib/libnspr4.so" ]; then
-                    NSPR_LIB="$dep_dir/usr/lib"
-                else
-                    # Fallback - search for the library
-                    NSPR_LIB=$(find "$dep_dir" -name "libnspr4.so" -printf '%h' -quit 2>/dev/null)
-                fi
-                echo "Found NSPR at: $dep_dir (lib: $NSPR_LIB)"
-            fi
-            # Only look for zlib if USE flag is enabled
-            if use zlib && [ -f "$dep_dir/usr/include/zlib.h" ]; then
-                ZLIB_INC="$dep_dir/usr/include"
-                if [ -d "$dep_dir/usr/lib64" ]; then
-                    ZLIB_LIB="$dep_dir/usr/lib64"
-                else
-                    ZLIB_LIB="$dep_dir/usr/lib"
-                fi
-                echo "Found zlib at: $dep_dir"
-            fi
-            # Only look for sqlite if USE flag is enabled
-            if use sqlite && [ -f "$dep_dir/usr/include/sqlite3.h" ]; then
-                SQLITE_INC="$dep_dir/usr/include"
-                if [ -d "$dep_dir/usr/lib64" ]; then
-                    SQLITE_LIB="$dep_dir/usr/lib64"
-                else
-                    SQLITE_LIB="$dep_dir/usr/lib"
-                fi
-                echo "Found sqlite at: $dep_dir"
-            fi
-        done
-
-        # CRITICAL: NSS Makefiles cannot handle colon-separated paths in environment
-        # variables. Colons are interpreted as make rule separators causing
-        # "multiple target patterns" errors. Unset ALL problematic variables.
-        unset CPATH
-        unset C_INCLUDE_PATH
-        unset CPLUS_INCLUDE_PATH
-        unset LIBRARY_PATH
-        unset CFLAGS
-        unset CXXFLAGS
-        unset LDFLAGS
-        unset CPPFLAGS
-        unset DEP_BASE_DIRS
-        unset PKG_CONFIG_PATH
-        unset LD_LIBRARY_PATH
-
-        export BUILD_OPT=1
-        export NSS_ENABLE_WERROR=0
-        export NSDISTMODE=copy
-        export NSS_DISABLE_GTESTS=1
-        export USE_64=1
-
-        # Pass dependency paths via direct make variables (not environment)
-        export NSPR_INCLUDE_DIR="$NSPR_INC"
-        export NSPR_LIB_DIR="$NSPR_LIB"
-
-        # Set zlib usage based on USE flag
-        if use zlib && [ -n "$ZLIB_INC" ]; then
-            export NSS_USE_SYSTEM_ZLIB=1
-            echo "Using system zlib"
-        fi
-
-        # Set sqlite usage based on USE flag
-        if use sqlite && [ -n "$SQLITE_INC" ]; then
-            export NSS_USE_SYSTEM_SQLITE=1
-            export SQLITE_INCLUDE_DIR="$SQLITE_INC"
-            export SQLITE_LIB_DIR="$SQLITE_LIB"
-            echo "Using system sqlite"
-        fi
-
-        # Set compiler flags without colons
-        export CC=gcc
-        export CXX=g++
-
-        # Build coreconf first (sequential to avoid race conditions)
-        make -j1 -C coreconf
-        make -j1 -C lib/dbm
-
-        # Build NSS with explicit paths (use -j1 to avoid jobserver issues)
-        make -j1 NSPRINCLUDE="-I$NSPR_INC" CC=gcc CXX=g++
-    """,
-    src_install = """
-        cd nss
-        # NSS has a custom install
-        mkdir -p "$DESTDIR/usr/lib" "$DESTDIR/usr/include/nss" "$DESTDIR/usr/bin"
-
-        # Install libraries
-        cp -P ../dist/Linux*/lib/*.so "$DESTDIR/usr/lib/" || true
-        cp -P ../dist/Linux*/lib/*.chk "$DESTDIR/usr/lib/" || true
-
-        # Install headers
-        cp -r ../dist/public/nss/* "$DESTDIR/usr/include/nss/" || true
-        cp -r ../dist/Linux*/include/* "$DESTDIR/usr/include/nss/" || true
-
-        # Install utilities
-        for util in certutil cmsutil crlutil modutil pk12util signtool signver ssltap; do
-            [ -f ../dist/Linux*/bin/$util ] && cp ../dist/Linux*/bin/$util "$DESTDIR/usr/bin/" || true
-        done
-    """,
-    rdepend = [
+    deps = [
         "//packages/linux/dev-libs/nspr:nspr",
         "//packages/linux/core/zlib:zlib",
     ],
-    bdepend = [
-        "//packages/linux/dev-libs/nspr:nspr",
-        "//packages/linux/core/zlib:zlib",
-    ],
+    install_script = """
+mkdir -p "$OUT"
+BUILD=$(mktemp -d)
+cp -a "$SRCS"/. "$BUILD/"
+cd "$BUILD"
+
+cd nss
+
+# Save dependency locations before cleaning environment
+NSPR_INC=""
+NSPR_LIB=""
+for inc in $CFLAGS; do
+    case "$inc" in
+        -I*)
+            dir="${inc#-I}"
+            base="${dir%/usr/include}"
+            if [ -d "$base/usr/include/nspr" ]; then
+                NSPR_INC="$base/usr/include/nspr"
+                if [ -f "$base/usr/lib64/libnspr4.so" ]; then
+                    NSPR_LIB="$base/usr/lib64"
+                elif [ -f "$base/usr/lib/libnspr4.so" ]; then
+                    NSPR_LIB="$base/usr/lib"
+                else
+                    NSPR_LIB=$(find "$base" -name "libnspr4.so" -printf '%h' -quit 2>/dev/null)
+                fi
+                echo "Found NSPR at: $base (lib: $NSPR_LIB)"
+            fi
+            ;;
+    esac
+done
+
+# CRITICAL: NSS Makefiles cannot handle colon-separated paths in environment
+# variables. Colons are interpreted as make rule separators causing
+# "multiple target patterns" errors. Unset ALL problematic variables.
+unset CPATH
+unset C_INCLUDE_PATH
+unset CPLUS_INCLUDE_PATH
+unset LIBRARY_PATH
+unset CFLAGS
+unset CXXFLAGS
+unset LDFLAGS
+unset CPPFLAGS
+unset PKG_CONFIG_PATH
+unset LD_LIBRARY_PATH
+
+export BUILD_OPT=1
+export NSS_ENABLE_WERROR=0
+export NSDISTMODE=copy
+export NSS_DISABLE_GTESTS=1
+export USE_64=1
+
+# Pass dependency paths via direct make variables (not environment)
+export NSPR_INCLUDE_DIR="$NSPR_INC"
+export NSPR_LIB_DIR="$NSPR_LIB"
+
+# Set compiler flags without colons
+export CC=gcc
+export CXX=g++
+
+# Build coreconf first (sequential to avoid race conditions)
+make -j1 -C coreconf
+make -j1 -C lib/dbm
+
+# Build NSS with explicit paths (use -j1 to avoid jobserver issues)
+make -j1 NSPRINCLUDE="-I$NSPR_INC" CC=gcc CXX=g++
+
+# Install
+mkdir -p "$OUT/usr/lib" "$OUT/usr/include/nss" "$OUT/usr/bin"
+
+# Install libraries
+cp -P ../dist/Linux*/lib/*.so "$OUT/usr/lib/" || true
+cp -P ../dist/Linux*/lib/*.chk "$OUT/usr/lib/" || true
+
+# Install headers
+cp -r ../dist/public/nss/* "$OUT/usr/include/nss/" || true
+cp -r ../dist/Linux*/include/* "$OUT/usr/include/nss/" || true
+
+# Install utilities
+for util in certutil cmsutil crlutil modutil pk12util signtool signver ssltap; do
+    [ -f ../dist/Linux*/bin/$util ] && cp ../dist/Linux*/bin/$util "$OUT/usr/bin/" || true
+done
+""",
     visibility = ["PUBLIC"],
 )

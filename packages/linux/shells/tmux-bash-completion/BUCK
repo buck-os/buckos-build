@@ -1,27 +1,22 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # tmux-bash-completion - Bash completion for tmux
-ebuild_package(
+package(
     name = "tmux-bash-completion",
-    src_uri = "https://github.com/imomaliev/tmux-bash-completion/archive/refs/heads/master.tar.gz",
-
-    sha256 = "e19ab4070ff99fcbb8969c9cfb85a984b775567eff6495ce58ee242723e72ca1",
+    build_rule = "binary",
     version = "2.0.0",
+    url = "https://github.com/imomaliev/tmux-bash-completion/archive/refs/heads/master.tar.gz",
+    sha256 = "e19ab4070ff99fcbb8969c9cfb85a984b775567eff6495ce58ee242723e72ca1",
     description = "Bash completion for tmux",
     homepage = "https://github.com/imobert/tmux-bash-completion",
     license = "BSD",
-    src_compile = """
-# No compilation needed - this is a shell script
-true
-""",
-    src_install = """
-mkdir -p "$DESTDIR/usr/share/bash-completion/completions"
-cp completions/tmux "$DESTDIR/usr/share/bash-completion/completions/"
-""",
-    rdepend = [
+    deps = [
         "//packages/linux/core/bash:bash",
         "//packages/linux/system/apps/tmux:tmux",
     ],
+    install_script = """
+mkdir -p "$OUT/usr/share/bash-completion/completions"
+cp "$SRCS/completions/tmux" "$OUT/usr/share/bash-completion/completions/"
+""",
     visibility = ["PUBLIC"],
 )

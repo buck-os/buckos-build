@@ -1,48 +1,50 @@
 # POSIX capabilities library
-load("//defs:package_defs.bzl", "ebuild_package", "download_source")
+load("//defs:package.bzl", "package")
 
-ebuild_package(
+package(
     name = "libcap",
-    src_uri = "https://www.kernel.org/pub/linux/libs/security/linux-privs/libcap2/libcap-2.77.tar.xz",
-
-    sha256 = "897bc18b44afc26c70e78cead3dbb31e154acc24bee085a5a09079a88dbf6f52",
+    build_rule = "binary",
     version = "2.77",
+    url = "https://www.kernel.org/pub/linux/libs/security/linux-privs/libcap2/libcap-2.77.tar.xz",
+    sha256 = "897bc18b44afc26c70e78cead3dbb31e154acc24bee085a5a09079a88dbf6f52",
     description = "POSIX 1003.1e capabilities",
     homepage = "https://sites.google.com/site/fully capable/",
     license = "|| ( GPL-2 BSD )",
-    iuse = ["pam", "static-libs"],
-    src_compile = """
+    use_configure = {
+        "pam": ("--enable-pam", "--disable-pam"),
+        "static-libs": ("--enable-static", "--disable-static"),
+    },
+    install_script = """
 # BUILD_CC/BUILD_CFLAGS/BUILD_LDFLAGS are used by libcap for host tools (_makenames)
 # They must use the native compiler without cross-compilation flags
 # We need to clear the LDFLAGS for the host tools since they include --sysroot
-make -j${MAKEOPTS:-$(nproc)} \\
-    AR="${AR:-ar}" \\
-    CC="${CC:-gcc}" \\
-    BUILD_CC="gcc" \\
-    BUILD_CFLAGS="" \\
-    BUILD_LDFLAGS="" \\
-    RANLIB="${RANLIB:-ranlib}" \\
-    exec_prefix="/usr" \\
-    lib_prefix="/usr" \\
-    lib="lib64" \\
-    prefix="/usr" \\
-    PAM_CAP="no" \\
-    DYNAMIC=yes \\
+make -j${MAKEOPTS:-$(nproc)} \
+    AR="${AR:-ar}" \
+    CC="${CC:-gcc}" \
+    BUILD_CC="gcc" \
+    BUILD_CFLAGS="" \
+    BUILD_LDFLAGS="" \
+    RANLIB="${RANLIB:-ranlib}" \
+    exec_prefix="/usr" \
+    lib_prefix="/usr" \
+    lib="lib64" \
+    prefix="/usr" \
+    PAM_CAP="no" \
+    DYNAMIC=yes \
     GOLANG=no
-""",
-    src_install = """
-make -j${MAKEOPTS:-$(nproc)} \\
-    AR="${AR:-ar}" \\
-    CC="${CC:-gcc}" \\
-    RANLIB="${RANLIB:-ranlib}" \\
-    exec_prefix="/usr" \\
-    lib_prefix="/usr" \\
-    lib="lib64" \\
-    prefix="/usr" \\
-    PAM_CAP="no" \\
-    DYNAMIC=yes \\
-    GOLANG=no \\
-    DESTDIR="$DESTDIR" \\
+
+make -j${MAKEOPTS:-$(nproc)} \
+    AR="${AR:-ar}" \
+    CC="${CC:-gcc}" \
+    RANLIB="${RANLIB:-ranlib}" \
+    exec_prefix="/usr" \
+    lib_prefix="/usr" \
+    lib="lib64" \
+    prefix="/usr" \
+    PAM_CAP="no" \
+    DYNAMIC=yes \
+    GOLANG=no \
+    DESTDIR="$DESTDIR" \
     install
 
 # Remove static libs if not requested

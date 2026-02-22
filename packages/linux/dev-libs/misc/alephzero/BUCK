@@ -1,61 +1,65 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
+load("//defs/rules:source.bzl", "extract_source")
 
-download_source(
-    name = "yyjson-src",
-    src_uri = "https://github.com/ibireme/yyjson/archive/refs/tags/0.10.0.tar.gz",
+http_file(
+    name = "yyjson-archive",
+    urls = ["https://github.com/ibireme/yyjson/archive/refs/tags/0.10.0.tar.gz"],
     sha256 = "0d901cb2c45c5586e3f3a4245e58c2252d6b24bf4b402723f6179523d389b165",
-    signature_required = False,
+    out = "0.10.0.tar.gz",
 )
 
-ebuild_package(
-    name = "alephzero",
-    src_uri = "https://github.com/alephzero/alephzero/archive/refs/heads/master.tar.gz",
+extract_source(
+    name = "yyjson-src",
+    source = ":yyjson-archive",
+)
 
-    sha256 = "e2d950cc25f14dc7719687279d485eaffaa3c8c5168d5dc5359df42ecb923e76",
+package(
+    name = "alephzero",
+    build_rule = "binary",
     version = "0_git",
-    category = "dev-libs/misc",
-    slot = "0",
+    url = "https://github.com/alephzero/alephzero/archive/refs/heads/master.tar.gz",
+    sha256 = "e2d950cc25f14dc7719687279d485eaffaa3c8c5168d5dc5359df42ecb923e76",
     description = "Simple, Robust, Fast IPC library",
     homepage = "https://github.com/alephzero/alephzero",
     license = "Unlicense",
+    deps = [":yyjson-src"],
+    install_script = """
+mkdir -p "$OUT"
+BUILD=$(mktemp -d)
+cp -a "$SRCS"/. "$BUILD/"
+cd "$BUILD"
 
-    src_prepare = '''
-# Initialize yyjson submodule from downloaded source
+# Initialize yyjson submodule from dep source
 mkdir -p third_party/yyjson
 
-# Find yyjson from bdepend source directories (in DEP_BASE_DIRS)
+# Find yyjson source in dep outputs (passed via CFLAGS -I paths)
 YYJSON_SRC=""
-IFS=':' read -ra DEP_DIRS <<< "$DEP_BASE_DIRS"
-for dep_dir in "${DEP_DIRS[@]}"; do
-    # Look for yyjson source (has src/yyjson.h or yyjson.h)
-    if [ -z "$YYJSON_SRC" ]; then
-        if [ -f "$dep_dir/src/yyjson.h" ]; then
-            YYJSON_SRC="$dep_dir"
-        elif [ -f "$dep_dir/yyjson.h" ]; then
-            YYJSON_SRC="$dep_dir"
-        fi
-    fi
+for inc in $CFLAGS; do
+    case "$inc" in
+        -I*)
+            dir="${inc#-I}"
+            base="${dir%/usr/include}"
+            if [ -f "$base/src/yyjson.h" ]; then
+                YYJSON_SRC="$base"
+                break
+            elif [ -f "$base/yyjson.h" ]; then
+                YYJSON_SRC="$base"
+                break
+            fi
+            ;;
+    esac
 done
 
 if [ -n "$YYJSON_SRC" ]; then
     echo "Copying yyjson from $YYJSON_SRC"
     cp -r "$YYJSON_SRC"/* third_party/yyjson/ || true
 else
-    echo "ERROR: yyjson source not found in DEP_BASE_DIRS"
-    echo "DEP_BASE_DIRS=$DEP_BASE_DIRS"
+    echo "ERROR: yyjson source not found in deps"
     exit 1
 fi
-''',
 
-    src_compile = '''
-make -j${MAKEOPTS:-$(nproc)} CC="${CC:-gcc}" lib/libalephzero.a lib/libalephzero.so
-''',
-
-    src_install = '''
-make DESTDIR="$DESTDIR" PREFIX=/usr install
-''',
-
-    bdepend = [":yyjson-src"],
-    depend = [],
+make -j$(nproc) CC="${CC:-gcc}" lib/libalephzero.a lib/libalephzero.so
+make DESTDIR="$OUT" PREFIX=/usr install
+""",
     visibility = ["PUBLIC"],
 )

@@ -1,5 +1,4 @@
 load("//defs:package.bzl", "package")
-load("//defs:package_defs.bzl", "gen_pkgconfig")
 
 # http-parser - HTTP request/response parser for C
 #
@@ -13,35 +12,46 @@ load("//defs:package_defs.bzl", "gen_pkgconfig")
 
 package(
     name = "http-parser",
-    build_rule = "autotools",
+    build_rule = "binary",
     version = "2.9.4",
     url = "https://github.com/nodejs/http-parser/archive/refs/tags/v2.9.4.tar.gz",
     sha256 = "467b9e30fd0979ee301065e70f637d525c28193449e1b13fbcb1b1fab3ad224f",
     description = "HTTP request/response parser for C",
     homepage = "https://github.com/nodejs/http-parser",
     license = "MIT",
-    build_cmd = """
+    install_script = """
+mkdir -p "$OUT"
+BUILD=$(mktemp -d)
+cp -a "$SRCS"/. "$BUILD/"
+cd "$BUILD"
+
 # Build shared and static libraries
 make library
-
-# Build the shared library explicitly
 make libhttp_parser.so
-""",
-    install_cmd = """
+
 # Install libraries
-mkdir -p "$DESTDIR/usr/lib"
-cp libhttp_parser.so* "$DESTDIR/usr/lib/" || true
-cp libhttp_parser.a "$DESTDIR/usr/lib/" || true
+mkdir -p "$OUT/usr/lib"
+cp libhttp_parser.so* "$OUT/usr/lib/" || true
+cp libhttp_parser.a "$OUT/usr/lib/" || true
 
 # Install headers
-mkdir -p "$DESTDIR/usr/include"
-cp http_parser.h "$DESTDIR/usr/include/"
-""" + gen_pkgconfig(
-        name = "http-parser",
-        description = "HTTP request/response parser for C",
-        libs = "-lhttp_parser",
-        destvar = "DESTDIR",
-        libdir = "lib",
-    ),
+mkdir -p "$OUT/usr/include"
+cp http_parser.h "$OUT/usr/include/"
+
+# Generate pkg-config file
+mkdir -p "$OUT/usr/lib/pkgconfig"
+cat > "$OUT/usr/lib/pkgconfig/http-parser.pc" << EOF
+prefix=/usr
+exec_prefix=\${prefix}
+libdir=\${prefix}/lib
+includedir=\${prefix}/include
+
+Name: http-parser
+Description: HTTP request/response parser for C
+Version: $PV
+Libs: -lhttp_parser
+Cflags: -I\${includedir}
+EOF
+""",
     visibility = ["PUBLIC"],
 )

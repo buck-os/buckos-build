@@ -1,5 +1,4 @@
 load("//defs:package.bzl", "package")
-load("//defs:package_defs.bzl", "gen_pkgconfig_headeronly")
 
 # RAPIDS RAFT - Reusable Accelerated Functions and Tools for GPU computing
 # High-performance primitives for machine learning and data mining
@@ -82,11 +81,21 @@ endif()
 EOF
 
 echo "RAPIDS RAFT v$PV installed successfully"
-""" + gen_pkgconfig_headeronly(
-        name = "raft",
-        description = "RAPIDS RAFT - Reusable Accelerated Functions and Tools for GPU computing",
-        requires = "cuda",
-    ),
+
+# Generate pkg-config file
+mkdir -p "$OUT/usr/lib/pkgconfig"
+cat > "$OUT/usr/lib/pkgconfig/raft.pc" << EOF
+prefix=/usr
+exec_prefix=${prefix}
+includedir=${prefix}/include
+
+Name: raft
+Description: RAPIDS RAFT - Reusable Accelerated Functions and Tools for GPU computing
+Version: $PV
+Requires: cuda
+Cflags: -I${includedir}
+EOF
+""",
     deps = [
         "//packages/linux/system/gpu/libraries/cuda-toolkit:cuda-toolkit",
         "//packages/linux/dev-libs/cuda/cutlass4:cutlass4",

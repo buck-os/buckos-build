@@ -1,21 +1,24 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # gentoo-zsh-completions - Gentoo-specific Zsh completions
-ebuild_package(
+package(
     name = "gentoo-zsh-completions",
-    src_uri = "https://github.com/gentoo/gentoo-zsh-completions/archive/refs/heads/master.tar.gz",
-
-    sha256 = "a60677d7422856b25d5b561e622c64f1d05ed933d887bcce3bdb81916d569617",
+    build_rule = "binary",
     version = "master",
+    url = "https://github.com/gentoo/gentoo-zsh-completions/archive/refs/heads/master.tar.gz",
+    sha256 = "a60677d7422856b25d5b561e622c64f1d05ed933d887bcce3bdb81916d569617",
     description = "Gentoo-specific Zsh completions",
     homepage = "https://github.com/gentoo/gentoo-zsh-completions",
     license = "GPL-2",
-    src_install = """
-make PREFIX=/usr DESTDIR="$DESTDIR" install
-""",
-    rdepend = [
+    deps = [
         "//packages/linux/shells/zsh:zsh",
     ],
+    install_script = """
+mkdir -p "$OUT"
+BUILD=$(mktemp -d)
+cp -a "$SRCS"/. "$BUILD/"
+cd "$BUILD"
+make PREFIX=/usr DESTDIR="$OUT" install
+""",
     visibility = ["PUBLIC"],
 )

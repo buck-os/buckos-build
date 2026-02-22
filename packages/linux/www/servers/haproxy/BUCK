@@ -1,50 +1,46 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
 # haproxy - High-performance TCP/HTTP load balancer
 #
 # NOTE: HAProxy uses make directly (no configure script)
-#
-# USE flags:
-#   ssl       - Enable SSL/TLS support with OpenSSL
-#   zlib      - Enable zlib compression
-#   pcre2     - Enable PCRE2 regular expressions
-#   prometheus - Enable Prometheus metrics exporter
-#   threads   - Enable multi-threading support
 
-ebuild_package(
+package(
     name = "haproxy",
-    src_uri = "https://www.haproxy.org/download/3.0/src/haproxy-3.0.5.tar.gz",
-
-    sha256 = "ae38221e85aeba038a725efbef5bfe5e76671ba7959e5eb74c39fd079e5d002e",
+    build_rule = "binary",
     version = "3.0.5",
+    url = "https://www.haproxy.org/download/3.0/src/haproxy-3.0.5.tar.gz",
+    sha256 = "ae38221e85aeba038a725efbef5bfe5e76671ba7959e5eb74c39fd079e5d002e",
     description = "High-performance TCP/HTTP load balancer and proxy server",
     homepage = "https://www.haproxy.org/",
     license = "GPL-2.0",
-    rdepend = [
+    deps = [
         "//packages/linux/system/libs/crypto/openssl:openssl",
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/utility/pcre2:pcre2",
     ],
-    src_configure = "true",
-    src_compile = """
-make -j${MAKEOPTS:-$(nproc)} \\
-    TARGET=linux-glibc \\
-    USE_OPENSSL=1 \\
-    USE_ZLIB=1 \\
-    USE_PCRE2=1 \\
-    USE_PROMEX=1 \\
-    USE_THREAD=1 \\
-    PREFIX=/usr
-""",
-    src_install = """
-make PREFIX=/usr DESTDIR="$DESTDIR" install
+    install_script = """
+mkdir -p "$OUT"
+BUILD=$(mktemp -d)
+cp -a "$SRCS"/. "$BUILD/"
+cd "$BUILD"
 
-mkdir -p "$DESTDIR/etc/haproxy"
-mkdir -p "$DESTDIR/var/lib/haproxy"
-mkdir -p "$DESTDIR/var/log/haproxy"
+make -j${MAKEOPTS:-$(nproc)} \
+    TARGET=linux-glibc \
+    USE_OPENSSL=1 \
+    USE_ZLIB=1 \
+    USE_PCRE2=1 \
+    USE_PROMEX=1 \
+    USE_THREAD=1 \
+    PREFIX=/usr
+
+make PREFIX=/usr DESTDIR="$OUT" install
+
+mkdir -p "$OUT/etc/haproxy"
+mkdir -p "$OUT/var/lib/haproxy"
+mkdir -p "$OUT/var/log/haproxy"
 
 # Create default configuration
-cat > "$DESTDIR/etc/haproxy/haproxy.cfg" << 'EOF'
+cat > "$OUT/etc/haproxy/haproxy.cfg" << 'HAPCFG'
 global
     log /dev/log local0
     chroot /var/lib/haproxy
@@ -70,7 +66,7 @@ frontend http_front
 backend http_back
     balance roundrobin
     server server1 127.0.0.1:8080 check
-EOF
+HAPCFG
 """,
     visibility = ["PUBLIC"],
 )

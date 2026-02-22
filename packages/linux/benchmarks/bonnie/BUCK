@@ -1,47 +1,43 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
 # bonnie++ - Filesystem and disk I/O benchmark
-ebuild_package(
+package(
+    build_rule = "binary",
     name = "bonnie",
-    src_uri = "https://www.coker.com.au/bonnie++/bonnie++-2.00a.tgz",
-
-    sha256 = "a8d33bbd81bc7eb559ce5bf6e584b9b53faea39ccfb4ae92e58f27257e468f0e",
     version = "2.00a",
-    category = "benchmarks",
+    url = "https://www.coker.com.au/bonnie++/bonnie++-2.00a.tgz",
+    sha256 = "a8d33bbd81bc7eb559ce5bf6e584b9b53faea39ccfb4ae92e58f27257e468f0e",
     description = "Filesystem and disk I/O benchmark suite",
     homepage = "https://www.coker.com.au/bonnie++/",
     license = "GPL-2.0",
-
-    src_prepare = '''
-# GCC 11+ and C++17 have std::data() which conflicts with global variable 'data' in bon_csv2html.cpp
-# Rename all occurrences of 'data' to 'csv_data' to avoid ambiguity
-echo "Applying C++17 compatibility fix: renaming 'data' variable to 'csv_data' in bon_csv2html.cpp"
+    pre_configure_cmds = [
+        # GCC 11+ and C++17 have std::data() which conflicts with global variable 'data' in bon_csv2html.cpp
+        # Rename all occurrences of 'data' to 'csv_data' to avoid ambiguity
+        """echo "Applying C++17 compatibility fix: renaming 'data' variable to 'csv_data' in bon_csv2html.cpp"
 sed -i 's/\\bdata\\b/csv_data/g' bon_csv2html.cpp
 # Also force C++14 in the Makefile since CXXFLAGS may be overridden
-sed -i 's/CXXFLAGS = /CXXFLAGS = -std=c++14 /' Makefile.in
-''',
+sed -i 's/CXXFLAGS = /CXXFLAGS = -std=c++14 /' Makefile.in""",
+    ],
+    install_script = """
+mkdir -p "$OUT"
+BUILD=$(mktemp -d)
+cp -a "$SRCS"/. "$BUILD/"
+cd "$BUILD"
 
-    src_configure = '''
 ./configure --prefix=/usr
-''',
-
-    src_compile = '''
 make -j${MAKEOPTS:-$(nproc)}
-''',
 
-    src_install = '''
-mkdir -p "$DESTDIR/usr/bin"
-mkdir -p "$DESTDIR/usr/sbin"
-mkdir -p "$DESTDIR/usr/share/man/man1"
-mkdir -p "$DESTDIR/usr/share/man/man8"
+mkdir -p "$OUT/usr/bin"
+mkdir -p "$OUT/usr/sbin"
+mkdir -p "$OUT/usr/share/man/man1"
+mkdir -p "$OUT/usr/share/man/man8"
 
-cp bonnie++ "$DESTDIR/usr/sbin/"
-cp bon_csv2html bon_csv2txt "$DESTDIR/usr/bin/"
-cp zcav "$DESTDIR/usr/bin/"
-cp bonnie++.1 "$DESTDIR/usr/share/man/man1/"
-cp bon_csv2html.1 bon_csv2txt.1 "$DESTDIR/usr/share/man/man1/"
-cp zcav.8 "$DESTDIR/usr/share/man/man8/"
-''',
-
+cp bonnie++ "$OUT/usr/sbin/"
+cp bon_csv2html bon_csv2txt "$OUT/usr/bin/"
+cp zcav "$OUT/usr/bin/"
+cp bonnie++.1 "$OUT/usr/share/man/man1/"
+cp bon_csv2html.1 bon_csv2txt.1 "$OUT/usr/share/man/man1/"
+cp zcav.8 "$OUT/usr/share/man/man8/"
+""",
     visibility = ["PUBLIC"],
 )

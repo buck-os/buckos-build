@@ -1,5 +1,4 @@
 load("//defs:package.bzl", "package")
-load("//defs:package_defs.bzl", "gen_pkgconfig_headeronly")
 
 # =============================================================================
 # NVIDIA CUTLASS v4 - CUDA Templates for Linear Algebra Subroutines
@@ -88,11 +87,21 @@ endif()
 EOF
 
 echo "CUTLASS v4.2.1 installed successfully"
-""" + gen_pkgconfig_headeronly(
-        name = "cutlass",
-        description = "NVIDIA CUTLASS - CUDA Templates for Linear Algebra Subroutines",
-        requires = "cuda",
-    ),
+
+# Generate pkg-config file
+mkdir -p "$OUT/usr/lib/pkgconfig"
+cat > "$OUT/usr/lib/pkgconfig/cutlass.pc" << EOF
+prefix=/usr
+exec_prefix=${prefix}
+includedir=${prefix}/include
+
+Name: cutlass
+Description: NVIDIA CUTLASS - CUDA Templates for Linear Algebra Subroutines
+Version: $PV
+Requires: cuda
+Cflags: -I${includedir}
+EOF
+""",
     deps = [
         "//packages/linux/system/gpu/libraries/cuda-toolkit:cuda-toolkit",
     ],

@@ -1,39 +1,41 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
 # SCTK - NIST Scoring Toolkit for speech recognition evaluation
 # Contains tools like sclite, sc_stats, rover, etc.
 
-ebuild_package(
+package(
+    build_rule = "binary",
     name = "sctk",
-    src_uri = "https://github.com/usnistgov/SCTK/archive/refs/tags/v2.4.12.tar.gz",
-
-    sha256 = "43bd2bfe60e0ad04a563ddef025e84fca4c073f8f7c02f056b59fb8e2ec4f022",
     version = "2.4.12",
+    url = "https://github.com/usnistgov/SCTK/archive/refs/tags/v2.4.12.tar.gz",
+    sha256 = "43bd2bfe60e0ad04a563ddef025e84fca4c073f8f7c02f056b59fb8e2ec4f022",
     description = "NIST Scoring Toolkit for speech recognition evaluation",
     homepage = "https://github.com/usnistgov/SCTK",
     license = "public-domain",
-    # SCTK uses a simple Makefile without configure
-    src_configure = "true",
-    src_compile = """
+    install_script = """
+mkdir -p "$OUT"
+BUILD=$(mktemp -d)
+cp -a "$SRCS"/. "$BUILD/"
+cd "$BUILD"
+
 # SCTK builds with just make
 make -j${MAKEOPTS:-$(nproc)} all
-""",
-    src_install = """
-mkdir -p "$DESTDIR/usr/bin"
-mkdir -p "$DESTDIR/usr/share/doc/sctk"
+
+mkdir -p "$OUT/usr/bin"
+mkdir -p "$OUT/usr/share/doc/sctk"
 
 # Install binaries
 for bin in sclite sc_stats rover asclite; do
     if [ -f "bin/$bin" ]; then
-        install -m755 "bin/$bin" "$DESTDIR/usr/bin/"
+        install -m755 "bin/$bin" "$OUT/usr/bin/"
     elif [ -f "src/$bin/$bin" ]; then
-        install -m755 "src/$bin/$bin" "$DESTDIR/usr/bin/"
+        install -m755 "src/$bin/$bin" "$OUT/usr/bin/"
     fi
 done
 
 # Install documentation if present
 if [ -f README.md ]; then
-    install -m644 README.md "$DESTDIR/usr/share/doc/sctk/"
+    install -m644 README.md "$OUT/usr/share/doc/sctk/"
 fi
 """,
     visibility = ["PUBLIC"],

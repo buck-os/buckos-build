@@ -1,15 +1,39 @@
 load("//defs:package.bzl", "package")
-load("//defs:package_defs.bzl", "ruby_package")
 
 # Asciidoctor - Text processor for AsciiDoc
 
-ruby_package(
+package(
+    build_rule = "binary",
     name = "asciidoctor",
     version = "2.0.18",
-    src_uri = "https://github.com/asciidoctor/asciidoctor/archive/refs/tags/v2.0.18.tar.gz",
+    url = "https://github.com/asciidoctor/asciidoctor/archive/refs/tags/v2.0.18.tar.gz",
     sha256 = "fad34373023f3212090635d7b793c2528e64c0593b2ba5c38b59f3fb6fd517f5",
     description = "A fast, open source text processor and publishing toolchain",
     homepage = "https://asciidoctor.org/",
     license = "MIT",
+    install_script = '''
+        cd $SRCS
+
+        export GEM_HOME="$OUT/usr/lib/ruby/gems"
+        export GEM_PATH="$GEM_HOME:/usr/lib/ruby/gems"
+
+        # Build gem from gemspec if present
+        if ls *.gemspec 1>/dev/null 2>&1; then
+            gem build *.gemspec
+        fi
+
+        mkdir -p "$OUT/usr/bin"
+        mkdir -p "$OUT/usr/lib/ruby/gems"
+
+        # Install the built gem
+        if ls *.gem 1>/dev/null 2>&1; then
+            gem install --local --install-dir "$OUT/usr/lib/ruby/gems" \
+                --bindir "$OUT/usr/bin" \
+                --no-document *.gem
+        fi
+    ''',
+    deps = [
+        "//packages/linux/lang/ruby:ruby",
+    ],
     visibility = ["PUBLIC"],
 )

@@ -1,32 +1,28 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # opencsg - Library for CSG (Constructive Solid Geometry) using OpenGL
-ebuild_package(
+package(
     name = "opencsg",
-    src_uri = "https://github.com/floriankirsch/OpenCSG/archive/refs/tags/opencsg-1-6-0-release.tar.gz",
-
-    sha256 = "a912405c55ad9ea185589ea073518bf895613e22175d5c8dd8edabab75e19be2",
+    build_rule = "binary",
     version = "1.6.0",
+    url = "https://github.com/floriankirsch/OpenCSG/archive/refs/tags/opencsg-1-6-0-release.tar.gz",
+    sha256 = "a912405c55ad9ea185589ea073518bf895613e22175d5c8dd8edabab75e19be2",
     description = "Library for CSG rendering using OpenGL",
     homepage = "http://www.opencsg.org/",
     license = "GPL-2.0-or-later",
-    src_configure = """
+    deps = [
+        "//packages/linux/desktop/qt:qt5",
+    ],
+    install_script = """
+mkdir -p "$OUT"
+BUILD=$(mktemp -d)
+cp -a "$SRCS"/. "$BUILD/"
+cd "$BUILD"
+
 cd src
 qmake opencsg.pro PREFIX=/usr
+make -j$(nproc)
+make INSTALL_ROOT="$OUT" install
 """,
-    src_compile = """
-cd src
-make -j${MAKEOPTS:-$(nproc)}
-""",
-    src_install = """
-cd src
-make INSTALL_ROOT="$DESTDIR" install
-""",
-    rdepend = [
-        "//packages/linux/desktop/qt:qt5",
-    ],
-    bdepend = [
-        "//packages/linux/desktop/qt:qt5",
-    ],
     visibility = ["PUBLIC"],
 )

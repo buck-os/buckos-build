@@ -1,38 +1,31 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
-ebuild_package(
+package(
+    build_rule = "binary",
     name = "gsm",
-    src_uri = "https://www.quut.com/gsm/gsm-1.0.22.tar.gz",
-
-    sha256 = "f0072e91f6bb85a878b2f6dbf4a0b7c850c4deb8049d554c65340b3bf69df0ac",
     version = "1.0.22",
+    url = "https://www.quut.com/gsm/gsm-1.0.22.tar.gz",
+    sha256 = "f0072e91f6bb85a878b2f6dbf4a0b7c850c4deb8049d554c65340b3bf69df0ac",
     description = "GSM 06.10 audio codec library",
     homepage = "https://www.quut.com/gsm/",
     license = "BSD",
-    src_prepare = """
-# Source extracts to gsm-src/ or gsm-1.0-pl22/ subdirectory - move contents up
-for subdir in gsm-src gsm-1.0-pl22; do
-    if [ -d "$subdir" ]; then
-        mv "$subdir"/* . 2>/dev/null || true
-        mv "$subdir"/.* . 2>/dev/null || true
-        rmdir "$subdir" 2>/dev/null || true
-        break
-    fi
-done
+    install_script = """
+mkdir -p "$OUT"
+BUILD=$(mktemp -d)
+cp -a "$SRCS"/. "$BUILD/"
+cd "$BUILD"
+
+make CCFLAGS="-c -O2 -fPIC -DNeedFunctionPrototypes=1" all
+
+mkdir -p "$OUT/usr/lib" "$OUT/usr/include/gsm" "$OUT/usr/bin"
+cp lib/libgsm.a "$OUT/usr/lib/"
+cp inc/gsm.h "$OUT/usr/include/gsm/"
+cp bin/toast bin/tcat bin/untoast "$OUT/usr/bin/" 2>/dev/null || true
+# Create shared library
+cd src
+$CC -shared -fPIC -Wl,-soname,libgsm.so.1 -o "$OUT/usr/lib/libgsm.so.1.0.22" *.o
+ln -sf libgsm.so.1.0.22 "$OUT/usr/lib/libgsm.so.1"
+ln -sf libgsm.so.1 "$OUT/usr/lib/libgsm.so"
 """,
-    src_compile = """
-        make CCFLAGS="-c -O2 -fPIC -DNeedFunctionPrototypes=1" all
-    """,
-    src_install = """
-        mkdir -p "$DESTDIR/usr/lib" "$DESTDIR/usr/include/gsm" "$DESTDIR/usr/bin"
-        cp lib/libgsm.a "$DESTDIR/usr/lib/"
-        cp inc/gsm.h "$DESTDIR/usr/include/gsm/"
-        cp bin/toast bin/tcat bin/untoast "$DESTDIR/usr/bin/" 2>/dev/null || true
-        # Create shared library
-        cd src
-        $CC -shared -fPIC -Wl,-soname,libgsm.so.1 -o "$DESTDIR/usr/lib/libgsm.so.1.0.22" *.o
-        ln -sf libgsm.so.1.0.22 "$DESTDIR/usr/lib/libgsm.so.1"
-        ln -sf libgsm.so.1 "$DESTDIR/usr/lib/libgsm.so"
-    """,
     visibility = ["PUBLIC"],
 )

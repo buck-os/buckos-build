@@ -1,5 +1,4 @@
 load("//defs:package.bzl", "package")
-load("//defs:package_defs.bzl", "gen_pkgconfig")
 
 package(
     build_rule = "binary",
@@ -45,13 +44,24 @@ mkdir -p "$OUT/usr/lib64/cmake/nvcomp"
 cp -r "$SRC_DIR/lib/cmake/nvcomp/"* "$OUT/usr/lib64/cmake/nvcomp/" 2>/dev/null || true
 
 echo "nvcomp $PV installed successfully"
-""" + gen_pkgconfig(
-        name = "nvcomp",
-        description = "NVIDIA GPU-accelerated data compression library",
-        cflags = "-I${includedir} -DNVCOMP_STATIC_DEFINE",
-        requires = "cuda",
-        libs_private = "-lnvcomp_cpu",
-    ),
+
+# Generate pkg-config file
+mkdir -p "$OUT/usr/lib64/pkgconfig"
+cat > "$OUT/usr/lib64/pkgconfig/nvcomp.pc" << EOF
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${prefix}/lib64
+includedir=${prefix}/include
+
+Name: nvcomp
+Description: NVIDIA GPU-accelerated data compression library
+Version: $PV
+Requires: cuda
+Libs.private: -lnvcomp_cpu
+Libs: -L${libdir} -lnvcomp
+Cflags: -I${includedir} -DNVCOMP_STATIC_DEFINE
+EOF
+""",
     deps = [
         "//packages/linux/system/gpu/libraries/cuda-toolkit:cuda-toolkit",
     ],

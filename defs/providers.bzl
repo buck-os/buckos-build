@@ -85,3 +85,27 @@ KernelBtfInfo = provider(fields = [
     "vmlinux_h",        # artifact: vmlinux.h generated from kernel BTF data (for BPF CO-RE)
     "version",          # str: kernel version string
 ])
+
+# ── Image providers ────────────────────────────────────────────────
+
+Stage3Info = provider(fields = [
+    "tarball",          # artifact: the stage3 tarball
+    "checksum",         # artifact: sha256 checksum file
+    "contents",         # artifact: CONTENTS.gz listing
+    "arch",             # str: architecture (amd64, arm64)
+    "variant",          # str: variant (minimal, base, developer, complete)
+    "libc",             # str: C library (glibc, musl)
+    "version",          # str: version string
+])
+
+# ── Language toolchain providers ──────────────────────────────────
+
+GoToolchainInfo = provider(fields = {
+    "goroot": provider_field(typing.Any),  # Artifact: Go installation root
+    "version": provider_field(str),
+})
+
+RustToolchainInfo = provider(fields = {
+    "rust_root": provider_field(typing.Any),  # Artifact: Rust installation root
+    "version": provider_field(str),
+})

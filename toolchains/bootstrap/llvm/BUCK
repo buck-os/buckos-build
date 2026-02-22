@@ -1,4 +1,5 @@
-load("@buckos//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("@buckos//defs:package.bzl", "package")
+load("@buckos//defs/rules:source.bzl", "extract_source")
 
 # =============================================================================
 # LLVM Bootstrap Toolchain
@@ -13,11 +14,16 @@ load("@buckos//defs:package_defs.bzl", "download_source", "ebuild_package")
 # LLVM Source (21.1.8)
 # =============================================================================
 
-download_source(
-    name = "llvm-src",
-    src_uri = "https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.8/llvm-project-21.1.8.src.tar.xz",
+http_file(
+    name = "llvm-src-archive",
+    urls = ["https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.8/llvm-project-21.1.8.src.tar.xz"],
     sha256 = "4633a23617fa31a3ea51242586ea7fb1da7140e426bd62fc164261fe036aa142",
-    signature_required = False,
+    out = "llvm-project-21.1.8.src.tar.xz",
+)
+
+extract_source(
+    name = "llvm-src",
+    source = ":llvm-src-archive",
 )
 
 # =============================================================================
@@ -25,26 +31,25 @@ download_source(
 # =============================================================================
 # Build LLVM from source with minimal configuration for Rust compilation
 
-ebuild_package(
+package(
     name = "llvm-bootstrap",
-    source = ":llvm-src",
+    build_rule = "binary",
     version = "21.1.8",
-    category = "toolchain/bootstrap",
-    slot = "0",
+    url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.8/llvm-project-21.1.8.src.tar.xz",
+    sha256 = "4633a23617fa31a3ea51242586ea7fb1da7140e426bd62fc164261fe036aa142",
+    source = ":llvm-src",
     description = "LLVM compiler infrastructure - bootstrap build for Rust",
     homepage = "https://llvm.org/",
     license = "Apache-2.0-with-LLVM-exceptions",
-    bootstrap_stage = "stage2",
+    deps = [
+        "//bootstrap:bootstrap-toolchain",
+        "@buckos//packages/linux/core/zlib:zlib",
+    ],
+    install_script = """
+export CMAKE_BUILD_TYPE=Release
+export MAKEFLAGS="-j$(nproc)"
 
-    env = {
-        # Use release build for speed
-        "CMAKE_BUILD_TYPE": "Release",
-        # Parallel build
-        "MAKEFLAGS": "-j$(nproc)",
-    },
-
-    src_configure = '''
-# Create build directory
+# Create build directory (out-of-tree build against read-only $SRCS)
 mkdir -p build
 cd build
 
@@ -73,33 +78,20 @@ cmake -G "Unix Makefiles" \
     -DCLANG_ENABLE_ARCMT=OFF \
     -DCLANG_ENABLE_STATIC_ANALYZER=OFF \
     -DCLANG_PLUGIN_SUPPORT=OFF \
-    ../llvm
+    "$SRCS/llvm"
 
 echo "LLVM configured for x86_64 target"
-''',
 
-    src_compile = '''
-cd build
 cmake --build . -- -j$(nproc)
-''',
 
-    src_install = '''
-cd build
-
-# Install to DESTDIR
-DESTDIR="$DESTDIR" cmake --install .
+# Install to $OUT
+DESTDIR="$OUT" cmake --install .
 
 # Create version symlink
-ln -sf llvm/21 "$DESTDIR/usr/lib/llvm-21"
+ln -sf llvm/21 "$OUT/usr/lib/llvm-21"
 
-echo "LLVM ${PV} installed to /usr/lib/llvm/21"
-''',
-
-    bdepend = ["//bootstrap:bootstrap-toolchain"],
-    depend = [
-        "@buckos//packages/linux/core/zlib:zlib",
-    ],
-    use_bootstrap = False,
+echo "LLVM $PV installed to /usr/lib/llvm/21"
+""",
     visibility = ["PUBLIC"],
 )
 
@@ -108,60 +100,65 @@ echo "LLVM ${PV} installed to /usr/lib/llvm/21"
 # =============================================================================
 # This target provides LLVM for Rust and other package builds.
 
-ebuild_package(
+package(
     name = "llvm-toolchain",
-    source = ":llvm-src",  # Dummy source
+    build_rule = "binary",
     version = "21.1.8",
-    category = "toolchain/bootstrap",
-    slot = "0",
+    url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.8/llvm-project-21.1.8.src.tar.xz",
+    sha256 = "4633a23617fa31a3ea51242586ea7fb1da7140e426bd62fc164261fe036aa142",
+    source = ":llvm-src",
     description = "LLVM toolchain for BuckOS package builds",
     homepage = "https://llvm.org/",
     license = "Apache-2.0-with-LLVM-exceptions",
-
-    src_configure = "true",
-    src_compile = "true",
-
-    src_install = '''
+    deps = [":llvm-bootstrap"],
+    install_script = """
 # Copy LLVM from llvm-bootstrap to tools directory structure
-mkdir -p "$DESTDIR/tools"
+mkdir -p "$OUT/tools"
 
-IFS=':' read -ra DEP_ARRAY <<< "$DEP_BASE_DIRS"
-for dep_dir in "${DEP_ARRAY[@]}"; do
-    if [ -d "$dep_dir/usr/lib/llvm/21" ]; then
-        echo "Found LLVM at: $dep_dir/usr/lib/llvm/21"
-        # Copy the entire LLVM installation
-        cp -a "$dep_dir/usr/lib/llvm/21" "$DESTDIR/tools/llvm"
-
-        # Create symlinks in tools/bin for PATH
-        mkdir -p "$DESTDIR/tools/bin"
-        for bin in "$DESTDIR/tools/llvm/bin"/*; do
-            if [ -f "$bin" ]; then
-                name=$(basename "$bin")
-                ln -sf ../llvm/bin/"$name" "$DESTDIR/tools/bin/$name"
+# Find llvm-bootstrap output via CFLAGS include paths
+DEP_BASE=""
+for flag in $CFLAGS; do
+    case "$flag" in
+        -I*)
+            dir="${flag#-I}"
+            base="${dir%/usr/include}"
+            if [ -d "$base/usr/lib/llvm/21" ]; then
+                DEP_BASE="$base"
+                break
             fi
-        done
-        break
-    fi
+            ;;
+    esac
 done
 
-if [ ! -x "$DESTDIR/tools/llvm/bin/llvm-config" ]; then
+if [ -n "$DEP_BASE" ]; then
+    echo "Found LLVM at: $DEP_BASE/usr/lib/llvm/21"
+    # Copy the entire LLVM installation
+    cp -a "$DEP_BASE/usr/lib/llvm/21" "$OUT/tools/llvm"
+
+    # Create symlinks in tools/bin for PATH
+    mkdir -p "$OUT/tools/bin"
+    for bin in "$OUT/tools/llvm/bin"/*; do
+        if [ -f "$bin" ]; then
+            name=$(basename "$bin")
+            ln -sf ../llvm/bin/"$name" "$OUT/tools/bin/$name"
+        fi
+    done
+fi
+
+if [ ! -x "$OUT/tools/llvm/bin/llvm-config" ]; then
     echo "ERROR: Could not find llvm-bootstrap output"
     exit 1
 fi
 
 # Create marker file
-cat > "$DESTDIR/tools/.llvm-toolchain" << 'EOF'
+cat > "$OUT/tools/.llvm-toolchain" << 'EOF'
 BuckOS LLVM Toolchain
 LLVM version: 21.1.8
 Built from source for Rust bootstrap
 EOF
 
 echo "LLVM toolchain assembled in /tools"
-''',
-
-    bdepend = [":llvm-bootstrap"],
-    depend = [],
-    use_bootstrap = False,
+""",
     visibility = ["PUBLIC"],
 )
 
@@ -171,26 +168,23 @@ echo "LLVM toolchain assembled in /tools"
 # Build LLVM from source for aarch64 using the native host compiler.
 # This is a NATIVE build (not cross-compilation) - runs on aarch64 host.
 
-ebuild_package(
+package(
     name = "llvm-bootstrap-aarch64",
-    source = ":llvm-src",
+    build_rule = "binary",
     version = "21.1.8",
-    category = "toolchain/bootstrap",
-    slot = "0",
+    url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.8/llvm-project-21.1.8.src.tar.xz",
+    sha256 = "4633a23617fa31a3ea51242586ea7fb1da7140e426bd62fc164261fe036aa142",
+    source = ":llvm-src",
     description = "LLVM compiler infrastructure for aarch64 - bootstrap build for Rust",
     homepage = "https://llvm.org/",
     license = "Apache-2.0-with-LLVM-exceptions",
-    # NOTE: No bootstrap_stage - use host's native compiler for native aarch64 builds
+    # NOTE: No bootstrap deps - use host's native compiler for native aarch64 builds
+    deps = [],
+    install_script = """
+export CMAKE_BUILD_TYPE=Release
+export MAKEFLAGS="-j$(nproc)"
 
-    env = {
-        # Use release build for speed
-        "CMAKE_BUILD_TYPE": "Release",
-        # Parallel build
-        "MAKEFLAGS": "-j$(nproc)",
-    },
-
-    src_configure = '''
-# Create build directory
+# Create build directory (out-of-tree build against read-only $SRCS)
 mkdir -p build
 cd build
 
@@ -224,33 +218,20 @@ cmake -G "Unix Makefiles" \
     -DCLANG_ENABLE_ARCMT=OFF \
     -DCLANG_ENABLE_STATIC_ANALYZER=OFF \
     -DCLANG_PLUGIN_SUPPORT=OFF \
-    ../llvm
+    "$SRCS/llvm"
 
 echo "LLVM configured for aarch64 native build with targets: AArch64;X86"
-''',
 
-    src_compile = '''
-cd build
 cmake --build . -- -j$(nproc)
-''',
 
-    src_install = '''
-cd build
-
-# Install to DESTDIR
-DESTDIR="$DESTDIR" cmake --install .
+# Install to $OUT
+DESTDIR="$OUT" cmake --install .
 
 # Create version symlink
-ln -sf llvm/21 "$DESTDIR/usr/lib/llvm-21"
+ln -sf llvm/21 "$OUT/usr/lib/llvm-21"
 
-echo "LLVM ${PV} (aarch64) installed to /usr/lib/llvm/21"
-''',
-
-    # No bdepend - use host's native compiler for native aarch64 builds
-    # The host must have: gcc/g++, cmake, make, and development headers
-    bdepend = [],
-    depend = [],  # Use host zlib via -DLLVM_ENABLE_ZLIB=ON (finds system zlib)
-    use_bootstrap = False,
+echo "LLVM $PV (aarch64) installed to /usr/lib/llvm/21"
+""",
     visibility = ["PUBLIC"],
 )
 
@@ -259,59 +240,64 @@ echo "LLVM ${PV} (aarch64) installed to /usr/lib/llvm/21"
 # =============================================================================
 # This target provides LLVM for aarch64 Rust and other package builds.
 
-ebuild_package(
+package(
     name = "llvm-toolchain-aarch64",
-    source = ":llvm-src",  # Dummy source
+    build_rule = "binary",
     version = "21.1.8",
-    category = "toolchain/bootstrap",
-    slot = "0",
+    url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.8/llvm-project-21.1.8.src.tar.xz",
+    sha256 = "4633a23617fa31a3ea51242586ea7fb1da7140e426bd62fc164261fe036aa142",
+    source = ":llvm-src",
     description = "LLVM toolchain for BuckOS aarch64 package builds",
     homepage = "https://llvm.org/",
     license = "Apache-2.0-with-LLVM-exceptions",
-
-    src_configure = "true",
-    src_compile = "true",
-
-    src_install = '''
+    deps = [":llvm-bootstrap-aarch64"],
+    install_script = """
 # Copy LLVM from llvm-bootstrap-aarch64 to tools directory structure
-mkdir -p "$DESTDIR/tools"
+mkdir -p "$OUT/tools"
 
-IFS=':' read -ra DEP_ARRAY <<< "$DEP_BASE_DIRS"
-for dep_dir in "${DEP_ARRAY[@]}"; do
-    if [ -d "$dep_dir/usr/lib/llvm/21" ]; then
-        echo "Found LLVM at: $dep_dir/usr/lib/llvm/21"
-        # Copy the entire LLVM installation
-        cp -a "$dep_dir/usr/lib/llvm/21" "$DESTDIR/tools/llvm"
-
-        # Create symlinks in tools/bin for PATH
-        mkdir -p "$DESTDIR/tools/bin"
-        for bin in "$DESTDIR/tools/llvm/bin"/*; do
-            if [ -f "$bin" ]; then
-                name=$(basename "$bin")
-                ln -sf ../llvm/bin/"$name" "$DESTDIR/tools/bin/$name"
+# Find llvm-bootstrap-aarch64 output via CFLAGS include paths
+DEP_BASE=""
+for flag in $CFLAGS; do
+    case "$flag" in
+        -I*)
+            dir="${flag#-I}"
+            base="${dir%/usr/include}"
+            if [ -d "$base/usr/lib/llvm/21" ]; then
+                DEP_BASE="$base"
+                break
             fi
-        done
-        break
-    fi
+            ;;
+    esac
 done
 
-if [ ! -x "$DESTDIR/tools/llvm/bin/llvm-config" ]; then
+if [ -n "$DEP_BASE" ]; then
+    echo "Found LLVM at: $DEP_BASE/usr/lib/llvm/21"
+    # Copy the entire LLVM installation
+    cp -a "$DEP_BASE/usr/lib/llvm/21" "$OUT/tools/llvm"
+
+    # Create symlinks in tools/bin for PATH
+    mkdir -p "$OUT/tools/bin"
+    for bin in "$OUT/tools/llvm/bin"/*; do
+        if [ -f "$bin" ]; then
+            name=$(basename "$bin")
+            ln -sf ../llvm/bin/"$name" "$OUT/tools/bin/$name"
+        fi
+    done
+fi
+
+if [ ! -x "$OUT/tools/llvm/bin/llvm-config" ]; then
     echo "ERROR: Could not find llvm-bootstrap-aarch64 output"
     exit 1
 fi
 
 # Create marker file
-cat > "$DESTDIR/tools/.llvm-toolchain" << 'EOF'
+cat > "$OUT/tools/.llvm-toolchain" << 'EOF'
 BuckOS LLVM Toolchain (aarch64)
 LLVM version: 21.1.8
 Built from source for Rust bootstrap on aarch64
 EOF
 
 echo "LLVM toolchain (aarch64) assembled in /tools"
-''',
-
-    bdepend = [":llvm-bootstrap-aarch64"],
-    depend = [],
-    use_bootstrap = False,
+""",
     visibility = ["PUBLIC"],
 )

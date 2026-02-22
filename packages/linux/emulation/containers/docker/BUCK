@@ -1,29 +1,12 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package", "ebuild_package")
+load("//defs:package.bzl", "package")
 
 # Docker CLI
-# USE flags: See use_flags.bzl for available flags
-
-autotools_package(
+package(
     name = "docker-cli",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-    ],
-    src_prepare = """
-autoreconf -fi
-""",
-    src_uri = "https://github.com/docker/cli/archive/refs/tags/v27.3.1.tar.gz",
-
-    sha256 = "df7d44387166d90954e290dfbe0a278649bf71d0e89933615bdc0757580b68e4",
-    iuse = ["hardened", "selinux"],
-    use_configure = {
-        "-hardened": "--disable-hardening",
-        "-selinux": "--disable-selinux",
-        "hardened": "--enable-hardening",
-        "selinux": "--enable-selinux",
-    },
+    build_rule = "binary",
     version = "27.3.1",
+    url = "https://github.com/docker/cli/archive/refs/tags/v27.3.1.tar.gz",
+    sha256 = "df7d44387166d90954e290dfbe0a278649bf71d0e89933615bdc0757580b68e4",
     description = "Docker CLI for interacting with Docker Engine",
     homepage = "https://www.docker.com/",
     license = "Apache-2.0",
@@ -34,27 +17,26 @@ autoreconf -fi
         "GITCOMMIT": "ce12230",
         "BUILDTIME": "2024-01-01T00:00:00Z",
     },
-    pre_configure = """
+    install_script = """
+set -e
+cd "$SRCS"
+
 # Build Docker CLI
 make dynbinary
-    """,
-    post_install = """
-#!/bin/bash
-set -e
 
 # Install docker binary
-mkdir -p "$DESTDIR/usr/bin"
-install -m 0755 build/docker "$DESTDIR/usr/bin/docker"
+mkdir -p "$OUT/usr/bin"
+install -m 0755 build/docker "$OUT/usr/bin/docker"
 
 # Install shell completions
-mkdir -p "$DESTDIR/usr/share/bash-completion/completions"
-mkdir -p "$DESTDIR/usr/share/zsh/site-functions"
-mkdir -p "$DESTDIR/usr/share/fish/vendor_completions.d"
+mkdir -p "$OUT/usr/share/bash-completion/completions"
+mkdir -p "$OUT/usr/share/zsh/site-functions"
+mkdir -p "$OUT/usr/share/fish/vendor_completions.d"
 
-install -m 0644 contrib/completion/bash/docker "$DESTDIR/usr/share/bash-completion/completions/"
-install -m 0644 contrib/completion/zsh/_docker "$DESTDIR/usr/share/zsh/site-functions/"
-install -m 0644 contrib/completion/fish/docker.fish "$DESTDIR/usr/share/fish/vendor_completions.d/"
-    """,
+install -m 0644 contrib/completion/bash/docker "$OUT/usr/share/bash-completion/completions/"
+install -m 0644 contrib/completion/zsh/_docker "$OUT/usr/share/zsh/site-functions/"
+install -m 0644 contrib/completion/fish/docker.fish "$OUT/usr/share/fish/vendor_completions.d/"
+""",
     deps = [
         "//packages/linux/lang/go:go",
     ],
@@ -62,22 +44,12 @@ install -m 0644 contrib/completion/fish/docker.fish "$DESTDIR/usr/share/fish/ven
 )
 
 # Docker Engine (dockerd)
-# USE flags: See use_flags.bzl for available flags
-
-autotools_package(
+package(
     name = "docker-engine",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-    ],
-    src_prepare = """
-autoreconf -fi
-""",
-    src_uri = "https://github.com/moby/moby/archive/refs/tags/v27.3.1.tar.gz",
-
-    sha256 = "d18208d9e0b6421307342cdef266193984c97c87177b9262b1113e6e9e7e020e",
+    build_rule = "binary",
     version = "27.3.1",
+    url = "https://github.com/moby/moby/archive/refs/tags/v27.3.1.tar.gz",
+    sha256 = "d18208d9e0b6421307342cdef266193984c97c87177b9262b1113e6e9e7e020e",
     description = "Docker Engine daemon and runtime",
     homepage = "https://www.docker.com/",
     license = "Apache-2.0",
@@ -88,22 +60,21 @@ autoreconf -fi
         "DOCKER_GITCOMMIT": "ce12230",
         "DOCKER_BUILDTAGS": "seccomp apparmor",
     },
-    pre_configure = """
+    install_script = """
+set -e
+cd "$SRCS"
+
 # Build Docker daemon
 DOCKER_BUILDTAGS='seccomp apparmor' hack/make.sh dynbinary
-    """,
-    post_install = """
-#!/bin/bash
-set -e
 
 # Install binaries
-mkdir -p "$DESTDIR/usr/bin"
-install -m 0755 bundles/dynbinary-daemon/dockerd "$DESTDIR/usr/bin/"
-install -m 0755 bundles/dynbinary-daemon/docker-proxy "$DESTDIR/usr/bin/"
+mkdir -p "$OUT/usr/bin"
+install -m 0755 bundles/dynbinary-daemon/dockerd "$OUT/usr/bin/"
+install -m 0755 bundles/dynbinary-daemon/docker-proxy "$OUT/usr/bin/"
 
 # Install systemd service
-mkdir -p "$DESTDIR/usr/lib/systemd/system"
-cat > "$DESTDIR/usr/lib/systemd/system/docker.service" << 'EOF'
+mkdir -p "$OUT/usr/lib/systemd/system"
+cat > "$OUT/usr/lib/systemd/system/docker.service" << 'EOF'
 [Unit]
 Description=Docker Application Container Engine
 Documentation=https://docs.docker.com
@@ -132,7 +103,7 @@ OOMScoreAdjust=-500
 WantedBy=multi-user.target
 EOF
 
-cat > "$DESTDIR/usr/lib/systemd/system/docker.socket" << 'EOF'
+cat > "$OUT/usr/lib/systemd/system/docker.socket" << 'EOF'
 [Unit]
 Description=Docker Socket for the API
 
@@ -147,9 +118,9 @@ WantedBy=sockets.target
 EOF
 
 # Create docker group sysusers config
-mkdir -p "$DESTDIR/usr/lib/sysusers.d"
-echo 'g docker - -' > "$DESTDIR/usr/lib/sysusers.d/docker.conf"
-    """,
+mkdir -p "$OUT/usr/lib/sysusers.d"
+echo 'g docker - -' > "$OUT/usr/lib/sysusers.d/docker.conf"
+""",
     deps = [
         "//packages/linux/lang/go:go",
         "//packages/linux/emulation/containers/containerd:containerd",
@@ -161,22 +132,12 @@ echo 'g docker - -' > "$DESTDIR/usr/lib/sysusers.d/docker.conf"
 )
 
 # Docker Compose
-# USE flags: See use_flags.bzl for available flags
-
-autotools_package(
+package(
     name = "docker-compose",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-    ],
-    src_prepare = """
-autoreconf -fi
-""",
-    src_uri = "https://github.com/docker/compose/archive/refs/tags/v2.30.3.tar.gz",
-
-    sha256 = "b9b6f45ccad892a3f9353a03b6bdf3f79ea15ee2076f98bf013ef1db40034378",
+    build_rule = "binary",
     version = "2.30.3",
+    url = "https://github.com/docker/compose/archive/refs/tags/v2.30.3.tar.gz",
+    sha256 = "b9b6f45ccad892a3f9353a03b6bdf3f79ea15ee2076f98bf013ef1db40034378",
     description = "Define and run multi-container Docker applications",
     homepage = "https://docs.docker.com/compose/",
     license = "Apache-2.0",
@@ -184,21 +145,20 @@ autoreconf -fi
         "CGO_ENABLED": "0",
         "GO111MODULE": "on",
     },
-    pre_configure = """
-make binary
-    """,
-    post_install = """
-#!/bin/bash
+    install_script = """
 set -e
+cd "$SRCS"
+
+make binary
 
 # Install as docker plugin
-mkdir -p "$DESTDIR/usr/lib/docker/cli-plugins"
-install -m 0755 bin/docker-compose "$DESTDIR/usr/lib/docker/cli-plugins/"
+mkdir -p "$OUT/usr/lib/docker/cli-plugins"
+install -m 0755 bin/docker-compose "$OUT/usr/lib/docker/cli-plugins/"
 
 # Also install as standalone binary
-mkdir -p "$DESTDIR/usr/bin"
-ln -sf /usr/lib/docker/cli-plugins/docker-compose "$DESTDIR/usr/bin/docker-compose"
-    """,
+mkdir -p "$OUT/usr/bin"
+ln -sf /usr/lib/docker/cli-plugins/docker-compose "$OUT/usr/bin/docker-compose"
+""",
     deps = [
         "//packages/linux/lang/go:go",
     ],
@@ -206,14 +166,12 @@ ln -sf /usr/lib/docker/cli-plugins/docker-compose "$DESTDIR/usr/bin/docker-compo
 )
 
 # Docker Buildx
-# USE flags: See use_flags.bzl for available flags
-
-ebuild_package(
+package(
     name = "docker-buildx",
-    src_uri = "https://github.com/docker/buildx/archive/refs/tags/v0.18.0.tar.gz",
-
-    sha256 = "a935cb2715a5054d918d40ef07cdd4a6465b20a755d466248718ab59fd41c334",
+    build_rule = "binary",
     version = "0.18.0",
+    url = "https://github.com/docker/buildx/archive/refs/tags/v0.18.0.tar.gz",
+    sha256 = "a935cb2715a5054d918d40ef07cdd4a6465b20a755d466248718ab59fd41c334",
     description = "Docker CLI plugin for extended build capabilities with BuildKit",
     homepage = "https://github.com/docker/buildx",
     license = "Apache-2.0",
@@ -221,25 +179,20 @@ ebuild_package(
         "CGO_ENABLED": "0",
         "GO111MODULE": "on",
     },
-    src_compile = """
-#!/bin/bash
+    install_script = """
 set -e
+cd "$SRCS"
 
 # Build docker-buildx using go build directly
-# The hack/build script outputs to $OUT which causes path issues
 CGO_ENABLED=0 go build -mod=vendor -trimpath \
-    -ldflags "-X github.com/docker/buildx/version.Version=${PV} -X github.com/docker/buildx/version.Package=github.com/docker/buildx" \
+    -ldflags "-X github.com/docker/buildx/version.Version=$PV -X github.com/docker/buildx/version.Package=github.com/docker/buildx" \
     -o buildx-binary ./cmd/buildx
-    """,
-    src_install = """
-#!/bin/bash
-set -e
 
 # Install as docker plugin
-mkdir -p "$DESTDIR/usr/lib/docker/cli-plugins"
-install -m 0755 buildx-binary "$DESTDIR/usr/lib/docker/cli-plugins/docker-buildx"
-    """,
-    bdepend = [
+mkdir -p "$OUT/usr/lib/docker/cli-plugins"
+install -m 0755 buildx-binary "$OUT/usr/lib/docker/cli-plugins/docker-buildx"
+""",
+    deps = [
         "//packages/linux/lang/go:go",
     ],
     visibility = ["PUBLIC"],

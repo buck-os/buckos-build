@@ -118,6 +118,7 @@ cargo_package = rule(
         "extra_ldflags": attrs.list(attrs.string(), default = []),
         "libraries": attrs.list(attrs.string(), default = []),
         "post_install_cmds": attrs.list(attrs.string(), default = []),
+        "install_script": attrs.option(attrs.string(), default = None),
 
         # Labels (metadata-only, for BXL queries)
         "labels": attrs.list(attrs.string(), default = []),

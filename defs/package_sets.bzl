@@ -35,7 +35,84 @@ Example usage:
     )
 """
 
-load("//defs:use_flags.bzl", "USE_PROFILES")
+# USE flag profiles for system_set's profile-based USE flag resolution.
+USE_PROFILES = {
+    "minimal": {
+        "enabled": ["ipv6", "ssl", "zlib"],
+        "disabled": [
+            "X", "wayland", "gtk", "qt5", "qt6",
+            "debug", "doc", "examples", "test",
+            "pulseaudio", "pipewire", "alsa",
+            "python", "perl", "ruby", "lua",
+        ],
+        "description": "Minimal system with essential features only",
+    },
+    "server": {
+        "enabled": [
+            "ipv6", "ssl", "http2",
+            "zlib", "zstd", "lz4",
+            "acl", "attr", "caps",
+            "hardened", "pie", "ssp",
+            "threads", "pam",
+            "postgres", "mysql", "sqlite",
+        ],
+        "disabled": [
+            "X", "wayland", "gtk", "qt5", "qt6",
+            "opengl", "vulkan",
+            "pulseaudio", "pipewire", "alsa",
+            "debug",
+        ],
+        "description": "Server-optimized profile without GUI",
+    },
+    "desktop": {
+        "enabled": [
+            "X", "wayland",
+            "opengl", "vulkan", "egl",
+            "gtk", "qt5",
+            "pulseaudio", "pipewire",
+            "ipv6", "ssl", "http2",
+            "zlib", "zstd", "brotli",
+            "unicode", "icu", "nls",
+            "dbus", "udev",
+            "ffmpeg", "gstreamer",
+            "cairo", "pango",
+        ],
+        "disabled": ["debug", "static", "minimal"],
+        "description": "Full desktop environment with multimedia",
+    },
+    "developer": {
+        "enabled": [
+            "debug", "doc", "examples", "test",
+            "python", "perl", "ruby",
+            "git", "subversion",
+            "xml", "json", "yaml",
+        ],
+        "disabled": [],
+        "description": "Development-focused with documentation and tests",
+    },
+    "hardened": {
+        "enabled": [
+            "hardened", "pie", "ssp",
+            "caps", "seccomp", "selinux",
+            "acl", "attr",
+            "ssl",
+        ],
+        "disabled": ["debug"],
+        "description": "Security-hardened configuration",
+    },
+    "default": {
+        "enabled": [
+            "ipv6", "ssl", "http2",
+            "zlib", "bzip2",
+            "unicode", "nls",
+            "readline", "ncurses",
+            "threads",
+            "pcre2",
+        ],
+        "disabled": ["debug", "static"],
+        "description": "Balanced default configuration",
+    },
+}
 
 # =============================================================================
 # SET OPERATION HELPERS (Starlark doesn't have native sets)

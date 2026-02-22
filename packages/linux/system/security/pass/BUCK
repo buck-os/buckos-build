@@ -1,44 +1,29 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
 # pass - Standard Unix password manager
-ebuild_package(
+package(
     name = "pass",
-    src_uri = "https://github.com/zx2c4/password-store/archive/refs/tags/1.7.4.tar.gz",
-
-    sha256 = "ff00bd2db86d8be722fc674f40abdc9b88701e47396378b15a4222c63c1d5243",
-    iuse = [
-        "X",
-        "dmenu",
-        "emacs",
-        "git",
-        "importers",
-        "wayland",
-    ],
-    use_configure = {
-        "-X": "--without-x",
-        "-dmenu": "--disable-dmenu",
-        "-emacs": "--disable-emacs",
-        "-git": "--disable-git",
-        "-importers": "--disable-importers",
-        "-wayland": "--disable-wayland",
-        "X": "--with-x",
-        "dmenu": "--enable-dmenu",
-        "emacs": "--enable-emacs",
-        "git": "--enable-git",
-        "importers": "--enable-importers",
-        "wayland": "--enable-wayland",
-    },
+    build_rule = "binary",
     version = "1.7.4",
+    url = "https://github.com/zx2c4/password-store/archive/refs/tags/1.7.4.tar.gz",
+    sha256 = "ff00bd2db86d8be722fc674f40abdc9b88701e47396378b15a4222c63c1d5243",
     description = "Standard Unix password manager",
     homepage = "https://www.passwordstore.org",
     license = "GPL-2+",
-    src_compile = """
+    use_configure = {
+        "X": ("--with-x", "--without-x"),
+        "dmenu": ("--enable-dmenu", "--disable-dmenu"),
+        "emacs": ("--enable-emacs", "--disable-emacs"),
+        "git": ("--enable-git", "--disable-git"),
+        "importers": ("--enable-importers", "--disable-importers"),
+        "wayland": ("--enable-wayland", "--disable-wayland"),
+    },
+    install_script = """
 make
-""",
-    src_install = """
+
 make install DESTDIR="$DESTDIR" PREFIX=/usr
 """,
-    rdepend = [
+    deps = [
         "//packages/linux/core/bash:bash",
         "//packages/linux/dev-tools/vcs/git:git",
         "//packages/linux/system/security/gnupg:gnupg",

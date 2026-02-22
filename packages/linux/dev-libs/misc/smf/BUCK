@@ -1,5 +1,4 @@
 load("//defs:package.bzl", "package")
-load("//defs:package_defs.bzl", "gen_pkgconfig_headeronly")
 
 # SMF - State Machine Framework from Zephyr RTOS
 # A hierarchical state machine library originally from Zephyr OS
@@ -64,11 +63,20 @@ To use SMF in your project:
 The header file at /usr/include/smf/smf.h provides the API reference.
 The source file at /usr/share/smf/smf.c can be embedded in your project.
 EOF
-    """ + gen_pkgconfig_headeronly(
-        name = "smf",
-        description = "State Machine Framework from Zephyr RTOS (header-only reference)",
-        libdir = "lib64",
-    ),
+
+        # Generate pkg-config file
+        mkdir -p "$OUT/usr/lib64/pkgconfig"
+        cat > "$OUT/usr/lib64/pkgconfig/smf.pc" << EOF
+prefix=/usr
+exec_prefix=${prefix}
+includedir=${prefix}/include
+
+Name: smf
+Description: State Machine Framework from Zephyr RTOS (header-only reference)
+Version: $PV
+Cflags: -I${includedir}
+EOF
+    """,
     deps = [],
     visibility = ["PUBLIC"],
 )

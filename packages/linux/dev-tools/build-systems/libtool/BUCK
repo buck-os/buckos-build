@@ -1,101 +1,86 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
-load("//defs:eclasses.bzl", "inherit")
+load("//defs:package.bzl", "package")
 
 # Libtool cannot use autotools_package because it would create a circular dependency
 # (autotools eclass depends on libtool). Build it manually instead.
-ebuild_package(
+package(
+    build_rule = "binary",
     name = "libtool",
-    src_uri = "https://mirror.buckos.org/l/libtool-2.4.7.tar.xz",
-
-    sha256 = "4f7f217f057ce655ff22559ad221a0fd8ef84ad1fc5fcb6990cecc333aa1635d",
-
-    signature_sha256 = "595c23d4681ad6c5fc40ddbc0af85b54c008968000c902ebb216af44a71fe81d",
-    iuse = ["vanilla"],
-    use_configure = {
-        "-vanilla": "--disable-vanilla",
-        "vanilla": "--enable-vanilla",
-    },
     version = "2.4.7",
-    category = "dev-tools/build-systems",
-    slot = "0",
+    url = "https://mirror.buckos.org/l/libtool-2.4.7.tar.xz",
+    sha256 = "4f7f217f057ce655ff22559ad221a0fd8ef84ad1fc5fcb6990cecc333aa1635d",
     description = "Generic library support script",
     homepage = "https://www.gnu.org/software/libtool/",
     license = "GPL-2+",
+    install_script = '''
+        cd $SRCS
 
-    src_prepare = '''
-# Make all files writable in case they're from a read-only cache
-chmod -R u+w . 2>/dev/null || true
-''',
+        # Make all files writable in case they're from a read-only cache
+        chmod -R u+w . 2>/dev/null || true
 
-    src_configure = '''
-# For cross-compilation: --build is the build machine, --host is the target
-BUILD_SYSTEM=$(./build-aux/config.guess 2>/dev/null || echo x86_64-pc-linux-gnu)
-HOST_SYSTEM=${CHOST:-$(${CC:-gcc} -dumpmachine)}
+        # For cross-compilation: --build is the build machine, --host is the target
+        BUILD_SYSTEM=$(./build-aux/config.guess 2>/dev/null || echo x86_64-pc-linux-gnu)
+        HOST_SYSTEM=${CHOST:-$(${CC:-gcc} -dumpmachine)}
 
-./configure \\
-    --prefix=/usr \\
-    --build=$BUILD_SYSTEM \\
-    --host=$HOST_SYSTEM \\
-    --mandir=/usr/share/man \\
-    --infodir=/usr/share/info \\
-    --datadir=/usr/share \\
-    --sysconfdir=/etc \\
-    --localstatedir=/var \\
-    --libdir=/usr/lib64 \\
-    --disable-static
-''',
+        ./configure \
+            --prefix=/usr \
+            --build=$BUILD_SYSTEM \
+            --host=$HOST_SYSTEM \
+            --mandir=/usr/share/man \
+            --infodir=/usr/share/info \
+            --datadir=/usr/share \
+            --sysconfdir=/etc \
+            --localstatedir=/var \
+            --libdir=/usr/lib64 \
+            --disable-static
 
-    src_compile = '''
-make -j${MAKEOPTS:-$(nproc)}
-''',
+        make -j${MAKEOPTS:-$(nproc)}
 
-    src_install = '''
-make DESTDIR="$DESTDIR" install
+        make DESTDIR="$OUT" install
 
-# Create wrapper scripts that set the correct data directory
-# libtoolize has hardcoded paths that need to be overridden
-BINDIR="$DESTDIR/usr/bin"
-DATADIR="$DESTDIR/usr/share/libtool"
-ACLOCALDIR="$DESTDIR/usr/share/aclocal"
+        # Create wrapper scripts that set the correct data directory
+        # libtoolize has hardcoded paths that need to be overridden
+        BINDIR="$OUT/usr/bin"
+        DATADIR="$OUT/usr/share/libtool"
+        ACLOCALDIR="$OUT/usr/share/aclocal"
 
-# Create symlink for m4 directory - libtoolize expects m4 files in $pkgdatadir/m4
-# but they're installed to /usr/share/aclocal
-mkdir -p "$DATADIR"
-ln -sf ../aclocal "$DATADIR/m4"
+        # Create symlink for m4 directory - libtoolize expects m4 files in $pkgdatadir/m4
+        # but they're installed to /usr/share/aclocal
+        mkdir -p "$DATADIR"
+        ln -sf ../aclocal "$DATADIR/m4"
 
-# libtoolize --ltdl expects libltdl source files in $DATADIR/libltdl/
-# These include COPYING.LIB, README, loaders/*.c, and *.c files
-LIBLTDL_DIR="$DATADIR/libltdl"
-mkdir -p "$LIBLTDL_DIR/loaders"
+        # libtoolize --ltdl expects libltdl source files in $DATADIR/libltdl/
+        # These include COPYING.LIB, README, loaders/*.c, and *.c files
+        LIBLTDL_DIR="$DATADIR/libltdl"
+        mkdir -p "$LIBLTDL_DIR/loaders"
 
-# Copy required files from the source tree to libltdl directory
-# libtoolize copies these when --ltdl is used
-for f in COPYING.LIB README Makefile.am Makefile.in configure configure.ac \
-         aclocal.m4 config-h.in ltdl.c ltdl.h ltdl.mk lt_dlloader.c lt_error.c \
-         lt__alloc.c lt__argz.c lt__dirent.c lt__strl.c slist.c; do
-    if [ -f "$DATADIR/$f" ]; then
-        cp "$DATADIR/$f" "$LIBLTDL_DIR/"
-    fi
-done
+        # Copy required files from the source tree to libltdl directory
+        # libtoolize copies these when --ltdl is used
+        for f in COPYING.LIB README Makefile.am Makefile.in configure configure.ac \
+                 aclocal.m4 config-h.in ltdl.c ltdl.h ltdl.mk lt_dlloader.c lt_error.c \
+                 lt__alloc.c lt__argz.c lt__dirent.c lt__strl.c slist.c; do
+            if [ -f "$DATADIR/$f" ]; then
+                cp "$DATADIR/$f" "$LIBLTDL_DIR/"
+            fi
+        done
 
-# Copy loaders directory
-if [ -d "$DATADIR/loaders" ]; then
-    cp -r "$DATADIR/loaders/"* "$LIBLTDL_DIR/loaders/"
-fi
+        # Copy loaders directory
+        if [ -d "$DATADIR/loaders" ]; then
+            cp -r "$DATADIR/loaders/"* "$LIBLTDL_DIR/loaders/"
+        fi
 
-# Create libltdl subdirectory for headers (libtoolize expects this structure)
-mkdir -p "$LIBLTDL_DIR/libltdl"
-for f in lt__alloc.h lt__argz_.h lt__dirent.h lt__glibc.h lt__private.h \
-         lt__strl.h lt_dlloader.h lt_error.h lt_system.h slist.h; do
-    if [ -f "$DATADIR/libltdl/$f" ]; then
-        cp "$DATADIR/libltdl/$f" "$LIBLTDL_DIR/libltdl/"
-    fi
-done
+        # Create libltdl subdirectory for headers (libtoolize expects this structure)
+        mkdir -p "$LIBLTDL_DIR/libltdl"
+        for f in lt__alloc.h lt__argz_.h lt__dirent.h lt__glibc.h lt__private.h \
+                 lt__strl.h lt_dlloader.h lt_error.h lt_system.h slist.h; do
+            if [ -f "$DATADIR/libltdl/$f" ]; then
+                cp "$DATADIR/libltdl/$f" "$LIBLTDL_DIR/libltdl/"
+            fi
+        done
 
-# Create wrapper for libtoolize
-if [ -f "$BINDIR/libtoolize" ]; then
-    mv "$BINDIR/libtoolize" "$BINDIR/libtoolize.real"
-    cat > "$BINDIR/libtoolize" << 'WRAPPER_EOF'
+        # Create wrapper for libtoolize
+        if [ -f "$BINDIR/libtoolize" ]; then
+            mv "$BINDIR/libtoolize" "$BINDIR/libtoolize.real"
+            cat > "$BINDIR/libtoolize" << 'WRAPPER_EOF'
 #!/bin/sh
 # Wrapper to set correct paths for libtoolize
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -106,13 +91,13 @@ export _lt_pkgdatadir="$SHARE_DIR"
 export aclocaldir="$ACLOCAL_DIR"
 exec "$SCRIPT_DIR/libtoolize.real" "$@"
 WRAPPER_EOF
-    chmod +x "$BINDIR/libtoolize"
-fi
+            chmod +x "$BINDIR/libtoolize"
+        fi
 
-# Create wrapper for libtool
-if [ -f "$BINDIR/libtool" ]; then
-    mv "$BINDIR/libtool" "$BINDIR/libtool.real"
-    cat > "$BINDIR/libtool" << 'WRAPPER_EOF'
+        # Create wrapper for libtool
+        if [ -f "$BINDIR/libtool" ]; then
+            mv "$BINDIR/libtool" "$BINDIR/libtool.real"
+            cat > "$BINDIR/libtool" << 'WRAPPER_EOF'
 #!/bin/sh
 # Wrapper to set correct paths for libtool
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -120,16 +105,15 @@ SHARE_DIR="${SCRIPT_DIR}/../share/libtool"
 export pkgdatadir="$SHARE_DIR"
 exec "$SCRIPT_DIR/libtool.real" "$@"
 WRAPPER_EOF
-    chmod +x "$BINDIR/libtool"
-fi
+            chmod +x "$BINDIR/libtool"
+        fi
 
-# Remove .la files to prevent libtool absolute path issues in cross-compilation
-# This includes libltdl.la which was causing "file in wrong format" errors
-find "$DESTDIR" -name '*.la' -type f -delete 2>/dev/null || true
-''',
-
+        # Remove .la files to prevent libtool absolute path issues in cross-compilation
+        # This includes libltdl.la which was causing "file in wrong format" errors
+        find "$OUT" -name '*.la' -type f -delete 2>/dev/null || true
+    ''',
     # No dependencies - libtool is a bootstrap package that must build without
     # depending on automake/autoconf (which themselves depend on libtool via autotools eclass)
-    depend = [],
+    deps = [],
     visibility = ["PUBLIC"],
 )

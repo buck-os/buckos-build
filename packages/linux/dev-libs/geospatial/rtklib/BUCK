@@ -1,40 +1,42 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
-ebuild_package(
+package(
     name = "rtklib",
-    src_uri = "https://github.com/rtklibexplorer/RTKLIB/archive/f1543bf9dc5f179298c7bf7fb34cc5c05220eec7.tar.gz",
-
-    sha256 = "99a9e40967075f3fd9d1fcb2c83f623bca768c96205f4c110100f8185df9df8c",
+    build_rule = "binary",
     version = "demo5-b34b",
+    url = "https://github.com/rtklibexplorer/RTKLIB/archive/f1543bf9dc5f179298c7bf7fb34cc5c05220eec7.tar.gz",
+    sha256 = "99a9e40967075f3fd9d1fcb2c83f623bca768c96205f4c110100f8185df9df8c",
     description = "RTKLIB: An Open Source Program Package for GNSS Positioning",
     homepage = "https://github.com/rtklibexplorer/RTKLIB",
     license = "BSD-2",
-    src_compile = """
-        SRCROOT=$(pwd)
-        cd app/consapp
-        export CC=gcc
-        export OPTS="-DTRACE -DENAGLO -DENAQZS -DENAGAL -DENACMP -DENAIRN -DNFREQ=2"
-        export CFLAGS="-Wall -O3 -ansi -pedantic -Wno-unused-but-set-variable -I$SRCROOT/src $OPTS"
-        export LDLIBS="-lm -lrt"
+    install_script = """
+mkdir -p "$OUT"
+BUILD=$(mktemp -d)
+cp -a "$SRCS"/. "$BUILD/"
+cd "$BUILD"
 
-        for dir in pos2kml str2str rnx2rtkp convbin rtkrcv; do
-            make -C $dir/gcc CC="$CC" CFLAGS="$CFLAGS" LDLIBS="$LDLIBS"
-        done
-    """,
-    src_install = """
-        mkdir -p "$DESTDIR/usr/bin"
-        mkdir -p "$DESTDIR/usr/lib"
-        mkdir -p "$DESTDIR/usr/include/rtklib"
+SRCROOT=$(pwd)
+cd app/consapp
+export OPTS="-DTRACE -DENAGLO -DENAQZS -DENAGAL -DENACMP -DENAIRN -DNFREQ=2"
+export CFLAGS="-Wall -O3 -ansi -pedantic -Wno-unused-but-set-variable -I$SRCROOT/src $OPTS"
+export LDLIBS="-lm -lrt"
 
-        cd app/consapp
-        for bin in pos2kml str2str rnx2rtkp convbin rtkrcv; do
-            if [ -f $bin/gcc/$bin ]; then
-                cp $bin/gcc/$bin "$DESTDIR/usr/bin/"
-            fi
-        done
+for dir in pos2kml str2str rnx2rtkp convbin rtkrcv; do
+    make -C $dir/gcc CC="${CC:-gcc}" CFLAGS="$CFLAGS" LDLIBS="$LDLIBS"
+done
 
-        cd ../..
-        cp src/rtklib.h "$DESTDIR/usr/include/rtklib/"
-    """,
+mkdir -p "$OUT/usr/bin"
+mkdir -p "$OUT/usr/lib"
+mkdir -p "$OUT/usr/include/rtklib"
+
+for bin in pos2kml str2str rnx2rtkp convbin rtkrcv; do
+    if [ -f $bin/gcc/$bin ]; then
+        cp $bin/gcc/$bin "$OUT/usr/bin/"
+    fi
+done
+
+cd ../..
+cp src/rtklib.h "$OUT/usr/include/rtklib/"
+""",
     visibility = ["PUBLIC"],
 )

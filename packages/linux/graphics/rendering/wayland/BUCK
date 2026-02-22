@@ -1,39 +1,31 @@
-load("//defs:package_defs.bzl", "download_source", "meson_package", "ebuild_package")
+load("//defs:package.bzl", "package")
 
 # wayland - Wayland display protocol libraries and scanner tool
 # Following Gentoo's approach: disable dtd_validation to avoid libxml2 runtime dependency
 
-download_source(
-    name = "wayland-src",
-    src_uri = "https://gitlab.freedesktop.org/wayland/wayland/-/releases/1.23.1/downloads/wayland-1.23.1.tar.xz",
-    sha256 = "864fb2a8399e2d0ec39d56e9d9b753c093775beadc6022ce81f441929a81e5ed",
-    signature_required = False,
-)
-
 # Native wayland-scanner build for cross-compilation
 # This builds wayland-scanner with the host toolchain so it can run during cross builds
-ebuild_package(
+package(
     name = "wayland-scanner",
-    source = ":wayland-src",
+    build_rule = "binary",
     version = "1.23.1",
+    url = "https://gitlab.freedesktop.org/wayland/wayland/-/releases/1.23.1/downloads/wayland-1.23.1.tar.xz",
+    sha256 = "864fb2a8399e2d0ec39d56e9d9b753c093775beadc6022ce81f441929a81e5ed",
     description = "Native wayland-scanner for cross-compilation",
     homepage = "https://gitlab.freedesktop.org/wayland/wayland",
     license = "MIT",
-    # Build with host toolchain only
-    bdepend = [],
-    src_prepare = "",
-    exec_bdepend = [
+    deps = [
         "//packages/linux/system/libs/data/expat:expat-host",
     ],
-    src_configure = """
+    install_script = """
 # Use host compiler for native build
 unset CC CXX AR RANLIB LD STRIP
 unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS
 export CC=gcc
 export CXX=g++
 
-# Find buckos-built expat-host in exec deps
-for dep in $EXEC_DEPS_DIRS; do
+# Find buckos-built expat-host in deps
+for dep in $DEPS_DIRS; do
     if [ -f "$dep/usr/lib64/pkgconfig/expat.pc" ]; then
         export PKG_CONFIG_PATH="$dep/usr/lib64/pkgconfig:$dep/usr/share/pkgconfig"
         export CFLAGS="-I$dep/usr/include"
@@ -53,17 +45,16 @@ done
 export PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
 
 mkdir -p build
-meson setup build \\
-    --prefix=/usr \\
-    --libdir=lib64 \\
-    --buildtype=release \\
-    -Ddocumentation=false \\
-    -Dtests=false \\
-    -Ddtd_validation=false \\
-    -Dlibraries=false \\
+meson setup build \
+    --prefix=/usr \
+    --libdir=lib64 \
+    --buildtype=release \
+    -Ddocumentation=false \
+    -Dtests=false \
+    -Ddtd_validation=false \
+    -Dlibraries=false \
     -Dscanner=true
-""",
-    src_compile = """
+
 # List available targets and find the scanner
 echo "Available ninja targets:"
 ninja -C build -t targets | head -20 || true
@@ -85,8 +76,7 @@ else
     # Build everything if we can't find the specific target
     ninja -C build
 fi
-""",
-    src_install = """
+
 mkdir -p "$DESTDIR/usr/bin"
 cp build/src/wayland-scanner "$DESTDIR/usr/bin/"
 chmod +x "$DESTDIR/usr/bin/wayland-scanner"
@@ -145,20 +135,24 @@ EOF
     visibility = ["PUBLIC"],
 )
 
-meson_package(
+package(
     name = "wayland",
-    source = ":wayland-src",
+    build_rule = "meson",
     version = "1.23.1",
+    url = "https://gitlab.freedesktop.org/wayland/wayland/-/releases/1.23.1/downloads/wayland-1.23.1.tar.xz",
+    sha256 = "864fb2a8399e2d0ec39d56e9d9b753c093775beadc6022ce81f441929a81e5ed",
     description = "Wayland display protocol libraries and scanner",
     homepage = "https://gitlab.freedesktop.org/wayland/wayland",
     license = "MIT",
     deps = [
         "//packages/linux/system/libs/utility/libffi:libffi",
         "//packages/linux/system/libs/data/expat:expat",
-    ],
-    # Use native wayland-scanner for cross-compilation
-    exec_bdepend = [
         ":wayland-scanner",
+    ],
+    pre_configure_cmds = [
+        # Fix wayland-util.h for C++ consumers: __STDC_VERSION__ is undefined in C++
+        # mode, triggering -Werror=undef in KDE builds (ECM enables -Wundef globally).
+        "sed -i 's/#if __STDC_VERSION__ >= 202311L/#if defined(__STDC_VERSION__) \\&\\& __STDC_VERSION__ >= 202311L/g' src/wayland-util.h",
     ],
     meson_args = [
         "-Ddocumentation=false",
@@ -170,160 +164,5 @@ meson_package(
         "-Dscanner=true",
         "-Dlibraries=true",
     ],
-    # For cross-compilation, find the native wayland-scanner from exec_bdepend
-    pre_configure = """
-# Fix wayland-util.h for C++ consumers: __STDC_VERSION__ is undefined in C++
-# mode, triggering -Werror=undef in KDE builds (ECM enables -Wundef globally).
-sed -i 's/#if __STDC_VERSION__ >= 202311L/#if defined(__STDC_VERSION__) \&\& __STDC_VERSION__ >= 202311L/g' src/wayland-util.h
-
-# Find native wayland-scanner from exec_bdepend
-WAYLAND_SCANNER=""
-IFS=':' read -ra _EXEC_BDEP_ARRAY <<< "${EXEC_BDEP_BASE_DIRS:-}"
-for _dep in "${_EXEC_BDEP_ARRAY[@]}"; do
-    if [ -x "$_dep/usr/bin/wayland-scanner" ]; then
-        WAYLAND_SCANNER="$_dep/usr/bin/wayland-scanner"
-        echo "Found native wayland-scanner: $WAYLAND_SCANNER"
-        break
-    fi
-done
-
-if [ -z "$WAYLAND_SCANNER" ]; then
-    # Fallback to host wayland-scanner
-    if [ -x "/usr/bin/wayland-scanner" ]; then
-        WAYLAND_SCANNER="/usr/bin/wayland-scanner"
-        echo "Using host wayland-scanner: $WAYLAND_SCANNER"
-    else
-        echo "ERROR: No wayland-scanner found, build will fail"
-        exit 1
-    fi
-fi
-
-# Create a wayland-scanner.pc that points to the actual binary location.
-# The installed .pc file has prefix=/usr which resolves wayland_scanner to
-# /usr/bin/wayland-scanner — a path that doesn't exist in the build tree.
-# Meson reads this variable via get_variable('wayland_scanner') and then
-# calls find_program() with the absolute path, which fails.
-mkdir -p "$S/build-pkgconfig"
-cat > "$S/build-pkgconfig/wayland-scanner.pc" << EOF
-wayland_scanner=$WAYLAND_SCANNER
-
-Name: Wayland Scanner
-Description: Wayland scanner tool
-Version: 1.23.1
-EOF
-
-# Create meson native file for host tools.
-# pkg_config_path tells meson where to find native (build-machine) .pc files;
-# this is needed because env vars don't carry between ebuild phases.
-cat > "$S/native.ini" << EOF
-[binaries]
-wayland-scanner = '$WAYLAND_SCANNER'
-pkg-config = 'pkg-config'
-
-[built-in options]
-pkg_config_path = ['$S/build-pkgconfig', '/usr/lib64/pkgconfig', '/usr/share/pkgconfig']
-EOF
-""",
-    # Use native file for host tools + cross-file for cross-compilation
-    src_configure = """
-# Wipe build directory first to ensure clean configuration
-if [ -d "${BUILD_DIR:-build}" ]; then
-    echo "Build directory exists, wiping for clean reconfiguration..."
-    rm -rf "${BUILD_DIR:-build}"
-fi
-
-mkdir -p "${BUILD_DIR:-build}"
-
-# Build meson command with native file for host tools
-MESON_CMD="meson setup \\"${BUILD_DIR:-build}\\" --prefix=\\"\${EPREFIX:-/usr}\\" --libdir=\\"\${LIBDIR:-lib64}\\" --buildtype=\\"\${MESON_BUILD_TYPE:-release}\\" --native-file=\\"$S/native.ini\\""
-
-# Add cross-file if cross-compiling (using the standard meson eclass logic)
-if [ "${CROSS_COMPILING:-false}" = "true" ] && [ -n "${CC:-}" ]; then
-    # Generate cross-file using the same logic as meson eclass
-    CROSS_FILE="${BUILD_DIR:-build}/cross-file.ini"
-
-    # Build c_args and cpp_args from CFLAGS/CXXFLAGS
-    MESON_C_ARGS=""
-    for flag in ${CFLAGS:-}; do
-        if [ -n "$MESON_C_ARGS" ]; then
-            MESON_C_ARGS="${MESON_C_ARGS}, '${flag}'"
-        else
-            MESON_C_ARGS="'${flag}'"
-        fi
-    done
-
-    MESON_CXX_ARGS=""
-    for flag in ${CXXFLAGS:-}; do
-        if [ -n "$MESON_CXX_ARGS" ]; then
-            MESON_CXX_ARGS="${MESON_CXX_ARGS}, '${flag}'"
-        else
-            MESON_CXX_ARGS="'${flag}'"
-        fi
-    done
-
-    MESON_LINK_ARGS=""
-    for flag in ${LDFLAGS:-}; do
-        if [ -n "$MESON_LINK_ARGS" ]; then
-            MESON_LINK_ARGS="${MESON_LINK_ARGS}, '${flag}'"
-        else
-            MESON_LINK_ARGS="'${flag}'"
-        fi
-    done
-
-    # Detect target architecture from CHOST or compiler
-    MESON_CPU_FAMILY="x86_64"
-    MESON_CPU="x86_64"
-    MESON_ENDIAN="little"
-
-    TARGET_ARCH="${CHOST:-$(${CC:-gcc} -dumpmachine)}"
-    case "$TARGET_ARCH" in
-        aarch64*|arm64*)
-            MESON_CPU_FAMILY="aarch64"
-            MESON_CPU="aarch64"
-            ;;
-        x86_64*|amd64*)
-            MESON_CPU_FAMILY="x86_64"
-            MESON_CPU="x86_64"
-            ;;
-        arm*)
-            MESON_CPU_FAMILY="arm"
-            MESON_CPU="arm"
-            ;;
-        riscv64*)
-            MESON_CPU_FAMILY="riscv64"
-            MESON_CPU="riscv64"
-            ;;
-    esac
-
-    cat > "$CROSS_FILE" << CROSSEOF
-[binaries]
-c = '${CC}'
-cpp = '${CXX}'
-ar = '${AR:-ar}'
-strip = '${STRIP:-strip}'
-pkgconfig = 'pkg-config'
-
-[built-in options]
-c_args = [${MESON_C_ARGS}]
-cpp_args = [${MESON_CXX_ARGS}]
-c_link_args = [${MESON_LINK_ARGS}]
-cpp_link_args = [${MESON_LINK_ARGS}]
-
-[host_machine]
-system = 'linux'
-cpu_family = '$MESON_CPU_FAMILY'
-cpu = '$MESON_CPU'
-endian = '$MESON_ENDIAN'
-CROSSEOF
-    echo "Generated meson cross-file: $CROSS_FILE"
-    cat "$CROSS_FILE"
-
-    MESON_CMD="$MESON_CMD --cross-file=\\"$CROSS_FILE\\""
-fi
-
-MESON_CMD="$MESON_CMD \${MESON_EXTRA_ARGS:-}"
-
-eval $MESON_CMD
-""",
     visibility = ["PUBLIC"],
 )

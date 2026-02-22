@@ -1,22 +1,25 @@
 load("//defs:package.bzl", "package")
-load("//defs:package_defs.bzl", "ebuild_package")
 
 # ── busybox-static ────────────────────────────────────────────────────
 #
 # Full-featured static busybox for initramfs.  Includes ash, coreutils,
 # mount helpers, and init utilities -- everything needed for a minimal
-# live-boot environment.  Kept as ebuild_package because the Kconfig
+# live-boot environment.  Uses binary build rule because the Kconfig
 # setup and custom install (applet symlinks) are too specialised for the
 # autotools pipeline.
-ebuild_package(
+package(
     name = "busybox-static",
-    source = ":busybox-src",
+    build_rule = "binary",
     version = "1.36.1",
+    url = "https://github.com/mirror/busybox/archive/refs/tags/1_36_1.tar.gz",
+    sha256 = "ea5494846c51d946e5e801d1c099b438f683af8147e0be24ca4001073143110f",
+    source = ":busybox-src",
     description = "Static busybox for initramfs with all essential applets",
     homepage = "https://busybox.net/",
     license = "GPL-2.0",
     deps = [],  # No deps - fully static
-    pre_configure = """
+    install_script = """
+# Kconfig setup
 export KCONFIG_NOTIMESTAMP=1
 
 # Start with allnoconfig (all disabled) for minimal build
@@ -119,20 +122,14 @@ EOF
 yes "" | make oldconfig > /dev/null 2>&1
 
 echo "Generated minimal static busybox config for initramfs"
-""",
-    src_configure = """
-# Busybox uses Kconfig - no configure script needed
-echo "Busybox configuration done in pre_configure"
-""",
-    src_compile = """
+
 # Build with static flags
-make -j$(nproc) \\
-    CROSS_COMPILE="${CROSS_COMPILE:-}" \\
-    CC="${CC:-gcc}" \\
-    HOSTCC="${HOSTCC:-gcc}" \\
+make -j$(nproc) \
+    CROSS_COMPILE="${CROSS_COMPILE:-}" \
+    CC="${CC:-gcc}" \
+    HOSTCC="${HOSTCC:-gcc}" \
     LDFLAGS="-static"
-""",
-    src_install = """
+
 # Install busybox binary
 mkdir -p "$DESTDIR/bin" "$DESTDIR/sbin"
 cp busybox "$DESTDIR/bin/busybox"

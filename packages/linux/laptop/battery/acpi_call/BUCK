@@ -2,90 +2,33 @@
 # A kernel module to call ACPI methods from userspace
 #
 # NOTE: Kernel modules must be built with the same compiler as the kernel.
-# This package uses ebuild_package with custom phases to properly detect
-# the kernel build directory and compiler from the BuckOS kernel dependency.
+# This package uses binary build_rule with a custom install_script to properly
+# detect the kernel build directory and compiler from the BuckOS kernel dependency.
 
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
-ebuild_package(
+package(
     name = "acpi_call",
-    src_uri = "https://github.com/nix-community/acpi_call/archive/refs/tags/v1.2.2.tar.gz",
-
-    sha256 = "8b1902a94395c2fa5a97f81c94868a9cbc46a48e12309ad01626439bde96f1d9",
-    iuse = ["examples"],
-    use_configure = {
-        "-examples": "--disable-examples",
-        "examples": "--enable-examples",
-    },
+    build_rule = "binary",
     version = "1.2.2",
+    url = "https://github.com/nix-community/acpi_call/archive/refs/tags/v1.2.2.tar.gz",
+    sha256 = "8b1902a94395c2fa5a97f81c94868a9cbc46a48e12309ad01626439bde96f1d9",
     description = "Kernel module to call ACPI methods from userspace",
     homepage = "https://github.com/nix-community/acpi_call",
     license = "GPL-3.0",
+    install_script = '''
+set -e
 
-    # Find kernel build directory from dependencies
-    pre_configure = '''
 # Find kernel build directory from BuckOS kernel package
-KERNEL_DIR=""
-for dep_dir in $DEP_BASE_DIRS; do
-    # Look for kernel source in /usr/src/linux-*
-    for kdir in "$dep_dir"/usr/src/linux-*; do
-        if [ -d "$kdir" ] && [ -f "$kdir/Makefile" ]; then
-            KERNEL_DIR="$kdir"
-            echo "Found kernel build directory: $KERNEL_DIR"
-            break 2
-        fi
-    done
-    # Also check lib/modules/*/build symlink
-    for moddir in "$dep_dir"/lib/modules/*/build; do
-        if [ -d "$moddir" ]; then
-            KERNEL_DIR="$moddir"
-            echo "Found kernel build directory via modules: $KERNEL_DIR"
-            break 2
-        fi
-    done
-done
-
-if [ -z "$KERNEL_DIR" ]; then
-    echo "WARNING: No kernel build directory found in dependencies"
-    echo "Falling back to host kernel (may cause ABI issues)"
-    KERNEL_DIR="/lib/modules/$(uname -r)/build"
-fi
-
-export KERNEL_DIR
-
-# Create GCC wrapper for GCC 14+ compatibility (same as kernel build)
-CC_BIN="${CC:-gcc}"
-CC_VER=$($CC_BIN --version 2>/dev/null | head -1)
-if echo "$CC_VER" | grep -iq gcc; then
-    GCC_MAJOR=$(echo "$CC_VER" | grep -oE "[0-9]+\.[0-9]+" | head -1 | cut -d. -f1)
-    if [ -n "$GCC_MAJOR" ] && [ "$GCC_MAJOR" -ge 14 ] 2>/dev/null; then
-        echo "GCC 14+ detected, creating wrapper with -std=gnu11"
-        WRAPPER_DIR="$T/.cc-wrapper"
-        mkdir -p "$WRAPPER_DIR"
-        cat > "$WRAPPER_DIR/gcc" << 'WRAPPER'
-#!/bin/bash
-exec /usr/bin/gcc "$@" -std=gnu11
-WRAPPER
-        chmod +x "$WRAPPER_DIR/gcc"
-        export CC="$WRAPPER_DIR/gcc"
-        export HOSTCC="$WRAPPER_DIR/gcc"
-    fi
-fi
-''',
-
-    src_compile = '''
-# Find kernel build directory (need to do this here as env doesn't persist from pre_configure)
 KERNEL_DIR=""
 IFS=':' read -ra DEP_DIRS <<< "$DEP_BASE_DIRS"
 for dep_dir in "${DEP_DIRS[@]}"; do
-    # Look for kernel source in /usr/src/linux-*
     for kdir in "$dep_dir"/usr/src/linux-*; do
         if [ -d "$kdir" ] && [ -f "$kdir/Makefile" ]; then
             KERNEL_DIR="$kdir"
             break 2
         fi
     done
-    # Also check lib/modules/*/build symlink
     for moddir in "$dep_dir"/lib/modules/*/build; do
         if [ -d "$moddir" ]; then
             KERNEL_DIR="$moddir"
@@ -99,40 +42,39 @@ if [ -z "$KERNEL_DIR" ]; then
     exit 1
 fi
 
+# Create GCC wrapper for GCC 14+ compatibility
+CC_BIN="${CC:-gcc}"
+CC_VER=$($CC_BIN --version 2>/dev/null | head -1)
+if echo "$CC_VER" | grep -iq gcc; then
+    GCC_MAJOR=$(echo "$CC_VER" | grep -oE "[0-9]+\.[0-9]+" | head -1 | cut -d. -f1)
+    if [ -n "$GCC_MAJOR" ] && [ "$GCC_MAJOR" -ge 14 ] 2>/dev/null; then
+        echo "GCC 14+ detected, creating wrapper with -std=gnu11"
+        WRAPPER_DIR="$(mktemp -d)"
+        cat > "$WRAPPER_DIR/gcc" << 'WRAPPER'
+#!/bin/bash
+exec /usr/bin/gcc "$@" -std=gnu11
+WRAPPER
+        chmod +x "$WRAPPER_DIR/gcc"
+        export CC="$WRAPPER_DIR/gcc"
+        export HOSTCC="$WRAPPER_DIR/gcc"
+    fi
+fi
+
+cd "$SRCS"
+
 echo "Building acpi_call module against kernel at: $KERNEL_DIR"
 make -C "$KERNEL_DIR" M="$PWD" ${CC:+CC=$CC} modules
-''',
-
-    src_install = '''
-# Find kernel build directory again for install phase
-KERNEL_DIR=""
-IFS=':' read -ra DEP_DIRS <<< "$DEP_BASE_DIRS"
-for dep_dir in "${DEP_DIRS[@]}"; do
-    for kdir in "$dep_dir"/usr/src/linux-*; do
-        if [ -d "$kdir" ] && [ -f "$kdir/Makefile" ]; then
-            KERNEL_DIR="$kdir"
-            break 2
-        fi
-    done
-    for moddir in "$dep_dir"/lib/modules/*/build; do
-        if [ -d "$moddir" ]; then
-            KERNEL_DIR="$moddir"
-            break 2
-        fi
-    done
-done
 
 # Install the kernel module
 KRELEASE=$(make -C "$KERNEL_DIR" -s kernelrelease 2>/dev/null || basename "$KERNEL_DIR" | sed 's/linux-//')
-mkdir -p "$DESTDIR/lib/modules/$KRELEASE/extra"
-install -m 644 acpi_call.ko "$DESTDIR/lib/modules/$KRELEASE/extra/"
+mkdir -p "$OUT/lib/modules/$KRELEASE/extra"
+install -m 644 acpi_call.ko "$OUT/lib/modules/$KRELEASE/extra/"
 
 # Install documentation
-mkdir -p "$DESTDIR/usr/share/doc/acpi_call"
-install -m 644 README.md "$DESTDIR/usr/share/doc/acpi_call/" 2>/dev/null || true
+mkdir -p "$OUT/usr/share/doc/acpi_call"
+install -m 644 README.md "$OUT/usr/share/doc/acpi_call/" 2>/dev/null || true
 ''',
-
-    bdepend = [
+    deps = [
         "//packages/linux/kernel/buckos-kernel:buckos-kernel",
     ],
     visibility = ["PUBLIC"],

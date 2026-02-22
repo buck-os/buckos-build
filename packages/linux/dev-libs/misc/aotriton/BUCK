@@ -1,5 +1,4 @@
 load("//defs:package.bzl", "package")
-load("//defs:package_defs.bzl", "gen_pkgconfig")
 
 # AOTriton - Ahead-of-Time Triton Compiler for AMD GPUs
 # AOTriton is a compiler that converts Triton kernels into GPU code ahead of time,
@@ -35,11 +34,22 @@ package(
 
         # Build - note that 'make install' runs the full build process
         make install DESTDIR="$OUT"
-    """ + gen_pkgconfig(
-        name = "aotriton",
-        description = "Ahead-of-Time Triton compiler for AMD ROCm GPUs",
-        libs = "-laotriton_v2",
-    ),
+
+        # Generate pkg-config file
+        mkdir -p "$OUT/usr/lib64/pkgconfig"
+        cat > "$OUT/usr/lib64/pkgconfig/aotriton.pc" << EOF
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${prefix}/lib64
+includedir=${prefix}/include
+
+Name: aotriton
+Description: Ahead-of-Time Triton compiler for AMD ROCm GPUs
+Version: $PV
+Libs: -laotriton_v2
+Cflags: -I${includedir}
+EOF
+    """,
     deps = [
         "//packages/linux/system/gpu/libraries/rocm:rocm",
         "//packages/linux/system/libs/compression/zstd:zstd",

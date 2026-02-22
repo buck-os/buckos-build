@@ -1,37 +1,15 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # Perl - Practical Extraction and Report Language
 # =============================================================================
 
-ebuild_package(
+package(
+    build_rule = "binary",
     name = "perl",
-    src_uri = "https://www.cpan.org/src/5.0/perl-5.38.2.tar.xz",
-
-    sha256 = "d91115e90b896520e83d4de6b52f8254ef2b70a8d545ffab33200ea9f1cf29e8",
-    iuse = [
-        "berkdb",
-        "gdbm",
-        "minimal",
-        "perl_features_debug",
-        "perl_features_ithreads",
-        "perl_features_quadmath",
-    ],
-    use_configure = {
-        "-berkdb": "--disable-berkdb",
-        "-gdbm": "--disable-gdbm",
-        "-minimal": "--disable-minimal",
-        "-perl_features_debug": "--disable-perl_features_debug",
-        "-perl_features_ithreads": "--disable-perl_features_ithreads",
-        "-perl_features_quadmath": "--disable-perl_features_quadmath",
-        "berkdb": "--enable-berkdb",
-        "gdbm": "--enable-gdbm",
-        "minimal": "--enable-minimal",
-        "perl_features_debug": "--enable-perl_features_debug",
-        "perl_features_ithreads": "--enable-perl_features_ithreads",
-        "perl_features_quadmath": "--enable-perl_features_quadmath",
-    },
     version = "5.38.2",
+    url = "https://www.cpan.org/src/5.0/perl-5.38.2.tar.xz",
+    sha256 = "d91115e90b896520e83d4de6b52f8254ef2b70a8d545ffab33200ea9f1cf29e8",
     description = "Perl is a highly capable, feature-rich programming language",
     homepage = "https://www.perl.org/",
     license = "Artistic-1.0-Perl OR GPL-1.0-or-later",
@@ -39,30 +17,29 @@ ebuild_package(
     # Perl Configure compiles and RUNS test programs, so it CANNOT cross-compile
     # inside the network-isolated mount namespace (host gcc can't link against
     # sysroot's glibc). Build with host compiler instead.
-    use_bootstrap = False,
-    src_configure = """
+    install_script = """
+cd "$SRCS"
+
 chmod +x Configure
-./Configure -des \\
-    -Dprefix=/usr \\
-    -Dvendorprefix=/usr \\
-    -Dprivlib=/usr/lib/perl5/5.38/core_perl \\
-    -Darchlib=/usr/lib/perl5/5.38/core_perl \\
-    -Dsitelib=/usr/lib/perl5/5.38/site_perl \\
-    -Dsitearch=/usr/lib/perl5/5.38/site_perl \\
-    -Dvendorlib=/usr/lib/perl5/5.38/vendor_perl \\
-    -Dvendorarch=/usr/lib/perl5/5.38/vendor_perl \\
-    -Dman1dir=/usr/share/man/man1 \\
-    -Dman3dir=/usr/share/man/man3 \\
-    -Duseshrplib \\
+./Configure -des \
+    -Dprefix=/usr \
+    -Dvendorprefix=/usr \
+    -Dprivlib=/usr/lib/perl5/5.38/core_perl \
+    -Darchlib=/usr/lib/perl5/5.38/core_perl \
+    -Dsitelib=/usr/lib/perl5/5.38/site_perl \
+    -Dsitearch=/usr/lib/perl5/5.38/site_perl \
+    -Dvendorlib=/usr/lib/perl5/5.38/vendor_perl \
+    -Dvendorarch=/usr/lib/perl5/5.38/vendor_perl \
+    -Dman1dir=/usr/share/man/man1 \
+    -Dman3dir=/usr/share/man/man3 \
+    -Duseshrplib \
     -Dusethreads
-""",
-    src_compile = """
+
 make -j${MAKEOPTS:-$(nproc)}
+
+make DESTDIR="$OUT" install
 """,
-    src_install = """
-make DESTDIR="$DESTDIR" install
-""",
-    bdepend = [
+    deps = [
         "//packages/linux/core/zlib:zlib",
     ],
     visibility = ["PUBLIC"],

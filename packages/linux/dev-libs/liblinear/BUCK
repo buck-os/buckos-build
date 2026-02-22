@@ -1,5 +1,4 @@
 load("//defs:package.bzl", "package")
-load("//defs:package_defs.bzl", "gen_pkgconfig")
 
 package(
     name = "liblinear",
@@ -32,12 +31,22 @@ package(
         # Install header
         mkdir -p "$DESTDIR/usr/include"
         cp linear.h "$DESTDIR/usr/include/"
-    """ + gen_pkgconfig(
-        name = "liblinear",
-        description = "A Library for Large Linear Classification",
-        libs = "-llinear",
-        destvar = "DESTDIR",
-    ),
+
+        # Generate pkg-config file
+        mkdir -p "$DESTDIR/usr/lib64/pkgconfig"
+        cat > "$DESTDIR/usr/lib64/pkgconfig/liblinear.pc" << EOF
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${prefix}/lib64
+includedir=${prefix}/include
+
+Name: liblinear
+Description: A Library for Large Linear Classification
+Version: $PV
+Libs: -llinear
+Cflags: -I${includedir}
+EOF
+    """,
 
     visibility = ["PUBLIC"],
 )

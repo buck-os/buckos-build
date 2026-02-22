@@ -1,22 +1,20 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # terraform - Infrastructure as code tool
-ebuild_package(
+package(
+    build_rule = "binary",
     name = "terraform",
-    src_uri = "https://github.com/hashicorp/terraform/archive/refs/tags/v1.7.3.tar.gz",
-
-    sha256 = "e99efa7e1e4e7fd37e7aaac5f6bd864260aa95b38a461899d0ec23069d614f19",
     version = "1.7.3",
+    url = "https://github.com/hashicorp/terraform/archive/refs/tags/v1.7.3.tar.gz",
+    sha256 = "e99efa7e1e4e7fd37e7aaac5f6bd864260aa95b38a461899d0ec23069d614f19",
     description = "Infrastructure as code software tool",
     homepage = "https://www.terraform.io",
     license = "BUSL-1.1",
-    src_compile = """
+    install_script = """
 go build -o terraform
+install -Dm755 terraform "$OUT/usr/bin/terraform"
 """,
-    src_install = """
-install -Dm755 terraform "$DESTDIR/usr/bin/terraform"
-""",
-    bdepend = [
+    deps = [
         "//packages/linux/lang/go:go",
     ],
     visibility = ["PUBLIC"],

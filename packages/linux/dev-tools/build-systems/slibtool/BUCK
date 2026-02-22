@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # slibtool - A strong libtool implementation, written in C
@@ -6,37 +6,27 @@ load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 # A faster, simpler libtool alternative. Drop-in replacement that can
 # significantly speed up builds that use libtool.
 
-ebuild_package(
+package(
+    build_rule = "binary",
     name = "slibtool",
-    src_uri = "https://mirror.buckos.org/s/slibtool-0.7.4.tar.xz",
-
-    sha256 = "FIXME",
     version = "0.7.4",
-    category = "dev-tools/build-systems",
+    url = "https://mirror.buckos.org/s/slibtool-0.7.4.tar.xz",
+    sha256 = "FIXME",
     description = "A strong libtool implementation, written in C",
     homepage = "https://git.foss21.org/slibtool",
     license = "MIT",
-
-    # slibtool uses a custom configure script (not autoconf)
-    src_configure = """
-./configure \\
-    --compiler="${CC:-gcc}" \\
-    --host="${CHOST:-$(gcc -dumpmachine)}" \\
-    --prefix=/usr \\
-    --libdir=/usr/lib64
-""",
-
-    src_compile = """
-make -j${MAKEOPTS:-$(nproc)}
-""",
-
-    src_install = """
-make DESTDIR="$DESTDIR" install
-""",
-
-    bdepend = [
+    install_script = """
+        cd $SRCS
+        ./configure \
+            --compiler="${CC:-gcc}" \
+            --host="${CHOST:-$(gcc -dumpmachine)}" \
+            --prefix=/usr \
+            --libdir=/usr/lib64
+        make -j${MAKEOPTS:-$(nproc)}
+        make DESTDIR="$OUT" install
+    """,
+    deps = [
         "//packages/linux/dev-tools/build-systems/m4:m4",
     ],
-    depend = [],
     visibility = ["PUBLIC"],
 )

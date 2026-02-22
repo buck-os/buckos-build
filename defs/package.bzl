@@ -29,6 +29,7 @@ load("//defs/rules:cargo.bzl", "cargo_package")
 load("//defs/rules:cmake.bzl", "cmake_package")
 load("//defs/rules:go.bzl", "go_package")
 load("//defs/rules:meson.bzl", "meson_package")
+load("//defs/rules:mozbuild.bzl", "mozbuild_package")
 load("//defs/rules:python.bzl", "python_package")
 load("//defs/rules:source.bzl", "extract_source")
 load("//defs/rules:transforms.bzl", "ima_sign_package", "stamp_package", "strip_package")
@@ -42,6 +43,7 @@ _BUILD_RULES = {
     "cmake": cmake_package,
     "go": go_package,
     "meson": meson_package,
+    "mozbuild": mozbuild_package,
     "python": python_package,
 }
 
@@ -59,7 +61,6 @@ _IGNORED_FIELDS = [
     "signature_sha256",
     "gpg_key",
     "gpg_keyring",
-    "exclude_patterns",
     "iuse",
     "use_defaults",
     "compat_tags",
@@ -267,6 +268,7 @@ def package(
         patches = [],
         configure_args = [],
         extra_cflags = [],
+        exclude_patterns = [],
         **build_kwargs):
     """Create a package target with optional transform chain.
 
@@ -367,6 +369,7 @@ def package(
             source = ":" + name + "-archive",
             strip_components = strip_components,
             format = format,
+            exclude_patterns = exclude_patterns,
         )
         build_kwargs["source"] = ":" + name + "-src"
 
@@ -379,7 +382,8 @@ def package(
 
     # -- 2. Normalize and resolve USE-conditional deps ----------------------
     normalized_use_deps = _normalize_use_deps(use_deps)
-    all_deps = list(build_kwargs.pop("deps", []))
+    raw_deps = build_kwargs.pop("deps", [])
+    all_deps = raw_deps if type(raw_deps) == "Select" else list(raw_deps)
     for flag, dep in normalized_use_deps.items():
         if type(dep) == "tuple":
             on_dep, off_dep = dep
@@ -429,6 +433,7 @@ def package(
         "cargo": "buckos:build:cargo",
         "go": "buckos:build:go",
         "python": "buckos:build:python",
+        "mozbuild": "buckos:build:mozbuild",
     }
     if build_rule in _label_map:
         _auto_labels.append(_label_map[build_rule])

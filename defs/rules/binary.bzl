@@ -32,7 +32,18 @@ def _src_prepare(ctx, source):
     for c in ctx.attrs.pre_configure_cmds:
         cmd.add("--cmd", c)
 
-    ctx.actions.run(cmd, category = "prepare", identifier = ctx.attrs.name)
+    # Pass dep base dirs so pre_configure_cmds can locate dep sources
+    env = {}
+    dep_base_dirs = []
+    for dep in ctx.attrs.deps:
+        if PackageInfo in dep:
+            dep_base_dirs.append(dep[PackageInfo].prefix)
+        else:
+            dep_base_dirs.append(dep[DefaultInfo].default_outputs[0])
+    if dep_base_dirs:
+        env["DEP_BASE_DIRS"] = cmd_args(dep_base_dirs, delimiter = ":")
+
+    ctx.actions.run(cmd, env = env, category = "prepare", identifier = ctx.attrs.name)
     return output
 
 def _dep_env_args(ctx):
@@ -43,6 +54,8 @@ def _dep_env_args(ctx):
     """
     pkg_config_paths = []
     path_dirs = []
+    lib_dirs = []
+    dep_base_dirs = []
     cflags = list(toolchain_extra_cflags(ctx)) + list(ctx.attrs.extra_cflags)
     ldflags = list(toolchain_extra_ldflags(ctx)) + list(ctx.attrs.extra_ldflags)
 
@@ -55,9 +68,12 @@ def _dep_env_args(ctx):
                 ldflags.append(f)
         else:
             prefix = dep[DefaultInfo].default_outputs[0]
+        dep_base_dirs.append(prefix)
         cflags.append(cmd_args(prefix, format = "-I{}/usr/include"))
         ldflags.append(cmd_args(prefix, format = "-L{}/usr/lib64"))
         ldflags.append(cmd_args(prefix, format = "-L{}/usr/lib"))
+        lib_dirs.append(cmd_args(prefix, format = "{}/usr/lib64"))
+        lib_dirs.append(cmd_args(prefix, format = "{}/usr/lib"))
         ldflags.append(cmd_args(prefix, format = "-Wl,-rpath-link,{}/usr/lib64"))
         ldflags.append(cmd_args(prefix, format = "-Wl,-rpath-link,{}/usr/lib"))
         pkg_config_paths.append(cmd_args(prefix, format = "{}/usr/lib64/pkgconfig"))
@@ -65,6 +81,18 @@ def _dep_env_args(ctx):
         pkg_config_paths.append(cmd_args(prefix, format = "{}/usr/share/pkgconfig"))
         path_dirs.append(cmd_args(prefix, format = "{}/usr/bin"))
         path_dirs.append(cmd_args(prefix, format = "{}/usr/sbin"))
+        # Bootstrap packages use /tools prefix
+        cflags.append(cmd_args(prefix, format = "-I{}/tools/include"))
+        ldflags.append(cmd_args(prefix, format = "-L{}/tools/lib64"))
+        ldflags.append(cmd_args(prefix, format = "-L{}/tools/lib"))
+        lib_dirs.append(cmd_args(prefix, format = "{}/tools/lib64"))
+        lib_dirs.append(cmd_args(prefix, format = "{}/tools/lib"))
+        ldflags.append(cmd_args(prefix, format = "-Wl,-rpath-link,{}/tools/lib64"))
+        ldflags.append(cmd_args(prefix, format = "-Wl,-rpath-link,{}/tools/lib"))
+        pkg_config_paths.append(cmd_args(prefix, format = "{}/tools/lib64/pkgconfig"))
+        pkg_config_paths.append(cmd_args(prefix, format = "{}/tools/lib/pkgconfig"))
+        path_dirs.append(cmd_args(prefix, format = "{}/tools/bin"))
+        path_dirs.append(cmd_args(prefix, format = "{}/tools/sbin"))
 
     env = {}
     if pkg_config_paths:
@@ -73,6 +101,10 @@ def _dep_env_args(ctx):
         env["CFLAGS"] = cmd_args(cflags, delimiter = " ")
     if ldflags:
         env["LDFLAGS"] = cmd_args(ldflags, delimiter = " ")
+    if dep_base_dirs:
+        env["DEP_BASE_DIRS"] = cmd_args(dep_base_dirs, delimiter = ":")
+    if lib_dirs:
+        env["LD_LIBRARY_PATH"] = cmd_args(lib_dirs, delimiter = ":")
 
     return env, path_dirs
 
@@ -154,6 +186,8 @@ _INSTALL_SCRIPT="$(_resolve "$1")"
 [[ -n "${CPPFLAGS:-}" ]]        && export CPPFLAGS="$(_resolve_flag_paths "$CPPFLAGS")"
 [[ -n "${PKG_CONFIG_PATH:-}" ]] && export PKG_CONFIG_PATH="$(_resolve_colon_paths "$PKG_CONFIG_PATH")"
 [[ -n "${_DEP_BIN_PATHS:-}" ]]  && export _DEP_BIN_PATHS="$(_resolve_colon_paths "$_DEP_BIN_PATHS")"
+[[ -n "${DEP_BASE_DIRS:-}" ]]   && export DEP_BASE_DIRS="$(_resolve_colon_paths "$DEP_BASE_DIRS")"
+[[ -n "${LD_LIBRARY_PATH:-}" ]] && export LD_LIBRARY_PATH="$(_resolve_colon_paths "$LD_LIBRARY_PATH")"
 
 # Prepend dep bin paths to PATH
 [[ -n "${_DEP_BIN_PATHS:-}" ]] && export PATH="$_DEP_BIN_PATHS:$PATH"
@@ -164,8 +198,14 @@ _INSTALL_SCRIPT="$(_resolve "$1")"
 if [[ -d "$SRCS" ]]; then
     mkdir -p "$WORKDIR"
     _WRITABLE="${WORKDIR}/src"
-    cp -a "$SRCS/." "$_WRITABLE"
-    chmod -R u+w "$_WRITABLE"
+    _SRCS_REAL="$(realpath "$SRCS")"
+    _WRITABLE_REAL="$(realpath "$_WRITABLE" 2>/dev/null || echo "$_WRITABLE")"
+    if [[ "$_SRCS_REAL" != "$_WRITABLE_REAL" ]]; then
+        cp -a "$SRCS/." "$_WRITABLE"
+        chmod -R u+w "$_WRITABLE"
+        # Restore execute bits on autotools scripts (Buck2 artifacts may strip them)
+        find "$_WRITABLE" -type f \\( -name 'configure' -o -name 'config.guess' -o -name 'config.sub' -o -name 'install-sh' -o -name 'depcomp' -o -name 'missing' -o -name 'compile' -o -name 'ltmain.sh' -o -name 'mkinstalldirs' -o -name 'config.status' \\) -exec chmod +x {} + 2>/dev/null || true
+    fi
     export SRCS="$_WRITABLE"
     export S="$_WRITABLE"
     cd "$_WRITABLE"

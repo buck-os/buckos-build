@@ -1,19 +1,35 @@
-load("//defs:package_defs.bzl", "cargo_workspace_package")
+load("//defs:package.bzl", "package")
 
 # BuckOS CLI - Command-line interface for BuckOS management
-# Build v2: Using /lib64 library path fix
-cargo_workspace_package(
+package(
     name = "buckos-cli",
-    workspace_source = "//packages/linux/apps/buckos-tools:buckos-src",
-    member = "buckos",  # Package name is "buckos", binary is "buckos-cli"
+    build_rule = "binary",
     version = "0.0.3",
-    bins = ["buckos-cli"],
+    url = "https://github.com/hodgesds/buckos/archive/refs/heads/main.tar.gz",
+    sha256 = "122f786c036ef7289c4fc988f5d1bc903d860c982ec1b9738717cd72d552a8b8",
+    source = "//packages/linux/apps/buckos-tools:buckos-src",
     description = "BuckOS command-line interface for system management",
     homepage = "https://github.com/hodgesds/buckos",
     license = "Apache-2.0 OR MIT",
-    extra_install = """
+    install_script = """
+set -e
+cd "$SRCS"
+
+# Fix library paths for systems using /lib64 instead of /lib
+if [ -f /lib64/ld-linux-x86-64.so.2 ] && [ ! -e /lib/ld-linux-x86-64.so.2 ]; then
+    export LIBRARY_PATH="/lib64:/usr/lib64:${LIBRARY_PATH:-}"
+    export RUSTFLAGS="${RUSTFLAGS:-} -C link-arg=-L/lib64 -C link-arg=-L/usr/lib64"
+    export RUSTFLAGS="${RUSTFLAGS} -C link-arg=-Wl,-rpath-link,/lib64 -C link-arg=-Wl,-rpath-link,/usr/lib64"
+    export RUSTFLAGS="${RUSTFLAGS} -C link-arg=-Wl,--dynamic-linker=/lib64/ld-linux-x86-64.so.2"
+fi
+
+cargo build --release -p buckos
+
+mkdir -p "$OUT/usr/bin"
+install -m 0755 target/release/buckos-cli "$OUT/usr/bin/buckos-cli"
+
 # Create symlink so users can run 'buckos' instead of 'buckos-cli'
-ln -sf buckos-cli "$DESTDIR/usr/bin/buckos"
+ln -sf buckos-cli "$OUT/usr/bin/buckos"
 """,
     deps = [
         "//packages/linux/system/libs/crypto/openssl:openssl",

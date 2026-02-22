@@ -1,79 +1,50 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # Binutils - GNU Binary Utilities
 # =============================================================================
 
-ebuild_package(
+package(
+    build_rule = "binary",
     name = "binutils",
-    src_uri = "https://mirror.buckos.org/b/binutils-2.45.1.tar.xz",
-
-    sha256 = "5fe101e6fe9d18fdec95962d81ed670fdee5f37e3f48f0bef87bddf862513aa5",
-
-    signature_sha256 = "6a3cb8380ec47a98310e90d42c65be7617f3b6f3ea08d90ea98f37909e0407a2",
-    iuse = [
-        "cet",
-        "debuginfod",
-        "gprofng",
-        "hardened",
-        "multitarget",
-        "nls",
-        "pgo",
-        "plugins",
-        "static-libs",
-        "vanilla",
-        "xxhash",
-        "zstd",
-    ],
-    use_configure = {
-        "-cet": "--disable-cet",
-        "-debuginfod": "--disable-debuginfod",
-        "-gprofng": "--disable-gprofng",
-        "-hardened": "--disable-hardening",
-        "-multitarget": "--disable-multitarget",
-        "-nls": "--disable-nls",
-        "-pgo": "--disable-pgo",
-        "-plugins": "--disable-plugins",
-        "-static-libs": "--disable-static",
-        "-vanilla": "--disable-vanilla",
-        "-xxhash": "--disable-xxhash",
-        "-zstd": "--without-zstd",
-        "cet": "--enable-cet",
-        "debuginfod": "--enable-debuginfod",
-        "gprofng": "--enable-gprofng",
-        "hardened": "--enable-hardening",
-        "multitarget": "--enable-multitarget",
-        "nls": "--enable-nls",
-        "pgo": "--enable-pgo",
-        "plugins": "--enable-plugins",
-        "static-libs": "--enable-static",
-        "vanilla": "--enable-vanilla",
-        "xxhash": "--enable-xxhash",
-        "zstd": "--with-zstd",
-    },
     version = "2.45.1",
-    category = "lang",
+    url = "https://mirror.buckos.org/b/binutils-2.45.1.tar.xz",
+    sha256 = "5fe101e6fe9d18fdec95962d81ed670fdee5f37e3f48f0bef87bddf862513aa5",
+    signature_sha256 = "6a3cb8380ec47a98310e90d42c65be7617f3b6f3ea08d90ea98f37909e0407a2",
     description = "GNU Binary Utilities - assembler, linker, and related tools",
     homepage = "https://www.gnu.org/software/binutils/",
     license = "GPL-3.0",
-
-    bdepend = [
+    deps = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
         "//packages/linux/dev-tools/build-systems/automake:automake",
         "//packages/linux/dev-tools/build-systems/libtool:libtool",
         "//packages/linux/core/zlib:zlib",
     ],
-
-    src_prepare = '''
-# Remove any stale config.cache files that cause CPPFLAGS conflicts
-find . -name 'config.cache' -delete
-''',
-
-    src_configure = '''
+    use_configure = {
+        "cet": ("--enable-cet", "--disable-cet"),
+        "debuginfod": ("--enable-debuginfod", "--disable-debuginfod"),
+        "gprofng": ("--enable-gprofng", "--disable-gprofng"),
+        "hardened": ("--enable-hardening", "--disable-hardening"),
+        "multitarget": ("--enable-multitarget", "--disable-multitarget"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "pgo": ("--enable-pgo", "--disable-pgo"),
+        "plugins": ("--enable-plugins", "--disable-plugins"),
+        "static-libs": ("--enable-static", "--disable-static"),
+        "vanilla": ("--enable-vanilla", "--disable-vanilla"),
+        "xxhash": ("--enable-xxhash", "--disable-xxhash"),
+        "zstd": ("--with-zstd", "--without-zstd"),
+    },
+    pre_configure_cmds = [
+        # Remove any stale config.cache files that cause CPPFLAGS conflicts
+        "find . -name 'config.cache' -delete",
+    ],
+    install_script = """
 # The cross-compiler linker defaults to -pie (--enable-default-pie) but
 # binutils' internal build system compiles some objects without -fPIE.
 # Override with -no-pie so the linker doesn't reject non-PIC relocations.
 export LDFLAGS="${LDFLAGS:+$LDFLAGS }-no-pie"
+
+cd "$SRCS"
 
 ./configure \
     --prefix=/usr \
@@ -85,9 +56,7 @@ export LDFLAGS="${LDFLAGS:+$LDFLAGS }-no-pie"
     --disable-werror \
     --disable-gprofng \
     --with-system-zlib
-''',
 
-    src_compile = '''
 # Build native host tools before cross-compilation starts
 # These tools generate code/data and can't be cross-compiled
 
@@ -120,11 +89,8 @@ fi
 find . -name '*.texi' -o -name '*.info' -o -name '*.stamp' | xargs touch 2>/dev/null || true
 
 make -j${MAKEOPTS:-$(nproc)} MAKEINFO=true
-''',
 
-    src_install = '''
-make DESTDIR="$DESTDIR" MAKEINFO=true install
-''',
-
+make DESTDIR="$OUT" MAKEINFO=true install
+""",
     visibility = ["PUBLIC"],
 )

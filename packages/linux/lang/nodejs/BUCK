@@ -26,7 +26,6 @@ cd "$SRCS"
 ./configure \
     --prefix=/usr \
     --shared-zlib \
-    --shared-openssl \
     --with-intl=system-icu \
     --without-npm \
     --without-corepack
@@ -37,7 +36,6 @@ make DESTDIR="$OUT" install
 """,
     deps = [
         "//packages/linux/core/zlib:zlib",
-        "//packages/linux/system/libs/crypto/openssl:openssl",
         "//packages/linux/system/libs/utility/icu:icu",
     ],
     visibility = ["PUBLIC"],

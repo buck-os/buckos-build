@@ -95,7 +95,7 @@ CONFIG_DRM_I915=y
 2. Create a BUCK file with `kernel_config`:
 
 ```python
-load("//defs:package_defs.bzl", "kernel_build", "kernel_config")
+load("//defs/rules:kernel.bzl", "kernel_build", "kernel_config")
 
 # Merge fragments into a final config
 kernel_config(
@@ -271,7 +271,7 @@ CONFIG_NVME_TARGET=y
 Compose with base fragments and build:
 
 ```python
-load("//defs:package_defs.bzl", "download_source", "kernel_build", "kernel_config")
+load("//defs/rules:kernel.bzl", "kernel_build", "kernel_config")
 
 kernel_config(
     name = "dpu-config",
@@ -312,7 +312,9 @@ The resulting kernel output includes in-tree modules, external modules in
 DPU images can be assembled using existing BuckOS image rules:
 
 ```python
-load("//defs:package_defs.bzl", "rootfs", "initramfs", "raw_disk_image")
+load("//defs/rules:rootfs.bzl", "rootfs")
+load("//defs/rules:initramfs.bzl", "initramfs")
+load("//defs/rules:image.bzl", "raw_disk_image")
 
 # Minimal rootfs for DPU
 rootfs(
@@ -424,7 +426,7 @@ There are two ways to build external kernel modules:
 The simplest approach — declare module sources directly on the `kernel_build` target:
 
 ```python
-load("//defs:package_defs.bzl", "download_source", "kernel_build")
+load("//defs/rules:kernel.bzl", "kernel_build")
 
 download_source(
     name = "my-driver-src",

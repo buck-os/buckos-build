@@ -1,22 +1,21 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # zsh-completions - Additional completion definitions for Zsh
-ebuild_package(
+package(
     name = "zsh-completions",
-    src_uri = "https://github.com/zsh-users/zsh-completions/archive/refs/tags/0.35.0.tar.gz",
-
-    sha256 = "811bb4213622720872e08d6e0857f1dd7bc12ff7aa2099a170b76301a53f4fbe",
+    build_rule = "binary",
     version = "0.35.0",
+    url = "https://github.com/zsh-users/zsh-completions/archive/refs/tags/0.35.0.tar.gz",
+    sha256 = "811bb4213622720872e08d6e0857f1dd7bc12ff7aa2099a170b76301a53f4fbe",
     description = "Additional completion definitions for Zsh",
     homepage = "https://github.com/zsh-users/zsh-completions",
     license = "BSD",
-    src_install = """
-mkdir -p "$DESTDIR/usr/share/zsh/site-functions"
-cp src/* "$DESTDIR/usr/share/zsh/site-functions/"
-""",
-    rdepend = [
+    deps = [
         "//packages/linux/shells/zsh:zsh",
     ],
+    install_script = """
+mkdir -p "$OUT/usr/share/zsh/site-functions"
+cp "$SRCS"/src/* "$OUT/usr/share/zsh/site-functions/"
+""",
     visibility = ["PUBLIC"],
 )

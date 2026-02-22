@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
 # dbench - Database-style benchmark for filesystems
 #
@@ -6,50 +6,44 @@ load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 # and autoreconf fails due to Automake module issues. We use a custom
 # build that regenerates the configure script properly.
 
-ebuild_package(
+package(
+    build_rule = "binary",
     name = "dbench",
-    src_uri = "https://samba.org/ftp/tridge/dbench/dbench-4.0.tar.gz",
-
-    sha256 = "6001893f34e68a3cfeb5d424e1f2bfef005df96a22d86f35dc770c5bccf3aa8a",
     version = "4.0",
-    category = "benchmarks",
+    url = "https://samba.org/ftp/tridge/dbench/dbench-4.0.tar.gz",
+    sha256 = "6001893f34e68a3cfeb5d424e1f2bfef005df96a22d86f35dc770c5bccf3aa8a",
     description = "Database-style benchmark for filesystems",
     homepage = "https://samba.org/ftp/tridge/dbench/",
     license = "GPL-3.0",
-    depend = [
+    deps = [
         "//packages/linux/system/security/cryptsetup:popt",
-    ],
-    bdepend = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
         "//packages/linux/dev-tools/build-systems/automake:automake",
         "//packages/linux/dev-tools/build-systems/libtool:libtool",
     ],
+    pre_configure_cmds = [
+        # dbench needs autoconf to generate configure from configure.in
+        "autoconf",
+    ],
+    install_script = """
+mkdir -p "$OUT"
+BUILD=$(mktemp -d)
+cp -a "$SRCS"/. "$BUILD/"
+cd "$BUILD"
 
-    src_prepare = '''
-# dbench needs autoconf to generate configure from configure.in
-autoconf
-''',
-
-    src_configure = '''
 ./configure --prefix=/usr
-''',
-
-    src_compile = '''
 make -j${MAKEOPTS:-$(nproc)}
-''',
 
-    src_install = '''
 # dbench install target doesn't support DESTDIR properly, install manually
-mkdir -p "$DESTDIR/usr/bin"
-mkdir -p "$DESTDIR/usr/share"
-mkdir -p "$DESTDIR/usr/share/man"
+mkdir -p "$OUT/usr/bin"
+mkdir -p "$OUT/usr/share"
+mkdir -p "$OUT/usr/share/man"
 
-cp dbench tbench tbench_srv "$DESTDIR/usr/bin/"
-cp client.txt "$DESTDIR/usr/share/"
-cp dbench.1 "$DESTDIR/usr/share/man/"
-ln -sf dbench.1 "$DESTDIR/usr/share/man/tbench.1"
-ln -sf dbench.1 "$DESTDIR/usr/share/man/tbench_srv.1"
-''',
-
+cp dbench tbench tbench_srv "$OUT/usr/bin/"
+cp client.txt "$OUT/usr/share/"
+cp dbench.1 "$OUT/usr/share/man/"
+ln -sf dbench.1 "$OUT/usr/share/man/tbench.1"
+ln -sf dbench.1 "$OUT/usr/share/man/tbench_srv.1"
+""",
     visibility = ["PUBLIC"],
 )

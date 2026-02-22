@@ -1,31 +1,20 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package", "autotools_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
 # pwsh - PowerShell for Linux (prebuilt binary)
-ebuild_package(
+package(
     name = "pwsh",
-    src_uri = "https://github.com/PowerShell/PowerShell/releases/download/v7.4.1/powershell-7.4.1-linux-x64.tar.gz",
-
-    sha256 = "8beabac4431b75e9b67c6d9fafd8b02cc019f21f230ea3d94aec1348c50529d3",
-    iuse = ["gui", "vanilla"],
-    use_configure = {
-        "-gui": "--disable-gui",
-        "-vanilla": "--disable-vanilla",
-        "gui": "--enable-gui",
-        "vanilla": "--enable-vanilla",
-    },
+    build_rule = "binary",
     version = "7.4.1",
+    url = "https://github.com/PowerShell/PowerShell/releases/download/v7.4.1/powershell-7.4.1-linux-x64.tar.gz",
+    sha256 = "8beabac4431b75e9b67c6d9fafd8b02cc019f21f230ea3d94aec1348c50529d3",
     description = "Cross-platform PowerShell",
     homepage = "https://github.com/PowerShell/PowerShell",
     license = "MIT",
-    src_configure = "true",
-    src_compile = "true",
-    src_install = """
-mkdir -p "$DESTDIR/usr/lib/powershell"
-cp -r * "$DESTDIR/usr/lib/powershell/"
-mkdir -p "$DESTDIR/usr/bin"
-ln -s /usr/lib/powershell/pwsh "$DESTDIR/usr/bin/pwsh"
+    install_script = """
+mkdir -p "$OUT/usr/lib/powershell"
+cp -r "$SRCS"/. "$OUT/usr/lib/powershell/"
+mkdir -p "$OUT/usr/bin"
+ln -s /usr/lib/powershell/pwsh "$OUT/usr/bin/pwsh"
 """,
-    rdepend = [],
     visibility = ["PUBLIC"],
 )

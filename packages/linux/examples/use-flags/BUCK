@@ -14,11 +14,7 @@
 #   gnutls = true
 #   brotli = true
 
-load("//defs:package_defs.bzl",
-     "download_source",
-     "autotools_package",
-     "ebuild_package",
-)
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # EXAMPLE 1: Basic USE Flag Package
@@ -29,35 +25,20 @@ load("//defs:package_defs.bzl",
 # Global flags come from .buckconfig [use] section.
 
 # Example: curl with USE flags
-autotools_package(
+package(
     name = "curl-example",
+    build_rule = "autotools",
     version = "8.5.0",
-    src_uri = "https://curl.se/download/curl-8.5.0.tar.xz",
+    url = "https://curl.se/download/curl-8.5.0.tar.xz",
     sha256 = "42ab8db9e20d8290a3b633e7fbb3cec15db34df65fd1015ef8ac1e4723750eeb",
-    signature_sha256 = "05a026c4551f8976a17c159c99c866e27533d34dceba70218db19d85726681cd",
-
-    # USE flags this package supports
-    iuse = [
-        "ssl",      # OpenSSL support
-        "gnutls",   # GnuTLS support (alternative to ssl)
-        "http2",    # HTTP/2 via nghttp2
-        "ipv6",     # IPv6 support
-        "zstd",     # Zstandard compression
-        "brotli",   # Brotli compression
-        "ldap",     # LDAP support
-        "debug",    # Debug build
-    ],
-
-    # Default USE flags for this package
-    use_defaults = ["ssl", "ipv6"],
 
     # Conditional dependencies based on USE flags
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "gnutls": ["//packages/linux/system/libs/crypto/gnutls:gnutls"],
-        "http2": ["//packages/linux/system/libs/network/nghttp2:nghttp2"],
-        "zstd": ["//packages/linux/system/libs/compression/zstd:zstd"],
-        "brotli": ["//packages/linux/system/libs/compression/brotli:brotli"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "gnutls": "//packages/linux/system/libs/crypto/gnutls:gnutls",
+        "http2": "//packages/linux/system/libs/network/nghttp2:nghttp2",
+        "zstd": "//packages/linux/system/libs/compression/zstd:zstd",
+        "brotli": "//packages/linux/system/libs/compression/brotli:brotli",
     },
 
     # Conditional configure arguments
@@ -87,7 +68,6 @@ autotools_package(
     description = "Command line tool for transferring data with URLs",
     homepage = "https://curl.se/",
     license = "MIT",
-    maintainers = ["buckos"],
 )
 
 # =============================================================================
@@ -100,19 +80,17 @@ autotools_package(
 #   gnutls = true
 #   brotli = true
 
-autotools_package(
+package(
     name = "curl-gnutls-example",
+    build_rule = "autotools",
     version = "8.5.0",
-    src_uri = "https://curl.se/download/curl-8.5.0.tar.xz",
+    url = "https://curl.se/download/curl-8.5.0.tar.xz",
     sha256 = "42ab8db9e20d8290a3b633e7fbb3cec15db34df65fd1015ef8ac1e4723750eeb",
-    signature_sha256 = "05a026c4551f8976a17c159c99c866e27533d34dceba70218db19d85726681cd",
-    iuse = ["ssl", "gnutls", "http2", "ipv6", "zstd", "brotli", "ldap", "debug"],
-    use_defaults = ["ssl", "ipv6"],
     use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "gnutls": ["//packages/linux/system/libs/crypto/gnutls:gnutls"],
-        "http2": ["//packages/linux/system/libs/network/nghttp2:nghttp2"],
-        "brotli": ["//packages/linux/system/libs/compression/brotli:brotli"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "gnutls": "//packages/linux/system/libs/crypto/gnutls:gnutls",
+        "http2": "//packages/linux/system/libs/network/nghttp2:nghttp2",
+        "brotli": "//packages/linux/system/libs/compression/brotli:brotli",
     },
     use_configure = {
         "ssl": "--with-ssl=/usr",
@@ -132,17 +110,15 @@ autotools_package(
 # Maximum flexibility with custom phase functions.
 # USE flags are available via the use() shell function.
 
-ebuild_package(
+package(
     name = "libxml2-example",
+    build_rule = "binary",
     version = "2.12.3",
-    src_uri = "https://download.gnome.org/sources/libxml2/2.12/libxml2-2.12.3.tar.xz",
-
+    url = "https://download.gnome.org/sources/libxml2/2.12/libxml2-2.12.3.tar.xz",
     sha256 = "8c8f1092340a89ff32bc44ad5c9693aff9bc8a7a3e161bb239666e5d15ac9aaa",
-    # USE flags
-    use_flags = ["readline"],
 
-    # Custom configure phase using USE flags
-    src_configure = """
+    # Custom configure and build via install_script
+    install_script = """
 # USE flags are available via the use() function
 ./configure --prefix=/usr \
     $(use debug && echo --enable-debug || echo --disable-debug) \
@@ -151,6 +127,9 @@ ebuild_package(
     $(use python && echo --with-python || echo --without-python) \
     $(use readline && echo --with-readline || echo --without-readline) \
     $(use static-libs && echo --enable-static || echo --disable-static)
+
+make -j$(nproc)
+make DESTDIR="$DESTDIR" install
 """,
 
     description = "XML C parser and toolkit",
@@ -163,17 +142,17 @@ ebuild_package(
 # EXAMPLE 4: Hardened OpenSSH
 # =============================================================================
 
-autotools_package(
+package(
     name = "openssh-hardened-example",
-    src_uri = "https://cdn.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-9.9p1.tar.gz",
-
-    sha256 = "b343fbcdbff87f15b1986e6e15d6d4fc9a7d36066be6b7fb507087ba8f966c02",
+    build_rule = "autotools",
     version = "9.9p1",
-    pre_configure = """
-# Patch configure to accept newer OpenSSL versions
-# OpenSSH 9.9p1 doesn't recognize OpenSSL 3.5.x, so we patch the version check
-sed -i 's/30[0-4][0-9][0-9][0-9][0-9][0-9]/30[0-9][0-9][0-9][0-9][0-9][0-9]/g' configure
-""",
+    url = "https://cdn.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-9.9p1.tar.gz",
+    sha256 = "b343fbcdbff87f15b1986e6e15d6d4fc9a7d36066be6b7fb507087ba8f966c02",
+    pre_configure_cmds = [
+        # Patch configure to accept newer OpenSSL versions
+        # OpenSSH 9.9p1 doesn't recognize OpenSSL 3.5.x, so we patch the version check
+        "sed -i 's/30[0-4][0-9][0-9][0-9][0-9][0-9]/30[0-9][0-9][0-9][0-9][0-9][0-9]/g' configure",
+    ],
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc/ssh",

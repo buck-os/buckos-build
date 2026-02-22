@@ -1,46 +1,33 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
-# =============================================================================
 # mtr - Network diagnostic tool combining ping and traceroute
-# =============================================================================
 #
 # mtr requires autoreconf to generate the configure script from configure.ac
 # but autoreconf fails due to Automake module path issues in the build environment.
-# Use ebuild_package with custom build steps to work around this.
+# Use binary build rule with custom build steps to work around this.
 
-ebuild_package(
+package(
     name = "mtr",
-    src_uri = "https://github.com/traviscross/mtr/archive/refs/tags/v0.95.tar.gz",
-
-    sha256 = "12490fb660ba5fb34df8c06a0f62b4f9cbd11a584fc3f6eceda0a99124e8596f",
-    iuse = [
-        "gui",
-        "ipinfo",
-        "ipv6",
-        "jansson",
-        "ncurses",
-    ],
-    use_configure = {
-        "-gui": "--disable-gui",
-        "-ipinfo": "--disable-ipinfo",
-        "-ipv6": "--disable-ipv6",
-        "-jansson": "--disable-jansson",
-        "-ncurses": "--without-ncurses",
-        "gui": "--enable-gui",
-        "ipinfo": "--enable-ipinfo",
-        "ipv6": "--enable-ipv6",
-        "jansson": "--enable-jansson",
-        "ncurses": "--with-ncurses",
-    },
+    build_rule = "binary",
     version = "0.95",
-
+    url = "https://github.com/traviscross/mtr/archive/refs/tags/v0.95.tar.gz",
+    sha256 = "12490fb660ba5fb34df8c06a0f62b4f9cbd11a584fc3f6eceda0a99124e8596f",
     description = "Network diagnostic tool combining ping and traceroute",
     homepage = "https://www.bitwizard.nl/mtr/",
     license = "GPL-2.0-only",
+    deps = [
+        "//packages/linux/system/terminal/ncurses:ncurses",
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+    ],
+    install_script = """
+mkdir -p "$OUT"
+BUILD=$(mktemp -d)
+cp -a "$SRCS"/. "$BUILD/"
+cd "$BUILD"
 
-    src_prepare = """
 # Generate configure script from configure.ac
-# autoreconf will call aclocal, libtoolize, and automake as needed
 # Find automake installation in dependencies and set up environment variables
 PERL5LIB=""
 AUTOMAKE_LIBDIR=""
@@ -48,55 +35,33 @@ ACLOCAL_AUTOMAKE_DIR=""
 # Split DEP_BASE_DIRS on colons
 IFS=':' read -ra DEP_DIRS_ARRAY <<< "$DEP_BASE_DIRS"
 for dep_dir in "${DEP_DIRS_ARRAY[@]}"; do
-    # Automake installs its Perl modules in usr/share/automake-1.16
     if [ -d "$dep_dir/usr/share/automake-1.16" ]; then
         PERL5LIB="$dep_dir/usr/share/automake-1.16${PERL5LIB:+:$PERL5LIB}"
         AUTOMAKE_LIBDIR="$dep_dir/usr/share/automake-1.16"
     fi
-    # Automake aclocal macros directory (contains internal/ subdirectory)
     if [ -d "$dep_dir/usr/share/aclocal-1.16" ]; then
         ACLOCAL_AUTOMAKE_DIR="$dep_dir/usr/share/aclocal-1.16"
     fi
-    # Also check for standard perl paths in dependencies
     if [ -d "$dep_dir/usr/share/perl5" ]; then
         PERL5LIB="$PERL5LIB${PERL5LIB:+:}$dep_dir/usr/share/perl5"
     fi
 done
-# Add system perl paths as fallback
 PERL5LIB="/usr/share/perl5:/usr/lib64/perl5${PERL5LIB:+:$PERL5LIB}"
 export PERL5LIB AUTOMAKE_LIBDIR ACLOCAL_AUTOMAKE_DIR
 
 autoreconf -fiv
-""",
 
-    src_configure = """
 # Disable GTK and jansson to avoid pkg-config macro issues
-./configure \\
-    --prefix=/usr \\
-    --with-ncurses \\
-    --without-gtk \\
-    --without-jansson \\
-    --enable-ipv6 \\
+./configure \
+    --prefix=/usr \
+    --with-ncurses \
+    --without-gtk \
+    --without-jansson \
+    --enable-ipv6 \
     LDFLAGS="-ltinfo"
-""",
 
-    src_compile = """
 make -j${MAKEOPTS:-$(nproc)}
+make DESTDIR="$OUT" install
 """,
-
-    src_install = """
-make DESTDIR="$DESTDIR" install
-""",
-
-    rdepend = [
-        "//packages/linux/system/terminal/ncurses:ncurses",
-    ],
-
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-    ],
-
     visibility = ["PUBLIC"],
 )

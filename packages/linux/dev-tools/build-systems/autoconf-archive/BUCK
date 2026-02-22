@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # autoconf-archive - GNU Autoconf Macro Archive
@@ -6,32 +6,19 @@ load("//defs:package_defs.bzl", "download_source", "ebuild_package")
 # Collection of freely reusable Autoconf macros including AX_PTHREAD,
 # AX_CHECK_COMPILE_FLAG, AX_CXX_COMPILE_STDCXX, and many others.
 
-ebuild_package(
+package(
+    build_rule = "autotools",
     name = "autoconf-archive",
-    src_uri = "https://mirror.buckos.org/a/autoconf-archive-2024.10.16.tar.xz",
-
-    sha256 = "FIXME",
     version = "2024.10.16",
-    category = "dev-tools/build-systems",
+    url = "https://mirror.buckos.org/a/autoconf-archive-2024.10.16.tar.xz",
+    sha256 = "FIXME",
     description = "GNU Autoconf Macro Archive",
     homepage = "https://www.gnu.org/software/autoconf-archive/",
     license = "GPL-3",
-
-    src_configure = """
-./configure \\
-    --prefix=/usr \\
-    --datadir=/usr/share
-""",
-
-    src_compile = """
-# autoconf-archive is just m4 macro files, no compilation needed
-true
-""",
-
-    src_install = """
-make DESTDIR="$DESTDIR" install
-""",
-
-    depend = [],
+    configure_args = [
+        "--prefix=/usr",
+        "--datadir=/usr/share",
+    ],
+    deps = [],
     visibility = ["PUBLIC"],
 )
