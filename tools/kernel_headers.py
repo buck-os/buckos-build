@@ -16,8 +16,8 @@ def main():
     parser = argparse.ArgumentParser(description="Install kernel headers")
     parser.add_argument("--source-dir", required=True,
                         help="Kernel source tree (read-only)")
-    parser.add_argument("--config", required=True,
-                        help="Finalized .config file")
+    parser.add_argument("--config", default=None,
+                        help="Finalized .config file (optional)")
     parser.add_argument("--output-dir", required=True,
                         help="Output directory for installed headers")
     parser.add_argument("--arch", default="x86",
@@ -36,14 +36,14 @@ def main():
     os.environ.setdefault("SOURCE_DATE_EPOCH", "315576000")
 
     source_dir = os.path.abspath(args.source_dir)
-    config_file = os.path.abspath(args.config)
+    config_file = os.path.abspath(args.config) if args.config else None
     output_dir = os.path.abspath(args.output_dir)
 
     if not os.path.isdir(source_dir):
         print(f"error: source directory not found: {source_dir}", file=sys.stderr)
         sys.exit(1)
 
-    if not os.path.isfile(config_file):
+    if config_file and not os.path.isfile(config_file):
         print(f"error: config file not found: {config_file}", file=sys.stderr)
         sys.exit(1)
 
@@ -53,8 +53,9 @@ def main():
         shutil.rmtree(build_dir)
     os.makedirs(build_dir)
 
-    # Copy .config into the O= build directory
-    shutil.copy2(config_file, os.path.join(build_dir, ".config"))
+    # Copy .config into the O= build directory (if provided)
+    if config_file:
+        shutil.copy2(config_file, os.path.join(build_dir, ".config"))
 
     # Ensure output dir exists
     os.makedirs(output_dir, exist_ok=True)

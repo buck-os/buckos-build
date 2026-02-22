@@ -2,12 +2,15 @@
 Kernel build rules for BuckOS.
 
 Rules:
-  kernel_config — merge kernel configuration fragments into a single .config
-  kernel_build  — build Linux kernel with custom configuration
+  kernel_config          — merge kernel configuration fragments into a single .config
+  kernel_build           — build Linux kernel with custom configuration
+  kernel_headers         — install kernel headers for userspace
+  kernel_btf_headers     — generate vmlinux.h from kernel BTF data
+  kernel_modules_install — install kernel modules with out-of-tree merging
 """
 
 load("//defs:empty_registry.bzl", "PATCH_REGISTRY")
-load("//defs:providers.bzl", "KernelInfo")
+load("//defs:providers.bzl", "KernelBtfInfo", "KernelConfigInfo", "KernelHeadersInfo", "KernelInfo")
 
 # ── kernel_config ────────────────────────────────────────────────────
 
@@ -15,65 +18,37 @@ def _kernel_config_impl(ctx: AnalysisContext) -> list[Provider]:
     """Merge kernel configuration fragments into a single .config file."""
     output = ctx.actions.declare_output(ctx.attrs.name + ".config")
 
-    # Collect all config fragments
-    config_files = []
+    if not ctx.attrs.source:
+        fail("kernel_config requires 'source' (kernel source tree dependency)")
+
+    src_dir = ctx.attrs.source[DefaultInfo].default_outputs[0]
+
+    arch_map = {"x86_64": "x86", "aarch64": "arm64"}
+
+    cmd = cmd_args(ctx.attrs._kernel_config_tool[RunInfo])
+    cmd.add("--source-dir", src_dir)
+    cmd.add("--output", output.as_output())
+    cmd.add("--arch", arch_map.get(ctx.attrs.arch, "x86"))
+
+    if ctx.attrs.defconfig:
+        cmd.add("--defconfig", ctx.attrs.defconfig)
+
     for frag in ctx.attrs.fragments:
-        config_files.append(frag)
-
-    script = ctx.actions.write(
-        "merge_config.sh",
-        """#!/bin/bash
-set -e
-OUTPUT="$1"
-shift
-
-# Start with empty config
-> "$OUTPUT"
-
-# Merge all config fragments
-# Later fragments override earlier ones
-for config in "$@"; do
-    if [ -f "$config" ]; then
-        # Read each line from the fragment
-        while IFS= read -r line || [ -n "$line" ]; do
-            # Skip empty lines and comments for processing
-            if [[ -z "$line" ]] || [[ "$line" =~ ^# ]]; then
-                echo "$line" >> "$OUTPUT"
-                continue
-            fi
-
-            # Extract config option name
-            if [[ "$line" =~ ^(CONFIG_[A-Za-z0-9_]+)= ]]; then
-                opt="${BASH_REMATCH[1]}"
-                # Remove any existing setting for this option
-                sed -i "/^$opt=/d" "$OUTPUT"
-                sed -i "/^# $opt is not set/d" "$OUTPUT"
-            elif [[ "$line" =~ ^#[[:space:]]*(CONFIG_[A-Za-z0-9_]+)[[:space:]]is[[:space:]]not[[:space:]]set ]]; then
-                opt="${BASH_REMATCH[1]}"
-                # Remove any existing setting for this option
-                sed -i "/^$opt=/d" "$OUTPUT"
-                sed -i "/^# $opt is not set/d" "$OUTPUT"
-            fi
-
-            echo "$line" >> "$OUTPUT"
-        done < "$config"
-    fi
-done
-""",
-        is_executable = True,
-    )
+        cmd.add("--fragment", frag)
 
     ctx.actions.run(
-        cmd_args([
-            "bash",
-            script,
-            output.as_output(),
-        ] + config_files),
+        cmd,
         category = "kernel_config",
         identifier = ctx.attrs.name,
     )
 
-    return [DefaultInfo(default_output = output)]
+    return [
+        DefaultInfo(default_output = output),
+        KernelConfigInfo(
+            config = output,
+            version = ctx.attrs.version or "",
+        ),
+    ]
 
 _kernel_config_rule = rule(
     impl = _kernel_config_impl,
@@ -84,6 +59,9 @@ _kernel_config_rule = rule(
         "defconfig": attrs.option(attrs.string(), default = None),
         "arch": attrs.string(default = "x86_64"),
         "labels": attrs.list(attrs.string(), default = []),
+        "_kernel_config_tool": attrs.default_only(
+            attrs.exec_dep(default = "//tools:kernel_config"),
+        ),
     },
 )
 
@@ -275,33 +253,27 @@ def _kernel_headers_impl(ctx: AnalysisContext) -> list[Provider]:
     """Install kernel headers for userspace (glibc, musl, BPF)."""
     install_dir = ctx.actions.declare_output(ctx.attrs.name, dir = True)
     src_dir = ctx.attrs.source[DefaultInfo].default_outputs[0]
-    config_file = ctx.attrs.config[DefaultInfo].default_outputs[0] if ctx.attrs.config else None
 
-    script = ctx.actions.write(
-        "install_headers.sh",
-        """#!/bin/bash
-set -e
-SRC_DIR="$(cd "$2" && pwd)"
-BUILD_DIR=$(mktemp -d)
-cp -a "$SRC_DIR"/. "$BUILD_DIR/"
-cd "$BUILD_DIR"
-if [ -n "$3" ]; then
-    cp "$3" .config
-    make ARCH=x86 olddefconfig
-fi
-make ARCH=x86 INSTALL_HDR_PATH="$1/usr" headers_install
-rm -rf "$BUILD_DIR"
-""",
-        is_executable = True,
-    )
+    arch_map = {"x86_64": "x86", "aarch64": "arm64"}
 
-    cmd = cmd_args(["bash", script, install_dir.as_output(), src_dir])
-    if config_file:
-        cmd.add(config_file)
+    cmd = cmd_args(ctx.attrs._kernel_headers_tool[RunInfo])
+    cmd.add("--source-dir", src_dir)
+    cmd.add("--output-dir", install_dir.as_output())
+    cmd.add("--arch", arch_map.get(ctx.attrs.arch, "x86"))
+
+    if ctx.attrs.config:
+        config_file = ctx.attrs.config[DefaultInfo].default_outputs[0]
+        cmd.add("--config", config_file)
 
     ctx.actions.run(cmd, category = "kernel_headers", identifier = ctx.attrs.name)
 
-    return [DefaultInfo(default_output = install_dir)]
+    return [
+        DefaultInfo(default_output = install_dir),
+        KernelHeadersInfo(
+            headers = install_dir,
+            version = ctx.attrs.version,
+        ),
+    ]
 
 _kernel_headers_rule = rule(
     impl = _kernel_headers_impl,
@@ -309,16 +281,21 @@ _kernel_headers_rule = rule(
         "source": attrs.dep(),
         "config": attrs.option(attrs.dep(), default = None),
         "version": attrs.string(default = ""),
+        "arch": attrs.string(default = "x86_64"),
         "labels": attrs.list(attrs.string(), default = []),
+        "_kernel_headers_tool": attrs.default_only(
+            attrs.exec_dep(default = "//tools:kernel_headers"),
+        ),
     },
 )
 
-def kernel_headers(name, source, version = "", config = None, labels = [], visibility = []):
+def kernel_headers(name, source, version = "", config = None, arch = "x86_64", labels = [], visibility = []):
     _kernel_headers_rule(
         name = name,
         source = source,
         config = config,
         version = version,
+        arch = arch,
         labels = labels,
         visibility = visibility,
     )
@@ -327,47 +304,34 @@ def kernel_headers(name, source, version = "", config = None, labels = [], visib
 
 def _kernel_btf_headers_impl(ctx: AnalysisContext) -> list[Provider]:
     """Generate vmlinux.h from a built kernel (for BPF CO-RE / sched_ext)."""
-    install_dir = ctx.actions.declare_output(ctx.attrs.name, dir = True)
+    vmlinux_h = ctx.actions.declare_output("vmlinux.h")
 
     if KernelInfo not in ctx.attrs.kernel:
         fail("kernel dep must provide KernelInfo")
-    vmlinux = ctx.attrs.kernel[KernelInfo].vmlinux
+    ki = ctx.attrs.kernel[KernelInfo]
 
-    script = ctx.actions.write(
-        "gen_btf.sh",
-        """#!/bin/bash
-set -e
-OUT="$1"
-VMLINUX="$2"
-mkdir -p "$OUT/usr/include/linux"
+    cmd = cmd_args(ctx.attrs._kernel_btf_tool[RunInfo])
+    cmd.add("--vmlinux", ki.vmlinux)
+    cmd.add("--output", vmlinux_h.as_output())
 
-if [ ! -s "$VMLINUX" ]; then
-    echo "Warning: vmlinux empty or missing, creating empty vmlinux.h"
-    touch "$OUT/usr/include/linux/vmlinux.h"
-    exit 0
-fi
-
-if command -v bpftool >/dev/null 2>&1; then
-    bpftool btf dump file "$VMLINUX" format c > "$OUT/usr/include/linux/vmlinux.h" 2>/dev/null || \
-        touch "$OUT/usr/include/linux/vmlinux.h"
-else
-    echo "Warning: bpftool not found, creating empty vmlinux.h"
-    touch "$OUT/usr/include/linux/vmlinux.h"
-fi
-""",
-        is_executable = True,
-    )
-
-    cmd = cmd_args(["bash", script, install_dir.as_output(), vmlinux])
     ctx.actions.run(cmd, category = "kernel_btf", identifier = ctx.attrs.name)
 
-    return [DefaultInfo(default_output = install_dir)]
+    return [
+        DefaultInfo(default_output = vmlinux_h),
+        KernelBtfInfo(
+            vmlinux_h = vmlinux_h,
+            version = ki.version,
+        ),
+    ]
 
 _kernel_btf_headers_rule = rule(
     impl = _kernel_btf_headers_impl,
     attrs = {
         "kernel": attrs.dep(),
         "labels": attrs.list(attrs.string(), default = []),
+        "_kernel_btf_tool": attrs.default_only(
+            attrs.exec_dep(default = "//tools:kernel_btf_headers"),
+        ),
     },
 )
 
@@ -388,42 +352,17 @@ def _kernel_modules_install_impl(ctx: AnalysisContext) -> list[Provider]:
     if KernelInfo not in ctx.attrs.kernel:
         fail("kernel dep must provide KernelInfo")
     ki = ctx.attrs.kernel[KernelInfo]
-    modules_src = ki.modules_dir
 
-    script = ctx.actions.write(
-        "install_modules.sh",
-        """#!/bin/bash
-set -e
-OUT="$1"
-MODULES_SRC="$2"
-shift 2
+    arch_map = {"x86_64": "x86", "aarch64": "arm64"}
 
-# Copy modules from kernel build (modules_dir contains <krelease>/...)
-if [ -d "$MODULES_SRC" ]; then
-    mkdir -p "$OUT/lib/modules"
-    cp -a "$MODULES_SRC/." "$OUT/lib/modules/"
-fi
+    cmd = cmd_args(ctx.attrs._kernel_modules_tool[RunInfo])
+    cmd.add("--build-tree", ki.build_tree)
+    cmd.add("--output-dir", install_dir.as_output())
+    cmd.add("--version", ctx.attrs.version or ki.version)
+    cmd.add("--arch", arch_map.get(ctx.attrs.arch, "x86"))
 
-# Install extra out-of-tree modules
-KRELEASE=$(ls "$OUT/lib/modules/" 2>/dev/null | head -1)
-for mod_dir in "$@"; do
-    if [ -d "$mod_dir" ] && [ -n "$KRELEASE" ]; then
-        mkdir -p "$OUT/lib/modules/$KRELEASE/extra"
-        find "$mod_dir" -name '*.ko' -exec cp {} "$OUT/lib/modules/$KRELEASE/extra/" \\;
-    fi
-done
-
-# Run depmod if modules exist
-if [ -n "$KRELEASE" ] && command -v depmod >/dev/null 2>&1; then
-    depmod -b "$OUT" "$KRELEASE" 2>/dev/null || true
-fi
-""",
-        is_executable = True,
-    )
-
-    cmd = cmd_args(["bash", script, install_dir.as_output(), modules_src])
     for mod in ctx.attrs.extra_modules:
-        cmd.add(mod[DefaultInfo].default_outputs[0])
+        cmd.add("--extra-module", mod[DefaultInfo].default_outputs[0])
 
     ctx.actions.run(cmd, category = "kernel_modules", identifier = ctx.attrs.name)
 
@@ -434,16 +373,21 @@ _kernel_modules_install_rule = rule(
     attrs = {
         "kernel": attrs.dep(),
         "version": attrs.string(default = ""),
+        "arch": attrs.string(default = "x86_64"),
         "extra_modules": attrs.list(attrs.dep(), default = []),
         "labels": attrs.list(attrs.string(), default = []),
+        "_kernel_modules_tool": attrs.default_only(
+            attrs.exec_dep(default = "//tools:kernel_modules_install"),
+        ),
     },
 )
 
-def kernel_modules_install(name, kernel, version = "", extra_modules = [], labels = [], visibility = []):
+def kernel_modules_install(name, kernel, version = "", arch = "x86_64", extra_modules = [], labels = [], visibility = []):
     _kernel_modules_install_rule(
         name = name,
         kernel = kernel,
         version = version,
+        arch = arch,
         extra_modules = extra_modules,
         labels = labels,
         visibility = visibility,
