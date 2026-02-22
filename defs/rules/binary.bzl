@@ -1,22 +1,27 @@
 """
 binary_package rule: custom install script for pre-built packages.
 
-Three discrete cacheable actions:
+Four discrete cacheable actions:
 
 1. src_unpack   — obtain source artifact from source dep
-2. src_prepare  — apply patches (zero-cost passthrough when no patches)
+2. src_prepare  — apply patches + pre_configure_cmds (zero-cost passthrough when none)
 3. install      — run install_script in a shell with $SRC and $OUT set
 """
 
-load("//defs:providers.bzl", "PackageInfo")
-load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_env_args")
+load("//defs:providers.bzl", "BuildToolchainInfo", "PackageInfo")
+load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_env_args",
+     "toolchain_extra_cflags", "toolchain_extra_ldflags")
 
 # ── Phase helpers ─────────────────────────────────────────────────────
 
 def _src_prepare(ctx, source):
-    """Apply patches.  Separate action so unpatched source stays cached."""
-    if not ctx.attrs.patches:
-        return source  # No patches — zero-cost passthrough
+    """Apply patches and pre_configure_cmds.
+
+    Separate action so unpatched source stays cached.
+    Uses patch_helper.py which copies source first (no artifact corruption).
+    """
+    if not ctx.attrs.patches and not ctx.attrs.pre_configure_cmds:
+        return source  # No patches or cmds — zero-cost passthrough
 
     output = ctx.actions.declare_output("prepared", dir = True)
     cmd = cmd_args(ctx.attrs._patch_tool[RunInfo])
@@ -24,9 +29,52 @@ def _src_prepare(ctx, source):
     cmd.add("--output-dir", output.as_output())
     for p in ctx.attrs.patches:
         cmd.add("--patch", p)
+    for c in ctx.attrs.pre_configure_cmds:
+        cmd.add("--cmd", c)
 
     ctx.actions.run(cmd, category = "prepare", identifier = ctx.attrs.name)
     return output
+
+def _dep_env_args(ctx):
+    """Build environment variables and PATH dirs from deps.
+
+    Returns (env dict entries, dep_bin_paths list).
+    Models on autotools' _dep_env_args() for consistent dep propagation.
+    """
+    pkg_config_paths = []
+    path_dirs = []
+    cflags = list(toolchain_extra_cflags(ctx)) + list(ctx.attrs.extra_cflags)
+    ldflags = list(toolchain_extra_ldflags(ctx)) + list(ctx.attrs.extra_ldflags)
+
+    for dep in ctx.attrs.deps:
+        if PackageInfo in dep:
+            prefix = dep[PackageInfo].prefix
+            for f in dep[PackageInfo].cflags:
+                cflags.append(f)
+            for f in dep[PackageInfo].ldflags:
+                ldflags.append(f)
+        else:
+            prefix = dep[DefaultInfo].default_outputs[0]
+        cflags.append(cmd_args(prefix, format = "-I{}/usr/include"))
+        ldflags.append(cmd_args(prefix, format = "-L{}/usr/lib64"))
+        ldflags.append(cmd_args(prefix, format = "-L{}/usr/lib"))
+        ldflags.append(cmd_args(prefix, format = "-Wl,-rpath-link,{}/usr/lib64"))
+        ldflags.append(cmd_args(prefix, format = "-Wl,-rpath-link,{}/usr/lib"))
+        pkg_config_paths.append(cmd_args(prefix, format = "{}/usr/lib64/pkgconfig"))
+        pkg_config_paths.append(cmd_args(prefix, format = "{}/usr/lib/pkgconfig"))
+        pkg_config_paths.append(cmd_args(prefix, format = "{}/usr/share/pkgconfig"))
+        path_dirs.append(cmd_args(prefix, format = "{}/usr/bin"))
+        path_dirs.append(cmd_args(prefix, format = "{}/usr/sbin"))
+
+    env = {}
+    if pkg_config_paths:
+        env["PKG_CONFIG_PATH"] = cmd_args(pkg_config_paths, delimiter = ":")
+    if cflags:
+        env["CFLAGS"] = cmd_args(cflags, delimiter = " ")
+    if ldflags:
+        env["LDFLAGS"] = cmd_args(ldflags, delimiter = " ")
+
+    return env, path_dirs
 
 def _install(ctx, source):
     """Run install_script with SRC pointing to source and OUT to output prefix."""
@@ -38,12 +86,93 @@ def _install(ctx, source):
     wrapper = ctx.actions.write("wrapper.sh", """\
 #!/bin/bash
 set -e
-# Resolve to absolute paths so install scripts that cd still work.
-_resolve() { [[ "$1" = /* ]] && echo "$1" || echo "$PWD/$1"; }
+# Save project root — Buck2 runs actions from here, all artifact paths
+# (buck-out/v2/...) are relative to this directory.
+_PROJECT_ROOT="$PWD"
+
+# Resolve a single path to absolute (relative to project root).
+_resolve() { [[ "$1" = /* ]] && echo "$1" || echo "$_PROJECT_ROOT/$1"; }
+
+# Resolve relative buck-out paths in compiler/linker flag strings to absolute.
+# Without this, libtool and other tools fail after cd into the source tree.
+_resolve_flag_paths() {
+    local result=""
+    for token in $1; do
+        case "$token" in
+            -I[^/]*)             token="-I${_PROJECT_ROOT}/${token#-I}" ;;
+            -L[^/]*)             token="-L${_PROJECT_ROOT}/${token#-L}" ;;
+            -Wl,-rpath-link,[^/]*) token="-Wl,-rpath-link,${_PROJECT_ROOT}/${token#-Wl,-rpath-link,}" ;;
+            -Wl,-rpath,[^/]*)    token="-Wl,-rpath,${_PROJECT_ROOT}/${token#-Wl,-rpath,}" ;;
+            [^-]*/*)             [[ ! "$token" = /* ]] && token="${_PROJECT_ROOT}/$token" ;;
+        esac
+        result="${result:+$result }$token"
+    done
+    echo "$result"
+}
+
+# Resolve relative paths in colon-separated lists (PKG_CONFIG_PATH etc).
+_resolve_colon_paths() {
+    local IFS=':' result=""
+    for p in $1; do
+        [[ -n "$p" && "$p" != /* ]] && p="${_PROJECT_ROOT}/$p"
+        result="${result:+$result:}$p"
+    done
+    echo "$result"
+}
+
 export SRCS="$(_resolve "$1")"; shift
 export OUT="$(_resolve "$1")"; shift
 export PV="$1"; shift
-source "$1"
+
+# Source ebuild helpers if available
+if [[ -n "${_EBUILD_HELPERS:-}" && -f "$_EBUILD_HELPERS" ]]; then
+    source "$_EBUILD_HELPERS"
+fi
+
+# Backward compat: export old ebuild env vars
+export DESTDIR="$OUT"
+export S="$SRCS"
+export WORKDIR="$(_resolve "${BUCK_SCRATCH_PATH:-$(mktemp -d)}")"
+export MAKE_JOBS="${MAKE_JOBS:-$(nproc)}"
+export MAKEOPTS="${MAKEOPTS:-$(nproc)}"
+
+# Disable host compiler/build caches — Buck2 caches actions itself.
+unset RUSTC_WRAPPER 2>/dev/null || true
+export CARGO_BUILD_RUSTC_WRAPPER=""
+export CCACHE_DISABLE=1
+
+# Resolve install script to absolute before cd
+_INSTALL_SCRIPT="$(_resolve "$1")"
+
+# Resolve env vars containing relative buck-out paths to absolute
+# so they survive cd into the source tree.
+[[ -n "${CC:-}" ]]              && export CC="$(_resolve_flag_paths "$CC")"
+[[ -n "${CXX:-}" ]]             && export CXX="$(_resolve_flag_paths "$CXX")"
+[[ -n "${AR:-}" ]]              && export AR="$(_resolve_flag_paths "$AR")"
+[[ -n "${CFLAGS:-}" ]]          && export CFLAGS="$(_resolve_flag_paths "$CFLAGS")"
+[[ -n "${LDFLAGS:-}" ]]         && export LDFLAGS="$(_resolve_flag_paths "$LDFLAGS")"
+[[ -n "${CPPFLAGS:-}" ]]        && export CPPFLAGS="$(_resolve_flag_paths "$CPPFLAGS")"
+[[ -n "${PKG_CONFIG_PATH:-}" ]] && export PKG_CONFIG_PATH="$(_resolve_colon_paths "$PKG_CONFIG_PATH")"
+[[ -n "${_DEP_BIN_PATHS:-}" ]]  && export _DEP_BIN_PATHS="$(_resolve_colon_paths "$_DEP_BIN_PATHS")"
+
+# Prepend dep bin paths to PATH
+[[ -n "${_DEP_BIN_PATHS:-}" ]] && export PATH="$_DEP_BIN_PATHS:$PATH"
+
+# Copy source to writable directory — Buck2 source artifacts are read-only,
+# but install scripts need to write (mkdir build, in-source builds, etc.).
+# This mirrors what configure_helper.py / build_helper.py do for autotools.
+if [[ -d "$SRCS" ]]; then
+    mkdir -p "$WORKDIR"
+    _WRITABLE="${WORKDIR}/src"
+    cp -a "$SRCS/." "$_WRITABLE"
+    chmod -R u+w "$_WRITABLE"
+    export SRCS="$_WRITABLE"
+    export S="$_WRITABLE"
+    cd "$_WRITABLE"
+elif [[ -f "$SRCS" ]]; then
+    cd "$(dirname "$SRCS")"
+fi
+source "$_INSTALL_SCRIPT"
 """, is_executable = True)
 
     script = ctx.actions.write("install.sh", ctx.attrs.install_script, is_executable = True)
@@ -52,13 +181,24 @@ source "$1"
 
     env = {}
 
-    # Inject toolchain CC/CXX/AR
-    for env_arg in toolchain_env_args(ctx):
-        parts = env_arg.split("=", 1) if type(env_arg) == "string" else []
-        if len(parts) == 2:
-            env[parts[0]] = parts[1]
+    # Inject toolchain CC/CXX/AR directly from BuildToolchainInfo
+    tc = ctx.attrs._toolchain[BuildToolchainInfo]
+    env["CC"] = cmd_args(tc.cc.args, delimiter = " ")
+    env["CXX"] = cmd_args(tc.cxx.args, delimiter = " ")
+    env["AR"] = cmd_args(tc.ar.args, delimiter = " ")
 
-    # Inject user-specified environment variables
+    # Inject dep environment (CFLAGS, LDFLAGS, PKG_CONFIG_PATH, PATH)
+    dep_env, dep_paths = _dep_env_args(ctx)
+    for key, value in dep_env.items():
+        env[key] = value
+    if dep_paths:
+        env["_DEP_BIN_PATHS"] = cmd_args(dep_paths, delimiter = ":")
+
+    # Inject ebuild helpers path
+    if ctx.attrs._ebuild_helpers:
+        env["_EBUILD_HELPERS"] = ctx.attrs._ebuild_helpers
+
+    # Inject user-specified environment variables (last — overrides everything)
     for key, value in ctx.attrs.env.items():
         env[key] = value
 
@@ -76,7 +216,7 @@ def _binary_package_impl(ctx):
     # Phase 1: src_unpack — obtain source from dep
     source = ctx.attrs.source[DefaultInfo].default_outputs[0]
 
-    # Phase 2: src_prepare — apply patches
+    # Phase 2: src_prepare — apply patches + pre_configure_cmds
     prepared = _src_prepare(ctx, source)
 
     # Phase 3: install
@@ -115,6 +255,7 @@ binary_package = rule(
 
         # Build configuration
         "install_script": attrs.string(default = "cp -a \"$SRCS\"/. \"$OUT/\""),
+        "pre_configure_cmds": attrs.list(attrs.string(), default = []),
         "env": attrs.dict(attrs.string(), attrs.string(), default = {}),
         "deps": attrs.list(attrs.dep(), default = []),
         "patches": attrs.list(attrs.source(), default = []),
@@ -140,6 +281,9 @@ binary_package = rule(
         # Tool deps (hidden — resolved automatically)
         "_patch_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:patch_helper"),
+        ),
+        "_ebuild_helpers": attrs.default_only(
+            attrs.source(default = "//tools:ebuild_helpers.sh"),
         ),
     } | TOOLCHAIN_ATTRS,
 )
