@@ -22,56 +22,20 @@ package(
     description = "Apache Portable Runtime Utility library",
     homepage = "https://apr.apache.org/",
     license = "Apache-2.0",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-    ],
     deps = [
         "//packages/linux/dev-libs/misc/apr:apr",
-        "//packages/linux/system/libs/data/expat:expat",
+                "//packages/linux/system/libs/data/expat:expat",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool"
     ],
     # apr-1-config should be in PATH from the apr dependency
-    src_prepare = """
+    pre_configure_cmds = ["""
 # Rename configure.in to configure.ac for modern autoconf
 if [ -f configure.in ] && [ ! -f configure.ac ]; then
     mv configure.in configure.ac
 fi
 autoreconf -fi
-""",
-    src_configure = """
-# Find apr-1-config in PATH (set by build system from deps)
-APR_CONFIG=$(which apr-1-config 2>/dev/null || true)
-
-if [ -z "$APR_CONFIG" ]; then
-    # Fallback: search in common locations
-    for dir in /usr "$PWD/../__apr__/apr" "$PWD/../apr"; do
-        if [ -x "$dir/bin/apr-1-config" ]; then
-            APR_CONFIG="$dir/bin/apr-1-config"
-            break
-        fi
-    done
-fi
-
-if [ -z "$APR_CONFIG" ] || [ ! -x "$APR_CONFIG" ]; then
-    echo "Error: apr-1-config not found in PATH or standard locations"
-    echo "PATH: $PATH"
-    exit 1
-fi
-
-APR_DIR=$(dirname $(dirname "$APR_CONFIG"))
-echo "Found APR at: $APR_DIR (config: $APR_CONFIG)"
-
-./configure --prefix=/usr --disable-static --with-apr="$APR_DIR" --with-expat=/usr
-
-# Fix build/rules.mk to use the correct paths from APR dependency
-# The apr_builddir and apr_builders need to point to the actual APR install
-if [ -f build/rules.mk ]; then
-    # Replace the builddir paths with APR_DIR paths
-    sed -i -e "s|^apr_builddir=.*|apr_builddir=$APR_DIR/share/apr-1/build|" build/rules.mk
-    sed -i -e "s|^apr_builders=.*|apr_builders=$APR_DIR/share/apr-1/build|" build/rules.mk
-    sed -i -e "s|^top_builddir=.*|top_builddir=$PWD|" build/rules.mk
-fi
-""",
+"""],
     visibility = ["PUBLIC"],
 )

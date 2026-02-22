@@ -34,14 +34,14 @@ package(
         "hypervisor-fw",
     ],
     # Custom install to place in cloud-hypervisor directory
-    src_install = """
+    post_install_cmds = ["""\
 mkdir -p "$D/usr/share/cloud-hypervisor"
 if [ -f "target/x86_64-unknown-none/release/hypervisor-fw" ]; then
     install -m 0644 target/x86_64-unknown-none/release/hypervisor-fw "$D/usr/share/cloud-hypervisor/"
 elif [ -f "target/release/hypervisor-fw" ]; then
     install -m 0644 target/release/hypervisor-fw "$D/usr/share/cloud-hypervisor/"
 fi
-""",
+"""],
     labels = ["buckos:firmware"],
     deps = [
         "//packages/linux/lang/rust:rust",

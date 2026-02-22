@@ -29,7 +29,7 @@ package(
 
     deps = [],
 
-    src_prepare = """
+    pre_configure_cmds = ["""
 # Fix function conflicts with glibc
 # Modern glibc provides setns, name_to_handle_at, and open_by_handle_at
 # so we need to prevent iproute2 from redefining them
@@ -54,37 +54,21 @@ sed -i 's/^check_libbpf$/echo "no" # check_libbpf disabled/' configure
 
 # Disable ELF support - transitive dependency issues with pkg-config
 sed -i 's/^check_elf$/echo "no" # check_elf disabled/' configure
-""",
 
-    pre_configure = """
 # iproute2 uses a different build system - run its configure first
 ./configure
 
 # Disable features that require missing libraries by patching config.mk
-# SELinux - not available
 sed -i 's/HAVE_SELINUX:=y/HAVE_SELINUX:=n/' config.mk
 sed -i '/-lselinux/d' config.mk
 sed -i '/-DHAVE_SELINUX/d' config.mk
-
-# ELF/BPF - libelf not available
 sed -i 's/HAVE_ELF:=y/HAVE_ELF:=n/' config.mk
 sed -i '/-lelf/d' config.mk
 sed -i '/-DHAVE_ELF/d' config.mk
-
-# libbpf - not available
 sed -i 's/HAVE_LIBBPF:=y/HAVE_LIBBPF:=n/' config.mk
 sed -i '/-lbpf/d' config.mk
 sed -i '/-DHAVE_LIBBPF/d' config.mk
-
-echo "Config.mk patched to disable SELinux, ELF, and libbpf support"
-""",
-
-    # Skip autotools configure - already done in pre_configure
-    src_configure = "",
-
-    post_install = """
-make install PREFIX=/usr SBINDIR=/sbin DESTDIR="$DESTDIR"
-""",
+"""],
 
     description = "Network configuration utilities (ip, ss, bridge, etc.)",
     homepage = "https://wiki.linuxfoundation.org/networking/iproute2",

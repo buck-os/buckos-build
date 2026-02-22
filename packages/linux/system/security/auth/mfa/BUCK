@@ -7,14 +7,23 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "oath-toolkit",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-    ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 autoreconf -fi
-""",
+""", """
+autoreconf -fi
+""", """
+autoreconf -fi
+""", """
+autoreconf -fi
+""", """
+autoreconf -fi
+""", """
+autoreconf -fi
+""", """
+autoreconf -fi
+""", """
+autoreconf -fi
+"""],
     url = "https://download.savannah.nongnu.org/releases/oath-toolkit/oath-toolkit-2.6.9.tar.gz",
 
     sha256 = "333ac831c8f1a6dbd7feb897339bba453ff34d3b0f4cfaa6b5a20dba55c8e985",
@@ -33,11 +42,38 @@ autoreconf -fi
         "--enable-pam",
         "--with-pam-dir=/lib/security",
     ],
-    post_install = """
+    post_install_cmds = ["""
         mkdir -p "$OUT/etc/users.oath"
-    """,
+    """, """
+        mkdir -p "$OUT/usr/bin"
+        ln -sf ../lib/python3/site-packages/bin/ykman "$OUT/usr/bin/ykman" || true
+    """],
     deps = [
         "//packages/linux/system/security/encryption:linux-pam",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool"
     ],
     visibility = ["PUBLIC"],
 )
@@ -46,14 +82,6 @@ autoreconf -fi
 package(
     build_rule = "autotools",
     name = "google-authenticator",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-    ],
-    src_prepare = """
-autoreconf -fi
-""",
     url = "https://github.com/google/google-authenticator-libpam/archive/refs/tags/1.10.tar.gz",
 
     sha256 = "6fe08e7a73ed8f176569c3ad6ad95a5677873e59300d463a2d962c92685a8596",
@@ -61,9 +89,6 @@ autoreconf -fi
     description = "Google Authenticator PAM module for two-factor authentication",
     homepage = "https://github.com/google/google-authenticator-libpam",
     license = "Apache-2.0",
-    pre_configure = """
-        ./bootstrap.sh
-    """,
     configure_args = [
         "--prefix=/usr",
         "--libdir=/lib/security",
@@ -123,14 +148,6 @@ package(
 package(
     build_rule = "autotools",
     name = "pam-u2f",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-    ],
-    src_prepare = """
-autoreconf -fi
-""",
     url = "https://developers.yubico.com/pam-u2f/Releases/pam_u2f-1.3.0.tar.gz",
 
     sha256 = "72360c6875485eb4df409da8f8f52b17893f05e4d998529c238814480e115220",
@@ -153,14 +170,6 @@ autoreconf -fi
 package(
     build_rule = "autotools",
     name = "yubikey-manager",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-    ],
-    src_prepare = """
-autoreconf -fi
-""",
     url = "https://github.com/Yubico/yubikey-manager/archive/refs/tags/5.4.0.tar.gz",
 
     sha256 = "babd34dffbc53445416d1e27e5e5859c95615252f066d0a22cb51653f546af17",
@@ -168,14 +177,7 @@ autoreconf -fi
     description = "YubiKey configuration and management tool",
     homepage = "https://developers.yubico.com/yubikey-manager/",
     license = "BSD-2-Clause",
-    pre_configure = """
-        pip3 install --target=$OUT/usr/lib/python3/site-packages .
-    """,
     configure_args = [],
-    post_install = """
-        mkdir -p "$OUT/usr/bin"
-        ln -sf ../lib/python3/site-packages/bin/ykman "$OUT/usr/bin/ykman" || true
-    """,
     deps = [
         "//packages/linux/lang/python:python",
         "//packages/linux/system/security/encryption:pcsc-lite",
@@ -188,14 +190,6 @@ autoreconf -fi
 package(
     build_rule = "autotools",
     name = "yubico-pam",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-    ],
-    src_prepare = """
-autoreconf -fi
-""",
     url = "https://developers.yubico.com/yubico-pam/Releases/pam_yubico-2.27.tar.gz",
 
     sha256 = "63d02788852644d871746e1a7a1d16c272c583c226f62576f5ad232a6a44e18c",
@@ -219,14 +213,6 @@ autoreconf -fi
 package(
     build_rule = "autotools",
     name = "ykclient",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-    ],
-    src_prepare = """
-autoreconf -fi
-""",
     url = "https://developers.yubico.com/yubico-c-client/Releases/ykclient-2.15.tar.gz",
 
     sha256 = "f461cdefe7955d58bbd09d0eb7a15b36cb3576b88adbd68008f40ea978ea5016",
@@ -250,14 +236,6 @@ autoreconf -fi
 package(
     build_rule = "autotools",
     name = "ykpers",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-    ],
-    src_prepare = """
-autoreconf -fi
-""",
     url = "https://developers.yubico.com/yubikey-personalization/Releases/ykpers-1.20.0.tar.gz",
 
     sha256 = "0ec84d0ea862f45a7d85a1a3afe5e60b8da42df211bb7d27a50f486e31a79b93",
@@ -282,14 +260,6 @@ autoreconf -fi
 package(
     build_rule = "autotools",
     name = "libyubikey",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-    ],
-    src_prepare = """
-autoreconf -fi
-""",
     url = "https://developers.yubico.com/yubico-c/Releases/libyubikey-1.13.tar.gz",
 
     sha256 = "04edd0eb09cb665a05d808c58e1985f25bb7c5254d2849f36a0658ffc51c3401",

@@ -16,9 +16,9 @@ package(
         "CFLAGS=-O2 -Wall",
     ],
 
-    post_install = """
+    post_install_cmds = ["""
 install -Dm755 pcimem "$OUT/usr/bin/pcimem"
-""",
+"""],
 
     visibility = ["PUBLIC"],
 )

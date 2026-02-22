@@ -50,14 +50,14 @@ package(
         "--with-ssl=openssl",
         "--with-ssldir=/etc/ssl",
     ],
-    post_install = """
+    post_install_cmds = ["""
 mkdir -p "$DESTDIR/etc/dovecot"
 mkdir -p "$DESTDIR/var/lib/dovecot"
 mkdir -p "$DESTDIR/var/run/dovecot"
 
 # Install example configuration
 cp -r doc/example-config/* "$DESTDIR/etc/dovecot/"
-""",
+"""],
     deps = [
         "//packages/linux/system/libs/crypto/openssl:openssl",
         "//packages/linux/dev-tools/dev-utils/flex:flex",

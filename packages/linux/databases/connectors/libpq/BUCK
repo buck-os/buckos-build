@@ -20,7 +20,7 @@ package(
 
     # PostgreSQL tarball has configure-generated files that conflict with meson
     # We need to remove them before meson can work
-    src_prepare = """
+    pre_configure_cmds = ["""
 rm -f GNUmakefile.in src/include/pg_config.h src/include/pg_config_ext.h
 rm -f src/include/pg_config_os.h src/include/stamp-h
 rm -rf src/interfaces/libpq/.deps config.log config.status
@@ -53,7 +53,7 @@ find src/backend/utils -type f \( -name 'fmgroids.h' -o -name 'fmgrprotos.h' \
     -o -name 'fmgrtab.c' -o -name 'errcodes.h' -o -name 'fmgr-stamp' \) -delete || true
 
 rm -f src/backend/snowball/snowball_create.sql || true
-""",
+"""],
 
     # Base Meson arguments - using explicit values for combo options
     configure_args = [

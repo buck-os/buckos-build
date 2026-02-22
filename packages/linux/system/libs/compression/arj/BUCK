@@ -11,8 +11,7 @@ package(
     description = "Open-source ARJ archiver",
     homepage = "https://arj.sourceforge.net",
     license = "GPL-2",
-    bdepend = [],
-    src_prepare = """
+    pre_configure_cmds = ["""
 # Update config.sub and config.guess in the gnu directory
 if [ -d gnu ]; then
     # Try to find modern config.sub and config.guess from automake
@@ -47,26 +46,7 @@ if [ -d gnu ]; then
         chmod +x gnu/configure
     fi
 fi
-""",
-    src_configure = """
-cd gnu
-if [ -f configure ]; then
-    ./configure --prefix=/usr
-fi
-cd ..
-""",
-    src_compile = """
-# ARJ builds in the gnu/ subdirectory
-cd gnu
-make -j${MAKEOPTS:-$(nproc)} ${EXTRA_EMAKE:-}
-cd ..
-""",
-    src_install = """
-# ARJ installs from the gnu/ subdirectory
-cd gnu
-make DESTDIR="$D" install
-cd ..
-""",
+"""],
     deps = [
     ],
     visibility = ["PUBLIC"],

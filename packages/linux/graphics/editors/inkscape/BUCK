@@ -33,33 +33,19 @@ package(
     description = "Professional vector graphics editor",
     homepage = "https://inkscape.org/",
     license = "GPL-3.0-or-later",
-    pre_configure = """
-mkdir -p build
-cd build
-cmake .. \
-    -DCMAKE_INSTALL_PREFIX=/usr \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DWITH_DBUS=ON \
-    -DWITH_GRAPHICS_MAGICK=OFF \
-    -DWITH_IMAGE_MAGICK=ON \
-    -DWITH_INTERNAL_2GEOM=ON \
-    -DWITH_OPENMP=ON
-""",
     configure_args = [],
     make_args = ["-C", "build"],
-    post_install = """
+    post_install_cmds = ["""
 cd build
 DESTDIR=$OUT make install
-""",
+"""],
     deps = [
         "//packages/linux/desktop/gtk:gtk3",
-        "//packages/linux/system/libs/data/libxml2:libxml2",
-        "//packages/linux/system/libs/data/libxslt:libxslt",
-        "//packages/linux/media/image/imagemagick:imagemagick",
-        "//packages/linux/dev-libs/boost:boost",
-    ],
-    bdepend = [
-        "//packages/linux/lang/python:python",
+                "//packages/linux/system/libs/data/libxml2:libxml2",
+                "//packages/linux/system/libs/data/libxslt:libxslt",
+                "//packages/linux/media/image/imagemagick:imagemagick",
+                "//packages/linux/dev-libs/boost:boost",
+                "//packages/linux/lang/python:python"
     ],
     visibility = ["PUBLIC"],
 )

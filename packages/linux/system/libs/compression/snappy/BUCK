@@ -11,9 +11,6 @@ package(
     license = "BSD-3-Clause",
     # USE flag -> CMake option mapping (function adds -D and =ON/OFF automatically)
     # Note: static-libs inverts BUILD_SHARED_LIBS logic, so we handle it in cmake_args instead
-    use_options = {
-        "test": "SNAPPY_BUILD_TESTS",
-    },
     configure_args = [
         "-DBUILD_SHARED_LIBS=ON",
         "-DSNAPPY_BUILD_BENCHMARKS=OFF",

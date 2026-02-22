@@ -7,13 +7,6 @@ package(
     url = "https://download.aircrack-ng.org/aircrack-ng-1.7.tar.gz",
     sha256 = "05a704e3c8f7792a17315080a21214a4448fd2452c1b0dd5226a3a55f90b58c3",
 
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
-    ],
-
     use_deps = {
         "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
         "sqlite": "//packages/linux/system/libs/database/sqlite:sqlite",
@@ -29,10 +22,6 @@ package(
         "ssl": ("--with-openssl", "--without-openssl"),
     },
 
-    pre_configure = """
-autoreconf -fiv
-""",
-
     configure_args = [
         "--prefix=/usr",
         "--enable-shared",
@@ -40,7 +29,11 @@ autoreconf -fiv
 
     deps = [
         "//packages/linux/core/zlib:zlib",
-        "//packages/linux/network/libs/libpcap:libpcap",
+                "//packages/linux/network/libs/libpcap:libpcap",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config"
     ],
 
     description = "WiFi security auditing tools suite",

@@ -10,37 +10,6 @@ package(
     homepage = "https://github.com/flecs-hub/explorer",
     license = "MIT",
     deps = [],
-    pre_configure = """
-# Create CMakeLists.txt for the bake-based project
-cat > CMakeLists.txt << 'EOF'
-cmake_minimum_required(VERSION 3.10)
-project(flecs_explorer C)
-
-set(CMAKE_C_STANDARD 99)
-
-add_executable(flecs_explorer
-    deps/flecs.c
-    src/main.c
-)
-
-target_include_directories(flecs_explorer PRIVATE
-    ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/deps
-)
-
-target_compile_definitions(flecs_explorer PRIVATE
-    FLECS_SOFT_ASSERT
-    FLECS_KEEP_ASSERT
-)
-
-target_link_libraries(flecs_explorer PRIVATE pthread rt m)
-
-install(TARGETS flecs_explorer RUNTIME DESTINATION bin)
-
-# Install web assets
-install(DIRECTORY etc/ DESTINATION share/flecs-explorer)
-EOF
-""",
     configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],

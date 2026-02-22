@@ -18,15 +18,12 @@ package(
     description = "Info-ZIP compression utility",
     homepage = "https://infozip.sourceforge.net/Zip.html",
     license = "Info-ZIP",
-    src_configure = "true",  # Makefile-only build, no configure script
+# Makefile-only build, no configure script
     configure_args = [],
-    src_compile = """
-make -f unix/Makefile generic CC="${CC:-gcc}" CPP="${CC:-gcc} -E" LOCAL_ZIP="-DLARGE_FILE_SUPPORT"
-""",
-    src_install = """
+    post_install_cmds = ["""\
 mkdir -p "$DESTDIR/usr/bin"
 install -m755 zip zipcloak zipnote zipsplit "$DESTDIR/usr/bin/"
-""",
+"""],
     deps = [
         "//packages/linux/system/libs/compression/bzip2:bzip2",
     ],

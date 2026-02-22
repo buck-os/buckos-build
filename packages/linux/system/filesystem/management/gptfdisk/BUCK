@@ -15,28 +15,6 @@ package(
     homepage = "https://www.rodsbooks.com/gdisk/",
     license = "GPL-2.0",
     # gptfdisk uses plain Makefile, no configure script
-    src_configure = """
-# gptfdisk uses plain Makefile, no configure needed
-echo "gptfdisk: Skipping configure (Makefile-only package)"
-""",
-    src_compile = """
-# Build only gdisk and fixparts (don't need sgdisk/cgdisk which require popt/ncurses)
-# Or build all if deps are available
-make -j${MAKEOPTS:-$(nproc)} gdisk fixparts
-""",
-    src_install = """
-# gptfdisk has no install target, manually install binaries
-install -d "$DESTDIR/usr/sbin"
-install -m 755 gdisk "$DESTDIR/usr/sbin/"
-install -m 755 fixparts "$DESTDIR/usr/sbin/"
-
-# Install man pages
-install -d "$DESTDIR/usr/share/man/man8"
-install -m 644 gdisk.8 "$DESTDIR/usr/share/man/man8/"
-install -m 644 fixparts.8 "$DESTDIR/usr/share/man/man8/"
-
-echo "gptfdisk installed: gdisk, fixparts"
-""",
     deps = [
         "//packages/linux/core/util-linux:util-linux",
     ],

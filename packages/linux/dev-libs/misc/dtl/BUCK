@@ -4,7 +4,7 @@ load("//defs:package.bzl", "package")
 
 package(
     name = "dtl",
-    build_rule = "autotools",
+    build_rule = "binary",
     version = "1.21",
     url = "https://github.com/cubicdaiya/dtl/archive/refs/tags/v1.21.tar.gz",
     sha256 = "90ed2dbf4e6d687737fe25f118bbcb6aed778cecc3f2115d191a032bf8643dbd",
@@ -12,10 +12,7 @@ package(
     homepage = "https://github.com/cubicdaiya/dtl",
     license = "BSD",
     deps = [],
-    build_commands = [
-        # dtl is header-only - just install the headers
-        "mkdir -p ${PREFIX}/include/dtl",
-        "cp -r dtl/*.hpp ${PREFIX}/include/dtl/",
-    ],
+    install_script = """# dtl is header-only - just install the headers
+        "mkdir -p ${PREFIX}/include/dtl"\ncp -r dtl/*.hpp ${PREFIX}/include/dtl/""",
     visibility = ["PUBLIC"],
 )

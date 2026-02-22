@@ -9,7 +9,7 @@ package(
     bins = ["mcap"],
     # Build from the cli/mcap package within the go subdirectory
     packages = ["./cli/mcap"],
-    src_prepare = """
+    pre_configure_cmds = ["""
 # This is a Go workspace with source in go/ subdirectory
 # Move everything from go/ to root and set up for build
 if [ -d go ]; then
@@ -19,5 +19,5 @@ fi
 
 # Clean up non-go files
 rm -rf .git cpp python rust swift typescript website
-""",
+"""],
 )

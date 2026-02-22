@@ -18,19 +18,10 @@ package(
     description = "Awesome - Highly configurable window manager for X",
     homepage = "https://awesomewm.org/",
     license = "GPL-2.0",
-    pre_configure = """
-mkdir -p build
-cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=/usr \\
-    -DGENERATE_MANPAGES=OFF \\
-    -DGENERATE_DOC=OFF
-""",
-    bdepend = [
-        "//packages/linux/graphics/imagemagick:imagemagick",
-        "//packages/linux/dev-tools/build-systems/cmake:cmake",
-    ],
     deps = [
         "//packages/linux/desktop/qt:qt5",
+                "//packages/linux/graphics/imagemagick:imagemagick",
+                "//packages/linux/dev-tools/build-systems/cmake:cmake"
     ],
     visibility = ["PUBLIC"],
 )

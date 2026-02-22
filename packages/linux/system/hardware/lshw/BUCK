@@ -26,9 +26,9 @@ package(
         "DATADIR=/usr/share",
         "RPM_OPT_FLAGS=",
     ],
-    post_install = """
+    post_install_cmds = ["""
         make DESTDIR=$OUT PREFIX=/usr SBINDIR=/usr/sbin install
-    """,
+    """],
     deps = [
     ],
     visibility = ["PUBLIC"],

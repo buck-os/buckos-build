@@ -9,12 +9,7 @@ package(
     description = "C/C++ implementation for running transformer models",
     homepage = "https://github.com/nolanoorg/cformers",
     license = "MIT",
-    src_configure = "true",
-    src_compile = """
-cd cformers/cpp
-make -j${MAKEOPTS:-$(nproc)}
-""",
-    src_install = """
+    post_install_cmds = ["""\
 mkdir -p "$DESTDIR/usr/bin"
 cd cformers/cpp
 install -m 755 main "$DESTDIR/usr/bin/cformers"
@@ -22,6 +17,6 @@ install -m 755 quantize_bloom "$DESTDIR/usr/bin/cformers-quantize-bloom"
 install -m 755 quantize_gptj "$DESTDIR/usr/bin/cformers-quantize-gptj"
 install -m 755 quantize_gpt2 "$DESTDIR/usr/bin/cformers-quantize-gpt2"
 install -m 755 quantize_gptneox "$DESTDIR/usr/bin/cformers-quantize-gptneox"
-""",
+"""],
     visibility = ["PUBLIC"],
 )

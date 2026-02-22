@@ -13,10 +13,10 @@ package(
         "IP=/sbin/ip",
     ],
 
-    post_install = """
+    post_install_cmds = ["""
 make DESTDIR=$DESTDIR install
 mkdir -p "$DESTDIR/etc/ppp/peers"
-""",
+"""],
 
     description = "PPTP client for Linux (legacy VPN protocol)",
     homepage = "https://pptpclient.sourceforge.net/",

@@ -24,15 +24,15 @@ package(
         "python": ("--enable-python", "--disable-python"),
         "static-libs": ("--enable-static", "--disable-static"),
     },
-    bdepend = [
+    deps = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
         "//packages/linux/dev-tools/build-systems/automake:automake",
         "//packages/linux/dev-tools/build-systems/libtool:libtool",
         "//packages/linux/dev-libs/misc/gettext:gettext",
     ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 libtoolize --copy --force
 autoreconf -fiv
-""",
+"""],
     visibility = ["PUBLIC"],
 )

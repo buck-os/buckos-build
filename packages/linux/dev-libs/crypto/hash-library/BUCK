@@ -9,18 +9,7 @@ package(
     description = "Portable C++ hashing library (CRC32, MD5, SHA1, SHA256, SHA3, Keccak, HMAC)",
     homepage = "https://create.stephan-brumme.com/hash-library/",
     license = "Zlib",
-    src_configure = "true",
-    src_compile = """
-cd hash-library-8
-g++ -std=c++11 -O3 -fPIC -c crc32.cpp -I.
-g++ -std=c++11 -O3 -fPIC -c keccak.cpp -I.
-g++ -std=c++11 -O3 -fPIC -c md5.cpp -I.
-g++ -std=c++11 -O3 -fPIC -c sha1.cpp -I.
-g++ -std=c++11 -O3 -fPIC -c sha256.cpp -I.
-g++ -std=c++11 -O3 -fPIC -c sha3.cpp -I.
-ar rcs libhash-library.a crc32.o keccak.o md5.o sha1.o sha256.o sha3.o
-""",
-    src_install = """
+    post_install_cmds = ["""\
 cd hash-library-8
 install -Dm644 libhash-library.a "$DESTDIR/usr/lib/libhash-library.a"
 install -Dm644 crc32.h "$DESTDIR/usr/include/hash-library/crc32.h"
@@ -32,6 +21,6 @@ install -Dm644 md5.h "$DESTDIR/usr/include/hash-library/md5.h"
 install -Dm644 sha1.h "$DESTDIR/usr/include/hash-library/sha1.h"
 install -Dm644 sha256.h "$DESTDIR/usr/include/hash-library/sha256.h"
 install -Dm644 sha3.h "$DESTDIR/usr/include/hash-library/sha3.h"
-""",
+"""],
     visibility = ["PUBLIC"],
 )

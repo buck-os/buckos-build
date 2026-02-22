@@ -17,51 +17,13 @@ package(
 
     deps = [
         "//packages/linux/network/libs/libpcap:libpcap",
-        "//packages/linux/system/terminal/ncurses:ncurses",
+                "//packages/linux/system/terminal/ncurses:ncurses",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool"
     ],
 
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-    ],
-
-    autoreconf = True,
-    autoreconf_args = ["-fiv"],
-
-    pre_configure = """
-# iftop needs to link against ncursesw, but ncurses package only installs ncurses.h
-# Create a symlink or wrapper to handle the ncursesw.h include
-for inc_dir in $(echo $C_INCLUDE_PATH | tr ':' ' '); do
-    if [[ "$inc_dir" == *"ncurses"* ]] && [[ -f "$inc_dir/ncurses.h" ]]; then
-        # Create ncursesw.h as a symlink to ncurses.h if it doesn't exist
-        if [[ ! -f "$inc_dir/ncursesw.h" ]]; then
-            ln -s ncurses.h "$inc_dir/ncursesw.h" 2>/dev/null || true
-        fi
-        break
-    fi
-done
-
-# The real issue: autoconf's AC_CHECK_LIB doesn't respect LDFLAGS during the link test
-# Fix by editing the configure script DIRECTLY to set foundcurseslib and CURSES_LIBS correctly
-sed -i 's/if test x$foundcurseslib = x ;/if test x1 = 0 ;/' configure 2>/dev/null
-# Also ensure that the CURSES_LIBS variable is set correctly after foundcurseslib is determined
-sed -i 's/CURSES_LIBS="-l$foundcurseslib"/CURSES_LIBS="'"$LDFLAGS"' -l$foundcurseslib"/' configure 2>/dev/null
-""",
-
-    src_compile = """
-# Fix function signature mismatch in cfgfile.h before compilation
-# The source code has the function defined with parameters but the header declares it without
-sed -i 's/^int read_config();$/int read_config(char *file, int whinge_on_error);/' cfgfile.h
-
-# Fix multiple definition issues - ui.h and tui.h define global variables without extern
-# These need to be extern declarations or moved to a single .c file
-# The easiest fix is to use -fcommon flag to allow multiple definitions
-sed -i 's|^iftop_LDADD = |iftop_LDADD = -Wl,--allow-multiple-definition |' Makefile
-sed -i "s|^iftop_LDADD = .*$|iftop_LDADD = -Wl,--allow-multiple-definition $LDFLAGS -lncursesw -ltinfow|" Makefile
-
-make -j${MAKEOPTS:-$(nproc)} LDFLAGS="-Wl,--allow-multiple-definition $LDFLAGS -lncursesw -ltinfow"
-""",
+    pre_configure_cmds = ["autoreconf -fiv"],
 
     description = "Display bandwidth usage on an interface by host",
     homepage = "https://www.ex-parrot.com/pdw/iftop/",

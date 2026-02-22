@@ -2,7 +2,7 @@ load("//defs:package.bzl", "package")
 
 package(
     name = "ofxEasing",
-    build_rule = "autotools",
+    build_rule = "binary",
     version = "1.0.0",
     url = "https://github.com/arturoc/ofxEasing/archive/refs/heads/master.tar.gz",
     sha256 = "a6034e3f5a1351959bf434201cb1201c2073f57b486d8c5d123bd4f7ab9aab07",
@@ -10,9 +10,6 @@ package(
     homepage = "https://github.com/arturoc/ofxEasing",
     license = "MIT",
     deps = [],
-    build_commands = [
-        "mkdir -p ${PREFIX}/include/ofxEasing",
-        "cp ofxEasing/include/*.h ${PREFIX}/include/ofxEasing/",
-    ],
+    install_script = """mkdir -p ${PREFIX}/include/ofxEasing\ncp ofxEasing/include/*.h ${PREFIX}/include/ofxEasing/""",
     visibility = ["PUBLIC"],
 )

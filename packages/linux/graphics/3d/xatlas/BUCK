@@ -6,20 +6,4 @@ package(
     version = "f700c77",
     url = "https://github.com/jpcy/xatlas/archive/f700c7790aaa030e794b52ba7791a05c085faf0c.tar.gz",
     sha256 = "57b56dbedab3bf0a487e4c0ed3cc3fe79210d4a008d59a8326af59196a3487eb",
-    pre_configure = """
-cat > CMakeLists.txt << 'EOF'
-cmake_minimum_required(VERSION 3.10)
-project(xatlas LANGUAGES CXX)
-
-add_library(xatlas STATIC source/xatlas/xatlas.cpp)
-target_include_directories(xatlas PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/source>
-    $<INSTALL_INTERFACE:include>
-)
-target_compile_features(xatlas PUBLIC cxx_std_11)
-
-install(TARGETS xatlas ARCHIVE DESTINATION lib)
-install(FILES source/xatlas/xatlas.h source/xatlas/xatlas_c.h DESTINATION include/xatlas)
-EOF
-""",
 )

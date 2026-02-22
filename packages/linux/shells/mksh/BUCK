@@ -17,13 +17,9 @@ package(
     description = "MirBSD Korn Shell - an enhanced version of the public domain ksh",
     homepage = "http://www.mirbsd.org/mksh.htm",
     license = "MirOS",
-    src_configure = """
-# mksh uses its own build script
-sh Build.sh -r
-""",
-    post_install = """
+    post_install_cmds = ["""
 mkdir -p "$DESTDIR/bin"
 cp mksh "$DESTDIR/bin/"
-""",
+"""],
     visibility = ["PUBLIC"],
 )

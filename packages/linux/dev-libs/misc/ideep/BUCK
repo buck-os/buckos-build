@@ -10,15 +10,13 @@ package(
     homepage = "https://github.com/intel/ideep",
     license = "MIT",
     deps = [],
-    src_configure = "true",
-    src_compile = "true",
-    src_install = """
+    post_install_cmds = ["""\
 mkdir -p "$DESTDIR${PREFIX}/include"
 cd ${S}
 cp -r include/ideep "$DESTDIR${PREFIX}/include/"
 cp include/ideep.hpp "$DESTDIR${PREFIX}/include/"
 cp include/ideep_pin_singletons.hpp "$DESTDIR${PREFIX}/include/"
 cp include/mkldnn_compat.hpp "$DESTDIR${PREFIX}/include/"
-""",
+"""],
     visibility = ["PUBLIC"],
 )

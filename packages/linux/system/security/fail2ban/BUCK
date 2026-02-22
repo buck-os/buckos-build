@@ -14,18 +14,14 @@ package(
     description = "Daemon to ban hosts that cause multiple authentication errors",
     homepage = "https://www.fail2ban.org/",
     license = "GPL-2.0+",
-    pre_configure = """
-        # fail2ban uses setup.py
-        true
-    """,
     make_args = [],
-    post_install = """
+    post_install_cmds = ["""
         python3 setup.py install --root=$OUT --prefix=/usr
         mkdir -p $OUT/etc/fail2ban
         mkdir -p $OUT/var/lib/fail2ban
         mkdir -p $OUT/var/run/fail2ban
         cp -r config/* $OUT/etc/fail2ban/
-    """,
+    """],
     deps = [
         "//packages/linux/lang/python:python",
     ],

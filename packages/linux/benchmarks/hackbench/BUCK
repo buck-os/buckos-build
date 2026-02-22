@@ -15,13 +15,9 @@ package(
     homepage = "https://git.kernel.org/pub/scm/utils/rt-tests/rt-tests.git",
     license = "GPL-2.0",
     deps = [],
-    src_configure = """
-# rt-tests uses make directly
-true
-""",
-    src_install = """
+    post_install_cmds = ["""\
 mkdir -p "$DESTDIR/usr/bin"
 cp hackbench "$DESTDIR/usr/bin/" 2>/dev/null || true
-""",
+"""],
     visibility = ["PUBLIC"],
 )

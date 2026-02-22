@@ -23,22 +23,11 @@ package(
         "-Dbash-completions=false",
         "-Dzsh-completions=false",
     ],
-    src_install = """
-        # Default meson install
-        DESTDIR="$DESTDIR" meson install -C "${BUILD_DIR:-build}"
-
-        # Create rc directories
-        mkdir -p $DESTDIR/etc/runlevels/boot
-        mkdir -p $DESTDIR/etc/runlevels/default
-        mkdir -p $DESTDIR/etc/runlevels/nonetwork
-        mkdir -p $DESTDIR/etc/runlevels/shutdown
-        mkdir -p $DESTDIR/etc/runlevels/sysinit
-    """,
-    bdepend = [
-        "//packages/linux/lang/python:python",  # Python for meson
-    ],
     deps = [
-        "//packages/linux/system/terminal/ncurses:ncurses",  # For termcap
+        "//packages/linux/system/terminal/ncurses:ncurses",
+                # For termcap,
+                "//packages/linux/lang/python:python",
+                # Python for meson
     ],
     visibility = ["PUBLIC"],
 )

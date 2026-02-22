@@ -20,24 +20,9 @@ package(
     # No configure script - just Makefiles in architecture-specific subdirectories
 
     # Build using the Makefile in the architecture-specific directory
-    src_compile = """
-# Detect architecture and build in appropriate directory
-ARCH=$(uname -m)
-if [ "$ARCH" = "x86_64" ]; then
-    cd x86
-elif [ "$ARCH" = "aarch64" ]; then
-    cd arm
-else
-    echo "Unsupported architecture: $ARCH" >&2
-    exit 1
-fi
-
-# Build the static library
-make libs2nbignum.a
-""",
 
     # Install headers and library
-    src_install = """
+    post_install_cmds = ["""\
 ARCH=$(uname -m)
 if [ "$ARCH" = "x86_64" ]; then
     ARCHDIR=x86
@@ -57,7 +42,7 @@ install -d "${DESTDIR}/usr/include"
 install -m 644 include/s2n-bignum.h "${DESTDIR}/usr/include/"
 install -m 644 include/s2n-bignum-c89.h "${DESTDIR}/usr/include/"
 install -m 644 include/_internal_s2n_bignum.h "${DESTDIR}/usr/include/"
-""",
+"""],
 
     visibility = ["PUBLIC"],
 )

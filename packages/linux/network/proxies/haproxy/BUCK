@@ -4,7 +4,7 @@ load("//defs:package.bzl", "package")
 
 package(
     name = "haproxy",
-    build_rule = "autotools",
+    build_rule = "binary",
     version = "2.9.6",
     url = "https://www.haproxy.org/download/2.9/src/haproxy-2.9.6.tar.gz",
     sha256 = "208adf47c8fa83c54978034ba5c0110b7463c47078f119bd052342171a3b9a0b",
@@ -17,9 +17,6 @@ package(
         "pcre2": "//packages/linux/system/libs/utility/pcre2:pcre2",
         "zlib": "//packages/linux/core/zlib:zlib",
     },
-    build_commands = [
-        "make TARGET=linux-glibc USE_OPENSSL=1 USE_ZLIB=1 USE_PCRE2=1 PREFIX=${PREFIX}",
-        "make install PREFIX=${PREFIX}",
-    ],
+    install_script = """make TARGET=linux-glibc USE_OPENSSL=1 USE_ZLIB=1 USE_PCRE2=1 PREFIX=${PREFIX}\nmake install PREFIX=${PREFIX}""",
     visibility = ["PUBLIC"],
 )

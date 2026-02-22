@@ -22,15 +22,13 @@ package(
         "--enable-introspection",
     ],
     make_args = [],
-    post_install = """
+    post_install_cmds = ["""
 make DESTDIR=$OUT install
-""",
+"""],
     deps = [
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/system/libs/data/json-c:json-c",
         "//packages/linux/graphics/utilities/gegl:gegl",
-    ],
-    bdepend = [
     ],
     visibility = ["PUBLIC"],
 )

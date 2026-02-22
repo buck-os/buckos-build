@@ -12,39 +12,6 @@ package(
     deps = [
         "//packages/linux/core/zlib:zlib",
     ],
-    pre_configure = """
-# Create CMakeLists.txt for spz library
-cat > CMakeLists.txt << 'EOF'
-cmake_minimum_required(VERSION 3.10)
-project(spz CXX)
-
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-find_package(ZLIB REQUIRED)
-
-add_library(spz SHARED
-    src/cc/load-spz.cc
-    src/cc/splat-types.cc
-    src/cc/splat-c-types.cc
-)
-
-target_include_directories(spz PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/cc>
-    $<INSTALL_INTERFACE:include/spz>
-)
-
-target_link_libraries(spz PRIVATE ZLIB::ZLIB)
-
-install(TARGETS spz LIBRARY DESTINATION lib)
-install(FILES
-    src/cc/load-spz.h
-    src/cc/splat-types.h
-    src/cc/splat-c-types.h
-    DESTINATION include/spz
-)
-EOF
-""",
     configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",

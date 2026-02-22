@@ -18,7 +18,9 @@ package(
         "--libdir=/usr/lib64",
     ],
     # Remove .la files that cause libtool path issues
-    src_install = "make DESTDIR=\"$DESTDIR\" install && find \"$DESTDIR\" -name '*.la' -delete",
+    post_install_cmds = ["""\
+find \"$DESTDIR\" -name '*.la' -delete
+"""],
     deps = [
         "//packages/linux/graphics/xorg/xorgproto:xorgproto",
     ],

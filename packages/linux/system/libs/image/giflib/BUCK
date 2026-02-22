@@ -14,31 +14,9 @@ package(
     description = "Library to handle, display and manipulate GIF images",
     homepage = "https://sourceforge.net/projects/giflib/",
     license = "MIT",
-    src_configure = "true",
-    src_prepare = """
+    pre_configure_cmds = ["""
 # Remove doc building from Makefile (we don't need docs)
 sed -i -e '/$(MAKE) -C doc/d' Makefile
-""",
-    src_compile = """
-# Build using the standard Makefile like Gentoo does
-# Pass AR explicitly to avoid 'rcs' command issues
-make -j${MAKEOPTS:-$(nproc)} \
-    AR="${AR:-ar}" \
-    CC="${CC:-gcc}" \
-    CFLAGS="${CFLAGS:--O2} -std=gnu99 -fPIC" \
-    LDFLAGS="${LDFLAGS:-}" \
-    OFLAGS="" \
-    all
-""",
-    src_install = """
-make \
-    DESTDIR="$DESTDIR" \
-    PREFIX="/usr" \
-    LIBDIR="/usr/lib" \
-    install
-
-# Remove static library (we only want shared)
-rm -f "$DESTDIR/usr/lib/libgif.a"
-""",
+"""],
     visibility = ["PUBLIC"],
 )

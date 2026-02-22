@@ -14,19 +14,15 @@ package(
     description = "PAM module for RADIUS authentication",
     homepage = "https://github.com/FreeRADIUS/pam_radius",
     license = "GPL-2.0+",
-    pre_configure = """
-        # pam_radius uses a simple Makefile
-        true
-    """,
     configure_args = [],
     make_args = [
         "PAMDIR=/lib/security",
     ],
-    post_install = """
+    post_install_cmds = ["""
         mkdir -p "$OUT/lib/security" "$OUT/etc/raddb"
         cp pam_radius_auth.so "$OUT/lib/security/"
         cp pam_radius_auth.conf "$OUT/etc/raddb/"
-    """,
+    """],
     deps = [
         "//packages/linux/system/security/encryption:linux-pam",
     ],
@@ -44,9 +40,6 @@ package(
     description = "PAM module for TACACS+ authentication",
     homepage = "https://github.com/kravietz/pam_tacplus",
     license = "GPL-2.0+",
-    pre_configure = """
-        autoreconf -i
-    """,
     configure_args = [
         "--prefix=/usr",
         "--with-pam-module-dir=/lib/security",

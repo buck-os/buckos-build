@@ -4,7 +4,7 @@ load("//defs:package.bzl", "package")
 
 package(
     name = "multicut",
-    build_rule = "autotools",
+    build_rule = "binary",
     version = "1.11",
     url = "https://github.com/bjoern-andres/graph/archive/refs/tags/v1.11.tar.gz",
     sha256 = "00432f3007b4cb2a8d6f2e021fd5625a79e307d6532971719ca6ab81dd0ae752",
@@ -14,10 +14,6 @@ package(
     deps = [
         "//packages/linux/dev-libs/eigen:eigen",
     ],
-    build_commands = [
-        "mkdir -p ${PREFIX}/include",
-        "cp -r include/andres ${PREFIX}/include/",
-        "cp -r include/nl-lmp ${PREFIX}/include/",
-    ],
+    install_script = """mkdir -p ${PREFIX}/include\ncp -r include/andres ${PREFIX}/include/\ncp -r include/nl-lmp ${PREFIX}/include/""",
     visibility = ["PUBLIC"],
 )

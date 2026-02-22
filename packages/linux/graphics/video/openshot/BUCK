@@ -10,21 +10,14 @@ package(
     description = "Video editing library used by OpenShot",
     homepage = "https://www.openshot.org/",
     license = "LGPL-3.0-or-later",
-    pre_configure = """
-mkdir -p build
-cd build
-cmake .. \
-    -DCMAKE_INSTALL_PREFIX=/usr \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DENABLE_RUBY=OFF \
-    -DUSE_SYSTEM_JSONCPP=ON
-""",
     configure_args = [],
     make_args = ["-C", "build"],
-    post_install = """
+    post_install_cmds = ["""
 cd build
 DESTDIR=$OUT make install
-""",
+""", """
+python3 setup.py install --prefix=/usr --root=$OUT
+"""],
     deps = [
         "//packages/linux/media/video/ffmpeg:ffmpeg",
         # "//packages/linux/core/jsoncpp:jsoncpp",  # TODO: not packaged yet
@@ -45,20 +38,13 @@ package(
     description = "Easy to use, quick to learn video editor",
     homepage = "https://www.openshot.org/",
     license = "GPL-3.0-or-later",
-    pre_configure = """
-# OpenShot uses Python setup
-""",
     configure_args = [],
     make_args = [],
-    post_install = """
-python3 setup.py install --prefix=/usr --root=$OUT
-""",
     deps = [
         ":libopenshot",
         "//packages/linux/lang/python:python",
         "//packages/linux/desktop/qt:qt5",
         # "//packages/linux/core/requests:requests",  # TODO: not packaged yet,
     ],
-    bdepend = [],
     visibility = ["PUBLIC"],
 )

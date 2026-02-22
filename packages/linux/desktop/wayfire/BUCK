@@ -20,13 +20,6 @@ package(
     description = "Wayfire - 3D Wayland compositor",
     homepage = "https://wayfire.org/",
     license = "MIT",
-    pre_configure = """
-mkdir -p build
-cd build
-meson setup .. --prefix=/usr \\
-    -Duse_system_wlroots=enabled \\
-    -Duse_system_wfconfig=enabled
-""",
     deps = [
         "//packages/linux/system/libs/utility/libffi:libffi",
         "//packages/linux/graphics/rendering/wayland:wayland",

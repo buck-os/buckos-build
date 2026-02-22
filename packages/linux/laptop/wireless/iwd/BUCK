@@ -26,7 +26,7 @@ package(
     description = "iNet Wireless Daemon for Linux",
     homepage = "https://iwd.wiki.kernel.org/",
     license = "LGPL-2.1",
-    autoreconf = True,
+    pre_configure_cmds = ["autoreconf -fi"],
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc",

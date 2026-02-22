@@ -16,24 +16,19 @@ package(
     description = "Complete front-end for MPlayer and mpv",
     homepage = "https://www.smplayer.info/",
     license = "GPL-2.0-or-later",
-    pre_configure = """
-sed -i 's|PREFIX=/usr/local|PREFIX=/usr|' Makefile
-""",
     configure_args = [],
     make_args = [
         "PREFIX=/usr",
         "QMAKE=qmake",
         "LRELEASE=lrelease",
     ],
-    post_install = """
+    post_install_cmds = ["""
 DESTDIR=$OUT PREFIX=/usr make install
-""",
+"""],
     deps = [
         "//packages/linux/graphics/video/mpv:mpv",
-        "//packages/linux/desktop/qt:qt5",
-    ],
-    bdepend = [
-        "//packages/linux/desktop/qt:qt5",
+                "//packages/linux/desktop/qt:qt5",
+                "//packages/linux/desktop/qt:qt5"
     ],
     visibility = ["PUBLIC"],
 )

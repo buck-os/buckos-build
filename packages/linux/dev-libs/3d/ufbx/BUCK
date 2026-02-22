@@ -2,7 +2,7 @@ load("//defs:package.bzl", "package")
 
 package(
     name = "ufbx",
-    build_rule = "autotools",
+    build_rule = "binary",
     version = "0.21.2",
     url = "https://github.com/ufbx/ufbx/archive/refs/tags/v0.21.2.tar.gz",
     sha256 = "41488cde8a7dd43e361d04a7d4003123be9af8eaa2cc26d48e1834b44d120606",
@@ -10,12 +10,6 @@ package(
     homepage = "https://github.com/ufbx/ufbx",
     license = "MIT",
     deps = [],
-    build_commands = [
-        "mkdir -p ${PREFIX}/include",
-        "cp ufbx.h ${PREFIX}/include/",
-        "mkdir -p ${PREFIX}/lib",
-        "${CC} -c -O2 -fPIC ufbx.c -o ufbx.o",
-        "${AR} rcs ${PREFIX}/lib/libufbx.a ufbx.o",
-    ],
+    install_script = """mkdir -p ${PREFIX}/include\ncp ufbx.h ${PREFIX}/include/\nmkdir -p ${PREFIX}/lib\n${CC} -c -O2 -fPIC ufbx.c -o ufbx.o\n${AR} rcs ${PREFIX}/lib/libufbx.a ufbx.o""",
     visibility = ["PUBLIC"],
 )

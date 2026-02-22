@@ -11,12 +11,12 @@ package(
     license = "BSD-3-Clause",
     packages = ["."],
     bins = ["u-root"],
-    src_prepare = """
+    pre_configure_cmds = ["""
 rm -rf .git
 # Remove incomplete vendor directory - we'll use go mod download instead
 if [ -d vendor ]; then
     rm -rf vendor
 fi
-""",
+"""],
     visibility = ["PUBLIC"],
 )

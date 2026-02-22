@@ -12,18 +12,12 @@ package(
         "zerocopy": ("--enable-zerocopy", "--disable-zerocopy"),
     },
 
-    pre_configure = """
-mkdir -p build
-cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DDETACH_KERNEL_DRIVER=ON -DINSTALL_UDEV_RULES=OFF
-""",
-
     make_args = ["-C", "build"],
 
-    post_install = """
+    post_install_cmds = ["""
 cd build
 make install DESTDIR="$DESTDIR"
-""",
+"""],
 
     deps = [
         "//packages/linux/system/libs/libusb:libusb",

@@ -16,10 +16,6 @@ package(
         "-DPX_PHYSX_STATIC_LIB=ON",
         "-DDISABLE_CUDA_PHYSX=ON",
     ],
-    pre_configure = """
-        # PhysX CMake expects to be run from physx/compiler/public
-        export PHYSX_ROOT_DIR="${PWD}/physx"
-    """,
     deps = [],
     visibility = ["PUBLIC"],
 )

@@ -28,28 +28,8 @@ package(
         "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
         "jemalloc": "//packages/linux/dev-libs/allocators/jemalloc:jemalloc",
     },
-    build_env = {
+    env = {
         "PREFIX": "/usr",
     },
-    build_cmd = """
-# Redis uses make directly
-make -j${MAKEOPTS:-$(nproc)} PREFIX=/usr
-""",
-    install_cmd = """
-make PREFIX=/usr DESTDIR="$DESTDIR" install
-
-# Create directories
-mkdir -p "$DESTDIR/etc/redis"
-mkdir -p "$DESTDIR/var/lib/redis"
-mkdir -p "$DESTDIR/var/log/redis"
-
-# Install default config
-cp redis.conf "$DESTDIR/etc/redis/redis.conf"
-
-# Update config for production use
-sed -i 's/^daemonize no/daemonize yes/' "$DESTDIR/etc/redis/redis.conf"
-sed -i 's|^dir \./|dir /var/lib/redis|' "$DESTDIR/etc/redis/redis.conf"
-sed -i 's|^logfile ""|logfile /var/log/redis/redis.log|' "$DESTDIR/etc/redis/redis.conf"
-""",
     visibility = ["PUBLIC"],
 )

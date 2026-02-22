@@ -20,17 +20,15 @@ package(
         "--prefix=/usr",
     ],
     make_args = [],
-    post_install = """
+    post_install_cmds = ["""
 DESTDIR=$OUT make install
-""",
+"""],
     deps = [
         "//packages/linux/system/libs/data/libxml2:libxml2",
-        "//packages/linux/media/image/imagemagick:imagemagick",
-        "//packages/linux/system/libs/font/freetype:freetype",
-        "//packages/linux/system/libs/font/fribidi:fribidi",
-    ],
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
+                "//packages/linux/media/image/imagemagick:imagemagick",
+                "//packages/linux/system/libs/font/freetype:freetype",
+                "//packages/linux/system/libs/font/fribidi:fribidi",
+                "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config"
     ],
     visibility = ["PUBLIC"],
 )

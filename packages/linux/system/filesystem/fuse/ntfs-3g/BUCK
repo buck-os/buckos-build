@@ -3,15 +3,9 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "ntfs-3g",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
-    ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 autoreconf -fi
-""",
+"""],
     url = "https://github.com/tuxera/ntfs-3g/archive/refs/tags/2022.10.3.tar.gz",
 
     sha256 = "8bd7749ea9d8534c9f0664d48b576e90b96d45ec8803c9427f6ffaa2f0dde299",
@@ -27,6 +21,10 @@ autoreconf -fi
     ],
     deps = [
         "//packages/linux/system/security/encryption:fuse3",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config"
     ],
     visibility = ["PUBLIC"],
 )

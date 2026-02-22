@@ -12,51 +12,6 @@ package(
     homepage = "https://github.com/aantron/better-enums",
     license = "BSD",
     deps = [],
-    pre_configure = """
-        # Create a minimal CMakeLists.txt for header-only installation
-        cat > CMakeLists.txt << 'EOF'
-cmake_minimum_required(VERSION 3.10)
-project(better_enums VERSION 0.11.3 LANGUAGES CXX)
-
-# Header-only library - just install the header
-install(FILES enum.h DESTINATION include/better_enums)
-
-# Install CMake package config files for find_package support
-include(CMakePackageConfigHelpers)
-
-configure_package_config_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/better_enumsConfig.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/better_enumsConfig.cmake
-    INSTALL_DESTINATION lib/cmake/better_enums
-    NO_CHECK_REQUIRED_COMPONENTS_MACRO
-)
-
-write_basic_package_version_file(
-    ${CMAKE_CURRENT_BINARY_DIR}/better_enumsConfigVersion.cmake
-    VERSION 0.11.3
-    COMPATIBILITY SameMajorVersion
-)
-
-install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/better_enumsConfig.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/better_enumsConfigVersion.cmake
-    DESTINATION lib/cmake/better_enums
-)
-EOF
-
-        # Create CMake config file
-        mkdir -p cmake
-        cat > cmake/better_enumsConfig.cmake.in << 'EOF'
-@PACKAGE_INIT@
-
-if(NOT TARGET better_enums::better_enums)
-    add_library(better_enums::better_enums INTERFACE IMPORTED)
-    set_target_properties(better_enums::better_enums PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "@PACKAGE_CMAKE_INSTALL_PREFIX@/include"
-    )
-endif()
-EOF
-    """,
     configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],

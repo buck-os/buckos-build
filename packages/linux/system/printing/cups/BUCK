@@ -7,8 +7,6 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "cups",
-    bdepend = [],
-    src_prepare = "",
     url = "https://github.com/OpenPrinting/cups/releases/download/v2.4.7/cups-2.4.7-source.tar.gz",
 
     sha256 = "dd54228dd903526428ce7e37961afaed230ad310788141da75cebaa08362cf6c",
@@ -48,16 +46,19 @@ package(
         "--disable-avahi",
         "--disable-systemd",
     ],
-    post_install = """
+    post_install_cmds = ["""
         mkdir -p "$OUT/etc/cups"
         mkdir -p "$OUT/var/log/cups"
         mkdir -p "$OUT/var/spool/cups"
         mkdir -p "$OUT/var/cache/cups"
-    """,
+    """],
     deps = [
         "//packages/linux/core/zlib:zlib",
-        "//packages/linux/system/libs/ipc/dbus:dbus",
-        "//packages/linux/system/libs/crypto/openssl:openssl",
+                "//packages/linux/system/libs/ipc/dbus:dbus",
+                "//packages/linux/system/libs/crypto/openssl:openssl",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool"
     ],
     visibility = ["PUBLIC"],
 )
@@ -66,8 +67,6 @@ package(
 package(
     build_rule = "autotools",
     name = "cups-filters",
-    bdepend = [],
-    src_prepare = "",
     url = "https://github.com/OpenPrinting/cups-filters/releases/download/2.0.0/cups-filters-2.0.0.tar.xz",
 
     sha256 = "b5152e3dd148ed73835827ac2f219df7cf5808dbf9dbaec2aa0127b44de800d8",
@@ -96,14 +95,9 @@ package(
 package(
     build_rule = "autotools",
     name = "libpaper",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-    ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 autoreconf -fi
-""",
+"""],
     url = "https://github.com/rrthomas/libpaper/archive/refs/tags/v2.1.3.tar.gz",
 
     sha256 = "77633a495878f9c226e28dd574a13b65ac254082f65530ff7cf9b22670da9856",

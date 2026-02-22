@@ -24,26 +24,8 @@ package(
     description = "DirectX 9/10/11 to Vulkan translation layer for Wine",
     homepage = "https://github.com/doitsujin/dxvk",
     license = "Zlib",
-    pre_configure = """
-# DXVK uses Meson and requires cross-compilation for 32-bit and 64-bit
-# Build 64-bit version
-meson setup build64 \
-    --cross-file build-win64.txt \
-    --prefix=/usr/share/dxvk/x64 \
-    --buildtype=release \
-    --strip
-
-# Build 32-bit version (if multilib available)
-if [ -f build-win32.txt ]; then
-    meson setup build32 \
-        --cross-file build-win32.txt \
-        --prefix=/usr/share/dxvk/x32 \
-        --buildtype=release \
-        --strip
-fi
-    """,
     configure_args = [],
-    post_install = """
+    post_install_cmds = ["""
 #!/bin/bash
 set -e
 
@@ -100,7 +82,7 @@ elif [ "$ACTION" = "uninstall" ]; then
 fi
 EOF
 chmod +x "$DESTDIR/usr/bin/setup_dxvk"
-    """,
+    """],
     deps = [
         "//packages/linux/gaming/compatibility/wine:wine",
     ],

@@ -10,11 +10,6 @@ package(
     description = "AppArmor userspace utilities and profiles",
     homepage = "https://apparmor.net/",
     license = "GPL-2.0",
-    pre_configure = """
-        # AppArmor builds in subdirectories
-        cd libraries/libapparmor
-        sh ./autogen.sh
-    """,
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc",
@@ -22,7 +17,7 @@ package(
         "--with-python",
     ],
     make_args = ["-C", "libraries/libapparmor"],
-    post_install = """
+    post_install_cmds = ["""
         # Install libapparmor
         cd libraries/libapparmor
         make DESTDIR=$OUT install
@@ -45,7 +40,7 @@ package(
 
         mkdir -p $OUT/etc/apparmor.d
         mkdir -p $OUT/var/lib/apparmor
-    """,
+    """],
     deps = [
         "//packages/linux/lang/python:python",
     ],

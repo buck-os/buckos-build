@@ -10,9 +10,7 @@ package(
     homepage = "https://github.com/llohse/libnpy",
     license = "MIT",
     deps = [],
-    src_configure = ":",
-    src_compile = ":",
-    src_install = """
+    post_install_cmds = ["""\
 mkdir -p "$DESTDIR/usr/include/libnpy"
 # The header may be in different locations depending on the tarball structure
 if [ -f include/npy.hpp ]; then
@@ -23,6 +21,6 @@ else
     # Search for the header file
     find . -name "npy.hpp" -exec cp {} "$DESTDIR/usr/include/libnpy/" \;
 fi
-""",
+"""],
     visibility = ["PUBLIC"],
 )

@@ -3,8 +3,6 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "libmnl",
-    bdepend = [],
-    src_prepare = "",
     version = "1.0.5",
     url = "https://www.netfilter.org/projects/libmnl/files/libmnl-1.0.5.tar.bz2",
     sha256 = "274b9b919ef3152bfb3da3a13c950dd60d6e2571cd553571571be9f39e513571",
@@ -23,9 +21,9 @@ package(
         "--enable-shared",
     ],
 
-    post_install = """
+    post_install_cmds = ["""
 find "$DESTDIR" -name "*.la" -delete
-""",
+"""],
 
     deps = [],
 

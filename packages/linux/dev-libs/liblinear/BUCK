@@ -11,42 +11,5 @@ package(
     homepage = "https://github.com/cjlin1/liblinear",
     license = "BSD-3-Clause",
 
-    src_compile = """
-        # Build library and utilities using Makefile
-        make lib
-        make train predict
-    """,
-
-    src_install = """
-        # Install shared library
-        mkdir -p "$DESTDIR/usr/lib64"
-        cp liblinear.so.5 "$DESTDIR/usr/lib64/"
-        ln -sf liblinear.so.5 "$DESTDIR/usr/lib64/liblinear.so"
-
-        # Install binaries
-        mkdir -p "$DESTDIR/usr/bin"
-        cp train "$DESTDIR/usr/bin/liblinear-train"
-        cp predict "$DESTDIR/usr/bin/liblinear-predict"
-
-        # Install header
-        mkdir -p "$DESTDIR/usr/include"
-        cp linear.h "$DESTDIR/usr/include/"
-
-        # Generate pkg-config file
-        mkdir -p "$DESTDIR/usr/lib64/pkgconfig"
-        cat > "$DESTDIR/usr/lib64/pkgconfig/liblinear.pc" << EOF
-prefix=/usr
-exec_prefix=${prefix}
-libdir=${prefix}/lib64
-includedir=${prefix}/include
-
-Name: liblinear
-Description: A Library for Large Linear Classification
-Version: $PV
-Libs: -llinear
-Cflags: -I${includedir}
-EOF
-    """,
-
     visibility = ["PUBLIC"],
 )

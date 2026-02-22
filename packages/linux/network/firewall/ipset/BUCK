@@ -7,15 +7,9 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "ipset",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-        "//packages/linux/dev-libs/misc/gettext:gettext",
-    ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 autoreconf -fi
-""",
+"""],
     version = "7.21",
     url = "https://ipset.netfilter.org/ipset-7.21.tar.bz2",
     sha256 = "e2c6ce4fcf3acb3893ca5d35c86935f80ad76fc5ccae601185842df760e0bc69",
@@ -33,7 +27,7 @@ autoreconf -fi
         "--with-kmod=no",
     ],
 
-    post_install = """
+    post_install_cmds = ["""
 # Create ipset configuration directories
 mkdir -p "$DESTDIR/etc/ipset"
 mkdir -p "$DESTDIR/var/lib/ipset"
@@ -50,10 +44,14 @@ chmod 600 "$DESTDIR/etc/ipset.conf"
 # Create empty sets save file
 touch "$DESTDIR/var/lib/ipset/ipset.save"
 chmod 600 "$DESTDIR/var/lib/ipset/ipset.save"
-""",
+"""],
 
     deps = [
         "//packages/linux/system/libs/network/libmnl:libmnl",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-libs/misc/gettext:gettext"
     ],
 
     description = "Administration tool for IP sets in Linux kernel",

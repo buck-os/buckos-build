@@ -8,13 +8,13 @@ package(
     sha256 = "989406521912cb14c786b1c1ce8b9b6ca556f0e4b8e93c9fd76dc9d7fd2eedb6",
     bins = ["protoc-gen-monkeyc"],
     packages = ["."],
-    src_prepare = """
+    pre_configure_cmds = ["""
 if [ -d protoc-gen-monkeyc ] && [ -f protoc-gen-monkeyc/go.mod ]; then
     cp -rT protoc-gen-monkeyc .
     rm -rf protoc-gen-monkeyc
 fi
 rm -rf .git
-""",
+"""],
     description = "Protobuf compiler plugin for generating Garmin Monkey C code",
     homepage = "https://github.com/domenipavec/protobuf-monkeyc",
     license = "MIT",

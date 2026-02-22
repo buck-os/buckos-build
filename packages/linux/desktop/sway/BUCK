@@ -24,86 +24,11 @@ package(
     patches = [
         "patches/0002-sway-use-find_program-for-wayland-scanner.patch",
     ],
-    use_defaults = [],  # No xwayland for pure Wayland build
+# No xwayland for pure Wayland build
     # wayland-scanner provides wayland-scanner for host (exec_bdepend builds for host platform)
-    exec_bdepend = [
-        "//packages/linux/graphics/rendering/wayland:wayland-scanner",
-    ],
     # Python mako is needed for code generation
-    bdepend = [
-        "//packages/linux/dev-libs/python/mako:mako",
-    ],
     # Work around pkg-config path resolution issues in cross-compilation
     env = {"CFLAGS": "-Wno-missing-include-dirs"},
-    pre_configure = '''
-# Set up wayland-scanner path for meson
-IFS=':' read -ra DEP_ARRAY <<< "$DEP_BASE_DIRS"
-for dep_dir in "${DEP_ARRAY[@]}"; do
-    if [ -x "$dep_dir/usr/bin/wayland-scanner" ]; then
-        WAYLAND_SCANNER="$dep_dir/usr/bin/wayland-scanner"
-        SCANNER_PKG_CONFIG_PATH="$dep_dir/usr/lib64/pkgconfig"
-        echo "Found wayland-scanner: $WAYLAND_SCANNER"
-
-        # Create patched pkg-config directory
-        mkdir -p patched_pkgconfig
-        if [ -f "$SCANNER_PKG_CONFIG_PATH/wayland-scanner.pc" ]; then
-            sed "s|^prefix=.*|prefix=$dep_dir/usr|" "$SCANNER_PKG_CONFIG_PATH/wayland-scanner.pc" > patched_pkgconfig/wayland-scanner.pc
-        fi
-
-        # Create meson native file
-        cat > native.ini << NEOF
-[binaries]
-wayland-scanner = '$WAYLAND_SCANNER'
-
-[built-in options]
-pkg_config_path = ['$(pwd)/patched_pkgconfig', '$SCANNER_PKG_CONFIG_PATH']
-NEOF
-        export PATH="$dep_dir/usr/bin:$PATH"
-        export PKG_CONFIG_PATH_FOR_BUILD="$(pwd)/patched_pkgconfig:$SCANNER_PKG_CONFIG_PATH${PKG_CONFIG_PATH_FOR_BUILD:+:$PKG_CONFIG_PATH_FOR_BUILD}"
-        break
-    fi
-done
-''',
-    src_configure = """
-# Add include subdirectory paths to CFLAGS (freetype2, harfbuzz, etc.)
-IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
-for _dep in "${_DEP_ARRAY[@]}"; do
-    for subdir in freetype2 harfbuzz fontconfig cairo pixman-1; do
-        if [ -d "$_dep/usr/include/$subdir" ]; then
-            export CFLAGS="${CFLAGS:-} -I$_dep/usr/include/$subdir"
-            export CXXFLAGS="${CXXFLAGS:-} -I$_dep/usr/include/$subdir"
-        fi
-    done
-done
-
-# Add rpath-link for all dep lib dirs
-_EXTRA_LDFLAGS=""
-for _dep in "${_DEP_ARRAY[@]}"; do
-    for _libdir in "$_dep/usr/lib64" "$_dep/usr/lib"; do
-        if [ -d "$_libdir" ]; then
-            _EXTRA_LDFLAGS="$_EXTRA_LDFLAGS -Wl,-rpath-link,$_libdir"
-        fi
-    done
-    if [ -x "$_dep/usr/bin/wayland-scanner" ]; then
-        export PATH="$_dep/usr/bin:$PATH"
-        export PKG_CONFIG_PATH_FOR_BUILD="$(pwd)/patched_pkgconfig:$_dep/usr/lib64/pkgconfig${PKG_CONFIG_PATH_FOR_BUILD:+:$PKG_CONFIG_PATH_FOR_BUILD}"
-    fi
-done
-export LDFLAGS="${LDFLAGS:-} $_EXTRA_LDFLAGS"
-
-NATIVE_FILE_ARG=""
-if [ -f native.ini ]; then
-    NATIVE_FILE_ARG="--native-file=native.ini"
-fi
-
-meson setup "${BUILD_DIR:-build}" \\
-    --prefix="${EPREFIX:-/usr}" \\
-    --libdir="${LIBDIR:-lib64}" \\
-    --buildtype="${MESON_BUILD_TYPE:-release}" \\
-    -Dwerror=false \\
-    $NATIVE_FILE_ARG \\
-    ${MESON_EXTRA_ARGS:-}
-""",
     configure_args = [
         "-Ddefault-wallpaper=false",
         "-Dwerror=false",
@@ -123,33 +48,38 @@ meson setup "${BUILD_DIR:-build}" \\
     },
     deps = [
         "//packages/linux/system/libs/utility/libffi:libffi",
-        "//packages/linux/core/zlib:zlib",
-        "//packages/linux/system/libs/data/expat:expat",
-        "//packages/linux/system/libs/image/libpng:libpng",
-        "//packages/linux/system/libs/compression/brotli:brotli",
-        "//packages/linux/system/libs/compression/bzip2:bzip2",
-        "//packages/linux/system/libs/input/libevdev:libevdev",
-        "//packages/linux/system/init/eudev:eudev",
-        "//packages/linux/system/libs/font/freetype:freetype",
-        "//packages/linux/system/libs/font/fontconfig:fontconfig",
-        "//packages/linux/system/libs/font/harfbuzz:harfbuzz",
-        "//packages/linux/system/libs/font/graphite2:graphite2",
-        "//packages/linux/graphics/rendering/wayland:wayland",
-        "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
-        "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
-        "//packages/linux/desktop/mesa:mesa",
-        "//packages/linux/system/libs/input/libinput:libinput",
-        "//packages/linux/desktop/libdrm:libdrm",
-        "//packages/linux/system/security/auth/biometric:pixman",
-        "//packages/linux/system/libs/data/json-c:json-c",
-        "//packages/linux/system/libs/utility/pcre2:pcre2",
-        "//packages/linux/system/libs/graphics/cairo:cairo",
-        "//packages/linux/fonts/libraries/pango:pango",
-        "//packages/linux/dev-libs/glib:glib",
-        "//packages/linux/system/libs/font/fribidi:fribidi",
-        "//packages/linux/desktop/sway:wlroots",
-        "//packages/linux/system/libs/libseat:libseat",  # Transitive dep via wlroots - needed for pkg-config resolution
-        "//packages/linux/system/libs/input/mtdev:mtdev",  # Transitive dep via libinput - needed for linking
+                "//packages/linux/core/zlib:zlib",
+                "//packages/linux/system/libs/data/expat:expat",
+                "//packages/linux/system/libs/image/libpng:libpng",
+                "//packages/linux/system/libs/compression/brotli:brotli",
+                "//packages/linux/system/libs/compression/bzip2:bzip2",
+                "//packages/linux/system/libs/input/libevdev:libevdev",
+                "//packages/linux/system/init/eudev:eudev",
+                "//packages/linux/system/libs/font/freetype:freetype",
+                "//packages/linux/system/libs/font/fontconfig:fontconfig",
+                "//packages/linux/system/libs/font/harfbuzz:harfbuzz",
+                "//packages/linux/system/libs/font/graphite2:graphite2",
+                "//packages/linux/graphics/rendering/wayland:wayland",
+                "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
+                "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
+                "//packages/linux/desktop/mesa:mesa",
+                "//packages/linux/system/libs/input/libinput:libinput",
+                "//packages/linux/desktop/libdrm:libdrm",
+                "//packages/linux/system/security/auth/biometric:pixman",
+                "//packages/linux/system/libs/data/json-c:json-c",
+                "//packages/linux/system/libs/utility/pcre2:pcre2",
+                "//packages/linux/system/libs/graphics/cairo:cairo",
+                "//packages/linux/fonts/libraries/pango:pango",
+                "//packages/linux/dev-libs/glib:glib",
+                "//packages/linux/system/libs/font/fribidi:fribidi",
+                "//packages/linux/desktop/sway:wlroots",
+                "//packages/linux/system/libs/libseat:libseat",
+                # Transitive dep via wlroots - needed for pkg-config resolution
+        "//packages/linux/system/libs/input/mtdev:mtdev",
+                # Transitive dep via libinput - needed for linking,
+                "//packages/linux/dev-libs/python/mako:mako",
+                "//packages/linux/graphics/rendering/wayland:wayland-scanner",
+                "//packages/linux/graphics/rendering/wayland:wayland-scanner"
     ],
     visibility = ["PUBLIC"],
 )
@@ -169,74 +99,10 @@ package(
         "patches/0001-wlroots-use-find_program-for-wayland-scanner.patch",
     ],
     # wayland-scanner provides wayland-scanner for host (exec_bdepend builds for host platform)
-    exec_bdepend = [
-        "//packages/linux/graphics/rendering/wayland:wayland-scanner",
-    ],
     # Work around pkg-config path resolution issues in cross-compilation
     # where Mesa's dri.pc references libdrm but the resolved include path
     # ends up pointing to mesa/usr/include/libdrm (which doesn't exist)
     env = {"CFLAGS": "-Wno-missing-include-dirs"},
-    pre_configure = '''
-# Set up wayland-scanner path for meson
-IFS=':' read -ra DEP_ARRAY <<< "$DEP_BASE_DIRS"
-for dep_dir in "${DEP_ARRAY[@]}"; do
-    if [ -x "$dep_dir/usr/bin/wayland-scanner" ]; then
-        WAYLAND_SCANNER="$dep_dir/usr/bin/wayland-scanner"
-        SCANNER_PKG_CONFIG_PATH="$dep_dir/usr/lib64/pkgconfig"
-        echo "Found wayland-scanner: $WAYLAND_SCANNER"
-
-        # Create patched pkg-config directory
-        mkdir -p patched_pkgconfig
-        if [ -f "$SCANNER_PKG_CONFIG_PATH/wayland-scanner.pc" ]; then
-            sed "s|^prefix=.*|prefix=$dep_dir/usr|" "$SCANNER_PKG_CONFIG_PATH/wayland-scanner.pc" > patched_pkgconfig/wayland-scanner.pc
-        fi
-
-        # Create meson native file
-        cat > native.ini << NEOF
-[binaries]
-wayland-scanner = '$WAYLAND_SCANNER'
-
-[built-in options]
-pkg_config_path = ['$(pwd)/patched_pkgconfig', '$SCANNER_PKG_CONFIG_PATH']
-NEOF
-        export PATH="$dep_dir/usr/bin:$PATH"
-        export PKG_CONFIG_PATH_FOR_BUILD="$(pwd)/patched_pkgconfig:$SCANNER_PKG_CONFIG_PATH${PKG_CONFIG_PATH_FOR_BUILD:+:$PKG_CONFIG_PATH_FOR_BUILD}"
-        break
-    fi
-done
-''',
-    src_configure = """
-# Add rpath-link for all dep lib dirs so the linker can resolve
-# transitive shared library deps
-_EXTRA_LDFLAGS=""
-IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
-for _dep in "${_DEP_ARRAY[@]}"; do
-    for _libdir in "$_dep/usr/lib64" "$_dep/usr/lib"; do
-        if [ -d "$_libdir" ]; then
-            _EXTRA_LDFLAGS="$_EXTRA_LDFLAGS -Wl,-rpath-link,$_libdir"
-        fi
-    done
-    # Update PATH for wayland-scanner
-    if [ -x "$_dep/usr/bin/wayland-scanner" ]; then
-        export PATH="$_dep/usr/bin:$PATH"
-        export PKG_CONFIG_PATH_FOR_BUILD="$(pwd)/patched_pkgconfig:$_dep/usr/lib64/pkgconfig${PKG_CONFIG_PATH_FOR_BUILD:+:$PKG_CONFIG_PATH_FOR_BUILD}"
-    fi
-done
-export LDFLAGS="${LDFLAGS:-} $_EXTRA_LDFLAGS"
-
-NATIVE_FILE_ARG=""
-if [ -f native.ini ]; then
-    NATIVE_FILE_ARG="--native-file=native.ini"
-fi
-
-meson setup "${BUILD_DIR:-build}" \\
-    --prefix="${EPREFIX:-/usr}" \\
-    --libdir="${LIBDIR:-lib64}" \\
-    --buildtype="${MESON_BUILD_TYPE:-release}" \\
-    -Dwerror=false \\
-    $NATIVE_FILE_ARG \\
-    ${MESON_EXTRA_ARGS:-}
-""",
     configure_args = [
         "-Dexamples=false",
         "-Dwerror=false",  # Also disable -Werror for cross-compilation safety

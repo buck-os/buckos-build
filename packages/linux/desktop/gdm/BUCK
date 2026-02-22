@@ -28,22 +28,11 @@ package(
     description = "GNOME Display Manager",
     homepage = "https://wiki.gnome.org/Projects/GDM",
     license = "GPL-2.0",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/meson:meson",
-        "//packages/linux/dev-tools/build-systems/ninja:ninja",
-    ],
-    pre_configure = """
-mkdir -p build
-cd build
-meson setup .. --prefix=/usr \\
-    -Dgdm-xsession=true \\
-    -Drun-dir=/run/gdm \\
-    -Dsystemd-journal=false \\
-    -Dplymouth=disabled
-""",
     deps = [
         "//packages/linux/system/libs/utility/libffi:libffi",
-        "//packages/linux/graphics/rendering/wayland:wayland",
+                "//packages/linux/graphics/rendering/wayland:wayland",
+                "//packages/linux/dev-tools/build-systems/meson:meson",
+                "//packages/linux/dev-tools/build-systems/ninja:ninja"
     ],
     visibility = ["PUBLIC"],
 )

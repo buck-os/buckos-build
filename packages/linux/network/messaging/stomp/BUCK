@@ -18,19 +18,5 @@ package(
     description = "C library implementing the STOMP messaging protocol",
     homepage = "https://github.com/ibm/stomp",
     license = "Apache-2.0",
-    build_cmd = """
-# Build the library
-make -j${MAKEOPTS:-$(nproc)}
-""",
-    install_cmd = """
-# Install library
-mkdir -p "$DESTDIR/usr/lib"
-cp -a lib*.so* "$DESTDIR/usr/lib/" || true
-cp -a lib*.a "$DESTDIR/usr/lib/" || true
-
-# Install headers
-mkdir -p "$DESTDIR/usr/include/stomp"
-find . -name "*.h" -exec cp {} "$DESTDIR/usr/include/stomp/" \\;
-""",
     visibility = ["PUBLIC"],
 )

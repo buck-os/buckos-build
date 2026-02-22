@@ -15,7 +15,7 @@ package(
     description = "Intel thermal daemon for temperature management and throttling",
     homepage = "https://github.com/intel/thermal_daemon",
     license = "GPL-2.0",
-    autoreconf = True,
+    pre_configure_cmds = ["autoreconf -fi"],
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc",

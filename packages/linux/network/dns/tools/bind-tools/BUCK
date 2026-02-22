@@ -30,7 +30,7 @@ package(
         "--without-python",
     ],
 
-    post_install = """
+    post_install_cmds = ["""
 # Only keep the client tools, not the server
 rm -rf "$DESTDIR/usr/sbin/named" || true
 rm -rf "$DESTDIR/etc/bind" || true
@@ -41,7 +41,7 @@ for tool in dig host nslookup nsupdate delv; do
         echo "Warning: $tool not found"
     fi
 done
-""",
+"""],
 
     deps = [
         "//packages/linux/system/libs/utility/libuv:libuv",

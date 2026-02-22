@@ -10,14 +10,12 @@ package(
     homepage = "https://github.com/FFmpeg/nv-codec-headers",
     license = "MIT",
     deps = [],
-    src_configure = "true",
-    src_compile = "true",
-    src_install = """
+    post_install_cmds = ["""\
 mkdir -p "$DESTDIR/usr/include/ffnvcodec"
 cp -r include/ffnvcodec/* "$DESTDIR/usr/include/ffnvcodec/"
 mkdir -p "$DESTDIR/usr/lib/pkgconfig"
 sed 's#@@PREFIX@@#/usr#' ffnvcodec.pc.in > "$DESTDIR/usr/lib/pkgconfig/ffnvcodec.pc"
-""",
+"""],
     visibility = ["PUBLIC"],
     labels = ["buckos:hw:cuda"],
 )

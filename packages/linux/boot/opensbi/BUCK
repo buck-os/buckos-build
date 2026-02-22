@@ -14,19 +14,6 @@ package(
     homepage = "https://github.com/riscv-software-src/opensbi",
     license = "BSD-2-Clause",
     deps = [],
-    src_configure = """
-# Skip build - requires RISC-V cross-compiler not available on x86_64
-echo "OpenSBI requires RISC-V cross-compiler - skipping build"
-""",
-    src_compile = """
-# Skip compilation - requires RISC-V toolchain
-echo "Skipping compilation - RISC-V cross-compiler not available"
-""",
-    src_install = """
-# Create empty install to satisfy build system
-mkdir -p "$DESTDIR/usr/share/doc/opensbi"
-echo "OpenSBI requires RISC-V cross-compiler - package not built" > "$DESTDIR/usr/share/doc/opensbi/README"
-""",
     make_args = [],
     visibility = ["PUBLIC"],
 )

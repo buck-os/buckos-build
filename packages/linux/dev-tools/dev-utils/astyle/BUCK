@@ -15,18 +15,13 @@ package(
     description = "Artistic Style - source code indenter, formatter, and beautifier",
     homepage = "https://astyle.sourceforge.net/",
     license = "MIT",
-    src_configure = "true",
-    src_compile = """
-cd build/gcc
-make -j${MAKEOPTS:-$(nproc)}
-""",
-    src_install = """
+    post_install_cmds = ["""\
 cd build/gcc
 install -Dm755 bin/astyle "$DESTDIR/usr/bin/astyle"
 # Install man page if it exists
 if [ -f ../../doc/astyle.1 ]; then
     install -Dm644 ../../doc/astyle.1 "$DESTDIR/usr/share/man/man1/astyle.1"
 fi
-""",
+"""],
     visibility = ["PUBLIC"],
 )

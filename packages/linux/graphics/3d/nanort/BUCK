@@ -10,11 +10,9 @@ package(
     homepage = "https://github.com/lighttransport/nanort",
     license = "MIT",
     deps = [],
-    src_configure = "true",
-    src_compile = "true",
-    src_install = """
+    post_install_cmds = ["""\
 mkdir -p "$DESTDIR/usr/include/nanort"
 cp nanort.h "$DESTDIR/usr/include/nanort/"
-""",
+"""],
     visibility = ["PUBLIC"],
 )

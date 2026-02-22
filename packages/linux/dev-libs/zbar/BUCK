@@ -21,15 +21,9 @@ package(
     },
     url = "https://github.com/mchehab/zbar/archive/a549566ea11eb03622bd4458a1728ffe3f589163.tar.gz",
     sha256 = "86817215aac09dafa7eda6495f8db1a9b8ce026f0a7a9d8af8b650db1dca999c",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-        "//packages/linux/dev-libs/misc/gettext:gettext",
-    ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 autoreconf -fi
-""",
+"""],
     configure_args = [
         "--enable-pthread",
         "--enable-codes=ean,code128,code39,code93,i25,codabar,databar,pdf417,qrcode,sqcode",
@@ -48,6 +42,9 @@ autoreconf -fi
     ],
     deps = [
         "//packages/linux/dev-libs/iconv:iconv",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-libs/misc/gettext:gettext"
     ],
-    maintainers = ["buckos"],
 )

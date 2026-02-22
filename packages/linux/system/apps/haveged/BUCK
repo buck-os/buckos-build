@@ -6,14 +6,9 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "haveged",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-    ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 autoreconf -fi
-""",
+"""],
     version = "1.9.19",
     url = "https://github.com/jirka-h/haveged/archive/refs/tags/v1.9.19.tar.gz",
     sha256 = "acbb05776668657012273be9bb3310e3140b79959aa4538e4cca8d30d40c0b8f",
@@ -36,6 +31,9 @@ autoreconf -fi
         "--enable-daemon",
     ],
     deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
     ],
     visibility = ["PUBLIC"],
 )

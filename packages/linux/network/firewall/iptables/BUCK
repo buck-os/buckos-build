@@ -33,7 +33,7 @@ package(
         "--with-xtlibdir=/lib/xtables",
     ],
 
-    post_install = """
+    post_install_cmds = ["""
 # Create iptables configuration directories
 mkdir -p "$DESTDIR/etc/iptables"
 mkdir -p "$DESTDIR/var/lib/iptables"
@@ -49,7 +49,7 @@ touch "$DESTDIR/etc/iptables/rules.v4"
 touch "$DESTDIR/etc/iptables/rules.v6"
 chmod 600 "$DESTDIR/etc/iptables/rules.v4"
 chmod 600 "$DESTDIR/etc/iptables/rules.v6"
-""",
+"""],
 
     deps = [
         "//packages/linux/core/libnl:libnl",

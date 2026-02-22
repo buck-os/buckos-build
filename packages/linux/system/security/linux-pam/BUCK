@@ -9,6 +9,8 @@ package(
     # Use release tarball with pre-generated configure
     url = "https://github.com/linux-pam/linux-pam/releases/download/v1.6.1/Linux-PAM-1.6.1.tar.xz",
     sha256 = "f8923c740159052d719dbfc2a2f81942d68dd34fcaf61c706a02c9b80feeef8e",
+    # Prevent aclocal re-generation (tarball has pre-generated files)
+    pre_configure_cmds = ["find . -name '*.in' -o -name configure -o -name aclocal.m4 -o -name config.h.in | xargs touch"],
     description = "Pluggable Authentication Modules",
     homepage = "https://github.com/linux-pam/linux-pam",
     license = "BSD-3-Clause",

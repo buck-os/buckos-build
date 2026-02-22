@@ -9,20 +9,15 @@ package(
     description = "2D animation rendering backend",
     homepage = "https://www.synfig.org/",
     license = "GPL-3.0-or-later",
-    pre_configure = """
-cd synfig-core
-mkdir -p build
-cd build
-cmake .. \
-    -DCMAKE_INSTALL_PREFIX=/usr \
-    -DCMAKE_BUILD_TYPE=Release
-""",
     configure_args = [],
     make_args = ["-C", "synfig-core/build"],
-    post_install = """
+    post_install_cmds = ["""
 cd synfig-core/build
 DESTDIR=$OUT make install
-""",
+""", """
+cd synfig-studio/build
+DESTDIR=$OUT make install
+"""],
     deps = [
         # "//packages/linux/dev-libs/libsigcpp:libsigcpp",  # TODO: not packaged yet
         "//packages/linux/system/libs/data/libxml2:libxml2",
@@ -34,7 +29,6 @@ DESTDIR=$OUT make install
         "//packages/linux/system/libs/graphics/cairo:cairo",
         "//packages/linux/fonts/libraries/pango:pango",
     ],
-    bdepend = [],
     visibility = ["PUBLIC"],
 )
 
@@ -47,26 +41,13 @@ package(
     description = "2D animation software - GTK+ based GUI",
     homepage = "https://www.synfig.org/",
     license = "GPL-3.0-or-later",
-    pre_configure = """
-cd synfig-studio
-mkdir -p build
-cd build
-cmake .. \
-    -DCMAKE_INSTALL_PREFIX=/usr \
-    -DCMAKE_BUILD_TYPE=Release
-""",
     configure_args = [],
     make_args = ["-C", "synfig-studio/build"],
-    post_install = """
-cd synfig-studio/build
-DESTDIR=$OUT make install
-""",
     deps = [
         ":synfig-core",
         "//packages/linux/desktop/gtk:gtk3",
         # "//packages/linux/dev-libs/libsigcpp:libsigcpp",  # TODO: not packaged yet
     ],
-    bdepend = [],
     visibility = ["PUBLIC"],
 )
 

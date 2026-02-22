@@ -15,16 +15,9 @@ package(
     homepage = "https://symas.com/lmdb/",
     license = "OLDAP-2.8",
     # No autotools - just Makefile
-    bdepend = [],
-    src_prepare = "",
-    src_configure = "true",
-    src_compile = """
-cd libraries/liblmdb
-make -j${MAKEOPTS:-$(nproc)} prefix=/usr
-""",
-    src_install = """
+    post_install_cmds = ["""\
 cd libraries/liblmdb
 make install DESTDIR="$DESTDIR" prefix=/usr
-""",
+"""],
     visibility = ["PUBLIC"],
 )

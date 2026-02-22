@@ -37,10 +37,9 @@ package(
         "--without-bash-malloc",
     ],
 
-    post_install = """
+    post_install_cmds = ["""
 # Create sh symlink
 ln -sf bash "$DESTDIR/usr/bin/sh"
-""",
-    maintainers = ["buckos"],
+"""],
     visibility = ["PUBLIC"],
 )

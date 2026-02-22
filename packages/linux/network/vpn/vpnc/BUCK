@@ -21,10 +21,10 @@ package(
         "ETCDIR=/etc/vpnc",
     ],
 
-    post_install = """
+    post_install_cmds = ["""
 make DESTDIR=$DESTDIR PREFIX=/usr ETCDIR=/etc/vpnc install
 mkdir -p "$DESTDIR/etc/vpnc"
-""",
+"""],
 
     deps = [
         "//packages/linux/system/libs/crypto/libgcrypt:libgcrypt",

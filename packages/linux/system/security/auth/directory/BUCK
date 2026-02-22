@@ -7,15 +7,27 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "krb5",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-        "//packages/linux/dev-libs/misc/gettext:gettext",
-    ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 autoreconf -fi
-""",
+""", """
+autoreconf -fi
+""", """
+autoreconf -fi
+""", """
+autoreconf -fi
+""", """
+autoreconf -fi
+""", """
+autoreconf -fi
+""", """
+autoreconf -fi
+""", """
+autoreconf -fi
+""", """
+autoreconf -fi
+""", """
+autoreconf -fi
+"""],
     url = "https://kerberos.org/dist/krb5/1.21/krb5-1.21.2.tar.gz",
 
     sha256 = "9560941a9d843c0243a71b17a7ac6fe31c7cebb5bce3983db79e52ae7e850491",
@@ -23,9 +35,6 @@ autoreconf -fi
     description = "MIT Kerberos network authentication system",
     homepage = "https://kerberos.org/",
     license = "MIT",
-    pre_configure = """
-        cd src
-    """,
     configure_args = [
         "--prefix=/usr",
         "--sbindir=/usr/sbin",
@@ -42,14 +51,71 @@ autoreconf -fi
         "--with-ldap",
         "--without-readline",
     ],
-    post_install = """
+    post_install_cmds = ["""
         mkdir -p "$OUT/etc/krb5.conf.d"
         mkdir -p "$OUT/var/lib/krb5kdc"
-    """,
+    """, """
+        mkdir -p "$OUT/etc/openldap/schema"
+        mkdir -p "$OUT/var/lib/openldap"
+        mkdir -p "$OUT/var/run/openldap"
+    """, """
+        mkdir -p "$OUT/var/run/saslauthd"
+        mkdir -p "$OUT/etc/sasl2"
+    """, """
+        mkdir -p "$OUT/etc/sssd"
+        mkdir -p "$OUT/var/lib/sss/db"
+        mkdir -p "$OUT/var/lib/sss/mc"
+        mkdir -p "$OUT/var/lib/sss/pipes"
+        mkdir -p "$OUT/var/lib/sss/pubconf"
+        mkdir -p "$OUT/var/log/sssd"
+    """, """
+        mkdir -p "$OUT/run/nslcd"
+        mkdir -p "$OUT/etc/nslcd"
+    """],
     deps = [
         "//packages/linux/system/libs/crypto/openssl:openssl",
-        ":openldap",
-        ":e2fsprogs-libs",
+                ":openldap",
+                ":e2fsprogs-libs",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-libs/misc/gettext:gettext",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-libs/misc/gettext:gettext",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-libs/misc/gettext:gettext",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-libs/misc/gettext:gettext",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-libs/misc/gettext:gettext",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-libs/misc/gettext:gettext",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-libs/misc/gettext:gettext",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-libs/misc/gettext:gettext",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-libs/misc/gettext:gettext",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-libs/misc/gettext:gettext"
     ],
     visibility = ["PUBLIC"],
 )
@@ -59,15 +125,6 @@ autoreconf -fi
 package(
     build_rule = "autotools",
     name = "e2fsprogs-libs",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-        "//packages/linux/dev-libs/misc/gettext:gettext",
-    ],
-    src_prepare = """
-autoreconf -fi
-""",
     url = "https://mirrors.edge.kernel.org/pub/linux/kernel/people/tytso/e2fsprogs/v1.47.0/e2fsprogs-1.47.0.tar.xz",
 
     sha256 = "144af53f2bbd921cef6f8bea88bb9faddca865da3fbc657cc9b4d2001097d5db",
@@ -93,15 +150,6 @@ autoreconf -fi
 package(
     build_rule = "autotools",
     name = "openldap",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-        "//packages/linux/dev-libs/misc/gettext:gettext",
-    ],
-    src_prepare = """
-autoreconf -fi
-""",
     url = "https://www.openldap.org/software/download/OpenLDAP/openldap-release/openldap-2.6.7.tgz",
 
     sha256 = "cd775f625c944ed78a3da18a03b03b08eea73c8aabc97b41bb336e9a10954930",
@@ -125,11 +173,6 @@ autoreconf -fi
         "--with-cyrus-sasl",
         "--with-tls=openssl",
     ],
-    post_install = """
-        mkdir -p "$OUT/etc/openldap/schema"
-        mkdir -p "$OUT/var/lib/openldap"
-        mkdir -p "$OUT/var/run/openldap"
-    """,
     deps = [
         "//packages/linux/system/libs/crypto/openssl:openssl",
         ":cyrus-sasl",
@@ -141,15 +184,6 @@ autoreconf -fi
 package(
     build_rule = "autotools",
     name = "cyrus-sasl",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-        "//packages/linux/dev-libs/misc/gettext:gettext",
-    ],
-    src_prepare = """
-autoreconf -fi
-""",
     url = "https://github.com/cyrusimap/cyrus-sasl/releases/download/cyrus-sasl-2.1.28/cyrus-sasl-2.1.28.tar.gz",
 
     sha256 = "7ccfc6abd01ed67c1a0924b353e526f1b766b21f42d4562ee635a8ebfc5bb38c",
@@ -178,10 +212,6 @@ autoreconf -fi
         "--with-dblib=lmdb",
         "--with-openssl",
     ],
-    post_install = """
-        mkdir -p "$OUT/var/run/saslauthd"
-        mkdir -p "$OUT/etc/sasl2"
-    """,
     deps = [
         "//packages/linux/system/libs/crypto/openssl:openssl",
         "//packages/linux/system/security/encryption:linux-pam",
@@ -194,15 +224,6 @@ autoreconf -fi
 package(
     build_rule = "autotools",
     name = "sssd",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-        "//packages/linux/dev-libs/misc/gettext:gettext",
-    ],
-    src_prepare = """
-autoreconf -fi
-""",
     url = "https://github.com/SSSD/sssd/releases/download/2.9.4/sssd-2.9.4.tar.gz",
 
     sha256 = "82b5ef80be47c96d518de26cfb440000f1bc6b9e3441a8393a007d21af316b18",
@@ -227,14 +248,6 @@ autoreconf -fi
         "--without-python2-bindings",
         "--with-python3-bindings",
     ],
-    post_install = """
-        mkdir -p "$OUT/etc/sssd"
-        mkdir -p "$OUT/var/lib/sss/db"
-        mkdir -p "$OUT/var/lib/sss/mc"
-        mkdir -p "$OUT/var/lib/sss/pipes"
-        mkdir -p "$OUT/var/lib/sss/pubconf"
-        mkdir -p "$OUT/var/log/sssd"
-    """,
     deps = [
         "//packages/linux/system/libs/ipc/dbus:dbus",
         "//packages/linux/system/security/encryption:linux-pam",
@@ -257,15 +270,6 @@ autoreconf -fi
 package(
     build_rule = "autotools",
     name = "tdb",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-        "//packages/linux/dev-libs/misc/gettext:gettext",
-    ],
-    src_prepare = """
-autoreconf -fi
-""",
     url = "https://www.samba.org/ftp/tdb/tdb-1.4.10.tar.gz",
 
     sha256 = "02338e33c16c21c9e29571cef523e76b2b708636254f6f30c6cf195d48c62daf",
@@ -273,9 +277,6 @@ autoreconf -fi
     description = "Trivial Database library",
     homepage = "https://tdb.samba.org/",
     license = "LGPL-3.0+",
-    pre_configure = """
-        ./configure --prefix=/usr --sysconfdir=/etc --disable-python
-    """,
     configure_args = [],
     deps = [
     ],
@@ -285,15 +286,6 @@ autoreconf -fi
 package(
     build_rule = "autotools",
     name = "tevent",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-        "//packages/linux/dev-libs/misc/gettext:gettext",
-    ],
-    src_prepare = """
-autoreconf -fi
-""",
     url = "https://www.samba.org/ftp/tevent/tevent-0.16.1.tar.gz",
 
     sha256 = "362971e0f32dc1905f6fe4736319c4b8348c22dc85aa6c3f690a28efe548029e",
@@ -301,9 +293,6 @@ autoreconf -fi
     description = "Event system based on talloc",
     homepage = "https://tevent.samba.org/",
     license = "LGPL-3.0+",
-    pre_configure = """
-        ./configure --prefix=/usr --sysconfdir=/etc --disable-python
-    """,
     configure_args = [],
     deps = [
         "//packages/linux/system/libs/talloc:talloc",
@@ -315,15 +304,6 @@ autoreconf -fi
 package(
     build_rule = "autotools",
     name = "ding-libs",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-        "//packages/linux/dev-libs/misc/gettext:gettext",
-    ],
-    src_prepare = """
-autoreconf -fi
-""",
     url = "https://github.com/SSSD/ding-libs/releases/download/0.6.2/ding-libs-0.6.2.tar.gz",
 
     sha256 = "e5f07f34f5921bcb5ccccfe3751c28497879a6451cd7b395e99e24d9b5728e8d",
@@ -346,15 +326,6 @@ autoreconf -fi
 package(
     build_rule = "autotools",
     name = "libunistring",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-        "//packages/linux/dev-libs/misc/gettext:gettext",
-    ],
-    src_prepare = """
-autoreconf -fi
-""",
     url = "https://mirrors.kernel.org/gnu/libunistring/libunistring-1.2.tar.xz",
 
     sha256 = "632bd65ed74a881ca8a0309a1001c428bd1cbd5cd7ddbf8cedcd2e65f4dcdc44",
@@ -377,15 +348,6 @@ autoreconf -fi
 package(
     build_rule = "autotools",
     name = "nss-pam-ldapd",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-        "//packages/linux/dev-libs/misc/gettext:gettext",
-    ],
-    src_prepare = """
-autoreconf -fi
-""",
     url = "https://arthurdejong.org/nss-pam-ldapd/nss-pam-ldapd-0.9.12.tar.gz",
 
     sha256 = "c6d661e74693cbf531a790631ca93b73f291fb23cc39465b09deb8da2bfb0e14",
@@ -404,10 +366,6 @@ autoreconf -fi
         "--with-nslcd-pidfile=/run/nslcd/nslcd.pid",
         "--with-nslcd-socket=/run/nslcd/socket",
     ],
-    post_install = """
-        mkdir -p "$OUT/run/nslcd"
-        mkdir -p "$OUT/etc/nslcd"
-    """,
     deps = [
         ":openldap",
         "//packages/linux/system/security/encryption:linux-pam",

@@ -14,9 +14,6 @@ package(
     license = "GPL-2",
     deps = [],
     # nasm is needed when asm is enabled (x86/x86_64 optimizations)
-    use_bdepend = {
-        "asm": ["//packages/linux/dev-tools/assemblers/nasm:nasm"],
-    },
     use_deps = {
         "opencl": "//packages/linux/dev-libs/opencl:opencl",
         "lavf": "//packages/linux/media/video/ffmpeg:ffmpeg",
@@ -43,13 +40,5 @@ package(
     },
     # Override src_configure because x264 has a non-standard configure script
     # that doesn't accept standard autotools arguments like --build, --mandir, etc.
-    src_configure = '''
-./configure \\
-    --prefix="${EPREFIX:-/usr}" \\
-    --libdir="${EPREFIX:-/usr}/${LIBDIR:-lib64}" \\
-    --enable-pic \\
-    --disable-swscale \\
-    ${EXTRA_ECONF:-}
-''',
     visibility = ["PUBLIC"],
 )

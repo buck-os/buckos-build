@@ -11,7 +11,6 @@ package(
     description = "Tools for capture and replay of Vulkan and D3D12 graphics API calls",
     homepage = "https://github.com/LunarG/gfxreconstruct",
     license = "MIT",
-    maintainers = ["buckos"],
     use_configure = {
         "X": ("-DENABLE_X=ON", "-DENABLE_X=OFF"),
     },
@@ -37,32 +36,6 @@ package(
         "-DBUILD_LAUNCHER_AND_INTERCEPTOR=OFF",  # Windows only
         "-DGFXRECON_AGS_SUPPORT=OFF",  # Windows AMD-specific
     ],
-    use_options = {
-        "lz4": {
-            "enabled": ["-DLZ4_OPTIONAL=OFF"],
-            "disabled": ["-DLZ4_OPTIONAL=ON"],
-        },
-        "wayland": {
-            "enabled": ["-DBUILD_WSI_WAYLAND_SUPPORT=ON"],
-            "disabled": ["-DBUILD_WSI_WAYLAND_SUPPORT=OFF"],
-        },
-        "xcb": {
-            "enabled": ["-DBUILD_WSI_XCB_SUPPORT=ON"],
-            "disabled": ["-DBUILD_WSI_XCB_SUPPORT=OFF"],
-        },
-        "xlib": {
-            "enabled": ["-DBUILD_WSI_XLIB_SUPPORT=ON"],
-            "disabled": ["-DBUILD_WSI_XLIB_SUPPORT=OFF"],
-        },
-        "d3d12": {
-            "enabled": ["-DD3D12_SUPPORT=ON"],
-            "disabled": ["-DD3D12_SUPPORT=OFF"],
-        },
-        "openxr": {
-            "enabled": ["-DGFXRECON_ENABLE_OPENXR=ON"],
-            "disabled": ["-DGFXRECON_ENABLE_OPENXR=OFF"],
-        },
-    },
     labels = ["buckos:hw:vulkan"],
     visibility = ["PUBLIC"],
 )

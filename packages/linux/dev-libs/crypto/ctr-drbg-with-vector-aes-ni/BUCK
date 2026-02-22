@@ -11,12 +11,8 @@ package(
     homepage = "https://github.com/aws-samples/ctr-drbg-with-vector-aes-ni",
     license = "Apache-2.0",
     deps = [],
-    src_configure = """
-# No configure script - just compile the library
-true
-""",
     make_args = [],
-    post_install = """
+    post_install_cmds = ["""
 # Install headers
 mkdir -p "$DESTDIR/usr/include/ctr-drbg"
 cp src/aes.h src/ctr_drbg.h src/defs.h "$DESTDIR/usr/include/ctr-drbg/"
@@ -28,6 +24,6 @@ gcc -c -m64 -maes -mavx2 -msse2 -O3 -std=c99 -fPIC -I. src/ctr_drbg.c -o ctr_drb
 gcc -c -m64 -maes -mavx2 -msse2 -O3 -std=c99 -fPIC -I. src/vaes256_key_expansion.S -o vaes256_key_expansion.o
 ar rcs libctr_drbg.a aes.o ctr_drbg.o vaes256_key_expansion.o
 cp libctr_drbg.a "$DESTDIR/usr/lib/"
-""",
+"""],
     visibility = ["PUBLIC"],
 )

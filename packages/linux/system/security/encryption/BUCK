@@ -89,10 +89,6 @@ package(
     description = "OpenBSD tool to sign and verify signatures on files",
     homepage = "https://github.com/aperezdc/signify",
     license = "ISC",
-    src_configure = """
-        # signify uses a simple Makefile
-        true
-    """,
     make_args = [
         "PREFIX=/usr",
         "MANDIR=/usr/share/man",
@@ -159,12 +155,32 @@ package(
     description = "Secure encryption and decryption of files and streams",
     homepage = "https://ccrypt.sourceforge.net/",
     license = "GPL-2.0+",
-    post_install = """
+    post_install_cmds = ["""
         # Create convenience symlinks
         ln -sf ccrypt "$OUT/usr/bin/ccencrypt"
         ln -sf ccrypt "$OUT/usr/bin/ccdecrypt"
         ln -sf ccrypt "$OUT/usr/bin/ccat"
-    """,
+    """, """
+        mkdir -p "$OUT/etc/pam.d"
+        chmod 4755 "$OUT/sbin/unix_chkpwd" || true
+    """, """
+        mkdir -p "$OUT/usr/lib/pcsc/drivers"
+        mkdir -p "$OUT/var/run/pcscd"
+    """, """
+        mkdir -p "$OUT/etc/opensc"
+    """, """
+        mkdir -p "$OUT/usr/bin"
+        mkdir -p "$OUT/usr/share/john"
+        cp run/john "$OUT/usr/bin/"
+        cp run/*.chr run/*.lst "$OUT/usr/share/john/" || true
+        ln -sf john "$OUT/usr/bin/unshadow"
+        ln -sf john "$OUT/usr/bin/unafs"
+        ln -sf john "$OUT/usr/bin/unique"
+    """, """
+        mkdir -p "$OUT/usr/bin" "$OUT/usr/share/man/man1"
+        cp bcrypt "$OUT/usr/bin/"
+        cp bcrypt.1 "$OUT/usr/share/man/man1/"
+    """],
     deps = [
     ],
     visibility = ["PUBLIC"],
@@ -185,10 +201,6 @@ package(
     description = "Standard unix password manager using GPG encryption",
     homepage = "https://www.passwordstore.org/",
     license = "GPL-2.0+",
-    src_configure = """
-        # pass uses a simple Makefile, no configure needed
-        true
-    """,
     make_args = [
         "PREFIX=/usr",
         "SYSCONFDIR=/etc",
@@ -217,10 +229,6 @@ package(
     description = "Crypto Undertaker - file encryption with hiding capabilities",
     homepage = "https://www.dyne.org/software/tomb/",
     license = "GPL-3.0+",
-    src_configure = """
-        # tomb uses a simple Makefile
-        true
-    """,
     make_args = [
         "PREFIX=/usr",
     ],
@@ -292,10 +300,6 @@ package(
     description = "Pluggable Authentication Modules for Linux",
     homepage = "http://www.linux-pam.org/",
     license = "BSD-3-Clause",
-    post_install = """
-        mkdir -p "$OUT/etc/pam.d"
-        chmod 4755 "$OUT/sbin/unix_chkpwd" || true
-    """,
     deps = [
     ],
     visibility = ["PUBLIC"],
@@ -339,10 +343,6 @@ package(
     description = "Linux key management utilities",
     homepage = "https://people.redhat.com/~dhowells/keyutils/",
     license = "GPL-2.0+ AND LGPL-2.1+",
-    src_configure = """
-        # keyutils uses a simple Makefile
-        true
-    """,
     make_args = [
         "PREFIX=/usr",
         "SBINDIR=/sbin",
@@ -394,9 +394,6 @@ package(
     description = "Disk encryption tool based on TrueCrypt",
     homepage = "https://www.veracrypt.fr/",
     license = "Apache-2.0 AND TrueCrypt-3.0",
-    src_configure = """
-        cd src
-    """,
     make_args = [
         "NOGUI=1",
         "WX_CONFIG=",
@@ -472,10 +469,6 @@ package(
     description = "PC/SC smart card daemon and library",
     homepage = "https://pcsclite.apdu.fr/",
     license = "BSD-3-Clause",
-    post_install = """
-        mkdir -p "$OUT/usr/lib/pcsc/drivers"
-        mkdir -p "$OUT/var/run/pcscd"
-    """,
     deps = [
         ":libusb",
     ],
@@ -564,9 +557,6 @@ package(
     description = "Smart card tools and middleware",
     homepage = "https://github.com/OpenSC/OpenSC",
     license = "LGPL-2.1+",
-    post_install = """
-        mkdir -p "$OUT/etc/opensc"
-    """,
     deps = [
         ":pcsc-lite",
         "//packages/linux/system/libs/crypto/openssl:openssl",
@@ -589,10 +579,6 @@ package(
     description = "Password hashing library and CLI tool",
     homepage = "https://github.com/P-H-C/phc-winner-argon2",
     license = "Apache-2.0 OR CC0-1.0",
-    src_configure = """
-        # argon2 uses a simple Makefile
-        true
-    """,
     make_args = [
         "PREFIX=/usr",
         "LIBRARY_REL=lib",
@@ -638,13 +624,6 @@ package(
     description = "C++ cryptography library",
     homepage = "https://botan.randombit.net/",
     license = "BSD-2-Clause",
-    src_configure = """
-        ./configure.py \
-            --prefix=/usr \
-            --with-zlib \
-            --with-bzip2 \
-            --without-documentation
-    """,
     deps = [
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/compression/bzip2:bzip2",
@@ -667,10 +646,6 @@ package(
     description = "Advanced CPU-based password recovery utility",
     homepage = "https://hashcat.net/hashcat/",
     license = "MIT",
-    src_configure = """
-        # hashcat uses a simple Makefile
-        true
-    """,
     make_args = [
         "PREFIX=/usr",
         "SHARED=1",
@@ -696,19 +671,7 @@ package(
     description = "John the Ripper password security auditing tool",
     homepage = "https://www.openwall.com/john/",
     license = "GPL-2.0+",
-    src_configure = """
-        cd src
-    """,
     make_args = [],
-    post_install = """
-        mkdir -p "$OUT/usr/bin"
-        mkdir -p "$OUT/usr/share/john"
-        cp run/john "$OUT/usr/bin/"
-        cp run/*.chr run/*.lst "$OUT/usr/share/john/" || true
-        ln -sf john "$OUT/usr/bin/unshadow"
-        ln -sf john "$OUT/usr/bin/unafs"
-        ln -sf john "$OUT/usr/bin/unique"
-    """,
     deps = [
         "//packages/linux/system/libs/crypto/openssl:openssl",
     ],
@@ -730,16 +693,7 @@ package(
     description = "Blowfish file encryption utility",
     homepage = "https://bcrypt.sourceforge.net/",
     license = "BSD-2-Clause",
-    src_configure = """
-        # bcrypt uses a simple Makefile
-        true
-    """,
     make_args = [],
-    post_install = """
-        mkdir -p "$OUT/usr/bin" "$OUT/usr/share/man/man1"
-        cp bcrypt "$OUT/usr/bin/"
-        cp bcrypt.1 "$OUT/usr/share/man/man1/"
-    """,
     deps = [
         "//packages/linux/core/zlib:zlib",
     ],

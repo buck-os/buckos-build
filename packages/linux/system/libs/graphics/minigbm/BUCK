@@ -12,9 +12,6 @@ package(
     description = "Mini GBM implementation for ChromeOS",
     homepage = "https://chromium.googlesource.com/chromiumos/platform/minigbm",
     license = "BSD-3-Clause",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
-    ],
     env = {
         # Disable problematic drivers that require platform-specific headers
         # Only build generic/minimal drivers: evdi, nouveau, udl, vgem, virtio_gpu
@@ -24,22 +21,6 @@ package(
         #           DRV_SYNAPTICS, DRV_TEGRA, DRV_VC4
         "CFLAGS": "${CFLAGS:-} -Wno-error -Wno-implicit-function-declaration -Wno-maybe-uninitialized",
     },
-    src_compile = """
-# Build without i915 driver which requires proprietary headers
-make -j${MAKEOPTS:-$(nproc)} \\
-    DRV_I915=0 \\
-    DRV_AMDGPU=0 \\
-    DRV_EXYNOS=0 \\
-    DRV_MARVELL=0 \\
-    DRV_MEDIATEK=0 \\
-    DRV_MESON=0 \\
-    DRV_MSM=0 \\
-    DRV_RADEON=0 \\
-    DRV_ROCKCHIP=0 \\
-    DRV_SYNAPTICS=0 \\
-    DRV_TEGRA=0 \\
-    DRV_VC4=0
-""",
     make_args = [
         "DESTDIR=$DESTDIR",
         "PREFIX=/usr",
@@ -47,6 +28,7 @@ make -j${MAKEOPTS:-$(nproc)} \\
     ],
     deps = [
         "//packages/linux/desktop/libdrm:libdrm",
+                "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config"
     ],
     visibility = ["PUBLIC"],
 )

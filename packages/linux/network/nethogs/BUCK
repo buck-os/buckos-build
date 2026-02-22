@@ -14,18 +14,6 @@ package(
     description = "Per-process network bandwidth monitor",
     homepage = "https://github.com/raboof/nethogs",
     license = "GPL-2.0-or-later",
-    src_configure = "true",
-    src_compile = """
-make -j${MAKEOPTS:-$(nproc)} \
-    PREFIX=/usr \
-    NCURSES_LIBS="-lncursesw -ltinfow -lstdc++"
-""",
-    src_install = """
-make install \
-    PREFIX=/usr \
-    DESTDIR="$DESTDIR" \
-    NCURSES_LIBS="-lncursesw -ltinfow -lstdc++"
-""",
     deps = [
         "//packages/linux/network/libs/libpcap:libpcap",
         "//packages/linux/system/terminal/ncurses:ncurses",

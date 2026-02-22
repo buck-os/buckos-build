@@ -14,10 +14,7 @@ package(
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/crypto/openssl:openssl",
     ],
-    pre_configure = """
-# uWebSockets doesn't have a configure script
-""",
-    post_install = """
+    post_install_cmds = ["""
 cd "$SRCDIR"
 
 # Build shared library
@@ -30,6 +27,6 @@ cp -a libuWS.so "$DESTDIR/usr/lib/"
 # Install headers
 mkdir -p "$DESTDIR/usr/include/uWS"
 cp -a src/*.h "$DESTDIR/usr/include/uWS/"
-""",
+"""],
     visibility = ["PUBLIC"],
 )

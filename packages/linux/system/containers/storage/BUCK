@@ -14,22 +14,20 @@ package(
     description = "FUSE implementation of overlayfs for rootless containers",
     homepage = "https://github.com/containers/fuse-overlayfs",
     license = "GPL-3.0",
-    src_prepare = """
+    pre_configure_cmds = ["""
 if [ -d "fuse-overlayfs-1.13" ]; then
     mv fuse-overlayfs-1.13/* . 2>/dev/null || true
     rmdir fuse-overlayfs-1.13 2>/dev/null || true
 fi
 autoreconf -fiv
-""",
+"""],
     configure_args = [],
     deps = [
         "//packages/linux/system/security/encryption:fuse3",
-    ],
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-        "//packages/linux/dev-tools/build-systems/pkgconf:pkgconf",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-tools/build-systems/pkgconf:pkgconf"
     ],
     visibility = ["PUBLIC"],
 )

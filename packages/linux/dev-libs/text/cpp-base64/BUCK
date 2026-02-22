@@ -12,16 +12,10 @@ package(
     homepage = "https://github.com/ReneNyffenegger/cpp-base64",
     license = "ZLIB",
     deps = [],
-    src_configure = "true",
-    src_compile = """
-${CXX:-g++} -O2 -std=c++17 -fPIC -c base64.cpp -o base64.o
-ar rcs libbase64.a base64.o
-${CXX:-g++} -O2 -std=c++17 -fPIC -shared base64.cpp -o libbase64.so
-""",
-    src_install = """
+    post_install_cmds = ["""\
 install -Dm644 base64.h "$DESTDIR/usr/include/base64.h"
 install -Dm644 libbase64.a "$DESTDIR/usr/lib/libbase64.a"
 install -Dm755 libbase64.so "$DESTDIR/usr/lib/libbase64.so"
-""",
+"""],
     visibility = ["PUBLIC"],
 )

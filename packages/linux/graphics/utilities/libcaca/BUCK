@@ -31,12 +31,12 @@ package(
         "-C",
         "caca",
     ],
-    post_install = """
+    post_install_cmds = ["""
 cd caca
 make DESTDIR=$OUT install
 cd ..
 make -C kernel DESTDIR=$OUT install || true
-""",
+"""],
     deps = [
         "//packages/linux/core/zlib:zlib",
     ],

@@ -15,94 +15,31 @@ package(
         "patches/0001-use-find_program-for-wayland-scanner.patch",
     ],
     # wayland-scanner provides native wayland-scanner for host (exec_bdepend builds for host platform)
-    exec_bdepend = [
-        "//packages/linux/graphics/rendering/wayland:wayland-scanner",
-    ],
     configure_args = [
         "-Ddocs=disabled",
         "-Dterminfo=disabled",
         "-Dtests=false",
     ],
-    pre_configure = '''
-# Set up wayland-scanner path for meson
-IFS=':' read -ra DEP_ARRAY <<< "$DEP_BASE_DIRS"
-for dep_dir in "${DEP_ARRAY[@]}"; do
-    if [ -x "$dep_dir/usr/bin/wayland-scanner" ]; then
-        WAYLAND_SCANNER="$dep_dir/usr/bin/wayland-scanner"
-        SCANNER_PKG_CONFIG_PATH="$dep_dir/usr/lib64/pkgconfig"
-        echo "Found wayland-scanner: $WAYLAND_SCANNER"
-
-        # Create patched pkg-config directory
-        mkdir -p patched_pkgconfig
-        if [ -f "$SCANNER_PKG_CONFIG_PATH/wayland-scanner.pc" ]; then
-            sed "s|^prefix=.*|prefix=$dep_dir/usr|" "$SCANNER_PKG_CONFIG_PATH/wayland-scanner.pc" > patched_pkgconfig/wayland-scanner.pc
-        fi
-
-        # Create meson native file
-        cat > native.ini << NEOF
-[binaries]
-wayland-scanner = '$WAYLAND_SCANNER'
-
-[built-in options]
-pkg_config_path = ['$(pwd)/patched_pkgconfig', '$SCANNER_PKG_CONFIG_PATH']
-NEOF
-        export PATH="$dep_dir/usr/bin:$PATH"
-        export PKG_CONFIG_PATH_FOR_BUILD="$(pwd)/patched_pkgconfig:$SCANNER_PKG_CONFIG_PATH${PKG_CONFIG_PATH_FOR_BUILD:+:$PKG_CONFIG_PATH_FOR_BUILD}"
-        break
-    fi
-done
-''',
-    src_configure = """
-# Add rpath-link for all dep lib dirs so the linker can resolve
-# transitive shared library deps (e.g. fcft -> harfbuzz)
-_EXTRA_LDFLAGS=""
-IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
-for _dep in "${_DEP_ARRAY[@]}"; do
-    for _libdir in "$_dep/usr/lib64" "$_dep/usr/lib"; do
-        if [ -d "$_libdir" ]; then
-            _EXTRA_LDFLAGS="$_EXTRA_LDFLAGS -Wl,-rpath-link,$_libdir"
-        fi
-    done
-    # Update PATH for wayland-scanner
-    if [ -x "$_dep/usr/bin/wayland-scanner" ]; then
-        export PATH="$_dep/usr/bin:$PATH"
-        export PKG_CONFIG_PATH_FOR_BUILD="$(pwd)/patched_pkgconfig:$_dep/usr/lib64/pkgconfig${PKG_CONFIG_PATH_FOR_BUILD:+:$PKG_CONFIG_PATH_FOR_BUILD}"
-    fi
-done
-export LDFLAGS="${LDFLAGS:-} $_EXTRA_LDFLAGS"
-
-NATIVE_FILE_ARG=""
-if [ -f native.ini ]; then
-    NATIVE_FILE_ARG="--native-file=native.ini"
-fi
-
-meson setup "${BUILD_DIR:-build}" \\
-    --prefix="${EPREFIX:-/usr}" \\
-    --libdir="${LIBDIR:-lib64}" \\
-    --buildtype="${MESON_BUILD_TYPE:-release}" \\
-    -Dwerror=false \\
-    $NATIVE_FILE_ARG \\
-    ${MESON_EXTRA_ARGS:-}
-""",
     use_configure = {
         "grapheme-clustering": ("-Dgrapheme-clustering=enabled", "-Dgrapheme-clustering=disabled"),
     },
     deps = [
         "//packages/linux/system/libs/utility/libffi:libffi",
-        "//packages/linux/core/zlib:zlib",
-        "//packages/linux/system/libs/font/fcft:fcft",
-        "//packages/linux/system/libs/font/fontconfig:fontconfig",
-        "//packages/linux/system/libs/font/freetype:freetype",
-        "//packages/linux/system/libs/font/harfbuzz:harfbuzz",
-        "//packages/linux/system/libs/font/graphite2:graphite2",
-        "//packages/linux/system/security/auth/biometric:pixman",
-        "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
-        "//packages/linux/system/libs/image/libpng:libpng",
-        "//packages/linux/system/libs/compression/bzip2:bzip2",
-        "//packages/linux/system/libs/data/expat:expat",
-        "//packages/linux/system/libs/data/tllist:tllist",
-        "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
-        "//packages/linux/graphics/rendering/wayland:wayland",
+                "//packages/linux/core/zlib:zlib",
+                "//packages/linux/system/libs/font/fcft:fcft",
+                "//packages/linux/system/libs/font/fontconfig:fontconfig",
+                "//packages/linux/system/libs/font/freetype:freetype",
+                "//packages/linux/system/libs/font/harfbuzz:harfbuzz",
+                "//packages/linux/system/libs/font/graphite2:graphite2",
+                "//packages/linux/system/security/auth/biometric:pixman",
+                "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
+                "//packages/linux/system/libs/image/libpng:libpng",
+                "//packages/linux/system/libs/compression/bzip2:bzip2",
+                "//packages/linux/system/libs/data/expat:expat",
+                "//packages/linux/system/libs/data/tllist:tllist",
+                "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
+                "//packages/linux/graphics/rendering/wayland:wayland",
+                "//packages/linux/graphics/rendering/wayland:wayland-scanner"
     ],
     visibility = ["PUBLIC"],
 )

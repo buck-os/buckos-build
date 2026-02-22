@@ -12,22 +12,20 @@ package(
     homepage = "https://github.com/hvisage/metalog",
     license = "GPL-2.0",
     use_configure = {},
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
-    ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 # GitHub archive does not include pre-generated configure script
 autoreconf -fi
-""",
+"""],
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc",
     ],
     deps = [
         "//packages/linux/system/libs/utility/pcre2:pcre2",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config"
     ],
     visibility = ["PUBLIC"],
 )

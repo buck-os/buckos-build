@@ -17,12 +17,8 @@ package(
 
     },
     configure_args = [],
-    src_configure = "true",  # Makefile-only build, no configure script
+# Makefile-only build, no configure script
 
-    pre_configure = """
-# pbzip2 is a command-line utility (no library), so no static-libs flag needed
-# Uses simple Makefile build system
-""",
     make_args = [
         "PREFIX=/usr",
     ],

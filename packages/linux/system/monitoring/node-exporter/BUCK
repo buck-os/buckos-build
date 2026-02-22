@@ -4,7 +4,7 @@ load("//defs:package.bzl", "package")
 
 package(
     name = "node-exporter",
-    build_rule = "autotools",
+    build_rule = "binary",
     version = "1.7.0",
     url = "https://github.com/prometheus/node_exporter/archive/refs/tags/v1.7.0.tar.gz",
     sha256 = "5da1dcc3608db663fc1949042c6f3ec29184c9414c37c0e2bdfe9b19fd5d75c7",
@@ -14,9 +14,6 @@ package(
     deps = [
         "//packages/linux/lang/go:go",
     ],
-    build_commands = [
-        "make build",
-        "install -Dm755 node_exporter ${PREFIX}/bin/node_exporter",
-    ],
+    install_script = """make build\ninstall -Dm755 node_exporter ${PREFIX}/bin/node_exporter""",
     visibility = ["PUBLIC"],
 )

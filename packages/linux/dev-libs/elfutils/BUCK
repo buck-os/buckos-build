@@ -8,7 +8,7 @@ load("//defs:package.bzl", "package")
 # Required by mesa's radeonsi driver for shader debugging info.
 
 package(
-    build_rule = "autotools",
+    build_rule = "binary",
     name = "elfutils",
     version = "0.194",
     url = "https://sourceware.org/elfutils/ftp/0.194/elfutils-0.194.tar.bz2",
@@ -16,26 +16,6 @@ package(
     description = "Libraries/utilities to handle ELF objects (libelf, libdw)",
     homepage = "https://sourceware.org/elfutils/",
     license = "GPL-2+ LGPL-3+",
-    # Fix: Remove C++ includes from CPPFLAGS - they cause C stdatomic.h to be shadowed
-    # by the C++ version which doesn't define atomic_size_t for C code
-    src_configure = '''
-# Filter out C++ includes from CPPFLAGS
-CPPFLAGS_FIXED=""
-for flag in $CPPFLAGS; do
-    case "$flag" in
-        *include/c++*) ;;  # Skip C++ include paths
-        *) CPPFLAGS_FIXED="$CPPFLAGS_FIXED $flag" ;;
-    esac
-done
-export CPPFLAGS="$CPPFLAGS_FIXED"
-echo "Fixed CPPFLAGS: $CPPFLAGS"
-
-./configure \\
-    --prefix="${EPREFIX:-/usr}" \\
-    --host="${CHOST:-}" \\
-    --build="${CBUILD:-}" \\
-    ${CONFIGURE_ARGS:-}
-''',
     configure_args = [
         "--disable-debuginfod",
         "--disable-libdebuginfod",
@@ -48,10 +28,25 @@ echo "Fixed CPPFLAGS: $CPPFLAGS"
         "--without-lzma",
         "--with-zstd",
     ],
-    # Only build and install libraries, not the utils (which require C++)
-    src_compile = '''
+    install_script = """\
+# Fix: Remove C++ includes from CPPFLAGS
+CPPFLAGS_FIXED=""
+for flag in $CPPFLAGS; do
+    case "$flag" in
+        *include/c++*) ;;
+        *) CPPFLAGS_FIXED="$CPPFLAGS_FIXED $flag" ;;
+    esac
+done
+export CPPFLAGS="$CPPFLAGS_FIXED"
+
+./configure \\
+    --prefix="/usr" \\
+    ${CONFIGURE_ARGS:-} \\
+    --disable-debuginfod --disable-libdebuginfod --disable-nls \\
+    --disable-valgrind --disable-valgrind-annotations \\
+    --program-prefix=eu- --with-zlib --without-bzlib --without-lzma --with-zstd
+
 # Build only the required libraries, skip the C++ utils
-# Order matters: libdw depends on libcpu, libdwfl, libdwfl_stacktrace, libdwelf
 make -j${MAKEOPTS:-$(nproc)} -C lib
 make -j${MAKEOPTS:-$(nproc)} -C libelf
 make -j${MAKEOPTS:-$(nproc)} -C libebl
@@ -59,38 +54,33 @@ make -j${MAKEOPTS:-$(nproc)} -C libcpu
 make -j${MAKEOPTS:-$(nproc)} -C backends
 make -j${MAKEOPTS:-$(nproc)} -C libdwelf
 make -j${MAKEOPTS:-$(nproc)} -C libdwfl
-make -j${MAKEOPTS:-$(nproc)} -C libdwfl_stacktrace || true  # May not exist in all versions
+make -j${MAKEOPTS:-$(nproc)} -C libdwfl_stacktrace || true
 make -j${MAKEOPTS:-$(nproc)} -C libdw
 make -j${MAKEOPTS:-$(nproc)} -C libasm
-''',
-    src_install = '''
-# Manual install since elfutils Makefiles don't handle DESTDIR well
-mkdir -p "${DESTDIR}/usr/lib64" "${DESTDIR}/usr/include" "${DESTDIR}/usr/include/elfutils" "${DESTDIR}/usr/lib64/pkgconfig"
 
-# Install libelf
-cp -P libelf/libelf.so* "${DESTDIR}/usr/lib64/"
-cp libelf/libelf.a "${DESTDIR}/usr/lib64/"
-cp libelf/libelf.h libelf/gelf.h libelf/nlist.h "${DESTDIR}/usr/include/"
-cp libelf/elf-knowledge.h "${DESTDIR}/usr/include/elfutils/"
+# Manual install
+mkdir -p "$OUT/usr/lib64" "$OUT/usr/include" "$OUT/usr/include/elfutils" "$OUT/usr/lib64/pkgconfig"
 
-# Install libdw
-cp -P libdw/libdw.so* "${DESTDIR}/usr/lib64/"
-cp libdw/libdw.a "${DESTDIR}/usr/lib64/"
-cp libdw/dwarf.h "${DESTDIR}/usr/include/"
-cp libdw/libdw.h libdw/known-dwarf.h "${DESTDIR}/usr/include/elfutils/"
+cp -P libelf/libelf.so* "$OUT/usr/lib64/"
+cp libelf/libelf.a "$OUT/usr/lib64/"
+cp libelf/libelf.h libelf/gelf.h libelf/nlist.h "$OUT/usr/include/"
+cp libelf/elf-knowledge.h "$OUT/usr/include/elfutils/"
 
-# Install libasm
-cp -P libasm/libasm.so* "${DESTDIR}/usr/lib64/"
-cp libasm/libasm.a "${DESTDIR}/usr/lib64/"
-cp libasm/libasm.h "${DESTDIR}/usr/include/elfutils/"
+cp -P libdw/libdw.so* "$OUT/usr/lib64/"
+cp libdw/libdw.a "$OUT/usr/lib64/"
+cp libdw/dwarf.h "$OUT/usr/include/"
+cp libdw/libdw.h libdw/known-dwarf.h "$OUT/usr/include/elfutils/"
 
-# Install pkg-config files
+cp -P libasm/libasm.so* "$OUT/usr/lib64/"
+cp libasm/libasm.a "$OUT/usr/lib64/"
+cp libasm/libasm.h "$OUT/usr/include/elfutils/"
+
 for pc in config/libelf.pc config/libdw.pc; do
     if [ -f "$pc" ]; then
-        sed "s|@prefix@|/usr|g; s|@exec_prefix@|/usr|g; s|@libdir@|/usr/lib64|g; s|@includedir@|/usr/include|g; s|@PACKAGE_VERSION@|0.194|g" "$pc" > "${DESTDIR}/usr/lib64/pkgconfig/$(basename $pc)"
+        sed "s|@prefix@|/usr|g; s|@exec_prefix@|/usr|g; s|@libdir@|/usr/lib64|g; s|@includedir@|/usr/include|g; s|@PACKAGE_VERSION@|0.194|g" "$pc" > "$OUT/usr/lib64/pkgconfig/$(basename $pc)"
     fi
 done
-''',
+""",
     deps = [
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/compression/zstd:zstd",

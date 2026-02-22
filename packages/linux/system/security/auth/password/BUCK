@@ -7,14 +7,11 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "libpwquality",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-    ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 autoreconf -fi
-""",
+""", """
+autoreconf -fi
+"""],
     url = "https://github.com/libpwquality/libpwquality/releases/download/libpwquality-1.4.5/libpwquality-1.4.5.tar.bz2",
 
     sha256 = "6fcf18b75d305d99d04d2e42982ed5b787a081af2842220ed63287a2d6a10988",
@@ -34,12 +31,18 @@ autoreconf -fi
         "--with-securedir=/lib/security",
         "--disable-python-bindings",
     ],
-    post_install = """
+    post_install_cmds = ["""
         mkdir -p "$OUT/etc/security"
-    """,
+    """],
     deps = [
         "//packages/linux/system/security/encryption:linux-pam",
-        "//packages/linux/system/security/cracklib:cracklib",
+                "//packages/linux/system/security/cracklib:cracklib",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool"
     ],
     visibility = ["PUBLIC"],
 )
@@ -48,14 +51,6 @@ autoreconf -fi
 package(
     build_rule = "autotools",
     name = "passwdqc",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-    ],
-    src_prepare = """
-autoreconf -fi
-""",
     url = "https://www.openwall.com/passwdqc/passwdqc-2.0.3.tar.gz",
 
     sha256 = "53b0f4bc49369f06195e9e13abb6cff352d5acb79e861004ec95973896488cf4",
@@ -63,10 +58,6 @@ autoreconf -fi
     description = "Password strength checking and policy enforcement toolset",
     homepage = "https://www.openwall.com/passwdqc/",
     license = "BSD-3-Clause",
-    pre_configure = """
-        # passwdqc uses a simple Makefile
-        true
-    """,
     configure_args = [],
     make_args = [
         "PREFIX=/usr",

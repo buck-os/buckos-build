@@ -14,15 +14,13 @@ package(
     description = "Full featured CLI system information tool",
     homepage = "https://github.com/smxi/inxi",
     license = "GPL-3.0-or-later",
-    bdepend = [],
-    src_prepare = "",
-    src_configure = "true",  # No configure script - just a Perl script
+# No configure script - just a Perl script
     configure_args = [],
-    src_compile = "true",  # Nothing to compile
-    src_install = """
+# Nothing to compile
+    post_install_cmds = ["""\
 mkdir -p "$DESTDIR/usr/bin"
 install -m 755 inxi "$DESTDIR/usr/bin/inxi"
-""",
+"""],
     deps = [
         "//packages/linux/core/bash:bash",
     ],

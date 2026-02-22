@@ -63,9 +63,9 @@ package(
         "--without-x",
     ],
     make_args = [],
-    post_install = """
+    post_install_cmds = ["""
 make DESTDIR=$OUT install
-""",
+"""],
     deps = [
         "//packages/linux/system/libs/image/libpng:libpng",
         "//packages/linux/system/libs/image/libjpeg-turbo:libjpeg-turbo",
@@ -80,6 +80,5 @@ make DESTDIR=$OUT install
         "//packages/linux/system/libs/compression/bzip2:bzip2",
         "//packages/linux/editors/ghostscript:ghostscript",
     ],
-    bdepend = [],
     visibility = ["PUBLIC"],
 )

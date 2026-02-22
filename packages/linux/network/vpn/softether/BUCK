@@ -15,29 +15,18 @@ package(
 
     use_configure = {},
 
-    pre_configure = """
-mkdir -p build
-cd build
-cmake .. \\
-    -DCMAKE_INSTALL_PREFIX=/usr \\
-    -DCMAKE_BUILD_TYPE=Release
-""",
-
     make_args = ["-C", "build"],
 
-    post_install = """
+    post_install_cmds = ["""
 cd build
 make DESTDIR=$DESTDIR install
 mkdir -p "$DESTDIR/etc/softether"
 mkdir -p "$DESTDIR/var/lib/softether"
-""",
+"""],
 
     deps = [
         "//packages/linux/core/zlib:zlib",
-    ],
-
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/cmake:cmake",
+                "//packages/linux/dev-tools/build-systems/cmake:cmake"
     ],
 
     description = "Multi-protocol VPN software (SSL-VPN, L2TP, IPsec, OpenVPN)",

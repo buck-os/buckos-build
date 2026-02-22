@@ -30,35 +30,8 @@ package(
     # blst uses build.sh, not autotools configure
 
     # Custom compilation using build.sh
-    src_compile = """
-# Build blst library using build.sh
-# The -shared flag builds both static and shared libraries
-export CFLAGS="${CFLAGS} -O2 -fPIC"
-if use portable; then
-    export CFLAGS="${CFLAGS} -D__BLST_PORTABLE__"
-fi
-
-# Build shared and static libraries
-./build.sh -shared
-""",
 
     # Custom installation
-    src_install = """
-# Install libraries
-install -d "${DESTDIR}/usr/lib"
-install -m 644 libblst.a "${DESTDIR}/usr/lib/"
-install -m 755 libblst.so "${DESTDIR}/usr/lib/"
-
-# Install headers
-install -d "${DESTDIR}/usr/include/blst"
-install -m 644 bindings/blst.h "${DESTDIR}/usr/include/blst/"
-install -m 644 bindings/blst_aux.h "${DESTDIR}/usr/include/blst/"
-
-# Remove static library if not requested
-if ! use static-libs; then
-    rm -f "${DESTDIR}/usr/lib/libblst.a"
-fi
-""",
 
     visibility = ["PUBLIC"],
 )

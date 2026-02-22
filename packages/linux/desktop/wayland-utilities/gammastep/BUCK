@@ -22,16 +22,14 @@ package(
         "--enable-wayland",
         "--disable-drm",
     ],
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-        "//packages/linux/dev-libs/misc/gettext:gettext",
-        "//packages/linux/dev-tools/build-systems/intltool:intltool",
-    ],
     deps = [
         "//packages/linux/system/libs/utility/libffi:libffi",
-        "//packages/linux/graphics/rendering/wayland:wayland",
+                "//packages/linux/graphics/rendering/wayland:wayland",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-libs/misc/gettext:gettext",
+                "//packages/linux/dev-tools/build-systems/intltool:intltool"
     ],
     visibility = ["PUBLIC"],
 )

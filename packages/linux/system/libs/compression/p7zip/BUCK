@@ -19,12 +19,5 @@ package(
     description = "7-Zip file archiver port for Unix systems",
     homepage = "https://github.com/p7zip-project/p7zip",
     license = "LGPL-2.1-or-later",
-    src_configure = "true",
-    src_compile = """
-make -j${MAKEOPTS:-$(nproc)} all3
-""",
-    src_install = """
-make install DEST_DIR="$DESTDIR" DEST_HOME=/usr DEST_SHARE_DOC=/usr/share/doc/p7zip
-""",
     visibility = ["PUBLIC"],
 )

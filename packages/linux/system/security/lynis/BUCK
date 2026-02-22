@@ -15,12 +15,8 @@ package(
     description = "Security auditing tool for Unix/Linux systems",
     homepage = "https://cisofy.com/lynis/",
     license = "GPL-3.0",
-    src_configure = """
-        # lynis is a shell script, no compilation needed
-        true
-    """,
     make_args = [],
-    post_install = """
+    post_install_cmds = ["""
         mkdir -p $OUT/usr/bin
         mkdir -p $OUT/usr/share/lynis
         mkdir -p $OUT/etc/lynis
@@ -32,6 +28,6 @@ package(
 
         # Install default profile
         cp default.prf $OUT/etc/lynis/
-    """,
+    """],
     visibility = ["PUBLIC"],
 )

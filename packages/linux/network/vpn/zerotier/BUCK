@@ -17,23 +17,16 @@ package(
         "debug": ("--enable-debug", "--disable-debug"),
     },
 
-    pre_configure = "true",
-
-    src_configure = """
-# ZeroTier doesn't use configure, skip this phase
-true
-""",
-
     make_args = [
         "one",
         "ZT_SSO_SUPPORTED=0",
     ],
 
-    post_install = """
+    post_install_cmds = ["""
 make DESTDIR=$DESTDIR install
 mkdir -p "$DESTDIR/var/lib/zerotier-one"
 mkdir -p "$DESTDIR/etc/zerotier-one"
-""",
+"""],
 
     description = "ZeroTier One - software-defined networking",
     homepage = "https://www.zerotier.com/",

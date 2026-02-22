@@ -10,29 +10,6 @@ package(
     description = "Fast PNG Encoder using AVX2",
     homepage = "https://github.com/veluca93/fpnge",
     license = "Apache-2.0",
-    pre_configure = """
-cat > CMakeLists.txt << 'EOF'
-cmake_minimum_required(VERSION 3.10)
-project(fpnge VERSION 0.1 LANGUAGES CXX)
-
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-add_library(fpnge STATIC fpnge.cc)
-target_include_directories(fpnge PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-    $<INSTALL_INTERFACE:include/fpnge>
-)
-target_compile_options(fpnge PRIVATE -march=haswell)
-target_compile_definitions(fpnge PRIVATE FPNGE_ASSERTS_THROW)
-
-install(TARGETS fpnge
-    ARCHIVE DESTINATION lib
-    LIBRARY DESTINATION lib
-)
-install(FILES fpnge.h DESTINATION include/fpnge)
-EOF
-    """,
     configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],

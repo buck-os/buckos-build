@@ -6,8 +6,6 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "at",
-    bdepend = [
-    ],
     version = "3.2.5",
     url = "https://salsa.debian.org/debian/at/-/archive/release/3.2.5/at-release-3.2.5.tar.gz",
     sha256 = "bd72b2e0666323f4a9d25613880b7a4d5761c8c2fefbf2fac7d5e9564a9d0da4",
@@ -31,9 +29,9 @@ package(
     make_args = [
         "INSTALL_OWNER=",
     ],
-    post_install = """
+    post_install_cmds = ["""
 chmod -R u+w $DESTDIR || true
-    """,
+    """],
     deps = [],
     visibility = ["PUBLIC"],
 )

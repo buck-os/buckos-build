@@ -12,22 +12,6 @@ package(
     homepage = "https://github.com/nmwsharp/happly",
     license = "MIT",
     deps = [],
-    pre_configure = """
-cat > CMakeLists.txt << 'EOF'
-cmake_minimum_required(VERSION 3.10)
-project(happly VERSION 2.0.0 LANGUAGES CXX)
-
-add_library(happly INTERFACE)
-target_include_directories(happly INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-    $<INSTALL_INTERFACE:include>
-)
-
-install(FILES happly.h DESTINATION include)
-install(TARGETS happly EXPORT happlyTargets)
-install(EXPORT happlyTargets DESTINATION lib/cmake/happly)
-EOF
-""",
     configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],

@@ -14,23 +14,15 @@ package(
 
     use_configure = {},
 
-    pre_configure = """
-mkdir -p build
-cd build
-cmake .. \\
-    -DCMAKE_INSTALL_PREFIX=/usr \\
-    -DN2N_OPTION_AES=ON
-""",
-
     make_args = ["-C", "build"],
 
-    post_install = """
+    post_install_cmds = ["""
 cd build
 make DESTDIR=$DESTDIR install
 mkdir -p "$DESTDIR/etc/n2n"
-""",
+"""],
 
-    bdepend = [
+    deps = [
         "//packages/linux/dev-tools/build-systems/cmake:cmake",
     ],
 

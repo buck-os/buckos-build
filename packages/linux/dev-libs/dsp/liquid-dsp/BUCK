@@ -5,14 +5,14 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "liquid-dsp",
-    bdepend = [
+    deps = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
         "//packages/linux/dev-tools/build-systems/automake:automake",
         "//packages/linux/dev-tools/build-systems/libtool:libtool",
     ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 autoreconf -fi
-""",
+"""],
     version = "1.6.0",
     url = "https://github.com/jgaeddert/liquid-dsp/archive/refs/tags/v1.6.0.tar.gz",
     sha256 = "6ee6a5dfb48e047b118cf613c0b9f43e34356a5667a77a72a55371d2c8c53bf5",
@@ -30,6 +30,5 @@ autoreconf -fi
     description = "Software-defined radio digital signal processing library",
     homepage = "https://liquidsdr.org/",
     license = "MIT",
-    maintainers = ["buckos"],
     visibility = ["PUBLIC"],
 )

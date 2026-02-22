@@ -2,7 +2,7 @@ load("//defs:package.bzl", "package")
 
 package(
     name = "zopflipng",
-    build_rule = "autotools",
+    build_rule = "binary",
     version = "1.0.3",
     url = "https://github.com/google/zopfli/archive/refs/tags/zopfli-1.0.3.tar.gz",
     sha256 = "e955a7739f71af37ef3349c4fa141c648e8775bceb2195be07e86f8e638814bd",
@@ -13,15 +13,6 @@ package(
         "//packages/linux/dev-libs/compression/zopfli:zopfli",
         "//packages/linux/graphics/bitmap/lodepng:lodepng",
     ],
-    build_commands = [
-        "cd src/zopflipng",
-        "g++ -O2 -W -Wall -Wextra -Wno-unused-function -ansi -pedantic -c zopflipng_lib.cc -I../zopfli -I${PREFIX}/include/lodepng -o zopflipng_lib.o",
-        "g++ -O2 -W -Wall -Wextra -Wno-unused-function -ansi -pedantic -c zopflipng_bin.cc -I../zopfli -I${PREFIX}/include/lodepng -o zopflipng_bin.o",
-        "g++ zopflipng_lib.o zopflipng_bin.o -L${PREFIX}/lib -lzopfli -lpng -lz -o zopflipng",
-        "mkdir -p ${PREFIX}/bin",
-        "mkdir -p ${PREFIX}/include/zopflipng",
-        "cp zopflipng ${PREFIX}/bin/",
-        "cp zopflipng_lib.h ${PREFIX}/include/zopflipng/",
-    ],
+    install_script = """cd src/zopflipng\ng++ -O2 -W -Wall -Wextra -Wno-unused-function -ansi -pedantic -c zopflipng_lib.cc -I../zopfli -I${PREFIX}/include/lodepng -o zopflipng_lib.o\ng++ -O2 -W -Wall -Wextra -Wno-unused-function -ansi -pedantic -c zopflipng_bin.cc -I../zopfli -I${PREFIX}/include/lodepng -o zopflipng_bin.o\ng++ zopflipng_lib.o zopflipng_bin.o -L${PREFIX}/lib -lzopfli -lpng -lz -o zopflipng\nmkdir -p ${PREFIX}/bin\nmkdir -p ${PREFIX}/include/zopflipng\ncp zopflipng ${PREFIX}/bin/\ncp zopflipng_lib.h ${PREFIX}/include/zopflipng/""",
     visibility = ["PUBLIC"],
 )

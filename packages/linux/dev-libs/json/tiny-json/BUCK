@@ -10,24 +10,6 @@ package(
     homepage = "https://github.com/rafagafe/tiny-json",
     license = "MIT",
     deps = [],
-    pre_configure = """
-cat > CMakeLists.txt << 'EOF'
-cmake_minimum_required(VERSION 3.10)
-project(tiny-json C)
-
-add_library(tiny-json tiny-json.c)
-target_include_directories(tiny-json PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-    $<INSTALL_INTERFACE:include>
-)
-
-install(TARGETS tiny-json
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-)
-install(FILES tiny-json.h DESTINATION include)
-EOF
-""",
     configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],

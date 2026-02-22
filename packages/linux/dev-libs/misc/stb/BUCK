@@ -4,7 +4,7 @@ load("//defs:package.bzl", "package")
 
 package(
     name = "stb",
-    build_rule = "autotools",
+    build_rule = "binary",
     version = "2024.01",
     url = "https://github.com/nothings/stb/archive/refs/heads/master.tar.gz",
     sha256 = "aa1cd65973cf814b11e5823889cb10650cf25c1badf11a80bbbc23e0c32622ee",
@@ -12,9 +12,6 @@ package(
     homepage = "https://github.com/nothings/stb",
     license = "MIT",
     deps = [],
-    build_commands = [
-        "mkdir -p ${PREFIX}/include/stb",
-        "cp *.h ${PREFIX}/include/stb/",
-    ],
+    install_script = """mkdir -p ${PREFIX}/include/stb\ncp *.h ${PREFIX}/include/stb/""",
     visibility = ["PUBLIC"],
 )

@@ -11,23 +11,6 @@ package(
     homepage = "https://nuetzlich.net/gocryptfs/",
     license = "MIT",
     configure_args = [],
-    src_configure = """
-# gocryptfs is a Go project, doesn't use configure
-true
-""",
-    src_compile = """
-# Build only the binary, skip man page generation (requires pandoc)
-./build.bash || go build -v -o gocryptfs .
-""",
-    src_install = """
-# Install manually to avoid make target that requires pandoc
-mkdir -p "$DESTDIR/usr/bin"
-install -m755 gocryptfs "$DESTDIR/usr/bin/"
-# Install gocryptfs-xray if it exists
-if [ -f gocryptfs-xray/gocryptfs-xray ]; then
-    install -m755 gocryptfs-xray/gocryptfs-xray "$DESTDIR/usr/bin/"
-fi
-""",
     deps = [
         "//packages/linux/system/security/encryption:fuse3",
         "//packages/linux/system/libs/crypto/openssl:openssl",

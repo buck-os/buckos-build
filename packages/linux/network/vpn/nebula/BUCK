@@ -16,16 +16,16 @@ package(
         "CGO_ENABLED": "0",
     },
 
-    post_install = """
+    post_install_cmds = ["""
 mkdir -p "$DESTDIR/usr/bin"
 mkdir -p "$DESTDIR/etc/nebula"
 cp nebula "$DESTDIR/usr/bin/"
 cp nebula-cert "$DESTDIR/usr/bin/"
 chmod 755 "$DESTDIR/usr/bin/nebula"
 chmod 755 "$DESTDIR/usr/bin/nebula-cert"
-""",
+"""],
 
-    bdepend = [
+    deps = [
         "//packages/linux/lang/go:go",
     ],
 

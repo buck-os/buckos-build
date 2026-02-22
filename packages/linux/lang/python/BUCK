@@ -19,7 +19,7 @@ package(
     # Default USE flags
     # Note: PGO disabled due to linking issues with __gcov_* symbols during cross-compile
     # Note: readline disabled due to library path pollution causing GLIBC mismatch in host tools
-    use_defaults = ["sqlite", "ssl"],  # readline, ncurses disabled due to cross-compilation issues
+# readline, ncurses disabled due to cross-compilation issues
 
     # Conditional dependencies
     use_deps = {
@@ -40,7 +40,6 @@ package(
     # major.minor version. Since the host has 3.13 and we build 3.12,
     # use the host toolchain instead. Python's configure also runs test
     # programs making true cross-compilation impractical.
-    use_bootstrap = False,
     configure_args = [
         "--enable-shared",
         "--with-system-expat",
@@ -56,12 +55,17 @@ package(
 
     # Fix lib-dynload path: Python stdlib is in lib/python3.12 but lib-dynload is in lib64/python3.12
     # Create a symlink so Python can find its C extensions
-    post_install = """
+    post_install_cmds = ["""
         # Create lib-dynload symlink in lib/python3.12 pointing to lib64/python3.12/lib-dynload
         if [ -d "$DESTDIR/usr/lib64/python3.12/lib-dynload" ] && [ ! -e "$DESTDIR/usr/lib/python3.12/lib-dynload" ]; then
             ln -sf ../../lib64/python3.12/lib-dynload "$DESTDIR/usr/lib/python3.12/lib-dynload"
         fi
-    """,
+    """, """
+        # Create lib-dynload symlink
+        if [ -d "$DESTDIR/usr/lib64/python3.12/lib-dynload" ] && [ ! -e "$DESTDIR/usr/lib/python3.12/lib-dynload" ]; then
+            ln -sf ../../lib64/python3.12/lib-dynload "$DESTDIR/usr/lib/python3.12/lib-dynload"
+        fi
+    """],
 
     visibility = ["PUBLIC"],
 )
@@ -98,7 +102,6 @@ package(
     ],
 
     # Use host toolchain - do not use bootstrap cross-compiler
-    use_bootstrap = False,
 
     # Minimal dependencies - only what's needed for Python to work
     deps = [
@@ -106,13 +109,6 @@ package(
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/system/libs/utility/libffi:libffi",
     ],
-
-    post_install = """
-        # Create lib-dynload symlink
-        if [ -d "$DESTDIR/usr/lib64/python3.12/lib-dynload" ] && [ ! -e "$DESTDIR/usr/lib/python3.12/lib-dynload" ]; then
-            ln -sf ../../lib64/python3.12/lib-dynload "$DESTDIR/usr/lib/python3.12/lib-dynload"
-        fi
-    """,
 
     visibility = ["PUBLIC"],
 )

@@ -4,7 +4,7 @@ load("//defs:package.bzl", "package")
 
 package(
     name = "greatest",
-    build_rule = "autotools",
+    build_rule = "binary",
     version = "1.5.0",
     url = "https://github.com/silentbicycle/greatest/archive/refs/tags/v1.5.0.tar.gz",
     sha256 = "33e4c93b1b7f631fec173b8675582d1739b1238a5440b7f4ad50582f0cf38c34",
@@ -12,8 +12,6 @@ package(
     homepage = "https://github.com/silentbicycle/greatest",
     license = "ISC",
     deps = [],
-    build_commands = [
-        "install -Dm644 greatest.h ${PREFIX}/include/greatest.h",
-    ],
+    install_script = "install -Dm644 greatest.h ${PREFIX}/include/greatest.h",
     visibility = ["PUBLIC"],
 )

@@ -10,11 +10,8 @@ package(
     description = "C library for accessing the PostgreSQL parser outside of the server",
     homepage = "https://github.com/pganalyze/libpg_query",
     license = "BSD-3-Clause",
-    src_configure = """
-# libpg_query uses plain Makefile, skip configure
-""",
     make_args = [],
-    post_install = """
+    post_install_cmds = ["""
 cd "$SRCDIR"
 
 # Build the library
@@ -25,6 +22,6 @@ make build_shared CC=cc
 
 # Install
 make install DESTDIR="$DESTDIR" prefix=/usr
-""",
+"""],
     visibility = ["PUBLIC"],
 )

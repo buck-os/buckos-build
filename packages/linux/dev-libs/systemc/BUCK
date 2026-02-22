@@ -3,15 +3,15 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "systemc",
-    bdepend = [
+    deps = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
         "//packages/linux/dev-tools/build-systems/automake:automake",
         "//packages/linux/dev-tools/build-systems/libtool:libtool",
         "//packages/linux/dev-libs/misc/gettext:gettext",
     ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 autoreconf -fi
-""",
+"""],
     version = "3.0.1",
     use_configure = {
         "debug": ("--enable-debug", "--disable-debug"),

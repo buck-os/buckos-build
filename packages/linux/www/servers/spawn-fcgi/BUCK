@@ -12,14 +12,14 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "spawn-fcgi",
-    bdepend = [
+    deps = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
         "//packages/linux/dev-tools/build-systems/automake:automake",
         "//packages/linux/dev-tools/build-systems/libtool:libtool",
     ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 autoreconf -fi
-""",
+"""],
     version = "1.6.5",
     url = "https://github.com/lighttpd/spawn-fcgi/archive/refs/tags/spawn-fcgi-1.6.5.tar.gz",
     sha256 = "5b2ea0fd9e3384be91173d69c722bea3cee56288751b0fc271f3f7830817d3b6",

@@ -10,56 +10,6 @@ package(
     homepage = "https://github.com/proxy-wasm/proxy-wasm-cpp-sdk",
     license = "Apache-2.0",
     deps = [],
-    pre_configure = """
-        cat > CMakeLists.txt << 'EOF'
-cmake_minimum_required(VERSION 3.10)
-project(proxy-wasm-cpp-sdk VERSION 0.0.1 LANGUAGES CXX)
-
-# Install headers
-install(FILES
-    proxy_wasm_api.h
-    proxy_wasm_common.h
-    proxy_wasm_enums.h
-    proxy_wasm_externs.h
-    proxy_wasm_intrinsics.h
-    DESTINATION include/proxy-wasm
-)
-
-# Install CMake package config files
-include(CMakePackageConfigHelpers)
-
-configure_package_config_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/proxy-wasm-cpp-sdkConfig.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/proxy-wasm-cpp-sdkConfig.cmake
-    INSTALL_DESTINATION lib/cmake/proxy-wasm-cpp-sdk
-    NO_CHECK_REQUIRED_COMPONENTS_MACRO
-)
-
-write_basic_package_version_file(
-    ${CMAKE_CURRENT_BINARY_DIR}/proxy-wasm-cpp-sdkConfigVersion.cmake
-    VERSION 0.0.1
-    COMPATIBILITY SameMajorVersion
-)
-
-install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/proxy-wasm-cpp-sdkConfig.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/proxy-wasm-cpp-sdkConfigVersion.cmake
-    DESTINATION lib/cmake/proxy-wasm-cpp-sdk
-)
-EOF
-
-        mkdir -p cmake
-        cat > cmake/proxy-wasm-cpp-sdkConfig.cmake.in << 'EOF'
-@PACKAGE_INIT@
-
-if(NOT TARGET proxy-wasm-cpp-sdk::proxy-wasm-cpp-sdk)
-    add_library(proxy-wasm-cpp-sdk::proxy-wasm-cpp-sdk INTERFACE IMPORTED)
-    set_target_properties(proxy-wasm-cpp-sdk::proxy-wasm-cpp-sdk PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "@PACKAGE_CMAKE_INSTALL_PREFIX@/include"
-    )
-endif()
-EOF
-    """,
     configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],

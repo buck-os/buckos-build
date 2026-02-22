@@ -12,21 +12,14 @@ package(
     homepage = "https://github.com/libbpf/libbpf",
     license = "LGPL-2.1 BSD-2-Clause",
     # Build in the src/ subdirectory where the Makefile is
-    src_compile = """
-cd src
-make -j${MAKE_JOBS:-$(nproc)} \
-    PREFIX=/usr \
-    LIBDIR=/usr/lib64 \
-    OBJDIR=../build
-""",
-    src_install = """
+    post_install_cmds = ["""\
 cd src
 make install \
     PREFIX=/usr \
     LIBDIR=/usr/lib64 \
     OBJDIR=../build \
     DESTDIR="$DESTDIR"
-""",
+"""],
     deps = [
         "//packages/linux/system/libs/elfutils:elfutils",
         "//packages/linux/core/zlib:zlib",

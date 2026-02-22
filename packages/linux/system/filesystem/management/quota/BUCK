@@ -18,20 +18,18 @@ package(
     description = "Disk quota management tools",
     homepage = "https://github.com/sailfishos-mirror/quota",
     license = "GPL-2.0",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-        "//packages/linux/dev-libs/misc/gettext:gettext",
-    ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 autoreconf -fi
-""",
+"""],
     configure_args = [
         "--disable-ldapmail",
     ],
     deps = [
         "//packages/linux/core/util-linux:util-linux",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-libs/misc/gettext:gettext"
     ],
     visibility = ["PUBLIC"],
 )

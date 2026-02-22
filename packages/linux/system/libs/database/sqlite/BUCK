@@ -26,10 +26,6 @@ package(
     ],
     # Build library only; skip shell CLI to avoid libtool link ordering
     # issues with dep library paths under exec platform builds
-    src_compile = "make -j${MAKEOPTS:-$(nproc)} libsqlite3.la",
-    src_install = """
-make install-libLTLIBRARIES install-pkgconfigDATA install-includeHEADERS DESTDIR="$DESTDIR"
-""",
     # sqlite's configure generates a Makefile that links the shell against
     # libsqlite3.so from the build dir.  Under exec platform builds the
     # rpath isn't set correctly causing link failures.  LDFLAGS with -L.

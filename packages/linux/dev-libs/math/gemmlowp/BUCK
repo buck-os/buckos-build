@@ -15,7 +15,7 @@ package(
     homepage = "https://github.com/google/gemmlowp",
     license = "Apache-2.0",
     deps = [],
-    src_prepare = """
+    pre_configure_cmds = ["""
         # Copy CMakeLists.txt from contrib to root for building
         if [ -d gemmlowp/contrib ]; then
             cp gemmlowp/contrib/CMakeLists.txt .
@@ -26,7 +26,7 @@ package(
             ls -la
             exit 1
         fi
-    """,
+    """],
     configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",

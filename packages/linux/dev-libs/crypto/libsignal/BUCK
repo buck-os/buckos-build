@@ -15,7 +15,7 @@ package(
         "--manifest-path=rust/bridge/ffi/Cargo.toml",
         "--lib",
     ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 # Find and copy git dependencies from bdepend sources
 CURVE_SRC=""
 BORING_SRC=""
@@ -58,8 +58,7 @@ sed -i "s|boring = { git = 'https://github.com/signalapp/boring', branch = 'libs
 
 # Also need to patch boring-sys reference if it exists
 sed -i "s|boring-sys = { git = 'https://github.com/signalapp/boring', branch = 'libsignal'}|boring-sys = { path = 'vendor-git/boring/boring-sys' }|" Cargo.toml
-""",
-    bdepend = [":curve25519-dalek-src", ":boring-src", ":boringssl-src"],
-    deps = [],
+"""],
+    deps = [":curve25519-dalek-src", ":boring-src", ":boringssl-src"],
     visibility = ["PUBLIC"],
 )

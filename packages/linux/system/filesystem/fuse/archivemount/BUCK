@@ -11,18 +11,16 @@ package(
     homepage = "https://www.cybernoia.de/software/archivemount.html",
     license = "LGPL-2.0",
     configure_args = [],
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
-    ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 autoreconf -fi
-""",
+"""],
     deps = [
         "//packages/linux/system/security/encryption:fuse3",
-        "//packages/linux/system/libs/compression/libarchive:libarchive",
+                "//packages/linux/system/libs/compression/libarchive:libarchive",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config"
     ],
     visibility = ["PUBLIC"],
 )

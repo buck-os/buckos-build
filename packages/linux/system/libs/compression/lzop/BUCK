@@ -19,12 +19,6 @@ package(
     configure_args = [
         "--prefix=/usr",
     ],
-    pre_configure = """
-# USE flags: nls
-# lzop is a command-line utility (no library), so no static-libs flag needed
-# Uses autotools build system
-# --enable-nls/--disable-nls controls internationalization support
-""",
     deps = [
         "//packages/linux/system/libs/compression/lzo:lzo",
     ],

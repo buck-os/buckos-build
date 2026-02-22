@@ -3,15 +3,9 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "bindfs",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
-    ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 autoreconf -fi
-""",
+"""],
     url = "https://bindfs.org/downloads/bindfs-1.17.6.tar.gz",
 
     sha256 = "d3beb3cc69bb2b6802cc539588e921fea973ed6191b133f2024719311d1cc18b",
@@ -25,6 +19,10 @@ autoreconf -fi
     configure_args = [],
     deps = [
         "//packages/linux/system/security/encryption:fuse3",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config"
     ],
     visibility = ["PUBLIC"],
 )

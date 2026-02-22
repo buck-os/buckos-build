@@ -4,8 +4,6 @@ package(
     build_rule = "autotools",
     name = "opencore-amr",
     # SourceForge release tarball includes pre-generated configure script
-    bdepend = [],
-    src_prepare = "",
     version = "0.1.6",
     url = "https://downloads.sourceforge.net/project/opencore-amr/opencore-amr/opencore-amr-0.1.6.tar.gz",
     sha256 = "483eb4061088e2b34b358e47540b5d495a96cd468e361050fae615b1809dc4a1",
@@ -16,6 +14,9 @@ package(
         "--prefix=/usr",
     ],
     deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
     ],
     visibility = ["PUBLIC"],
 )
@@ -23,14 +24,9 @@ package(
 package(
     build_rule = "autotools",
     name = "opencore-amr-source",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-    ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 autoreconf -fi
-""",
+"""],
     version = "0.1.3",
     url = "https://github.com/BelledonneCommunications/opencore-amr/archive/refs/tags/v0.1.3.tar.gz",
     sha256 = "c760bf626e0e467b9344b380d9ba59d95c5214d561326ffa2be79ac5ddcd8983",

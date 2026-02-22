@@ -5,21 +5,20 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "libbacktrace",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-    ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 autoreconf -fi
-""",
+"""],
     version = "master",
     url = "https://github.com/ianlancetaylor/libbacktrace/archive/refs/heads/master.tar.gz",
     sha256 = "f56c63a8a2038a526631884328b5b654104ac1ccf21607feeb6f0d85605d3260",
     description = "A library to produce symbolic backtraces",
     homepage = "https://github.com/ianlancetaylor/libbacktrace",
     license = "BSD-3-Clause",
-    deps = [],
+    deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+    ],
     configure_args = [
         "--prefix=${PREFIX}",
         "--enable-shared",

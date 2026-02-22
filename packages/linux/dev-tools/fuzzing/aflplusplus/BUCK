@@ -13,29 +13,6 @@ package(
     homepage = "https://github.com/AFLplusplus/AFLplusplus",
     license = "Apache-2.0",
     # AFL++ uses GNUmakefile directly, skip configure
-    src_configure = """
-# No configure needed for AFL++
-true
-""",
-    src_compile = """
-make -j${MAKEOPTS:-$(nproc)} \
-    PREFIX=/usr \
-    BIN_PATH=/usr/bin \
-    HELPER_PATH=/usr/lib/afl \
-    DOC_PATH=/usr/share/doc/afl \
-    MISC_PATH=/usr/share/afl \
-    MAN_PATH=/usr/share/man/man8
-""",
-    src_install = """
-make install \
-    DESTDIR="$DESTDIR" \
-    PREFIX=/usr \
-    BIN_PATH=/usr/bin \
-    HELPER_PATH=/usr/lib/afl \
-    DOC_PATH=/usr/share/doc/afl \
-    MISC_PATH=/usr/share/afl \
-    MAN_PATH=/usr/share/man/man8
-""",
     deps = [
     ],
     visibility = ["PUBLIC"],

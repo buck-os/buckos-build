@@ -9,12 +9,6 @@ package(
     description = "Library for reading RAW files from digital cameras",
     homepage = "https://www.libraw.org/",
     license = "LGPL-2.1",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
-    ],
     configure_args = [
         "--disable-examples",
     ],
@@ -27,7 +21,12 @@ package(
         "openmp": ("--enable-openmp", "--disable-openmp"),
         "zlib": ("--enable-zlib", "--disable-zlib"),
     },
-    deps = [],
+    deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
+    ],
     use_deps = {
         "jpeg": "//packages/linux/system/libs/image/libjpeg-turbo:libjpeg-turbo",
         "zlib": "//packages/linux/core/zlib:zlib",

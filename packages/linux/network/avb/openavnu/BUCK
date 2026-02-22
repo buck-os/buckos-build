@@ -10,13 +10,11 @@ package(
     description = "Open Audio Video Bridging (AVB) stack",
     homepage = "https://github.com/Avnu/OpenAvnu",
     license = "BSD GPL-2.0",
-    src_configure = "true",
-    src_compile = "make -C daemons/mrpd",
-    src_install = """
-        install -Dm755 daemons/mrpd/mrpd "$DESTDIR/usr/bin/mrpd"
+    post_install_cmds = ["""\
+install -Dm755 daemons/mrpd/mrpd "$DESTDIR/usr/bin/mrpd"
         install -Dm644 daemons/mrpd/mrpd.h "$DESTDIR/usr/include/mrpd/mrpd.h"
         install -Dm644 daemons/common/eui64set.h "$DESTDIR/usr/include/mrpd/eui64set.h"
         install -Dm644 daemons/common/parse.h "$DESTDIR/usr/include/mrpd/parse.h"
-    """,
+"""],
     visibility = ["PUBLIC"],
 )

@@ -17,20 +17,12 @@ package(
     description = "Diagram creation program for GNOME",
     homepage = "https://wiki.gnome.org/Apps/Dia",
     license = "GPL-2.0-or-later",
-    pre_configure = """
-mkdir -p build
-cd build
-meson setup .. \
-    --prefix=/usr \
-    -Dbuildtype=release \
-    -Ddoc=false
-""",
     configure_args = [],
     make_args = ["-C", "build"],
-    post_install = """
+    post_install_cmds = ["""
 cd build
 DESTDIR=$OUT meson install
-""",
+"""],
     deps = [
         "//packages/linux/desktop/gtk:gtk3",
         "//packages/linux/system/libs/data/libxml2:libxml2",
@@ -38,6 +30,5 @@ DESTDIR=$OUT meson install
         "//packages/linux/fonts/libraries/pango:pango",
         # "//packages/linux/core/graphene:graphene",  # TODO: not packaged yet
     ],
-    bdepend = [],
     visibility = ["PUBLIC"],
 )

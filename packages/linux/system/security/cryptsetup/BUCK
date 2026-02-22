@@ -6,15 +6,9 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "popt",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-        "//packages/linux/dev-libs/misc/gettext:gettext",
-    ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 autoreconf -fi
-""",
+"""],
     version = "1.19",
     url = "http://ftp.rpm.org/popt/releases/popt-1.x/popt-1.19.tar.gz",
     sha256 = "c25a4838fc8e4c1c8aacb8bd620edb3084a3d63bf8987fdad3ca2758c63240f9",
@@ -35,51 +29,10 @@ autoreconf -fi
 package(
     build_rule = "autotools",
     name = "lvm2",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",  # For PKG_* m4 macros
-        "//packages/linux/dev-libs/misc/gettext:gettext",
-    ],
     # Use pre-generated configure from tarball to avoid AX_PYTHON_MODULE macro issues
-    src_prepare = "",
     # Add library search paths for cross-compilation via LDFLAGS -L flags
-    src_configure = """
-_EXTRA_LDFLAGS=""
-IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
-for _dep in "${_DEP_ARRAY[@]}"; do
-    for _libdir in "$_dep/usr/lib64" "$_dep/usr/lib" "$_dep/lib64" "$_dep/lib"; do
-        if [ -d "$_libdir" ]; then
-            _EXTRA_LDFLAGS="$_EXTRA_LDFLAGS -L$_libdir -Wl,-rpath-link,$_libdir"
-        fi
-    done
-done
-export LDFLAGS="${LDFLAGS:-} $_EXTRA_LDFLAGS"
-echo "LDFLAGS=$LDFLAGS"
-./configure \\
-    --build=$CBUILD \\
-    --host=$CHOST \\
-    --target=$CHOST \\
-    --prefix=/usr \\
-    --sbindir=/sbin \\
-    --sysconfdir=/etc \\
-    --localstatedir=/var \\
-    --enable-cmdlib \\
-    --enable-pkgconfig \\
-    --disable-dbus \\
-    --enable-udev_rules \\
-    --enable-udev_sync \\
-    --disable-readline \\
-    --disable-thin_check_needs_check \\
-    --disable-cache_check_needs_check \\
-    --with-symvers=no
-""",
     # LVM2's Makefile uses CLDFLAGS (configure-time LDFLAGS), not make-time LDFLAGS
     # CLDFLAGS is now exported by ebuild.sh alongside LDFLAGS
-    src_compile = """
-make -j${MAKEOPTS:-$(nproc)} CLDFLAGS="${CLDFLAGS:-}"
-""",
     version = "2.03.23",
     url = "https://mirrors.kernel.org/sourceware/lvm2/LVM2.2.03.23.tgz",
     sha256 = "74e794a9e9dee1bcf8a2065f65b9196c44fdf321e22d63b98ed7de8c9aa17a5d",
@@ -87,14 +40,25 @@ make -j${MAKEOPTS:-$(nproc)} CLDFLAGS="${CLDFLAGS:-}"
     homepage = "https://sourceware.org/lvm2/",
     license = "GPL-2.0",
     # USE flags: systemd - use systemd's libudev instead of eudev
-    use_defaults = ["systemd"],  # Default to systemd for modern systems
+# Default to systemd for modern systems
     use_deps = {
         "systemd": "//packages/linux/system/init/systemd:systemd",
         "-systemd": "//packages/linux/system/init/eudev:eudev",
     },
     deps = [
         "//packages/linux/system/libs/io/libaio:libaio",
-        "//packages/linux/system/libs/ipc/libcap:libcap",  # Required by libsystemd
+                "//packages/linux/system/libs/ipc/libcap:libcap",
+                # Required by libsystemd,
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-libs/misc/gettext:gettext",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
+                # For PKG_* m4 macros
+        "//packages/linux/dev-libs/misc/gettext:gettext"
     ],
     visibility = ["PUBLIC"],
 )

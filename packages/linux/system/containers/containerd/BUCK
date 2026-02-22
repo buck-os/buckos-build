@@ -4,7 +4,7 @@ load("//defs:package.bzl", "package")
 
 package(
     name = "containerd",
-    build_rule = "autotools",
+    build_rule = "binary",
     version = "1.7.13",
     use_configure = {
         "apparmor": ("--enable-apparmor", "--disable-apparmor"),
@@ -23,8 +23,6 @@ package(
     deps = [
         "//packages/linux/system/containers/runc:runc",
     ],
-    install_cmds = [
-        "cp -r bin/* ${PREFIX}/bin/",
-    ],
+    install_script = "cp -r bin/* $OUT/usr/bin/",
     visibility = ["PUBLIC"],
 )

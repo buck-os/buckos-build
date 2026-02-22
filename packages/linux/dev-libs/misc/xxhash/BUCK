@@ -10,24 +10,5 @@ package(
     description = "Extremely fast non-cryptographic hash algorithm",
     homepage = "https://cyan4973.github.io/xxHash/",
     license = "BSD-2-Clause",
-    src_configure = "true",
-    src_compile = """
-# Build only specific targets - avoid 'lib' target which includes static library
-make -j${MAKEOPTS:-$(nproc)} PREFIX=/usr LIBDIR=/usr/lib libxxhash.so.0.8.2 xxhsum
-# Create symlinks
-ln -sf libxxhash.so.0.8.2 libxxhash.so.0
-ln -sf libxxhash.so.0 libxxhash.so
-""",
-    src_install = """
-# Install only shared library and binary
-install -d "$DESTDIR/usr/lib"
-install -d "$DESTDIR/usr/include"
-install -d "$DESTDIR/usr/bin"
-install -m755 libxxhash.so.* "$DESTDIR/usr/lib/"
-ln -sf libxxhash.so.0.8.2 "$DESTDIR/usr/lib/libxxhash.so.0"
-ln -sf libxxhash.so.0.8.2 "$DESTDIR/usr/lib/libxxhash.so"
-install -m644 xxhash.h "$DESTDIR/usr/include/"
-install -m755 xxhsum "$DESTDIR/usr/bin/"
-""",
     visibility = ["PUBLIC"],
 )

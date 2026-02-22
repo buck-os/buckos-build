@@ -11,9 +11,9 @@ package(
     license = "Apache-2.0",
     packages = ["./binary/scalibr"],
     bins = ["scalibr"],
-    src_prepare = """
+    pre_configure_cmds = ["""
 rm -rf .git
-""",
+"""],
     deps = [],
     visibility = ["PUBLIC"],
 )

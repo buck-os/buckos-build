@@ -22,22 +22,13 @@ package(
         "keyutils": ("--enable-keyutils", "--disable-keyutils"),
         "sctp": ("--enable-sctp", "--disable-sctp"),
     },
-    use_defaults = [],  # Don't build static by default (requires glibc-static)
+# Don't build static by default (requires glibc-static)
     deps = [],
     use_deps = {
         "zlib": "//packages/linux/core/zlib:zlib",
     },
-    use_make = {
-        "static": "STATIC=1",
-    },
-    make_args = [],
-    make_install_args = [
+    make_args = [
         "DESTDIR=$DESTDIR",
     ],
-    src_install = """
-make DESTDIR="$DESTDIR" install
-mkdir -p "$DESTDIR/usr/bin"
-cp stress-ng "$DESTDIR/usr/bin/" 2>/dev/null || true
-""",
     visibility = ["PUBLIC"],
 )

@@ -34,17 +34,5 @@ package(
         # Water mask size - according to spec should always be 256
         "-DTERRAIN_MASK_SIZE=256",
     ],
-    pre_configure = """
-        # Configure config.hpp from template
-        # CMake will handle this via configure_file() in CMakeLists.txt
-
-        # Note: GDAL >= 2.0.0 is required (RFC 46 unified GDAL/OGR API)
-        # The build will check for GDALOpenEx function to verify GDAL version
-
-        echo "Cesium Terrain Builder requires:"
-        echo "  - GDAL >= 2.0.0 (RFC 46 unified API with GDALOpenEx)"
-        echo "  - zlib for terrain tile compression"
-        echo "  - C++11 compatible compiler"
-    """,
     visibility = ["PUBLIC"],
 )

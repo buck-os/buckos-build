@@ -3,14 +3,9 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "vim-minimal",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-    ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 autoreconf -fi
-""",
+"""],
     url = "https://github.com/vim/vim/archive/v9.1.0.tar.gz",
 
     sha256 = "ddb435f6e386c53799a3025bdc5a3533beac735a0ee596cb27ada97366a1c725",
@@ -18,9 +13,6 @@ autoreconf -fi
     description = "Minimal Vim build with basic features",
     homepage = "https://www.vim.org/",
     license = "Vim",
-    pre_configure = """
-cd src
-""",
     configure_args = [
         "--with-features=small",
         "--enable-gui=no",
@@ -41,6 +33,9 @@ cd src
     },
     deps = [
         "//packages/linux/system/terminal/ncurses:ncurses",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool"
     ],
     visibility = ["PUBLIC"],
 )

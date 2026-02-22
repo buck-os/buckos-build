@@ -10,7 +10,7 @@ package(
     description = "Linux Audit Framework userspace utilities",
     homepage = "https://github.com/linux-audit/audit-userspace",
     license = "LGPL-2.1+",
-    use_defaults = ["caps"],  # Enable by default for capability checking
+# Enable by default for capability checking
     use_configure = {
         "!caps": "--with-libcap-ng=no",
         "caps": "--with-libcap-ng=yes",
@@ -23,26 +23,5 @@ package(
     use_deps = {
         "caps": "//packages/linux/system/libs/ipc/libcap-ng:libcap-ng",
     },
-    src_configure = """
-# Force include stdatomic.h for C11 atomic types
-export CFLAGS="$CFLAGS -std=gnu11 -include stdatomic.h"
-export CXXFLAGS="$CXXFLAGS -std=gnu++11"
-./configure \\
-    --prefix=/usr \\
-    --sbindir=/sbin \\
-    --sysconfdir=/etc \\
-    --localstatedir=/var \\
-    --without-python \\
-    --without-python3 \\
-    --enable-shared \\
-    --disable-static \\
-    --disable-zos-remote
-""",
-    src_compile = """
-# Ensure CFLAGS with atomic support are used during compilation
-make -j${MAKEOPTS:-$(nproc)} ${EXTRA_EMAKE:-} \\
-    CFLAGS="$CFLAGS -std=gnu11 -include stdatomic.h" \\
-    CXXFLAGS="$CXXFLAGS -std=gnu++11"
-""",
     visibility = ["PUBLIC"],
 )

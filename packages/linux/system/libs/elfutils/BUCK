@@ -32,12 +32,12 @@ package(
         "--disable-libdebuginfod",  # Disable debuginfod client library
     ],
     # Disable C++ utilities that fail due to include_next issues with bootstrap toolchain
-    src_prepare = """
+    pre_configure_cmds = ["""
 # Disable srcfiles utility which requires C++ and fails with bootstrap toolchain
 # due to #include_next issues
 sed -i 's/srcfiles$(EXEEXT)//' src/Makefile.in || true
 sed -i '/^srcfiles_SOURCES/d' src/Makefile.am src/Makefile.in || true
-""",
+"""],
     deps = [
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/compression/bzip2:bzip2",

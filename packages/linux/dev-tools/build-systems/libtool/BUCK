@@ -33,9 +33,17 @@ package(
             --libdir=/usr/lib64 \
             --disable-static
 
-        make -j${MAKEOPTS:-$(nproc)}
+        # Uniform timestamps prevent autotools regeneration rules
+        find . -type f -exec touch {} + 2>/dev/null || true
 
-        make DESTDIR="$OUT" install
+        # Suppress autotools regeneration — libtool's GEN rules create
+        # libltdl/Makefile.am with fresh timestamps during build, triggering
+        # automake which isn't available
+        make -j${MAKEOPTS:-$(nproc)} \
+            ACLOCAL=true AUTOMAKE=true AUTOCONF=true AUTOHEADER=true MAKEINFO=true
+
+        make DESTDIR="$OUT" install \
+            ACLOCAL=true AUTOMAKE=true AUTOCONF=true AUTOHEADER=true MAKEINFO=true
 
         # Create wrapper scripts that set the correct data directory
         # libtoolize has hardcoded paths that need to be overridden

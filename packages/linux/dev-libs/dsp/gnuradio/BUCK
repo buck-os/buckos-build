@@ -38,14 +38,6 @@ package(
         "vocoder": ("-DENABLE_VOCODER=ON", "-DENABLE_VOCODER=OFF"),
         "wavelet": ("-DENABLE_WAVELET=ON", "-DENABLE_WAVELET=OFF"),
     },
-    use_options = {
-        "python": "ENABLE_PYTHON",
-        "uhd": "ENABLE_GR_UHD",
-        "audio": "ENABLE_GR_AUDIO",
-        "qtgui": "ENABLE_GR_QTGUI",
-        "grc": "ENABLE_GRC",
-        "zeromq": "ENABLE_GR_ZEROMQ",
-    },
     use_deps = {
         "python": [
             "//packages/linux/lang/python:python3",
@@ -66,6 +58,5 @@ package(
     description = "GNU Radio software-defined radio toolkit",
     homepage = "https://www.gnuradio.org/",
     license = "GPL-3.0-or-later",
-    maintainers = ["buckos"],
     visibility = ["PUBLIC"],
 )

@@ -4,7 +4,7 @@ load("//defs:package.bzl", "package")
 
 package(
     name = "postfix",
-    build_rule = "autotools",
+    build_rule = "binary",
     version = "3.8.5",
     url = "https://de.postfix.org/ftpmirror/official/postfix-3.8.5.tar.gz",
     sha256 = "f3e827a2b2e410359ad25d31341970434ab07e36139f9a2ef93981b0ec564c85",
@@ -18,10 +18,6 @@ package(
         "mysql": "//packages/linux/databases/mysql:mysql",
         "pgsql": "//packages/linux/databases/postgresql:postgresql",
     },
-    build_commands = [
-        "make makefiles CCARGS='-DUSE_TLS -DUSE_SASL_AUTH' AUXLIBS='-lssl -lcrypto'",
-        "make",
-        "sh postfix-install -non-interactive install_root=${DESTDIR}",
-    ],
+    install_script = """make makefiles CCARGS='-DUSE_TLS -DUSE_SASL_AUTH' AUXLIBS='-lssl -lcrypto'\nmake\nsh postfix-install -non-interactive install_root=${DESTDIR}""",
     visibility = ["PUBLIC"],
 )

@@ -12,39 +12,6 @@ package(
     deps = [
         "//packages/linux/graphics/rendering/imgui:imgui",
     ],
-    pre_configure = """
-cat > CMakeLists.txt << 'EOF'
-cmake_minimum_required(VERSION 3.14)
-project(implot3d LANGUAGES CXX)
-
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-find_package(imgui REQUIRED)
-
-add_library(implot3d STATIC
-    implot3d.cpp
-    implot3d_items.cpp
-    implot3d_meshes.cpp
-)
-
-target_include_directories(implot3d PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-    $<INSTALL_INTERFACE:include>
-)
-
-target_link_libraries(implot3d PUBLIC imgui::imgui)
-
-install(TARGETS implot3d
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-)
-
-install(FILES implot3d.h implot3d_internal.h
-    DESTINATION include
-)
-EOF
-""",
     configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],

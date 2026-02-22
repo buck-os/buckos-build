@@ -13,25 +13,15 @@ package(
     description = "Powerful yet simple to use screenshot software",
     homepage = "https://flameshot.org/",
     license = "GPL-3.0-or-later",
-    pre_configure = """
-mkdir -p build
-cd build
-cmake .. \
-    -DCMAKE_INSTALL_PREFIX=/usr \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DUSE_WAYLAND_CLIPBOARD=ON \
-    -DUSE_WAYLAND_GRIM=ON
-""",
     configure_args = [],
     make_args = ["-C", "build"],
-    post_install = """
+    post_install_cmds = ["""
 cd build
 DESTDIR=$OUT make install
-""",
+"""],
     deps = [
         "//packages/linux/desktop/qt:qt5",
         # "//packages/linux/desktop/kde/kguiaddons:kguiaddons",  # TODO: KDE libs not packaged yet
     ],
-    bdepend = [],
     visibility = ["PUBLIC"],
 )

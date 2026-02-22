@@ -14,19 +14,5 @@ package(
     license = "MIT",
     deps = [],
     # tree-sitter Makefile has an issue with 'rcs' command - use make with AR override
-    src_compile = """
-# Fix Makefile issue where it calls 'rcs' directly instead of 'ar rcs'
-# We need to create a wrapper script for rcs that calls ar rcs instead
-cat > rcs << 'EOF'
-#!/bin/bash
-exec ar rcs "$@"
-EOF
-chmod +x rcs
-export PATH="$PWD:$PATH"
-make PREFIX=${PREFIX}
-""",
-    src_install = """
-make install PREFIX=${PREFIX} DESTDIR="$DESTDIR"
-""",
     visibility = ["PUBLIC"],
 )

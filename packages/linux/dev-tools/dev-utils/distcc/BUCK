@@ -4,8 +4,6 @@ package(
     build_rule = "autotools",
     name = "distcc",
     # GitHub release tarball includes pre-generated configure script
-    bdepend = [],
-    src_prepare = "",
     url = "https://github.com/distcc/distcc/releases/download/v3.4/distcc-3.4.tar.gz",
 
     sha256 = "2b99edda9dad9dbf283933a02eace6de7423fe5650daa4a728c950e5cd37bd7d",
@@ -20,8 +18,5 @@ package(
         "--without-libiberty",
     ],
     # Skip building include-server since it requires distutils (removed in Python 3.12+)
-    src_compile = """
-        make -j${MAKEOPTS:-$(nproc)} ${EXTRA_EMAKE:-} distcc distccd distccmon-text lsdistcc update-distcc-symlinks
-    """,
     visibility = ["PUBLIC"],
 )

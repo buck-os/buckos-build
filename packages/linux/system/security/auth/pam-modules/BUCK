@@ -19,9 +19,11 @@ package(
         "--sysconfdir=/etc",
         "--with-slibdir=/lib/security",
     ],
-    post_install = """
+    post_install_cmds = ["""
         mkdir -p "$OUT/etc/security"
-    """,
+    """, """
+        mkdir -p "$OUT/etc/pam_pkcs11"
+    """],
     deps = [
         "//packages/linux/system/security/encryption:linux-pam",
         "//packages/linux/core/util-linux:util-linux",
@@ -41,9 +43,6 @@ package(
     description = "PAM module to execute scripts",
     homepage = "https://github.com/jeroennijhof/pam_script",
     license = "GPL-2.0+",
-    pre_configure = """
-        autoreconf -i
-    """,
     configure_args = [
         "--prefix=/usr",
         "--libdir=/lib/security",
@@ -65,9 +64,6 @@ package(
     description = "PAM module for SSH agent-based authentication",
     homepage = "https://github.com/jbeverly/pam_ssh_agent_auth",
     license = "BSD-2-Clause",
-    pre_configure = """
-        autoreconf -i
-    """,
     configure_args = [
         "--prefix=/usr",
         "--libexecdir=/lib/security",
@@ -91,17 +87,11 @@ package(
     description = "PAM module for PKCS#11 smart card authentication",
     homepage = "https://github.com/OpenSC/pam_pkcs11",
     license = "LGPL-2.1+",
-    pre_configure = """
-        ./bootstrap
-    """,
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc",
         "--with-pam-dir=/lib/security",
     ],
-    post_install = """
-        mkdir -p "$OUT/etc/pam_pkcs11"
-    """,
     deps = [
         "//packages/linux/system/security/encryption:linux-pam",
         "//packages/linux/system/libs/crypto/openssl:openssl",
@@ -121,9 +111,6 @@ package(
     description = "PAM module for auto-blacklisting failed logins",
     homepage = "https://github.com/deksai/pam_abl",
     license = "GPL-2.0+",
-    pre_configure = """
-        autoreconf -i
-    """,
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc",

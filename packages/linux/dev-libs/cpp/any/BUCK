@@ -12,51 +12,6 @@ package(
     homepage = "https://github.com/thelink2012/any",
     license = "BSL-1.0",
     deps = [],
-    pre_configure = """
-        # Create a minimal CMakeLists.txt for header-only installation
-        cat > CMakeLists.txt << 'EOF'
-cmake_minimum_required(VERSION 3.10)
-project(any VERSION 1.0.0 LANGUAGES CXX)
-
-# Header-only library - just install the header
-install(FILES any.hpp DESTINATION include/linb)
-
-# Install CMake package config files for find_package support
-include(CMakePackageConfigHelpers)
-
-configure_package_config_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/anyConfig.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/anyConfig.cmake
-    INSTALL_DESTINATION lib/cmake/any
-    NO_CHECK_REQUIRED_COMPONENTS_MACRO
-)
-
-write_basic_package_version_file(
-    ${CMAKE_CURRENT_BINARY_DIR}/anyConfigVersion.cmake
-    VERSION 1.0.0
-    COMPATIBILITY SameMajorVersion
-)
-
-install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/anyConfig.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/anyConfigVersion.cmake
-    DESTINATION lib/cmake/any
-)
-EOF
-
-        # Create CMake config file
-        mkdir -p cmake
-        cat > cmake/anyConfig.cmake.in << 'EOF'
-@PACKAGE_INIT@
-
-if(NOT TARGET any::any)
-    add_library(any::any INTERFACE IMPORTED)
-    set_target_properties(any::any PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "@PACKAGE_CMAKE_INSTALL_PREFIX@/include"
-    )
-endif()
-EOF
-    """,
     configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],

@@ -14,15 +14,11 @@ package(
     description = "Parallel implementation of gzip for modern multi-processor machines",
     homepage = "https://zlib.net/pigz/",
     license = "Zlib",
-    src_configure = "true",
-    src_compile = """
-make -j${MAKEOPTS:-$(nproc)}
-""",
-    src_install = """
+    post_install_cmds = ["""\
 install -Dm755 pigz "$DESTDIR/usr/bin/pigz"
 install -Dm755 unpigz "$DESTDIR/usr/bin/unpigz"
 install -Dm644 pigz.1 "$DESTDIR/usr/share/man/man1/pigz.1"
-""",
+"""],
     deps = [
         "//packages/linux/core/zlib:zlib",
     ],

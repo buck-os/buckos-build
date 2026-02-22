@@ -4,7 +4,7 @@ load("//defs:package.bzl", "package")
 
 package(
     name = "gmock-global",
-    build_rule = "autotools",
+    build_rule = "binary",
     version = "1.0.0",
     url = "https://github.com/apriorit/gmock-global/archive/refs/heads/master.tar.gz",
     sha256 = "b11adcb9adeae0688218cdf94dd73f727af8d8a59ba72b621e4bfb8a8a31f6d9",
@@ -14,8 +14,6 @@ package(
     deps = [
         "//packages/linux/dev-tools/testing:googletest",
     ],
-    build_commands = [
-        "install -Dm644 gmock-global.h ${PREFIX}/include/gmock-global.h",
-    ],
+    install_script = "install -Dm644 gmock-global.h ${PREFIX}/include/gmock-global.h",
     visibility = ["PUBLIC"],
 )

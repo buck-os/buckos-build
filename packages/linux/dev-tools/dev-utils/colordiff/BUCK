@@ -13,16 +13,6 @@ package(
 
     # Skip building docs (requires xmlto) by disabling make
     make_args = [],
-    src_compile = """
-# Colordiff is a Perl script, no compilation needed
-true
-""",
-    src_install = """
-# Install manually
-install -Dm755 colordiff.pl "$DESTDIR/usr/bin/colordiff"
-install -Dm644 colordiffrc "$DESTDIR/etc/colordiffrc"
-install -Dm644 colordiffrc-lightbg "$DESTDIR/usr/share/colordiff/colordiffrc-lightbg"
-""",
 
     visibility = ["PUBLIC"],
 )

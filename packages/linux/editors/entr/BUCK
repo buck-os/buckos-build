@@ -4,8 +4,6 @@ package(
     build_rule = "autotools",
     name = "entr",
     # Official release tarball includes pre-generated configure script
-    bdepend = [],
-    src_prepare = "",
     url = "https://eradman.com/entrproject/code/entr-5.6.tar.gz",
 
     sha256 = "0222b8df928d3b5a3b5194d63e7de098533e04190d9d9a154b926c6c1f9dd14e",
@@ -13,10 +11,6 @@ package(
     description = "Run arbitrary commands when files change",
     homepage = "https://eradman.com/entrproject/",
     license = "ISC",
-    pre_configure = """
-# entr uses a custom configure script
-./configure
-""",
     deps = [
     ],
     visibility = ["PUBLIC"],

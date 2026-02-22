@@ -10,22 +10,6 @@ package(
     homepage = "https://github.com/okdshin/unique_resource",
     license = "BSL-1.0",
     deps = [],
-    pre_configure = """
-cat > CMakeLists.txt << 'EOF'
-cmake_minimum_required(VERSION 3.10)
-project(unique_resource VERSION 0.0.1 LANGUAGES CXX)
-
-add_library(unique_resource INTERFACE)
-target_include_directories(unique_resource INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-    $<INSTALL_INTERFACE:include>
-)
-
-install(FILES unique_resource.hpp DESTINATION include)
-install(TARGETS unique_resource EXPORT unique_resourceTargets)
-install(EXPORT unique_resourceTargets DESTINATION lib/cmake/unique_resource)
-EOF
-""",
     configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],

@@ -13,35 +13,22 @@ package(
     url = "https://github.com/plougher/squashfs-tools/archive/refs/tags/4.6.1.tar.gz",
 
     sha256 = "9c4974e07c61547dae14af4ed1f358b7d04618ae194e54d6be72ee126f0d2f53",
-    use_make = {
-        "lz4": "LZ4_SUPPORT=1",
-        "-lz4": "LZ4_SUPPORT=0",
-        "lzma": "XZ_SUPPORT=1",
-        "-lzma": "XZ_SUPPORT=0",
-        "lzo": "LZO_SUPPORT=1",
-        "-lzo": "LZO_SUPPORT=0",
-        "xattr": "XATTR_SUPPORT=1",
-        "-xattr": "XATTR_SUPPORT=0",
-        "zstd": "ZSTD_SUPPORT=1",
-        "-zstd": "ZSTD_SUPPORT=0",
-    },
     version = "4.6.1",
     description = "Tools for creating and extracting SquashFS filesystems",
     homepage = "https://github.com/plougher/squashfs-tools",
     license = "GPL-2.0",
-    src_prepare = """
+    pre_configure_cmds = ["""
 # squashfs-tools builds in subdirectory
 cd squashfs-tools
-""",
-    src_configure = ":",
+"""],
     make_args = [
         "GZIP_SUPPORT=1",
     ],
-    src_install = """
+    post_install_cmds = ["""\
 mkdir -p $DESTDIR/usr/bin
 install -m755 mksquashfs $DESTDIR/usr/bin/
 install -m755 unsquashfs $DESTDIR/usr/bin/
-""",
+"""],
     deps = [
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/compression/xz:xz",

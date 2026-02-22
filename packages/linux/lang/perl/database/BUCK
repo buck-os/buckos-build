@@ -11,10 +11,6 @@ package(
     description = "Database independent interface for Perl",
     homepage = "https://dbi.perl.org/",
     license = "Artistic-1.0-Perl OR GPL-1.0-or-later",
-    pre_configure = """
-        perl Makefile.PL PREFIX="${EPREFIX:-/usr}" INSTALLDIRS=vendor
-    """,
-    src_configure = "",
     configure_args = [],
     deps = [
         "//packages/linux/lang/perl:perl",
@@ -33,10 +29,6 @@ package(
     description = "Self-contained RDBMS in a DBI Driver",
     homepage = "https://metacpan.org/pod/DBD::SQLite",
     license = "Artistic-1.0-Perl OR GPL-1.0-or-later",
-    pre_configure = """
-        perl Makefile.PL PREFIX="${EPREFIX:-/usr}" INSTALLDIRS=vendor
-    """,
-    src_configure = "",
     configure_args = [],
     deps = [
         "//packages/linux/lang/perl:perl",
@@ -56,22 +48,6 @@ package(
     description = "PostgreSQL database driver for the DBI module",
     homepage = "https://metacpan.org/pod/DBD::Pg",
     license = "Artistic-1.0-Perl OR GPL-1.0-or-later",
-    pre_configure = """
-        # Find PostgreSQL in dependency directories
-        for dep_dir in ${DEP_DIRS_ARRAY[@]:-}; do
-            if [ -f "$dep_dir/usr/bin/pg_config" ]; then
-                export POSTGRES_HOME="$dep_dir/usr"
-                break
-            fi
-        done
-        if [ -z "${POSTGRES_HOME:-}" ]; then
-            echo "ERROR: PostgreSQL not found in dependencies"
-            exit 1
-        fi
-        echo "Using POSTGRES_HOME=$POSTGRES_HOME"
-        perl Makefile.PL PREFIX="${EPREFIX:-/usr}" INSTALLDIRS=vendor
-    """,
-    src_configure = "",
     configure_args = [],
     deps = [
         "//packages/linux/lang/perl:perl",
@@ -92,10 +68,6 @@ package(
     description = "MySQL driver for the Perl5 Database Interface",
     homepage = "https://metacpan.org/pod/DBD::mysql",
     license = "Artistic-1.0-Perl OR GPL-1.0-or-later",
-    pre_configure = """
-        perl Makefile.PL PREFIX="${EPREFIX:-/usr}" INSTALLDIRS=vendor
-    """,
-    src_configure = "",
     configure_args = [],
     deps = [
         "//packages/linux/lang/perl:perl",
@@ -115,10 +87,6 @@ package(
     description = "Extensible and flexible object <-> relational mapper",
     homepage = "https://metacpan.org/pod/DBIx::Class",
     license = "Artistic-1.0-Perl OR GPL-1.0-or-later",
-    pre_configure = """
-        perl Makefile.PL PREFIX="${EPREFIX:-/usr}" INSTALLDIRS=vendor
-    """,
-    src_configure = "",
     configure_args = [],
     deps = [
         "//packages/linux/lang/perl:perl",
@@ -141,10 +109,6 @@ package(
     description = "Generate SQL from Perl data structures",
     homepage = "https://metacpan.org/pod/SQL::Abstract",
     license = "Artistic-1.0-Perl OR GPL-1.0-or-later",
-    pre_configure = """
-        perl Makefile.PL PREFIX="${EPREFIX:-/usr}" INSTALLDIRS=vendor
-    """,
-    src_configure = "",
     configure_args = [],
     deps = [
         "//packages/linux/lang/perl:perl",
@@ -164,10 +128,6 @@ package(
     description = "A DBI wrapper and target class for Rose database",
     homepage = "https://metacpan.org/pod/Rose::DB",
     license = "Artistic-1.0-Perl OR GPL-1.0-or-later",
-    pre_configure = """
-        perl Makefile.PL PREFIX="${EPREFIX:-/usr}" INSTALLDIRS=vendor
-    """,
-    src_configure = "",
     configure_args = [],
     deps = [
         "//packages/linux/lang/perl:perl",
@@ -187,10 +147,6 @@ package(
     description = "Mojolicious and PostgreSQL",
     homepage = "https://metacpan.org/pod/Mojo::Pg",
     license = "Artistic-2.0",
-    pre_configure = """
-        perl Makefile.PL PREFIX="${EPREFIX:-/usr}" INSTALLDIRS=vendor
-    """,
-    src_configure = "",
     configure_args = [],
     deps = [
         "//packages/linux/lang/perl:perl",
@@ -211,10 +167,6 @@ package(
     description = "A tiny Mojolicious wrapper for SQLite",
     homepage = "https://metacpan.org/pod/Mojo::SQLite",
     license = "Artistic-2.0",
-    pre_configure = """
-        perl Makefile.PL PREFIX="${EPREFIX:-/usr}" INSTALLDIRS=vendor
-    """,
-    src_configure = "",
     configure_args = [],
     deps = [
         "//packages/linux/lang/perl:perl",
@@ -235,10 +187,6 @@ package(
     description = "Perl binding for Redis database",
     homepage = "https://metacpan.org/pod/Redis",
     license = "Artistic-2.0",
-    pre_configure = """
-        perl Makefile.PL PREFIX="${EPREFIX:-/usr}" INSTALLDIRS=vendor
-    """,
-    src_configure = "",
     configure_args = [],
     deps = [
         "//packages/linux/lang/perl:perl",
@@ -258,10 +206,6 @@ package(
     description = "Official MongoDB Driver for Perl",
     homepage = "https://metacpan.org/pod/MongoDB",
     license = "Apache-2.0",
-    pre_configure = """
-        perl Makefile.PL PREFIX="${EPREFIX:-/usr}" INSTALLDIRS=vendor
-    """,
-    src_configure = "",
     configure_args = [],
     deps = [
         "//packages/linux/lang/perl:perl",
@@ -282,14 +226,9 @@ package(
     description = "Perl client for memcached, in C language",
     homepage = "https://metacpan.org/pod/Cache::Memcached::Fast",
     license = "Artistic-1.0-Perl OR GPL-1.0-or-later",
-    pre_configure = """
-        perl Makefile.PL PREFIX="${EPREFIX:-/usr}" INSTALLDIRS=vendor
-    """,
-    src_configure = "",
     configure_args = [],
     # Force single-threaded build to avoid race condition where compute_crc32.h
     # is generated but dispatch_key.c compiles before it's ready
-    src_compile = "make -j1",
     deps = [
         "//packages/linux/lang/perl:perl",
     ],

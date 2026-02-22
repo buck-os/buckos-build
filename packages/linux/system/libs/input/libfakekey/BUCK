@@ -4,14 +4,9 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "libfakekey",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-    ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 autoreconf -fi
-""",
+"""],
     url = "https://github.com/veyon/libfakekey/archive/refs/tags/0.3.tar.gz",
 
     sha256 = "d282fa6481a5b85f71e36e8bad4cfa938cc8eaac4c42ffa27f9203ac634813f4",
@@ -27,6 +22,9 @@ autoreconf -fi
     ],
     deps = [
         # "//packages/linux/graphics/xorg/libs:libxtst",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool"
     ],
     visibility = ["PUBLIC"],
 )

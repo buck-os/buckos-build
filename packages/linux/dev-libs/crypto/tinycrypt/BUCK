@@ -10,13 +10,8 @@ package(
     description = "TinyCrypt Cryptographic Library",
     homepage = "https://github.com/intel/tinycrypt",
     license = "Apache-2.0",
-    maintainers = ["buckos"],
-    src_configure = """
-# TinyCrypt uses a simple Makefile, not autotools
-# Skip configure step
-""",
 
-    post_install = """
+    post_install_cmds = ["""
 cd "$SRCDIR"
 
 # Build the library
@@ -31,7 +26,7 @@ cp -f libtinycrypt.a "$DESTDIR/usr/lib/"
 # Install headers
 mkdir -p "$DESTDIR/usr/include/tinycrypt"
 cp -f include/tinycrypt/*.h "$DESTDIR/usr/include/tinycrypt/"
-""",
+"""],
 
     deps = [],
     visibility = ["PUBLIC"],

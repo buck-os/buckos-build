@@ -17,25 +17,7 @@ package(
     homepage = "https://github.com/rickysarraf/laptop-mode-tools",
     license = "GPL-2.0",
     # laptop-mode-tools has no build phase, only install
-    src_compile = ":",
     # Use custom install to avoid ownership issues in the install script
-    src_install = """
-        # Set install parameters
-        export DESTDIR="$OUT"
-        export INIT_D=none
-        export MAN_D=/usr/share/man
-        export LIB_D=/usr/lib
-
-        # Run make install, ignoring ownership errors
-        make install DESTDIR="$OUT" INIT_D=none MAN_D=/usr/share/man LIB_D=/usr/lib || true
-
-        # The install script fails on chown/chmod, but files are copied
-        # Verify essential files were installed
-        if [ ! -d "$OUT/usr/sbin" ] || [ ! -f "$OUT/etc/laptop-mode/laptop-mode.conf" ]; then
-            echo "ERROR: Installation failed - critical files missing"
-            exit 1
-        fi
-    """,
     deps = [
         "//packages/linux/core/bash:bash",
     ],

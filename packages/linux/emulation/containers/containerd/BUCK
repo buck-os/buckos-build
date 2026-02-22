@@ -28,11 +28,7 @@ package(
         "GOFLAGS": "-mod=vendor",
     },
     configure_args = [],
-    pre_configure = """
-# Build containerd
-make BUILDTAGS='seccomp apparmor' binaries
-    """,
-    post_install = """
+    post_install_cmds = ["""
 #!/bin/bash
 set -e
 
@@ -73,7 +69,7 @@ EOF
 # Create default configuration
 mkdir -p "$DESTDIR/etc/containerd"
 containerd config default > "$DESTDIR/etc/containerd/config.toml" 2>/dev/null || true
-    """,
+    """],
     deps = [
         "//packages/linux/lang/go:go",
         "//packages/linux/system/containers/runc:runc",

@@ -25,13 +25,13 @@ package(
         "--disable-static",
     ],
 
-    post_install = """
+    post_install_cmds = ["""
 # The examples build various ldns-* utilities
 # Ensure drill is installed
 if [ ! -f "$DESTDIR/usr/bin/drill" ]; then
     echo "Warning: drill not found"
 fi
-""",
+"""],
 
     deps = [
         "//packages/linux/network/dns/libraries/ldns:ldns",

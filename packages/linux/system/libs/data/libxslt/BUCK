@@ -24,73 +24,9 @@ package(
     ],
     # Custom src_configure to find libxml2 in cross-compilation deps
     # Override LIBXML_CFLAGS/LIBXML_LIBS to use cross-compiled libxml2 (not host's)
-    src_configure = """
-# Find libxml2 dep path and build flags from DEP_BASE_DIRS
-LIBXML2_DEP=""
-_EXTRA_LDFLAGS=""
-IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
-for _dep in "${_DEP_ARRAY[@]}"; do
-    if [ -f "$_dep/usr/bin/xml2-config" ]; then
-        LIBXML2_DEP="$_dep"
-    fi
-    for _libdir in "$_dep/usr/lib64" "$_dep/usr/lib"; do
-        if [ -d "$_libdir" ]; then
-            _EXTRA_LDFLAGS="$_EXTRA_LDFLAGS -L$_libdir -Wl,-rpath-link,$_libdir"
-        fi
-    done
-done
-export LDFLAGS="${LDFLAGS:-} $_EXTRA_LDFLAGS"
-
-# Override pkg-config/xml2-config detection with explicit paths to cross-compiled libxml2
-if [ -n "$LIBXML2_DEP" ]; then
-    export LIBXML_CFLAGS="-I$LIBXML2_DEP/usr/include/libxml2"
-    export LIBXML_LIBS="-L$LIBXML2_DEP/usr/lib64 -lxml2"
-fi
-
-ECONF_SOURCE="${ECONF_SOURCE:-.}"
-"$ECONF_SOURCE/configure" \\
-    --prefix="${EPREFIX:-/usr}" \\
-    --build="${CBUILD:-$(gcc -dumpmachine)}" \\
-    --host="${CHOST:-$(gcc -dumpmachine)}" \\
-    --mandir="${EPREFIX:-/usr}/share/man" \\
-    --infodir="${EPREFIX:-/usr}/share/info" \\
-    --datadir="${EPREFIX:-/usr}/share" \\
-    --sysconfdir="${EPREFIX:-/etc}" \\
-    --localstatedir="${EPREFIX:-/var}" \\
-    --libdir="${EPREFIX:-/usr}/${LIBDIR:-lib64}" \\
-    --disable-static \\
-    --without-python \\
-    --without-crypto \\
-    ${EXTRA_ECONF:-}
-""",
     # Pass -L flags on make command line to override libtool's host paths
     # Skip xsltproc binary (not needed, only shared libs needed for KDE)
-    src_compile = """
-_EXTRA_LDFLAGS=""
-IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
-for _dep in "${_DEP_ARRAY[@]}"; do
-    for _libdir in "$_dep/usr/lib64" "$_dep/usr/lib"; do
-        if [ -d "$_libdir" ]; then
-            _EXTRA_LDFLAGS="$_EXTRA_LDFLAGS -L$_libdir -Wl,-rpath-link,$_libdir"
-        fi
-    done
-done
-make -C libxslt -j${MAKEOPTS:-$(nproc)} ${EXTRA_EMAKE:-} LDFLAGS="${LDFLAGS:-} $_EXTRA_LDFLAGS"
-make -C libexslt -j${MAKEOPTS:-$(nproc)} ${EXTRA_EMAKE:-} LDFLAGS="${LDFLAGS:-} $_EXTRA_LDFLAGS"
-""",
     # Install only libs and headers (skip xsltproc which has linking issues)
-    src_install = """
-make -C libxslt DESTDIR="$DESTDIR" ${EXTRA_EMAKE:-} install
-make -C libexslt DESTDIR="$DESTDIR" ${EXTRA_EMAKE:-} install
-# Install pkg-config files and top-level config
-install -d "$DESTDIR/usr/lib64/pkgconfig"
-install -m 644 libxslt.pc "$DESTDIR/usr/lib64/pkgconfig/" 2>/dev/null || true
-install -m 644 libexslt.pc "$DESTDIR/usr/lib64/pkgconfig/" 2>/dev/null || true
-# Install cmake config if available
-if [ -d libxslt ]; then
-    make -C libxslt DESTDIR="$DESTDIR" install-data-am 2>/dev/null || true
-fi
-""",
     deps = [
         "//packages/linux/system/libs/data/libxml2:libxml2",
     ],

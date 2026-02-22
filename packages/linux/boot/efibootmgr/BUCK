@@ -11,18 +11,14 @@ package(
     description = "User-space application to modify the EFI boot manager",
     homepage = "https://github.com/rhinstaller/efibootmgr",
     license = "GPL-2",
-    src_prepare = """
+    pre_configure_cmds = ["""
 # Remove -Werror to avoid build failures (from Gentoo ebuild)
 sed -i 's/-Werror //' Make.defaults || true
-""",
+"""],
     make_args = [
         "EFIDIR=BuckOS",
-    ],
-    make_install_args = [
         "DESTDIR=$DESTDIR",
         "prefix=/usr",
-        "EFIDIR=BuckOS",
-        "install",
     ],
     deps = [
         "//packages/linux/system/security/cryptsetup:popt",

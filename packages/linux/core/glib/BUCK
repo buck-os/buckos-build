@@ -12,7 +12,7 @@ package(
     homepage = "https://wiki.gnome.org/Projects/GLib",
     license = "LGPL-2.1+",
     # Fix meson options conflict - glib 2.84.4 has both files
-    src_prepare = "rm -f meson_options.txt",
+    pre_configure_cmds = ["rm -f meson_options.txt"],
     configure_args = [
         "-Dtests=false",
         "-Dinstalled_tests=false",

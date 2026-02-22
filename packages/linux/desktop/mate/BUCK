@@ -7,15 +7,12 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "mate-panel",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-    ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 NOCONFIGURE=1 ./autogen.sh
-""",
-    configure_flags = [
+""", """
+NOCONFIGURE=1 ./autogen.sh
+"""],
+    configure_args = [
         "--disable-gtk-doc",
         "--disable-gtk-doc-html",
     ],
@@ -33,6 +30,12 @@ NOCONFIGURE=1 ./autogen.sh
     license = "GPL-2.0",
     deps = [
         "//packages/linux/desktop/gtk:gtk3",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool"
     ],
     visibility = ["PUBLIC"],
 )
@@ -40,15 +43,7 @@ NOCONFIGURE=1 ./autogen.sh
 package(
     build_rule = "autotools",
     name = "marco",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-    ],
-    src_prepare = """
-NOCONFIGURE=1 ./autogen.sh
-""",
-    configure_flags = [
+    configure_args = [
         "--disable-gtk-doc",
         "--disable-gtk-doc-html",
     ],

@@ -2,7 +2,7 @@ load("//defs:package.bzl", "package")
 
 package(
     name = "svd3",
-    build_rule = "autotools",
+    build_rule = "binary",
     version = "2014.04",
     url = "https://github.com/ericjang/svd3/archive/refs/heads/master.tar.gz",
     sha256 = "c11cfc2f1a35f24c071fbad04b1f03f2567fe3da45cc6acf31aac5bbbde10b54",
@@ -10,9 +10,6 @@ package(
     homepage = "https://github.com/ericjang/svd3",
     license = "MIT",
     deps = [],
-    build_commands = [
-        "mkdir -p ${PREFIX}/include/svd3",
-        "cp *.h ${PREFIX}/include/svd3/",
-    ],
+    install_script = """mkdir -p ${PREFIX}/include/svd3\ncp *.h ${PREFIX}/include/svd3/""",
     visibility = ["PUBLIC"],
 )

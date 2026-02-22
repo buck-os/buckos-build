@@ -27,20 +27,18 @@ package(
         "--with-boost=/usr",
     ],
     make_args = [],
-    post_install = """
+    post_install_cmds = ["""
 DESTDIR=$OUT rake install
-""",
+"""],
     deps = [
         "//packages/linux/media/video/ffmpeg:ffmpeg",
-        "//packages/linux/dev-libs/boost:boost",
-        "//packages/linux/core/zlib:zlib",
-        "//packages/linux/dev-libs/pugixml:pugixml",
-        "//packages/linux/system/libs/audio/flac:flac",
-        "//packages/linux/system/libs/audio/libvorbis:libvorbis",
-    ],
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
-        "//packages/linux/lang/ruby:ruby",
+                "//packages/linux/dev-libs/boost:boost",
+                "//packages/linux/core/zlib:zlib",
+                "//packages/linux/dev-libs/pugixml:pugixml",
+                "//packages/linux/system/libs/audio/flac:flac",
+                "//packages/linux/system/libs/audio/libvorbis:libvorbis",
+                "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
+                "//packages/linux/lang/ruby:ruby"
     ],
     visibility = ["PUBLIC"],
 )

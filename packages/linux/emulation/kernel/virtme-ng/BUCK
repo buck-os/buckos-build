@@ -13,11 +13,7 @@ package(
     description = "Quickly run kernels inside a virtualized snapshot of your live system",
     homepage = "https://github.com/arighi/virtme-ng",
     license = "GPL-2.0",
-    pre_configure = """
-# Build with pip/setuptools
-python3 -m pip install --no-build-isolation --prefix=/usr --root="$DESTDIR" .
-    """,
-    post_install = """
+    post_install_cmds = ["""
 #!/bin/bash
 set -e
 
@@ -37,7 +33,7 @@ memory = 2G
 # Enable KVM acceleration if available
 kvm = true
 EOF
-    """,
+    """],
     deps = [
         "//packages/linux/lang/python:python",
         "//packages/linux/emulation/hypervisors/qemu:qemu",

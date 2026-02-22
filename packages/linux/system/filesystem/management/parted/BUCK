@@ -28,28 +28,6 @@ package(
         ],
     },
     # lvm2 installs to /usr/lib not /usr/lib64
-    src_configure = """
-# Find lvm2 lib directory (it uses /usr/lib not /usr/lib64)
-_EXTRA_LDFLAGS=""
-_EXTRA_CPPFLAGS=""
-for dep in ${DEP_BASE_DIRS//:/ }; do
-    if [ -f "$dep/usr/lib/libdevmapper.so" ]; then
-        _EXTRA_LDFLAGS="$_EXTRA_LDFLAGS -L$dep/usr/lib -Wl,-rpath-link,$dep/usr/lib"
-        _EXTRA_CPPFLAGS="$_EXTRA_CPPFLAGS -I$dep/usr/include"
-        echo "Found libdevmapper at: $dep/usr/lib"
-    fi
-done
-
-export LDFLAGS="${LDFLAGS:-} $_EXTRA_LDFLAGS"
-export CPPFLAGS="${CPPFLAGS:-} $_EXTRA_CPPFLAGS"
-
-./configure \\
-    --prefix=/usr \\
-    --build="${CBUILD:-$(gcc -dumpmachine)}" \\
-    --host="${CHOST:-$(gcc -dumpmachine)}" \\
-    --libdir=/usr/lib64 \\
-    ${EXTRA_ECONF:-}
-""",
     deps = [
         "//packages/linux/core/util-linux:util-linux",
         "//packages/linux/system/terminal/ncurses:ncurses",  # termcap for readline

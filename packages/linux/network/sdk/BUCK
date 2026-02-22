@@ -3,18 +3,16 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "arista-esdk",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-    ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 autoreconf -fi
-""",
+"""],
     version = "2.22.1",
     url = "https://github.com/aristanetworks/EosSdk/archive/refs/tags/v2.22.1.tar.gz",
     sha256 = "650b3b161f9547058fc84de3c0f8d53f2e16a7113d0c5bb948ca004c0e7ddcf7",
     configure_args = [],
-    deps = [],
-    maintainers = ["buckos"],
+    deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+    ],
 )

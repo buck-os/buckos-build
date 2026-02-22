@@ -25,7 +25,6 @@ package(
     deps = [
         "//packages/linux/desktop/libdrm:libdrm",
     ],
-    maintainers = ["buckos"],
     visibility = ["PUBLIC"],
 )
 
@@ -45,7 +44,6 @@ package(
     deps = [
         ":libva",
     ],
-    maintainers = ["buckos"],
     visibility = ["PUBLIC"],
 )
 
@@ -59,18 +57,17 @@ package(
     description = "Intel Media Driver for VAAPI (Gen8+ graphics)",
     homepage = "https://github.com/intel/media-driver",
     license = "MIT BSD-3-Clause",
-    src_prepare = """
+    pre_configure_cmds = ["""
 # GitHub archive extracts to media-driver-intel-media-24.2.5/
 if [ -d "media-driver-intel-media-24.2.5" ]; then
     mv media-driver-intel-media-24.2.5/* . 2>/dev/null || true
     rmdir media-driver-intel-media-24.2.5 2>/dev/null || true
 fi
-""",
+"""],
     configure_args = [],
     deps = [
         ":libva",
         "//packages/linux/desktop/libdrm:libdrm",
     ],
-    maintainers = ["buckos"],
     visibility = ["PUBLIC"],
 )

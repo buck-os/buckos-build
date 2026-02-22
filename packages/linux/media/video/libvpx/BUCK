@@ -11,13 +11,9 @@ package(
     description = "VP8/VP9 codec library",
     homepage = "https://www.webmproject.org/",
     license = "BSD-3-Clause",
-    deps = [],
-    bdepend = [
+    deps = [
         "//packages/linux/dev-tools/assemblers/nasm:nasm",
     ],
-    src_configure = """
-./configure --prefix=/usr --enable-shared --disable-static --enable-pic --as=nasm
-""",
     use_configure = {
         "cpu_flags_ppc_vsx3": ("--enable-cpu_flags_ppc_vsx3", "--disable-cpu_flags_ppc_vsx3"),
         "examples": ("--enable-examples", "--disable-examples"),

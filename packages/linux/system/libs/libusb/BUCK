@@ -3,21 +3,6 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "libusb",
-    bdepend = [],
-    src_prepare = "",
-    src_configure = """
-export CFLAGS="-std=gnu11 $CFLAGS"
-./configure \
-    --build=$CBUILD \
-    --host=$CHOST \
-    --prefix=/usr \
-    --disable-static \
-    --enable-shared \
-    --disable-udev
-""",
-    src_compile = """
-make -j${MAKEOPTS:-$(nproc)} CFLAGS="-std=gnu11 $CFLAGS"
-""",
     version = "1.0.27",
     url = "https://github.com/libusb/libusb/releases/download/v1.0.27/libusb-1.0.27.tar.bz2",
     sha256 = "ffaa41d741a8a3bee244ac8e54a72ea05bf2879663c098c82fc5757853441575",

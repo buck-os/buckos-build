@@ -4,14 +4,9 @@ package(
     build_rule = "autotools",
     name = "splint",
     # Official release tarball includes pre-generated configure script
-    bdepend = [],
     # Prevent bison from regenerating parser files by setting BISON=no.
     # The tarball includes pre-generated files (*.c.der) that will be used instead.
     # This avoids issues with modern bison generating incompatible header files.
-    src_compile = """
-export BISON=no
-make -j1
-""",
     url = "https://splint.org/downloads/splint-3.1.2.src.tgz",
 
     sha256 = "c78db643df663313e3fa9d565118391825dd937617819c6efc7966cdf444fb0a",

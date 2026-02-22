@@ -2,7 +2,7 @@ load("//defs:package.bzl", "package")
 
 package(
     name = "lodepng",
-    build_rule = "autotools",
+    build_rule = "binary",
     version = "20240101",
     url = "https://github.com/lvandeve/lodepng/archive/18964554bc769255401942e0e6dfd09f2fab2093.tar.gz",
     sha256 = "58f4bce09556fc8039be04e4632c228695a9ead4b4e8d292957e3f59b26269a9",
@@ -10,12 +10,6 @@ package(
     homepage = "https://lodev.org/lodepng/",
     license = "Zlib",
     deps = [],
-    build_commands = [
-        "mkdir -p ${PREFIX}/include/lodepng",
-        "cp lodepng.h ${PREFIX}/include/lodepng/",
-        "cp lodepng_util.h ${PREFIX}/include/lodepng/",
-        "cp lodepng.cpp ${PREFIX}/include/lodepng/",
-        "cp lodepng_util.cpp ${PREFIX}/include/lodepng/",
-    ],
+    install_script = """mkdir -p ${PREFIX}/include/lodepng\ncp lodepng.h ${PREFIX}/include/lodepng/\ncp lodepng_util.h ${PREFIX}/include/lodepng/\ncp lodepng.cpp ${PREFIX}/include/lodepng/\ncp lodepng_util.cpp ${PREFIX}/include/lodepng/""",
     visibility = ["PUBLIC"],
 )

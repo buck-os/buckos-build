@@ -32,7 +32,7 @@ package(
         "CFLAGS": "-O2 -march=x86-64 -pipe",
         "LDFLAGS": "-Wl,-O1,--as-needed",
     },
-    post_install = """
+    post_install_cmds = ["""
 #!/bin/bash
 set -e
 
@@ -70,7 +70,7 @@ Categories=Utility;
 MimeType=application/x-ms-dos-executable;application/x-msi;application/x-ms-shortcut;
 NoDisplay=true
 EOF
-    """,
+    """],
     deps = [
         "//packages/linux/core/glibc:glibc",
     ],

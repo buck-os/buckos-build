@@ -20,10 +20,10 @@ package(
         "PREFIX=/usr",
     ],
 
-    post_install = """
+    post_install_cmds = ["""
 cd src
 make DESTDIR=$DESTDIR PREFIX=/usr WITH_BASHCOMPLETION=yes WITH_WGQUICK=yes WITH_SYSTEMDUNITS=yes install
-""",
+"""],
 
     description = "WireGuard userspace tools (wg, wg-quick)",
     homepage = "https://www.wireguard.com/",

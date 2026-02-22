@@ -1,12 +1,21 @@
 load("//defs:package.bzl", "package")
 
+_use_host_toolchain = read_config("buckos", "use_host_toolchain", "false").lower() in ["true", "1", "yes"]
+
 # =============================================================================
 # GCC - GNU Compiler Collection (from bootstrap toolchain)
 # =============================================================================
 # Extracts the GCC compiler from the bootstrap toolchain for installation
 # in the rootfs.  Does not build from source — uses the pre-built toolchain.
+#
+# When use_host_toolchain = true, provides a passthrough (host gcc is used directly).
 
-package(
+genrule(
+    name = "gcc",
+    out = "gcc-host-passthrough",
+    cmd = "echo 'Using host system gcc' > $OUT",
+    visibility = ["PUBLIC"],
+) if _use_host_toolchain else package(
     build_rule = "binary",
     name = "gcc",
     version = "14.3.0",
@@ -80,7 +89,12 @@ echo "GCC installed from bootstrap-toolchain"
 # GCC Runtime Libraries - C/C++ runtime for target systems
 # =============================================================================
 
-package(
+genrule(
+    name = "gcc-runtime",
+    out = "gcc-runtime-host-passthrough",
+    cmd = "echo 'Using host system gcc-runtime' > $OUT",
+    visibility = ["PUBLIC"],
+) if _use_host_toolchain else package(
     build_rule = "binary",
     name = "gcc-runtime",
     version = "14.3.0",

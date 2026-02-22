@@ -4,8 +4,6 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "lzo",
-    bdepend = [],
-    src_prepare = "",
     version = "2.10",
     url = "https://www.oberhumer.com/opensource/lzo/download/lzo-2.10.tar.gz",
     sha256 = "c0f892943208266f9b6543b3ae308fab6284c5c90e627931446fb49b4221a072",
@@ -23,11 +21,6 @@ package(
         "--prefix=/usr",
         "--enable-shared",
     ],
-    pre_configure = """
-# USE flags: static-libs
-# LZO uses autotools build system
-# --enable-static/--disable-static controls static library building
-""",
     deps = [],
     visibility = ["PUBLIC"],
 )

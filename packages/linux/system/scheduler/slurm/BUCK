@@ -3,15 +3,9 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "slurm",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
-    ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 autoreconf -fi
-""",
+"""],
     version = "25.05.1",
     url = "https://github.com/SchedMD/slurm/archive/refs/tags/slurm-25-05-1-1.tar.gz",
     sha256 = "b568c761a6c9d72358addb3bb585456e73e80a02214ce375d2de8534f9ddb585",
@@ -25,7 +19,11 @@ autoreconf -fi
     ],
     deps = [
         "//packages/linux/system/libs/data/json-c:json-c",
-        "//packages/linux/system/terminal/readline:readline",
-        "//packages/linux/core/zlib:zlib",
+                "//packages/linux/system/terminal/readline:readline",
+                "//packages/linux/core/zlib:zlib",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config"
     ],
 )

@@ -11,19 +11,6 @@ package(
     description = "Tools and library for manipulating EFI variables",
     homepage = "https://github.com/rhboot/efivar",
     license = "LGPL-2.1",
-    src_configure = """
-echo "efivar uses Make, skipping configure"
-""",
-    src_compile = """
-# Build only the libraries and binaries, skip docs (requires mandoc)
-make -j${MAKEOPTS:-$(nproc)} PREFIX=/usr LIBDIR=/usr/lib64 HOST_MARCH= ERRORS= -C src
-""",
-    src_install = """
-# Install only the libraries and binaries
-make DESTDIR=$DESTDIR PREFIX=/usr LIBDIR=/usr/lib64 -C src install
-# Install headers
-make DESTDIR=$DESTDIR PREFIX=/usr LIBDIR=/usr/lib64 -C src install-headers
-""",
     deps = [
         "//packages/linux/system/security/cryptsetup:popt",
     ],

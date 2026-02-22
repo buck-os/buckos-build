@@ -16,18 +16,13 @@ package(
         "ipv6": ("--enable-ipv6", "--disable-ipv6"),
     },
 
-    pre_configure = """
-# ufw uses Python setup.py
-python3 setup.py build
-""",
-
     make_args = [
         "PYTHON=/usr/bin/python3",
         "PREFIX=/usr",
         "SYSCONFDIR=/etc",
     ],
 
-    post_install = """
+    post_install_cmds = ["""
 # Install using setup.py
 python3 setup.py install --root=$DESTDIR --prefix=/usr
 
@@ -57,7 +52,7 @@ cat > "$DESTDIR/etc/ufw/before.rules" << 'RULES'
 COMMIT
 RULES
 chmod 640 "$DESTDIR/etc/ufw/before.rules"
-""",
+"""],
 
     deps = [
         "//packages/linux/network/firewall/iptables:iptables",

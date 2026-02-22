@@ -10,14 +10,14 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "fcgi",
-    bdepend = [
+    deps = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
         "//packages/linux/dev-tools/build-systems/automake:automake",
         "//packages/linux/dev-tools/build-systems/libtool:libtool",
     ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 autoreconf -fi
-""",
+"""],
     version = "2.4.2",
     use_configure = {
         "html": ("--enable-html", "--disable-html"),

@@ -14,18 +14,15 @@ package(
     description = "Set x86 CPU energy performance policy",
     homepage = "https://kernel.org/",
     license = "GPL-2.0",
-    src_configure = """
-        cd tools/power/x86/x86_energy_perf_policy
-    """,
     make_args = [
         "-C", "tools/power/x86/x86_energy_perf_policy",
         "prefix=/usr",
         "sbindir=/usr/sbin",
         "mandir=/usr/share/man",
     ],
-    post_install = """
+    post_install_cmds = ["""
         make -C tools/power/x86/x86_energy_perf_policy DESTDIR=$OUT prefix=/usr install
-    """,
+    """],
     deps = [
     ],
     visibility = ["PUBLIC"],

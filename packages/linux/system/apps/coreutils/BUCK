@@ -39,10 +39,10 @@ package(
     ],
     # Prevent man page regeneration — help2man requires running the built
     # binaries, and make tries to write back into the (read-only) source tree
-    src_prepare = """
+    pre_configure_cmds = ["""
 chmod -R u+w . 2>/dev/null || true
 touch man/*.1 2>/dev/null || true
-""",
+"""],
     env = {"HELP2MAN": "true", "FORCE_UNSAFE_CONFIGURE": "1"},
     deps = [],
     visibility = ["PUBLIC"],

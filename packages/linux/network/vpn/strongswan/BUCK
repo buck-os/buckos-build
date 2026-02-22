@@ -58,12 +58,12 @@ package(
         "--disable-gmp",
     ],
 
-    post_install = """
+    post_install_cmds = ["""
 # Create strongSwan directories
 mkdir -p "$DESTDIR/etc/strongswan.d"
 mkdir -p "$DESTDIR/etc/swanctl/conf.d"
 mkdir -p "$DESTDIR/var/lib/strongswan"
-""",
+"""],
 
     description = "strongSwan IPsec VPN solution supporting IKEv1/IKEv2",
     homepage = "https://www.strongswan.org/",

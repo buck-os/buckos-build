@@ -16,12 +16,12 @@ package(
     description = "Modular initramfs image creation utility (Arch Linux default)",
     homepage = "https://gitlab.archlinux.org/archlinux/mkinitcpio/mkinitcpio",
     license = "GPL-2.0",
-    pre_configure = "true",  # Uses Makefile directly
+# Uses Makefile directly
     configure_args = [],
     make_args = [
         "PREFIX=/usr",
     ],
-    post_install = """
+    post_install_cmds = ["""
 # Install using make
 make DESTDIR=$OUT PREFIX=/usr install
 
@@ -54,7 +54,7 @@ EOF
 
 # Create preset directory
 mkdir -p $OUT/etc/mkinitcpio.d
-""",
+"""],
     deps = [
         "//packages/linux/system/libs/kmod:kmod",
         "//packages/linux/core/bash:bash",

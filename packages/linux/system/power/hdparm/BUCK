@@ -22,9 +22,9 @@ package(
         "sbindir=/usr/sbin",
         "mandir=/usr/share/man",
     ],
-    post_install = """
+    post_install_cmds = ["""
         make DESTDIR=$OUT prefix=/usr install
-    """,
+    """],
     deps = [
     ],
     visibility = ["PUBLIC"],

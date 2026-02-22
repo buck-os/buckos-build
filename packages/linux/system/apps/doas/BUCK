@@ -6,11 +6,6 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "doas",
-    bdepend = [
-        "//packages/linux/dev-tools/dev-utils/bison:bison",  # Provides yacc for parse.y
-    ],
-    src_prepare = "",
-    src_configure = "./configure --prefix=/usr",
     version = "6.8.2",
     url = "https://github.com/Duncaen/OpenDoas/archive/v6.8.2.tar.gz",
     sha256 = "6da058a0e70b7543bc60624389b0b00b686189ec933828c522bf8b2600495a67",
@@ -24,6 +19,8 @@ package(
         "pam": ("--with-pam", "--without-pam"),
         "persist": ("--with-timestamp", "--without-timestamp"),
     },
-    deps = [],
+    deps = [
+        "//packages/linux/dev-tools/dev-utils/bison:bison",  # Provides yacc for parse.y
+    ],
     visibility = ["PUBLIC"],
 )

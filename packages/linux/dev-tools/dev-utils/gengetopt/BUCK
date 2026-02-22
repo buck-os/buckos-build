@@ -5,10 +5,6 @@ package(
     build_rule = "autotools",
     name = "gengetopt",
     # GNU release tarball includes pre-generated configure script
-    bdepend = [
-        "//packages/linux/dev-tools/documentation/texinfo:texinfo",
-    ],
-    src_prepare = "",
     url = "https://mirrors.kernel.org/gnu/gengetopt/gengetopt-2.23.tar.xz",
 
     sha256 = "b941aec9011864978dd7fdeb052b1943535824169d2aa2b0e7eae9ab807584ac",
@@ -20,6 +16,7 @@ package(
         "--prefix=/usr",
     ],
     deps = [
+        "//packages/linux/dev-tools/documentation/texinfo:texinfo",
     ],
     visibility = ["PUBLIC"],
 )

@@ -11,8 +11,6 @@ package(
     homepage = "https://libexpat.github.io/",
     license = "MIT",
     # Build for host, not cross-compile
-    use_bootstrap = False,
-    bdepend = [],
     configure_args = [
         "--disable-static",
         "--without-examples",
@@ -25,8 +23,6 @@ package(
     build_rule = "autotools",
     name = "expat",
     # No autoreconf needed - tarball has pre-generated configure
-    bdepend = [],
-    src_prepare = "",
     url = "https://github.com/libexpat/libexpat/releases/download/R_2_6_3/expat-2.6.3.tar.xz",
     sha256 = "274db254a6979bde5aad404763a704956940e465843f2a9bd9ed7af22e2c0efc",
     use_configure = {

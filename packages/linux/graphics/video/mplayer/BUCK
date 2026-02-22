@@ -131,22 +131,21 @@ package(
         "--language=all",
     ],
     make_args = [],
-    post_install = """
+    post_install_cmds = ["""
 DESTDIR=$OUT make install
-""",
+"""],
     deps = [
         "//packages/linux/media/video/ffmpeg:ffmpeg",
-        "//packages/linux/graphics/video/libva:libva",
-        "//packages/linux/graphics/video/vdpau:vdpau",
-        "//packages/linux/system/libs/audio/alsa-lib:alsa-lib",
-        "//packages/linux/audio/daemons/pulseaudio:pulseaudio",
-        "//packages/linux/core/zlib:zlib",
-        "//packages/linux/system/libs/font/freetype:freetype",
-        "//packages/linux/system/libs/font/fontconfig:fontconfig",
-    ],
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
-        # "//packages/linux/lang/yasm:yasm",  # TODO: not packaged yet,
+                "//packages/linux/graphics/video/libva:libva",
+                "//packages/linux/graphics/video/vdpau:vdpau",
+                "//packages/linux/system/libs/audio/alsa-lib:alsa-lib",
+                "//packages/linux/audio/daemons/pulseaudio:pulseaudio",
+                "//packages/linux/core/zlib:zlib",
+                "//packages/linux/system/libs/font/freetype:freetype",
+                "//packages/linux/system/libs/font/fontconfig:fontconfig",
+                "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
+                # "//packages/linux/lang/yasm:yasm",
+                # TODO: not packaged yet
     ],
     visibility = ["PUBLIC"],
 )

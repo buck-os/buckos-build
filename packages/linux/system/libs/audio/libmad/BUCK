@@ -17,9 +17,9 @@ package(
     license = "GPL-2.0-or-later",
     # Touch configure to prevent autoreconf (Perl module path issues)
     # The official tarball includes pre-generated configure
-    src_prepare = """
+    pre_configure_cmds = ["""
 touch configure
-""",
+"""],
     configure_args = [
         "--disable-static",
         "--enable-shared",

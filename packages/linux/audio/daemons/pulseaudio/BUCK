@@ -32,29 +32,11 @@ package(
 
     # Meson options based on USE flags
     # Format: {"flag": "meson_option"} - will generate -Dmeson_option=enabled/disabled
-    use_options = {
-        "alsa": "alsa",
-        "bluetooth": "bluez5",
-        "dbus": "dbus",
-        "gstreamer": "gstreamer",
-        "jack": "jack",
-        "X": "x11",
-        "gtk": "gtk",
-        "ssl": "openssl",
-        "systemd": "systemd",
-        "webrtc-aec": "webrtc-aec",
-        "fftw": "fftw",
-        "orc": "orc",
-        "soxr": "soxr",
-        "speex": "speex",
-        # Note: "man" option requires boolean (true/false), not enabled/disabled
-        # So we handle it in meson_args instead
-    },
 
     # Patch meson.build to make intl optional (can't find it during cross-compilation)
-    src_prepare = """
+    pre_configure_cmds = ["""
 sed -i "s/intl_dep = cc.find_library('intl'/intl_dep = dependency('', required: false) #/" meson.build
-""",
+"""],
 
     # Base Meson arguments (always applied)
     configure_args = [

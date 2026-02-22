@@ -12,15 +12,12 @@ package(
     deps = [
         "//packages/linux/dev-libs/crypto/openssl:openssl",
     ],
-    pre_configure = """
-# fsverity-utils uses a plain Makefile, skip configure
-""",
     configure_args = [],
     make_args = [
         "PREFIX=/usr",
         "LIBDIR=/usr/lib",
     ],
-    post_install = """
+    post_install_cmds = ["""
 cd "$SRCDIR"
 
 # Build the library and binary
@@ -28,6 +25,6 @@ make PREFIX=/usr LIBDIR=/usr/lib DESTDIR="$DESTDIR" all
 
 # Install
 make PREFIX=/usr LIBDIR=/usr/lib DESTDIR="$DESTDIR" install
-""",
+"""],
     visibility = ["PUBLIC"],
 )

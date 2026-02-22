@@ -2,7 +2,7 @@ load("//defs:package.bzl", "package")
 
 package(
     name = "neon2sse",
-    build_rule = "autotools",
+    build_rule = "binary",
     version = "2020.10",
     url = "https://github.com/intel/ARM_NEON_2_x86_SSE/archive/refs/heads/master.tar.gz",
     sha256 = "634abac63d22fd9554d49c27ef1b82a92f5b9261019557da13972093ba9d58d9",
@@ -10,9 +10,6 @@ package(
     homepage = "https://github.com/intel/ARM_NEON_2_x86_SSE",
     license = "BSD-2-Clause",
     deps = [],
-    build_commands = [
-        "mkdir -p ${PREFIX}/include",
-        "cp NEON_2_SSE.h ${PREFIX}/include/",
-    ],
+    install_script = """mkdir -p ${PREFIX}/include\ncp NEON_2_SSE.h ${PREFIX}/include/""",
     visibility = ["PUBLIC"],
 )

@@ -10,13 +10,6 @@ package(
     homepage = "https://github.com/zserge/jsmn",
     license = "MIT",
     deps = [],
-    pre_configure = """
-cat > CMakeLists.txt << 'EOF'
-cmake_minimum_required(VERSION 3.10)
-project(jsmn)
-install(FILES jsmn.h DESTINATION include)
-EOF
-""",
     configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],

@@ -16,10 +16,10 @@ package(
     description = "Generic initramfs generation tool (Debian/Ubuntu default)",
     homepage = "https://salsa.debian.org/kernel-team/initramfs-tools",
     license = "GPL-2.0",
-    pre_configure = "true",  # Uses Makefile
+# Uses Makefile
     configure_args = [],
     make_args = [],
-    post_install = """
+    post_install_cmds = ["""
 # Install using make
 make DESTDIR=$OUT install
 
@@ -71,7 +71,7 @@ cat > $OUT/etc/initramfs-tools/modules << 'EOF'
 # List of modules to include in initramfs
 # One module per line, optionally followed by parameters
 EOF
-""",
+"""],
     deps = [
         "//packages/linux/system/libs/kmod:kmod",
         "//packages/linux/core/bash:bash",

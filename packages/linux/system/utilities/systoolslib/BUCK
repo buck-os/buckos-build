@@ -10,16 +10,12 @@ package(
     description = "Collection of Unix/Windows system tools and utilities",
     homepage = "https://github.com/jflarvoire/SysToolsLib",
     license = "Apache-2.0",
-    src_configure = """
-# No configure step needed - uses plain Makefile
-true
-""",
     make_args = [
         "prefix=/usr",
     ],
-    post_install = """
+    post_install_cmds = ["""
 cd C/SRC
 make prefix=/usr DESTDIR="$DESTDIR" install || true
-""",
+"""],
     visibility = ["PUBLIC"],
 )

@@ -18,17 +18,16 @@ package(
         "--disable-static",
     ],
     make_args = [],
-    post_install = """
+    post_install_cmds = ["""
 DESTDIR=$OUT make install
-""",
+"""],
     deps = [
         "//packages/linux/media/video/ffmpeg:ffmpeg",
-        "//packages/linux/desktop/gtk:gtk3",
-        # "//packages/linux/core/frei0r:frei0r",  # TODO: not packaged yet,
-        "//packages/linux/audio/daemons/pulseaudio:pulseaudio",
-    ],
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
+                "//packages/linux/desktop/gtk:gtk3",
+                # "//packages/linux/core/frei0r:frei0r",
+                # TODO: not packaged yet,
+                "//packages/linux/audio/daemons/pulseaudio:pulseaudio",
+                "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config"
     ],
     visibility = ["PUBLIC"],
 )

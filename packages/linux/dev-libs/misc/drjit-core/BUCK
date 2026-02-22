@@ -16,44 +16,6 @@ package(
 
     # Dr.Jit has git submodules (nanothread, robin-map)
     # GitHub archive tarballs don't include submodules, so we need to fetch them manually
-    pre_configure = """
-# Fetch and initialize submodules if missing
-if [ ! -d "ext/nanothread/include" ]; then
-    echo "Fetching nanothread submodule..."
-    mkdir -p ext/nanothread
-    cd ext/nanothread
-    wget -q https://github.com/mitsuba-renderer/nanothread/archive/refs/heads/master.tar.gz -O nanothread.tar.gz
-    tar --strip-components=1 -xf nanothread.tar.gz
-    rm nanothread.tar.gz
-
-    # nanothread also has a submodule: cmake-defaults
-    if [ ! -d "ext/cmake-defaults" ]; then
-        mkdir -p ext/cmake-defaults
-        cd ext/cmake-defaults
-        wget -q https://github.com/mitsuba-renderer/cmake-defaults/archive/refs/heads/master.tar.gz -O cmake-defaults.tar.gz
-        tar --strip-components=1 -xf cmake-defaults.tar.gz
-        rm cmake-defaults.tar.gz
-        cd ../..
-    fi
-    cd ../..
-fi
-
-if [ ! -d "ext/robin_map/include" ]; then
-    echo "Fetching robin-map submodule..."
-    mkdir -p ext/robin_map
-    cd ext/robin_map
-    wget -q https://github.com/Tessil/robin-map/archive/refs/heads/master.tar.gz -O robin-map.tar.gz
-    tar --strip-components=1 -xf robin-map.tar.gz
-    rm robin-map.tar.gz
-    cd ../..
-fi
-
-# Verify submodules are present
-if [ ! -d "ext/nanothread/ext/cmake-defaults" ] || [ ! -d "ext/robin_map/include" ]; then
-    echo "ERROR: Failed to initialize Dr.Jit-Core submodules"
-    exit 1
-fi
-""",
 
     configure_args = [
         "-DBUILD_SHARED_LIBS=ON",

@@ -34,35 +34,20 @@ package(
     description = "Photography workflow application and raw developer",
     homepage = "https://www.darktable.org/",
     license = "GPL-3.0-or-later",
-    pre_configure = """
-mkdir -p build
-cd build
-cmake .. \
-    -DCMAKE_INSTALL_PREFIX=/usr \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DBINARY_PACKAGE_BUILD=ON \
-    -DBUILD_USERMANUAL=OFF \
-    -DUSE_LIBSECRET=ON \
-    -DUSE_LUA=OFF \
-    -DUSE_OPENCL=ON \
-    -DRAWSPEED_ENABLE_LTO=ON
-""",
     configure_args = [],
     make_args = ["-C", "build"],
-    post_install = """
+    post_install_cmds = ["""
 cd build
 DESTDIR=$OUT make install
-""",
+"""],
     deps = [
         "//packages/linux/desktop/gtk:gtk3",
-        "//packages/linux/system/libs/database/sqlite:sqlite",
-        "//packages/linux/system/libs/network/curl:curl",
-        "//packages/linux/dev-libs/exiv2:exiv2",
-        "//packages/linux/system/libs/graphics/lcms2:lcms2",
-        "//packages/linux/dev-libs/pugixml:pugixml",
-    ],
-    bdepend = [
-        "//packages/linux/dev-tools/dev-utils/intltool:intltool",
+                "//packages/linux/system/libs/database/sqlite:sqlite",
+                "//packages/linux/system/libs/network/curl:curl",
+                "//packages/linux/dev-libs/exiv2:exiv2",
+                "//packages/linux/system/libs/graphics/lcms2:lcms2",
+                "//packages/linux/dev-libs/pugixml:pugixml",
+                "//packages/linux/dev-tools/dev-utils/intltool:intltool"
     ],
     visibility = ["PUBLIC"],
 )

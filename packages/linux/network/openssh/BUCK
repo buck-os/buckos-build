@@ -12,16 +12,11 @@ package(
     sha256 = "b343fbcdbff87f15b1986e6e15d6d4fc9a7d36066be6b7fb507087ba8f966c02",
 
     # Need autoreconf to regenerate configure properly
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-    ],
 
     # Run autoreconf to regenerate configure (matches Gentoo)
-    src_prepare = """
+    pre_configure_cmds = ["""
 autoreconf -fi
-""",
+"""],
 
     use_deps = {
         "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
@@ -51,67 +46,10 @@ autoreconf -fi
     },
 
     # For cross-compilation: Point OpenSSH to the actual OpenSSL dependency directory
-    src_configure = '''
-# For cross-compilation: --build is the build machine, --host is the target
-BUILD_SYSTEM=$(./config.guess 2>/dev/null || echo x86_64-pc-linux-gnu)
-HOST_SYSTEM=${CHOST:-$(${CC:-gcc} -dumpmachine)}
-
-# Find OpenSSL dependency directory from DEP_BASE_DIRS
-OPENSSL_DIR=""
-IFS=':' read -ra DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
-for dep in "${DEP_ARRAY[@]}"; do
-    if [ -d "$dep/usr/include/openssl" ] && [ -f "$dep/usr/include/openssl/opensslv.h" ]; then
-        OPENSSL_DIR="$dep/usr"
-        echo "Found OpenSSL at: $OPENSSL_DIR"
-        break
-    fi
-done
-
-if [ -z "$OPENSSL_DIR" ]; then
-    echo "ERROR: Could not find OpenSSL dependency"
-    exit 1
-fi
-
-# Explicitly add OpenSSL include and library paths FIRST in CPPFLAGS/LDFLAGS
-# PREPEND (not append) so OpenSSL dependency headers are found before any host headers
-export CPPFLAGS="-I$OPENSSL_DIR/include ${CPPFLAGS:-}"
-export LDFLAGS="-L$OPENSSL_DIR/lib64 ${LDFLAGS:-}"
-
-# Provide cache variables to skip OpenSSL detection issues in cross-compilation
-export ac_cv_header_openssl_opensslv_h=yes
-export ac_cv_lib_crypto_EVP_CIPHER_CTX_new=yes
-
-./configure --prefix=/usr --libdir=/usr/lib64 --build=$BUILD_SYSTEM --host=$HOST_SYSTEM \
-    --sysconfdir=/etc/ssh \
-    --with-ssl-dir="$OPENSSL_DIR" \
-    --with-zlib=/usr \
-    --disable-strip \
-    --with-privsep-user=nobody \
-    --with-privsep-path=/var/empty \
-    --without-hardening \
-    --without-pie \
-    --without-stackprotect \
-    ${EXTRA_ECONF:-}
-''',
 
     configure_args = [],
 
     # For aarch64: Ensure OpenSSL headers from dependency are used during compilation
-    src_compile = '''
-# Find OpenSSL dependency directory again
-OPENSSL_DIR=""
-IFS=':' read -ra DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
-for dep in "${DEP_ARRAY[@]}"; do
-    if [ -d "$dep/usr/include/openssl" ]; then
-        OPENSSL_DIR="$dep/usr"
-        break
-    fi
-done
-
-# PREPEND OpenSSL include path to CFLAGS to override any system paths
-make -j${MAKEOPTS:-$(nproc)} ${EXTRA_EMAKE:-} \\
-    CFLAGS="-I$OPENSSL_DIR/include $CFLAGS"
-''',
 
     # Cross-compilation requires explicit definition of BSD compat functions
     # Force openssh to use its bundled openbsd-compat implementations
@@ -128,9 +66,14 @@ make -j${MAKEOPTS:-$(nproc)} ${EXTRA_EMAKE:-} \\
         "ac_cv_func_explicit_bzero": "no",
     },
 
-    deps = ["//packages/linux/core/zlib:zlib"],
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool"
+    ],
 
-    post_install = """
+    post_install_cmds = ["""
 # Create privilege separation directory
 mkdir -p "$DESTDIR/var/empty"
 chmod 755 "$DESTDIR/var/empty"
@@ -155,7 +98,7 @@ RestartSec=42s
 [Install]
 WantedBy=multi-user.target
 SSHD_SERVICE
-""",
+"""],
 
     description = "OpenSSH SSH connectivity tools",
     homepage = "https://www.openssh.com/",

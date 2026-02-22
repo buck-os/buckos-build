@@ -18,51 +18,9 @@ package(
     homepage = "https://skarnet.org/software/s6/",
     license = "ISC",
     # skarnet.org uses non-standard configure - custom src_configure phase
-    src_configure = """
-# Find skalibs in dependency directories
-SKALIBS_DIR=""
-for dir in ${DEP_BASE_DIRS//:/ }; do
-    if [ -d "$dir/usr/lib/skalibs/sysdeps" ]; then
-        SKALIBS_DIR="$dir"
-        break
-    fi
-done
-if [ -z "$SKALIBS_DIR" ]; then
-    echo "ERROR: Could not find skalibs sysdeps directory"
-    echo "DEP_BASE_DIRS: $DEP_BASE_DIRS"
-    exit 1
-fi
-echo "Found skalibs at: $SKALIBS_DIR"
-
-# Find execline if enabled
-EXECLINE_INCLUDE=""
-EXECLINE_LIB=""
-if echo "${USE_CONFIGURE_FLAGS}" | grep -q "enable-execline"; then
-    for dir in ${DEP_BASE_DIRS//:/ }; do
-        if [ -d "$dir/usr/include/execline" ]; then
-            EXECLINE_INCLUDE="$dir/usr/include"
-            EXECLINE_LIB="$dir/usr/lib"
-            echo "Found execline at: $dir"
-            break
-        fi
-    done
-fi
-
-./configure \\
-    --prefix=/usr \\
-    --libexecdir=/usr/lib/s6 \\
-    --libdir=/usr/lib \\
-    --enable-shared \\
-    --disable-static \\
-    --with-sysdeps="$SKALIBS_DIR/usr/lib/skalibs/sysdeps" \\
-    --with-include="$SKALIBS_DIR/usr/include${EXECLINE_INCLUDE:+:$EXECLINE_INCLUDE}" \\
-    --with-lib="$SKALIBS_DIR/usr/lib${EXECLINE_LIB:+:$EXECLINE_LIB}" \\
-    ${USE_CONFIGURE_FLAGS}
-""",
     deps = [
         "//packages/linux/system/init/skalibs:skalibs",
         "//packages/linux/system/init/execline:execline",
     ],
-    bdepend = [],
     visibility = ["PUBLIC"],
 )

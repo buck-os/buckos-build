@@ -4,7 +4,7 @@ load("//defs:package.bzl", "package")
 
 package(
     name = "linenoise",
-    build_rule = "autotools",
+    build_rule = "binary",
     version = "1.0",
     url = "https://github.com/antirez/linenoise/archive/refs/heads/master.tar.gz",
     sha256 = "9a76362bbbedc1a50fd83f05f4e36dfdf12fb1092d920c187798b7e5cd4d913e",
@@ -12,10 +12,6 @@ package(
     homepage = "https://github.com/antirez/linenoise",
     license = "BSD-2-Clause",
     deps = [],
-    build_commands = [
-        "make",
-        "install -Dm755 linenoise.h ${PREFIX}/include/linenoise.h",
-        "install -Dm755 linenoise.c ${PREFIX}/src/linenoise.c",
-    ],
+    install_script = """make\ninstall -Dm755 linenoise.h ${PREFIX}/include/linenoise.h\ninstall -Dm755 linenoise.c ${PREFIX}/src/linenoise.c""",
     visibility = ["PUBLIC"],
 )

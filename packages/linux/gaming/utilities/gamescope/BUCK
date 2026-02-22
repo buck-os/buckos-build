@@ -23,20 +23,8 @@ package(
     description = "SteamOS session compositing window manager",
     homepage = "https://github.com/ValveSoftware/gamescope",
     license = "BSD-2-Clause",
-    pre_configure = """
-# Initialize and update submodules
-git submodule update --init --recursive || true
-
-# Gamescope uses Meson build system
-meson setup build \
-    --prefix=/usr \
-    --libdir=/usr/lib \
-    --buildtype=release \
-    -Dpipewire=enabled \
-    -Denable_openvr_support=false
-    """,
     configure_args = [],
-    post_install = """
+    post_install_cmds = ["""
 #!/bin/bash
 set -e
 
@@ -54,7 +42,7 @@ To enable, run:
 
 This allows gamescope to set real-time scheduling for better performance.
 EOF
-    """,
+    """],
     deps = [
         "//packages/linux/system/libs/utility/libffi:libffi",
         "//packages/linux/graphics/rendering/wayland:wayland",

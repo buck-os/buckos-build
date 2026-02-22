@@ -9,19 +9,11 @@ package(
     description = "Base64 encoding/decoding library in C",
     homepage = "https://github.com/libb64/libb64",
     license = "CC0-1.0",
-    src_configure = "true",
-    src_compile = """
-cd src
-# Build object files
-make -j${MAKEOPTS:-$(nproc)} CFLAGS="-O3 -fPIC -Wno-implicit-fallthrough -I../include" cencode.o cdecode.o
-# Create static library manually (Makefile uses 'rv' which doesn't exist)
-ar rcs libb64.a cencode.o cdecode.o
-""",
-    src_install = """
+    post_install_cmds = ["""\
 mkdir -p "$DESTDIR/usr/lib"
 mkdir -p "$DESTDIR/usr/include/b64"
 cp src/libb64.a "$DESTDIR/usr/lib/"
 cp include/b64/*.h "$DESTDIR/usr/include/b64/"
-""",
+"""],
     visibility = ["PUBLIC"],
 )

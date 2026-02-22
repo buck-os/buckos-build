@@ -3,15 +3,9 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "exfat-fuse",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
-    ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 autoreconf -fi
-""",
+"""],
     url = "https://github.com/relan/exfat/archive/refs/tags/v1.4.0.tar.gz",
 
     sha256 = "af560659f55dca0270f94809530f359d6bdad5d313133c68b458fb0a8eeab1c8",
@@ -22,6 +16,10 @@ autoreconf -fi
     configure_args = [],
     deps = [
         "//packages/linux/system/security/encryption:fuse3",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config"
     ],
     visibility = ["PUBLIC"],
 )

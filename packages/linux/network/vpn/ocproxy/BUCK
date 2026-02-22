@@ -7,10 +7,10 @@ package(
     url = "https://github.com/cernekee/ocproxy/archive/refs/tags/v1.60.tar.gz",
     sha256 = "a7367647f07df33869e2f79da66b6f104f6495ae806b12a8b8d9ca82fb7899ac",
 
-    src_prepare = """
+    pre_configure_cmds = ["""
 # GitHub archive doesn't include pre-generated configure script
 autoreconf -fiv
-""",
+"""],
 
     use_configure = {},
 
@@ -18,14 +18,11 @@ autoreconf -fiv
         "--prefix=/usr",
     ],
 
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-    ],
-
     deps = [
         "//packages/linux/system/libs/utility/libevent:libevent",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool"
     ],
 
     description = "User-level SOCKS and port-forwarding proxy for OpenConnect",

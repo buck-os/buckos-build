@@ -36,21 +36,11 @@ package(
     description = "WPA/WPA2/IEEE 802.1X Supplicant",
     homepage = "https://w1.fi/wpa_supplicant/",
     license = "BSD-3-Clause",
-    src_configure = "true",
-    pre_configure = """
-        cd wpa_supplicant
-        cp defconfig .config
-        echo "CONFIG_BACKEND=file" >> .config
-        echo "CONFIG_CTRL_IFACE_DBUS_NEW=y" >> .config
-        echo "CONFIG_READLINE=y" >> .config
-    """,
     configure_args = [],
     make_args = [
         "-C", "wpa_supplicant",
         "BINDIR=/usr/bin",
         "LIBDIR=/usr/lib",
-    ],
-    install_args = [
         "-C", "wpa_supplicant",
         "DESTDIR=${DESTDIR}",
         "BINDIR=/usr/bin",

@@ -70,23 +70,20 @@ package(
     description = "Network Security Services",
     homepage = "https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS",
     license = "MPL-2.0",
-    src_configure = """
-        cd nss
-    """,
     make_args = [
         "BUILD_OPT=1",
         "NSS_USE_SYSTEM_SQLITE=1",
         "USE_64=1",
         "NSS_ENABLE_WERROR=0",
     ],
-    post_install = """
+    post_install_cmds = ["""
         mkdir -p "$OUT/usr/lib" "$OUT/usr/include/nss" "$OUT/usr/bin"
         cd ../dist/Linux*/
         cp -L lib/*.so "$OUT/usr/lib/"
         cp -L lib/*.chk "$OUT/usr/lib/" || true
         cp -rL include/nss/* "$OUT/usr/include/nss/"
         cp -L bin/* "$OUT/usr/bin/" || true
-    """,
+    """],
     deps = [
         "//packages/linux/system/libs/database/sqlite:sqlite",
         ":nspr",
@@ -106,9 +103,6 @@ package(
     description = "Netscape Portable Runtime",
     homepage = "https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSPR",
     license = "MPL-2.0",
-    src_configure = """
-        cd nspr
-    """,
     deps = [
     ],
     visibility = ["PUBLIC"],

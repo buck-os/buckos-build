@@ -21,7 +21,7 @@ package(
     description = "Query and change monitor settings using DDC/CI and USB",
     homepage = "https://www.ddcutil.com/",
     license = "GPL-2.0",
-    autoreconf = True,
+    pre_configure_cmds = ["autoreconf -fi"],
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc",

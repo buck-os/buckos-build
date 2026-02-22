@@ -2,7 +2,7 @@ load("//defs:package.bzl", "package")
 
 package(
     name = "seaoptimizer",
-    build_rule = "autotools",
+    build_rule = "binary",
     version = "1.0.0",
     url = "https://github.com/ands/seamoptimizer/archive/refs/heads/master.tar.gz",
     sha256 = "81cd4e907020796af1a1fb7d195464cb9ad1852901dcca2143b0324cfb19800b",
@@ -10,9 +10,6 @@ package(
     homepage = "https://github.com/ands/seamoptimizer",
     license = "PUBLIC_DOMAIN",
     deps = [],
-    build_commands = [
-        "mkdir -p ${PREFIX}/include/seaoptimizer",
-        "cp seamoptimizer.h ${PREFIX}/include/seaoptimizer/",
-    ],
+    install_script = """mkdir -p ${PREFIX}/include/seaoptimizer\ncp seamoptimizer.h ${PREFIX}/include/seaoptimizer/""",
     visibility = ["PUBLIC"],
 )

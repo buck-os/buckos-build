@@ -19,13 +19,11 @@ package(
     description = "Lightweight, fast web server optimized for high-performance environments",
     homepage = "https://www.lighttpd.net/",
     license = "BSD-3-Clause",
-    bdepend = [
+    deps = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
         "//packages/linux/dev-tools/build-systems/automake:automake",
         "//packages/linux/dev-tools/build-systems/libtool:libtool",
         "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
-    ],
-    deps = [
     ],
     use_deps = {
         "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
@@ -47,7 +45,7 @@ package(
         "ssl": ("--with-openssl", "--without-openssl"),
         "zlib": ("--with-zlib", "--without-zlib"),
     },
-    post_install = """
+    post_install_cmds = ["""
 mkdir -p "$DESTDIR/var/log/lighttpd"
 mkdir -p "$DESTDIR/var/cache/lighttpd"
 mkdir -p "$DESTDIR/var/www/html"
@@ -63,6 +61,6 @@ server.errorlog = "/var/log/lighttpd/error.log"
 accesslog.filename = "/var/log/lighttpd/access.log"
 index-file.names = ( "index.html", "index.htm" )
 EOF
-""",
+"""],
     visibility = ["PUBLIC"],
 )

@@ -10,36 +10,6 @@ package(
     homepage = "https://github.com/aras-p/smol-v",
     license = "MIT",
     deps = [],
-    pre_configure = """
-        cat > CMakeLists.txt << 'EOF'
-cmake_minimum_required(VERSION 3.10)
-project(smol-v VERSION 1.0.0 LANGUAGES CXX)
-
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-add_library(smol-v STATIC source/smolv.cpp)
-
-target_include_directories(smol-v PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/source>
-    $<INSTALL_INTERFACE:include>
-)
-
-set_target_properties(smol-v PROPERTIES
-    OUTPUT_NAME smolv
-)
-
-install(TARGETS smol-v
-    EXPORT smol-vTargets
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-    RUNTIME DESTINATION bin
-    INCLUDES DESTINATION include
-)
-
-install(FILES source/smolv.h DESTINATION include)
-EOF
-    """,
     configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],

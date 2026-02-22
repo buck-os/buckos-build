@@ -28,29 +28,11 @@ package(
     ],
     # Custom install that makes .pc files relocatable using ${pcfiledir}
     # This allows packages that depend on glib to find tools like glib-mkenums
-    src_install = """
-        # Run standard meson install
-        DESTDIR="$DESTDIR" meson install -C "${BUILD_DIR:-build}"
-
-        # Fix .pc files to use relocatable paths with ${pcfiledir}
-        # ${pcfiledir} is a pkg-config variable that expands to the directory containing the .pc file
-        for pc_file in "$DESTDIR"/usr/lib64/pkgconfig/*.pc; do
-            if [ -f "$pc_file" ]; then
-                # Replace prefix=/usr with prefix using pcfiledir (../../ from lib64/pkgconfig to usr)
-                sed -i \
-                    -e 's|^prefix=/usr$|prefix=${pcfiledir}/../..|' \
-                    -e 's|^bindir=.*|bindir=${prefix}/bin|' \
-                    "$pc_file"
-            fi
-        done
-    """,
-    bdepend = [
-        "//packages/linux/dev-libs/python/packaging:packaging",
-    ],
     deps = [
         "//packages/linux/system/libs/utility/libffi:libffi",
-        "//packages/linux/core/zlib:zlib",
-        "//packages/linux/system/libs/utility/pcre2:pcre2",
+                "//packages/linux/core/zlib:zlib",
+                "//packages/linux/system/libs/utility/pcre2:pcre2",
+                "//packages/linux/dev-libs/python/packaging:packaging"
     ],
     visibility = ["PUBLIC"],
 )

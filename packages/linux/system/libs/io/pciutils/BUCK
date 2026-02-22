@@ -13,28 +13,8 @@ package(
     homepage = "https://mj.ucw.cz/sw/pciutils/",
     license = "GPL-2",
     # pciutils uses Make directly, skip configure
-    src_configure = "true",
     configure_args = [],
     # Build with shared library support
-    src_compile = """
-make -j${MAKEOPTS:-$(nproc)} \
-    PREFIX=/usr \
-    LIBDIR=/usr/lib64 \
-    SHAREDIR=/usr/share/hwdata \
-    ZLIB=yes \
-    SHARED=yes \
-    CC="${CC:-gcc}" \
-    OPT="$CFLAGS"
-""",
-    src_install = """
-make install install-lib \
-    PREFIX=/usr \
-    LIBDIR=/usr/lib64 \
-    SHAREDIR=/usr/share/hwdata \
-    DESTDIR="$DESTDIR"
-# Create symlink for library
-ln -sf libpci.so.3 "$DESTDIR/usr/lib64/libpci.so"
-""",
     deps = [
         "//packages/linux/core/zlib:zlib",
     ],

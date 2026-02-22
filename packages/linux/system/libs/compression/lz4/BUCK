@@ -11,24 +11,6 @@ package(
     homepage = "https://lz4.github.io/lz4/",
     license = "BSD-2-Clause",
     # Build the library only first, then programs
-    src_compile = """
-# Build lib first
-cd lib
-make -j${MAKEOPTS:-$(nproc)}
-cd ..
-
-# Build programs - need to set include path to local lib
-cd programs
-make -j${MAKEOPTS:-$(nproc)} LZ4_PATH=../lib CPPFLAGS="-I../lib"
-cd ..
-""",
-    src_install = """
-# Use standard make install
-make PREFIX=/usr LIBDIR=/usr/lib DESTDIR="$DESTDIR" install
-
-# Remove static library if not requested
-rm -f "$DESTDIR/usr/lib/liblz4.a"
-""",
     deps = [],
     visibility = ["PUBLIC"],
 )

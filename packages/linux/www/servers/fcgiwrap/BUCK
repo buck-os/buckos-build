@@ -13,15 +13,9 @@ package(
     name = "fcgiwrap",
     # Disable -Werror for implicit-fallthrough warning
     env = {"CFLAGS": "-O2 -Wno-implicit-fallthrough"},
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
-    ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 autoreconf -fiv
-""",
+"""],
     version = "1.1.0",
     use_configure = {
         "systemd": ("--with-systemd", "--without-systemd"),
@@ -36,6 +30,10 @@ autoreconf -fiv
     license = "MIT",
     deps = [
         "//packages/linux/www/servers/fcgi:fcgi",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config"
     ],
     configure_args = [
         "--prefix=${PREFIX}",

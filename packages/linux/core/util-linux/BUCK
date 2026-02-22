@@ -104,12 +104,9 @@ package(
 
     # Force sequential build to avoid parallel race conditions
     # util-linux has internal dependencies that aren't properly declared in Makefiles
-    src_compile = """
-make -j1
-""",
 
     # Post-install script to verify getopt installation
-    post_install = """
+    post_install_cmds = ["""
 # Verify that getopt was installed
 if [ -f "$DESTDIR/usr/bin/getopt" ]; then
     echo "✓ getopt installed successfully at $DESTDIR/usr/bin/getopt"
@@ -118,7 +115,7 @@ else
     echo "  Checking alternate locations..."
     find "$DESTDIR" -name "getopt" -type f 2>/dev/null || echo "  getopt not found anywhere in package"
 fi
-""",
+"""],
 
     deps = [
         "//packages/linux/system/libs/crypto/libxcrypt:libxcrypt",

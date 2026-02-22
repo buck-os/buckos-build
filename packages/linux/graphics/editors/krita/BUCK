@@ -25,30 +25,18 @@ package(
     description = "Digital painting and illustration application",
     homepage = "https://krita.org/",
     license = "GPL-3.0-or-later",
-    pre_configure = """
-mkdir -p build
-cd build
-cmake .. \
-    -DCMAKE_INSTALL_PREFIX=/usr \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DBUILD_TESTING=OFF \
-    -DENABLE_UPDATERS=OFF \
-    -DFOUNDATION_BUILD=ON
-""",
     configure_args = [],
     make_args = ["-C", "build"],
-    post_install = """
+    post_install_cmds = ["""
 cd build
 DESTDIR=$OUT make install
-""",
+"""],
     deps = [
         "//packages/linux/desktop/kde:kf5",
-        "//packages/linux/desktop/qt:qt5",
-        "//packages/linux/dev-libs/boost:boost",
-        "//packages/linux/dev-libs/eigen:eigen",
-    ],
-    bdepend = [
-        "//packages/linux/lang/python:python",
+                "//packages/linux/desktop/qt:qt5",
+                "//packages/linux/dev-libs/boost:boost",
+                "//packages/linux/dev-libs/eigen:eigen",
+                "//packages/linux/lang/python:python"
     ],
     visibility = ["PUBLIC"],
 )

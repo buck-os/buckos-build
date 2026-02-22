@@ -23,26 +23,12 @@ package(
     description = "Image viewer for X11 and Wayland",
     homepage = "https://codeberg.org/exec64/imv",
     license = "MIT",
-    pre_configure = """
-mkdir -p build
-cd build
-meson setup .. \
-    --prefix=/usr \
-    -Dbuildtype=release \
-    -Dwindows=all \
-    -Dfreeimage=enabled \
-    -Dlibjpeg=enabled \
-    -Dlibpng=enabled \
-    -Dlibtiff=enabled \
-    -Dlibheif=enabled \
-    -Dlibnsgif=disabled
-""",
     configure_args = [],
     make_args = ["-C", "build"],
-    post_install = """
+    post_install_cmds = ["""
 cd build
 DESTDIR=$OUT meson install
-""",
+"""],
     deps = [
         "//packages/linux/system/libs/utility/libffi:libffi",
         "//packages/linux/graphics/rendering/wayland:wayland",
@@ -54,6 +40,5 @@ DESTDIR=$OUT meson install
         "//packages/linux/fonts/libraries/pango:pango",
         # "//packages/linux/core/inih:inih",  # TODO: not packaged yet,
     ],
-    bdepend = [],
     visibility = ["PUBLIC"],
 )

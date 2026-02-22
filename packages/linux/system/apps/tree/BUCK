@@ -15,13 +15,6 @@ package(
     make_args = [
         "PREFIX=/usr",
     ],
-    src_install = """
-# tree's Makefile doesn't properly use DESTDIR for MANDIR, install manually
-install -d "$DESTDIR/usr/bin"
-install -d "$DESTDIR/usr/share/man/man1"
-install -m755 tree "$DESTDIR/usr/bin/"
-install -m644 doc/tree.1 "$DESTDIR/usr/share/man/man1/"
-""",
     deps = [],
     visibility = ["PUBLIC"],
 )

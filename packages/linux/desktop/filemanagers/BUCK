@@ -144,9 +144,13 @@ package(
     homepage = "https://github.com/ranger/ranger",
     license = "GPL-3.0-or-later",
     make_args = [],
-    post_install = """
+    post_install_cmds = ["""
         python setup.py install --prefix=/usr --root="$OUT"
-    """,
+    """, """
+        go build -o lf
+        mkdir -p "$OUT/usr/bin"
+        cp lf "$OUT/usr/bin/"
+    """],
     deps = [
         "//packages/linux/lang/python:python",
     ],
@@ -166,11 +170,6 @@ package(
     homepage = "https://github.com/gokcehan/lf",
     license = "MIT",
     make_args = [],
-    post_install = """
-        go build -o lf
-        mkdir -p "$OUT/usr/bin"
-        cp lf "$OUT/usr/bin/"
-    """,
     deps = [
         "//packages/linux/lang/go:go",
     ],

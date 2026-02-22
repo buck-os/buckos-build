@@ -19,23 +19,21 @@ package(
     description = "Real-time reporting of Intel Core CPU frequency and C-states",
     homepage = "https://github.com/ajaiantilal/i7z",
     license = "GPL-2.0",
-    bdepend = [],
-    src_prepare = """
+    pre_configure_cmds = ["""
         sed -i 's/^struct timespec global_ts;/extern struct timespec global_ts;/' i7z_Dual_Socket.c
         sed -i 's/^struct program_options prog_options;/extern struct program_options prog_options;/' i7z_Dual_Socket.c
-    """,
-    src_configure = "true",
+    """],
     configure_args = [],
     make_args = [
         "prefix=/usr",
     ],
-    src_install = """
-        mkdir -p ${DESTDIR}/usr/sbin
-        mkdir -p ${DESTDIR}/usr/share/man/man1
-        install -m 755 i7z ${DESTDIR}/usr/sbin/
-        install -m 755 i7z_rw_registers.rb ${DESTDIR}/usr/sbin/ || true
-        gzip -c i7z.1 > ${DESTDIR}/usr/share/man/man1/i7z.1.gz || true
-    """,
+    post_install_cmds = ["""\
+mkdir -p ${DESTDIR}/usr/sbin
+mkdir -p ${DESTDIR}/usr/share/man/man1
+install -m 755 i7z ${DESTDIR}/usr/sbin/
+install -m 755 i7z_rw_registers.rb ${DESTDIR}/usr/sbin/ || true
+gzip -c i7z.1 > ${DESTDIR}/usr/share/man/man1/i7z.1.gz || true
+"""],
     deps = [
         "//packages/linux/system/terminal/ncurses:ncurses",
     ],

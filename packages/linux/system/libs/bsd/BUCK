@@ -12,7 +12,7 @@ package(
     },
     url = "https://deb.debian.org/debian/pool/main/libb/libbsd/libbsd_0.12.2.orig.tar.xz",
     sha256 = "b88cc9163d0c652aaf39a99991d974ddba1c3a9711db8f1b5838af2a14731014",
-    gpg_key = "B972BF3EA4AE57A3",  # Guillem Jover
+# Guillem Jover
     description = "Utility functions from BSD systems (strlcpy, arc4random, etc.)",
     homepage = "https://libbsd.freedesktop.org/",
     license = "BSD ISC",
@@ -22,7 +22,7 @@ package(
     # Fix libbsd linker script and .la to not reference absolute host paths.
     # libbsd.so is a GNU ld script: GROUP(/usr/lib64/libbsd.so.0.12.2 AS_NEEDED(-lmd))
     # The absolute path breaks cross-compilation. Rewrite with relative name.
-    post_install = """
+    post_install_cmds = ["""
 # Fix libbsd.so linker script: replace absolute host paths with relative names
 if [ -f "$DESTDIR/usr/lib64/libbsd.so" ]; then
     echo "Fixing libbsd.so linker script..."
@@ -47,7 +47,7 @@ if [ -f "$DESTDIR/usr/lib64/libbsd.la" ]; then
     echo "Fixing libbsd.la to remove host path references..."
     sed -i "s|/usr/lib64/libmd.la|-lmd|g" "$DESTDIR/usr/lib64/libbsd.la"
 fi
-""",
+"""],
     deps = [
         "//packages/linux/core/libmd:libmd",  # Required for hash functions
     ],

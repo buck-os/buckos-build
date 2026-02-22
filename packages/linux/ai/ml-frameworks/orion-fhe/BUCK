@@ -15,13 +15,8 @@ package(
         "//packages/linux/dev-libs/python/numpy:numpy",
         "//packages/linux/dev-libs/python/scipy:scipy",
     ],
-    build_backend = "poetry",
-    build_env = {
+    env = {
         "CGO_ENABLED": "1",
     },
-    install_cmd = """
-cd orion/backend/lattigo && go build -buildmode=c-shared -buildvcs=false -o lattigo-linux.so . && cd ../../..
-pip install --no-deps --prefix="$DESTDIR/usr" .
-""",
     visibility = ["PUBLIC"],
 )

@@ -13,20 +13,6 @@ package(
     description = "Security-oriented coverage-guided fuzzer with powerful analysis options",
     homepage = "https://github.com/google/honggfuzz",
     license = "Apache-2.0",
-    src_configure = """
-# No configure script, honggfuzz uses Makefile directly
-true
-""",
-    src_compile = """
-make -j${MAKEOPTS:-$(nproc)} \
-    PREFIX=/usr \
-    BUILD_LINUX_NO_BFD=true
-""",
-    src_install = """
-make install \
-    DESTDIR="$DESTDIR" \
-    PREFIX=/usr
-""",
     deps = [
         "//packages/linux/system/libs/libunwind:libunwind",
     ],

@@ -11,12 +11,8 @@ package(
     description = "Rootkit Hunter - scans for rootkits, backdoors and local exploits",
     homepage = "http://rkhunter.sourceforge.net/",
     license = "GPL-2.0",
-    src_configure = """
-        # rkhunter uses its own installer script
-        true
-    """,
     make_args = [],
-    post_install = """
+    post_install_cmds = ["""
         ./installer.sh --layout custom \
             --striproot $OUT \
             --install
@@ -25,6 +21,6 @@ package(
         mkdir -p $OUT/var/lib/rkhunter/db
         mkdir -p $OUT/var/lib/rkhunter/tmp
         mkdir -p $OUT/var/log
-    """,
+    """],
     visibility = ["PUBLIC"],
 )

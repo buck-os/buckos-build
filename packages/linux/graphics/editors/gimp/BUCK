@@ -40,32 +40,18 @@ package(
     description = "GNU Image Manipulation Program - A powerful image editing application",
     homepage = "https://www.gimp.org/",
     license = "GPL-3.0-or-later",
-    pre_configure = """
-mkdir -p build
-cd build
-meson setup .. \
-    --prefix=/usr \
-    --libdir=/usr/lib \
-    --sysconfdir=/etc \
-    -Dbuildtype=release \
-    -Djavascript=disabled \
-    -Dlua=disabled \
-    -Dvala=disabled
-""",
     configure_args = [],
     make_args = ["-C", "build"],
-    post_install = """
+    post_install_cmds = ["""
 cd build
 DESTDIR=$OUT meson install
-""",
+"""],
     deps = [
         "//packages/linux/desktop/gtk:gtk3",
-        "//packages/linux/dev-libs/glib:glib",
-        "//packages/linux/graphics/utilities/gegl:gegl",
-        "//packages/linux/graphics/utilities/babl:babl",
-    ],
-    bdepend = [
-        "//packages/linux/lang/python:python",
+                "//packages/linux/dev-libs/glib:glib",
+                "//packages/linux/graphics/utilities/gegl:gegl",
+                "//packages/linux/graphics/utilities/babl:babl",
+                "//packages/linux/lang/python:python"
     ],
     visibility = ["PUBLIC"],
 )

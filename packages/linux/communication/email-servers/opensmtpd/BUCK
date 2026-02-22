@@ -33,7 +33,7 @@ package(
         "--with-table-db",
         "--with-table-ldap",
     ],
-    post_install = """
+    post_install_cmds = ["""
 mkdir -p "$DESTDIR/etc/smtpd"
 mkdir -p "$DESTDIR/var/spool/smtpd"
 mkdir -p "$DESTDIR/var/empty"
@@ -54,7 +54,7 @@ match for any action "relay"
 CONFIG
 
 touch "$DESTDIR/etc/smtpd/aliases"
-""",
+"""],
     deps = [
         "//packages/linux/system/libs/crypto/openssl:openssl",
         "//packages/linux/system/security/linux-pam:linux-pam",

@@ -9,7 +9,7 @@ package(
     # Binary is called tcgstorage, not gosedctl
     bins = ["tcgstorage"],
     packages = ["./cmd/tcgstorage"],
-    src_prepare = """
+    pre_configure_cmds = ["""
 rm -rf .git
-""",
+"""],
 )

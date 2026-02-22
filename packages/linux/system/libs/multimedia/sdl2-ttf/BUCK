@@ -15,14 +15,6 @@ package(
     description = "SDL2 TrueType font rendering library",
     homepage = "https://www.libsdl.org/projects/SDL_ttf/",
     license = "Zlib",
-    pre_configure = """
-mkdir -p build
-cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=/usr \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DBUILD_SHARED_LIBS=ON \
-    -DSDL2TTF_HARFBUZZ=ON
-""",
     deps = [
         "//packages/linux/system/libs/multimedia/sdl2:sdl2",
         "//packages/linux/system/libs/font/freetype:freetype",

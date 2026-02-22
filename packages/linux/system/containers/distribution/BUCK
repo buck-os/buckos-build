@@ -16,7 +16,7 @@ package(
         "./cmd/digest",
         "./cmd/registry-api-descriptor-template",
     ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 rm -rf .git
 
 # Remove stale vendor directory - it's inconsistent with expected go.mod
@@ -39,24 +39,5 @@ require (
 EOF
     echo "Created go.mod for module github.com/docker/distribution"
 fi
-""",
-    src_install = """
-# Install binaries
-mkdir -p "$DESTDIR/usr/bin"
-for bin in registry digest registry-api-descriptor-template; do
-    if [ -f "${BUILD_DIR:-build}/$bin" ]; then
-        install -m 755 "${BUILD_DIR:-build}/$bin" "$DESTDIR/usr/bin/"
-        echo "Installed $bin to /usr/bin"
-    fi
-done
-
-# Verify at least one binary was installed
-if [ ! -d "$DESTDIR/usr/bin" ] || [ -z "$(ls -A "$DESTDIR/usr/bin" 2>/dev/null)" ]; then
-    echo "ERROR: No binaries were installed"
-    echo "Build directory contents:"
-    ls -la "${BUILD_DIR:-build}/" || echo "Build directory not found"
-    exit 1
-fi
-""",
-    maintainers = ["buckos"],
+"""],
 )

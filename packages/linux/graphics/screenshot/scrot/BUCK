@@ -4,8 +4,6 @@ package(
     build_rule = "autotools",
     name = "scrot",
     # GitHub release tarball includes pre-generated configure script
-    bdepend = [],
-    src_prepare = "",
     url = "https://github.com/resurrecting-open-source-projects/scrot/releases/download/1.10/scrot-1.10.tar.gz",
 
     sha256 = "d3fb2fb962c1921030a442448afb1994d77d40192868da1b4cdeade0066bf36f",
@@ -17,9 +15,9 @@ package(
         "--prefix=/usr",
     ],
     make_args = [],
-    post_install = """
+    post_install_cmds = ["""
 make DESTDIR=$OUT install
-""",
+"""],
     deps = [
         "//packages/linux/graphics/xorg:x11-extended",
         "//packages/linux/graphics/xorg/libXinerama:libXinerama",

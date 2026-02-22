@@ -3,15 +3,15 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "ltrace",
-    bdepend = [
+    deps = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
         "//packages/linux/dev-tools/build-systems/automake:automake",
         "//packages/linux/dev-tools/build-systems/libtool:libtool",
     ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 mkdir -p config/m4 config/autoconf
 autoreconf -fi
-""",
+"""],
     version = "0.7.91_pre20221216",
     url = "https://gitlab.com/cespedes/ltrace/-/archive/5cffc0d2134f697fbac8627ec5b5f0085cd47c8a.tar.bz2",
     sha256 = "52200d6262a8de40e494301f6af015da2b34fe69d85b55f6223464c03a999800",

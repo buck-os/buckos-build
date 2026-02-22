@@ -14,51 +14,14 @@ package(
     homepage = "https://www.postfix.org/",
     license = "IPL-1.0 EPL-2.0",
     # Postfix doesn't use autotools - skip autoreconf
-    src_prepare = """
+    pre_configure_cmds = ["""
 # Postfix uses its own build system, no autoreconf needed
 true
-""",
+"""],
     # Configure step: Generate Makefiles with custom options
-    src_configure = """
-unset LD_LIBRARY_PATH
-
-# Configure build flags - disable Berkeley DB, enable TLS and LMDB
-export CCARGS='-DUSE_TLS -DHAS_LMDB'
-export AUXLIBS='-lssl -lcrypto -lpthread -llmdb'
-
-# Generate makefiles with NO_DB=1 to avoid Berkeley DB dependency
-make -f Makefile.in MAKELEVEL= Makefiles CCARGS="$CCARGS" AUXLIBS="$AUXLIBS" OPT="$CFLAGS" DEBUG="" NO_DB=1
-""",
     # Standard make for compilation
     make_args = [],
     # Install using postfix's custom install target
-    src_install = """
-make non-interactive-package install_root="$DESTDIR" \
-    config_directory=/etc/postfix \
-    daemon_directory=/usr/libexec/postfix \
-    data_directory=/var/lib/postfix \
-    html_directory=/usr/share/doc/postfix/html \
-    manpage_directory=/usr/share/man \
-    queue_directory=/var/spool/postfix \
-    readme_directory=/usr/share/doc/postfix/readme \
-    sendmail_path=/usr/sbin/sendmail \
-    newaliases_path=/usr/bin/newaliases \
-    mailq_path=/usr/bin/mailq
-
-# Create required directories
-mkdir -p "$DESTDIR/etc/postfix"
-mkdir -p "$DESTDIR/var/spool/postfix"
-mkdir -p "$DESTDIR/var/lib/postfix"
-
-# Install default configuration files
-install -Dm644 conf/main.cf "$DESTDIR/etc/postfix/main.cf"
-install -Dm644 conf/master.cf "$DESTDIR/etc/postfix/master.cf"
-
-# Create required spool directories
-for dir in active bounce corrupt defer deferred flush hold incoming maildrop pid private public saved trace; do
-    mkdir -p "$DESTDIR/var/spool/postfix/$dir"
-done
-""",
     deps = [
         "//packages/linux/system/libs/crypto/openssl:openssl",
         "//packages/linux/system/libs/database/lmdb:lmdb",

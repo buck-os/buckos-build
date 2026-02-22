@@ -11,7 +11,7 @@ package(
     homepage = "https://github.com/openbmc/libmctp",
     license = "Apache-2.0",
     # GitHub archive requires autoreconf - create missing files first
-    src_prepare = """
+    pre_configure_cmds = ["""
 # autotools eclass default src_prepare follows
 # Run autoreconf if needed
 if [ -f configure.ac ] || [ -f configure.in ]; then
@@ -40,9 +40,9 @@ AUTOPOINT_STUB
         autoreconf -fiv
     fi
 fi
-""",
+"""],
     configure_args = [],
-    bdepend = [
+    deps = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
         "//packages/linux/dev-tools/build-systems/automake:automake",
         "//packages/linux/dev-tools/build-systems/libtool:libtool",

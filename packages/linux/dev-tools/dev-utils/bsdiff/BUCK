@@ -16,7 +16,6 @@ package(
     license = "BSD-2-Clause",
 
     # Skip configure since bsdiff uses a simple Makefile
-    pre_configure = "true",
 
     # bsdiff builds both bsdiff and bspatch
     make_args = [
@@ -24,11 +23,11 @@ package(
     ],
 
     # Custom install since there's no 'make install' target
-    post_install = """
+    post_install_cmds = ["""
 # Install binaries
 install -Dm755 bsdiff "$OUT/usr/bin/bsdiff"
 install -Dm755 bspatch "$OUT/usr/bin/bspatch"
-""",
+"""],
 
     deps = [
         "//packages/linux/system/libs/compression/bzip2:bzip2",

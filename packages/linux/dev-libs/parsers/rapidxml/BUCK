@@ -2,7 +2,7 @@ load("//defs:package.bzl", "package")
 
 package(
     name = "rapidxml",
-    build_rule = "autotools",
+    build_rule = "binary",
     version = "1.13",
     url = "https://downloads.sourceforge.net/project/rapidxml/rapidxml/rapidxml%201.13/rapidxml-1.13.zip",
     sha256 = "c3f0b886374981bb20fabcf323d755db4be6dba42064599481da64a85f5b3571",
@@ -10,9 +10,6 @@ package(
     homepage = "http://rapidxml.sourceforge.net/",
     license = "BSL-1.0",
     deps = [],
-    build_commands = [
-        "mkdir -p ${PREFIX}/include/rapidxml",
-        "cp *.hpp ${PREFIX}/include/rapidxml/",
-    ],
+    install_script = """mkdir -p ${PREFIX}/include/rapidxml\ncp *.hpp ${PREFIX}/include/rapidxml/""",
     visibility = ["PUBLIC"],
 )

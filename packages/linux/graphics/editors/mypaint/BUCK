@@ -13,22 +13,17 @@ package(
     description = "Simple drawing and painting program for digital artists",
     homepage = "https://mypaint.app/",
     license = "GPL-2.0-or-later",
-    pre_configure = """
-python setup.py build
-""",
     configure_args = [],
     make_args = [],
-    post_install = """
+    post_install_cmds = ["""
 python setup.py install --prefix=/usr --root=$OUT
-""",
+"""],
     deps = [
         "//packages/linux/desktop/gtk:gtk3",
-        "//packages/linux/dev-libs/glib:glib",
-        "//packages/linux/lang/python:python",
-        "//packages/linux/graphics/utilities/libmypaint:libmypaint",
-    ],
-    bdepend = [
-        "//packages/linux/lang/python:python",
+                "//packages/linux/dev-libs/glib:glib",
+                "//packages/linux/lang/python:python",
+                "//packages/linux/graphics/utilities/libmypaint:libmypaint",
+                "//packages/linux/lang/python:python"
     ],
     visibility = ["PUBLIC"],
 )

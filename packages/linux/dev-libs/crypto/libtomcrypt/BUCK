@@ -14,18 +14,7 @@ package(
     description = "Comprehensive, modular and portable cryptographic toolkit",
     homepage = "https://www.libtom.net/LibTomCrypt/",
     license = "Unlicense",
-    src_configure = """
-# libtomcrypt uses make, skip configure
-true
-""",
-    src_compile = """
-# Build static library using makefile (not makefile.shared to avoid libtool)
-make -f makefile LIBPATH=/usr/lib INCPATH=/usr/include
-""",
     # Use makefile instead of makefile.shared to avoid libtool dependency
     make_args = [],
-    src_install = """
-make -f makefile install DESTDIR="$DESTDIR" LIBPATH=/usr/lib INCPATH=/usr/include
-""",
     visibility = ["PUBLIC"],
 )

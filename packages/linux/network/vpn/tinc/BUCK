@@ -30,10 +30,10 @@ package(
         "--localstatedir=/var",
     ],
 
-    post_install = """
+    post_install_cmds = ["""
 mkdir -p "$DESTDIR/etc/tinc"
 mkdir -p "$DESTDIR/var/run/tinc"
-""",
+"""],
 
     description = "Virtual Private Network daemon for mesh networks",
     homepage = "https://www.tinc-vpn.org/",

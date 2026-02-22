@@ -8,12 +8,13 @@ http_file(
     name = "linux-6.18-archive",
     urls = ["https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.18.tar.xz"],
     sha256 = "9106a4605da9e31ff17659d958782b815f9591ab308d03b0ee21aad6c7dced4b",
-    out = "linux-6.18.tar.xz",
 )
 
 extract_source(
     name = "linux-6.18-src",
     source = ":linux-6.18-archive",
+    strip_components = 1,
+    format = "tar.xz",
     visibility = ["PUBLIC"],
 )
 
@@ -22,12 +23,13 @@ http_file(
     name = "linux-6.17-archive",
     urls = ["https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.17.10.tar.xz"],
     sha256 = "fa7f344f3a50dad0af2e0066d51bd3b9183fd24587861042343ded3d1fd5c8cd",
-    out = "linux-6.17.10.tar.xz",
 )
 
 extract_source(
     name = "linux-6.17-src",
     source = ":linux-6.17-archive",
+    strip_components = 1,
+    format = "tar.xz",
     visibility = ["PUBLIC"],
 )
 
@@ -37,12 +39,13 @@ http_file(
     name = "linux-6.12-archive",
     urls = ["https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.60.tar.xz"],
     sha256 = "a63096b2147411d683cecbf87622bb2ff4885bac2b3641d3d4f10250c89cdcf8",
-    out = "linux-6.12.60.tar.xz",
 )
 
 extract_source(
     name = "linux-6.12-src",
     source = ":linux-6.12-archive",
+    strip_components = 1,
+    format = "tar.xz",
     visibility = ["PUBLIC"],
 )
 

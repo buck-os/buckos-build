@@ -35,11 +35,11 @@ package(
         "USE_DNSSEC=false",
     ],
 
-    post_install = """
+    post_install_cmds = ["""
 make DESTDIR=$DESTDIR PREFIX=/usr SYSCONFDIR=/etc LIBEXECDIR=/usr/libexec install
 mkdir -p "$DESTDIR/etc/ipsec.d"
 mkdir -p "$DESTDIR/var/run/pluto"
-""",
+"""],
 
     deps = [
         "//packages/linux/core/libnl:libnl",

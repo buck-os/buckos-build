@@ -13,18 +13,6 @@ package(
     description = "Lightweight tool for hosting KVM guests",
     homepage = "https://git.kernel.org/pub/scm/linux/kernel/git/will/kvmtool.git",
     license = "GPL-2.0",
-    src_install = """
-#!/bin/bash
-set -e
-
-mkdir -p "$DESTDIR/usr/bin"
-install -m 0755 lkvm "$DESTDIR/usr/bin/"
-ln -sf lkvm "$DESTDIR/usr/bin/kvm"
-
-# Install man page if it exists
-mkdir -p "$DESTDIR/usr/share/man/man1"
-install -m 0644 Documentation/lkvm.1 "$DESTDIR/usr/share/man/man1/" 2>/dev/null || true
-    """,
     deps = [
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/io/libaio:libaio",

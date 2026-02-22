@@ -9,30 +9,5 @@ package(
     description = "Native filesystem watcher for IntelliJ IDEA",
     homepage = "https://github.com/JetBrains/intellij-community",
     license = "Apache-2.0",
-    src_configure = "true",
-    src_compile = """
-# The tarball extracts directly without a prefix directory wrapper
-# Check both patterns: with prefix and direct extraction
-if [ -d native/fsNotifier/linux ]; then
-    cd native/fsNotifier/linux
-elif SRCDIR=$(ls -d intellij-community-* 2>/dev/null | head -1); [ -n "$SRCDIR" ]; then
-    cd "$SRCDIR/native/fsNotifier/linux"
-else
-    echo "ERROR: Cannot find native/fsNotifier/linux directory"
-    find . -name "*.c" -path "*/fsNotifier/*" | head -5
-    exit 1
-fi
-cc -O2 -Wall -Wextra -Wpedantic -std=c11 -D_DEFAULT_SOURCE \
-    -o fsnotifier main.c inotify.c util.c
-""",
-    src_install = """
-# Match the same directory detection logic
-if [ -d native/fsNotifier/linux ]; then
-    cd native/fsNotifier/linux
-elif SRCDIR=$(ls -d intellij-community-* 2>/dev/null | head -1); [ -n "$SRCDIR" ]; then
-    cd "$SRCDIR/native/fsNotifier/linux"
-fi
-install -Dm755 fsnotifier "$DESTDIR/usr/bin/fsnotifier"
-""",
     visibility = ["PUBLIC"],
 )

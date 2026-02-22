@@ -7,9 +7,9 @@ package(
     build_rule = "autotools",
     name = "rsync",
     # Prevent Makefile from trying to regenerate configure.sh (requires autoconf)
-    src_prepare = """
+    pre_configure_cmds = ["""
 touch configure.sh config.h.in
-""",
+"""],
     version = "3.3.0",
     url = "https://download.samba.org/pub/rsync/src/rsync-3.3.0.tar.gz",
     sha256 = "7399e9a6708c32d678a72a63219e96f23be0be2336e50fd1348498d07041df90",

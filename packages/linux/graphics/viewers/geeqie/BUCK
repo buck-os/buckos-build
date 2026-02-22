@@ -30,21 +30,12 @@ package(
     description = "Lightweight image viewer with extensive features",
     homepage = "https://www.geeqie.org/",
     license = "GPL-2.0-or-later",
-    pre_configure = """
-mkdir -p build
-cd build
-meson setup .. \
-    --prefix=/usr \
-    -Dbuildtype=release \
-    -Dpandoc=disabled \
-    -Dyelp-build=disabled
-""",
     configure_args = [],
     make_args = ["-C", "build"],
-    post_install = """
+    post_install_cmds = ["""
 cd build
 DESTDIR=$OUT meson install
-""",
+"""],
     deps = [
         "//packages/linux/desktop/gtk:gtk3",
         "//packages/linux/dev-libs/exiv2:exiv2",
@@ -54,6 +45,5 @@ DESTDIR=$OUT meson install
         # "//packages/linux/core/libheif:libheif",  # TODO: not packaged yet,
         # "//packages/linux/core/djvulibre:djvulibre",  # TODO: not packaged yet,
     ],
-    bdepend = [],
     visibility = ["PUBLIC"],
 )

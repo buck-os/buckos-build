@@ -24,15 +24,9 @@ package(
     description = "Scanner Access Now Easy - backends",
     homepage = "http://www.sane-project.org/",
     license = "GPL-2.0-or-later",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-        "//packages/linux/dev-libs/misc/gettext:gettext",
-    ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 autoreconf -fiv
-""",
+"""],
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc",
@@ -43,14 +37,24 @@ autoreconf -fiv
         "--disable-avahi",
         "--disable-locking",
     ],
-    post_install = """
+    post_install_cmds = ["""
         mkdir -p "$OUT/etc/sane.d"
         mkdir -p "$OUT/var/lock/sane"
-    """,
+    """, """
+        cd build
+        DESTDIR=$OUT ninja install
+    """, """
+        cd build
+        DESTDIR=$OUT make install
+    """],
     deps = [
         "//packages/linux/system/libs/libusb:libusb",
-        "//packages/linux/system/libs/image/libtiff:libtiff",
-        "//packages/linux/system/libs/image/libjpeg-turbo:libjpeg-turbo",
+                "//packages/linux/system/libs/image/libtiff:libtiff",
+                "//packages/linux/system/libs/image/libjpeg-turbo:libjpeg-turbo",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-libs/misc/gettext:gettext"
     ],
     visibility = ["PUBLIC"],
 )
@@ -66,17 +70,8 @@ package(
     description = "Simple Scan - easy to use scanning application",
     homepage = "https://github.com/GNOME/simple-scan",
     license = "GPL-3.0-or-later",
-    pre_configure = """
-        meson setup build \
-            --prefix=/usr \
-            --buildtype=release
-    """,
     configure_args = [],
     make_args = ["-C", "build"],
-    post_install = """
-        cd build
-        DESTDIR=$OUT ninja install
-    """,
     deps = [
         ":sane-backends",
         "//packages/linux/desktop/gtk:gtk4",
@@ -96,20 +91,8 @@ package(
     description = "KDE scanner application",
     homepage = "https://apps.kde.org/skanlite/",
     license = "GPL-2.0-or-later",
-    pre_configure = """
-        mkdir -p build
-        cd build
-        cmake .. \
-            -DCMAKE_INSTALL_PREFIX=/usr \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DBUILD_TESTING=OFF
-    """,
     configure_args = [],
     make_args = ["-C", "build"],
-    post_install = """
-        cd build
-        DESTDIR=$OUT make install
-    """,
     deps = [
         ":sane-backends",
         "//packages/linux/desktop/kde:kf5",

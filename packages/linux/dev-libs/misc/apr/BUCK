@@ -21,17 +21,5 @@ package(
         "--disable-static",
         "--enable-threads",
     ],
-    src_install = """
-        make DESTDIR="$DESTDIR" install
-
-        # Copy build tools that apr-util needs
-        mkdir -p "$DESTDIR/usr/share/apr-1/build"
-        cp -r build/*.mk build/*.awk build/libtool "$DESTDIR/usr/share/apr-1/build/" || true
-
-        # Ensure libtool script is executable
-        if [ -f "$DESTDIR/usr/share/apr-1/build/libtool" ]; then
-            chmod +x "$DESTDIR/usr/share/apr-1/build/libtool"
-        fi
-    """,
     visibility = ["PUBLIC"],
 )

@@ -2,7 +2,7 @@ load("//defs:package.bzl", "package")
 
 package(
     name = "linux-syscall-support",
-    build_rule = "autotools",
+    build_rule = "binary",
     version = "2024.02.01",
     url = "https://chromium.googlesource.com/linux-syscall-support/+archive/ed31caa60f20a4f6569883b2d752ef7522de51e0.tar.gz",
     sha256 = "2efb414e99607643009820ea5ef5608556bb8da37dbb39bde9958a6d0c05f472",
@@ -10,9 +10,6 @@ package(
     homepage = "https://chromium.googlesource.com/linux-syscall-support",
     license = "BSD-3-Clause",
     deps = [],
-    build_commands = [
-        "mkdir -p ${PREFIX}/include/third_party/lss",
-        "cp linux_syscall_support.h ${PREFIX}/include/third_party/lss/",
-    ],
+    install_script = """mkdir -p ${PREFIX}/include/third_party/lss\ncp linux_syscall_support.h ${PREFIX}/include/third_party/lss/""",
     visibility = ["PUBLIC"],
 )

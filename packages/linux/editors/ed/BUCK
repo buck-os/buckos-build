@@ -16,9 +16,6 @@ package(
         "--prefix=/usr",
     ],
     # GNU ed uses a lzip-style non-standard configure, force CFLAGS in make
-    src_compile = """
-make CFLAGS="-std=gnu17 -O2" -j${MAKEOPTS:-$(nproc)}
-""",
     deps = [
     ],
     visibility = ["PUBLIC"],

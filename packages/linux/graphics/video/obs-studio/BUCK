@@ -32,29 +32,12 @@ package(
     description = "Free and open source streaming and recording software",
     homepage = "https://obsproject.com/",
     license = "GPL-2.0-or-later",
-    pre_configure = """
-mkdir -p build
-cd build
-cmake .. \
-    -DCMAKE_INSTALL_PREFIX=/usr \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DENABLE_WAYLAND=ON \
-    -DENABLE_BROWSER=ON \
-    -DENABLE_VST=ON \
-    -DENABLE_VLC=ON \
-    -DENABLE_NEW_MPEGTS_OUTPUT=ON \
-    -DENABLE_JACK=ON \
-    -DENABLE_PULSEAUDIO=ON \
-    -DENABLE_PIPEWIRE=ON \
-    -DENABLE_AJA=OFF \
-    -DENABLE_WEBRTC=ON
-""",
     configure_args = [],
     make_args = ["-C", "build"],
-    post_install = """
+    post_install_cmds = ["""
 cd build
 DESTDIR=$OUT make install
-""",
+"""],
     deps = [
         "//packages/linux/system/libs/utility/libffi:libffi",
         "//packages/linux/desktop/qt:qt5",
@@ -73,6 +56,5 @@ DESTDIR=$OUT make install
         "//packages/linux/lang/python:python",
         "//packages/linux/graphics/rendering/wayland:wayland",
     ],
-    bdepend = [],
     visibility = ["PUBLIC"],
 )

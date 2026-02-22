@@ -4,8 +4,6 @@ package(
     build_rule = "autotools",
     name = "libelf",
     # Release tarball includes pre-generated configure script
-    bdepend = [],
-    src_prepare = "",
     version = "0.8.13",
     url = "https://fossies.org/linux/misc/old/libelf-0.8.13.tar.gz",
     sha256 = "591a9b4ec81c1f2042a97aa60564e0cb79d041c52faa7416acb38bc95bd2c76d",
@@ -22,17 +20,6 @@ package(
         "--prefix=/usr",
         "--libdir=/usr/lib64",
     ],
-    src_install = """
-# libelf's old Makefile doesn't properly respect DESTDIR, so we need to
-# pre-create directories and ensure DESTDIR is set correctly
-mkdir -p "$D/usr/lib64"
-mkdir -p "$D/usr/include"
-mkdir -p "$D/usr/include/libelf"
-# Use D instead of DESTDIR (the ebuild framework sets D for us)
-make DESTDIR="$D" install || true
-# Fix any permission issues during install
-chmod -R u+w "$D" 2>/dev/null || true
-""",
     deps = [],
     visibility = ["PUBLIC"],
 )

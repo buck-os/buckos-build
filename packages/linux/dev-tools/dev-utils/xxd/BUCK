@@ -13,16 +13,11 @@ package(
     description = "Hexdump utility from Vim",
     homepage = "https://www.vim.org/",
     license = "GPL-2+",
-    src_configure = "true",
-    src_compile = """
-        cd src/xxd
-        make
-    """,
-    src_install = """
-        cd src/xxd
+    post_install_cmds = ["""\
+cd src/xxd
         install -Dm755 xxd "$DESTDIR/usr/bin/xxd"
         # Man page is in runtime/doc/, not src/xxd/
         install -Dm644 ../../runtime/doc/xxd.1 "$DESTDIR/usr/share/man/man1/xxd.1"
-    """,
+"""],
     visibility = ["PUBLIC"],
 )

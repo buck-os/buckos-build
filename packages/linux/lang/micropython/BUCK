@@ -14,9 +14,6 @@ package(
     # USE flags
 
     # Make args based on USE flags
-    use_make = {
-        "-ffi": "MICROPY_PY_FFI=0",
-    },
 
     # Conditional dependencies
     use_deps = {
@@ -24,19 +21,12 @@ package(
     },
 
     # Custom build phases for micropython's non-standard build
-    src_compile = """
-        # Build mpy-cross first (needed for frozen modules)
-        make -C mpy-cross
 
-        # Build unix port
-        make -C ports/unix $EXTRA_EMAKE
-    """,
-
-    src_install = """
-        mkdir -p "$DESTDIR/usr/bin"
+    post_install_cmds = ["""\
+mkdir -p "$DESTDIR/usr/bin"
         cp ports/unix/build-standard/micropython "$DESTDIR/usr/bin/micropython"
         cp mpy-cross/build/mpy-cross "$DESTDIR/usr/bin/mpy-cross"
-    """,
+"""],
 
     visibility = ["PUBLIC"],
 )

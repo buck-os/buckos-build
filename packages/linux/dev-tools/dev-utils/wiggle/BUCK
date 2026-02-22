@@ -10,16 +10,8 @@ package(
     description = "Tool for applying patches with conflicts",
     homepage = "https://github.com/neilbrown/wiggle",
     license = "GPL-2.0-or-later",
-    bdepend = [],
-    src_prepare = "",
-    src_configure = "true",  # No configure script - plain Makefile
+# No configure script - plain Makefile
     configure_args = [],
-    src_compile = """
-make CC=cc PREFIX=/usr
-""",
-    src_install = """
-make install DESTDIR="$DESTDIR" PREFIX=/usr
-""",
     deps = [
         "//packages/linux/system/terminal/ncurses:ncurses",
     ],

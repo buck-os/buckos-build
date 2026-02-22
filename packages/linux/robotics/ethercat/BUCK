@@ -3,15 +3,9 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "ethercat",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
-    ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 autoreconf -fi
-""",
+"""],
     version = "1.6.8",
     url = "https://gitlab.com/etherlab.org/ethercat/-/archive/stable-1.6/ethercat-stable-1.6.tar.gz",
     sha256 = "7771b4876d2d16a6ecc0ddad8dc2128ddb7ac53d89759cbb3d1d90474037ea62",
@@ -26,5 +20,10 @@ autoreconf -fi
         "--disable-igb",
         "--disable-r8169",
     ],
-    deps = [],
+    deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
+    ],
 )

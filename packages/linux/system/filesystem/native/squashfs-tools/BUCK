@@ -10,17 +10,7 @@ package(
     description = "Tools for creating and extracting SquashFS filesystems",
     homepage = "https://github.com/plougher/squashfs-tools",
     license = "GPL-2.0",
-    src_configure = "cd squashfs-tools",
-    src_compile = """
-cd squashfs-tools
-make -j${MAKEOPTS:-$(nproc)} \
-    XZ_SUPPORT=1 \
-    LZO_SUPPORT=1 \
-    ZSTD_SUPPORT=1 \
-    GZIP_SUPPORT=1 \
-    LZMA_XZ_SUPPORT=1
-""",
-    src_install = """
+    post_install_cmds = ["""\
 cd squashfs-tools
 mkdir -p "$DESTDIR/usr/bin"
 mkdir -p "$DESTDIR/usr/share/man/man1"
@@ -28,7 +18,7 @@ install -m 755 mksquashfs "$DESTDIR/usr/bin/"
 install -m 755 unsquashfs "$DESTDIR/usr/bin/"
 install -m 755 sqfstar "$DESTDIR/usr/bin/" || true
 install -m 644 ../USAGE "$DESTDIR/usr/share/man/man1/mksquashfs.1" || true
-""",
+"""],
     deps = [
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/compression/xz:xz",

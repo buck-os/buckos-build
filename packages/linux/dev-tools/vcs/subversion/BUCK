@@ -40,30 +40,6 @@ package(
     },
 
     # Custom configure to find APR correctly
-    src_configure = """
-# Find apr-1-config in PATH (set by build system from deps)
-APR_CONFIG=$(which apr-1-config 2>/dev/null || true)
-APU_CONFIG=$(which apu-1-config 2>/dev/null || true)
-
-if [ -z "$APR_CONFIG" ] || [ ! -x "$APR_CONFIG" ]; then
-    echo "Error: apr-1-config not found in PATH"
-    echo "PATH: $PATH"
-    exit 1
-fi
-
-if [ -z "$APU_CONFIG" ] || [ ! -x "$APU_CONFIG" ]; then
-    echo "Warning: apu-1-config not found, will use apr-util from apr location"
-fi
-
-APR_DIR=$(dirname $(dirname "$APR_CONFIG"))
-echo "Found APR at: $APR_DIR (config: $APR_CONFIG)"
-
-./configure --prefix=/usr \\
-    --with-apr="$APR_CONFIG" \\
-    --with-apr-util="${APU_CONFIG:-$APR_DIR}" \\
-    --with-zlib=/usr \\
-    --disable-static
-""",
     configure_args = [],
 
     deps = [

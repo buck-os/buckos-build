@@ -13,52 +13,11 @@ package(
     sha256 = "c00d910d5394e69675608eb5ee0f504d5cfda41e990a2d9a91baac6df93e3f92",
 
     # ferm uses a plain Makefile, no configure script
-    src_configure = ":",
 
     make_args = [
         "PREFIX=/usr",
         "SYSCONFDIR=/etc",
     ],
-
-    src_install = """
-# Install ferm using make
-make PREFIX=/usr SYSCONFDIR=/etc DESTDIR=$DESTDIR install
-
-# Create ferm configuration directories
-mkdir -p "$DESTDIR/etc/ferm"
-mkdir -p "$DESTDIR/var/lib/ferm"
-
-# Create default ferm configuration
-cat > "$DESTDIR/etc/ferm/ferm.conf" << 'FERMCONF'
-# ferm configuration file
-# See ferm(1) for syntax
-
-table filter {
-    chain INPUT {
-        policy DROP;
-
-        # Connection tracking
-        mod state state INVALID DROP;
-        mod state state (ESTABLISHED RELATED) ACCEPT;
-
-        # Allow loopback
-        interface lo ACCEPT;
-
-        # Allow ping
-        proto icmp ACCEPT;
-    }
-
-    chain OUTPUT {
-        policy ACCEPT;
-    }
-
-    chain FORWARD {
-        policy DROP;
-    }
-}
-FERMCONF
-chmod 600 "$DESTDIR/etc/ferm/ferm.conf"
-""",
 
     deps = [
         "//packages/linux/network/firewall/iptables:iptables",

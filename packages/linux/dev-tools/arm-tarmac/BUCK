@@ -24,26 +24,8 @@ package(
     license = "Apache-2.0",
 
     # arm-tarmac uses CMake, not autotools
-    src_configure = """
-echo "=== Configuring arm-tarmac with CMake ==="
-mkdir -p build
-cd build
-cmake .. \\
-    -DCMAKE_INSTALL_PREFIX=/usr \\
-    -DCMAKE_BUILD_TYPE=Release \\
-    -DCMAKE_CXX_STANDARD=14 \\
-    -DCMAKE_CXX_FLAGS="-static-libgcc -static-libstdc++" \\
-    -DCMAKE_EXE_LINKER_FLAGS="-static" \\
-    -DFORCE_BUILDING_ALL_APPS=OFF
-""",
 
-    src_compile = """
-echo "=== Building arm-tarmac ==="
-cd build
-make -j${MAKEOPTS:-$(nproc)}
-""",
-
-    src_install = """
+    post_install_cmds = ["""\
 echo "=== Installing arm-tarmac ==="
 cd build
 make install DESTDIR="$DESTDIR"
@@ -52,7 +34,7 @@ make install DESTDIR="$DESTDIR"
 if [ -f libtarmac.a ]; then
     install -D -m 644 libtarmac.a "$DESTDIR/usr/lib64/libtarmac.a"
 fi
-""",
+"""],
 
     deps = [
         "//packages/linux/dev-tools/build-systems/cmake:cmake",

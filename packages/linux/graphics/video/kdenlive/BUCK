@@ -14,22 +14,12 @@ package(
     description = "KDE non-linear video editor",
     homepage = "https://kdenlive.org/",
     license = "GPL-3.0-or-later",
-    pre_configure = """
-mkdir -p build
-cd build
-cmake .. \
-    -DCMAKE_INSTALL_PREFIX=/usr \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DBUILD_TESTING=OFF \
-    -DKDE_INSTALL_USE_QT_SYS_PATHS=ON \
-    -DRELEASE_BUILD=ON
-""",
     configure_args = [],
     make_args = ["-C", "build"],
-    post_install = """
+    post_install_cmds = ["""
 cd build
 DESTDIR=$OUT make install
-""",
+"""],
     deps = [
         "//packages/linux/desktop/kde:kf5",
         "//packages/linux/desktop/qt:qt5",
@@ -39,6 +29,5 @@ DESTDIR=$OUT make install
         "//packages/linux/graphics/video/v4l-utils:v4l-utils",
         # "//packages/linux/core/rttr:rttr",  # TODO: not packaged yet,
     ],
-    bdepend = [],
     visibility = ["PUBLIC"],
 )

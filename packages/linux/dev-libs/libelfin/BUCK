@@ -6,15 +6,6 @@ package(
     version = "0.3",
     url = "https://github.com/aclements/libelfin/archive/v0.3.tar.gz",
     sha256 = "c338942b967582922b3514b54b93175ca9051a9668db92dd8ef619824d443ac7",
-    src_configure = "true",
-    src_compile = """
-make -C elf PREFIX=/usr -j${MAKEOPTS:-$(nproc)}
-make -C dwarf PREFIX=/usr -j${MAKEOPTS:-$(nproc)}
-""",
-    src_install = """
-make -C elf PREFIX=/usr DESTDIR="$DESTDIR" install
-make -C dwarf PREFIX=/usr DESTDIR="$DESTDIR" install
-""",
     deps = [
         "//packages/linux/lang/python:python",
     ],

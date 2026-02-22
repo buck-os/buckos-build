@@ -26,14 +26,6 @@ package(
         "vulkan": "//packages/linux/desktop/mesa:mesa",
     },
     configure_args = [],
-    pre_configure = """
-mkdir -p build
-cd build
-# USE flags: X, wayland, opengl, vulkan, alsa, pulseaudio, pipewire, static-libs
-cmake .. -DCMAKE_INSTALL_PREFIX=/usr \
-    -DCMAKE_BUILD_TYPE=Release \
-    $CONFIGURE_ARGS
-""",
     deps = [],
     visibility = ["PUBLIC"],
 )

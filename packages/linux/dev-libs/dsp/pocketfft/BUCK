@@ -12,12 +12,10 @@ package(
     homepage = "https://github.com/mreineck/pocketfft",
     license = "BSD-3-Clause",
     deps = [],
-    src_configure = "true",
-    src_compile = "true",
-    src_install = """
-        mkdir -p "${DESTDIR}/usr/include/pocketfft"
+    post_install_cmds = ["""\
+mkdir -p "${DESTDIR}/usr/include/pocketfft"
         cp pocketfft_hdronly.h "${DESTDIR}/usr/include/pocketfft/"
         cp pocketfft_hdronly.h "${DESTDIR}/usr/include/pocketfft_hdronly.h"
-    """,
+"""],
     visibility = ["PUBLIC"],
 )

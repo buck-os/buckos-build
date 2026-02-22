@@ -20,9 +20,9 @@ package(
         "mandir=/usr/share/man",
         "libdir=/usr/lib",
     ],
-    post_install = """
+    post_install_cmds = ["""
         make DESTDIR=$OUT prefix=/usr install
-    """,
+    """],
     deps = [
     ],
     visibility = ["PUBLIC"],

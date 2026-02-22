@@ -38,23 +38,6 @@ package(
     },
     # w3m's configure has a hardcoded search for gc.h that ignores CPPFLAGS.
     # We need to find the boehm-gc dependency and pass --with-gc=PREFIX
-    pre_configure = """
-        # Find boehm-gc in our dependencies
-        for dep_dir in $(echo "$CPATH" | tr ':' ' '); do
-            base_dir="${dep_dir%/usr/include}"
-            base_dir="${base_dir%/include}"
-            if [ -f "$dep_dir/gc.h" ] || [ -f "$dep_dir/gc/gc.h" ]; then
-                echo "Found boehm-gc at: $base_dir"
-                export GC_PREFIX="$base_dir/usr"
-                break
-            fi
-        done
-        if [ -n "$GC_PREFIX" ]; then
-            # Append --with-gc to EXTRA_ECONF (used by autotools eclass)
-            export EXTRA_ECONF="${EXTRA_ECONF:-} --with-gc=$GC_PREFIX"
-            echo "EXTRA_ECONF=$EXTRA_ECONF"
-        fi
-    """,
     use_configure = {
         "image": ("--enable-image=fb", "--disable-image"),
         "ipv6": ("--enable-ipv6", "--disable-ipv6"),

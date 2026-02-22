@@ -17,7 +17,7 @@ package(
         "PREFIX=/usr",
         "CRONTAB_GROUP=root",
     ],
-    src_install = """
+    post_install_cmds = ["""\
 mkdir -p "$DESTDIR/usr/sbin" "$DESTDIR/usr/bin"
 install -m0700 crond "$DESTDIR/usr/sbin/crond"
 install -m0755 crontab "$DESTDIR/usr/bin/crontab"
@@ -31,7 +31,7 @@ fi
 mkdir -p "$DESTDIR/etc/cron.d"
 mkdir -p "$DESTDIR/var/spool/cron/crontabs"
 mkdir -p "$DESTDIR/var/spool/cron/cronstamps"
-""",
+"""],
     deps = [],
     visibility = ["PUBLIC"],
 )

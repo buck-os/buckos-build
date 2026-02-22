@@ -14,17 +14,17 @@ package(
     description = "Hardware detection tool from openSUSE",
     homepage = "https://github.com/openSUSE/hwinfo",
     license = "GPL-2.0",
-    src_prepare = """
+    pre_configure_cmds = ["""
 # Create VERSION file expected by the build system
 echo "23.2" > VERSION
-""",
+"""],
     make_args = [
         "PREFIX=/usr",
         "LIBDIR=/usr/lib",
     ],
-    post_install = """
+    post_install_cmds = ["""
         make DESTDIR=$OUT PREFIX=/usr LIBDIR=/usr/lib install
-    """,
+    """],
     deps = [
     ],
     visibility = ["PUBLIC"],

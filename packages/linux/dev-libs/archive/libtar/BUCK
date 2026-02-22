@@ -5,14 +5,9 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "libtar",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-    ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 autoreconf -fi
-""",
+"""],
     version = "1.2.20",
     url = "https://github.com/tklauser/libtar/archive/refs/tags/v1.2.20.tar.gz",
     sha256 = "3152fc61cf03c82efbf99645596efdadba297eac3e85a52ae189902a072c9a16",
@@ -21,6 +16,9 @@ autoreconf -fi
     license = "BSD-3-Clause",
     deps = [
         "//packages/linux/core/zlib:zlib",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool"
     ],
     configure_args = [
         "--enable-shared",

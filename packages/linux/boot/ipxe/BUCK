@@ -21,14 +21,7 @@ package(
     description = "Open source network boot firmware (PXE)",
     homepage = "https://ipxe.org/",
     license = "GPL-2.0",
-    src_configure = "true",
-    src_compile = """
-cd src
-# Disable -Werror since some warnings are treated as errors
-make -j${MAKEOPTS:-$(nproc)} NO_WERROR=1 bin-x86_64-efi/ipxe.efi bin-x86_64-efi/snponly.efi
-make -j${MAKEOPTS:-$(nproc)} NO_WERROR=1 bin/ipxe.iso bin/ipxe.usb bin/undionly.kpxe
-""",
-    src_install = """
+    post_install_cmds = ["""\
 mkdir -p "$DESTDIR/usr/share/ipxe"
 cp -v src/bin-x86_64-efi/*.efi "$DESTDIR/usr/share/ipxe/" 2>/dev/null || true
 cp -v src/bin/*.iso "$DESTDIR/usr/share/ipxe/" 2>/dev/null || true
@@ -36,7 +29,7 @@ cp -v src/bin/*.usb "$DESTDIR/usr/share/ipxe/" 2>/dev/null || true
 cp -v src/bin/*.kpxe "$DESTDIR/usr/share/ipxe/" 2>/dev/null || true
 mkdir -p "$DESTDIR/usr/share/doc/ipxe"
 cp -v README COPYING* "$DESTDIR/usr/share/doc/ipxe/" 2>/dev/null || true
-""",
+"""],
     labels = ["buckos:firmware"],
     deps = [],
     visibility = ["PUBLIC"],

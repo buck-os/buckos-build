@@ -4,8 +4,6 @@ package(
     build_rule = "autotools",
     name = "firejail",
     # GitHub release tarball includes pre-generated configure script
-    bdepend = [],
-    src_prepare = "",
     url = "https://github.com/netblue30/firejail/releases/download/0.9.72/firejail-0.9.72.tar.xz",
 
     sha256 = "82e177c48cfc87f62b088b55efc53ff4612b9740aab5ea35cbf2395e83efe7f4",
@@ -35,8 +33,8 @@ package(
         "--enable-private-home",
         "--enable-x11",
     ],
-    post_install = """
+    post_install_cmds = ["""
         mkdir -p $OUT/etc/firejail
-    """,
+    """],
     visibility = ["PUBLIC"],
 )

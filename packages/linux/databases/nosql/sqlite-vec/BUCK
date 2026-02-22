@@ -20,26 +20,5 @@ package(
     deps = [
         "//packages/linux/system/libs/database/sqlite:sqlite",
     ],
-    build_cmd = """
-# Build the SQLite extension
-make loadable
-
-# Build static library
-make static
-""",
-    install_cmd = """
-# Install the shared extension
-mkdir -p "$DESTDIR/usr/lib/sqlite3"
-cp dist/*.so "$DESTDIR/usr/lib/sqlite3/" || true
-cp dist/*.dylib "$DESTDIR/usr/lib/sqlite3/" || true
-
-# Install static library
-mkdir -p "$DESTDIR/usr/lib"
-cp dist/*.a "$DESTDIR/usr/lib/" || true
-
-# Install headers
-mkdir -p "$DESTDIR/usr/include/sqlite-vec"
-cp sqlite-vec.h "$DESTDIR/usr/include/sqlite-vec/" || true
-""",
     visibility = ["PUBLIC"],
 )

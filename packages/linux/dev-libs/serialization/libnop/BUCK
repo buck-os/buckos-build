@@ -12,22 +12,6 @@ package(
     homepage = "https://github.com/google/libnop",
     license = "Apache-2.0",
     deps = [],
-    pre_configure = """
-cat > CMakeLists.txt << 'EOF'
-cmake_minimum_required(VERSION 3.10)
-project(libnop VERSION 1.0.0 LANGUAGES CXX)
-
-add_library(libnop INTERFACE)
-target_include_directories(libnop INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include>
-)
-
-install(DIRECTORY include/nop DESTINATION include)
-install(TARGETS libnop EXPORT libnopTargets)
-install(EXPORT libnopTargets DESTINATION lib/cmake/libnop)
-EOF
-""",
     configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],

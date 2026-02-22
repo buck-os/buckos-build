@@ -100,7 +100,7 @@ package(
         "--with-session-info=systemd",
         "--with-init-script=systemd",
     ],
-    post_install = """
+    post_install_cmds = ["""
 #!/bin/bash
 set -e
 
@@ -111,7 +111,7 @@ install -m 0644 data/spice-vdagentd.service "$DESTDIR/usr/lib/systemd/system/"
 # Install udev rules
 mkdir -p "$DESTDIR/usr/lib/udev/rules.d"
 install -m 0644 data/70-spice-vdagentd.rules "$DESTDIR/usr/lib/udev/rules.d/" 2>/dev/null || true
-    """,
+    """],
     deps = [
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/system/init/systemd:systemd",

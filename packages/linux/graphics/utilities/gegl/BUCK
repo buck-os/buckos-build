@@ -31,38 +31,29 @@ package(
     description = "Graph based image processing framework",
     homepage = "https://gegl.org/",
     license = "LGPL-3.0-or-later",
-    pre_configure = """
-mkdir -p build
-cd build
-meson setup .. \
-    --prefix=/usr \
-    -Dbuildtype=release \
-    -Ddocs=false \
-    -Dintrospection=true \
-    -Dworkshop=true
-""",
     configure_args = [],
     make_args = ["-C", "build"],
-    post_install = """
+    post_install_cmds = ["""
 cd build
 DESTDIR=$OUT meson install
-""",
+"""],
     deps = [
         "//packages/linux/graphics/utilities/babl:babl",
-        "//packages/linux/dev-libs/glib:glib",
-        "//packages/linux/system/libs/image/libpng:libpng",
-        "//packages/linux/system/libs/image/libjpeg-turbo:libjpeg-turbo",
-        "//packages/linux/system/libs/graphics/cairo:cairo",
-        "//packages/linux/fonts/libraries/pango:pango",
-        "//packages/linux/dev-libs/openexr:openexr",
-        # "//packages/linux/core/libraw:libraw",  # TODO: not packaged yet
-        # "//packages/linux/core/librsvg:librsvg",  # TODO: not packaged yet
+                "//packages/linux/dev-libs/glib:glib",
+                "//packages/linux/system/libs/image/libpng:libpng",
+                "//packages/linux/system/libs/image/libjpeg-turbo:libjpeg-turbo",
+                "//packages/linux/system/libs/graphics/cairo:cairo",
+                "//packages/linux/fonts/libraries/pango:pango",
+                "//packages/linux/dev-libs/openexr:openexr",
+                # "//packages/linux/core/libraw:libraw",
+                # TODO: not packaged yet
+        # "//packages/linux/core/librsvg:librsvg",
+                # TODO: not packaged yet
         "//packages/linux/system/libs/image/libwebp:libwebp",
-        # "//packages/linux/editors/poppler:poppler",  # TODO: wrong path
+                # "//packages/linux/editors/poppler:poppler",
+                # TODO: wrong path
         "//packages/linux/media/video/ffmpeg:ffmpeg",
-    ],
-    bdepend = [
-        "//packages/linux/lang/vala:vala",
+                "//packages/linux/lang/vala:vala"
     ],
     visibility = ["PUBLIC"],
 )

@@ -11,10 +11,9 @@ package(
     description = "Tools for creating and extracting SquashFS filesystems",
     homepage = "https://github.com/plougher/squashfs-tools",
     license = "GPL-2.0",
-    src_prepare = """
+    pre_configure_cmds = ["""
 cd squashfs-tools
-""",
-    src_configure = ":",
+"""],
     make_args = [
         "GZIP_SUPPORT=1",
         "XZ_SUPPORT=1",
@@ -22,11 +21,11 @@ cd squashfs-tools
         "ZSTD_SUPPORT=1",
         "XATTR_SUPPORT=1",
     ],
-    src_install = """
+    post_install_cmds = ["""\
 mkdir -p $DESTDIR/usr/bin
 install -m755 mksquashfs $DESTDIR/usr/bin/
 install -m755 unsquashfs $DESTDIR/usr/bin/
-""",
+"""],
     deps = [
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/compression/xz:xz",

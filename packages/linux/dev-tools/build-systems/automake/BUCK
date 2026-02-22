@@ -27,6 +27,51 @@ package(
         # Stub out makeinfo — the build host may not have texinfo installed.
         "MAKEINFO=true",
     ],
+    post_install_cmds = [
+        # Create wrapper scripts so aclocal/automake find their m4 macros
+        # when run from Buck2 sandboxed paths instead of /usr/share/...
+        """
+        BINDIR="$DESTDIR/usr/bin"
+        VER="1.16"
+
+        # Wrap aclocal and aclocal-$VER
+        for tool in aclocal "aclocal-$VER"; do
+            if [ -f "$BINDIR/$tool" ]; then
+                mv "$BINDIR/$tool" "$BINDIR/${tool}.real"
+                cat > "$BINDIR/$tool" << WRAPPER_EOF
+#!/bin/sh
+SCRIPT_DIR="\\$(cd "\\$(dirname "\\$0")" && pwd)"
+SHARE="\\${SCRIPT_DIR}/../share"
+export AUTOMAKE_UNINSTALLED=1
+export PERL5LIB="\\$SHARE/automake-$VER:\\${PERL5LIB:+:\\$PERL5LIB}"
+export ACLOCAL_AUTOMAKE_DIR="\\$SHARE/aclocal-$VER"
+exec "\\$SCRIPT_DIR/${tool}.real" --automake-acdir="\\$SHARE/aclocal-$VER" --system-acdir="\\$SHARE/aclocal" "\\$@"
+WRAPPER_EOF
+                chmod +x "$BINDIR/$tool"
+            fi
+        done
+
+        # Wrap automake and automake-$VER
+        for tool in automake "automake-$VER"; do
+            if [ -f "$BINDIR/$tool" ]; then
+                mv "$BINDIR/$tool" "$BINDIR/${tool}.real"
+                cat > "$BINDIR/$tool" << WRAPPER_EOF
+#!/bin/sh
+SCRIPT_DIR="\\$(cd "\\$(dirname "\\$0")" && pwd)"
+SHARE="\\${SCRIPT_DIR}/../share"
+export AUTOMAKE_UNINSTALLED=1
+export PERL5LIB="\\$SHARE/automake-$VER:\\${PERL5LIB:+:\\$PERL5LIB}"
+export AUTOMAKE_LIBDIR="\\$SHARE/automake-$VER"
+# automake traces macros via \$AUTOCONF (defaults to 'true' = no-op)
+AUTOCONF_BIN="\\$(command -v autoconf 2>/dev/null)"
+[ -n "\\$AUTOCONF_BIN" ] && export AUTOCONF="\\$AUTOCONF_BIN"
+exec "\\$SCRIPT_DIR/${tool}.real" "\\$@"
+WRAPPER_EOF
+                chmod +x "$BINDIR/$tool"
+            fi
+        done
+        """,
+    ],
     deps = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
     ],

@@ -36,14 +36,6 @@ package(
         "opus": "//packages/linux/system/libs/audio/opus:opus",
     },
     configure_args = [],
-    pre_configure = """
-mkdir -p build
-cd build
-# USE flags: flac, mp3, ogg, opus, wavpack, static-libs
-cmake .. -DCMAKE_INSTALL_PREFIX=/usr \
-    -DCMAKE_BUILD_TYPE=Release \
-    $CONFIGURE_ARGS
-""",
     deps = [
         "//packages/linux/system/libs/multimedia/sdl2:sdl2",
     ],

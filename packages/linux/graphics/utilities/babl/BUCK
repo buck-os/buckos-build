@@ -18,27 +18,16 @@ package(
     description = "Dynamic pixel format translation library",
     homepage = "https://gegl.org/babl/",
     license = "LGPL-3.0-or-later",
-    pre_configure = """
-mkdir -p build
-cd build
-meson setup .. \
-    --prefix=/usr \
-    -Dbuildtype=release \
-    -Dwith-docs=false \
-    -Denable-gir=true
-""",
     configure_args = [],
     make_args = ["-C", "build"],
-    post_install = """
+    post_install_cmds = ["""
 cd build
 DESTDIR=$OUT meson install
-""",
+"""],
     deps = [
         "//packages/linux/dev-libs/glib:glib",
-        "//packages/linux/system/libs/graphics/lcms2:lcms2",
-    ],
-    bdepend = [
-        "//packages/linux/lang/vala:vala",
+                "//packages/linux/system/libs/graphics/lcms2:lcms2",
+                "//packages/linux/lang/vala:vala"
     ],
     visibility = ["PUBLIC"],
 )

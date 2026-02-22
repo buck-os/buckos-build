@@ -15,24 +15,12 @@ package(
     description = "Cross-platform raw image processing program",
     homepage = "https://rawtherapee.com/",
     license = "GPL-3.0-or-later",
-    pre_configure = """
-mkdir -p build
-cd build
-cmake .. \
-    -DCMAKE_INSTALL_PREFIX=/usr \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCACHE_NAME_SUFFIX="" \
-    -DWITH_LTO=ON \
-    -DWITH_PROF=OFF \
-    -DWITH_BENCHMARK=OFF \
-    -DOPTION_OMP=ON
-""",
     configure_args = [],
     make_args = ["-C", "build"],
-    post_install = """
+    post_install_cmds = ["""
 cd build
 DESTDIR=$OUT make install
-""",
+"""],
     deps = [
         "//packages/linux/desktop/gtk:gtk3",
         "//packages/linux/system/libs/graphics/lcms2:lcms2",
@@ -40,6 +28,5 @@ DESTDIR=$OUT make install
         # "//packages/linux/dev-libs/libiptcdata:libiptcdata",  # TODO: not packaged yet
         "//packages/linux/dev-libs/lensfun:lensfun",
     ],
-    bdepend = [],
     visibility = ["PUBLIC"],
 )

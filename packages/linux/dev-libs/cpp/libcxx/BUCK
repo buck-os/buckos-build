@@ -11,23 +11,6 @@ package(
     description = "LLVM libc++ C++ Standard Library",
     homepage = "https://libcxx.llvm.org/",
     license = "Apache-2.0 WITH LLVM-exception",
-    src_configure = """
-mkdir -p "$S/build"
-cmake -G Ninja -S "$S/runtimes" -B "$S/build" \
-    -DCMAKE_INSTALL_PREFIX=/usr \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind" \
-    -DLIBCXX_ENABLE_SHARED=ON \
-    -DLIBCXX_ENABLE_STATIC=ON \
-    -DLIBCXX_ENABLE_FILESYSTEM=ON \
-    -DLIBCXX_INCLUDE_TESTS=OFF \
-    -DLIBCXX_INCLUDE_BENCHMARKS=OFF \
-    -DLIBCXXABI_ENABLE_SHARED=ON \
-    -DLIBCXXABI_ENABLE_STATIC=ON \
-    -DLIBCXXABI_USE_LLVM_UNWINDER=ON \
-    -DLIBUNWIND_ENABLE_SHARED=ON \
-    -DLIBUNWIND_ENABLE_STATIC=ON
-""",
     configure_args = [],
     deps = [
         "//packages/linux/core/llvm:llvm",

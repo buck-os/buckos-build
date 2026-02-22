@@ -13,25 +13,9 @@ package(
         "//packages/linux/core/libnl:libnl",
         "//packages/linux/dev-libs/serialization/protobuf:protobuf",
     ],
-    pre_configure = """
-# Initialize kafel submodule (it's bundled in the source)
-if [ ! -f kafel/Makefile ]; then
-    echo "Error: kafel submodule not found in source"
-    exit 1
-fi
-# Build kafel first
-make -C kafel
-""",
-    src_configure = "true",
-    src_compile = """
-# Generate protobuf files
-protoc --cpp_out=. config.proto
-# Compile nsjail
-make -j${MAKEOPTS:-$(nproc)} CXXFLAGS="-O2 -c -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -fPIE -std=c++11 -fno-exceptions -I$(pkg-config --cflags protobuf | tr ' ' '\n' | grep -E '^-I' | sed 's/-I//') -Ikafel/include" LDFLAGS="-pie -Wl,-z,noexecstack -lpthread $(pkg-config --libs protobuf) $(pkg-config --libs libnl-route-3.0)"
-""",
-    src_install = """
+    post_install_cmds = ["""\
 install -Dm755 nsjail "$DESTDIR/usr/bin/nsjail"
 install -Dm644 nsjail.1 "$DESTDIR/usr/share/man/man1/nsjail.1"
-""",
+"""],
     visibility = ["PUBLIC"],
 )

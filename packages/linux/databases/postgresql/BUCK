@@ -66,7 +66,7 @@ package(
         "zlib": ("--with-zlib", "--without-zlib"),
         "zstd": ("--with-zstd", "--without-zstd"),
     },
-    post_install = """
+    post_install_cmds = ["""
 # Create data directory
 mkdir -p "$DESTDIR/var/lib/postgresql/data"
 chmod 700 "$DESTDIR/var/lib/postgresql/data"
@@ -76,6 +76,6 @@ mkdir -p "$DESTDIR/var/log/postgresql"
 
 # Create run directory
 mkdir -p "$DESTDIR/run/postgresql"
-""",
+"""],
     visibility = ["PUBLIC"],
 )

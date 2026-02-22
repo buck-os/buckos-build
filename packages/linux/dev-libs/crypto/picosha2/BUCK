@@ -9,10 +9,8 @@ package(
     description = "Header-only C++ SHA256 hash generator",
     homepage = "https://github.com/okdshin/PicoSHA2",
     license = "MIT",
-    src_configure = "true",
-    src_compile = "true",
-    src_install = """
+    post_install_cmds = ["""\
 install -Dm644 picosha2.h "$DESTDIR/usr/include/picosha2.h"
-""",
+"""],
     visibility = ["PUBLIC"],
 )

@@ -17,9 +17,9 @@ package(
     make_args = [
         "PREFIX=/usr",
     ],
-    post_install = """
+    post_install_cmds = ["""
         make DESTDIR=$OUT PREFIX=/usr install
-    """,
+    """],
     deps = [
     ],
     visibility = ["PUBLIC"],

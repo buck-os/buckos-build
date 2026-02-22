@@ -17,26 +17,5 @@ package(
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
     ],
-    pre_configure = """
-        # Create CMakeLists.txt for this simple C library
-        cat > CMakeLists.txt << 'EOF'
-cmake_minimum_required(VERSION 3.10)
-project(mikktspace C)
-
-# Add the library
-add_library(mikktspace SHARED mikktspace.c)
-
-# Set compiler flags
-target_compile_options(mikktspace PRIVATE -Wno-shadow)
-
-# Install library and headers
-install(TARGETS mikktspace
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib)
-
-install(FILES mikktspace.h
-    DESTINATION include)
-EOF
-    """,
     visibility = ["PUBLIC"],
 )

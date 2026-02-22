@@ -19,13 +19,6 @@ package(
     description = "Hyprland - Dynamic tiling Wayland compositor",
     homepage = "https://hyprland.org/",
     license = "BSD-3-Clause",
-    pre_configure = """
-mkdir -p build
-cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=/usr \\
-    -DNO_XWAYLAND=OFF \\
-    -DNO_SYSTEMD=ON
-""",
     deps = [
         "//packages/linux/system/libs/utility/libffi:libffi",
         "//packages/linux/graphics/rendering/wayland:wayland",

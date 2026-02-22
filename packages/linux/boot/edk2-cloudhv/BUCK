@@ -22,50 +22,13 @@ package(
     description = "UEFI firmware for Cloud Hypervisor (EDK2 CLOUDHV)",
     homepage = "https://github.com/tianocore/edk2",
     license = "BSD-2-Clause",
-    bdepend = [
+    deps = [
         "//packages/linux/lang/python:python",
         "//packages/linux/dev-tools/nasm:nasm",
         "//packages/linux/dev-tools/acpica:iasl",
     ],
     # EDK2 requires submodule initialization and specific build setup
-    src_unpack = """
-# Extract source
-tar xf "$DISTDIR/$A"
-cd edk2-edk2-stable202411 || cd edk2-stable202411
-
-# Initialize submodules for the build
-# Note: In a real build, we'd need to handle submodules
-# For now, we'll use prebuilt or handle this specially
-
-# Set up EDK2 workspace
-export WORKSPACE="$PWD"
-export EDK_TOOLS_PATH="$WORKSPACE/BaseTools"
-export PACKAGES_PATH="$WORKSPACE"
-""",
-    src_configure = """
-# Build BaseTools first
-cd BaseTools
-make -j${MAKEOPTS:-$(nproc)}
-cd ..
-
-# Source edksetup.sh to set up the build environment
-. edksetup.sh
-""",
-    src_compile = """
-# Build the CLOUDHV platform
-# This builds the UEFI firmware for Cloud Hypervisor
-export WORKSPACE="$PWD"
-export EDK_TOOLS_PATH="$WORKSPACE/BaseTools"
-export PACKAGES_PATH="$WORKSPACE"
-. edksetup.sh
-
-build -t GCC5 -a X64 -b RELEASE \\
-    -p OvmfPkg/CloudHv/CloudHvX64.dsc \\
-    -D SECURE_BOOT_ENABLE=FALSE \\
-    -D TPM_ENABLE=FALSE \\
-    -D NETWORK_IP6_ENABLE=FALSE
-""",
-    src_install = """
+    post_install_cmds = ["""\
 mkdir -p "$D/usr/share/cloud-hypervisor"
 
 # The built firmware is in Build/CloudHvX64/RELEASE_GCC5/FV/
@@ -77,7 +40,7 @@ else
     # Try alternative paths
     find Build -name "CLOUDHV.fd" -exec install -m 0644 {} "$D/usr/share/cloud-hypervisor/" \\;
 fi
-""",
+"""],
     labels = ["buckos:firmware"],
     visibility = ["PUBLIC"],
 )

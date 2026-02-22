@@ -10,19 +10,12 @@ package(
     description = "Select operation - query for a selection from the user and print to stdout",
     homepage = "https://github.com/naelstrof/slop",
     license = "GPL-3.0-or-later",
-    pre_configure = """
-mkdir -p build
-cd build
-cmake .. \
-    -DCMAKE_INSTALL_PREFIX=/usr \
-    -DCMAKE_BUILD_TYPE=Release
-""",
     configure_args = [],
     make_args = ["-C", "build"],
-    post_install = """
+    post_install_cmds = ["""
 cd build
 DESTDIR=$OUT make install
-""",
+"""],
     deps = [
         # "//packages/linux/system/libs/glm:glm",  # TODO: not packaged yet,
         "//packages/linux/system/libs/utility/icu:icu",
@@ -30,6 +23,5 @@ DESTDIR=$OUT make install
         "//packages/linux/desktop/mesa:mesa",
         # "//packages/linux/dev-libs/glew:glew",  # TODO: glew package doesn't exist yet
     ],
-    bdepend = [],
     visibility = ["PUBLIC"],
 )

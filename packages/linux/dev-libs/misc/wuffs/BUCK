@@ -2,7 +2,7 @@ load("//defs:package.bzl", "package")
 
 package(
     name = "wuffs",
-    build_rule = "autotools",
+    build_rule = "binary",
     version = "0.3.0",
     url = "https://github.com/google/wuffs/archive/refs/tags/v0.3.0.tar.gz",
     sha256 = "9604a542f212ba4320c07df3867247e240aa537a7ea7421791fc380420aa6c83",
@@ -10,9 +10,6 @@ package(
     homepage = "https://github.com/nicholasbishop/wuffs-mirror",
     license = "Apache-2.0",
     deps = [],
-    build_commands = [
-        "mkdir -p ${PREFIX}/include/wuffs",
-        "cp release/c/*.h ${PREFIX}/include/wuffs/ 2>/dev/null || cp release/c/*.c ${PREFIX}/include/wuffs/ 2>/dev/null || cp *.c ${PREFIX}/include/wuffs/ || cp src/*.c ${PREFIX}/include/wuffs/",
-    ],
+    install_script = """mkdir -p ${PREFIX}/include/wuffs\ncp release/c/*.h ${PREFIX}/include/wuffs/ 2>/dev/null || cp release/c/*.c ${PREFIX}/include/wuffs/ 2>/dev/null || cp *.c ${PREFIX}/include/wuffs/ || cp src/*.c ${PREFIX}/include/wuffs/""",
     visibility = ["PUBLIC"],
 )

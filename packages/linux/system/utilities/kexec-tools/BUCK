@@ -3,14 +3,14 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "kexec-tools",
-    bdepend = [
+    deps = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
         "//packages/linux/dev-tools/build-systems/automake:automake",
         "//packages/linux/dev-tools/build-systems/libtool:libtool",
     ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 autoreconf -fi
-""",
+"""],
     version = "2.0.32",
     use_configure = {
         "booke": ("--enable-booke", "--disable-booke"),

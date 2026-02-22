@@ -13,8 +13,8 @@ package(
     license = "Apache-2.0",
     bins = ["gotpm"],
     packages = ["./cmd/gotpm"],
-    src_prepare = """
+    pre_configure_cmds = ["""
 rm -rf .git
-""",
+"""],
     visibility = ["PUBLIC"],
 )

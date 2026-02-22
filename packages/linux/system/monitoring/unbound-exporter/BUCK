@@ -4,7 +4,7 @@ load("//defs:package.bzl", "package")
 
 package(
     name = "unbound-exporter",
-    build_rule = "autotools",
+    build_rule = "binary",
     version = "0.0.1-5e9c7ff",
     url = "https://github.com/letsencrypt/unbound_exporter/archive/5e9c7ff5c5850a54029ed58e56449d38d14cfcd8.tar.gz",
     sha256 = "30cc186e481c8620137f63597f90c0a62db30f235ddd62b3bacc798f0e314ea7",
@@ -14,9 +14,6 @@ package(
     deps = [
         "//packages/linux/lang/go:go",
     ],
-    build_commands = [
-        "go build -o unbound_exporter .",
-        "install -Dm755 unbound_exporter ${PREFIX}/bin/unbound_exporter",
-    ],
+    install_script = """go build -o unbound_exporter .\ninstall -Dm755 unbound_exporter ${PREFIX}/bin/unbound_exporter""",
     visibility = ["PUBLIC"],
 )

@@ -14,16 +14,10 @@ package(
     homepage = "https://github.com/djselbeck/rapl-read-ryzen",
     license = "GPL-2.0",
     # Single C file project - no Makefile
-    src_configure = """
-echo "rapl-read-ryzen: Single file project, no configure needed"
-""",
-    src_compile = """
-gcc -O2 -o rapl-read-ryzen ryzen.c -lm
-""",
-    src_install = """
+    post_install_cmds = ["""\
 install -d "$DESTDIR/usr/bin"
 install -m 755 rapl-read-ryzen "$DESTDIR/usr/bin/"
-""",
+"""],
     deps = [],
     visibility = ["PUBLIC"],
 )

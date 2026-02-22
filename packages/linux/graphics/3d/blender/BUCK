@@ -72,58 +72,31 @@ package(
     description = "3D creation suite for modeling, animation, rendering and more",
     homepage = "https://www.blender.org/",
     license = "GPL-3.0-or-later",
-    pre_configure = """
-mkdir -p build
-cd build
-cmake .. \
-    -DCMAKE_INSTALL_PREFIX=/usr \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DWITH_INSTALL_PORTABLE=OFF \
-    -DWITH_PYTHON_INSTALL=OFF \
-    -DWITH_CYCLES=ON \
-    -DWITH_CYCLES_CUDA_BINARIES=OFF \
-    -DWITH_CYCLES_HIP_BINARIES=OFF \
-    -DWITH_CYCLES_ONEAPI_BINARIES=OFF \
-    -DWITH_OPENCOLORIO=ON \
-    -DWITH_OPENIMAGEIO=ON \
-    -DWITH_OPENSUBDIV=ON \
-    -DWITH_OPENVDB=ON \
-    -DWITH_ALEMBIC=ON \
-    -DWITH_CODEC_FFMPEG=ON \
-    -DWITH_CODEC_SNDFILE=ON \
-    -DWITH_FFTW3=ON \
-    -DWITH_SDL=ON \
-    -DWITH_JACK=ON \
-    -DWITH_PULSEAUDIO=ON \
-    -DWITH_MOD_OCEANSIM=ON \
-    -DWITH_LLVM=ON
-""",
     configure_args = [],
     make_args = ["-C", "build"],
-    post_install = """
+    post_install_cmds = ["""
 cd build
 DESTDIR=$OUT make install
 
 # Install desktop file and icons
 mkdir -p $OUT/usr/share/applications
 mkdir -p $OUT/usr/share/icons/hicolor/scalable/apps
-""",
+"""],
     deps = [
         "//packages/linux/lang/python:python",
-        "//packages/linux/dev-libs/boost:boost",
-        "//packages/linux/desktop/mesa:mesa",
-        "//packages/linux/dev-libs/openexr:openexr",
-        "//packages/linux/system/libs/image/openjpeg:openjpeg",
-        "//packages/linux/media/video/ffmpeg:ffmpeg",
-        "//packages/linux/dev-libs/math/fftw:fftw",
-        # "//packages/linux/dev-libs/opencolorio:opencolorio",  # TODO: not packaged yet
+                "//packages/linux/dev-libs/boost:boost",
+                "//packages/linux/desktop/mesa:mesa",
+                "//packages/linux/dev-libs/openexr:openexr",
+                "//packages/linux/system/libs/image/openjpeg:openjpeg",
+                "//packages/linux/media/video/ffmpeg:ffmpeg",
+                "//packages/linux/dev-libs/math/fftw:fftw",
+                # "//packages/linux/dev-libs/opencolorio:opencolorio",
+                # TODO: not packaged yet
         "//packages/linux/media/image/openimageio:openimageio",
-        "//packages/linux/dev-libs/openvdb:openvdb",
-        "//packages/linux/dev-libs/alembic:alembic",
-        "//packages/linux/system/libs/multimedia/sdl2:sdl2",
-    ],
-    bdepend = [
-        "//packages/linux/core/llvm:llvm",
+                "//packages/linux/dev-libs/openvdb:openvdb",
+                "//packages/linux/dev-libs/alembic:alembic",
+                "//packages/linux/system/libs/multimedia/sdl2:sdl2",
+                "//packages/linux/core/llvm:llvm"
     ],
     visibility = ["PUBLIC"],
 )

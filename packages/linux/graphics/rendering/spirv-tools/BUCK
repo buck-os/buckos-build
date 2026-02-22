@@ -34,12 +34,5 @@ package(
         # The package expects to find SPIRV-Headers in external/SPIRV-Headers
         # or via SPIRV-Headers_SOURCE_DIR variable
     ],
-    pre_configure = """
-        # SPIRV-Tools expects SPIRV-Headers to be available
-        # For now, we'll need to handle this dependency manually
-        # TODO: Once spirv-headers package is available, this can be removed
-        echo "Note: SPIRV-Tools requires SPIRV-Headers dependency"
-        echo "      This may need to be configured when building"
-    """,
     visibility = ["PUBLIC"],
 )

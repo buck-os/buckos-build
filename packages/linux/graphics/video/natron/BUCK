@@ -12,26 +12,18 @@ package(
     description = "Open-source compositing software for VFX and motion graphics",
     homepage = "https://natrongithub.github.io/",
     license = "GPL-2.0-only",
-    pre_configure = """
-qmake -r CONFIG+=release \
-    CONFIG+=enforce-gcc8 \
-    DEFINES+=QT_NO_DEBUG_OUTPUT \
-    PREFIX=/usr
-""",
     configure_args = [],
     make_args = [],
-    post_install = """
+    post_install_cmds = ["""
 INSTALL_ROOT=$OUT make install
-""",
+"""],
     deps = [
         "//packages/linux/media/video/ffmpeg:ffmpeg",
-        "//packages/linux/desktop/qt:qt5",
-        "//packages/linux/media/image/imagemagick:imagemagick",
-        "//packages/linux/dev-libs/boost:boost",
-        "//packages/linux/system/libs/graphics/cairo:cairo",
-    ],
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
+                "//packages/linux/desktop/qt:qt5",
+                "//packages/linux/media/image/imagemagick:imagemagick",
+                "//packages/linux/dev-libs/boost:boost",
+                "//packages/linux/system/libs/graphics/cairo:cairo",
+                "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config"
     ],
     visibility = ["PUBLIC"],
 )

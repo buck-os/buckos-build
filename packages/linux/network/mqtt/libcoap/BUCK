@@ -5,22 +5,21 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "libcoap",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
-    ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 autoreconf -fi
-""",
+"""],
     version = "4.3.4",
     url = "https://github.com/obgm/libcoap/archive/refs/tags/v4.3.4.tar.gz",
     sha256 = "ae61a48c21f7b40e1442c9e1da9aab9e6f2cf0deccb02f3fed4de232a0b0522e",
     description = "C implementation of the Constrained Application Protocol (CoAP)",
     homepage = "https://libcoap.net/",
     license = "BSD-2-Clause",
-    deps = [],
+    deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
+    ],
     use_deps = {
         "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
     },

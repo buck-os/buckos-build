@@ -13,14 +13,5 @@ package(
     description = "Just-In-Time Compiler for Lua",
     homepage = "https://luajit.org/",
     license = "MIT",
-    src_configure = "true",
-    src_compile = """
-make -j${MAKEOPTS:-$(nproc)} PREFIX=/usr INSTALL_LIB=/usr/lib amalg
-""",
-    src_install = """
-# LuaJIT requires DESTDIR to be set for all directory creation
-make install DESTDIR="$DESTDIR" PREFIX=/usr INSTALL_LIB="$DESTDIR/usr/lib" INSTALL_BIN="$DESTDIR/usr/bin" INSTALL_INC="$DESTDIR/usr/include/luajit-2.1" INSTALL_SHARE="$DESTDIR/usr/share/luajit-2.1.0-beta3" INSTALL_MAN="$DESTDIR/usr/share/man/man1" INSTALL_PKGCONFIG="$DESTDIR/usr/lib/pkgconfig" INSTALL_LMOD="$DESTDIR/usr/share/lua/5.1" INSTALL_CMOD="$DESTDIR/usr/lib/lua/5.1"
-ln -sf luajit-2.1.0-beta3 "$DESTDIR/usr/bin/luajit"
-""",
     visibility = ["PUBLIC"],
 )

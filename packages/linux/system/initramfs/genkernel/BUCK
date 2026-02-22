@@ -21,12 +21,12 @@ package(
     description = "Gentoo automatic kernel/initramfs builder",
     homepage = "https://wiki.gentoo.org/wiki/Genkernel",
     license = "GPL-2.0",
-    pre_configure = "true",  # No configure script
+# No configure script
     configure_args = [],
     make_args = [
         "PREFIX=/usr",
     ],
-    post_install = """
+    post_install_cmds = ["""
 # Install using make
 make DESTDIR=$OUT PREFIX=/usr install
 
@@ -79,7 +79,10 @@ EOF
 
 # Create modules directory
 mkdir -p $OUT/usr/share/genkernel/defaults
-""",
+""", """
+make DESTDIR=$OUT PREFIX=/usr install
+mkdir -p $OUT/etc/genkernel.d
+"""],
     deps = [
         "//packages/linux/system/libs/kmod:kmod",
         "//packages/linux/core/bash:bash",
@@ -101,13 +104,8 @@ package(
     description = "Fork of genkernel with additional features and improvements",
     homepage = "https://github.com/Sabayon/genkernel-next",
     license = "GPL-2.0",
-    pre_configure = "true",
     configure_args = [],
     make_args = ["PREFIX=/usr"],
-    post_install = """
-make DESTDIR=$OUT PREFIX=/usr install
-mkdir -p $OUT/etc/genkernel.d
-""",
     deps = [
         "//packages/linux/system/libs/kmod:kmod",
         "//packages/linux/core/bash:bash",

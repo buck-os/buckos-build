@@ -10,27 +10,19 @@ package(
     description = "Advanced color picker and palette editing tool",
     homepage = "https://www.gpick.org/",
     license = "BSD-3-Clause",
-    pre_configure = """
-mkdir -p build
-cd build
-cmake .. \
-    -DCMAKE_INSTALL_PREFIX=/usr \
-    -DCMAKE_BUILD_TYPE=Release
-""",
     configure_args = [],
     make_args = ["-C", "build"],
-    post_install = """
+    post_install_cmds = ["""
 cd build
 DESTDIR=$OUT make install
-""",
+"""],
     deps = [
         "//packages/linux/desktop/gtk:gtk3",
-        "//packages/linux/lang/lua:lua",
-        "//packages/linux/system/libs/data/expat:expat",
-        "//packages/linux/dev-libs/boost:boost",
-    ],
-    bdepend = [
-        # "//packages/linux/core/ragel:ragel",  # TODO: not packaged yet
+                "//packages/linux/lang/lua:lua",
+                "//packages/linux/system/libs/data/expat:expat",
+                "//packages/linux/dev-libs/boost:boost",
+                # "//packages/linux/core/ragel:ragel",
+                # TODO: not packaged yet
     ],
     visibility = ["PUBLIC"],
 )

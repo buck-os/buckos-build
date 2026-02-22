@@ -12,12 +12,10 @@ package(
     homepage = "https://github.com/cy94/mlib",
     license = "MIT",
     deps = [],
-    src_configure = "true",
-    src_compile = "true",
-    src_install = """
+    post_install_cmds = ["""\
 mkdir -p "$DESTDIR/usr/include/mLib"
 cp -r include/* "$DESTDIR/usr/include/mLib/"
 cp -r src/* "$DESTDIR/usr/include/mLib/"
-""",
+"""],
     visibility = ["PUBLIC"],
 )

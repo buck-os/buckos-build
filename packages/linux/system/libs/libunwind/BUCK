@@ -28,30 +28,13 @@ package(
     ],
     # Custom install to avoid libtool relinking issues with missing .la files
     # Libtool tries to relink during install which fails when .la files are deleted
-    src_install = """
-# Install without libtool relinking by setting LT_INSTALL to just copy
-# This avoids the "not a valid libtool archive" error for deleted .la files
-make DESTDIR="$DESTDIR" LT_INSTALL='/usr/bin/install -c' ${EXTRA_EMAKE:-} install || {
-    # If that fails, manually install the important files
-    mkdir -p "$DESTDIR/usr/lib64" "$DESTDIR/usr/include"
-
-    # Copy shared libraries
-    cp -a .libs/libunwind*.so* "$DESTDIR/usr/lib64/" 2>/dev/null || true
-    cp -a src/.libs/libunwind*.so* "$DESTDIR/usr/lib64/" 2>/dev/null || true
-
-    # Copy headers
-    cp -a include/*.h "$DESTDIR/usr/include/" 2>/dev/null || true
-    cp -a src/unwind/*.h "$DESTDIR/usr/include/" 2>/dev/null || true
-
-    # Copy pkg-config files
-    mkdir -p "$DESTDIR/usr/lib64/pkgconfig"
-    for pc in src/*.pc src/*/*.pc; do
-        [ -f "$pc" ] && cp "$pc" "$DESTDIR/usr/lib64/pkgconfig/"
+    post_install_cmds = ["""\
+cp "$pc" "$DESTDIR/usr/lib64/pkgconfig/"
     done
 }
 # Remove .la files
 find "$DESTDIR" -name '*.la' -type f -delete 2>/dev/null || true
-""",
+"""],
     deps = [
         "//packages/linux/system/libs/compression/xz:xz",
     ],

@@ -22,43 +22,30 @@ package(
     description = "Open-source video transcoder",
     homepage = "https://handbrake.fr/",
     license = "GPL-2.0-only",
-    pre_configure = """
-./configure \
-    --prefix=/usr \
-    --force \
-    --disable-gtk-update-checks \
-    --enable-fdk-aac \
-    --enable-x265 \
-    --enable-numa \
-    --enable-nvenc \
-    --enable-vce \
-    --enable-qsv
-""",
     configure_args = [],
     make_args = [
         "-C", "build",
     ],
-    post_install = """
+    post_install_cmds = ["""
 cd build
 DESTDIR=$OUT make install
-""",
+"""],
     deps = [
         "//packages/linux/media/video/ffmpeg:ffmpeg",
-        "//packages/linux/media/video/x264:x264",
-        "//packages/linux/media/video/x265:x265",
-        "//packages/linux/media/video/libvpx:libvpx",
-        "//packages/linux/media/video/dav1d:dav1d",
-        "//packages/linux/system/libs/audio/opus:opus",
-        "//packages/linux/system/libs/audio/lame:lame",
-        "//packages/linux/desktop/gtk:gtk4",
-        "//packages/linux/dev-libs/glib:glib",
-        "//packages/linux/system/libs/data/jansson:jansson",
-        # "//packages/linux/core/numactl:numactl",  # TODO: not packaged yet
-    ],
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
-        "//packages/linux/dev-tools/assemblers/nasm:nasm",
-        "//packages/linux/lang/python:python",
+                "//packages/linux/media/video/x264:x264",
+                "//packages/linux/media/video/x265:x265",
+                "//packages/linux/media/video/libvpx:libvpx",
+                "//packages/linux/media/video/dav1d:dav1d",
+                "//packages/linux/system/libs/audio/opus:opus",
+                "//packages/linux/system/libs/audio/lame:lame",
+                "//packages/linux/desktop/gtk:gtk4",
+                "//packages/linux/dev-libs/glib:glib",
+                "//packages/linux/system/libs/data/jansson:jansson",
+                # "//packages/linux/core/numactl:numactl",
+                # TODO: not packaged yet,
+                "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
+                "//packages/linux/dev-tools/assemblers/nasm:nasm",
+                "//packages/linux/lang/python:python"
     ],
     visibility = ["PUBLIC"],
 )

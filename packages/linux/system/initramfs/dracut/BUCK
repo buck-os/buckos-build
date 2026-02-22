@@ -24,32 +24,10 @@ package(
         "systemd": "//packages/linux/system/init/systemd:systemd",
         "cryptsetup": "//packages/linux/system/filesystem/management/cryptsetup:cryptsetup",
     },
-    pre_configure = """
-# dracut uses a custom configure script (not autotools)
-./configure \
-    --prefix=/usr \
-    --sysconfdir=/etc \
-    --libdir=/usr/lib \
-    --systemdsystemunitdir=/usr/lib/systemd/system \
-    --bashcompletiondir=/usr/share/bash-completion/completions
-
-# Build the C utilities (dracut-install, skipcpio, dracut-util)
-make dracut-install skipcpio dracut-util
-
-# Build dracut-cpio (Rust-based cpio implementation)
-if [ -d src/dracut-cpio ]; then
-    cd src/dracut-cpio
-    cargo build --release
-    cd ../..
-fi
-
-# Skip the autotools configure phase
-touch configure.done
-""",
     # Override src_configure to do nothing (we configured in pre_configure)
     configure_args = ["--help || true"],  # No-op to satisfy autotools eclass
     make_args = [],
-    post_install = """
+    post_install_cmds = ["""
 # Manual installation since 'make install' requires asciidoc for man pages
 
 # Create directories
@@ -171,7 +149,7 @@ fi
 echo "Dracut installation complete"
 ls -la "$DESTDIR/usr/bin/"
 ls -la "$DESTDIR/usr/lib/dracut/" | head -20
-""",
+"""],
     deps = [
         "//packages/linux/system/libs/kmod:kmod",
         "//packages/linux/core/bash:bash",

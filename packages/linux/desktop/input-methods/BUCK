@@ -66,26 +66,21 @@ package(
     description = "Next generation input method framework",
     homepage = "https://fcitx-im.org/",
     license = "LGPL-2.1-or-later",
-    pre_configure = """
-        mkdir -p build
-        cd build
-        cmake .. \
-            -DCMAKE_INSTALL_PREFIX=/usr \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DENABLE_TEST=OFF \
-            -DENABLE_COVERAGE=OFF \
-            -DENABLE_ENCHANT=OFF \
-            -DENABLE_X11=ON \
-            -DENABLE_WAYLAND=ON \
-            -DENABLE_DBUS=ON \
-            -DUSE_SYSTEMD=OFF
-    """,
     configure_args = [],
     make_args = ["-C", "build"],
-    post_install = """
+    post_install_cmds = ["""
         cd build
         DESTDIR=$OUT make install
-    """,
+    """, """
+        cd build
+        DESTDIR=$OUT make install
+    """, """
+        cd build
+        DESTDIR=$OUT make install
+    """, """
+        cd build
+        DESTDIR=$OUT make install
+    """],
     deps = [
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/system/libs/ipc/dbus:dbus",
@@ -106,22 +101,8 @@ package(
     description = "GTK input method module for Fcitx5",
     homepage = "https://fcitx-im.org/",
     license = "LGPL-2.1-or-later",
-    pre_configure = """
-        mkdir -p build
-        cd build
-        cmake .. \
-            -DCMAKE_INSTALL_PREFIX=/usr \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DENABLE_GTK2_IM_MODULE=OFF \
-            -DENABLE_GTK3_IM_MODULE=ON \
-            -DENABLE_GTK4_IM_MODULE=ON
-    """,
     configure_args = [],
     make_args = ["-C", "build"],
-    post_install = """
-        cd build
-        DESTDIR=$OUT make install
-    """,
     deps = [
         ":fcitx5",
     ],
@@ -139,22 +120,8 @@ package(
     description = "Qt input method module for Fcitx5",
     homepage = "https://fcitx-im.org/",
     license = "LGPL-2.1-or-later",
-    pre_configure = """
-        mkdir -p build
-        cd build
-        cmake .. \
-            -DCMAKE_INSTALL_PREFIX=/usr \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DENABLE_QT4=OFF \
-            -DENABLE_QT5=ON \
-            -DENABLE_QT6=OFF
-    """,
     configure_args = [],
     make_args = ["-C", "build"],
-    post_install = """
-        cd build
-        DESTDIR=$OUT make install
-    """,
     deps = [
         ":fcitx5",
         "//packages/linux/desktop/qt:qt5",
@@ -173,22 +140,8 @@ package(
     description = "Chinese addons for Fcitx5 (Pinyin, Wubi, etc.)",
     homepage = "https://fcitx-im.org/",
     license = "LGPL-2.1-or-later",
-    pre_configure = """
-        mkdir -p build
-        cd build
-        cmake .. \
-            -DCMAKE_INSTALL_PREFIX=/usr \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DENABLE_TEST=OFF \
-            -DENABLE_OPENCC=OFF \
-            -DENABLE_GUI=ON
-    """,
     configure_args = [],
     make_args = ["-C", "build"],
-    post_install = """
-        cd build
-        DESTDIR=$OUT make install
-    """,
     deps = [
         ":fcitx5",
         "//packages/linux/desktop/qt:qt5",

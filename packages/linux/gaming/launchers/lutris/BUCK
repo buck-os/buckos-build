@@ -15,15 +15,11 @@ package(
     description = "Open Gaming Platform for Linux",
     homepage = "https://lutris.net/",
     license = "GPL-3.0",
-    pre_configure = """
-# Lutris uses Python/Meson, skip autoconf
-mkdir -p build
-    """,
     configure_args = [],
     env = {
         "PYTHON": "/usr/bin/python3",
     },
-    post_install = """
+    post_install_cmds = ["""
 #!/bin/bash
 set -e
 
@@ -45,7 +41,7 @@ install -Dm644 share/icons/hicolor/scalable/apps/lutris.svg \
 mkdir -p "$DESTDIR/usr/share/man/man1"
 install -Dm644 share/man/man1/lutris.1 \
     "$DESTDIR/usr/share/man/man1/lutris.1"
-    """,
+    """],
     deps = [
         "//packages/linux/lang/python:python",
         "//packages/linux/gaming/compatibility/wine:wine",

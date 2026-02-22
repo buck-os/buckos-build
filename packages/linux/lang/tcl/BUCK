@@ -14,19 +14,10 @@ package(
     homepage = "https://www.tcl.tk/",
     license = "BSD",
     # Tcl's configure is in the unix subdirectory
-    src_prepare = "true",
-    src_configure = """
-        cd unix
-        ./configure --prefix=/usr --mandir=/usr/share/man --enable-threads
-    """,
-    src_compile = """
-        cd unix
-        make -j${MAKEOPTS:-$(nproc)}
-    """,
-    src_install = """
-        cd unix
+    post_install_cmds = ["""\
+cd unix
         make DESTDIR="$DESTDIR" install install-private-headers
         ln -sf tclsh8.6 "$DESTDIR/usr/bin/tclsh"
-    """,
+"""],
     visibility = ["PUBLIC"],
 )

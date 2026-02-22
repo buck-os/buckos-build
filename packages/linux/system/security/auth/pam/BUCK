@@ -22,6 +22,9 @@ package(
         "systemd": ("--enable-systemd", "--disable-systemd"),
     },
     install_script = '''
+# Prevent autotools regeneration (tarball has pre-generated files)
+find . -name '*.in' -o -name configure -o -name aclocal.m4 -o -name config.h.in | xargs touch
+
 # For cross-compilation: --build is the build machine, --host is the target
 BUILD_SYSTEM=$(./build-aux/config.guess 2>/dev/null || echo x86_64-pc-linux-gnu)
 HOST_SYSTEM=${CHOST:-$(${CC:-gcc} -dumpmachine)}

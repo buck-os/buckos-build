@@ -4,8 +4,6 @@ package(
     build_rule = "autotools",
     name = "xz",
     # GitHub releases/download tarball includes pre-generated configure script
-    bdepend = [],
-    src_prepare = "",
     version = "5.6.3",
     url = "https://github.com/tukaani-project/xz/releases/download/v5.6.3/xz-5.6.3.tar.xz",
     sha256 = "db0590629b6f0fa36e74aea5f9731dc6f8df068ce7b7bafa45301832a5eebc3a",
@@ -24,10 +22,10 @@ package(
         "--enable-shared",
         "--enable-threads=posix",
     ],
-    post_install = """
+    post_install_cmds = ["""
 # Remove .la files to avoid libtool path issues in dependent packages
 find $DESTDIR -name "*.la" -delete
-""",
+"""],
     deps = [],
     visibility = ["PUBLIC"],
 )

@@ -9,24 +9,6 @@ package(
     description = "MD5 hash implementation from bzflag",
     homepage = "https://github.com/BZFlag-Dev/bzflag",
     license = "RSA-MD",
-    pre_configure = """
-# Create CMakeLists.txt for md5 library
-cat > CMakeLists.txt << 'EOF'
-cmake_minimum_required(VERSION 3.10)
-project(md5 CXX)
-
-set(CMAKE_CXX_STANDARD 11)
-
-add_library(md5 SHARED src/md5/md5.cpp)
-target_include_directories(md5 PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
-    $<INSTALL_INTERFACE:include>
-)
-
-install(TARGETS md5 LIBRARY DESTINATION lib)
-install(FILES src/md5/md5.h DESTINATION include/md5)
-EOF
-""",
     configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",

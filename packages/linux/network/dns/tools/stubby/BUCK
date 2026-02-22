@@ -11,22 +11,13 @@ package(
         "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
     },
 
-    pre_configure = """
-# Stubby uses CMake
-mkdir -p build && cd build
-cmake .. \
-    -DCMAKE_INSTALL_PREFIX=/usr \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DENABLE_GETDNS_STATIC_LINK=OFF
-""",
-
     configure_args = [],
     make_args = ["-C", "build"],
 
-    post_install = """
+    post_install_cmds = ["""
 # Install default configuration
 install -Dm644 stubby.yml.example "$DESTDIR/etc/stubby/stubby.yml" || true
-""",
+"""],
 
     deps = [
         "//packages/linux/network/dns/libraries/getdns:getdns",

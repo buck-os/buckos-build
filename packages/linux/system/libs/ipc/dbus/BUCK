@@ -9,9 +9,9 @@ package(
     description = "Message bus system",  # Cache: 2026-02-04 systemd-enabled
     homepage = "https://www.freedesktop.org/wiki/Software/dbus/",
     license = "AFL-2.1",
-    use_defaults = ["systemd"],  # systemd enabled for proper init system support
+# systemd enabled for proper init system support
     use_configure = {
-        "doc": ("--enable-doxygen-docs --enable-xml-docs", "--disable-doxygen-docs --disable-xml-docs"),
+        "doc": (["--enable-doxygen-docs", "--enable-xml-docs"], ["--disable-doxygen-docs", "--disable-xml-docs"]),
         "static-libs": ("--enable-static", "--disable-static"),
         "systemd": ("--enable-systemd", "--disable-systemd"),
     },
@@ -30,27 +30,6 @@ package(
         "--with-systemdsystemunitdir=/usr/lib/systemd/system",
         "--with-systemduserunitdir=/usr/lib/systemd/user",
     ],
-    src_install = """
-make install DESTDIR="$DESTDIR"
-
-# Remove /var/run directory to preserve the /var/run -> /run symlink
-# dbus creates /var/run/dbus for compatibility, but we use /run/dbus (via runstatedir)
-# The directory will be created at boot by systemd or tmpfiles.d
-if [ -d "$DESTDIR/var/run" ]; then
-    rm -rf "$DESTDIR/var/run"
-    echo "Removed $DESTDIR/var/run to preserve symlink"
-fi
-
-# Fix session.conf - autotools puts build-time tmpdir path in the session socket config
-# Replace any build path with the correct runtime path
-if [ -f "$DESTDIR/usr/share/dbus-1/session.conf" ]; then
-    sed -i 's|unix:tmpdir=[^<]*|unix:tmpdir=/tmp|g' "$DESTDIR/usr/share/dbus-1/session.conf"
-    echo "Fixed session.conf socket path"
-fi
-
-# Also remove .la files with build paths
-find "$DESTDIR" -name "*.la" -type f -delete 2>/dev/null || true
-""",
     deps = [
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/acct-group/messagebus:messagebus",

@@ -6,19 +6,16 @@ package(
     version = "0.5.3",
     url = "https://github.com/hautreux/auks/archive/refs/tags/0.5.3.tar.gz",
     sha256 = "2bcf8f10e3db2cc1bff47798279d15bb5234a38ac41be76cb5c90f7b59eba78a",
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-    ],
-    src_prepare = """
+    pre_configure_cmds = ["""
 autoreconf -fi
-""",
+"""],
     configure_args = [
         "--with-tirpc",
     ],
     deps = [
         "//packages/linux/system/libs/ipc/libtirpc:libtirpc",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool"
     ],
-    maintainers = ["buckos"],
 )

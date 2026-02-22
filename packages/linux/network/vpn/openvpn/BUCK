@@ -32,13 +32,13 @@ package(
         "--enable-management",
     ],
 
-    post_install = """
+    post_install_cmds = ["""
 # Create OpenVPN directories
 mkdir -p "$DESTDIR/etc/openvpn/client"
 mkdir -p "$DESTDIR/etc/openvpn/server"
 mkdir -p "$DESTDIR/var/log/openvpn"
 mkdir -p "$DESTDIR/run/openvpn"
-""",
+"""],
 
     description = "Full-featured SSL VPN solution",
     homepage = "https://openvpn.net/",
