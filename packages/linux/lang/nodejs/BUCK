@@ -1,42 +1,41 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # Node.js - JavaScript runtime
 # =============================================================================
 
-ebuild_package(
+package(
+    build_rule = "binary",
     name = "nodejs",
-    src_uri = "https://nodejs.org/dist/v22.22.0/node-v22.22.0.tar.xz",
-
-    sha256 = "4c138012bb5352f49822a8f3e6d1db71e00639d0c36d5b6756f91e4c6f30b683",
     version = "22.22.0",
+    url = "https://nodejs.org/dist/v22.22.0/node-v22.22.0.tar.xz",
+    sha256 = "4c138012bb5352f49822a8f3e6d1db71e00639d0c36d5b6756f91e4c6f30b683",
     description = "Node.js is a JavaScript runtime built on Chrome's V8 JavaScript engine",
     homepage = "https://nodejs.org/",
     license = "MIT",
-    src_prepare = """
-# Fix Python 3.13 compatibility in configure.py
-# The try_check_compiler function returns 5 values but code expects 4
-sed -i 's/ok, is_clang, clang_version, gcc_version = try_check_compiler/ok, is_clang, clang_version, gcc_version, _ = try_check_compiler/' configure.py || true
-sed -i 's/ok, is_clang, clang_version, gcc_version = try_check_compiler/ok, is_clang, clang_version, gcc_version, _ = try_check_compiler/' configure || true
-    """,
-    src_configure = """
-        # Node.js uses its own configure script that doesn't accept standard autotools flags
-        # Only pass Node.js-compatible options
-        ./configure \\
-            --prefix=/usr \\
-            --shared-zlib \\
-            --shared-openssl \\
-            --with-intl=system-icu \\
-            --without-npm \\
-            --without-corepack
-    """,
-    src_compile = """
-        make -j${MAKEOPTS:-$(nproc)}
-    """,
-    src_install = """
-        make DESTDIR="$DESTDIR" install
-    """,
-    depend = [
+    pre_configure_cmds = [
+        # Allow Python 3.14 (not in Node 22's supported list)
+        "sed -i 's/(3, 13),/(3, 14), (3, 13),/' configure.py || true",
+        "sed -i 's/(3, 13),/(3, 14), (3, 13),/' configure || true",
+    ],
+    install_script = """
+cd "$SRCS"
+
+# Node.js uses its own configure script that doesn't accept standard autotools flags
+# Only pass Node.js-compatible options
+./configure \
+    --prefix=/usr \
+    --shared-zlib \
+    --shared-openssl \
+    --with-intl=system-icu \
+    --without-npm \
+    --without-corepack
+
+make -j${MAKEOPTS:-$(nproc)}
+
+make DESTDIR="$OUT" install
+""",
+    deps = [
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/crypto/openssl:openssl",
         "//packages/linux/system/libs/utility/icu:icu",

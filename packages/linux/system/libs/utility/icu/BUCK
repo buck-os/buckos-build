@@ -1,27 +1,19 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
 # ICU - International Components for Unicode
-# ICU has its own configure system, not autotools
-download_source(
-    name = "icu-src",
-    src_uri = "https://github.com/unicode-org/icu/releases/download/release-75-1/icu4c-75_1-src.tgz",
-    sha256 = "cb968df3e4d2e87e8b11c49a5d01c787bd13b9545280fc6642f826527618caef",
-    signature_sha256 = "c6cd1e5a18b0ab624a6133c35c8043e852935895ea60ad330014de29a3ec7941",
-    signature_required = False,
-)
 
 # Native ICU build for cross-compilation tools (icupkg, etc.)
-ebuild_package(
+package(
     name = "icu-native",
-    bdepend = [],
-    src_prepare = "",
-    source = ":icu-src",
+    build_rule = "binary",
     version = "75.1",
+    url = "https://github.com/unicode-org/icu/releases/download/release-75-1/icu4c-75_1-src.tgz",
+    sha256 = "cb968df3e4d2e87e8b11c49a5d01c787bd13b9545280fc6642f826527618caef",
     description = "ICU native build for cross-compilation tools",
     homepage = "https://icu.unicode.org/",
     license = "Unicode-3.0",
     # Build with host toolchain
-    src_configure = """
+    install_script = """
 cd source
 # Use host compiler for native build - completely reset environment
 unset CC CXX AR RANLIB LD STRIP CPP
@@ -37,50 +29,38 @@ export LD=/usr/bin/ld
 export STRIP=/usr/bin/strip
 # Ensure host tools are in PATH first
 export PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
-./configure \\
-    --prefix=/usr \\
-    --libdir=/usr/lib64 \\
-    --disable-samples \\
+./configure \
+    --prefix=/usr \
+    --libdir=/usr/lib64 \
+    --disable-samples \
     --disable-tests
-""",
-    src_compile = """
-cd source
+
 make -j${MAKEOPTS:-$(nproc)}
-""",
-    src_install = """
-cd source
+
 make DESTDIR="$DESTDIR" install
 """,
+    deps = [],
     visibility = ["PUBLIC"],
 )
 
-ebuild_package(
+package(
     name = "icu",
-    # No autotools bdepend - ICU has its own configure
-    bdepend = [],
-    # Native ICU provides host tools (icupkg, etc.) for cross-compilation
-    exec_bdepend = [
-        ":icu-native",
-    ],
-    # No autoreconf - ICU uses its own configure system
-    src_prepare = "",
-    source = ":icu-src",
-    iuse = ["debug", "examples", "static-libs"],
-    use_configure = {
-        "-debug": "--disable-debug",
-        "-examples": "--disable-examples",
-        "-static-libs": "--disable-static",
-        "debug": "--enable-debug",
-        "examples": "--enable-examples",
-        "static-libs": "--enable-static",
-    },
+    build_rule = "binary",
     version = "75.1",
+    url = "https://github.com/unicode-org/icu/releases/download/release-75-1/icu4c-75_1-src.tgz",
+    sha256 = "cb968df3e4d2e87e8b11c49a5d01c787bd13b9545280fc6642f826527618caef",
+    source = ":icu-native-src",
     description = "International Components for Unicode library",
     homepage = "https://icu.unicode.org/",
     license = "Unicode-3.0",
+    use_configure = {
+        "debug": ("--enable-debug", "--disable-debug"),
+        "examples": ("--enable-examples", "--disable-examples"),
+        "static-libs": ("--enable-static", "--disable-static"),
+    },
     # ICU configure is in source/ subdirectory
     # Use --with-cross-build to point to native ICU for tools
-    src_configure = """
+    install_script = """
 cd source
 
 # Find the native ICU build directory from exec_bdepend
@@ -121,29 +101,32 @@ for _dep in "${_EXEC_BDEP_ARRAY[@]}"; do
     done
 done
 
+# Determine consistent build triplet — ICU falsely detects cross-compilation
+# when config.guess (x86_64-pc-linux-gnu) differs from cc -dumpmachine
+# (x86_64-redhat-linux-gnu).  Use a single value for both to avoid this.
+_BUILD_TRIPLET=$(./config.guess 2>/dev/null || echo x86_64-pc-linux-gnu)
+
 if [ -z "$ICU_CROSS_BUILD" ]; then
     echo "WARNING: Could not find native ICU build, attempting without cross-build"
-    ./configure \\
-        --prefix=/usr \\
-        --libdir=/usr/lib64 \\
-        --disable-samples \\
-        --disable-tests \\
-        --build=$(./config.guess 2>/dev/null || echo x86_64-pc-linux-gnu) \\
-        --host=${CHOST:-$(${CC:-gcc} -dumpmachine)}
+    ./configure \
+        --prefix=/usr \
+        --libdir=/usr/lib64 \
+        --disable-samples \
+        --disable-tests \
+        --build="$_BUILD_TRIPLET" \
+        --host="$_BUILD_TRIPLET"
 else
     echo "Using native ICU from: $ICU_CROSS_BUILD"
-    ./configure \\
-        --prefix=/usr \\
-        --libdir=/usr/lib64 \\
-        --disable-samples \\
-        --disable-tests \\
-        --with-cross-build="$ICU_CROSS_BUILD" \\
-        --build=$(./config.guess 2>/dev/null || echo x86_64-pc-linux-gnu) \\
-        --host=${CHOST:-$(${CC:-gcc} -dumpmachine)}
+    ./configure \
+        --prefix=/usr \
+        --libdir=/usr/lib64 \
+        --disable-samples \
+        --disable-tests \
+        --with-cross-build="$ICU_CROSS_BUILD" \
+        --build="$_BUILD_TRIPLET" \
+        --host="$_BUILD_TRIPLET"
 fi
-""",
-    src_compile = """
-cd source
+
 # Ensure lib/ directory exists before building
 mkdir -p lib
 
@@ -163,14 +146,16 @@ for lib in libicuuc libicui18n libicudata; do
     fi
 done
 echo "All required ICU libraries built successfully"
-""",
-    src_install = """
-cd source
+
 # Install all ICU libraries and headers
 make DESTDIR="$DESTDIR" install
 # Remove tools (we only want libraries for cross-compilation target)
 rm -rf "$DESTDIR/usr/bin" "$DESTDIR/usr/sbin" || true
 rm -rf "$DESTDIR/usr/share/man" || true
 """,
+    # Native ICU provides host tools (icupkg, etc.) for cross-compilation
+    deps = [
+        ":icu-native",
+    ],
     visibility = ["PUBLIC"],
 )
