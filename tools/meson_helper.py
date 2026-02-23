@@ -148,7 +148,7 @@ def main():
     # Python modules (e.g. mako for mesa) are found without manual
     # PYTHONPATH wiring.  --path-prepend dirs are {prefix}/usr/bin;
     # derive {prefix}/usr/lib/python*/site-packages from them.
-    _path_sources = args.hermetic_path or args.path_prepend
+    _path_sources = list(args.hermetic_path) + list(args.path_prepend)
     if _path_sources:
         python_paths = []
         for bin_dir in _path_sources:

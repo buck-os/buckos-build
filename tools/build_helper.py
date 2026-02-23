@@ -298,7 +298,7 @@ def main():
 
     # Auto-detect Python site-packages from dep prefixes so build-time
     # Python modules (e.g. mako for mesa) are found by custom generators.
-    _path_sources = args.hermetic_path or args.path_prepend
+    _path_sources = list(args.hermetic_path) + list(args.path_prepend)
     if _path_sources:
         python_paths = []
         for bin_dir in _path_sources:

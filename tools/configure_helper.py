@@ -206,7 +206,7 @@ def main():
     # Auto-detect automake Perl modules and aclocal dirs from dep
     # prefixes.  The Buck2-installed automake hardcodes /usr/share/...
     # paths which don't resolve to the artifact directory.
-    _path_sources = args.hermetic_path or args.path_prepend
+    _path_sources = list(args.hermetic_path) + list(args.path_prepend)
     if _path_sources:
         perl5lib = []
         aclocal_dirs = []
