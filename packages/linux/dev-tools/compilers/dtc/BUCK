@@ -8,11 +8,6 @@ package(
     build_rule = "meson",
     name = "dtc",
     version = "1.7.2",
-    use_configure = {
-        "python": ("--enable-python", "--disable-python"),
-        "static-libs": ("--enable-static", "--disable-static"),
-        "yaml": ("--enable-yaml", "--disable-yaml"),
-    },
     url = "https://git.kernel.org/pub/scm/utils/dtc/dtc.git/snapshot/dtc-1.7.2.tar.gz",
     sha256 = "8f1486962f093f28a2f79f01c1fd82f144ef640ceabe555536d43362212ceb7c",
     description = "Device Tree Compiler and libfdt library",
@@ -24,7 +19,7 @@ package(
         "-Dvalgrind=disabled",
         "-Dpython=disabled",
         "-Dstatic-build=false",
-        "-Dtests=disabled",
+        "-Dtests=false",
     ],
     deps = [
         "//packages/linux/dev-tools/dev-utils/flex:flex",

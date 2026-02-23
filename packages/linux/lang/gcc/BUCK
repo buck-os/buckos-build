@@ -112,9 +112,9 @@ package(
         "cp include/obstack.h libiberty/obstack.h",
         # libcody's sub-configure doesn't inherit CXXFLAGS from the
         # top-level build, so it fails C++11 feature detection.  Patch
-        # its configure.ac to not require the check (the top-level GCC
-        # build already verified C++11 works).
-        "sed -i 's/AX_CHECK_COMPILE_FLAG.*-std=c++11.*//' libcody/configure.ac libcody/configure 2>/dev/null; true",
+        # the generated configure script to skip the fatal error — the
+        # top-level GCC build already verified C++11 works.
+        "sed -i 's/as_fn_error.*C++11 is required.*/: # patched — C++11 verified by top-level configure/' libcody/configure",
     ],
     configure_args = [
         "--disable-bootstrap",
@@ -123,11 +123,11 @@ package(
         "--disable-nls",
         "--disable-cet",
         "--disable-fixincludes",
+        "--disable-libsanitizer",
         "--with-system-zlib",
     ],
     env = {
-        "CFLAGS": "-O2 -std=gnu17 -Wno-error=implicit-function-declaration",
-        "CXXFLAGS": "-O2 -std=gnu++17",
+        "CFLAGS": "-O2 -Wno-error=implicit-function-declaration",
     },
     deps = [
         "//packages/linux/system/libs/utility/gmp:gmp",
