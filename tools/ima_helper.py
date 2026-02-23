@@ -45,12 +45,15 @@ def main():
         print(f"error: signing key not found: {args.key}", file=sys.stderr)
         sys.exit(1)
 
+    # Clear host build env vars that could poison the build.
+    # Deps inject these explicitly via --env args.
+    for var in ["LD_LIBRARY_PATH", "PKG_CONFIG_PATH", "PYTHONPATH",
+                "C_INCLUDE_PATH", "CPLUS_INCLUDE_PATH", "LIBRARY_PATH",
+                "ACLOCAL_PATH"]:
+        os.environ.pop(var, None)
+
     if args.hermetic_path:
         os.environ["PATH"] = ":".join(os.path.abspath(p) for p in args.hermetic_path)
-        for var in ["LD_LIBRARY_PATH", "PKG_CONFIG_PATH", "PYTHONPATH",
-                    "C_INCLUDE_PATH", "CPLUS_INCLUDE_PATH", "LIBRARY_PATH",
-                    "ACLOCAL_PATH"]:
-            os.environ.pop(var, None)
 
     evmctl = shutil.which("evmctl")
     if evmctl is None:

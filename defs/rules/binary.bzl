@@ -135,6 +135,7 @@ _resolve_flag_paths() {
             -L[^/]*)             token="-L${_PROJECT_ROOT}/${token#-L}" ;;
             -Wl,-rpath-link,[^/]*) token="-Wl,-rpath-link,${_PROJECT_ROOT}/${token#-Wl,-rpath-link,}" ;;
             -Wl,-rpath,[^/]*)    token="-Wl,-rpath,${_PROJECT_ROOT}/${token#-Wl,-rpath,}" ;;
+            --*=buck-out/*)      token="${token%%=*}=${_PROJECT_ROOT}/${token#*=}" ;;
             [^-]*/*)             [[ ! "$token" = /* ]] && token="${_PROJECT_ROOT}/$token" ;;
         esac
         result="${result:+$result }$token"
@@ -185,11 +186,11 @@ _INSTALL_SCRIPT="$(_resolve "$1")"
 [[ -n "${LD_LIBRARY_PATH:-}" ]] && export LD_LIBRARY_PATH="$(_resolve_colon_paths "$LD_LIBRARY_PATH")"
 [[ -n "${_HERMETIC_PATH:-}" ]]  && export _HERMETIC_PATH="$(_resolve_colon_paths "$_HERMETIC_PATH")"
 
+# Clear host build env vars not explicitly set by the build system
+unset PYTHONPATH C_INCLUDE_PATH CPLUS_INCLUDE_PATH LIBRARY_PATH ACLOCAL_PATH 2>/dev/null || true
 # Set hermetic base PATH if provided (replaces host PATH)
 if [[ -n "${_HERMETIC_PATH:-}" ]]; then
     export PATH="$_HERMETIC_PATH"
-    # Clear host build env vars not explicitly set by the build system
-    unset PYTHONPATH C_INCLUDE_PATH CPLUS_INCLUDE_PATH LIBRARY_PATH ACLOCAL_PATH 2>/dev/null || true
 fi
 # Prepend dep bin paths to PATH
 [[ -n "${_DEP_BIN_PATHS:-}" ]] && export PATH="$_DEP_BIN_PATHS:$PATH"

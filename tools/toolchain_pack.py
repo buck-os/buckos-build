@@ -80,9 +80,11 @@ def _scrub_build_paths(directory):
 
                 new_data = pattern.sub(_replace, data)
                 if new_data != data:
+                    orig_mode = os.stat(path).st_mode
                     os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
                     with open(path, 'wb') as f:
                         f.write(new_data)
+                    os.chmod(path, orig_mode)
                     scrubbed += 1
             except (PermissionError, OSError):
                 pass

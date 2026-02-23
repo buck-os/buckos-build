@@ -50,7 +50,7 @@ def main():
         usr_dir = os.path.join(prefix, "usr")
         if not os.path.isdir(usr_dir):
             continue
-        for subdir in ("bin", "sbin", "share", "lib", "lib64", "libexec"):
+        for subdir in ("bin", "sbin", "share", "lib", "lib64", "libexec", "include"):
             src_dir = os.path.join(usr_dir, subdir)
             if not os.path.isdir(src_dir):
                 continue

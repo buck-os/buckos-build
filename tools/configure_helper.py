@@ -137,13 +137,12 @@ def main():
     # paths (which are relative to the project root, not to output_dir).
     env["PROJECT_ROOT"] = os.getcwd()
 
-    # In hermetic mode, clear host build env vars that could poison
-    # the build.  Deps inject these explicitly via --env args.
-    if args.hermetic_path:
-        for var in ["LD_LIBRARY_PATH", "PKG_CONFIG_PATH", "PYTHONPATH",
-                    "C_INCLUDE_PATH", "CPLUS_INCLUDE_PATH", "LIBRARY_PATH",
-                    "ACLOCAL_PATH"]:
-            env.pop(var, None)
+    # Clear host build env vars that could poison the build.
+    # Deps inject these explicitly via --env args.
+    for var in ["LD_LIBRARY_PATH", "PKG_CONFIG_PATH", "PYTHONPATH",
+                "C_INCLUDE_PATH", "CPLUS_INCLUDE_PATH", "LIBRARY_PATH",
+                "ACLOCAL_PATH"]:
+        env.pop(var, None)
 
     # Disable host compiler/build caches — Buck2 caches actions itself,
     # and external caches can poison results across build contexts.

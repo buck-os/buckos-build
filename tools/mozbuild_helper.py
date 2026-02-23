@@ -382,13 +382,12 @@ def main():
 
     args = parser.parse_args()
 
-    # In hermetic mode, clear host build env vars that could poison
-    # the build.  Deps inject these explicitly via the helper.
-    if args.hermetic_path:
-        for var in ["LD_LIBRARY_PATH", "PKG_CONFIG_PATH", "PYTHONPATH",
-                    "C_INCLUDE_PATH", "CPLUS_INCLUDE_PATH", "LIBRARY_PATH",
-                    "ACLOCAL_PATH"]:
-            os.environ.pop(var, None)
+    # Clear host build env vars that could poison the build.
+    # Deps inject these explicitly via the helper.
+    for var in ["LD_LIBRARY_PATH", "PKG_CONFIG_PATH", "PYTHONPATH",
+                "C_INCLUDE_PATH", "CPLUS_INCLUDE_PATH", "LIBRARY_PATH",
+                "ACLOCAL_PATH"]:
+        os.environ.pop(var, None)
 
     args.source_dir = _resolve(args.source_dir)
     args.output_dir = _resolve(args.output_dir)
