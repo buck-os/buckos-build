@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
 """QEMU ISO boot test.
 
-Boots the buckos-iso in QEMU via -cdrom and checks serial output
-for the kernel init marker.
+Extracts kernel and initramfs from the ISO, then boots them directly
+with -kernel/-initrd/-append so we can inject console=ttyS0 for serial
+output capture.
 
 Env vars from sh_test:
-    ISO       — path to .iso file
+    ISO       — path to .iso file or directory containing it
     QEMU_DIR  — path to buckos-built QEMU package (contains qemu-system-x86_64)
+    RUN_ENV   — optional path to runtime env wrapper (sets LD_LIBRARY_PATH)
 """
 
 import os
 import subprocess
 import sys
+import tempfile
 
 
 def find_file(base, name):
@@ -22,6 +25,46 @@ def find_file(base, name):
         if name in filenames:
             return os.path.join(dirpath, name)
     return None
+
+
+def extract_from_iso(iso_file, tmpdir):
+    """Mount ISO and copy kernel + initramfs to tmpdir."""
+    mnt = os.path.join(tmpdir, "mnt")
+    os.makedirs(mnt, exist_ok=True)
+
+    # Try mount (needs privileges) then fall back to xorriso/7z
+    r = subprocess.run(
+        ["mount", "-o", "loop,ro", iso_file, mnt],
+        capture_output=True,
+    )
+    if r.returncode != 0:
+        # Try xorriso extraction
+        r2 = subprocess.run(
+            ["xorriso", "-osirrox", "on", "-indev", iso_file,
+             "-extract", "/boot", os.path.join(tmpdir, "boot")],
+            capture_output=True,
+        )
+        if r2.returncode != 0:
+            return None, None
+        vmlinuz = os.path.join(tmpdir, "boot", "vmlinuz")
+        initramfs = os.path.join(tmpdir, "boot", "initramfs.img")
+        if os.path.isfile(vmlinuz) and os.path.isfile(initramfs):
+            return vmlinuz, initramfs
+        return None, None
+
+    # Copy from mount
+    vmlinuz_src = os.path.join(mnt, "boot", "vmlinuz")
+    initramfs_src = os.path.join(mnt, "boot", "initramfs.img")
+    vmlinuz = initramfs = None
+
+    if os.path.isfile(vmlinuz_src) and os.path.isfile(initramfs_src):
+        vmlinuz = os.path.join(tmpdir, "vmlinuz")
+        initramfs = os.path.join(tmpdir, "initramfs.img")
+        subprocess.run(["cp", vmlinuz_src, vmlinuz], check=True)
+        subprocess.run(["cp", initramfs_src, initramfs], check=True)
+
+    subprocess.run(["umount", mnt], capture_output=True)
+    return vmlinuz, initramfs
 
 
 def main():
@@ -41,7 +84,6 @@ def main():
     # Resolve ISO
     iso_file = find_file(iso, "buckos.iso")
     if not iso_file:
-        # Fall back to any .iso
         for dirpath, _, filenames in os.walk(iso):
             for f in filenames:
                 if f.endswith(".iso"):
@@ -63,25 +105,39 @@ def main():
         sys.exit(1)
     os.chmod(qemu_bin, 0o755)
 
-    cmd = [
-        qemu_bin,
-        "-cdrom", iso_file,
-        "-nographic", "-no-reboot", "-m", "512M",
-        "-enable-kvm", "-cpu", "host",
-        "-boot", "d",
-    ]
+    # Extract kernel + initramfs so we can inject console=ttyS0
+    with tempfile.TemporaryDirectory() as tmpdir:
+        vmlinuz, initramfs = extract_from_iso(iso_file, tmpdir)
+        if not vmlinuz or not initramfs:
+            print(f"FAIL: could not extract kernel/initramfs from {iso_file}")
+            sys.exit(1)
 
-    # Prepend the runtime environment wrapper so QEMU finds its shared libs
-    run_env = os.environ.get("RUN_ENV")
-    if run_env:
-        os.chmod(run_env, 0o755)
-        cmd = [run_env] + cmd
+        cmd = [
+            qemu_bin,
+            "-kernel", vmlinuz,
+            "-initrd", initramfs,
+            "-append", "console=ttyS0 rdinit=/init panic=1",
+            "-cdrom", iso_file,
+            "-nographic", "-no-reboot", "-m", "512M",
+            "-enable-kvm", "-cpu", "host",
+        ]
 
-    try:
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
-        output = r.stdout + r.stderr
-    except subprocess.TimeoutExpired:
-        output = ""
+        # Prepend the runtime environment wrapper so QEMU finds its shared libs
+        run_env = os.environ.get("RUN_ENV")
+        if run_env:
+            os.chmod(run_env, 0o755)
+            cmd = [run_env] + cmd
+
+        try:
+            r = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+            output = r.stdout + r.stderr
+        except subprocess.TimeoutExpired as e:
+            # stdout/stderr may be bytes despite text=True
+            def _decode(b):
+                if b is None:
+                    return ""
+                return b.decode("utf-8", errors="replace") if isinstance(b, bytes) else b
+            output = _decode(e.stdout) + _decode(e.stderr)
 
     boot_marker = "Run /init as init process"
 
