@@ -52,6 +52,26 @@ static void write_ima_policy(void)
 	close(fd);
 }
 
+static void write_ima_policy_file_check(void)
+{
+	int fd = open("/sys/kernel/security/ima/policy", O_WRONLY);
+	if (fd < 0) {
+		printf("INIT: cannot open IMA policy: %s\n", strerror(errno));
+		return;
+	}
+	const char *r1 = "appraise func=BPRM_CHECK fowner=0\n";
+	const char *r2 = "appraise func=FILE_CHECK fowner=0\n";
+	if (write(fd, r1, strlen(r1)) < 0)
+		printf("INIT: write BPRM_CHECK policy failed: %s\n",
+		       strerror(errno));
+	if (write(fd, r2, strlen(r2)) < 0)
+		printf("INIT: write FILE_CHECK policy failed: %s\n",
+		       strerror(errno));
+	else
+		printf("INIT: IMA appraise policy loaded (BPRM_CHECK + FILE_CHECK)\n");
+	close(fd);
+}
+
 int main(void)
 {
 	/* Mount essential filesystems */
@@ -72,11 +92,17 @@ int main(void)
 	printf("INIT: ima_test_mode=%s\n", mode);
 
 	int expect_eacces = 0;
+	int expect_file_denied = 0;
 	if (strcmp(mode, "enforce_signed") == 0) {
 		write_ima_policy();
 	} else if (strcmp(mode, "enforce_unsigned") == 0) {
 		write_ima_policy();
 		expect_eacces = 1;
+	} else if (strcmp(mode, "file_signed") == 0) {
+		write_ima_policy_file_check();
+	} else if (strcmp(mode, "file_unsigned") == 0) {
+		write_ima_policy_file_check();
+		expect_file_denied = 1;
 	} else if (strcmp(mode, "noima") == 0) {
 		/* no policy — IMA appraisal inactive */
 	} else {
@@ -127,6 +153,20 @@ int main(void)
 			printf("IMA-RESULT:PASS\n");
 		} else {
 			printf("INIT: expected EACCES, got exit=%d\n",
+			       WIFEXITED(status) ? WEXITSTATUS(status) : -1);
+			printf("IMA-RESULT:FAIL\n");
+		}
+	} else if (expect_file_denied) {
+		/*
+		 * Binary is signed so exec succeeds, but the data file
+		 * is unsigned so the file read should fail (non-zero exit).
+		 */
+		if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+			printf("INIT: file access denied as expected (exit=%d)\n",
+			       WEXITSTATUS(status));
+			printf("IMA-RESULT:PASS\n");
+		} else {
+			printf("INIT: expected file denial, got exit=%d\n",
 			       WIFEXITED(status) ? WEXITSTATUS(status) : -1);
 			printf("IMA-RESULT:FAIL\n");
 		}

@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """IMA signing via evmctl.
 
-Copies input directory to output and signs ELF files using
+Copies input directory to output and signs all regular files using
 evmctl ima_sign --sigfile, which creates detached .sig sidecar files.
 
-Only ELF binaries are signed; non-ELF regular files are skipped.
-evmctl --sigfile returns non-zero because the xattr attempt fails
-without CAP_SYS_ADMIN, but the .sig sidecar is still created.
+Symlinks and .sig sidecars are skipped.  evmctl --sigfile returns
+non-zero because the xattr attempt fails without CAP_SYS_ADMIN,
+but the .sig sidecar is still created.
 """
 
 import argparse
@@ -16,20 +16,8 @@ import subprocess
 import sys
 
 
-_ELF_MAGIC = b"\x7fELF"
-
-
-def is_elf(path):
-    """Check if a file is an ELF binary by reading its magic bytes."""
-    try:
-        with open(path, "rb") as f:
-            return f.read(4) == _ELF_MAGIC
-    except (OSError, IOError):
-        return False
-
-
 def main():
-    parser = argparse.ArgumentParser(description="IMA sign ELF files with evmctl")
+    parser = argparse.ArgumentParser(description="IMA sign files with evmctl")
     parser.add_argument("--input", required=True, help="Input directory")
     parser.add_argument("--output", required=True, help="Output directory")
     parser.add_argument("--key", required=True, help="Path to signing key (PEM)")
@@ -88,7 +76,7 @@ def main():
         shutil.rmtree(args.output)
     shutil.copytree(args.input, args.output, symlinks=True)
 
-    # Sign ELF files only
+    # Sign all regular files (skip symlinks and .sig sidecars)
     signed = 0
     errors = 0
     for dirpath, _dirnames, filenames in os.walk(args.output):
@@ -98,7 +86,7 @@ def main():
                 continue
             if not os.path.isfile(filepath):
                 continue
-            if not is_elf(filepath):
+            if filepath.endswith(".sig"):
                 continue
 
             # evmctl --sigfile creates .sig sidecar; the xattr attempt fails
@@ -120,7 +108,7 @@ def main():
         print(f"error: {errors} files failed to sign", file=sys.stderr)
         sys.exit(1)
 
-    print(f"signed {signed} ELF files")
+    print(f"signed {signed} files")
 
 
 if __name__ == "__main__":

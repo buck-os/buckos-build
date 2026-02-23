@@ -37,7 +37,7 @@ kernel_build(
     visibility = ["PUBLIC"],
 )
 
-# ── ext4 disk image with IMA-signed binary ──────────────────────────
+# ── ext4 disk image with IMA-signed binary + signed data file ────────
 
 genrule(
     name = "ima-disk-signed",
@@ -57,14 +57,19 @@ genrule(
         cp "$BINARY" "$WORK/ima-test"
         evmctl ima_sign --sigfile --key "$KEY" "$WORK/ima-test" 2>/dev/null || true
 
+        echo "IMA-FILE-CONTENT" > "$WORK/test-data.txt"
+        evmctl ima_sign --sigfile --key "$KEY" "$WORK/test-data.txt" 2>/dev/null || true
+
         printf 'write %s /ima-test\\nset_inode_field /ima-test mode 0100755\\nea_set /ima-test security.ima -f %s\\n' \
             "$WORK/ima-test" "$WORK/ima-test.sig" > "$WORK/debugfs.cmds"
+        printf 'write %s /test-data.txt\\nset_inode_field /test-data.txt mode 0100644\\nea_set /test-data.txt security.ima -f %s\\n' \
+            "$WORK/test-data.txt" "$WORK/test-data.txt.sig" >> "$WORK/debugfs.cmds"
         debugfs -w -f "$WORK/debugfs.cmds" "$OUT" 2>/dev/null
     """,
     visibility = ["PUBLIC"],
 )
 
-# ── ext4 disk image with unsigned binary ─────────────────────────────
+# ── ext4 disk image with unsigned binary + unsigned data file ─────────
 
 genrule(
     name = "ima-disk-unsigned",
@@ -78,8 +83,41 @@ genrule(
 
         mke2fs -t ext4 -d "$WORK/empty" "$OUT" 8M 2>/dev/null
 
+        echo "IMA-FILE-CONTENT" > "$WORK/test-data.txt"
+
         printf 'write %s /ima-test\\nset_inode_field /ima-test mode 0100755\\n' \
             "$BINARY" > "$WORK/debugfs.cmds"
+        printf 'write %s /test-data.txt\\nset_inode_field /test-data.txt mode 0100644\\n' \
+            "$WORK/test-data.txt" >> "$WORK/debugfs.cmds"
+        debugfs -w -f "$WORK/debugfs.cmds" "$OUT" 2>/dev/null
+    """,
+    visibility = ["PUBLIC"],
+)
+
+# ── ext4 disk image with signed binary + unsigned data file ──────────
+
+genrule(
+    name = "ima-disk-file-unsigned",
+    out = "disk-file-unsigned.img",
+    cmd = """
+        set -e
+        BINARY=$(location :ima-test-binary)/usr/bin/ima-test
+        KEY=$(location //defs/keys:ima-test-key)
+        WORK=$BUCK_SCRATCH_PATH/work
+        mkdir -p "$WORK/empty"
+        mkdir -p `dirname $OUT`
+
+        mke2fs -t ext4 -d "$WORK/empty" "$OUT" 8M 2>/dev/null
+
+        cp "$BINARY" "$WORK/ima-test"
+        evmctl ima_sign --sigfile --key "$KEY" "$WORK/ima-test" 2>/dev/null || true
+
+        echo "IMA-FILE-CONTENT" > "$WORK/test-data.txt"
+
+        printf 'write %s /ima-test\\nset_inode_field /ima-test mode 0100755\\nea_set /ima-test security.ima -f %s\\n' \
+            "$WORK/ima-test" "$WORK/ima-test.sig" > "$WORK/debugfs.cmds"
+        printf 'write %s /test-data.txt\\nset_inode_field /test-data.txt mode 0100644\\n' \
+            "$WORK/test-data.txt" >> "$WORK/debugfs.cmds"
         debugfs -w -f "$WORK/debugfs.cmds" "$OUT" 2>/dev/null
     """,
     visibility = ["PUBLIC"],

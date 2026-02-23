@@ -84,7 +84,7 @@ sh_test(
         "DISK": "$(location //tests/fixtures/ima-test:ima-disk-signed)",
         "CMDLINE_EXTRA": "ima_appraise=enforce ima_test_mode=enforce_signed",
         "EXPECT_MARKER": "IMA-RESULT:PASS",
-        "EXPECT_TEST_OUTPUT": "IMA-TEST-PASS",
+        "EXPECT_TEST_OUTPUT": "IMA-FILE-CONTENT",
     },
     run_test_separately = True,
     labels = ["vm", "slow"],
@@ -124,7 +124,52 @@ sh_test(
         "DISK": "$(location //tests/fixtures/ima-test:ima-disk-unsigned)",
         "CMDLINE_EXTRA": "ima_appraise=off ima_test_mode=noima",
         "EXPECT_MARKER": "IMA-RESULT:PASS",
-        "EXPECT_TEST_OUTPUT": "IMA-TEST-PASS",
+        "EXPECT_TEST_OUTPUT": "IMA-FILE-CONTENT",
+    },
+    run_test_separately = True,
+    labels = ["vm", "slow"],
+)
+
+# ── IMA QEMU FILE_CHECK enforcement ─────────────────────────────────
+
+# FILE_CHECK: signed binary + signed data file — both pass
+sh_test(
+    name = "test-ima-file-signed",
+    test = "verify_ima_qemu.py",
+    deps = [
+        "//tests/fixtures/ima-test:ima-kernel",
+        "//tests/fixtures/ima-test:ima-initramfs",
+        "//tests/fixtures/ima-test:ima-disk-signed",
+    ],
+    env = {
+        "KERNEL": "$(location //tests/fixtures/ima-test:ima-kernel)",
+        "INITRAMFS": "$(location //tests/fixtures/ima-test:ima-initramfs)",
+        "DISK": "$(location //tests/fixtures/ima-test:ima-disk-signed)",
+        "CMDLINE_EXTRA": "ima_appraise=enforce ima_test_mode=file_signed",
+        "EXPECT_MARKER": "IMA-RESULT:PASS",
+        "EXPECT_TEST_OUTPUT": "IMA-FILE-CONTENT",
+    },
+    run_test_separately = True,
+    labels = ["vm", "slow"],
+)
+
+# FILE_CHECK: signed binary + unsigned data file — file read denied
+sh_test(
+    name = "test-ima-file-unsigned",
+    test = "verify_ima_qemu.py",
+    deps = [
+        "//tests/fixtures/ima-test:ima-kernel",
+        "//tests/fixtures/ima-test:ima-initramfs",
+        "//tests/fixtures/ima-test:ima-disk-file-unsigned",
+    ],
+    env = {
+        "KERNEL": "$(location //tests/fixtures/ima-test:ima-kernel)",
+        "INITRAMFS": "$(location //tests/fixtures/ima-test:ima-initramfs)",
+        "DISK": "$(location //tests/fixtures/ima-test:ima-disk-file-unsigned)",
+        "CMDLINE_EXTRA": "ima_appraise=enforce ima_test_mode=file_unsigned",
+        "EXPECT_MARKER": "IMA-RESULT:PASS",
+        "EXPECT_TEST_OUTPUT": "IMA-FILE-DENIED",
+        "EXPECT_NO_TEST_OUTPUT": "IMA-FILE-CONTENT",
     },
     run_test_separately = True,
     labels = ["vm", "slow"],
@@ -205,7 +250,7 @@ sh_test(
         "DISK": "$(location //tests/fixtures/ima-test:ima-disk-unsigned)",
         "CMDLINE_EXTRA": "ima_appraise=off ima_test_mode=noima",
         "EXPECT_MARKER": "IMA-RESULT:PASS",
-        "EXPECT_TEST_OUTPUT": "IMA-TEST-PASS",
+        "EXPECT_TEST_OUTPUT": "IMA-FILE-CONTENT",
     },
     run_test_separately = True,
     labels = ["vm", "slow", "integration"],
@@ -228,7 +273,24 @@ sh_test(
         "DISK": "$(location //tests/fixtures/ima-test:ima-disk-signed)",
         "CMDLINE_EXTRA": "ima_appraise=enforce ima_test_mode=enforce_signed",
         "EXPECT_MARKER": "IMA-RESULT:PASS",
-        "EXPECT_TEST_OUTPUT": "IMA-TEST-PASS",
+        "EXPECT_TEST_OUTPUT": "IMA-FILE-CONTENT",
+    },
+    run_test_separately = True,
+    labels = ["vm", "slow", "integration"],
+)
+
+# ── ISO boot ─────────────────────────────────────────────────────
+
+sh_test(
+    name = "test-iso-boot",
+    test = "verify_iso_boot.py",
+    deps = [
+        "//packages/linux/system:buckos-iso",
+        "//packages/linux/emulation/hypervisors/qemu:qemu",
+    ],
+    env = {
+        "ISO": "$(location //packages/linux/system:buckos-iso)",
+        "QEMU_DIR": "$(location //packages/linux/emulation/hypervisors/qemu:qemu)",
     },
     run_test_separately = True,
     labels = ["vm", "slow", "integration"],
@@ -268,6 +330,55 @@ sh_test(
         "CMDLINE_EXTRA": "ima_appraise=enforce ima_test_mode=enforce_unsigned",
         "EXPECT_MARKER": "IMA-RESULT:PASS",
         "EXPECT_NO_TEST_OUTPUT": "IMA-TEST-PASS",
+    },
+    run_test_separately = True,
+    labels = ["vm", "slow", "integration"],
+)
+
+# ── Cloud Hypervisor: IMA FILE_CHECK enforcement ────────────────────
+
+# CH FILE_CHECK: signed binary + signed data file — both pass
+sh_test(
+    name = "test-ch-ima-file-signed",
+    test = "verify_ch_ima.py",
+    deps = [
+        "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
+        "//tests/fixtures/ima-test:ima-kernel",
+        "//tests/fixtures/ima-test:ima-initramfs",
+        "//tests/fixtures/ima-test:ima-disk-signed",
+    ],
+    env = {
+        "CH_BINARY": "$(location //packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor)",
+        "KERNEL": "$(location //tests/fixtures/ima-test:ima-kernel)",
+        "INITRAMFS": "$(location //tests/fixtures/ima-test:ima-initramfs)",
+        "DISK": "$(location //tests/fixtures/ima-test:ima-disk-signed)",
+        "CMDLINE_EXTRA": "ima_appraise=enforce ima_test_mode=file_signed",
+        "EXPECT_MARKER": "IMA-RESULT:PASS",
+        "EXPECT_TEST_OUTPUT": "IMA-FILE-CONTENT",
+    },
+    run_test_separately = True,
+    labels = ["vm", "slow", "integration"],
+)
+
+# CH FILE_CHECK: signed binary + unsigned data file — file read denied
+sh_test(
+    name = "test-ch-ima-file-unsigned",
+    test = "verify_ch_ima.py",
+    deps = [
+        "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
+        "//tests/fixtures/ima-test:ima-kernel",
+        "//tests/fixtures/ima-test:ima-initramfs",
+        "//tests/fixtures/ima-test:ima-disk-file-unsigned",
+    ],
+    env = {
+        "CH_BINARY": "$(location //packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor)",
+        "KERNEL": "$(location //tests/fixtures/ima-test:ima-kernel)",
+        "INITRAMFS": "$(location //tests/fixtures/ima-test:ima-initramfs)",
+        "DISK": "$(location //tests/fixtures/ima-test:ima-disk-file-unsigned)",
+        "CMDLINE_EXTRA": "ima_appraise=enforce ima_test_mode=file_unsigned",
+        "EXPECT_MARKER": "IMA-RESULT:PASS",
+        "EXPECT_TEST_OUTPUT": "IMA-FILE-DENIED",
+        "EXPECT_NO_TEST_OUTPUT": "IMA-FILE-CONTENT",
     },
     run_test_separately = True,
     labels = ["vm", "slow", "integration"],
