@@ -35,6 +35,7 @@ def _rebase_pkg(pkg, new_prefix):
         lib_dirs = pkg.lib_dirs,
         bin_dirs = pkg.bin_dirs,
         libraries = pkg.libraries,
+        runtime_lib_dirs = pkg.runtime_lib_dirs,
         pkg_config_path = pkg.pkg_config_path,
         cflags = pkg.cflags,
         ldflags = pkg.ldflags,

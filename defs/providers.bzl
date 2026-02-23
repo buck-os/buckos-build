@@ -19,6 +19,9 @@ PackageInfo = provider(fields = [
     "libraries",        # list[str]: library names for -l flags
     "pkg_config_path",  # artifact | None: path to .pc files
 
+    # Runtime library paths for LD_LIBRARY_PATH (self + transitive deps)
+    "runtime_lib_dirs", # list[cmd_args]: lib dirs for LD_LIBRARY_PATH
+
     # Extra flags this package requires consumers to use
     "cflags",           # list[str]
     "ldflags",          # list[str]

@@ -40,6 +40,10 @@ cc "$@" -o "$OUT/usr/bin/{binary}" "$SRC"
             lib_dirs = [],
             bin_dirs = [output.project("usr/bin")],
             libraries = [],
+            runtime_lib_dirs = [
+                cmd_args(output, format = "{}/usr/lib64"),
+                cmd_args(output, format = "{}/usr/lib"),
+            ],
             pkg_config_path = None,
             cflags = [],
             ldflags = [],
@@ -97,6 +101,10 @@ cc -shared -fPIC "$@" -o "$OUT/usr/lib64/{lib}" "$SRC"
             lib_dirs = [output.project("usr/lib64")],
             bin_dirs = [],
             libraries = [ctx.attrs.lib_name],
+            runtime_lib_dirs = [
+                cmd_args(output, format = "{}/usr/lib64"),
+                cmd_args(output, format = "{}/usr/lib"),
+            ],
             pkg_config_path = None,
             cflags = [],
             ldflags = [],

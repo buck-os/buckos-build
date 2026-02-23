@@ -16,6 +16,7 @@ their non-standard sysroot assembly and cross-tool discovery.
 """
 
 load("//defs:providers.bzl", "BootstrapStageInfo", "PackageInfo")
+load("//defs/rules:_common.bzl", "collect_runtime_lib_dirs")
 
 TARGET_TRIPLE = "x86_64-buckos-linux-gnu"
 
@@ -803,6 +804,7 @@ def _bootstrap_package_impl(ctx):
         ],
         bin_dirs = [installed.project("usr/bin")],
         libraries = ctx.attrs.libraries,
+        runtime_lib_dirs = collect_runtime_lib_dirs([], installed),
         pkg_config_path = installed.project("usr/lib/pkgconfig"),
         cflags = [],
         ldflags = [],

@@ -13,6 +13,7 @@ inputs haven't changed.
 """
 
 load("//defs:providers.bzl", "PackageInfo")
+load("//defs/rules:_common.bzl", "collect_runtime_lib_dirs")
 load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_env_args", "toolchain_extra_cflags", "toolchain_extra_ldflags", "toolchain_path_args")
 
 # ── Phase helpers ─────────────────────────────────────────────────────
@@ -217,6 +218,7 @@ def _meson_package_impl(ctx):
         lib_dirs = [],
         bin_dirs = [],
         libraries = ctx.attrs.libraries,
+        runtime_lib_dirs = collect_runtime_lib_dirs(ctx.attrs.deps, installed),
         pkg_config_path = None,
         cflags = ctx.attrs.extra_cflags,
         ldflags = ctx.attrs.extra_ldflags,

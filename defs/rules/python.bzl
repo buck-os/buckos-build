@@ -9,6 +9,7 @@ Four discrete cacheable actions:
 """
 
 load("//defs:providers.bzl", "BuildToolchainInfo", "PackageInfo")
+load("//defs/rules:_common.bzl", "collect_runtime_lib_dirs")
 load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_env_args", "toolchain_path_args")
 
 # ── Phase helpers ─────────────────────────────────────────────────────
@@ -89,6 +90,7 @@ def _python_package_impl(ctx):
         lib_dirs = [],
         bin_dirs = [],
         libraries = [],
+        runtime_lib_dirs = collect_runtime_lib_dirs(ctx.attrs.deps, installed),
         pkg_config_path = None,
         cflags = [],
         ldflags = [],

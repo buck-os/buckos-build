@@ -1,3 +1,5 @@
+load("//defs/rules:runtime_env.bzl", "runtime_env")
+
 # Test targets — run with: buck2 test //tests:
 
 # ── Provenance stamp unit tests ──────────────────────────────────────
@@ -281,16 +283,23 @@ sh_test(
 
 # ── ISO boot ─────────────────────────────────────────────────────
 
+runtime_env(
+    name = "qemu-env",
+    package = "//packages/linux/emulation/hypervisors/qemu:qemu",
+)
+
 sh_test(
     name = "test-iso-boot",
     test = "verify_iso_boot.py",
     deps = [
         "//packages/linux/system:buckos-iso",
         "//packages/linux/emulation/hypervisors/qemu:qemu",
+        ":qemu-env",
     ],
     env = {
         "ISO": "$(location //packages/linux/system:buckos-iso)",
         "QEMU_DIR": "$(location //packages/linux/emulation/hypervisors/qemu:qemu)",
+        "RUN_ENV": "$(location :qemu-env)",
     },
     run_test_separately = True,
     labels = ["vm", "slow", "integration"],

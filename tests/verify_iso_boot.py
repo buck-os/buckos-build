@@ -71,6 +71,12 @@ def main():
         "-boot", "d",
     ]
 
+    # Prepend the runtime environment wrapper so QEMU finds its shared libs
+    run_env = os.environ.get("RUN_ENV")
+    if run_env:
+        os.chmod(run_env, 0o755)
+        cmd = [run_env] + cmd
+
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
         output = r.stdout + r.stderr
