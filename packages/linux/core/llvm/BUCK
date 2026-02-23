@@ -36,3 +36,46 @@ package(
     ],
     visibility = ["PUBLIC"],
 )
+
+# =============================================================================
+# LLVM Native - minimal clang for hermetic host tools
+# =============================================================================
+# Stripped-down LLVM+clang build for the seed toolchain.  Rust crates
+# use clang as their linker, so it must be on the hermetic PATH.
+#
+# X86 only, all optional deps disabled, static linking — produces a
+# self-contained clang binary with no runtime library deps beyond
+# libc/libstdc++.  Built via bootstrap transition (host PATH).
+
+package(
+    build_rule = "cmake",
+    name = "llvm-native",
+    version = "21.1.6",
+    url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.6/llvm-project-21.1.6.src.tar.xz",
+    sha256 = "ae67086eb04bed7ca11ab880349b5f1ab6f50e1b88cda376eaf8a845b935762b",
+    description = "LLVM and Clang - native host compiler for bootstrap",
+    homepage = "https://llvm.org/",
+    license = "Apache-2.0 WITH LLVM-exception",
+    source_subdir = "llvm",
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DLLVM_ENABLE_PROJECTS=clang;lld",
+        "-DLLVM_ENABLE_RUNTIMES=",
+        "-DLLVM_TARGETS_TO_BUILD=X86",
+        "-DLLVM_BUILD_LLVM_DYLIB=OFF",
+        "-DLLVM_LINK_LLVM_DYLIB=OFF",
+        "-DLLVM_ENABLE_RTTI=OFF",
+        "-DLLVM_ENABLE_FFI=OFF",
+        "-DLLVM_ENABLE_ZLIB=OFF",
+        "-DLLVM_ENABLE_ZSTD=OFF",
+        "-DLLVM_ENABLE_TERMINFO=OFF",
+        "-DLLVM_ENABLE_LIBXML2=OFF",
+        "-DLLVM_INCLUDE_BENCHMARKS=OFF",
+        "-DLLVM_INCLUDE_EXAMPLES=OFF",
+        "-DLLVM_INCLUDE_TESTS=OFF",
+        "-DLLVM_INCLUDE_DOCS=OFF",
+        "-DCLANG_ENABLE_STATIC_ANALYZER=OFF",
+        "-DCLANG_ENABLE_ARCMT=OFF",
+    ],
+    visibility = ["PUBLIC"],
+)
