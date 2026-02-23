@@ -44,6 +44,8 @@ def main():
                         help="Path to Python interpreter to use (default: sys.executable)")
     parser.add_argument("--hermetic-path", action="append", dest="hermetic_path", default=[],
                         help="Set PATH to only these dirs (replaces host PATH, repeatable)")
+    parser.add_argument("--dep-prefix", action="append", dest="dep_prefixes", default=[],
+                        help="Dependency prefix dir — site-packages added to PYTHONPATH (repeatable)")
     args = parser.parse_args()
 
     if not os.path.isdir(args.source_dir):
@@ -128,6 +130,22 @@ def main():
         if _py_paths:
             _existing = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = ":".join(_py_paths) + (":" + _existing if _existing else "")
+
+    # Add dep prefix site-packages to PYTHONPATH so build deps
+    # (setuptools, wheel, etc.) are found by pip --no-build-isolation.
+    if args.dep_prefixes:
+        import glob as _glob
+        dep_py_paths = []
+        for prefix in args.dep_prefixes:
+            prefix = os.path.abspath(prefix)
+            for pattern in ("usr/lib/python*/site-packages", "usr/lib/python*/dist-packages",
+                            "usr/lib64/python*/site-packages", "usr/lib64/python*/dist-packages"):
+                for sp in _glob.glob(os.path.join(prefix, pattern)):
+                    if os.path.isdir(sp):
+                        dep_py_paths.append(sp)
+        if dep_py_paths:
+            existing = env.get("PYTHONPATH", "")
+            env["PYTHONPATH"] = ":".join(dep_py_paths) + (":" + existing if existing else "")
 
     result = subprocess.run(cmd, env=env)
     if result.returncode != 0:

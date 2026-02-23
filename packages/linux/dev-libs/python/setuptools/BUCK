@@ -1,0 +1,26 @@
+load("//defs:package.bzl", "package")
+
+# setuptools - Build backend for Python packages
+# Downloaded as a wheel and extracted directly into site-packages.
+# This avoids the circular dependency of needing setuptools to install
+# setuptools (Python 3.12+ removed it from stdlib).
+package(
+    build_rule = "binary",
+    name = "setuptools",
+    version = "75.8.2",
+    url = "https://files.pythonhosted.org/packages/py3/s/setuptools/setuptools-75.8.2-py3-none-any.whl",
+    sha256 = "558e47c15f1811c1fa7adbd0096669bf76c1d3f433f58324df69f3f5ecac4e8f",
+    description = "Python build system and distribution tools",
+    homepage = "https://github.com/pypa/setuptools",
+    license = "MIT",
+    strip_components = 0,
+    format = "whl",
+    install_script = """
+# Wheel contents are already the raw package — copy into site-packages
+PYVER=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+SITE="$OUT/usr/lib/python${PYVER}/site-packages"
+mkdir -p "$SITE"
+cp -a "$SRCS"/. "$SITE/"
+""",
+    visibility = ["PUBLIC"],
+)

@@ -54,6 +54,15 @@ def _python_install(ctx, source):
     for key, value in ctx.attrs.env.items():
         cmd.add("--env", "{}={}".format(key, value))
 
+    # Propagate dependency prefixes so build deps (setuptools, etc.)
+    # are on PYTHONPATH during pip install --no-build-isolation.
+    for dep in ctx.attrs.deps:
+        if PackageInfo in dep:
+            prefix = dep[PackageInfo].prefix
+        else:
+            prefix = dep[DefaultInfo].default_outputs[0]
+        cmd.add("--dep-prefix", prefix)
+
     for arg in ctx.attrs.pip_args:
         cmd.add("--pip-arg", arg)
 
