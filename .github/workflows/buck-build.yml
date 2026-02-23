@@ -42,17 +42,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/ci-setup
-      - run: buck2 test //tests:
+      - run: "buck2 test //tests:"
+
+  test_selfhosted:
+    name: buck2 test (self-hosted)
+    runs-on: [self-hosted, bigly]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          clean: false
+      - uses: ./.github/actions/ci-setup
+      - run: "buck2 test //tests:"
 
   required:
     name: required-checks
     runs-on: ubuntu-latest
     if: always()
-    needs: [targets, bxl, test]
+    needs: [targets, bxl, test, test_selfhosted]
     steps:
       - run: |
-          results=("${{ needs.targets.result }}" "${{ needs.bxl.result }}" "${{ needs.test.result }}")
-          names=(targets bxl test)
+          results=("${{ needs.targets.result }}" "${{ needs.bxl.result }}" "${{ needs.test.result }}" "${{ needs.test_selfhosted.result }}")
+          names=(targets bxl test test_selfhosted)
           for i in "${!names[@]}"; do
             if [[ "${results[$i]}" != "success" ]]; then
               echo "::error::${names[$i]} failed: ${results[$i]}"
