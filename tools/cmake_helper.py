@@ -194,6 +194,11 @@ def main():
 
     cmd.extend(args.cmake_args)
 
+    # Older CMakeLists.txt files declare cmake_minimum_required < 3.5,
+    # which newer CMake rejects.  Set the policy floor globally so every
+    # package configures without per-package workarounds.
+    cmd.append("-DCMAKE_POLICY_VERSION_MINIMUM=3.5")
+
     result = subprocess.run(cmd, env=env)
     if result.returncode != 0:
         print(f"error: cmake configure failed with exit code {result.returncode}", file=sys.stderr)
