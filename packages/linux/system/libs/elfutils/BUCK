@@ -38,6 +38,9 @@ package(
 sed -i 's/srcfiles$(EXEEXT)//' src/Makefile.in || true
 sed -i '/^srcfiles_SOURCES/d' src/Makefile.am src/Makefile.in || true
 """],
+    # elfutils 0.191 uses char[2] initializers like "ax" that GCC 15 rejects
+    # with -Werror=unterminated-string-initialization
+    extra_cflags = ["-Wno-unterminated-string-initialization"],
     deps = [
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/compression/bzip2:bzip2",

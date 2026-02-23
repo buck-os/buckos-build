@@ -204,7 +204,9 @@ package(
     sha256 = "ea5494846c51d946e5e801d1c099b438f683af8147e0be24ca4001073143110f",
     skip_configure = True,
     pre_build_cmds = [
-        # Generate minimal config with only cpio enabled
+        # Generate minimal config with only cpio enabled.
+        # Kconfig needs a host compiler (cc) to build scripts/conf —
+        # the native gcc-native package in host-tools provides this.
         "export KCONFIG_NOTIMESTAMP=1 && make allnoconfig > /dev/null 2>&1",
         "printf 'CONFIG_CPIO=y\\nCONFIG_FEATURE_CPIO_O=y\\nCONFIG_FEATURE_CPIO_P=y\\n' >> .config",
         'yes "" | make oldconfig > /dev/null 2>&1',

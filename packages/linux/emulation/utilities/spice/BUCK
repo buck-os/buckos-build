@@ -30,19 +30,20 @@ package(
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc",
-        "--enable-gstreamer=1.0",
+        "--disable-gstreamer",
         "--enable-opus",
         "--enable-lz4",
-        "--enable-smartcard",
+        "--disable-smartcard",
     ],
     deps = [
         ":spice-protocol",
         "//packages/linux/dev-libs/glib:glib",
+        "//packages/linux/system/libs/utility/libffi:libffi",
         "//packages/linux/system/security/auth/biometric:pixman",
         "//packages/linux/system/libs/crypto/openssl:openssl",
         "//packages/linux/system/libs/audio/opus:opus",
         "//packages/linux/system/libs/compression/lz4:lz4",
-        "//packages/linux/graphics/video/gstreamer:gstreamer",
+        "//packages/linux/system/libs/image/libjpeg-turbo:libjpeg-turbo",
     ],
     visibility = ["PUBLIC"],
 )

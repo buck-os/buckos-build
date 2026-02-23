@@ -10,15 +10,18 @@ package(
     description = "Tools for creating and extracting SquashFS filesystems",
     homepage = "https://github.com/plougher/squashfs-tools",
     license = "GPL-2.0",
-    post_install_cmds = ["""\
-cd squashfs-tools
-mkdir -p "$DESTDIR/usr/bin"
-mkdir -p "$DESTDIR/usr/share/man/man1"
-install -m 755 mksquashfs "$DESTDIR/usr/bin/"
-install -m 755 unsquashfs "$DESTDIR/usr/bin/"
-install -m 755 sqfstar "$DESTDIR/usr/bin/" || true
-install -m 644 ../USAGE "$DESTDIR/usr/share/man/man1/mksquashfs.1" || true
-"""],
+    # Makefile lives in squashfs-tools/ subdirectory (no top-level Makefile).
+    # squashfs uses INSTALL_PREFIX not DESTDIR; we override it via make_args
+    # so make install puts binaries into $DESTDIR/usr/bin.
+    make_args = ["-C", "squashfs-tools"],
+    install_prefix_var = "INSTALL_PREFIX",
+    post_install_cmds = [
+        # INSTALL_PREFIX is set to the raw prefix dir; relocate into usr/
+        "mkdir -p usr/bin usr/share/man/man1",
+        "mv bin/* usr/bin/ && rmdir bin",
+        "mv man/man1/* usr/share/man/man1/ || true",
+        "rm -rf man || true",
+    ],
     deps = [
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/compression/xz:xz",

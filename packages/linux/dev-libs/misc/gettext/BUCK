@@ -32,6 +32,8 @@ package(
         # Disable C++ libasprintf - causes stdlib.h not found issue in cross-compilation
         "--disable-cxx",
         "--disable-libasprintf",
+        # Prevent libtool from embedding absolute build-time paths in RPATH
+        "--disable-rpath",
     ],
     deps = [
         "//packages/linux/system/terminal/ncurses:ncurses",

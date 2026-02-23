@@ -37,9 +37,9 @@ package(
         # Uniform timestamps prevent autotools regeneration rules
         find . -type f -exec touch {} + 2>/dev/null || true
 
-        make -j${MAKEOPTS:-$(nproc)} MAKEINFO=true
+        make -j${MAKEOPTS:-$(nproc)} MAKEINFO=true ACLOCAL=true AUTOMAKE=true
 
-        make DESTDIR="$OUT" install
+        make DESTDIR="$OUT" install MAKEINFO=true ACLOCAL=true AUTOMAKE=true
 
         # Create wrapper scripts that set the correct data directory
         # autom4te has /usr/share/autoconf hardcoded, but in Buck2 builds we need

@@ -22,6 +22,11 @@ package(
         "LIBDIR=/usr/lib",
         "USRLIBDIR=/usr/lib",
     ],
+    post_install_cmds = [
+        # keyutils Makefile creates absolute symlinks; fix to relative
+        "cd usr/lib && ln -sf libkeyutils.so.1.10 libkeyutils.so.1 && ln -sf libkeyutils.so.1 libkeyutils.so",
+    ],
+    libraries = ["keyutils"],
     deps = [
         "//packages/linux/dev-tools/build-systems/binutils:binutils",
     ],
