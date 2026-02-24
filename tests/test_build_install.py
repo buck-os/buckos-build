@@ -12,6 +12,7 @@ sys.path.insert(0, str(_REPO / "tools"))
 from build_helper import _resolve_env_paths as build_resolve
 from build_helper import _rewrite_file, _can_unshare_net
 from install_helper import _resolve_env_paths as install_resolve
+from install_helper import _suppress_phony_rebuilds
 
 passed = 0
 failed = 0
@@ -487,6 +488,103 @@ def main():
             obj2 = _StubUnpickler(f).load()
         check(obj2.source_dir == "/new/output/dir",
               f"re-pickled round-trip: {obj2.source_dir}")
+
+        # ── _suppress_phony_rebuilds ──────────────────────────────────
+
+        print("=== _suppress_phony_rebuilds ===")
+
+        phony_dir = os.path.join(tmpdir, "phony_test")
+        os.makedirs(os.path.join(phony_dir, "sub"), exist_ok=True)
+
+        # 42. Variable-only .PHONY line — variable stripped
+        f1 = os.path.join(phony_dir, "Makefile")
+        with open(f1, "w") as f:
+            f.write("all: foo\n.PHONY: $(LTCOMMAND)\ninstall: all\n")
+        _suppress_phony_rebuilds(phony_dir)
+        with open(f1) as f:
+            content = f.read()
+        check("$(LTCOMMAND)" not in content,
+              "variable-only .PHONY: variable stripped")
+        check(".PHONY:" in content,
+              "variable-only .PHONY: directive preserved")
+        check("install: all\n" in content,
+              "variable-only .PHONY: surrounding lines intact")
+
+        # 43. Mixed literal + variable — only variable removed
+        f2 = os.path.join(phony_dir, "sub", "Makefile")
+        with open(f2, "w") as f:
+            f.write(".PHONY: install clean $(LTLIBRARY) $(LTCOMMAND)\n")
+        _suppress_phony_rebuilds(phony_dir)
+        with open(f2) as f:
+            content = f.read()
+        check("install" in content and "clean" in content,
+              f"mixed .PHONY: literals preserved: {content.strip()}")
+        check("$(LTLIBRARY)" not in content and "$(LTCOMMAND)" not in content,
+              f"mixed .PHONY: variables stripped: {content.strip()}")
+
+        # 44. Continuation lines with variables
+        f3 = os.path.join(phony_dir, "buildrules")
+        with open(f3, "w") as f:
+            f.write(".PHONY: $(TARGET1) \\\n\t$(TARGET2)\nsome_rule:\n")
+        _suppress_phony_rebuilds(phony_dir)
+        with open(f3) as f:
+            content = f.read()
+        check("$(TARGET1)" not in content and "$(TARGET2)" not in content,
+              f"continuation: both variables stripped: {content.strip()!r}")
+        check("some_rule:" in content,
+              "continuation: following lines intact")
+
+        # 45. ${VAR} syntax also stripped
+        f4 = os.path.join(phony_dir, "GNUmakefile")
+        with open(f4, "w") as f:
+            f.write(".PHONY: ${PROGRAMS}\n")
+        _suppress_phony_rebuilds(phony_dir)
+        with open(f4) as f:
+            content = f.read()
+        check("${PROGRAMS}" not in content,
+              f"${{}} syntax stripped: {content.strip()!r}")
+
+        # 46. .PHONY with only literals — untouched
+        f5 = os.path.join(phony_dir, "literal.mk")
+        orig = ".PHONY: install clean all\n"
+        with open(f5, "w") as f:
+            f.write(orig)
+        _suppress_phony_rebuilds(phony_dir)
+        with open(f5) as f:
+            content = f.read()
+        check(content == orig,
+              "literal-only .PHONY: untouched")
+
+        # 47. File without .PHONY — untouched
+        f6 = os.path.join(phony_dir, "plain.mk")
+        orig = "all: foo\nfoo: bar.c\n"
+        with open(f6, "w") as f:
+            f.write(orig)
+        os.utime(f6, (5000000, 5000000))
+        orig_mtime = os.stat(f6).st_mtime
+        _suppress_phony_rebuilds(phony_dir)
+        with open(f6) as f:
+            content = f.read()
+        check(content == orig and os.stat(f6).st_mtime == orig_mtime,
+              "no .PHONY: file untouched (content and mtime)")
+
+        # 48. Binary file — skipped without error
+        f7 = os.path.join(phony_dir, "binary.o")
+        with open(f7, "wb") as f:
+            f.write(b"\x00\x01\x02.PHONY: $(X)\xff\xfe")
+        _suppress_phony_rebuilds(phony_dir)
+        # Just verify no exception was raised
+        ok("binary file skipped without error")
+
+        # 49. Timestamp preserved on modified file
+        f8 = os.path.join(phony_dir, "ts_test.mk")
+        with open(f8, "w") as f:
+            f.write(".PHONY: $(BIN)\n")
+        os.utime(f8, (3000000, 3000000))
+        _suppress_phony_rebuilds(phony_dir)
+        st = os.stat(f8)
+        check(st.st_mtime == 3000000,
+              f"mtime preserved on modified file: {st.st_mtime}")
 
     finally:
         os.chdir(saved_cwd)

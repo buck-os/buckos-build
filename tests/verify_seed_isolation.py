@@ -185,10 +185,12 @@ def main():
             ht_elfs = find_elf_files(ht_dir)
             print(f"  host-tools/: {len(ht_elfs)} ELF files")
 
-            # Host tools must not reference build dirs or sysroot
+            # Host tools are buckos-native: they reference the buckos
+            # sysroot (expected) but must not reference host paths
             ht_forbidden = rpath_forbidden + [
-                "/sys-root",
-                "buckos-linux-gnu",
+                "/usr/lib",
+                "/usr/lib64",
+                "/lib/x86_64-linux-gnu",
             ]
             for elf in ht_elfs:
                 for v in check_rpath(elf, ht_forbidden):
@@ -199,6 +201,30 @@ def main():
                 if "/bin/" in os.path.relpath(elf, ht_dir):
                     for v in check_strings_for_leaks(elf, rpath_forbidden):
                         warnings.append(f"host-tools string: {v}")
+
+            # Positive check: host-tools ELFs should be buckos-linked
+            for elf in ht_elfs:
+                if "/bin/" not in os.path.relpath(elf, ht_dir):
+                    continue
+                output = run(["readelf", "-d", elf])
+                if not output:
+                    continue
+                needed = [
+                    l for l in output.splitlines() if "NEEDED" in l
+                ]
+                if not needed:
+                    continue  # statically linked
+                # At least one NEEDED should be a standard buckos lib
+                has_buckos_lib = any(
+                    "libc.so" in l or "libm.so" in l or "libdl.so" in l
+                    or "libpthread.so" in l or "libstdc++.so" in l
+                    for l in needed
+                )
+                if not has_buckos_lib:
+                    name = os.path.basename(elf)
+                    warnings.append(
+                        f"host-tools: {name} has no standard buckos NEEDED"
+                    )
         else:
             if meta.get("has_host_tools"):
                 failures.append(
