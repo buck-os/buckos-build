@@ -192,6 +192,34 @@ python_binary(
     visibility = ["PUBLIC"],
 )
 
+python_binary(
+    name = "rootfs_helper",
+    main = "rootfs_helper.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "acct_helper",
+    main = "acct_helper.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "initramfs_builder",
+    main = "initramfs_builder.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "dracut_initramfs_helper",
+    main = "dracut_initramfs_helper.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
 export_file(
     name = "sbom.bxl",
     src = "sbom.bxl",

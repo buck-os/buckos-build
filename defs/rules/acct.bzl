@@ -34,22 +34,14 @@ def _acct_group_impl(ctx):
     """Generate /etc/group and /etc/gshadow entries."""
     prefix = ctx.actions.declare_output("installed", dir = True)
 
-    # group(5): group_name:password:GID:user_list
-    group_line = "{}:x:{}:".format(ctx.attrs.name, ctx.attrs.gid)
-
-    # gshadow(5): group_name:encrypted_password:admins:members
-    gshadow_line = "{}:!::".format(ctx.attrs.name)
-
-    script = ctx.actions.write("gen_group.sh", """\
-#!/bin/bash
-set -e
-mkdir -p "$1/etc"
-echo '{group}' >> "$1/etc/group"
-echo '{gshadow}' >> "$1/etc/gshadow"
-""".format(group = group_line, gshadow = gshadow_line), is_executable = True)
+    cmd = cmd_args(ctx.attrs._acct_tool[RunInfo])
+    cmd.add("--mode", "group")
+    cmd.add("--name", ctx.attrs.name)
+    cmd.add("--id", str(ctx.attrs.gid))
+    cmd.add("--output-dir", prefix.as_output())
 
     ctx.actions.run(
-        cmd_args("bash", script, prefix.as_output()),
+        cmd,
         category = "acct_group",
         identifier = ctx.attrs.name,
     )
@@ -83,6 +75,9 @@ acct_group_package = rule(
         "gid": attrs.int(),
         "description": attrs.string(default = ""),
         "deps": attrs.list(attrs.dep(), default = []),
+        "_acct_tool": attrs.default_only(
+            attrs.exec_dep(default = "//tools:acct_helper"),
+        ),
     },
 )
 
@@ -92,31 +87,17 @@ def _acct_user_impl(ctx):
     """Generate /etc/passwd and /etc/shadow entries."""
     prefix = ctx.actions.declare_output("installed", dir = True)
 
-    # passwd(5): username:password:UID:GID:GECOS:home_dir:shell
-    # GID is set to UID by default (matching primary_group convention)
-    passwd_line = "{}:x:{}:{}:{}:{}:{}".format(
-        ctx.attrs.name,
-        ctx.attrs.uid,
-        ctx.attrs.uid,  # GID = UID (resolved via primary_group at rootfs merge)
-        ctx.attrs.description,
-        ctx.attrs.home,
-        ctx.attrs.shell,
-    )
-
-    # shadow(5): username:encrypted_password:last_changed:min:max:warn:inactive:expire:reserved
-    shadow_line = "{}:!:0:0:99999:7:::".format(ctx.attrs.name)
-
-    script = ctx.actions.write("gen_user.sh", """\
-#!/bin/bash
-set -e
-mkdir -p "$1/etc"
-echo '{passwd}' >> "$1/etc/passwd"
-echo '{shadow}' >> "$1/etc/shadow"
-chmod 640 "$1/etc/shadow"
-""".format(passwd = passwd_line, shadow = shadow_line), is_executable = True)
+    cmd = cmd_args(ctx.attrs._acct_tool[RunInfo])
+    cmd.add("--mode", "user")
+    cmd.add("--name", ctx.attrs.name)
+    cmd.add("--id", str(ctx.attrs.uid))
+    cmd.add("--output-dir", prefix.as_output())
+    cmd.add("--home", ctx.attrs.home)
+    cmd.add("--shell", ctx.attrs.shell)
+    cmd.add("--description", ctx.attrs.description)
 
     ctx.actions.run(
-        cmd_args("bash", script, prefix.as_output()),
+        cmd,
         category = "acct_user",
         identifier = ctx.attrs.name,
     )
@@ -154,5 +135,8 @@ acct_user_package = rule(
         "groups": attrs.list(attrs.string(), default = []),
         "description": attrs.string(default = ""),
         "deps": attrs.list(attrs.dep(), default = []),
+        "_acct_tool": attrs.default_only(
+            attrs.exec_dep(default = "//tools:acct_helper"),
+        ),
     },
 )

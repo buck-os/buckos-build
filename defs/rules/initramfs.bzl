@@ -19,111 +19,17 @@ def _initramfs_impl(ctx):
     initramfs_file = ctx.actions.declare_output(ctx.attrs.name + ".cpio.gz")
 
     rootfs_dir = ctx.attrs.rootfs[DefaultInfo].default_outputs[0]
-
-    compression = ctx.attrs.compression
-    if compression == "gz":
-        compress_cmd = "gzip -9"
-    elif compression == "xz":
-        compress_cmd = "xz -9 --check=crc32"
-    elif compression == "lz4":
-        compress_cmd = "lz4 -l -9"
-    elif compression == "zstd":
-        compress_cmd = "zstd -19"
-    else:
-        compress_cmd = "gzip -9"
-
     init_path = ctx.attrs.init if ctx.attrs.init else "/sbin/init"
 
-    init_script_src = None
+    cmd = cmd_args(ctx.attrs._initramfs_tool[RunInfo])
+    cmd.add("--rootfs-dir", rootfs_dir)
+    cmd.add("--output", initramfs_file.as_output())
+    cmd.add("--init-path", init_path)
+    cmd.add("--compression", ctx.attrs.compression)
+
     if ctx.attrs.init_script:
         init_script_src = ctx.attrs.init_script[DefaultInfo].default_outputs[0]
-
-    script = ctx.actions.write(
-        "create_initramfs.sh",
-        """#!/bin/bash
-set -e
-
-ROOTFS="$1"
-OUTPUT="$(realpath -m "$2")"
-INIT_PATH="{init_path}"
-INIT_SCRIPT="$3"
-mkdir -p "$(dirname "$OUTPUT")"
-
-WORK=$(mktemp -d)
-trap "rm -rf $WORK" EXIT
-
-cp -a "$ROOTFS"/* "$WORK"/
-
-# Fix aarch64 library paths
-if [ -d "$WORK/lib64" ] && [ ! -L "$WORK/lib64" ]; then
-    mkdir -p "$WORK/lib"
-    cp -a "$WORK/lib64/"* "$WORK/lib/" 2>/dev/null || true
-    rm -rf "$WORK/lib64"
-    ln -sf lib "$WORK/lib64"
-fi
-if [ -d "$WORK/usr/lib64" ] && [ ! -L "$WORK/usr/lib64" ]; then
-    mkdir -p "$WORK/usr/lib"
-    cp -a "$WORK/usr/lib64/"* "$WORK/usr/lib/" 2>/dev/null || true
-    rm -rf "$WORK/usr/lib64"
-    ln -sf lib "$WORK/usr/lib64"
-fi
-
-# Install custom init script if provided
-if [ -n "$INIT_SCRIPT" ] && [ -f "$INIT_SCRIPT" ]; then
-    mkdir -p "$(dirname "$WORK$INIT_PATH")"
-    cp "$INIT_SCRIPT" "$WORK$INIT_PATH"
-    chmod +x "$WORK$INIT_PATH"
-elif [ ! -e "$WORK$INIT_PATH" ]; then
-    if [ -x "$WORK/bin/busybox" ]; then
-        mkdir -p "$WORK/sbin"
-        ln -sf /bin/busybox "$WORK/sbin/init"
-    elif [ -x "$WORK/bin/sh" ]; then
-        cat > "$WORK/sbin/init" << 'INIT_EOF'
-#!/bin/sh
-mount -t proc proc /proc
-mount -t sysfs sysfs /sys
-mount -t devtmpfs devtmpfs /dev 2>/dev/null || true
-[ -x /etc/init.d/rcS ] && /etc/init.d/rcS
-exec /bin/sh
-INIT_EOF
-        chmod +x "$WORK/sbin/init"
-    fi
-fi
-
-# Create /init at root for kernel to find
-if [ ! -e "$WORK/init" ]; then
-    if [ -e "$WORK$INIT_PATH" ]; then
-        ln -sf "$INIT_PATH" "$WORK/init"
-    elif [ -x "$WORK/sbin/init" ]; then
-        ln -sf /sbin/init "$WORK/init"
-    elif [ -x "$WORK/bin/sh" ]; then
-        cat > "$WORK/init" << 'INIT_EOF'
-#!/bin/sh
-mount -t proc proc /proc
-mount -t sysfs sysfs /sys
-mount -t devtmpfs devtmpfs /dev 2>/dev/null || true
-[ -x /etc/init.d/rcS ] && /etc/init.d/rcS
-exec /bin/sh
-INIT_EOF
-        chmod +x "$WORK/init"
-    fi
-fi
-
-cd "$WORK"
-find . -print0 | cpio --null -o -H newc | {compress_cmd} > "$OUTPUT"
-
-echo "Created initramfs: $OUTPUT"
-""".format(init_path = init_path, compress_cmd = compress_cmd),
-        is_executable = True,
-    )
-
-    cmd = cmd_args([
-        "bash",
-        script,
-        rootfs_dir,
-        initramfs_file.as_output(),
-        init_script_src if init_script_src else "",
-    ])
+        cmd.add("--init-script", init_script_src)
 
     ctx.actions.run(cmd, category = "initramfs", identifier = ctx.attrs.name)
 
@@ -137,6 +43,9 @@ _initramfs_rule = rule(
         "init": attrs.string(default = "/sbin/init"),
         "init_script": attrs.option(attrs.dep(), default = None),
         "labels": attrs.list(attrs.string(), default = []),
+        "_initramfs_tool": attrs.default_only(
+            attrs.exec_dep(default = "//tools:initramfs_builder"),
+        ),
     },
 )
 
@@ -164,15 +73,14 @@ def _dracut_initramfs_impl(ctx):
     kver = ctx.attrs.kernel_version
     compress = ctx.attrs.compression
 
-    cmd = cmd_args([
-        create_script,
-        kernel_image,
-        dracut_dir,
-        rootfs_dir,
-        initramfs_file.as_output(),
-        kver,
-        compress,
-    ])
+    cmd = cmd_args(ctx.attrs._dracut_tool[RunInfo])
+    cmd.add(create_script)
+    cmd.add(kernel_image)
+    cmd.add(dracut_dir)
+    cmd.add(rootfs_dir)
+    cmd.add(initramfs_file.as_output())
+    cmd.add(kver)
+    cmd.add(compress)
     if modules_dir:
         cmd.add(modules_dir)
 
@@ -192,6 +100,9 @@ _dracut_initramfs_rule = rule(
         "add_modules": attrs.list(attrs.string(), default = ["dmsquash-live", "livenet"]),
         "compression": attrs.string(default = "gzip"),
         "labels": attrs.list(attrs.string(), default = []),
+        "_dracut_tool": attrs.default_only(
+            attrs.exec_dep(default = "//tools:dracut_initramfs_helper"),
+        ),
     },
 )
 
