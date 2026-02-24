@@ -16,6 +16,7 @@ load("//tests/graph:test_targets_impl.bzl", test_targets_run = "run")
 load("//tests/graph:test_provenance_impl.bzl", test_provenance_run = "run")
 load("//tests/graph:test_graph_impl.bzl", test_graph_run = "run")
 load("//tests/graph:test_cloud_hypervisor_impl.bzl", test_cloud_hypervisor_run = "run")
+load("//tests/graph:test_dedup_impl.bzl", test_dedup_run = "run")
 
 _SUITES = [
     ("test_deps", test_deps_run),
@@ -28,6 +29,7 @@ _SUITES = [
     ("test_provenance", test_provenance_run),
     ("test_graph", test_graph_run),
     ("test_cloud_hypervisor", test_cloud_hypervisor_run),
+    ("test_dedup", test_dedup_run),
 ]
 
 def _impl(ctx):
