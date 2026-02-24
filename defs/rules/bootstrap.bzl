@@ -213,18 +213,22 @@ def _bootstrap_gcc_impl(ctx):
     # them, Buck2 won't materialize the targets for downstream actions.
     math_lib_srcs = []
     pre_parts = []
+    # Copy math libs into the source tree (GCC configure expects in-tree
+    # gmp/, mpfr/, mpc/ directories).  We use cp -a instead of symlinks
+    # because symlinks embed absolute paths that break when the action
+    # output is restored from remote cache on a different machine.
     if ctx.attrs.gmp_source:
         gmp_src = ctx.attrs.gmp_source[DefaultInfo].default_outputs[0]
         math_lib_srcs.append(gmp_src)
-        pre_parts.append(cmd_args("ln -sfn $PROJECT_ROOT/", gmp_src, " gmp", delimiter = ""))
+        pre_parts.append(cmd_args("cp -a $PROJECT_ROOT/", gmp_src, " gmp", delimiter = ""))
     if ctx.attrs.mpfr_source:
         mpfr_src = ctx.attrs.mpfr_source[DefaultInfo].default_outputs[0]
         math_lib_srcs.append(mpfr_src)
-        pre_parts.append(cmd_args("ln -sfn $PROJECT_ROOT/", mpfr_src, " mpfr", delimiter = ""))
+        pre_parts.append(cmd_args("cp -a $PROJECT_ROOT/", mpfr_src, " mpfr", delimiter = ""))
     if ctx.attrs.mpc_source:
         mpc_src = ctx.attrs.mpc_source[DefaultInfo].default_outputs[0]
         math_lib_srcs.append(mpc_src)
-        pre_parts.append(cmd_args("ln -sfn $PROJECT_ROOT/", mpc_src, " mpc", delimiter = ""))
+        pre_parts.append(cmd_args("cp -a $PROJECT_ROOT/", mpc_src, " mpc", delimiter = ""))
 
     # For pass1 (C only, no libc): remove libcody and c++tools
     if not ctx.attrs.with_headers:
