@@ -103,6 +103,27 @@ python_binary(
 )
 
 python_binary(
+    name = "bootstrap_gcc_configure",
+    main = "bootstrap_gcc_configure.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "bootstrap_glibc_configure",
+    main = "bootstrap_glibc_configure.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "bootstrap_python_configure",
+    main = "bootstrap_python_configure.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
     name = "merge_host_tools",
     main = "merge_host_tools.py",
     visibility = ["PUBLIC"],
