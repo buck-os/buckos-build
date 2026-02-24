@@ -118,7 +118,7 @@ def main():
             "-initrd", initramfs,
             "-append", "console=ttyS0 rdinit=/init panic=1",
             "-cdrom", iso_file,
-            "-nographic", "-no-reboot", "-m", "512M",
+            "-nographic", "-no-reboot", "-m", "2G",
             "-enable-kvm", "-cpu", "host",
         ]
 
@@ -139,17 +139,21 @@ def main():
                 return b.decode("utf-8", errors="replace") if isinstance(b, bytes) else b
             output = _decode(e.stdout) + _decode(e.stderr)
 
-    boot_marker = "Run /init as init process"
+    kernel_marker = "Run /init as init process"
+    shell_marker = "System initialization complete."
 
     print(output[-3000:] if len(output) > 3000 else output)
     print("---")
 
-    if boot_marker in output:
-        print(f"PASS: found '{boot_marker}'")
-        sys.exit(0)
-    else:
-        print(f"FAIL: '{boot_marker}' not found in output")
-        sys.exit(1)
+    ok = True
+    for label, marker in [("kernel", kernel_marker), ("shell", shell_marker)]:
+        if marker in output:
+            print(f"PASS: {label}: found '{marker}'")
+        else:
+            print(f"FAIL: {label}: '{marker}' not found in output")
+            ok = False
+
+    sys.exit(0 if ok else 1)
 
 
 if __name__ == "__main__":

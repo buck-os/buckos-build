@@ -83,6 +83,7 @@ elif [ ! -e "$WORK$INIT_PATH" ]; then
 mount -t proc proc /proc
 mount -t sysfs sysfs /sys
 mount -t devtmpfs devtmpfs /dev 2>/dev/null || true
+[ -x /etc/init.d/rcS ] && /etc/init.d/rcS
 exec /bin/sh
 INIT_EOF
         chmod +x "$WORK/sbin/init"
@@ -101,6 +102,7 @@ if [ ! -e "$WORK/init" ]; then
 mount -t proc proc /proc
 mount -t sysfs sysfs /sys
 mount -t devtmpfs devtmpfs /dev 2>/dev/null || true
+[ -x /etc/init.d/rcS ] && /etc/init.d/rcS
 exec /bin/sh
 INIT_EOF
         chmod +x "$WORK/init"

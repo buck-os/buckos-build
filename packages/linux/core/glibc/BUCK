@@ -8,7 +8,7 @@ package(
     name = "glibc",
     build_rule = "binary",
     version = "2.42",
-    url = "https://ftpmirror.gnu.org/gnu/glibc/glibc-2.42.tar.xz",
+    url = "https://mirrors.kernel.org/gnu/glibc/glibc-2.42.tar.xz",
     sha256 = None,
     source = "toolchains//bootstrap:glibc-src",
     description = "GNU C Library (glibc) - the standard C library for GNU/Linux systems",
@@ -56,9 +56,11 @@ fi
 
 echo "Copying glibc from: $CROSS_GLIBC"
 
+mkdir -p "$DESTDIR"
+
 # Copy the entire structure - glibc is now built with --prefix=/usr
 # x86_64 uses lib64/, aarch64 uses lib/
-cp -a "$CROSS_GLIBC"/* "$DESTDIR/" 2>/dev/null || true
+cp -a "$CROSS_GLIBC"/* "$DESTDIR/"
 
 echo "glibc installation complete"
 
