@@ -429,6 +429,15 @@ def main():
         print(f"error: {args.build_system} failed with exit code {result.returncode}", file=sys.stderr)
         sys.exit(1)
 
+    # Re-run symlink fix after build — some packages (xfsprogs) recreate
+    # self-referencing symlinks during make.
+    for dirpath, dirnames, _filenames in os.walk(output_dir):
+        for d in dirnames:
+            p = os.path.join(dirpath, d)
+            if os.path.islink(p) and os.readlink(p) == ".":
+                os.unlink(p)
+                os.makedirs(p, exist_ok=True)
+
 
 if __name__ == "__main__":
     main()
