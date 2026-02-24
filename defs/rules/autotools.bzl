@@ -271,6 +271,8 @@ def _src_install(ctx, built):
         cmd.add(cmd_args("--make-arg=", var, delimiter = ""))
     for arg in ctx.attrs.make_args:
         cmd.add(cmd_args("--make-arg=", arg, delimiter = ""))
+    for arg in ctx.attrs.install_args:
+        cmd.add(cmd_args("--make-arg=", arg, delimiter = ""))
 
     # Post-install commands (run in the prefix dir after make install)
     for post_cmd in ctx.attrs.post_install_cmds:
@@ -341,6 +343,7 @@ autotools_package = rule(
         "pre_build_cmds": attrs.list(attrs.string(), default = []),
         "post_install_cmds": attrs.list(attrs.string(), default = []),
         "make_args": attrs.list(attrs.string(), default = []),
+        "install_args": attrs.list(attrs.string(), default = []),
         "install_prefix_var": attrs.option(attrs.string(), default = None),
         "env": attrs.dict(attrs.string(), attrs.string(), default = {}),
         "deps": attrs.list(attrs.dep(), default = []),

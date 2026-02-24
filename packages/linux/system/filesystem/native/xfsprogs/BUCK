@@ -19,6 +19,10 @@ package(
         "--enable-editline=yes",
         "--enable-blkid=yes",
     ],
+    # xfsprogs' make install triggers relinking with broken cross-subdir
+    # dependencies — xfs_copy links ../libxlog/.libs/libxlog.a before it
+    # exists.  Serialize install to avoid the race.
+    install_args = ["-j1"],
     deps = [
         "//packages/linux/core/util-linux:util-linux",
         "//packages/linux/dev-libs/parsers/inih:inih",
