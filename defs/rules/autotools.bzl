@@ -122,6 +122,12 @@ def _src_configure(ctx, source):
             cmd.add(cmd_args("--ldflags=", lib, delimiter = ""))
             cmd.add(cmd_args("--ldflags=", cmd_args(prefix, format = "-Wl,-rpath-link,{}/usr/lib64"), delimiter = ""))
             cmd.add(cmd_args("--ldflags=", cmd_args(prefix, format = "-Wl,-rpath-link,{}/usr/lib"), delimiter = ""))
+
+            # Transitive rpath-link: resolve indirect .so deps (e.g. libedit → ncurses)
+            if PackageInfo in dep:
+                for rt_dir in dep[PackageInfo].runtime_lib_dirs:
+                    cmd.add(cmd_args("--ldflags=", cmd_args("-Wl,-rpath-link,", rt_dir, delimiter = ""), delimiter = ""))
+
             cmd.add("--pkg-config-path", cmd_args(prefix, format = "{}/usr/lib64/pkgconfig"))
             cmd.add("--pkg-config-path", cmd_args(prefix, format = "{}/usr/lib/pkgconfig"))
             cmd.add("--pkg-config-path", cmd_args(prefix, format = "{}/usr/share/pkgconfig"))
@@ -169,6 +175,12 @@ def _dep_env_args(ctx):
         ldflags.append(cmd_args(prefix, format = "-L{}/usr/lib"))
         ldflags.append(cmd_args(prefix, format = "-Wl,-rpath-link,{}/usr/lib64"))
         ldflags.append(cmd_args(prefix, format = "-Wl,-rpath-link,{}/usr/lib"))
+
+        # Transitive rpath-link: resolve indirect .so deps (e.g. libedit → ncurses)
+        if PackageInfo in dep:
+            for rt_dir in dep[PackageInfo].runtime_lib_dirs:
+                ldflags.append(cmd_args("-Wl,-rpath-link,", rt_dir, delimiter = ""))
+
         pkg_config_paths.append(cmd_args(prefix, format = "{}/usr/lib64/pkgconfig"))
         pkg_config_paths.append(cmd_args(prefix, format = "{}/usr/lib/pkgconfig"))
         pkg_config_paths.append(cmd_args(prefix, format = "{}/usr/share/pkgconfig"))

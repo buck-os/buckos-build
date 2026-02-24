@@ -101,6 +101,12 @@ def _meson_setup(ctx, source):
         # (e.g. libsndfile.so → libFLAC.so) without adding runtime rpath.
         ldflags.append(cmd_args(prefix, format = "-Wl,-rpath-link,{}/usr/lib64"))
         ldflags.append(cmd_args(prefix, format = "-Wl,-rpath-link,{}/usr/lib"))
+
+        # Transitive rpath-link: resolve indirect .so deps (e.g. libedit → ncurses)
+        if PackageInfo in dep:
+            for rt_dir in dep[PackageInfo].runtime_lib_dirs:
+                ldflags.append(cmd_args("-Wl,-rpath-link,", rt_dir, delimiter = ""))
+
         pkg_config_paths.append(cmd_args(prefix, format = "{}/usr/lib64/pkgconfig"))
         pkg_config_paths.append(cmd_args(prefix, format = "{}/usr/lib/pkgconfig"))
         pkg_config_paths.append(cmd_args(prefix, format = "{}/usr/share/pkgconfig"))

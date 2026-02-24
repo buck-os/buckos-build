@@ -90,6 +90,12 @@ def _dep_env_args(ctx):
         lib_dirs.append(cmd_args(prefix, format = "{}/tools/lib"))
         ldflags.append(cmd_args(prefix, format = "-Wl,-rpath-link,{}/tools/lib64"))
         ldflags.append(cmd_args(prefix, format = "-Wl,-rpath-link,{}/tools/lib"))
+
+        # Transitive rpath-link: resolve indirect .so deps (e.g. libedit → ncurses)
+        if PackageInfo in dep:
+            for rt_dir in dep[PackageInfo].runtime_lib_dirs:
+                ldflags.append(cmd_args("-Wl,-rpath-link,", rt_dir, delimiter = ""))
+
         pkg_config_paths.append(cmd_args(prefix, format = "{}/tools/lib64/pkgconfig"))
         pkg_config_paths.append(cmd_args(prefix, format = "{}/tools/lib/pkgconfig"))
         path_dirs.append(cmd_args(prefix, format = "{}/tools/bin"))
