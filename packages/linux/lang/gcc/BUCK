@@ -82,12 +82,14 @@ echo "GCC installed from bootstrap-toolchain"
 # Full GCC with C and C++ for the seed toolchain.  Must be capable of
 # building any package in the tree (C++ for LLVM, Qt, KDE, etc.).
 #
-# Built via bootstrap transition (host PATH), so the host's existing
-# GCC bootstraps this one — proper compiler bootstrapping.
+# Cross-compiled with the seed cross-compiler → buckos-native binaries.
+# Same CPU architecture (x86_64), so intermediate bootstrap stages run
+# on the build host via the compatible dynamic linker.  Profiled
+# bootstrap + LTO produces a significantly faster compiler at the cost
+# of a longer build (3 full stages + profile collection).
 #
 # libcody (C++ modules server) sub-configure doesn't inherit top-level
-# CXXFLAGS and fails C++11 detection.  Fix by injecting CXXFLAGS into
-# the sub-configure via the top-level Makefile.
+# CXXFLAGS and fails C++11 detection.  Fix by patching the sub-configure.
 
 package(
     build_rule = "autotools",
@@ -108,7 +110,8 @@ package(
         "sed -i 's/as_fn_error.*C++11 is required.*/: # patched — C++11 verified by top-level configure/' libcody/configure",
     ],
     configure_args = [
-        "--disable-bootstrap",
+        "--enable-profiled-bootstrap",
+        "--with-build-config=bootstrap-lto",
         "--disable-multilib",
         "--enable-languages=c,c++",
         "--disable-nls",
@@ -120,11 +123,18 @@ package(
     env = {
         "CFLAGS": "-O2 -Wno-error=implicit-function-declaration",
     },
+    configure_prefix_deps = {
+        "gmp": "//packages/linux/system/libs/utility/gmp:gmp",
+        "mpfr": "//packages/linux/system/libs/utility/mpfr:mpfr",
+        "mpc": "//packages/linux/system/libs/utility/mpc:mpc",
+        "zstd": "//packages/linux/system/libs/compression/zstd:zstd",
+    },
     deps = [
         "//packages/linux/system/libs/utility/gmp:gmp",
         "//packages/linux/system/libs/utility/mpfr:mpfr",
         "//packages/linux/system/libs/utility/mpc:mpc",
         "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/compression/zstd:zstd",
     ],
     post_install_cmds = [
         # Create standard symlinks

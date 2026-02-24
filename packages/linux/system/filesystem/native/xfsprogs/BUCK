@@ -7,11 +7,9 @@ package(
 
     sha256 = "3a6dc7b1245ce9bccd197bab00691f1b190bd3694d3ccc301d21b83afc133199",
     use_configure = {
-        "icu": ("--enable-icu", "--disable-icu"),
-        "libedit": ("--enable-libedit", "--disable-libedit"),
-        "nls": ("--enable-nls", "--disable-nls"),
-        "selinux": ("--enable-selinux", "--disable-selinux"),
-        "static-libs": ("--enable-static", "--disable-static"),
+        "icu": ("--enable-libicu=yes", "--enable-libicu=no"),
+        "nls": ("--enable-gettext=yes", "--enable-gettext=no"),
+        "static-libs": ("--enable-static=yes", "--enable-static=no"),
     },
     version = "6.18.0",
     description = "XFS filesystem utilities (mkfs.xfs, xfs_repair, xfs_info, etc.)",
@@ -25,7 +23,7 @@ package(
         "//packages/linux/core/util-linux:util-linux",
         "//packages/linux/dev-libs/parsers/inih:inih",
         "//packages/linux/system/libs/liburcu:liburcu",
-        "//packages/linux/system/terminal/readline:readline",
+        "//packages/linux/dev-libs/misc/libedit:libedit",
     ],
     visibility = ["PUBLIC"],
 )

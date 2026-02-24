@@ -6,17 +6,20 @@ package(
     url = "https://sourceforge.net/projects/gptfdisk/files/gptfdisk/1.0.9/gptfdisk-1.0.9.tar.gz",
 
     sha256 = "dafead2693faeb8e8b97832b23407f6ed5b3219bc1784f482dd855774e2d50c2",
-    use_configure = {
-        "ncurses": ("--with-ncurses", "--without-ncurses"),
-        "static": ("--enable-static", "--disable-static"),
-    },
+    skip_configure = True,
     version = "1.0.9",
     description = "GPT partitioning tools (gdisk, sgdisk, cgdisk, fixparts)",
     homepage = "https://www.rodsbooks.com/gdisk/",
     license = "GPL-2.0",
-    # gptfdisk uses plain Makefile, no configure script
+    # gptfdisk uses a plain Makefile with no install target;
+    # inject one so the autotools install phase succeeds.
+    pre_build_cmds = [
+        "printf '\\ninstall: all\\n\\tmkdir -p $(DESTDIR)/usr/sbin\\n\\tcp -f gdisk sgdisk cgdisk fixparts $(DESTDIR)/usr/sbin/\\n' >> Makefile",
+    ],
     deps = [
         "//packages/linux/core/util-linux:util-linux",
+        "//packages/linux/dev-libs/popt:popt",
+        "//packages/linux/system/terminal/ncurses:ncurses",
     ],
     visibility = ["PUBLIC"],
 )

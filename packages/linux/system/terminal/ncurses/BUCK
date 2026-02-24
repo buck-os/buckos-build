@@ -48,6 +48,9 @@ package(
         "cd usr/lib64 && ln -sf libncursesw.so libtinfo.so && ln -sf libncursesw.so libtinfow.so",
         # pkg-config symlinks
         "cd usr/lib64/pkgconfig && for pc in ncurses form panel menu; do ln -sf ${pc}w.pc ${pc}.pc; done && ln -sf ncursesw.pc tinfo.pc",
+        # --enable-widec + --enable-symlinks flattens headers into include/;
+        # packages expecting <ncursesw/ncurses.h> need this symlink
+        "ln -sf . usr/include/ncursesw",
     ],
 
     deps = [],

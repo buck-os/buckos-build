@@ -18,8 +18,10 @@ package(
         cd $SRCS
 
         # Pre-set cache variable to skip filesystem character test that creates
-        # files with backslashes in their names (Buck2 cannot handle these paths)
-        ac_cv_unsupported_fs_chars='"<>\\\\|' ./configure \
+        # files with backslashes in their names (Buck2 cannot handle these paths).
+        # The single backslash in the value marks \ as unsupported so configure
+        # won't create conftest.t\ on disk.
+        ac_cv_unsupported_fs_chars='"<>\\|' ./configure \
             --prefix=/usr \
             --build=$(./build-aux/config.guess 2>/dev/null || echo x86_64-pc-linux-gnu) \
             --host=${CHOST:-$(${CC:-gcc} -dumpmachine)} \
@@ -33,6 +35,10 @@ package(
 
         # Clean any pre-existing frozen files that may cause format mismatches
         find . -name '*.m4f' -delete 2>/dev/null || true
+
+        # Remove configure test artifacts — filenames with special characters
+        # (backslashes, etc.) break Buck2's path handling.
+        find . -name 'conftest*' -delete 2>/dev/null || true
 
         # Uniform timestamps prevent autotools regeneration rules
         find . -type f -exec touch {} + 2>/dev/null || true
