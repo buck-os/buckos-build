@@ -9,9 +9,11 @@ packages that use a non-standard name (e.g. CONFIG_PREFIX for busybox).
 import argparse
 import multiprocessing
 import os
+import shutil
 import stat
 import subprocess
 import sys
+import tempfile
 
 from _env import sanitize_global_env
 
@@ -168,12 +170,49 @@ def main():
     # paths (which are relative to the project root, not to the prefix).
     os.environ["PROJECT_ROOT"] = os.getcwd()
 
-    build_dir = os.path.abspath(args.build_dir)
+    _orig_build = os.path.abspath(args.build_dir)
+    if not os.path.isdir(_orig_build):
+        print(f"error: build directory not found: {_orig_build}", file=sys.stderr)
+        sys.exit(1)
+
+    # Copy build tree to a writable working directory.  Buck2
+    # compile-phase outputs are read-only artifacts; make install may
+    # need to patch libtool scripts, reset timestamps, or re-link
+    # binaries (mmap-based linkers like mold SIGBUS on read-only
+    # files, and hard-linked archives can appear truncated).
+    _work_base = tempfile.mkdtemp(prefix="install-build-")
+    _work_tree = os.path.join(_work_base, "tree")
+    shutil.copytree(_orig_build, _work_tree, symlinks=True)
+
+    # Fix symlinks that point back into the read-only original.
+    for dirpath, dirnames, filenames in os.walk(_work_tree):
+        for entries in (dirnames, filenames):
+            for name in entries:
+                p = os.path.join(dirpath, name)
+                if not os.path.islink(p):
+                    continue
+                target = os.readlink(p)
+                if target == ".":
+                    os.unlink(p)
+                    os.makedirs(p, exist_ok=True)
+                elif _orig_build in target:
+                    os.unlink(p)
+                    os.symlink(target.replace(_orig_build, _work_tree), p)
+
+    # Ensure every file and directory in the copy is writable.
+    for dirpath, dirnames, filenames in os.walk(_work_tree):
+        for d in dirnames:
+            dp = os.path.join(dirpath, d)
+            if not os.path.islink(dp):
+                os.chmod(dp, os.stat(dp).st_mode | stat.S_IWUSR)
+        for f in filenames:
+            fp = os.path.join(dirpath, f)
+            if not os.path.islink(fp):
+                os.chmod(fp, os.stat(fp).st_mode | stat.S_IWUSR)
+
+    build_dir = _work_tree
     if args.build_subdir:
         build_dir = os.path.join(build_dir, args.build_subdir)
-    if not os.path.isdir(build_dir):
-        print(f"error: build directory not found: {build_dir}", file=sys.stderr)
-        sys.exit(1)
 
     # Expose the build directory so post-cmds can reference build
     # artifacts (e.g. copying objects not handled by make install).
@@ -181,7 +220,6 @@ def main():
 
     # Create a pkg-config wrapper that always passes --define-prefix so
     # .pc files in Buck2 dep directories resolve paths correctly.
-    import tempfile
     wrapper_dir = tempfile.mkdtemp(prefix="pkgconf-wrapper-")
     wrapper = os.path.join(wrapper_dir, "pkg-config")
     with open(wrapper, "w") as f:
@@ -236,24 +274,6 @@ def main():
 
     prefix = os.path.abspath(args.prefix)
     os.makedirs(prefix, exist_ok=True)
-
-    # The build tree is a read-only Buck2 output from the compile action.
-    # Make it writable so we can patch libtool scripts and reset timestamps.
-    for dirpath, dirnames, filenames in os.walk(build_dir):
-        for d in dirnames:
-            dp = os.path.join(dirpath, d)
-            if not os.path.islink(dp):
-                try:
-                    os.chmod(dp, os.stat(dp).st_mode | stat.S_IWUSR)
-                except OSError:
-                    pass
-        for f in filenames:
-            fp = os.path.join(dirpath, f)
-            if not os.path.islink(fp):
-                try:
-                    os.chmod(fp, os.stat(fp).st_mode | stat.S_IWUSR)
-                except OSError:
-                    pass
 
     # Suppress libtool re-linking during install.
     #
@@ -360,6 +380,9 @@ def main():
             print(f"error: post-cmd failed with exit code {result.returncode}: {cmd_str}",
                   file=sys.stderr)
             sys.exit(1)
+
+    # Clean up the writable build-tree copy.
+    shutil.rmtree(_work_base, ignore_errors=True)
 
 
 if __name__ == "__main__":
