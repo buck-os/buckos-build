@@ -1,13 +1,22 @@
 """
 Bootstrap toolchain instantiation and export.
 
+Gentoo-style staged bootstrap:
+
+  Stage 1  — cross-compiler (host GCC → buckos cross-compiler)
+  Stage 2  — temporary tools (cross-compiled, host PATH leaks in)
+  Stage 3  — hermetic rebuild (rebuilt with stage 2 tools on PATH)
+
 Provides:
   :bootstrap-toolchain  — BuildToolchainInfo wrapping Stage 1 output
-  :export               — distributable tar.zst archive (cross-compiler only)
-  :seed-export          — distributable tar.zst archive (cross-compiler + host tools)
+  :stage2-toolchain     — Stage 1 + Stage 2 host tools (hermetic PATH)
+  :export               — distributable tar.zst (cross-compiler only)
+  :seed-export          — distributable tar.zst (cross-compiler +
+                          stage 3 buckos-native host tools)
 """
 
 load("//tc:toolchain_rules.bzl", "buckos_bootstrap_toolchain")
+load("//tc:transitions.bzl", "default_dep")
 load("//defs/rules:toolchain_export.bzl", "toolchain_export")
 
 buckos_bootstrap_toolchain(
@@ -16,9 +25,36 @@ buckos_bootstrap_toolchain(
     visibility = ["PUBLIC"],
 )
 
+# Stage 2 host tools resolved in DEFAULT config via default_dep wrapper.
+# Toolchain rules can't use transition_dep directly, so this wrapper
+# applies the default transition to break the stage3 dependency cycle:
+#   stage3 packages → stage2-toolchain → stage2-host-tools
+#                                         ↓ (default transition)
+#                                       host-tools in DEFAULT config
+#                                         → seed toolchain (no cycle)
+default_dep(
+    name = "stage2-host-tools",
+    dep = "//tc/bootstrap/host-tools:host-tools",
+    visibility = ["PUBLIC"],
+)
+
+# Stage 2 toolchain: stage 1 cross-compiler + stage 2 host tools.
+# Stage 2 host tools are built in DEFAULT config (non-hermetic, host PATH
+# leaks into the build environment) but the output is buckos-native because
+# the cross-compiler uses --sysroot.
+#
+# This toolchain provides hermetic PATH for the stage 3 rebuild —
+# TOOLCHAIN_ATTRS select() resolves here when the stage3 transition is active.
+buckos_bootstrap_toolchain(
+    name = "stage2-toolchain",
+    bootstrap_stage = "//tc/bootstrap/stage1:stage1",
+    host_tools = ":stage2-host-tools",
+    extra_cflags = ["-march=x86-64-v3"],
+    extra_ldflags = ["-fuse-ld=mold"],
+    visibility = ["PUBLIC"],
+)
+
 # Export the Stage 1 cross-compiler (runs on host, targets buckos).
-# Stage 2 produces native tools for the target system — those can't
-# run on the build host and are used for rootfs content instead.
 toolchain_export(
     name = "export",
     stage = "//tc/bootstrap/stage1:stage1",
@@ -27,10 +63,9 @@ toolchain_export(
     visibility = ["PUBLIC"],
 )
 
-# Seed export: Stage 1 cross-compiler + host tools.
-# Used as the fallback when no prebuilt seed is configured.
-# The bootstrap transition on host_tools flips the toolchain to host PATH
-# tools, breaking the circular dependency automatically.
+# Seed export: stage 1 cross-compiler + stage 3 hermetic host tools.
+# The stage3 transition (on host_tools attr) rebuilds host-tools with
+# the stage 2 toolchain, ensuring no host PATH leakage in the output.
 toolchain_export(
     name = "seed-export",
     stage = "//tc/bootstrap/stage1:stage1",

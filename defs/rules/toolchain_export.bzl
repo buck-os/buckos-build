@@ -3,6 +3,11 @@ toolchain_export rule: pack a bootstrap stage into a distributable archive.
 
 The archive contains compiler binaries, sysroot, GCC internal tools,
 optionally host tools, and a metadata.json file for provenance tracking.
+
+When host_tools is provided, the stage3 transition is applied so the
+tools are built with the stage 2 toolchain (hermetic PATH from the
+stage 2 host tools).  This ensures the seed contains hermetically-built
+buckos-native host tools with no host library or path leakage.
 """
 
 load("//defs:providers.bzl", "BootstrapStageInfo")
@@ -37,7 +42,7 @@ toolchain_export = rule(
     attrs = {
         "stage": attrs.dep(providers = [BootstrapStageInfo]),
         "host_tools": attrs.option(
-            attrs.transition_dep(cfg = "//tc/exec:bootstrap-transition"),
+            attrs.transition_dep(cfg = "//tc/exec:stage3-transition"),
             default = None,
         ),
         "gcc_version": attrs.string(default = "14.3.0"),

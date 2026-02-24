@@ -3,10 +3,10 @@
 Provides TOOLCHAIN_ATTRS (merge into rule attrs dicts) and
 toolchain_env_args() (inject CC/CXX/AR into Python helper cmd_args).
 
-The _toolchain attr uses select() on the bootstrap mode constraint.
-In normal builds, toolchains//:buckos provides the seed toolchain.
-During bootstrap (cfg transition), the host PATH toolchain is used
-instead, breaking the circular dependency.
+The _toolchain attr uses select() on the bootstrap mode constraint:
+  DEFAULT        → seed toolchain (toolchains//:buckos)
+  is-stage3-mode → stage 2 toolchain (stage 1 + stage 2 host tools)
+  is-bootstrap-mode → host PATH toolchain (escape hatch)
 """
 
 load("//defs:providers.bzl", "BuildToolchainInfo")
@@ -14,10 +14,13 @@ load("//defs:providers.bzl", "BuildToolchainInfo")
 def _buckos_toolchain_select():
     """Config-driven toolchain selection via select().
 
-    Returns the seed toolchain by default, falls back to host PATH
-    toolchain when the bootstrap transition is active.
+    Three modes:
+      DEFAULT        — seed toolchain (stage 1 cross-compiler)
+      stage3         — stage 2 toolchain (hermetic rebuild)
+      bootstrap      — host PATH toolchain (escape hatch)
     """
     return select({
+        "//tc/exec:is-stage3-mode": "//tc/bootstrap:stage2-toolchain",
         "//tc/exec:is-bootstrap-mode": "//tc/host:host-toolchain",
         "DEFAULT": "toolchains//:buckos",
     })

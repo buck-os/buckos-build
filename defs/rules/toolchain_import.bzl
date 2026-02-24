@@ -55,8 +55,8 @@ def _toolchain_import_impl(ctx):
         sysroot = sysroot,
         python = python_cmd,
         host_bin_dir = host_bin,
-        extra_cflags = [],
-        extra_ldflags = [],
+        extra_cflags = ctx.attrs.extra_cflags,
+        extra_ldflags = ctx.attrs.extra_ldflags,
     )
 
     return [
@@ -71,6 +71,8 @@ toolchain_import = rule(
         "archive": attrs.source(),
         "target_triple": attrs.string(default = "x86_64-buckos-linux-gnu"),
         "has_host_tools": attrs.bool(default = False),
+        "extra_cflags": attrs.list(attrs.string(), default = []),
+        "extra_ldflags": attrs.list(attrs.string(), default = []),
         "labels": attrs.list(attrs.string(), default = []),
         "_unpack_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:toolchain_unpack"),

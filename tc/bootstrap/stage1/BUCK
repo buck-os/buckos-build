@@ -86,7 +86,6 @@ extract_source(name = "mpc-src", source = ":mpc-archive")
 bootstrap_binutils(
     name = "cross-binutils",
     source = ":binutils-src",
-    host_tools = "//tc/bootstrap/host-tools:bootstrap-tools",
     visibility = ["PUBLIC"],
 )
 
@@ -113,7 +112,6 @@ bootstrap_gcc(
     with_headers = False,
     host_cc = "gcc -std=gnu11 -Wno-error=implicit-function-declaration",
     host_cxx = "g++ -std=gnu++11",
-    host_tools = "//tc/bootstrap/host-tools:bootstrap-tools",
     visibility = ["PUBLIC"],
 )
 
@@ -125,7 +123,6 @@ bootstrap_glibc(
     compiler = ":gcc-pass1",
     binutils = ":cross-binutils",
     linux_headers = ":linux-headers",
-    host_tools = "//tc/bootstrap/host-tools:bootstrap-tools",
     visibility = ["PUBLIC"],
 )
 
@@ -145,7 +142,6 @@ bootstrap_gcc(
     with_headers = True,
     host_cc = "gcc -std=gnu11 -Wno-error=implicit-function-declaration -fcf-protection=none",
     host_cxx = "g++ -std=gnu++11 -fcf-protection=none",
-    host_tools = "//tc/bootstrap/host-tools:bootstrap-tools",
     stage_number = 1,
     visibility = ["PUBLIC"],
 )

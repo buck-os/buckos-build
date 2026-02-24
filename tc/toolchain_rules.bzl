@@ -116,6 +116,13 @@ def _buckos_bootstrap_toolchain_impl(ctx: AnalysisContext) -> list[Provider]:
     """Bootstrap toolchain: bridges BootstrapStageInfo -> BuildToolchainInfo.
 
     Uses the bootstrap-built compiler and sysroot artifacts directly.
+    When host_tools is provided, its bin/ dir becomes the hermetic PATH
+    and its make/pkg-config are used instead of host PATH lookups.
+
+    The host_tools attr uses the default transition to ensure host-tools
+    are resolved in DEFAULT config (stage 2 build), even when this
+    toolchain is itself resolved in stage3 config.  This breaks the
+    stage3 → stage2-toolchain → host-tools → stage2-toolchain cycle.
     """
     stage = ctx.attrs.bootstrap_stage[BootstrapStageInfo]
 
@@ -130,17 +137,29 @@ def _buckos_bootstrap_toolchain_impl(ctx: AnalysisContext) -> list[Provider]:
     if stage.python:
         python_run_info = RunInfo(args = cmd_args(stage.python))
 
+    # Wire host tools when provided (stage 2 toolchain for hermetic rebuild)
+    host_bin = None
+    make_cmd = cmd_args(ctx.attrs.make)
+    pkg_config_cmd = cmd_args(ctx.attrs.pkg_config)
+    if ctx.attrs.host_tools:
+        ht_dir = ctx.attrs.host_tools[DefaultInfo].default_outputs[0]
+        host_bin = ht_dir.project("bin")
+        make_cmd = cmd_args(host_bin.project("make"))
+        pkg_config_cmd = cmd_args(host_bin.project("pkg-config"))
+        if not python_run_info:
+            python_run_info = RunInfo(args = cmd_args(host_bin.project("python3")))
+
     info = BuildToolchainInfo(
         cc = RunInfo(args = cc_args),
         cxx = RunInfo(args = cxx_args),
         ar = RunInfo(args = cmd_args(stage.ar)),
         strip = RunInfo(args = cmd_args(ctx.attrs.strip_bin)),
-        make = RunInfo(args = cmd_args(ctx.attrs.make)),
-        pkg_config = RunInfo(args = cmd_args(ctx.attrs.pkg_config)),
+        make = RunInfo(args = make_cmd),
+        pkg_config = RunInfo(args = pkg_config_cmd),
         target_triple = stage.target_triple,
         sysroot = stage.sysroot,
         python = python_run_info,
-        host_bin_dir = None,
+        host_bin_dir = host_bin,
         extra_cflags = ctx.attrs.extra_cflags,
         extra_ldflags = ctx.attrs.extra_ldflags,
     )
@@ -151,6 +170,7 @@ buckos_bootstrap_toolchain = rule(
     is_toolchain_rule = True,
     attrs = {
         "bootstrap_stage": attrs.dep(providers = [BootstrapStageInfo]),
+        "host_tools": attrs.option(attrs.dep(), default = None),
         "strip_bin": attrs.string(default = "strip"),
         "make": attrs.string(default = "make"),
         "pkg_config": attrs.string(default = "pkg-config"),

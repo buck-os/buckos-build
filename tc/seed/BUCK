@@ -18,9 +18,9 @@ or for a local file:
   [buckos]
   seed_path = /path/to/buckos-seed.tar.zst
 
-When neither is set, the seed is built from source via the bootstrap
-pipeline.  The resolved archive is unpacked by toolchain_import into
-a BuildToolchainInfo that the rest of the build graph consumes.
+When neither is set, the seed is built from source via the 3-stage
+bootstrap pipeline.  The resolved archive is unpacked by toolchain_import
+into a BuildToolchainInfo that the rest of the build graph consumes.
 
 NOTE: When seed_url or seed_path is configured, uncomment the
 corresponding target declaration below.
@@ -43,11 +43,21 @@ load(":defs.bzl", "seed_archive_label")
 #     src = read_config("buckos", "seed_path", ""),
 # )
 
+# Prebuilt seeds contain buckos-native host tools; build-from-source
+# seeds contain only the stage1 cross-compiler (host tools are built
+# separately using the seed toolchain).
+_has_prebuilt = bool(
+    read_config("buckos", "seed_url", "") or
+    read_config("buckos", "seed_path", ""),
+)
+
 toolchain_import(
     name = "seed-toolchain",
     archive = seed_archive_label(),
     target_triple = "x86_64-buckos-linux-gnu",
-    has_host_tools = True,
+    has_host_tools = _has_prebuilt,
+    extra_cflags = ["-march=x86-64-v3"],
+    extra_ldflags = ["-fuse-ld=mold"],
     labels = ["buckos:seed"],
     visibility = ["PUBLIC"],
 )

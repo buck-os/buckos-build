@@ -16,13 +16,15 @@ buckos execution platforms alongside its own:
 
 load("//tc:defs.bzl", "buckos_execution_platforms")
 
-# ── Bootstrap mode constraints ───────────────────────────────────────
+# ── Toolchain mode constraints ──────────────────────────────────────
 #
-# The bootstrap transition flips bootstrap-mode-setting to
-# bootstrap-mode-true so TOOLCHAIN_ATTRS select() resolves to the host
-# PATH toolchain instead of the seed.  This breaks the circular
-# dependency: seed needs host tools → host tools need a toolchain →
-# but not the seed toolchain.
+# TOOLCHAIN_ATTRS select() uses these to choose between toolchains:
+#   is-bootstrap-mode → host PATH toolchain (escape hatch)
+#   is-stage3-mode    → stage 2 toolchain (hermetic rebuild)
+#   DEFAULT           → seed toolchain (toolchains//:buckos)
+#
+# The stage3 transition is the active one: applied by toolchain_export
+# to the host_tools dep so stage 3 tools are built hermetically.
 
 constraint_setting(
     name = "bootstrap-mode-setting",
@@ -41,22 +43,35 @@ constraint_value(
     visibility = ["PUBLIC"],
 )
 
+constraint_value(
+    name = "stage3-mode-true",
+    constraint_setting = ":bootstrap-mode-setting",
+    visibility = ["PUBLIC"],
+)
+
 config_setting(
     name = "is-bootstrap-mode",
     constraint_values = [":bootstrap-mode-true"],
     visibility = ["PUBLIC"],
 )
 
-# ── Bootstrap transition target ─────────────────────────────────────
-#
-# Used via attrs.transition_dep(cfg = "//tc/exec:bootstrap-transition")
-# to apply the bootstrap mode to deps that need to build with the host
-# PATH toolchain instead of the seed.
+config_setting(
+    name = "is-stage3-mode",
+    constraint_values = [":stage3-mode-true"],
+    visibility = ["PUBLIC"],
+)
 
-load("//tc:transitions.bzl", "bootstrap_transition")
+# ── Transition targets ─────────────────────────────────────────────
 
-bootstrap_transition(
-    name = "bootstrap-transition",
+load("//tc:transitions.bzl", "default_transition", "stage3_transition")
+
+default_transition(
+    name = "default-transition",
+    visibility = ["PUBLIC"],
+)
+
+stage3_transition(
+    name = "stage3-transition",
     visibility = ["PUBLIC"],
 )
 

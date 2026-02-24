@@ -24,21 +24,6 @@ def _env_args(cmd, env_dict):
     for k, v in env_dict.items():
         cmd.add("--env", cmd_args(k, "=", v, delimiter = ""))
 
-def _host_tools_path(cmd, ctx):
-    """Prepend host_tools bin/lib dirs to PATH/LD_LIBRARY_PATH if available."""
-    if getattr(ctx.attrs, "host_tools", None):
-        ht_dir = ctx.attrs.host_tools[DefaultInfo].default_outputs[0]
-        cmd.add("--path-prepend", cmd_args(ht_dir, "/bin", delimiter = ""))
-        # Shared libs (e.g. libpython) live in the merged lib/lib64 dirs
-        cmd.add("--env", cmd_args("LD_LIBRARY_PATH=", ht_dir, "/lib:", ht_dir, "/lib64", delimiter = ""))
-
-_HOST_TOOLS_ATTR = {
-    "host_tools": attrs.option(
-        attrs.transition_dep(cfg = "//tc/exec:bootstrap-transition"),
-        default = None,
-    ),
-}
-
 def _toolchain_env(ctx):
     """Build environment dict from BootstrapStageInfo or host_cc attrs."""
     env = {}
@@ -105,7 +90,6 @@ def _bootstrap_binutils_impl(ctx):
     build_cmd.add("--output-dir", built.as_output())
     build_cmd.add("--build-subdir", "build")
     build_cmd.add("--make-arg", "MAKEINFO=true")
-    _host_tools_path(build_cmd, ctx)
     _env_args(build_cmd, env)
     ctx.actions.run(build_cmd, category = "compile", identifier = ctx.attrs.name)
 
@@ -116,7 +100,6 @@ def _bootstrap_binutils_impl(ctx):
     inst_cmd.add("--build-subdir", "build")
     inst_cmd.add("--prefix", installed.as_output())
     inst_cmd.add("--make-arg", "MAKEINFO=true")
-    _host_tools_path(inst_cmd, ctx)
     _env_args(inst_cmd, env)
     ctx.actions.run(inst_cmd, category = "install", identifier = ctx.attrs.name)
 
@@ -140,7 +123,7 @@ bootstrap_binutils = rule(
         "_install_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:install_helper"),
         ),
-    } | _HOST_TOOLS_ATTR,
+    },
 )
 
 # ── bootstrap_linux_headers ──────────────────────────────────────────
@@ -223,15 +206,24 @@ def _bootstrap_gcc_impl(ctx):
 
     # Build the pre-cmd chain for src_prepare.  $PROJECT_ROOT is set by
     # configure_helper so artifact paths (relative to project root) resolve.
+    #
+    # Collect math lib source artifacts — downstream actions (configure,
+    # compile, install) need these as hidden inputs because the prepare
+    # phase creates symlinks into these artifacts.  Without declaring
+    # them, Buck2 won't materialize the targets for downstream actions.
+    math_lib_srcs = []
     pre_parts = []
     if ctx.attrs.gmp_source:
         gmp_src = ctx.attrs.gmp_source[DefaultInfo].default_outputs[0]
+        math_lib_srcs.append(gmp_src)
         pre_parts.append(cmd_args("ln -sfn $PROJECT_ROOT/", gmp_src, " gmp", delimiter = ""))
     if ctx.attrs.mpfr_source:
         mpfr_src = ctx.attrs.mpfr_source[DefaultInfo].default_outputs[0]
+        math_lib_srcs.append(mpfr_src)
         pre_parts.append(cmd_args("ln -sfn $PROJECT_ROOT/", mpfr_src, " mpfr", delimiter = ""))
     if ctx.attrs.mpc_source:
         mpc_src = ctx.attrs.mpc_source[DefaultInfo].default_outputs[0]
+        math_lib_srcs.append(mpc_src)
         pre_parts.append(cmd_args("ln -sfn $PROJECT_ROOT/", mpc_src, " mpc", delimiter = ""))
 
     # For pass1 (C only, no libc): remove libcody and c++tools
@@ -268,13 +260,14 @@ def _bootstrap_gcc_impl(ctx):
         prep_cmd.add("--pre-cmd", part)
     ctx.actions.run(prep_cmd, category = "prepare", identifier = ctx.attrs.name)
 
-    # Phase 3: configure — build sysroot and run configure.
     # Phase 3: configure — Python helper handles sysroot assembly and
     # runs ../configure from an out-of-tree build dir.
     configured = ctx.actions.declare_output("configured", dir = True)
     conf_cmd = cmd_args(ctx.attrs._gcc_configure_tool[RunInfo])
     conf_cmd.add("--source-dir", prepared)
     conf_cmd.add("--output-dir", configured.as_output())
+    if math_lib_srcs:
+        conf_cmd.add(cmd_args(hidden = math_lib_srcs))
     conf_cmd.add("--target-triple", target_triple)
     if ctx.attrs.libc_headers:
         conf_cmd.add("--headers-dir", ctx.attrs.libc_headers[DefaultInfo].default_outputs[0])
@@ -339,6 +332,8 @@ def _bootstrap_gcc_impl(ctx):
     build_cmd.add("--build-dir", configured)
     build_cmd.add("--output-dir", built.as_output())
     build_cmd.add("--skip-make")
+    if math_lib_srcs:
+        build_cmd.add(cmd_args(hidden = math_lib_srcs))
 
     # Cross-binutils must be on PATH for libgcc's ar/ranlib steps
     if ctx.attrs.binutils:
@@ -349,7 +344,6 @@ def _bootstrap_gcc_impl(ctx):
         _stage_out = ctx.attrs.prev_stage[DefaultInfo].default_outputs[0]
         build_cmd.add("--path-prepend", cmd_args(_stage_out, "/tools/bin", delimiter = ""))
 
-    _host_tools_path(build_cmd, ctx)
     _env_args(build_cmd, _toolchain_env(ctx))
 
     # Ensure makeinfo stub is on PATH for GMP/MPFR sub-configures
@@ -385,6 +379,8 @@ def _bootstrap_gcc_impl(ctx):
     inst_cmd.add("--build-dir", built)
     inst_cmd.add("--build-subdir", "build")
     inst_cmd.add("--prefix", installed.as_output())
+    if math_lib_srcs:
+        inst_cmd.add(cmd_args(hidden = math_lib_srcs))
 
     if ctx.attrs.binutils:
         _bdir2 = ctx.attrs.binutils[DefaultInfo].default_outputs[0]
@@ -393,7 +389,6 @@ def _bootstrap_gcc_impl(ctx):
         _stage_out2 = ctx.attrs.prev_stage[DefaultInfo].default_outputs[0]
         inst_cmd.add("--path-prepend", cmd_args(_stage_out2, "/tools/bin", delimiter = ""))
 
-    _host_tools_path(inst_cmd, ctx)
     _env_args(inst_cmd, _toolchain_env(ctx))
 
     if not ctx.attrs.with_headers:
@@ -502,7 +497,7 @@ bootstrap_gcc = rule(
         "_install_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:install_helper"),
         ),
-    } | _HOST_TOOLS_ATTR,
+    },
 )
 
 # ── bootstrap_glibc ──────────────────────────────────────────────────
@@ -552,7 +547,6 @@ def _bootstrap_glibc_impl(ctx):
     build_cmd.add("--path-prepend", cmd_args(compiler_dir, "/tools/bin", delimiter = ""))
     if binutils_dir:
         build_cmd.add("--path-prepend", cmd_args(binutils_dir, "/tools/bin", delimiter = ""))
-    _host_tools_path(build_cmd, ctx)
     ctx.actions.run(build_cmd, category = "compile", identifier = ctx.attrs.name)
 
     # Phase 5: install — use install_helper with post-cmds for linker
@@ -565,7 +559,6 @@ def _bootstrap_glibc_impl(ctx):
     inst_cmd.add("--path-prepend", cmd_args(compiler_dir, "/tools/bin", delimiter = ""))
     if binutils_dir:
         inst_cmd.add("--path-prepend", cmd_args(binutils_dir, "/tools/bin", delimiter = ""))
-    _host_tools_path(inst_cmd, ctx)
 
     # Fix glibc linker scripts to use relative paths
     inst_cmd.add("--post-cmd",
@@ -603,7 +596,7 @@ bootstrap_glibc = rule(
         "_install_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:install_helper"),
         ),
-    } | _HOST_TOOLS_ATTR,
+    },
 )
 
 # ── bootstrap_package ────────────────────────────────────────────────
