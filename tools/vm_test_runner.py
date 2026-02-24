@@ -16,6 +16,8 @@ import subprocess
 import sys
 import tempfile
 
+from _env import sanitize_global_env
+
 
 def parse_inject(value):
     """Parse an --inject SRC:DEST argument."""
@@ -193,6 +195,7 @@ def main():
     parser.add_argument("--inject", action="append", type=parse_inject, default=[],
                         help="Inject file into initramfs as SRC:DEST (repeatable)")
     args = parser.parse_args()
+    sanitize_global_env()
 
     # Validate inputs
     if not os.path.isfile(args.kernel):

@@ -7,6 +7,7 @@ python_library(
 python_binary(
     name = "extract",
     main = "extract.py",
+    deps = [":_env"],
     visibility = ["PUBLIC"],
 )
 
@@ -110,18 +111,21 @@ python_binary(
 python_binary(
     name = "toolchain_pack",
     main = "toolchain_pack.py",
+    deps = [":_env"],
     visibility = ["PUBLIC"],
 )
 
 python_binary(
     name = "toolchain_unpack",
     main = "toolchain_unpack.py",
+    deps = [":_env"],
     visibility = ["PUBLIC"],
 )
 
 python_binary(
     name = "vm_test_runner",
     main = "vm_test_runner.py",
+    deps = [":_env"],
     visibility = ["PUBLIC"],
 )
 

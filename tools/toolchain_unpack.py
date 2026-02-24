@@ -12,6 +12,8 @@ import os
 import subprocess
 import sys
 
+from _env import clean_env, sanitize_global_env
+
 
 def sha256_directory(directory):
     """Compute SHA256 of all files in a directory tree, excluding metadata.json."""
@@ -53,6 +55,7 @@ def main():
     parser.add_argument("--print-metadata", action="store_true",
                         help="Print metadata and exit")
     args = parser.parse_args()
+    sanitize_global_env()
 
     archive = os.path.abspath(args.archive)
     if not os.path.isfile(archive):
@@ -71,7 +74,7 @@ def main():
             else:
                 cmd = f"tar -C {tmpdir} -xzf {archive} ./metadata.json"
 
-            result = subprocess.run(cmd, shell=True, capture_output=True)
+            result = subprocess.run(cmd, shell=True, capture_output=True, env=clean_env())
             if result.returncode != 0:
                 print(f"error: failed to extract metadata.json", file=sys.stderr)
                 sys.exit(1)
@@ -103,7 +106,7 @@ def main():
     else:
         cmd = f"tar -C {output} -xzf {archive}"
 
-    result = subprocess.run(cmd, shell=True)
+    result = subprocess.run(cmd, shell=True, env=clean_env())
     if result.returncode != 0:
         print(f"error: extraction failed with exit code {result.returncode}", file=sys.stderr)
         sys.exit(1)

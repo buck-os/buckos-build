@@ -17,6 +17,8 @@ import sys
 import tarfile
 import zipfile
 
+from _env import sanitize_global_env
+
 
 # Map of format string -> (tarfile mode or None, external decompressor or None)
 _FORMATS = {
@@ -159,6 +161,7 @@ def main():
     parser.add_argument("--exclude", action="append", default=[],
                         help="Glob pattern to exclude from extraction (repeatable)")
     args = parser.parse_args()
+    sanitize_global_env()
 
     if not os.path.isfile(args.archive):
         print(f"error: archive not found: {args.archive}", file=sys.stderr)

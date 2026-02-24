@@ -17,6 +17,8 @@ import sys
 import tempfile
 from datetime import datetime, timezone
 
+from _env import clean_env, sanitize_global_env
+
 
 def sha256_directory(directory):
     """Compute SHA256 of all files in a directory tree."""
@@ -104,6 +106,7 @@ def main():
     parser.add_argument("--host-tools-dir", default=None,
                         help="Directory containing host tools to include as host-tools/")
     args = parser.parse_args()
+    sanitize_global_env()
 
     stage_dir = os.path.abspath(args.stage_dir)
     output = os.path.abspath(args.output)
@@ -178,7 +181,7 @@ def main():
                 f"tar -C {stage_copy} -czf {output} . -C {tmpdir} metadata.json{host_tools_tar}"
             )
 
-        result = subprocess.run(tar_cmd, shell=True)
+        result = subprocess.run(tar_cmd, shell=True, env=clean_env())
 
     if result.returncode != 0:
         print(f"error: tar failed with exit code {result.returncode}", file=sys.stderr)
