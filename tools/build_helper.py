@@ -146,6 +146,18 @@ def main():
         shutil.rmtree(output_dir)
     shutil.copytree(build_dir, output_dir, symlinks=True)
 
+    # Replace self-referencing symlinks (target ".") with real directories.
+    # Buck2 records these with an empty target and fails to materialise them.
+    # xfsprogs and ncurses create such symlinks (e.g. include/disk -> .).
+    for dirpath, dirnames, _filenames in os.walk(output_dir):
+        for d in dirnames:
+            p = os.path.join(dirpath, d)
+            if os.path.islink(p):
+                target = os.readlink(p)
+                if target == ".":
+                    os.unlink(p)
+                    os.makedirs(p, exist_ok=True)
+
     # Rewrite absolute paths in build system files.
     # Both CMake and Meson embed the build dir in generated files.  After
     # copytree these paths are stale.  Do string replacement in all
