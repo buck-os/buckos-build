@@ -1,0 +1,18 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "liburcu",
+    url = "https://lttng.org/files/urcu/userspace-rcu-0.15.6.tar.bz2",
+
+    sha256 = "850b192096eb11ebf2c70e8f97bc7da7479ee41da1bebeb44e3986908bac414f",
+    version = "0.15.6",
+    description = "Userspace RCU (read-copy-update) library",
+    homepage = "https://liburcu.org/",
+    license = "LGPL-2.1-or-later",
+    configure_args = [
+        "--disable-static",
+    ],
+    deps = [],
+    visibility = ["PUBLIC"],
+)

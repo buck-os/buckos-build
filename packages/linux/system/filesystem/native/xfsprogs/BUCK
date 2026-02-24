@@ -3,9 +3,9 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "xfsprogs",
-    url = "https://mirrors.edge.kernel.org/pub/linux/utils/fs/xfs/xfsprogs/xfsprogs-6.6.0.tar.xz",
+    url = "https://mirrors.edge.kernel.org/pub/linux/utils/fs/xfs/xfsprogs/xfsprogs-6.18.0.tar.xz",
 
-    sha256 = "50ca2f4676df8fab4cb4c3ef3dd512d5551e6844d40a65a31d5b8e03593d22df",
+    sha256 = "3a6dc7b1245ce9bccd197bab00691f1b190bd3694d3ccc301d21b83afc133199",
     use_configure = {
         "icu": ("--enable-icu", "--disable-icu"),
         "libedit": ("--enable-libedit", "--disable-libedit"),
@@ -13,7 +13,7 @@ package(
         "selinux": ("--enable-selinux", "--disable-selinux"),
         "static-libs": ("--enable-static", "--disable-static"),
     },
-    version = "6.6.0",
+    version = "6.18.0",
     description = "XFS filesystem utilities (mkfs.xfs, xfs_repair, xfs_info, etc.)",
     homepage = "https://xfs.wiki.kernel.org/",
     license = "GPL-2.0",
@@ -23,6 +23,8 @@ package(
     ],
     deps = [
         "//packages/linux/core/util-linux:util-linux",
+        "//packages/linux/dev-libs/parsers/inih:inih",
+        "//packages/linux/system/libs/liburcu:liburcu",
         "//packages/linux/system/terminal/readline:readline",
     ],
     visibility = ["PUBLIC"],
