@@ -10,6 +10,8 @@ native benefits: content-addressed CAS lookup by sha256, deferred
 execution, and RE-native download handling.
 """
 
+load("//tc:transitions.bzl", "strip_toolchain_mode")
+
 def _extract_source_impl(ctx):
     # Get the archive from the source dep
     archive = ctx.attrs.source[DefaultInfo].default_outputs[0]
@@ -41,4 +43,5 @@ extract_source = rule(
             attrs.exec_dep(default = "//tools:extract"),
         ),
     },
+    cfg = strip_toolchain_mode,
 )

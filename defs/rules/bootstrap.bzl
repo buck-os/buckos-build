@@ -14,6 +14,7 @@ delegate to Python helpers for env sanitisation and determinism.
 
 load("//defs:providers.bzl", "BootstrapStageInfo", "PackageInfo")
 load("//defs/rules:_common.bzl", "collect_runtime_lib_dirs")
+load("//tc:transitions.bzl", "strip_toolchain_mode")
 
 TARGET_TRIPLE = "x86_64-buckos-linux-gnu"
 
@@ -124,6 +125,7 @@ bootstrap_binutils = rule(
             attrs.exec_dep(default = "//tools:install_helper"),
         ),
     },
+    cfg = strip_toolchain_mode,
 )
 
 # ── bootstrap_linux_headers ──────────────────────────────────────────
@@ -186,6 +188,7 @@ bootstrap_linux_headers = rule(
             attrs.exec_dep(default = "//tools:build_helper"),
         ),
     },
+    cfg = strip_toolchain_mode,
 )
 
 # ── bootstrap_gcc ────────────────────────────────────────────────────
@@ -505,6 +508,7 @@ bootstrap_gcc = rule(
             attrs.exec_dep(default = "//tools:install_helper"),
         ),
     },
+    cfg = strip_toolchain_mode,
 )
 
 # ── bootstrap_glibc ──────────────────────────────────────────────────
@@ -604,6 +608,7 @@ bootstrap_glibc = rule(
             attrs.exec_dep(default = "//tools:install_helper"),
         ),
     },
+    cfg = strip_toolchain_mode,
 )
 
 # ── bootstrap_package ────────────────────────────────────────────────
