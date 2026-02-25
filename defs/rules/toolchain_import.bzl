@@ -44,6 +44,13 @@ def _toolchain_import_impl(ctx):
     if host_bin:
         python_cmd = RunInfo(args = cmd_args(host_bin.project("python3")))
 
+    # ld.bfd resolves DT_NEEDED chains and needs to find libstdc++.so
+    # when linking C programs against C++ shared libraries.  The GCC
+    # runtime libs live outside the sysroot — add them as rpath-link.
+    gcc_lib_dir = unpacked.project("tools/" + triple + "/lib64")
+    ldflags = list(ctx.attrs.extra_ldflags)
+    ldflags.append(cmd_args("-Wl,-rpath-link,", gcc_lib_dir, delimiter = ""))
+
     info = BuildToolchainInfo(
         cc = RunInfo(args = cc_args),
         cxx = RunInfo(args = cxx_args),
@@ -56,7 +63,7 @@ def _toolchain_import_impl(ctx):
         python = python_cmd,
         host_bin_dir = host_bin,
         extra_cflags = ctx.attrs.extra_cflags,
-        extra_ldflags = ctx.attrs.extra_ldflags,
+        extra_ldflags = ldflags,
     )
 
     return [
