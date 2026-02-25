@@ -241,6 +241,8 @@ def main():
                 'build build.ninja: phony',
                 content, count=1, flags=re.MULTILINE | re.DOTALL,
             )
+            if 'build build.ninja: phony' not in content:
+                content = 'build build.ninja: phony\n' + content
             with open(ninja_file, "w") as f:
                 f.write(content)
             os.utime(ninja_file, (stat.st_atime, stat.st_mtime))
@@ -255,6 +257,8 @@ def main():
             'build build.ninja: phony',
             content, count=1, flags=re.MULTILINE | re.DOTALL,
         )
+        if 'build build.ninja: phony' not in content:
+            content = 'build build.ninja: phony\n' + content
         with open(ninja_file, "w") as f:
             f.write(content)
         os.utime(ninja_file, (stat.st_atime, stat.st_mtime))
@@ -317,6 +321,8 @@ def main():
                 'build build.ninja: phony',
                 _nf_content, count=1,
             )
+            if 'build build.ninja: phony' not in _nf_new:
+                _nf_new = 'build build.ninja: phony\n' + _nf_new
             if _nf_new != _nf_content:
                 with open(_nf, "w") as f:
                     f.write(_nf_new)

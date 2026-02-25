@@ -463,6 +463,10 @@ def main():
                 'build build.ninja: phony',
                 _nf_content, count=1,
             )
+            # Ensure phony rule exists even if the regex didn't match
+            # (e.g. cached build output with old comment-based suppression).
+            if 'build build.ninja: phony' not in _nf_new:
+                _nf_new = 'build build.ninja: phony\n' + _nf_new
             if _nf_new != _nf_content:
                 with open(_nf, "w") as f:
                     f.write(_nf_new)
