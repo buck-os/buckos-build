@@ -299,7 +299,7 @@ kernel_build(
         ":custom-driver-src",  # External modules built against this kernel
     ],
     arch = "aarch64",  # Most DPUs are ARM64
-    cross_toolchain = "toolchains//bootstrap:cross-toolchain-aarch64",
+    cross_toolchain = "//tc/bootstrap/aarch64:cross-toolchain-aarch64",
     visibility = ["PUBLIC"],
 )
 ```

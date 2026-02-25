@@ -28,9 +28,14 @@ HOST_SYSTEM=${CHOST:-$(${CC:-gcc} -dumpmachine)}
     --disable-static \
     --disable-nls
 
-make -j${MAKEOPTS:-$(nproc)}
+# Suppress autotools regeneration — automake/aclocal not available in
+# the build environment; timestamp skew after configure can trigger
+# spurious Makefile.in rebuilds.
+AUTOTOOLS_NOOP="ACLOCAL=true AUTOMAKE=true AUTOCONF=true AUTOHEADER=true"
 
-make DESTDIR="$DESTDIR" install
+make -j${MAKEOPTS:-$(nproc)} $AUTOTOOLS_NOOP
+
+make DESTDIR="$DESTDIR" install $AUTOTOOLS_NOOP
 ''',
     deps = [],
     visibility = ["PUBLIC"],

@@ -10,6 +10,7 @@ import argparse
 import glob as _glob
 import multiprocessing
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -103,6 +104,47 @@ def _rewrite_file(fpath, old, new):
     os.utime(fpath, (stat.st_atime, stat.st_mtime))
 
 
+def _patch_runshared(build_dir):
+    """Patch RUNSHARED assignments to preserve LD_LIBRARY_PATH from environment.
+
+    Some packages (notably Python) generate Makefiles with:
+        RUNSHARED=	LD_LIBRARY_PATH=/abs/path/to/build
+    This replaces LD_LIBRARY_PATH for subprocesses, losing dep lib dirs
+    set by the helper.  Appending :$$LD_LIBRARY_PATH (Make syntax for
+    literal $) makes the shell expand the current environment value.
+    """
+    _runshared_re = re.compile(
+        r'^(RUNSHARED\s*=\s*LD_LIBRARY_PATH=\S+)$',
+        re.MULTILINE,
+    )
+
+    def _append_env(m):
+        val = m.group(1)
+        if '$$LD_LIBRARY_PATH' in val:
+            return val
+        return val + ':$$LD_LIBRARY_PATH'
+
+    for dirpath, _dirnames, filenames in os.walk(build_dir):
+        for fname in filenames:
+            fpath = os.path.join(dirpath, fname)
+            try:
+                with open(fpath, 'r') as f:
+                    content = f.read()
+            except (UnicodeDecodeError, PermissionError, OSError):
+                continue
+            if 'RUNSHARED' not in content:
+                continue
+            new_content = _runshared_re.sub(_append_env, content)
+            if new_content != content:
+                try:
+                    st = os.stat(fpath)
+                    with open(fpath, 'w') as f:
+                        f.write(new_content)
+                    os.utime(fpath, (st.st_atime, st.st_mtime))
+                except (PermissionError, OSError):
+                    pass
+
+
 def main():
     parser = argparse.ArgumentParser(description="Run make or ninja build")
     parser.add_argument("--build-dir", required=True, help="Build directory")
@@ -190,7 +232,6 @@ def main():
                     pass
         # Rewrite build.ninja and suppress cmake regeneration.
         if os.path.isfile(ninja_file):
-            import re
             stat = os.stat(ninja_file)
             with open(ninja_file, "r") as f:
                 content = f.read()
@@ -204,7 +245,6 @@ def main():
                 f.write(content)
             os.utime(ninja_file, (stat.st_atime, stat.st_mtime))
     elif os.path.isfile(ninja_file):
-        import re
         stat = os.stat(ninja_file)
         with open(ninja_file, "r") as f:
             content = f.read()
@@ -239,9 +279,11 @@ def main():
         ".wasm", ".pyc", ".qm",
     ))
     config_status = os.path.join(output_dir, "config.status")
+    _top_makefile = os.path.join(output_dir, "Makefile")
     _needs_comprehensive = (os.path.isfile(cmake_cache)
                             or os.path.isfile(ninja_file)
-                            or os.path.isfile(config_status))
+                            or os.path.isfile(config_status)
+                            or os.path.isfile(_top_makefile))
     if _needs_comprehensive:
         for dirpath, _dirnames, filenames in os.walk(output_dir):
             for fname in filenames:
@@ -317,6 +359,62 @@ def main():
             _pickle.dump(_idata, f)
         os.utime(_install_dat, (stat.st_atime, stat.st_mtime))
 
+    # Detect and rewrite stale cross-machine paths.  When Buck2 restores
+    # cached configure outputs from a different machine, files contain the
+    # original machine's project root (e.g. /home/patso/repos/foo) which
+    # doesn't exist here.  Scan config.status for /buck-out/ prefixes that
+    # differ from the current project root and rewrite them everywhere.
+    _BUCK_OUT_RE = re.compile(r'(/[^\s"\']+?)/buck-out/')
+    _stale_root = None
+    _current_root = os.getcwd()
+    # Check config.status (autotools), CMakeCache.txt (cmake), and
+    # build.ninja (meson/cmake) for stale project root prefixes.
+    _stale_candidates = list(_glob.glob(os.path.join(output_dir, "**/config.status"), recursive=True))
+    if os.path.isfile(cmake_cache):
+        _stale_candidates.append(cmake_cache)
+    if os.path.isfile(ninja_file):
+        _stale_candidates.append(ninja_file)
+    # Also check top-level Makefile — build systems that don't generate
+    # config.status/CMakeCache.txt/build.ninja (e.g. OpenSSL's Configure)
+    # still embed absolute paths in their Makefiles.
+    if os.path.isfile(_top_makefile) and not _stale_candidates:
+        _stale_candidates.append(_top_makefile)
+    for _cs in _stale_candidates:
+        try:
+            with open(_cs, "r") as f:
+                _cs_content = f.read()
+        except (UnicodeDecodeError, PermissionError, OSError):
+            continue
+        _m = _BUCK_OUT_RE.search(_cs_content)
+        if _m and _m.group(1) != _current_root:
+            _stale_root = _m.group(1)
+            break
+    if _stale_root:
+        # Rewrite symlink targets
+        for dirpath, dirnames, filenames in os.walk(output_dir):
+            for entries in (dirnames, filenames):
+                for name in entries:
+                    p = os.path.join(dirpath, name)
+                    if not os.path.islink(p):
+                        continue
+                    target = os.readlink(p)
+                    if _stale_root in target:
+                        os.unlink(p)
+                        os.symlink(target.replace(_stale_root, _current_root), p)
+        # Rewrite text files
+        for dirpath, _dirnames, filenames in os.walk(output_dir):
+            for fname in filenames:
+                if os.path.splitext(fname)[1] in _BINARY_EXTS:
+                    continue
+                fpath = os.path.join(dirpath, fname)
+                if os.path.islink(fpath):
+                    continue
+                try:
+                    _rewrite_file(fpath, _stale_root, _current_root)
+                except (UnicodeDecodeError, PermissionError, IsADirectoryError,
+                        FileNotFoundError):
+                    pass
+
     # Reset all file timestamps to a single fixed instant so make doesn't
     # try to regenerate autotools/cmake/meson outputs.  The copytree
     # preserves original timestamps but path rewriting modifies some
@@ -330,6 +428,10 @@ def main():
                 os.utime(os.path.join(dirpath, fname), _stamp)
             except (PermissionError, OSError):
                 pass
+
+    # Patch RUNSHARED assignments so LD_LIBRARY_PATH from the environment
+    # survives into subprocesses (e.g. Python test-imports during compile).
+    _patch_runshared(output_dir)
 
     # Create a pkg-config wrapper that always passes --define-prefix so
     # .pc files in Buck2 dep directories resolve paths correctly.
@@ -365,6 +467,19 @@ def main():
         prepend = ":".join(os.path.abspath(p) for p in args.path_prepend if os.path.isdir(p))
         if prepend:
             os.environ["PATH"] = prepend + ":" + os.environ.get("PATH", "")
+        # Derive LD_LIBRARY_PATH from dep bin dirs so dynamically linked
+        # libraries (e.g. libbz2.so for Python's _bz2 module) are found
+        # at build time when the build process test-imports extensions.
+        _dep_lib_dirs = []
+        for _bp in args.path_prepend:
+            _parent = os.path.dirname(os.path.abspath(_bp))
+            for _ld in ("lib", "lib64"):
+                _d = os.path.join(_parent, _ld)
+                if os.path.isdir(_d):
+                    _dep_lib_dirs.append(_d)
+        if _dep_lib_dirs:
+            _existing = os.environ.get("LD_LIBRARY_PATH", "")
+            os.environ["LD_LIBRARY_PATH"] = ":".join(_dep_lib_dirs) + (":" + _existing if _existing else "")
 
     # Auto-detect Python site-packages from dep prefixes so build-time
     # Python modules (e.g. mako for mesa) are found by custom generators.

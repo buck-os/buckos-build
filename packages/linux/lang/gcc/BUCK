@@ -16,22 +16,26 @@ package(
     homepage = "https://gcc.gnu.org/",
     license = "GPL-3.0",
     install_script = """
-# Extract GCC from bootstrap-toolchain
+# Extract GCC from stage 1 gcc-pass2 output
 mkdir -p "$OUT/usr/bin" "$OUT/usr/lib64" "$OUT/usr/lib" "$OUT/usr/include"
+
+BUCKOS_TARGET="x86_64-buckos-linux-gnu"
 
 IFS=':' read -ra _deps <<< "$DEP_BASE_DIRS"
 for dep_dir in "${_deps[@]}"; do
-    if [ -f "$dep_dir/tools/.bootstrap-toolchain" ]; then
-        echo "Found bootstrap-toolchain at: $dep_dir"
+    # Detect gcc-pass2 by the cross-compiler binary
+    if [ -f "$dep_dir/tools/bin/${BUCKOS_TARGET}-gcc" ] || [ -f "$dep_dir/tools/bin/gcc" ]; then
+        echo "Found gcc-pass2 at: $dep_dir"
         TOOLS="$dep_dir/tools"
 
-        # Copy compiler binaries
+        # Copy compiler binaries (prefer unprefixed, fall back to prefixed)
         for bin in gcc g++ cpp gcov gcc-ar gcc-nm gcc-ranlib; do
-            if [ -f "$TOOLS/bin/$bin" ] || [ -f "$TOOLS/bin/x86_64-buckos-linux-gnu-$bin" ]; then
-                src="$TOOLS/bin/$bin"
-                [ -f "$src" ] || src="$TOOLS/bin/x86_64-buckos-linux-gnu-$bin"
-                cp -a "$src" "$OUT/usr/bin/$bin"
+            if [ -f "$TOOLS/bin/$bin" ]; then
+                cp -a "$TOOLS/bin/$bin" "$OUT/usr/bin/$bin"
                 echo "Installed $bin"
+            elif [ -f "$TOOLS/bin/${BUCKOS_TARGET}-$bin" ]; then
+                cp -a "$TOOLS/bin/${BUCKOS_TARGET}-$bin" "$OUT/usr/bin/$bin"
+                echo "Installed $bin (from ${BUCKOS_TARGET}-$bin)"
             fi
         done
 
@@ -46,20 +50,24 @@ for dep_dir in "${_deps[@]}"; do
             cp -a "$TOOLS/libexec/gcc"/* "$OUT/usr/lib/gcc/"
         fi
 
-        # Copy compiler support libraries — glob in the library directory
-        for f in "$TOOLS"/lib/libgcc_s.so* "$TOOLS"/lib/libstdc++.so* \
-                 "$TOOLS"/lib/libgomp.so* "$TOOLS"/lib/libatomic.so* \
-                 "$TOOLS"/lib/libitm.so* "$TOOLS"/lib/libquadmath.so* \
-                 "$TOOLS"/lib64/libgcc_s.so* "$TOOLS"/lib64/libstdc++.so* \
-                 "$TOOLS"/lib64/libgomp.so* "$TOOLS"/lib64/libatomic.so* \
-                 "$TOOLS"/lib64/libitm.so* "$TOOLS"/lib64/libquadmath.so*; do
-            [ -f "$f" ] && cp -a "$f" "$OUT/usr/lib64/" 2>/dev/null
+        # Copy compiler support libraries from target-specific directories
+        # gcc-pass2 installs to tools/<target>/lib*/ rather than tools/lib/
+        for libdir in "$TOOLS/${BUCKOS_TARGET}/lib" "$TOOLS/${BUCKOS_TARGET}/lib64" \
+                      "$TOOLS/lib" "$TOOLS/lib64"; do
+            for f in "$libdir"/libgcc_s.so* "$libdir"/libstdc++.so* \
+                     "$libdir"/libgomp.so* "$libdir"/libatomic.so* \
+                     "$libdir"/libitm.so* "$libdir"/libquadmath.so*; do
+                [ -f "$f" ] && cp -a "$f" "$OUT/usr/lib64/" 2>/dev/null
+            done
         done
 
-        # Copy headers (C++ stdlib headers)
-        if [ -d "$TOOLS/include/c++" ]; then
-            cp -a "$TOOLS/include/c++" "$OUT/usr/include/"
-        fi
+        # Copy headers (C++ stdlib headers from target-specific include dir)
+        for incdir in "$TOOLS/${BUCKOS_TARGET}/include/c++" "$TOOLS/include/c++"; do
+            if [ -d "$incdir" ]; then
+                cp -a "$incdir" "$OUT/usr/include/"
+                break
+            fi
+        done
 
         break
     fi
@@ -67,12 +75,12 @@ done
 
 # Verify
 if [ ! -f "$OUT/usr/bin/gcc" ]; then
-    echo "ERROR: gcc not found in bootstrap-toolchain!"
+    echo "ERROR: gcc not found in gcc-pass2 output!"
     exit 1
 fi
-echo "GCC installed from bootstrap-toolchain"
+echo "GCC installed from gcc-pass2"
 """,
-    deps = ["toolchains//bootstrap:bootstrap-toolchain"],
+    deps = ["//tc/bootstrap/stage1:gcc-pass2"],
     visibility = ["PUBLIC"],
 )
 
@@ -158,15 +166,21 @@ package(
     install_script = """
 mkdir -p "$OUT/usr/lib64"
 
+BUCKOS_TARGET="x86_64-buckos-linux-gnu"
+
 IFS=':' read -ra _deps <<< "$DEP_BASE_DIRS"
 for dep_dir in "${_deps[@]}"; do
-    if [ -f "$dep_dir/tools/.bootstrap-toolchain" ]; then
-        echo "Found bootstrap-toolchain at: $dep_dir"
+    # Detect gcc-pass2 by the cross-compiler binary
+    if [ -f "$dep_dir/tools/bin/${BUCKOS_TARGET}-gcc" ] || [ -f "$dep_dir/tools/bin/gcc" ]; then
+        echo "Found gcc-pass2 at: $dep_dir"
 
-        # Copy runtime libraries — glob in the library directory so the
-        # wildcard expands against actual files, not the cwd.
-        for f in "$dep_dir"/tools/lib/libstdc++.so* "$dep_dir"/tools/lib/libgcc_s.so*; do
-            [ -f "$f" ] && cp -a "$f" "$OUT/usr/lib64/"
+        # Copy runtime libraries from target-specific directories
+        # gcc-pass2 installs to tools/<target>/lib*/ rather than tools/lib/
+        for libdir in "$dep_dir/tools/${BUCKOS_TARGET}/lib" "$dep_dir/tools/${BUCKOS_TARGET}/lib64" \
+                      "$dep_dir/tools/lib" "$dep_dir/tools/lib64"; do
+            for f in "$libdir"/libstdc++.so* "$libdir"/libgcc_s.so*; do
+                [ -f "$f" ] && cp -a "$f" "$OUT/usr/lib64/"
+            done
         done
 
         # Create symlinks
@@ -184,6 +198,6 @@ if [ ! -f "$OUT/usr/lib64/libstdc++.so.6" ]; then
 fi
 echo "GCC runtime libraries installed"
 """,
-    deps = ["toolchains//bootstrap:bootstrap-toolchain"],
+    deps = ["//tc/bootstrap/stage1:gcc-pass2"],
     visibility = ["PUBLIC"],
 )

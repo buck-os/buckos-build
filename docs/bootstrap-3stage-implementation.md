@@ -266,7 +266,7 @@ Update `toolchains/bootstrap/BUCK` to use:
 buck2 kill && buck2 clean
 
 # Build Stage 1 (cross-toolchain)
-buck2 build toolchains//bootstrap:cross-gcc-pass2
+buck2 build //tc/bootstrap/stage1:gcc-pass2
 
 # Build Stage 2 (core utilities)
 buck2 build toolchains//bootstrap:bootstrap-toolchain

@@ -9,7 +9,7 @@ multiple values to control which toolchain TOOLCHAIN_ATTRS select() resolves:
   bootstrap-mode-false → seed toolchain (same as DEFAULT)
   DEFAULT              → seed toolchain (toolchains//:buckos)
 
-Three transitions:
+Four transitions:
 
   default_transition  — reset to DEFAULT (seed toolchain).  Used by
                         stage2-toolchain to resolve host_tools in DEFAULT
@@ -21,6 +21,14 @@ Three transitions:
                         with the stage 2 toolchain (hermetic PATH).
 
   bootstrap_transition — flip to bootstrap mode (escape hatch).
+
+  strip_toolchain_mode_transition — remove bootstrap-mode-setting entirely,
+                        returning to the base platform.  Applied as cfg on
+                        rules whose output is configuration-independent
+                        (source extraction, stage 1 bootstrap, kernel
+                        config/headers) to prevent duplicate actions when
+                        the same targets are reached through both DEFAULT
+                        and stage3 configurations.
 """
 
 def _config_transition_impl(ctx):
@@ -87,4 +95,26 @@ stage3_transition = rule(
         "_value": attrs.dep(default = "//tc/exec:stage3-mode-true"),
     },
     is_configuration_rule = True,
+)
+
+def _strip_toolchain_mode_impl(platform: PlatformInfo, refs: struct) -> PlatformInfo:
+    """Strip the bootstrap-mode constraint, returning to the base platform.
+
+    Stripping (not setting to bootstrap-mode-false) is deliberate: the DEFAULT
+    config has no bootstrap-mode-setting at all, so stripping produces the
+    exact same configuration hash — true dedup with zero extra configurations.
+    """
+    constraints = dict(platform.configuration.constraints)
+    constraints.pop(refs.setting[ConstraintSettingInfo].label, None)
+    return PlatformInfo(
+        label = "<base>",
+        configuration = ConfigurationInfo(
+            constraints = constraints,
+            values = platform.configuration.values,
+        ),
+    )
+
+strip_toolchain_mode = transition(
+    impl = _strip_toolchain_mode_impl,
+    refs = {"setting": "//tc/exec:bootstrap-mode-setting"},
 )

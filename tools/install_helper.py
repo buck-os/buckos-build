@@ -7,8 +7,11 @@ packages that use a non-standard name (e.g. CONFIG_PREFIX for busybox).
 """
 
 import argparse
+import glob as _glob
 import multiprocessing
 import os
+import re
+import shutil
 import stat
 import subprocess
 import sys
@@ -27,6 +30,76 @@ def _rewrite_file(fpath, old, new):
     with open(fpath, "w") as f:
         f.write(fc)
     os.utime(fpath, (stat.st_atime, stat.st_mtime))
+
+
+_BINARY_EXTS = frozenset((
+    ".o", ".a", ".so", ".gch", ".pcm", ".pch", ".d",
+    ".png", ".jpg", ".gif", ".ico", ".gz", ".xz", ".bz2",
+    ".wasm", ".pyc", ".qm",
+))
+
+_BUCK_OUT_RE = re.compile(r'(/[^\s"\']+?)/buck-out/')
+
+
+def _detect_stale_project_root(build_dir):
+    """Scan build metadata files for absolute paths containing /buck-out/.
+
+    Checks config.status (autotools), CMakeCache.txt (cmake),
+    build.ninja (meson/cmake), and Makefile (OpenSSL-style).  If the
+    prefix before /buck-out/ differs from os.getcwd(), return the stale
+    root.  Otherwise return None.
+    """
+    current_root = os.getcwd()
+    candidates = list(_glob.glob(os.path.join(build_dir, "**/config.status"), recursive=True))
+    for name in ("CMakeCache.txt", "build.ninja"):
+        path = os.path.join(build_dir, name)
+        if os.path.isfile(path):
+            candidates.append(path)
+    # Also check top-level Makefile — build systems that don't generate
+    # config.status (e.g. OpenSSL's Configure) still embed absolute paths.
+    top_makefile = os.path.join(build_dir, "Makefile")
+    if os.path.isfile(top_makefile) and not candidates:
+        candidates.append(top_makefile)
+    for cs in candidates:
+        try:
+            with open(cs, "r") as f:
+                content = f.read()
+        except (UnicodeDecodeError, PermissionError, OSError):
+            continue
+        m = _BUCK_OUT_RE.search(content)
+        if m and m.group(1) != current_root:
+            return m.group(1)
+    return None
+
+
+def _fix_stale_symlinks(build_dir, old_root, new_root):
+    """Rewrite absolute symlink targets that contain old_root."""
+    for dirpath, dirnames, filenames in os.walk(build_dir):
+        for entries in (dirnames, filenames):
+            for name in entries:
+                p = os.path.join(dirpath, name)
+                if not os.path.islink(p):
+                    continue
+                target = os.readlink(p)
+                if old_root in target:
+                    os.unlink(p)
+                    os.symlink(target.replace(old_root, new_root), p)
+
+
+def _rewrite_stale_paths(build_dir, old_root, new_root):
+    """Rewrite old_root to new_root in all non-binary text files."""
+    for dirpath, _dirnames, filenames in os.walk(build_dir):
+        for fname in filenames:
+            if os.path.splitext(fname)[1] in _BINARY_EXTS:
+                continue
+            fpath = os.path.join(dirpath, fname)
+            if os.path.islink(fpath):
+                continue
+            try:
+                _rewrite_file(fpath, old_root, new_root)
+            except (UnicodeDecodeError, PermissionError, IsADirectoryError,
+                    FileNotFoundError):
+                pass
 
 
 def _resolve_env_paths(value):
@@ -87,6 +160,47 @@ def _resolve_env_paths(value):
     return " ".join(parts)
 
 
+def _patch_runshared(build_dir):
+    """Patch RUNSHARED assignments to preserve LD_LIBRARY_PATH from environment.
+
+    Some packages (notably Python) generate Makefiles with:
+        RUNSHARED=	LD_LIBRARY_PATH=/abs/path/to/build
+    This replaces LD_LIBRARY_PATH for subprocesses, losing dep lib dirs
+    set by the helper.  Appending :$$LD_LIBRARY_PATH (Make syntax for
+    literal $) makes the shell expand the current environment value.
+    """
+    _runshared_re = re.compile(
+        r'^(RUNSHARED\s*=\s*LD_LIBRARY_PATH=\S+)$',
+        re.MULTILINE,
+    )
+
+    def _append_env(m):
+        val = m.group(1)
+        if '$$LD_LIBRARY_PATH' in val:
+            return val
+        return val + ':$$LD_LIBRARY_PATH'
+
+    for dirpath, _dirnames, filenames in os.walk(build_dir):
+        for fname in filenames:
+            fpath = os.path.join(dirpath, fname)
+            try:
+                with open(fpath, 'r') as f:
+                    content = f.read()
+            except (UnicodeDecodeError, PermissionError, OSError):
+                continue
+            if 'RUNSHARED' not in content:
+                continue
+            new_content = _runshared_re.sub(_append_env, content)
+            if new_content != content:
+                try:
+                    st = os.stat(fpath)
+                    with open(fpath, 'w') as f:
+                        f.write(new_content)
+                    os.utime(fpath, (st.st_atime, st.st_mtime))
+                except (PermissionError, OSError):
+                    pass
+
+
 def _suppress_phony_rebuilds(build_dir):
     """Remove variable-expanded targets from .PHONY declarations.
 
@@ -101,7 +215,6 @@ def _suppress_phony_rebuilds(build_dir):
     existing files as up-to-date.  Literal .PHONY targets (install,
     clean, all, etc.) are preserved.
     """
-    import re
     _var_re = re.compile(r'\$[({][^)}]*[)}]')
 
     for dirpath, _dirnames, filenames in os.walk(build_dir):
@@ -213,6 +326,19 @@ def main():
         prepend = ":".join(os.path.abspath(p) for p in args.path_prepend if os.path.isdir(p))
         if prepend:
             os.environ["PATH"] = prepend + ":" + os.environ.get("PATH", "")
+        # Derive LD_LIBRARY_PATH from dep bin dirs so dynamically linked
+        # libraries are found at install time (e.g. Python test-imports
+        # extension modules during make install).
+        _dep_lib_dirs = []
+        for _bp in args.path_prepend:
+            _parent = os.path.dirname(os.path.abspath(_bp))
+            for _ld in ("lib", "lib64"):
+                _d = os.path.join(_parent, _ld)
+                if os.path.isdir(_d):
+                    _dep_lib_dirs.append(_d)
+        if _dep_lib_dirs:
+            _existing = os.environ.get("LD_LIBRARY_PATH", "")
+            os.environ["LD_LIBRARY_PATH"] = ":".join(_dep_lib_dirs) + (":" + _existing if _existing else "")
 
     # Auto-detect Python site-packages from dep prefixes so build-time
     # Python modules (e.g. packaging for gdbus-codegen) are found.
@@ -223,7 +349,7 @@ def main():
             _parent = os.path.dirname(os.path.abspath(_bp))
             for _pattern in ("lib/python*/site-packages", "lib/python*/dist-packages",
                              "lib64/python*/site-packages", "lib64/python*/dist-packages"):
-                for _sp in __import__("glob").glob(os.path.join(_parent, _pattern)):
+                for _sp in _glob.glob(os.path.join(_parent, _pattern)):
                     if os.path.isdir(_sp):
                         _py_paths.append(_sp)
         if _py_paths:
@@ -239,6 +365,8 @@ def main():
 
     # The build tree is a read-only Buck2 output from the compile action.
     # Make it writable so we can patch libtool scripts and reset timestamps.
+    # Also break hard links — Buck2 may share inodes across actions, and
+    # mmap-based linkers (mold) SIGBUS when writing to shared mappings.
     for dirpath, dirnames, filenames in os.walk(build_dir):
         for d in dirnames:
             dp = os.path.join(dirpath, d)
@@ -249,11 +377,26 @@ def main():
                     pass
         for f in filenames:
             fp = os.path.join(dirpath, f)
-            if not os.path.islink(fp):
-                try:
-                    os.chmod(fp, os.stat(fp).st_mode | stat.S_IWUSR)
-                except OSError:
-                    pass
+            if os.path.islink(fp):
+                continue
+            try:
+                st = os.stat(fp)
+                os.chmod(fp, st.st_mode | stat.S_IWUSR)
+                if st.st_nlink > 1:
+                    tmp = fp + ".hlbreak"
+                    shutil.copy2(fp, tmp)
+                    os.rename(tmp, fp)
+            except OSError:
+                pass
+
+    # Detect and rewrite stale absolute paths from cross-machine cache.
+    # When build ran on CI and install runs locally, autotools files
+    # (config.status, Makefiles) contain CI's project root.
+    _stale_root = _detect_stale_project_root(build_dir)
+    if _stale_root:
+        _new_root = os.getcwd()
+        _fix_stale_symlinks(build_dir, _stale_root, _new_root)
+        _rewrite_stale_paths(build_dir, _stale_root, _new_root)
 
     # Suppress libtool re-linking during install.
     #
@@ -266,7 +409,6 @@ def main():
     #
     # This is the same technique distros like Gentoo and Arch use to
     # avoid libtool re-link failures in staged installs.
-    import glob as _glob
     for lt_script in _glob.glob(os.path.join(build_dir, "**/libtool"), recursive=True):
         try:
             _rewrite_file(lt_script, "need_relink=yes", "need_relink=no")
@@ -283,14 +425,13 @@ def main():
     # Clear relink_command from .la files so libtool --mode=install doesn't
     # re-link libraries/binaries.  relink_command embeds build-tree paths
     # (often relative) that may not resolve in Buck2's split-action model.
-    import re as _re
     for la_file in _glob.glob(os.path.join(build_dir, "**", "*.la"), recursive=True):
         try:
             with open(la_file, "r") as f:
                 la_content = f.read()
             if "relink_command=" not in la_content:
                 continue
-            la_new = _re.sub(r"relink_command=.*", 'relink_command=""', la_content)
+            la_new = re.sub(r"relink_command=.*", 'relink_command=""', la_content)
             if la_new != la_content:
                 la_stat = os.stat(la_file)
                 with open(la_file, "w") as f:
@@ -314,6 +455,10 @@ def main():
                 os.utime(os.path.join(dirpath, fname), _stamp)
             except (PermissionError, OSError):
                 pass
+
+    # Patch RUNSHARED assignments so LD_LIBRARY_PATH from the environment
+    # survives into subprocesses (e.g. Python's compileall test-imports).
+    _patch_runshared(build_dir)
 
     targets = args.make_targets or ["install"]
 
@@ -346,7 +491,6 @@ def main():
     # Remove libtool .la files — they embed absolute build-time paths that
     # break when consumed from Buck2 dep directories.  Modern pkg-config and
     # cmake handle transitive deps without them.
-    import glob as _glob
     for la in _glob.glob(os.path.join(prefix, "**", "*.la"), recursive=True):
         os.remove(la)
 
@@ -360,6 +504,7 @@ def main():
             print(f"error: post-cmd failed with exit code {result.returncode}: {cmd_str}",
                   file=sys.stderr)
             sys.exit(1)
+
 
 
 if __name__ == "__main__":

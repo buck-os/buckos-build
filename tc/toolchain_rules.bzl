@@ -197,6 +197,13 @@ def _buckos_prebuilt_toolchain_impl(ctx: AnalysisContext) -> list[Provider]:
     cxx_args = cmd_args(toolchain_dir.project("tools/bin/" + triple + "-g++"))
     cxx_args.add(cmd_args("--sysroot=", sysroot, delimiter = ""))
 
+    # ld.bfd resolves DT_NEEDED chains and needs to find libstdc++.so
+    # when linking C programs against C++ shared libraries.  The GCC
+    # runtime libs live outside the sysroot — add them as rpath-link.
+    gcc_lib_dir = toolchain_dir.project("tools/" + triple + "/lib64")
+    ldflags = list(ctx.attrs.extra_ldflags)
+    ldflags.append(cmd_args("-Wl,-rpath-link,", gcc_lib_dir, delimiter = ""))
+
     info = BuildToolchainInfo(
         cc = RunInfo(args = cc_args),
         cxx = RunInfo(args = cxx_args),
@@ -209,7 +216,7 @@ def _buckos_prebuilt_toolchain_impl(ctx: AnalysisContext) -> list[Provider]:
         python = None,
         host_bin_dir = None,
         extra_cflags = ctx.attrs.extra_cflags,
-        extra_ldflags = ctx.attrs.extra_ldflags,
+        extra_ldflags = ldflags,
     )
     return [DefaultInfo(), info]
 

@@ -1,0 +1,23 @@
+"""
+BXL graph structure test: configuration dedup for pinned rules.
+
+Verifies that stage 1 bootstrap and extract_source targets resolve to
+a single configuration in the seed-export dep graph, preventing duplicate
+actions when reached through both DEFAULT and stage3 paths.
+
+Run:
+    buck2 bxl buckos//tests/graph/test_dedup.bxl:test_dedup
+"""
+
+load("//tests/graph:test_dedup_impl.bzl", "run")
+
+def _impl(ctx):
+    passed, failed, details = run(ctx)
+    if failed > 0:
+        fail("{} assertion(s) failed\n{}".format(failed, details))
+
+test_dedup = bxl_main(
+    doc = "Verify configuration dedup for pinned stage 1 targets.",
+    impl = _impl,
+    cli_args = {},
+)

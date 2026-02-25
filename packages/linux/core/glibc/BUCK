@@ -10,7 +10,7 @@ package(
     version = "2.42",
     url = "https://mirrors.kernel.org/gnu/glibc/glibc-2.42.tar.xz",
     sha256 = None,
-    source = "toolchains//bootstrap:glibc-src",
+    source = "//tc/bootstrap/stage1:glibc-src",
     description = "GNU C Library (glibc) - the standard C library for GNU/Linux systems",
     homepage = "https://www.gnu.org/software/libc/",
     license = "LGPL-2.1+ GPL-2+",
@@ -92,8 +92,8 @@ ls -la "$DESTDIR/usr/lib/locale/" 2>/dev/null || true
     # Depend on cross-glibc from bootstrap to get the pre-built glibc
     # Use select() to pick the right cross-glibc for the target architecture
     deps = select({
-        "//platforms:is_aarch64": ["toolchains//bootstrap:cross-glibc-aarch64"],
-        "DEFAULT": ["toolchains//bootstrap:cross-glibc"],
+        "//platforms:is_aarch64": ["//tc/bootstrap/aarch64:cross-glibc-aarch64"],
+        "DEFAULT": ["//tc/bootstrap/stage1:glibc"],
     }),
     visibility = ["PUBLIC"],
 )

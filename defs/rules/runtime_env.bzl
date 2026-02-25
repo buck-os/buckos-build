@@ -22,8 +22,13 @@ def _runtime_env_impl(ctx):
     ))
     content.add("exec \"$@\"\n")
 
-    ctx.actions.write(wrapper, content, is_executable = True)
-    return [DefaultInfo(default_output = wrapper)]
+    script, hidden = ctx.actions.write(
+        wrapper,
+        content,
+        is_executable = True,
+        allow_args = True,
+    )
+    return [DefaultInfo(default_output = script, other_outputs = hidden)]
 
 runtime_env = rule(
     impl = _runtime_env_impl,

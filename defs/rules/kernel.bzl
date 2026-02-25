@@ -11,6 +11,7 @@ Rules:
 
 load("//defs:empty_registry.bzl", "PATCH_REGISTRY")
 load("//defs:providers.bzl", "KernelBtfInfo", "KernelConfigInfo", "KernelHeadersInfo", "KernelInfo")
+load("//tc:transitions.bzl", "strip_toolchain_mode")
 
 # ── kernel_config ────────────────────────────────────────────────────
 
@@ -63,6 +64,7 @@ _kernel_config_rule = rule(
             attrs.exec_dep(default = "//tools:kernel_config"),
         ),
     },
+    cfg = strip_toolchain_mode,
 )
 
 def kernel_config(labels = [], **kwargs):
@@ -287,6 +289,7 @@ _kernel_headers_rule = rule(
             attrs.exec_dep(default = "//tools:kernel_headers"),
         ),
     },
+    cfg = strip_toolchain_mode,
 )
 
 def kernel_headers(name, source, version = "", config = None, arch = "x86_64", labels = [], visibility = []):
