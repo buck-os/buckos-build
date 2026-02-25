@@ -451,7 +451,7 @@ def main():
     # fail looking for source files or cross-compilation configs from
     # the configure action's output directory.
     _regen_re = re.compile(
-        r'^build build\.ninja:.*?(?=\n(?:build |$))',
+        r'^build build\.ninja[ :].*?(?=\n(?:build |$))',
         re.MULTILINE | re.DOTALL,
     )
     for _nf in _glob.glob(os.path.join(make_dir, "**/build.ninja"), recursive=True):
@@ -485,6 +485,54 @@ def main():
                 os.utime(os.path.join(dirpath, fname), _stamp)
             except (PermissionError, OSError):
                 pass
+
+    # Suppress Makefile-level reconfiguration.  Build systems like QEMU
+    # wrap meson inside autotools; their Makefile re-runs config.status
+    # when included Makefiles (Makefile.mtest, Makefile.ninja) are created
+    # for the first time.  cmake-generated Makefiles run cmake
+    # --check-build-system which fails when the built cmake has stale
+    # paths from a different machine.  Append no-op overrides for
+    # targets whose recipes invoke these reconfiguration commands.
+    _CLEAN_TARGETS = frozenset(("distclean", "clean", "maintainer-clean",
+                                "mostlyclean", "realclean"))
+    _RECONFIG_TRIGGERS = ('config.status', 'check-build-system')
+    _RECONFIG_RECIPE_PATTERNS = ('./config.status', '--reconfigure',
+                                 '--check-build-system')
+    for _mf in _glob.glob(os.path.join(make_dir, "**/Makefile"), recursive=True):
+        try:
+            with open(_mf, "r") as f:
+                _mf_content = f.read()
+        except (UnicodeDecodeError, PermissionError, OSError):
+            continue
+        if not any(t in _mf_content for t in _RECONFIG_TRIGGERS):
+            continue
+        _mf_stat = os.stat(_mf)
+        _suppressed = {}  # target -> "::" or ":"
+        _current_target = None
+        _current_colon = ":"
+        for line in _mf_content.splitlines():
+            if line.startswith('\t'):
+                if (_current_target
+                        and _current_target not in _CLEAN_TARGETS
+                        and any(p in line for p in _RECONFIG_RECIPE_PATTERNS)):
+                    _suppressed[_current_target] = _current_colon
+            elif ':' in line and not line.startswith(('#', '\t', '.PHONY')):
+                colon_idx = line.index(':')
+                _current_colon = "::" if line[colon_idx:colon_idx+2] == "::" else ":"
+                target_part = line[:colon_idx].strip()
+                if target_part and not target_part.startswith(('$', '@', '-')):
+                    _current_target = target_part
+                else:
+                    _current_target = None
+            else:
+                _current_target = None
+        if _suppressed:
+            _overrides = ["\n# Reconfiguration suppressed by install_helper"]
+            for _t in sorted(_suppressed):
+                _overrides.append(f"{_t}{_suppressed[_t]} ;")
+            with open(_mf, "a") as f:
+                f.write("\n".join(_overrides) + "\n")
+            os.utime(_mf, (_mf_stat.st_atime, _mf_stat.st_mtime))
 
     # Prevent autotools reconfigure during install.  In out-of-tree builds
     # the build subdir's config.status depends on ../configure (in the

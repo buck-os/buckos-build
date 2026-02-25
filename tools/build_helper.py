@@ -237,7 +237,7 @@ def main():
                 content = f.read()
             content = content.replace(build_dir, output_dir)
             content = re.sub(
-                r'^build build\.ninja:.*?(?=\n(?:build |$))',
+                r'^build build\.ninja[ :].*?(?=\n(?:build |$))',
                 'build build.ninja: phony',
                 content, count=1, flags=re.MULTILINE | re.DOTALL,
             )
@@ -253,7 +253,7 @@ def main():
         if build_dir in content:
             content = content.replace(build_dir, output_dir)
         content = re.sub(
-            r'^build build\.ninja:.*?(?=\n(?:build |$))',
+            r'^build build\.ninja[ :].*?(?=\n(?:build |$))',
             'build build.ninja: phony',
             content, count=1, flags=re.MULTILINE | re.DOTALL,
         )
@@ -309,7 +309,7 @@ def main():
     # this action; regeneration would fail looking for files that only
     # existed in the configure action's output directory.
     _regen_re = re.compile(
-        r'^build build\.ninja:.*?(?=\n(?:build |$))',
+        r'^build build\.ninja[ :].*?(?=\n(?:build |$))',
         re.MULTILINE | re.DOTALL,
     )
     for _nf in _glob.glob(os.path.join(output_dir, "**/build.ninja"), recursive=True):
@@ -460,6 +460,60 @@ def main():
                 os.utime(os.path.join(dirpath, fname), _stamp)
             except (PermissionError, OSError):
                 pass
+
+    # Suppress Makefile-level reconfiguration.  Build systems like QEMU
+    # wrap meson inside autotools; their build/Makefile has rules that
+    # re-run config.status when config-host.mak appears stale.  cmake-
+    # generated Makefiles run cmake --check-build-system which fails
+    # when the built cmake has stale paths.  In our split-action model,
+    # configuration happened in a previous action — the build phase must
+    # never reconfigure.  Append no-op overrides (GNU Make uses the last
+    # recipe for a given target) so these rules become harmless.
+    _CLEAN_TARGETS = frozenset(("distclean", "clean", "maintainer-clean",
+                                "mostlyclean", "realclean"))
+    _RECONFIG_TRIGGERS = ('config.status', 'check-build-system')
+    _RECONFIG_RECIPE_PATTERNS = ('./config.status', '--reconfigure',
+                                 '--check-build-system')
+    for _mf in _glob.glob(os.path.join(output_dir, "**/Makefile"), recursive=True):
+        try:
+            with open(_mf, "r") as f:
+                _mf_content = f.read()
+        except (UnicodeDecodeError, PermissionError, OSError):
+            continue
+        if not any(t in _mf_content for t in _RECONFIG_TRIGGERS):
+            continue
+        _mf_stat = os.stat(_mf)
+        # Scan for targets whose recipes invoke config.status (as a
+        # command, not in rm/echo), meson --reconfigure, or cmake
+        # --check-build-system.  Track whether the target uses ::
+        # (double-colon) rules.
+        _suppressed = {}  # target -> "::" or ":"
+        _current_target = None
+        _current_colon = ":"
+        for line in _mf_content.splitlines():
+            if line.startswith('\t'):
+                if (_current_target
+                        and _current_target not in _CLEAN_TARGETS
+                        and any(p in line for p in _RECONFIG_RECIPE_PATTERNS)):
+                    _suppressed[_current_target] = _current_colon
+            elif ':' in line and not line.startswith(('#', '\t', '.PHONY')):
+                # Detect :: vs : rules
+                colon_idx = line.index(':')
+                _current_colon = "::" if line[colon_idx:colon_idx+2] == "::" else ":"
+                target_part = line[:colon_idx].strip()
+                if target_part and not target_part.startswith(('$', '@', '-')):
+                    _current_target = target_part
+                else:
+                    _current_target = None
+            else:
+                _current_target = None
+        if _suppressed:
+            _overrides = ["\n# Reconfiguration suppressed by build_helper"]
+            for _t in sorted(_suppressed):
+                _overrides.append(f"{_t}{_suppressed[_t]} ;")
+            with open(_mf, "a") as f:
+                f.write("\n".join(_overrides) + "\n")
+            os.utime(_mf, (_mf_stat.st_atime, _mf_stat.st_mtime))
 
     # Patch RUNSHARED assignments so LD_LIBRARY_PATH from the environment
     # survives into subprocesses (e.g. Python test-imports during compile).
