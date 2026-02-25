@@ -8,6 +8,109 @@ BuckOS uses Buck2 to define and build Linux packages as reproducible build
 targets. Each package is as a Buck target with source downloads, build
 configuration, and dependencies clearly specified.
 
+## Testing (aka capabilities atm)
+
+All builds and tests run entirely rootless — no `sudo`, no privileged
+daemons. Everything is a pure Buck2 target: `buck2 test //tests:`. Many
+tests double as runnable demos of the subsystems they exercise.
+
+### Test Inventory
+
+**Provenance and IMA signing** — build small ELF fixtures and verify
+`.note.package` injection and IMA `.sig` sidecar generation. Good
+starting points for understanding the provenance pipeline.
+
+| Target | What it covers |
+|--------|----------------|
+| `test-hello-provenance` | ELF binary has `.note.package` section |
+| `test-hello-no-provenance` | Unstamped binary has no `.note.package` |
+| `test-testlib-provenance` | Shared library `.note.package` injection |
+| `test-hello-ima` | IMA `.sig` sidecar files are generated |
+
+**Cloud Hypervisor VM tests** — same IMA matrix as above but running
+under Cloud Hypervisor, plus boot script and minimal VM boot verification.
+Demonstrates CH as an alternative VMM. Labeled `vm`, `slow`.
+
+| Target | What it covers |
+|--------|----------------|
+| `test-ch-boot-script` | Generated CH boot script is well-formed |
+| `test-ch-vm-boot` | Minimal CH VM boots to init |
+| `test-ch-ima-noima` | Unsigned workload binary runs with IMA off (CH) |
+| `test-ch-ima-enforce-signed` | Signed workload binary executes under IMA enforce (CH) |
+| `test-ch-ima-enforce-unsigned` | Unsigned workload binary rejected (CH) |
+| `test-ch-ima-file-signed` | Signed workload binary reads signed data file (CH) |
+| `test-ch-ima-file-unsigned` | Signed workload binary denied reading unsigned data file (CH) |
+
+Kernel configs are composable Buck targets — each feature area (filesystem,
+network, security, IMA, etc.) is a standalone config fragment merged by the
+`kernel_config` rule. USE flag constraints gate which fragments are included
+via `select()`, so toggling IMA on or off is a one-line config change
+(`?//use/constraints:ima-on`) rather than a manual kernel config edit. Patches that
+haven't landed in-tree yet can be applied transparently through the private
+patch registry (`patches/`), which injects patches at build time without
+modifying the upstream build graph.
+
+**Seed isolation** — audits the exported seed archive for host-path leaks
+in RPATH/RUNPATH and cross-contamination between host-tools and sysroot.
+Requires a full bootstrap, labeled `slow`.
+
+| Target | What it covers |
+|--------|----------------|
+| `test-seed-isolation` | ELF RPATH/RUNPATH and NEEDED audit of seed archive |
+
+**ISO boot** — minimal boot verification of the hybrid BIOS+EFI ISO
+image in QEMU. Labeled `vm`, `slow`.
+
+| Target | What it covers |
+|--------|----------------|
+| `test-iso-boot` | BuckOS ISO boots in QEMU to login prompt |
+| `qemu-env` | Runtime environment providing QEMU binary to VM tests |
+
+**Build smoke tests** — end-to-end builds of representative packages,
+useful for verifying the toolchain works after changes.
+
+| Target | What it covers |
+|--------|----------------|
+| `build-smoke-zlib` | zlib builds and produces `libz.so` + headers |
+| `build-smoke-ch` | Cloud Hypervisor (Rust/Cargo) builds |
+
+**IMA QEMU enforcement** — boot a QEMU VM with an IMA-enabled kernel and
+exercise the full appraisal chain: signed workload binaries run, unsigned
+workload binaries are rejected, FILE_CHECK appraisal gates data file
+access. These demonstrate the IMA policy lifecycle end-to-end. Labeled
+`vm`, `slow`.
+
+| Target | What it covers |
+|--------|----------------|
+| `test-ima-enforce-signed` | Signed workload binary executes under `ima_appraise=enforce` (QEMU) |
+| `test-ima-enforce-unsigned` | Unsigned workload binary rejected under enforcement (QEMU) |
+| `test-ima-noima` | Unsigned workload binary runs when IMA is off (QEMU) |
+| `test-ima-file-signed` | Signed workload binary reads signed data file via FILE_CHECK (QEMU) |
+| `test-ima-file-unsigned` | Signed workload binary denied reading unsigned data file (QEMU) |
+
+**Unit tests** — exercise Python helpers and shell scripts in isolation, no
+build deps. Run the group with `buck2 test //tests: --labels tools-unit`.
+
+| Target | What it covers |
+|--------|----------------|
+| `test-provenance-stamp` | `provenance-stamp.sh` ELF note injection logic |
+| `test-env-unit` | Environment variable helpers |
+| `test-path-resolution` | Buck2 artifact path resolution |
+| `test-extract-unit` | Source tarball extraction |
+| `test-rootfs-unit` | Rootfs assembly helpers |
+| `test-small-helpers` | Miscellaneous small utility functions |
+| `test-merge-and-hash` | FHS tree merge and content hashing |
+| `test-kernel-helpers` | Kernel config and build helpers |
+| `test-iso-config` | ISO image configuration generation |
+| `test-build-install` | `build_helper.py` / `install_helper.py` logic |
+| `test-stage3-strip` | Stage 3 binary stripping |
+| `test-bootstrap-helpers` | Bootstrap rule helpers (configure, sysroot) |
+| `test-lang-helpers` | Go / Rust / LLVM toolchain helpers |
+| `test-patch-acct` | Patch application and acct-user/group helpers |
+| `test-sysroot-merge` | Sysroot directory merge logic |
+| `test-toolchain-unpack` | Seed toolchain unpacking and validation |
+| `test-vm-helpers` | QEMU / Cloud Hypervisor launch helpers |
+
 ## Project Structure
 
 ```
@@ -577,8 +680,6 @@ cmake_package(
 ```
 
 User-provided labels are merged with auto-injected labels.
-
-## Testing
 
 ### Boot in QEMU
 
