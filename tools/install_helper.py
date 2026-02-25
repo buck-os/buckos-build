@@ -282,15 +282,16 @@ def main():
     os.environ["PROJECT_ROOT"] = os.getcwd()
 
     build_dir = os.path.abspath(args.build_dir)
+    make_dir = build_dir
     if args.build_subdir:
-        build_dir = os.path.join(build_dir, args.build_subdir)
-    if not os.path.isdir(build_dir):
-        print(f"error: build directory not found: {build_dir}", file=sys.stderr)
+        make_dir = os.path.join(build_dir, args.build_subdir)
+    if not os.path.isdir(make_dir):
+        print(f"error: build directory not found: {make_dir}", file=sys.stderr)
         sys.exit(1)
 
     # Expose the build directory so post-cmds can reference build
     # artifacts (e.g. copying objects not handled by make install).
-    os.environ["BUILD_DIR"] = build_dir
+    os.environ["BUILD_DIR"] = make_dir
 
     # Create a pkg-config wrapper that always passes --define-prefix so
     # .pc files in Buck2 dep directories resolve paths correctly.
@@ -498,16 +499,16 @@ def main():
         # not exist in Buck2's split-action model (only the build output
         # is an input to the install action, not the dep tree).  cmake
         # --install runs the install scripts directly, bypassing ninja.
-        _cmake_cache = os.path.join(build_dir, "CMakeCache.txt")
+        _cmake_cache = os.path.join(make_dir, "CMakeCache.txt")
         if os.path.isfile(_cmake_cache) and shutil.which("cmake"):
-            cmd = ["cmake", "--install", build_dir]
+            cmd = ["cmake", "--install", make_dir]
             _use_cmake_install = True
         else:
-            cmd = ["ninja", "-C", build_dir, f"-j{jobs}"] + targets
+            cmd = ["ninja", "-C", make_dir, f"-j{jobs}"] + targets
     else:
         cmd = [
             "make",
-            "-C", build_dir,
+            "-C", make_dir,
             f"-j{jobs}",
             f"{args.destdir_var}={prefix}",
         ] + targets
