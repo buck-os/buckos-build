@@ -14,12 +14,21 @@ def _runtime_env_impl(ctx):
     wrapper = ctx.actions.declare_output("run-env.sh")
     content = cmd_args()
     content.add("#!/bin/sh\n")
+    # Buck2 cmd_args produce relative paths.  Resolve them to absolute
+    # so the dynamic linker finds libraries regardless of CWD or when
+    # outputs are materialised from remote cache.
     content.add(cmd_args(
-        "export LD_LIBRARY_PATH=\"",
+        "_rel=\"",
         cmd_args(lib_dirs, delimiter = ":"),
         "\"\n",
         delimiter = "",
     ))
+    content.add("_abs=\"\"\n")
+    content.add("IFS=:\n")
+    content.add("for _d in $_rel; do\n")
+    content.add("  case \"$_d\" in /*) _abs=\"${_abs:+$_abs:}$_d\" ;; *) _abs=\"${_abs:+$_abs:}$PWD/$_d\" ;; esac\n")
+    content.add("done\n")
+    content.add("export LD_LIBRARY_PATH=\"$_abs\"\n")
     content.add("exec \"$@\"\n")
 
     script, hidden = ctx.actions.write(
