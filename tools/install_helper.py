@@ -534,6 +534,34 @@ def main():
                 f.write("\n".join(_overrides) + "\n")
             os.utime(_mf, (_mf_stat.st_atime, _mf_stat.st_mtime))
 
+    # Suppress rebuild-during-install.  In Buck2's split-action model the
+    # build tree is a finished input from the compile phase.  Install
+    # targets (install-am) depend on all/all-am which checks whether
+    # binaries need rebuilding.  Race conditions in parallel make or
+    # missing transitive deps can trigger relinking that fails because
+    # the full dependency tree isn't available during install.
+    # Override build targets with no-ops so install never rebuilds.
+    _BUILD_TARGETS = ("all", "all-am", "all-recursive")
+    for _mf in _glob.glob(os.path.join(make_dir, "**/Makefile"), recursive=True):
+        try:
+            with open(_mf, "r") as f:
+                _mf_content = f.read()
+        except (UnicodeDecodeError, PermissionError, OSError):
+            continue
+        _mf_stat = os.stat(_mf)
+        _build_overrides = []
+        for _bt in _BUILD_TARGETS:
+            if not re.search(rf'^{re.escape(_bt)}\s*:', _mf_content, re.MULTILINE):
+                continue
+            _colon = "::" if re.search(rf'^{re.escape(_bt)}\s*::', _mf_content, re.MULTILINE) else ":"
+            _build_overrides.append(f"{_bt}{_colon} ;")
+        if _build_overrides:
+            with open(_mf, "a") as f:
+                f.write("\n# Build suppressed by install_helper — "
+                        "compile phase already completed\n")
+                f.write("\n".join(_build_overrides) + "\n")
+            os.utime(_mf, (_mf_stat.st_atime, _mf_stat.st_mtime))
+
     # Prevent autotools reconfigure during install.  In out-of-tree builds
     # the build subdir's config.status depends on ../configure (in the
     # source root).  Buck2 normalises artifact timestamps, so configure

@@ -446,6 +446,44 @@ def main():
                 except (UnicodeDecodeError, PermissionError, IsADirectoryError,
                         FileNotFoundError):
                     pass
+        # Second pass: build_dir→output_dir.  The first comprehensive
+        # rewrite ran before the stale root fix and couldn't match
+        # because files contained the stale machine's paths.  Now that
+        # stale_root→current_root is done, build_dir will match.
+        for dirpath, dirnames, filenames in os.walk(output_dir):
+            for entries in (dirnames, filenames):
+                for name in entries:
+                    p = os.path.join(dirpath, name)
+                    if not os.path.islink(p):
+                        continue
+                    target = os.readlink(p)
+                    if build_dir in target:
+                        os.unlink(p)
+                        os.symlink(target.replace(build_dir, output_dir), p)
+        for dirpath, _dirnames, filenames in os.walk(output_dir):
+            for fname in filenames:
+                if os.path.splitext(fname)[1] in _BINARY_EXTS:
+                    continue
+                fpath = os.path.join(dirpath, fname)
+                if os.path.islink(fpath):
+                    continue
+                try:
+                    _rewrite_file(fpath, build_dir, output_dir)
+                except (UnicodeDecodeError, PermissionError, IsADirectoryError,
+                        FileNotFoundError):
+                    pass
+        # Also fix the meson install.dat pickle which the text rewrite
+        # skips (binary).  Apply both stale_root→current_root and
+        # build_dir→output_dir so paths resolve to the new location.
+        if os.path.isfile(_install_dat):
+            stat = os.stat(_install_dat)
+            with open(_install_dat, "rb") as f:
+                _idata = _StubUnpickler(f).load()
+            _patch_paths(_idata, _stale_root, _current_root)
+            _patch_paths(_idata, build_dir, output_dir)
+            with open(_install_dat, "wb") as f:
+                _pickle.dump(_idata, f)
+            os.utime(_install_dat, (stat.st_atime, stat.st_mtime))
 
     # Reset all file timestamps to a single fixed instant so make doesn't
     # try to regenerate autotools/cmake/meson outputs.  The copytree
