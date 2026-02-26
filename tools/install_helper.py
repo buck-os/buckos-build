@@ -282,15 +282,16 @@ def main():
     os.environ["PROJECT_ROOT"] = os.getcwd()
 
     build_dir = os.path.abspath(args.build_dir)
+    make_dir = build_dir
     if args.build_subdir:
-        build_dir = os.path.join(build_dir, args.build_subdir)
-    if not os.path.isdir(build_dir):
-        print(f"error: build directory not found: {build_dir}", file=sys.stderr)
+        make_dir = os.path.join(build_dir, args.build_subdir)
+    if not os.path.isdir(make_dir):
+        print(f"error: build directory not found: {make_dir}", file=sys.stderr)
         sys.exit(1)
 
     # Expose the build directory so post-cmds can reference build
     # artifacts (e.g. copying objects not handled by make install).
-    os.environ["BUILD_DIR"] = build_dir
+    os.environ["BUILD_DIR"] = make_dir
 
     # Create a pkg-config wrapper that always passes --define-prefix so
     # .pc files in Buck2 dep directories resolve paths correctly.
@@ -367,7 +368,7 @@ def main():
     # Make it writable so we can patch libtool scripts and reset timestamps.
     # Also break hard links — Buck2 may share inodes across actions, and
     # mmap-based linkers (mold) SIGBUS when writing to shared mappings.
-    for dirpath, dirnames, filenames in os.walk(build_dir):
+    for dirpath, dirnames, filenames in os.walk(make_dir):
         for d in dirnames:
             dp = os.path.join(dirpath, d)
             if not os.path.islink(dp):
@@ -392,11 +393,68 @@ def main():
     # Detect and rewrite stale absolute paths from cross-machine cache.
     # When build ran on CI and install runs locally, autotools files
     # (config.status, Makefiles) contain CI's project root.
-    _stale_root = _detect_stale_project_root(build_dir)
+    _stale_root = _detect_stale_project_root(make_dir)
     if _stale_root:
         _new_root = os.getcwd()
-        _fix_stale_symlinks(build_dir, _stale_root, _new_root)
-        _rewrite_stale_paths(build_dir, _stale_root, _new_root)
+        _fix_stale_symlinks(make_dir, _stale_root, _new_root)
+        _rewrite_stale_paths(make_dir, _stale_root, _new_root)
+
+        # Rewrite meson's install.dat pickle which the text rewrite
+        # skips (binary).  install.dat stores absolute source paths
+        # used by `meson install` to locate headers and other files.
+        _install_dat = os.path.join(make_dir, "meson-private", "install.dat")
+        if os.path.isfile(_install_dat):
+            import pickle as _pickle
+
+            class _StubUnpickler(_pickle.Unpickler):
+                """Unpickler that stubs missing mesonbuild modules."""
+                def find_class(self, module, name):
+                    try:
+                        return super().find_class(module, name)
+                    except (ModuleNotFoundError, AttributeError):
+                        type_key = f"{module}.{name}"
+                        if type_key not in _stub_cache:
+                            class _Stub:
+                                def __reduce__(self):
+                                    return (_make_stub, (type_key,), self.__dict__)
+                                def __setstate__(self, state):
+                                    if isinstance(state, dict):
+                                        self.__dict__.update(state)
+                            _Stub.__qualname__ = _Stub.__name__ = name
+                            _Stub.__module__ = module
+                            _stub_cache[type_key] = _Stub
+                        return _stub_cache[type_key]
+
+            _stub_cache = {}
+
+            def _make_stub(type_key):
+                return _stub_cache[type_key]()
+
+            def _patch_paths(obj, old, new):
+                """Recursively replace old prefix with new in string attributes."""
+                if isinstance(obj, str):
+                    return obj.replace(old, new) if old in obj else obj
+                if isinstance(obj, list):
+                    return [_patch_paths(item, old, new) for item in obj]
+                if isinstance(obj, tuple):
+                    return tuple(_patch_paths(item, old, new) for item in obj)
+                if hasattr(obj, "__dict__"):
+                    for k, v in obj.__dict__.items():
+                        patched = _patch_paths(v, old, new)
+                        if patched is not v:
+                            setattr(obj, k, patched)
+                return obj
+
+            try:
+                _dat_stat = os.stat(_install_dat)
+                with open(_install_dat, "rb") as f:
+                    _idata = _StubUnpickler(f).load()
+                _patch_paths(_idata, _stale_root, _new_root)
+                with open(_install_dat, "wb") as f:
+                    _pickle.dump(_idata, f)
+                os.utime(_install_dat, (_dat_stat.st_atime, _dat_stat.st_mtime))
+            except Exception:
+                pass  # Best-effort — don't block install on pickle errors
 
     # Suppress libtool re-linking during install.
     #
@@ -409,13 +467,13 @@ def main():
     #
     # This is the same technique distros like Gentoo and Arch use to
     # avoid libtool re-link failures in staged installs.
-    for lt_script in _glob.glob(os.path.join(build_dir, "**/libtool"), recursive=True):
+    for lt_script in _glob.glob(os.path.join(make_dir, "**/libtool"), recursive=True):
         try:
             _rewrite_file(lt_script, "need_relink=yes", "need_relink=no")
         except (UnicodeDecodeError, PermissionError):
             pass
     # Also patch top-level libtool if present
-    _top_lt = os.path.join(build_dir, "libtool")
+    _top_lt = os.path.join(make_dir, "libtool")
     if os.path.isfile(_top_lt):
         try:
             _rewrite_file(_top_lt, "need_relink=yes", "need_relink=no")
@@ -425,7 +483,7 @@ def main():
     # Clear relink_command from .la files so libtool --mode=install doesn't
     # re-link libraries/binaries.  relink_command embeds build-tree paths
     # (often relative) that may not resolve in Buck2's split-action model.
-    for la_file in _glob.glob(os.path.join(build_dir, "**", "*.la"), recursive=True):
+    for la_file in _glob.glob(os.path.join(make_dir, "**", "*.la"), recursive=True):
         try:
             with open(la_file, "r") as f:
                 la_content = f.read()
@@ -442,46 +500,234 @@ def main():
 
     # Neutralise .PHONY declarations that reference build artifacts via
     # variable expansion so make doesn't force-rebuild them during install.
-    _suppress_phony_rebuilds(build_dir)
+    _suppress_phony_rebuilds(make_dir)
+
+    # Suppress meson/cmake regeneration in all build.ninja files.
+    # In Buck2's split-action model the configure output isn't available
+    # during install; if ninja tries to regenerate, meson/cmake would
+    # fail looking for source files or cross-compilation configs from
+    # the configure action's output directory.
+    _regen_re = re.compile(
+        r'^build build\.ninja[ :].*?(?=\n(?:build |$))',
+        re.MULTILINE | re.DOTALL,
+    )
+    for _nf in _glob.glob(os.path.join(make_dir, "**/build.ninja"), recursive=True):
+        try:
+            _nf_stat = os.stat(_nf)
+            with open(_nf, "r") as f:
+                _nf_content = f.read()
+            _nf_new = _regen_re.sub(
+                'build build.ninja: phony',
+                _nf_content, count=1,
+            )
+            # Ensure phony rule exists even if the regex didn't match
+            # (e.g. cached build output with old comment-based suppression).
+            if 'build build.ninja: phony' not in _nf_new:
+                _nf_new = 'build build.ninja: phony\n' + _nf_new
+            if _nf_new != _nf_content:
+                with open(_nf, "w") as f:
+                    f.write(_nf_new)
+                os.utime(_nf, (_nf_stat.st_atime, _nf_stat.st_mtime))
+        except (UnicodeDecodeError, PermissionError, FileNotFoundError):
+            pass
+
+    # Remove standalone dependency tracking files (*.o.d, *.lo.d).
+    # These record header paths from the build phase and are not needed
+    # during install.  Cross-machine caches may contain paths that cause
+    # make parse errors (e.g. nettle's ecc-gostdsa-sign.o.d).
+    for dirpath, _dirnames, filenames in os.walk(make_dir):
+        for fname in filenames:
+            if fname.endswith((".o.d", ".lo.d")):
+                try:
+                    os.unlink(os.path.join(dirpath, fname))
+                except OSError:
+                    pass
 
     # Reset all file timestamps in the build tree to a uniform instant.
     # Buck2 normalises artifact timestamps after the build phase, so make
     # install can see stale dependencies and try to regenerate files.
     _epoch = float(os.environ.get("SOURCE_DATE_EPOCH", "315576000"))
     _stamp = (_epoch, _epoch)
-    for dirpath, _dirnames, filenames in os.walk(build_dir):
+    for dirpath, _dirnames, filenames in os.walk(make_dir):
         for fname in filenames:
             try:
                 os.utime(os.path.join(dirpath, fname), _stamp)
             except (PermissionError, OSError):
                 pass
 
+    # Bump compiled artifacts to _epoch + 1.  Install targets often have
+    # direct dependencies on build artifacts (e.g. install-gas: as-new,
+    # install-binPROGRAMS: $(bin_PROGRAMS)).  If objects/archives/binaries
+    # share the same timestamp as their sources, make may consider them
+    # stale and trigger relinking.  Making them strictly newer than sources
+    # prevents all rebuild chains during install.
+    _COMPILED_EXTS = frozenset((".o", ".a", ".lo", ".so", ".stamp"))
+    _bump = (_epoch + 1, _epoch + 1)
+    for dirpath, _dirnames, filenames in os.walk(make_dir):
+        for fname in filenames:
+            fpath = os.path.join(dirpath, fname)
+            if os.path.islink(fpath):
+                continue
+            ext = os.path.splitext(fname)[1]
+            if ext in _COMPILED_EXTS or (ext.startswith(".so.") if ext else False):
+                try:
+                    os.utime(fpath, _bump)
+                except (PermissionError, OSError):
+                    pass
+                continue
+            # Versioned shared libraries: libfoo.so.1.2.3
+            if ".so." in fname:
+                try:
+                    os.utime(fpath, _bump)
+                except (PermissionError, OSError):
+                    pass
+                continue
+            # Extensionless ELF executables (e.g. as-new, ld-new)
+            if not ext:
+                try:
+                    with open(fpath, "rb") as f:
+                        if f.read(4) == b"\x7fELF":
+                            os.utime(fpath, _bump)
+                except (PermissionError, OSError):
+                    pass
+
+    # Suppress Makefile-level reconfiguration.  Build systems like QEMU
+    # wrap meson inside autotools; their Makefile re-runs config.status
+    # when included Makefiles (Makefile.mtest, Makefile.ninja) are created
+    # for the first time.  cmake-generated Makefiles run cmake
+    # --check-build-system which fails when the built cmake has stale
+    # paths from a different machine.  Append no-op overrides for
+    # targets whose recipes invoke these reconfiguration commands.
+    _CLEAN_TARGETS = frozenset(("distclean", "clean", "maintainer-clean",
+                                "mostlyclean", "realclean"))
+    _RECONFIG_TRIGGERS = ('config.status', 'check-build-system')
+    _RECONFIG_RECIPE_PATTERNS = ('./config.status', '$(SHELL) config.status',
+                                 '--reconfigure', '--check-build-system')
+    for _mf in _glob.glob(os.path.join(make_dir, "**/Makefile"), recursive=True):
+        try:
+            with open(_mf, "r") as f:
+                _mf_content = f.read()
+        except (UnicodeDecodeError, PermissionError, OSError):
+            continue
+        if not any(t in _mf_content for t in _RECONFIG_TRIGGERS):
+            continue
+        _mf_stat = os.stat(_mf)
+        _suppressed = {}  # target -> "::" or ":"
+        _current_target = None
+        _current_colon = ":"
+        for line in _mf_content.splitlines():
+            if line.startswith('\t'):
+                if (_current_target
+                        and _current_target not in _CLEAN_TARGETS
+                        and any(p in line for p in _RECONFIG_RECIPE_PATTERNS)):
+                    _suppressed[_current_target] = _current_colon
+            elif ':' in line and not line.startswith(('#', '\t', '.PHONY')):
+                colon_idx = line.index(':')
+                _current_colon = "::" if line[colon_idx:colon_idx+2] == "::" else ":"
+                target_part = line[:colon_idx].strip()
+                if target_part and not target_part.startswith(('$', '@', '-')):
+                    _current_target = target_part
+                else:
+                    _current_target = None
+            else:
+                _current_target = None
+        if _suppressed:
+            _overrides = ["\n# Reconfiguration suppressed by install_helper"]
+            for _t in sorted(_suppressed):
+                _overrides.append(f"{_t}{_suppressed[_t]} ;")
+            with open(_mf, "a") as f:
+                f.write("\n".join(_overrides) + "\n")
+            os.utime(_mf, (_mf_stat.st_atime, _mf_stat.st_mtime))
+
+    # Suppress rebuild-during-install.  In Buck2's split-action model the
+    # build tree is a finished input from the compile phase.  Install
+    # targets (install-am) depend on all/all-am which checks whether
+    # binaries need rebuilding.  Race conditions in parallel make or
+    # missing transitive deps can trigger relinking that fails because
+    # the full dependency tree isn't available during install.
+    # Override build targets with no-ops so install never rebuilds.
+    _BUILD_TARGETS = ("all", "all-am", "all-recursive")
+    for _mf in _glob.glob(os.path.join(make_dir, "**/Makefile"), recursive=True):
+        try:
+            with open(_mf, "r") as f:
+                _mf_content = f.read()
+        except (UnicodeDecodeError, PermissionError, OSError):
+            continue
+        _mf_stat = os.stat(_mf)
+        _build_overrides = []
+        for _bt in _BUILD_TARGETS:
+            if not re.search(rf'^{re.escape(_bt)}\s*:', _mf_content, re.MULTILINE):
+                continue
+            _colon = "::" if re.search(rf'^{re.escape(_bt)}\s*::', _mf_content, re.MULTILINE) else ":"
+            _build_overrides.append(f"{_bt}{_colon} ;")
+        if _build_overrides:
+            with open(_mf, "a") as f:
+                f.write("\n# Build suppressed by install_helper — "
+                        "compile phase already completed\n")
+                f.write("\n".join(_build_overrides) + "\n")
+            os.utime(_mf, (_mf_stat.st_atime, _mf_stat.st_mtime))
+
+    # Prevent autotools reconfigure during install.  In out-of-tree builds
+    # the build subdir's config.status depends on ../configure (in the
+    # source root).  Buck2 normalises artifact timestamps, so configure
+    # can appear newer than config.status, causing make to re-run configure.
+    # The configure action's inputs (headers, cross-tools) aren't available
+    # here, so reconfigure would fail.  Touch configure scripts to match
+    # their config.status mtime.
+    for _cs in _glob.glob(os.path.join(make_dir, "**/config.status"), recursive=True):
+        _cs_mtime = os.stat(_cs).st_mtime
+        _cs_dir = os.path.dirname(_cs)
+        for _parent in [os.path.dirname(_cs_dir),
+                        os.path.dirname(os.path.dirname(_cs_dir))]:
+            _configure = os.path.join(_parent, "configure")
+            if os.path.isfile(_configure):
+                try:
+                    os.chmod(_configure,
+                             os.stat(_configure).st_mode | stat.S_IWUSR)
+                    os.utime(_configure, (_cs_mtime, _cs_mtime))
+                except OSError:
+                    pass
+                break
+
     # Patch RUNSHARED assignments so LD_LIBRARY_PATH from the environment
     # survives into subprocesses (e.g. Python's compileall test-imports).
-    _patch_runshared(build_dir)
+    _patch_runshared(make_dir)
 
     targets = args.make_targets or ["install"]
 
     jobs = multiprocessing.cpu_count()
 
+    _use_cmake_install = False
     if args.build_system == "ninja":
         # Ninja uses DESTDIR as an env var, not a command-line arg
         os.environ[args.destdir_var] = prefix
-        cmd = ["ninja", "-C", build_dir, f"-j{jobs}"] + targets
+        # Prefer cmake --install for CMake builds.  ninja install checks
+        # the full dependency graph including external libraries that may
+        # not exist in Buck2's split-action model (only the build output
+        # is an input to the install action, not the dep tree).  cmake
+        # --install runs the install scripts directly, bypassing ninja.
+        _cmake_cache = os.path.join(make_dir, "CMakeCache.txt")
+        if os.path.isfile(_cmake_cache) and shutil.which("cmake"):
+            cmd = ["cmake", "--install", make_dir]
+            _use_cmake_install = True
+        else:
+            cmd = ["ninja", "-C", make_dir, f"-j{jobs}"] + targets
     else:
         cmd = [
             "make",
-            "-C", build_dir,
+            "-C", make_dir,
             f"-j{jobs}",
             f"{args.destdir_var}={prefix}",
         ] + targets
-    # Resolve paths in make args (e.g. CC=buck-out/.../gcc → absolute)
-    for arg in args.make_args:
-        if "=" in arg:
-            key, _, value = arg.partition("=")
-            cmd.append(f"{key}={_resolve_env_paths(value)}")
-        else:
-            cmd.append(arg)
+    # Resolve paths in make args (e.g. CC=buck-out/.../gcc → absolute).
+    # Skipped for cmake --install which doesn't accept make arguments.
+    if not _use_cmake_install:
+        for arg in args.make_args:
+            if "=" in arg:
+                key, _, value = arg.partition("=")
+                cmd.append(f"{key}={_resolve_env_paths(value)}")
+            else:
+                cmd.append(arg)
 
     result = subprocess.run(cmd)
     if result.returncode != 0:
@@ -505,6 +751,23 @@ def main():
                   file=sys.stderr)
             sys.exit(1)
 
+    # Sanitize file names — delete files/dirs with control characters or
+    # backslashes that Buck2 cannot relativize (e.g. autoconf's filesystem
+    # character test creates conftest.t<TAB>).
+    for _clean_dir in (prefix, make_dir):
+        for dirpath, dirnames, filenames in os.walk(_clean_dir, topdown=False):
+            for fname in filenames:
+                if any(ord(c) < 32 or ord(c) == 127 or c == '\\' for c in fname):
+                    try:
+                        os.unlink(os.path.join(dirpath, fname))
+                    except OSError:
+                        pass
+            for dname in list(dirnames):
+                if any(ord(c) < 32 or ord(c) == 127 or c == '\\' for c in dname):
+                    try:
+                        shutil.rmtree(os.path.join(dirpath, dname))
+                    except OSError:
+                        pass
 
 
 if __name__ == "__main__":

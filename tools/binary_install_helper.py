@@ -254,6 +254,31 @@ def main():
         env=env,
         cwd=cwd,
     )
+
+    # Sanitize file names in output and scratch space.  Some build systems
+    # (autoconf's filesystem character test) create files with tabs,
+    # backslashes, or other control characters that Buck2 cannot relativize.
+    # Delete these unconditionally — they are never intentional build output.
+    def _has_unsafe_chars(name):
+        return any(ord(c) < 32 or ord(c) == 127 or c == '\\' for c in name)
+
+    for _clean_dir in (output_dir, workdir):
+        if not os.path.isdir(_clean_dir):
+            continue
+        for dirpath, dirnames, filenames in os.walk(_clean_dir, topdown=False):
+            for fname in filenames:
+                if _has_unsafe_chars(fname):
+                    try:
+                        os.unlink(os.path.join(dirpath, fname))
+                    except OSError:
+                        pass
+            for dname in list(dirnames):
+                if _has_unsafe_chars(dname):
+                    try:
+                        shutil.rmtree(os.path.join(dirpath, dname))
+                    except OSError:
+                        pass
+
     sys.exit(result.returncode)
 
 

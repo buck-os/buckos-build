@@ -29,9 +29,12 @@ chmod +x Configure
     -Dusethreads \
     -Duserelocatableinc
 
-make -j${MAKEOPTS:-$(nproc)}
+# Override LD_RUN_PATH to prevent ExtUtils::MakeMaker from embedding
+# host library paths (e.g. /usr/lib64) as RUNPATH in XS .so modules.
+# Must be a make variable override — env var alone doesn't win.
+make LD_RUN_PATH= -j${MAKEOPTS:-$(nproc)}
 
-make DESTDIR="$OUT" install
+make LD_RUN_PATH= DESTDIR="$OUT" install
 """,
     deps = [
         "//packages/linux/core/zlib:zlib",

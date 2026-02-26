@@ -1,0 +1,104 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  merge_group:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  test-setup:
+    name: "Test setup.sh (${{ matrix.distro }})"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - distro: ubuntu:24.04
+          - distro: fedora:41
+          - distro: archlinux:latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Test setup.sh in Docker
+        run: |
+          docker run --rm -v "$PWD:/src:ro" -w /tmp/test "${{ matrix.distro }}" \
+            bash -c '
+              cp -r /src/. . &&
+              bash setup.sh --yes &&
+              export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH" &&
+              gcc --version &&
+              buck2 --version &&
+              cargo --version &&
+              uv --version &&
+              rg --version &&
+              fd --version || fdfind --version
+            '
+
+  test:
+    name: build & test
+    runs-on: large
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          clean: false
+      - name: Install buck2
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -sL https://github.com/facebook/buck2/releases/download/latest/buck2-x86_64-unknown-linux-gnu.zst \
+            | zstd -d -f -o "$HOME/.local/bin/buck2"
+          chmod +x "$HOME/.local/bin/buck2"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Resolve targets
+        run: buck2 targets //...
+      - name: Graph tests
+        run: |
+          failed=0
+          for bxl in tests/graph/test_*.bxl; do
+            name=$(basename "$bxl" .bxl)
+            echo "::group::$name"
+            buck2 bxl "//tests/graph/${name}.bxl:${name}" || failed=1
+            echo "::endgroup::"
+          done
+          [ "$failed" -eq 0 ]
+      - name: Unit tests
+        run: |
+          buck2 test //tests:
+      - name: Build ISO
+        run: buck2 build //packages/linux/system:buckos-minimal-iso --out buckos.iso
+      - name: Build seed toolchain
+        run: buck2 build //tc/bootstrap:seed-export --out seed-toolchain.tar.zst
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: buckos-minimal-iso
+          path: buckos.iso
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: seed-toolchain
+          path: seed-toolchain.tar.zst
+
+  # release:
+  #   needs: [test-setup, test]
+  #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     contents: write
+  #   steps:
+  #     - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+  #     - uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2.5.0
+  #       with:
+  #         tag_name: dev
+  #         name: Development Build
+  #         prerelease: true
+  #         make_latest: false
+  #         body: |
+  #           Rolling development build from `main` at ${{ github.sha }}.
+  #         files: |
+  #           buckos-minimal-iso/buckos.iso
+  #           seed-toolchain/seed-toolchain.tar.zst

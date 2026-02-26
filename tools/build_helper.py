@@ -237,10 +237,12 @@ def main():
                 content = f.read()
             content = content.replace(build_dir, output_dir)
             content = re.sub(
-                r'^build build\.ninja:.*?(?=\n(?:build |$))',
-                '# cmake regeneration suppressed by build_helper',
+                r'^build build\.ninja[ :].*?(?=\n(?:build |$))',
+                'build build.ninja: phony',
                 content, count=1, flags=re.MULTILINE | re.DOTALL,
             )
+            if 'build build.ninja: phony' not in content:
+                content = 'build build.ninja: phony\n' + content
             with open(ninja_file, "w") as f:
                 f.write(content)
             os.utime(ninja_file, (stat.st_atime, stat.st_mtime))
@@ -251,10 +253,12 @@ def main():
         if build_dir in content:
             content = content.replace(build_dir, output_dir)
         content = re.sub(
-            r'^build build\.ninja:.*?(?=\n(?:build |$))',
-            '# meson regeneration suppressed by build_helper',
+            r'^build build\.ninja[ :].*?(?=\n(?:build |$))',
+            'build build.ninja: phony',
             content, count=1, flags=re.MULTILINE | re.DOTALL,
         )
+        if 'build build.ninja: phony' not in content:
+            content = 'build build.ninja: phony\n' + content
         with open(ninja_file, "w") as f:
             f.write(content)
         os.utime(ninja_file, (stat.st_atime, stat.st_mtime))
@@ -297,6 +301,34 @@ def main():
                 except (UnicodeDecodeError, PermissionError, IsADirectoryError,
                         FileNotFoundError):
                     pass
+
+    # Suppress meson/cmake regeneration in ALL build.ninja files.
+    # Packages like QEMU wrap meson inside autotools, placing build.ninja
+    # in a subdirectory (build/build.ninja) that the top-level check
+    # above misses.  The configure-phase source tree isn't an input to
+    # this action; regeneration would fail looking for files that only
+    # existed in the configure action's output directory.
+    _regen_re = re.compile(
+        r'^build build\.ninja[ :].*?(?=\n(?:build |$))',
+        re.MULTILINE | re.DOTALL,
+    )
+    for _nf in _glob.glob(os.path.join(output_dir, "**/build.ninja"), recursive=True):
+        try:
+            _nf_stat = os.stat(_nf)
+            with open(_nf, "r") as f:
+                _nf_content = f.read()
+            _nf_new = _regen_re.sub(
+                'build build.ninja: phony',
+                _nf_content, count=1,
+            )
+            if 'build build.ninja: phony' not in _nf_new:
+                _nf_new = 'build build.ninja: phony\n' + _nf_new
+            if _nf_new != _nf_content:
+                with open(_nf, "w") as f:
+                    f.write(_nf_new)
+                os.utime(_nf, (_nf_stat.st_atime, _nf_stat.st_mtime))
+        except (UnicodeDecodeError, PermissionError, FileNotFoundError):
+            pass
 
     # Rewrite paths in meson's install.dat (binary pickle).  The text
     # rewrite above skips it due to UnicodeDecodeError.  Unpickle, patch
@@ -414,6 +446,44 @@ def main():
                 except (UnicodeDecodeError, PermissionError, IsADirectoryError,
                         FileNotFoundError):
                     pass
+        # Second pass: build_dir→output_dir.  The first comprehensive
+        # rewrite ran before the stale root fix and couldn't match
+        # because files contained the stale machine's paths.  Now that
+        # stale_root→current_root is done, build_dir will match.
+        for dirpath, dirnames, filenames in os.walk(output_dir):
+            for entries in (dirnames, filenames):
+                for name in entries:
+                    p = os.path.join(dirpath, name)
+                    if not os.path.islink(p):
+                        continue
+                    target = os.readlink(p)
+                    if build_dir in target:
+                        os.unlink(p)
+                        os.symlink(target.replace(build_dir, output_dir), p)
+        for dirpath, _dirnames, filenames in os.walk(output_dir):
+            for fname in filenames:
+                if os.path.splitext(fname)[1] in _BINARY_EXTS:
+                    continue
+                fpath = os.path.join(dirpath, fname)
+                if os.path.islink(fpath):
+                    continue
+                try:
+                    _rewrite_file(fpath, build_dir, output_dir)
+                except (UnicodeDecodeError, PermissionError, IsADirectoryError,
+                        FileNotFoundError):
+                    pass
+        # Also fix the meson install.dat pickle which the text rewrite
+        # skips (binary).  Apply both stale_root→current_root and
+        # build_dir→output_dir so paths resolve to the new location.
+        if os.path.isfile(_install_dat):
+            stat = os.stat(_install_dat)
+            with open(_install_dat, "rb") as f:
+                _idata = _StubUnpickler(f).load()
+            _patch_paths(_idata, _stale_root, _current_root)
+            _patch_paths(_idata, build_dir, output_dir)
+            with open(_install_dat, "wb") as f:
+                _pickle.dump(_idata, f)
+            os.utime(_install_dat, (stat.st_atime, stat.st_mtime))
 
     # Reset all file timestamps to a single fixed instant so make doesn't
     # try to regenerate autotools/cmake/meson outputs.  The copytree
@@ -428,6 +498,60 @@ def main():
                 os.utime(os.path.join(dirpath, fname), _stamp)
             except (PermissionError, OSError):
                 pass
+
+    # Suppress Makefile-level reconfiguration.  Build systems like QEMU
+    # wrap meson inside autotools; their build/Makefile has rules that
+    # re-run config.status when config-host.mak appears stale.  cmake-
+    # generated Makefiles run cmake --check-build-system which fails
+    # when the built cmake has stale paths.  In our split-action model,
+    # configuration happened in a previous action — the build phase must
+    # never reconfigure.  Append no-op overrides (GNU Make uses the last
+    # recipe for a given target) so these rules become harmless.
+    _CLEAN_TARGETS = frozenset(("distclean", "clean", "maintainer-clean",
+                                "mostlyclean", "realclean"))
+    _RECONFIG_TRIGGERS = ('config.status', 'check-build-system')
+    _RECONFIG_RECIPE_PATTERNS = ('./config.status', '$(SHELL) config.status',
+                                 '--reconfigure', '--check-build-system')
+    for _mf in _glob.glob(os.path.join(output_dir, "**/Makefile"), recursive=True):
+        try:
+            with open(_mf, "r") as f:
+                _mf_content = f.read()
+        except (UnicodeDecodeError, PermissionError, OSError):
+            continue
+        if not any(t in _mf_content for t in _RECONFIG_TRIGGERS):
+            continue
+        _mf_stat = os.stat(_mf)
+        # Scan for targets whose recipes invoke config.status (as a
+        # command, not in rm/echo), meson --reconfigure, or cmake
+        # --check-build-system.  Track whether the target uses ::
+        # (double-colon) rules.
+        _suppressed = {}  # target -> "::" or ":"
+        _current_target = None
+        _current_colon = ":"
+        for line in _mf_content.splitlines():
+            if line.startswith('\t'):
+                if (_current_target
+                        and _current_target not in _CLEAN_TARGETS
+                        and any(p in line for p in _RECONFIG_RECIPE_PATTERNS)):
+                    _suppressed[_current_target] = _current_colon
+            elif ':' in line and not line.startswith(('#', '\t', '.PHONY')):
+                # Detect :: vs : rules
+                colon_idx = line.index(':')
+                _current_colon = "::" if line[colon_idx:colon_idx+2] == "::" else ":"
+                target_part = line[:colon_idx].strip()
+                if target_part and not target_part.startswith(('$', '@', '-')):
+                    _current_target = target_part
+                else:
+                    _current_target = None
+            else:
+                _current_target = None
+        if _suppressed:
+            _overrides = ["\n# Reconfiguration suppressed by build_helper"]
+            for _t in sorted(_suppressed):
+                _overrides.append(f"{_t}{_suppressed[_t]} ;")
+            with open(_mf, "a") as f:
+                f.write("\n".join(_overrides) + "\n")
+            os.utime(_mf, (_mf_stat.st_atime, _mf_stat.st_mtime))
 
     # Patch RUNSHARED assignments so LD_LIBRARY_PATH from the environment
     # survives into subprocesses (e.g. Python test-imports during compile).
@@ -509,7 +633,26 @@ def main():
                   file=sys.stderr)
             sys.exit(1)
 
+    # Sanitize file names — delete files/dirs with control characters or
+    # backslashes that Buck2 cannot relativize (e.g. autoconf's filesystem
+    # character test creates conftest.t<TAB>).
+    def _sanitize_tree(root):
+        for dirpath, dirnames, filenames in os.walk(root, topdown=False):
+            for fname in filenames:
+                if any(ord(c) < 32 or ord(c) == 127 or c == '\\' for c in fname):
+                    try:
+                        os.unlink(os.path.join(dirpath, fname))
+                    except OSError:
+                        pass
+            for dname in list(dirnames):
+                if any(ord(c) < 32 or ord(c) == 127 or c == '\\' for c in dname):
+                    try:
+                        shutil.rmtree(os.path.join(dirpath, dname))
+                    except OSError:
+                        pass
+
     if args.skip_make:
+        _sanitize_tree(output_dir)
         return
 
     jobs = args.jobs or multiprocessing.cpu_count()
@@ -552,6 +695,8 @@ def main():
             if os.path.islink(p) and os.readlink(p) == ".":
                 os.unlink(p)
                 os.makedirs(p, exist_ok=True)
+
+    _sanitize_tree(output_dir)
 
 
 if __name__ == "__main__":

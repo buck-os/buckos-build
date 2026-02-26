@@ -1,5 +1,7 @@
 # BuckOS Linux
 
+[![CI](https://github.com/buck-os/buckos-build/actions/workflows/ci.yml/badge.svg)](https://github.com/buck-os/buckos-build/actions/workflows/ci.yml)
+
 A Buck2-based Linux distribution
 
 ## Overview
@@ -703,7 +705,7 @@ Available QEMU targets:
 
 ```bash
 # Build a hybrid (BIOS+EFI) bootable ISO
-buck2 build //packages/linux/system:buckos-iso --show-output
+buck2 build //packages/linux/system:buckos-minimal-iso --show-output
 ```
 
 ## Security Features
@@ -858,3 +860,4 @@ GPL-2.0 License - See individual packages for their respective licenses.
 2. Create a feature branch
 3. Add your packages following the existing patterns
 4. Submit a pull request
+

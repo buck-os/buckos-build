@@ -412,12 +412,12 @@ sh_test(
     name = "test-iso-boot",
     test = "verify_iso_boot.py",
     deps = [
-        "//packages/linux/system:buckos-iso",
+        "//packages/linux/system:buckos-minimal-iso",
         "//packages/linux/emulation/hypervisors/qemu:qemu",
         ":qemu-env",
     ],
     env = {
-        "ISO": "$(location //packages/linux/system:buckos-iso)",
+        "ISO": "$(location //packages/linux/system:buckos-minimal-iso)",
         "QEMU_DIR": "$(location //packages/linux/emulation/hypervisors/qemu:qemu)",
         "RUN_ENV": "$(location :qemu-env)",
     },

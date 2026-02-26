@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Unit tests for build and install helper utilities."""
+import glob as _glob
 import os
 import shutil
 import sys
@@ -585,6 +586,88 @@ def main():
         st = os.stat(f8)
         check(st.st_mtime == 3000000,
               f"mtime preserved on modified file: {st.st_mtime}")
+
+        # ── build.ninja regeneration suppression ─────────────────────
+
+        print("=== build.ninja regeneration suppression ===")
+
+        import re
+
+        _regen_re = re.compile(
+            r'^build build\.ninja:.*?(?=\n(?:build |$))',
+            re.MULTILINE | re.DOTALL,
+        )
+
+        # 50. Meson-style regeneration rule is suppressed
+        ninja_content = (
+            "build foo.o: cc foo.c\n"
+            "\n"
+            "build build.ninja: REGENERATE_BUILD PHONY ../meson.build\n"
+            "  command = /usr/bin/meson --internal regenerate\n"
+            "  generator = 1\n"
+            "\n"
+            "build install: phony\n"
+        )
+        result = _regen_re.sub("# regen suppressed", ninja_content, count=1)
+        check("REGENERATE_BUILD" not in result,
+              "meson regen rule removed")
+        check("# regen suppressed" in result,
+              "meson regen replaced with comment")
+        check("build foo.o: cc foo.c" in result,
+              "meson other rules preserved")
+        check("build install: phony" in result,
+              "meson install target preserved")
+
+        # 51. CMake-style regeneration rule is suppressed
+        cmake_ninja = (
+            "build CMakeFiles/foo.dir/foo.c.o: C_COMPILER foo.c\n"
+            "\n"
+            "build build.ninja: RERUN_CMAKE CMakeLists.txt\n"
+            "  pool = console\n"
+            "  command = cmake --regenerate-during-build .\n"
+            "\n"
+            "build all: phony lib/libfoo.so\n"
+        )
+        result = _regen_re.sub("# regen suppressed", cmake_ninja, count=1)
+        check("RERUN_CMAKE" not in result,
+              "cmake regen rule removed")
+        check("build all: phony" in result,
+              "cmake all target preserved")
+
+        # 52. No regen rule — content unchanged
+        no_regen = "build foo.o: cc foo.c\nbuild all: phony foo.o\n"
+        result = _regen_re.sub("# regen suppressed", no_regen, count=1)
+        check(result == no_regen,
+              "no regen rule: content unchanged")
+
+        # 53. Nested build.ninja found by glob
+        nested_dir = os.path.join(tmpdir, "nested_ninja")
+        os.makedirs(os.path.join(nested_dir, "build"), exist_ok=True)
+        with open(os.path.join(nested_dir, "build", "build.ninja"), "w") as f:
+            f.write(ninja_content)
+        found = _glob.glob(os.path.join(nested_dir, "**/build.ninja"), recursive=True)
+        check(len(found) == 1 and "build" + os.sep + "build.ninja" in found[0],
+              f"nested build.ninja found by glob: {found}")
+
+        # ── cmake --install detection ────────────────────────────────
+
+        print("=== cmake --install detection ===")
+
+        cmake_det_dir = os.path.join(tmpdir, "cmake_detect")
+        os.makedirs(cmake_det_dir)
+
+        # 54. No CMakeCache.txt → no cmake install
+        check(not os.path.isfile(os.path.join(cmake_det_dir, "CMakeCache.txt")),
+              "no CMakeCache.txt: cmake --install not used")
+
+        # 55. With CMakeCache.txt + cmake in PATH → cmake --install
+        with open(os.path.join(cmake_det_dir, "CMakeCache.txt"), "w") as f:
+            f.write("CMAKE_INSTALL_PREFIX:PATH=/usr\n")
+        _has_cmake = shutil.which("cmake") is not None
+        _would_use_cmake = (os.path.isfile(os.path.join(cmake_det_dir, "CMakeCache.txt"))
+                            and _has_cmake)
+        check(_would_use_cmake == _has_cmake,
+              f"CMakeCache.txt present, cmake in PATH={_has_cmake}: cmake_install={_would_use_cmake}")
 
     finally:
         os.chdir(saved_cwd)

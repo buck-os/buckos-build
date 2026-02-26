@@ -242,7 +242,26 @@ def main():
                   file=sys.stderr)
             sys.exit(1)
 
+    # Sanitize file names — delete files/dirs with control characters or
+    # backslashes that Buck2 cannot relativize (e.g. autoconf's filesystem
+    # character test creates conftest.t<TAB>).
+    def _sanitize_tree(root):
+        for dirpath, dirnames, filenames in os.walk(root, topdown=False):
+            for fname in filenames:
+                if any(ord(c) < 32 or ord(c) == 127 or c == '\\' for c in fname):
+                    try:
+                        os.unlink(os.path.join(dirpath, fname))
+                    except OSError:
+                        pass
+            for dname in list(dirnames):
+                if any(ord(c) < 32 or ord(c) == 127 or c == '\\' for c in dname):
+                    try:
+                        shutil.rmtree(os.path.join(dirpath, dname))
+                    except OSError:
+                        pass
+
     if args.skip_configure:
+        _sanitize_tree(output_dir)
         return
 
     configure = os.path.join(output_dir, args.configure_script)
@@ -270,6 +289,8 @@ def main():
     if result.returncode != 0:
         print(f"error: configure failed with exit code {result.returncode}", file=sys.stderr)
         sys.exit(1)
+
+    _sanitize_tree(output_dir)
 
 
 if __name__ == "__main__":

@@ -468,6 +468,7 @@ def _bootstrap_gcc_impl(ctx):
             cxx = installed.project("tools/bin/" + target_triple + "-g++"),
             ar = installed.project("tools/bin/" + target_triple + "-ar") if ctx.attrs.binutils else installed.project("tools/bin/ar"),
             sysroot = installed.project("tools/" + target_triple + "/sys-root"),
+            gcc_lib_dir = installed.project("tools/" + target_triple + "/lib64"),
             target_triple = target_triple,
             python = None,
             python_version = None,

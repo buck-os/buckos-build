@@ -51,6 +51,15 @@ WRAPPER_EOF
             fi
         done
 
+        # Rewrite shebangs in .real scripts from absolute buck-out perl
+        # paths to portable #!/usr/bin/env perl — absolute paths become
+        # stale when actions are cached on one machine and restored on another.
+        for real in "\\$BINDIR"/*.real; do
+            [ -f "\\$real" ] || continue
+            head -1 "\\$real" | grep -q '/perl' || continue
+            sed -i '1s|#!.*/perl.*|#!/usr/bin/env perl|' "\\$real"
+        done
+
         # Wrap automake and automake-$VER
         for tool in automake "automake-$VER"; do
             if [ -f "$BINDIR/$tool" ]; then

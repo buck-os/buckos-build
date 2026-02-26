@@ -39,11 +39,13 @@ rmdir sharedobj 2>/dev/null || true
 # Install
 make PREFIX="$OUT/usr" install
 
-# Install shared library
+# Install shared library.  Use copies instead of symlinks so the
+# library survives round-trips through Buck2 RE cache which may
+# not preserve internal directory symlinks.
 install -Dm755 libbz2.so.1.0.8 "$OUT/usr/lib/libbz2.so.1.0.8"
-ln -sf libbz2.so.1.0.8 "$OUT/usr/lib/libbz2.so.1.0"
-ln -sf libbz2.so.1.0.8 "$OUT/usr/lib/libbz2.so.1"
-ln -sf libbz2.so.1.0.8 "$OUT/usr/lib/libbz2.so"
+cp -f "$OUT/usr/lib/libbz2.so.1.0.8" "$OUT/usr/lib/libbz2.so.1.0"
+cp -f "$OUT/usr/lib/libbz2.so.1.0.8" "$OUT/usr/lib/libbz2.so.1"
+cp -f "$OUT/usr/lib/libbz2.so.1.0.8" "$OUT/usr/lib/libbz2.so"
 """,
     deps = [],
     visibility = ["PUBLIC"],

@@ -57,6 +57,7 @@ BootstrapStageInfo = provider(fields = [
     "cxx",              # artifact: the C++ compiler binary
     "ar",               # artifact
     "sysroot",          # artifact
+    "gcc_lib_dir",      # artifact | None: GCC runtime libs (libstdc++, libgcc_s)
     "target_triple",    # str
     "python",           # artifact | None: bootstrap Python interpreter
     "python_version",   # str | None: Python version (e.g., "3.12.1")

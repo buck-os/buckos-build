@@ -19,8 +19,7 @@ package(
 
         # Pre-set cache variable to skip filesystem character test that creates
         # files with special characters in their names (Buck2 cannot handle
-        # tabs or backslashes in paths).  The $'...' quoting lets us embed
-        # a literal tab (\t) alongside the other unsupported chars.
+        # tabs or backslashes in paths).  Starlark \\\\ -> bash \\, \\t -> \t.
         ac_cv_unsupported_fs_chars=$'"<>\\\\|\\t' ./configure \
             --prefix=/usr \
             --build=$(./build-aux/config.guess 2>/dev/null || echo x86_64-pc-linux-gnu) \
@@ -114,6 +113,15 @@ WRAPPER_EOF
             fi
         done
 
+        # Rewrite shebangs in .real scripts from absolute buck-out perl paths
+        # to portable #!/usr/bin/env perl — the absolute paths become stale
+        # when actions are cached on one machine and restored on another.
+        for real in "$BINDIR"/*.real; do
+            [ -f "$real" ] || continue
+            head -1 "$real" | grep -q '/perl' || continue
+            sed -i '1s|#!.*/perl.*|#!/usr/bin/env perl|' "$real"
+        done
+
         # Also patch the .real scripts to replace hardcoded @include arrays with dynamic paths
         for script in autoscan.real autoupdate.real; do
             if [ -f "$BINDIR/$script" ]; then
@@ -122,6 +130,13 @@ WRAPPER_EOF
                 sed -i "s#my @include = ('/usr/share/autoconf');#my @include = (\$ENV{'AC_MACRODIR'} // '/usr/share/autoconf');#g" "$BINDIR/$script"
             fi
         done
+
+        # Final cleanup: delete any file whose name contains characters that
+        # Buck2 cannot relativize (tabs, backslashes).  Despite the cache
+        # variable and earlier cleanups, parallel make or autom4te invocations
+        # during install may recreate conftest files intermittently.
+        find . -name 'conftest*' -delete 2>/dev/null || true
+        find "$OUT" -name 'conftest*' -delete 2>/dev/null || true
     ''',
     # No dependencies - autoconf is a bootstrap package
     deps = [],
