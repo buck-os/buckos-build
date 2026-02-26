@@ -32,7 +32,12 @@ def _runtime_env_impl(ctx):
         identifier = ctx.attrs.name,
     )
 
-    return [DefaultInfo(default_output = wrapper)]
+    # Propagate lib dirs as other_outputs so that test consumers also
+    # materialise them — not just the wrapper script itself.
+    return [DefaultInfo(
+        default_output = wrapper,
+        other_outputs = [cmd_args(lib_dirs)],
+    )]
 
 runtime_env = rule(
     impl = _runtime_env_impl,
