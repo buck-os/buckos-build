@@ -33,6 +33,7 @@ def _stage3_impl(ctx):
             cxx = gcc_info.cxx,
             ar = gcc_info.ar,
             sysroot = gcc_info.sysroot,
+            gcc_lib_dir = gcc_info.gcc_lib_dir,
             target_triple = gcc_info.target_triple,
             python = python_artifact,
             python_version = python_version,

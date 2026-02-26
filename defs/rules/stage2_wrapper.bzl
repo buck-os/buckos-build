@@ -41,6 +41,7 @@ def _stage2_wrapper_impl(ctx):
             cxx = output.project("tools/bin/" + TARGET_TRIPLE + "-g++"),
             ar = output.project("tools/bin/" + TARGET_TRIPLE + "-ar"),
             sysroot = output.project("tools/" + TARGET_TRIPLE + "/sys-root"),
+            gcc_lib_dir = output.project("tools/" + TARGET_TRIPLE + "/lib64"),
             target_triple = TARGET_TRIPLE,
             python = None,
             python_version = None,

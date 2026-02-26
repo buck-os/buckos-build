@@ -149,6 +149,13 @@ def _buckos_bootstrap_toolchain_impl(ctx: AnalysisContext) -> list[Provider]:
         if not python_run_info:
             python_run_info = RunInfo(args = cmd_args(host_bin.project("python3")))
 
+    # ld.bfd resolves DT_NEEDED chains and needs to find libstdc++.so
+    # when linking C programs against C++ shared libraries.  The GCC
+    # runtime libs live outside the sysroot — add them as rpath-link.
+    ldflags = list(ctx.attrs.extra_ldflags)
+    if stage.gcc_lib_dir:
+        ldflags.append(cmd_args("-Wl,-rpath-link,", stage.gcc_lib_dir, delimiter = ""))
+
     info = BuildToolchainInfo(
         cc = RunInfo(args = cc_args),
         cxx = RunInfo(args = cxx_args),
@@ -161,7 +168,7 @@ def _buckos_bootstrap_toolchain_impl(ctx: AnalysisContext) -> list[Provider]:
         python = python_run_info,
         host_bin_dir = host_bin,
         extra_cflags = ctx.attrs.extra_cflags,
-        extra_ldflags = ctx.attrs.extra_ldflags,
+        extra_ldflags = ldflags,
     )
     return [DefaultInfo(), info]
 
