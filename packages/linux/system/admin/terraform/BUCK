@@ -1,18 +1,59 @@
 load("//defs:package.bzl", "package")
 
-# terraform - Infrastructure as code tool
+# Terraform - Infrastructure as Code tool by HashiCorp
+#
+# Terraform enables you to safely and predictably create, change, and
+# improve infrastructure. It codifies APIs into declarative configuration
+# files that can be shared, treated as code, edited, reviewed, and versioned.
+#
+# Note: As of v1.6.0, Terraform is licensed under BUSL-1.1 (Business Source
+# License). For production use, consider OpenTofu (MPL-2.0 fork).
+
 package(
     build_rule = "binary",
     name = "terraform",
-    version = "1.7.3",
-    url = "https://github.com/hashicorp/terraform/archive/refs/tags/v1.7.3.tar.gz",
-    sha256 = "e99efa7e1e4e7fd37e7aaac5f6bd864260aa95b38a461899d0ec23069d614f19",
+    version = "1.14.5",
+    url = "https://github.com/hashicorp/terraform/archive/refs/tags/v1.14.5.tar.gz",
+    sha256 = "ac3faee7b1d301a4d12fe6b7f33b1ba57a183e080a2442f6f1466a30f257ba45",
     description = "Infrastructure as code software tool",
     homepage = "https://www.terraform.io",
     license = "BUSL-1.1",
     install_script = """
-go build -o terraform
+#!/bin/bash
+set -e
+
+# Build terraform binary
+export CGO_ENABLED=0
+export GO111MODULE=on
+
+# Get version info for build
+VERSION="1.14.5"
+COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+go build -trimpath -ldflags "
+    -s -w
+    -X github.com/hashicorp/terraform/version.Version=${VERSION}
+    -X github.com/hashicorp/terraform/version.Prerelease=
+" -o terraform ./
+
+# Install binary
 install -Dm755 terraform "$OUT/usr/bin/terraform"
+
+# Install shell completions
+mkdir -p "$OUT/usr/share/bash-completion/completions"
+mkdir -p "$OUT/usr/share/zsh/site-functions"
+
+# Generate completions (terraform supports this natively)
+cat > "$OUT/usr/share/bash-completion/completions/terraform" << 'EOF'
+complete -C /usr/bin/terraform terraform
+EOF
+
+cat > "$OUT/usr/share/zsh/site-functions/_terraform" << 'EOF'
+#compdef terraform
+autoload -U +X bashcompinit && bashcompinit
+complete -C /usr/bin/terraform terraform
+EOF
 """,
     deps = [
         "//packages/linux/lang/go:go",

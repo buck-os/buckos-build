@@ -1,0 +1,63 @@
+load("//defs:package.bzl", "package")
+
+# OpenTofu - Open-source Infrastructure as Code tool
+#
+# OpenTofu is an open-source fork of Terraform, created in response to
+# HashiCorp's license change to BUSL-1.1. It is a drop-in replacement
+# for Terraform with full compatibility and community-driven development.
+#
+# OpenTofu is licensed under MPL-2.0, making it suitable for production
+# use without licensing concerns.
+
+package(
+    build_rule = "binary",
+    name = "opentofu",
+    version = "1.11.5",
+    url = "https://github.com/opentofu/opentofu/archive/refs/tags/v1.11.5.tar.gz",
+    sha256 = "450f962f262d9f484ad1fb73454650740cdce0d83a854ad8b6c183cc5822eb09",
+    description = "Open-source infrastructure as code tool (Terraform fork)",
+    homepage = "https://opentofu.org",
+    license = "MPL-2.0",
+    install_script = """
+#!/bin/bash
+set -e
+
+# Build opentofu binary
+export CGO_ENABLED=0
+export GO111MODULE=on
+
+# Get version info for build
+VERSION="1.11.5"
+
+go build -trimpath -ldflags "
+    -s -w
+    -X github.com/opentofu/opentofu/version.Version=${VERSION}
+    -X github.com/opentofu/opentofu/version.Prerelease=
+" -o tofu ./cmd/tofu
+
+# Install binary
+install -Dm755 tofu "$OUT/usr/bin/tofu"
+
+# Create terraform compatibility symlink (optional, for drop-in replacement)
+ln -sf tofu "$OUT/usr/bin/opentofu"
+
+# Install shell completions
+mkdir -p "$OUT/usr/share/bash-completion/completions"
+mkdir -p "$OUT/usr/share/zsh/site-functions"
+
+# Generate completions (tofu supports this natively like terraform)
+cat > "$OUT/usr/share/bash-completion/completions/tofu" << 'EOF'
+complete -C /usr/bin/tofu tofu
+EOF
+
+cat > "$OUT/usr/share/zsh/site-functions/_tofu" << 'EOF'
+#compdef tofu
+autoload -U +X bashcompinit && bashcompinit
+complete -C /usr/bin/tofu tofu
+EOF
+""",
+    deps = [
+        "//packages/linux/lang/go:go",
+    ],
+    visibility = ["PUBLIC"],
+)
