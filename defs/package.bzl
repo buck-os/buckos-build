@@ -189,18 +189,41 @@ def package(
                 labels = _dl_labels,
             )
         else:
-            _urls = []
-            if _mirror_base:
-                _urls.append("{}/{}".format(_mirror_base, _filename))
-            _urls.append(url)
+            _mirror_prefix = read_config("mirror", "prefix", "")
+            if _mirror_prefix:
+                _mirror_params = read_config("mirror", "params", "")
 
-            native.http_file(
-                name = name + "-archive",
-                urls = _urls,
-                sha256 = sha256,
-                out = _filename,
-                labels = _dl_labels,
-            )
+                _prepend_name = read_config("mirror", "prepend_name", "true") == "true"
+                _dl_filename = _filename
+                if _prepend_name and name not in _dl_filename:
+                    _dl_filename = name + "-" + _dl_filename
+
+                _url = "{}/{}/{}{}".format(
+                    _mirror_prefix,
+                    name[0],
+                    _dl_filename,
+                    _mirror_params,
+                )
+
+                native.http_file(
+                    name = name + "-archive",
+                    urls = [_url],
+                    sha256 = sha256,
+                    out = _dl_filename,
+                    labels = _dl_labels,
+                )
+            else:
+                _urls = []
+                if _mirror_base:
+                    _urls.append("{}/{}".format(_mirror_base, _filename))
+                _urls.append(url)
+                native.http_file(
+                    name = name + "-archive",
+                    urls = _urls,
+                    sha256 = sha256,
+                    out = _filename,
+                    labels = _dl_labels,
+                )
 
         extract_source(
             name = name + "-src",
