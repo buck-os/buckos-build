@@ -390,6 +390,76 @@ def main():
             except OSError:
                 pass
 
+    # Reconstruct shared library symlinks lost by RE/cache transport.
+    # Buck2's remote execution cache doesn't preserve symlinks — directory
+    # artifacts get the real files but not the symlinks.  Shared library
+    # builds typically create:
+    #   libfoo.so.2.4  (real file)
+    #   libfoo.so.2 -> libfoo.so.2.4
+    #   libfoo.so   -> libfoo.so.2
+    # Some packages (e.g. e2fsprogs) also create parent-directory symlinks:
+    #   lib/ext2fs/libext2fs.so.2.4  (real file, built here)
+    #   lib/libext2fs.so.2.4 -> ext2fs/libext2fs.so.2.4
+    #   lib/libext2fs.so     -> libext2fs.so.2.4
+    # Without these, Makefile DEPLIBS references like ../lib/libext2fs.so
+    # fail with "No rule to make target".  Reconstruct by scanning for
+    # versioned .so files and creating missing symlinks.
+    _soname_re = re.compile(r'^(.+\.so)\.(\d+(?:\.\d+)*)$')
+    for dirpath, _dirnames, filenames in os.walk(make_dir):
+        # Collect versioned .so files: {base: {version_string: filename}}
+        _so_versions = {}  # "libfoo.so" -> ["1.2.3", "1.2", "1"]
+        for fname in filenames:
+            m = _soname_re.match(fname)
+            if m:
+                base = m.group(1)       # libfoo.so
+                ver = m.group(2)        # "2.4" or "2"
+                _so_versions.setdefault(base, []).append((ver, fname))
+        for base, versions in _so_versions.items():
+            # Find the most-versioned real file to anchor the chain
+            # (e.g. libfoo.so.2.4 is the real file, .so.2 and .so are symlinks)
+            _anchor = max(versions, key=lambda v: v[0].count('.'))[1]
+            # Create base symlink (libfoo.so -> libfoo.so.2.4) if missing
+            base_path = os.path.join(dirpath, base)
+            if not os.path.lexists(base_path):
+                os.symlink(_anchor, base_path)
+            # Create intermediate version symlinks if missing
+            # e.g. libfoo.so.2 -> libfoo.so.2.4
+            for ver, fname in versions:
+                parts = ver.split('.')
+                for i in range(1, len(parts)):
+                    short_ver = '.'.join(parts[:i])
+                    short_name = base + '.' + short_ver
+                    short_path = os.path.join(dirpath, short_name)
+                    if not os.path.lexists(short_path):
+                        os.symlink(fname, short_path)
+
+            # Reconstruct parent-directory symlinks.  Some build systems
+            # (e.g. e2fsprogs Makefile.elf-lib) create symlinks in the
+            # parent dir pointing into the subdirectory:
+            #   lib/libext2fs.so.2.4 -> ext2fs/libext2fs.so.2.4
+            #   lib/libext2fs.so     -> libext2fs.so.2.4
+            # These let DEPLIBS like $(LIB)/libext2fs.so (where LIB=../lib)
+            # resolve without encoding the subdirectory name.
+            parent = os.path.dirname(dirpath)
+            if parent and parent != make_dir and os.path.isdir(parent):
+                subdir = os.path.basename(dirpath)
+                # anchor symlink: lib/libfoo.so.2.4 -> ext2fs/libfoo.so.2.4
+                parent_anchor = os.path.join(parent, _anchor)
+                if not os.path.lexists(parent_anchor):
+                    os.symlink(os.path.join(subdir, _anchor), parent_anchor)
+                # base symlink: lib/libfoo.so -> libfoo.so.2.4
+                parent_base = os.path.join(parent, base)
+                if not os.path.lexists(parent_base):
+                    os.symlink(_anchor, parent_base)
+                # soname symlink: lib/libfoo.so.2 -> libfoo.so.2.4
+                for ver, fname in versions:
+                    parts = ver.split('.')
+                    for i in range(1, len(parts)):
+                        short_name = base + '.' + '.'.join(parts[:i])
+                        parent_short = os.path.join(parent, short_name)
+                        if not os.path.lexists(parent_short):
+                            os.symlink(_anchor, parent_short)
+
     # Detect and rewrite stale absolute paths from cross-machine cache.
     # When build ran on CI and install runs locally, autotools files
     # (config.status, Makefiles) contain CI's project root.
@@ -555,42 +625,6 @@ def main():
             except (PermissionError, OSError):
                 pass
 
-    # Bump compiled artifacts to _epoch + 1.  Install targets often have
-    # direct dependencies on build artifacts (e.g. install-gas: as-new,
-    # install-binPROGRAMS: $(bin_PROGRAMS)).  If objects/archives/binaries
-    # share the same timestamp as their sources, make may consider them
-    # stale and trigger relinking.  Making them strictly newer than sources
-    # prevents all rebuild chains during install.
-    _COMPILED_EXTS = frozenset((".o", ".a", ".lo", ".so", ".stamp"))
-    _bump = (_epoch + 1, _epoch + 1)
-    for dirpath, _dirnames, filenames in os.walk(make_dir):
-        for fname in filenames:
-            fpath = os.path.join(dirpath, fname)
-            if os.path.islink(fpath):
-                continue
-            ext = os.path.splitext(fname)[1]
-            if ext in _COMPILED_EXTS or (ext.startswith(".so.") if ext else False):
-                try:
-                    os.utime(fpath, _bump)
-                except (PermissionError, OSError):
-                    pass
-                continue
-            # Versioned shared libraries: libfoo.so.1.2.3
-            if ".so." in fname:
-                try:
-                    os.utime(fpath, _bump)
-                except (PermissionError, OSError):
-                    pass
-                continue
-            # Extensionless ELF executables (e.g. as-new, ld-new)
-            if not ext:
-                try:
-                    with open(fpath, "rb") as f:
-                        if f.read(4) == b"\x7fELF":
-                            os.utime(fpath, _bump)
-                except (PermissionError, OSError):
-                    pass
-
     # Suppress Makefile-level reconfiguration.  Build systems like QEMU
     # wrap meson inside autotools; their Makefile re-runs config.status
     # when included Makefiles (Makefile.mtest, Makefile.ninja) are created
@@ -646,6 +680,10 @@ def main():
     # missing transitive deps can trigger relinking that fails because
     # the full dependency tree isn't available during install.
     #
+    # Dynamically discover all "all" variant targets (all, all-am,
+    # all-recursive, all-libs-recursive, etc.) rather than maintaining
+    # a static list.  Packages like e2fsprogs define additional variants.
+    #
     # Single-colon (:) rules: append no-op override at end of file.
     # GNU Make uses the last single-colon definition, so this reliably
     # replaces both prerequisites and recipe.
@@ -653,7 +691,7 @@ def main():
     # Double-colon (::) rules: rewrite in-place.  Each :: definition is
     # independent, so appending a new :: no-op does NOT suppress the
     # original recipe.
-    _BUILD_TARGETS = ("all", "all-am", "all-recursive")
+    _ALL_NAME_RE = re.compile(r'^all(?:-[\w-]*)?$')
     for _mf in _glob.glob(os.path.join(make_dir, "**/Makefile"), recursive=True):
         try:
             with open(_mf, "r") as f:
@@ -663,11 +701,38 @@ def main():
         _mf_stat = os.stat(_mf)
         _single = []
         _double = []
-        for _bt in _BUILD_TARGETS:
-            if re.search(rf'^{re.escape(_bt)}\s*::', _mf_content, re.MULTILINE):
-                _double.append(_bt)
-            elif re.search(rf'^{re.escape(_bt)}\s*:', _mf_content, re.MULTILINE):
-                _single.append(_bt)
+        # Parse target definition lines to find all "all" variant targets.
+        # Handles multi-target lines like "all-libs-recursive all-progs-recursive:"
+        # and backslash-continuation lines like:
+        #   all-libs-recursive install-libs-recursive \
+        #     install-shlibs-libs-recursive::
+        # Join continuation lines before parsing so targets on continued
+        # lines are not missed.
+        _joined_lines = []
+        _accum = ""
+        for _raw in _mf_content.splitlines():
+            if _raw.endswith('\\'):
+                _accum += _raw[:-1] + " "
+            else:
+                _accum += _raw
+                _joined_lines.append(_accum)
+                _accum = ""
+        if _accum:
+            _joined_lines.append(_accum)
+        for _line in _joined_lines:
+            if _line.startswith(('\t', '#')) or ':' not in _line:
+                continue
+            _ci = _line.index(':')
+            _tpart = _line[:_ci]
+            # Skip variable assignments (VAR = ...) that happen to contain ':'
+            if '=' in _tpart:
+                continue
+            _is_dc = _line[_ci:_ci + 2] == '::'
+            for _bt in _tpart.split():
+                if _bt.startswith(('$', '%', '.')) or _bt in _single or _bt in _double:
+                    continue
+                if _ALL_NAME_RE.match(_bt):
+                    (_double if _is_dc else _single).append(_bt)
         if not _single and not _double:
             continue
         # Single-colon: append override (proven reliable)
