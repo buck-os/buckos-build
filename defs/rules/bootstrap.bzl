@@ -147,8 +147,9 @@ def _bootstrap_linux_headers_impl(ctx):
     build_cmd.add("--build-dir", prepared)
     build_cmd.add("--output-dir", installed.as_output())
     # Use pre-cmds to run mrproper + headers, then copy
-    build_cmd.add("--pre-cmd", "make ARCH=x86_64 mrproper")
-    build_cmd.add("--pre-cmd", "make ARCH=x86_64 headers")
+    kernel_arch = ctx.attrs.kernel_arch
+    build_cmd.add("--pre-cmd", "make ARCH=" + kernel_arch + " mrproper")
+    build_cmd.add("--pre-cmd", "make ARCH=" + kernel_arch + " headers")
     build_cmd.add("--pre-cmd", "find usr/include -type f ! -name '*.h' -delete")
     build_cmd.add("--pre-cmd", cmd_args(
         "mkdir -p ", installed.as_output(), "/usr/include && ",
@@ -181,6 +182,7 @@ bootstrap_linux_headers = rule(
     impl = _bootstrap_linux_headers_impl,
     attrs = {
         "source": attrs.dep(),
+        "kernel_arch": attrs.string(default = "x86_64"),
         "_configure_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:configure_helper"),
         ),
@@ -468,7 +470,7 @@ def _bootstrap_gcc_impl(ctx):
             cxx = installed.project("tools/bin/" + target_triple + "-g++"),
             ar = installed.project("tools/bin/" + target_triple + "-ar") if ctx.attrs.binutils else installed.project("tools/bin/ar"),
             sysroot = installed.project("tools/" + target_triple + "/sys-root"),
-            gcc_lib_dir = installed.project("tools/" + target_triple + "/lib64"),
+            gcc_lib_dir = installed.project("tools/" + target_triple + "/" + ctx.attrs.lib_dir),
             target_triple = target_triple,
             python = None,
             python_version = None,
@@ -494,6 +496,7 @@ bootstrap_gcc = rule(
         "is_cross": attrs.bool(default = True),
         "with_headers": attrs.bool(default = False),
         "target_triple": attrs.string(default = TARGET_TRIPLE),
+        "lib_dir": attrs.string(default = "lib64"),
         "stage_number": attrs.int(default = 1),
         "extra_configure_args": attrs.list(attrs.string(), default = []),
         "_configure_tool": attrs.default_only(
@@ -547,6 +550,10 @@ def _bootstrap_glibc_impl(ctx):
     conf_cmd.add("--headers-dir", headers_dir)
     if binutils_dir:
         conf_cmd.add("--binutils-dir", binutils_dir)
+    conf_cmd.add("--lib-dir", ctx.attrs.lib_dir)
+    conf_cmd.add("--dynamic-linker", ctx.attrs.dynamic_linker)
+    for arg in ctx.attrs.extra_configure_args:
+        conf_cmd.add(cmd_args("--configure-arg=", arg, delimiter = ""))
     ctx.actions.run(conf_cmd, category = "configure", identifier = ctx.attrs.name)
 
     # Phase 4: compile — use build_helper for timestamp management.
@@ -579,10 +586,12 @@ def _bootstrap_glibc_impl(ctx):
         "sed -i -e 's|/usr/lib64/||g' -e 's|/usr/lib/||g' -e 's|/lib64/||g' -e 's|/lib/||g' \"$script\"; " +
         "fi; done",
     )
-    # Create /lib64 symlink
+    # Create dynamic linker symlink
+    lib_dir = ctx.attrs.lib_dir
+    dynamic_linker = ctx.attrs.dynamic_linker
     inst_cmd.add("--post-cmd",
-        "mkdir -p $DESTDIR/lib64 && " +
-        "ln -sfv ../usr/lib64/ld-linux-x86-64.so.2 $DESTDIR/lib64/ld-linux-x86-64.so.2",
+        "mkdir -p $DESTDIR/" + lib_dir + " && " +
+        "ln -sfv ../usr/" + lib_dir + "/" + dynamic_linker + " $DESTDIR/" + lib_dir + "/" + dynamic_linker,
     )
     ctx.actions.run(inst_cmd, category = "install", identifier = ctx.attrs.name)
 
@@ -596,6 +605,9 @@ bootstrap_glibc = rule(
         "binutils": attrs.option(attrs.dep(), default = None),
         "linux_headers": attrs.dep(),
         "target_triple": attrs.string(default = TARGET_TRIPLE),
+        "lib_dir": attrs.string(default = "lib64"),
+        "dynamic_linker": attrs.string(default = "ld-linux-x86-64.so.2"),
+        "extra_configure_args": attrs.list(attrs.string(), default = []),
         "_configure_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:configure_helper"),
         ),

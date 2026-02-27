@@ -123,6 +123,12 @@ bootstrap_glibc(
     compiler = ":gcc-pass1",
     binutils = ":cross-binutils",
     linux_headers = ":linux-headers",
+    extra_configure_args = [
+        "--enable-cet=no",
+        "libc_cv_pde_load_address=0x0000000000400000",
+        "CFLAGS=-O2 -g -fcf-protection=none",
+        "CXXFLAGS=-O2 -g -fcf-protection=none",
+    ],
     visibility = ["PUBLIC"],
 )
 

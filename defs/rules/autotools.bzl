@@ -278,6 +278,10 @@ def _src_install(ctx, built):
 
     if ctx.attrs.install_prefix_var:
         cmd.add("--destdir-var", ctx.attrs.install_prefix_var)
+    # Override install targets when explicit ordering is needed (e.g.
+    # e2fsprogs: install-shlibs must finish before install-progs).
+    for target in ctx.attrs.install_targets:
+        cmd.add("--make-target", target)
     # Suppress autotools regeneration during install (same as compile phase)
     for var in ["ACLOCAL=true", "AUTOMAKE=true", "AUTOCONF=true", "AUTOHEADER=true", "MAKEINFO=true"]:
         cmd.add(cmd_args("--make-arg=", var, delimiter = ""))
@@ -356,6 +360,7 @@ autotools_package = rule(
         "post_install_cmds": attrs.list(attrs.string(), default = []),
         "make_args": attrs.list(attrs.string(), default = []),
         "install_args": attrs.list(attrs.string(), default = []),
+        "install_targets": attrs.list(attrs.string(), default = []),
         "install_prefix_var": attrs.option(attrs.string(), default = None),
         "env": attrs.dict(attrs.string(), attrs.string(), default = {}),
         "deps": attrs.list(attrs.dep(), default = []),

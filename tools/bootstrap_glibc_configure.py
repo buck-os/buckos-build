@@ -40,6 +40,10 @@ def main():
                         help="Linux headers install dir")
     parser.add_argument("--binutils-dir", default=None,
                         help="Cross-binutils install dir")
+    parser.add_argument("--lib-dir", default="lib64",
+                        help="Library directory name (e.g. lib64, lib)")
+    parser.add_argument("--dynamic-linker", default="ld-linux-x86-64.so.2",
+                        help="Dynamic linker filename")
     parser.add_argument("--configure-arg", action="append", dest="configure_args",
                         default=[], help="Extra configure argument (repeatable)")
     args = parser.parse_args()
@@ -111,15 +115,11 @@ def main():
         "--with-headers=" + headers_path,
         "--disable-nscd",
         "--disable-werror",
-        "--enable-cet=no",
-        "libc_cv_slibdir=/usr/lib64",
+        "libc_cv_slibdir=/usr/" + args.lib_dir,
         "libc_cv_forced_unwind=yes",
         "libc_cv_c_cleanup=yes",
         "libc_cv_pde=yes",
-        "libc_cv_pde_load_address=0x0000000000400000",
         "libc_cv_cxx_link_ok=no",
-        "CFLAGS=-O2 -g -fcf-protection=none",
-        "CXXFLAGS=-O2 -g -fcf-protection=none",
     ]
     configure_cmd.extend(args.configure_args)
 

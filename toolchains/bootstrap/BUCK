@@ -1,5 +1,6 @@
 load("@buckos//defs:package.bzl", "package")
 load("@buckos//defs/rules:source.bzl", "extract_source")
+load("@buckos//tc/bootstrap/host-tools:defs.bzl", "host_tools_aggregator")
 
 # =============================================================================
 # Bootstrap Toolchain for BuckOS
@@ -4327,9 +4328,9 @@ make -j$MAKE_JOBS DESTDIR="$OUT" install MAKEINFO=true""",
 )
 
 # Complete ARM64 cross-toolchain target
-filegroup(
+host_tools_aggregator(
     name = "cross-toolchain-aarch64",
-    srcs = [
+    packages = [
         ":cross-binutils-aarch64",
         ":cross-gcc-aarch64-pass2",
         ":cross-glibc-aarch64",
