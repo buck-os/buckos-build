@@ -17,6 +17,8 @@ load("//tests/graph:test_provenance_impl.bzl", test_provenance_run = "run")
 load("//tests/graph:test_graph_impl.bzl", test_graph_run = "run")
 load("//tests/graph:test_cloud_hypervisor_impl.bzl", test_cloud_hypervisor_run = "run")
 load("//tests/graph:test_dedup_impl.bzl", test_dedup_run = "run")
+load("//tests/graph:test_bootstrap_isolation_impl.bzl", test_bootstrap_isolation_run = "run")
+load("//tests/graph:test_hermiticity_impl.bzl", test_hermiticity_run = "run")
 
 _SUITES = [
     ("test_deps", test_deps_run),
@@ -30,6 +32,8 @@ _SUITES = [
     ("test_graph", test_graph_run),
     ("test_cloud_hypervisor", test_cloud_hypervisor_run),
     ("test_dedup", test_dedup_run),
+    ("test_bootstrap_isolation", test_bootstrap_isolation_run),
+    ("test_hermiticity", test_hermiticity_run),
 ]
 
 def _impl(ctx):

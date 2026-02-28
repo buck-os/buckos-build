@@ -10,7 +10,7 @@ forward to the <base> config).  We assert on the <base>-labelled nodes
 only — routing nodes don't produce actions.
 """
 
-load("//tests/graph:helpers.bzl", "assert_result", "summarize")
+load("//tests/graph:helpers.bzl", "assert_result", "starts_with", "summarize")
 
 # Stage 1 bootstrap targets pinned via cfg = strip_toolchain_mode.
 # Each must have exactly one <base> configuration node — if zero,
@@ -89,5 +89,36 @@ def run(ctx):
                 len(base), ", ".join(base) if base else ", ".join(total),
             ),
         )
+
+    # ── Host-tools dedup ──────────────────────────────────────────────
+    #
+    # Host-tools targets (stage 2 packages) should appear in at most 2
+    # distinct configurations: DEFAULT and stage3-transition.  More than
+    # 2 means duplicate actions.
+    host_tools_configs = {}
+    for node in all_deps:
+        raw = _normalize(str(node.label.raw_target()))
+        full = str(node.label)
+        if starts_with(raw, "//tc/bootstrap/host-tools"):
+            if raw not in host_tools_configs:
+                host_tools_configs[raw] = []
+            host_tools_configs[raw].append(full)
+
+    multi_config_violations = []
+    for target, configs in host_tools_configs.items():
+        if len(configs) > 2:
+            multi_config_violations.append(
+                "{} has {} configs".format(target, len(configs)),
+            )
+
+    assert_result(
+        ctx, results,
+        "host-tools targets have at most 2 configs",
+        len(multi_config_violations) == 0,
+        "{} target(s) with >2 configs: {}".format(
+            len(multi_config_violations),
+            ", ".join(multi_config_violations[:3]) if multi_config_violations else "n/a",
+        ),
+    )
 
     return summarize(ctx, results)

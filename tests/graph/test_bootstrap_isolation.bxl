@@ -1,0 +1,22 @@
+"""
+BXL graph structure test: bootstrap isolation.
+
+Verifies that no package in //packages/... depends on bootstrap internals
+(stage1/stage2/stage3 targets).  Only //tc/bootstrap/host-tools/... is allowed.
+
+Run:
+    buck2 bxl buckos//tests/graph/test_bootstrap_isolation.bxl:test_bootstrap_isolation
+"""
+
+load("//tests/graph:test_bootstrap_isolation_impl.bzl", "run")
+
+def _impl(ctx):
+    passed, failed, details = run(ctx)
+    if failed > 0:
+        fail("{} assertion(s) failed\n{}".format(failed, details))
+
+test_bootstrap_isolation = bxl_main(
+    doc = "Verify packages don't depend on bootstrap internals.",
+    impl = _impl,
+    cli_args = {},
+)

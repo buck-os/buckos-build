@@ -1,0 +1,22 @@
+"""
+BXL graph structure test: hermiticity check.
+
+Verifies that stage3-mode targets have the correct configuration constraints
+(stage3-mode-true but NOT bootstrap-mode-true).
+
+Run:
+    buck2 bxl buckos//tests/graph/test_hermiticity.bxl:test_hermiticity
+"""
+
+load("//tests/graph:test_hermiticity_impl.bzl", "run")
+
+def _impl(ctx):
+    passed, failed, details = run(ctx)
+    if failed > 0:
+        fail("{} assertion(s) failed\n{}".format(failed, details))
+
+test_hermiticity = bxl_main(
+    doc = "Verify stage3-mode targets have correct constraints.",
+    impl = _impl,
+    cli_args = {},
+)
