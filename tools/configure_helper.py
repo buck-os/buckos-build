@@ -195,10 +195,18 @@ def main():
         env["LDFLAGS"] = _resolve_env_paths(" ".join(all_ldflags))
     if all_pkg_config:
         env["PKG_CONFIG_PATH"] = _resolve_env_paths(":".join(all_pkg_config))
+    # Merge --env entries.  For compiler/linker flag variables, prepend to
+    # existing tset-derived values so user flags (e.g. -std=gnu11) combine
+    # with dep flags (e.g. -I.../include) instead of clobbering them.
+    _MERGE_FLAGS = {"CFLAGS", "CXXFLAGS", "CPPFLAGS", "LDFLAGS"}
     for entry in args.extra_env:
         key, _, value = entry.partition("=")
         if key:
-            env[key] = _resolve_env_paths(value)
+            resolved = _resolve_env_paths(value)
+            if key in _MERGE_FLAGS and key in env:
+                env[key] = resolved + " " + env[key]
+            else:
+                env[key] = resolved
     if args.hermetic_path:
         env["PATH"] = ":".join(os.path.abspath(p) for p in args.hermetic_path)
         # Derive LD_LIBRARY_PATH from hermetic bin dirs so dynamically
@@ -241,7 +249,7 @@ def main():
     # Auto-detect automake Perl modules and aclocal dirs from dep
     # prefixes.  The Buck2-installed automake hardcodes /usr/share/...
     # paths which don't resolve to the artifact directory.
-    _path_sources = list(args.hermetic_path) + list(args.path_prepend)
+    _path_sources = list(args.hermetic_path) + list(all_path_prepend)
     if _path_sources:
         perl5lib = []
         aclocal_dirs = []
