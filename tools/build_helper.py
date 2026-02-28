@@ -576,6 +576,13 @@ def main():
                 _current_target = None
         if _suppressed:
             _overrides = ["\n# Reconfiguration suppressed by build_helper"]
+            # Exclude suppressed targets from $(ninja-targets) to avoid
+            # circular deps (e.g. run-ninja → config-host.mak → run-ninja
+            # in QEMU's meson+autotools hybrid Makefile).  makefile-targets
+            # is the filter-out list; appending is harmless if the variable
+            # is unused by this particular Makefile.
+            _overrides.append(
+                "makefile-targets += " + " ".join(sorted(_suppressed)))
             for _t in sorted(_suppressed):
                 _overrides.append(f"{_t}{_suppressed[_t]} ;")
             with open(_mf, "a") as f:
