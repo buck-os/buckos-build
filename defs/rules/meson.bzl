@@ -20,6 +20,7 @@ load("//defs/rules:_common.bzl",
      "write_link_flags", "write_pkg_config_paths",
 )
 load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_env_args", "toolchain_extra_cflags", "toolchain_extra_ldflags", "toolchain_path_args")
+load("//defs:host_tools.bzl", "MESON_HOST_TOOL_ATTRS", "host_tool_path_args")
 
 # ── Phase helpers ─────────────────────────────────────────────────────
 
@@ -63,6 +64,10 @@ def _meson_setup(ctx, source, cflags_file = None, ldflags_file = None,
 
     # Hermetic PATH from seed toolchain
     for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+
+    # Per-rule host tool deps → --path-prepend
+    for arg in host_tool_path_args(ctx):
         cmd.add(arg)
 
     # Inject user-specified environment variables
@@ -133,6 +138,10 @@ def _src_compile(ctx, configured, source, path_file = None, lib_dirs_file = None
     for arg in toolchain_path_args(ctx):
         cmd.add(arg)
 
+    # Per-rule host tool deps → --path-prepend
+    for arg in host_tool_path_args(ctx):
+        cmd.add(arg)
+
     # Inject user-specified environment variables
     for key, value in ctx.attrs.env.items():
         cmd.add("--env", "{}={}".format(key, value))
@@ -171,6 +180,10 @@ def _src_install(ctx, built, source, path_file = None, lib_dirs_file = None):
 
     # Hermetic PATH from seed toolchain
     for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+
+    # Per-rule host tool deps → --path-prepend
+    for arg in host_tool_path_args(ctx):
         cmd.add(arg)
 
     # Inject user-specified environment variables
@@ -303,5 +316,5 @@ meson_package = rule(
         "_install_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:install_helper"),
         ),
-    } | TOOLCHAIN_ATTRS,
+    } | TOOLCHAIN_ATTRS | MESON_HOST_TOOL_ATTRS,
 )

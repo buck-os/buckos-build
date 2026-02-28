@@ -57,20 +57,17 @@ def toolchain_path_args(ctx):
     """Return PATH strategy flags for hermetic builds.
 
     Three outcomes:
-      1. host_bin_dir set     → --hermetic-path (fully hermetic)
+      1. host_bin_dir set     → --hermetic-path (fully hermetic, single dir)
       2. allows_host_path     → --allow-host-path (bootstrap escape hatch)
-      3. neither              → fail() at analysis time (misconfigured toolchain)
+      3. neither              → --hermetic-empty (PATH built from per-rule host tool deps)
     """
     tc = ctx.attrs._toolchain[BuildToolchainInfo]
     if tc.host_bin_dir:
         return [cmd_args("--hermetic-path", tc.host_bin_dir)]
     if tc.allows_host_path:
         return [cmd_args("--allow-host-path")]
-    fail(
-        "Toolchain does not provide host_bin_dir and does not allow " +
-        "host PATH. Non-bootstrap toolchains must include hermetic " +
-        "host tools (triple: {}).".format(tc.target_triple),
-    )
+    # Hermetic empty: PATH built entirely from per-rule host tool deps
+    return [cmd_args("--hermetic-empty")]
 
 def toolchain_extra_cflags(ctx):
     """Return toolchain-injected CFLAGS (e.g. hardening flags)."""

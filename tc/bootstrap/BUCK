@@ -9,7 +9,7 @@ Gentoo-style staged bootstrap:
 
 Provides:
   :bootstrap-toolchain  — BuildToolchainInfo wrapping Stage 1 output
-  :stage2-toolchain     — Stage 1 + Stage 2 host tools (hermetic PATH)
+  :stage2-toolchain     — Stage 1 cross-compiler (PATH from per-rule deps)
   :seed-export          — distributable tar.zst (cross-compiler +
                           stage 3 buckos-native host tools)
 """
@@ -25,29 +25,22 @@ buckos_bootstrap_toolchain(
 )
 
 # Stage 2 host tools resolved in DEFAULT config via default_dep wrapper.
-# Toolchain rules can't use transition_dep directly, so this wrapper
-# applies the default transition to break the stage3 dependency cycle:
-#   stage3 packages → stage2-toolchain → stage2-host-tools
-#                                         ↓ (default transition)
-#                                       host-tools in DEFAULT config
-#                                         → seed toolchain (no cycle)
+# No longer a stage2-toolchain dep (PATH now comes from per-rule host
+# tool exec_deps), but kept for seed-export bundling and direct use.
 default_dep(
     name = "stage2-host-tools",
     dep = "//tc/bootstrap/host-tools:host-tools",
     visibility = ["PUBLIC"],
 )
 
-# Stage 2 toolchain: stage 1 cross-compiler + stage 2 host tools.
-# Stage 2 host tools are built in DEFAULT config (non-hermetic, host PATH
-# leaks into the build environment) but the output is buckos-native because
-# the cross-compiler uses --sysroot.
-#
-# This toolchain provides hermetic PATH for the stage 3 rebuild —
-# TOOLCHAIN_ATTRS select() resolves here when the stage3 transition is active.
+# Stage 2 toolchain: stage 1 cross-compiler, no host_tools.
+# PATH is assembled from per-rule host tool exec_deps via --hermetic-empty
+# + --path-prepend instead of a single host_bin_dir.  This removes the
+# tight coupling between the toolchain and the host_tools_aggregator
+# mega target, which now only exists for seed-export bundling.
 buckos_bootstrap_toolchain(
     name = "stage2-toolchain",
     bootstrap_stage = "//tc/bootstrap/stage1:stage1",
-    host_tools = ":stage2-host-tools",
     extra_cflags = ["-march=x86-64-v3"],
     visibility = ["PUBLIC"],
 )

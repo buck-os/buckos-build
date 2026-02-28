@@ -72,6 +72,7 @@ def main():
     # os.environ.clear() only if captured here first.
     starlark_vars = {}
     for key in ("CC", "CXX", "AR", "_HERMETIC_PATH", "_ALLOW_HOST_PATH",
+                "_HERMETIC_EMPTY", "_PATH_PREPEND",
                 "CFLAGS", "LDFLAGS",
                 "CPPFLAGS", "PKG_CONFIG_PATH", "_DEP_BIN_PATHS", "DEP_BASE_DIRS",
                 "_DEP_LD_LIBRARY_PATH", "MAKE_JOBS"):
@@ -127,7 +128,7 @@ def main():
         if key in starlark_vars:
             env[key] = _resolve_flag_paths(starlark_vars[key], project_root)
     for key in ("PKG_CONFIG_PATH", "_DEP_BIN_PATHS", "DEP_BASE_DIRS",
-                "_DEP_LD_LIBRARY_PATH", "_HERMETIC_PATH"):
+                "_DEP_LD_LIBRARY_PATH", "_HERMETIC_PATH", "_PATH_PREPEND"):
         if key in starlark_vars:
             env[key] = _resolve_colon_paths(starlark_vars[key], project_root)
 
@@ -137,7 +138,9 @@ def main():
 
     # Hermetic PATH handling
     hermetic_path = env.pop("_HERMETIC_PATH", None)
+    hermetic_empty = env.pop("_HERMETIC_EMPTY", None)
     allow_host_path = env.pop("_ALLOW_HOST_PATH", None)
+    path_prepend = env.pop("_PATH_PREPEND", None)
     if hermetic_path:
         env["PATH"] = hermetic_path
         # Derive LD_LIBRARY_PATH from hermetic bin dirs
@@ -163,12 +166,29 @@ def main():
         if py_paths:
             existing = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = ":".join(py_paths) + (":" + existing if existing else "")
+    elif hermetic_empty:
+        env["PATH"] = ""
     elif allow_host_path:
         env["PATH"] = _host_path
     else:
-        print("error: build requires _HERMETIC_PATH or _ALLOW_HOST_PATH env",
+        print("error: build requires _HERMETIC_PATH, _HERMETIC_EMPTY, or _ALLOW_HOST_PATH env",
               file=sys.stderr)
         sys.exit(1)
+
+    # Prepend host tool deps to PATH
+    if path_prepend:
+        env["PATH"] = path_prepend + (":" + env["PATH"] if env.get("PATH") else "")
+        # Derive LD_LIBRARY_PATH from prepend dirs
+        _pp_lib_dirs = []
+        for bd in path_prepend.split(":"):
+            parent = os.path.dirname(bd)
+            for ld in ("lib", "lib64"):
+                d = os.path.join(parent, ld)
+                if os.path.isdir(d):
+                    _pp_lib_dirs.append(d)
+        if _pp_lib_dirs:
+            existing = env.get("LD_LIBRARY_PATH", "")
+            env["LD_LIBRARY_PATH"] = ":".join(_pp_lib_dirs) + (":" + existing if existing else "")
 
     # Translate _DEP_LD_LIBRARY_PATH → LD_LIBRARY_PATH for the subprocess.
     # The underscore-prefixed name prevents the dynamic linker from seeing

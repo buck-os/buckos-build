@@ -65,6 +65,10 @@ def main():
                         help="Set PATH to only these dirs (replaces host PATH, repeatable)")
     parser.add_argument("--allow-host-path", action="store_true",
                         help="Allow host PATH (bootstrap escape hatch)")
+    parser.add_argument("--hermetic-empty", action="store_true",
+                        help="Start with empty PATH (populated by --path-prepend)")
+    parser.add_argument("--path-prepend", action="append", dest="path_prepend", default=[],
+                        help="Directory to prepend to PATH (repeatable, resolved to absolute)")
     parser.add_argument("--bin", action="append", dest="bins", default=[],
                         help="Specific binary name to install (repeatable; default: all executables)")
     parser.add_argument("--package", action="append", dest="packages", default=[],
@@ -127,12 +131,27 @@ def main():
         if _py_paths:
             _existing = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = ":".join(_py_paths) + (":" + _existing if _existing else "")
+    elif args.hermetic_empty:
+        env["PATH"] = ""
     elif args.allow_host_path:
         env["PATH"] = _host_path
     else:
-        print("error: build requires --hermetic-path or --allow-host-path",
+        print("error: build requires --hermetic-path, --hermetic-empty, or --allow-host-path",
               file=sys.stderr)
         sys.exit(1)
+    if args.path_prepend:
+        prepend = ":".join(os.path.abspath(p) for p in args.path_prepend)
+        env["PATH"] = prepend + (":" + env["PATH"] if env.get("PATH") else "")
+        _dep_lib_dirs = []
+        for _bp in args.path_prepend:
+            _parent = os.path.dirname(os.path.abspath(_bp))
+            for _ld in ("lib", "lib64"):
+                _d = os.path.join(_parent, _ld)
+                if os.path.isdir(_d):
+                    _dep_lib_dirs.append(_d)
+        if _dep_lib_dirs:
+            _existing = env.get("LD_LIBRARY_PATH", "")
+            env["LD_LIBRARY_PATH"] = ":".join(_dep_lib_dirs) + (":" + _existing if _existing else "")
     env["GOFLAGS"] = env.get("GOFLAGS", "")
 
     # Set up vendored dependencies if provided

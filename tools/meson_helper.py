@@ -92,6 +92,8 @@ def main():
                         help="Set PATH to only these dirs (replaces host PATH, repeatable)")
     parser.add_argument("--allow-host-path", action="store_true",
                         help="Allow host PATH (bootstrap escape hatch)")
+    parser.add_argument("--hermetic-empty", action="store_true",
+                        help="Start with empty PATH (populated by --path-prepend)")
     parser.add_argument("--pre-cmd", action="append", dest="pre_cmds", default=[],
                         help="Shell command to run in source dir before meson setup (repeatable)")
     parser.add_argument("--cflags-file", default=None,
@@ -149,10 +151,12 @@ def main():
         if _lib_dirs:
             _existing = env.get("LD_LIBRARY_PATH", "")
             env["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (":" + _existing if _existing else "")
+    elif args.hermetic_empty:
+        env["PATH"] = ""
     elif args.allow_host_path:
         env["PATH"] = _host_path
     else:
-        print("error: build requires --hermetic-path or --allow-host-path",
+        print("error: build requires --hermetic-path, --hermetic-empty, or --allow-host-path",
               file=sys.stderr)
         sys.exit(1)
     all_path_prepend = file_path_dirs + args.path_prepend

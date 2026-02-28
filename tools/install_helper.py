@@ -271,6 +271,8 @@ def main():
                         help="Set PATH to only these dirs (replaces host PATH, repeatable)")
     parser.add_argument("--allow-host-path", action="store_true",
                         help="Allow host PATH (bootstrap escape hatch)")
+    parser.add_argument("--hermetic-empty", action="store_true",
+                        help="Start with empty PATH (populated by --path-prepend)")
     parser.add_argument("--build-system", choices=["make", "ninja"], default="make",
                         help="Build system to use (default: make)")
     parser.add_argument("--make-target", action="append", dest="make_targets", default=None,
@@ -369,10 +371,12 @@ def main():
         if _lib_dirs:
             _existing = os.environ.get("LD_LIBRARY_PATH", "")
             os.environ["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (":" + _existing if _existing else "")
+    elif args.hermetic_empty:
+        os.environ["PATH"] = ""
     elif args.allow_host_path:
         os.environ["PATH"] = _host_path
     else:
-        print("error: build requires --hermetic-path or --allow-host-path",
+        print("error: build requires --hermetic-path, --hermetic-empty, or --allow-host-path",
               file=sys.stderr)
         sys.exit(1)
     all_path_prepend = file_path_dirs + args.path_prepend
