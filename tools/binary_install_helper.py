@@ -131,6 +131,10 @@ def main():
                 "_DEP_LD_LIBRARY_PATH", "_HERMETIC_PATH", "_PATH_PREPEND"):
         if key in starlark_vars:
             env[key] = _resolve_colon_paths(starlark_vars[key], project_root)
+    # Pass through boolean-ish flags that don't need path resolution
+    for key in ("_ALLOW_HOST_PATH", "_HERMETIC_EMPTY"):
+        if key in starlark_vars:
+            env[key] = starlark_vars[key]
 
     # Re-inject user env attrs
     for key, val in user_env.items():

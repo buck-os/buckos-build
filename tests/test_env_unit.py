@@ -65,16 +65,19 @@ def main():
         os.environ.clear()
         os.environ.update(saved)
 
-    # -- clean_env: preserves PATH when set --
-    print("=== clean_env: preserves PATH ===")
+    # -- clean_env: PATH is NOT passed through (hermetic enforcement) --
+    # PATH is managed explicitly by each helper via --hermetic-path,
+    # --hermetic-empty, or --allow-host-path.  clean_env() must not
+    # leak host PATH into the build environment.
+    print("=== clean_env: PATH not passed through ===")
     saved = dict(os.environ)
     try:
         os.environ["PATH"] = "/usr/local/bin:/usr/bin"
         env = clean_env()
-        if env.get("PATH") == "/usr/local/bin:/usr/bin":
-            ok("PATH preserved")
+        if "PATH" not in env:
+            ok("PATH not in clean_env result")
         else:
-            fail(f"PATH: expected '/usr/local/bin:/usr/bin', got '{env.get('PATH')}'")
+            fail(f"PATH leaked into clean_env: '{env.get('PATH')}'")
     finally:
         os.environ.clear()
         os.environ.update(saved)
@@ -238,11 +241,9 @@ def main():
     saved = dict(os.environ)
     try:
         os.environ["HOME"] = "/home/test"
-        os.environ["PATH"] = "/usr/bin"
         os.environ["USER"] = "testuser"
         sanitize_global_env()
         if (os.environ.get("HOME") == "/home/test"
-                and os.environ.get("PATH") == "/usr/bin"
                 and os.environ.get("USER") == "testuser"):
             ok("passthrough vars preserved")
         else:
@@ -309,7 +310,6 @@ def main():
     saved = dict(os.environ)
     try:
         os.environ["HOME"] = "/home/test"
-        os.environ["PATH"] = "/usr/bin"
         os.environ["CC"] = "gcc"
         r1 = clean_env()
         r2 = clean_env()

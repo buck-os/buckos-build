@@ -338,6 +338,7 @@ def _bootstrap_gcc_impl(ctx):
 
     env = _toolchain_env(ctx)
     _env_args(conf_cmd, env)
+    conf_cmd.add("--allow-host-path")
     ctx.actions.run(conf_cmd, category = "configure", identifier = ctx.attrs.name)
 
     # Phase 4: compile — use build_helper for timestamp management, env
@@ -564,6 +565,7 @@ def _bootstrap_glibc_impl(ctx):
     conf_cmd.add("--dynamic-linker", ctx.attrs.dynamic_linker)
     for arg in ctx.attrs.extra_configure_args:
         conf_cmd.add(cmd_args("--configure-arg=", arg, delimiter = ""))
+    conf_cmd.add("--allow-host-path")
     ctx.actions.run(conf_cmd, category = "configure", identifier = ctx.attrs.name)
 
     # Phase 4: compile — use build_helper for timestamp management.

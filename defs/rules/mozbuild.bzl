@@ -13,7 +13,7 @@ Five cacheable actions:
 load("//defs:providers.bzl", "BuildToolchainInfo", "PackageInfo")
 load("//defs/rules:_common.bzl", "build_package_tsets", "collect_runtime_lib_dirs")
 load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_path_args")
-load("//defs:host_tools.bzl", "MOZBUILD_HOST_TOOL_ATTRS", "host_tool_path_args")
+load("//defs:host_tools.bzl", "host_tool_path_args")
 
 # ── Phase helpers ─────────────────────────────────────────────────────
 
@@ -140,7 +140,7 @@ def _configure(ctx, source):
     for arg in toolchain_path_args(ctx):
         cmd.add(arg)
 
-    # Per-rule host tool deps → --path-prepend
+    # Add host_deps bin dirs to PATH
     for arg in host_tool_path_args(ctx):
         cmd.add(arg)
 
@@ -174,7 +174,7 @@ def _build(ctx, source, configured):
     for arg in toolchain_path_args(ctx):
         cmd.add(arg)
 
-    # Per-rule host tool deps → --path-prepend
+    # Add host_deps bin dirs to PATH
     for arg in host_tool_path_args(ctx):
         cmd.add(arg)
 
@@ -203,7 +203,7 @@ def _install(ctx, source, built):
     for arg in toolchain_path_args(ctx):
         cmd.add(arg)
 
-    # Per-rule host tool deps → --path-prepend
+    # Add host_deps bin dirs to PATH
     for arg in host_tool_path_args(ctx):
         cmd.add(arg)
 
@@ -304,5 +304,5 @@ mozbuild_package = rule(
         "_patch_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:patch_helper"),
         ),
-    } | TOOLCHAIN_ATTRS | MOZBUILD_HOST_TOOL_ATTRS,
+    } | TOOLCHAIN_ATTRS,
 )

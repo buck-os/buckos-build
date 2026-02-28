@@ -26,7 +26,7 @@ load("//defs/rules:_common.bzl",
      "write_pkg_config_paths",
 )
 load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_env_args", "toolchain_extra_cflags", "toolchain_extra_ldflags", "toolchain_path_args")
-load("//defs:host_tools.bzl", "AUTOTOOLS_HOST_TOOL_ATTRS", "host_tool_path_args")
+load("//defs:host_tools.bzl", "host_tool_path_args")
 
 # ── Phase helpers ─────────────────────────────────────────────────────
 
@@ -70,10 +70,6 @@ def _src_configure(ctx, source, cflags_file = None, ldflags_file = None,
     for arg in toolchain_path_args(ctx):
         cmd.add(arg)
 
-    # Per-rule host tool deps → --path-prepend
-    for arg in host_tool_path_args(ctx):
-        cmd.add(arg)
-
     # Inject user-specified environment variables
     for key, value in ctx.attrs.env.items():
         cmd.add("--env", "{}={}".format(key, value))
@@ -86,9 +82,8 @@ def _src_configure(ctx, source, cflags_file = None, ldflags_file = None,
         cmd.add("--pre-cmd", pre_cmd)
 
     # Add host_deps bin dirs to PATH (build tools like cmake, m4, etc.)
-    for hd in ctx.attrs.host_deps:
-        prefix = hd[PackageInfo].prefix if PackageInfo in hd else hd[DefaultInfo].default_outputs[0]
-        cmd.add("--path-prepend", cmd_args(prefix, format = "{}/usr/bin"))
+    for arg in host_tool_path_args(ctx):
+        cmd.add(arg)
 
     if ctx.attrs.skip_configure:
         cmd.add("--skip-configure")
@@ -156,10 +151,6 @@ def _src_compile(ctx, configured, cflags_file = None, ldflags_file = None,
     for arg in toolchain_path_args(ctx):
         cmd.add(arg)
 
-    # Per-rule host tool deps → --path-prepend
-    for arg in host_tool_path_args(ctx):
-        cmd.add(arg)
-
     # Toolchain-injected CFLAGS / LDFLAGS for build phase
     _tc_cflags = list(toolchain_extra_cflags(ctx)) + list(ctx.attrs.extra_cflags)
     _tc_ldflags = list(toolchain_extra_ldflags(ctx)) + list(ctx.attrs.extra_ldflags)
@@ -175,9 +166,8 @@ def _src_compile(ctx, configured, cflags_file = None, ldflags_file = None,
     add_flag_file(cmd, "--path-file", path_file)
 
     # Add host_deps bin dirs to PATH
-    for hd in ctx.attrs.host_deps:
-        prefix = hd[PackageInfo].prefix if PackageInfo in hd else hd[DefaultInfo].default_outputs[0]
-        cmd.add("--path-prepend", cmd_args(prefix, format = "{}/usr/bin"))
+    for arg in host_tool_path_args(ctx):
+        cmd.add(arg)
 
     # Inject user-specified environment variables
     for key, value in ctx.attrs.env.items():
@@ -218,10 +208,6 @@ def _src_install(ctx, built, cflags_file = None, ldflags_file = None,
     for arg in toolchain_path_args(ctx):
         cmd.add(arg)
 
-    # Per-rule host tool deps → --path-prepend
-    for arg in host_tool_path_args(ctx):
-        cmd.add(arg)
-
     # Toolchain-injected CFLAGS / LDFLAGS for install phase
     _tc_cflags = list(toolchain_extra_cflags(ctx)) + list(ctx.attrs.extra_cflags)
     _tc_ldflags = list(toolchain_extra_ldflags(ctx)) + list(ctx.attrs.extra_ldflags)
@@ -237,9 +223,8 @@ def _src_install(ctx, built, cflags_file = None, ldflags_file = None,
     add_flag_file(cmd, "--path-file", path_file)
 
     # Add host_deps bin dirs to PATH
-    for hd in ctx.attrs.host_deps:
-        prefix = hd[PackageInfo].prefix if PackageInfo in hd else hd[DefaultInfo].default_outputs[0]
-        cmd.add("--path-prepend", cmd_args(prefix, format = "{}/usr/bin"))
+    for arg in host_tool_path_args(ctx):
+        cmd.add(arg)
 
     # Inject user-specified environment variables
     for key, value in ctx.attrs.env.items():
@@ -383,5 +368,5 @@ autotools_package = rule(
         "_install_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:install_helper"),
         ),
-    } | TOOLCHAIN_ATTRS | AUTOTOOLS_HOST_TOOL_ATTRS,
+    } | TOOLCHAIN_ATTRS,
 )

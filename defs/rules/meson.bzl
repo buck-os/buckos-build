@@ -20,7 +20,7 @@ load("//defs/rules:_common.bzl",
      "write_link_flags", "write_pkg_config_paths",
 )
 load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_env_args", "toolchain_extra_cflags", "toolchain_extra_ldflags", "toolchain_path_args")
-load("//defs:host_tools.bzl", "MESON_HOST_TOOL_ATTRS", "host_tool_path_args")
+load("//defs:host_tools.bzl", "host_tool_path_args")
 
 # ── Phase helpers ─────────────────────────────────────────────────────
 
@@ -66,10 +66,6 @@ def _meson_setup(ctx, source, cflags_file = None, ldflags_file = None,
     for arg in toolchain_path_args(ctx):
         cmd.add(arg)
 
-    # Per-rule host tool deps → --path-prepend
-    for arg in host_tool_path_args(ctx):
-        cmd.add(arg)
-
     # Inject user-specified environment variables
     for key, value in ctx.attrs.env.items():
         cmd.add("--env", "{}={}".format(key, value))
@@ -105,9 +101,8 @@ def _meson_setup(ctx, source, cflags_file = None, ldflags_file = None,
     add_flag_file(cmd, "--path-file", path_file)
 
     # Add host_deps bin dirs to PATH
-    for hd in ctx.attrs.host_deps:
-        prefix = hd[PackageInfo].prefix if PackageInfo in hd else hd[DefaultInfo].default_outputs[0]
-        cmd.add("--path-prepend", cmd_args(prefix, format = "{}/usr/bin"))
+    for arg in host_tool_path_args(ctx):
+        cmd.add(arg)
 
     # Configure arguments from the common interface
     for arg in ctx.attrs.configure_args:
@@ -138,10 +133,6 @@ def _src_compile(ctx, configured, source, path_file = None, lib_dirs_file = None
     for arg in toolchain_path_args(ctx):
         cmd.add(arg)
 
-    # Per-rule host tool deps → --path-prepend
-    for arg in host_tool_path_args(ctx):
-        cmd.add(arg)
-
     # Inject user-specified environment variables
     for key, value in ctx.attrs.env.items():
         cmd.add("--env", "{}={}".format(key, value))
@@ -153,9 +144,8 @@ def _src_compile(ctx, configured, source, path_file = None, lib_dirs_file = None
     add_flag_file(cmd, "--ldflags-file", lib_dirs_file)
 
     # Add host_deps bin dirs to PATH
-    for hd in ctx.attrs.host_deps:
-        prefix = hd[PackageInfo].prefix if PackageInfo in hd else hd[DefaultInfo].default_outputs[0]
-        cmd.add("--path-prepend", cmd_args(prefix, format = "{}/usr/bin"))
+    for arg in host_tool_path_args(ctx):
+        cmd.add(arg)
 
     for arg in ctx.attrs.make_args:
         cmd.add("--make-arg", arg)
@@ -182,10 +172,6 @@ def _src_install(ctx, built, source, path_file = None, lib_dirs_file = None):
     for arg in toolchain_path_args(ctx):
         cmd.add(arg)
 
-    # Per-rule host tool deps → --path-prepend
-    for arg in host_tool_path_args(ctx):
-        cmd.add(arg)
-
     # Inject user-specified environment variables
     for key, value in ctx.attrs.env.items():
         cmd.add("--env", "{}={}".format(key, value))
@@ -195,9 +181,8 @@ def _src_install(ctx, built, source, path_file = None, lib_dirs_file = None):
     add_flag_file(cmd, "--ldflags-file", lib_dirs_file)
 
     # Add host_deps bin dirs to PATH
-    for hd in ctx.attrs.host_deps:
-        prefix = hd[PackageInfo].prefix if PackageInfo in hd else hd[DefaultInfo].default_outputs[0]
-        cmd.add("--path-prepend", cmd_args(prefix, format = "{}/usr/bin"))
+    for arg in host_tool_path_args(ctx):
+        cmd.add(arg)
 
     for arg in ctx.attrs.make_args:
         cmd.add("--make-arg", arg)
@@ -316,5 +301,5 @@ meson_package = rule(
         "_install_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:install_helper"),
         ),
-    } | TOOLCHAIN_ATTRS | MESON_HOST_TOOL_ATTRS,
+    } | TOOLCHAIN_ATTRS,
 )

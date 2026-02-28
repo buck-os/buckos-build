@@ -11,7 +11,7 @@ Four discrete cacheable actions:
 load("//defs:providers.bzl", "BuildToolchainInfo", "PackageInfo")
 load("//defs/rules:_common.bzl", "build_package_tsets", "collect_runtime_lib_dirs")
 load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_env_args", "toolchain_path_args")
-load("//defs:host_tools.bzl", "PYTHON_HOST_TOOL_ATTRS", "host_tool_path_args")
+load("//defs:host_tools.bzl", "host_tool_path_args")
 
 # ── Phase helpers ─────────────────────────────────────────────────────
 
@@ -43,7 +43,7 @@ def _python_install(ctx, source):
     for arg in toolchain_path_args(ctx):
         cmd.add(arg)
 
-    # Per-rule host tool deps → --path-prepend
+    # Add host_deps bin dirs to PATH
     for arg in host_tool_path_args(ctx):
         cmd.add(arg)
 
@@ -160,5 +160,5 @@ python_package = rule(
         "_python_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:python_helper"),
         ),
-    } | TOOLCHAIN_ATTRS | PYTHON_HOST_TOOL_ATTRS,
+    } | TOOLCHAIN_ATTRS,
 )

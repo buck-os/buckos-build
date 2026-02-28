@@ -30,9 +30,34 @@ def main():
     parser.add_argument("--extra-module", action="append", dest="extra_modules",
                         default=[],
                         help="Path to extra .ko file or directory of .ko files (repeatable)")
+    parser.add_argument("--allow-host-path", action="store_true",
+                        help="Allow host PATH (bootstrap escape hatch)")
+    parser.add_argument("--hermetic-path", action="append", dest="hermetic_path", default=[],
+                        help="Set PATH to only these dirs (replaces host PATH, repeatable)")
+    parser.add_argument("--hermetic-empty", action="store_true",
+                        help="Start with empty PATH (populated by --path-prepend)")
+    parser.add_argument("--path-prepend", action="append", dest="path_prepend", default=[],
+                        help="Directory to prepend to PATH (repeatable, resolved to absolute)")
     args = parser.parse_args()
 
+    _host_path = os.environ.get("PATH", "")
     sanitize_global_env()
+
+    # Apply PATH from toolchain flags
+    if args.hermetic_path:
+        os.environ["PATH"] = ":".join(os.path.abspath(p) for p in args.hermetic_path)
+    elif args.hermetic_empty:
+        os.environ["PATH"] = ""
+    elif args.allow_host_path:
+        os.environ["PATH"] = _host_path
+    else:
+        print("error: kernel_modules_install requires --hermetic-path, --hermetic-empty, or --allow-host-path",
+              file=sys.stderr)
+        sys.exit(1)
+    if args.path_prepend:
+        prepend = ":".join(os.path.abspath(p) for p in args.path_prepend if os.path.isdir(p))
+        if prepend:
+            os.environ["PATH"] = prepend + ":" + os.environ.get("PATH", "")
 
     build_tree = os.path.abspath(args.build_tree)
     output_dir = os.path.abspath(args.output_dir)

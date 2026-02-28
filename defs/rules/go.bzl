@@ -12,7 +12,7 @@ Four discrete cacheable actions:
 load("//defs:providers.bzl", "PackageInfo")
 load("//defs/rules:_common.bzl", "build_package_tsets", "collect_runtime_lib_dirs")
 load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_env_args", "toolchain_path_args")
-load("//defs:host_tools.bzl", "GO_HOST_TOOL_ATTRS", "host_tool_path_args")
+load("//defs:host_tools.bzl", "host_tool_path_args")
 
 # ── Phase helpers ─────────────────────────────────────────────────────
 
@@ -44,7 +44,7 @@ def _go_build(ctx, source):
     for arg in toolchain_path_args(ctx):
         cmd.add(arg)
 
-    # Per-rule host tool deps → --path-prepend
+    # Add host_deps bin dirs to PATH
     for arg in host_tool_path_args(ctx):
         cmd.add(arg)
 
@@ -165,5 +165,5 @@ go_package = rule(
         "_go_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:go_helper"),
         ),
-    } | TOOLCHAIN_ATTRS | GO_HOST_TOOL_ATTRS,
+    } | TOOLCHAIN_ATTRS,
 )

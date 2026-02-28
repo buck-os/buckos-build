@@ -11,6 +11,7 @@ Rules:
 
 load("//defs:empty_registry.bzl", "PATCH_REGISTRY")
 load("//defs:providers.bzl", "KernelBtfInfo", "KernelConfigInfo", "KernelHeadersInfo", "KernelInfo")
+load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_path_args")
 load("//tc:transitions.bzl", "strip_toolchain_mode")
 
 # ── kernel_config ────────────────────────────────────────────────────
@@ -36,6 +37,10 @@ def _kernel_config_impl(ctx: AnalysisContext) -> list[Provider]:
 
     for frag in ctx.attrs.fragments:
         cmd.add("--fragment", frag)
+
+    # Hermetic PATH from toolchain
+    for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
 
     ctx.actions.run(
         cmd,
@@ -63,7 +68,7 @@ _kernel_config_rule = rule(
         "_kernel_config_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:kernel_config"),
         ),
-    },
+    } | TOOLCHAIN_ATTRS,
     cfg = strip_toolchain_mode,
 )
 
@@ -150,6 +155,10 @@ def _kernel_build_impl(ctx: AnalysisContext) -> list[Provider]:
     for mod in ctx.attrs.modules:
         cmd.add("--external-module", mod[DefaultInfo].default_outputs[0])
 
+    # Hermetic PATH from toolchain
+    for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+
     ctx.actions.run(
         cmd,
         category = "kernel",
@@ -191,7 +200,7 @@ _kernel_build_rule = rule(
         "_kernel_build_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:kernel_build"),
         ),
-    },
+    } | TOOLCHAIN_ATTRS,
 )
 
 def kernel_build(
@@ -267,6 +276,10 @@ def _kernel_headers_impl(ctx: AnalysisContext) -> list[Provider]:
         config_file = ctx.attrs.config[DefaultInfo].default_outputs[0]
         cmd.add("--config", config_file)
 
+    # Hermetic PATH from toolchain
+    for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+
     ctx.actions.run(cmd, category = "kernel_headers", identifier = ctx.attrs.name)
 
     return [
@@ -288,7 +301,7 @@ _kernel_headers_rule = rule(
         "_kernel_headers_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:kernel_headers"),
         ),
-    },
+    } | TOOLCHAIN_ATTRS,
     cfg = strip_toolchain_mode,
 )
 
@@ -367,6 +380,10 @@ def _kernel_modules_install_impl(ctx: AnalysisContext) -> list[Provider]:
     for mod in ctx.attrs.extra_modules:
         cmd.add("--extra-module", mod[DefaultInfo].default_outputs[0])
 
+    # Hermetic PATH from toolchain
+    for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+
     ctx.actions.run(cmd, category = "kernel_modules", identifier = ctx.attrs.name)
 
     return [DefaultInfo(default_output = install_dir)]
@@ -382,7 +399,7 @@ _kernel_modules_install_rule = rule(
         "_kernel_modules_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:kernel_modules_install"),
         ),
-    },
+    } | TOOLCHAIN_ATTRS,
 )
 
 def kernel_modules_install(name, kernel, version = "", arch = "x86_64", extra_modules = [], labels = [], visibility = []):

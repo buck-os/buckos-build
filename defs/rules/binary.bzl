@@ -12,7 +12,7 @@ load("//defs:providers.bzl", "BuildToolchainInfo", "PackageInfo")
 load("//defs/rules:_common.bzl", "build_package_tsets", "collect_runtime_lib_dirs")
 load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_env_args",
      "toolchain_extra_cflags", "toolchain_extra_ldflags")
-load("//defs:host_tools.bzl", "BINARY_HOST_TOOL_ATTRS", "host_tool_path_args")
+load("//defs:host_tools.bzl", "host_tool_env_paths")
 
 # ── Phase helpers ─────────────────────────────────────────────────────
 
@@ -145,22 +145,6 @@ def _install(ctx, source):
     else:
         env["_HERMETIC_EMPTY"] = "1"
 
-    # Per-rule host tool deps → _PATH_PREPEND env var
-    _host_paths = []
-    for attr_name in dir(ctx.attrs):
-        if not attr_name.startswith("_host_"):
-            continue
-        dep = getattr(ctx.attrs, attr_name)
-        if dep == None:
-            continue
-        if PackageInfo in dep:
-            prefix = dep[PackageInfo].prefix
-        else:
-            prefix = dep[DefaultInfo].default_outputs[0]
-        _host_paths.append(cmd_args(prefix, format = "{}/usr/bin"))
-        _host_paths.append(cmd_args(prefix, format = "{}/usr/sbin"))
-    if _host_paths:
-        env["_PATH_PREPEND"] = cmd_args(_host_paths, delimiter = ":")
 
     # Inject dep environment (CFLAGS, LDFLAGS, PKG_CONFIG_PATH, PATH)
     dep_env, dep_paths = _dep_env_args(ctx)
@@ -168,12 +152,7 @@ def _install(ctx, source):
         env[key] = value
 
     # Add host_deps bin dirs to dep paths
-    for hd in ctx.attrs.host_deps:
-        if PackageInfo in hd:
-            prefix = hd[PackageInfo].prefix
-        else:
-            prefix = hd[DefaultInfo].default_outputs[0]
-        dep_paths.append(cmd_args(prefix, format = "{}/usr/bin"))
+    dep_paths.extend(host_tool_env_paths(ctx))
 
     if dep_paths:
         env["_DEP_BIN_PATHS"] = cmd_args(dep_paths, delimiter = ":")
@@ -275,5 +254,5 @@ binary_package = rule(
         "_binary_install_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:binary_install_helper"),
         ),
-    } | TOOLCHAIN_ATTRS | BINARY_HOST_TOOL_ATTRS,
+    } | TOOLCHAIN_ATTRS,
 )
