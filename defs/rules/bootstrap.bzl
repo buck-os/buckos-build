@@ -54,6 +54,7 @@ def _bootstrap_binutils_impl(ctx):
     prep_cmd.add("--source-dir", source)
     prep_cmd.add("--output-dir", prepared.as_output())
     prep_cmd.add("--skip-configure")
+    prep_cmd.add("--allow-host-path")
     ctx.actions.run(prep_cmd, category = "prepare", identifier = ctx.attrs.name)
 
     # Phase 3: configure
@@ -82,6 +83,7 @@ def _bootstrap_binutils_impl(ctx):
         conf_cmd.add(cmd_args("--configure-arg=", arg, delimiter = ""))
     env = _toolchain_env(ctx)
     _env_args(conf_cmd, env)
+    conf_cmd.add("--allow-host-path")
     ctx.actions.run(conf_cmd, category = "configure", identifier = ctx.attrs.name)
 
     # Phase 4: compile (copy whole configured tree; make runs in build subdir)
@@ -92,6 +94,7 @@ def _bootstrap_binutils_impl(ctx):
     build_cmd.add("--build-subdir", "build")
     build_cmd.add("--make-arg", "MAKEINFO=true")
     _env_args(build_cmd, env)
+    build_cmd.add("--allow-host-path")
     ctx.actions.run(build_cmd, category = "compile", identifier = ctx.attrs.name)
 
     # Phase 5: install (run from built tree's build subdir)
@@ -102,6 +105,7 @@ def _bootstrap_binutils_impl(ctx):
     inst_cmd.add("--prefix", installed.as_output())
     inst_cmd.add("--make-arg", "MAKEINFO=true")
     _env_args(inst_cmd, env)
+    inst_cmd.add("--allow-host-path")
     ctx.actions.run(inst_cmd, category = "install", identifier = ctx.attrs.name)
 
     return [DefaultInfo(default_output = installed)]
@@ -139,6 +143,7 @@ def _bootstrap_linux_headers_impl(ctx):
     prep_cmd.add("--source-dir", source)
     prep_cmd.add("--output-dir", prepared.as_output())
     prep_cmd.add("--skip-configure")
+    prep_cmd.add("--allow-host-path")
     ctx.actions.run(prep_cmd, category = "prepare", identifier = ctx.attrs.name)
 
     # Build headers + install in one action (make headers then copy)
@@ -174,6 +179,7 @@ def _bootstrap_linux_headers_impl(ctx):
     ))
     # All work is done in pre-cmds; skip the make invocation
     build_cmd.add("--skip-make")
+    build_cmd.add("--allow-host-path")
     ctx.actions.run(build_cmd, category = "install", identifier = ctx.attrs.name)
 
     return [DefaultInfo(default_output = installed)]
@@ -267,6 +273,7 @@ def _bootstrap_gcc_impl(ctx):
 
     for part in pre_parts:
         prep_cmd.add("--pre-cmd", part)
+    prep_cmd.add("--allow-host-path")
     ctx.actions.run(prep_cmd, category = "prepare", identifier = ctx.attrs.name)
 
     # Phase 3: configure — Python helper handles sysroot assembly and
@@ -331,6 +338,7 @@ def _bootstrap_gcc_impl(ctx):
 
     env = _toolchain_env(ctx)
     _env_args(conf_cmd, env)
+    conf_cmd.add("--allow-host-path")
     ctx.actions.run(conf_cmd, category = "configure", identifier = ctx.attrs.name)
 
     # Phase 4: compile — use build_helper for timestamp management, env
@@ -354,6 +362,7 @@ def _bootstrap_gcc_impl(ctx):
         build_cmd.add("--path-prepend", cmd_args(_stage_out, "/tools/bin", delimiter = ""))
 
     _env_args(build_cmd, _toolchain_env(ctx))
+    build_cmd.add("--allow-host-path")
 
     # Ensure makeinfo stub is on PATH for GMP/MPFR sub-configures
     _mi = 'command -v makeinfo >/dev/null 2>&1 || { mkdir -p .stub-bin && printf "#!/bin/sh\\nexit 0\\n" > .stub-bin/makeinfo && chmod +x .stub-bin/makeinfo && export PATH="$PWD/.stub-bin:$PATH"; } && '
@@ -402,6 +411,7 @@ def _bootstrap_gcc_impl(ctx):
         inst_cmd.add("--path-prepend", cmd_args(_stage_out2, "/tools/bin", delimiter = ""))
 
     _env_args(inst_cmd, _toolchain_env(ctx))
+    inst_cmd.add("--allow-host-path")
 
     if not ctx.attrs.with_headers:
         # Pass1: install gcc + manually copy libgcc.a and CRT objects
@@ -537,6 +547,7 @@ def _bootstrap_glibc_impl(ctx):
         "find . -name 'libc_sigaction.c' " +
         "-exec sed -i 's/eh_frame,\\\\\"a\\\\\"/eh_frame,\\\\\"aw\\\\\"/g' {} +",
     )
+    prep_cmd.add("--allow-host-path")
     ctx.actions.run(prep_cmd, category = "prepare", identifier = ctx.attrs.name)
 
     # Phase 3: configure — Python helper handles cross-tool discovery
@@ -554,6 +565,7 @@ def _bootstrap_glibc_impl(ctx):
     conf_cmd.add("--dynamic-linker", ctx.attrs.dynamic_linker)
     for arg in ctx.attrs.extra_configure_args:
         conf_cmd.add(cmd_args("--configure-arg=", arg, delimiter = ""))
+    conf_cmd.add("--allow-host-path")
     ctx.actions.run(conf_cmd, category = "configure", identifier = ctx.attrs.name)
 
     # Phase 4: compile — use build_helper for timestamp management.
@@ -566,6 +578,7 @@ def _bootstrap_glibc_impl(ctx):
     build_cmd.add("--path-prepend", cmd_args(compiler_dir, "/tools/bin", delimiter = ""))
     if binutils_dir:
         build_cmd.add("--path-prepend", cmd_args(binutils_dir, "/tools/bin", delimiter = ""))
+    build_cmd.add("--allow-host-path")
     ctx.actions.run(build_cmd, category = "compile", identifier = ctx.attrs.name)
 
     # Phase 5: install — use install_helper with post-cmds for linker
@@ -593,6 +606,7 @@ def _bootstrap_glibc_impl(ctx):
         "mkdir -p $DESTDIR/" + lib_dir + " && " +
         "ln -sfv ../usr/" + lib_dir + "/" + dynamic_linker + " $DESTDIR/" + lib_dir + "/" + dynamic_linker,
     )
+    inst_cmd.add("--allow-host-path")
     ctx.actions.run(inst_cmd, category = "install", identifier = ctx.attrs.name)
 
     return [DefaultInfo(default_output = installed)]
@@ -636,6 +650,7 @@ def _bootstrap_package_impl(ctx):
     prep_cmd.add("--source-dir", source)
     prep_cmd.add("--output-dir", prepared.as_output())
     prep_cmd.add("--skip-configure")
+    prep_cmd.add("--allow-host-path")
     ctx.actions.run(prep_cmd, category = "prepare", identifier = ctx.attrs.name)
 
     # Build environment from stage info
@@ -667,6 +682,7 @@ def _bootstrap_package_impl(ctx):
     conf_cmd.add("--path-prepend", tools_bin)
     for e in ctx.attrs.extra_env:
         conf_cmd.add("--env", e)
+    conf_cmd.add("--allow-host-path")
     ctx.actions.run(conf_cmd, category = "configure", identifier = ctx.attrs.name)
 
     # Phase 4: compile (copy whole configured tree, use build-subdir if set)
@@ -689,6 +705,7 @@ def _bootstrap_package_impl(ctx):
     build_cmd.add("--path-prepend", tools_bin)
     for e in ctx.attrs.extra_env:
         build_cmd.add("--env", e)
+    build_cmd.add("--allow-host-path")
     ctx.actions.run(build_cmd, category = "compile", identifier = ctx.attrs.name)
 
     # Phase 5: install (use built dir which has compiled objects)
@@ -711,6 +728,7 @@ def _bootstrap_package_impl(ctx):
     inst_cmd.add("--path-prepend", tools_bin)
     for e in ctx.attrs.extra_env:
         inst_cmd.add("--env", e)
+    inst_cmd.add("--allow-host-path")
     ctx.actions.run(inst_cmd, category = "install", identifier = ctx.attrs.name)
 
     pkg_info = PackageInfo(
@@ -728,6 +746,10 @@ def _bootstrap_package_impl(ctx):
         pkg_config_path = installed.project("usr/lib/pkgconfig"),
         cflags = [],
         ldflags = [],
+        compile_info = None,
+        link_info = None,
+        path_info = None,
+        runtime_deps = None,
         license = ctx.attrs.license,
         src_uri = ctx.attrs.src_uri,
         src_sha256 = ctx.attrs.src_sha256,
@@ -791,6 +813,7 @@ def _bootstrap_python_impl(ctx):
     prep_cmd.add("--source-dir", source)
     prep_cmd.add("--output-dir", prepared.as_output())
     prep_cmd.add("--skip-configure")
+    prep_cmd.add("--allow-host-path")
     ctx.actions.run(prep_cmd, category = "prepare", identifier = ctx.attrs.name)
 
     # Phase 2: configure — Python helper merges deps into build sysroot
@@ -817,6 +840,7 @@ def _bootstrap_python_impl(ctx):
     build_cmd.add("--output-dir", built.as_output())
     build_cmd.add("--build-subdir", "build")
     build_cmd.add("--path-prepend", cmd_args(stage_output, "/tools/bin", delimiter = ""))
+    build_cmd.add("--allow-host-path")
     ctx.actions.run(build_cmd, category = "compile", identifier = ctx.attrs.name)
 
     # Phase 4: install — use install_helper with post-cmd for ensurepip.
@@ -833,6 +857,7 @@ def _bootstrap_python_impl(ctx):
         "  $DESTDIR/usr/bin/python3 -m ensurepip --upgrade 2>/dev/null || true; " +
         "fi",
     )
+    inst_cmd.add("--allow-host-path")
     ctx.actions.run(inst_cmd, category = "install", identifier = ctx.attrs.name)
 
     return [DefaultInfo(default_output = installed)]

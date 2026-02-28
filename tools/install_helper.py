@@ -16,7 +16,7 @@ import stat
 import subprocess
 import sys
 
-from _env import sanitize_global_env
+from _env import clean_env, sanitize_filenames
 
 
 def _rewrite_file(fpath, old, new):
@@ -252,6 +252,8 @@ def _suppress_phony_rebuilds(build_dir):
 
 
 def main():
+    _host_path = os.environ.get("PATH", "")
+
     parser = argparse.ArgumentParser(description="Run make install")
     parser.add_argument("--build-dir", required=True, help="Build directory")
     parser.add_argument("--prefix", required=True, help="DESTDIR prefix for installation")
@@ -267,19 +269,46 @@ def main():
                         help="Directory to prepend to PATH (repeatable, resolved to absolute)")
     parser.add_argument("--hermetic-path", action="append", dest="hermetic_path", default=[],
                         help="Set PATH to only these dirs (replaces host PATH, repeatable)")
+    parser.add_argument("--allow-host-path", action="store_true",
+                        help="Allow host PATH (bootstrap escape hatch)")
+    parser.add_argument("--hermetic-empty", action="store_true",
+                        help="Start with empty PATH (populated by --path-prepend)")
     parser.add_argument("--build-system", choices=["make", "ninja"], default="make",
                         help="Build system to use (default: make)")
     parser.add_argument("--make-target", action="append", dest="make_targets", default=None,
                         help="Make target to install (repeatable, default: install)")
     parser.add_argument("--post-cmd", action="append", dest="post_cmds", default=[],
                         help="Shell command to run in prefix dir after install (repeatable)")
+    parser.add_argument("--cflags-file", default=None,
+                        help="File with CFLAGS (one per line, from tset projection)")
+    parser.add_argument("--ldflags-file", default=None,
+                        help="File with LDFLAGS (one per line, from tset projection)")
+    parser.add_argument("--pkg-config-file", default=None,
+                        help="File with PKG_CONFIG_PATH entries (one per line, from tset projection)")
+    parser.add_argument("--path-file", default=None,
+                        help="File with PATH dirs to prepend (one per line, from tset projection)")
+    parser.add_argument("--lib-dirs-file", default=None,
+                        help="File with lib dirs for LD_LIBRARY_PATH (one per line, from tset projection)")
     args = parser.parse_args()
 
-    sanitize_global_env()
+    # Read flag files early — tset-propagated values are base defaults.
+    def _read_flag_file(path):
+        if not path:
+            return []
+        with open(path) as f:
+            return [line.rstrip("\n") for line in f if line.strip()]
+
+    file_cflags = _read_flag_file(args.cflags_file)
+    file_ldflags = _read_flag_file(args.ldflags_file)
+    file_pkg_config = _read_flag_file(args.pkg_config_file)
+    file_path_dirs = _read_flag_file(args.path_file)
+    file_lib_dirs = _read_flag_file(args.lib_dirs_file)
+
+    env = clean_env()
 
     # Expose the project root so post-cmds can resolve Buck2 artifact
     # paths (which are relative to the project root, not to the prefix).
-    os.environ["PROJECT_ROOT"] = os.getcwd()
+    env["PROJECT_ROOT"] = os.getcwd()
 
     build_dir = os.path.abspath(args.build_dir)
     make_dir = build_dir
@@ -291,7 +320,7 @@ def main():
 
     # Expose the build directory so post-cmds can reference build
     # artifacts (e.g. copying objects not handled by make install).
-    os.environ["BUILD_DIR"] = make_dir
+    env["BUILD_DIR"] = make_dir
 
     # Create a pkg-config wrapper that always passes --define-prefix so
     # .pc files in Buck2 dep directories resolve paths correctly.
@@ -304,13 +333,35 @@ def main():
                 'PATH="${PATH#"$SELF_DIR:"}" exec pkg-config --define-prefix "$@"\n')
     os.chmod(wrapper, 0o755)
 
-    # Apply extra environment variables
+    # Apply extra environment variables first (toolchain flags like -march).
     for entry in args.extra_env:
         key, _, value = entry.partition("=")
         if key:
-            os.environ[key] = _resolve_env_paths(value)
+            env[key] = _resolve_env_paths(value)
+
+    # Prepend flag file values — dep-provided -I/-L flags must appear before
+    # toolchain flags so headers/libs from deps are found.  Extract -I flags
+    # for CPPFLAGS/CXXFLAGS propagation (autotools: CPPFLAGS→C+C++, CFLAGS→C only).
+    if file_cflags:
+        existing = env.get("CFLAGS", "")
+        merged = _resolve_env_paths(" ".join(file_cflags))
+        env["CFLAGS"] = (merged + " " + existing).strip() if existing else merged
+        file_include_flags = [f for f in file_cflags if f.startswith("-I")]
+        if file_include_flags:
+            inc_str = _resolve_env_paths(" ".join(file_include_flags))
+            for var in ("CPPFLAGS", "CXXFLAGS"):
+                existing = env.get(var, "")
+                env[var] = (inc_str + " " + existing).strip() if existing else inc_str
+    if file_ldflags:
+        existing = env.get("LDFLAGS", "")
+        merged = _resolve_env_paths(" ".join(file_ldflags))
+        env["LDFLAGS"] = (merged + " " + existing).strip() if existing else merged
+    if file_pkg_config:
+        existing = env.get("PKG_CONFIG_PATH", "")
+        merged = _resolve_env_paths(":".join(file_pkg_config))
+        env["PKG_CONFIG_PATH"] = (merged + ":" + existing).rstrip(":") if existing else merged
     if args.hermetic_path:
-        os.environ["PATH"] = ":".join(os.path.abspath(p) for p in args.hermetic_path)
+        env["PATH"] = ":".join(os.path.abspath(p) for p in args.hermetic_path)
         # Derive LD_LIBRARY_PATH from hermetic bin dirs so dynamically
         # linked tools (e.g. cross-ar needing libzstd) find their libs.
         _lib_dirs = []
@@ -321,29 +372,36 @@ def main():
                 if os.path.isdir(_d):
                     _lib_dirs.append(_d)
         if _lib_dirs:
-            _existing = os.environ.get("LD_LIBRARY_PATH", "")
-            os.environ["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (":" + _existing if _existing else "")
-    if args.path_prepend:
-        prepend = ":".join(os.path.abspath(p) for p in args.path_prepend if os.path.isdir(p))
+            _existing = env.get("LD_LIBRARY_PATH", "")
+            env["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (":" + _existing if _existing else "")
+    elif args.hermetic_empty:
+        env["PATH"] = ""
+    elif args.allow_host_path:
+        env["PATH"] = _host_path
+    else:
+        print("error: build requires --hermetic-path, --hermetic-empty, or --allow-host-path",
+              file=sys.stderr)
+        sys.exit(1)
+    all_path_prepend = file_path_dirs + args.path_prepend
+    if all_path_prepend:
+        prepend = ":".join(os.path.abspath(p) for p in all_path_prepend if os.path.isdir(p))
         if prepend:
-            os.environ["PATH"] = prepend + ":" + os.environ.get("PATH", "")
-        # Derive LD_LIBRARY_PATH from dep bin dirs so dynamically linked
-        # libraries are found at install time (e.g. Python test-imports
-        # extension modules during make install).
-        _dep_lib_dirs = []
-        for _bp in args.path_prepend:
-            _parent = os.path.dirname(os.path.abspath(_bp))
-            for _ld in ("lib", "lib64"):
-                _d = os.path.join(_parent, _ld)
-                if os.path.isdir(_d):
-                    _dep_lib_dirs.append(_d)
-        if _dep_lib_dirs:
-            _existing = os.environ.get("LD_LIBRARY_PATH", "")
-            os.environ["LD_LIBRARY_PATH"] = ":".join(_dep_lib_dirs) + (":" + _existing if _existing else "")
+            env["PATH"] = prepend + ":" + env.get("PATH", "")
+
+    # Merge tset-provided lib dirs into LD_LIBRARY_PATH so dynamically
+    # linked dep libraries are found at install time (e.g. Python
+    # test-imports extension modules during make install).  Scoped to the
+    # subprocess env dict — never poisons the host Python process.
+    if file_lib_dirs:
+        resolved = [os.path.abspath(d) for d in file_lib_dirs if os.path.isdir(d)]
+        if resolved:
+            existing = env.get("LD_LIBRARY_PATH", "")
+            merged = ":".join(resolved)
+            env["LD_LIBRARY_PATH"] = (merged + ":" + existing).rstrip(":") if existing else merged
 
     # Auto-detect Python site-packages from dep prefixes so build-time
     # Python modules (e.g. packaging for gdbus-codegen) are found.
-    _path_sources = list(args.hermetic_path) + list(args.path_prepend)
+    _path_sources = list(args.hermetic_path) + list(all_path_prepend)
     if _path_sources:
         _py_paths = []
         for _bp in _path_sources:
@@ -354,12 +412,12 @@ def main():
                     if os.path.isdir(_sp):
                         _py_paths.append(_sp)
         if _py_paths:
-            _existing = os.environ.get("PYTHONPATH", "")
-            os.environ["PYTHONPATH"] = ":".join(_py_paths) + (":" + _existing if _existing else "")
+            _existing = env.get("PYTHONPATH", "")
+            env["PYTHONPATH"] = ":".join(_py_paths) + (":" + _existing if _existing else "")
 
     # Prepend pkg-config wrapper to PATH (after hermetic/prepend logic
     # so the wrapper is always available regardless of PATH mode)
-    os.environ["PATH"] = wrapper_dir + ":" + os.environ.get("PATH", "")
+    env["PATH"] = wrapper_dir + ":" + env.get("PATH", "")
 
     prefix = os.path.abspath(args.prefix)
     os.makedirs(prefix, exist_ok=True)
@@ -616,7 +674,7 @@ def main():
     # Reset all file timestamps in the build tree to a uniform instant.
     # Buck2 normalises artifact timestamps after the build phase, so make
     # install can see stale dependencies and try to regenerate files.
-    _epoch = float(os.environ.get("SOURCE_DATE_EPOCH", "315576000"))
+    _epoch = float(env.get("SOURCE_DATE_EPOCH", "315576000"))
     _stamp = (_epoch, _epoch)
     for dirpath, _dirnames, filenames in os.walk(make_dir):
         for fname in filenames:
@@ -813,7 +871,7 @@ def main():
     _use_cmake_install = False
     if args.build_system == "ninja":
         # Ninja uses DESTDIR as an env var, not a command-line arg
-        os.environ[args.destdir_var] = prefix
+        env[args.destdir_var] = prefix
         # Prefer cmake --install for CMake builds.  ninja install checks
         # the full dependency graph including external libraries that may
         # not exist in Buck2's split-action model (only the build output
@@ -842,7 +900,7 @@ def main():
             else:
                 cmd.append(arg)
 
-    result = subprocess.run(cmd)
+    result = subprocess.run(cmd, env=env)
     if result.returncode != 0:
         print(f"error: make install failed with exit code {result.returncode}", file=sys.stderr)
         sys.exit(1)
@@ -855,32 +913,16 @@ def main():
 
     # Run post-install commands (e.g. ldconfig, cleanup)
     # Set DESTDIR so legacy scripts that reference $DESTDIR work correctly.
-    os.environ["DESTDIR"] = prefix
-    os.environ["OUT"] = prefix
+    env["DESTDIR"] = prefix
+    env["OUT"] = prefix
     for cmd_str in args.post_cmds:
-        result = subprocess.run(cmd_str, shell=True, cwd=prefix)
+        result = subprocess.run(cmd_str, shell=True, cwd=prefix, env=env)
         if result.returncode != 0:
             print(f"error: post-cmd failed with exit code {result.returncode}: {cmd_str}",
                   file=sys.stderr)
             sys.exit(1)
 
-    # Sanitize file names — delete files/dirs with control characters or
-    # backslashes that Buck2 cannot relativize (e.g. autoconf's filesystem
-    # character test creates conftest.t<TAB>).
-    for _clean_dir in (prefix, make_dir):
-        for dirpath, dirnames, filenames in os.walk(_clean_dir, topdown=False):
-            for fname in filenames:
-                if any(ord(c) < 32 or ord(c) == 127 or c == '\\' for c in fname):
-                    try:
-                        os.unlink(os.path.join(dirpath, fname))
-                    except OSError:
-                        pass
-            for dname in list(dirnames):
-                if any(ord(c) < 32 or ord(c) == 127 or c == '\\' for c in dname):
-                    try:
-                        shutil.rmtree(os.path.join(dirpath, dname))
-                    except OSError:
-                        pass
+    sanitize_filenames(prefix, make_dir)
 
 
 if __name__ == "__main__":

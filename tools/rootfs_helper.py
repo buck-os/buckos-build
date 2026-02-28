@@ -236,6 +236,8 @@ def main():
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--package-dir", action="append", dest="package_dirs",
                         default=[], help="Package directory to merge (repeatable)")
+    parser.add_argument("--prefix-list", default=None,
+                        help="File with package prefix paths (one per line, from tset projection)")
     parser.add_argument("--version", default="1")
     parser.add_argument("--manifest-output", default=None,
                         help="Write content manifest for cache invalidation")
@@ -243,6 +245,14 @@ def main():
 
     rootfs = os.path.abspath(args.output_dir)
     env = clean_env()
+
+    # Read prefix list from tset projection file (one path per line)
+    if args.prefix_list:
+        with open(args.prefix_list) as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    args.package_dirs.append(line)
 
     # Create base directory structure
     for d in ("usr/bin", "usr/sbin", "usr/lib", "etc", "var", "tmp",

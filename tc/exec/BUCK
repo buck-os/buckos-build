@@ -61,6 +61,18 @@ config_setting(
     visibility = ["PUBLIC"],
 )
 
+constraint_value(
+    name = "host-target-mode",
+    constraint_setting = ":bootstrap-mode-setting",
+    visibility = ["PUBLIC"],
+)
+
+config_setting(
+    name = "is-host-target",
+    constraint_values = [":host-target-mode"],
+    visibility = ["PUBLIC"],
+)
+
 # ── Transition targets ─────────────────────────────────────────────
 
 load("//tc:transitions.bzl", "default_transition", "stage3_transition")

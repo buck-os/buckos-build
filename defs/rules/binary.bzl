@@ -9,9 +9,10 @@ Four discrete cacheable actions:
 """
 
 load("//defs:providers.bzl", "BuildToolchainInfo", "PackageInfo")
-load("//defs/rules:_common.bzl", "collect_runtime_lib_dirs")
+load("//defs/rules:_common.bzl", "build_package_tsets", "collect_runtime_lib_dirs")
 load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_env_args",
      "toolchain_extra_cflags", "toolchain_extra_ldflags")
+load("//defs:host_tools.bzl", "host_tool_env_paths")
 
 # ── Phase helpers ─────────────────────────────────────────────────────
 
@@ -139,11 +140,20 @@ def _install(ctx, source):
     # Hermetic PATH from toolchain (replaces host PATH in wrapper)
     if tc.host_bin_dir:
         env["_HERMETIC_PATH"] = cmd_args(tc.host_bin_dir)
+    elif tc.allows_host_path:
+        env["_ALLOW_HOST_PATH"] = "1"
+    else:
+        env["_HERMETIC_EMPTY"] = "1"
+
 
     # Inject dep environment (CFLAGS, LDFLAGS, PKG_CONFIG_PATH, PATH)
     dep_env, dep_paths = _dep_env_args(ctx)
     for key, value in dep_env.items():
         env[key] = value
+
+    # Add host_deps bin dirs to dep paths
+    dep_paths.extend(host_tool_env_paths(ctx))
+
     if dep_paths:
         env["_DEP_BIN_PATHS"] = cmd_args(dep_paths, delimiter = ":")
 
@@ -171,6 +181,9 @@ def _binary_package_impl(ctx):
     # Phase 3: install
     installed = _install(ctx, prepared)
 
+    # Build transitive sets
+    compile_tset, link_tset, path_tset, runtime_tset = build_package_tsets(ctx, installed)
+
     pkg_info = PackageInfo(
         name = ctx.attrs.name,
         version = ctx.attrs.version,
@@ -183,6 +196,10 @@ def _binary_package_impl(ctx):
         pkg_config_path = None,
         cflags = [],
         ldflags = [],
+        compile_info = compile_tset,
+        link_info = link_tset,
+        path_info = path_tset,
+        runtime_deps = runtime_tset,
         license = ctx.attrs.license,
         src_uri = ctx.attrs.src_uri,
         src_sha256 = ctx.attrs.src_sha256,
@@ -208,6 +225,8 @@ binary_package = rule(
         "pre_configure_cmds": attrs.list(attrs.string(), default = []),
         "env": attrs.dict(attrs.string(), attrs.string(), default = {}),
         "deps": attrs.list(attrs.dep(), default = []),
+        "host_deps": attrs.list(attrs.exec_dep(), default = []),
+        "runtime_deps": attrs.list(attrs.dep(), default = []),
         "patches": attrs.list(attrs.source(), default = []),
 
         # Unused by binary but accepted by the package() macro interface

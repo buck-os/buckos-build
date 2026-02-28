@@ -13,8 +13,14 @@ inputs haven't changed.
 """
 
 load("//defs:providers.bzl", "PackageInfo")
-load("//defs/rules:_common.bzl", "collect_runtime_lib_dirs")
+load("//defs/rules:_common.bzl",
+     "add_flag_file", "build_package_tsets", "collect_dep_tsets",
+     "collect_runtime_lib_dirs",
+     "write_bin_dirs", "write_cmake_prefix_paths", "write_compile_flags",
+     "write_lib_dirs", "write_link_flags", "write_pkg_config_paths",
+)
 load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_env_args", "toolchain_extra_cflags", "toolchain_extra_ldflags", "toolchain_path_args")
+load("//defs:host_tools.bzl", "host_tool_path_args")
 
 # ── Phase helpers ─────────────────────────────────────────────────────
 
@@ -35,8 +41,15 @@ def _src_prepare(ctx, source):
     ctx.actions.run(cmd, category = "prepare", identifier = ctx.attrs.name)
     return output
 
-def _cmake_configure(ctx, source):
-    """Run cmake configure with toolchain env and dep flags."""
+def _cmake_configure(ctx, source, cflags_file = None, ldflags_file = None,
+                     pkg_config_file = None, path_file = None,
+                     prefix_path_file = None, lib_dirs_file = None):
+    """Run cmake configure with toolchain env and dep flags.
+
+    Dep flags are propagated via tset projection files — the cmake_helper
+    reads them and merges into CMAKE_*_FLAGS defines, CMAKE_PREFIX_PATH,
+    PKG_CONFIG_PATH, LD_LIBRARY_PATH, and PATH.
+    """
     output = ctx.actions.declare_output("configured", dir = True)
     cmd = cmd_args(ctx.attrs._cmake_tool[RunInfo])
     cmd.add("--source-dir", source)
@@ -66,52 +79,10 @@ def _cmake_configure(ctx, source):
     for define in ctx.attrs.cmake_defines:
         cmd.add(cmd_args("--cmake-define=", define, delimiter = ""))
 
-    # Extra CFLAGS / LDFLAGS — pass as CMAKE_C_FLAGS / CMAKE_EXE_LINKER_FLAGS
+    # Toolchain and per-package CFLAGS / LDFLAGS as cmake defines.
+    # These are merged with dep tset flags by the cmake_helper.
     cflags = list(toolchain_extra_cflags(ctx)) + list(ctx.attrs.extra_cflags)
     ldflags = list(toolchain_extra_ldflags(ctx)) + list(ctx.attrs.extra_ldflags)
-
-    # Propagate flags, pkg-config paths, and cmake prefix paths from dependencies
-    pkg_config_paths = []
-    lib_paths = []
-    for dep in ctx.attrs.deps:
-        if PackageInfo in dep:
-            pkg = dep[PackageInfo]
-            prefix = pkg.prefix
-            if pkg.pkg_config_path:
-                pkg_config_paths.append(pkg.pkg_config_path)
-            for f in pkg.cflags:
-                cflags.append(f)
-            for f in pkg.ldflags:
-                ldflags.append(f)
-        else:
-            prefix = dep[DefaultInfo].default_outputs[0]
-
-        # Derive standard include/lib/pkgconfig paths from dep prefix
-        cflags.append(cmd_args(prefix, format = "-I{}/usr/include"))
-        ldflags.append(cmd_args(prefix, format = "-L{}/usr/lib64"))
-        ldflags.append(cmd_args(prefix, format = "-L{}/usr/lib"))
-        ldflags.append(cmd_args(prefix, format = "-Wl,-rpath-link,{}/usr/lib64"))
-        ldflags.append(cmd_args(prefix, format = "-Wl,-rpath-link,{}/usr/lib"))
-
-        # Transitive rpath-link: resolve indirect .so deps (e.g. libedit → ncurses)
-        if PackageInfo in dep:
-            for rt_dir in dep[PackageInfo].runtime_lib_dirs:
-                ldflags.append(cmd_args("-Wl,-rpath-link,", rt_dir, delimiter = ""))
-
-        pkg_config_paths.append(cmd_args(prefix, format = "{}/usr/lib64/pkgconfig"))
-        pkg_config_paths.append(cmd_args(prefix, format = "{}/usr/lib/pkgconfig"))
-        pkg_config_paths.append(cmd_args(prefix, format = "{}/usr/share/pkgconfig"))
-
-        # Add dep prefix to CMAKE_PREFIX_PATH for find_package()
-        cmd.add("--prefix-path", cmd_args(prefix, format = "{}/usr"))
-        # Add dep bin dirs to PATH so cmake can run dep tools (qtpaths, etc.)
-        cmd.add("--path-prepend", cmd_args(prefix, format = "{}/usr/bin"))
-        # Collect lib paths for LD_LIBRARY_PATH (dep tools need shared libs)
-        lib_paths.append(cmd_args(prefix, format = "{}/usr/lib64"))
-        lib_paths.append(cmd_args(prefix, format = "{}/usr/lib"))
-
-    if lib_paths:
-        cmd.add("--env", cmd_args("LD_LIBRARY_PATH=", cmd_args(lib_paths, delimiter = ":"), delimiter = ""))
     if cflags:
         _cf = cmd_args(cflags, delimiter = " ")
         cmd.add(cmd_args("--cmake-define=", "CMAKE_C_FLAGS=", _cf, delimiter = ""))
@@ -121,8 +92,18 @@ def _cmake_configure(ctx, source):
         cmd.add(cmd_args("--cmake-define=", "CMAKE_EXE_LINKER_FLAGS=", _ld, delimiter = ""))
         cmd.add(cmd_args("--cmake-define=", "CMAKE_SHARED_LINKER_FLAGS=", _ld, delimiter = ""))
         cmd.add(cmd_args("--cmake-define=", "CMAKE_MODULE_LINKER_FLAGS=", _ld, delimiter = ""))
-    if pkg_config_paths:
-        cmd.add("--env", cmd_args("PKG_CONFIG_PATH=", cmd_args(pkg_config_paths, delimiter = ":"), delimiter = ""))
+
+    # Dep flags via tset projection files
+    add_flag_file(cmd, "--cflags-file", cflags_file)
+    add_flag_file(cmd, "--ldflags-file", ldflags_file)
+    add_flag_file(cmd, "--pkg-config-file", pkg_config_file)
+    add_flag_file(cmd, "--path-file", path_file)
+    add_flag_file(cmd, "--prefix-path-file", prefix_path_file)
+    add_flag_file(cmd, "--lib-dirs-file", lib_dirs_file)
+
+    # Add host_deps bin dirs to PATH
+    for arg in host_tool_path_args(ctx):
+        cmd.add(arg)
 
     # Pass dep prefix paths as cmake defines (e.g. SPIRV-Headers_SOURCE_DIR)
     for var_name, dep in ctx.attrs.cmake_dep_defines.items():
@@ -136,10 +117,15 @@ def _cmake_configure(ctx, source):
     for arg in ctx.attrs.configure_args:
         cmd.add(cmd_args("--cmake-arg=", arg, delimiter = ""))
 
+    # Ensure dep artifacts are materialized — tset flag files reference
+    # dep prefixes but don't register them as action inputs.
+    for dep in ctx.attrs.deps:
+        cmd.add(cmd_args(hidden = dep[DefaultInfo].default_outputs))
+
     ctx.actions.run(cmd, category = "configure", identifier = ctx.attrs.name)
     return output
 
-def _src_compile(ctx, configured, source):
+def _src_compile(ctx, configured, source, path_file = None, lib_dirs_file = None):
     """Run ninja in the cmake build tree."""
     output = ctx.actions.declare_output("built", dir = True)
     cmd = cmd_args(ctx.attrs._build_tool[RunInfo])
@@ -165,20 +151,15 @@ def _src_compile(ctx, configured, source):
     for key, value in ctx.attrs.env.items():
         cmd.add("--env", "{}={}".format(key, value))
 
-    # Set LD_LIBRARY_PATH and PATH so build tools (moc, rcc,
-    # qtwaylandscanner, etc.) can find shared libs and executables
-    # from deps at runtime.
-    lib_paths = []
-    for dep in ctx.attrs.deps:
-        if PackageInfo in dep:
-            prefix = dep[PackageInfo].prefix
-        else:
-            prefix = dep[DefaultInfo].default_outputs[0]
-        lib_paths.append(cmd_args(prefix, format = "{}/usr/lib64"))
-        lib_paths.append(cmd_args(prefix, format = "{}/usr/lib"))
-        cmd.add("--path-prepend", cmd_args(prefix, format = "{}/usr/bin"))
-    if lib_paths:
-        cmd.add("--env", cmd_args("LD_LIBRARY_PATH=", cmd_args(lib_paths, delimiter = ":"), delimiter = ""))
+    # Dep bin dirs and lib dirs via tset projection files.
+    # Build tools (moc, rcc, qtwaylandscanner, etc.) need shared libs
+    # and executables from deps at runtime.
+    add_flag_file(cmd, "--path-file", path_file)
+    add_flag_file(cmd, "--lib-dirs-file", lib_dirs_file)
+
+    # Add host_deps bin dirs to PATH
+    for arg in host_tool_path_args(ctx):
+        cmd.add(arg)
 
     for arg in ctx.attrs.make_args:
         cmd.add("--make-arg", arg)
@@ -186,7 +167,7 @@ def _src_compile(ctx, configured, source):
     ctx.actions.run(cmd, category = "compile", identifier = ctx.attrs.name)
     return output
 
-def _src_install(ctx, built, source):
+def _src_install(ctx, built, source, path_file = None, lib_dirs_file = None):
     """Run ninja install into the output prefix."""
     output = ctx.actions.declare_output("installed", dir = True)
     cmd = cmd_args(ctx.attrs._install_tool[RunInfo])
@@ -209,12 +190,25 @@ def _src_install(ctx, built, source):
     for key, value in ctx.attrs.env.items():
         cmd.add("--env", "{}={}".format(key, value))
 
+    # Dep bin/lib dirs — install rules may run tools or need shared libs
+    add_flag_file(cmd, "--path-file", path_file)
+    add_flag_file(cmd, "--lib-dirs-file", lib_dirs_file)
+
+    # Add host_deps bin dirs to PATH
+    for arg in host_tool_path_args(ctx):
+        cmd.add(arg)
+
     for arg in ctx.attrs.make_args:
         cmd.add("--make-arg", arg)
 
     # Post-install commands (run in the prefix dir after install)
     for post_cmd in ctx.attrs.post_install_cmds:
         cmd.add("--post-cmd", post_cmd)
+
+    # Ensure dep artifacts are materialized — tset flag files reference
+    # dep prefixes but don't register them as action inputs.
+    for dep in ctx.attrs.deps:
+        cmd.add(cmd_args(hidden = dep[DefaultInfo].default_outputs))
 
     ctx.actions.run(cmd, category = "install", identifier = ctx.attrs.name)
     return output
@@ -228,14 +222,28 @@ def _cmake_package_impl(ctx):
     # Phase 2: src_prepare — apply patches
     prepared = _src_prepare(ctx, source)
 
+    # Collect dep-only tsets and write flag files for build phases
+    dep_compile, dep_link, dep_path = collect_dep_tsets(ctx)
+    cflags_file = write_compile_flags(ctx, dep_compile)
+    ldflags_file = write_link_flags(ctx, dep_link)
+    pkg_config_file = write_pkg_config_paths(ctx, dep_compile)
+    path_file = write_bin_dirs(ctx, dep_path)
+    prefix_path_file = write_cmake_prefix_paths(ctx, dep_path)
+    lib_dirs_file = write_lib_dirs(ctx, dep_path)
+
     # Phase 3: cmake_configure
-    configured = _cmake_configure(ctx, prepared)
+    configured = _cmake_configure(ctx, prepared, cflags_file, ldflags_file,
+                                  pkg_config_file, path_file,
+                                  prefix_path_file, lib_dirs_file)
 
     # Phase 4: src_compile (source passed as hidden input for cmake out-of-tree builds)
-    built = _src_compile(ctx, configured, prepared)
+    built = _src_compile(ctx, configured, prepared, path_file, lib_dirs_file)
 
     # Phase 5: src_install
-    installed = _src_install(ctx, built, prepared)
+    installed = _src_install(ctx, built, prepared, path_file, lib_dirs_file)
+
+    # Build transitive sets
+    compile_tset, link_tset, path_tset, runtime_tset = build_package_tsets(ctx, installed)
 
     pkg_info = PackageInfo(
         name = ctx.attrs.name,
@@ -249,6 +257,10 @@ def _cmake_package_impl(ctx):
         pkg_config_path = None,
         cflags = ctx.attrs.extra_cflags,
         ldflags = ctx.attrs.extra_ldflags,
+        compile_info = compile_tset,
+        link_info = link_tset,
+        path_info = path_tset,
+        runtime_deps = runtime_tset,
         license = ctx.attrs.license,
         src_uri = ctx.attrs.src_uri,
         src_sha256 = ctx.attrs.src_sha256,
@@ -280,6 +292,8 @@ cmake_package = rule(
         "pre_configure_cmds": attrs.list(attrs.string(), default = []),
         "env": attrs.dict(attrs.string(), attrs.string(), default = {}),
         "deps": attrs.list(attrs.dep(), default = []),
+        "host_deps": attrs.list(attrs.exec_dep(), default = []),
+        "runtime_deps": attrs.list(attrs.dep(), default = []),
         "patches": attrs.list(attrs.source(), default = []),
         "libraries": attrs.list(attrs.string(), default = []),
         "extra_cflags": attrs.list(attrs.string(), default = []),

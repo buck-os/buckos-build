@@ -34,6 +34,7 @@ def _buckos_toolchain_impl(ctx: AnalysisContext) -> list[Provider]:
         sysroot = None,
         python = None,
         host_bin_dir = None,
+        allows_host_path = True,
         extra_cflags = ctx.attrs.extra_cflags,
         extra_ldflags = ctx.attrs.extra_ldflags,
     )
@@ -88,6 +89,7 @@ def _buckos_cross_toolchain_impl(ctx: AnalysisContext) -> list[Provider]:
         sysroot = sysroot_dir,
         python = None,
         host_bin_dir = None,
+        allows_host_path = True,
         extra_cflags = ctx.attrs.extra_cflags,
         extra_ldflags = ctx.attrs.extra_ldflags,
     )
@@ -167,6 +169,7 @@ def _buckos_bootstrap_toolchain_impl(ctx: AnalysisContext) -> list[Provider]:
         sysroot = stage.sysroot,
         python = python_run_info,
         host_bin_dir = host_bin,
+        allows_host_path = ctx.attrs.host_tools == None,
         extra_cflags = ctx.attrs.extra_cflags,
         extra_ldflags = ldflags,
     )
@@ -222,6 +225,7 @@ def _buckos_prebuilt_toolchain_impl(ctx: AnalysisContext) -> list[Provider]:
         sysroot = sysroot,
         python = None,
         host_bin_dir = None,
+        allows_host_path = False,
         extra_cflags = ctx.attrs.extra_cflags,
         extra_ldflags = ldflags,
     )

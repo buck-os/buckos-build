@@ -33,6 +33,8 @@ def main():
     parser.add_argument("--languages", default="c")
     parser.add_argument("--with-headers", action="store_true",
                         help="Pass2 mode (has libc headers)")
+    parser.add_argument("--allow-host-path", action="store_true",
+                        help="Allow host PATH (bootstrap escape hatch)")
     args = parser.parse_args()
 
     project_root = os.getcwd()
@@ -76,6 +78,8 @@ def main():
     # Build environment
     env = clean_env()
     env["PROJECT_ROOT"] = project_root
+    if args.allow_host_path:
+        env["PATH"] = os.environ.get("PATH", "")
     for entry in args.extra_env:
         key, _, value = entry.partition("=")
         if key:

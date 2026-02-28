@@ -19,8 +19,13 @@ package(
 
         # Pre-set cache variable to skip filesystem character test that creates
         # files with special characters in their names (Buck2 cannot handle
-        # tabs or backslashes in paths).  Starlark \\\\ -> bash \\, \\t -> \t.
-        ac_cv_unsupported_fs_chars=$'"<>\\\\|\\t' ./configure \
+        # backslashes in paths).  Passed as a configure ARGUMENT (not env var)
+        # so config.status --recheck preserves it — otherwise make-triggered
+        # rechecks re-run configure without the variable and momentarily
+        # create conftest.t\t, which Buck2 can catch mid-scan.
+        # Starlark \\\\ -> bash \\, \\t -> \t.
+        ./configure \
+            ac_cv_unsupported_fs_chars=$'"<>\\\\|\\t' \
             --prefix=/usr \
             --build=$(./build-aux/config.guess 2>/dev/null || echo x86_64-pc-linux-gnu) \
             --host=${CHOST:-$(${CC:-gcc} -dumpmachine)} \

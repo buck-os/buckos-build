@@ -2,7 +2,9 @@
 rootfs rule: assemble a root filesystem from packages.
 """
 
-load("//defs:providers.bzl", "KernelInfo")
+load("//defs:providers.bzl", "KernelInfo", "PackageInfo")
+load("//defs/rules:_common.bzl", "add_flag_file", "write_runtime_prefixes")
+load("//defs:tsets.bzl", "RuntimeDepTSet")
 
 # ── rootfs rule ──────────────────────────────────────────────────────
 
@@ -15,11 +17,26 @@ def _rootfs_impl(ctx):
     for pkg in ctx.attrs.packages:
         pkg_dirs.append(pkg[DefaultInfo].default_outputs[0])
 
+    # Collect transitive runtime closure from top_packages via tset.
+    # Each top_package's runtime_deps tset includes itself and all
+    # transitive runtime deps — the "prefixes" projection yields their
+    # prefix artifacts for merging into the rootfs.
+    prefix_list_file = None
+    if ctx.attrs.top_packages:
+        from_top = []
+        for tp in ctx.attrs.top_packages:
+            if PackageInfo in tp and tp[PackageInfo].runtime_deps:
+                from_top.append(tp[PackageInfo].runtime_deps)
+        if from_top:
+            merged = ctx.actions.tset(RuntimeDepTSet, children = from_top)
+            prefix_list_file = write_runtime_prefixes(ctx, merged)
+
     # Build rootfs_helper command
     cmd = cmd_args(ctx.attrs._rootfs_tool[RunInfo])
     cmd.add("--output-dir", rootfs_dir.as_output())
     for pkg_dir in pkg_dirs:
         cmd.add("--package-dir", pkg_dir)
+    add_flag_file(cmd, "--prefix-list", prefix_list_file)
     cmd.add("--version", ctx.attrs.version)
 
     # Write version to a file that contributes to action cache key.
@@ -86,7 +103,8 @@ shift
 _rootfs_rule = rule(
     impl = _rootfs_impl,
     attrs = {
-        "packages": attrs.list(attrs.dep()),
+        "packages": attrs.list(attrs.dep(), default = []),
+        "top_packages": attrs.list(attrs.dep(), default = []),
         "version": attrs.string(default = "1"),
         "labels": attrs.list(attrs.string(), default = []),
         "_rootfs_tool": attrs.default_only(

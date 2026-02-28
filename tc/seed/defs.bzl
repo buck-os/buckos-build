@@ -1,19 +1,45 @@
 """Seed toolchain resolution helper."""
 
-def seed_archive_label():
-    """Return the label for the seed archive based on buckconfig.
+load("//tc:toolchain_rules.bzl", "buckos_bootstrap_toolchain")
+load("//defs/rules:toolchain_import.bzl", "toolchain_import")
 
-    When buckos.seed_url is set, returns ":seed-archive" (declared by
-    the caller as http_file).  When buckos.seed_path is set, returns
-    ":seed-local-archive" (declared as export_file).  Otherwise falls
-    back to building stage 1 from source (host tools are built
-    separately via the stage 2 → stage 3 pipeline).
+def seed_toolchain():
+    """Declare the seed-toolchain target based on .buckconfig.
+
+    When a prebuilt seed is configured (seed_url or seed_path),
+    declares a toolchain_import that unpacks the archive into a
+    BuildToolchainInfo with hermetic host tools.
+
+    When building from source (neither configured), declares a
+    buckos_bootstrap_toolchain wrapping stage 1 with host PATH.
+    The full seed archive (//tc/bootstrap:seed-export) must be
+    built explicitly — it cannot be the seed-toolchain dep because
+    seed-export → host-tools → packages → seed-toolchain would
+    create a configured target cycle.
     """
     url = read_config("buckos", "seed_url", "")
     path = read_config("buckos", "seed_path", "")
     if url:
-        return ":seed-archive"
+        archive = ":seed-archive"
     elif path:
-        return ":seed-local-archive"
+        archive = ":seed-local-archive"
     else:
-        return "//tc/bootstrap:export"
+        archive = None
+
+    if archive:
+        toolchain_import(
+            name = "seed-toolchain",
+            archive = archive,
+            target_triple = "x86_64-buckos-linux-gnu",
+            has_host_tools = True,
+            extra_cflags = ["-march=x86-64-v3"],
+            labels = ["buckos:seed"],
+            visibility = ["PUBLIC"],
+        )
+    else:
+        buckos_bootstrap_toolchain(
+            name = "seed-toolchain",
+            bootstrap_stage = "//tc/bootstrap/stage1:stage1",
+            extra_cflags = ["-march=x86-64-v3"],
+            visibility = ["PUBLIC"],
+        )

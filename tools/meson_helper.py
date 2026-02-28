@@ -10,7 +10,7 @@ import os
 import subprocess
 import sys
 
-from _env import clean_env
+from _env import clean_env, sanitize_filenames
 
 
 def _resolve_env_paths(value):
@@ -72,6 +72,8 @@ def _resolve_env_paths(value):
 
 
 def main():
+    _host_path = os.environ.get("PATH", "")
+
     parser = argparse.ArgumentParser(description="Run meson setup")
     parser.add_argument("--source-dir", required=True, help="Source directory")
     parser.add_argument("--build-dir", required=True, help="Build directory")
@@ -88,9 +90,33 @@ def main():
                         help="Directory to prepend to PATH (repeatable, resolved to absolute)")
     parser.add_argument("--hermetic-path", action="append", dest="hermetic_path", default=[],
                         help="Set PATH to only these dirs (replaces host PATH, repeatable)")
+    parser.add_argument("--allow-host-path", action="store_true",
+                        help="Allow host PATH (bootstrap escape hatch)")
+    parser.add_argument("--hermetic-empty", action="store_true",
+                        help="Start with empty PATH (populated by --path-prepend)")
     parser.add_argument("--pre-cmd", action="append", dest="pre_cmds", default=[],
                         help="Shell command to run in source dir before meson setup (repeatable)")
+    parser.add_argument("--cflags-file", default=None,
+                        help="File with CFLAGS (one per line, from tset projection)")
+    parser.add_argument("--ldflags-file", default=None,
+                        help="File with LDFLAGS (one per line, from tset projection)")
+    parser.add_argument("--pkg-config-file", default=None,
+                        help="File with PKG_CONFIG_PATH entries (one per line, from tset projection)")
+    parser.add_argument("--path-file", default=None,
+                        help="File with PATH dirs to prepend (one per line, from tset projection)")
     args = parser.parse_args()
+
+    # Read flag files early — tset-propagated values are base defaults.
+    def _read_flag_file(path):
+        if not path:
+            return []
+        with open(path) as f:
+            return [line.rstrip("\n") for line in f if line.strip()]
+
+    file_cflags = _read_flag_file(args.cflags_file)
+    file_ldflags = _read_flag_file(args.ldflags_file)
+    file_pkg_config = _read_flag_file(args.pkg_config_file)
+    file_path_dirs = _read_flag_file(args.path_file)
 
     if not os.path.isdir(args.source_dir):
         print(f"error: source directory not found: {args.source_dir}", file=sys.stderr)
@@ -125,16 +151,60 @@ def main():
         if _lib_dirs:
             _existing = env.get("LD_LIBRARY_PATH", "")
             env["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (":" + _existing if _existing else "")
-    if args.path_prepend:
-        prepend = ":".join(os.path.abspath(p) for p in args.path_prepend if os.path.isdir(p))
+    elif args.hermetic_empty:
+        env["PATH"] = ""
+    elif args.allow_host_path:
+        env["PATH"] = _host_path
+    else:
+        print("error: build requires --hermetic-path, --hermetic-empty, or --allow-host-path",
+              file=sys.stderr)
+        sys.exit(1)
+    all_path_prepend = file_path_dirs + args.path_prepend
+    if all_path_prepend:
+        prepend = ":".join(os.path.abspath(p) for p in all_path_prepend if os.path.isdir(p))
         if prepend:
             env["PATH"] = prepend + ":" + env.get("PATH", "")
+        # Derive LD_LIBRARY_PATH from dep bin dirs so dynamically linked
+        # dep tools (e.g. buckos python needing libpython3.12.so) work
+        # during meson setup.  This is scoped to the setup subprocess
+        # and doesn't affect the ninja build phase.
+        _dep_lib_dirs = []
+        for _bp in all_path_prepend:
+            _parent = os.path.dirname(os.path.abspath(_bp))
+            for _ld in ("lib", "lib64"):
+                _d = os.path.join(_parent, _ld)
+                if os.path.isdir(_d):
+                    _dep_lib_dirs.append(_d)
+        if _dep_lib_dirs:
+            _existing = env.get("LD_LIBRARY_PATH", "")
+            env["LD_LIBRARY_PATH"] = ":".join(_dep_lib_dirs) + (":" + _existing if _existing else "")
+
+    # Apply extra environment variables first (toolchain flags like -march).
+    for entry in args.extra_env:
+        key, _, value = entry.partition("=")
+        if key:
+            env[key] = _resolve_env_paths(value)
+
+    # Prepend flag file values — dep-provided -I/-L flags must appear before
+    # toolchain flags so headers/libs from deps are found.
+    if file_cflags:
+        existing = env.get("CFLAGS", "")
+        merged = _resolve_env_paths(" ".join(file_cflags))
+        env["CFLAGS"] = (merged + " " + existing).strip() if existing else merged
+    if file_ldflags:
+        existing = env.get("LDFLAGS", "")
+        merged = _resolve_env_paths(" ".join(file_ldflags))
+        env["LDFLAGS"] = (merged + " " + existing).strip() if existing else merged
+    if file_pkg_config:
+        existing = env.get("PKG_CONFIG_PATH", "")
+        merged = _resolve_env_paths(":".join(file_pkg_config))
+        env["PKG_CONFIG_PATH"] = (merged + ":" + existing).rstrip(":") if existing else merged
 
     # Auto-detect Python site-packages from dep prefixes so build-time
     # Python modules (e.g. mako for mesa) are found without manual
     # PYTHONPATH wiring.  --path-prepend dirs are {prefix}/usr/bin;
     # derive {prefix}/usr/lib/python*/site-packages from them.
-    _path_sources = list(args.hermetic_path) + list(args.path_prepend)
+    _path_sources = list(args.hermetic_path) + list(all_path_prepend)
     if _path_sources:
         python_paths = []
         for bin_dir in _path_sources:
@@ -151,11 +221,6 @@ def main():
     # Prepend pkg-config wrapper to PATH (after hermetic/prepend logic
     # so the wrapper is always available regardless of PATH mode)
     env["PATH"] = wrapper_dir + ":" + env.get("PATH", "")
-
-    for entry in args.extra_env:
-        key, _, value = entry.partition("=")
-        if key:
-            env[key] = _resolve_env_paths(value)
     if args.cc:
         env["CC"] = _resolve_env_paths(args.cc)
     if args.cxx:
@@ -170,13 +235,12 @@ def main():
                   file=sys.stderr)
             sys.exit(1)
 
-    cmd = [
-        "meson",
-        "setup",
+    cmd = ["meson", "setup"]
+    cmd.extend([
         os.path.abspath(args.build_dir),
         source_abs,
         f"--prefix={args.prefix}",
-    ]
+    ])
 
     for define in args.meson_defines:
         # Resolve relative Buck2 paths in define values (e.g.
@@ -204,6 +268,8 @@ def main():
     if result.returncode != 0:
         print(f"error: meson setup failed with exit code {result.returncode}", file=sys.stderr)
         sys.exit(1)
+
+    sanitize_filenames(os.path.abspath(args.build_dir))
 
 
 if __name__ == "__main__":

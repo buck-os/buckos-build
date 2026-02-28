@@ -16,7 +16,7 @@ import stat
 import subprocess
 import sys
 
-from _env import clean_env
+from _env import clean_env, sanitize_filenames
 
 
 def _resolve_flag_paths(value, project_root):
@@ -65,12 +65,15 @@ def main():
               file=sys.stderr)
         sys.exit(1)
 
+    _host_path = os.environ.get("PATH", "")
     project_root = os.getcwd()
 
     # Read all Starlark env= vars BEFORE sanitizing.  These survive
     # os.environ.clear() only if captured here first.
     starlark_vars = {}
-    for key in ("CC", "CXX", "AR", "_HERMETIC_PATH", "CFLAGS", "LDFLAGS",
+    for key in ("CC", "CXX", "AR", "_HERMETIC_PATH", "_ALLOW_HOST_PATH",
+                "_HERMETIC_EMPTY", "_PATH_PREPEND",
+                "CFLAGS", "LDFLAGS",
                 "CPPFLAGS", "PKG_CONFIG_PATH", "_DEP_BIN_PATHS", "DEP_BASE_DIRS",
                 "_DEP_LD_LIBRARY_PATH", "MAKE_JOBS"):
         val = os.environ.get(key)
@@ -125,16 +128,23 @@ def main():
         if key in starlark_vars:
             env[key] = _resolve_flag_paths(starlark_vars[key], project_root)
     for key in ("PKG_CONFIG_PATH", "_DEP_BIN_PATHS", "DEP_BASE_DIRS",
-                "_DEP_LD_LIBRARY_PATH", "_HERMETIC_PATH"):
+                "_DEP_LD_LIBRARY_PATH", "_HERMETIC_PATH", "_PATH_PREPEND"):
         if key in starlark_vars:
             env[key] = _resolve_colon_paths(starlark_vars[key], project_root)
+    # Pass through boolean-ish flags that don't need path resolution
+    for key in ("_ALLOW_HOST_PATH", "_HERMETIC_EMPTY"):
+        if key in starlark_vars:
+            env[key] = starlark_vars[key]
 
     # Re-inject user env attrs
     for key, val in user_env.items():
         env[key] = val
 
     # Hermetic PATH handling
-    hermetic_path = env.get("_HERMETIC_PATH")
+    hermetic_path = env.pop("_HERMETIC_PATH", None)
+    hermetic_empty = env.pop("_HERMETIC_EMPTY", None)
+    allow_host_path = env.pop("_ALLOW_HOST_PATH", None)
+    path_prepend = env.pop("_PATH_PREPEND", None)
     if hermetic_path:
         env["PATH"] = hermetic_path
         # Derive LD_LIBRARY_PATH from hermetic bin dirs
@@ -160,6 +170,29 @@ def main():
         if py_paths:
             existing = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = ":".join(py_paths) + (":" + existing if existing else "")
+    elif hermetic_empty:
+        env["PATH"] = ""
+    elif allow_host_path:
+        env["PATH"] = _host_path
+    else:
+        print("error: build requires _HERMETIC_PATH, _HERMETIC_EMPTY, or _ALLOW_HOST_PATH env",
+              file=sys.stderr)
+        sys.exit(1)
+
+    # Prepend host tool deps to PATH
+    if path_prepend:
+        env["PATH"] = path_prepend + (":" + env["PATH"] if env.get("PATH") else "")
+        # Derive LD_LIBRARY_PATH from prepend dirs
+        _pp_lib_dirs = []
+        for bd in path_prepend.split(":"):
+            parent = os.path.dirname(bd)
+            for ld in ("lib", "lib64"):
+                d = os.path.join(parent, ld)
+                if os.path.isdir(d):
+                    _pp_lib_dirs.append(d)
+        if _pp_lib_dirs:
+            existing = env.get("LD_LIBRARY_PATH", "")
+            env["LD_LIBRARY_PATH"] = ":".join(_pp_lib_dirs) + (":" + existing if existing else "")
 
     # Translate _DEP_LD_LIBRARY_PATH → LD_LIBRARY_PATH for the subprocess.
     # The underscore-prefixed name prevents the dynamic linker from seeing
@@ -255,29 +288,7 @@ def main():
         cwd=cwd,
     )
 
-    # Sanitize file names in output and scratch space.  Some build systems
-    # (autoconf's filesystem character test) create files with tabs,
-    # backslashes, or other control characters that Buck2 cannot relativize.
-    # Delete these unconditionally — they are never intentional build output.
-    def _has_unsafe_chars(name):
-        return any(ord(c) < 32 or ord(c) == 127 or c == '\\' for c in name)
-
-    for _clean_dir in (output_dir, workdir):
-        if not os.path.isdir(_clean_dir):
-            continue
-        for dirpath, dirnames, filenames in os.walk(_clean_dir, topdown=False):
-            for fname in filenames:
-                if _has_unsafe_chars(fname):
-                    try:
-                        os.unlink(os.path.join(dirpath, fname))
-                    except OSError:
-                        pass
-            for dname in list(dirnames):
-                if _has_unsafe_chars(dname):
-                    try:
-                        shutil.rmtree(os.path.join(dirpath, dname))
-                    except OSError:
-                        pass
+    sanitize_filenames(output_dir, workdir)
 
     sys.exit(result.returncode)
 

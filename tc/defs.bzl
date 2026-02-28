@@ -14,6 +14,13 @@ def _buckos_execution_platforms_impl(ctx: AnalysisContext) -> list[Provider]:
     constraints = dict()
     constraints.update(ctx.attrs.cpu_configuration[ConfigurationInfo].constraints)
     constraints.update(ctx.attrs.os_configuration[ConfigurationInfo].constraints)
+
+    # Include host-target-mode so exec_dep targets (host_deps) resolve to
+    # the host toolchain.  When Buck2 configures an exec_dep for this
+    # execution platform, the is-host-target constraint is present.
+    constraints[ctx.attrs.host_target_setting[ConstraintSettingInfo].label] = \
+        ctx.attrs.host_target_value[ConstraintValueInfo]
+
     cfg = ConfigurationInfo(constraints = constraints, values = {})
 
     name = ctx.label.raw_target()
@@ -50,5 +57,13 @@ buckos_execution_platforms = rule(
         ),
         "remote_cache_enabled": attrs.bool(default = False),
         "remote_execution_enabled": attrs.bool(default = False),
+        "host_target_setting": attrs.dep(
+            providers = [ConstraintSettingInfo],
+            default = "//tc/exec:bootstrap-mode-setting",
+        ),
+        "host_target_value": attrs.dep(
+            providers = [ConstraintValueInfo],
+            default = "//tc/exec:host-target-mode",
+        ),
     },
 )

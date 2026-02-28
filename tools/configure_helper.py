@@ -16,7 +16,7 @@ import shutil
 import subprocess
 import sys
 
-from _env import clean_env
+from _env import clean_env, sanitize_filenames
 
 
 def _resolve_env_paths(value):
@@ -81,6 +81,8 @@ def _resolve_env_paths(value):
 
 
 def main():
+    _host_path = os.environ.get("PATH", "")
+
     parser = argparse.ArgumentParser(description="Run autotools configure")
     parser.add_argument("--source-dir", required=True, help="Source directory containing configure script")
     parser.add_argument("--output-dir", required=True, help="Build/output directory")
@@ -110,9 +112,34 @@ def main():
                         help="Directory to prepend to PATH (repeatable, resolved to absolute)")
     parser.add_argument("--hermetic-path", action="append", dest="hermetic_path", default=[],
                         help="Set PATH to only these dirs (replaces host PATH, repeatable)")
+    parser.add_argument("--allow-host-path", action="store_true",
+                        help="Allow host PATH (bootstrap escape hatch)")
+    parser.add_argument("--hermetic-empty", action="store_true",
+                        help="Start with empty PATH (populated by --path-prepend)")
     parser.add_argument("--pre-cmd", action="append", dest="pre_cmds", default=[],
                         help="Shell command to run in source dir before configure (repeatable)")
+    parser.add_argument("--cflags-file", default=None,
+                        help="File with CFLAGS (one per line, from tset projection)")
+    parser.add_argument("--ldflags-file", default=None,
+                        help="File with LDFLAGS (one per line, from tset projection)")
+    parser.add_argument("--pkg-config-file", default=None,
+                        help="File with PKG_CONFIG_PATH entries (one per line, from tset projection)")
+    parser.add_argument("--path-file", default=None,
+                        help="File with PATH dirs to prepend (one per line, from tset projection)")
     args = parser.parse_args()
+
+    # Read flag files early — tset-propagated flags are base; per-package
+    # flags from --cflags/--ldflags can override them.
+    def _read_flag_file(path):
+        if not path:
+            return []
+        with open(path) as f:
+            return [line.rstrip("\n") for line in f if line.strip()]
+
+    file_cflags = _read_flag_file(args.cflags_file)
+    file_ldflags = _read_flag_file(args.ldflags_file)
+    file_pkg_config = _read_flag_file(args.pkg_config_file)
+    file_path_dirs = _read_flag_file(args.path_file)
 
     source_dir = os.path.abspath(args.source_dir)
     output_dir = os.path.abspath(args.output_dir)
@@ -147,20 +174,39 @@ def main():
         env["CC"] = args.cc
     if args.cxx:
         env["CXX"] = args.cxx
-    if args.cflags:
-        env["CFLAGS"] = _resolve_env_paths(" ".join(args.cflags))
-    if args.cxxflags:
-        env["CXXFLAGS"] = _resolve_env_paths(" ".join(args.cxxflags))
-    if args.cppflags:
-        env["CPPFLAGS"] = _resolve_env_paths(" ".join(args.cppflags))
-    if args.ldflags:
-        env["LDFLAGS"] = _resolve_env_paths(" ".join(args.ldflags))
-    if args.pkg_config_paths:
-        env["PKG_CONFIG_PATH"] = _resolve_env_paths(":".join(args.pkg_config_paths))
+    all_cflags = file_cflags + args.cflags
+    all_ldflags = file_ldflags + args.ldflags
+    all_pkg_config = file_pkg_config + args.pkg_config_paths
+
+    # Extract -I flags from tset cflags file for CPPFLAGS/CXXFLAGS propagation.
+    # Autotools passes CPPFLAGS to both C and C++ compilers, CFLAGS to C only,
+    # CXXFLAGS to C++ only — include dirs need to be in all three.
+    file_include_flags = [f for f in file_cflags if f.startswith("-I")]
+
+    if all_cflags:
+        env["CFLAGS"] = _resolve_env_paths(" ".join(all_cflags))
+    all_cxxflags = file_include_flags + args.cxxflags
+    if all_cxxflags:
+        env["CXXFLAGS"] = _resolve_env_paths(" ".join(all_cxxflags))
+    all_cppflags = file_include_flags + args.cppflags
+    if all_cppflags:
+        env["CPPFLAGS"] = _resolve_env_paths(" ".join(all_cppflags))
+    if all_ldflags:
+        env["LDFLAGS"] = _resolve_env_paths(" ".join(all_ldflags))
+    if all_pkg_config:
+        env["PKG_CONFIG_PATH"] = _resolve_env_paths(":".join(all_pkg_config))
+    # Merge --env entries.  For compiler/linker flag variables, prepend to
+    # existing tset-derived values so user flags (e.g. -std=gnu11) combine
+    # with dep flags (e.g. -I.../include) instead of clobbering them.
+    _MERGE_FLAGS = {"CFLAGS", "CXXFLAGS", "CPPFLAGS", "LDFLAGS"}
     for entry in args.extra_env:
         key, _, value = entry.partition("=")
         if key:
-            env[key] = _resolve_env_paths(value)
+            resolved = _resolve_env_paths(value)
+            if key in _MERGE_FLAGS and key in env:
+                env[key] = resolved + " " + env[key]
+            else:
+                env[key] = resolved
     if args.hermetic_path:
         env["PATH"] = ":".join(os.path.abspath(p) for p in args.hermetic_path)
         # Derive LD_LIBRARY_PATH from hermetic bin dirs so dynamically
@@ -186,15 +232,24 @@ def main():
         if _py_paths:
             _existing = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = ":".join(_py_paths) + (":" + _existing if _existing else "")
-    if args.path_prepend:
-        prepend = ":".join(os.path.abspath(p) for p in args.path_prepend if os.path.isdir(p))
+    elif args.hermetic_empty:
+        env["PATH"] = ""
+    elif args.allow_host_path:
+        env["PATH"] = _host_path
+    else:
+        print("error: build requires --hermetic-path, --hermetic-empty, or --allow-host-path",
+              file=sys.stderr)
+        sys.exit(1)
+    all_path_prepend = file_path_dirs + args.path_prepend
+    if all_path_prepend:
+        prepend = ":".join(os.path.abspath(p) for p in all_path_prepend if os.path.isdir(p))
         if prepend:
-            env["PATH"] = prepend + ":" + env.get("PATH", os.environ.get("PATH", ""))
+            env["PATH"] = prepend + ":" + env.get("PATH", "")
 
     # Auto-detect automake Perl modules and aclocal dirs from dep
     # prefixes.  The Buck2-installed automake hardcodes /usr/share/...
     # paths which don't resolve to the artifact directory.
-    _path_sources = list(args.hermetic_path) + list(args.path_prepend)
+    _path_sources = list(args.hermetic_path) + list(all_path_prepend)
     if _path_sources:
         perl5lib = []
         aclocal_dirs = []
@@ -242,26 +297,8 @@ def main():
                   file=sys.stderr)
             sys.exit(1)
 
-    # Sanitize file names — delete files/dirs with control characters or
-    # backslashes that Buck2 cannot relativize (e.g. autoconf's filesystem
-    # character test creates conftest.t<TAB>).
-    def _sanitize_tree(root):
-        for dirpath, dirnames, filenames in os.walk(root, topdown=False):
-            for fname in filenames:
-                if any(ord(c) < 32 or ord(c) == 127 or c == '\\' for c in fname):
-                    try:
-                        os.unlink(os.path.join(dirpath, fname))
-                    except OSError:
-                        pass
-            for dname in list(dirnames):
-                if any(ord(c) < 32 or ord(c) == 127 or c == '\\' for c in dname):
-                    try:
-                        shutil.rmtree(os.path.join(dirpath, dname))
-                    except OSError:
-                        pass
-
     if args.skip_configure:
-        _sanitize_tree(output_dir)
+        sanitize_filenames(output_dir)
         return
 
     configure = os.path.join(output_dir, args.configure_script)
@@ -290,7 +327,7 @@ def main():
         print(f"error: configure failed with exit code {result.returncode}", file=sys.stderr)
         sys.exit(1)
 
-    _sanitize_tree(output_dir)
+    sanitize_filenames(output_dir)
 
 
 if __name__ == "__main__":

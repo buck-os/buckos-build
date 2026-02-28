@@ -1,11 +1,11 @@
 """
 Seed toolchain resolution.
 
-Resolves the seed toolchain archive from one of three sources:
+Resolves the seed toolchain from one of three sources:
 
   1. buckos.seed_url   — remote download via http_file
   2. buckos.seed_path  — local file via export_file
-  3. neither           — build from source via //tc/bootstrap:seed-export
+  3. neither           — bootstrap from source (stage 1 cross-compiler)
 
 To use a prebuilt seed, add to .buckconfig:
 
@@ -18,16 +18,20 @@ or for a local file:
   [buckos]
   seed_path = /path/to/buckos-seed.tar.zst
 
-When neither is set, the seed is built from source via the 3-stage
-bootstrap pipeline.  The resolved archive is unpacked by toolchain_import
-into a BuildToolchainInfo that the rest of the build graph consumes.
+When a prebuilt seed is configured, toolchain_import unpacks it into a
+BuildToolchainInfo with hermetic host tools.
+
+When neither is set, seed-toolchain wraps the stage 1 cross-compiler
+directly (bootstrap-toolchain with host PATH).  The full seed archive
+(//tc/bootstrap:seed-export) is built explicitly — it cannot be the
+seed-toolchain dep because seed-export → host-tools → packages →
+seed-toolchain creates a configured target cycle.
 
 NOTE: When seed_url or seed_path is configured, uncomment the
 corresponding target declaration below.
 """
 
-load("//defs/rules:toolchain_import.bzl", "toolchain_import")
-load(":defs.bzl", "seed_archive_label")
+load(":defs.bzl", "seed_toolchain")
 
 # Uncomment when buckos.seed_url is set in .buckconfig:
 # http_file(
@@ -43,20 +47,4 @@ load(":defs.bzl", "seed_archive_label")
 #     src = read_config("buckos", "seed_path", ""),
 # )
 
-# Prebuilt seeds contain buckos-native host tools; build-from-source
-# seeds contain only the stage1 cross-compiler (host tools are built
-# separately using the seed toolchain).
-_has_prebuilt = bool(
-    read_config("buckos", "seed_url", "") or
-    read_config("buckos", "seed_path", ""),
-)
-
-toolchain_import(
-    name = "seed-toolchain",
-    archive = seed_archive_label(),
-    target_triple = "x86_64-buckos-linux-gnu",
-    has_host_tools = _has_prebuilt,
-    extra_cflags = ["-march=x86-64-v3"],
-    labels = ["buckos:seed"],
-    visibility = ["PUBLIC"],
-)
+seed_toolchain()

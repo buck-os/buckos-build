@@ -11,8 +11,9 @@ Five cacheable actions:
 """
 
 load("//defs:providers.bzl", "BuildToolchainInfo", "PackageInfo")
-load("//defs/rules:_common.bzl", "collect_runtime_lib_dirs")
+load("//defs/rules:_common.bzl", "build_package_tsets", "collect_runtime_lib_dirs")
 load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_path_args")
+load("//defs:host_tools.bzl", "host_tool_path_args")
 
 # ── Phase helpers ─────────────────────────────────────────────────────
 
@@ -139,6 +140,10 @@ def _configure(ctx, source):
     for arg in toolchain_path_args(ctx):
         cmd.add(arg)
 
+    # Add host_deps bin dirs to PATH
+    for arg in host_tool_path_args(ctx):
+        cmd.add(arg)
+
     ctx.actions.run(cmd, env = env, category = "configure", identifier = ctx.attrs.name)
     return output
 
@@ -169,6 +174,10 @@ def _build(ctx, source, configured):
     for arg in toolchain_path_args(ctx):
         cmd.add(arg)
 
+    # Add host_deps bin dirs to PATH
+    for arg in host_tool_path_args(ctx):
+        cmd.add(arg)
+
     ctx.actions.run(cmd, env = env, category = "build", identifier = ctx.attrs.name)
     return output
 
@@ -194,6 +203,10 @@ def _install(ctx, source, built):
     for arg in toolchain_path_args(ctx):
         cmd.add(arg)
 
+    # Add host_deps bin dirs to PATH
+    for arg in host_tool_path_args(ctx):
+        cmd.add(arg)
+
     ctx.actions.run(cmd, env = env, category = "install", identifier = ctx.attrs.name)
     return output
 
@@ -216,6 +229,9 @@ def _mozbuild_package_impl(ctx):
     # Phase 5: install
     installed = _install(ctx, prepared, built)
 
+    # Build transitive sets
+    compile_tset, link_tset, path_tset, runtime_tset = build_package_tsets(ctx, installed)
+
     pkg_info = PackageInfo(
         name = ctx.attrs.name,
         version = ctx.attrs.version,
@@ -228,6 +244,10 @@ def _mozbuild_package_impl(ctx):
         pkg_config_path = None,
         cflags = [],
         ldflags = [],
+        compile_info = compile_tset,
+        link_info = link_tset,
+        path_info = path_tset,
+        runtime_deps = runtime_tset,
         license = ctx.attrs.license,
         src_uri = ctx.attrs.src_uri,
         src_sha256 = ctx.attrs.src_sha256,
@@ -253,6 +273,8 @@ mozbuild_package = rule(
         "mozconfig_options": attrs.list(attrs.string(), default = []),
         "pre_configure_cmds": attrs.list(attrs.string(), default = []),
         "deps": attrs.list(attrs.dep(), default = []),
+        "host_deps": attrs.list(attrs.exec_dep(), default = []),
+        "runtime_deps": attrs.list(attrs.dep(), default = []),
         "patches": attrs.list(attrs.source(), default = []),
 
         # Unused by mozbuild but accepted by the package() macro interface
