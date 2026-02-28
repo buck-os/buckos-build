@@ -15,7 +15,7 @@ import shutil
 import subprocess
 import sys
 
-from _env import sanitize_global_env
+from _env import sanitize_filenames, sanitize_global_env
 
 
 def _can_unshare_net():
@@ -146,6 +146,8 @@ def _patch_runshared(build_dir):
 
 
 def main():
+    _host_path = os.environ.get("PATH", "")
+
     parser = argparse.ArgumentParser(description="Run make or ninja build")
     parser.add_argument("--build-dir", required=True, help="Build directory")
     parser.add_argument("--output-dir", required=True,
@@ -168,6 +170,8 @@ def main():
                         help="Directory to prepend to PATH (repeatable, resolved to absolute)")
     parser.add_argument("--hermetic-path", action="append", dest="hermetic_path", default=[],
                         help="Set PATH to only these dirs (replaces host PATH, repeatable)")
+    parser.add_argument("--allow-host-path", action="store_true",
+                        help="Allow host PATH (bootstrap escape hatch)")
     parser.add_argument("--cflags-file", default=None,
                         help="File with CFLAGS (one per line, from tset projection)")
     parser.add_argument("--ldflags-file", default=None,
@@ -629,6 +633,12 @@ def main():
         if _lib_dirs:
             _existing = os.environ.get("LD_LIBRARY_PATH", "")
             os.environ["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (":" + _existing if _existing else "")
+    elif args.allow_host_path:
+        os.environ["PATH"] = _host_path
+    else:
+        print("error: build requires --hermetic-path or --allow-host-path",
+              file=sys.stderr)
+        sys.exit(1)
     all_path_prepend = file_path_dirs + args.path_prepend
     if all_path_prepend:
         prepend = ":".join(os.path.abspath(p) for p in all_path_prepend if os.path.isdir(p))
@@ -676,26 +686,8 @@ def main():
                   file=sys.stderr)
             sys.exit(1)
 
-    # Sanitize file names — delete files/dirs with control characters or
-    # backslashes that Buck2 cannot relativize (e.g. autoconf's filesystem
-    # character test creates conftest.t<TAB>).
-    def _sanitize_tree(root):
-        for dirpath, dirnames, filenames in os.walk(root, topdown=False):
-            for fname in filenames:
-                if any(ord(c) < 32 or ord(c) == 127 or c == '\\' for c in fname):
-                    try:
-                        os.unlink(os.path.join(dirpath, fname))
-                    except OSError:
-                        pass
-            for dname in list(dirnames):
-                if any(ord(c) < 32 or ord(c) == 127 or c == '\\' for c in dname):
-                    try:
-                        shutil.rmtree(os.path.join(dirpath, dname))
-                    except OSError:
-                        pass
-
     if args.skip_make:
-        _sanitize_tree(output_dir)
+        sanitize_filenames(output_dir)
         return
 
     jobs = args.jobs or multiprocessing.cpu_count()
@@ -739,7 +731,7 @@ def main():
                 os.unlink(p)
                 os.makedirs(p, exist_ok=True)
 
-    _sanitize_tree(output_dir)
+    sanitize_filenames(output_dir)
 
 
 if __name__ == "__main__":

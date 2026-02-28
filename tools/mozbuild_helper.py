@@ -19,7 +19,7 @@ import subprocess
 import sys
 import json
 
-from _env import sanitize_global_env
+from _env import sanitize_filenames, sanitize_global_env
 
 
 def _resolve(path):
@@ -192,8 +192,13 @@ def _common_env(args, src_dir, pkg_config_bin_dir):
         if _py_paths:
             _existing = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = ":".join(_py_paths) + (":" + _existing if _existing else "")
+    elif hasattr(args, 'allow_host_path') and args.allow_host_path:
+        base_path = getattr(args, '_host_path', '')
     else:
-        base_path = None
+        print("error: build requires --hermetic-path or --allow-host-path",
+              file=sys.stderr)
+        sys.exit(1)
+        base_path = None  # unreachable
 
     # Dep environment (before PATH so we can prepend pkg-config wrapper)
     # Don't inherit PKG_CONFIG_PATH from os.environ — the Starlark layer sets
@@ -209,7 +214,7 @@ def _common_env(args, src_dir, pkg_config_bin_dir):
         env["PATH"] = base_path
 
     # pkg-config wrapper with --define-prefix (MUST be first in PATH)
-    env["PATH"] = pkg_config_bin_dir + ":" + env.get("PATH", os.environ.get("PATH", ""))
+    env["PATH"] = pkg_config_bin_dir + ":" + env.get("PATH", "")
 
     # Mozconfig
     mozconfig = os.path.join(src_dir, "mozconfig")
@@ -383,6 +388,8 @@ def phase_install(args):
 
 
 def main():
+    _host_path = os.environ.get("PATH", "")
+
     parser = argparse.ArgumentParser(description="Mozilla/mach build helper")
     parser.add_argument("--phase", required=True,
                         choices=["configure", "rust-deps", "build", "install"],
@@ -406,8 +413,11 @@ def main():
                         help="Colon-separated dep base directories")
     parser.add_argument("--hermetic-path", action="append", dest="hermetic_path", default=[],
                         help="Set PATH to only these dirs (replaces host PATH, repeatable)")
+    parser.add_argument("--allow-host-path", action="store_true",
+                        help="Allow host PATH (bootstrap escape hatch)")
 
     args = parser.parse_args()
+    args._host_path = _host_path
 
     sanitize_global_env()
 
@@ -426,6 +436,7 @@ def main():
     }
 
     phases[args.phase](args)
+    sanitize_filenames(args.output_dir, args.work_dir)
 
 
 if __name__ == "__main__":

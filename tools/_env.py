@@ -11,12 +11,13 @@ what it needs on top.
 """
 
 import os
+import shutil
 
 # Vars passed through from the host environment when present.
 _PASSTHROUGH = frozenset({
     "HOME", "USER", "LOGNAME",
     "TMPDIR", "TEMP", "TMP",
-    "TERM", "PATH",
+    "TERM",
     "BUCK_SCRATCH_PATH",
 })
 
@@ -44,6 +45,36 @@ def clean_env():
             env[key] = val
     env.update(_DETERMINISM_PINS)
     return env
+
+
+def _has_unsafe_chars(name):
+    """True if *name* contains characters Buck2 cannot relativize."""
+    return any(ord(c) < 32 or ord(c) == 127 or c == '\\' for c in name)
+
+
+def sanitize_filenames(*roots):
+    """Delete files/dirs whose names contain control chars or backslashes.
+
+    Some build systems (autoconf's filesystem character test, conftest.t<TAB>)
+    create files that Buck2's path handling cannot relativize.  Walk each
+    root bottom-up and remove offending entries before Buck2 sees them.
+    """
+    for root in roots:
+        if not root or not os.path.isdir(root):
+            continue
+        for dirpath, dirnames, filenames in os.walk(root, topdown=False):
+            for fname in filenames:
+                if _has_unsafe_chars(fname):
+                    try:
+                        os.unlink(os.path.join(dirpath, fname))
+                    except OSError:
+                        pass
+            for dname in list(dirnames):
+                if _has_unsafe_chars(dname):
+                    try:
+                        shutil.rmtree(os.path.join(dirpath, dname))
+                    except OSError:
+                        pass
 
 
 def sanitize_global_env():

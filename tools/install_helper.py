@@ -16,7 +16,7 @@ import stat
 import subprocess
 import sys
 
-from _env import sanitize_global_env
+from _env import sanitize_filenames, sanitize_global_env
 
 
 def _rewrite_file(fpath, old, new):
@@ -252,6 +252,8 @@ def _suppress_phony_rebuilds(build_dir):
 
 
 def main():
+    _host_path = os.environ.get("PATH", "")
+
     parser = argparse.ArgumentParser(description="Run make install")
     parser.add_argument("--build-dir", required=True, help="Build directory")
     parser.add_argument("--prefix", required=True, help="DESTDIR prefix for installation")
@@ -267,6 +269,8 @@ def main():
                         help="Directory to prepend to PATH (repeatable, resolved to absolute)")
     parser.add_argument("--hermetic-path", action="append", dest="hermetic_path", default=[],
                         help="Set PATH to only these dirs (replaces host PATH, repeatable)")
+    parser.add_argument("--allow-host-path", action="store_true",
+                        help="Allow host PATH (bootstrap escape hatch)")
     parser.add_argument("--build-system", choices=["make", "ninja"], default="make",
                         help="Build system to use (default: make)")
     parser.add_argument("--make-target", action="append", dest="make_targets", default=None,
@@ -365,6 +369,12 @@ def main():
         if _lib_dirs:
             _existing = os.environ.get("LD_LIBRARY_PATH", "")
             os.environ["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (":" + _existing if _existing else "")
+    elif args.allow_host_path:
+        os.environ["PATH"] = _host_path
+    else:
+        print("error: build requires --hermetic-path or --allow-host-path",
+              file=sys.stderr)
+        sys.exit(1)
     all_path_prepend = file_path_dirs + args.path_prepend
     if all_path_prepend:
         prepend = ":".join(os.path.abspath(p) for p in all_path_prepend if os.path.isdir(p))
@@ -907,23 +917,7 @@ def main():
                   file=sys.stderr)
             sys.exit(1)
 
-    # Sanitize file names — delete files/dirs with control characters or
-    # backslashes that Buck2 cannot relativize (e.g. autoconf's filesystem
-    # character test creates conftest.t<TAB>).
-    for _clean_dir in (prefix, make_dir):
-        for dirpath, dirnames, filenames in os.walk(_clean_dir, topdown=False):
-            for fname in filenames:
-                if any(ord(c) < 32 or ord(c) == 127 or c == '\\' for c in fname):
-                    try:
-                        os.unlink(os.path.join(dirpath, fname))
-                    except OSError:
-                        pass
-            for dname in list(dirnames):
-                if any(ord(c) < 32 or ord(c) == 127 or c == '\\' for c in dname):
-                    try:
-                        shutil.rmtree(os.path.join(dirpath, dname))
-                    except OSError:
-                        pass
+    sanitize_filenames(prefix, make_dir)
 
 
 if __name__ == "__main__":

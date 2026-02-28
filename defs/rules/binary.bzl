@@ -139,6 +139,8 @@ def _install(ctx, source):
     # Hermetic PATH from toolchain (replaces host PATH in wrapper)
     if tc.host_bin_dir:
         env["_HERMETIC_PATH"] = cmd_args(tc.host_bin_dir)
+    elif tc.allows_host_path:
+        env["_ALLOW_HOST_PATH"] = "1"
 
     # Inject dep environment (CFLAGS, LDFLAGS, PKG_CONFIG_PATH, PATH)
     dep_env, dep_paths = _dep_env_args(ctx)

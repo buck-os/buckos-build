@@ -48,6 +48,8 @@ def _resolve_env_paths(value):
 
 
 def main():
+    _host_path = os.environ.get("PATH", "")
+
     parser = argparse.ArgumentParser(description="Run go build")
     parser.add_argument("--source-dir", required=True,
                         help="Go source directory (contains go.mod)")
@@ -61,6 +63,8 @@ def main():
                         help="Extra environment variable KEY=VALUE (repeatable)")
     parser.add_argument("--hermetic-path", action="append", dest="hermetic_path", default=[],
                         help="Set PATH to only these dirs (replaces host PATH, repeatable)")
+    parser.add_argument("--allow-host-path", action="store_true",
+                        help="Allow host PATH (bootstrap escape hatch)")
     parser.add_argument("--bin", action="append", dest="bins", default=[],
                         help="Specific binary name to install (repeatable; default: all executables)")
     parser.add_argument("--package", action="append", dest="packages", default=[],
@@ -123,6 +127,12 @@ def main():
         if _py_paths:
             _existing = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = ":".join(_py_paths) + (":" + _existing if _existing else "")
+    elif args.allow_host_path:
+        env["PATH"] = _host_path
+    else:
+        print("error: build requires --hermetic-path or --allow-host-path",
+              file=sys.stderr)
+        sys.exit(1)
     env["GOFLAGS"] = env.get("GOFLAGS", "")
 
     # Set up vendored dependencies if provided

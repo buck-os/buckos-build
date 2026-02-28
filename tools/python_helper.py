@@ -33,6 +33,8 @@ def _resolve_env_paths(value):
 
 
 def main():
+    _host_path = os.environ.get("PATH", "")
+
     parser = argparse.ArgumentParser(description="Run pip install")
     parser.add_argument("--source-dir", required=True,
                         help="Python source directory (contains setup.py or pyproject.toml)")
@@ -46,6 +48,8 @@ def main():
                         help="Path to Python interpreter to use (default: sys.executable)")
     parser.add_argument("--hermetic-path", action="append", dest="hermetic_path", default=[],
                         help="Set PATH to only these dirs (replaces host PATH, repeatable)")
+    parser.add_argument("--allow-host-path", action="store_true",
+                        help="Allow host PATH (bootstrap escape hatch)")
     parser.add_argument("--dep-prefix", action="append", dest="dep_prefixes", default=[],
                         help="Dependency prefix dir — site-packages added to PYTHONPATH (repeatable)")
     args = parser.parse_args()
@@ -116,6 +120,12 @@ def main():
         if _py_paths:
             _existing = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = ":".join(_py_paths) + (":" + _existing if _existing else "")
+    elif args.allow_host_path:
+        env["PATH"] = _host_path
+    else:
+        print("error: build requires --hermetic-path or --allow-host-path",
+              file=sys.stderr)
+        sys.exit(1)
 
     # Add dep prefix site-packages to PYTHONPATH so build deps
     # (setuptools, wheel, etc.) are found by pip --no-build-isolation.

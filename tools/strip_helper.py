@@ -26,6 +26,8 @@ def is_elf(path):
 
 
 def main():
+    _host_path = os.environ.get("PATH", "")
+
     parser = argparse.ArgumentParser(description="Strip ELF binaries")
     parser.add_argument("--input", required=True, help="Input directory")
     parser.add_argument("--output", required=True, help="Output directory")
@@ -33,6 +35,8 @@ def main():
                         help="Path to strip binary")
     parser.add_argument("--hermetic-path", action="append", dest="hermetic_path", default=[],
                         help="Set PATH to only these dirs (replaces host PATH, repeatable)")
+    parser.add_argument("--allow-host-path", action="store_true",
+                        help="Allow host PATH (bootstrap escape hatch)")
     args = parser.parse_args()
 
     sanitize_global_env()
@@ -66,6 +70,12 @@ def main():
         if _py_paths:
             _existing = os.environ.get("PYTHONPATH", "")
             os.environ["PYTHONPATH"] = ":".join(_py_paths) + (":" + _existing if _existing else "")
+    elif args.allow_host_path:
+        os.environ["PATH"] = _host_path
+    else:
+        print("error: build requires --hermetic-path or --allow-host-path",
+              file=sys.stderr)
+        sys.exit(1)
 
     # Copy input to output
     if os.path.exists(args.output):

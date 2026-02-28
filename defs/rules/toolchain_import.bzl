@@ -62,6 +62,7 @@ def _toolchain_import_impl(ctx):
         sysroot = sysroot,
         python = python_cmd,
         host_bin_dir = host_bin,
+        allows_host_path = False,
         extra_cflags = ctx.attrs.extra_cflags,
         extra_ldflags = ldflags,
     )

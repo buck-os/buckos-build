@@ -10,7 +10,6 @@ Gentoo-style staged bootstrap:
 Provides:
   :bootstrap-toolchain  — BuildToolchainInfo wrapping Stage 1 output
   :stage2-toolchain     — Stage 1 + Stage 2 host tools (hermetic PATH)
-  :export               — distributable tar.zst (cross-compiler only)
   :seed-export          — distributable tar.zst (cross-compiler +
                           stage 3 buckos-native host tools)
 """
@@ -50,15 +49,6 @@ buckos_bootstrap_toolchain(
     bootstrap_stage = "//tc/bootstrap/stage1:stage1",
     host_tools = ":stage2-host-tools",
     extra_cflags = ["-march=x86-64-v3"],
-    visibility = ["PUBLIC"],
-)
-
-# Export the Stage 1 cross-compiler (runs on host, targets buckos).
-toolchain_export(
-    name = "export",
-    stage = "//tc/bootstrap/stage1:stage1",
-    gcc_version = "14.3.0",
-    glibc_version = "2.42",
     visibility = ["PUBLIC"],
 )
 

@@ -43,19 +43,11 @@ load(":defs.bzl", "seed_archive_label")
 #     src = read_config("buckos", "seed_path", ""),
 # )
 
-# Prebuilt seeds contain buckos-native host tools; build-from-source
-# seeds contain only the stage1 cross-compiler (host tools are built
-# separately using the seed toolchain).
-_has_prebuilt = bool(
-    read_config("buckos", "seed_url", "") or
-    read_config("buckos", "seed_path", ""),
-)
-
 toolchain_import(
     name = "seed-toolchain",
     archive = seed_archive_label(),
     target_triple = "x86_64-buckos-linux-gnu",
-    has_host_tools = _has_prebuilt,
+    has_host_tools = True,
     extra_cflags = ["-march=x86-64-v3"],
     labels = ["buckos:seed"],
     visibility = ["PUBLIC"],

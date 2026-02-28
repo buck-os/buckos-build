@@ -10,7 +10,7 @@ import os
 import subprocess
 import sys
 
-from _env import clean_env
+from _env import clean_env, sanitize_filenames
 
 
 def _resolve_env_paths(value):
@@ -72,6 +72,8 @@ def _resolve_env_paths(value):
 
 
 def main():
+    _host_path = os.environ.get("PATH", "")
+
     parser = argparse.ArgumentParser(description="Run meson setup")
     parser.add_argument("--source-dir", required=True, help="Source directory")
     parser.add_argument("--build-dir", required=True, help="Build directory")
@@ -88,6 +90,8 @@ def main():
                         help="Directory to prepend to PATH (repeatable, resolved to absolute)")
     parser.add_argument("--hermetic-path", action="append", dest="hermetic_path", default=[],
                         help="Set PATH to only these dirs (replaces host PATH, repeatable)")
+    parser.add_argument("--allow-host-path", action="store_true",
+                        help="Allow host PATH (bootstrap escape hatch)")
     parser.add_argument("--pre-cmd", action="append", dest="pre_cmds", default=[],
                         help="Shell command to run in source dir before meson setup (repeatable)")
     parser.add_argument("--cflags-file", default=None,
@@ -145,6 +149,12 @@ def main():
         if _lib_dirs:
             _existing = env.get("LD_LIBRARY_PATH", "")
             env["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (":" + _existing if _existing else "")
+    elif args.allow_host_path:
+        env["PATH"] = _host_path
+    else:
+        print("error: build requires --hermetic-path or --allow-host-path",
+              file=sys.stderr)
+        sys.exit(1)
     all_path_prepend = file_path_dirs + args.path_prepend
     if all_path_prepend:
         prepend = ":".join(os.path.abspath(p) for p in all_path_prepend if os.path.isdir(p))
@@ -241,6 +251,8 @@ def main():
     if result.returncode != 0:
         print(f"error: meson setup failed with exit code {result.returncode}", file=sys.stderr)
         sys.exit(1)
+
+    sanitize_filenames(os.path.abspath(args.build_dir))
 
 
 if __name__ == "__main__":
