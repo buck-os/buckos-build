@@ -35,5 +35,4 @@ mkdir -p "$OUT/usr/lib/udev/rules.d"
 printf '%s\\n' '# Steam Controller' 'KERNEL=="hidraw*", ATTRS{idVendor}=="28de", MODE="0660", TAG+="uaccess"' '# Steam Deck' 'KERNEL=="hidraw*", ATTRS{idVendor}=="28de", ATTRS{idProduct}=="1205", MODE="0660", TAG+="uaccess"' > "$OUT/usr/lib/udev/rules.d/70-steam-controller.rules"
     """,
     deps = [],
-    visibility = ["PUBLIC"],
 )

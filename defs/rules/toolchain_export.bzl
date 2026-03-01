@@ -33,7 +33,7 @@ def _toolchain_export_impl(ctx):
         host_tools_dir = ctx.attrs.host_tools[DefaultInfo].default_outputs[0]
         cmd.add("--host-tools-dir", host_tools_dir)
 
-    ctx.actions.run(cmd, category = "toolchain_export", identifier = ctx.attrs.name)
+    ctx.actions.run(cmd, category = "toolchain_export", identifier = ctx.attrs.name, allow_cache_upload = True)
 
     return [DefaultInfo(default_output = archive)]
 

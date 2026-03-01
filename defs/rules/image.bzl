@@ -39,6 +39,7 @@ def _raw_disk_image_impl(ctx: AnalysisContext) -> list[Provider]:
         cmd,
         category = "disk_image",
         identifier = ctx.attrs.name,
+        allow_cache_upload = True,
     )
 
     return [DefaultInfo(default_output = image_file)]
@@ -98,7 +99,7 @@ def _iso_image_impl(ctx: AnalysisContext) -> list[Provider]:
     for arg in toolchain_path_args(ctx):
         cmd.add(arg)
 
-    ctx.actions.run(cmd, category = "iso", identifier = ctx.attrs.name)
+    ctx.actions.run(cmd, category = "iso", identifier = ctx.attrs.name, allow_cache_upload = True)
 
     return [
         DefaultInfo(default_output = iso_file),
@@ -192,6 +193,7 @@ def _stage3_tarball_impl(ctx: AnalysisContext) -> list[Provider]:
         cmd,
         category = "stage3",
         identifier = ctx.attrs.name,
+        allow_cache_upload = True,
     )
 
     return [

@@ -38,7 +38,6 @@ ch_boot_script(
     kernel_args = "console=ttyS0 quiet",
     serial_console = "tty",
     labels = ["buckos:bootscript"],
-    visibility = ["PUBLIC"],
 )
 
 # Standard direct boot (recommended for testing)
@@ -53,7 +52,6 @@ ch_boot_script(
     kernel_args = "console=ttyS0 root=/dev/vda rw quiet",
     serial_console = "tty",
     labels = ["buckos:bootscript"],
-    visibility = ["PUBLIC"],
 )
 
 # Full direct boot (with larger disk and more resources)
@@ -68,7 +66,6 @@ ch_boot_script(
     kernel_args = "console=ttyS0 root=/dev/vda rw",
     serial_console = "tty",
     labels = ["buckos:bootscript"],
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -85,7 +82,6 @@ ch_boot_script(
     cpus = "2",
     serial_console = "tty",
     labels = ["buckos:bootscript"],
-    visibility = ["PUBLIC"],
 )
 
 # Boot via EDK2 CLOUDHV (full UEFI firmware)
@@ -98,7 +94,6 @@ ch_boot_script(
     cpus = "2",
     serial_console = "tty",
     labels = ["buckos:bootscript"],
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -119,7 +114,6 @@ ch_boot_script(
     virtiofs_path = "/tmp/buckos-rootfs",
     serial_console = "tty",
     labels = ["buckos:bootscript"],
-    visibility = ["PUBLIC"],
 )
 
 # VirtioFS boot with more resources
@@ -136,7 +130,6 @@ ch_boot_script(
     virtiofs_path = "/tmp/buckos-rootfs",
     serial_console = "tty",
     labels = ["buckos:bootscript"],
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -157,7 +150,6 @@ ch_boot_script(
     tap_name = "tap0",
     serial_console = "tty",
     labels = ["buckos:bootscript"],
-    visibility = ["PUBLIC"],
 )
 
 # Full network boot with larger resources
@@ -174,7 +166,6 @@ ch_boot_script(
     tap_name = "tap0",
     serial_console = "tty",
     labels = ["buckos:bootscript"],
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -194,7 +185,6 @@ ch_boot_script(
     serial_console = "tty",
     extra_args = ["--log-file", "/tmp/ch-debug.log", "-v"],
     labels = ["buckos:bootscript"],
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -210,7 +200,6 @@ filegroup(
         ":ch-boot-direct-full",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # All firmware boot scripts
@@ -221,7 +210,6 @@ filegroup(
         ":ch-boot-firmware-uefi",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # All VirtioFS boot scripts
@@ -232,7 +220,6 @@ filegroup(
         ":ch-boot-virtiofs-full",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # All network boot scripts
@@ -243,7 +230,6 @@ filegroup(
         ":ch-boot-network-full",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # All Cloud Hypervisor boot scripts
@@ -258,5 +244,4 @@ filegroup(
         ":ch-boot-debug",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )

@@ -44,17 +44,14 @@ def _acct_group_impl(ctx):
         cmd,
         category = "acct_group",
         identifier = ctx.attrs.name,
+        allow_cache_upload = True,
     )
 
     pkg_info = PackageInfo(
         name = ctx.attrs.name,
         version = "0",
         prefix = prefix,
-        include_dirs = [],
-        lib_dirs = [],
-        bin_dirs = [],
         libraries = [],
-        pkg_config_path = None,
         cflags = [],
         ldflags = [],
         compile_info = None,
@@ -103,17 +100,14 @@ def _acct_user_impl(ctx):
         cmd,
         category = "acct_user",
         identifier = ctx.attrs.name,
+        allow_cache_upload = True,
     )
 
     pkg_info = PackageInfo(
         name = ctx.attrs.name,
         version = "0",
         prefix = prefix,
-        include_dirs = [],
-        lib_dirs = [],
-        bin_dirs = [],
         libraries = [],
-        pkg_config_path = None,
         cflags = [],
         ldflags = [],
         compile_info = None,

@@ -29,7 +29,6 @@ mkdir -p "$OUT/usr/lib/firmware/intel"
 cp -r intel/* "$OUT/usr/lib/firmware/intel/" 2>/dev/null || true
 """,
     labels = ["buckos:firmware", "buckos:hw:gpu"],
-    visibility = ["PUBLIC"],
 )
 
 # Intel GPU tools
@@ -56,7 +55,6 @@ package(
         "LDFLAGS": "-Wl,-O1,--as-needed",
     },
     labels = ["buckos:hw:gpu"],
-    visibility = ["PUBLIC"],
 )
 
 # Combined Intel drivers package
@@ -67,5 +65,4 @@ filegroup(
         ":intel-gpu-tools",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )

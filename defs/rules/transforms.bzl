@@ -31,11 +31,7 @@ def _rebase_pkg(pkg, new_prefix):
         name = pkg.name,
         version = pkg.version,
         prefix = new_prefix,
-        include_dirs = pkg.include_dirs,
-        lib_dirs = pkg.lib_dirs,
-        bin_dirs = pkg.bin_dirs,
         libraries = pkg.libraries,
-        pkg_config_path = pkg.pkg_config_path,
         cflags = pkg.cflags,
         ldflags = pkg.ldflags,
         compile_info = pkg.compile_info,
@@ -68,7 +64,7 @@ def _strip_package_impl(ctx):
     for arg in toolchain_path_args(ctx):
         cmd.add(arg)
 
-    ctx.actions.run(cmd, category = "strip", identifier = pkg.name)
+    ctx.actions.run(cmd, category = "strip", identifier = pkg.name, allow_cache_upload = True)
     return [DefaultInfo(default_output = output), _rebase_pkg(pkg, output)]
 
 strip_package = rule(
@@ -101,7 +97,7 @@ def _stamp_package_impl(ctx):
     for arg in toolchain_path_args(ctx):
         cmd.add(arg)
 
-    ctx.actions.run(cmd, category = "stamp", identifier = pkg.name)
+    ctx.actions.run(cmd, category = "stamp", identifier = pkg.name, allow_cache_upload = True)
     return [DefaultInfo(default_output = output), _rebase_pkg(pkg, output)]
 
 stamp_package = rule(
@@ -133,7 +129,7 @@ def _ima_sign_package_impl(ctx):
     for arg in toolchain_path_args(ctx):
         cmd.add(arg)
 
-    ctx.actions.run(cmd, category = "ima_sign", identifier = pkg.name)
+    ctx.actions.run(cmd, category = "ima_sign", identifier = pkg.name, allow_cache_upload = True)
     return [DefaultInfo(default_output = output), _rebase_pkg(pkg, output)]
 
 ima_sign_package = rule(

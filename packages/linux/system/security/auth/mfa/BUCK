@@ -75,7 +75,6 @@ autoreconf -fi
                 "//packages/linux/dev-tools/build-systems/automake:automake",
                 "//packages/linux/dev-tools/build-systems/libtool:libtool"
     ],
-    visibility = ["PUBLIC"],
 )
 
 # Google Authenticator PAM module
@@ -96,7 +95,6 @@ package(
     deps = [
         "//packages/linux/system/security/encryption:linux-pam",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # libfido2 - FIDO2/WebAuthn library
@@ -121,7 +119,6 @@ package(
         "//packages/linux/system/libs/libusb:libusb",
         ":libcbor",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # libcbor - CBOR encoding/decoding library
@@ -141,7 +138,6 @@ package(
         "-DBUILD_SHARED_LIBS=ON",
         "-DCBOR_PRETTY_PRINTER=ON",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # pam-u2f - U2F PAM module
@@ -163,7 +159,6 @@ package(
         "//packages/linux/system/security/encryption:linux-pam",
         ":libfido2",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # YubiKey Manager
@@ -183,7 +178,6 @@ package(
         "//packages/linux/system/security/encryption:pcsc-lite",
         ":libfido2",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # yubico-pam - YubiKey PAM module
@@ -206,7 +200,6 @@ package(
         ":ykclient",
         ":ykpers",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # ykclient - Yubico client library
@@ -229,7 +222,6 @@ package(
     deps = [
         "//packages/linux/system/libs/network/curl:curl",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # ykpers - YubiKey personalization library
@@ -253,7 +245,6 @@ package(
         "//packages/linux/system/security/encryption:libusb",
         ":libyubikey",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # libyubikey - YubiKey low-level library
@@ -275,5 +266,4 @@ package(
     ],
     deps = [
     ],
-    visibility = ["PUBLIC"],
 )

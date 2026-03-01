@@ -23,7 +23,6 @@ package(
         "-DCMAKE_INSTALL_PREFIX=/usr",
     ],
     labels = ["buckos:hw:opencl"],
-    visibility = ["PUBLIC"],
 )
 
 # OpenCL ICD Loader
@@ -49,7 +48,6 @@ package(
         ":opencl-headers",
     ],
     labels = ["buckos:hw:opencl"],
-    visibility = ["PUBLIC"],
 )
 
 # Combined OpenCL package
@@ -60,5 +58,4 @@ filegroup(
         ":opencl-icd-loader",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )

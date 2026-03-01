@@ -10,7 +10,6 @@ load("//packages/linux/desktop/kde:meta.bzl", "KDE_PLASMA")
 export_file(
     name = "plasma-env-sh",
     src = "files/plasma-env.sh",
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -182,14 +181,12 @@ BuckOs Linux 0.1
 Kernel \\r on \\m
 ISSUE
 """,
-    visibility = ["PUBLIC"],
 )
 # Package the init scripts
 filegroup(
     name = "init-scripts",
     srcs = [":init-scripts-gen"],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Baselayout - Core filesystem layout
@@ -271,14 +268,12 @@ f /var/log/wtmp 0664 root utmp -
 f /var/log/lastlog 0664 root utmp -
 UTMPCONF
 """,
-    visibility = ["PUBLIC"],
 )
 
 filegroup(
     name = "baselayout",
     srcs = [":baselayout-gen"],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -309,7 +304,6 @@ cat > $OUT/etc/dbus-1/system.d/10-allow-session-creation.conf << 'DBUSEOF'
 </busconfig>
 DBUSEOF
 """,
-    visibility = ["PUBLIC"],
 )
 
 # Plasma Login Manager configuration (like CachyOS)
@@ -594,7 +588,6 @@ cat > "$OUT/etc/systemd/system/user@.service.d/runtime.conf" << 'USERSERVICEEOF'
 Environment=XDG_RUNTIME_DIR=/run/user/%i
 USERSERVICEEOF
 """,
-    visibility = ["PUBLIC"],
 )
 
 # Users and groups for live environment
@@ -690,7 +683,6 @@ chmod 640 $OUT/etc/shadow
 chmod 755 $OUT/home/live
 chmod 755 $OUT/var/empty
 """,
-    visibility = ["PUBLIC"],
 )
 
 # Systemd tmpfiles configuration for live environment
@@ -774,7 +766,6 @@ PROFILEEOF
 chmod 755 $OUT/etc/profile.d/locale.sh
 
 """,
-    visibility = ["PUBLIC"],
 )
 
 # System-wide environment configuration (must be applied after PAM to override its empty /etc/environment)
@@ -793,7 +784,6 @@ ENVEOF
 # Also create the locale directory structure
 mkdir -p $OUT/usr/lib/locale
 """,
-    visibility = ["PUBLIC"],
 )
 
 # Fontconfig symlinks to enable installed fonts
@@ -911,7 +901,6 @@ cat > $OUT/etc/xdg/plasmarc << 'PLASMARCEOF'
 name=breeze-light
 PLASMARCEOF
 """,
-    visibility = ["PUBLIC"],
 )
 
 # Polkit rules for live session (allow session management without authentication)
@@ -945,7 +934,6 @@ d /etc/polkit-1/rules.d 0700 polkitd polkitd -
 d /usr/share/polkit-1/rules.d 0700 polkitd polkitd -
 TMPFILESEOF
 """,
-    visibility = ["PUBLIC"],
 )
 
 # Login tracking files (utmp/wtmp/btmp) for live session
@@ -974,7 +962,6 @@ chmod 664 $OUT/var/log/lastlog
 mkdir -p $OUT/var
 ln -sf ../run $OUT/var/run
 """,
-    visibility = ["PUBLIC"],
 )
 
 # Desktop installer shortcut
@@ -1169,7 +1156,6 @@ cp $OUT/usr/bin/kwin_wayland_wrapper $OUT/usr/sbin/kwin_wayland_wrapper
 mkdir -p $OUT/etc/xdg/menus
 ln -sf plasma-applications.menu $OUT/etc/xdg/menus/applications.menu
 """,
-    visibility = ["PUBLIC"],
 )
 
 # SSH configuration for live environment
@@ -1183,7 +1169,6 @@ cat > $OUT/etc/ssh/sshd_config.d/live.conf << 'SSHDEOF'
 PermitRootLogin yes
 SSHDEOF
 """,
-    visibility = ["PUBLIC"],
 )
 
 # Systemd services for live environment
@@ -1433,7 +1418,6 @@ sed -i 's|^live:!:|live:$6$xyz$LH0pTsMhKj5X5VQrDvKxQ8Kj7FqNJvGqKxjQh3CqZ8nD6s5R2
 
 # Note: XDG_RUNTIME_DIR setup moved to live-desktop-gen with dynamic $UID
 """,
-    visibility = ["PUBLIC"],
 )
 
 # Root filesystem assembly
@@ -1471,7 +1455,6 @@ rootfs(
         "//packages/linux/network/iproute2:iproute2",
         "//packages/linux/network/dhcpcd:dhcpcd",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -1484,7 +1467,6 @@ initramfs(
     rootfs = ":buckos-rootfs",
     compression = "gz",
     init = "/sbin/init",
-    visibility = ["PUBLIC"],
 )
 
 # Initramfs with xz compression (smaller but slower)
@@ -1493,7 +1475,6 @@ initramfs(
     rootfs = ":buckos-rootfs",
     compression = "xz",
     init = "/sbin/init",
-    visibility = ["PUBLIC"],
 )
 
 # Bootable initramfs with full system - commented out until buckos-bootable is defined
@@ -1518,7 +1499,6 @@ qemu_boot_script(
     memory = "2G",
     cpus = "2",
     kernel_args = "console=ttyS0 rdinit=/init",
-    visibility = ["PUBLIC"],
 )
 
 # QEMU boot with more memory for development
@@ -1531,7 +1511,6 @@ qemu_boot_script(
     cpus = "4",
     kernel_args = "console=ttyS0 rdinit=/init loglevel=7",
     extra_args = ["-enable-kvm"],
-    visibility = ["PUBLIC"],
 )
 
 # QEMU boot with full bootable system - commented out until buckos-bootable is defined
@@ -1559,7 +1538,6 @@ qemu_boot_script(
         "-netdev user,id=net0,hostfwd=tcp::2222-:22",
         "-device virtio-net-pci,netdev=net0",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -1574,7 +1552,6 @@ iso_image(
     boot_mode = "hybrid",
     volume_label = "BUCKOS",
     kernel_args = "quiet rdinit=/init",
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -1609,7 +1586,6 @@ rootfs(
         # Basic libraries
         "//packages/linux/core/zlib:zlib",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # Stage3 base rootfs - includes GCC toolchain for building packages
@@ -1653,7 +1629,6 @@ rootfs(
         # Note: Additional toolchain packages (gcc, binutils, etc.) would be added
         # once those packages are available in the build system
     ],
-    visibility = ["PUBLIC"],
 )
 
 # Stage3 developer rootfs - modern build systems and dev tools
@@ -1700,7 +1675,6 @@ rootfs(
         # TEMPORARILY DISABLED for aarch64 cross-compilation (Fix #22)
         # "//packages/linux/network/openssh:openssh",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -1715,7 +1689,6 @@ stage3_tarball(
     arch = "amd64",
     libc = "glibc",
     compression = "xz",
-    visibility = ["PUBLIC"],
 )
 
 # Base stage3 tarball (with toolchain)
@@ -1726,7 +1699,6 @@ stage3_tarball(
     arch = "amd64",
     libc = "glibc",
     compression = "xz",
-    visibility = ["PUBLIC"],
 )
 
 # Developer stage3 tarball
@@ -1737,7 +1709,6 @@ stage3_tarball(
     arch = "amd64",
     libc = "glibc",
     compression = "xz",
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -1752,14 +1723,12 @@ genrule(
     name = "live-init-scripts-gen",
     out = "live-init-scripts",
     cmd = "bash $(location //defs/scripts:generate-live-init-scripts) $OUT",
-    visibility = ["PUBLIC"],
 )
 
 filegroup(
     name = "live-init-scripts",
     srcs = [":live-init-scripts-gen"],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -1823,7 +1792,6 @@ mkdir -p "$OUT/var/db/repos/buckos-build/install"
 zstd -d "$(location :buck2-prebuilt)" -o "$OUT/usr/bin/buck2"
 chmod +x "$OUT/usr/bin/buck2"
 """,
-    visibility = ["PUBLIC"],
 )
 
 # Live rootfs with KDE Plasma desktop (systemd-only, no eudev)
@@ -2020,7 +1988,6 @@ rootfs(
         # IMPORTANT: This must be LAST to override PAM's /etc/environment file
         ":live-environment-gen",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # Minimal live rootfs with Sway (lighter alternative)
@@ -2101,7 +2068,6 @@ rootfs(
         "//packages/linux/dev-tools/vcs/git:git",
         "//packages/linux/editors/vim:vim",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -2283,7 +2249,6 @@ gcc -nostdlib -nostartfiles -static \\
 chmod 755 $OUT/usr/bin/static-init
 rm /tmp/init.c
 """,
-    visibility = ["PUBLIC"],
 )
 
 # Copy live-init script to initramfs location
@@ -2296,7 +2261,6 @@ mkdir -p $OUT/usr/bin
 cp $(location //defs/scripts:live-init) $OUT/usr/bin/live-init-script
 chmod +x $OUT/usr/bin/live-init-script
 """,
-    visibility = ["PUBLIC"],
 )
 
 # Rootfs with static init for the initramfs
@@ -2317,7 +2281,6 @@ rootfs(
         "//packages/linux/system/libs/compression/zstd:zstd",
         "//packages/linux/core/zlib:zlib",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # Shell script init wrapper - uses bash instead of custom binary for better hardware compatibility
@@ -2346,7 +2309,6 @@ exec /usr/bin/live-init-script
 SHELLINIT
 chmod +x $OUT/usr/bin/shell-init
 """,
-    visibility = ["PUBLIC"],
 )
 
 # Initramfs for live system with shell init (uses bash for better hardware compatibility)
@@ -2355,7 +2317,6 @@ initramfs(
     rootfs = ":buckos-initramfs-rootfs-shell",
     compression = "gz",
     init = "/usr/bin/shell-init",
-    visibility = ["PUBLIC"],
 )
 
 # Rootfs for shell-based initramfs (dynamic, needs glibc)
@@ -2376,7 +2337,6 @@ rootfs(
         "//packages/linux/system/libs/compression/zstd:zstd",
         "//packages/linux/core/zlib:zlib",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -2391,7 +2351,6 @@ genrule(
     out = "rootfs",
     srcs = ["//defs/scripts:busybox-live-init"],
     cmd = "mkdir -p $OUT/usr/bin && cp $(location //defs/scripts:busybox-live-init) $OUT/init && chmod +x $OUT/init",
-    visibility = ["PUBLIC"],
 )
 
 # Rootfs for static busybox initramfs (NO glibc - fully static)
@@ -2403,7 +2362,6 @@ rootfs(
         # Static busybox - the ONLY binary needed
         "//packages/linux/core/busybox:busybox-static",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # Static busybox initramfs for live system with custom live boot init
@@ -2413,7 +2371,6 @@ initramfs(
     compression = "gz",
     init = "/init",
     init_script = "//defs/scripts:busybox-live-init",
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -2502,7 +2459,6 @@ SWITCHROOTCONF
         # Create /init symlink (kernel looks for this)
         ln -sf usr/lib/systemd/systemd $OUT/init
     """,
-    visibility = ["PUBLIC"],
 )
 
 # Rootfs with systemd for initramfs (minimal set for live boot)
@@ -2525,7 +2481,6 @@ rootfs(
         # Static busybox as fallback and for blkid
         "//packages/linux/core/busybox:busybox-static",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # Systemd-based initramfs for live boot
@@ -2534,7 +2489,6 @@ initramfs(
     rootfs = ":buckos-initramfs-rootfs-systemd",
     compression = "gz",
     init = "/usr/lib/systemd/systemd",
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -2579,7 +2533,6 @@ rootfs(
         # tar for img-lib module
         "//packages/linux/system/apps/tar:tar",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # Dracut-generated initramfs with dmsquash-live for live boot
@@ -2590,7 +2543,6 @@ dracut_initramfs(
     rootfs = ":buckos-dracut-builder-rootfs",
     add_modules = ["dmsquash-live", "livenet", "systemd", "systemd-initrd"],
     compression = "gzip",
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -2607,7 +2559,6 @@ iso_image(
     volume_label = "BUCKOS_LIVE",
     # Systemd initrd boot parameters (no serial console)
     kernel_args = "console=tty0 loglevel=7 rd.systemd.show_status=true",
-    visibility = ["PUBLIC"],
 )
 
 # Live ISO with Sway (lighter alternative)
@@ -2619,7 +2570,6 @@ iso_image(
     boot_mode = "hybrid",
     volume_label = "BUCKOS_LIVE",
     kernel_args = "console=tty0 console=ttyS0,115200 rdinit=/init nokaslr",
-    visibility = ["PUBLIC"],
 )
 
 # Live ISO with KDE Plasma desktop for aarch64 (UEFI boot)
@@ -2632,14 +2582,12 @@ iso_image(
     volume_label = "BUCKOS_LIVE_ARM64",
     kernel_args = "console=tty0 console=ttyAMA0,115200 init=/init quiet systemd.unified_cgroup_hierarchy=1",
     default_target_platform = "//platforms:linux-aarch64-target",
-    visibility = ["PUBLIC"],
 )
 
 # Main live installer ISO (defaults to KDE x86_64)
 alias(
     name = "buckos-live-installer",
     actual = ":buckos-live-installer-kde",
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -2659,7 +2607,6 @@ qemu_boot_script(
         "-vga virtio",
         "-display gtk",
     ],
-    visibility = ["PUBLIC"],
 )
 
 qemu_boot_script(
@@ -2675,7 +2622,6 @@ qemu_boot_script(
         "-vga virtio",
         "-display gtk",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -2743,14 +2689,12 @@ chmod 1777 $OUT/tmp
 chmod 1777 $OUT/var/tmp
 chmod 700 $OUT/root
 """,
-    visibility = ["PUBLIC"],
 )
 
 filegroup(
     name = "baselayout-aarch64",
     srcs = [":baselayout-aarch64-gen"],
     default_target_platform = "//platforms:linux-aarch64-target",
-    visibility = ["PUBLIC"],
 )
 
 # ARM64 Minimal rootfs
@@ -2789,7 +2733,6 @@ rootfs(
         "//packages/linux/network/net-tools:net-tools",
     ],
     default_target_platform = "//platforms:linux-aarch64-target",
-    visibility = ["PUBLIC"],
 )
 
 # ARM64 initramfs
@@ -2799,7 +2742,6 @@ initramfs(
     compression = "gz",
     init = "/sbin/init",
     default_target_platform = "//platforms:linux-aarch64-target",
-    visibility = ["PUBLIC"],
 )
 
 # ARM64 QEMU boot script
@@ -2811,7 +2753,6 @@ qemu_boot_script(
     memory = "2G",
     cpus = "2",
     kernel_args = "console=ttyAMA0 rdinit=/init",
-    visibility = ["PUBLIC"],
 )
 
 # ARM64 QEMU boot with more resources
@@ -2823,7 +2764,6 @@ qemu_boot_script(
     memory = "4G",
     cpus = "4",
     kernel_args = "console=ttyAMA0 rdinit=/init loglevel=7",
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -2857,7 +2797,6 @@ rootfs(
         "//packages/linux/core/zlib:zlib",
     ],
     default_target_platform = "//platforms:linux-aarch64-target",
-    visibility = ["PUBLIC"],
 )
 
 # ARM64 minimal stage3 tarball
@@ -2868,7 +2807,6 @@ stage3_tarball(
     arch = "arm64",
     libc = "glibc",
     compression = "xz",
-    visibility = ["PUBLIC"],
 )
 
 # ARM64 Stage3 base rootfs (with build tools)
@@ -2909,7 +2847,6 @@ rootfs(
         "//packages/linux/dev-tools/build-systems/make:make",
     ],
     default_target_platform = "//platforms:linux-aarch64-target",
-    visibility = ["PUBLIC"],
 )
 
 # ARM64 base stage3 tarball
@@ -2920,7 +2857,6 @@ stage3_tarball(
     arch = "arm64",
     libc = "glibc",
     compression = "xz",
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -2934,7 +2870,6 @@ filegroup(
     name = "live-init-scripts-aarch64",
     srcs = [":live-init-scripts-gen"],
     default_target_platform = "//platforms:linux-aarch64-target",
-    visibility = ["PUBLIC"],
 )
 
 # ARM64 Live rootfs with Sway desktop
@@ -2993,7 +2928,6 @@ rootfs(
         "//packages/linux/editors/vim:vim",
     ],
     default_target_platform = "//platforms:linux-aarch64-target",
-    visibility = ["PUBLIC"],
 )
 
 # ARM64 Live initramfs
@@ -3006,7 +2940,6 @@ initramfs(
     init = "/init",  # Use /init for initramfs (standard location)
     init_script = "//defs/scripts:initramfs-init",  # Live boot script
     default_target_platform = "//platforms:linux-aarch64-target",
-    visibility = ["PUBLIC"],
 )
 
 # ARM64 Live ISO with Sway
@@ -3020,14 +2953,12 @@ iso_image(
     volume_label = "BUCKOS_ARM64",
     kernel_args = "quiet splash rdinit=/init",
     arch = "aarch64",
-    visibility = ["PUBLIC"],
 )
 
 # ARM64 Live ISO (alias)
 alias(
     name = "buckos-live-iso-aarch64",
     actual = ":buckos-live-installer-aarch64-iso",
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -3047,7 +2978,6 @@ qemu_boot_script(
         "-device virtio-gpu-pci",
         "-display gtk",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # QEMU boot for ARM64 live with full desktop (needs more RAM)
@@ -3066,6 +2996,5 @@ qemu_boot_script(
         "-device usb-mouse",
         "-display gtk",
     ],
-    visibility = ["PUBLIC"],
 )
 

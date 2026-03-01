@@ -38,7 +38,6 @@ fi
     deps = [
         "//packages/linux/lang/rust:rust",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # Export the firmware file for use in boot scripts
@@ -46,5 +45,4 @@ export_file(
     name = "hypervisor-fw",
     src = ":rust-hypervisor-firmware",
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )

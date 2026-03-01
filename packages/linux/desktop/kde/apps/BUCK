@@ -186,7 +186,6 @@ sed -i 's/m_bell->setSource/\\/\\/ &/' src/terminalDisplay/TerminalBell.cpp || t
 sed -i 's/m_bell->play/\\/\\/ &/' src/terminalDisplay/TerminalBell.cpp || true
 """],
     deps = _KDE_COMMON_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # -----------------------------------------------------------------------------
@@ -226,7 +225,6 @@ sed -i 's/set(HAVE_X11 TRUE)/set(HAVE_X11 FALSE)/' CMakeLists.txt
 sed -i '/kconfig_add_kcfg_files(/{/GENERATE_MOC/!s/kconfig_add_kcfg_files(\\([^ ]*\\)/kconfig_add_kcfg_files(\\1 GENERATE_MOC/}' src/CMakeLists.txt
 """],
     deps = _KDE_COMMON_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # -----------------------------------------------------------------------------
@@ -252,7 +250,6 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
 sed -i 's/set(HAVE_X11 TRUE)/set(HAVE_X11 FALSE)/' apps/kate/CMakeLists.txt
 """],
     deps = _KDE_COMMON_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # -----------------------------------------------------------------------------
@@ -277,7 +274,6 @@ package(
     deps = _KDE_COMMON_DEPS + [
         "//packages/linux/editors/poppler:poppler",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # -----------------------------------------------------------------------------
@@ -303,7 +299,6 @@ package(
         "//packages/linux/dev-libs/exiv2:exiv2",
         "//packages/linux/system/libs/graphics/lcms2:lcms2",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # -----------------------------------------------------------------------------
@@ -328,7 +323,6 @@ package(
         "//packages/linux/system/libs/compression/libarchive:libarchive",
         "//packages/linux/system/libs/compression/libzip:libzip",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # -----------------------------------------------------------------------------
@@ -350,7 +344,6 @@ package(
     ],
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = _KDE_COMMON_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # -----------------------------------------------------------------------------
@@ -375,7 +368,6 @@ package(
         "//packages/linux/system/libs/utility/gmp:gmp",
         "//packages/linux/system/libs/utility/mpfr:mpfr",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # -----------------------------------------------------------------------------
@@ -397,7 +389,6 @@ package(
     ],
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = _KDE_COMMON_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # -----------------------------------------------------------------------------
@@ -420,7 +411,6 @@ package(
     ],
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = _KDE_COMMON_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # -----------------------------------------------------------------------------
@@ -444,7 +434,6 @@ package(
     deps = _KDE_COMMON_DEPS + [
         "//packages/linux/desktop/kde/apps:konsole",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # -----------------------------------------------------------------------------
@@ -466,7 +455,6 @@ package(
     ],
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = _KDE_COMMON_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # -----------------------------------------------------------------------------
@@ -488,7 +476,6 @@ package(
     ],
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = _KDE_COMMON_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # -----------------------------------------------------------------------------
@@ -512,7 +499,6 @@ package(
     deps = _KDE_COMMON_DEPS + [
         "//packages/linux/laptop/monitoring/lm-sensors:lm-sensors",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # -----------------------------------------------------------------------------
@@ -536,7 +522,6 @@ package(
     deps = _KDE_COMMON_DEPS + [
         "//packages/linux/desktop/kde/apps:ksystemstats",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # -----------------------------------------------------------------------------
@@ -570,7 +555,6 @@ package(
     deps = _KDE_COMMON_DEPS + [
         "//packages/linux/dev-libs/boost:boost",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # -----------------------------------------------------------------------------
@@ -591,7 +575,6 @@ package(
     ],
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = _KDE_COMMON_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -612,7 +595,6 @@ filegroup(
         ":kcalc",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Extended KDE applications bundle
@@ -630,7 +612,6 @@ filegroup(
         ":krusader",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Complete KDE applications bundle
@@ -641,5 +622,4 @@ filegroup(
         ":kde-apps-extra",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )

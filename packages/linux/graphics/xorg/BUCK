@@ -16,7 +16,6 @@ filegroup(
         "//packages/linux/graphics/xorg/xtrans:xtrans",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Authentication and connection - required for any X11 app
@@ -28,7 +27,6 @@ filegroup(
         "//packages/linux/graphics/xorg/libXdmcp:libXdmcp",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # XCB layer - modern X11 protocol binding
@@ -39,7 +37,6 @@ filegroup(
         "//packages/linux/graphics/xorg/libxcb:libxcb",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # XCB utilities - convenience libraries on top of XCB
@@ -55,7 +52,6 @@ filegroup(
         "//packages/linux/graphics/xorg/xcb-util-cursor:xcb-util-cursor",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Core X11 libraries - minimum needed for most X11 apps
@@ -67,7 +63,6 @@ filegroup(
         "//packages/linux/graphics/xorg/libXext:libXext",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Session management - for apps that need session support
@@ -79,7 +74,6 @@ filegroup(
         "//packages/linux/graphics/xorg/libSM:libSM",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Toolkit libraries - X Toolkit Intrinsics and related
@@ -93,7 +87,6 @@ filegroup(
         "//packages/linux/graphics/xorg/libXaw:libXaw",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Rendering extensions - for compositing, antialiasing, etc.
@@ -107,7 +100,6 @@ filegroup(
         "//packages/linux/graphics/xorg/libXcomposite:libXcomposite",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Input extensions - for advanced input handling
@@ -119,7 +111,6 @@ filegroup(
         "//packages/linux/graphics/xorg/libXtst:libXtst",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Display extensions - for multi-monitor, video modes
@@ -133,7 +124,6 @@ filegroup(
         "//packages/linux/graphics/xorg/libXScrnSaver:libXScrnSaver",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Video extensions
@@ -144,7 +134,6 @@ filegroup(
         "//packages/linux/graphics/xorg/libXv:libXv",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Cursor handling
@@ -155,7 +144,6 @@ filegroup(
         "//packages/linux/graphics/xorg/libXcursor:libXcursor",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Font rendering - Xft and dependencies
@@ -166,7 +154,6 @@ filegroup(
         "//packages/linux/graphics/xorg/libXft:libXft",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Keyboard configuration
@@ -179,7 +166,6 @@ filegroup(
         "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Extended X11 libraries - commonly needed extensions
@@ -192,7 +178,6 @@ filegroup(
         ":x11-cursor",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Full X11 libraries - all client libraries
@@ -209,14 +194,12 @@ filegroup(
         ":xcb-utils",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Alias for backwards compatibility
 alias(
     name = "xorg-libs",
     actual = ":x11-full",
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -233,7 +216,6 @@ filegroup(
         ":x11-fonts",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Qt dependencies - what Qt apps typically need
@@ -247,7 +229,6 @@ filegroup(
         ":xcb-utils",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # SDL2 dependencies - what SDL2 apps typically need
@@ -259,7 +240,6 @@ filegroup(
         ":x11-video",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # OpenGL/GLX dependencies - for OpenGL apps
@@ -270,5 +250,4 @@ filegroup(
         ":x11-display",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )

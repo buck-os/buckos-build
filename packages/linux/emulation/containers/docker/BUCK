@@ -40,7 +40,6 @@ install -m 0644 contrib/completion/fish/docker.fish "$OUT/usr/share/fish/vendor_
     deps = [
         "//packages/linux/lang/go:go",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # Docker Engine (dockerd)
@@ -128,7 +127,6 @@ echo 'g docker - -' > "$OUT/usr/lib/sysusers.d/docker.conf"
         "//packages/linux/system/libs/ipc/libseccomp:libseccomp",
         "//packages/linux/network/firewall/iptables:iptables",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # Docker Compose
@@ -162,7 +160,6 @@ ln -sf /usr/lib/docker/cli-plugins/docker-compose "$OUT/usr/bin/docker-compose"
     deps = [
         "//packages/linux/lang/go:go",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # Docker Buildx
@@ -195,5 +192,4 @@ install -m 0755 buildx-binary "$OUT/usr/lib/docker/cli-plugins/docker-buildx"
     deps = [
         "//packages/linux/lang/go:go",
     ],
-    visibility = ["PUBLIC"],
 )

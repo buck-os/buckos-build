@@ -23,7 +23,6 @@ package(
         # Generate pkg-config file
         "printf 'prefix=/usr\\nlibdir=${prefix}/lib64\\nincludedir=${prefix}/include\\n\\nName: duktape\\nDescription: Embeddable JavaScript engine\\nVersion: 2.7.0\\nLibs: -L${libdir} -lduktape -lm\\nCflags: -I${includedir}\\n' > usr/lib64/pkgconfig/duktape.pc",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # PolicyKit - Authorization framework
@@ -65,5 +64,4 @@ package(
         "//packages/linux/system/libs/ipc/libcap:libcap",
         "//packages/linux/system/init/systemd:systemd",
     ],
-    visibility = ["PUBLIC"],
 )

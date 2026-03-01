@@ -45,7 +45,7 @@ def _qemu_boot_script_impl(ctx):
     if extra_args:
         cmd.add("--extra-args", extra_args)
 
-    ctx.actions.run(cmd, category = "qemu_boot_script", identifier = ctx.attrs.name)
+    ctx.actions.run(cmd, category = "qemu_boot_script", identifier = ctx.attrs.name, allow_cache_upload = True)
 
     return [DefaultInfo(default_output = boot_script)]
 

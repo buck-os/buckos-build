@@ -23,7 +23,6 @@ kernel_headers(
     source = "//packages/linux/kernel/src:linux-src",
     config = "//packages/linux/kernel/configs:buckos-default",
     version = "6.17.10",
-    visibility = ["PUBLIC"],
 )
 
 # ── Default kernel build ─────────────────────────────────────────────
@@ -34,7 +33,6 @@ kernel_build(
     config = "//packages/linux/kernel/configs:buckos-default",
     version = "6.17.10",
     labels = ["buckos:compile", "buckos:build:kbuild"],
-    visibility = ["PUBLIC"],
 )
 
 # ── BTF headers (vmlinux.h for BPF CO-RE / sched_ext) ───────────────
@@ -42,7 +40,6 @@ kernel_build(
 kernel_btf_headers(
     name = "linux-btf",
     kernel = ":buckos-kernel",
-    visibility = ["PUBLIC"],
 )
 
 # ── Installed modules ────────────────────────────────────────────────
@@ -55,7 +52,6 @@ kernel_modules_install(
         # Out-of-tree modules listed here, e.g.:
         # "//packages/linux/drivers/nvidia:nvidia-ko",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # ── Kernel variants ──────────────────────────────────────────────────
@@ -67,7 +63,6 @@ kernel_build(
     config = "//packages/linux/kernel/configs:buckos-minimal",
     version = "6.17.10",
     labels = ["buckos:compile", "buckos:build:kbuild"],
-    visibility = ["PUBLIC"],
 )
 
 # Server kernel
@@ -77,7 +72,6 @@ kernel_build(
     config = "//packages/linux/kernel/configs:buckos-server",
     version = "6.17.10",
     labels = ["buckos:compile", "buckos:build:kbuild"],
-    visibility = ["PUBLIC"],
 )
 
 # VM Guest kernel
@@ -87,7 +81,6 @@ kernel_build(
     config = "//packages/linux/kernel/configs:buckos-vm-guest",
     version = "6.17.10",
     labels = ["buckos:compile", "buckos:build:kbuild"],
-    visibility = ["PUBLIC"],
 )
 
 # Defconfig kernel (development/testing)
@@ -97,7 +90,6 @@ kernel_build(
     config = "//packages/linux/kernel/configs:buckos-minimal",
     version = "6.17.10",
     labels = ["buckos:compile", "buckos:build:kbuild"],
-    visibility = ["PUBLIC"],
 )
 
 # Live CD/USB kernel
@@ -109,7 +101,6 @@ kernel_build(
     # GCC 15 trips -Werror=address in libbpf tools (hashmap__find NULL check)
     patches = ["fix-libbpf-werror-address.patch"],
     labels = ["buckos:compile", "buckos:build:kbuild"],
-    visibility = ["PUBLIC"],
 )
 
 # Cloud Hypervisor Guest kernel
@@ -120,7 +111,6 @@ kernel_build(
     version = "6.18",
     kcflags = "-Wno-error -Wno-unterminated-string-initialization",
     labels = ["buckos:compile", "buckos:build:kbuild"],
-    visibility = ["PUBLIC"],
 )
 
 # ── ARM64 variants ───────────────────────────────────────────────────
@@ -133,7 +123,6 @@ kernel_build(
     arch = "aarch64",
     cross_toolchain = "//tc/bootstrap/aarch64:cross-toolchain-aarch64",
     labels = ["buckos:compile", "buckos:build:kbuild", "buckos:arch:aarch64"],
-    visibility = ["PUBLIC"],
 )
 
 kernel_build(
@@ -144,7 +133,6 @@ kernel_build(
     arch = "aarch64",
     cross_toolchain = "//tc/bootstrap/aarch64:cross-toolchain-aarch64",
     labels = ["buckos:compile", "buckos:build:kbuild", "buckos:arch:aarch64"],
-    visibility = ["PUBLIC"],
 )
 
 kernel_build(
@@ -155,5 +143,4 @@ kernel_build(
     arch = "aarch64",
     cross_toolchain = "//tc/bootstrap/aarch64:cross-toolchain-aarch64",
     labels = ["buckos:compile", "buckos:build:kbuild", "buckos:arch:aarch64"],
-    visibility = ["PUBLIC"],
 )

@@ -34,7 +34,6 @@ package(
     deps = [
         "//packages/linux/core/elfutils:elfutils",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # SDT headers only - minimal package for build-time SDT support
@@ -57,11 +56,9 @@ genrule(
             cp $TMPDIR/includes/sys/dtrace.h $OUT/usr/include/sys/
         fi
     """,
-    visibility = ["PUBLIC"],
 )
 
 filegroup(
     name = "sdt-headers",
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )

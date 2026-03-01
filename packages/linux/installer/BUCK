@@ -99,14 +99,12 @@ ICON_EOF
 echo "Installer package created"
 ls -la "$OUT/usr/bin/"
 """,
-    visibility = ["PUBLIC"],
 )
 
 # Package the installer for rootfs inclusion
 filegroup(
     name = "buckos-installer",
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -195,12 +193,10 @@ fi
 
 echo "Done"
 """,
-    visibility = ["PUBLIC"],
 )
 
 # Package the build definitions for rootfs inclusion
 filegroup(
     name = "buckos-build-defs",
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )

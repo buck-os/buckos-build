@@ -90,6 +90,7 @@ shift
         manifest_cmd2,
         category = "rootfs_manifest",
         identifier = ctx.attrs.name + "-manifest",
+        allow_cache_upload = True,
     )
 
     # Include manifest as hidden input to force cache invalidation
@@ -99,6 +100,7 @@ shift
         cmd,
         category = "rootfs",
         identifier = ctx.attrs.name,
+        allow_cache_upload = True,
     )
 
     return [DefaultInfo(default_output = rootfs_dir)]

@@ -10,7 +10,7 @@ Five cacheable actions:
 5. install       — DESTDIR=$OUT ./mach install
 """
 
-load("//defs:providers.bzl", "BuildToolchainInfo", "PackageInfo")
+load("//defs:providers.bzl", "PackageInfo")
 load("//defs/rules:_common.bzl", "COMMON_PACKAGE_ATTRS", "build_package_tsets")
 load("//defs:toolchain_helpers.bzl", "toolchain_path_args")
 load("//defs:host_tools.bzl", "host_tool_path_args")
@@ -41,7 +41,7 @@ def _src_prepare(ctx, source):
     if dep_base_dirs:
         env["DEP_BASE_DIRS"] = cmd_args(dep_base_dirs, delimiter = ":")
 
-    ctx.actions.run(cmd, env = env, category = "prepare", identifier = ctx.attrs.name)
+    ctx.actions.run(cmd, env = env, category = "mozbuild_prepare", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
 
@@ -144,7 +144,7 @@ def _configure(ctx, source):
     for arg in host_tool_path_args(ctx):
         cmd.add(arg)
 
-    ctx.actions.run(cmd, env = env, category = "configure", identifier = ctx.attrs.name)
+    ctx.actions.run(cmd, env = env, category = "mozbuild_configure", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
 
@@ -178,7 +178,7 @@ def _build(ctx, source, configured):
     for arg in host_tool_path_args(ctx):
         cmd.add(arg)
 
-    ctx.actions.run(cmd, env = env, category = "build", identifier = ctx.attrs.name)
+    ctx.actions.run(cmd, env = env, category = "mozbuild_build", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
 
@@ -207,7 +207,7 @@ def _install(ctx, source, built):
     for arg in host_tool_path_args(ctx):
         cmd.add(arg)
 
-    ctx.actions.run(cmd, env = env, category = "install", identifier = ctx.attrs.name)
+    ctx.actions.run(cmd, env = env, category = "mozbuild_install", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
 
@@ -236,11 +236,7 @@ def _mozbuild_package_impl(ctx):
         name = ctx.attrs.name,
         version = ctx.attrs.version,
         prefix = installed,
-        include_dirs = [],
-        lib_dirs = [],
-        bin_dirs = [],
         libraries = [],
-        pkg_config_path = None,
         cflags = [],
         ldflags = [],
         compile_info = compile_tset,

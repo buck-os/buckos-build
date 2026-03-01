@@ -11,7 +11,6 @@ package(
     description = "SPICE protocol headers",
     homepage = "https://www.spice-space.org/",
     license = "BSD-3-Clause",
-    visibility = ["PUBLIC"],
 )
 
 # SPICE server library
@@ -45,7 +44,6 @@ package(
         "//packages/linux/system/libs/compression/lz4:lz4",
         "//packages/linux/system/libs/image/libjpeg-turbo:libjpeg-turbo",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # SPICE GTK client library
@@ -78,7 +76,6 @@ package(
         "//packages/linux/system/libs/compression/lz4:lz4",
         "//packages/linux/audio/daemons/pulseaudio:pulseaudio",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # SPICE VD Agent for guest
@@ -117,7 +114,6 @@ install -m 0644 data/70-spice-vdagentd.rules "$DESTDIR/usr/lib/udev/rules.d/" 2>
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/system/init/systemd:systemd",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -133,5 +129,4 @@ filegroup(
         ":spice-vdagent",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )

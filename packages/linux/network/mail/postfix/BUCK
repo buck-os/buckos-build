@@ -19,5 +19,4 @@ package(
         "pgsql": "//packages/linux/databases/postgresql:postgresql",
     },
     install_script = """make makefiles CCARGS='-DUSE_TLS -DUSE_SASL_AUTH' AUXLIBS='-lssl -lcrypto'\nmake\nsh postfix-install -non-interactive install_root=${DESTDIR}""",
-    visibility = ["PUBLIC"],
 )

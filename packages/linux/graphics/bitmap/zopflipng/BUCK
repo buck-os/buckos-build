@@ -14,5 +14,4 @@ package(
         "//packages/linux/graphics/bitmap/lodepng:lodepng",
     ],
     install_script = """cd src/zopflipng\ng++ -O2 -W -Wall -Wextra -Wno-unused-function -ansi -pedantic -c zopflipng_lib.cc -I../zopfli -I${PREFIX}/include/lodepng -o zopflipng_lib.o\ng++ -O2 -W -Wall -Wextra -Wno-unused-function -ansi -pedantic -c zopflipng_bin.cc -I../zopfli -I${PREFIX}/include/lodepng -o zopflipng_bin.o\ng++ zopflipng_lib.o zopflipng_bin.o -L${PREFIX}/lib -lzopfli -lpng -lz -o zopflipng\nmkdir -p ${PREFIX}/bin\nmkdir -p ${PREFIX}/include/zopflipng\ncp zopflipng ${PREFIX}/bin/\ncp zopflipng_lib.h ${PREFIX}/include/zopflipng/""",
-    visibility = ["PUBLIC"],
 )

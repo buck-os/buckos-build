@@ -29,7 +29,6 @@ package(
     homepage = "https://www.openssl.org/",
     description = "TLS/SSL and crypto library",
     cpe = "cpe:2.3:a:openssl:openssl:3.6.0:*:*:*:*:*:*:*",
-    visibility = ["PUBLIC"],
 )
 
 # ── OpenSSL 3.3 (LTS) ──
@@ -55,9 +54,8 @@ package(
     homepage = "https://www.openssl.org/",
     description = "TLS/SSL and crypto library (LTS)",
     cpe = "cpe:2.3:a:openssl:openssl:3.3.2:*:*:*:*:*:*:*",
-    visibility = ["PUBLIC"],
 )
 
 # ── Default ──
 # Points to LTS stable (3.3) due to 3.6.0 AVX-512 assembly bug
-alias(name = "openssl", actual = ":openssl-3.3", visibility = ["PUBLIC"])
+alias(name = "openssl", actual = ":openssl-3.3")

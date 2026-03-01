@@ -31,7 +31,6 @@ package(
         "LDFLAGS": "-Wl,-O1,--as-needed",
     },
     labels = ["buckos:hw:gpu"],
-    visibility = ["PUBLIC"],
 )
 
 # gpu-burn - GPU stress testing (requires CUDA toolkit - disabled until CUDA is packaged)
@@ -64,5 +63,4 @@ filegroup(
         # ":gpu-burn",  # Disabled - requires CUDA toolkit
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )

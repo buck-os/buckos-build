@@ -46,6 +46,7 @@ def _kernel_config_impl(ctx: AnalysisContext) -> list[Provider]:
         cmd,
         category = "kernel_config",
         identifier = ctx.attrs.name,
+        allow_cache_upload = True,
     )
 
     return [
@@ -163,6 +164,7 @@ def _kernel_build_impl(ctx: AnalysisContext) -> list[Provider]:
         cmd,
         category = "kernel",
         identifier = ctx.attrs.name,
+        allow_cache_upload = True,
     )
 
     return [
@@ -217,7 +219,7 @@ def kernel_build(
         inject_files = {},
         kcflags = None,
         labels = [],
-        visibility = []):
+        visibility = None):
     """Build Linux kernel with optional patches and external modules.
 
     This macro wraps _kernel_build_rule to integrate with the private
@@ -233,7 +235,7 @@ def kernel_build(
         cross_toolchain: Optional cross-compilation toolchain dependency
         patches: List of patch files to apply to kernel source before build
         modules: List of external module source dependencies (download_source targets) to compile
-        visibility: Target visibility
+        visibility: Target visibility (defaults to PACKAGE file setting)
     """
     # Apply private patch registry overrides
     merged_patches = list(patches)
@@ -241,7 +243,7 @@ def kernel_build(
     if "patches" in private:
         merged_patches.extend(private["patches"])
 
-    _kernel_build_rule(
+    kwargs = dict(
         name = name,
         source = source,
         version = version,
@@ -255,8 +257,10 @@ def kernel_build(
         inject_files = inject_files,
         kcflags = kcflags,
         labels = labels,
-        visibility = visibility,
     )
+    if visibility != None:
+        kwargs["visibility"] = visibility
+    _kernel_build_rule(**kwargs)
 
 # ── kernel_headers ──────────────────────────────────────────────────
 
@@ -280,7 +284,7 @@ def _kernel_headers_impl(ctx: AnalysisContext) -> list[Provider]:
     for arg in toolchain_path_args(ctx):
         cmd.add(arg)
 
-    ctx.actions.run(cmd, category = "kernel_headers", identifier = ctx.attrs.name)
+    ctx.actions.run(cmd, category = "kernel_headers", identifier = ctx.attrs.name, allow_cache_upload = True)
 
     return [
         DefaultInfo(default_output = install_dir),
@@ -305,16 +309,18 @@ _kernel_headers_rule = rule(
     cfg = strip_toolchain_mode,
 )
 
-def kernel_headers(name, source, version = "", config = None, arch = "x86_64", labels = [], visibility = []):
-    _kernel_headers_rule(
+def kernel_headers(name, source, version = "", config = None, arch = "x86_64", labels = [], visibility = None):
+    kwargs = dict(
         name = name,
         source = source,
         config = config,
         version = version,
         arch = arch,
         labels = labels,
-        visibility = visibility,
     )
+    if visibility != None:
+        kwargs["visibility"] = visibility
+    _kernel_headers_rule(**kwargs)
 
 # ── kernel_btf_headers ──────────────────────────────────────────────
 
@@ -330,7 +336,7 @@ def _kernel_btf_headers_impl(ctx: AnalysisContext) -> list[Provider]:
     cmd.add("--vmlinux", ki.vmlinux)
     cmd.add("--output", vmlinux_h.as_output())
 
-    ctx.actions.run(cmd, category = "kernel_btf", identifier = ctx.attrs.name)
+    ctx.actions.run(cmd, category = "kernel_btf", identifier = ctx.attrs.name, allow_cache_upload = True)
 
     return [
         DefaultInfo(default_output = vmlinux_h),
@@ -351,13 +357,15 @@ _kernel_btf_headers_rule = rule(
     },
 )
 
-def kernel_btf_headers(name, kernel, labels = [], visibility = []):
-    _kernel_btf_headers_rule(
+def kernel_btf_headers(name, kernel, labels = [], visibility = None):
+    kwargs = dict(
         name = name,
         kernel = kernel,
         labels = labels,
-        visibility = visibility,
     )
+    if visibility != None:
+        kwargs["visibility"] = visibility
+    _kernel_btf_headers_rule(**kwargs)
 
 # ── kernel_modules_install ──────────────────────────────────────────
 
@@ -384,7 +392,7 @@ def _kernel_modules_install_impl(ctx: AnalysisContext) -> list[Provider]:
     for arg in toolchain_path_args(ctx):
         cmd.add(arg)
 
-    ctx.actions.run(cmd, category = "kernel_modules", identifier = ctx.attrs.name)
+    ctx.actions.run(cmd, category = "kernel_modules", identifier = ctx.attrs.name, allow_cache_upload = True)
 
     return [DefaultInfo(default_output = install_dir)]
 
@@ -402,13 +410,15 @@ _kernel_modules_install_rule = rule(
     } | TOOLCHAIN_ATTRS,
 )
 
-def kernel_modules_install(name, kernel, version = "", arch = "x86_64", extra_modules = [], labels = [], visibility = []):
-    _kernel_modules_install_rule(
+def kernel_modules_install(name, kernel, version = "", arch = "x86_64", extra_modules = [], labels = [], visibility = None):
+    kwargs = dict(
         name = name,
         kernel = kernel,
         version = version,
         arch = arch,
         extra_modules = extra_modules,
         labels = labels,
-        visibility = visibility,
     )
+    if visibility != None:
+        kwargs["visibility"] = visibility
+    _kernel_modules_install_rule(**kwargs)

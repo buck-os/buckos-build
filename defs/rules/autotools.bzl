@@ -42,7 +42,7 @@ def _src_prepare(ctx, source):
     for p in ctx.attrs.patches:
         cmd.add("--patch", p)
 
-    ctx.actions.run(cmd, category = "prepare", identifier = ctx.attrs.name)
+    ctx.actions.run(cmd, category = "autotools_prepare", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
 def _src_configure(ctx, source, cflags_file = None, ldflags_file = None,
@@ -129,12 +129,7 @@ def _src_configure(ctx, source, cflags_file = None, ldflags_file = None,
         add_flag_file(cmd, "--pkg-config-file", pkg_config_file)
         add_flag_file(cmd, "--path-file", path_file)
 
-    # Ensure dep artifacts are materialized — tset flag files reference
-    # dep prefixes but don't register them as action inputs.
-    for dep in ctx.attrs.deps:
-        cmd.add(cmd_args(hidden = dep[DefaultInfo].default_outputs))
-
-    ctx.actions.run(cmd, category = "configure", identifier = ctx.attrs.name)
+    ctx.actions.run(cmd, category = "autotools_configure", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
 def _src_compile(ctx, configured, cflags_file = None, ldflags_file = None,
@@ -190,12 +185,7 @@ def _src_compile(ctx, configured, cflags_file = None, ldflags_file = None,
     for arg in ctx.attrs.make_args:
         cmd.add(cmd_args("--make-arg=", arg, delimiter = ""))
 
-    # Ensure dep artifacts are materialized — tset flag files reference
-    # dep prefixes but don't register them as action inputs.
-    for dep in ctx.attrs.deps:
-        cmd.add(cmd_args(hidden = dep[DefaultInfo].default_outputs))
-
-    ctx.actions.run(cmd, category = "compile", identifier = ctx.attrs.name)
+    ctx.actions.run(cmd, category = "autotools_compile", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
 def _src_install(ctx, built, cflags_file = None, ldflags_file = None,
@@ -260,12 +250,7 @@ def _src_install(ctx, built, cflags_file = None, ldflags_file = None,
     for post_cmd in ctx.attrs.post_install_cmds:
         cmd.add("--post-cmd", post_cmd)
 
-    # Ensure dep artifacts are materialized — tset flag files reference
-    # dep prefixes but don't register them as action inputs.
-    for dep in ctx.attrs.deps:
-        cmd.add(cmd_args(hidden = dep[DefaultInfo].default_outputs))
-
-    ctx.actions.run(cmd, category = "install", identifier = ctx.attrs.name)
+    ctx.actions.run(cmd, category = "autotools_install", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
 # ── Rule implementation ───────────────────────────────────────────────
@@ -309,11 +294,7 @@ def _autotools_package_impl(ctx):
         name = ctx.attrs.name,
         version = ctx.attrs.version,
         prefix = installed,
-        include_dirs = [],
-        lib_dirs = [],
-        bin_dirs = [],
         libraries = ctx.attrs.libraries,
-        pkg_config_path = None,
         cflags = ctx.attrs.extra_cflags,
         ldflags = ctx.attrs.extra_ldflags,
         compile_info = compile_tset,

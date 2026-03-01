@@ -23,7 +23,6 @@ install -m 755 bin/* "$OUT/usr/lib/cni/"
     deps = [
         "//packages/linux/lang/go:go",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # netavark - Container network stack
@@ -43,7 +42,6 @@ install -m 755 target/release/netavark "$OUT/usr/libexec/podman/"
     deps = [
         "//packages/linux/dev-libs/serialization/protobuf:protobuf",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # aardvark-dns - DNS server for container networks
@@ -60,7 +58,6 @@ package(
 mkdir -p "$OUT/usr/libexec/podman"
 install -m 755 target/release/aardvark-dns "$OUT/usr/libexec/podman/"
 """,
-    visibility = ["PUBLIC"],
 )
 
 # slirp4netns - User-mode networking for unprivileged network namespaces
@@ -80,5 +77,4 @@ package(
         "//packages/linux/system/libs/ipc/libseccomp:libseccomp",
         "//packages/linux/system/libs/ipc/libcap:libcap",
     ],
-    visibility = ["PUBLIC"],
 )

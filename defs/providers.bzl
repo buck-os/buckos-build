@@ -13,11 +13,7 @@ PackageInfo = provider(fields = [
 
     # Build outputs
     "prefix",           # artifact: the install prefix directory
-    "include_dirs",     # list[artifact]: paths to installed headers
-    "lib_dirs",         # list[artifact]: paths to installed libraries
-    "bin_dirs",         # list[artifact]: paths to installed binaries
     "libraries",        # list[str]: library names for -l flags
-    "pkg_config_path",  # artifact | None: path to .pc files
 
     # Extra flags this package requires consumers to use
     "cflags",           # list[str]

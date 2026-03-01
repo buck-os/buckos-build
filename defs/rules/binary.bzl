@@ -10,7 +10,7 @@ Four discrete cacheable actions:
 
 load("//defs:providers.bzl", "BuildToolchainInfo", "PackageInfo")
 load("//defs/rules:_common.bzl", "COMMON_PACKAGE_ATTRS", "build_package_tsets")
-load("//defs:toolchain_helpers.bzl", "toolchain_env_args",
+load("//defs:toolchain_helpers.bzl",
      "toolchain_extra_cflags", "toolchain_extra_ldflags")
 load("//defs:host_tools.bzl", "host_tool_env_paths")
 
@@ -45,7 +45,7 @@ def _src_prepare(ctx, source):
     if dep_base_dirs:
         env["DEP_BASE_DIRS"] = cmd_args(dep_base_dirs, delimiter = ":")
 
-    ctx.actions.run(cmd, env = env, category = "prepare", identifier = ctx.attrs.name)
+    ctx.actions.run(cmd, env = env, category = "binary_prepare", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
 def _dep_env_args(ctx):
@@ -159,8 +159,9 @@ def _install(ctx, source):
     ctx.actions.run(
         cmd,
         env = env,
-        category = "install",
+        category = "binary_install",
         identifier = ctx.attrs.name,
+        allow_cache_upload = True,
     )
     return output
 
@@ -183,11 +184,7 @@ def _binary_package_impl(ctx):
         name = ctx.attrs.name,
         version = ctx.attrs.version,
         prefix = installed,
-        include_dirs = [],
-        lib_dirs = [],
-        bin_dirs = [],
         libraries = [],
-        pkg_config_path = None,
         cflags = [],
         ldflags = [],
         compile_info = compile_tset,

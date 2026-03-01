@@ -30,7 +30,7 @@ def _stage2_wrapper_impl(ctx):
     cmd.add("--stage2-dir", stage2_output)
     cmd.add("--output-dir", output.as_output())
     cmd.add("--target-triple", TARGET_TRIPLE)
-    ctx.actions.run(cmd, category = "create_wrappers", identifier = ctx.attrs.name)
+    ctx.actions.run(cmd, category = "create_wrappers", identifier = ctx.attrs.name, allow_cache_upload = True)
 
     # Return BootstrapStageInfo with wrapper paths
     return [

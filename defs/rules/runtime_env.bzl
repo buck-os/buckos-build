@@ -41,6 +41,7 @@ def _runtime_env_impl(ctx):
         env = {"_LIB_DIRS": lib_paths},
         category = "runtime_env",
         identifier = ctx.attrs.name,
+        allow_cache_upload = True,
     )
 
     # Propagate lib dirs as other_outputs so that test consumers also

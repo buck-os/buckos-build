@@ -15,7 +15,6 @@ extract_source(
     source = ":linux-6.18-archive",
     strip_components = 1,
     format = "tar.xz",
-    visibility = ["PUBLIC"],
 )
 
 # Stable - Latest stable kernel
@@ -30,7 +29,6 @@ extract_source(
     source = ":linux-6.17-archive",
     strip_components = 1,
     format = "tar.xz",
-    visibility = ["PUBLIC"],
 )
 
 # LTS - Long Term Support (6.12.x series)
@@ -46,31 +44,26 @@ extract_source(
     source = ":linux-6.12-archive",
     strip_components = 1,
     format = "tar.xz",
-    visibility = ["PUBLIC"],
 )
 
 # Default alias points to stable (recommended for most users)
 alias(
     name = "linux-src",
     actual = ":linux-6.17-src",
-    visibility = ["PUBLIC"],
 )
 
 # Convenience aliases
 alias(
     name = "linux-mainline-src",
     actual = ":linux-6.18-src",
-    visibility = ["PUBLIC"],
 )
 
 alias(
     name = "linux-stable-src",
     actual = ":linux-6.17-src",
-    visibility = ["PUBLIC"],
 )
 
 alias(
     name = "linux-lts-src",
     actual = ":linux-6.12-src",
-    visibility = ["PUBLIC"],
 )

@@ -34,7 +34,7 @@ def _initramfs_impl(ctx):
         init_script_src = ctx.attrs.init_script[DefaultInfo].default_outputs[0]
         cmd.add("--init-script", init_script_src)
 
-    ctx.actions.run(cmd, category = "initramfs", identifier = ctx.attrs.name)
+    ctx.actions.run(cmd, category = "initramfs", identifier = ctx.attrs.name, allow_cache_upload = True)
 
     return [DefaultInfo(default_output = initramfs_file)]
 
@@ -89,7 +89,7 @@ def _dracut_initramfs_impl(ctx):
     for arg in toolchain_path_args(ctx):
         cmd.add(arg)
 
-    ctx.actions.run(cmd, category = "dracut_initramfs", identifier = ctx.attrs.name)
+    ctx.actions.run(cmd, category = "dracut_initramfs", identifier = ctx.attrs.name, allow_cache_upload = True)
 
     return [DefaultInfo(default_output = initramfs_file)]
 

@@ -16,6 +16,7 @@ load("//defs:providers.bzl", "PackageInfo")
 load("//defs/rules:_common.bzl",
      "COMMON_PACKAGE_ATTRS",
      "add_flag_file", "build_package_tsets", "collect_dep_tsets",
+     "src_prepare",
      "write_bin_dirs", "write_compile_flags", "write_lib_dirs",
      "write_link_flags", "write_pkg_config_paths",
 )
@@ -23,23 +24,6 @@ load("//defs:toolchain_helpers.bzl", "toolchain_env_args", "toolchain_extra_cfla
 load("//defs:host_tools.bzl", "host_tool_path_args")
 
 # ── Phase helpers ─────────────────────────────────────────────────────
-
-def _src_prepare(ctx, source):
-    """Apply patches and pre_configure_cmds.  Separate action so unpatched source stays cached."""
-    if not ctx.attrs.patches and not ctx.attrs.pre_configure_cmds:
-        return source  # No patches or cmds — zero-cost passthrough
-
-    output = ctx.actions.declare_output("prepared", dir = True)
-    cmd = cmd_args(ctx.attrs._patch_tool[RunInfo])
-    cmd.add("--source-dir", source)
-    cmd.add("--output-dir", output.as_output())
-    for p in ctx.attrs.patches:
-        cmd.add("--patch", p)
-    for c in ctx.attrs.pre_configure_cmds:
-        cmd.add("--cmd", c)
-
-    ctx.actions.run(cmd, category = "prepare", identifier = ctx.attrs.name)
-    return output
 
 def _meson_setup(ctx, source, cflags_file = None, ldflags_file = None,
                  pkg_config_file = None, path_file = None):
@@ -108,12 +92,7 @@ def _meson_setup(ctx, source, cflags_file = None, ldflags_file = None,
     for arg in ctx.attrs.configure_args:
         cmd.add(cmd_args("--meson-arg=", arg, delimiter = ""))
 
-    # Ensure dep artifacts are materialized — tset flag files reference
-    # dep prefixes but don't register them as action inputs.
-    for dep in ctx.attrs.deps:
-        cmd.add(cmd_args(hidden = dep[DefaultInfo].default_outputs))
-
-    ctx.actions.run(cmd, category = "configure", identifier = ctx.attrs.name)
+    ctx.actions.run(cmd, category = "meson_configure", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
 def _src_compile(ctx, configured, source, path_file = None, lib_dirs_file = None):
@@ -124,11 +103,11 @@ def _src_compile(ctx, configured, source, path_file = None, lib_dirs_file = None
     cmd.add("--output-dir", output.as_output())
     cmd.add("--build-system", "ninja")
 
-    # Ensure source dir and dep artifacts are available — meson
-    # out-of-tree builds reference them in build.ninja.
+    # Ensure source dir is available — meson out-of-tree builds
+    # reference source files by absolute path in build.ninja.
+    # Dep prefixes are materialised via tset projections (path_file,
+    # lib_dirs_file) passed to add_flag_file below.
     cmd.add(cmd_args(hidden = source))
-    for dep in ctx.attrs.deps:
-        cmd.add(cmd_args(hidden = dep[DefaultInfo].default_outputs))
 
     # Inject toolchain CC/CXX/AR
     for env_arg in toolchain_env_args(ctx):
@@ -155,7 +134,7 @@ def _src_compile(ctx, configured, source, path_file = None, lib_dirs_file = None
     for arg in ctx.attrs.make_args:
         cmd.add("--make-arg", arg)
 
-    ctx.actions.run(cmd, category = "compile", identifier = ctx.attrs.name)
+    ctx.actions.run(cmd, category = "meson_compile", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
 def _src_install(ctx, built, source, path_file = None, lib_dirs_file = None):
@@ -196,12 +175,7 @@ def _src_install(ctx, built, source, path_file = None, lib_dirs_file = None):
     for post_cmd in ctx.attrs.post_install_cmds:
         cmd.add("--post-cmd", post_cmd)
 
-    # Ensure dep artifacts are materialized — tset flag files reference
-    # dep prefixes but don't register them as action inputs.
-    for dep in ctx.attrs.deps:
-        cmd.add(cmd_args(hidden = dep[DefaultInfo].default_outputs))
-
-    ctx.actions.run(cmd, category = "install", identifier = ctx.attrs.name)
+    ctx.actions.run(cmd, category = "meson_install", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
 # ── Rule implementation ───────────────────────────────────────────────
@@ -211,7 +185,7 @@ def _meson_package_impl(ctx):
     source = ctx.attrs.source[DefaultInfo].default_outputs[0]
 
     # Phase 2: src_prepare — apply patches
-    prepared = _src_prepare(ctx, source)
+    prepared = src_prepare(ctx, source, "meson_prepare")
 
     # Collect dep-only tsets and write flag files for build phases
     dep_compile, dep_link, dep_path = collect_dep_tsets(ctx)
@@ -238,11 +212,7 @@ def _meson_package_impl(ctx):
         name = ctx.attrs.name,
         version = ctx.attrs.version,
         prefix = installed,
-        include_dirs = [],
-        lib_dirs = [],
-        bin_dirs = [],
         libraries = ctx.attrs.libraries,
-        pkg_config_path = None,
         cflags = ctx.attrs.extra_cflags,
         ldflags = ctx.attrs.extra_ldflags,
         compile_info = compile_tset,

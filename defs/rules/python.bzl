@@ -9,28 +9,11 @@ Four discrete cacheable actions:
 """
 
 load("//defs:providers.bzl", "BuildToolchainInfo", "PackageInfo")
-load("//defs/rules:_common.bzl", "COMMON_PACKAGE_ATTRS", "build_package_tsets")
+load("//defs/rules:_common.bzl", "COMMON_PACKAGE_ATTRS", "build_package_tsets", "src_prepare")
 load("//defs:toolchain_helpers.bzl", "toolchain_env_args", "toolchain_path_args")
 load("//defs:host_tools.bzl", "host_tool_path_args")
 
 # ── Phase helpers ─────────────────────────────────────────────────────
-
-def _src_prepare(ctx, source):
-    """Apply patches and pre_configure_cmds.  Separate action so unpatched source stays cached."""
-    if not ctx.attrs.patches and not ctx.attrs.pre_configure_cmds:
-        return source  # No patches or cmds — zero-cost passthrough
-
-    output = ctx.actions.declare_output("prepared", dir = True)
-    cmd = cmd_args(ctx.attrs._patch_tool[RunInfo])
-    cmd.add("--source-dir", source)
-    cmd.add("--output-dir", output.as_output())
-    for p in ctx.attrs.patches:
-        cmd.add("--patch", p)
-    for c in ctx.attrs.pre_configure_cmds:
-        cmd.add("--cmd", c)
-
-    ctx.actions.run(cmd, category = "prepare", identifier = ctx.attrs.name)
-    return output
 
 def _python_install(ctx, source):
     """Run pip install via python_helper.py."""
@@ -72,7 +55,7 @@ def _python_install(ctx, source):
     for arg in ctx.attrs.pip_args:
         cmd.add("--pip-arg", arg)
 
-    ctx.actions.run(cmd, category = "python_install", identifier = ctx.attrs.name)
+    ctx.actions.run(cmd, category = "python_install", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
 # ── Rule implementation ───────────────────────────────────────────────
@@ -82,7 +65,7 @@ def _python_package_impl(ctx):
     source = ctx.attrs.source[DefaultInfo].default_outputs[0]
 
     # Phase 2: src_prepare — apply patches
-    prepared = _src_prepare(ctx, source)
+    prepared = src_prepare(ctx, source, "python_prepare")
 
     # Phase 3: python_install
     installed = _python_install(ctx, prepared)
@@ -94,11 +77,7 @@ def _python_package_impl(ctx):
         name = ctx.attrs.name,
         version = ctx.attrs.version,
         prefix = installed,
-        include_dirs = [],
-        lib_dirs = [],
-        bin_dirs = [],
         libraries = [],
-        pkg_config_path = None,
         cflags = [],
         ldflags = [],
         compile_info = compile_tset,

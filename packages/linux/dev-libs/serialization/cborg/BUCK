@@ -11,5 +11,4 @@ package(
     license = "Apache-2.0",
     deps = [],
     install_script = """mkdir -p ${PREFIX}/include/cborg\nmkdir -p ${PREFIX}/lib\ncp cborg/*.h ${PREFIX}/include/cborg/\ng++ -c -O2 -fPIC -fstack-protector-strong -Icborg source/CborBase.cpp -o CborBase.o\ng++ -c -O2 -fPIC -fstack-protector-strong -Icborg source/Cbore.cpp -o Cbore.o\ng++ -c -O2 -fPIC -fstack-protector-strong -Icborg source/Cborg.cpp -o Cborg.o\nar rcs ${PREFIX}/lib/libcborg.a CborBase.o Cbore.o Cborg.o""",
-    visibility = ["PUBLIC"],
 )

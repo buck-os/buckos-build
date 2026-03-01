@@ -74,7 +74,6 @@ package(
                 "//packages/linux/graphics/rendering/wayland:wayland-scanner",
                 "//packages/linux/graphics/rendering/wayland:wayland-scanner"
     ],
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -327,7 +326,6 @@ package(
         "//packages/linux/desktop/mesa:mesa",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KConfig - Configuration system
@@ -369,7 +367,6 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
         # Qt6Core depends on zstd
         "//packages/linux/system/libs/compression/zstd:zstd",
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KI18n - Internationalization
@@ -405,7 +402,6 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
         "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -455,7 +451,6 @@ package(
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
         "//packages/linux/system/libs/crypto/openssl:openssl",  # For encrypted 7zip archives
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KCodecs - Text encoding
@@ -493,7 +488,6 @@ package(
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KGuiAddons - GUI utilities
@@ -542,7 +536,6 @@ sed -i '/add_subdirectory.*geo-scheme-handler/d' src/CMakeLists.txt || true
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KWidgetsAddons - Widget utilities
@@ -586,7 +579,6 @@ sed -i '/find_package.*Shiboken/d; /find_package.*PySide/d' CMakeLists.txt || tr
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KDBusAddons - D-Bus utilities
@@ -627,7 +619,6 @@ package(
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KItemViews - Item view utilities
@@ -666,7 +657,6 @@ package(
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KItemModels - Item model utilities
@@ -703,7 +693,6 @@ package(
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KColorScheme - Color scheme support
@@ -747,7 +736,6 @@ package(
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KConfigWidgets - Configuration widgets
@@ -796,7 +784,6 @@ package(
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # Breeze - KDE visual style (window decorations, cursors, widgets)
@@ -855,7 +842,6 @@ package(
         "//packages/linux/system/init/eudev:eudev",
         "//packages/linux/system/libs/crypto/openssl:openssl",
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # Breeze Icons - KDE icon theme
@@ -903,7 +889,6 @@ sed -i 's/BreezeIcons COMPONENTS icons/BreezeIcons/' CMakeLists.txt || true
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KIconThemes - Icon theme support
@@ -953,7 +938,6 @@ package(
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
         "//packages/linux/system/libs/crypto/openssl:openssl",  # karchive depends on openssl
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KAuth - Authorization framework
@@ -1006,7 +990,6 @@ sed -i '/add_subdirectory.*examples/d' CMakeLists.txt || true
         "//packages/linux/system/init/eudev:eudev",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KCrash - Crash handling
@@ -1050,7 +1033,6 @@ package(
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KWindowSystem - Window system access
@@ -1111,7 +1093,6 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
         "//packages/linux/graphics/xorg/libXdmcp:libXdmcp",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KIdleTime - User idle time detection
@@ -1162,7 +1143,6 @@ sed -i '/add_subdirectory.*examples/d' CMakeLists.txt || true
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     # Native wayland-scanner needed for generating protocol headers during cross-compilation
-    visibility = ["PUBLIC"],
 )
 
 # KNotifications - Desktop notifications
@@ -1207,7 +1187,6 @@ package(
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KCompletion - Text completion
@@ -1242,7 +1221,6 @@ package(
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
-    visibility = ["PUBLIC"],
 )
 
 # KJobWidgets - Job progress widgets
@@ -1290,7 +1268,6 @@ package(
         "//packages/linux/audio/libraries:libcanberra",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # Solid - Hardware integration
@@ -1333,7 +1310,6 @@ package(
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KService - Service framework
@@ -1377,7 +1353,6 @@ package(
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KBookmarks - Bookmarks framework
@@ -1425,7 +1400,6 @@ package(
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KIO - I/O Framework (core file access)
@@ -1532,7 +1506,6 @@ cd "$S"
         ":breeze-icons",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # Sonnet - Spell checking framework
@@ -1589,7 +1562,6 @@ touch src/core/trigrams.qrc || true
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KTextWidgets - Text widget framework
@@ -1637,7 +1609,6 @@ package(
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KXmlGui - XML GUI framework
@@ -1692,7 +1663,6 @@ package(
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KPty - Pseudo-terminal handling
@@ -1734,7 +1704,6 @@ package(
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KParts - Document component framework
@@ -1809,7 +1778,6 @@ package(
         "//packages/linux/dev-tools/build-systems/libtool:libtool",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # Syntax Highlighting - Syntax highlighting engine
@@ -1865,7 +1833,6 @@ sed -i '/Q_INIT_RESOURCE(theme_data)/d' src/lib/repository.cpp || true
         "//packages/linux/system/libs/crypto/openssl:openssl",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KTextEditor - Full text editor component
@@ -1966,7 +1933,6 @@ sed -i '/chkAutoReloadOnExternalChanges/d' src/dialogs/katedialogs.cpp
         "//packages/linux/dev-tools/build-systems/libtool:libtool",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # Attica - Content sharing framework
@@ -2005,7 +1971,6 @@ package(
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KGlobalAccel - Global keyboard shortcuts
@@ -2054,7 +2019,6 @@ package(
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KPackage - Package framework
@@ -2103,7 +2067,6 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
         "//packages/linux/system/libs/crypto/openssl:openssl",  # karchive depends on openssl
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # Kirigami - KDE's lightweight UI framework
@@ -2150,7 +2113,6 @@ package(
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KSvg - SVG rendering
@@ -2201,7 +2163,6 @@ package(
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KRunner - Krunner framework
@@ -2248,7 +2209,6 @@ package(
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
         "//packages/linux/system/libs/crypto/openssl:openssl",  # karchive depends on openssl
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # Syndication - RSS/Atom feed parser
@@ -2288,7 +2248,6 @@ package(
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KNewStuff - Get Hot New Stuff
@@ -2348,7 +2307,6 @@ package(
         "//packages/linux/system/libs/crypto/openssl:openssl",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KNotifyConfig - Notification configuration
@@ -2419,7 +2377,6 @@ package(
         "//packages/linux/dev-tools/build-systems/libtool:libtool",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KDocTools - Documentation tools
@@ -2481,7 +2438,6 @@ touch src/customization/xsl/all-l10n.xml
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KCMUtils - KCM utilities
@@ -2553,7 +2509,6 @@ package(
         "//packages/linux/dev-tools/build-systems/libtool:libtool",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -2637,7 +2592,6 @@ sed -i '/devicenotifications/d' src/dataengines/CMakeLists.txt || true
         "//packages/linux/dev-tools/build-systems/libtool:libtool",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # Plasma Desktop
@@ -2820,7 +2774,6 @@ done
         "//packages/linux/graphics/xorg/libxkbfile:libxkbfile",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KGlobalAccelD - Global Accelerator Daemon (Plasma component)
@@ -2891,7 +2844,6 @@ package(
         "//packages/linux/dev-tools/build-systems/libtool:libtool",  # libltdl for libcanberra
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -2942,7 +2894,6 @@ package(
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
-    visibility = ["PUBLIC"],
 )
 
 # KDecoration2 - Window decoration library
@@ -2986,7 +2937,6 @@ package(
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
-    visibility = ["PUBLIC"],
 )
 
 # KScreenLocker - Screen locker
@@ -3083,7 +3033,6 @@ sed -i '/qCDebug(KSCREENLOCKER) << "Event received"/a\\    (void)event;' ksldapp
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
-    visibility = ["PUBLIC"],
 )
 
 # Plasma Activities - Activity manager library
@@ -3127,7 +3076,6 @@ package(
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
-    visibility = ["PUBLIC"],
 )
 
 # kactivitymanagerd - Activity manager daemon (required for plasmashell)
@@ -3195,7 +3143,6 @@ sed -i 's/connect(KX11Extras::self/\\/\\/connect(KX11Extras::self/' src/service/
         "//packages/linux/system/init/eudev:eudev",
         "//packages/linux/system/libs/utility/libffi:libffi",
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # libplasma - Core Plasma library (provides PlasmaQuick)
@@ -3317,7 +3264,6 @@ sed -i '/isPlatformX11.*{/,/^    }/d' src/plasma/private/theme_p.cpp
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
-    visibility = ["PUBLIC"],
 )
 
 # Layer Shell Qt - Qt component for Wayland layer shell
@@ -3372,7 +3318,6 @@ sed -i 's/^add_library(LayerShellQtInterface)/add_library(LayerShellQtInterface 
         "//packages/linux/system/libs/crypto/openssl:openssl",  # For Qt6Network
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KWin - Window Manager
@@ -3509,7 +3454,6 @@ SENSOR_CPP
         "//packages/linux/system/libs/compression/bzip2:bzip2",  # transitive dep of freetype (BZ2_bzDecompress)
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -3560,7 +3504,6 @@ package(
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
-    visibility = ["PUBLIC"],
 )
 
 # KDeclarative - KDE Declarative Framework
@@ -3608,7 +3551,6 @@ package(
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
-    visibility = ["PUBLIC"],
 )
 
 # KStatusNotifierItem - Status Notifier Item Framework
@@ -3652,7 +3594,6 @@ package(
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
-    visibility = ["PUBLIC"],
 )
 
 # KWallet - Wallet Framework
@@ -3708,7 +3649,6 @@ package(
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
-    visibility = ["PUBLIC"],
 )
 
 # KUnitConversion - Unit Conversion Framework
@@ -3744,7 +3684,6 @@ package(
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
-    visibility = ["PUBLIC"],
 )
 
 # QRencode - QR Code encoding library (needed by Prison)
@@ -3770,7 +3709,6 @@ package(
     deps = [
         "//packages/linux/core/zlib:zlib",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # Prison - Barcode Framework
@@ -3814,7 +3752,6 @@ package(
         "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -3885,7 +3822,6 @@ EOF
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -3928,7 +3864,6 @@ package(
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
-    visibility = ["PUBLIC"],
 )
 
 # libkscreen - KDE Screen Management Library
@@ -3995,7 +3930,6 @@ sed -i '/add_subdirectory.*backendlauncher/d' src/CMakeLists.txt || true
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     # Native wayland-scanner needed for generating protocol headers during cross-compilation
-    visibility = ["PUBLIC"],
 )
 
 # libksysguard - KDE System Monitor Library
@@ -4058,7 +3992,6 @@ package(
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
-    visibility = ["PUBLIC"],
 )
 
 # Plasma Workspace - KDE Plasma Shell and Workspace
@@ -4241,7 +4174,6 @@ STUB
         "//packages/linux/system/libs/font/freetype:freetype",
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
-    visibility = ["PUBLIC"],
 )
 
 # plasma-login-manager - KDE Plasma Login Manager (alternative to SDDM)
@@ -4339,7 +4271,6 @@ Restart=always
 Alias=display-manager.service
 SERVICEEOF
 """],
-    visibility = ["PUBLIC"],
 )
 
 # KDE Plasma meta-package for installation (matches live KDE ISO for bootable system)
@@ -4395,7 +4326,6 @@ filegroup(
         "//packages/linux/system/libs/audio/alsa-lib:alsa-lib",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # KDE Frameworks meta-target (alias for KF6 frameworks used by apps expecting kf5)
@@ -4456,7 +4386,6 @@ filegroup(
         # plasma-integration requires X11 - skip for Wayland-only
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -4496,7 +4425,6 @@ package(
         "//packages/linux/system/libs/ipc/libcap:libcap",
         "//packages/linux/system/libs/compression/zstd:zstd",
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # Plasma Integration - Qt/Plasma integration library
@@ -4580,7 +4508,6 @@ sed -i 's/#include <xcb/#\\/\\/#include <xcb/g' qt6/src/platformtheme/*.cpp 2>/d
         "//packages/linux/system/init/eudev:eudev",
         "//packages/linux/system/libs/compression/zstd:zstd",
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # KHolidays - Library for holiday and special event handling
@@ -4618,7 +4545,6 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
         "//packages/linux/system/libs/utility/libffi:libffi",
         "//packages/linux/system/libs/compression/zstd:zstd",
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # Kirigami Addons - Visual end user components for Kirigami
@@ -4665,7 +4591,6 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
         "//packages/linux/system/libs/utility/libffi:libffi",
         "//packages/linux/system/libs/compression/zstd:zstd",
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )
 
 # Milou - Search application built on top of KRunner
@@ -4716,5 +4641,4 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
         "//packages/linux/system/libs/utility/libffi:libffi",
         "//packages/linux/system/libs/compression/zstd:zstd",
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
-    visibility = ["PUBLIC"],
 )

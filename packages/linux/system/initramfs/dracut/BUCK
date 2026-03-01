@@ -167,12 +167,10 @@ ls -la "$DESTDIR/usr/lib/dracut/" | head -20
         "//packages/linux/lang/rust:rust",  # Required for building dracut-cpio
         "//packages/linux/system/libs/cpio:cpio",  # Required for building initramfs archives
     ],
-    visibility = ["PUBLIC"],
 )
 
 # Dracut modules for common boot scenarios
 filegroup(
     name = "dracut-modules",
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )

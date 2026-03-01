@@ -54,6 +54,14 @@ _TRANSFORM_MAP = {
     "ima": (ima_sign_package, "signed"),
 }
 
+# ── Mirror configuration (read once at module load) ──────────────────
+_MIRROR_MODE = read_config("mirror", "mode", "upstream")
+_MIRROR_BASE_URL = read_config("mirror", "base_url", "")
+_MIRROR_VENDOR_DIR = read_config("mirror", "vendor_dir", "")
+_MIRROR_PREFIX = read_config("mirror", "prefix", "")
+_MIRROR_PARAMS = read_config("mirror", "params", "")
+_MIRROR_PREPEND_NAME = read_config("mirror", "prepend_name", "true") == "true"
+
 
 def _merge_private_registry(name, patches, configure_args, extra_cflags):
     """Merge public args with private patch registry entries.
@@ -155,10 +163,6 @@ def package(
     _filename = filename or (url.rsplit("/", 1)[-1] if url else None)
 
     if "source" not in build_kwargs:
-        _mode = read_config("mirror", "mode", "upstream")
-        _mirror_base = read_config("mirror", "base_url", "")
-        _vendor_dir = read_config("mirror", "vendor_dir", "")
-
         # Provenance labels for download targets
         _dl_labels = ["buckos:download"]
         if url:
@@ -172,10 +176,10 @@ def package(
             _dl_labels.append("buckos:vendor:" + name)
             _dl_labels.append("buckos:sig:none")
 
-        if _mode == "vendor" and _vendor_dir:
+        if _MIRROR_MODE == "vendor" and _MIRROR_VENDOR_DIR:
             native.export_file(
                 name = name + "-archive",
-                src = "{}/{}".format(_vendor_dir, _filename),
+                src = "{}/{}".format(_MIRROR_VENDOR_DIR, _filename),
                 labels = _dl_labels,
             )
         elif local_only:
@@ -189,20 +193,16 @@ def package(
                 labels = _dl_labels,
             )
         else:
-            _mirror_prefix = read_config("mirror", "prefix", "")
-            if _mirror_prefix:
-                _mirror_params = read_config("mirror", "params", "")
-
-                _prepend_name = read_config("mirror", "prepend_name", "true") == "true"
+            if _MIRROR_PREFIX:
                 _dl_filename = _filename
-                if _prepend_name and name not in _dl_filename:
+                if _MIRROR_PREPEND_NAME and name not in _dl_filename:
                     _dl_filename = name + "-" + _dl_filename
 
                 _url = "{}/{}/{}{}".format(
-                    _mirror_prefix,
+                    _MIRROR_PREFIX,
                     name[0],
                     _dl_filename,
-                    _mirror_params,
+                    _MIRROR_PARAMS,
                 )
 
                 native.http_file(
@@ -214,8 +214,8 @@ def package(
                 )
             else:
                 _urls = []
-                if _mirror_base:
-                    _urls.append("{}/{}".format(_mirror_base, _filename))
+                if _MIRROR_BASE_URL:
+                    _urls.append("{}/{}".format(_MIRROR_BASE_URL, _filename))
                 _urls.append(url)
                 native.http_file(
                     name = name + "-archive",
@@ -383,5 +383,4 @@ def package(
     native.alias(
         name = name,
         actual = prev_target,
-        visibility = ["PUBLIC"],
     )

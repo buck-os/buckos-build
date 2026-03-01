@@ -53,7 +53,6 @@ cat > "$OUT/etc/containers/policy.json" << 'EOF'
 }
 EOF
 """,
-    visibility = ["PUBLIC"],
 )
 
 # podman - Container management tool
@@ -94,7 +93,6 @@ mkdir -p "$OUT/usr/share/fish/vendor_completions.d"
         "//packages/linux/system/containers/network:slirp4netns",
         "//packages/linux/lang/go:go",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # buildah - Container image builder
@@ -127,7 +125,6 @@ mkdir -p "$OUT/usr/share/bash-completion/completions"
         "//packages/linux/system/containers/network:slirp4netns",
         "//packages/linux/lang/go:go",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # skopeo - Container image inspection and transport
@@ -157,7 +154,6 @@ mkdir -p "$OUT/usr/share/bash-completion/completions"
         "//packages/linux/system/containers/podman:containers-common",
         "//packages/linux/lang/go:go",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # podman-compose - Run docker-compose files with Podman
@@ -181,5 +177,4 @@ install -m 755 podman_compose.py "$OUT/usr/bin/podman-compose"
         # "//packages/linux/dev-libs/python/pyyaml:pyyaml",
         "//packages/linux/system/containers/podman:podman",
     ],
-    visibility = ["PUBLIC"],
 )

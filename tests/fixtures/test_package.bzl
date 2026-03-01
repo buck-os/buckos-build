@@ -28,7 +28,7 @@ cc "$@" -o "$OUT/usr/bin/{binary}" "$SRC"
     cmd = cmd_args(script, output.as_output(), src)
     cmd.add(ctx.attrs.cflags)
 
-    ctx.actions.run(cmd, category = "compile", identifier = ctx.attrs.name)
+    ctx.actions.run(cmd, category = "test_compile", identifier = ctx.attrs.name)
 
     return [
         DefaultInfo(default_output = output),
@@ -36,11 +36,7 @@ cc "$@" -o "$OUT/usr/bin/{binary}" "$SRC"
             name = ctx.attrs.pkg_name,
             version = ctx.attrs.version,
             prefix = output,
-            include_dirs = [],
-            lib_dirs = [],
-            bin_dirs = [output.project("usr/bin")],
             libraries = [],
-            pkg_config_path = None,
             cflags = [],
             ldflags = [],
             compile_info = None,
@@ -89,7 +85,7 @@ cc -shared -fPIC "$@" -o "$OUT/usr/lib64/{lib}" "$SRC"
     cmd = cmd_args(script, output.as_output(), src)
     cmd.add(ctx.attrs.cflags)
 
-    ctx.actions.run(cmd, category = "compile", identifier = ctx.attrs.name)
+    ctx.actions.run(cmd, category = "test_compile", identifier = ctx.attrs.name)
 
     return [
         DefaultInfo(default_output = output),
@@ -97,11 +93,7 @@ cc -shared -fPIC "$@" -o "$OUT/usr/lib64/{lib}" "$SRC"
             name = ctx.attrs.pkg_name,
             version = ctx.attrs.version,
             prefix = output,
-            include_dirs = [],
-            lib_dirs = [output.project("usr/lib64")],
-            bin_dirs = [],
             libraries = [ctx.attrs.lib_name],
-            pkg_config_path = None,
             cflags = [],
             ldflags = [],
             compile_info = None,

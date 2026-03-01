@@ -28,7 +28,7 @@ def _extract_source_impl(ctx):
         cmd.add("--exclude", pattern)
     cmd.add("--allow-host-path")
 
-    ctx.actions.run(cmd, category = "extract", identifier = ctx.attrs.name)
+    ctx.actions.run(cmd, category = "extract", identifier = ctx.attrs.name, allow_cache_upload = True)
 
     return [DefaultInfo(default_output = output)]
 
