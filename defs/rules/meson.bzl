@@ -108,11 +108,6 @@ def _meson_setup(ctx, source, cflags_file = None, ldflags_file = None,
     for arg in ctx.attrs.configure_args:
         cmd.add(cmd_args("--meson-arg=", arg, delimiter = ""))
 
-    # Ensure dep artifacts are materialized — tset flag files reference
-    # dep prefixes but don't register them as action inputs.
-    for dep in ctx.attrs.deps:
-        cmd.add(cmd_args(hidden = dep[DefaultInfo].default_outputs))
-
     ctx.actions.run(cmd, category = "meson_configure", identifier = ctx.attrs.name)
     return output
 
@@ -195,11 +190,6 @@ def _src_install(ctx, built, source, path_file = None, lib_dirs_file = None):
     # Post-install commands (run in the prefix dir after install)
     for post_cmd in ctx.attrs.post_install_cmds:
         cmd.add("--post-cmd", post_cmd)
-
-    # Ensure dep artifacts are materialized — tset flag files reference
-    # dep prefixes but don't register them as action inputs.
-    for dep in ctx.attrs.deps:
-        cmd.add(cmd_args(hidden = dep[DefaultInfo].default_outputs))
 
     ctx.actions.run(cmd, category = "meson_install", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output

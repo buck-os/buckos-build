@@ -159,21 +159,23 @@ def collect_dep_tsets(ctx):
 # ── Flag file writers ────────────────────────────────────────────────
 #
 # These write tset projections to files via ctx.actions.write with
-# allow_args=True.  That call returns (artifact, hidden_artifacts);
-# each writer unpacks and returns the same pair.  Callers must add
-# the hidden list to their run command so Buck2 materializes the
-# artifacts whose paths are embedded in the file.
+# allow_args=True.  The write action resolves artifact paths in the
+# projection, but its returned hidden list only contains write-to-file
+# macro outputs — NOT the artifacts referenced by the projection
+# content.  We return the projection itself so add_flag_file() can
+# register it as a hidden dep on the consuming action, causing Buck2
+# to materialise the tset's constituent artifacts (dep prefixes).
 #
 # Use add_flag_file(cmd, flag, result) to add a writer result to a
 # command — it handles None and unpacks the tuple automatically.
 
 def _write_tset_file(ctx, filename, projection):
-    artifact, hidden = ctx.actions.write(
+    artifact, _macro_hidden = ctx.actions.write(
         filename,
         projection,
         allow_args = True,
     )
-    return artifact, hidden
+    return artifact, projection
 
 def write_compile_flags(ctx, compile_tset):
     """Write cflags (one per line) from compile tset projection."""
@@ -226,10 +228,14 @@ def write_runtime_prefixes(ctx, runtime_tset):
 def add_flag_file(cmd, flag_name, writer_result):
     """Add a flag-file argument to cmd, handling None and hidden deps.
 
-    writer_result is either None or (artifact, hidden_list) from a write_* helper.
+    writer_result is either None or (artifact, projection) from a write_*
+    helper.  The projection is a tset args_projection whose visit_artifacts
+    emits ArtifactGroup::TransitiveSetProjection — adding it as hidden
+    causes Buck2 to materialise all dep prefix artifacts referenced by
+    the flag file.
     """
     if not writer_result:
         return
-    artifact, hidden = writer_result
+    artifact, projection = writer_result
     cmd.add(flag_name, artifact)
-    cmd.add(cmd_args(hidden = hidden))
+    cmd.add(cmd_args(hidden = [projection]))
