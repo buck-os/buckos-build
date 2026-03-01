@@ -12,6 +12,7 @@ what it needs on top.
 
 import os
 import shutil
+import sys
 
 # Vars passed through from the host environment when present.
 _PASSTHROUGH = frozenset({
@@ -75,6 +76,41 @@ def sanitize_filenames(*roots):
                         shutil.rmtree(os.path.join(dirpath, dname))
                     except OSError:
                         pass
+
+
+def add_path_args(parser):
+    """Register the standard three-way PATH arguments on an argparse parser."""
+    parser.add_argument("--hermetic-path", action="append",
+                        dest="hermetic_path", default=[],
+                        help="Set PATH to only these dirs (repeatable)")
+    parser.add_argument("--allow-host-path", action="store_true",
+                        help="Allow host PATH (bootstrap escape hatch)")
+    parser.add_argument("--hermetic-empty", action="store_true",
+                        help="Start with empty PATH")
+    parser.add_argument("--path-prepend", action="append",
+                        dest="path_prepend", default=[],
+                        help="Dir to prepend to PATH (repeatable)")
+
+
+def setup_path(args, env, host_path=""):
+    """Set env["PATH"] from the standard three-way PATH arguments.
+
+    Requires args parsed by add_path_args().  host_path is the original
+    host PATH captured before sanitization (used with --allow-host-path).
+    """
+    if args.hermetic_path:
+        env["PATH"] = ":".join(os.path.abspath(p) for p in args.hermetic_path)
+    elif args.hermetic_empty:
+        env["PATH"] = ""
+    elif args.allow_host_path:
+        env["PATH"] = host_path
+    else:
+        print("error: requires --hermetic-path, --hermetic-empty, or --allow-host-path",
+              file=sys.stderr)
+        sys.exit(1)
+    if hasattr(args, 'path_prepend') and args.path_prepend:
+        prepend = ":".join(os.path.abspath(p) for p in args.path_prepend)
+        env["PATH"] = prepend + (":" + env["PATH"] if env.get("PATH") else "")
 
 
 def sanitize_global_env():
