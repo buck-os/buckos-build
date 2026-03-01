@@ -103,11 +103,11 @@ def _src_compile(ctx, configured, source, path_file = None, lib_dirs_file = None
     cmd.add("--output-dir", output.as_output())
     cmd.add("--build-system", "ninja")
 
-    # Ensure source dir and dep artifacts are available — meson
-    # out-of-tree builds reference them in build.ninja.
+    # Ensure source dir is available — meson out-of-tree builds
+    # reference source files by absolute path in build.ninja.
+    # Dep prefixes are materialised via tset projections (path_file,
+    # lib_dirs_file) passed to add_flag_file below.
     cmd.add(cmd_args(hidden = source))
-    for dep in ctx.attrs.deps:
-        cmd.add(cmd_args(hidden = dep[DefaultInfo].default_outputs))
 
     # Inject toolchain CC/CXX/AR
     for env_arg in toolchain_env_args(ctx):
