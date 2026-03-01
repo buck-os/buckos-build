@@ -215,7 +215,7 @@ def write_link_libs(ctx, link_tset):
     """Write -l flags (one per line) from link tset projection."""
     if not link_tset:
         return None
-    return _write_tset_file(ctx, "tset_libs.txt", link_tset.project_as_args("libs", ordering = "preorder"))
+    return _write_tset_file(ctx, "tset_libs.txt", link_tset.project_as_args("libs", ordering = "topological"))
 
 def write_runtime_prefixes(ctx, runtime_tset):
     """Write prefix paths (one per line) from runtime tset projection."""
