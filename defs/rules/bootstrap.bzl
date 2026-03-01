@@ -94,7 +94,7 @@ def _bootstrap_binutils_impl(ctx):
     build_cmd.add("--make-arg", "MAKEINFO=true")
     _env_args(build_cmd, env)
     build_cmd.add("--allow-host-path")
-    ctx.actions.run(build_cmd, category = "bootstrap_compile", identifier = ctx.attrs.name)
+    ctx.actions.run(build_cmd, category = "bootstrap_compile", identifier = ctx.attrs.name, allow_cache_upload = True)
 
     # Phase 5: install (run from built tree's build subdir)
     installed = ctx.actions.declare_output("installed", dir = True)
@@ -105,7 +105,7 @@ def _bootstrap_binutils_impl(ctx):
     inst_cmd.add("--make-arg", "MAKEINFO=true")
     _env_args(inst_cmd, env)
     inst_cmd.add("--allow-host-path")
-    ctx.actions.run(inst_cmd, category = "bootstrap_install", identifier = ctx.attrs.name)
+    ctx.actions.run(inst_cmd, category = "bootstrap_install", identifier = ctx.attrs.name, allow_cache_upload = True)
 
     return [DefaultInfo(default_output = installed)]
 
@@ -179,7 +179,7 @@ def _bootstrap_linux_headers_impl(ctx):
     # All work is done in pre-cmds; skip the make invocation
     build_cmd.add("--skip-make")
     build_cmd.add("--allow-host-path")
-    ctx.actions.run(build_cmd, category = "bootstrap_install", identifier = ctx.attrs.name)
+    ctx.actions.run(build_cmd, category = "bootstrap_install", identifier = ctx.attrs.name, allow_cache_upload = True)
 
     return [DefaultInfo(default_output = installed)]
 
@@ -389,7 +389,7 @@ def _bootstrap_gcc_impl(ctx):
             "make " + _at + "-j$(nproc) all-target-libstdc++-v3",
         )
 
-    ctx.actions.run(build_cmd, category = "bootstrap_compile", identifier = ctx.attrs.name)
+    ctx.actions.run(build_cmd, category = "bootstrap_compile", identifier = ctx.attrs.name, allow_cache_upload = True)
 
     # Phase 5: install — use install_helper for timestamp management and
     # env sanitisation.  Custom targets via --make-target, post-install
@@ -468,7 +468,7 @@ def _bootstrap_gcc_impl(ctx):
                 )
             inst_cmd.add("--post-cmd", sysroot_cmd)
 
-    ctx.actions.run(inst_cmd, category = "bootstrap_install", identifier = ctx.attrs.name)
+    ctx.actions.run(inst_cmd, category = "bootstrap_install", identifier = ctx.attrs.name, allow_cache_upload = True)
 
     # Return BootstrapStageInfo if this is a final stage compiler
     providers = [DefaultInfo(default_output = installed)]
@@ -578,7 +578,7 @@ def _bootstrap_glibc_impl(ctx):
     if binutils_dir:
         build_cmd.add("--path-prepend", cmd_args(binutils_dir, "/tools/bin", delimiter = ""))
     build_cmd.add("--allow-host-path")
-    ctx.actions.run(build_cmd, category = "bootstrap_compile", identifier = ctx.attrs.name)
+    ctx.actions.run(build_cmd, category = "bootstrap_compile", identifier = ctx.attrs.name, allow_cache_upload = True)
 
     # Phase 5: install — use install_helper with post-cmds for linker
     # script fixups and /lib64 symlink creation.
@@ -606,7 +606,7 @@ def _bootstrap_glibc_impl(ctx):
         "ln -sfv ../usr/" + lib_dir + "/" + dynamic_linker + " $DESTDIR/" + lib_dir + "/" + dynamic_linker,
     )
     inst_cmd.add("--allow-host-path")
-    ctx.actions.run(inst_cmd, category = "bootstrap_install", identifier = ctx.attrs.name)
+    ctx.actions.run(inst_cmd, category = "bootstrap_install", identifier = ctx.attrs.name, allow_cache_upload = True)
 
     return [DefaultInfo(default_output = installed)]
 
@@ -705,7 +705,7 @@ def _bootstrap_package_impl(ctx):
     for e in ctx.attrs.extra_env:
         build_cmd.add("--env", e)
     build_cmd.add("--allow-host-path")
-    ctx.actions.run(build_cmd, category = "bootstrap_compile", identifier = ctx.attrs.name)
+    ctx.actions.run(build_cmd, category = "bootstrap_compile", identifier = ctx.attrs.name, allow_cache_upload = True)
 
     # Phase 5: install (use built dir which has compiled objects)
     installed = ctx.actions.declare_output("installed", dir = True)
@@ -728,7 +728,7 @@ def _bootstrap_package_impl(ctx):
     for e in ctx.attrs.extra_env:
         inst_cmd.add("--env", e)
     inst_cmd.add("--allow-host-path")
-    ctx.actions.run(inst_cmd, category = "bootstrap_install", identifier = ctx.attrs.name)
+    ctx.actions.run(inst_cmd, category = "bootstrap_install", identifier = ctx.attrs.name, allow_cache_upload = True)
 
     pkg_info = PackageInfo(
         name = ctx.attrs.name,
@@ -832,7 +832,7 @@ def _bootstrap_python_impl(ctx):
     build_cmd.add("--build-subdir", "build")
     build_cmd.add("--path-prepend", cmd_args(stage_output, "/tools/bin", delimiter = ""))
     build_cmd.add("--allow-host-path")
-    ctx.actions.run(build_cmd, category = "bootstrap_compile", identifier = ctx.attrs.name)
+    ctx.actions.run(build_cmd, category = "bootstrap_compile", identifier = ctx.attrs.name, allow_cache_upload = True)
 
     # Phase 4: install — use install_helper with post-cmd for ensurepip.
     installed = ctx.actions.declare_output("installed", dir = True)
@@ -849,7 +849,7 @@ def _bootstrap_python_impl(ctx):
         "fi",
     )
     inst_cmd.add("--allow-host-path")
-    ctx.actions.run(inst_cmd, category = "bootstrap_install", identifier = ctx.attrs.name)
+    ctx.actions.run(inst_cmd, category = "bootstrap_install", identifier = ctx.attrs.name, allow_cache_upload = True)
 
     return [DefaultInfo(default_output = installed)]
 

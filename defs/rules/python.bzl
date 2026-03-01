@@ -72,7 +72,7 @@ def _python_install(ctx, source):
     for arg in ctx.attrs.pip_args:
         cmd.add("--pip-arg", arg)
 
-    ctx.actions.run(cmd, category = "python_install", identifier = ctx.attrs.name)
+    ctx.actions.run(cmd, category = "python_install", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
 # ── Rule implementation ───────────────────────────────────────────────

@@ -155,7 +155,7 @@ def _src_compile(ctx, configured, source, path_file = None, lib_dirs_file = None
     for arg in ctx.attrs.make_args:
         cmd.add("--make-arg", arg)
 
-    ctx.actions.run(cmd, category = "meson_compile", identifier = ctx.attrs.name)
+    ctx.actions.run(cmd, category = "meson_compile", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
 def _src_install(ctx, built, source, path_file = None, lib_dirs_file = None):
@@ -201,7 +201,7 @@ def _src_install(ctx, built, source, path_file = None, lib_dirs_file = None):
     for dep in ctx.attrs.deps:
         cmd.add(cmd_args(hidden = dep[DefaultInfo].default_outputs))
 
-    ctx.actions.run(cmd, category = "meson_install", identifier = ctx.attrs.name)
+    ctx.actions.run(cmd, category = "meson_install", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
 # ── Rule implementation ───────────────────────────────────────────────

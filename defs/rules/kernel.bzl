@@ -163,6 +163,7 @@ def _kernel_build_impl(ctx: AnalysisContext) -> list[Provider]:
         cmd,
         category = "kernel",
         identifier = ctx.attrs.name,
+        allow_cache_upload = True,
     )
 
     return [

@@ -161,6 +161,7 @@ def _install(ctx, source):
         env = env,
         category = "binary_install",
         identifier = ctx.attrs.name,
+        allow_cache_upload = True,
     )
     return output
 

@@ -178,7 +178,7 @@ def _build(ctx, source, configured):
     for arg in host_tool_path_args(ctx):
         cmd.add(arg)
 
-    ctx.actions.run(cmd, env = env, category = "mozbuild_build", identifier = ctx.attrs.name)
+    ctx.actions.run(cmd, env = env, category = "mozbuild_build", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
 
@@ -207,7 +207,7 @@ def _install(ctx, source, built):
     for arg in host_tool_path_args(ctx):
         cmd.add(arg)
 
-    ctx.actions.run(cmd, env = env, category = "mozbuild_install", identifier = ctx.attrs.name)
+    ctx.actions.run(cmd, env = env, category = "mozbuild_install", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
 

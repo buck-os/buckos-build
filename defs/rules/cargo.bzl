@@ -69,7 +69,7 @@ def _cargo_build(ctx, source):
     if ctx.attrs.vendor_deps:
         cmd.add("--vendor-dir", ctx.attrs.vendor_deps[DefaultInfo].default_outputs[0])
 
-    ctx.actions.run(cmd, category = "cargo_build", identifier = ctx.attrs.name)
+    ctx.actions.run(cmd, category = "cargo_build", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
 # ── Rule implementation ───────────────────────────────────────────────

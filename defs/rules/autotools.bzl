@@ -195,7 +195,7 @@ def _src_compile(ctx, configured, cflags_file = None, ldflags_file = None,
     for dep in ctx.attrs.deps:
         cmd.add(cmd_args(hidden = dep[DefaultInfo].default_outputs))
 
-    ctx.actions.run(cmd, category = "autotools_compile", identifier = ctx.attrs.name)
+    ctx.actions.run(cmd, category = "autotools_compile", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
 def _src_install(ctx, built, cflags_file = None, ldflags_file = None,
@@ -265,7 +265,7 @@ def _src_install(ctx, built, cflags_file = None, ldflags_file = None,
     for dep in ctx.attrs.deps:
         cmd.add(cmd_args(hidden = dep[DefaultInfo].default_outputs))
 
-    ctx.actions.run(cmd, category = "autotools_install", identifier = ctx.attrs.name)
+    ctx.actions.run(cmd, category = "autotools_install", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
 # ── Rule implementation ───────────────────────────────────────────────
