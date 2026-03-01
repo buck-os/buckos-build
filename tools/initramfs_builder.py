@@ -12,7 +12,7 @@ import subprocess
 import sys
 import tempfile
 
-from _env import clean_env
+from _env import add_path_args, clean_env, setup_path
 
 
 def _fix_lib64(staging):
@@ -42,6 +42,8 @@ exec /bin/sh
 
 
 def main():
+    _host_path = os.environ.get("PATH", "")
+
     parser = argparse.ArgumentParser(description="Build initramfs cpio archive")
     parser.add_argument("--rootfs-dir", required=True)
     parser.add_argument("--output", required=True)
@@ -50,9 +52,11 @@ def main():
                         help="Path to custom init script to install")
     parser.add_argument("--compression", default="gz",
                         choices=["gz", "xz", "lz4", "zstd"])
+    add_path_args(parser)
     args = parser.parse_args()
 
     env = clean_env()
+    setup_path(args, env, _host_path)
     output = os.path.abspath(args.output)
     os.makedirs(os.path.dirname(output) or ".", exist_ok=True)
 

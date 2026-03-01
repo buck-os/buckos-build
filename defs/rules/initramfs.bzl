@@ -7,6 +7,7 @@ Two variants:
 """
 
 load("//defs:providers.bzl", "KernelInfo")
+load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_path_args")
 
 def _get_kernel_image(dep):
     """Extract boot image from KernelInfo provider."""
@@ -26,6 +27,8 @@ def _initramfs_impl(ctx):
     cmd.add("--output", initramfs_file.as_output())
     cmd.add("--init-path", init_path)
     cmd.add("--compression", ctx.attrs.compression)
+    for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
 
     if ctx.attrs.init_script:
         init_script_src = ctx.attrs.init_script[DefaultInfo].default_outputs[0]
@@ -46,7 +49,7 @@ _initramfs_rule = rule(
         "_initramfs_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:initramfs_builder"),
         ),
-    },
+    } | TOOLCHAIN_ATTRS,
 )
 
 def initramfs(labels = [], **kwargs):
@@ -83,6 +86,8 @@ def _dracut_initramfs_impl(ctx):
     cmd.add(compress)
     if modules_dir:
         cmd.add(modules_dir)
+    for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
 
     ctx.actions.run(cmd, category = "dracut_initramfs", identifier = ctx.attrs.name)
 
@@ -103,7 +108,7 @@ _dracut_initramfs_rule = rule(
         "_dracut_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:dracut_initramfs_helper"),
         ),
-    },
+    } | TOOLCHAIN_ATTRS,
 )
 
 def dracut_initramfs(labels = [], **kwargs):

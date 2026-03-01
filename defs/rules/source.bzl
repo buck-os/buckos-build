@@ -26,6 +26,7 @@ def _extract_source_impl(ctx):
         cmd.add("--format", ctx.attrs.format)
     for pattern in ctx.attrs.exclude_patterns:
         cmd.add("--exclude", pattern)
+    cmd.add("--allow-host-path")
 
     ctx.actions.run(cmd, category = "extract", identifier = ctx.attrs.name)
 

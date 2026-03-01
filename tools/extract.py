@@ -17,7 +17,7 @@ import sys
 import tarfile
 import zipfile
 
-from _env import sanitize_global_env
+from _env import add_path_args, sanitize_global_env, setup_path
 
 
 # Map of format string -> (tarfile mode or None, external decompressor or None)
@@ -151,6 +151,8 @@ def extract_zip(archive, output, strip_components):
 
 
 def main():
+    _host_path = os.environ.get("PATH", "")
+
     parser = argparse.ArgumentParser(description="Universal archive extractor")
     parser.add_argument("--archive", required=True, help="Path to the archive file")
     parser.add_argument("--output", required=True, help="Output directory")
@@ -160,8 +162,14 @@ def main():
                         help="Archive format (auto-detected from filename if omitted)")
     parser.add_argument("--exclude", action="append", default=[],
                         help="Glob pattern to exclude from extraction (repeatable)")
+    add_path_args(parser)
     args = parser.parse_args()
     sanitize_global_env()
+
+    # Restore PATH for external decompressors (zstd, lzip, lz4) and tar
+    env = {}
+    setup_path(args, env, _host_path)
+    os.environ["PATH"] = env.get("PATH", "")
 
     if not os.path.isfile(args.archive):
         print(f"error: archive not found: {args.archive}", file=sys.stderr)

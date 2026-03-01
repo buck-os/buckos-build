@@ -13,7 +13,7 @@ import subprocess
 import sys
 import tempfile
 
-from _env import clean_env
+from _env import add_path_args, clean_env, setup_path
 
 
 def _run(cmd, env, **kwargs):
@@ -140,6 +140,8 @@ def _populate_image(output, filesystem, label, rootfs, size_bytes, env):
 
 
 def main():
+    _host_path = os.environ.get("PATH", "")
+
     parser = argparse.ArgumentParser(description="Create raw disk image")
     parser.add_argument("--rootfs", required=True)
     parser.add_argument("--output", required=True)
@@ -147,9 +149,11 @@ def main():
     parser.add_argument("--filesystem", default="ext4")
     parser.add_argument("--label", default=None)
     parser.add_argument("--partition-table", action="store_true")
+    add_path_args(parser)
     args = parser.parse_args()
 
     env = clean_env()
+    setup_path(args, env, _host_path)
     rootfs = os.path.abspath(args.rootfs)
     output = os.path.abspath(args.output)
     label = args.label or "buckos"

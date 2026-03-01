@@ -12,7 +12,7 @@ import shutil
 import subprocess
 import sys
 
-from _env import clean_env
+from _env import add_path_args, clean_env, setup_path
 
 
 def _merge_package(src, rootfs, env):
@@ -232,6 +232,8 @@ def _merge_acct_entries(rootfs):
 
 
 def main():
+    _host_path = os.environ.get("PATH", "")
+
     parser = argparse.ArgumentParser(description="Assemble root filesystem")
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--package-dir", action="append", dest="package_dirs",
@@ -241,10 +243,12 @@ def main():
     parser.add_argument("--version", default="1")
     parser.add_argument("--manifest-output", default=None,
                         help="Write content manifest for cache invalidation")
+    add_path_args(parser)
     args = parser.parse_args()
 
     rootfs = os.path.abspath(args.output_dir)
     env = clean_env()
+    setup_path(args, env, _host_path)
 
     # Read prefix list from tset projection file (one path per line)
     if args.prefix_list:

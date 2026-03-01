@@ -14,7 +14,7 @@ import sys
 import tempfile
 from datetime import datetime, timezone
 
-from _env import clean_env
+from _env import add_path_args, clean_env, setup_path
 
 
 def _apply_ima(workdir, env):
@@ -42,6 +42,8 @@ def _apply_ima(workdir, env):
 
 
 def main():
+    _host_path = os.environ.get("PATH", "")
+
     parser = argparse.ArgumentParser(description="Create stage3 tarball")
     parser.add_argument("--rootfs", required=True)
     parser.add_argument("--tarball-output", required=True)
@@ -52,9 +54,11 @@ def main():
     parser.add_argument("--libc", default="glibc")
     parser.add_argument("--version", default="0.1")
     parser.add_argument("--compression", default="xz", choices=["xz", "gz", "zstd"])
+    add_path_args(parser)
     args = parser.parse_args()
 
     env = clean_env()
+    setup_path(args, env, _host_path)
     rootfs = os.path.abspath(args.rootfs)
     tarball = os.path.abspath(args.tarball_output)
     sha256_file = os.path.abspath(args.sha256_output)
