@@ -10,8 +10,8 @@ Rules:
 """
 
 load("//defs:empty_registry.bzl", "PATCH_REGISTRY")
-load("//defs:providers.bzl", "KernelBtfInfo", "KernelConfigInfo", "KernelHeadersInfo", "KernelInfo")
-load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_path_args")
+load("//defs:providers.bzl", "BuildToolchainInfo", "KernelBtfInfo", "KernelConfigInfo", "KernelHeadersInfo", "KernelInfo")
+load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_env_args", "toolchain_path_args")
 load("//tc:transitions.bzl", "strip_toolchain_mode")
 
 # ── kernel_config ────────────────────────────────────────────────────
@@ -37,6 +37,11 @@ def _kernel_config_impl(ctx: AnalysisContext) -> list[Provider]:
 
     for frag in ctx.attrs.fragments:
         cmd.add("--fragment", frag)
+
+    # Inject CC from toolchain so kconfig probes use the right compiler
+    tc = ctx.attrs._toolchain[BuildToolchainInfo]
+    cmd.add("--cc", cmd_args(tc.cc.args, delimiter = " "))
+    cmd.add("--hostcc", cmd_args(tc.cc.args, delimiter = " "))
 
     # Hermetic PATH from toolchain
     for arg in toolchain_path_args(ctx):
@@ -155,6 +160,11 @@ def _kernel_build_impl(ctx: AnalysisContext) -> list[Provider]:
 
     for mod in ctx.attrs.modules:
         cmd.add("--external-module", mod[DefaultInfo].default_outputs[0])
+
+    # Inject CC/AR from toolchain as make variables so the kernel
+    # uses the buckos compiler instead of whatever is on host PATH.
+    for env_arg in toolchain_env_args(ctx):
+        cmd.add("--make-flag", env_arg)
 
     # Hermetic PATH from toolchain
     for arg in toolchain_path_args(ctx):

@@ -82,19 +82,24 @@ def main():
     # Resolve fragment paths to absolute before any chdir
     fragments = [os.path.abspath(f) for f in args.fragments]
 
+    # Resolve relative buck-out paths in CC/HOSTCC to absolute (make -C
+    # changes directory, breaking relative artifact references).
+    cc = _resolve_cc_path(args.cc)
+    hostcc = _resolve_cc_path(args.hostcc)
+
     # Build make command base
     make_base = ["make", "-C", source_dir, f"O={build_dir}", f"ARCH={args.arch}"]
     if args.cross_compile:
         make_base.append(f"CROSS_COMPILE={args.cross_compile}")
 
     # GCC 14+ workaround: detect and create wrapper if needed
-    cc_override = _gcc14_workaround(build_dir, args.cc)
+    cc_override = _gcc14_workaround(build_dir, cc)
     if cc_override:
         make_base.extend(cc_override)
-    elif args.cc:
-        make_base.append(f"CC={args.cc}")
-        if args.hostcc:
-            make_base.append(f"HOSTCC={args.hostcc}")
+    elif cc:
+        make_base.append(f"CC={cc}")
+        if hostcc:
+            make_base.append(f"HOSTCC={hostcc}")
 
     # Step 1: Generate base config
     if args.defconfig:
@@ -144,6 +149,26 @@ def main():
     print(f"Kernel config generated: {output_config}")
 
 
+def _resolve_cc_path(cc_str):
+    """Resolve relative buck-out paths in a CC string to absolute."""
+    if not cc_str:
+        return cc_str
+    parts = cc_str.split()
+    resolved = []
+    for p in parts:
+        for prefix in ("--sysroot=", "-I", "-L"):
+            if p.startswith(prefix):
+                path = p[len(prefix):]
+                if not os.path.isabs(path) and (path.startswith("buck-out") or os.path.exists(path)):
+                    p = prefix + os.path.abspath(path)
+                break
+        else:
+            if not os.path.isabs(p) and (p.startswith("buck-out") or os.path.exists(p)):
+                p = os.path.abspath(p)
+        resolved.append(p)
+    return " ".join(resolved)
+
+
 def _gcc14_workaround(build_dir, cc_bin):
     """Detect GCC 14+ and create a wrapper that appends -std=gnu11.
 
@@ -152,7 +177,8 @@ def _gcc14_workaround(build_dir, cc_bin):
 
     Returns list of make CC/HOSTCC args, or empty list.
     """
-    cc = cc_bin or "gcc"
+    # cc_bin may be "gcc" or "/path/to/gcc --sysroot=/path"; extract binary
+    cc = (cc_bin or "gcc").split()[0]
     try:
         result = subprocess.run(
             [cc, "--version"], capture_output=True, text=True, timeout=5,

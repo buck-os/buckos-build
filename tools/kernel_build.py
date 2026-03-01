@@ -174,7 +174,27 @@ def main():
     if cc_override:
         make_cmd.extend(cc_override)
     for flag in args.make_flags:
-        make_cmd.append(flag)
+        # Resolve relative buck-out paths in KEY=VALUE flags so they
+        # work when make runs in the build tree directory.
+        if "=" in flag:
+            key, _, val = flag.partition("=")
+            tokens = val.split()
+            resolved = []
+            for t in tokens:
+                # Handle --sysroot=path and bare path tokens
+                for prefix in ("--sysroot=", "-I", "-L"):
+                    if t.startswith(prefix):
+                        path = t[len(prefix):]
+                        if not os.path.isabs(path) and (path.startswith("buck-out") or os.path.exists(path)):
+                            t = prefix + os.path.abspath(path)
+                        break
+                else:
+                    if not os.path.isabs(t) and (t.startswith("buck-out") or os.path.exists(t)):
+                        t = os.path.abspath(t)
+                resolved.append(t)
+            make_cmd.append(f"{key}={' '.join(resolved)}")
+        else:
+            make_cmd.append(flag)
 
     # Configure
     config_file = os.path.abspath(args.config) if args.config else ""
