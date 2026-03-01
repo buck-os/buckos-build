@@ -1,17 +1,29 @@
 load("//defs:package.bzl", "package")
 
+# autojump uses a custom install.py, not setup.py/pyproject.toml.
+# Use autotools with skip_configure and shell-based install.
 package(
-    build_rule = "python",
+    build_rule = "autotools",
     name = "autojump",
     version = "22.5.3",
-    use_configure = {
-        "ipython": ("--enable-ipython", "--disable-ipython"),
-    },
+    skip_configure = True,
     url = "https://github.com/wting/autojump/archive/refs/tags/release-v22.5.3.tar.gz",
     sha256 = "00daf3698e17ac3ac788d529877c03ee80c3790472a85d0ed063ac3a354c37b1",
     description = "A cd command that learns and jumps to frequently used directories",
     homepage = "https://github.com/wting/autojump",
     license = "GPL-3.0",
+    pre_build_cmds = [
+        "printf 'all:\\ninstall:\\n' > Makefile",
+    ],
+    post_install_cmds = ["""
+mkdir -p "$DESTDIR/usr/bin"
+mkdir -p "$DESTDIR/usr/share/autojump"
+mkdir -p "$DESTDIR/etc/profile.d"
+install -m 755 "$BUILD_DIR/bin/autojump" "$DESTDIR/usr/bin/"
+install -m 644 "$BUILD_DIR/bin/autojump.bash" "$DESTDIR/etc/profile.d/"
+install -m 644 "$BUILD_DIR/bin/autojump.zsh" "$DESTDIR/usr/share/autojump/"
+install -m 644 "$BUILD_DIR/bin/autojump.fish" "$DESTDIR/usr/share/autojump/"
+"""],
     deps = [
         "//packages/linux/lang/python:python",
     ],

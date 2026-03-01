@@ -45,8 +45,12 @@ package(
         "--enable-function-subdirs",
         "--enable-multibyte",
         "--with-tcsetpgrp",
+        "--with-term-lib=ncursesw",
     ],
 
+    # GCC 14+ treats conflicting type qualifiers as errors; zsh's termcap
+    # module redeclares ncurses symbols without const.
+    extra_cflags = ["-Wno-error=incompatible-pointer-types"],
     # ncurses is required for terminal handling
     deps = [
         "//packages/linux/system/terminal/ncurses:ncurses",
