@@ -6,14 +6,8 @@ Two variants:
 - dracut_initramfs: dracut-based initramfs with live boot support
 """
 
-load("//defs:providers.bzl", "KernelInfo")
+load("//defs:providers.bzl", "KernelInfo", "get_kernel_image")
 load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_path_args")
-
-def _get_kernel_image(dep):
-    """Extract boot image from KernelInfo provider."""
-    if KernelInfo not in dep:
-        fail("kernel dep must provide KernelInfo")
-    return dep[KernelInfo].bzimage
 
 def _initramfs_impl(ctx):
     """Create an initramfs cpio archive from a rootfs."""
@@ -60,7 +54,7 @@ def _dracut_initramfs_impl(ctx):
     """Create an initramfs using dracut with dmsquash-live module for live boot."""
     initramfs_file = ctx.actions.declare_output(ctx.attrs.name + ".img")
 
-    kernel_image = _get_kernel_image(ctx.attrs.kernel)
+    kernel_image = get_kernel_image(ctx.attrs.kernel)
 
     if ctx.attrs.modules:
         modules_dir = ctx.attrs.modules[DefaultInfo].default_outputs[0]

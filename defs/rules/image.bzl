@@ -4,14 +4,8 @@ Image rules: iso_image, raw_disk_image, stage3_tarball.
 Assembly rules that take rootfs/kernel/initramfs deps and produce images.
 """
 
-load("//defs:providers.bzl", "IsoImageInfo", "KernelInfo", "Stage3Info")
+load("//defs:providers.bzl", "IsoImageInfo", "KernelInfo", "Stage3Info", "get_kernel_image")
 load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_path_args")
-
-def _get_kernel_image(dep):
-    """Extract boot image from KernelInfo provider."""
-    if KernelInfo not in dep:
-        fail("kernel dep must provide KernelInfo")
-    return dep[KernelInfo].bzimage
 
 # =============================================================================
 # RAW DISK IMAGE
@@ -74,7 +68,7 @@ def _iso_image_impl(ctx: AnalysisContext) -> list[Provider]:
     iso_file = ctx.actions.declare_output(ctx.attrs.name + ".iso")
 
     cmd = cmd_args(ctx.attrs._iso_tool[RunInfo])
-    cmd.add("--kernel", _get_kernel_image(ctx.attrs.kernel))
+    cmd.add("--kernel", get_kernel_image(ctx.attrs.kernel))
     cmd.add("--initramfs", ctx.attrs.initramfs[DefaultInfo].default_outputs[0])
     cmd.add("--output", iso_file.as_output())
 

@@ -2,19 +2,13 @@
 boot script rules: generate QEMU and Cloud Hypervisor boot scripts.
 """
 
-load("//defs:providers.bzl", "KernelInfo")
-
-def _get_kernel_image(dep):
-    """Extract boot image from KernelInfo provider."""
-    if KernelInfo not in dep:
-        fail("kernel dep must provide KernelInfo")
-    return dep[KernelInfo].bzimage
+load("//defs:providers.bzl", "get_kernel_image")
 
 def _qemu_boot_script_impl(ctx):
     """Generate a QEMU boot script for testing."""
     boot_script = ctx.actions.declare_output(ctx.attrs.name + ".sh")
 
-    kernel_image = _get_kernel_image(ctx.attrs.kernel)
+    kernel_image = get_kernel_image(ctx.attrs.kernel)
     initramfs_file = ctx.attrs.initramfs[DefaultInfo].default_outputs[0]
 
     arch = ctx.attrs.arch
@@ -78,7 +72,7 @@ def _ch_boot_script_impl(ctx):
     """
     boot_script = ctx.actions.declare_output(ctx.attrs.name + ".sh")
 
-    kernel_image = _get_kernel_image(ctx.attrs.kernel) if ctx.attrs.kernel else None
+    kernel_image = get_kernel_image(ctx.attrs.kernel) if ctx.attrs.kernel else None
     firmware_file = ctx.attrs.firmware[DefaultInfo].default_outputs[0] if ctx.attrs.firmware else None
     disk_image_file = ctx.attrs.disk_image[DefaultInfo].default_outputs[0] if ctx.attrs.disk_image else None
     initramfs_file = ctx.attrs.initramfs[DefaultInfo].default_outputs[0] if ctx.attrs.initramfs else None

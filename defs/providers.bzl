@@ -76,6 +76,12 @@ KernelInfo = provider(fields = [
     "version",          # str: kernel version string (e.g. 6.12.0-buckos)
 ])
 
+def get_kernel_image(dep):
+    """Extract boot image from KernelInfo provider."""
+    if KernelInfo not in dep:
+        fail("kernel dep must provide KernelInfo")
+    return dep[KernelInfo].bzimage
+
 KernelHeadersInfo = provider(fields = [
     "headers",          # artifact: installed headers tree (usr/include/)
     "version",          # str: kernel version string
