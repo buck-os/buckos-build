@@ -332,31 +332,16 @@ def main():
     # _find_syslinux_file tests
     # ===================================================================
 
-    # 26. File found when present in search path (monkey-patch)
-    print("=== _find_syslinux_file: finds file via monkey-patch ===")
-    import iso_helper
-    orig_search_dirs = None
+    # 26. File found when present in search path (search_dirs param)
+    print("=== _find_syslinux_file: finds file via search_dirs ===")
     with tempfile.TemporaryDirectory() as d:
         # Create a fake syslinux file
         open(os.path.join(d, "isolinux.bin"), "w").close()
-        # Monkey-patch the function to search our temp dir
-        orig_fn = iso_helper._find_syslinux_file
-
-        def patched_find(name, _d=d):
-            p = os.path.join(_d, name)
-            if os.path.isfile(p):
-                return p
-            return None
-
-        iso_helper._find_syslinux_file = patched_find
-        try:
-            result = iso_helper._find_syslinux_file("isolinux.bin")
-            if result and result.endswith("isolinux.bin"):
-                ok("finds file in patched search path")
-            else:
-                fail(f"expected path to isolinux.bin, got '{result}'")
-        finally:
-            iso_helper._find_syslinux_file = orig_fn
+        result = _find_syslinux_file("isolinux.bin", search_dirs=[d])
+        if result and result.endswith("isolinux.bin"):
+            ok("finds file in search_dirs")
+        else:
+            fail(f"expected path to isolinux.bin, got '{result}'")
 
     # 27. File not found returns None
     print("=== _find_syslinux_file: missing file returns None ===")

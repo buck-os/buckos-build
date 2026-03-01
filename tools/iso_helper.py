@@ -41,22 +41,32 @@ def _run(cmd, **kwargs):
     return result
 
 
-def _find_syslinux_file(name):
-    """Search common syslinux paths for a file."""
-    for d in ["/usr/lib/syslinux/bios", "/usr/share/syslinux",
-              "/usr/lib/ISOLINUX", "/usr/lib/syslinux"]:
+_DEFAULT_SYSLINUX_DIRS = [
+    "/usr/lib/syslinux/bios", "/usr/share/syslinux",
+    "/usr/lib/ISOLINUX", "/usr/lib/syslinux",
+]
+
+
+def _find_syslinux_file(name, search_dirs=None):
+    """Search syslinux paths for a file.
+
+    When search_dirs is provided, search only those dirs.  Otherwise
+    fall back to the default host paths (for --allow-host-path mode).
+    """
+    dirs = search_dirs if search_dirs else _DEFAULT_SYSLINUX_DIRS
+    for d in dirs:
         p = os.path.join(d, name)
         if os.path.isfile(p):
             return p
     return None
 
 
-def _setup_bios(work):
+def _setup_bios(work, search_dirs=None):
     """Copy isolinux/syslinux files for BIOS boot."""
     isolinux_dir = os.path.join(work, "isolinux")
     os.makedirs(isolinux_dir, exist_ok=True)
 
-    isolinux_bin = _find_syslinux_file("isolinux.bin")
+    isolinux_bin = _find_syslinux_file("isolinux.bin", search_dirs)
     if not isolinux_bin:
         print("warning: isolinux.bin not found, BIOS boot unavailable",
               file=sys.stderr)
@@ -64,7 +74,7 @@ def _setup_bios(work):
 
     shutil.copy2(isolinux_bin, isolinux_dir)
     for mod in ["ldlinux.c32", "menu.c32", "libutil.c32", "libcom32.c32"]:
-        src = _find_syslinux_file(mod)
+        src = _find_syslinux_file(mod, search_dirs)
         if src:
             shutil.copy2(src, isolinux_dir)
     return True
@@ -326,7 +336,7 @@ def _pin_timestamps(work, epoch):
         pass
 
 
-def _create_iso_xorriso(work, output, volume_label, boot_mode):
+def _create_iso_xorriso(work, output, volume_label, boot_mode, search_dirs=None):
     """Create ISO using xorriso."""
     xorriso = _find_tool("xorriso")
     if not xorriso:
@@ -334,7 +344,7 @@ def _create_iso_xorriso(work, output, volume_label, boot_mode):
 
     has_bios = os.path.isfile(os.path.join(work, "isolinux", "isolinux.bin"))
     has_efi = os.path.isfile(os.path.join(work, "boot", "efi.img"))
-    isohdpfx = _find_syslinux_file("isohdpfx.bin")
+    isohdpfx = _find_syslinux_file("isohdpfx.bin", search_dirs)
 
     cmd = [xorriso, "-as", "mkisofs", "-o", output, "-iso-level", "3"]
 
@@ -429,6 +439,8 @@ def main():
                         help="Start with empty PATH (populated by --path-prepend)")
     parser.add_argument("--path-prepend", action="append", dest="path_prepend", default=[],
                         help="Directory to prepend to PATH (repeatable, resolved to absolute)")
+    parser.add_argument("--syslinux-dir", action="append", dest="syslinux_dirs", default=[],
+                        help="Directory to search for syslinux files (repeatable)")
     args = parser.parse_args()
 
     sanitize_global_env()
@@ -492,6 +504,9 @@ def main():
 
     epoch = int(os.environ.get("SOURCE_DATE_EPOCH", "315576000"))
 
+    # Resolve syslinux search dirs (empty list → use default host paths)
+    syslinux_dirs = [os.path.abspath(d) for d in args.syslinux_dirs] or None
+
     # aarch64 forces EFI (no BIOS boot on ARM)
     boot_mode = args.boot_mode
     if args.arch == "aarch64" and boot_mode == "bios":
@@ -517,7 +532,7 @@ def main():
 
         # Set up boot methods
         if boot_mode in ("bios", "hybrid"):
-            _setup_bios(work)
+            _setup_bios(work, syslinux_dirs)
         if boot_mode in ("efi", "hybrid"):
             _setup_efi(work, args.arch)
 
@@ -526,7 +541,7 @@ def main():
 
         # Create ISO
         print(f"Creating ISO image ({boot_mode} boot)...")
-        if not _create_iso_xorriso(work, output, args.volume_label, boot_mode):
+        if not _create_iso_xorriso(work, output, args.volume_label, boot_mode, syslinux_dirs):
             if not _create_iso_fallback(work, output, args.volume_label):
                 print("error: no ISO creation tool found "
                       "(xorriso, genisoimage, or mkisofs required)",

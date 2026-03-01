@@ -32,6 +32,8 @@ def _raw_disk_image_impl(ctx: AnalysisContext) -> list[Provider]:
     cmd.add("--label", label)
     if ctx.attrs.partition_table:
         cmd.add("--partition-table")
+    for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
 
     ctx.actions.run(
         cmd,
@@ -53,7 +55,7 @@ _raw_disk_image_rule = rule(
         "_disk_image_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:disk_image_helper"),
         ),
-    },
+    } | TOOLCHAIN_ATTRS,
 )
 
 def raw_disk_image(labels = [], **kwargs):
@@ -88,6 +90,10 @@ def _iso_image_impl(ctx: AnalysisContext) -> list[Provider]:
     cmd.add("--kernel-args", ctx.attrs.kernel_args)
     cmd.add("--arch", ctx.attrs.arch)
 
+    if ctx.attrs.syslinux:
+        syslinux_dir = ctx.attrs.syslinux[DefaultInfo].default_outputs[0]
+        cmd.add("--syslinux-dir", syslinux_dir)
+
     # Hermetic PATH from toolchain
     for arg in toolchain_path_args(ctx):
         cmd.add(arg)
@@ -115,6 +121,7 @@ _iso_image_rule = rule(
         "volume_label": attrs.string(default = "BUCKOS"),
         "kernel_args": attrs.string(default = "quiet"),
         "arch": attrs.string(default = "x86_64"),  # x86_64 or aarch64
+        "syslinux": attrs.option(attrs.dep(), default = None),
         "labels": attrs.list(attrs.string(), default = []),
         "_iso_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:iso_helper"),
@@ -178,6 +185,8 @@ def _stage3_tarball_impl(ctx: AnalysisContext) -> list[Provider]:
     cmd.add("--libc", libc)
     cmd.add("--version", version if version else "0.1")
     cmd.add("--compression", compression)
+    for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
 
     ctx.actions.run(
         cmd,
@@ -211,7 +220,7 @@ _stage3_tarball_rule = rule(
         "_stage3_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:stage3_helper"),
         ),
-    },
+    } | TOOLCHAIN_ATTRS,
 )
 
 def stage3_tarball(labels = [], **kwargs):
