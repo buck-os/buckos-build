@@ -751,9 +751,18 @@ def main():
     # so the wrapper is always available regardless of PATH mode)
     env["PATH"] = wrapper_dir + ":" + env.get("PATH", "")
 
+    # Find buckos bash for shell=True subprocesses (pre-cmds).
+    _buckos_bash = None
+    for _d in env.get("PATH", "").split(":"):
+        _bash = os.path.join(_d, "bash") if _d else ""
+        if _bash and os.path.isfile(_bash) and os.access(_bash, os.X_OK):
+            _buckos_bash = _bash
+            break
+
     # Run pre-build commands (e.g. Kconfig setup)
     for cmd_str in args.pre_cmds:
-        result = subprocess.run(cmd_str, shell=True, cwd=output_dir, env=env)
+        result = subprocess.run(cmd_str, shell=True, cwd=output_dir, env=env,
+                                executable=_buckos_bash)
         if result.returncode != 0:
             print(f"error: pre-cmd failed with exit code {result.returncode}: {cmd_str}",
                   file=sys.stderr)
@@ -785,14 +794,10 @@ def main():
 
     # Override make's SHELL so recipe lines use buckos bash instead of
     # /bin/sh (which doesn't exist on remote execution workers).
-    if args.build_system == "make":
+    if args.build_system == "make" and _buckos_bash:
         _has_shell_arg = any(a.startswith("SHELL=") for a in args.make_args)
         if not _has_shell_arg:
-            for _d in env.get("PATH", "").split(":"):
-                _bash = os.path.join(_d, "bash") if _d else ""
-                if _bash and os.path.isfile(_bash) and os.access(_bash, os.X_OK):
-                    cmd.append(f"SHELL={_bash}")
-                    break
+            cmd.append(f"SHELL={_buckos_bash}")
 
     # Wrap with unshare --net for network isolation (reproducibility)
     if _NETWORK_ISOLATED:

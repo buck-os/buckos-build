@@ -292,12 +292,27 @@ def main():
     # Prepend pkg-config wrapper to PATH
     env["PATH"] = wrapper_dir + ":" + env.get("PATH", os.environ.get("PATH", ""))
 
+    # Find buckos bash on PATH for running configure and pre-cmds.
+    # CONFIG_SHELL tells autotools configure to re-exec sub-configures
+    # under this shell instead of #!/bin/sh (which doesn't exist on
+    # remote execution workers).
+    _config_shell = None
+    for _d in env.get("PATH", "").split(":"):
+        _bash = os.path.join(_d, "bash") if _d else ""
+        if _bash and os.path.isfile(_bash) and os.access(_bash, os.X_OK):
+            _config_shell = _bash
+            env["CONFIG_SHELL"] = _bash
+            break
+
     # Run pre-configure commands (e.g. autoreconf, libtoolize, or
     # bootstrap src_prepare steps like symlinking in-tree libraries).
     # These run before the skip-configure check so they're available
     # for prepare-only actions (--skip-configure --pre-cmd "...").
     for cmd_str in args.pre_cmds:
-        result = subprocess.run(cmd_str, shell=True, cwd=output_dir, env=env)
+        result = subprocess.run(
+            cmd_str, shell=True, cwd=output_dir, env=env,
+            executable=_config_shell,
+        )
         if result.returncode != 0:
             print(f"error: pre-cmd failed with exit code {result.returncode}: {cmd_str}",
                   file=sys.stderr)
@@ -327,7 +342,10 @@ def main():
     # Buck2 renders artifact paths relative to the project root, but
     # configure runs in output_dir — the relative paths would break.
     resolved_args = [_resolve_env_paths(a) for a in args.configure_args]
-    cmd = [configure] + resolved_args
+    if _config_shell:
+        cmd = [_config_shell, configure] + resolved_args
+    else:
+        cmd = [configure] + resolved_args
     result = subprocess.run(cmd, cwd=configure_cwd, env=env)
     if result.returncode != 0:
         print(f"error: configure failed with exit code {result.returncode}", file=sys.stderr)

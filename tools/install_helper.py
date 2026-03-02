@@ -413,6 +413,14 @@ def main():
     # so the wrapper is always available regardless of PATH mode)
     env["PATH"] = wrapper_dir + ":" + env.get("PATH", "")
 
+    # Find buckos bash for shell=True subprocesses and SHELL= override.
+    _buckos_bash = None
+    for _d in env.get("PATH", "").split(":"):
+        _bash = os.path.join(_d, "bash") if _d else ""
+        if _bash and os.path.isfile(_bash) and os.access(_bash, os.X_OK):
+            _buckos_bash = _bash
+            break
+
     prefix = os.path.abspath(args.prefix)
     os.makedirs(prefix, exist_ok=True)
 
@@ -900,14 +908,10 @@ def main():
 
     # Override make's SHELL so recipe lines use buckos bash instead of
     # /bin/sh (which doesn't exist on remote execution workers).
-    if args.build_system == "make":
+    if args.build_system == "make" and _buckos_bash:
         _has_shell_arg = any(a.startswith("SHELL=") for a in args.make_args)
         if not _has_shell_arg:
-            for _d in env.get("PATH", "").split(":"):
-                _bash = os.path.join(_d, "bash") if _d else ""
-                if _bash and os.path.isfile(_bash) and os.access(_bash, os.X_OK):
-                    cmd.append(f"SHELL={_bash}")
-                    break
+            cmd.append(f"SHELL={_buckos_bash}")
 
     result = subprocess.run(cmd, env=env)
     if result.returncode != 0:
@@ -925,7 +929,8 @@ def main():
     env["DESTDIR"] = prefix
     env["OUT"] = prefix
     for cmd_str in args.post_cmds:
-        result = subprocess.run(cmd_str, shell=True, cwd=prefix, env=env)
+        result = subprocess.run(cmd_str, shell=True, cwd=prefix, env=env,
+                                executable=_buckos_bash)
         if result.returncode != 0:
             print(f"error: post-cmd failed with exit code {result.returncode}: {cmd_str}",
                   file=sys.stderr)
