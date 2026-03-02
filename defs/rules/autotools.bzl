@@ -187,6 +187,9 @@ def _src_compile(ctx, configured, cflags_file = None, ldflags_file = None,
     if ctx.attrs.skip_configure:
         cmd.add("--make-arg=PREFIX=/usr")
 
+    if ctx.attrs.build_subdir:
+        cmd.add("--build-subdir", ctx.attrs.build_subdir)
+
     for pre_cmd in ctx.attrs.pre_build_cmds:
         cmd.add("--pre-cmd", pre_cmd)
     for arg in ctx.attrs.make_args:
@@ -239,6 +242,8 @@ def _src_install(ctx, built, cflags_file = None, ldflags_file = None,
     for key, value in ctx.attrs.env.items():
         cmd.add("--env", "{}={}".format(key, value))
 
+    if ctx.attrs.build_subdir:
+        cmd.add("--build-subdir", ctx.attrs.build_subdir)
     if ctx.attrs.install_prefix_var:
         cmd.add("--destdir-var", ctx.attrs.install_prefix_var)
     # Override install targets when explicit ordering is needed (e.g.
@@ -332,6 +337,7 @@ autotools_package = rule(
         "configure_prefix_deps": attrs.dict(attrs.string(), attrs.dep(), default = {}),
         "configure_script": attrs.option(attrs.string(), default = None),
         "skip_configure": attrs.bool(default = False),
+        "build_subdir": attrs.option(attrs.string(), default = None),
         "pre_build_cmds": attrs.list(attrs.string(), default = []),
         "make_args": attrs.list(attrs.string(), default = []),
         "install_args": attrs.list(attrs.string(), default = []),

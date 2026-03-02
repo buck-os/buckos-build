@@ -43,6 +43,9 @@ package(
     description = "Generic and open source machine emulator and virtualizer",
     homepage = "https://www.qemu.org/",
     license = "GPL-2.0",
+    # QEMU's ./configure creates a build/ subdirectory with the actual
+    # meson/ninja build system; make must run from there, not the source root.
+    build_subdir = "build",
     pre_configure_cmds = [
         # Fix struct sched_attr redefinition with glibc >= 2.41 (linux-user targets)
         "awk '/^struct sched_attr \\{/{print \"#if !(defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 41)))\"; f=1} {print} f && /^};/{print \"#endif\"; f=0}' linux-user/syscall.c > linux-user/syscall.c.tmp && mv linux-user/syscall.c.tmp linux-user/syscall.c",
@@ -134,6 +137,7 @@ package(
     description = "QEMU Guest Agent for improved host-guest communication",
     homepage = "https://www.qemu.org/",
     license = "GPL-2.0",
+    build_subdir = "build",
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc",
@@ -160,6 +164,7 @@ package(
     description = "QEMU user-space emulation for running foreign binaries",
     homepage = "https://www.qemu.org/",
     license = "GPL-2.0",
+    build_subdir = "build",
     pre_configure_cmds = [
         # Fix struct sched_attr redefinition with glibc >= 2.41
         "awk '/^struct sched_attr \\{/{print \"#if !(defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 41)))\"; f=1} {print} f && /^};/{print \"#endif\"; f=0}' linux-user/syscall.c > linux-user/syscall.c.tmp && mv linux-user/syscall.c.tmp linux-user/syscall.c",
@@ -190,6 +195,7 @@ package(
     description = "QEMU disk image utility (qemu-img, qemu-nbd)",
     homepage = "https://www.qemu.org/",
     license = "GPL-2.0",
+    build_subdir = "build",
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc",
