@@ -5,11 +5,12 @@ Runs cmake with specified source dir, build dir, and arguments.
 """
 
 import argparse
+import glob as _glob
 import os
 import subprocess
 import sys
 
-from _env import clean_env, sanitize_filenames, write_pkg_config_wrapper
+from _env import clean_env, derive_lib_paths, register_cleanup, sanitize_filenames, write_pkg_config_wrapper
 
 
 def _resolve_env_paths(value):
@@ -130,6 +131,7 @@ def main():
         sys.exit(1)
 
     os.makedirs(args.build_dir, exist_ok=True)
+    register_cleanup(os.path.abspath(args.build_dir))
 
     # Create a pkg-config wrapper that always passes --define-prefix so
     # .pc files in Buck2 dep directories resolve paths correctly.
@@ -199,11 +201,18 @@ def main():
     if args.source_subdir:
         source_path = os.path.join(source_path, args.source_subdir)
 
+    # Force cmake to use our --define-prefix wrapper instead of the real
+    # pkg-config binary.  cmake's find_program() searches CMAKE_PREFIX_PATH
+    # before PATH, so it finds the buckos-built pkg-config binary (which
+    # doesn't rewrite prefixes) before our wrapper on PATH.
+    wrapper_pkg_config = os.path.join(wrapper_dir, "pkg-config")
+
     cmd = [
         "cmake",
         "-S", source_path,
         "-B", os.path.abspath(args.build_dir),
         f"-DCMAKE_INSTALL_PREFIX={args.install_prefix}",
+        f"-DPKG_CONFIG_EXECUTABLE={wrapper_pkg_config}",
         "-G", "Ninja",
     ]
 
@@ -221,6 +230,24 @@ def main():
             existing = env.get("LD_LIBRARY_PATH", "")
             merged = ":".join(resolved_lib_dirs)
             env["LD_LIBRARY_PATH"] = (merged + ":" + existing).rstrip(":") if existing else merged
+
+    # Derive LD_LIBRARY_PATH from path-prepend dirs so host tools with
+    # shared libraries (e.g. python → libpython3.so) can execute.
+    derive_lib_paths(all_path_prepend, env)
+
+    # Auto-detect Perl5 lib dirs from dep prefixes so build-time perl
+    # modules (e.g. URI::Escape for kdoctools) are found by cmake's
+    # FindPerlModules.  all_prefix_paths are {dep}/usr directories.
+    _perl5_paths = []
+    for _pp in all_prefix_paths:
+        for _pattern in ("lib/perl5", "share/perl5",
+                         "lib/perl5/5.*", "lib64/perl5/5.*"):
+            for _sp in _glob.glob(os.path.join(_pp, _pattern)):
+                if os.path.isdir(_sp):
+                    _perl5_paths.append(_sp)
+    if _perl5_paths:
+        _existing = env.get("PERL5LIB", "")
+        env["PERL5LIB"] = ":".join(_perl5_paths) + (":" + _existing if _existing else "")
 
     # Collect cmake defines in a dict so we can merge flag-file values
     # with toolchain/per-package values for CMAKE_*_FLAGS.
