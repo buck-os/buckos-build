@@ -15,7 +15,7 @@ package(
     license = "MIT",
     use_configure = {
         "X": ("-Dplatforms=x11,wayland", "-Dplatforms=wayland"),
-        "llvm": ("-Dllvm=enabled -Damd-use-llvm=true -Dgallium-drivers=radeonsi,llvmpipe,virgl", "-Dllvm=disabled -Dgallium-drivers=softpipe,virgl"),
+        "llvm": (["-Dllvm=enabled", "-Damd-use-llvm=true", "-Dgallium-drivers=radeonsi,llvmpipe,virgl"], ["-Dllvm=disabled", "-Dgallium-drivers=softpipe,virgl"]),
         "vulkan": ("-Dvulkan-drivers=intel,intel_hasvk,amd", "-Dvulkan-drivers="),
     },
     use_deps = {
