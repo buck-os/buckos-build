@@ -259,6 +259,7 @@ def package(
         "m4", "pkg-config", "meson", "ninja", "cmake",
         # Deps of the above (would create cycles if injected)
         "zlib", "expat", "libffi", "ncurses", "readline", "pcre2",
+        "sqlite",  # dep of python-host (_sqlite3)
         "acl", "attr", "libcap", "gettext", "autoconf", "automake", "libtool",
     )
     _CONFIGURABLE_RULES = ("autotools", "meson", "cmake", "mozbuild")
@@ -298,17 +299,17 @@ def package(
                 "//packages/linux/dev-tools/build-systems/ninja:ninja",
             ])
     if _auto_tool_deps:
-        raw_deps = build_kwargs.pop("deps", [])
-        if type(raw_deps) == "Select":
-            all_deps = raw_deps
+        raw_host_deps = build_kwargs.pop("host_deps", [])
+        if type(raw_host_deps) == "Select":
+            all_host_deps = raw_host_deps
             for td in _auto_tool_deps:
-                all_deps = all_deps + [td]
+                all_host_deps = all_host_deps + [td]
         else:
-            all_deps = list(raw_deps)
+            all_host_deps = list(raw_host_deps)
             for td in _auto_tool_deps:
-                if td not in all_deps:
-                    all_deps.append(td)
-        build_kwargs["deps"] = all_deps
+                if td not in all_host_deps:
+                    all_host_deps.append(td)
+        build_kwargs["host_deps"] = all_host_deps
 
     # -- 2. Resolve USE-conditional deps -------------------------------------
     raw_deps = build_kwargs.pop("deps", [])

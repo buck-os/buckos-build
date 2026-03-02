@@ -48,9 +48,11 @@ rm -f $OUT/lib/udev/udevd 2>/dev/null || true
 
 # Don't create symlinks for udevd - systemd will provide it
 """],
+    host_deps = [
+        "//packages/linux/dev-tools/dev-utils/gperf:gperf",  # Build-time tool for hwdb generation
+    ],
     deps = [
         "//packages/linux/core/util-linux:util-linux",
-        "//packages/linux/dev-tools/dev-utils/gperf:gperf",  # Build-time dependency for hwdb generation
         "//packages/linux/system/libs/compression/xz:xz",  # liblzma - needed for kmod's .la files
         "//packages/linux/system/libs/compression/zstd:zstd",  # libzstd - needed for kmod's .la files
         "//packages/linux/core/zlib:zlib",  # zlib - needed for kmod's .la files
