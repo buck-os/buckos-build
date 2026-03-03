@@ -13,7 +13,7 @@ package(
     # Makefile lives in squashfs-tools/ subdirectory (no top-level Makefile).
     # squashfs uses INSTALL_PREFIX not DESTDIR; we override it via make_args
     # so make install puts binaries into $DESTDIR/usr/bin.
-    make_args = ["-C", "squashfs-tools"],
+    make_args = ["-C", "squashfs-tools", "XZ_SUPPORT=1", "LZO_SUPPORT=1", "ZSTD_SUPPORT=1"],
     install_prefix_var = "INSTALL_PREFIX",
     post_install_cmds = [
         # INSTALL_PREFIX is set to the raw prefix dir; relocate into usr/
