@@ -708,6 +708,9 @@ def main():
             _candidate = os.path.join(_abs_bp, "meson")
             if os.path.isfile(_candidate):
                 _dep_meson = _candidate
+    if _dep_python3:
+        env.setdefault("PYTHON", _dep_python3)
+        env.setdefault("PYTHON3", _dep_python3)
     _host_python = shutil.which("python3") if _dep_python3 else None
     if _dep_python3 and _host_python:
         _dep_python3_abs = os.path.abspath(_dep_python3)
