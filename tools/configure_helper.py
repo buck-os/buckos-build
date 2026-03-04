@@ -259,6 +259,16 @@ def main():
     # shared libraries (e.g. python → libpython3.so) can execute.
     derive_lib_paths(all_path_prepend, env)
 
+    # Pin PYTHON/PYTHON3 to buckos python so autotools build scripts
+    # (e.g. AC_PATH_PROG([PYTHON3]), Makefile rules invoking $(PYTHON))
+    # use the ABI-matched buckos python rather than host python.
+    for _bp in list(args.hermetic_path) + list(all_path_prepend):
+        _candidate = os.path.join(os.path.abspath(_bp), "python3")
+        if os.path.isfile(_candidate):
+            env.setdefault("PYTHON", _candidate)
+            env.setdefault("PYTHON3", _candidate)
+            break
+
     # Auto-detect automake Perl modules and aclocal dirs from dep
     # prefixes.  The Buck2-installed automake hardcodes /usr/share/...
     # paths which don't resolve to the artifact directory.

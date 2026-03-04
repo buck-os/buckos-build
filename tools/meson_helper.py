@@ -130,8 +130,8 @@ def main():
 
     # Create a pkg-config wrapper that always passes --define-prefix so
     # .pc files in Buck2 dep directories resolve paths correctly.
-    import tempfile
-    wrapper_dir = write_pkg_config_wrapper(tempfile.mkdtemp(prefix="pkgconf-wrapper-"))
+    # Write into build_dir so the path is stable across meson reconfigures.
+    wrapper_dir = write_pkg_config_wrapper(os.path.join(args.build_dir, ".pkgconf-wrapper"))
 
     env = clean_env()
 
@@ -224,6 +224,32 @@ def main():
     if args.cxx:
         env["CXX"] = _resolve_env_paths(args.cxx)
 
+    # Find buckos python3 from dep dirs — prefer it over host python.
+    # Buckos python is ABI-matched to buckos libs in LD_LIBRARY_PATH.
+    _dep_python3 = None
+    for _bp in list(args.hermetic_path) + list(all_path_prepend):
+        _candidate = os.path.join(os.path.abspath(_bp), "python3")
+        if os.path.isfile(_candidate):
+            _dep_python3 = _candidate
+            break
+
+    if _dep_python3:
+        env["PYTHON"] = _dep_python3
+        env["PYTHON3"] = _dep_python3
+
+    # Generate a meson native file pinning tool paths so meson embeds
+    # the correct absolute paths in build.ninja from the start, rather
+    # than relying on PATH lookup or post-hoc build.ninja patching.
+    # [binaries] pins apply to the native (build-host) machine tools.
+    _native_lines = ["[binaries]"]
+    _native_lines.append(f"pkg-config = '{os.path.join(wrapper_dir, 'pkg-config')}'")
+    if _dep_python3:
+        _native_lines.append(f"python3 = '{_dep_python3}'")
+        _native_lines.append(f"python = '{_dep_python3}'")
+    _native_file = os.path.join(args.build_dir, "buckos-native.ini")
+    with open(_native_file, "w") as _nf:
+        _nf.write("\n".join(_native_lines) + "\n")
+
     # Run pre-configure commands in the source directory
     source_abs = os.path.abspath(args.source_dir)
     for cmd_str in args.pre_cmds:
@@ -238,6 +264,7 @@ def main():
         os.path.abspath(args.build_dir),
         source_abs,
         f"--prefix={args.prefix}",
+        f"--native-file={_native_file}",
     ])
 
     for define in args.meson_defines:
