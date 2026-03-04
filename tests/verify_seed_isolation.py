@@ -107,12 +107,24 @@ def main():
     warnings = []
 
     with tempfile.TemporaryDirectory(prefix="seed-verify-") as tmpdir:
-        # Unpack
+        # Unpack — handle .zip wrapper (contains a single .tar.zst inside)
         print(f"Unpacking seed archive ...")
-        r = subprocess.run(
-            ["tar", "-xf", archive_path, "-C", tmpdir],
-            capture_output=True, text=True, timeout=300,
-        )
+        if archive_path.endswith(".zip"):
+            import zipfile
+            with zipfile.ZipFile(archive_path) as zf:
+                names = zf.namelist()
+                zf.extractall(tmpdir)
+                inner = os.path.join(tmpdir, names[0])
+            r = subprocess.run(
+                f"zstd -dc {inner} | tar -xf - -C {tmpdir}",
+                shell=True, capture_output=True, text=True, timeout=300,
+            )
+            os.unlink(inner)
+        else:
+            r = subprocess.run(
+                ["tar", "-xf", archive_path, "-C", tmpdir],
+                capture_output=True, text=True, timeout=300,
+            )
         if r.returncode != 0:
             print(f"FAIL: tar extract failed: {r.stderr}", file=sys.stderr)
             sys.exit(1)

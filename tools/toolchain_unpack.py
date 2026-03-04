@@ -43,7 +43,20 @@ def detect_compression(path):
         return "xz"
     elif path.endswith(".tar.gz") or path.endswith(".tgz"):
         return "gz"
+    elif path.endswith(".zip"):
+        return "zip"
     return "auto"
+
+
+def _unzip_inner(zip_path, dest_dir):
+    """Unzip a .zip archive and return the path to the single inner file."""
+    import zipfile
+    with zipfile.ZipFile(zip_path) as zf:
+        names = zf.namelist()
+        if len(names) != 1:
+            raise ValueError(f"expected exactly one file in zip, got: {names}")
+        zf.extractall(dest_dir)
+        return os.path.join(dest_dir, names[0])
 
 
 def main():
@@ -67,7 +80,14 @@ def main():
         import tempfile
         with tempfile.TemporaryDirectory() as tmpdir:
             comp = detect_compression(archive)
-            if comp == "zst":
+            if comp == "zip":
+                inner = _unzip_inner(archive, tmpdir)
+                inner_comp = detect_compression(inner)
+                if inner_comp == "zst":
+                    cmd = f"zstd -dc {inner} | tar -C {tmpdir} -xf - ./metadata.json"
+                else:
+                    cmd = f"tar -C {tmpdir} -xf {inner} ./metadata.json"
+            elif comp == "zst":
                 cmd = f"zstd -dc {archive} | tar -C {tmpdir} -xf - ./metadata.json"
             elif comp == "xz":
                 cmd = f"tar -C {tmpdir} -xJf {archive} ./metadata.json"
@@ -99,14 +119,26 @@ def main():
     # Extract
     print(f"Extracting {archive} -> {output}", file=sys.stderr)
     comp = detect_compression(archive)
-    if comp == "zst":
+    if comp == "zip":
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmpdir:
+            inner = _unzip_inner(archive, tmpdir)
+            inner_comp = detect_compression(inner)
+            if inner_comp == "zst":
+                cmd = f"zstd -dc {inner} | tar -C {output} -xf -"
+            else:
+                cmd = f"tar -C {output} -xf {inner}"
+            result = subprocess.run(cmd, shell=True, env=clean_env())
+    elif comp == "zst":
         cmd = f"zstd -dc {archive} | tar -C {output} -xf -"
+        result = subprocess.run(cmd, shell=True, env=clean_env())
     elif comp == "xz":
         cmd = f"tar -C {output} -xJf {archive}"
+        result = subprocess.run(cmd, shell=True, env=clean_env())
     else:
         cmd = f"tar -C {output} -xzf {archive}"
+        result = subprocess.run(cmd, shell=True, env=clean_env())
 
-    result = subprocess.run(cmd, shell=True, env=clean_env())
     if result.returncode != 0:
         print(f"error: extraction failed with exit code {result.returncode}", file=sys.stderr)
         sys.exit(1)
