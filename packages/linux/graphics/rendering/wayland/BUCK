@@ -18,20 +18,26 @@ package(
         "//packages/linux/system/libs/data/expat:expat-host",
     ],
     install_script = """
-# Use host compiler for native build; PKG_CONFIG_PATH is inherited from
-# the binary rule env and already includes expat-host's pkgconfig dir.
+# Use host compiler for native build
 unset CC CXX AR RANLIB LD STRIP
 unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS
 export CC=gcc
 export CXX=g++
 
-# Get expat include/link flags via pkg-config (PKG_CONFIG_PATH set by dep env)
-if pkg-config --exists expat 2>/dev/null; then
-    export CFLAGS=$(pkg-config --cflags expat)
-    export LDFLAGS=$(pkg-config --libs expat)
-    echo "expat cflags: $CFLAGS"
-else
-    echo "WARNING: expat not found via pkg-config; PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
+# Locate expat from DEP_BASE_DIRS (set by binary rule from dep install prefixes)
+# We can't rely on pkg-config --cflags because pkg-config strips standard paths
+# like -I/usr/include, which breaks on CI where libexpat-dev isn't system-installed.
+IFS=: read -ra _DEPS <<< "${DEP_BASE_DIRS:-}"
+for _dep in "${_DEPS[@]}"; do
+    if [ -f "$_dep/usr/include/expat.h" ]; then
+        export CFLAGS="-I$_dep/usr/include"
+        export LDFLAGS="-L$_dep/usr/lib64 -lexpat"
+        echo "expat found in dep: $_dep"
+        break
+    fi
+done
+if [ -z "$CFLAGS" ]; then
+    echo "WARNING: expat.h not found in DEP_BASE_DIRS=$DEP_BASE_DIRS"
 fi
 
 # Ensure host meson/ninja are in PATH
