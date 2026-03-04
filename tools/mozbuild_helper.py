@@ -106,8 +106,6 @@ def _build_dep_env(dep_base_dirs, pkg_config_path, base_path=None):
         if base_path is None:
             base_path = ""
         env["PATH"] = ":".join(non_python_bin_paths) + ":" + base_path
-    elif base_path is not None:
-        env["PATH"] = base_path
 
     # LIBRARY_PATH for the linker (NOT LD_LIBRARY_PATH — that would cause
     # buckos shared libs to shadow system libs for host tools)
