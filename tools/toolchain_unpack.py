@@ -102,6 +102,12 @@ def _patch_elf_interpreter(path, new_interp):
         if old_interp == new_interp:
             return False  # already correct
 
+        # Only rewrite interpreters with padding (leading ///) from build time.
+        # Non-padded interpreters belong to host-built binaries that should
+        # use the system ld-linux.
+        if not old_interp.startswith("///"):
+            return False
+
         new_bytes = new_interp.encode("ascii") + b"\x00"
 
         if len(new_bytes) <= p_filesz:
@@ -150,7 +156,7 @@ def _rewrite_interpreters(toolchain_dir):
     new_interp = os.path.abspath(ld_linux)
     patched = 0
 
-    for subdir in ("host-tools", "tools"):
+    for subdir in ("host-tools",):
         root = os.path.join(toolchain_dir, subdir)
         if not os.path.isdir(root):
             continue
