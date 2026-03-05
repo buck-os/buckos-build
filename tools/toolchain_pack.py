@@ -96,6 +96,87 @@ def _scrub_build_paths(directory):
         print(f"  scrubbed build paths from {scrubbed} ELF files", file=sys.stderr)
 
 
+def _pad_elf_interpreter(directory, target_size=256):
+    """Pad the ELF interpreter to a fixed size with leading slashes.
+
+    The cross-compiler is built by the host GCC and links against the
+    host glibc.  On systems with older glibc the binary segfaults.
+    Padding the interpreter to target_size bytes with leading slashes
+    (///...///lib64/ld-linux-x86-64.so.2) allows the unpack step to
+    overwrite it in-place with the absolute path to the bundled buckos
+    ld-linux, making the cross-compiler portable.
+
+    Multiple leading slashes collapse to one per POSIX, so the padded
+    path still resolves correctly on the build host.
+    """
+    STANDARD_INTERP = b"/lib64/ld-linux-x86-64.so.2"
+    padded = 0
+
+    for dirpath, _, filenames in os.walk(directory):
+        for name in filenames:
+            path = os.path.join(dirpath, name)
+            if os.path.islink(path) or not os.path.isfile(path):
+                continue
+            try:
+                with open(path, 'rb') as f:
+                    data = bytearray(f.read())
+            except (PermissionError, OSError):
+                continue
+
+            if data[:4] != b'\x7fELF':
+                continue
+            # Only handle 64-bit little-endian (x86_64)
+            if data[4] != 2 or data[5] != 1:
+                continue
+
+            e_phoff = struct.unpack_from('<Q', data, 32)[0]
+            e_phentsize = struct.unpack_from('<H', data, 54)[0]
+            e_phnum = struct.unpack_from('<H', data, 56)[0]
+
+            PT_INTERP = 3
+            for i in range(e_phnum):
+                off = e_phoff + i * e_phentsize
+                p_type = struct.unpack_from('<I', data, off)[0]
+                if p_type != PT_INTERP:
+                    continue
+
+                p_offset = struct.unpack_from('<Q', data, off + 8)[0]
+                p_filesz = struct.unpack_from('<Q', data, off + 32)[0]
+
+                end = data.index(0, p_offset)
+                old_interp = data[p_offset:end]
+                if old_interp != STANDARD_INTERP:
+                    break  # already padded or different interpreter
+
+                # Build padded string: ///...///lib64/ld-linux-x86-64.so.2\0
+                # target_size includes the null terminator
+                suffix = b"lib64/ld-linux-x86-64.so.2"
+                n_slashes = target_size - 1 - len(suffix)  # -1 for null
+                new_bytes = b"/" * n_slashes + suffix + b"\x00"
+
+                if len(new_bytes) <= p_filesz:
+                    data[p_offset:p_offset + len(new_bytes)] = new_bytes
+                    for j in range(len(new_bytes), p_filesz):
+                        data[p_offset + j] = 0
+                else:
+                    new_offset = len(data)
+                    data.extend(new_bytes)
+                    struct.pack_into('<Q', data, off + 8, new_offset)
+                    struct.pack_into('<Q', data, off + 32, len(new_bytes))
+                    struct.pack_into('<Q', data, off + 40, len(new_bytes))
+
+                orig_mode = os.stat(path).st_mode
+                os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
+                with open(path, 'wb') as f:
+                    f.write(data)
+                os.chmod(path, orig_mode)
+                padded += 1
+                break
+
+    if padded:
+        print(f"  padded ELF interpreter in {padded} binaries", file=sys.stderr)
+
+
 def _strip_rpath(directory):
     """Strip DT_RPATH and DT_RUNPATH from ELF binaries.
 
@@ -229,9 +310,18 @@ def main():
         print("Scrubbing build paths...", file=sys.stderr)
         _scrub_build_paths(stage_copy)
 
-        # Strip libtool-baked RPATH/RUNPATH from host-tools.  These contain
-        # absolute buck-out build dirs and /usr/lib64 — wrong for the
-        # redistributable seed.  Host-tools use LD_LIBRARY_PATH at runtime.
+        # Pad the cross-compiler's ELF interpreter with leading slashes
+        # so the unpack step can rewrite it to the bundled ld-linux.
+        # Host-tools are already padded at build time via extra_ldflags.
+        print("Padding cross-compiler interpreter...", file=sys.stderr)
+        _pad_elf_interpreter(stage_copy)
+
+        # Strip RPATH/RUNPATH from all seed binaries.  Cross-compiler
+        # tools have buck-out RPATHs (scrubbed to /build above); host-tools
+        # have libtool-baked paths.  Both are wrong for the redistributable
+        # seed — all binaries find libraries via LD_LIBRARY_PATH at runtime.
+        print("Stripping RPATH from cross-compiler...", file=sys.stderr)
+        _strip_rpath(stage_copy)
         if has_host_tools:
             print("Stripping RPATH from host-tools...", file=sys.stderr)
             _strip_rpath(host_tools_dst)

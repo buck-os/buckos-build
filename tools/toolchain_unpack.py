@@ -156,7 +156,7 @@ def _rewrite_interpreters(toolchain_dir):
     new_interp = os.path.abspath(ld_linux)
     patched = 0
 
-    for subdir in ("host-tools",):
+    for subdir in ("host-tools", "tools"):
         root = os.path.join(toolchain_dir, subdir)
         if not os.path.isdir(root):
             continue
