@@ -42,6 +42,9 @@ buckos_bootstrap_toolchain(
     name = "stage2-toolchain",
     bootstrap_stage = "//tc/bootstrap/stage1:stage1",
     extra_cflags = ["-march=x86-64-v3"],
+    extra_ldflags = [
+        "-Wl,--dynamic-linker," + "/" * 228 + "lib64/ld-linux-x86-64.so.2",
+    ],
     visibility = ["PUBLIC"],
 )
 

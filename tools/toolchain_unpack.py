@@ -9,6 +9,8 @@ import argparse
 import hashlib
 import json
 import os
+import stat
+import struct
 import subprocess
 import sys
 
@@ -57,6 +59,118 @@ def _unzip_inner(zip_path, dest_dir):
             raise ValueError(f"expected exactly one file in zip, got: {names}")
         zf.extractall(dest_dir)
         return os.path.join(dest_dir, names[0])
+
+
+def _patch_elf_interpreter(path, new_interp):
+    """Patch the ELF interpreter (PT_INTERP) in a binary.
+
+    Appends the new interpreter string to the end of the file and
+    updates the PT_INTERP program header to point there.  This avoids
+    needing to restructure the ELF or depend on patchelf.
+    """
+    with open(path, "rb") as f:
+        data = bytearray(f.read())
+
+    if data[:4] != b"\x7fELF":
+        return False
+
+    # Only handle 64-bit little-endian (x86_64)
+    ei_class = data[4]
+    ei_data = data[5]
+    if ei_class != 2 or ei_data != 1:
+        return False
+
+    e_phoff = struct.unpack_from("<Q", data, 32)[0]
+    e_phentsize = struct.unpack_from("<H", data, 54)[0]
+    e_phnum = struct.unpack_from("<H", data, 56)[0]
+
+    PT_INTERP = 3
+    interp_found = False
+
+    for i in range(e_phnum):
+        off = e_phoff + i * e_phentsize
+        p_type = struct.unpack_from("<I", data, off)[0]
+        if p_type != PT_INTERP:
+            continue
+
+        p_offset = struct.unpack_from("<Q", data, off + 8)[0]
+        p_filesz = struct.unpack_from("<Q", data, off + 32)[0]
+
+        # Read current interpreter
+        end = data.index(0, p_offset)
+        old_interp = data[p_offset:end].decode("ascii", errors="replace")
+        if old_interp == new_interp:
+            return False  # already correct
+
+        new_bytes = new_interp.encode("ascii") + b"\x00"
+
+        if len(new_bytes) <= p_filesz:
+            # Fits in existing space — overwrite in place
+            data[p_offset:p_offset + len(new_bytes)] = new_bytes
+            # Pad remaining with nulls
+            for j in range(len(new_bytes), p_filesz):
+                data[p_offset + j] = 0
+        else:
+            # Append to end of file, update offset and size
+            new_offset = len(data)
+            data.extend(new_bytes)
+            struct.pack_into("<Q", data, off + 8, new_offset)   # p_offset
+            struct.pack_into("<Q", data, off + 16, 0)           # p_vaddr (unused)
+            struct.pack_into("<Q", data, off + 24, 0)           # p_paddr (unused)
+            struct.pack_into("<Q", data, off + 32, len(new_bytes))  # p_filesz
+            struct.pack_into("<Q", data, off + 40, len(new_bytes))  # p_memsz
+
+        interp_found = True
+        break
+
+    if not interp_found:
+        return False
+
+    orig_mode = os.stat(path).st_mode
+    os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
+    with open(path, "wb") as f:
+        f.write(data)
+    os.chmod(path, orig_mode)
+    return True
+
+
+def _rewrite_interpreters(toolchain_dir):
+    """Rewrite ELF interpreters in host-tools to use the bundled ld-linux.
+
+    Host-tools binaries are built for buckos (glibc 2.42) but their
+    ELF interpreter points to /lib64/ld-linux-x86-64.so.2 which is
+    the host system's glibc.  On systems with an older glibc, mixing
+    ld-linux versions causes segfaults.  Patch all binaries to use the
+    bundled buckos ld-linux so the toolchain is self-contained.
+    """
+    ld_linux = os.path.join(toolchain_dir, "host-tools", "lib64", "ld-linux-x86-64.so.2")
+    if not os.path.exists(ld_linux):
+        return
+
+    new_interp = os.path.abspath(ld_linux)
+    patched = 0
+
+    for subdir in ("host-tools", "tools"):
+        root = os.path.join(toolchain_dir, subdir)
+        if not os.path.isdir(root):
+            continue
+        for dirpath, _, filenames in os.walk(root):
+            for name in filenames:
+                fpath = os.path.join(dirpath, name)
+                if os.path.islink(fpath) or not os.path.isfile(fpath):
+                    continue
+                # Quick check for ELF magic before full parse
+                try:
+                    with open(fpath, "rb") as f:
+                        if f.read(4) != b"\x7fELF":
+                            continue
+                except (PermissionError, OSError):
+                    continue
+                if _patch_elf_interpreter(fpath, new_interp):
+                    patched += 1
+
+    if patched:
+        print(f"  patched ELF interpreter in {patched} binaries", file=sys.stderr)
 
 
 def main():
@@ -142,6 +256,9 @@ def main():
     if result.returncode != 0:
         print(f"error: extraction failed with exit code {result.returncode}", file=sys.stderr)
         sys.exit(1)
+
+    # Patch ELF interpreters to use bundled ld-linux
+    _rewrite_interpreters(output)
 
     # Read metadata
     meta_path = os.path.join(output, "metadata.json")

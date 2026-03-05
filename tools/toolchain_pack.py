@@ -12,6 +12,7 @@ import os
 import re
 import shutil
 import stat
+import struct
 import subprocess
 import sys
 import tempfile
@@ -95,6 +96,89 @@ def _scrub_build_paths(directory):
         print(f"  scrubbed build paths from {scrubbed} ELF files", file=sys.stderr)
 
 
+def _strip_rpath(directory):
+    """Strip DT_RPATH and DT_RUNPATH from ELF binaries.
+
+    Libtool-built packages embed build-time RPATH entries pointing to
+    buck-out directories and /usr/lib64.  These are incorrect in the
+    redistributable seed — host-tools find their libraries via
+    LD_LIBRARY_PATH at runtime.  Overwrite the RPATH strings with
+    null bytes to remove them without restructuring the ELF.
+    """
+    DT_RPATH = 15
+    DT_RUNPATH = 29
+    SHT_DYNAMIC = 6
+    stripped = 0
+
+    for dirpath, _, filenames in os.walk(directory):
+        for name in filenames:
+            path = os.path.join(dirpath, name)
+            if os.path.islink(path) or not os.path.isfile(path):
+                continue
+            try:
+                with open(path, 'rb') as f:
+                    magic = f.read(4)
+                if magic != b'\x7fELF':
+                    continue
+                with open(path, 'rb') as f:
+                    data = bytearray(f.read())
+
+                # Only handle 64-bit LE (x86_64)
+                if data[4] != 2 or data[5] != 1:
+                    continue
+
+                e_shoff = struct.unpack_from('<Q', data, 40)[0]
+                e_shentsize = struct.unpack_from('<H', data, 58)[0]
+                e_shnum = struct.unpack_from('<H', data, 60)[0]
+
+                # Find SHT_DYNAMIC section and its linked .dynstr
+                dyn_offset = dyn_size = dyn_entsize = dynstr_offset = 0
+                for i in range(e_shnum):
+                    sh_off = e_shoff + i * e_shentsize
+                    sh_type = struct.unpack_from('<I', data, sh_off + 4)[0]
+                    if sh_type == SHT_DYNAMIC:
+                        dyn_offset = struct.unpack_from('<Q', data, sh_off + 24)[0]
+                        dyn_size = struct.unpack_from('<Q', data, sh_off + 32)[0]
+                        dyn_entsize = struct.unpack_from('<Q', data, sh_off + 56)[0]
+                        sh_link = struct.unpack_from('<I', data, sh_off + 40)[0]
+                        dynstr_sh_off = e_shoff + sh_link * e_shentsize
+                        dynstr_offset = struct.unpack_from('<Q', data, dynstr_sh_off + 24)[0]
+                        break
+
+                if not dyn_offset or not dynstr_offset:
+                    continue
+                if not dyn_entsize:
+                    dyn_entsize = 16  # sizeof(Elf64_Dyn)
+
+                modified = False
+                n_entries = dyn_size // dyn_entsize
+                for i in range(n_entries):
+                    ent_off = dyn_offset + i * dyn_entsize
+                    d_tag = struct.unpack_from('<q', data, ent_off)[0]
+                    if d_tag in (DT_RPATH, DT_RUNPATH):
+                        d_val = struct.unpack_from('<Q', data, ent_off + 8)[0]
+                        str_off = dynstr_offset + d_val
+                        end = data.index(0, str_off)
+                        if end > str_off:
+                            for j in range(str_off, end):
+                                data[j] = 0
+                            modified = True
+
+                if modified:
+                    orig_mode = os.stat(path).st_mode
+                    os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
+                    with open(path, 'wb') as f:
+                        f.write(data)
+                    os.chmod(path, orig_mode)
+                    stripped += 1
+
+            except (PermissionError, OSError, ValueError, struct.error):
+                pass
+
+    if stripped:
+        print(f"  stripped RPATH from {stripped} ELF files", file=sys.stderr)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Pack bootstrap toolchain into archive")
     parser.add_argument("--stage-dir", required=True, help="Stage 2 output directory")
@@ -144,6 +228,13 @@ def main():
         # time — scrubbing truncates those to "/build" which breaks exec().
         print("Scrubbing build paths...", file=sys.stderr)
         _scrub_build_paths(stage_copy)
+
+        # Strip libtool-baked RPATH/RUNPATH from host-tools.  These contain
+        # absolute buck-out build dirs and /usr/lib64 — wrong for the
+        # redistributable seed.  Host-tools use LD_LIBRARY_PATH at runtime.
+        if has_host_tools:
+            print("Stripping RPATH from host-tools...", file=sys.stderr)
+            _strip_rpath(host_tools_dst)
 
         # Compute content hash from scrubbed stage
         print("Computing content hash...", file=sys.stderr)
