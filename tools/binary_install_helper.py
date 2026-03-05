@@ -164,6 +164,13 @@ def main():
         if ld_lib_parts:
             existing = env.get("LD_LIBRARY_PATH", "")
             env["LD_LIBRARY_PATH"] = ":".join(ld_lib_parts) + (":" + existing if existing else "")
+        # Auto-detect BISON_PKGDATADIR
+        if "BISON_PKGDATADIR" not in env:
+            for bd in hermetic_path.split(":"):
+                bison_data = os.path.join(os.path.dirname(bd), "share", "bison")
+                if os.path.isdir(bison_data):
+                    env["BISON_PKGDATADIR"] = bison_data
+                    break
         # Auto-detect PYTHONPATH
         py_paths = []
         for bd in hermetic_path.split(":"):
@@ -199,6 +206,13 @@ def main():
         if _pp_lib_dirs:
             existing = env.get("LD_LIBRARY_PATH", "")
             env["LD_LIBRARY_PATH"] = ":".join(_pp_lib_dirs) + (":" + existing if existing else "")
+        # Auto-detect BISON_PKGDATADIR from prepend dirs
+        if "BISON_PKGDATADIR" not in env:
+            for bd in path_prepend.split(":"):
+                bison_data = os.path.join(os.path.dirname(bd), "share", "bison")
+                if os.path.isdir(bison_data):
+                    env["BISON_PKGDATADIR"] = bison_data
+                    break
 
     # Translate _DEP_LD_LIBRARY_PATH → LD_LIBRARY_PATH for the subprocess.
     # The underscore-prefixed name prevents the dynamic linker from seeing

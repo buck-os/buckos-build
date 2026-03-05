@@ -15,7 +15,7 @@ import subprocess
 import sys
 import tempfile
 
-from _env import sanitize_global_env
+from _env import derive_lib_paths, sanitize_global_env
 
 
 def main():
@@ -108,6 +108,12 @@ def main():
         prepend = ":".join(os.path.abspath(p) for p in args.path_prepend if os.path.isdir(p))
         if prepend:
             os.environ["PATH"] = prepend + ":" + os.environ.get("PATH", "")
+
+    # Derive LD_LIBRARY_PATH and BISON_PKGDATADIR from bin dirs
+    if args.hermetic_path:
+        derive_lib_paths(args.hermetic_path, os.environ)
+    if args.path_prepend:
+        derive_lib_paths(args.path_prepend, os.environ)
 
     os.environ.setdefault("KBUILD_BUILD_TIMESTAMP", "Thu Jan  1 00:00:00 UTC 1970")
     os.environ.setdefault("KBUILD_BUILD_USER", "buckos")

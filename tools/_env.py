@@ -144,6 +144,7 @@ def setup_path(args, env, host_path=""):
     """
     if args.hermetic_path:
         env["PATH"] = ":".join(os.path.abspath(p) for p in args.hermetic_path)
+        derive_lib_paths(args.hermetic_path, env)
     elif args.hermetic_empty:
         env["PATH"] = ""
     elif args.allow_host_path:
@@ -159,11 +160,12 @@ def setup_path(args, env, host_path=""):
 
 
 def derive_lib_paths(bin_dirs, env):
-    """Derive LD_LIBRARY_PATH from bin dirs.
+    """Derive LD_LIBRARY_PATH and tool data dirs from bin dirs.
 
-    Given {prefix}/usr/bin, adds {prefix}/usr/lib and {prefix}/usr/lib64
-    so dynamically linked host tools (e.g. python → libpython3.so)
-    can find their shared libraries.
+    Given {prefix}/bin, adds {prefix}/lib and {prefix}/lib64 to
+    LD_LIBRARY_PATH so dynamically linked host tools can find their
+    shared libraries, and sets BISON_PKGDATADIR so relocated bison
+    finds its m4sugar data files.
     """
     lib_parts = []
     for bin_dir in bin_dirs:
@@ -172,6 +174,11 @@ def derive_lib_paths(bin_dirs, env):
             d = os.path.join(parent, ld)
             if os.path.isdir(d):
                 lib_parts.append(d)
+        # Bison looks for data at compiled-in /usr/share/bison; set
+        # BISON_PKGDATADIR so it finds data in the relocated prefix.
+        bison_data = os.path.join(parent, "share", "bison")
+        if os.path.isdir(bison_data) and "BISON_PKGDATADIR" not in env:
+            env["BISON_PKGDATADIR"] = bison_data
     if lib_parts:
         existing = env.get("LD_LIBRARY_PATH", "")
         merged = ":".join(lib_parts)
