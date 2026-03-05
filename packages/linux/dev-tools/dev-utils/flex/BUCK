@@ -16,6 +16,12 @@ package(
 
     # Default USE flags
 
+    # Use relative m4 path so flex searches PATH at runtime instead of
+    # hardcoding an absolute path (which breaks after seed relocation).
+    configure_args = [
+        "M4=m4",
+    ],
+
     # Conditional configure arguments
     use_configure = {
         "nls": ("--enable-nls", "--disable-nls"),

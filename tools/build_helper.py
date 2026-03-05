@@ -384,6 +384,11 @@ def main():
                     type_key = f"{module}.{name}"
                     if type_key not in _stub_cache:
                         class _Stub:
+                            def __init__(self, *args, **kwargs):
+                                # Accept constructor args (e.g. OctalInt(value))
+                                # that pickle passes via __reduce__ tuples.
+                                if args:
+                                    self._args = args
                             def __reduce__(self):
                                 return (_make_stub, (type_key,), self.__dict__)
                             def __setstate__(self, state):

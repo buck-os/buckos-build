@@ -56,6 +56,12 @@ host_tools_aggregator(
         # Native C/C++ compiler (needed by Kconfig, kernel builds, etc.)
         "//packages/linux/lang/gcc:gcc-native",
 
+        # C library + kernel headers — gcc-native needs glibc CRT files
+        # (Scrt1.o, crti.o, crtn.o), headers (sys/types.h, stdio.h), and
+        # shared libs to compile and link host programs.
+        "//packages/linux/core/glibc:glibc",
+        "//packages/linux/system/libs/crypto/libxcrypt:libxcrypt",
+
         # GCC dependencies (libs must be in merged tree for gcc to find them)
         "//packages/linux/system/libs/utility/gmp:gmp",
         "//packages/linux/system/libs/utility/mpfr:mpfr",

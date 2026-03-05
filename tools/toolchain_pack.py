@@ -138,11 +138,12 @@ def main():
             host_tools_tar = f" -C {tmpdir} host-tools"
             has_host_tools = True
 
-        # Scrub absolute buck-out paths from ELF binaries in both trees
+        # Scrub absolute buck-out paths from ELF binaries in the cross-compiler
+        # tree only.  Host-tools binaries must NOT be scrubbed because tools
+        # like flex and bison store paths to helper programs (m4) at compile
+        # time — scrubbing truncates those to "/build" which breaks exec().
         print("Scrubbing build paths...", file=sys.stderr)
         _scrub_build_paths(stage_copy)
-        if has_host_tools:
-            _scrub_build_paths(os.path.join(tmpdir, "host-tools"))
 
         # Compute content hash from scrubbed stage
         print("Computing content hash...", file=sys.stderr)
