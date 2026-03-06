@@ -14,9 +14,11 @@ package(
     homepage = "https://www.perl.org/",
     license = "Artistic-1.0-Perl OR GPL-1.0-or-later",
     # Perl uses its own Configure script (capital C), not autotools.
-    # Perl Configure compiles and RUNS test programs, so it CANNOT cross-compile
-    # inside the network-isolated mount namespace (host gcc can't link against
-    # sysroot's glibc). Build with host compiler instead.
+    # Perl Configure compiles and RUNS test programs during configure AND
+    # the perl binary must run during downstream builds (libxcrypt, autoconf).
+    # Using our GCC+specs would produce a binary with RPATH placeholder that
+    # can't find libperl.so at build time.  Build with host compiler instead;
+    # pack-time patching fixes the interpreter + RPATH for the seed.
     install_script = """
 cd "$SRCS"
 
