@@ -1,0 +1,18 @@
+load("//defs:package.bzl", "package")
+
+# aflplusplus-4 - American Fuzzy Lop plus plus (AFL++)
+# A security-oriented fuzzer that employs genetic algorithms
+package(
+    build_rule = "autotools",
+    name = "aflplusplus-4",
+    url = "https://github.com/AFLplusplus/AFLplusplus/archive/refs/tags/v4.21c.tar.gz",
+
+    sha256 = "11f7c77d37cff6e7f65ac7cc55bab7901e0c6208e845a38764394d04ed567b30",
+    version = "4.21c",
+    description = "American Fuzzy Lop plus plus - A security-oriented fuzzer",
+    homepage = "https://github.com/AFLplusplus/AFLplusplus",
+    license = "Apache-2.0",
+    # AFL++ uses GNUmakefile directly, skip configure
+    deps = [
+    ],
+)

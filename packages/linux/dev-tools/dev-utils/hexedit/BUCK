@@ -1,0 +1,19 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "hexedit",
+    version = "1.6",
+    url = "https://github.com/pixel/hexedit/archive/refs/tags/1.6.tar.gz",
+    sha256 = "598906131934f88003a6a937fab10542686ce5f661134bc336053e978c4baae3",
+    description = "View and edit files in hexadecimal or ASCII",
+    homepage = "https://github.com/pixel/hexedit",
+    license = "GPL-2+",
+    use_deps = {
+        "ncurses": "//packages/linux/system/terminal/ncurses:ncurses",
+    },
+    use_configure = {
+        "ncurses": ("--with-ncurses", "--without-ncurses"),
+    },
+
+)

@@ -1,0 +1,21 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cmake",
+    name = "mcap-cpp",
+    version = "1.4.1",
+    url = "https://github.com/foxglove/mcap/archive/refs/tags/releases/cpp/v1.4.1.tar.gz",
+    sha256 = "69bcd33e1590201ea180e9e6ba8a22f3e8e7e2283e9ebcbff6a2c7134d8341db",
+    description = "C++ implementation of the MCAP file format for robotics data recording",
+    homepage = "https://github.com/foxglove/mcap",
+    license = "MIT",
+    deps = [
+        "//packages/linux/dev-libs/compression/lz4:lz4",
+        "//packages/linux/system/libs/compression/zstd:zstd",
+    ],
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DMCAP_BUILD_TESTS=OFF",
+        "-DMCAP_BUILD_EXAMPLES=OFF",
+    ],
+)

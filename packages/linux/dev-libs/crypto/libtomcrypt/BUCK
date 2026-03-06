@@ -1,0 +1,19 @@
+load("//defs:package.bzl", "package")
+
+package(
+    name = "libtomcrypt",
+    build_rule = "autotools",
+    version = "1.18.2",
+    use_configure = {
+        "gmp": ("--enable-gmp", "--disable-gmp"),
+        "libtommath": ("--enable-libtommath", "--disable-libtommath"),
+        "tomsfastmath": ("--enable-tomsfastmath", "--disable-tomsfastmath"),
+    },
+    url = "https://github.com/libtom/libtomcrypt/releases/download/v1.18.2/crypt-1.18.2.tar.xz",
+    sha256 = "96ad4c3b8336050993c5bc2cf6c057484f2b0f9f763448151567fbab5e767b84",
+    description = "Comprehensive, modular and portable cryptographic toolkit",
+    homepage = "https://www.libtom.net/LibTomCrypt/",
+    license = "Unlicense",
+    # Use makefile instead of makefile.shared to avoid libtool dependency
+    make_args = [],
+)

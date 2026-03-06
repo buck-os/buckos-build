@@ -1,0 +1,63 @@
+load("//defs:package.bzl", "package")
+
+# DuckDB - High-performance analytical database system
+#
+# DuckDB is an in-process SQL OLAP database management system designed
+# to be fast, reliable, portable, and easy to use. It provides a rich
+# SQL dialect with support for complex nested data types, window functions,
+# and various extensions for analytics.
+#
+# USE flags:
+#   shell      - Build the DuckDB CLI shell
+#   parquet    - Enable Parquet file support (built-in extension)
+#   json       - Enable JSON extension (built-in extension)
+#   icu        - Enable ICU extension for internationalization (built-in extension)
+#   tpch       - Enable TPC-H benchmark extension (built-in extension)
+#   fts        - Enable Full-Text Search extension (built-in extension)
+#   httpfs     - Enable HTTP/S filesystem extension
+#   visualizer - Enable query visualizer extension
+#   autocomplete - Enable autocomplete extension
+#   threads    - Enable multi-threading support
+
+package(
+    build_rule = "cmake",
+    name = "duckdb",
+    version = "1.3.1",
+    url = "https://github.com/duckdb/duckdb/archive/refs/tags/v1.3.1.tar.gz",
+    sha256 = "6735519dc4a2deba55f1c348d5c5299fe204224a830c4b2ab1d323009f1ba4ef",
+    description = "High-performance analytical database system",
+    homepage = "https://duckdb.org/",
+    license = "MIT",
+
+    # USE flags this package supports
+
+    # Default enabled flags - core functionality most users expect
+
+    # Base CMake arguments (always applied)
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DBUILD_UNITTESTS=OFF",
+        "-DBUILD_BENCHMARKS=OFF",
+        "-DBUILD_TPCE=OFF",
+        "-DENABLE_SANITIZER=OFF",
+        "-DENABLE_UBSAN=OFF",
+        "-DDISABLE_UNITY=ON",
+    ],
+
+    # USE flag to CMake option mapping
+    # Note: DuckDB's built-in extensions (parquet, json, icu, etc.) are
+    # compiled in by default and controlled via runtime configuration
+
+    # Base dependencies
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+    ],
+
+    # Threading support - DuckDB enables threads by default
+    # We disable threads only when the USE flag is explicitly disabled
+    use_deps = {
+
+    },
+
+)

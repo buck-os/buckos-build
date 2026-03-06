@@ -1,0 +1,25 @@
+load("//defs:package.bzl", "package")
+
+# gtk-doc - GTK+ documentation generator
+package(
+    build_rule = "autotools",
+    name = "gtk-doc",
+    url = "https://download.gnome.org/sources/gtk-doc/1.33/gtk-doc-1.33.2.tar.xz",
+
+    sha256 = "cc1b709a20eb030a278a1f9842a362e00402b7f834ae1df4c1998a723152bf43",
+    use_configure = {
+        "emacs": ("--enable-emacs", "--disable-emacs"),
+    },
+    version = "1.33.2",
+    description = "GTK+ documentation generator",
+    homepage = "https://wiki.gnome.org/DocumentationProject/GtkDoc",
+    license = "GPL-2+",
+    configure_args = [
+        "-Dprefix=/usr",
+        "-Dtests=false",
+    ],
+    deps = [
+        "//packages/linux/lang/python:python",
+        "//packages/linux/dev-tools/dev-utils/itstool:itstool",
+    ],
+)

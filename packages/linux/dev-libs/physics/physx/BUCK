@@ -1,0 +1,20 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cmake",
+    name = "physx",
+    version = "4.1",
+    url = "https://github.com/NVIDIAGameWorks/PhysX/archive/refs/heads/4.1.tar.gz",
+    sha256 = "aab4a18662834eb01a7eefff463a9c64923b68d65107980fa2d56c28c99da095",
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DPX_BUILDSNIPPETS=OFF",
+        "-DPX_BUILDPUBLICSAMPLES=OFF",
+        "-DPX_CMAKE_SUPPRESS_REGENERATION=ON",
+        "-DPHYSX_ROOT_DIR=../physx",
+        "-DTARGET_BUILD_PLATFORM=linux",
+        "-DPX_PHYSX_STATIC_LIB=ON",
+        "-DDISABLE_CUDA_PHYSX=ON",
+    ],
+    deps = [],
+)

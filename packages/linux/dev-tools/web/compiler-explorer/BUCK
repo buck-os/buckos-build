@@ -1,0 +1,31 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "binary",
+    name = "compiler-explorer",
+    version = "5.0.0",
+    url = "https://github.com/compiler-explorer/compiler-explorer/archive/refs/tags/v5.0.0.tar.gz",
+    sha256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    description = "Interactively investigate compiler output",
+    homepage = "https://compiler-explorer.com/",
+    license = "BSD-2-Clause",
+    install_script = """
+        cd $SRCS
+
+        # Install to /opt/compiler-explorer
+        mkdir -p "$OUT/opt/compiler-explorer"
+        cp -r * "$OUT/opt/compiler-explorer/"
+
+        # Create wrapper script
+        mkdir -p "$OUT/usr/bin"
+        cat > "$OUT/usr/bin/compiler-explorer" << 'EOF'
+#!/bin/bash
+cd /opt/compiler-explorer
+exec node --no-warnings=ExperimentalWarning --import=tsx app.ts "$@"
+EOF
+        chmod +x "$OUT/usr/bin/compiler-explorer"
+    """,
+    deps = [
+        "//packages/linux/lang/nodejs:nodejs",
+    ],
+)

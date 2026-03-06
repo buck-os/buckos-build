@@ -1,0 +1,26 @@
+load("//defs:package.bzl", "package")
+
+# AWS SDK for C++ - Official AWS SDK
+
+package(
+    build_rule = "cmake",
+    name = "aws-sdk-cpp",
+    version = "1.11.267",
+    url = "https://github.com/aws/aws-sdk-cpp/archive/refs/tags/1.11.267.tar.gz",
+    sha256 = "89b7b2fc921e4c5a35785f3bcf0f7dbf76ad488d85c9888043ed7b8e5029f25d",
+    description = "AWS SDK for C++",
+    homepage = "https://aws.amazon.com/sdk-for-cpp/",
+    license = "Apache-2.0",
+    deps = [
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/system/libs/network/curl:curl",
+        "//packages/linux/core/zlib:zlib",
+    ],
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DENABLE_TESTING=OFF",
+        "-DAUTORUN_UNIT_TESTS=OFF",
+        "-DBUILD_ONLY=s3",  # Start with S3 only
+    ],
+)

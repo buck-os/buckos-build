@@ -1,0 +1,31 @@
+load("//defs:package.bzl", "package")
+
+# BaSpaCho - Fast linear algebra library for bundle adjustment and general sparse Cholesky factorization
+
+package(
+    build_rule = "cmake",
+    name = "baspacho",
+    version = "0.0.1",
+    url = "https://github.com/facebookresearch/baspacho/archive/b7f78dfcc59d26d6539bd31435a2170329d26b0b.tar.gz",
+    sha256 = "aaf1f232ff03b0bfe78a3b512a2e21f6735aebacc04ae1ae701579068436df89",
+    description = "Fast linear algebra library for bundle adjustment and general sparse Cholesky factorization",
+    homepage = "https://github.com/facebookresearch/baspacho",
+    license = "MIT",
+    deps = [
+        "//packages/linux/dev-libs/eigen:eigen",
+    ],
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_STANDARD=17",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DBASPACHO_BUILD_TESTS=OFF",
+        "-DBASPACHO_BUILD_EXAMPLES=OFF",
+        "-DBASPACHO_USE_SUITESPARSE_AMD=OFF",
+    ],
+    use_configure = {
+        "cuda": ("-DBASPACHO_USE_CUBLAS=ON", "-DBASPACHO_USE_CUBLAS=OFF"),
+    },
+    use_deps = {
+        "blas": "//packages/linux/dev-libs/math/openblas:openblas",
+    },
+)

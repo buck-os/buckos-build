@@ -1,0 +1,27 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cmake",
+    name = "jinja2cpp",
+    version = "1.3.2",
+    url = "https://github.com/jinja2cpp/Jinja2Cpp/archive/refs/tags/1.3.2.tar.gz",
+    sha256 = "227afb9d16eb1a47c3f3ca10c2f589dd2791c5d8b4767c73e26a0b8997e4c03e",
+    description = "Jinja2 C++ template engine implementation",
+    homepage = "https://github.com/jinja2cpp/Jinja2Cpp",
+    license = "MPL-2.0",
+    deps = [
+        "//packages/linux/dev-libs/boost:boost",
+        "//packages/linux/dev-libs/misc/fmt:fmt",
+        "//packages/linux/dev-libs/json/rapidjson:rapidjson",
+    ],
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DJINJA2CPP_BUILD_TESTS=OFF",
+        "-DJINJA2CPP_STRICT_WARNINGS=OFF",
+        "-DJINJA2CPP_DEPS_MODE=external",
+        "-DJINJA2CPP_WITH_JSON_BINDINGS=rapid",
+        "-DJINJA2CPP_USE_REGEX=boost",
+        "-DJINJA2CPP_BUILD_SHARED=OFF",
+        "-DJINJA2CPP_PIC=ON",
+    ],
+)

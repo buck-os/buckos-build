@@ -1,0 +1,40 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "binary",
+    name = "apache-arrow",
+    version = "17.0.0",
+    url = "https://archive.apache.org/dist/arrow/arrow-17.0.0/apache-arrow-17.0.0.tar.gz",
+    sha256 = "9d280d8042e7cf526f8c28d170d93bfab65e50f94569f6a790982a878d8d898d",
+    description = "Apache Arrow - columnar in-memory analytics",
+    homepage = "https://arrow.apache.org/",
+    license = "Apache-2.0",
+    install_script = """
+        cd "$SRCS/cpp"
+        mkdir -p build && cd build
+        cmake .. \
+            -DCMAKE_INSTALL_PREFIX=/usr \
+            -DCMAKE_INSTALL_LIBDIR=lib64 \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DARROW_BUILD_SHARED=ON \
+            -DARROW_BUILD_STATIC=OFF \
+            -DARROW_COMPUTE=ON \
+            -DARROW_CSV=ON \
+            -DARROW_FILESYSTEM=ON \
+            -DARROW_JSON=ON \
+            -DARROW_PARQUET=OFF \
+            -DARROW_WITH_BROTLI=OFF \
+            -DARROW_WITH_LZ4=ON \
+            -DARROW_WITH_SNAPPY=ON \
+            -DARROW_WITH_ZLIB=ON \
+            -DARROW_WITH_ZSTD=ON
+        make -j${MAKEOPTS:-$(nproc)}
+        make install DESTDIR="$OUT"
+    """,
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/dev-libs/compression/lz4:lz4",
+        "//packages/linux/system/libs/compression/snappy:snappy",
+        "//packages/linux/system/libs/compression/zstd:zstd",
+    ],
+)

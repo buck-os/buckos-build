@@ -1,0 +1,75 @@
+load("//defs:package.bzl", "package")
+
+# libpq - PostgreSQL C client library
+#
+# The libpq C library provides the official PostgreSQL client API.
+# It's extracted from the PostgreSQL source and can be used standalone
+# for applications that need to connect to PostgreSQL databases.
+#
+# NOTE: PostgreSQL meson uses combo options (openssl/none/auto), not boolean (enabled/disabled)
+
+package(
+    build_rule = "meson",
+    name = "libpq",
+    version = "16.4",
+    url = "https://ftp.postgresql.org/pub/source/v16.4/postgresql-16.4.tar.bz2",
+    sha256 = "971766d645aa73e93b9ef4e3be44201b4f45b5477095b049125403f9f3386d6f",
+    description = "PostgreSQL C client library",
+    homepage = "https://www.postgresql.org/",
+    license = "PostgreSQL",
+
+    # PostgreSQL tarball has configure-generated files that conflict with meson
+    # We need to remove them before meson can work
+    pre_configure_cmds = ["""
+rm -f GNUmakefile.in src/include/pg_config.h src/include/pg_config_ext.h
+rm -f src/include/pg_config_os.h src/include/stamp-h
+rm -rf src/interfaces/libpq/.deps config.log config.status
+find . -name 'Makefile' -type f -delete || true
+find . -name '.deps' -type d -exec rm -rf {} + || true
+
+find . -type f \( -name '*_gram.[ch]' -o -name '*_scan.c' -o -name '*scanner.c' \
+    -o -name '*parse.[ch]' -o -name 'kwlist_d.h' -o -name '*_kwlist_d.h' \
+    -o -name 'gram.[ch]' -o -name 'scan.c' -o -name 'psqlscan.c' \
+    -o -name 'psqlscanslash.c' -o -name 'exprscan.c' -o -name 'exprparse.[ch]' \
+    -o -name 'bootparse.[ch]' -o -name 'bootscanner.c' -o -name 'repl_gram.[ch]' \
+    -o -name 'repl_scanner.c' -o -name 'syncrep_gram.[ch]' -o -name 'syncrep_scanner.c' \
+    -o -name 'jsonpath_gram.[ch]' -o -name 'jsonpath_scan.c' -o -name 'guc-file.c' \
+    -o -name 'cubeparse.[ch]' -o -name 'cubescan.c' -o -name 'segparse.[ch]' \
+    -o -name 'segscan.c' -o -name 'specparse.[ch]' -o -name 'specscanner.c' \
+    -o -name 'pgc.c' -o -name 'preproc.[chy]' -o -name 'sql_help.[ch]' \
+    -o -name 'pl_gram.[ch]' -o -name 'daitch_mokotoff.h' -o -name 'plerrcodes.h' \
+    -o -name 'c_kwlist_d.h' -o -name 'ecpg_kwlist_d.h' \) -delete || true
+
+find src/backend/catalog -type f \( -name 'postgres.bki' -o -name 'schemapg.h' \
+    -o -name 'system_constraints.sql' -o -name 'system_fk_info.h' \
+    -o -name 'pg_*_d.h' -o -name 'bki-stamp' \) -delete || true
+
+find src/backend/nodes -type f \( -name 'nodetags.h' -o -name '*.funcs.c' \
+    -o -name '*.switch.c' -o -name 'node-support-stamp' \) -delete || true
+
+find src/backend/storage/lmgr -type f \( -name 'lwlocknames.[ch]' \) -delete || true
+
+find src/backend/utils -type f \( -name 'fmgroids.h' -o -name 'fmgrprotos.h' \
+    -o -name 'fmgrtab.c' -o -name 'errcodes.h' -o -name 'fmgr-stamp' \) -delete || true
+
+rm -f src/backend/snowball/snowball_create.sql || true
+"""],
+
+    # Base Meson arguments - using explicit values for combo options
+    configure_args = [
+        "-Dsystem_tzdata=/usr/share/zoneinfo",
+        "-Dssl=openssl",
+        "-Dzlib=enabled",
+        "-Dreadline=disabled",
+        "-Dgssapi=disabled",
+        "-Dldap=disabled",
+        "-Dpam=disabled",
+    ],
+
+    # Dependencies
+    deps = [
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/core/zlib:zlib",
+    ],
+
+)

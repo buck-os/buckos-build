@@ -1,0 +1,19 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cmake",
+    name = "quirc",
+    version = "1.0",
+    use_configure = {
+        "opencv": ("-DENABLE_OPENCV=ON", "-DENABLE_OPENCV=OFF"),
+        "sdl": ("-DENABLE_SDL=ON", "-DENABLE_SDL=OFF"),
+        "tools": ("-DENABLE_TOOLS=ON", "-DENABLE_TOOLS=OFF"),
+        "v4l": ("-DENABLE_V4L=ON", "-DENABLE_V4L=OFF"),
+    },
+    url = "https://github.com/dlbeer/quirc/archive/v1.0.tar.gz",
+    sha256 = "91bba64ffca5b84aa953b88d5f5ccc9507275345c200fd581dca24fbf66b3706",
+    configure_args = [
+        "-DBUILD_SHARED_LIBS=OFF",
+    ],
+    deps = [],
+)

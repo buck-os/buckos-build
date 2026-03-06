@@ -1,0 +1,23 @@
+load("//defs:package.bzl", "package")
+
+# sqlite-vec - Vector search extension for SQLite
+#
+# sqlite-vec is a SQLite extension that provides vector search capabilities,
+# enabling semantic search and similarity matching in SQLite databases.
+#
+# This extension is useful for AI/ML applications that need to store and
+# search vector embeddings.
+
+package(
+    name = "sqlite-vec",
+    build_rule = "autotools",
+    version = "0.1.7-alpha.2",
+    url = "https://github.com/asg017/sqlite-vec/archive/refs/tags/v0.1.7-alpha.2.tar.gz",
+    sha256 = "9df64b954970588946b7a031d9a9189db1faf2d21026683a5e143faedba8f082",
+    description = "Vector search extension for SQLite",
+    homepage = "https://github.com/asg017/sqlite-vec",
+    license = "MIT OR Apache-2.0",
+    deps = [
+        "//packages/linux/system/libs/database/sqlite:sqlite",
+    ],
+)

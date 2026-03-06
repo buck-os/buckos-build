@@ -1,0 +1,40 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "apr-util",
+    url = "https://archive.apache.org/dist/apr/apr-util-1.6.3.tar.gz",
+
+    sha256 = "2b74d8932703826862ca305b094eef2983c27b39d5c9414442e9976a9acf1983",
+    use_configure = {
+        "berkdb": ("--enable-berkdb", "--disable-berkdb"),
+        "gdbm": ("--enable-gdbm", "--disable-gdbm"),
+        "ldap": ("--enable-ldap", "--disable-ldap"),
+        "mysql": ("--enable-mysql", "--disable-mysql"),
+        "nss": ("--enable-nss", "--disable-nss"),
+        "odbc": ("--enable-odbc", "--disable-odbc"),
+        "openssl": ("--with-openssl", "--without-openssl"),
+        "postgres": ("--enable-postgres", "--disable-postgres"),
+        "sqlite": ("--enable-sqlite", "--disable-sqlite"),
+        "static-libs": ("--enable-static", "--disable-static"),
+    },
+    version = "1.6.3",
+    description = "Apache Portable Runtime Utility library",
+    homepage = "https://apr.apache.org/",
+    license = "Apache-2.0",
+    deps = [
+        "//packages/linux/dev-libs/misc/apr:apr",
+                "//packages/linux/system/libs/data/expat:expat",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool"
+    ],
+    # apr-1-config should be in PATH from the apr dependency
+    pre_configure_cmds = ["""
+# Rename configure.in to configure.ac for modern autoconf
+if [ -f configure.in ] && [ ! -f configure.ac ]; then
+    mv configure.in configure.ac
+fi
+autoreconf -fi
+"""],
+)

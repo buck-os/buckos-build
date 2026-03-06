@@ -1,0 +1,15 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cmake",
+    name = "swift-collections",
+    version = "1.0.3",
+    url = "https://github.com/apple/swift-collections/archive/refs/tags/1.0.3.tar.gz",
+    sha256 = "563219e35e5aae9a723ab499679fcb2cfbbdb6d826350e62c8dd3fb8c8dc593b",
+    configure_args = [
+        "-DBUILD_TESTING=OFF",
+    ],
+    deps = [
+        "//packages/linux/lang/swift:swift",
+    ],
+)

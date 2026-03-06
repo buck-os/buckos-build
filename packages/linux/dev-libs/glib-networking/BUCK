@@ -1,0 +1,21 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "meson",
+    name = "glib-networking",
+    version = "2.72.2",
+    use_configure = {},
+    url = "https://download.gnome.org/sources/glib-networking/2.72/glib-networking-2.72.2.tar.xz",
+    sha256 = "cd2a084c7bb91d78e849fb55d40e472f6d8f6862cddc9f12c39149359ba18268",
+    deps = [
+        "//packages/linux/dev-libs/glib:glib",
+        "//packages/linux/system/libs/crypto/gnutls:gnutls",
+    ],
+    configure_args = [
+        "-Dgnutls=enabled",
+        "-Dopenssl=disabled",
+        "-Dlibproxy=disabled",
+        "-Dgnome_proxy=disabled",
+        "-Dinstalled_tests=false",
+    ],
+)

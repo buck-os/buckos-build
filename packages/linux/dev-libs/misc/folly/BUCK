@@ -1,0 +1,41 @@
+load("//defs:package.bzl", "package")
+
+# Folly - Facebook Open Source Library
+
+package(
+    build_rule = "cmake",
+    name = "folly",
+    version = "2024.01.01.00",
+    url = "https://github.com/facebook/folly/archive/refs/tags/v2024.01.01.00.tar.gz",
+    sha256 = "3043ad0bf552ea9d56eb8f824b701cbe72d04f818cbf8bc1052fba038f6ad021",
+    description = "Facebook Open Source Library - C++ utilities",
+    homepage = "https://github.com/facebook/folly",
+    license = "Apache-2.0",
+    use_configure = {
+        "io-uring": ("-DENABLE_IO_URING=ON", "-DENABLE_IO_URING=OFF"),
+        "llvm-libunwind": ("-DENABLE_LLVM_LIBUNWIND=ON", "-DENABLE_LLVM_LIBUNWIND=OFF"),
+    },
+    deps = [
+        "//packages/linux/dev-libs/boost:boost",
+        "//packages/linux/dev-libs/google/glog:glog",
+        "//packages/linux/dev-libs/google/gflags:gflags",
+        "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
+        "//packages/linux/system/libs/utility/libevent:libevent",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/dev-libs/misc/fmt:fmt",
+        "//packages/linux/core/zlib:zlib",
+    ],
+    use_deps = {
+        "jemalloc": "//packages/linux/dev-libs/allocators/jemalloc:jemalloc",
+        "lz4": "//packages/linux/system/libs/compression/lz4:lz4",
+        "zstd": "//packages/linux/system/libs/compression/zstd:zstd",
+        "snappy": "//packages/linux/system/libs/compression/snappy:snappy",
+        "bzip2": "//packages/linux/system/libs/compression/bzip2:bzip2",
+    },
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DBUILD_TESTS=OFF",
+        "-DFOLLY_USE_JEMALLOC=ON",
+    ],
+)

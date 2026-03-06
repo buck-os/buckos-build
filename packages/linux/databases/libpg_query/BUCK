@@ -1,0 +1,26 @@
+load("//defs:package.bzl", "package")
+
+package(
+    name = "libpg_query",
+    build_rule = "autotools",
+    skip_configure = True,
+    version = "15-4.2.3",
+    url = "https://github.com/pganalyze/libpg_query/archive/refs/tags/15-4.2.3.tar.gz",
+    sha256 = "8b820d63442b1677ce4f0df2a95b3fafdbc520a82901def81217559ec4df9e6b",
+    description = "C library for accessing the PostgreSQL parser outside of the server",
+    homepage = "https://github.com/pganalyze/libpg_query",
+    license = "BSD-3-Clause",
+    make_args = [],
+    post_install_cmds = ["""
+cd "$SRCDIR"
+
+# Build the library
+make build CC=cc
+
+# Build shared library
+make build_shared CC=cc
+
+# Install
+make install DESTDIR="$DESTDIR" prefix=/usr
+"""],
+)

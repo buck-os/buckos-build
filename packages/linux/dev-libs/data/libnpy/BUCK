@@ -1,0 +1,25 @@
+load("//defs:package.bzl", "package")
+
+package(
+    name = "libnpy",
+    build_rule = "autotools",
+    version = "1.0.1",
+    url = "https://github.com/llohse/libnpy/archive/refs/tags/v1.0.1.tar.gz",
+    sha256 = "43452a4db1e8c1df606c64376ea1e32789124051d7640e7e4e8518ab4f0fba44",
+    description = "C++ library for reading and writing numpy .npy files",
+    homepage = "https://github.com/llohse/libnpy",
+    license = "MIT",
+    deps = [],
+    post_install_cmds = ["""\
+mkdir -p "$DESTDIR/usr/include/libnpy"
+# The header may be in different locations depending on the tarball structure
+if [ -f include/npy.hpp ]; then
+    cp include/npy.hpp "$DESTDIR/usr/include/libnpy/"
+elif [ -f npy.hpp ]; then
+    cp npy.hpp "$DESTDIR/usr/include/libnpy/"
+else
+    # Search for the header file
+    find . -name "npy.hpp" -exec cp {} "$DESTDIR/usr/include/libnpy/" \;
+fi
+"""],
+)

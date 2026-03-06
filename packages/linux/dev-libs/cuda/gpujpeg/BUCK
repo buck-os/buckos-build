@@ -1,0 +1,15 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cmake",
+    name = "gpujpeg",
+    version = "0.26.0",
+    url = "https://github.com/CESNET/GPUJPEG/archive/refs/tags/v0.26.0.tar.gz",
+    sha256 = "e673e0890e82793485728ef576b9f00fe7a878fff8b0b1d1f00c1eb1725ecc63",
+    configure_args = [
+        "-DBUILD_OPENGL=OFF",
+        "-DBUILD_SHARED_LIBS=ON",
+    ],
+    deps = [],
+    labels = ["buckos:hw:cuda"],
+)

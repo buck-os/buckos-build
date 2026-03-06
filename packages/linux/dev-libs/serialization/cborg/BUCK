@@ -1,0 +1,14 @@
+load("//defs:package.bzl", "package")
+
+package(
+    name = "cborg",
+    build_rule = "binary",
+    version = "1.0.3",
+    url = "https://github.com/TRUEPIC/cborg/archive/refs/tags/v1.0.3.tar.gz",
+    sha256 = "9ee5cdd690f99bd002acf949a1eb21af9a1e1560ef3a2faa5913b49aaf92a67f",
+    description = "A simple CBOR encoder/decoder with a fluent API",
+    homepage = "https://github.com/truepic/cborg",
+    license = "Apache-2.0",
+    deps = [],
+    install_script = """mkdir -p ${PREFIX}/include/cborg\nmkdir -p ${PREFIX}/lib\ncp cborg/*.h ${PREFIX}/include/cborg/\ng++ -c -O2 -fPIC -fstack-protector-strong -Icborg source/CborBase.cpp -o CborBase.o\ng++ -c -O2 -fPIC -fstack-protector-strong -Icborg source/Cbore.cpp -o Cbore.o\ng++ -c -O2 -fPIC -fstack-protector-strong -Icborg source/Cborg.cpp -o Cborg.o\nar rcs ${PREFIX}/lib/libcborg.a CborBase.o Cbore.o Cborg.o""",
+)

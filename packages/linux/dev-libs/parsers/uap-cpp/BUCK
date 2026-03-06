@@ -1,0 +1,20 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cmake",
+    name = "uap-cpp",
+    version = "master",
+    url = "https://github.com/ua-parser/uap-cpp/archive/e51ea6b39c7f5141bee801fbf9b187db6cc28e1d.tar.gz",
+    sha256 = "c19396d415409580ef526b9652a1cf40e43eb99246639e4f9be891f3fe2c0ad0",
+    description = "User-Agent string parser library for C++",
+    homepage = "https://github.com/ua-parser/uap-cpp",
+    license = "MIT",
+    configure_args = [
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DCMAKE_PREFIX_PATH=$(echo $DEP_BASE_DIRS | tr ':' ';' | sed 's|;|/usr;|g' | sed 's|$|/usr|')",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/text/re2:re2",
+        "//packages/linux/dev-libs/yaml/yaml-cpp:yaml-cpp",
+    ],
+)

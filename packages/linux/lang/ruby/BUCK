@@ -1,0 +1,33 @@
+load("//defs:package.bzl", "package")
+
+# =============================================================================
+# Ruby - Dynamic, open source programming language
+# =============================================================================
+
+package(
+    build_rule = "autotools",
+    name = "ruby",
+    url = "https://cache.ruby-lang.org/pub/ruby/3.3/ruby-3.3.0.tar.xz",
+
+    sha256 = "676b65a36e637e90f982b57b059189b3276b9045034dcd186a7e9078847b975b",
+    version = "3.3.0",
+    description = "Ruby is a dynamic, open source programming language with a focus on simplicity and productivity",
+    homepage = "https://www.ruby-lang.org/",
+    license = "BSD-2-Clause",
+    configure_args = [
+        "--enable-shared",
+        "--disable-install-doc",
+        "--disable-dtrace",  # Disable DTrace - not properly available in build environment
+        "--with-compress-debug-sections=no",
+    ],
+    env = {
+        # Required: enable optimization for _FORTIFY_SOURCE compatibility
+        # Prepend -O2 to ensure optimization is enabled even if other flags are set
+        "CFLAGS": "-O2 ${CFLAGS:-}",
+        "CXXFLAGS": "-O2 ${CXXFLAGS:-}",
+    },
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+    ],
+)

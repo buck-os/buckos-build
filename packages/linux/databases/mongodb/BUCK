@@ -1,0 +1,40 @@
+load("//defs:package.bzl", "package")
+
+# mongodb - Document-oriented database
+#
+# USE flags:
+#   ssl      - Enable SSL/TLS support with OpenSSL
+#   debug    - Enable debugging
+#   kerberos - Enable Kerberos authentication
+#   mongosh  - Enable MongoDB Shell
+#   tools    - Enable MongoDB tools
+
+package(
+    build_rule = "binary",
+    name = "mongodb",
+    version = "7.0.5",
+    url = "https://github.com/mongodb/mongo/archive/refs/tags/r7.0.5.tar.gz",
+    sha256 = "8b3bd7d5dfb51d008b8e2b2303b84647002cccd9121fe828e5cebcf70873273f",
+    description = "Document-oriented NoSQL database",
+    homepage = "https://www.mongodb.com",
+    license = "SSPL-1.0",
+    deps = [
+        "//packages/linux/lang/python:python",
+    ],
+    use_configure = {
+        "debug": ("--enable-debug", "--disable-debug"),
+        "kerberos": ("--enable-kerberos", "--disable-kerberos"),
+        "mongosh": ("--enable-mongosh", "--disable-mongosh"),
+        "ssl": ("--enable-ssl", "--disable-ssl"),
+        "tools": ("--enable-tools", "--disable-tools"),
+    },
+    install_script = """
+mkdir -p "$OUT"
+BUILD=$(mktemp -d)
+cp -a "$SRCS"/. "$BUILD/"
+cd "$BUILD"
+
+python3 buildscripts/scons.py mongod mongos --prefix=/usr
+python3 buildscripts/scons.py install-mongod install-mongos --prefix="$OUT/usr"
+""",
+)

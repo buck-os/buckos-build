@@ -1,0 +1,23 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cmake",
+    name = "rmm",
+    version = "24.12.00",
+    url = "https://github.com/rapidsai/rmm/archive/refs/tags/v24.12.00.tar.gz",
+    sha256 = "4a48e86a9ae9997b79b2d0708a58929fa61cb138a75064293ff77bed2dc21938",
+    description = "RAPIDS Memory Manager - CUDA memory allocation library",
+    homepage = "https://github.com/rapidsai/rmm",
+    license = "Apache-2.0",
+    deps = [
+        "//packages/linux/dev-libs/misc/fmt:fmt",
+        "//packages/linux/dev-libs/logging/spdlog:spdlog",
+        "//packages/linux/dev-libs/cuda/nvtx:nvtx",
+    ],
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_TESTS=OFF",
+        "-DBUILD_BENCHMARKS=OFF",
+    ],
+    labels = ["buckos:hw:cuda"],
+)

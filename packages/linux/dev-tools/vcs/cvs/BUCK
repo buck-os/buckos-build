@@ -1,0 +1,36 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "cvs",
+    # GNU release tarball includes pre-generated configure script
+    version = "1.12.13",
+    url = "https://mirrors.kernel.org/gnu/non-gnu/cvs/source/feature/1.12.13/cvs-1.12.13.tar.bz2",
+    sha256 = "78853613b9a6873a30e1cc2417f738c330e75f887afdaf7b3d0800cb19ca515e",
+    description = "Concurrent Versions System - source code revision control tools",
+    homepage = "https://cvs.nongnu.org/",
+    license = "GPL-2",
+
+    # USE flags this package supports
+
+    # Default USE flags
+
+    # Conditional configure arguments
+    use_configure = {
+        "crypt": ("--enable-crypt", "--disable-crypt"),
+        "kerberos": ("--with-gssapi", "--without-gssapi"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "pam": ("--enable-pam", "--disable-pam"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "server": ("--enable-server", "--disable-server"),
+    },
+
+    # Base configure arguments (always applied)
+    configure_args = [
+        "--with-external-zlib",
+    ],
+
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+    ],
+)

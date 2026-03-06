@@ -1,0 +1,16 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cmake",
+    name = "monocypher",
+    version = "4.0.2",
+    url = "https://github.com/LoupVaillant/Monocypher/archive/4.0.2.tar.gz",
+    sha256 = "bc1ca30b1b2654e4e7daf2492c0d204200e55137f23fda6b7142fd7d523bd6b4",
+    description = "Easy to use, easy to deploy crypto library",
+    homepage = "https://monocypher.org/",
+    license = "BSD-2-Clause OR CC0-1.0",
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+    ],
+)

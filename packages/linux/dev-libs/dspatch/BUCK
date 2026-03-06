@@ -1,0 +1,22 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "meson",
+    name = "dspatch",
+    url = "https://github.com/cross-platform/dspatch/archive/refs/tags/11.4.1.tar.gz",
+
+    sha256 = "10095b582994b446631cfd13f0038903f89f80afcf3699f213a2779d065ea888",
+    version = "11.4.1",
+    configure_args = [
+        "-Dcpp_std=c++17",
+    ],
+    pre_configure_cmds = ['''
+# Extract fast_any submodule
+mkdir -p "$S/include/fast_any"
+if [ -f "../__fast_any-src__/fast_any-src" ]; then
+    tar -xzf "../__fast_any-src__/fast_any-src" -C "$S/include/fast_any" --strip-components=1
+elif [ -d "../__fast_any-src__" ]; then
+    cp -r "../__fast_any-src__"/* "$S/include/fast_any/"
+fi
+'''],
+)

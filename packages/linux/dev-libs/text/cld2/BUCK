@@ -1,0 +1,20 @@
+load("//defs:package.bzl", "package")
+
+# CLD2 - Compact Language Detector 2
+# Probabilistically detects over 80 languages in Unicode UTF-8 text
+
+package(
+    build_rule = "cmake",
+    name = "cld2",
+    version = "20131028",
+    url = "https://github.com/CLD2Owners/cld2/archive/b56fa78a2fe44ac2851bae5bf4f4693a0644da7b.tar.gz",
+    sha256 = "2bd0f8aa344698c0ce6b2c89f5540af10e69e92d4c74f9fe66ffe25281be1111",
+    description = "Compact Language Detector 2 - Detects over 80 languages in UTF-8 text",
+    homepage = "https://github.com/CLD2Owners/cld2",
+    license = "Apache-2.0",
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+    ],
+    deps = [],
+)

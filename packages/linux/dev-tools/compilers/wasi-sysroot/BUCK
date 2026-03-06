@@ -1,0 +1,16 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "binary",
+    name = "wasi-sysroot",
+    version = "25.0",
+    local_only = True,
+    source = ":wasi-sysroot-source",
+    description = "WASI sysroot for WebAssembly",
+    homepage = "https://github.com/WebAssembly/wasi-sdk",
+    license = "Apache-2.0",
+    install_script = """
+        mkdir -p "$OUT/usr"
+        cp -r "$SRCS"/* "$OUT/usr/"
+    """,
+)

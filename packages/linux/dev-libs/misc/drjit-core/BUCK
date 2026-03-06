@@ -1,0 +1,45 @@
+load("//defs:package.bzl", "package")
+
+# Dr.Jit-Core - A tracing GPU/CPU Just-In-Time-Compiler
+# JIT compiler designed to vectorize and parallelize computation,
+# primarily for differentiable Monte Carlo rendering
+
+package(
+    build_rule = "cmake",
+    name = "drjit-core",
+    version = "0.0.0+git5cf6d37",
+    url = "https://github.com/mitsuba-renderer/drjit-core/archive/5cf6d3730ebc931863c89071e16979153e802d09.tar.gz",
+    sha256 = "86c687d42d7af8f969c20ce3a6af7d920d64ef391767b9f3f9ee20b51e6eb8a1",  # TODO: Calculate with: wget -qO- <URL> | sha256sum
+    description = "Dr.Jit-Core - A tracing GPU/CPU Just-In-Time-Compiler for parallel computation",
+    homepage = "https://github.com/mitsuba-renderer/drjit-core",
+    license = "BSD-3-Clause",
+
+    # Dr.Jit has git submodules (nanothread, robin-map)
+    # GitHub archive tarballs don't include submodules, so we need to fetch them manually
+
+    configure_args = [
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DCMAKE_BUILD_TYPE=Release",
+
+        # Enable dynamic LLVM loading (no LLVM dependency at build time)
+        "-DDRJIT_DYNAMIC_LLVM=ON",
+
+        # Enable dynamic CUDA loading (no CUDA dependency at build time)
+        "-DDRJIT_DYNAMIC_CUDA=ON",
+
+        # Disable OptiX support (requires NVIDIA OptiX SDK)
+        "-DDRJIT_ENABLE_OPTIX=OFF",
+
+        # Disable tests
+        "-DDRJIT_CORE_ENABLE_TESTS=OFF",
+    ],
+
+    deps = [
+        # LZ4 compression library (used for compressed PTX kernels)
+        "//packages/linux/system/libs/compression/lz4:lz4",
+
+        # Note: nanothread and robin-map are included as vendored submodules
+        # and built as part of the drjit-core build process
+    ],
+
+)

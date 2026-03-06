@@ -1,0 +1,26 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cmake",
+    name = "aocl-blas",
+    version = "5.2",
+    url = "https://mirror.buckos.org/a/aocl-blas-5.2.tar.gz",
+    sha256 = "c553bd543eedc87920df9b82634ae4c02662145ed737f51fdf4c9bca5e588028",
+    description = "AMD Optimizing CPU Libraries - BLAS Library (BLIS)",
+    homepage = "https://www.amd.com/en/developer/aocl.html",
+    license = "BSD-3-Clause",
+    deps = [],
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DBLIS_CONFIG_FAMILY=auto",
+        "-DENABLE_THREADING=openmp",
+        "-DENABLE_MIXED_DT=ON",
+        "-DENABLE_SUP_HANDLING=ON",
+    ],
+    use_configure = {
+        "blas": ("-DENABLE_BLAS=ON", "-DENABLE_BLAS=OFF"),
+        "cblas": ("-DENABLE_CBLAS=ON", "-DENABLE_CBLAS=OFF"),
+        "openmp": ("-DENABLE_THREADING=openmp", "-DENABLE_THREADING=no"),
+    },
+)
