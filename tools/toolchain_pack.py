@@ -228,11 +228,12 @@ def _rewrite_rpath(directory):
                         if avail <= 0:
                             continue
                         old_rpath = data[str_off:end]
-                        # Only rewrite RPATHs that contain the specs
-                        # placeholder or /buckos-rpath.  Leave RPATHs
-                        # that already have $ORIGIN (set by the build
-                        # system, e.g. Rust's x.py install) alone.
-                        if b"$ORIGIN" in old_rpath:
+                        # Leave pure $ORIGIN RPATHs (set by the build
+                        # system) alone.  But rewrite combined RPATHs
+                        # that have both $ORIGIN and the specs placeholder
+                        # (e.g. Rust: "$ORIGIN/../lib:/buckos-rpath-pad…")
+                        # so the seed gets glibc paths too.
+                        if b"$ORIGIN" in old_rpath and b"/buckos-rpath-pad" not in old_rpath:
                             continue
                         if len(new_rpath) <= avail:
                             data[str_off:str_off + len(new_rpath)] = new_rpath

@@ -121,11 +121,12 @@ debug = false
 codegen-units-std = 1
 lto = "thin"
 download-rustc = false
-# Disable x.py install's RPATH rewriting — our GCC specs already set
-# a padded RPATH placeholder at link time.  Letting x.py rewrite it
-# to $ORIGIN/../lib (14 bytes) makes it too short for the pack step
-# to overwrite with the full $ORIGIN/../lib64/glibc path.
-rpath = false
+# Enable Rust's RPATH so binaries get $ORIGIN/../lib at link time.
+# This makes rustc/cargo self-contained (find their own libs without
+# LD_LIBRARY_PATH).  GCC specs also append the placeholder RPATH, so
+# the combined RPATH is "$ORIGIN/../lib:/buckos-rpath-pad...".  The
+# pack step rewrites the combined value to include glibc paths.
+rpath = true
 
 [target.x86_64-unknown-linux-gnu]
 # Wrapper scripts invoke our GCC with specs — LLVM and other C/C++
@@ -208,62 +209,6 @@ for root, _, files in os.walk(out):
             patched += 1
             break
 print(f"Patched interp in {patched} binaries")
-
-# Also inject RPATH placeholder into binaries that lack one (LLD tools
-# linked by LLVM's build, not by our GCC).  Uses the same placeholder
-# that _rewrite_rpath expects.
-DT_RPATH, DT_RUNPATH, DT_NEEDED = 15, 29, 1
-SHT_DYNAMIC = 6
-placeholder = b"/buckos-rpath-pad" + b"X" * 228
-injected = 0
-for root, _, files in os.walk(out):
-    for name in files:
-        path = os.path.join(root, name)
-        if os.path.islink(path) or not os.path.isfile(path):
-            continue
-        try:
-            with open(path, "rb") as f:
-                data = f.read()
-        except (PermissionError, OSError):
-            continue
-        if data[:4] != b"\x7fELF" or data[4] != 2 or data[5] != 1:
-            continue
-        e_shoff = struct.unpack_from("<Q", data, 40)[0]
-        e_shentsize = struct.unpack_from("<H", data, 58)[0]
-        e_shnum = struct.unpack_from("<H", data, 60)[0]
-        dyn_offset = dyn_size = dyn_entsize = 0
-        for j in range(e_shnum):
-            sh_off = e_shoff + j * e_shentsize
-            if struct.unpack_from("<I", data, sh_off + 4)[0] == SHT_DYNAMIC:
-                dyn_offset = struct.unpack_from("<Q", data, sh_off + 24)[0]
-                dyn_size = struct.unpack_from("<Q", data, sh_off + 32)[0]
-                dyn_entsize = struct.unpack_from("<Q", data, sh_off + 56)[0]
-                break
-        if not dyn_offset:
-            continue
-        if not dyn_entsize:
-            dyn_entsize = 16
-        has_rpath = has_needed = False
-        for j in range(dyn_size // dyn_entsize):
-            tag = struct.unpack_from("<q", data, dyn_offset + j * dyn_entsize)[0]
-            if tag in (DT_RPATH, DT_RUNPATH):
-                has_rpath = True
-            if tag == DT_NEEDED:
-                has_needed = True
-        if has_rpath or not has_needed:
-            continue
-        # Use patchelf if available, otherwise skip
-        import subprocess
-        try:
-            subprocess.run(
-                ["patchelf", "--set-rpath", placeholder.decode(), path],
-                capture_output=True, timeout=30,
-            )
-            injected += 1
-        except (FileNotFoundError, subprocess.TimeoutExpired):
-            pass
-if injected:
-    print(f"Injected RPATH placeholder into {injected} binaries")
 PYEOF
 """,
 )
