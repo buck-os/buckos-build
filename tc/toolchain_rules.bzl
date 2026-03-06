@@ -151,10 +151,42 @@ def _buckos_bootstrap_toolchain_impl(ctx: AnalysisContext) -> list[Provider]:
         if not python_run_info:
             python_run_info = RunInfo(args = cmd_args(host_bin.project("python3")))
 
+    # Extract linker flags that must be unconditional (specs) vs optional
+    # (LDFLAGS).  Build systems that ignore LDFLAGS (perl, bzip2, rust,
+    # glibc utils) still get the padded interpreter and RPATH placeholder
+    # because GCC specs are applied at link time regardless.
+    interp_val = None
+    rpath_val = None
+    remaining_ldflags = []
+    for flag in ctx.attrs.extra_ldflags:
+        if "--dynamic-linker," in flag and "rpath" not in flag:
+            # "-Wl,--dynamic-linker,///...///lib64/ld-linux-x86-64.so.2"
+            interp_val = flag.split("--dynamic-linker,", 1)[1]
+        elif "-rpath," in flag and "rpath-link" not in flag:
+            # "-Wl,-rpath,/buckos-rpath-padXXX..."
+            rpath_val = flag.split("-rpath,", 1)[1]
+        else:
+            remaining_ldflags.append(flag)
+
+    if interp_val or rpath_val:
+        spec_parts = []
+        if interp_val:
+            spec_parts.append("--dynamic-linker " + interp_val)
+        if rpath_val:
+            spec_parts.append("-rpath " + rpath_val)
+        specs_content = (
+            "*link:\n" +
+            "+ %{!shared:%{!static:" + " ".join(spec_parts) + "}}\n" +
+            "\n"
+        )
+        specs_file = ctx.actions.write("gcc-link.specs", specs_content)
+        cc_args.add(cmd_args("-specs=", specs_file, delimiter = ""))
+        cxx_args.add(cmd_args("-specs=", specs_file, delimiter = ""))
+
     # ld.bfd resolves DT_NEEDED chains and needs to find libstdc++.so
     # when linking C programs against C++ shared libraries.  The GCC
     # runtime libs live outside the sysroot — add them as rpath-link.
-    ldflags = list(ctx.attrs.extra_ldflags)
+    ldflags = list(remaining_ldflags)
     if stage.gcc_lib_dir:
         ldflags.append(cmd_args("-Wl,-rpath-link,", stage.gcc_lib_dir, delimiter = ""))
 

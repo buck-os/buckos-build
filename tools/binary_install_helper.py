@@ -23,7 +23,7 @@ def _resolve_flag_paths(value, project_root):
     """Resolve relative buck-out paths in compiler/linker flag strings."""
     parts = []
     for token in value.split():
-        for prefix in ("-I", "-L", "-Wl,-rpath-link,", "-Wl,-rpath,"):
+        for prefix in ("-I", "-L", "-Wl,-rpath-link,", "-Wl,-rpath,", "-specs="):
             if token.startswith(prefix) and len(token) > len(prefix):
                 path = token[len(prefix):]
                 if not os.path.isabs(path):
@@ -159,7 +159,7 @@ def main():
             parent = os.path.dirname(bd)
             for ld in ("lib", "lib64"):
                 d = os.path.join(parent, ld)
-                if os.path.isdir(d):
+                if os.path.isdir(d) and not os.path.exists(os.path.join(d, "libc.so.6")):
                     ld_lib_parts.append(d)
         if ld_lib_parts:
             existing = env.get("LD_LIBRARY_PATH", "")
@@ -201,7 +201,7 @@ def main():
             parent = os.path.dirname(bd)
             for ld in ("lib", "lib64"):
                 d = os.path.join(parent, ld)
-                if os.path.isdir(d):
+                if os.path.isdir(d) and not os.path.exists(os.path.join(d, "libc.so.6")):
                     _pp_lib_dirs.append(d)
         if _pp_lib_dirs:
             existing = env.get("LD_LIBRARY_PATH", "")

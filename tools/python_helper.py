@@ -15,8 +15,22 @@ from _env import clean_env
 
 def _resolve_env_paths(value):
     """Resolve relative Buck2 artifact paths in env values to absolute."""
+    _FLAG_PREFIXES = ["-specs="]
+
     parts = []
     for token in value.split():
+        flag_resolved = False
+        for prefix in _FLAG_PREFIXES:
+            if token.startswith(prefix) and len(token) > len(prefix):
+                path = token[len(prefix):]
+                if not os.path.isabs(path) and os.path.exists(path):
+                    parts.append(prefix + os.path.abspath(path))
+                else:
+                    parts.append(token)
+                flag_resolved = True
+                break
+        if flag_resolved:
+            continue
         if token.startswith("--") and "=" in token:
             idx = token.index("=")
             flag = token[: idx + 1]
@@ -108,7 +122,7 @@ def main():
             _parent = os.path.dirname(os.path.abspath(_bp))
             for _ld in ("lib", "lib64"):
                 _d = os.path.join(_parent, _ld)
-                if os.path.isdir(_d):
+                if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")):
                     _lib_dirs.append(_d)
         if _lib_dirs:
             _existing = env.get("LD_LIBRARY_PATH", "")
@@ -140,7 +154,7 @@ def main():
             _parent = os.path.dirname(os.path.abspath(_bp))
             for _ld in ("lib", "lib64"):
                 _d = os.path.join(_parent, _ld)
-                if os.path.isdir(_d):
+                if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")):
                     _dep_lib_dirs.append(_d)
         if _dep_lib_dirs:
             _existing = env.get("LD_LIBRARY_PATH", "")
