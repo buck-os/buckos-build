@@ -157,7 +157,9 @@ def _rewrite_interpreters(toolchain_dir):
     new_interp = os.path.abspath(ld_linux)
     patched = 0
 
-    for subdir in ("host-tools", "tools"):
+    # Only rewrite host-tools — the cross-compiler (tools/) was built by
+    # the host GCC against host glibc and must keep the host's ld-linux.
+    for subdir in ("host-tools",):
         root = os.path.join(toolchain_dir, subdir)
         if not os.path.isdir(root):
             continue
@@ -237,14 +239,31 @@ def _install_gcc_specs(toolchain_dir, target_triple="x86_64-buckos-linux-gnu"):
 
 def _write_specs(gcc_libdir, ld_linux_abs):
     """Write a specs override into a GCC lib directory."""
+    rpath_placeholder = "/buckos-rpath-pad" + "X" * 228
     specs_content = (
         "*link:\n"
-        f"+ %{{!shared:%{{!static:--dynamic-linker {ld_linux_abs}}}}}\n"
+        f"+ %{{!shared:%{{!static:--dynamic-linker {ld_linux_abs}"
+        f" -rpath {rpath_placeholder}}}}}\n"
         "\n"
     )
     specs_path = os.path.join(gcc_libdir, "specs")
     with open(specs_path, "w") as f:
         f.write(specs_content)
+
+
+def _pipe_extract(producer_cmd, consumer_cmd):
+    """Run producer | consumer without shell=True, return combined result."""
+    producer = subprocess.Popen(
+        producer_cmd, stdout=subprocess.PIPE, env=clean_env(),
+    )
+    consumer = subprocess.Popen(
+        consumer_cmd, stdin=producer.stdout,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=clean_env(),
+    )
+    producer.stdout.close()
+    consumer.communicate()
+    rc = consumer.returncode or producer.wait()
+    return type("R", (), {"returncode": rc})()
 
 
 def main():
@@ -272,17 +291,28 @@ def main():
                 inner = _unzip_inner(archive, tmpdir)
                 inner_comp = detect_compression(inner)
                 if inner_comp == "zst":
-                    cmd = f"zstd -dc {inner} | tar -C {tmpdir} -xf - ./metadata.json"
+                    result = _pipe_extract(
+                        ["zstd", "-dc", inner],
+                        ["tar", "-C", tmpdir, "-xf", "-", "./metadata.json"],
+                    )
                 else:
-                    cmd = f"tar -C {tmpdir} -xf {inner} ./metadata.json"
+                    result = subprocess.run(
+                        ["tar", "-C", tmpdir, "-xf", inner, "./metadata.json"],
+                        capture_output=True, env=clean_env())
             elif comp == "zst":
-                cmd = f"zstd -dc {archive} | tar -C {tmpdir} -xf - ./metadata.json"
+                result = _pipe_extract(
+                    ["zstd", "-dc", archive],
+                    ["tar", "-C", tmpdir, "-xf", "-", "./metadata.json"],
+                )
             elif comp == "xz":
-                cmd = f"tar -C {tmpdir} -xJf {archive} ./metadata.json"
+                result = subprocess.run(
+                    ["tar", "-C", tmpdir, "-xJf", archive, "./metadata.json"],
+                    capture_output=True, env=clean_env())
             else:
-                cmd = f"tar -C {tmpdir} -xzf {archive} ./metadata.json"
+                result = subprocess.run(
+                    ["tar", "-C", tmpdir, "-xzf", archive, "./metadata.json"],
+                    capture_output=True, env=clean_env())
 
-            result = subprocess.run(cmd, shell=True, capture_output=True, env=clean_env())
             if result.returncode != 0:
                 print(f"error: failed to extract metadata.json", file=sys.stderr)
                 sys.exit(1)
@@ -313,19 +343,24 @@ def main():
             inner = _unzip_inner(archive, tmpdir)
             inner_comp = detect_compression(inner)
             if inner_comp == "zst":
-                cmd = f"zstd -dc {inner} | tar -C {output} -xf -"
+                result = _pipe_extract(
+                    ["zstd", "-dc", inner],
+                    ["tar", "-C", output, "-xf", "-"],
+                )
             else:
-                cmd = f"tar -C {output} -xf {inner}"
-            result = subprocess.run(cmd, shell=True, env=clean_env())
+                result = subprocess.run(
+                    ["tar", "-C", output, "-xf", inner], env=clean_env())
     elif comp == "zst":
-        cmd = f"zstd -dc {archive} | tar -C {output} -xf -"
-        result = subprocess.run(cmd, shell=True, env=clean_env())
+        result = _pipe_extract(
+            ["zstd", "-dc", archive],
+            ["tar", "-C", output, "-xf", "-"],
+        )
     elif comp == "xz":
-        cmd = f"tar -C {output} -xJf {archive}"
-        result = subprocess.run(cmd, shell=True, env=clean_env())
+        result = subprocess.run(
+            ["tar", "-C", output, "-xJf", archive], env=clean_env())
     else:
-        cmd = f"tar -C {output} -xzf {archive}"
-        result = subprocess.run(cmd, shell=True, env=clean_env())
+        result = subprocess.run(
+            ["tar", "-C", output, "-xzf", archive], env=clean_env())
 
     if result.returncode != 0:
         print(f"error: extraction failed with exit code {result.returncode}", file=sys.stderr)
