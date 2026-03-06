@@ -123,11 +123,28 @@ def _build_dep_env(dep_base_dirs, pkg_config_path, base_path=None):
     return env
 
 
-def _write_mozconfig(path, options):
-    """Write mozconfig file."""
+def _write_mozconfig(path, options, dep_base_dirs=None):
+    """Write mozconfig file.
+
+    Auto-injects --with-libclang-path if libclang.so is found in a dep
+    and no explicit --with-libclang-path is already specified.
+    """
+    has_libclang = any("--with-libclang-path" in o for o in options)
+    libclang_dir = ""
+    if not has_libclang and dep_base_dirs:
+        for d in dep_base_dirs:
+            for sub in ("usr/lib64", "usr/lib"):
+                candidate = os.path.join(d, sub)
+                if os.path.isfile(os.path.join(candidate, "libclang.so")):
+                    libclang_dir = candidate
+                    break
+            if libclang_dir:
+                break
     with open(path, "w") as f:
         for opt in options:
             f.write("ac_add_options {}\n".format(opt))
+        if libclang_dir:
+            f.write("ac_add_options --with-libclang-path={}\n".format(libclang_dir))
 
 
 def _run(cmd, cwd=None, env=None):
@@ -260,7 +277,8 @@ def phase_configure(args):
     env = _common_env(args, src_dir, pkg_config_bin)
 
     # Write mozconfig
-    _write_mozconfig(os.path.join(src_dir, "mozconfig"), args.mozconfig_options)
+    _dep_dirs = [_resolve(d) for d in args.dep_base_dirs.split(":") if d] if args.dep_base_dirs else []
+    _write_mozconfig(os.path.join(src_dir, "mozconfig"), args.mozconfig_options, _dep_dirs)
 
     # Run configure
     _run([sys.executable if shutil.which("python3") is None else "python3",
@@ -291,7 +309,8 @@ def phase_rust_deps(args):
     pkg_config_bin = _setup_pkg_config_wrapper(
         os.path.join(args.work_dir, "bin"))
     env = _common_env(args, src_dir, pkg_config_bin)
-    _write_mozconfig(os.path.join(src_dir, "mozconfig"), args.mozconfig_options)
+    _dep_dirs = [_resolve(d) for d in args.dep_base_dirs.split(":") if d] if args.dep_base_dirs else []
+    _write_mozconfig(os.path.join(src_dir, "mozconfig"), args.mozconfig_options, _dep_dirs)
 
     # Find objdir
     objdir = None
@@ -377,7 +396,8 @@ def phase_build(args):
     pkg_config_bin = _setup_pkg_config_wrapper(
         os.path.join(args.work_dir, "bin"))
     env = _common_env(args, src_dir, pkg_config_bin)
-    _write_mozconfig(os.path.join(src_dir, "mozconfig"), args.mozconfig_options)
+    _dep_dirs = [_resolve(d) for d in args.dep_base_dirs.split(":") if d] if args.dep_base_dirs else []
+    _write_mozconfig(os.path.join(src_dir, "mozconfig"), args.mozconfig_options, _dep_dirs)
 
     # Full build
     _run(["python3", "./mach", "build"], cwd=src_dir, env=env)
@@ -405,7 +425,8 @@ def phase_install(args):
     pkg_config_bin = _setup_pkg_config_wrapper(
         os.path.join(args.work_dir, "bin"))
     env = _common_env(args, src_dir, pkg_config_bin)
-    _write_mozconfig(os.path.join(src_dir, "mozconfig"), args.mozconfig_options)
+    _dep_dirs = [_resolve(d) for d in args.dep_base_dirs.split(":") if d] if args.dep_base_dirs else []
+    _write_mozconfig(os.path.join(src_dir, "mozconfig"), args.mozconfig_options, _dep_dirs)
 
     output = _resolve(args.output_dir)
     os.makedirs(output, exist_ok=True)
