@@ -107,10 +107,21 @@ def _build_dep_env(dep_base_dirs, pkg_config_path, base_path=None):
             base_path = ""
         env["PATH"] = ":".join(non_python_bin_paths) + ":" + base_path
 
-    # LIBRARY_PATH for the linker (NOT LD_LIBRARY_PATH — that would cause
-    # buckos shared libs to shadow system libs for host tools)
+    # LIBRARY_PATH for the linker
     if lib_paths:
         env["LIBRARY_PATH"] = ":".join(lib_paths)
+
+    # LD_LIBRARY_PATH so dep binaries (rustc, llvm-objdump, mold) can find
+    # their shared libraries at runtime.  Exclude dirs containing libc.so.6
+    # to avoid poisoning host processes.
+    safe_lib_paths = [
+        p for p in lib_paths
+        if not os.path.exists(os.path.join(p, "libc.so.6"))
+    ]
+    if safe_lib_paths:
+        existing = env.get("LD_LIBRARY_PATH", "")
+        merged = ":".join(safe_lib_paths)
+        env["LD_LIBRARY_PATH"] = (merged + ":" + existing).rstrip(":") if existing else merged
 
     # C_INCLUDE_PATH / CPLUS_INCLUDE_PATH as fallback for headers that
     # pkg-config doesn't cover (Firefox system_wrappers use #include_next)
