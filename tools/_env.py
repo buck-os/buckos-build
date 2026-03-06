@@ -166,13 +166,19 @@ def derive_lib_paths(bin_dirs, env):
     LD_LIBRARY_PATH so dynamically linked host tools can find their
     shared libraries, and sets BISON_PKGDATADIR so relocated bison
     finds its m4sugar data files.
+
+    Directories containing libc.so.6 are EXCLUDED from LD_LIBRARY_PATH.
+    Including them would poison host processes (bash, sh, etc.) whose
+    host ld-linux picks up the buckos libc instead of the host libc,
+    causing GLIBC_PRIVATE symbol mismatches.  Buckos binaries find
+    their libc via RPATH set at pack time instead.
     """
     lib_parts = []
     for bin_dir in bin_dirs:
         parent = os.path.dirname(os.path.abspath(bin_dir))
         for ld in ("lib", "lib64"):
             d = os.path.join(parent, ld)
-            if os.path.isdir(d):
+            if os.path.isdir(d) and not os.path.exists(os.path.join(d, "libc.so.6")):
                 lib_parts.append(d)
         # Bison looks for data at compiled-in /usr/share/bison; set
         # BISON_PKGDATADIR so it finds data in the relocated prefix.

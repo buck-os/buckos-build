@@ -179,7 +179,7 @@ def _common_env(args, src_dir, pkg_config_bin_dir):
             _parent = os.path.dirname(os.path.abspath(_bp))
             for _ld in ("lib", "lib64"):
                 _d = os.path.join(_parent, _ld)
-                if os.path.isdir(_d):
+                if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")):
                     _lib_dirs.append(_d)
         if _lib_dirs:
             _existing = env.get("LD_LIBRARY_PATH", "")
@@ -227,7 +227,7 @@ def _common_env(args, src_dir, pkg_config_bin_dir):
             _parent = os.path.dirname(os.path.abspath(_bp))
             for _ld in ("lib", "lib64"):
                 _d = os.path.join(_parent, _ld)
-                if os.path.isdir(_d):
+                if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")):
                     _dep_lib_dirs.append(_d)
         if _dep_lib_dirs:
             _existing = env.get("LD_LIBRARY_PATH", "")
