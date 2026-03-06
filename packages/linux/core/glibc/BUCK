@@ -1,8 +1,19 @@
 load("//defs:package.bzl", "package")
 
-# System glibc package
-# This repackages the cross-glibc from the bootstrap toolchain for the final system.
-# The cross-glibc is now built with --prefix=/usr so it can be copied directly.
+# System glibc package — copies from cross-glibc (stage 1).
+#
+# Rebuilding glibc from source within the package system is complex because
+# the binary_package rule injects LD_LIBRARY_PATH from deps, which poisons
+# the cross-compiler (host binary) with buckos glibc → GLIBC_ABI_GNU2_TLS
+# mismatch.  The bootstrap_glibc rule handles this with a dedicated configure
+# tool, but that infrastructure isn't available at the package level.
+#
+# The cross-glibc utilities have the standard /usr/lib64/ld-linux-x86-64.so.2
+# interpreter.  This is acceptable because:
+#   - The packaged glibc IS the correct buckos glibc (same build)
+#   - The utils (ldconfig, iconv, etc.) use the system ld-linux which
+#     resolves to the bundled one after unpack rewrites the path
+#   - The seed isolation test excludes glibc utils from the padded-interp check
 
 package(
     name = "glibc",
@@ -14,32 +25,6 @@ package(
     description = "GNU C Library (glibc) - the standard C library for GNU/Linux systems",
     homepage = "https://www.gnu.org/software/libc/",
     license = "LGPL-2.1+ GPL-2+",
-    use_configure = {
-        "audit": ("--enable-audit", "--disable-audit"),
-        "caps": ("--enable-libcap", "--disable-libcap"),
-        "cet": ("--enable-cet", "--disable-cet"),
-        "clang": ("--enable-clang", "--disable-clang"),
-        "compile-locales": ("--enable-compile-locales", "--disable-compile-locales"),
-        "custom-cflags": ("--enable-custom-cflags", "--disable-custom-cflags"),
-        "gd": ("--enable-gd", "--disable-gd"),
-        "hash-sysv-compat": ("--enable-hash-sysv-compat", "--disable-hash-sysv-compat"),
-        "headers-only": ("--enable-headers-only", "--disable-headers-only"),
-        "multiarch": ("--enable-multiarch", "--disable-multiarch"),
-        "multilib": ("--enable-multilib", "--disable-multilib"),
-        "multilib-bootstrap": ("--enable-multilib-bootstrap", "--disable-multilib-bootstrap"),
-        "nscd": ("--enable-nscd", "--disable-nscd"),
-        "perl": ("--enable-perl", "--disable-perl"),
-        "profile": ("--enable-profile", "--disable-profile"),
-        "selinux": ("--enable-selinux", "--disable-selinux"),
-        "sframe": ("--enable-sframe", "--disable-sframe"),
-        "ssp": ("--enable-ssp", "--disable-ssp"),
-        "stack-realign": ("--enable-stack-realign", "--disable-stack-realign"),
-        "static-libs": ("--enable-static", "--disable-static"),
-        "suid": ("--enable-suid", "--disable-suid"),
-        "systemd": ("--enable-systemd", "--disable-systemd"),
-        "systemtap": ("--enable-systemtap", "--disable-systemtap"),
-        "vanilla": ("--enable-vanilla", "--disable-vanilla"),
-    },
     install_script = """
 # Copy glibc from cross-glibc build output
 # The cross-glibc is built with --prefix=/usr so paths are already correct

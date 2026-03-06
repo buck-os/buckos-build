@@ -18,11 +18,11 @@ package(
     license = "BSD-3-Clause",
     skip_configure = True,
     pre_build_cmds = [
-        # CMake is a host tool — unset cross-compiler vars so bootstrap
-        # finds the host g++.  Bundled libraries avoid glibc version
-        # mismatches.  Disable ccmake (curses GUI) to avoid
-        # NCURSES_BOOL/std::function conflict with GCC 15.
-        "unset CC CXX CFLAGS CXXFLAGS LDFLAGS CPPFLAGS && ./bootstrap --prefix=/usr --parallel=$(nproc) --no-qt-gui -- -DCMAKE_USE_OPENSSL=OFF -DBUILD_CursesDialog=OFF",
+        # CMake bootstrap respects CC/CXX from environment.  GCC specs
+        # inject padded interpreter + RPATH unconditionally at link time,
+        # so no CFLAGS/LDFLAGS needed.  Disable ccmake (curses GUI) to
+        # avoid NCURSES_BOOL/std::function conflict with GCC 15.
+        "./bootstrap --prefix=/usr --parallel=$(nproc) --no-qt-gui -- -DCMAKE_USE_OPENSSL=OFF -DBUILD_CursesDialog=OFF",
     ],
     deps = [],
 )

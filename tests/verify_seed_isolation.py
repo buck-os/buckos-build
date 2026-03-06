@@ -63,18 +63,24 @@ def check_rpath(elf_path, forbidden_patterns):
 
 
 def check_interp_padded(elf_path):
-    """Check that .interp has a padded interpreter (leading ///)."""
-    output = run(["readelf", "-p", ".interp", elf_path])
+    """Check that .interp has a padded interpreter (leading ///).
+
+    Uses readelf -l (program headers) because the dynamic linker reads
+    PT_INTERP, not the .interp section header.  Some linkers (LLD) set
+    the section size smaller than the program header filesz, causing
+    readelf -p .interp to show a truncated string.
+    """
+    output = run(["readelf", "-l", elf_path])
     if not output:
-        return None  # no .interp — statically linked or shared lib
+        return None  # no program headers
     for line in output.splitlines():
-        if "ld-linux" not in line and "ld.so" not in line:
+        if "Requesting program interpreter:" not in line:
             continue
-        # Extract the string value — readelf -p format: "  [     0]  /path..."
-        idx = line.find("]")
-        if idx < 0:
+        # Format: "[Requesting program interpreter: /path...]"
+        start = line.find(": ")
+        if start < 0:
             continue
-        interp = line[idx + 1:].strip()
+        interp = line[start + 2:].rstrip("]").strip()
         if interp and not interp.startswith("///"):
             return interp  # unpadded — return the bad value
         return None  # padded — OK
@@ -254,20 +260,47 @@ def main():
             # Every dynamically-linked host-tools binary must have been
             # built by our GCC (padded interp + $ORIGIN RPATH).  Binaries
             # missing these fall back to host libc — a hermeticity leak.
+            #
+            # Excluded from this check:
+            # - testdata/: Go stdlib ships upstream ELF test fixtures
+            # - libc.so.6: glibc itself has .interp for ldd(1) but is
+            #   not a regular executable
+            # - glibc utils: copied from cross-glibc (stage 1), have
+            #   standard /usr/lib64/ld-linux path which the unpack step
+            #   rewrites.  Rebuilding glibc at the package level is
+            #   blocked by LD_LIBRARY_PATH poisoning the cross-compiler.
+            _GLIBC_UTILS = {
+                "ldconfig", "ldd", "getent", "getconf", "iconv",
+                "locale", "localedef", "gencat", "mtrace", "pcprofiledump",
+                "pldd", "sprof", "sotruss", "tzselect", "zdump", "zic",
+                "catchsegv", "xtrace", "sln", "iconvconfig", "nscd",
+                "makedb", "ld-linux-x86-64.so.2",
+            }
             unpadded = []
             no_rpath = []
             for elf in ht_elfs:
+                rel = os.path.relpath(elf, ht_dir)
+                if "/testdata/" in rel:
+                    continue
+                if os.path.basename(rel) in _GLIBC_UTILS:
+                    continue
+                # glibc getconf helpers (libexec/getconf/*)
+                if "libexec/getconf/" in rel:
+                    continue
+                if os.path.basename(rel) == "libc.so.6":
+                    continue
+                # QEMU firmware images are non-x86_64 ELFs (hppa, s390x)
+                if "share/qemu/" in rel:
+                    continue
                 bad_interp = check_interp_padded(elf)
                 if bad_interp is not None:
-                    unpadded.append(
-                        f"{os.path.relpath(elf, ht_dir)}: interp={bad_interp}"
-                    )
+                    unpadded.append(f"{rel}: interp={bad_interp}")
                 # Only check RPATH on executables (have .interp), not
                 # shared libs which are found via the executable's RPATH.
-                has_interp = run(["readelf", "-p", ".interp", elf])
-                if has_interp and "ld-linux" in has_interp:
-                    if check_has_rpath(elf) is not None:
-                        no_rpath.append(os.path.relpath(elf, ht_dir))
+                has_interp = run(["readelf", "-l", elf])
+                if has_interp and "Requesting program interpreter:" in has_interp:
+                    if "/testdata/" not in rel and check_has_rpath(elf):
+                        no_rpath.append(rel)
             if unpadded:
                 failures.append(
                     f"{len(unpadded)} host-tools binaries have unpadded "

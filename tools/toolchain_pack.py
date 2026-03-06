@@ -146,6 +146,221 @@ def _isolate_glibc(directory):
               file=sys.stderr)
 
 
+def _pad_elf_interpreter(directory, target_size=256):
+    """Pad the ELF interpreter in binaries that still have the standard path.
+
+    Most host-tools binaries get the padded interpreter from GCC specs at
+    link time.  A few (Perl, glibc utils) bypass CC or use the host compiler,
+    leaving the standard 27-byte path.  Pad those so the unpack step can
+    overwrite with the actual bundled ld-linux path.
+    """
+    STANDARD_INTERPS = [
+        b"/lib64/ld-linux-x86-64.so.2",
+        b"/usr/lib64/ld-linux-x86-64.so.2",
+    ]
+    padded = 0
+
+    for dirpath, _, filenames in os.walk(directory):
+        for name in filenames:
+            path = os.path.join(dirpath, name)
+            if os.path.islink(path) or not os.path.isfile(path):
+                continue
+            try:
+                with open(path, 'rb') as f:
+                    data = bytearray(f.read())
+            except (PermissionError, OSError):
+                continue
+
+            if data[:4] != b'\x7fELF':
+                continue
+            if data[4] != 2 or data[5] != 1:
+                continue
+
+            e_phoff = struct.unpack_from('<Q', data, 32)[0]
+            e_phentsize = struct.unpack_from('<H', data, 54)[0]
+            e_phnum = struct.unpack_from('<H', data, 56)[0]
+
+            PT_INTERP = 3
+            for i in range(e_phnum):
+                off = e_phoff + i * e_phentsize
+                p_type = struct.unpack_from('<I', data, off)[0]
+                if p_type != PT_INTERP:
+                    continue
+
+                p_offset = struct.unpack_from('<Q', data, off + 8)[0]
+                p_filesz = struct.unpack_from('<Q', data, off + 32)[0]
+
+                end = data.index(0, p_offset)
+                old_interp = data[p_offset:end]
+                if old_interp not in STANDARD_INTERPS:
+                    break
+
+                suffix = b"lib64/ld-linux-x86-64.so.2"
+                n_slashes = target_size - 1 - len(suffix)
+                new_bytes = b"/" * n_slashes + suffix + b"\x00"
+
+                if len(new_bytes) <= p_filesz:
+                    data[p_offset:p_offset + len(new_bytes)] = new_bytes
+                    for j in range(len(new_bytes), p_filesz):
+                        data[p_offset + j] = 0
+                else:
+                    new_offset = len(data)
+                    data.extend(new_bytes)
+                    struct.pack_into('<Q', data, off + 8, new_offset)
+                    struct.pack_into('<Q', data, off + 32, len(new_bytes))
+                    struct.pack_into('<Q', data, off + 40, len(new_bytes))
+
+                orig_mode = os.stat(path).st_mode
+                os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
+                with open(path, 'wb') as f:
+                    f.write(data)
+                os.chmod(path, orig_mode)
+                padded += 1
+                break
+
+    if padded:
+        print(f"  padded ELF interpreter in {padded} binaries", file=sys.stderr)
+
+
+def _inject_rpath(directory):
+    """Inject RPATH into dynamically-linked binaries that lack one.
+
+    Most host-tools binaries get RPATH from GCC specs at link time.  A few
+    (Perl, glibc utils) bypass CC, leaving no RPATH.  Uses patchelf to add
+    $ORIGIN-relative RPATH so they find buckos libs after unpacking.
+
+    Must be called BEFORE _isolate_glibc so patchelf can find its own
+    libs via LD_LIBRARY_PATH.
+    """
+    DT_RPATH = 15
+    DT_RUNPATH = 29
+    SHT_DYNAMIC = 6
+    injected = 0
+    skipped = []
+
+    patchelf = os.path.join(directory, "bin", "patchelf")
+    if not os.path.isfile(patchelf):
+        print("  warning: patchelf not found, skipping RPATH injection",
+              file=sys.stderr)
+        return
+
+    # Use clean env WITHOUT LD_LIBRARY_PATH — patchelf has a padded
+    # interp that resolves to host ld-linux, so it must use host libc.
+    # Setting LD_LIBRARY_PATH to buckos lib64/ would poison it with
+    # buckos glibc → ABI mismatch crash.
+    patchelf_env = clean_env()
+    patchelf_env.pop("LD_LIBRARY_PATH", None)
+
+    lib_suffixes = []
+    for ld in ("lib", "lib64"):
+        if os.path.isdir(os.path.join(directory, ld)):
+            lib_suffixes.append(ld)
+    if os.path.isdir(os.path.join(directory, "lib64")):
+        lib_suffixes.append(os.path.join("lib64", "glibc"))
+
+    for dirpath, _, filenames in os.walk(directory):
+        for name in filenames:
+            path = os.path.join(dirpath, name)
+            if os.path.islink(path) or not os.path.isfile(path):
+                continue
+            try:
+                with open(path, 'rb') as f:
+                    magic = f.read(4)
+                if magic != b'\x7fELF':
+                    continue
+                with open(path, 'rb') as f:
+                    data = f.read()
+            except (PermissionError, OSError):
+                continue
+
+            if data[4] != 2 or data[5] != 1:
+                continue
+
+            e_shoff = struct.unpack_from('<Q', data, 40)[0]
+            e_shentsize = struct.unpack_from('<H', data, 58)[0]
+            e_shnum = struct.unpack_from('<H', data, 60)[0]
+
+            dyn_offset = dyn_size = dyn_entsize = 0
+            for i in range(e_shnum):
+                sh_off = e_shoff + i * e_shentsize
+                sh_type = struct.unpack_from('<I', data, sh_off + 4)[0]
+                if sh_type == SHT_DYNAMIC:
+                    dyn_offset = struct.unpack_from('<Q', data, sh_off + 24)[0]
+                    dyn_size = struct.unpack_from('<Q', data, sh_off + 32)[0]
+                    dyn_entsize = struct.unpack_from('<Q', data, sh_off + 56)[0]
+                    break
+
+            if not dyn_offset:
+                continue
+            if not dyn_entsize:
+                dyn_entsize = 16
+
+            has_rpath = False
+            has_needed = False
+            n_entries = dyn_size // dyn_entsize
+
+            # Find .dynstr via .dynamic section's sh_link
+            dynstr_offset_inj = 0
+            for j in range(e_shnum):
+                sh_off_j = e_shoff + j * e_shentsize
+                sh_type_j = struct.unpack_from('<I', data, sh_off_j + 4)[0]
+                if sh_type_j == SHT_DYNAMIC:
+                    sh_link = struct.unpack_from('<I', data, sh_off_j + 40)[0]
+                    dstr_sh = e_shoff + sh_link * e_shentsize
+                    dynstr_offset_inj = struct.unpack_from('<Q', data, dstr_sh + 24)[0]
+                    break
+
+            for i in range(n_entries):
+                ent_off = dyn_offset + i * dyn_entsize
+                d_tag = struct.unpack_from('<q', data, ent_off)[0]
+                if d_tag in (DT_RPATH, DT_RUNPATH):
+                    # Check if the rpath string is non-empty — LLD sometimes
+                    # creates DT_RUNPATH with an empty string
+                    d_val = struct.unpack_from('<Q', data, ent_off + 8)[0]
+                    if dynstr_offset_inj:
+                        str_off = dynstr_offset_inj + d_val
+                        if str_off < len(data) and data[str_off] != 0:
+                            has_rpath = True
+                    else:
+                        has_rpath = True
+                if d_tag == 1:  # DT_NEEDED
+                    has_needed = True
+
+            if has_rpath or not has_needed:
+                continue
+
+            rel = os.path.relpath(directory, dirpath)
+            rpath_parts = []
+            for suffix in lib_suffixes:
+                rpath_parts.append("$ORIGIN/" + os.path.join(rel, suffix))
+            new_rpath = ":".join(rpath_parts)
+            if not new_rpath:
+                continue
+
+            orig_mode = os.stat(path).st_mode
+            os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
+            try:
+                result = subprocess.run(
+                    [patchelf, "--set-rpath", new_rpath, path],
+                    capture_output=True, text=True, timeout=30,
+                    env=patchelf_env,
+                )
+                if result.returncode == 0:
+                    injected += 1
+                else:
+                    skipped.append(os.path.relpath(path, directory))
+            except (subprocess.TimeoutExpired, FileNotFoundError):
+                skipped.append(os.path.relpath(path, directory))
+            os.chmod(path, orig_mode)
+
+    if injected:
+        print(f"  injected RPATH into {injected} binaries via patchelf",
+              file=sys.stderr)
+    if skipped:
+        print(f"  warning: patchelf failed on {len(skipped)} binaries: "
+              f"{', '.join(skipped[:5])}", file=sys.stderr)
+
+
 def _rewrite_rpath(directory):
     """Rewrite RPATH/RUNPATH in ELF binaries to $ORIGIN-relative paths.
 
@@ -227,12 +442,22 @@ def _rewrite_rpath(directory):
                         avail = end - str_off
                         if avail <= 0:
                             continue
+                        old_rpath = data[str_off:end]
+                        # Only rewrite RPATHs that contain the specs
+                        # placeholder or /buckos-rpath.  Leave RPATHs
+                        # that already have $ORIGIN (set by the build
+                        # system, e.g. Rust's x.py install) alone.
+                        if b"$ORIGIN" in old_rpath:
+                            continue
                         if len(new_rpath) <= avail:
                             data[str_off:str_off + len(new_rpath)] = new_rpath
                             for j in range(str_off + len(new_rpath), end):
                                 data[j] = 0
                             modified = True
                         else:
+                            # New value doesn't fit — zero out the
+                            # placeholder; _inject_rpath already handled
+                            # these via patchelf.
                             for j in range(str_off, end):
                                 data[j] = 0
                             modified = True
@@ -301,16 +526,29 @@ def main():
         print("Scrubbing build paths...", file=sys.stderr)
         _scrub_build_paths(stage_copy)
 
-        # GCC specs inject the padded interpreter and RPATH placeholder
-        # into ALL binaries at link time, regardless of whether the build
-        # system passes LDFLAGS.  Every host-tools binary therefore has
-        # a ///.../// interpreter and a padded RPATH placeholder.
+        # Most host-tools binaries are built from source by our GCC with
+        # specs (padded interp + RPATH placeholder).  A few (Perl, glibc
+        # utils) bypass CC or use the host compiler — _pad_elf_interpreter
+        # and _inject_rpath fix those at pack time.
         #
-        # _isolate_glibc moves libc.so.6 et al. from lib64/ to
-        # lib64/glibc/, so LD_LIBRARY_PATH (which includes lib64/) is
-        # safe for host processes.  _rewrite_rpath overwrites the RPATH
-        # placeholder with $ORIGIN-relative paths including lib64/glibc/.
+        # 1. _pad_elf_interpreter: binaries with the standard 27-byte
+        #    interp get padded so unpack can rewrite to bundled ld-linux.
+        #
+        # 2. _inject_rpath: binaries without RPATH (not built by our GCC)
+        #    get $ORIGIN-relative RPATH injected via patchelf.
+        #    Must run BEFORE _isolate_glibc (patchelf needs libc in lib64/).
+        #
+        # 3. _isolate_glibc: move libc.so.6 et al. from lib64/ to
+        #    lib64/glibc/ so LD_LIBRARY_PATH (lib64/) is safe for host
+        #    processes.
+        #
+        # 4. _rewrite_rpath: overwrite the specs RPATH placeholder with
+        #    $ORIGIN-relative paths to lib/, lib64/, lib64/glibc/.
         if has_host_tools:
+            print("Padding ELF interpreters in host-tools...", file=sys.stderr)
+            _pad_elf_interpreter(host_tools_dst)
+            print("Injecting RPATH into host-tools...", file=sys.stderr)
+            _inject_rpath(host_tools_dst)
             print("Isolating glibc from host-tools...", file=sys.stderr)
             _isolate_glibc(host_tools_dst)
             print("Rewriting RPATH in host-tools...", file=sys.stderr)
