@@ -1,0 +1,30 @@
+load("//defs:package.bzl", "package")
+
+# zip - Info-ZIP compression utility
+
+package(
+    build_rule = "autotools",
+    name = "zip",
+    url = "https://downloads.sourceforge.net/infozip/zip30.tar.gz",
+
+    sha256 = "f0e8bb1f9b7eb0b01285495a2699df3a4b766784c1765a8f1aeedf63c0806369",
+    use_configure = {
+        "bzip2": ("--with-bzip2", "--without-bzip2"),
+        "crypt": ("--enable-crypt", "--disable-crypt"),
+        "natspec": ("--enable-natspec", "--disable-natspec"),
+        "unicode": ("--enable-unicode", "--disable-unicode"),
+    },
+    version = "3.0",
+    description = "Info-ZIP compression utility",
+    homepage = "https://infozip.sourceforge.net/Zip.html",
+    license = "Info-ZIP",
+# Makefile-only build, no configure script
+    configure_args = [],
+    post_install_cmds = ["""\
+mkdir -p "$DESTDIR/usr/bin"
+install -m755 zip zipcloak zipnote zipsplit "$DESTDIR/usr/bin/"
+"""],
+    deps = [
+        "//packages/linux/system/libs/compression/bzip2:bzip2",
+    ],
+)

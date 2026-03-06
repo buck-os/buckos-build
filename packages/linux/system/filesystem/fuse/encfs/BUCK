@@ -1,0 +1,21 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cmake",
+    name = "encfs",
+    url = "https://github.com/vgough/encfs/releases/download/v1.9.5/encfs-1.9.5.tar.gz",
+
+    sha256 = "4709f05395ccbad6c0a5b40a4619d60aafe3473b1a79bafb3aa700b1f756fd63",
+    use_configure = {
+        "nls": ("-DENABLE_NLS=ON", "-DENABLE_NLS=OFF"),
+    },
+    version = "1.9.5",
+    description = "FUSE-based encrypted filesystem",
+    homepage = "https://vgough.github.io/encfs/",
+    license = "GPL-3.0",
+    configure_args = [],
+    deps = [
+        "//packages/linux/system/security/encryption:fuse3",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+    ],
+)

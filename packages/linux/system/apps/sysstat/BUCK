@@ -1,0 +1,39 @@
+load("//defs:package.bzl", "package")
+
+# sysstat - System performance monitoring tools
+# USE flags: nls, sensors, debug
+
+package(
+    build_rule = "autotools",
+    name = "sysstat",
+    pre_configure_cmds = ["""
+autoreconf -fi
+"""],
+    version = "12.7.5",
+    url = "https://github.com/sysstat/sysstat/archive/refs/tags/v12.7.5.tar.gz",
+    sha256 = "a4d30e37c0c894214b941b51184723e19d492118c946cfdeac74b6d1f0068016",
+    description = "System performance monitoring tools",
+    homepage = "https://github.com/sysstat/sysstat",
+    license = "GPL-2.0-or-later",
+    use_configure = {
+        "dcron": ("--enable-dcron", "--disable-dcron"),
+        "debug": ("--enable-debug", "--disable-debug"),
+        "lm-sensors": ("--enable-lm-sensors", "--disable-lm-sensors"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "sensors": ("--enable-sensors", "--disable-sensors"),
+        "systemd": ("--enable-systemd", "--disable-systemd"),
+    },
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "sa_dir=/var/log/sa",
+        "conf_dir=/etc/sysstat",
+    ],
+    deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+        "//packages/linux/dev-libs/misc/gettext:gettext",
+    ],
+)

@@ -46,6 +46,14 @@ package(
         # types work without a terminfo directory.
         "--with-fallbacks=xterm,linux,vt100,vt220,screen,xterm-256color,tmux,tmux-256color",
     ],
+
+    # Fix cross-compiled tic needing glibc 2.42 (host has 2.41)
+    # Replace run_tic.sh with no-op so install.data skips tic invocation.
+    # With --with-fallbacks, essential terminfo entries (linux, xterm, vt100, etc.)
+    # are compiled directly into the library, so external terminfo files aren't required.
+    pre_build_cmds = [
+        "printf '#!/bin/sh\\nexit 0\\n' > misc/run_tic.sh",
+    ],
     # Skip install.data (tic terminfo compilation) — tic is cross-compiled
     # and can't run on the build host.  Fallback entries cover basic use.
     install_targets = ["install.libs", "install.progs", "install.includes", "install.man"],

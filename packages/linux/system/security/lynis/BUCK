@@ -1,0 +1,32 @@
+load("//defs:package.bzl", "package")
+
+package(
+    name = "lynis",
+    build_rule = "autotools",
+    skip_configure = True,
+    url = "https://github.com/CISOfy/lynis/archive/refs/tags/3.0.9.tar.gz",
+
+    sha256 = "520eb76aee5d350c2a7265414bae302077cd70ed5a0aaf61dec9e43a968b1727",
+    use_configure = {
+        "cron": ("--enable-cron", "--disable-cron"),
+        "systemd": ("--enable-systemd", "--disable-systemd"),
+    },
+    version = "3.0.9",
+    description = "Security auditing tool for Unix/Linux systems",
+    homepage = "https://cisofy.com/lynis/",
+    license = "GPL-3.0",
+    make_args = [],
+    post_install_cmds = ["""
+        mkdir -p $OUT/usr/bin
+        mkdir -p $OUT/usr/share/lynis
+        mkdir -p $OUT/etc/lynis
+        mkdir -p $OUT/var/log/lynis
+
+        cp -r db include plugins $OUT/usr/share/lynis/
+        cp lynis $OUT/usr/bin/lynis
+        chmod 755 $OUT/usr/bin/lynis
+
+        # Install default profile
+        cp default.prf $OUT/etc/lynis/
+    """],
+)

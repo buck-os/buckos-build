@@ -1,0 +1,88 @@
+load("//defs:package.bzl", "package")
+
+# =============================================================================
+# initramfs-tools - Debian initramfs generator
+# =============================================================================
+# The standard Debian/Ubuntu initramfs generator.
+# Uses hook-based architecture with scripts in /etc/initramfs-tools.
+
+package(
+    build_rule = "autotools",
+    name = "initramfs-tools",
+    url = "https://mirror.buckos.org/i/initramfs-tools-v0.142.tar.gz",
+
+    sha256 = "27a78cc25acc3ca3d9c78deca165bf001b09b260ce25a3f3756e47a0e7bc0554",
+    version = "0.142",
+    description = "Generic initramfs generation tool (Debian/Ubuntu default)",
+    homepage = "https://salsa.debian.org/kernel-team/initramfs-tools",
+    license = "GPL-2.0",
+# Uses Makefile
+    configure_args = [],
+    make_args = [],
+    post_install_cmds = ["""
+# Install using make
+make DESTDIR=$OUT install
+
+# Create configuration directories
+mkdir -p $OUT/etc/initramfs-tools/conf.d
+mkdir -p $OUT/etc/initramfs-tools/hooks
+mkdir -p $OUT/etc/initramfs-tools/scripts/init-top
+mkdir -p $OUT/etc/initramfs-tools/scripts/init-premount
+mkdir -p $OUT/etc/initramfs-tools/scripts/local-top
+mkdir -p $OUT/etc/initramfs-tools/scripts/local-premount
+mkdir -p $OUT/etc/initramfs-tools/scripts/local-bottom
+mkdir -p $OUT/etc/initramfs-tools/scripts/init-bottom
+mkdir -p $OUT/usr/share/initramfs-tools/hooks
+mkdir -p $OUT/usr/share/initramfs-tools/scripts
+
+# Create default configuration
+cat > $OUT/etc/initramfs-tools/initramfs.conf << 'EOF'
+# initramfs.conf - Configuration for initramfs-tools
+
+# MODULES: Specifies which modules should be included
+# Most systems want "most" or "dep"
+#   most - include most filesystem and storage drivers
+#   dep - include only what's needed for this system
+#   netboot - include modules needed for NFS root
+#   list - only the modules from /etc/initramfs-tools/modules
+MODULES=most
+
+# BUSYBOX: Include busybox in initramfs (auto/yes/no)
+BUSYBOX=auto
+
+# KEYMAP: Include a keymap in initramfs (yes/no)
+KEYMAP=n
+
+# COMPRESS: Compression algorithm (gzip, bzip2, lz4, lzma, lzop, xz, zstd)
+COMPRESS=zstd
+
+# DEVICE: Root device to mount (required only if not using UUID)
+# DEVICE=
+
+# NFSROOT: NFS server for netboot
+# NFSROOT=auto
+
+# RUNSIZE: Size of /run in the initramfs (in bytes, or with suffix like 10%)
+RUNSIZE=10%
+EOF
+
+# Create modules list file
+cat > $OUT/etc/initramfs-tools/modules << 'EOF'
+# List of modules to include in initramfs
+# One module per line, optionally followed by parameters
+EOF
+"""],
+    deps = [
+        "//packages/linux/system/libs/kmod:kmod",
+        "//packages/linux/core/bash:bash",
+        "//packages/linux/system/apps/coreutils:coreutils",
+        "//packages/linux/core/util-linux:util-linux",
+    ],
+)
+
+# update-initramfs - Wrapper script (part of initramfs-tools)
+# This is typically bundled with initramfs-tools but listed here for clarity
+alias(
+    name = "update-initramfs",
+    actual = ":initramfs-tools",
+)

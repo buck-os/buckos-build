@@ -1,0 +1,27 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "mdadm",
+    url = "https://mirrors.edge.kernel.org/pub/linux/utils/raid/mdadm/mdadm-4.3.tar.xz",
+
+    sha256 = "416727ae1f1080ea6e3090cea36dd076826fc369151e36ab736557ba92196f9f",
+    use_configure = {
+        "corosync": ("--enable-corosync", "--disable-corosync"),
+        "static": ("--enable-static", "--disable-static"),
+        "systemd": ("--enable-systemd", "--disable-systemd"),
+        "udev": ("--enable-udev", "--disable-udev"),
+    },
+    version = "4.3",
+    description = "Tool for managing Linux software RAID arrays",
+    homepage = "https://git.kernel.org/pub/scm/utils/mdadm/mdadm.git",
+    license = "GPL-2.0",
+    configure_args = [],
+    make_args = [
+        "BINDIR=/sbin",
+        "UDEVDIR=/lib/udev",
+    ],
+    deps = [
+        "//packages/linux/system/init/eudev:eudev",
+    ],
+)

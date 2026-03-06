@@ -1,0 +1,34 @@
+load("//defs:package.bzl", "package")
+
+# lshw - Hardware Lister
+# Provides detailed information about the hardware configuration
+
+package(
+    name = "lshw",
+    build_rule = "autotools",
+    skip_configure = True,
+    url = "https://www.ezix.org/software/files/lshw-B.02.20.tar.gz",
+
+    sha256 = "06d9cf122422220e5dc94e8ea5b01816a69bb6b59368f63d7f21fff31fc6922a",
+    use_configure = {
+        "gtk": ("--enable-gtk", "--disable-gtk"),
+        "sqlite": ("--enable-sqlite", "--disable-sqlite"),
+        "static": ("--enable-static", "--disable-static"),
+    },
+    version = "B.02.20",
+    description = "Hardware lister - provides detailed hardware information",
+    homepage = "https://www.ezix.org/project/wiki/HardwareLiSter",
+    license = "GPL-2.0",
+    make_args = [
+        "PREFIX=/usr",
+        "SBINDIR=/usr/sbin",
+        "MANDIR=/usr/share/man",
+        "DATADIR=/usr/share",
+        "RPM_OPT_FLAGS=",
+    ],
+    post_install_cmds = ["""
+        make DESTDIR=$OUT PREFIX=/usr SBINDIR=/usr/sbin install
+    """],
+    deps = [
+    ],
+)

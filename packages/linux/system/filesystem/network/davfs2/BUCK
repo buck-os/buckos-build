@@ -1,0 +1,25 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "davfs2",
+    url = "https://github.com/alisarctl/davfs2/archive/refs/tags/rel-1-7-2.tar.gz",
+
+    sha256 = "6511fd787315840ffa8bd365837126a116c854f5f060ac349734bdef7cde07a2",
+    version = "1.7.2",
+    description = "WebDAV filesystem driver (mount.davfs)",
+    homepage = "https://savannah.nongnu.org/projects/davfs2",
+    license = "GPL-3.0",
+    pre_configure_cmds = ["""
+autoreconf -fiv
+"""],
+    configure_args = [],
+    deps = [
+        "//packages/linux/system/security/encryption:fuse3",
+                "//packages/linux/system/libs/network/curl:curl",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-libs/misc/gettext:gettext"
+    ],
+)

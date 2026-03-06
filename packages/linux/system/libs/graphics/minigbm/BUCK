@@ -1,0 +1,33 @@
+load("//defs:package.bzl", "package")
+
+# NOTE: Using intel/minigbm GitHub mirror as chromium.googlesource blocks CI/CD
+package(
+    name = "minigbm",
+    build_rule = "autotools",
+    skip_configure = True,
+    url = "https://github.com/intel/minigbm/archive/refs/heads/master.tar.gz",
+
+    sha256 = "8244c0eea5c9fb39a8f8bf8c8e7522b171a83cb6bf2c402719d86ab5bb0dc87a",
+    version = "main",
+    description = "Mini GBM implementation for ChromeOS",
+    homepage = "https://chromium.googlesource.com/chromiumos/platform/minigbm",
+    license = "BSD-3-Clause",
+    env = {
+        # Disable problematic drivers that require platform-specific headers
+        # Only build generic/minimal drivers: evdi, nouveau, udl, vgem, virtio_gpu
+        # Disabled: DRV_I915 (requires i915_private.h functions)
+        #           DRV_AMDGPU, DRV_EXYNOS, DRV_MARVELL, DRV_MEDIATEK
+        #           DRV_MESON, DRV_MSM, DRV_RADEON, DRV_ROCKCHIP
+        #           DRV_SYNAPTICS, DRV_TEGRA, DRV_VC4
+        "CFLAGS": "${CFLAGS:-} -Wno-error -Wno-implicit-function-declaration -Wno-maybe-uninitialized",
+    },
+    make_args = [
+        "DESTDIR=$DESTDIR",
+        "PREFIX=/usr",
+        "LIBDIR=/usr/lib",
+    ],
+    deps = [
+        "//packages/linux/desktop/libdrm:libdrm",
+                "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config"
+    ],
+)

@@ -1,0 +1,35 @@
+load("//defs:package.bzl", "package")
+
+package(
+    name = "squashfs-tools-4.5.1",
+    build_rule = "autotools",
+    skip_configure = True,
+    url = "https://github.com/plougher/squashfs-tools/archive/refs/tags/4.5.1.tar.gz",
+
+    sha256 = "277b6e7f75a4a57f72191295ae62766a10d627a4f5e5f19eadfbc861378deea7",
+    version = "4.5.1",
+    description = "Tools for creating and extracting SquashFS filesystems",
+    homepage = "https://github.com/plougher/squashfs-tools",
+    license = "GPL-2.0",
+    pre_configure_cmds = ["""
+cd squashfs-tools
+"""],
+    make_args = [
+        "GZIP_SUPPORT=1",
+        "XZ_SUPPORT=1",
+        "LZ4_SUPPORT=1",
+        "ZSTD_SUPPORT=1",
+        "XATTR_SUPPORT=1",
+    ],
+    post_install_cmds = ["""\
+mkdir -p $DESTDIR/usr/bin
+install -m755 mksquashfs $DESTDIR/usr/bin/
+install -m755 unsquashfs $DESTDIR/usr/bin/
+"""],
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/compression/xz:xz",
+        "//packages/linux/system/libs/compression/lz4:lz4",
+        "//packages/linux/system/libs/compression/zstd:zstd",
+    ],
+)

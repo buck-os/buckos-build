@@ -1,0 +1,30 @@
+load("//defs:package.bzl", "package")
+
+# hwinfo - Hardware Information
+# Probes for hardware and shows detailed information
+
+package(
+    name = "hwinfo",
+    build_rule = "autotools",
+    skip_configure = True,
+    url = "https://github.com/openSUSE/hwinfo/archive/refs/tags/23.2.tar.gz",
+
+    sha256 = "1ffc00d07aa1ad766e861d0d8492e2d2fa52cf537807f34e1c80e8c2d56c7115",
+    version = "23.2",
+    description = "Hardware detection tool from openSUSE",
+    homepage = "https://github.com/openSUSE/hwinfo",
+    license = "GPL-2.0",
+    pre_configure_cmds = ["""
+# Create VERSION file expected by the build system
+echo "23.2" > VERSION
+"""],
+    make_args = [
+        "PREFIX=/usr",
+        "LIBDIR=/usr/lib",
+    ],
+    post_install_cmds = ["""
+        make DESTDIR=$OUT PREFIX=/usr LIBDIR=/usr/lib install
+    """],
+    deps = [
+    ],
+)

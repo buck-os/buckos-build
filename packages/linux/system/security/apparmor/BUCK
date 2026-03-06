@@ -1,0 +1,47 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "apparmor",
+    url = "https://gitlab.com/apparmor/apparmor/-/archive/v3.1.6/apparmor-v3.1.6.tar.gz",
+
+    sha256 = "a7899f1529ad7f1e33fb07109075be3827edf43997040ecdec601590748f1039",
+    version = "3.1.6",
+    description = "AppArmor userspace utilities and profiles",
+    homepage = "https://apparmor.net/",
+    license = "GPL-2.0",
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--with-perl",
+        "--with-python",
+    ],
+    make_args = ["-C", "libraries/libapparmor"],
+    post_install_cmds = ["""
+        # Install libapparmor
+        cd libraries/libapparmor
+        make DESTDIR=$OUT install
+        cd ../..
+
+        # Install parser
+        cd parser
+        make DESTDIR=$OUT install
+        cd ..
+
+        # Install utilities
+        cd utils
+        make DESTDIR=$OUT install
+        cd ..
+
+        # Install profiles
+        cd profiles
+        make DESTDIR=$OUT install
+        cd ..
+
+        mkdir -p $OUT/etc/apparmor.d
+        mkdir -p $OUT/var/lib/apparmor
+    """],
+    deps = [
+        "//packages/linux/lang/python:python",
+    ],
+)

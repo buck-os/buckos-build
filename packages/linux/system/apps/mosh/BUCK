@@ -1,0 +1,37 @@
+load("//defs:package.bzl", "package")
+
+# mosh - Mobile shell with roaming and intelligent local echo
+# USE flags: hardening, ufw, utempter
+
+package(
+    build_rule = "autotools",
+    name = "mosh",
+    version = "1.4.0",
+    url = "https://github.com/mobile-shell/mosh/releases/download/mosh-1.4.0/mosh-1.4.0.tar.gz",
+    sha256 = "872e4b134e5df29c8933dff12350785054d2fd2839b5ae6b5587b14db1465ddd",
+    description = "Mobile shell with roaming and intelligent local echo",
+    homepage = "https://mosh.org",
+    license = "GPL-3+",
+    use_configure = {
+        "client": ("--enable-client", "--disable-client"),
+        "debug": ("--enable-debug", "--disable-debug"),
+        "examples": ("--enable-examples", "--disable-examples"),
+        "hardened": ("--enable-hardening", "--disable-hardening"),
+        "hardening": ("--enable-hardening", "--disable-hardening"),
+        "nettle": ("--enable-nettle", "--disable-nettle"),
+        "server": ("--enable-server", "--disable-server"),
+        "syslog": ("--enable-syslog", "--disable-syslog"),
+        "ufw": ("--enable-ufw", "--disable-ufw"),
+        "utempter": ("--enable-utempter", "--disable-utempter"),
+    },
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+    ],
+    deps = [
+        "//packages/linux/system/terminal/ncurses:ncurses",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/dev-libs/serialization/protobuf:protobuf",
+        "//packages/linux/core/zlib:zlib",
+    ],
+)

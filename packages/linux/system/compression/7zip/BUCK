@@ -1,0 +1,22 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "binary",
+    name = "7zip",
+    version = "24.09",
+    url = "https://7-zip.org/a/7z2409-src.tar.xz",
+    sha256 = "49c05169f49572c1128453579af1632a952409ced028259381dac30726b6133a",
+    description = "7-Zip file archiver with high compression ratio",
+    homepage = "https://www.7-zip.org/",
+    license = "LGPL-2.1",
+    install_script = """
+        cd "$SRCS/CPP/7zip/Bundles/Alone2"
+        make -f ../../cmpl_gcc.mak -j${MAKEOPTS:-$(nproc)}
+
+        # Install
+        mkdir -p "$OUT/usr/bin"
+        cp _o/7zz "$OUT/usr/bin/" || cp b/g/7zz "$OUT/usr/bin/"
+        ln -sf 7zz "$OUT/usr/bin/7z"
+    """,
+    deps = [],
+)

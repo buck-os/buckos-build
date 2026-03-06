@@ -1,0 +1,30 @@
+load("//defs:package.bzl", "package")
+
+# talloc - Memory allocator from Samba project
+package(
+    build_rule = "autotools",
+    name = "talloc",
+    # talloc uses waf (Python-based build system), not autoconf
+    # The ./configure script is a waf wrapper
+    url = "https://www.samba.org/ftp/talloc/talloc-2.4.3.tar.gz",
+
+    sha256 = "dc46c40b9f46bb34dd97fe41f548b0e8b247b77a918576733c528e83abd854dd",
+    use_configure = {
+        "compat": ("--enable-compat", "--disable-compat"),
+        "python": ("--enable-python", "--disable-python"),
+        "valgrind": ("--enable-valgrind", "--disable-valgrind"),
+    },
+    version = "2.4.3",
+    description = "Hierarchical pool based memory allocator with destructors",
+    homepage = "https://talloc.samba.org/",
+    license = "LGPL-3.0",
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--disable-python",
+    ],
+    # Custom phases for waf build system
+    # Samba's waf configure wrapper script generates a Makefile
+    deps = [
+    ],
+)

@@ -1,0 +1,35 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "ipxe",
+    version = "1.21.1",
+    use_configure = {
+        "binary": ("--enable-binary", "--disable-binary"),
+        "ipv6": ("--enable-ipv6", "--disable-ipv6"),
+        "iso": ("--enable-iso", "--disable-iso"),
+        "lkrn": ("--enable-lkrn", "--disable-lkrn"),
+        "qemu": ("--enable-qemu", "--disable-qemu"),
+        "uefi32": ("--enable-uefi32", "--disable-uefi32"),
+        "uefi64": ("--enable-uefi64", "--disable-uefi64"),
+        "undi": ("--enable-undi", "--disable-undi"),
+        "usb": ("--enable-usb", "--disable-usb"),
+        "vmware": ("--enable-vmware", "--disable-vmware"),
+    },
+    url = "https://github.com/ipxe/ipxe/archive/refs/tags/v1.21.1.tar.gz",
+    sha256 = "16e8d51c48d8a120332cf0dc32b473acc5d179e3975ced208eb21caf3b6528dc",
+    description = "Open source network boot firmware (PXE)",
+    homepage = "https://ipxe.org/",
+    license = "GPL-2.0",
+    post_install_cmds = ["""\
+mkdir -p "$DESTDIR/usr/share/ipxe"
+cp -v src/bin-x86_64-efi/*.efi "$DESTDIR/usr/share/ipxe/" 2>/dev/null || true
+cp -v src/bin/*.iso "$DESTDIR/usr/share/ipxe/" 2>/dev/null || true
+cp -v src/bin/*.usb "$DESTDIR/usr/share/ipxe/" 2>/dev/null || true
+cp -v src/bin/*.kpxe "$DESTDIR/usr/share/ipxe/" 2>/dev/null || true
+mkdir -p "$DESTDIR/usr/share/doc/ipxe"
+cp -v README COPYING* "$DESTDIR/usr/share/doc/ipxe/" 2>/dev/null || true
+"""],
+    labels = ["buckos:firmware"],
+    deps = [],
+)

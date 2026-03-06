@@ -1,0 +1,132 @@
+load("//defs:package.bzl", "package")
+
+# =============================================================================
+# Documentation Tools
+# =============================================================================
+
+# man-db - Man page database and utilities
+package(
+    name = "man-db",
+    build_rule = "autotools",
+    skip_configure = True,
+    url = "https://mirror.csclub.uwaterloo.ca/nongnu/man-db/man-db-2.12.0.tar.xz",
+
+    sha256 = "415a6284a22764ad22ff0f66710d853be7790dd451cd71436e3d25c74d996a95",
+    use_configure = {
+        "manpager": ("--enable-manpager", "--disable-manpager"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "seccomp": ("--enable-seccomp", "--disable-seccomp"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "static-libs": ("--enable-static", "--disable-static"),
+        "zlib": ("--with-zlib", "--without-zlib"),
+    },
+    version = "2.12.0",
+    description = "Man page database and utilities",
+    homepage = "https://man-db.nongnu.org/",
+    license = "GPL-2.0-or-later",
+    deps = [
+        "//packages/linux/core/less:less",
+        "//packages/linux/system/docs:libpipeline",
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/docs:groff",
+        "//packages/linux/system/docs:gdbm",
+    ],
+)
+
+# man-pages - Linux man pages collection
+package(
+    name = "man-pages",
+    build_rule = "autotools",
+    skip_configure = True,
+    url = "https://mirrors.edge.kernel.org/pub/linux/docs/man-pages/man-pages-6.06.tar.xz",
+
+    sha256 = "bd6f89cf26d2262567dac41d2640fc3667f240cb658079530141e372c8581928",
+    version = "6.06",
+    description = "Linux kernel and C library interface man pages",
+    homepage = "https://www.kernel.org/doc/man-pages/",
+    license = "GPL-2.0-or-later AND BSD-3-Clause AND MIT",
+    make_args = [],
+    post_install_cmds = ["""
+        make prefix="$OUT/usr" install
+    """],
+    deps = [],
+)
+
+# groff - GNU troff text formatting system
+package(
+    name = "groff",
+    build_rule = "autotools",
+    skip_configure = True,
+    url = "https://mirrors.kernel.org/gnu/groff/groff-1.23.0.tar.gz",
+
+    sha256 = "6b9757f592b7518b4902eb6af7e54570bdccba37a871fddb2d30ae3863511c13",
+    version = "1.23.0",
+    description = "GNU troff text formatting system",
+    homepage = "https://www.gnu.org/software/groff/",
+    license = "GPL-3.0-or-later",
+    deps = [
+    ],
+)
+
+# libpipeline - Pipeline manipulation library
+package(
+    name = "libpipeline",
+    build_rule = "autotools",
+    skip_configure = True,
+    url = "https://mirror.csclub.uwaterloo.ca/nongnu/libpipeline/libpipeline-1.5.7.tar.gz",
+
+    sha256 = "b8b45194989022a79ec1317f64a2a75b1551b2a55bea06f67704cb2a2e4690b0",
+    version = "1.5.7",
+    description = "C library for manipulating pipelines of processes",
+    homepage = "https://libpipeline.nongnu.org/",
+    license = "GPL-2.0-or-later",
+    deps = [],
+)
+
+# gdbm - GNU database manager
+package(
+    name = "gdbm",
+    build_rule = "autotools",
+    skip_configure = True,
+    url = "https://mirrors.kernel.org/gnu/gdbm/gdbm-1.23.tar.gz",
+
+    sha256 = "74b1081d21fff13ae4bd7c16e5d6e504a4c26f7cde1dca0d963a484174bbcacd",
+    version = "1.23",
+    description = "GNU database manager library",
+    homepage = "https://www.gnu.org/software/gdbm/",
+    license = "GPL-3.0-or-later",
+    deps = [
+        "//packages/linux/system/terminal/readline:readline",
+        "//packages/linux/system/terminal/ncurses:ncurses",
+    ],
+)
+
+# texinfo - GNU documentation system
+package(
+    name = "texinfo",
+    build_rule = "autotools",
+    skip_configure = True,
+    url = "https://mirrors.kernel.org/gnu/texinfo/texinfo-7.2.tar.xz",
+
+    sha256 = "0329d7788fbef113fa82cb80889ca197a344ce0df7646fe000974c5d714363a6",
+    version = "7.2",
+    description = "GNU documentation system for producing online and printed manuals",
+    homepage = "https://www.gnu.org/software/texinfo",
+    license = "GPL-3.0-or-later",
+    deps = [
+        "//packages/linux/system/terminal/ncurses:ncurses",
+    ],
+)
+
+# Filegroup for all documentation packages
+filegroup(
+    name = "docs",
+    srcs = [
+        ":man-db",
+        ":man-pages",
+        ":groff",
+        ":gdbm",
+        ":texinfo",
+    ],
+    default_target_platform = "//platforms:linux-target",
+)

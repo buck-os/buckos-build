@@ -1,0 +1,23 @@
+load("//defs:package.bzl", "package")
+
+# unzip - Info-ZIP extraction utility for .zip archives
+
+# unzip uses a Makefile, not autotools
+# Old C code has format string issues that trigger -Werror=format-security
+package(
+    build_rule = "autotools",
+    name = "unzip",
+    url = "https://downloads.sourceforge.net/infozip/unzip60.tar.gz",
+
+    sha256 = "036d96991646d0449ed0aa952e4fbe21b476ce994abc276e49d30e686708bd37",
+    use_configure = {
+        "bzip2": ("--with-bzip2", "--without-bzip2"),
+        "natspec": ("--enable-natspec", "--disable-natspec"),
+        "unicode": ("--enable-unicode", "--disable-unicode"),
+    },
+    version = "6.0",
+    description = "Info-ZIP extraction utility for .zip archives",
+    homepage = "https://infozip.sourceforge.net/UnZip.html",
+    license = "Info-ZIP",
+    env = {"CFLAGS": "-O2 -Wno-format-security -Wno-implicit-function-declaration -Wno-old-style-definition -Wno-implicit-int"},
+)

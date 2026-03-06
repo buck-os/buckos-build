@@ -1,0 +1,44 @@
+load("//defs:package.bzl", "package")
+
+# salt - Infrastructure automation and configuration management
+package(
+    build_rule = "binary",
+    name = "salt",
+    version = "3007.0",
+    url = "https://github.com/saltstack/salt/archive/refs/tags/v3007.0.tar.gz",
+    sha256 = "22f738426d9e37f0e8b4570d6cf87a1499473f0772b2c3567c848cb80c1cf71e",
+    description = "Infrastructure automation and configuration management",
+    homepage = "https://saltproject.io",
+    license = "Apache-2.0",
+    install_script = """
+        cd $SRCS
+
+        # Find Python with pip from dependency
+        PYTHON_CMD=""
+        IFS=':' read -ra _dep_array <<< "${DEP_BASE_DIRS:-}"
+        for dep in "${_dep_array[@]}"; do
+            if [ -x "$dep/usr/bin/python3" ]; then
+                # Check if this Python has pip
+                if "$dep/usr/bin/python3" -m pip --version >/dev/null 2>&1; then
+                    PYTHON_CMD="$dep/usr/bin/python3"
+                    break
+                fi
+            fi
+        done
+
+        if [ -z "$PYTHON_CMD" ]; then
+            # Fall back to system python with pip
+            if python3 -m pip --version >/dev/null 2>&1; then
+                PYTHON_CMD="python3"
+            else
+                echo "Error: No Python with pip module found"
+                exit 1
+            fi
+        fi
+
+        $PYTHON_CMD -m pip install --prefix=/usr --root="$OUT" .
+    """,
+    deps = [
+        "//packages/linux/lang/python:python",
+    ],
+)

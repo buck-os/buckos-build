@@ -1,0 +1,26 @@
+load("//defs:package.bzl", "package")
+
+# -----------------------------------------------------------------------------
+# s6-linux-init - Set of tools to create a s6-based init system
+# -----------------------------------------------------------------------------
+
+package(
+    build_rule = "autotools",
+    name = "s6-linux-init",
+    url = "https://skarnet.org/software/s6-linux-init/s6-linux-init-1.1.2.0.tar.gz",
+
+    sha256 = "11ae08d0a66210b5e56b6baee0f6b9b1b69fbedb05fda1285b115a31ca46c77f",
+    use_configure = {
+        "sysv-utils": ("--enable-sysv-utils", "--disable-sysv-utils"),
+    },
+    version = "1.1.2.0",
+    description = "Set of tools to create a s6-based init system",
+    homepage = "https://skarnet.org/software/s6-linux-init/",
+    license = "ISC",
+    # skarnet.org uses non-standard configure - custom src_configure phase
+    deps = [
+        "//packages/linux/system/init/skalibs:skalibs",
+        "//packages/linux/system/init/s6:s6",
+        "//packages/linux/system/init/execline:execline",
+    ],
+)

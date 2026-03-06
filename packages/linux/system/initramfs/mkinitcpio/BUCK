@@ -1,0 +1,66 @@
+load("//defs:package.bzl", "package")
+
+# =============================================================================
+# mkinitcpio - Arch Linux initramfs creation utility
+# =============================================================================
+# Modular initramfs generator with hook-based system.
+# Known for simplicity, speed, and excellent documentation.
+
+package(
+    build_rule = "autotools",
+    name = "mkinitcpio",
+    url = "https://github.com/archlinux/mkinitcpio/archive/refs/tags/v38.tar.gz",
+
+    sha256 = "a5a6b6877fda57aaf26b7ebc738ef1dc510d54efb16ede58519b55a1a08028b4",
+    version = "38",
+    description = "Modular initramfs image creation utility (Arch Linux default)",
+    homepage = "https://gitlab.archlinux.org/archlinux/mkinitcpio/mkinitcpio",
+    license = "GPL-2.0",
+# Uses Makefile directly
+    configure_args = [],
+    make_args = [
+        "PREFIX=/usr",
+    ],
+    post_install_cmds = ["""
+# Install using make
+make DESTDIR=$OUT PREFIX=/usr install
+
+# Create configuration directories
+mkdir -p $OUT/etc/mkinitcpio.d
+mkdir -p $OUT/usr/lib/initcpio/hooks
+mkdir -p $OUT/usr/lib/initcpio/install
+
+# Create default configuration
+cat > $OUT/etc/mkinitcpio.conf << 'EOF'
+# mkinitcpio configuration file
+
+# MODULES - Modules to add to the initramfs
+MODULES=()
+
+# BINARIES - Additional binaries to add
+BINARIES=()
+
+# FILES - Additional files to add
+FILES=()
+
+# HOOKS - Build hooks to run
+# Order matters: base and udev should come first
+HOOKS=(base udev autodetect modconf kms keyboard keymap consolefont block filesystems fsck)
+
+# COMPRESSION - Compression algorithm
+COMPRESSION="zstd"
+#COMPRESSION_OPTIONS=()
+EOF
+
+# Create preset directory
+mkdir -p $OUT/etc/mkinitcpio.d
+"""],
+    deps = [
+        "//packages/linux/system/libs/kmod:kmod",
+        "//packages/linux/core/bash:bash",
+        "//packages/linux/system/apps/coreutils:coreutils",
+        "//packages/linux/core/util-linux:util-linux",
+        "//packages/linux/system/libs/compression/xz:xz",
+        "//packages/linux/system/libs/cpio:cpio",
+    ],
+)

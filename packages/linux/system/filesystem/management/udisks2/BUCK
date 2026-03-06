@@ -1,0 +1,22 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "udisks2",
+    url = "https://github.com/storaged-project/udisks/releases/download/udisks-2.10.1/udisks-2.10.1.tar.bz2",
+
+    sha256 = "b75734ccf602540dedb4068bec206adcb508a4c003725e117ae8f994d92d8ece",
+    version = "2.10.1",
+    description = "Disk management service and tools",
+    homepage = "https://github.com/storaged-project/udisks",
+    license = "GPL-2.0",
+    configure_args = [
+        "--disable-man",
+        "--disable-gtk-doc",
+    ],
+    deps = [
+        "//packages/linux/core/util-linux:util-linux",
+        "//packages/linux/system/filesystem/management/lvm2:lvm2",
+        "//packages/linux/system/init/eudev:eudev",
+    ],
+)

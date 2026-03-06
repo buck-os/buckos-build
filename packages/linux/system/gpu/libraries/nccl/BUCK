@@ -1,0 +1,15 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cmake",
+    name = "nccl",
+    version = "2.28.3",
+    url = "https://github.com/NVIDIA/nccl/archive/refs/tags/v2.28.3-1.tar.gz",
+    sha256 = "888b305a79954b67022cfdd91aec515e88c9fed7ddbd2fb96af4ee3295853bb0",
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DCMAKE_CUDA_ARCHITECTURES=70;75;80;86;89;90",
+    ],
+    labels = ["buckos:hw:cuda"],
+)

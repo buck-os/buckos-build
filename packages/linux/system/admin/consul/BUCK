@@ -1,0 +1,16 @@
+load("//defs:package.bzl", "package")
+
+# consul - Service mesh and service discovery
+package(
+    build_rule = "go",
+    name = "consul",
+    version = "1.17.3",
+    url = "https://github.com/hashicorp/consul/archive/refs/tags/v1.17.3.tar.gz",
+    sha256 = "bf574ddca90ba820ce1637dae7b648940ed06dbf8a3fe9781b8270b6bf38b9c4",
+    description = "Service mesh and service discovery solution",
+    homepage = "https://www.consul.io",
+    license = "BUSL-1.1",
+    deps = [
+        "//packages/linux/lang/go:go",
+    ],
+)

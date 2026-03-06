@@ -1,0 +1,30 @@
+load("//defs:package.bzl", "package")
+
+# metalog - Modern replacement for syslogd and klogd
+
+package(
+    build_rule = "autotools",
+    name = "metalog",
+    version = "20230719",
+    url = "https://github.com/hvisage/metalog/archive/metalog-20230719.tar.gz",
+    sha256 = "563b41409ee9e396c3709f002b59ccd9aff901b7d7e3adee6344e4b599a02105",
+    description = "Modern replacement for syslogd and klogd",
+    homepage = "https://github.com/hvisage/metalog",
+    license = "GPL-2.0",
+    use_configure = {},
+    pre_configure_cmds = ["""
+# GitHub archive does not include pre-generated configure script
+autoreconf -fi
+"""],
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+    ],
+    deps = [
+        "//packages/linux/system/libs/utility/pcre2:pcre2",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config"
+    ],
+)

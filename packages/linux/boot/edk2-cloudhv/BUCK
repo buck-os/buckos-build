@@ -1,0 +1,52 @@
+load("//defs:package.bzl", "package")
+
+# EDK2 Cloud Hypervisor Firmware (CLOUDHV)
+#
+# UEFI firmware for Cloud Hypervisor.
+# This provides full UEFI boot support for Cloud Hypervisor VMs,
+# including Secure Boot capabilities.
+#
+# Build output: CLOUDHV.fd
+# Install location: /usr/share/cloud-hypervisor/CLOUDHV.fd
+#
+# Note: EDK2 is a complex build that requires specific toolchain setup.
+# This package builds only the CLOUDHV platform target.
+
+package(
+    name = "edk2-cloudhv",
+    build_rule = "autotools",
+    skip_configure = True,
+    version = "202411",
+    url = "https://github.com/tianocore/edk2/archive/refs/tags/edk2-stable202411.tar.gz",
+    sha256 = "FIXME",
+    description = "UEFI firmware for Cloud Hypervisor (EDK2 CLOUDHV)",
+    homepage = "https://github.com/tianocore/edk2",
+    license = "BSD-2-Clause",
+    deps = [
+        "//packages/linux/lang/python:python",
+        "//packages/linux/dev-tools/nasm:nasm",
+        "//packages/linux/dev-tools/acpica:iasl",
+    ],
+    # EDK2 requires submodule initialization and specific build setup
+    post_install_cmds = ["""\
+mkdir -p "$D/usr/share/cloud-hypervisor"
+
+# The built firmware is in Build/CloudHvX64/RELEASE_GCC5/FV/
+FW_PATH="Build/CloudHvX64/RELEASE_GCC5/FV/CLOUDHV.fd"
+if [ -f "$FW_PATH" ]; then
+    install -m 0644 "$FW_PATH" "$D/usr/share/cloud-hypervisor/CLOUDHV.fd"
+else
+    echo "Warning: CLOUDHV.fd not found at expected path"
+    # Try alternative paths
+    find Build -name "CLOUDHV.fd" -exec install -m 0644 {} "$D/usr/share/cloud-hypervisor/" \\;
+fi
+"""],
+    labels = ["buckos:firmware"],
+)
+
+# Export the firmware file for use in boot scripts
+export_file(
+    name = "cloudhv-fd",
+    src = ":edk2-cloudhv",
+    default_target_platform = "//platforms:linux-target",
+)

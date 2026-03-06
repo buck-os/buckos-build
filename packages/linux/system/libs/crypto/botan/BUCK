@@ -1,0 +1,31 @@
+load("//defs:package.bzl", "package")
+
+# Botan - C++ cryptography library
+
+package(
+    build_rule = "cmake",
+    name = "botan",
+    version = "3.6.1",
+    url = "https://botan.randombit.net/releases/Botan-3.6.1.tar.xz",
+    sha256 = "7cb8575d88d232c77174769d7f9e24bb44444160585986eebd66e749cb9a9089",
+    description = "C++ cryptography library",
+    homepage = "https://botan.randombit.net/",
+    license = "BSD-2",
+    use_configure = {
+        "boost": ("-DENABLE_BOOST=ON", "-DENABLE_BOOST=OFF"),
+        "python": ("-DENABLE_PYTHON=ON", "-DENABLE_PYTHON=OFF"),
+        "tools": ("-DENABLE_TOOLS=ON", "-DENABLE_TOOLS=OFF"),
+    },
+    use_deps = {
+        "sqlite": "//packages/linux/system/libs/database/sqlite:sqlite",
+        "zlib": "//packages/linux/core/zlib:zlib",
+        "bzip2": "//packages/linux/system/libs/compression/bzip2:bzip2",
+        "lzma": "//packages/linux/system/libs/compression/xz-utils:xz-utils",
+    },
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DBUILD_TESTING=OFF",
+    ],
+    deps = [],
+)

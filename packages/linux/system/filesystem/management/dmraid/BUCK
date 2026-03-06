@@ -1,0 +1,23 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "dmraid",
+    url = "https://people.redhat.com/~heinzm/sw/dmraid/src/dmraid-1.0.0.rc16-3.tar.bz2",
+
+    sha256 = "93421bd169d71ff5e7d2db95b62b030bfa205a12010b6468dcdef80337d6fbd8",
+    use_configure = {
+        "intel-led": ("--enable-intel-led", "--disable-intel-led"),
+        "led": ("--enable-led", "--disable-led"),
+        "mini": ("--enable-mini", "--disable-mini"),
+        "static": ("--enable-static", "--disable-static"),
+    },
+    version = "1.0.0.rc16",
+    description = "Device-mapper RAID activation tool for BIOS RAID sets",
+    homepage = "https://people.redhat.com/~heinzm/sw/dmraid/",
+    license = "GPL-2.0",
+    configure_args = [],
+    deps = [
+        "//packages/linux/system/filesystem/management/lvm2:lvm2",
+    ],
+)

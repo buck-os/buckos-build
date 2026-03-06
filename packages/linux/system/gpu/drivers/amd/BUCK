@@ -1,0 +1,72 @@
+load("//defs:package.bzl", "package")
+
+# =============================================================================
+# AMD Drivers - AMDGPU open-source drivers and firmware
+# =============================================================================
+#
+# The AMDGPU driver stack provides hardware acceleration for AMD GPUs.
+# Uses the open-source kernel driver with proprietary firmware.
+#
+# =============================================================================
+
+package(
+    build_rule = "binary",
+    name = "amd-drivers",
+    version = "6.1.3",
+    local_only = True,
+    filename = "amdgpu-firmware-6.1.3.tar.gz",
+    description = "AMD GPU drivers and firmware for Linux",
+    homepage = "https://www.amd.com/en/support/linux-drivers",
+    license = "MIT AND proprietary",
+    install_script = """
+# Install AMD GPU firmware (source is already extracted to $SRCS)
+mkdir -p "$OUT/usr/lib/firmware/amdgpu"
+cp -r $SRCS/amdgpu/* "$OUT/usr/lib/firmware/amdgpu/"
+
+# Install Radeon firmware (for older GPUs)
+mkdir -p "$OUT/usr/lib/firmware/radeon"
+cp -r $SRCS/radeon/* "$OUT/usr/lib/firmware/radeon/"
+
+# Create modprobe configuration
+mkdir -p "$OUT/etc/modprobe.d"
+cat > "$OUT/etc/modprobe.d/amdgpu.conf" << 'EOF'
+# Enable DC (Display Core) for better display support
+options amdgpu dc=1
+
+# Enable GPU recovery
+options amdgpu gpu_recovery=1
+
+# Enable PPFeatureMask for overclocking support (optional)
+# options amdgpu ppfeaturemask=0xffffffff
+EOF
+
+# Create Vulkan ICD configuration
+mkdir -p "$OUT/usr/share/vulkan/icd.d"
+cat > "$OUT/usr/share/vulkan/icd.d/radeon_icd.x86_64.json" << 'EOF'
+{
+    "file_format_version": "1.0.0",
+    "ICD": {
+        "library_path": "/usr/lib64/libvulkan_radeon.so",
+        "api_version": "1.3.275"
+    }
+}
+EOF
+
+# Install helper scripts
+mkdir -p "$OUT/usr/bin"
+cat > "$OUT/usr/bin/amd-gpu-info" << 'EOF'
+#!/bin/bash
+# Display AMD GPU information
+for card in /sys/class/drm/card*/device; do
+    if [ -f "$card/vendor" ] && grep -q "0x1002" "$card/vendor"; then
+        echo "AMD GPU: $(basename $(dirname $card))"
+        [ -f "$card/gpu_busy_percent" ] && echo "  GPU Usage: $(cat $card/gpu_busy_percent)%"
+        [ -f "$card/mem_info_vram_used" ] && echo "  VRAM Used: $(cat $card/mem_info_vram_used)"
+        [ -f "$card/power_dpm_state" ] && echo "  Power State: $(cat $card/power_dpm_state)"
+    fi
+done
+EOF
+chmod +x "$OUT/usr/bin/amd-gpu-info"
+""",
+    labels = ["buckos:firmware", "buckos:hw:gpu", "buckos:hw:rocm"],
+)

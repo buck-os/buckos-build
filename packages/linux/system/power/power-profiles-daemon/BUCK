@@ -1,0 +1,30 @@
+load("//defs:package.bzl", "package")
+
+# power-profiles-daemon - D-Bus Power Profile Service
+# Makes power profiles handling available over D-Bus
+
+package(
+    build_rule = "meson",
+    name = "power-profiles-daemon",
+    version = "0.21",
+    url = "https://gitlab.freedesktop.org/upower/power-profiles-daemon/-/archive/0.21/power-profiles-daemon-0.21.tar.gz",
+    sha256 = "c15a368a59f2cae1474bdfccdd9357f06b0abc9eb7638a87f68c091aaf570349",
+    description = "D-Bus daemon for power profile handling",
+    homepage = "https://gitlab.freedesktop.org/upower/power-profiles-daemon",
+    license = "GPL-3.0",
+    configure_args = [
+        "-Dtests=false",
+        "-Dsystemdsystemunitdir=/usr/lib/systemd/system",
+    ],
+    use_configure = {
+        "bash-completion": ("-Dbash_completion=true", "-Dbash_completion=false"),
+        "gtk-doc": ("-Dgtk_doc=true", "-Dgtk_doc=false"),
+        "man": ("-Dman=true", "-Dman=false"),
+    },
+    deps = [
+        "//packages/linux/dev-libs/glib:glib",
+        "//packages/linux/system/libs/ipc/dbus:dbus",
+        # "//packages/linux/core/polkit:polkit",  # TODO: not packaged yet
+        "//packages/linux/laptop/battery/upower:upower",
+    ],
+)

@@ -1,0 +1,90 @@
+load("//defs:package.bzl", "package")
+
+# =============================================================================
+# Container Networking
+# =============================================================================
+
+# cni-plugins - Container Network Interface plugins
+package(
+    build_rule = "binary",
+    name = "cni-plugins",
+    version = "1.4.1",
+    url = "https://github.com/containernetworking/plugins/archive/refs/tags/v1.4.1.tar.gz",
+    sha256 = "f8e7055bc77bbd1e978157c2dcb53836f5f4d9d582f7bc2dffdd78997a267f96",
+    description = "Standard CNI network plugins for container networking",
+    homepage = "https://github.com/containernetworking/plugins",
+    license = "Apache-2.0",
+    install_script = """
+export CGO_ENABLED=0
+./build_linux.sh
+mkdir -p "$OUT/usr/lib/cni"
+install -m 755 bin/* "$OUT/usr/lib/cni/"
+""",
+    deps = [
+        "//packages/linux/lang/go:go",
+    ],
+)
+
+# netavark - Container network stack
+package(
+    build_rule = "binary",
+    name = "netavark",
+    version = "1.14.0",
+    url = "https://github.com/containers/netavark/archive/refs/tags/v1.14.0.tar.gz",
+    sha256 = "d2ded5412e5037e84f79a28c774378c864aa6f6e43023dd88891c70cfaf963ef",
+    description = "Container network stack for Podman",
+    homepage = "https://github.com/containers/netavark",
+    license = "Apache-2.0",
+    install_script = """
+cd $SRCS
+export PATH="$(echo $DEP_BASE_DIRS | tr ':' '\n' | while read d; do [ -d "$d/usr/bin" ] && echo -n "$d/usr/bin:"; done)$PATH"
+cargo build --release
+mkdir -p "$OUT/usr/libexec/podman"
+install -m 755 target/release/netavark "$OUT/usr/libexec/podman/"
+""",
+    deps = [
+        "//packages/linux/dev-libs/serialization/protobuf:protobuf",
+        "//packages/linux/lang/rust:rust",
+    ],
+)
+
+# aardvark-dns - DNS server for container networks
+package(
+    build_rule = "binary",
+    name = "aardvark-dns",
+    version = "1.14.0",
+    url = "https://github.com/containers/aardvark-dns/archive/refs/tags/v1.14.0.tar.gz",
+    sha256 = "d46f170e0439fc97e15bb31d63b7464192f74809b0d54064383e6a0b592d8cfd",
+    description = "Authoritative DNS server for container records",
+    homepage = "https://github.com/containers/aardvark-dns",
+    license = "Apache-2.0",
+    install_script = """
+cd $SRCS
+export PATH="$(echo $DEP_BASE_DIRS | tr ':' '\n' | while read d; do [ -d "$d/usr/bin" ] && echo -n "$d/usr/bin:"; done)$PATH"
+cargo build --release
+mkdir -p "$OUT/usr/libexec/podman"
+install -m 755 target/release/aardvark-dns "$OUT/usr/libexec/podman/"
+""",
+    deps = [
+        "//packages/linux/lang/rust:rust",
+    ],
+)
+
+# slirp4netns - User-mode networking for unprivileged network namespaces
+package(
+    build_rule = "autotools",
+    name = "slirp4netns",
+    version = "1.2.3",
+    url = "https://github.com/rootless-containers/slirp4netns/archive/refs/tags/v1.2.3.tar.gz",
+    sha256 = "acce648fab8fe5f113c41a8fd6d20177708519b4ddaa60f845e1998a17b22ca5",
+    description = "User-mode networking for unprivileged network namespaces",
+    homepage = "https://github.com/rootless-containers/slirp4netns",
+    license = "GPL-2.0",
+    deps = [
+        "//packages/linux/dev-libs/glib:glib",
+        # TODO: libslirp package needs to be created
+        # "//packages/linux/system/libs/network/libslirp:libslirp",
+        "//packages/linux/system/libs/ipc/libseccomp:libseccomp",
+        "//packages/linux/system/libs/ipc/libcap:libcap",
+    ],
+)

@@ -1,0 +1,36 @@
+load("//defs:package.bzl", "package")
+
+# at - Job scheduling utility
+# USE flags: selinux, pam
+
+package(
+    build_rule = "autotools",
+    name = "at",
+    version = "3.2.5",
+    url = "https://salsa.debian.org/debian/at/-/archive/release/3.2.5/at-release-3.2.5.tar.gz",
+    sha256 = "bd72b2e0666323f4a9d25613880b7a4d5761c8c2fefbf2fac7d5e9564a9d0da4",
+    description = "Delayed job execution and batch processing",
+    homepage = "https://salsa.debian.org/debian/at",
+    license = "GPL-2+",
+    use_deps = {
+        "selinux": "//packages/linux/system/security/selinux:selinux",
+        "pam": "//packages/linux/system/security/auth/pam:pam",
+    },
+    use_configure = {
+        "pam": ("--with-pam", "--without-pam"),
+        "selinux": ("--with-selinux", "--without-selinux"),
+    },
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--with-jobdir=/var/spool/atjobs",
+        "--with-atspool=/var/spool/atspool",
+    ],
+    make_args = [
+        "INSTALL_OWNER=",
+    ],
+    post_install_cmds = ["""
+chmod -R u+w $DESTDIR || true
+    """],
+    deps = [],
+)
