@@ -418,11 +418,15 @@ sh_test(
     name = "test-iso-boot",
     test = "verify_iso_boot.py",
     deps = [
+        "//packages/linux/kernel/buckos-kernel:buckos-kernel",
+        "//packages/linux/system:buckos-initramfs",
         "//packages/linux/system:buckos-minimal-iso",
         "//packages/linux/emulation/hypervisors/qemu:qemu",
         ":qemu-env",
     ],
     env = {
+        "KERNEL": "$(location //packages/linux/kernel/buckos-kernel:buckos-kernel)",
+        "INITRAMFS": "$(location //packages/linux/system:buckos-initramfs)",
         "ISO": "$(location //packages/linux/system:buckos-minimal-iso)",
         "QEMU_DIR": "$(location //packages/linux/emulation/hypervisors/qemu:qemu)",
         "RUN_ENV": "$(location :qemu-env)",
@@ -435,11 +439,15 @@ sh_test(
     name = "test-kde-iso-boot",
     test = "verify_kde_iso_boot.py",
     deps = [
+        "//packages/linux/kernel/buckos-kernel:buckos-kernel-live",
+        "//packages/linux/system:buckos-live-initramfs-systemd",
         "//packages/linux/system:buckos-live-installer-kde",
         "//packages/linux/emulation/hypervisors/qemu:qemu",
         ":qemu-env",
     ],
     env = {
+        "KERNEL": "$(location //packages/linux/kernel/buckos-kernel:buckos-kernel-live)",
+        "INITRAMFS": "$(location //packages/linux/system:buckos-live-initramfs-systemd)",
         "ISO": "$(location //packages/linux/system:buckos-live-installer-kde)",
         "QEMU_DIR": "$(location //packages/linux/emulation/hypervisors/qemu:qemu)",
         "RUN_ENV": "$(location :qemu-env)",
