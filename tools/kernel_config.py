@@ -225,7 +225,7 @@ def _gcc14_workaround(build_dir, cc_bin):
         )
     os.chmod(wrapper_path, 0o755)
 
-    return [f"CC={wrapper_path}", f"HOSTCC={wrapper_path}"]
+    return [f"CC={wrapper_path}"]
 
 
 def _run(cmd, cwd=None, env=None):

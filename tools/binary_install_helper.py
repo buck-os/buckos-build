@@ -167,6 +167,9 @@ def main():
                 d = os.path.join(parent, ld)
                 if os.path.isdir(d) and not os.path.exists(os.path.join(d, "libc.so.6")):
                     ld_lib_parts.append(d)
+                    glibc_d = os.path.join(d, "glibc")
+                    if os.path.isdir(glibc_d):
+                        ld_lib_parts.append(glibc_d)
         if ld_lib_parts:
             existing = env.get("LD_LIBRARY_PATH", "")
             env["LD_LIBRARY_PATH"] = ":".join(ld_lib_parts) + (":" + existing if existing else "")
@@ -209,6 +212,9 @@ def main():
                 d = os.path.join(parent, ld)
                 if os.path.isdir(d) and not os.path.exists(os.path.join(d, "libc.so.6")):
                     _pp_lib_dirs.append(d)
+                    glibc_d = os.path.join(d, "glibc")
+                    if os.path.isdir(glibc_d):
+                        _pp_lib_dirs.append(glibc_d)
         if _pp_lib_dirs:
             existing = env.get("LD_LIBRARY_PATH", "")
             env["LD_LIBRARY_PATH"] = ":".join(_pp_lib_dirs) + (":" + existing if existing else "")
