@@ -66,6 +66,8 @@ def main():
                         help="Allow host PATH (bootstrap escape hatch)")
     parser.add_argument("--hermetic-empty", action="store_true",
                         help="Start with empty PATH (populated by --path-prepend)")
+    parser.add_argument("--ld-linux", default=None,
+                        help="Buckos ld-linux path (disables posix_spawn)")
     parser.add_argument("--path-prepend", action="append", dest="path_prepend", default=[],
                         help="Directory to prepend to PATH (repeatable, resolved to absolute)")
     parser.add_argument("--dep-prefix", action="append", dest="dep_prefixes", default=[],

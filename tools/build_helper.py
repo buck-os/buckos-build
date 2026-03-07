@@ -15,7 +15,7 @@ import shutil
 import subprocess
 import sys
 
-from _env import clean_env, derive_lib_paths, filter_path_flags, register_cleanup, sanitize_filenames, write_pkg_config_wrapper
+from _env import clean_env, disable_posix_spawn, derive_lib_paths, filter_path_flags, register_cleanup, sanitize_filenames, write_pkg_config_wrapper
 
 
 def _can_unshare_net():
@@ -174,6 +174,8 @@ def main():
                         help="Allow host PATH (bootstrap escape hatch)")
     parser.add_argument("--hermetic-empty", action="store_true",
                         help="Start with empty PATH (populated by --path-prepend)")
+    parser.add_argument("--ld-linux", default=None,
+                        help="Buckos ld-linux path (disables posix_spawn)")
     parser.add_argument("--cflags-file", default=None,
                         help="File with CFLAGS (one per line, from tset projection)")
     parser.add_argument("--ldflags-file", default=None,
@@ -772,6 +774,11 @@ def main():
     # Prepend pkg-config wrapper to PATH (after hermetic/prepend logic
     # so the wrapper is always available regardless of PATH mode)
     env["PATH"] = wrapper_dir + ":" + env.get("PATH", "")
+
+    # Disable posix_spawn in child processes to avoid ENOEXEC with
+    # padded ELF interpreters on buckos-native dep binaries.
+    if args.ld_linux:
+        disable_posix_spawn(env)
 
     # Find buckos bash for shell=True subprocesses (pre-cmds).
     _buckos_bash = None

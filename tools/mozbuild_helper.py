@@ -19,7 +19,7 @@ import subprocess
 import sys
 import json
 
-from _env import clean_env, sanitize_filenames, sanitize_global_env, write_pkg_config_wrapper
+from _env import clean_env, disable_posix_spawn, sanitize_filenames, sanitize_global_env, write_pkg_config_wrapper
 
 
 def _resolve(path):
@@ -275,6 +275,11 @@ def _common_env(args, src_dir, pkg_config_bin_dir):
     mozconfig = os.path.join(src_dir, "mozconfig")
     env["MOZCONFIG"] = mozconfig
 
+    # Disable posix_spawn in child Python processes (mach) to avoid
+    # ENOEXEC with padded ELF interpreters on buckos-native dep binaries.
+    if hasattr(args, 'ld_linux') and args.ld_linux:
+        disable_posix_spawn(env, args.work_dir)
+
     return env
 
 
@@ -480,6 +485,8 @@ def main():
                         help="Start with empty PATH (populated by --path-prepend)")
     parser.add_argument("--path-prepend", action="append", dest="path_prepend", default=[],
                         help="Directory to prepend to PATH (repeatable, resolved to absolute)")
+    parser.add_argument("--ld-linux", default=None,
+                        help="Buckos ld-linux path (disables posix_spawn)")
     parser.add_argument("--env", action="append", dest="extra_env", default=[],
                         help="Extra environment variable KEY=VALUE (repeatable)")
 

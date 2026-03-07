@@ -37,6 +37,7 @@ def _make_args(**kwargs):
         "allow_host_path": False,
         "hermetic_empty": False,
         "path_prepend": [],
+        "ld_linux": None,
     }
     defaults.update(kwargs)
     return argparse.Namespace(**defaults)

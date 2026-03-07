@@ -134,6 +134,8 @@ def add_path_args(parser):
     parser.add_argument("--path-prepend", action="append",
                         dest="path_prepend", default=[],
                         help="Dir to prepend to PATH (repeatable)")
+    parser.add_argument("--ld-linux", default=None,
+                        help="Buckos ld-linux path (disables posix_spawn)")
 
 
 def setup_path(args, env, host_path=""):
@@ -141,6 +143,8 @@ def setup_path(args, env, host_path=""):
 
     Requires args parsed by add_path_args().  host_path is the original
     host PATH captured before sanitization (used with --allow-host-path).
+    If --ld-linux was provided, disables posix_spawn in child Python
+    processes to avoid ENOEXEC with padded ELF interpreters.
     """
     if args.hermetic_path:
         env["PATH"] = ":".join(os.path.abspath(p) for p in args.hermetic_path)
@@ -157,6 +161,33 @@ def setup_path(args, env, host_path=""):
         prepend = ":".join(os.path.abspath(p) for p in args.path_prepend)
         env["PATH"] = prepend + (":" + env["PATH"] if env.get("PATH") else "")
         derive_lib_paths(args.path_prepend, env)
+    if getattr(args, 'ld_linux', None):
+        disable_posix_spawn(env)
+
+
+def disable_posix_spawn(env, scratch_dir=None):
+    """Install a sitecustomize.py that disables posix_spawn in subprocess.
+
+    Python 3.14+ defaults to posix_spawn for subprocess.Popen, which
+    fails with ENOEXEC on some kernels/configurations when the ELF
+    interpreter is padded (///...///lib64/ld-linux-x86-64.so.2).
+    Fork+exec handles padded interpreters correctly everywhere.
+
+    Creates a sitecustomize.py in a scratch directory and prepends it
+    to PYTHONPATH so all child Python processes inherit the fix.
+    """
+    if scratch_dir is None:
+        scratch_dir = os.environ.get("BUCK_SCRATCH_PATH",
+                                     os.environ.get("TMPDIR", "/tmp"))
+    pysite = os.path.join(scratch_dir, "buckos-pysite")
+    sitecust = os.path.join(pysite, "sitecustomize.py")
+    if not os.path.exists(sitecust):
+        os.makedirs(pysite, exist_ok=True)
+        with open(sitecust, "w") as f:
+            f.write("import subprocess as _sp\n")
+            f.write("_sp._USE_POSIX_SPAWN = False\n")
+    existing = env.get("PYTHONPATH", "")
+    env["PYTHONPATH"] = pysite + (":" + existing if existing else "")
 
 
 def derive_lib_paths(bin_dirs, env):

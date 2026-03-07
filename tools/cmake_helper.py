@@ -98,6 +98,8 @@ def main():
                         help="Allow host PATH (bootstrap escape hatch)")
     parser.add_argument("--hermetic-empty", action="store_true",
                         help="Start with empty PATH (populated by --path-prepend)")
+    parser.add_argument("--ld-linux", default=None,
+                        help="Buckos ld-linux path (disables posix_spawn)")
     parser.add_argument("--cflags-file", default=None,
                         help="File with CFLAGS (one per line, from tset projection)")
     parser.add_argument("--ldflags-file", default=None,

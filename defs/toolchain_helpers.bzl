@@ -54,20 +54,28 @@ def toolchain_env_args(ctx):
     return result
 
 def toolchain_path_args(ctx):
-    """Return PATH strategy flags for hermetic builds.
+    """Return PATH strategy flags and ld-linux for hermetic builds.
 
-    Three outcomes:
+    PATH outcomes:
       1. host_bin_dir set     → --hermetic-path (fully hermetic, single dir)
       2. allows_host_path     → --allow-host-path (bootstrap escape hatch)
       3. neither              → --hermetic-empty (PATH built from per-rule host tool deps)
+
+    When a sysroot is available, also emits --ld-linux pointing to the
+    buckos dynamic linker.  Build helpers use this to disable posix_spawn
+    in child Python processes, avoiding ENOEXEC with padded ELF interpreters.
     """
     tc = ctx.attrs._toolchain[BuildToolchainInfo]
+    result = []
     if tc.host_bin_dir:
-        return [cmd_args("--hermetic-path", tc.host_bin_dir)]
-    if tc.allows_host_path:
-        return [cmd_args("--allow-host-path")]
-    # Hermetic empty: PATH built entirely from per-rule host tool deps
-    return [cmd_args("--hermetic-empty")]
+        result.append(cmd_args("--hermetic-path", tc.host_bin_dir))
+    elif tc.allows_host_path:
+        result.append(cmd_args("--allow-host-path"))
+    else:
+        result.append(cmd_args("--hermetic-empty"))
+    if tc.sysroot:
+        result.append(cmd_args("--ld-linux", tc.sysroot.project("lib64/ld-linux-x86-64.so.2")))
+    return result
 
 def toolchain_extra_cflags(ctx):
     """Return toolchain-injected CFLAGS (e.g. hardening flags)."""
