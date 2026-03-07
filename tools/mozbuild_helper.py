@@ -118,6 +118,10 @@ def _build_dep_env(dep_base_dirs, pkg_config_path, base_path=None):
         p for p in lib_paths
         if not os.path.exists(os.path.join(p, "libc.so.6"))
     ]
+    for _p in list(safe_lib_paths):
+        _glibc_d = os.path.join(_p, "glibc")
+        if os.path.isdir(_glibc_d):
+            safe_lib_paths.append(_glibc_d)
     if safe_lib_paths:
         existing = env.get("LD_LIBRARY_PATH", "")
         merged = ":".join(safe_lib_paths)
@@ -209,6 +213,9 @@ def _common_env(args, src_dir, pkg_config_bin_dir):
                 _d = os.path.join(_parent, _ld)
                 if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")):
                     _lib_dirs.append(_d)
+                    _glibc_d = os.path.join(_d, "glibc")
+                    if os.path.isdir(_glibc_d):
+                        _lib_dirs.append(_glibc_d)
         if _lib_dirs:
             _existing = env.get("LD_LIBRARY_PATH", "")
             env["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (":" + _existing if _existing else "")
@@ -257,6 +264,9 @@ def _common_env(args, src_dir, pkg_config_bin_dir):
                 _d = os.path.join(_parent, _ld)
                 if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")):
                     _dep_lib_dirs.append(_d)
+                    _glibc_d = os.path.join(_d, "glibc")
+                    if os.path.isdir(_glibc_d):
+                        _dep_lib_dirs.append(_glibc_d)
         if _dep_lib_dirs:
             _existing = env.get("LD_LIBRARY_PATH", "")
             env["LD_LIBRARY_PATH"] = ":".join(_dep_lib_dirs) + (":" + _existing if _existing else "")

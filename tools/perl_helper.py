@@ -130,6 +130,9 @@ def main():
             _d = os.path.join(_parent, _ld)
             if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")):
                 _lib_dirs.append(_d)
+                _glibc_d = os.path.join(_d, "glibc")
+                if os.path.isdir(_glibc_d):
+                    _lib_dirs.append(_glibc_d)
     if _lib_dirs:
         _existing = env.get("LD_LIBRARY_PATH", "")
         env["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (":" + _existing if _existing else "")

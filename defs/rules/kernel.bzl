@@ -38,10 +38,12 @@ def _kernel_config_impl(ctx: AnalysisContext) -> list[Provider]:
     for frag in ctx.attrs.fragments:
         cmd.add("--fragment", frag)
 
-    # Inject CC from toolchain so kconfig probes use the right compiler
+    # Inject CC from toolchain so kconfig probes use the right compiler.
+    # HOSTCC is left unset — the kernel defaults to system cc, which is
+    # needed because host tools (fixdep, etc.) must run on the build
+    # machine, not target buckos with its RPATH placeholder.
     tc = ctx.attrs._toolchain[BuildToolchainInfo]
     cmd.add("--cc", cmd_args(tc.cc.args, delimiter = " "))
-    cmd.add("--hostcc", cmd_args(tc.cc.args, delimiter = " "))
 
     # Hermetic PATH from toolchain
     for arg in toolchain_path_args(ctx):
