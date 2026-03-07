@@ -97,8 +97,12 @@ def _patch_elf_interpreter(path, new_interp):
         p_offset = struct.unpack_from("<Q", data, off + 8)[0]
         p_filesz = struct.unpack_from("<Q", data, off + 32)[0]
 
-        # Read current interpreter
-        end = data.index(0, p_offset)
+        # Read current interpreter (bounded by segment size)
+        seg_end = p_offset + p_filesz
+        try:
+            end = data.index(0, p_offset, seg_end)
+        except ValueError:
+            end = seg_end
         old_interp = data[p_offset:end].decode("ascii", errors="replace")
         if old_interp == new_interp:
             return False  # already correct
