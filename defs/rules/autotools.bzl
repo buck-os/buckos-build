@@ -18,7 +18,7 @@ inputs haven't changed.
    (post_install_cmds run in the prefix dir after make install)
 """
 
-load("//defs:providers.bzl", "BuildToolchainInfo", "PackageInfo")
+load("//defs:providers.bzl", "PackageInfo")
 load("//defs/rules:_common.bzl",
      "COMMON_PACKAGE_ATTRS",
      "add_flag_file", "build_package_tsets", "collect_dep_tsets",
@@ -90,14 +90,6 @@ def _src_configure(ctx, source, cflags_file = None, ldflags_file = None,
     else:
         # Default prefix for FHS layout
         cmd.add("--configure-arg=--prefix=/usr")
-
-        # Tell configure this is a cross-build so it doesn't try to run
-        # compiled test programs (which fail when the RPATH placeholder
-        # hasn't been rewritten yet).  Only needed for buckos cross-compilers,
-        # not the host bootstrap toolchain.
-        tc = ctx.attrs._toolchain[BuildToolchainInfo]
-        if "buckos" in tc.target_triple:
-            cmd.add(cmd_args("--configure-arg=--host=", tc.target_triple, delimiter = ""))
 
         # Configure arguments (use = syntax so argparse handles --prefix=... values)
         for arg in ctx.attrs.configure_args:

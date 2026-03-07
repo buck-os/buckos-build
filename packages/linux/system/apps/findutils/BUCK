@@ -21,6 +21,13 @@ package(
     configure_args = [
         "--prefix=/usr",
         "--localstatedir=/var/lib/locate",
+        # --host prevents configure from running compiled test programs
+        # (which fail because the RPATH placeholder hasn't been rewritten).
+        # Tool overrides prevent autotools from looking for prefixed names.
+        "--host=x86_64-buckos-linux-gnu",
+        "RANLIB=ranlib",
+        "NM=nm",
+        "STRIP=strip",
     ],
     deps = [],
 )
