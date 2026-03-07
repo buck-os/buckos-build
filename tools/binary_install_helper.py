@@ -16,7 +16,7 @@ import stat
 import subprocess
 import sys
 
-from _env import clean_env, register_cleanup, sanitize_filenames, write_stub_script
+from _env import clean_env, file_prefix_map_flags, register_cleanup, sanitize_filenames, write_stub_script
 
 
 def _resolve_flag_paths(value, project_root):
@@ -141,6 +141,12 @@ def main():
     for key in ("_ALLOW_HOST_PATH", "_HERMETIC_EMPTY"):
         if key in starlark_vars:
             env[key] = starlark_vars[key]
+
+    # Scrub absolute build paths from debug info and __FILE__ expansions.
+    pfm = " ".join(file_prefix_map_flags())
+    for var in ("CFLAGS", "CXXFLAGS"):
+        existing = env.get(var, "")
+        env[var] = (pfm + " " + existing).strip() if existing else pfm
 
     # Re-inject user env attrs
     for key, val in user_env.items():

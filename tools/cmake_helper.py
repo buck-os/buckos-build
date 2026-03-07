@@ -10,7 +10,7 @@ import os
 import subprocess
 import sys
 
-from _env import clean_env, derive_lib_paths, filter_path_flags, register_cleanup, sanitize_filenames, write_pkg_config_wrapper
+from _env import clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, register_cleanup, sanitize_filenames, write_pkg_config_wrapper
 
 
 def _resolve_env_paths(value):
@@ -284,6 +284,12 @@ def main():
             cmake_defines[key] = _resolve_env_paths(value)
         else:
             cmake_defines[define] = ""
+
+    # Scrub absolute build paths from debug info and __FILE__ expansions.
+    pfm = " ".join(file_prefix_map_flags())
+    for key in ("CMAKE_C_FLAGS", "CMAKE_CXX_FLAGS"):
+        existing = cmake_defines.get(key, "")
+        cmake_defines[key] = (pfm + " " + existing).strip() if existing else pfm
 
     # Merge flag-file cflags into CMAKE_C_FLAGS and CMAKE_CXX_FLAGS.
     # File flags (dep tset) come first; --cmake-define flags (toolchain/

@@ -283,6 +283,17 @@ def write_stub_script(path, exit_code=0):
     os.chmod(path, 0o755)
 
 
+def file_prefix_map_flags():
+    """Return compiler flags that strip absolute build paths from output.
+
+    Maps the project root (Buck2 cwd) to empty so paths like
+    /home/user/repos/buckos-build/buck-out/v2/.../foo.c become
+    buck-out/v2/.../foo.c in debug info and __FILE__ expansions.
+    """
+    cwd = os.getcwd()
+    return [f"-ffile-prefix-map={cwd}/="]
+
+
 def sanitize_global_env():
     """Replace os.environ in-place with a clean environment.
 

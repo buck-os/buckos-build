@@ -16,7 +16,7 @@ import shutil
 import subprocess
 import sys
 
-from _env import clean_env, disable_posix_spawn, derive_lib_paths, filter_path_flags, register_cleanup, sanitize_filenames, write_pkg_config_wrapper
+from _env import clean_env, disable_posix_spawn, derive_lib_paths, file_prefix_map_flags, filter_path_flags, register_cleanup, sanitize_filenames, write_pkg_config_wrapper
 
 
 def _resolve_env_paths(value):
@@ -175,7 +175,7 @@ def main():
         env["CC"] = args.cc
     if args.cxx:
         env["CXX"] = args.cxx
-    all_cflags = file_cflags + args.cflags
+    all_cflags = file_prefix_map_flags() + file_cflags + args.cflags
     all_ldflags = file_ldflags + args.ldflags
     all_pkg_config = file_pkg_config + args.pkg_config_paths
 

@@ -10,7 +10,7 @@ import os
 import subprocess
 import sys
 
-from _env import clean_env, derive_lib_paths, filter_path_flags, register_cleanup, sanitize_filenames, write_pkg_config_wrapper
+from _env import clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, register_cleanup, sanitize_filenames, write_pkg_config_wrapper
 
 
 def _resolve_env_paths(value):
@@ -186,6 +186,12 @@ def main():
         key, _, value = entry.partition("=")
         if key:
             env[key] = _resolve_env_paths(value)
+
+    # Scrub absolute build paths from debug info and __FILE__ expansions.
+    pfm = " ".join(file_prefix_map_flags())
+    for var in ("CFLAGS", "CXXFLAGS"):
+        existing = env.get(var, "")
+        env[var] = (pfm + " " + existing).strip() if existing else pfm
 
     # Prepend flag file values — dep-provided -I/-L flags must appear before
     # toolchain flags so headers/libs from deps are found.
