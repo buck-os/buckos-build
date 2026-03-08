@@ -395,10 +395,21 @@ def main():
         except OSError:
             _use_config_shell = True
 
+    # Pass CC/CXX as configure arguments too — hand-written configure
+    # scripts (e.g. GNU ed, lzip) ignore env vars and only accept these
+    # as command-line KEY=VALUE pairs.  Autoconf scripts accept both.
+    # Only inject if not already specified in configure_args.
+    _arg_keys = {a.split("=", 1)[0] for a in resolved_args if "=" in a}
+    _cc_args = []
+    if args.cc and "CC" not in _arg_keys:
+        _cc_args.append(f"CC={_resolve_env_paths(args.cc)}")
+    if args.cxx and "CXX" not in _arg_keys:
+        _cc_args.append(f"CXX={_resolve_env_paths(args.cxx)}")
+
     if _use_config_shell:
-        cmd = [_config_shell, configure] + resolved_args
+        cmd = [_config_shell, configure] + resolved_args + _cc_args
     else:
-        cmd = [configure] + resolved_args
+        cmd = [configure] + resolved_args + _cc_args
     result = subprocess.run(cmd, cwd=configure_cwd, env=env)
     if result.returncode != 0:
         print(f"error: configure failed with exit code {result.returncode}", file=sys.stderr)
