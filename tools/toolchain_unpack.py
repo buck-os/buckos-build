@@ -242,7 +242,7 @@ def _install_gcc_specs(toolchain_dir, target_triple="x86_64-buckos-linux-gnu"):
         )
         for gcc_libdir in sorted(_glob.glob(pattern)):
             if os.path.isdir(gcc_libdir):
-                _write_specs(gcc_libdir, host_ld_abs)
+                _write_specs(gcc_libdir, host_ld_abs, add_lib_paths=True)
                 installed += 1
 
     if installed:
@@ -250,15 +250,66 @@ def _install_gcc_specs(toolchain_dir, target_triple="x86_64-buckos-linux-gnu"):
               file=sys.stderr)
 
 
-def _write_specs(gcc_libdir, ld_linux_abs):
-    """Write a specs override into a GCC lib directory."""
-    rpath_placeholder = "/buckos-rpath-pad" + "X" * 228
+def _write_specs(gcc_libdir, ld_linux_abs, add_lib_paths=False):
+    """Write a specs override into a GCC lib directory.
+
+    Uses real absolute lib paths as RPATH so freshly compiled binaries
+    can find buckos glibc at runtime without LD_LIBRARY_PATH.  This
+    avoids poisoning the cross-compiler (a host binary) with buckos
+    glibc via LD_LIBRARY_PATH — on hosts with older glibc the mismatch
+    causes segfaults.
+
+    When add_lib_paths is True, also adds -L flags so the linker can
+    find CRT startup files (crt1.o, crti.o) in the bundled lib dirs.
+    Only used for host-tools GCC — the cross-compiler finds CRT via
+    its sysroot.
+    """
+    # Derive lib dirs from ld-linux location.
+    # ld-linux is at <prefix>/lib64/glibc/ld-linux-x86-64.so.2 or
+    # <prefix>/lib64/ld-linux-x86-64.so.2.
+    ld_dir = os.path.dirname(ld_linux_abs)
+    # Walk up to the prefix root (host-tools/ or tools/<triple>/sys-root/)
+    if os.path.basename(ld_dir) == "glibc":
+        prefix = os.path.dirname(os.path.dirname(ld_dir))  # up from lib64/glibc
+    else:
+        prefix = os.path.dirname(ld_dir)  # up from lib64
+
+    rpath_parts = []
+    startfile_prefixes = []
+    for d in ("lib", "lib64", os.path.join("lib64", "glibc")):
+        p = os.path.join(prefix, d)
+        if os.path.isdir(p):
+            abs_p = os.path.abspath(p)
+            rpath_parts.append(abs_p)
+            if add_lib_paths:
+                # Trailing slash is required for GCC startfile prefix
+                startfile_prefixes.append(abs_p + "/")
+    rpath_str = ":".join(rpath_parts) if rpath_parts else "/buckos-rpath-pad" + "X" * 228
+
     specs_content = (
         "*link:\n"
         f"+ %{{!shared:%{{!static:--dynamic-linker {ld_linux_abs}"
-        f" -rpath {rpath_placeholder}}}}}\n"
+        f" -rpath {rpath_str}}}}}\n"
         "\n"
     )
+    if startfile_prefixes:
+        # Override startfile_prefix_spec so GCC finds CRT files
+        # (crt1.o, crti.o, crtn.o) in the bundled lib dirs.
+        specs_content += (
+            "*startfile_prefix_spec:\n"
+            + " ".join(startfile_prefixes) + "\n"
+            "\n"
+        )
+        # Detect multiarch include paths (Ubuntu/Debian put arch-specific
+        # headers in /usr/include/<multiarch-tuple>/ instead of /usr/include/).
+        # GCC built on non-multiarch systems (Fedora) doesn't know about these.
+        multiarch_inc = "/usr/include/x86_64-linux-gnu"
+        if os.path.isdir(multiarch_inc):
+            specs_content += (
+                "*cpp:\n"
+                f"+ -isystem {multiarch_inc}\n"
+                "\n"
+            )
     specs_path = os.path.join(gcc_libdir, "specs")
     with open(specs_path, "w") as f:
         f.write(specs_content)

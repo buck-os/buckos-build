@@ -266,13 +266,12 @@ def main():
                     for v in check_strings_for_leaks(elf, rpath_forbidden):
                         warnings.append(f"host-tools string: {v}")
 
-            # Build-machine identity check for host-tools.  These are
-            # warnings (not failures) because _scrub_build_paths cannot
-            # safely scrub host-tools ELFs — some binaries embed paths
-            # to helper programs and zeroing them corrupts machine code.
+            # Build-machine identity check for host-tools.  Home paths
+            # are scrubbed section-aware at pack time (data sections only,
+            # never executable code).
             for elf in ht_elfs:
                 for v in check_strings_for_leaks(elf, string_forbidden):
-                    warnings.append(f"host-tools identity leak: {v}")
+                    failures.append(f"host-tools identity leak: {v}")
 
             # Every dynamically-linked host-tools binary must have been
             # built by our GCC (padded interp + $ORIGIN RPATH).  Binaries

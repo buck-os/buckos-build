@@ -199,11 +199,11 @@ def derive_lib_paths(bin_dirs, env):
     finds its m4sugar data files.
 
     Directories containing libc.so.6 are EXCLUDED from LD_LIBRARY_PATH
-    to avoid poisoning host processes in non-hermetic builds.  However,
-    lib64/glibc/ (created by _isolate_glibc in the seed) IS included so
-    that freshly compiled buckos binaries — whose RPATH placeholder
-    hasn't been rewritten — can find buckos libc via LD_LIBRARY_PATH.
-    With hermetic PATH all processes are buckos-native, so this is safe.
+    to avoid poisoning host processes with buckos glibc.  The isolated
+    glibc directory (lib64/glibc/) is also excluded — freshly compiled
+    buckos binaries find glibc via RPATH set in the GCC specs at unpack
+    time.  Including glibc in LD_LIBRARY_PATH would poison the cross-
+    compiler (a host binary) causing segfaults on hosts with older glibc.
     """
     lib_parts = []
     for bin_dir in bin_dirs:
@@ -212,11 +212,6 @@ def derive_lib_paths(bin_dirs, env):
             d = os.path.join(parent, ld)
             if os.path.isdir(d) and not os.path.exists(os.path.join(d, "libc.so.6")):
                 lib_parts.append(d)
-            # Include the isolated glibc directory so freshly compiled
-            # binaries with unresolved RPATH placeholders can find libc.
-            glibc_d = os.path.join(d, "glibc")
-            if os.path.isdir(glibc_d):
-                lib_parts.append(glibc_d)
         # Bison looks for data at compiled-in /usr/share/bison; set
         # BISON_PKGDATADIR so it finds data in the relocated prefix.
         bison_data = os.path.join(parent, "share", "bison")

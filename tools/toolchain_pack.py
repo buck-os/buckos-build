@@ -96,6 +96,138 @@ def _scrub_build_paths(directory):
         print(f"  scrubbed build paths from {scrubbed} ELF files", file=sys.stderr)
 
 
+def _elf_data_ranges(data):
+    """Return list of (start, end) byte ranges for ELF data sections.
+
+    Only returns ranges for sections that contain string/path data
+    (rodata, strtab, comment, debug sections).  Excludes executable
+    code sections (.text, .init, .fini, .plt) to avoid corrupting
+    machine code that happens to match path patterns.
+    """
+    if len(data) < 64 or data[:4] != b'\x7fELF':
+        return []
+    # Only handle 64-bit LE
+    if data[4] != 2 or data[5] != 1:
+        return []
+
+    SHT_PROGBITS = 1
+    SHT_STRTAB = 3
+    SHT_NOTE = 7
+
+    e_shoff = struct.unpack_from('<Q', data, 40)[0]
+    e_shentsize = struct.unpack_from('<H', data, 58)[0]
+    e_shnum = struct.unpack_from('<H', data, 60)[0]
+    e_shstrndx = struct.unpack_from('<H', data, 62)[0]
+
+    if e_shoff == 0 or e_shnum == 0:
+        return []
+
+    # Read section header string table to get section names
+    shstrtab_off = 0
+    if e_shstrndx < e_shnum:
+        idx_off = e_shoff + e_shstrndx * e_shentsize
+        shstrtab_off = struct.unpack_from('<Q', data, idx_off + 24)[0]
+
+    # Executable section names to skip
+    _EXEC_NAMES = {b'.text', b'.init', b'.fini', b'.plt', b'.plt.got',
+                   b'.plt.sec'}
+
+    ranges = []
+    for i in range(e_shnum):
+        sh_off = e_shoff + i * e_shentsize
+        sh_type = struct.unpack_from('<I', data, sh_off + 4)[0]
+        sh_flags = struct.unpack_from('<Q', data, sh_off + 8)[0]
+        sh_offset = struct.unpack_from('<Q', data, sh_off + 24)[0]
+        sh_size = struct.unpack_from('<Q', data, sh_off + 32)[0]
+        sh_name_idx = struct.unpack_from('<I', data, sh_off)[0]
+
+        if sh_size == 0:
+            continue
+
+        # Get section name
+        sec_name = b''
+        if shstrtab_off and sh_name_idx:
+            end = data.find(0, shstrtab_off + sh_name_idx)
+            if end > 0:
+                sec_name = data[shstrtab_off + sh_name_idx:end]
+
+        # Skip executable sections
+        SHF_EXECINSTR = 0x4
+        if sh_flags & SHF_EXECINSTR:
+            continue
+        if sec_name in _EXEC_NAMES:
+            continue
+
+        # Include string tables, rodata, comment, debug, note sections
+        if sh_type == SHT_STRTAB:
+            ranges.append((sh_offset, sh_offset + sh_size))
+        elif sh_type == SHT_NOTE:
+            ranges.append((sh_offset, sh_offset + sh_size))
+        elif sh_type == SHT_PROGBITS and sec_name in (
+            b'.rodata', b'.rodata.str1.1', b'.rodata.str1.8',
+            b'.comment', b'.GCC.command.line',
+        ):
+            ranges.append((sh_offset, sh_offset + sh_size))
+        elif sec_name.startswith(b'.debug'):
+            ranges.append((sh_offset, sh_offset + sh_size))
+
+    return ranges
+
+
+def _scrub_home_paths(directory):
+    """Replace /home/... paths in ELF data sections with zeroes.
+
+    Build-machine home directories leak the builder's identity into
+    shipped artifacts.  Only scrubs data sections (rodata, strtab,
+    debug info) — never touches executable code sections.
+    """
+    pattern = re.compile(rb'/home/[^\x00]+')
+    scrubbed = 0
+
+    for dirpath, _, filenames in os.walk(directory):
+        for name in filenames:
+            path = os.path.join(dirpath, name)
+            if os.path.islink(path) or not os.path.isfile(path):
+                continue
+            try:
+                with open(path, 'rb') as f:
+                    magic = f.read(4)
+                if magic != b'\x7fELF':
+                    continue
+                with open(path, 'rb') as f:
+                    data = bytearray(f.read())
+                if b'/home/' not in data:
+                    continue
+
+                ranges = _elf_data_ranges(bytes(data))
+                if not ranges:
+                    continue
+
+                modified = False
+                for m in pattern.finditer(bytes(data)):
+                    start, end = m.start(), m.end()
+                    # Only scrub if the match falls entirely within a data section
+                    in_data = any(rs <= start and end <= re
+                                  for rs, re in ranges)
+                    if in_data:
+                        for j in range(start, end):
+                            data[j] = 0
+                        modified = True
+
+                if modified:
+                    orig_mode = os.stat(path).st_mode
+                    os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
+                    with open(path, 'wb') as f:
+                        f.write(data)
+                    os.chmod(path, orig_mode)
+                    scrubbed += 1
+            except (PermissionError, OSError, struct.error):
+                pass
+
+    if scrubbed:
+        print(f"  scrubbed home paths from {scrubbed} ELF files", file=sys.stderr)
+
+
 # glibc runtime files that must be isolated from LD_LIBRARY_PATH.
 # Including these in LD_LIBRARY_PATH causes host processes (bash, sh)
 # to load buckos glibc via the host's ld-linux → GLIBC_PRIVATE mismatch.
@@ -311,6 +443,14 @@ def main():
         # time — scrubbing truncates those to "/build" which breaks exec().
         print("Scrubbing build paths...", file=sys.stderr)
         _scrub_build_paths(stage_copy)
+
+        # Scrub /home/... paths from data sections to prevent builder
+        # identity leaking into shipped artifacts.  Section-aware: only
+        # touches rodata, strtab, debug — never executable code.
+        print("Scrubbing home paths...", file=sys.stderr)
+        _scrub_home_paths(stage_copy)
+        if has_host_tools:
+            _scrub_home_paths(host_tools_dst)
 
         # All host-tools binaries are built by our GCC with specs, so they
         # have padded interp + RPATH placeholder at link time.  No pack-time
