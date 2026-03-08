@@ -48,6 +48,29 @@ COMMON_PACKAGE_ATTRS = {
     "_patch_tool": attrs.default_only(
         attrs.exec_dep(default = "//tools:patch_helper"),
     ),
+
+    # Base host tools: fundamental build prerequisites that every package
+    # needs (shell, coreutils, make, etc.).  These are exec_deps so they
+    # provide hermetic PATH entries.
+    #
+    # Only populated in stage3 mode — the seed toolchain already provides
+    # these via host_bin_dir (--hermetic-path), and bootstrap mode uses
+    # host PATH.  Restricting to stage3 also breaks dependency cycles:
+    # exec_deps resolve at the exec platform (DEFAULT config) where this
+    # select evaluates to [], so bash doesn't depend on itself.
+    "_base_host_tools": attrs.default_only(attrs.list(attrs.exec_dep(), default = select({
+        "//tc/exec:is-stage3-mode": [
+            "//packages/linux/core/bash:bash",
+            "//packages/linux/system/apps/coreutils:coreutils",
+            "//packages/linux/dev-tools/build-systems/make:make",
+            "//packages/linux/editors/sed:sed",
+            "//packages/linux/editors/grep:grep",
+            "//packages/linux/editors/gawk:gawk",
+            "//packages/linux/system/apps/findutils:findutils",
+            "//packages/linux/editors/diffutils:diffutils",
+        ],
+        "DEFAULT": [],
+    }))),
 } | TOOLCHAIN_ATTRS
 
 # ── Tset construction ────────────────────────────────────────────────
@@ -224,10 +247,14 @@ def collect_host_path_children(ctx):
     tools always find their deps regardless of stale RUNPATH.
     """
     children = []
+    all_host = []
+    if hasattr(ctx.attrs, "_base_host_tools"):
+        all_host.extend(ctx.attrs._base_host_tools)
     if hasattr(ctx.attrs, "host_deps"):
-        for hd in ctx.attrs.host_deps:
-            if PackageInfo in hd and hd[PackageInfo].path_info:
-                children.append(hd[PackageInfo].path_info)
+        all_host.extend(ctx.attrs.host_deps)
+    for hd in all_host:
+        if PackageInfo in hd and hd[PackageInfo].path_info:
+            children.append(hd[PackageInfo].path_info)
     return children
 
 def write_lib_dirs_with_hosts(ctx, dep_path, host_path_children):
