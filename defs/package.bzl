@@ -263,28 +263,21 @@ def package(
         "acl", "attr", "libcap", "gettext", "autoconf", "automake", "libtool",
     )
 
-    # Seed tools that appear as explicit host_deps in package() calls.
-    # In DEFAULT mode (with seed), these tools are on the hermetic PATH
-    # from the seed's host-tools/ — building them as exec_deps is wasteful.
-    # Gate them behind stage3 mode where PATH is empty and tools must come
-    # from per-rule exec_deps.
+    # Lightweight build system tools safe to gate behind stage3 mode.
+    # In DEFAULT mode these are available via seed hermetic PATH or host
+    # PATH — building them as exec_deps is wasteful.  Only includes tools
+    # that are interchangeable with host versions.  Heavyweight tools
+    # (rust, llvm, mold) are NOT gated because package authors explicitly
+    # request the buckos version and host versions may be absent or broken.
     _SEED_HOST_TOOLS = (
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
         "//packages/linux/dev-tools/build-systems/automake:automake",
         "//packages/linux/dev-tools/build-systems/libtool:libtool",
-        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
-        "//packages/linux/dev-tools/build-systems/cmake:cmake",
-        "//packages/linux/dev-tools/build-systems/meson:meson",
-        "//packages/linux/dev-tools/build-systems/ninja:ninja",
         "//packages/linux/dev-tools/dev-utils/bison:bison",
         "//packages/linux/dev-tools/dev-utils/flex:flex",
         "//packages/linux/dev-tools/parsers/bison:bison",
         "//packages/linux/dev-tools/parsers/flex:flex",
         "//packages/linux/dev-tools/documentation/help2man:help2man",
-        "//packages/linux/lang/rust:rust",
-        "//packages/linux/lang/linkers:mold",
-        "//packages/linux/core/llvm:llvm-native",
-        "//packages/linux/system/filesystem/native/squashfs-tools:squashfs-tools",
     )
 
     _CONFIGURABLE_RULES = ("autotools", "meson", "cmake", "mozbuild")
