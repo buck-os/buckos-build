@@ -18,18 +18,30 @@ import sys
 
 passed = 0
 failed = 0
+_output_lines = []
 
 
 def ok(msg):
     global passed
-    print(f"  PASS: {msg}")
+    _output_lines.append(f"  PASS: {msg}")
     passed += 1
 
 
 def fail(msg):
     global failed
-    print(f"  FAIL: {msg}")
+    _output_lines.append(f"  FAIL: {msg}")
     failed += 1
+
+
+def _section(msg):
+    _output_lines.append(msg)
+
+
+def _flush_output():
+    if failed:
+        for line in _output_lines:
+            print(line)
+        print(f"--- {passed} passed, {failed} failed ---")
 
 
 def find_elfs(root):
@@ -85,7 +97,7 @@ def main():
 
     # -- Provenance disabled --
     if not expect_prov:
-        print("=== Verifying provenance disabled ===")
+        _section("=== Verifying provenance disabled ===")
         jsonl = os.path.join(output_dir, ".buckos-provenance.jsonl")
         if not os.path.exists(jsonl):
             ok("no .buckos-provenance.jsonl")
@@ -111,11 +123,11 @@ def main():
                     else:
                         fail(f"{os.path.basename(elf)} failed to execute")
 
-        print(f"--- {passed} passed, {failed} failed ---")
+        _flush_output()
         sys.exit(1 if failed else 0)
 
     # -- Provenance enabled --
-    print("=== Verifying provenance ===")
+    _section("=== Verifying provenance ===")
     expect_name = os.environ.get("EXPECT_NAME", "")
     expect_version = os.environ.get("EXPECT_VERSION", "")
 
@@ -124,7 +136,7 @@ def main():
         ok(".buckos-provenance.jsonl exists")
     else:
         fail(".buckos-provenance.jsonl missing")
-        print(f"--- {passed} passed, {failed} failed ---")
+        _flush_output()
         sys.exit(1)
 
     with open(jsonl_path) as f:
@@ -189,7 +201,7 @@ def main():
 
     # IMA checks
     if expect_ima:
-        print("=== Verifying IMA signatures ===")
+        _section("=== Verifying IMA signatures ===")
         for elf in elfs:
             sig = elf + ".sig"
             name = os.path.basename(elf)
@@ -198,7 +210,7 @@ def main():
             else:
                 fail(f"{name}: .sig sidecar missing")
 
-    print(f"--- {passed} passed, {failed} failed ---")
+    _flush_output()
     sys.exit(1 if failed else 0)
 
 

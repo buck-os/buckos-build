@@ -7,6 +7,7 @@ Stdlib only — no pytest.
 """
 
 import hashlib
+import io
 import json
 import os
 import shutil
@@ -19,17 +20,18 @@ SCRIPT = Path(__file__).resolve().parent.parent / "defs" / "scripts" / "provenan
 
 passed = 0
 failed = 0
+_output_lines = []
 
 
 def ok(msg):
     global passed
-    print(f"  PASS: {msg}")
+    _output_lines.append(f"  PASS: {msg}")
     passed += 1
 
 
 def fail(msg):
     global failed
-    print(f"  FAIL: {msg}")
+    _output_lines.append(f"  FAIL: {msg}")
     failed += 1
 
 
@@ -75,6 +77,10 @@ def verify_bos_prov(rec):
 
 
 def main():
+    _real_stdout = sys.stdout
+    _buf = io.StringIO()
+    sys.stdout = _buf
+
     # -- JSONL has correct fields --
     print("=== TestProvenanceEnabled ===")
     with tempfile.TemporaryDirectory() as d:
@@ -212,7 +218,12 @@ def main():
         print("  SKIP: objcopy not found")
 
     # -- Summary --
-    print(f"\n=== {passed}/{passed + failed} passed, {failed} failed ===")
+    sys.stdout = _real_stdout
+    if failed:
+        _real_stdout.write(_buf.getvalue())
+        for _line in _output_lines:
+            print(_line)
+        print(f"\n=== {passed}/{passed + failed} passed, {failed} failed ===")
     sys.exit(1 if failed else 0)
 
 

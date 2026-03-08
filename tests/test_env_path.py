@@ -5,6 +5,7 @@ Stdlib only -- no pytest.
 """
 
 import argparse
+import io
 import os
 import sys
 from pathlib import Path
@@ -16,17 +17,18 @@ from _env import add_path_args, setup_path
 
 passed = 0
 failed = 0
+_output_lines = []
 
 
 def ok(msg):
     global passed
-    print(f"  PASS: {msg}")
+    _output_lines.append(f"  PASS: {msg}")
     passed += 1
 
 
 def fail(msg):
     global failed
-    print(f"  FAIL: {msg}")
+    _output_lines.append(f"  FAIL: {msg}")
     failed += 1
 
 
@@ -44,6 +46,10 @@ def _make_args(**kwargs):
 
 
 def main():
+    _real_stdout = sys.stdout
+    _buf = io.StringIO()
+    sys.stdout = _buf
+
     # -- add_path_args: registers expected arguments --
     print("=== add_path_args: registers arguments ===")
     parser = argparse.ArgumentParser()
@@ -140,7 +146,12 @@ def main():
             fail(f"expected exit code 1, got {e.code}")
 
     # -- Summary --
-    print(f"\n--- {passed} passed, {failed} failed ---")
+    sys.stdout = _real_stdout
+    if failed:
+        _real_stdout.write(_buf.getvalue())
+        for _line in _output_lines:
+            print(_line)
+        print(f"\n--- {passed} passed, {failed} failed ---")
     sys.exit(1 if failed else 0)
 
 

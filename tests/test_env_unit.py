@@ -5,6 +5,7 @@ Tests the whitelist-based environment sanitization used by build helpers.
 Stdlib only -- no pytest.
 """
 
+import io
 import os
 import sys
 from pathlib import Path
@@ -16,21 +17,26 @@ from _env import clean_env, sanitize_global_env, _PASSTHROUGH, _DETERMINISM_PINS
 
 passed = 0
 failed = 0
+_output_lines = []
 
 
 def ok(msg):
     global passed
-    print(f"  PASS: {msg}")
+    _output_lines.append(f"  PASS: {msg}")
     passed += 1
 
 
 def fail(msg):
     global failed
-    print(f"  FAIL: {msg}")
+    _output_lines.append(f"  FAIL: {msg}")
     failed += 1
 
 
 def main():
+    _real_stdout = sys.stdout
+    _buf = io.StringIO()
+    sys.stdout = _buf
+
     # -- clean_env: returns only passthrough + determinism pins --
     print("=== clean_env: only expected keys ===")
     saved = dict(os.environ)
@@ -362,7 +368,12 @@ def main():
         fail("could not find _env python_library block in tools/BUCK")
 
     # -- Summary --
-    print(f"\n--- {passed} passed, {failed} failed ---")
+    sys.stdout = _real_stdout
+    if failed:
+        _real_stdout.write(_buf.getvalue())
+        for _line in _output_lines:
+            print(_line)
+        print(f"\n--- {passed} passed, {failed} failed ---")
     sys.exit(1 if failed else 0)
 
 
