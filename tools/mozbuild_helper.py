@@ -63,7 +63,6 @@ def _build_dep_env(dep_base_dirs, pkg_config_path, base_path=None):
     env = {}
 
     pc_paths = []
-    bin_paths = []
     lib_paths = []
     include_paths = []
 
@@ -72,10 +71,6 @@ def _build_dep_env(dep_base_dirs, pkg_config_path, base_path=None):
             p = os.path.join(dep_dir, subdir)
             if os.path.isdir(p):
                 pc_paths.append(p)
-        for subdir in ["usr/bin", "usr/sbin"]:
-            p = os.path.join(dep_dir, subdir)
-            if os.path.isdir(p):
-                bin_paths.append(p)
         for subdir in ["usr/lib64", "usr/lib"]:
             p = os.path.join(dep_dir, subdir)
             if os.path.isdir(p):
@@ -92,20 +87,10 @@ def _build_dep_env(dep_base_dirs, pkg_config_path, base_path=None):
     if all_pc:
         env["PKG_CONFIG_PATH"] = ":".join(all_pc)
 
-    # Only prepend dep bin dirs that don't shadow the host python interpreter.
-    # Buckos python3 is a transitive dep of many packages (glib → packaging →
-    # python), but Firefox's mach must run with the host python3 (which has all
-    # the required C extensions like _curses, ssl, etc.).  Bin dirs that
-    # contain a python3 binary are excluded from PATH prepending; they remain
-    # available via LIBRARY_PATH for the linker.
-    non_python_bin_paths = [
-        p for p in bin_paths
-        if not os.path.isfile(os.path.join(p, "python3"))
-    ]
-    if non_python_bin_paths:
-        if base_path is None:
-            base_path = ""
-        env["PATH"] = ":".join(non_python_bin_paths) + ":" + base_path
+    # Dep bin dirs are NOT added to PATH.  Deps provide libraries and
+    # headers; build tools (rustc, cargo, mold, etc.) come from the seed
+    # host-tools via the hermetic PATH.  Dep binaries have unrewritten
+    # padded ELF interpreters that can cause ENOEXEC.
 
     # LIBRARY_PATH for the linker
     if lib_paths:
@@ -196,6 +181,12 @@ def _common_env(args, src_dir, pkg_config_bin_dir):
     # Disable compiler caches
     env["CCACHE_DISABLE"] = "1"
     env["CARGO_BUILD_RUSTC_WRAPPER"] = ""
+
+    # Prevent mach from discovering host rustup/cargo via $HOME/.cargo/bin.
+    # mach's rust_search_path explicitly expands $CARGO_HOME (or ~/.cargo)
+    # and prepends it to the search path, bypassing our hermetic PATH.
+    env["CARGO_HOME"] = os.path.join(args.work_dir, "cargo-home")
+    env["RUSTUP_HOME"] = os.path.join(args.work_dir, "rustup-home")
 
     # Unset flags that interfere with mach's own flag management
     for var in ["CFLAGS", "CXXFLAGS", "LDFLAGS", "CPPFLAGS", "RUSTFLAGS"]:
