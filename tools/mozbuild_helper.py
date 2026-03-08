@@ -19,7 +19,7 @@ import subprocess
 import sys
 import json
 
-from _env import clean_env, sanitize_filenames, sanitize_global_env, write_pkg_config_wrapper
+from _env import clean_env, disable_posix_spawn, sanitize_filenames, sanitize_global_env, write_pkg_config_wrapper
 
 
 def _resolve(path):
@@ -92,15 +92,40 @@ def _build_dep_env(dep_base_dirs, pkg_config_path, base_path=None):
     if all_pc:
         env["PKG_CONFIG_PATH"] = ":".join(all_pc)
 
-    if bin_paths:
+    # Only prepend dep bin dirs that don't shadow the host python interpreter.
+    # Buckos python3 is a transitive dep of many packages (glib → packaging →
+    # python), but Firefox's mach must run with the host python3 (which has all
+    # the required C extensions like _curses, ssl, etc.).  Bin dirs that
+    # contain a python3 binary are excluded from PATH prepending; they remain
+    # available via LIBRARY_PATH for the linker.
+    non_python_bin_paths = [
+        p for p in bin_paths
+        if not os.path.isfile(os.path.join(p, "python3"))
+    ]
+    if non_python_bin_paths:
         if base_path is None:
             base_path = ""
-        env["PATH"] = ":".join(bin_paths) + ":" + base_path
+        env["PATH"] = ":".join(non_python_bin_paths) + ":" + base_path
 
-    # LIBRARY_PATH for the linker (NOT LD_LIBRARY_PATH — that poisons
-    # system Python's shared libs like pyexpat against our older expat)
+    # LIBRARY_PATH for the linker
     if lib_paths:
         env["LIBRARY_PATH"] = ":".join(lib_paths)
+
+    # LD_LIBRARY_PATH so dep binaries (rustc, llvm-objdump, mold) can find
+    # their shared libraries at runtime.  Exclude dirs containing libc.so.6
+    # to avoid poisoning host processes.
+    safe_lib_paths = [
+        p for p in lib_paths
+        if not os.path.exists(os.path.join(p, "libc.so.6"))
+    ]
+    for _p in list(safe_lib_paths):
+        _glibc_d = os.path.join(_p, "glibc")
+        if os.path.isdir(_glibc_d):
+            safe_lib_paths.append(_glibc_d)
+    if safe_lib_paths:
+        existing = env.get("LD_LIBRARY_PATH", "")
+        merged = ":".join(safe_lib_paths)
+        env["LD_LIBRARY_PATH"] = (merged + ":" + existing).rstrip(":") if existing else merged
 
     # C_INCLUDE_PATH / CPLUS_INCLUDE_PATH as fallback for headers that
     # pkg-config doesn't cover (Firefox system_wrappers use #include_next)
@@ -113,11 +138,28 @@ def _build_dep_env(dep_base_dirs, pkg_config_path, base_path=None):
     return env
 
 
-def _write_mozconfig(path, options):
-    """Write mozconfig file."""
+def _write_mozconfig(path, options, dep_base_dirs=None):
+    """Write mozconfig file.
+
+    Auto-injects --with-libclang-path if libclang.so is found in a dep
+    and no explicit --with-libclang-path is already specified.
+    """
+    has_libclang = any("--with-libclang-path" in o for o in options)
+    libclang_dir = ""
+    if not has_libclang and dep_base_dirs:
+        for d in dep_base_dirs:
+            for sub in ("usr/lib64", "usr/lib"):
+                candidate = os.path.join(d, sub)
+                if os.path.isfile(os.path.join(candidate, "libclang.so")):
+                    libclang_dir = candidate
+                    break
+            if libclang_dir:
+                break
     with open(path, "w") as f:
         for opt in options:
             f.write("ac_add_options {}\n".format(opt))
+        if libclang_dir:
+            f.write("ac_add_options --with-libclang-path={}\n".format(libclang_dir))
 
 
 def _run(cmd, cwd=None, env=None):
@@ -169,8 +211,11 @@ def _common_env(args, src_dir, pkg_config_bin_dir):
             _parent = os.path.dirname(os.path.abspath(_bp))
             for _ld in ("lib", "lib64"):
                 _d = os.path.join(_parent, _ld)
-                if os.path.isdir(_d):
+                if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")):
                     _lib_dirs.append(_d)
+                    _glibc_d = os.path.join(_d, "glibc")
+                    if os.path.isdir(_glibc_d):
+                        _lib_dirs.append(_glibc_d)
         if _lib_dirs:
             _existing = env.get("LD_LIBRARY_PATH", "")
             env["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (":" + _existing if _existing else "")
@@ -217,8 +262,11 @@ def _common_env(args, src_dir, pkg_config_bin_dir):
             _parent = os.path.dirname(os.path.abspath(_bp))
             for _ld in ("lib", "lib64"):
                 _d = os.path.join(_parent, _ld)
-                if os.path.isdir(_d):
+                if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")):
                     _dep_lib_dirs.append(_d)
+                    _glibc_d = os.path.join(_d, "glibc")
+                    if os.path.isdir(_glibc_d):
+                        _dep_lib_dirs.append(_glibc_d)
         if _dep_lib_dirs:
             _existing = env.get("LD_LIBRARY_PATH", "")
             env["LD_LIBRARY_PATH"] = ":".join(_dep_lib_dirs) + (":" + _existing if _existing else "")
@@ -237,6 +285,11 @@ def _common_env(args, src_dir, pkg_config_bin_dir):
     mozconfig = os.path.join(src_dir, "mozconfig")
     env["MOZCONFIG"] = mozconfig
 
+    # Disable posix_spawn in child Python processes (mach) to avoid
+    # ENOEXEC with padded ELF interpreters on buckos-native dep binaries.
+    if hasattr(args, 'ld_linux') and args.ld_linux:
+        disable_posix_spawn(env, args.work_dir)
+
     return env
 
 
@@ -250,7 +303,8 @@ def phase_configure(args):
     env = _common_env(args, src_dir, pkg_config_bin)
 
     # Write mozconfig
-    _write_mozconfig(os.path.join(src_dir, "mozconfig"), args.mozconfig_options)
+    _dep_dirs = [_resolve(d) for d in args.dep_base_dirs.split(":") if d] if args.dep_base_dirs else []
+    _write_mozconfig(os.path.join(src_dir, "mozconfig"), args.mozconfig_options, _dep_dirs)
 
     # Run configure
     _run([sys.executable if shutil.which("python3") is None else "python3",
@@ -281,7 +335,8 @@ def phase_rust_deps(args):
     pkg_config_bin = _setup_pkg_config_wrapper(
         os.path.join(args.work_dir, "bin"))
     env = _common_env(args, src_dir, pkg_config_bin)
-    _write_mozconfig(os.path.join(src_dir, "mozconfig"), args.mozconfig_options)
+    _dep_dirs = [_resolve(d) for d in args.dep_base_dirs.split(":") if d] if args.dep_base_dirs else []
+    _write_mozconfig(os.path.join(src_dir, "mozconfig"), args.mozconfig_options, _dep_dirs)
 
     # Find objdir
     objdir = None
@@ -367,7 +422,8 @@ def phase_build(args):
     pkg_config_bin = _setup_pkg_config_wrapper(
         os.path.join(args.work_dir, "bin"))
     env = _common_env(args, src_dir, pkg_config_bin)
-    _write_mozconfig(os.path.join(src_dir, "mozconfig"), args.mozconfig_options)
+    _dep_dirs = [_resolve(d) for d in args.dep_base_dirs.split(":") if d] if args.dep_base_dirs else []
+    _write_mozconfig(os.path.join(src_dir, "mozconfig"), args.mozconfig_options, _dep_dirs)
 
     # Full build
     _run(["python3", "./mach", "build"], cwd=src_dir, env=env)
@@ -395,7 +451,8 @@ def phase_install(args):
     pkg_config_bin = _setup_pkg_config_wrapper(
         os.path.join(args.work_dir, "bin"))
     env = _common_env(args, src_dir, pkg_config_bin)
-    _write_mozconfig(os.path.join(src_dir, "mozconfig"), args.mozconfig_options)
+    _dep_dirs = [_resolve(d) for d in args.dep_base_dirs.split(":") if d] if args.dep_base_dirs else []
+    _write_mozconfig(os.path.join(src_dir, "mozconfig"), args.mozconfig_options, _dep_dirs)
 
     output = _resolve(args.output_dir)
     os.makedirs(output, exist_ok=True)
@@ -438,6 +495,8 @@ def main():
                         help="Start with empty PATH (populated by --path-prepend)")
     parser.add_argument("--path-prepend", action="append", dest="path_prepend", default=[],
                         help="Directory to prepend to PATH (repeatable, resolved to absolute)")
+    parser.add_argument("--ld-linux", default=None,
+                        help="Buckos ld-linux path (disables posix_spawn)")
     parser.add_argument("--env", action="append", dest="extra_env", default=[],
                         help="Extra environment variable KEY=VALUE (repeatable)")
 

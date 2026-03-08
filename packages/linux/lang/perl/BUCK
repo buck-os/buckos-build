@@ -14,14 +14,37 @@ package(
     homepage = "https://www.perl.org/",
     license = "Artistic-1.0-Perl OR GPL-1.0-or-later",
     # Perl uses its own Configure script (capital C), not autotools.
-    # Perl Configure compiles and RUNS test programs, so it CANNOT cross-compile
-    # inside the network-isolated mount namespace (host gcc can't link against
-    # sysroot's glibc). Build with host compiler instead.
+    # Pass -Dcc/-Dld to force Configure to use our GCC (with specs) so
+    # the output perl binary gets padded interp + RPATH placeholder.
+    # Test programs and perl itself run at build time via the host
+    # ld-linux (padded path collapses to /lib64/ld-linux-*) and
+    # LD_LIBRARY_PATH covers library lookup since the specs RPATH
+    # placeholder (/buckos-rpath-pad...) doesn't resolve on the host.
     install_script = """
 cd "$SRCS"
 
 chmod +x Configure
+
+# Convert -L paths to -rpath so the perl binary can find dep libs at
+# runtime.  In stage 2 these are Buck-out paths (works on build host).
+# In stage 3, specs add the RPATH placeholder; _rewrite_rpath finalizes
+# everything to $ORIGIN-relative paths in the seed.
+RPATH_FLAGS=""
+for flag in $LDFLAGS; do
+    case "$flag" in
+        -L*) RPATH_FLAGS="$RPATH_FLAGS -Wl,-rpath,${flag#-L}" ;;
+    esac
+done
+PERL_LDFLAGS="$LDFLAGS $RPATH_FLAGS"
+
+# Pass dep CFLAGS/LDFLAGS to Configure so it can find dep headers/libs
+# (e.g. libxcrypt, zlib).  Perl Configure ignores env LDFLAGS for its
+# test programs — must use -Dccflags/-Dldflags instead.
 ./Configure -des \
+    -Dcc="$CC" \
+    -Dld="$CC" \
+    -Dccflags="$CFLAGS" \
+    -Dldflags="$PERL_LDFLAGS" \
     -Dprefix=/usr \
     -Dvendorprefix=/usr \
     -Dman1dir=/usr/share/man/man1 \
@@ -29,15 +52,13 @@ chmod +x Configure
     -Dusethreads \
     -Duserelocatableinc
 
-# Override LD_RUN_PATH to prevent ExtUtils::MakeMaker from embedding
-# host library paths (e.g. /usr/lib64) as RUNPATH in XS .so modules.
-# Must be a make variable override — env var alone doesn't win.
-make LD_RUN_PATH= -j${MAKEOPTS:-$(nproc)}
+make -j${MAKEOPTS:-$(nproc)}
 
-make LD_RUN_PATH= DESTDIR="$OUT" install
+make DESTDIR="$OUT" install
 """,
     deps = [
         "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/crypto/libxcrypt:libxcrypt",
     ],
     visibility = ["PUBLIC"],
 )

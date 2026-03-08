@@ -148,10 +148,9 @@ def main():
             os.environ["PATH"] = fake_bin + ":" + old_path
             try:
                 result = build_gcc14_workaround(build_dir)
-                if (len(result) == 2
-                        and result[0].startswith("CC=")
-                        and result[1].startswith("HOSTCC=")):
-                    ok("GCC 14 returns CC and HOSTCC wrapper args")
+                if (len(result) == 1
+                        and result[0].startswith("CC=")):
+                    ok("GCC 14 returns CC wrapper arg")
                 else:
                     fail(f"unexpected result: {result!r}")
             finally:
@@ -165,10 +164,10 @@ def main():
             os.environ["PATH"] = fake_bin + ":" + old_path
             try:
                 result = build_gcc14_workaround(build_dir)
-                if len(result) == 2:
+                if len(result) == 1:
                     ok("GCC 15 also triggers wrapper")
                 else:
-                    fail(f"expected 2 args, got {result!r}")
+                    fail(f"expected 1 arg, got {result!r}")
             finally:
                 os.environ["PATH"] = old_path
 
@@ -268,10 +267,11 @@ def main():
             os.environ["PATH"] = fake_bin + ":" + old_path
             try:
                 result = config_gcc14_workaround(build_dir, "")
-                if len(result) == 2:
+                if (len(result) == 1
+                        and result[0].startswith("CC=")):
                     ok("empty cc_bin defaults to gcc and triggers wrapper")
                 else:
-                    fail(f"expected 2 args, got {result!r}")
+                    fail(f"expected 1 CC arg, got {result!r}")
             finally:
                 os.environ["PATH"] = old_path
 
@@ -284,10 +284,11 @@ def main():
             os.environ["PATH"] = fake_bin + ":" + old_path
             try:
                 result = config_gcc14_workaround(build_dir, "my-gcc")
-                if len(result) == 2:
+                if (len(result) == 1
+                        and result[0].startswith("CC=")):
                     ok("custom cc_bin triggers wrapper for GCC 14+")
                 else:
-                    fail(f"expected 2 args, got {result!r}")
+                    fail(f"expected 1 CC arg, got {result!r}")
             finally:
                 os.environ["PATH"] = old_path
 

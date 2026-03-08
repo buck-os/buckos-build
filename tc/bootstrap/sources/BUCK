@@ -1,0 +1,64 @@
+"""Shared source tarballs for bootstrap pipelines.
+
+Used by both the x86_64 stage1 cross-compiler and the aarch64 cross-compiler.
+Centralised here so that stage1 build targets are not pulled into the graph
+when a prebuilt seed is configured.
+"""
+
+load("//defs/rules:source.bzl", "extract_source")
+
+http_file(
+    name = "binutils-archive",
+    urls = ["https://mirror.buckos.org/b/binutils-2.45.1.tar.xz"],
+    sha256 = "5fe101e6fe9d18fdec95962d81ed670fdee5f37e3f48f0bef87bddf862513aa5",
+    out = "binutils-2.45.1.tar.xz",
+)
+extract_source(name = "binutils-src", source = ":binutils-archive")
+
+http_file(
+    name = "linux-archive",
+    urls = ["https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.60.tar.xz"],
+    sha256 = "a63096b2147411d683cecbf87622bb2ff4885bac2b3641d3d4f10250c89cdcf8",
+    out = "linux-6.12.60.tar.xz",
+)
+extract_source(name = "linux-src", source = ":linux-archive")
+
+http_file(
+    name = "gcc-archive",
+    urls = ["https://mirror.buckos.org/g/gcc-14.3.0.tar.gz"],
+    sha256 = "ace8b8b0dbfe6abfc22f821cb093e195aa5498b7ccf7cd23e4424b9f14afed22",
+    out = "gcc-14.3.0.tar.gz",
+)
+extract_source(name = "gcc-src", source = ":gcc-archive")
+
+http_file(
+    name = "glibc-archive",
+    urls = ["https://mirror.buckos.org/g/glibc-2.42.tar.gz"],
+    sha256 = "d4468d3e3267068c1b0623ca6424aac9a28766df774c8d8fb4978127fca7125a",
+    out = "glibc-2.42.tar.gz",
+)
+extract_source(name = "glibc-src", source = ":glibc-archive")
+
+http_file(
+    name = "gmp-archive",
+    urls = ["https://mirror.buckos.org/g/gmp-6.3.0.tar.xz"],
+    sha256 = "a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898",
+    out = "gmp-6.3.0.tar.xz",
+)
+extract_source(name = "gmp-src", source = ":gmp-archive")
+
+http_file(
+    name = "mpfr-archive",
+    urls = ["https://mirror.buckos.org/m/mpfr-4.2.1.tar.xz"],
+    sha256 = "277807353a6726978996945af13e52829e3abd7a9a5b7fb2793894e18f1fcbb2",
+    out = "mpfr-4.2.1.tar.xz",
+)
+extract_source(name = "mpfr-src", source = ":mpfr-archive")
+
+http_file(
+    name = "mpc-archive",
+    urls = ["https://mirror.buckos.org/m/mpc-1.3.1.tar.gz"],
+    sha256 = "ab642492f5cf882b74aa0cb730cd410a81edcdbec895183ce930e706c1c759b8",
+    out = "mpc-1.3.1.tar.gz",
+)
+extract_source(name = "mpc-src", source = ":mpc-archive")

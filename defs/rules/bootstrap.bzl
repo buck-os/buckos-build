@@ -76,6 +76,7 @@ def _bootstrap_binutils_impl(ctx):
         "--disable-readline",
         "--enable-gprofng=no",
         "--enable-default-hash-style=gnu",
+        "--without-xxhash",
     ]:
         conf_cmd.add(cmd_args("--configure-arg=", arg, delimiter = ""))
     for arg in ctx.attrs.extra_configure_args:

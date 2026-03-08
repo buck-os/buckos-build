@@ -18,6 +18,7 @@ Env vars from sh_test:
 import os
 import subprocess
 import sys
+import threading
 
 
 def find_file(base, name):
@@ -82,8 +83,8 @@ def main():
         "-initrd", initramfs,
         "-drive", f"file={disk},format=raw,if=virtio,readonly=on,file.locking=off",
         "-append", f"console=ttyS0 panic=-1 {cmdline_extra}",
-        "-nographic", "-no-reboot", "-m", "256M",
-        "-enable-kvm", "-cpu", "host",
+        "-nographic", "-no-reboot", "-m", "1G",
+        "-enable-kvm", "-cpu", "host", "-smp", "4",
     ]
 
     # Prepend the runtime environment wrapper so QEMU finds its shared libs
@@ -92,12 +93,33 @@ def main():
         os.chmod(run_env, 0o755)
         cmd = [run_env] + cmd
 
-    try:
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-        output = r.stdout + r.stderr
-    except subprocess.TimeoutExpired:
-        output = ""
+    # Collect positive markers to watch for (early exit once all found)
+    pos_markers = {expect_marker: False}
+    if expect_test_output:
+        pos_markers[expect_test_output] = False
 
+    lines = []
+    proc = subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+    )
+
+    timer = threading.Timer(30, lambda: proc.kill())
+    timer.start()
+
+    try:
+        for line in proc.stdout:
+            lines.append(line)
+            for m in pos_markers:
+                if m in line:
+                    pos_markers[m] = True
+            if all(pos_markers.values()):
+                proc.kill()
+                break
+    finally:
+        timer.cancel()
+        proc.wait()
+
+    output = "".join(lines)
     print(output)
     print("---")
 

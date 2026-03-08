@@ -418,11 +418,15 @@ sh_test(
     name = "test-iso-boot",
     test = "verify_iso_boot.py",
     deps = [
+        "//packages/linux/kernel/buckos-kernel:buckos-kernel",
+        "//packages/linux/system:buckos-initramfs",
         "//packages/linux/system:buckos-minimal-iso",
         "//packages/linux/emulation/hypervisors/qemu:qemu",
         ":qemu-env",
     ],
     env = {
+        "KERNEL": "$(location //packages/linux/kernel/buckos-kernel:buckos-kernel)",
+        "INITRAMFS": "$(location //packages/linux/system:buckos-initramfs)",
         "ISO": "$(location //packages/linux/system:buckos-minimal-iso)",
         "QEMU_DIR": "$(location //packages/linux/emulation/hypervisors/qemu:qemu)",
         "RUN_ENV": "$(location :qemu-env)",
@@ -435,11 +439,15 @@ sh_test(
     name = "test-kde-iso-boot",
     test = "verify_kde_iso_boot.py",
     deps = [
+        "//packages/linux/kernel/buckos-kernel:buckos-kernel-live",
+        "//packages/linux/system:buckos-live-initramfs-systemd",
         "//packages/linux/system:buckos-live-installer-kde",
         "//packages/linux/emulation/hypervisors/qemu:qemu",
         ":qemu-env",
     ],
     env = {
+        "KERNEL": "$(location //packages/linux/kernel/buckos-kernel:buckos-kernel-live)",
+        "INITRAMFS": "$(location //packages/linux/system:buckos-live-initramfs-systemd)",
         "ISO": "$(location //packages/linux/system:buckos-live-installer-kde)",
         "QEMU_DIR": "$(location //packages/linux/emulation/hypervisors/qemu:qemu)",
         "RUN_ENV": "$(location :qemu-env)",
@@ -451,17 +459,23 @@ sh_test(
 # ── Seed isolation ────────────────────────────────────────────────
 # Verifies the seed archive has no build-path leaks in RPATH/RUNPATH,
 # no cross-contamination between host-tools and sysroot, valid metadata.
-# Requires full bootstrap so tagged slow.
+# When a prebuilt seed is configured, verifies it directly (fast).
+# When building from source, requires full bootstrap (slow).
+
+_source_mode = read_config("buckos", "source_mode", "") in ("true", "1", "yes")
+_seed_path = read_config("buckos", "seed_path", "")
+_seed_url = read_config("buckos", "seed_url", "")
+_prebuilt_seed = not _source_mode and bool(_seed_path or _seed_url)
 
 sh_test(
     name = "test-seed-isolation",
     test = "verify_seed_isolation.py",
-    deps = ["//tc/bootstrap:seed-export"],
+    deps = ["//tc/seed:seed-archive-ref"] if _prebuilt_seed else ["//tc/bootstrap:seed-export"],
     env = {
-        "SEED_ARCHIVE": "$(location //tc/bootstrap:seed-export)",
+        "SEED_ARCHIVE": "$(location //tc/seed:seed-archive-ref)" if _prebuilt_seed else "$(location //tc/bootstrap:seed-export)",
     },
     run_test_separately = True,
-    labels = ["slow"],
+    labels = [] if _prebuilt_seed else ["slow"],
 )
 
 # IMA enforce: unsigned binary rejected

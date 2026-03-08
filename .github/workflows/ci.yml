@@ -55,6 +55,8 @@ jobs:
             | zstd -d -f -o "$HOME/.local/bin/buck2"
           chmod +x "$HOME/.local/bin/buck2"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Restart buck2 daemon
+        run: buck2 kill 2>/dev/null || true
       - name: Resolve targets
         run: buck2 targets //...
       - name: Graph tests
@@ -70,35 +72,76 @@ jobs:
       - name: Unit tests
         run: |
           buck2 test //tests:
-      - name: Build ISO
-        run: buck2 build //packages/linux/system:buckos-minimal-iso --out buckos.iso
+      - name: Build minimal ISO
+        run: buck2 build //packages/linux/system:buckos-minimal-iso --out buckos-minimal.iso
+      - name: Build KDE ISO
+        run: buck2 build //packages/linux/system:buckos-live-installer-kde --out buckos-kde.iso
       - name: Build seed toolchain
         run: buck2 build //tc/bootstrap:seed-export --out seed-toolchain.tar.zst
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: buckos-minimal-iso
-          path: buckos.iso
+          path: buckos-minimal.iso
+          compression-level: 0
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: buckos-kde-iso
+          path: buckos-kde.iso
+          compression-level: 0
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: seed-toolchain
           path: seed-toolchain.tar.zst
+          compression-level: 0
 
-  # release:
-  #   needs: [test-setup, test]
-  #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-  #   runs-on: ubuntu-latest
-  #   permissions:
-  #     contents: write
-  #   steps:
-  #     - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
-  #     - uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2.5.0
-  #       with:
-  #         tag_name: dev
-  #         name: Development Build
-  #         prerelease: true
-  #         make_latest: false
-  #         body: |
-  #           Rolling development build from `main` at ${{ github.sha }}.
-  #         files: |
-  #           buckos-minimal-iso/buckos.iso
-  #           seed-toolchain/seed-toolchain.tar.zst
+  test-seed:
+    name: test with seed
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: seed-toolchain
+          path: .
+      - name: Install dependencies
+        run: sudo apt-get install -yq zstd binutils
+      - name: Install buck2
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -sL https://github.com/facebook/buck2/releases/download/latest/buck2-x86_64-unknown-linux-gnu.zst \
+            | zstd -d -f -o "$HOME/.local/bin/buck2"
+          chmod +x "$HOME/.local/bin/buck2"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Configure seed
+        run: |
+          printf '[buckos]\nseed_path = seed-toolchain.tar.zst\n' >> .buckconfig.local
+          tmpdir=$(mktemp -d)
+          buck2 init "$tmpdir"
+          printf '\n[cells]\n' >> .buckconfig.local
+          grep 'none = none' "$tmpdir/.buckconfig" >> .buckconfig.local
+          sed -n '/^\[cell_aliases\]/,/^[[:space:]]*$/p' "$tmpdir/.buckconfig" >> .buckconfig.local
+      - name: Tests
+        run: |
+          buck2 test //tests:
+
+  release:
+    needs: [test-setup, test-seed]
+    if: github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+      - uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2.5.0
+        with:
+          tag_name: dev
+          name: Development Build
+          prerelease: true
+          make_latest: false
+          body: |
+            Rolling development build from `main` at ${{ github.sha }}.
+          files: |
+            buckos-minimal-iso/buckos-minimal.iso
+            buckos-kde-iso/buckos-kde.iso
+            seed-toolchain/seed-toolchain.tar.zst

@@ -1,8 +1,18 @@
 load("//defs:package.bzl", "package")
 
-# System glibc package
-# This repackages the cross-glibc from the bootstrap toolchain for the final system.
-# The cross-glibc is now built with --prefix=/usr so it can be copied directly.
+# =============================================================================
+# glibc - GNU C Library (built from source)
+# =============================================================================
+#
+# Rebuilt from source at the package level using the stage 2 toolchain.
+# The cross-compiler CC (with specs) injects padded interp + RPATH
+# placeholder into all glibc utilities (ldconfig, ldd, getent, etc.),
+# eliminating the need for pack-time ELF patching.
+#
+# glibc's configure is sensitive to CFLAGS — the install_script
+# overrides them to avoid interference from dep include paths.
+# Depends only on linux-headers (no shared libs → no LD_LIBRARY_PATH
+# poisoning of the cross-compiler).
 
 package(
     name = "glibc",
@@ -10,89 +20,172 @@ package(
     version = "2.42",
     url = "https://mirrors.kernel.org/gnu/glibc/glibc-2.42.tar.xz",
     sha256 = None,
-    source = "//tc/bootstrap/stage1:glibc-src",
+    source = "//tc/bootstrap/sources:glibc-src",
     description = "GNU C Library (glibc) - the standard C library for GNU/Linux systems",
     homepage = "https://www.gnu.org/software/libc/",
     license = "LGPL-2.1+ GPL-2+",
-    use_configure = {
-        "audit": ("--enable-audit", "--disable-audit"),
-        "caps": ("--enable-libcap", "--disable-libcap"),
-        "cet": ("--enable-cet", "--disable-cet"),
-        "clang": ("--enable-clang", "--disable-clang"),
-        "compile-locales": ("--enable-compile-locales", "--disable-compile-locales"),
-        "custom-cflags": ("--enable-custom-cflags", "--disable-custom-cflags"),
-        "gd": ("--enable-gd", "--disable-gd"),
-        "hash-sysv-compat": ("--enable-hash-sysv-compat", "--disable-hash-sysv-compat"),
-        "headers-only": ("--enable-headers-only", "--disable-headers-only"),
-        "multiarch": ("--enable-multiarch", "--disable-multiarch"),
-        "multilib": ("--enable-multilib", "--disable-multilib"),
-        "multilib-bootstrap": ("--enable-multilib-bootstrap", "--disable-multilib-bootstrap"),
-        "nscd": ("--enable-nscd", "--disable-nscd"),
-        "perl": ("--enable-perl", "--disable-perl"),
-        "profile": ("--enable-profile", "--disable-profile"),
-        "selinux": ("--enable-selinux", "--disable-selinux"),
-        "sframe": ("--enable-sframe", "--disable-sframe"),
-        "ssp": ("--enable-ssp", "--disable-ssp"),
-        "stack-realign": ("--enable-stack-realign", "--disable-stack-realign"),
-        "static-libs": ("--enable-static", "--disable-static"),
-        "suid": ("--enable-suid", "--disable-suid"),
-        "systemd": ("--enable-systemd", "--disable-systemd"),
-        "systemtap": ("--enable-systemtap", "--disable-systemtap"),
-        "vanilla": ("--enable-vanilla", "--disable-vanilla"),
-    },
     install_script = """
-# Copy glibc from cross-glibc build output
-# The cross-glibc is built with --prefix=/usr so paths are already correct
+cd "$SRCS"
 
-# DEP_BASE_DIRS is set by binary_package from deps
-CROSS_GLIBC="${DEP_BASE_DIRS%%:*}"  # Get first path from colon-separated list
+# glibc's configure is sensitive to CFLAGS/LDFLAGS — override with
+# minimal flags.  Specs handle the padded interp + RPATH via CC.
+export CFLAGS="-O2 -march=x86-64-v3"
+export CXXFLAGS="-O2 -march=x86-64-v3"
+export LDFLAGS=""
 
-if [ -z "$CROSS_GLIBC" ] || [ ! -d "$CROSS_GLIBC" ]; then
-    echo "ERROR: Could not find cross-glibc." >&2
+# Patch .eh_frame section attributes — the cross-compiler generates
+# .eh_frame,"aw" (writable) but glibc's hand-written assembly in
+# libc_sigaction.c uses .eh_frame,"a" (read-only).
+find . -name 'libc_sigaction.c' \
+    -exec sed -i 's/eh_frame,\\"a\\"/eh_frame,\\"aw\\"/g' {} +
+
+# Extract sysroot from CC for kernel headers (CC includes --sysroot=...)
+SYSROOT=""
+for word in $CC; do
+    case "$word" in
+        --sysroot=*) SYSROOT="${word#--sysroot=}" ;;
+    esac
+done
+
+# Also check DEP_BASE_DIRS for explicit linux-headers dep
+KERNEL_HEADERS=""
+if [ -n "$SYSROOT" ] && [ -d "$SYSROOT/usr/include/linux" ]; then
+    KERNEL_HEADERS="$SYSROOT/usr/include"
+fi
+IFS=':' read -ra DEPS <<< "${DEP_BASE_DIRS:-}"
+for dep in "${DEPS[@]}"; do
+    if [ -d "$dep/usr/include/linux" ]; then
+        KERNEL_HEADERS="$dep/usr/include"
+        break
+    fi
+done
+
+if [ -z "$KERNEL_HEADERS" ]; then
+    echo "ERROR: Could not find kernel headers" >&2
+    echo "  SYSROOT=$SYSROOT" >&2
     echo "  DEP_BASE_DIRS=$DEP_BASE_DIRS" >&2
-    echo "  CROSS_GLIBC=$CROSS_GLIBC" >&2
     exit 1
 fi
+echo "Using kernel headers: $KERNEL_HEADERS"
 
-echo "Copying glibc from: $CROSS_GLIBC"
+# Out-of-tree build
+chmod +x scripts/config.guess 2>/dev/null || true
+BUILD_TRIPLE=$(scripts/config.guess 2>/dev/null || echo "x86_64-pc-linux-gnu")
+echo "Build triple: $BUILD_TRIPLE"
 
-mkdir -p "$DESTDIR"
+mkdir -p build && cd build
+echo "rootsbindir=/usr/sbin" > configparms
 
-# Copy the entire structure - glibc is now built with --prefix=/usr
-# x86_64 uses lib64/, aarch64 uses lib/
-cp -a "$CROSS_GLIBC"/* "$DESTDIR/"
+../configure \
+    --prefix=/usr \
+    --host=x86_64-buckos-linux-gnu \
+    --build="$BUILD_TRIPLE" \
+    --enable-kernel=4.19 \
+    --with-headers="$KERNEL_HEADERS" \
+    --disable-nscd \
+    --disable-werror \
+    --enable-cet=no \
+    libc_cv_slibdir=/usr/lib64 \
+    libc_cv_forced_unwind=yes \
+    libc_cv_c_cleanup=yes \
+    libc_cv_pde=yes \
+    libc_cv_cxx_link_ok=no \
+    libc_cv_pde_load_address=0x0000000000400000
 
-echo "glibc installation complete"
+make -j${MAKEOPTS:-$(nproc)}
+make DESTDIR="$OUT" install
 
-# Generate C.UTF-8 locale for live environment
-# C.UTF-8 is built into glibc 2.35+ but still needs to be compiled
+# Fix glibc linker scripts to use relative paths
+for script in $OUT/usr/lib*/libc.so $OUT/usr/lib*/libpthread.so $OUT/usr/lib*/libm.so; do
+    if [ -f "$script" ] && file "$script" | grep -q ASCII; then
+        sed -i -e 's|/usr/lib64/||g' -e 's|/usr/lib/||g' -e 's|/lib64/||g' -e 's|/lib/||g' "$script"
+    fi
+done
+
+# Do NOT create /lib64/ld-linux-x86-64.so.2 symlink here.
+# The rootfs baselayout provides /lib64 -> usr/lib64 (merged-usr),
+# so /lib64/ld-linux-x86-64.so.2 resolves to usr/lib64/ automatically.
+# Creating a symlink here would clobber the real ELF file when tar
+# extracts through the directory symlink with --keep-directory-symlink.
+
+# Generate C.UTF-8 locale
 echo "Generating C.UTF-8 locale..."
-mkdir -p "$DESTDIR/usr/lib/locale"
-
-# Use localedef from the cross-glibc to generate C.UTF-8
-if [ -x "$CROSS_GLIBC/usr/bin/localedef" ]; then
-    "$CROSS_GLIBC/usr/bin/localedef" \
-        --prefix="$DESTDIR" \
-        -i C -f UTF-8 C.UTF-8 2>/dev/null || \
-    echo "Warning: localedef failed, C.UTF-8 may not be available"
+mkdir -p "$OUT/usr/lib/locale"
+if [ -x "$OUT/usr/bin/localedef" ]; then
+    LD_LIBRARY_PATH="$OUT/usr/lib64" "$OUT/usr/bin/localedef" \
+        --prefix="$OUT" -i C -f UTF-8 C.UTF-8 2>/dev/null || \
+        echo "Warning: localedef failed, C.UTF-8 may not be available"
 else
     echo "Warning: localedef not found, locales not generated"
 fi
 
-# Show installed libraries (check both lib64 for x86_64 and lib for aarch64)
-ls -la "$DESTDIR/usr/lib64/"*.so* 2>/dev/null | head -5 || \
-ls -la "$DESTDIR/lib64/"*.so* 2>/dev/null | head -5 || \
-ls -la "$DESTDIR/usr/lib/"*.so* 2>/dev/null | head -5 || \
-ls -la "$DESTDIR/lib/"*.so* 2>/dev/null | head -5 || true
+# Patch interp in glibc utilities.  glibc's build system explicitly sets
+# --dynamic-linker=/usr/lib64/ld-linux-x86-64.so.2, overriding our GCC
+# specs.  Pad the interp so the unpack step can rewrite it to the actual
+# bundled ld-linux path.
+python3 - "$OUT" << 'PYEOF'
+import struct, os, sys
+out = sys.argv[1]
+target_size = 256
+suffix = b"lib64/ld-linux-x86-64.so.2"
+n_slashes = target_size - 1 - len(suffix)
+new_interp = b"/" * n_slashes + suffix + b"\x00"
+STANDARD = [b"/lib64/ld-linux-x86-64.so.2", b"/usr/lib64/ld-linux-x86-64.so.2"]
+patched = 0
+for root, _, files in os.walk(out):
+    for name in files:
+        path = os.path.join(root, name)
+        if os.path.islink(path) or not os.path.isfile(path):
+            continue
+        try:
+            with open(path, "rb") as f:
+                data = bytearray(f.read())
+        except (PermissionError, OSError):
+            continue
+        if data[:4] != b"\x7fELF" or data[4] != 2 or data[5] != 1:
+            continue
+        e_phoff = struct.unpack_from("<Q", data, 32)[0]
+        e_phentsize = struct.unpack_from("<H", data, 54)[0]
+        e_phnum = struct.unpack_from("<H", data, 56)[0]
+        for i in range(e_phnum):
+            off = e_phoff + i * e_phentsize
+            if struct.unpack_from("<I", data, off)[0] != 3:
+                continue
+            p_offset = struct.unpack_from("<Q", data, off + 8)[0]
+            p_filesz = struct.unpack_from("<Q", data, off + 32)[0]
+            end = data.find(0, p_offset)
+            if end < 0:
+                break
+            old_interp = data[p_offset:end]
+            if old_interp not in STANDARD:
+                break
+            if len(new_interp) <= p_filesz:
+                data[p_offset:p_offset + len(new_interp)] = new_interp
+                for j in range(len(new_interp), p_filesz):
+                    data[p_offset + j] = 0
+            else:
+                new_off = len(data)
+                data.extend(new_interp)
+                struct.pack_into("<Q", data, off + 8, new_off)
+                struct.pack_into("<Q", data, off + 32, len(new_interp))
+                struct.pack_into("<Q", data, off + 40, len(new_interp))
+            os.chmod(path, 0o755)
+            with open(path, "wb") as f:
+                f.write(data)
+            patched += 1
+            break
+print(f"Patched interp in {patched} glibc binaries")
+PYEOF
 
-# Show generated locale
-ls -la "$DESTDIR/usr/lib/locale/" 2>/dev/null || true
+echo "glibc 2.42 built from source"
+ls -la "$OUT/usr/lib64/"*.so* 2>/dev/null | head -5 || true
 """,
 
-    # Depend on cross-glibc from bootstrap to get the pre-built glibc
-    # Use select() to pick the right cross-glibc for the target architecture
+    # Only depend on linux-headers for kernel headers.
+    # NOT cross-glibc — its shared libs would cause LD_LIBRARY_PATH
+    # poisoning of the cross-compiler (host binary + buckos glibc = crash).
     deps = select({
-        "//platforms:is_aarch64": ["//tc/bootstrap/aarch64:cross-glibc-aarch64"],
-        "DEFAULT": ["//tc/bootstrap/stage1:glibc"],
+        "//platforms:is_aarch64": ["//tc/bootstrap/aarch64:linux-headers-aarch64"],
+        "DEFAULT": ["//tc/bootstrap/stage1:linux-headers"],
     }),
 )

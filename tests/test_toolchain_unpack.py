@@ -69,8 +69,8 @@ def main():
           ".tar -> auto")
 
     print("=== detect_compression: .zip ===")
-    check(detect_compression("archive.zip") == "auto",
-          ".zip -> auto")
+    check(detect_compression("archive.zip") == "zip",
+          ".zip -> zip")
 
     print("=== detect_compression: full path preserved ===")
     check(detect_compression("/tmp/builds/seed.tar.zst") == "zst",

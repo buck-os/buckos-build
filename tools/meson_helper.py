@@ -10,7 +10,7 @@ import os
 import subprocess
 import sys
 
-from _env import clean_env, derive_lib_paths, filter_path_flags, register_cleanup, sanitize_filenames, write_pkg_config_wrapper
+from _env import clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, register_cleanup, sanitize_filenames, write_pkg_config_wrapper
 
 
 def _resolve_env_paths(value):
@@ -36,7 +36,7 @@ def _resolve_env_paths(value):
                 resolved.append(p)
         return ":".join(resolved)
 
-    _FLAG_PREFIXES = ["-I", "-L", "-Wl,-rpath-link,", "-Wl,-rpath,"]
+    _FLAG_PREFIXES = ["-I", "-L", "-Wl,-rpath-link,", "-Wl,-rpath,", "-specs="]
 
     parts = []
     for token in value.split():
@@ -94,6 +94,8 @@ def main():
                         help="Allow host PATH (bootstrap escape hatch)")
     parser.add_argument("--hermetic-empty", action="store_true",
                         help="Start with empty PATH (populated by --path-prepend)")
+    parser.add_argument("--ld-linux", default=None,
+                        help="Buckos ld-linux path (disables posix_spawn)")
     parser.add_argument("--pre-cmd", action="append", dest="pre_cmds", default=[],
                         help="Shell command to run in source dir before meson setup (repeatable)")
     parser.add_argument("--cflags-file", default=None,
@@ -125,13 +127,15 @@ def main():
         print(f"error: source directory not found: {args.source_dir}", file=sys.stderr)
         sys.exit(1)
 
-    os.makedirs(args.build_dir, exist_ok=True)
-    register_cleanup(os.path.abspath(args.build_dir))
+    _build_dir_abs = os.path.abspath(args.build_dir)
+    os.makedirs(_build_dir_abs, exist_ok=True)
+    register_cleanup(_build_dir_abs)
 
     # Create a pkg-config wrapper that always passes --define-prefix so
     # .pc files in Buck2 dep directories resolve paths correctly.
-    import tempfile
-    wrapper_dir = write_pkg_config_wrapper(tempfile.mkdtemp(prefix="pkgconf-wrapper-"))
+    # Write into build_dir so the path is stable across meson reconfigures.
+    # Use absolute path so meson native file embeds an executable path, not a name.
+    wrapper_dir = write_pkg_config_wrapper(os.path.join(_build_dir_abs, ".pkgconf-wrapper"))
 
     env = clean_env()
 
@@ -144,8 +148,11 @@ def main():
             _parent = os.path.dirname(os.path.abspath(_bp))
             for _ld in ("lib", "lib64"):
                 _d = os.path.join(_parent, _ld)
-                if os.path.isdir(_d):
+                if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")):
                     _lib_dirs.append(_d)
+                    _glibc_d = os.path.join(_d, "glibc")
+                    if os.path.isdir(_glibc_d):
+                        _lib_dirs.append(_glibc_d)
         if _lib_dirs:
             _existing = env.get("LD_LIBRARY_PATH", "")
             env["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (":" + _existing if _existing else "")
@@ -182,6 +189,12 @@ def main():
         key, _, value = entry.partition("=")
         if key:
             env[key] = _resolve_env_paths(value)
+
+    # Scrub absolute build paths from debug info and __FILE__ expansions.
+    pfm = " ".join(file_prefix_map_flags())
+    for var in ("CFLAGS", "CXXFLAGS"):
+        existing = env.get(var, "")
+        env[var] = (pfm + " " + existing).strip() if existing else pfm
 
     # Prepend flag file values — dep-provided -I/-L flags must appear before
     # toolchain flags so headers/libs from deps are found.
@@ -224,6 +237,32 @@ def main():
     if args.cxx:
         env["CXX"] = _resolve_env_paths(args.cxx)
 
+    # Find buckos python3 from dep dirs — prefer it over host python.
+    # Buckos python is ABI-matched to buckos libs in LD_LIBRARY_PATH.
+    _dep_python3 = None
+    for _bp in list(args.hermetic_path) + list(all_path_prepend):
+        _candidate = os.path.join(os.path.abspath(_bp), "python3")
+        if os.path.isfile(_candidate):
+            _dep_python3 = _candidate
+            break
+
+    if _dep_python3:
+        env["PYTHON"] = _dep_python3
+        env["PYTHON3"] = _dep_python3
+
+    # Generate a meson native file pinning tool paths so meson embeds
+    # the correct absolute paths in build.ninja from the start, rather
+    # than relying on PATH lookup or post-hoc build.ninja patching.
+    # [binaries] pins apply to the native (build-host) machine tools.
+    _native_lines = ["[binaries]"]
+    _native_lines.append(f"pkg-config = '{os.path.join(wrapper_dir, 'pkg-config')}'")
+    if _dep_python3:
+        _native_lines.append(f"python3 = '{_dep_python3}'")
+        _native_lines.append(f"python = '{_dep_python3}'")
+    _native_file = os.path.join(_build_dir_abs, "buckos-native.ini")
+    with open(_native_file, "w") as _nf:
+        _nf.write("\n".join(_native_lines) + "\n")
+
     # Run pre-configure commands in the source directory
     source_abs = os.path.abspath(args.source_dir)
     for cmd_str in args.pre_cmds:
@@ -235,9 +274,10 @@ def main():
 
     cmd = ["meson", "setup"]
     cmd.extend([
-        os.path.abspath(args.build_dir),
+        _build_dir_abs,
         source_abs,
         f"--prefix={args.prefix}",
+        f"--native-file={_native_file}",
     ])
 
     for define in args.meson_defines:

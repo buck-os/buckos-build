@@ -42,6 +42,15 @@ buckos_bootstrap_toolchain(
     name = "stage2-toolchain",
     bootstrap_stage = "//tc/bootstrap/stage1:stage1",
     extra_cflags = ["-march=x86-64-v3"],
+    extra_ldflags = [
+        "-Wl,--dynamic-linker," + "/" * 228 + "lib64/ld-linux-x86-64.so.2",
+        # Padded RPATH placeholder: a nonexistent path that reserves 256
+        # bytes in the ELF RUNPATH string table.  toolchain_pack.py
+        # overwrites it with $ORIGIN-relative paths so buckos binaries
+        # find their libc via RPATH instead of LD_LIBRARY_PATH (which
+        # would poison host processes via shell=True → /bin/sh segfaults).
+        "-Wl,-rpath,/buckos-rpath-pad" + "X" * 228,
+    ],
     visibility = ["PUBLIC"],
 )
 

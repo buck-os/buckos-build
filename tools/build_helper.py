@@ -15,7 +15,7 @@ import shutil
 import subprocess
 import sys
 
-from _env import clean_env, derive_lib_paths, filter_path_flags, register_cleanup, sanitize_filenames, write_pkg_config_wrapper
+from _env import clean_env, disable_posix_spawn, derive_lib_paths, file_prefix_map_flags, filter_path_flags, register_cleanup, sanitize_filenames, write_pkg_config_wrapper
 
 
 def _can_unshare_net():
@@ -56,7 +56,7 @@ def _resolve_env_paths(value):
                 resolved.append(p)
         return ":".join(resolved)
 
-    _FLAG_PREFIXES = ["-I", "-L", "-Wl,-rpath-link,", "-Wl,-rpath,"]
+    _FLAG_PREFIXES = ["-I", "-L", "-Wl,-rpath-link,", "-Wl,-rpath,", "-specs="]
 
     parts = []
     for token in value.split():
@@ -174,6 +174,8 @@ def main():
                         help="Allow host PATH (bootstrap escape hatch)")
     parser.add_argument("--hermetic-empty", action="store_true",
                         help="Start with empty PATH (populated by --path-prepend)")
+    parser.add_argument("--ld-linux", default=None,
+                        help="Buckos ld-linux path (disables posix_spawn)")
     parser.add_argument("--cflags-file", default=None,
                         help="File with CFLAGS (one per line, from tset projection)")
     parser.add_argument("--ldflags-file", default=None,
@@ -384,6 +386,11 @@ def main():
                     type_key = f"{module}.{name}"
                     if type_key not in _stub_cache:
                         class _Stub:
+                            def __init__(self, *args, **kwargs):
+                                # Accept constructor args (e.g. OctalInt(value))
+                                # that pickle passes via __reduce__ tuples.
+                                if args:
+                                    self._args = args
                             def __reduce__(self):
                                 return (_make_stub, (type_key,), self.__dict__)
                             def __setstate__(self, state):
@@ -604,6 +611,12 @@ def main():
         if key:
             env[key] = _resolve_env_paths(value)
 
+    # Scrub absolute build paths from debug info and __FILE__ expansions.
+    pfm = " ".join(file_prefix_map_flags())
+    for var in ("CFLAGS", "CXXFLAGS"):
+        existing = env.get(var, "")
+        env[var] = (pfm + " " + existing).strip() if existing else pfm
+
     # Prepend flag file values — dep-provided -I/-L flags must appear before
     # toolchain flags so headers/libs from deps are found.  Extract -I flags
     # for CPPFLAGS/CXXFLAGS propagation (autotools: CPPFLAGS→C+C++, CFLAGS→C only).
@@ -634,8 +647,11 @@ def main():
             _parent = os.path.dirname(os.path.abspath(_bp))
             for _ld in ("lib", "lib64"):
                 _d = os.path.join(_parent, _ld)
-                if os.path.isdir(_d):
+                if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")):
                     _lib_dirs.append(_d)
+                    _glibc_d = os.path.join(_d, "glibc")
+                    if os.path.isdir(_glibc_d):
+                        _lib_dirs.append(_glibc_d)
         if _lib_dirs:
             _existing = env.get("LD_LIBRARY_PATH", "")
             env["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (":" + _existing if _existing else "")
@@ -708,6 +724,9 @@ def main():
             _candidate = os.path.join(_abs_bp, "meson")
             if os.path.isfile(_candidate):
                 _dep_meson = _candidate
+    if _dep_python3:
+        env.setdefault("PYTHON", _dep_python3)
+        env.setdefault("PYTHON3", _dep_python3)
     _host_python = shutil.which("python3") if _dep_python3 else None
     if _dep_python3 and _host_python:
         _dep_python3_abs = os.path.abspath(_dep_python3)
@@ -764,6 +783,11 @@ def main():
     # Prepend pkg-config wrapper to PATH (after hermetic/prepend logic
     # so the wrapper is always available regardless of PATH mode)
     env["PATH"] = wrapper_dir + ":" + env.get("PATH", "")
+
+    # Disable posix_spawn in child processes to avoid ENOEXEC with
+    # padded ELF interpreters on buckos-native dep binaries.
+    if args.ld_linux:
+        disable_posix_spawn(env)
 
     # Find buckos bash for shell=True subprocesses (pre-cmds).
     _buckos_bash = None

@@ -15,6 +15,15 @@ from build_helper import _rewrite_file, _can_unshare_net
 from install_helper import _resolve_env_paths as install_resolve
 from install_helper import _suppress_phony_rebuilds
 
+# Module-level stub cache for pickling support — pickle needs to
+# find the reconstructor function via importable module path.
+_stub_cache = {}
+
+
+def _make_stub(type_key):
+    return _stub_cache[type_key]()
+
+
 passed = 0
 failed = 0
 
@@ -427,10 +436,6 @@ def main():
         # (mesonbuild is not importable — this is the whole point)
 
         # Inline the StubUnpickler logic — import it the same way build_helper does
-        _stub_cache = {}
-
-        def _make_stub(type_key):
-            return _stub_cache[type_key]()
 
         class _StubUnpickler(pickle.Unpickler):
             def find_class(self, module, name):

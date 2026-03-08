@@ -16,14 +16,14 @@ import stat
 import subprocess
 import sys
 
-from _env import clean_env, register_cleanup, sanitize_filenames, write_stub_script
+from _env import clean_env, file_prefix_map_flags, register_cleanup, sanitize_filenames, write_stub_script
 
 
 def _resolve_flag_paths(value, project_root):
     """Resolve relative buck-out paths in compiler/linker flag strings."""
     parts = []
     for token in value.split():
-        for prefix in ("-I", "-L", "-Wl,-rpath-link,", "-Wl,-rpath,"):
+        for prefix in ("-I", "-L", "-Wl,-rpath-link,", "-Wl,-rpath,", "-specs="):
             if token.startswith(prefix) and len(token) > len(prefix):
                 path = token[len(prefix):]
                 if not os.path.isabs(path):
@@ -142,6 +142,12 @@ def main():
         if key in starlark_vars:
             env[key] = starlark_vars[key]
 
+    # Scrub absolute build paths from debug info and __FILE__ expansions.
+    pfm = " ".join(file_prefix_map_flags())
+    for var in ("CFLAGS", "CXXFLAGS"):
+        existing = env.get(var, "")
+        env[var] = (pfm + " " + existing).strip() if existing else pfm
+
     # Re-inject user env attrs
     for key, val in user_env.items():
         env[key] = val
@@ -159,11 +165,21 @@ def main():
             parent = os.path.dirname(bd)
             for ld in ("lib", "lib64"):
                 d = os.path.join(parent, ld)
-                if os.path.isdir(d):
+                if os.path.isdir(d) and not os.path.exists(os.path.join(d, "libc.so.6")):
                     ld_lib_parts.append(d)
+                    glibc_d = os.path.join(d, "glibc")
+                    if os.path.isdir(glibc_d):
+                        ld_lib_parts.append(glibc_d)
         if ld_lib_parts:
             existing = env.get("LD_LIBRARY_PATH", "")
             env["LD_LIBRARY_PATH"] = ":".join(ld_lib_parts) + (":" + existing if existing else "")
+        # Auto-detect BISON_PKGDATADIR
+        if "BISON_PKGDATADIR" not in env:
+            for bd in hermetic_path.split(":"):
+                bison_data = os.path.join(os.path.dirname(bd), "share", "bison")
+                if os.path.isdir(bison_data):
+                    env["BISON_PKGDATADIR"] = bison_data
+                    break
         # Auto-detect PYTHONPATH
         py_paths = []
         for bd in hermetic_path.split(":"):
@@ -194,11 +210,21 @@ def main():
             parent = os.path.dirname(bd)
             for ld in ("lib", "lib64"):
                 d = os.path.join(parent, ld)
-                if os.path.isdir(d):
+                if os.path.isdir(d) and not os.path.exists(os.path.join(d, "libc.so.6")):
                     _pp_lib_dirs.append(d)
+                    glibc_d = os.path.join(d, "glibc")
+                    if os.path.isdir(glibc_d):
+                        _pp_lib_dirs.append(glibc_d)
         if _pp_lib_dirs:
             existing = env.get("LD_LIBRARY_PATH", "")
             env["LD_LIBRARY_PATH"] = ":".join(_pp_lib_dirs) + (":" + existing if existing else "")
+        # Auto-detect BISON_PKGDATADIR from prepend dirs
+        if "BISON_PKGDATADIR" not in env:
+            for bd in path_prepend.split(":"):
+                bison_data = os.path.join(os.path.dirname(bd), "share", "bison")
+                if os.path.isdir(bison_data):
+                    env["BISON_PKGDATADIR"] = bison_data
+                    break
 
     # Translate _DEP_LD_LIBRARY_PATH → LD_LIBRARY_PATH for the subprocess.
     # The underscore-prefixed name prevents the dynamic linker from seeing

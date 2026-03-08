@@ -354,6 +354,10 @@ package(
         "-DQT_FEATURE_testlib=ON",
         "-DQT_FEATURE_xml=ON",
         # OpenGL configured via USE flags (opengl -> EGL+GLES2)
+        # Force GLES2 mode; libglvnd provides libOpenGL which Qt prefers as Desktop OpenGL,
+        # but Desktop OpenGL requires GL/glx.h which we don't have (libglvnd built without X11)
+        "-DINPUT_opengl=es2",
+        "-DINPUT_glx=no",
         # Disable features we don't need
         "-DQT_FEATURE_journald=OFF",
         "-DQT_FEATURE_syslog=OFF",

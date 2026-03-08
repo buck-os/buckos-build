@@ -24,22 +24,21 @@ unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS
 export CC=gcc
 export CXX=g++
 
-# Find buckos-built expat-host in deps
-for dep in $DEPS_DIRS; do
-    if [ -f "$dep/usr/lib64/pkgconfig/expat.pc" ]; then
-        export PKG_CONFIG_PATH="$dep/usr/lib64/pkgconfig:$dep/usr/share/pkgconfig"
-        export CFLAGS="-I$dep/usr/include"
-        export LDFLAGS="-L$dep/usr/lib64 -Wl,-rpath,$dep/usr/lib64"
-        echo "Found expat-host at: $dep"
-        break
-    elif [ -f "$dep/usr/lib/pkgconfig/expat.pc" ]; then
-        export PKG_CONFIG_PATH="$dep/usr/lib/pkgconfig:$dep/usr/share/pkgconfig"
-        export CFLAGS="-I$dep/usr/include"
-        export LDFLAGS="-L$dep/usr/lib -Wl,-rpath,$dep/usr/lib"
-        echo "Found expat-host at: $dep"
+# Locate expat from DEP_BASE_DIRS (set by binary rule from dep install prefixes)
+# We can't rely on pkg-config --cflags because pkg-config strips standard paths
+# like -I/usr/include, which breaks on CI where libexpat-dev isn't system-installed.
+IFS=: read -ra _DEPS <<< "${DEP_BASE_DIRS:-}"
+for _dep in "${_DEPS[@]}"; do
+    if [ -f "$_dep/usr/include/expat.h" ]; then
+        export CFLAGS="-I$_dep/usr/include"
+        export LDFLAGS="-L$_dep/usr/lib64 -lexpat"
+        echo "expat found in dep: $_dep"
         break
     fi
 done
+if [ -z "$CFLAGS" ]; then
+    echo "WARNING: expat.h not found in DEP_BASE_DIRS=$DEP_BASE_DIRS"
+fi
 
 # Ensure host meson/ninja are in PATH
 export PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH"

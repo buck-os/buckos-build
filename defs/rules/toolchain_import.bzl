@@ -16,7 +16,7 @@ def _toolchain_import_impl(ctx):
     cmd.add("--archive", ctx.attrs.archive)
     cmd.add("--output", unpacked.as_output())
 
-    ctx.actions.run(cmd, category = "toolchain_import", identifier = ctx.attrs.name, allow_cache_upload = True)
+    ctx.actions.run(cmd, category = "toolchain_import", identifier = ctx.attrs.name, allow_cache_upload = False)
 
     triple = ctx.attrs.target_triple
 

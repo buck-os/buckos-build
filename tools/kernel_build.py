@@ -15,7 +15,7 @@ import subprocess
 import sys
 import tempfile
 
-from _env import sanitize_global_env
+from _env import derive_lib_paths, sanitize_global_env
 
 
 def main():
@@ -71,6 +71,8 @@ def main():
                         help="Set PATH to only these dirs (replaces host PATH, repeatable)")
     parser.add_argument("--hermetic-empty", action="store_true",
                         help="Start with empty PATH (populated by --path-prepend)")
+    parser.add_argument("--ld-linux", default=None,
+                        help="Buckos ld-linux path (disables posix_spawn)")
     parser.add_argument("--path-prepend", action="append", dest="path_prepend", default=[],
                         help="Directory to prepend to PATH (repeatable, resolved to absolute)")
     args = parser.parse_args()
@@ -108,6 +110,12 @@ def main():
         prepend = ":".join(os.path.abspath(p) for p in args.path_prepend if os.path.isdir(p))
         if prepend:
             os.environ["PATH"] = prepend + ":" + os.environ.get("PATH", "")
+
+    # Derive LD_LIBRARY_PATH and BISON_PKGDATADIR from bin dirs
+    if args.hermetic_path:
+        derive_lib_paths(args.hermetic_path, os.environ)
+    if args.path_prepend:
+        derive_lib_paths(args.path_prepend, os.environ)
 
     os.environ.setdefault("KBUILD_BUILD_TIMESTAMP", "Thu Jan  1 00:00:00 UTC 1970")
     os.environ.setdefault("KBUILD_BUILD_USER", "buckos")
@@ -331,10 +339,14 @@ def _gcc14_workaround(build_dir):
     os.makedirs(wrapper_dir, exist_ok=True)
     wrapper_path = os.path.join(wrapper_dir, "gcc")
     with open(wrapper_path, "w") as f:
-        f.write(f"#!/bin/bash\nexec {gcc_path} \"$@\" -std=gnu11\n")
+        f.write(
+            '#!/usr/bin/env python3\n'
+            'import os, sys\n'
+            f'os.execv("{gcc_path}", ["{gcc_path}"] + sys.argv[1:] + ["-std=gnu11"])\n'
+        )
     os.chmod(wrapper_path, 0o755)
 
-    return [f"CC={wrapper_path}", f"HOSTCC={wrapper_path}"]
+    return [f"CC={wrapper_path}"]
 
 
 def _copy_output(build_dir, rel_path, output_path):

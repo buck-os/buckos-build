@@ -300,15 +300,17 @@ def package(
             ])
     if _auto_tool_deps:
         raw_host_deps = build_kwargs.pop("host_deps", [])
+        # In seed/bootstrap mode, the toolchain provides PATH via --hermetic-path
+        # or --allow-host-path; exec_deps are only needed in stage3 mode where
+        # PATH is empty (--hermetic-empty) and tools come from per-rule deps.
+        staged_auto_deps = select({
+            "//tc/exec:is-stage3-mode": _auto_tool_deps,
+            "DEFAULT": [],
+        })
         if type(raw_host_deps) == "Select":
-            all_host_deps = raw_host_deps
-            for td in _auto_tool_deps:
-                all_host_deps = all_host_deps + [td]
+            all_host_deps = raw_host_deps + staged_auto_deps
         else:
-            all_host_deps = list(raw_host_deps)
-            for td in _auto_tool_deps:
-                if td not in all_host_deps:
-                    all_host_deps.append(td)
+            all_host_deps = list(raw_host_deps) + staged_auto_deps
         build_kwargs["host_deps"] = all_host_deps
 
     # -- 2. Resolve USE-conditional deps -------------------------------------

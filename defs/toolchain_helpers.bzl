@@ -69,6 +69,19 @@ def toolchain_path_args(ctx):
     # Hermetic empty: PATH built entirely from per-rule host tool deps
     return [cmd_args("--hermetic-empty")]
 
+def toolchain_ld_linux_args(ctx):
+    """Return --ld-linux flag pointing to the buckos dynamic linker.
+
+    Build helpers use this to disable posix_spawn in child Python
+    processes, avoiding ENOEXEC with padded ELF interpreters.
+    Only needed for rules whose builds execute buckos-native dep
+    binaries (e.g. mozbuild running rustc/cargo via mach).
+    """
+    tc = ctx.attrs._toolchain[BuildToolchainInfo]
+    if tc.sysroot:
+        return [cmd_args("--ld-linux", tc.sysroot.project("lib64/ld-linux-x86-64.so.2"))]
+    return []
+
 def toolchain_extra_cflags(ctx):
     """Return toolchain-injected CFLAGS (e.g. hardening flags)."""
     return ctx.attrs._toolchain[BuildToolchainInfo].extra_cflags

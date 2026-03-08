@@ -72,6 +72,12 @@ package(
         "-DLLVM_TARGETS_TO_BUILD=AMDGPU;X86;AArch64;ARM;WebAssembly;BPF",
         "-DLLVM_INSTALL_UTILS=ON",
     ],
+    # Strip static libraries post-install — everything links against
+    # libLLVM.so (LINK_LLVM_DYLIB=ON), so the .a files are dead weight
+    # and bloat the seed by ~2GB.
+    post_install_cmds = [
+        "find $OUT -name '*.a' -path '*/lib/*' -delete",
+    ],
     deps = [
         "//packages/linux/system/terminal/ncurses:ncurses",
         "//packages/linux/system/libs/data/libxml2:libxml2",

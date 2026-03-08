@@ -16,7 +16,7 @@ import shutil
 import subprocess
 import sys
 
-from _env import clean_env, derive_lib_paths, filter_path_flags, register_cleanup, sanitize_filenames, write_pkg_config_wrapper
+from _env import clean_env, disable_posix_spawn, derive_lib_paths, file_prefix_map_flags, filter_path_flags, register_cleanup, sanitize_filenames, write_pkg_config_wrapper
 
 
 def _resolve_env_paths(value):
@@ -42,7 +42,7 @@ def _resolve_env_paths(value):
                 resolved.append(p)
         return ":".join(resolved)
 
-    _FLAG_PREFIXES = ["-I", "-L", "-Wl,-rpath-link,", "-Wl,-rpath,"]
+    _FLAG_PREFIXES = ["-I", "-L", "-Wl,-rpath-link,", "-Wl,-rpath,", "-specs="]
 
     parts = []
     for token in value.split():
@@ -116,6 +116,8 @@ def main():
                         help="Allow host PATH (bootstrap escape hatch)")
     parser.add_argument("--hermetic-empty", action="store_true",
                         help="Start with empty PATH (populated by --path-prepend)")
+    parser.add_argument("--ld-linux", default=None,
+                        help="Buckos ld-linux path (disables posix_spawn)")
     parser.add_argument("--pre-cmd", action="append", dest="pre_cmds", default=[],
                         help="Shell command to run in source dir before configure (repeatable)")
     parser.add_argument("--cflags-file", default=None,
@@ -173,7 +175,7 @@ def main():
         env["CC"] = args.cc
     if args.cxx:
         env["CXX"] = args.cxx
-    all_cflags = file_cflags + args.cflags
+    all_cflags = file_prefix_map_flags() + file_cflags + args.cflags
     all_ldflags = file_ldflags + args.ldflags
     all_pkg_config = file_pkg_config + args.pkg_config_paths
 
@@ -215,8 +217,11 @@ def main():
             _parent = os.path.dirname(os.path.abspath(_bp))
             for _ld in ("lib", "lib64"):
                 _d = os.path.join(_parent, _ld)
-                if os.path.isdir(_d):
+                if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")):
                     _lib_dirs.append(_d)
+                    _glibc_d = os.path.join(_d, "glibc")
+                    if os.path.isdir(_glibc_d):
+                        _lib_dirs.append(_glibc_d)
         if _lib_dirs:
             _existing = env.get("LD_LIBRARY_PATH", "")
             env["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (":" + _existing if _existing else "")
@@ -259,6 +264,16 @@ def main():
     # shared libraries (e.g. python → libpython3.so) can execute.
     derive_lib_paths(all_path_prepend, env)
 
+    # Pin PYTHON/PYTHON3 to buckos python so autotools build scripts
+    # (e.g. AC_PATH_PROG([PYTHON3]), Makefile rules invoking $(PYTHON))
+    # use the ABI-matched buckos python rather than host python.
+    for _bp in list(args.hermetic_path) + list(all_path_prepend):
+        _candidate = os.path.join(os.path.abspath(_bp), "python3")
+        if os.path.isfile(_candidate):
+            env.setdefault("PYTHON", _candidate)
+            env.setdefault("PYTHON3", _candidate)
+            break
+
     # Auto-detect automake Perl modules and aclocal dirs from dep
     # prefixes.  The Buck2-installed automake hardcodes /usr/share/...
     # paths which don't resolve to the artifact directory.
@@ -298,6 +313,11 @@ def main():
 
     # Prepend pkg-config wrapper to PATH
     env["PATH"] = wrapper_dir + ":" + env.get("PATH", os.environ.get("PATH", ""))
+
+    # Disable posix_spawn in child processes to avoid ENOEXEC with
+    # padded ELF interpreters on buckos-native dep binaries.
+    if args.ld_linux:
+        disable_posix_spawn(env)
 
     # Find buckos bash on PATH for running configure and pre-cmds.
     # CONFIG_SHELL tells autotools configure to re-exec sub-configures
