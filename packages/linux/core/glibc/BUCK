@@ -126,9 +126,10 @@ fi
 python3 - "$OUT" << 'PYEOF'
 import struct, os, sys
 out = sys.argv[1]
-target_size = 256
+# Match GCC specs padding: 228 leading slashes + suffix + NUL = 255 bytes.
+# p_filesz includes the NUL terminator.
 suffix = b"lib64/ld-linux-x86-64.so.2"
-n_slashes = target_size - 1 - len(suffix)
+n_slashes = 228
 new_interp = b"/" * n_slashes + suffix + b"\x00"
 STANDARD = [b"/lib64/ld-linux-x86-64.so.2", b"/usr/lib64/ld-linux-x86-64.so.2"]
 patched = 0
