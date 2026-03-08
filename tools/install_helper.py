@@ -291,6 +291,8 @@ def main():
                         help="File with PATH dirs to prepend (one per line, from tset projection)")
     parser.add_argument("--lib-dirs-file", default=None,
                         help="File with lib dirs for LD_LIBRARY_PATH (one per line, from tset projection)")
+    parser.add_argument("--path-append-file", default=None,
+                        help="File with dep bin dirs to append to PATH (one per line, from tset projection)")
     args = parser.parse_args()
 
     # Read flag files early — tset-propagated values are base defaults.
@@ -305,6 +307,7 @@ def main():
     file_pkg_config = [p for p in _read_flag_file(args.pkg_config_file) if os.path.isdir(os.path.abspath(p))]
     file_path_dirs = _read_flag_file(args.path_file)
     file_lib_dirs = _read_flag_file(args.lib_dirs_file)
+    file_path_append_dirs = _read_flag_file(args.path_append_file)
 
     env = clean_env()
 
@@ -394,6 +397,13 @@ def main():
         if prepend:
             env["PATH"] = prepend + ":" + env.get("PATH", "")
 
+    # Append dep bin dirs for *-config discovery scripts (gpg-error-config,
+    # curl-config, etc.).  Appended so seed/host tools take priority.
+    if file_path_append_dirs:
+        append = ":".join(os.path.abspath(p) for p in file_path_append_dirs if os.path.isdir(p))
+        if append:
+            env["PATH"] = env.get("PATH", "") + ":" + append
+
     # Merge tset-provided lib dirs into LD_LIBRARY_PATH so dynamically
     # linked dep libraries are found at install time (e.g. Python
     # test-imports extension modules during make install).  Scoped to the
@@ -411,7 +421,7 @@ def main():
 
     # Auto-detect Python site-packages from dep prefixes so build-time
     # Python modules (e.g. packaging for gdbus-codegen) are found.
-    _path_sources = list(args.hermetic_path) + list(all_path_prepend)
+    _path_sources = list(args.hermetic_path) + list(all_path_prepend) + list(file_path_append_dirs)
     if _path_sources:
         _py_paths = []
         for _bp in _path_sources:

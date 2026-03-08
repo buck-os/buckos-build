@@ -141,7 +141,8 @@ def _src_configure(ctx, source, cflags_file = None, ldflags_file = None,
     return output
 
 def _src_compile(ctx, configured, cflags_file = None, ldflags_file = None,
-                 pkg_config_file = None, lib_dirs_file = None):
+                 pkg_config_file = None, lib_dirs_file = None,
+                 bin_dirs_file = None):
     """Run make (or equivalent) in the configured source tree.
 
     When pre_build_cmds is non-empty, each command runs in the build
@@ -172,6 +173,7 @@ def _src_compile(ctx, configured, cflags_file = None, ldflags_file = None,
     add_flag_file(cmd, "--ldflags-file", ldflags_file)
     add_flag_file(cmd, "--pkg-config-file", pkg_config_file)
     add_flag_file(cmd, "--lib-dirs-file", lib_dirs_file)
+    add_flag_file(cmd, "--path-append-file", bin_dirs_file)
 
     # Add host_deps bin dirs to PATH
     for arg in host_tool_path_args(ctx):
@@ -205,7 +207,8 @@ def _src_compile(ctx, configured, cflags_file = None, ldflags_file = None,
     return output
 
 def _src_install(ctx, built, cflags_file = None, ldflags_file = None,
-                 pkg_config_file = None, lib_dirs_file = None):
+                 pkg_config_file = None, lib_dirs_file = None,
+                 bin_dirs_file = None):
     """Run make install DESTDIR=... into the output prefix.
 
     install_prefix_var overrides the make variable name for the install
@@ -238,6 +241,7 @@ def _src_install(ctx, built, cflags_file = None, ldflags_file = None,
     add_flag_file(cmd, "--ldflags-file", ldflags_file)
     add_flag_file(cmd, "--pkg-config-file", pkg_config_file)
     add_flag_file(cmd, "--lib-dirs-file", lib_dirs_file)
+    add_flag_file(cmd, "--path-append-file", bin_dirs_file)
 
     # Add host_deps bin dirs to PATH
     for arg in host_tool_path_args(ctx):
@@ -300,11 +304,11 @@ def _autotools_package_impl(ctx):
 
     # Phase 4: src_compile
     built = _src_compile(ctx, configured, cflags_file, ldflags_file,
-                         pkg_config_file, lib_dirs_file)
+                         pkg_config_file, lib_dirs_file, bin_dirs_file)
 
     # Phase 5: src_install
     installed = _src_install(ctx, built, cflags_file, ldflags_file,
-                             pkg_config_file, lib_dirs_file)
+                             pkg_config_file, lib_dirs_file, bin_dirs_file)
 
     # Build transitive sets
     compile_tset, link_tset, path_tset, runtime_tset = build_package_tsets(ctx, installed)

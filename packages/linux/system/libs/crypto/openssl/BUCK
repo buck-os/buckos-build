@@ -21,6 +21,10 @@ package(
         "--openssldir=/etc/ssl",
         "--libdir=lib",
     ],
+    # OpenSSL regenerates Makefile on first make when configdata.pm
+    # timestamps change.  Run make once to absorb the regeneration
+    # so the real build succeeds.
+    pre_build_cmds = ["make || true"],
     deps = ["//packages/linux/core/zlib:zlib"],
     patches = glob(["patches/3.6/*.patch"]),
     transforms = ["strip", "stamp"],
@@ -46,6 +50,7 @@ package(
         "--openssldir=/etc/ssl",
         "--libdir=lib",
     ],
+    pre_build_cmds = ["make || true"],
     deps = ["//packages/linux/core/zlib:zlib"],
     patches = glob(["patches/3.3/*.patch"]),
     transforms = ["strip", "stamp"],
