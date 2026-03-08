@@ -1770,12 +1770,11 @@ filegroup(
 # The buckos CLI expects /var/db/repos/buckos-build with defs/ and packages/ directories
 # Also downloads buck2 prebuilt binary for building packages
 
-# TODO: Pin to a specific commit archive and add sha256 for reproducibility.
-# The main branch tarball changes on every push.
+# Pinned to a specific commit for reproducibility.
 http_file(
     name = "buckos-build-tarball",
-    urls = ["https://github.com/buck-os/buckos-build/archive/refs/heads/main.tar.gz"],
-    sha256 = "8e5893bf79c01f5724e0cb2ae299e19037d2b48babf606abcc3f3cd336fcdeb2",
+    urls = ["https://github.com/buck-os/buckos-build/archive/194254784a88cd5ff45bac830ae7ee78b62092f9.tar.gz"],
+    sha256 = "cb207a57881b97fa17038c953a4bf8a49415c8a2942d3e15d4a473d36b9ff6f2",
     out = "buckos-build-main.tar.gz",
 )
 
@@ -1797,20 +1796,22 @@ mkdir -p "$OUT/usr/bin"
 mkdir -p "$OUT/etc"
 
 TARBALL="$(location :buckos-build-tarball)"
+# Detect the top-level directory name in the archive (varies with commit SHA)
+PREFIX=$(tar -tzf "$TARBALL" | head -1 | cut -d/ -f1)
 # Extract defs/ directory (required by buckos CLI)
-tar -xzf "$TARBALL" --strip-components=1 -C "$OUT/var/db/repos/buckos-build" "buckos-build-main/defs"
+tar -xzf "$TARBALL" --strip-components=1 -C "$OUT/var/db/repos/buckos-build" "$PREFIX/defs"
 # Extract config/ directory (Fedora build flags and other config)
-tar -xzf "$TARBALL" --strip-components=1 -C "$OUT/var/db/repos/buckos-build" "buckos-build-main/config"
+tar -xzf "$TARBALL" --strip-components=1 -C "$OUT/var/db/repos/buckos-build" "$PREFIX/config"
 # Extract .buckconfig and .buckroot (required for buck2 to work)
-tar -xzf "$TARBALL" --strip-components=1 -C "$OUT/var/db/repos/buckos-build" "buckos-build-main/.buckconfig"
-tar -xzf "$TARBALL" --strip-components=1 -C "$OUT/var/db/repos/buckos-build" "buckos-build-main/.buckroot"
+tar -xzf "$TARBALL" --strip-components=1 -C "$OUT/var/db/repos/buckos-build" "$PREFIX/.buckconfig"
+tar -xzf "$TARBALL" --strip-components=1 -C "$OUT/var/db/repos/buckos-build" "$PREFIX/.buckroot"
 # Extract platforms/ directory (required for buck2 target platforms)
-tar -xzf "$TARBALL" --strip-components=1 -C "$OUT/var/db/repos/buckos-build" "buckos-build-main/platforms"
+tar -xzf "$TARBALL" --strip-components=1 -C "$OUT/var/db/repos/buckos-build" "$PREFIX/platforms"
 # Extract toolchains/ directory (required for buck2 toolchains)
-tar -xzf "$TARBALL" --strip-components=1 -C "$OUT/var/db/repos/buckos-build" "buckos-build-main/toolchains"
+tar -xzf "$TARBALL" --strip-components=1 -C "$OUT/var/db/repos/buckos-build" "$PREFIX/toolchains"
 # Extract packages/linux directory
 mkdir -p "$OUT/var/db/repos/buckos-build/packages"
-tar -xzf "$TARBALL" --strip-components=2 -C "$OUT/var/db/repos/buckos-build/packages" "buckos-build-main/packages/linux"
+tar -xzf "$TARBALL" --strip-components=2 -C "$OUT/var/db/repos/buckos-build/packages" "$PREFIX/packages/linux"
 
 # Create symlink for buck-out to use tmpfs (avoids filling overlay RAM)
 ln -s /tmp/buck-out "$OUT/var/db/repos/buckos-build/buck-out"
