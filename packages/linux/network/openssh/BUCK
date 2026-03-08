@@ -63,9 +63,11 @@ autoreconf -fi
     deps = [
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/crypto/libxcrypt:libxcrypt",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+    ],
+    host_deps = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
         "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
     ],
 
     post_install_cmds = ["""

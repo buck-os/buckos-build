@@ -11,9 +11,11 @@ package(
     build_rule = "autotools",
     name = "fcgi",
     deps = [
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+    ],
+    host_deps = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
         "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
     ],
     pre_configure_cmds = ["""
 autoreconf -fi

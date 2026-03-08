@@ -14,10 +14,12 @@ package(
     homepage = "https://www.gnu.org/software/binutils/",
     license = "GPL-3.0",
     deps = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
         "//packages/linux/dev-tools/build-systems/libtool:libtool",
         "//packages/linux/core/zlib:zlib",
+    ],
+    host_deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
     ],
     use_configure = {
         "cet": ("--enable-cet", "--disable-cet"),

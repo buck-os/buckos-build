@@ -195,12 +195,6 @@ def write_pkg_config_paths(ctx, compile_tset):
         return None
     return _write_tset_file(ctx, "tset_pkg_config_paths.txt", compile_tset.project_as_args("pkg_config_paths", ordering = "preorder"))
 
-def write_bin_dirs(ctx, path_tset):
-    """Write bin directories (one per line) from path tset projection."""
-    if not path_tset:
-        return None
-    return _write_tset_file(ctx, "tset_bin_dirs.txt", path_tset.project_as_args("bin_dirs", ordering = "preorder"))
-
 def write_lib_dirs(ctx, path_tset):
     """Write lib directories (one per line) from path tset projection."""
     if not path_tset:

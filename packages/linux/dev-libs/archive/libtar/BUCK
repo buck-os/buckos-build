@@ -16,9 +16,11 @@ autoreconf -fi
     license = "BSD-3-Clause",
     deps = [
         "//packages/linux/core/zlib:zlib",
-                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-                "//packages/linux/dev-tools/build-systems/automake:automake",
                 "//packages/linux/dev-tools/build-systems/libtool:libtool"
+    ],
+    host_deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
     ],
     configure_args = [
         "--enable-shared",

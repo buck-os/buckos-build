@@ -24,7 +24,8 @@ package(
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/image/libpng:libpng",
         "//packages/linux/system/libs/compression/bzip2:bzip2",
-        # gperf generates hash tables during build
-        "//packages/linux/dev-tools/dev-utils/gperf:gperf",
+    ],
+    host_deps = [
+        "//packages/linux/dev-tools/dev-utils/gperf:gperf",  # generates hash tables during build
     ],
 )
