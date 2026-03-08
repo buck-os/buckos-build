@@ -189,4 +189,8 @@ ls -la "$OUT/usr/lib64/"*.so* 2>/dev/null | head -5 || true
         "//platforms:is_aarch64": ["//tc/bootstrap/aarch64:linux-headers-aarch64"],
         "DEFAULT": ["//tc/bootstrap/stage1:linux-headers"],
     }),
+    # gperf is needed at install time for locale charmap-kw.h generation.
+    host_deps = [
+        "//packages/linux/dev-tools/dev-utils/gperf:gperf",
+    ],
 )
