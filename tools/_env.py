@@ -166,12 +166,14 @@ def setup_path(args, env, host_path=""):
 
 
 def disable_posix_spawn(env, scratch_dir=None):
-    """Install a sitecustomize.py that disables posix_spawn in subprocess.
+    """Install a sitecustomize.py that handles padded ELF interpreters.
 
-    Python 3.14+ defaults to posix_spawn for subprocess.Popen, which
-    fails with ENOEXEC on some kernels/configurations when the ELF
-    interpreter is padded (///...///lib64/ld-linux-x86-64.so.2).
-    Fork+exec handles padded interpreters correctly everywhere.
+    Buckos-native binaries have padded ELF interpreters
+    (///...///lib64/ld-linux-x86-64.so.2) that can cause ENOEXEC on
+    some kernels.  This installs a sitecustomize.py that:
+      1. Disables posix_spawn (Python 3.14+ default)
+      2. Patches subprocess.Popen to retry ENOEXEC by invoking the
+         binary through ld-linux directly
 
     Creates a sitecustomize.py in a scratch directory and prepends it
     to PYTHONPATH so all child Python processes inherit the fix.
@@ -184,10 +186,55 @@ def disable_posix_spawn(env, scratch_dir=None):
     if not os.path.exists(sitecust):
         os.makedirs(pysite, exist_ok=True)
         with open(sitecust, "w") as f:
-            f.write("import subprocess as _sp\n")
-            f.write("_sp._USE_POSIX_SPAWN = False\n")
+            f.write(_SITECUSTOMIZE_SRC)
     existing = env.get("PYTHONPATH", "")
     env["PYTHONPATH"] = pysite + (":" + existing if existing else "")
+
+
+_SITECUSTOMIZE_SRC = '''\
+"""Buckos sitecustomize: handle padded ELF interpreters."""
+import errno as _errno
+import os as _os
+import subprocess as _sp
+
+# Disable posix_spawn — it fails with ENOEXEC on padded interpreters.
+_sp._USE_POSIX_SPAWN = False
+
+# Patch Popen to retry ENOEXEC through ld-linux.  The kernel rejects
+# execve on padded-interp ELFs on some systems; invoking ld-linux
+# directly bypasses the kernel interpreter resolution.
+_ld_linux = None
+for _p in ("/lib64/ld-linux-x86-64.so.2",
+           "/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2"):
+    if _os.path.exists(_p):
+        _ld_linux = _p
+        break
+
+if _ld_linux:
+    _orig_init = _sp.Popen.__init__
+
+    def _popen_init(self, args, *a, **kw):
+        try:
+            return _orig_init(self, args, *a, **kw)
+        except OSError as e:
+            if e.errno != _errno.ENOEXEC:
+                raise
+            # Retry with ld-linux for ELF binaries only
+            cmd = list(args) if not isinstance(args, str) else [args]
+            if not cmd:
+                raise
+            binary = kw.get("executable") or cmd[0]
+            try:
+                with open(binary, "rb") as _f:
+                    if _f.read(4) != b"\\x7fELF":
+                        raise  # not ELF, re-raise original
+            except (IOError, OSError):
+                raise e
+            kw.pop("executable", None)
+            return _orig_init(self, [_ld_linux] + cmd, *a, **kw)
+
+    _sp.Popen.__init__ = _popen_init
+'''
 
 
 def derive_lib_paths(bin_dirs, env):
