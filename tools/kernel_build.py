@@ -121,6 +121,13 @@ def main():
     # the seed's native gcc (HOSTCC) can find seed-provided libraries
     # like zlib and libelf when building kernel host tools (resolve_btfids).
     # CC (the cross-compiler) has its own --sysroot and ignores these.
+    #
+    # Also extract --sysroot from make flags to add sysroot headers/libs.
+    # The seed's host-tools gcc (x86_64-pc-linux-gnu) doesn't carry its
+    # own glibc headers — it uses the system /usr/include by default.
+    # On hosts with a different glibc, this causes type mismatches
+    # (e.g. __time64_t).  Pointing C_INCLUDE_PATH to the sysroot fixes
+    # HOSTCC compilation.
     _all_bin_dirs = (args.hermetic_path or []) + (args.path_prepend or [])
     _lib_parts, _inc_parts = [], []
     for bin_dir in _all_bin_dirs:
@@ -133,6 +140,19 @@ def main():
             d = os.path.join(parent, inc)
             if os.path.isdir(d) and d not in _inc_parts:
                 _inc_parts.append(d)
+    # Extract sysroot from CC= make flag (e.g. CC=gcc --sysroot=/path)
+    for flag in args.make_flags:
+        if flag.startswith("CC=") and "--sysroot=" in flag:
+            sysroot = flag.split("--sysroot=", 1)[1].split()[0]
+            sysroot = os.path.abspath(sysroot)
+            for inc in ("usr/include", "include"):
+                d = os.path.join(sysroot, inc)
+                if os.path.isdir(d) and d not in _inc_parts:
+                    _inc_parts.append(d)
+            for ld in ("usr/lib64", "usr/lib", "lib64", "lib"):
+                d = os.path.join(sysroot, ld)
+                if os.path.isdir(d) and d not in _lib_parts:
+                    _lib_parts.append(d)
     if _lib_parts:
         os.environ["LIBRARY_PATH"] = ":".join(_lib_parts)
     if _inc_parts:
