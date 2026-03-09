@@ -4,12 +4,19 @@ host_tools_exec rule: make stage3 host tools executable on the build host.
 Stage3 host tools are hermetically built with GCC specs that inject a
 padded ELF interpreter (///...///lib64/ld-linux-x86-64.so.2).  This
 resolves to the host /lib64/ld-linux-x86-64.so.2 at runtime, but using
-the host ld-linux with buckos-built glibc can cause ABI mismatches.
+the host ld-linux with buckos-built glibc can cause ABI mismatches
+(GLIBC_PRIVATE symbol version conflicts when ld-linux 2.39 loads
+libc.so.6 2.42).
 
 This rule copies the merged host tools directory and rewrites the padded
 interpreters to point to the actual buckos ld-linux from the bootstrap
 sysroot.  The output is a directory of hermetically-built, host-runnable
 tools suitable for use as host_bin_dir in BuildToolchainInfo.
+
+The rewrite bakes the sysroot ld-linux's absolute path into each ELF,
+making the output machine-specific.  local_only + no cache upload ensure
+the action always runs locally and its output is never served to a
+different machine via RE cache.
 """
 
 load("//defs:providers.bzl", "BootstrapStageInfo")
@@ -31,6 +38,8 @@ def _host_tools_exec_impl(ctx):
         cmd,
         category = "host_tools_exec",
         identifier = ctx.attrs.name,
+        local_only = True,
+        allow_cache_upload = False,
     )
 
     return [DefaultInfo(default_output = output)]

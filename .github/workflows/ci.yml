@@ -55,6 +55,8 @@ jobs:
             | zstd -d -f -o "$HOME/.local/bin/buck2"
           chmod +x "$HOME/.local/bin/buck2"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Restart buck2 daemon
+        run: buck2 kill 2>/dev/null || true
       - name: Resolve targets
         run: buck2 targets //...
       - name: Graph tests
