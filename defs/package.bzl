@@ -64,6 +64,22 @@ _MIRROR_PREFIX = read_config("mirror", "prefix", "")
 _MIRROR_PARAMS = read_config("mirror", "params", "")
 _MIRROR_PREPEND_NAME = read_config("mirror", "prepend_name", "true") == "true"
 
+# ── Seed detection (read once at module load) ─────────────────────────
+# When a prebuilt seed is present, its host-tools/bin provides most build
+# tools (LLVM, Rust, mold, …).  Explicit host_deps that duplicate seed
+# tools are gated behind stage3 to avoid rebuilding them.  When NO seed
+# is present (building from source), those tools must be built from
+# source as exec_deps since the host may not have them installed.
+_SOURCE_MODE = read_config("buckos", "source_mode", "") in ("true", "1", "yes")
+_HAS_PREBUILT_SEED = (
+    not _SOURCE_MODE and
+    bool(
+        read_config("buckos", "seed_path", "") or
+        read_config("buckos", "seed_url", "") or
+        read_config("buckos", "default_seed_url", ""),
+    )
+)
+
 
 def _merge_private_registry(name, patches, configure_args, extra_cflags):
     """Merge public args with private patch registry entries.
@@ -328,13 +344,13 @@ def package(
                 "//packages/linux/dev-tools/build-systems/ninja:ninja",
             ])
 
-    # Gate explicit host_deps that reference seed tools.  In DEFAULT mode,
-    # host_bin_dir provides a hermetic PATH (from seed archive or from
-    # host-tools-exec in source_mode) — no exec_dep needed.  In stage3
-    # mode the PATH is empty (--hermetic-empty) and tools must come from
-    # per-rule exec_deps.
+    # Gate explicit host_deps that reference seed tools.  When a prebuilt
+    # seed is present, host_bin_dir provides these tools via hermetic PATH
+    # — no exec_dep needed (except in stage3 where PATH is empty).
+    # When building from source (no seed), these tools must be built as
+    # exec_deps since the host system may not have them installed.
     raw_host_deps = build_kwargs.pop("host_deps", [])
-    if type(raw_host_deps) != "Select" and raw_host_deps:
+    if _HAS_PREBUILT_SEED and type(raw_host_deps) != "Select" and raw_host_deps:
         _seed = [d for d in raw_host_deps if d in _SEED_HOST_TOOLS]
         _non_seed = [d for d in raw_host_deps if d not in _SEED_HOST_TOOLS]
         if _seed:

@@ -69,6 +69,13 @@ jobs:
             echo "::endgroup::"
           done
           [ "$failed" -eq 0 ]
+      - name: Build seed toolchain
+        run: buck2 build //tc/bootstrap:seed-export --out seed-toolchain.tar.zst
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: seed-toolchain
+          path: seed-toolchain.tar.zst
+          compression-level: 0
       - name: Unit tests
         run: |
           buck2 test //tests:
@@ -76,8 +83,6 @@ jobs:
         run: buck2 build //packages/linux/system:buckos-minimal-iso --out buckos-minimal.iso
       - name: Build KDE ISO
         run: buck2 build //packages/linux/system:buckos-live-installer-kde --out buckos-kde.iso
-      - name: Build seed toolchain
-        run: buck2 build //tc/bootstrap:seed-export --out seed-toolchain.tar.zst
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: buckos-minimal-iso
@@ -87,11 +92,6 @@ jobs:
         with:
           name: buckos-kde-iso
           path: buckos-kde.iso
-          compression-level: 0
-      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: seed-toolchain
-          path: seed-toolchain.tar.zst
           compression-level: 0
 
   test-seed:
