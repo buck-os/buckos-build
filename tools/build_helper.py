@@ -369,86 +369,52 @@ def main():
     # rewrite above skips it due to UnicodeDecodeError.  Unpickle, patch
     # path attributes, and re-pickle so `meson install` finds files at
     # the new location.
+    #
+    # install.dat contains serialised mesonbuild.* objects.  We must use
+    # the REAL mesonbuild classes (not stubs) so the re-pickled file is
+    # loadable by meson's safe unpickler.  Find mesonbuild from the
+    # hermetic PATH's Python site-packages and add it to sys.path
+    # temporarily.
+    import pickle as _pickle
+
+    def _patch_pickle_paths(obj, old, new):
+        """Recursively replace old prefix with new in string attributes."""
+        if isinstance(obj, str):
+            return obj.replace(old, new) if old in obj else obj
+        if isinstance(obj, list):
+            return [_patch_pickle_paths(item, old, new) for item in obj]
+        if isinstance(obj, tuple):
+            return tuple(_patch_pickle_paths(item, old, new) for item in obj)
+        if hasattr(obj, "__dict__"):
+            for k, v in obj.__dict__.items():
+                patched = _patch_pickle_paths(v, old, new)
+                if patched is not v:
+                    setattr(obj, k, patched)
+        return obj
+
+    # Locate mesonbuild from hermetic path or path-prepend dirs
+    _meson_added_paths = []
+    for _bp in list(args.hermetic_path) + list(args.path_prepend):
+        _parent = os.path.dirname(os.path.abspath(_bp))
+        for _pattern in ("lib/python*/site-packages", "lib64/python*/site-packages"):
+            for _sp in _glob.glob(os.path.join(_parent, _pattern)):
+                if os.path.isdir(os.path.join(_sp, "mesonbuild")):
+                    if _sp not in sys.path:
+                        sys.path.insert(0, _sp)
+                        _meson_added_paths.append(_sp)
+
     _install_dat = os.path.join(output_dir, "meson-private", "install.dat")
     if os.path.isfile(_install_dat):
-        import pickle as _pickle
-
-        import types as _types
-
-        _stub_cache = {}
-        _fake_modules = {}
-
-        class _StubUnpickler(_pickle.Unpickler):
-            """Unpickler that stubs missing modules (e.g. mesonbuild).
-
-            install.dat contains serialised mesonbuild.* objects but the
-            build_helper pex doesn't ship mesonbuild.  We only need to
-            walk __dict__ and rewrite strings, so a generic stub class
-            that preserves attributes is sufficient.
-
-            Stub classes are registered in sys.modules so pickle can
-            serialize them back using their original module.name path.
-            """
-            def find_class(self, module, name):
-                try:
-                    return super().find_class(module, name)
-                except (ModuleNotFoundError, AttributeError):
-                    type_key = f"{module}.{name}"
-                    if type_key not in _stub_cache:
-                        class _Stub:
-                            def __init__(self, *args, **kwargs):
-                                if args:
-                                    self._args = args
-                            def __setstate__(self, state):
-                                if isinstance(state, dict):
-                                    self.__dict__.update(state)
-                        _Stub.__qualname__ = _Stub.__name__ = name
-                        _Stub.__module__ = module
-                        _stub_cache[type_key] = _Stub
-                        # Register full module hierarchy in sys.modules
-                        # so pickle.dump can re-import the class.
-                        # e.g. for mesonbuild.backend.backends we need
-                        # mesonbuild, mesonbuild.backend (as packages),
-                        # and mesonbuild.backend.backends as modules.
-                        parts = module.split(".")
-                        for i in range(len(parts)):
-                            mod_path = ".".join(parts[: i + 1])
-                            if mod_path not in _fake_modules:
-                                mod = _types.ModuleType(mod_path)
-                                mod.__path__ = []  # mark as package
-                                _fake_modules[mod_path] = mod
-                                sys.modules[mod_path] = mod
-                            if i > 0:
-                                parent_path = ".".join(parts[:i])
-                                setattr(
-                                    _fake_modules[parent_path],
-                                    parts[i],
-                                    _fake_modules[mod_path],
-                                )
-                        setattr(_fake_modules[module], name, _Stub)
-                    return _stub_cache[type_key]
-
-        stat = os.stat(_install_dat)
-        with open(_install_dat, "rb") as f:
-            _idata = _StubUnpickler(f).load()
-        def _patch_paths(obj, old, new):
-            """Recursively replace old prefix with new in string attributes."""
-            if isinstance(obj, str):
-                return obj.replace(old, new) if old in obj else obj
-            if isinstance(obj, list):
-                return [_patch_paths(item, old, new) for item in obj]
-            if isinstance(obj, tuple):
-                return tuple(_patch_paths(item, old, new) for item in obj)
-            if hasattr(obj, "__dict__"):
-                for k, v in obj.__dict__.items():
-                    patched = _patch_paths(v, old, new)
-                    if patched is not v:
-                        setattr(obj, k, patched)
-            return obj
-        _patch_paths(_idata, build_dir, output_dir)
-        with open(_install_dat, "wb") as f:
-            _pickle.dump(_idata, f)
-        os.utime(_install_dat, (stat.st_atime, stat.st_mtime))
+        try:
+            _dat_stat = os.stat(_install_dat)
+            with open(_install_dat, "rb") as f:
+                _idata = _pickle.load(f)
+            _patch_pickle_paths(_idata, build_dir, output_dir)
+            with open(_install_dat, "wb") as f:
+                _pickle.dump(_idata, f)
+            os.utime(_install_dat, (_dat_stat.st_atime, _dat_stat.st_mtime))
+        except Exception as _e:
+            print(f"warning: could not rewrite install.dat: {_e}", file=sys.stderr)
 
     # Detect and rewrite stale cross-machine paths.  When Buck2 restores
     # cached configure outputs from a different machine, files contain the
@@ -534,15 +500,21 @@ def main():
         # Also fix the meson install.dat pickle which the text rewrite
         # skips (binary).  Apply both stale_root→current_root and
         # build_dir→output_dir so paths resolve to the new location.
+        # Uses real mesonbuild classes (added to sys.path earlier) so
+        # the re-pickled file is loadable by meson's safe unpickler.
         if os.path.isfile(_install_dat):
-            stat = os.stat(_install_dat)
-            with open(_install_dat, "rb") as f:
-                _idata = _StubUnpickler(f).load()
-            _patch_paths(_idata, _stale_root, _current_root)
-            _patch_paths(_idata, build_dir, output_dir)
-            with open(_install_dat, "wb") as f:
-                _pickle.dump(_idata, f)
-            os.utime(_install_dat, (stat.st_atime, stat.st_mtime))
+            try:
+                _dat_stat2 = os.stat(_install_dat)
+                with open(_install_dat, "rb") as f:
+                    _idata = _pickle.load(f)
+                _patch_pickle_paths(_idata, _stale_root, _current_root)
+                _patch_pickle_paths(_idata, build_dir, output_dir)
+                with open(_install_dat, "wb") as f:
+                    _pickle.dump(_idata, f)
+                os.utime(_install_dat, (_dat_stat2.st_atime, _dat_stat2.st_mtime))
+            except Exception as _e:
+                print(f"warning: could not rewrite install.dat (stale root): {_e}",
+                      file=sys.stderr)
 
     # Reset all file timestamps to a single fixed instant so make doesn't
     # try to regenerate autotools/cmake/meson outputs.  The copytree

@@ -28,6 +28,9 @@ HOST_TOOL_PACKAGES = [
     "//packages/linux/system/libs/compression/bzip2:bzip2",
     "//packages/linux/system/libs/compression/zstd:zstd",
 
+    # Core libraries (needed by HOSTCC tools: kernel libbpf, resolve_btfids)
+    "//packages/linux/core/zlib:zlib",
+
     # Binary utilities (strip, objcopy, ar, as, ld, etc.)
     "//packages/linux/dev-tools/build-systems/binutils:binutils",
 

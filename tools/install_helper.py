@@ -580,38 +580,22 @@ def main():
         # Rewrite meson's install.dat pickle which the text rewrite
         # skips (binary).  install.dat stores absolute source paths
         # used by `meson install` to locate headers and other files.
+        # Use real mesonbuild classes (from hermetic PATH site-packages)
+        # so the re-pickled file is loadable by meson's safe unpickler.
         _install_dat = os.path.join(make_dir, "meson-private", "install.dat")
         if os.path.isfile(_install_dat):
             import pickle as _pickle
 
-            class _StubUnpickler(_pickle.Unpickler):
-                """Unpickler that stubs missing mesonbuild modules."""
-                def find_class(self, module, name):
-                    try:
-                        return super().find_class(module, name)
-                    except (ModuleNotFoundError, AttributeError):
-                        type_key = f"{module}.{name}"
-                        if type_key not in _stub_cache:
-                            class _Stub:
-                                def __init__(self, *args, **kwargs):
-                                    # Accept constructor args (e.g. OctalInt(value))
-                                    # that pickle passes via __reduce__ tuples.
-                                    if args:
-                                        self._args = args
-                                def __reduce__(self):
-                                    return (_make_stub, (type_key,), self.__dict__)
-                                def __setstate__(self, state):
-                                    if isinstance(state, dict):
-                                        self.__dict__.update(state)
-                            _Stub.__qualname__ = _Stub.__name__ = name
-                            _Stub.__module__ = module
-                            _stub_cache[type_key] = _Stub
-                        return _stub_cache[type_key]
-
-            _stub_cache = {}
-
-            def _make_stub(type_key):
-                return _stub_cache[type_key]()
+            # Add mesonbuild to sys.path from hermetic or path-prepend dirs
+            _meson_sp_added = []
+            for _bp in list(args.hermetic_path) + list(all_path_prepend):
+                _parent = os.path.dirname(os.path.abspath(_bp))
+                for _pattern in ("lib/python*/site-packages", "lib64/python*/site-packages"):
+                    for _sp in _glob.glob(os.path.join(_parent, _pattern)):
+                        if os.path.isdir(os.path.join(_sp, "mesonbuild")):
+                            if _sp not in sys.path:
+                                sys.path.insert(0, _sp)
+                                _meson_sp_added.append(_sp)
 
             def _patch_paths(obj, old, new):
                 """Recursively replace old prefix with new in string attributes."""
@@ -631,13 +615,16 @@ def main():
             try:
                 _dat_stat = os.stat(_install_dat)
                 with open(_install_dat, "rb") as f:
-                    _idata = _StubUnpickler(f).load()
+                    _idata = _pickle.load(f)
                 _patch_paths(_idata, _stale_root, _new_root)
                 with open(_install_dat, "wb") as f:
                     _pickle.dump(_idata, f)
                 os.utime(_install_dat, (_dat_stat.st_atime, _dat_stat.st_mtime))
             except Exception:
                 pass  # Best-effort — don't block install on pickle errors
+            finally:
+                for _sp in _meson_sp_added:
+                    sys.path.remove(_sp)
 
     # --- Meson install fast-path ---
     # For meson-wrapped builds (including autotools wrappers like QEMU),

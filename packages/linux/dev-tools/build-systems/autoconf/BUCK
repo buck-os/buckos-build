@@ -42,9 +42,9 @@ package(
         # Uniform timestamps prevent autotools regeneration rules
         find . -type f -exec touch {} + 2>/dev/null || true
 
-        make -j${MAKEOPTS:-$(nproc)} MAKEINFO=true ACLOCAL=true AUTOMAKE=true
+        make -j${MAKEOPTS:-$(nproc)} MAKEINFO=true ACLOCAL=true AUTOMAKE=true AUTOCONF=true AUTOHEADER=true
 
-        make DESTDIR="$OUT" install MAKEINFO=true ACLOCAL=true AUTOMAKE=true
+        make DESTDIR="$OUT" install MAKEINFO=true ACLOCAL=true AUTOMAKE=true AUTOCONF=true AUTOHEADER=true
 
         # Clean conftest files again — make may recreate them during build
         find . -name 'conftest*' -delete 2>/dev/null || true
@@ -71,6 +71,8 @@ DATA_DIR="${SCRIPT_DIR}/../share/autoconf"
 export AC_MACRODIR="$DATA_DIR"
 export autom4te_perllibdir="$DATA_DIR"
 export trailer_m4="$DATA_DIR/autoconf/trailer.m4"
+# Override hardcoded /usr/bin/m4 with the m4 from our hermetic PATH
+export M4="${M4:-m4}"
 # Use -B to prepend the correct include directory
 exec "$SCRIPT_DIR/autom4te.real" -B "$DATA_DIR" "$@"
 WRAPPER_EOF
@@ -89,6 +91,7 @@ export AC_MACRODIR="$DATA_DIR"
 export autom4te_perllibdir="$DATA_DIR"
 export trailer_m4="$DATA_DIR/autoconf/trailer.m4"
 export AUTOM4TE="$SCRIPT_DIR/autom4te"
+export M4="${M4:-m4}"
 exec "$SCRIPT_DIR/autoconf.real" "$@"
 WRAPPER_EOF
             chmod +x "$BINDIR/autoconf"
@@ -107,6 +110,12 @@ export AC_MACRODIR="\$DATA_DIR"
 export autom4te_perllibdir="\$DATA_DIR"
 export trailer_m4="\$DATA_DIR/autoconf/trailer.m4"
 export AUTOM4TE="\$SCRIPT_DIR/autom4te"
+# Override hardcoded tool paths so autoreconf/autoheader find
+# sibling tools in the same prefix instead of /usr/bin defaults
+export AUTOCONF="\$SCRIPT_DIR/autoconf"
+export AUTOHEADER="\$SCRIPT_DIR/autoheader"
+export AUTORECONF="\$SCRIPT_DIR/autoreconf"
+export M4="\${M4:-m4}"
 exec "\$SCRIPT_DIR/${tool}.real" "\$@"
 WRAPPER_EOF
                 chmod +x "$BINDIR/$tool"
@@ -129,6 +138,22 @@ WRAPPER_EOF
                 # Use # as delimiter since | appears in the replacement text (|| operator)
                 sed -i "s#my @include = ('/usr/share/autoconf');#my @include = (\$ENV{'AC_MACRODIR'} // '/usr/share/autoconf');#g" "$BINDIR/$script"
             fi
+        done
+
+        # Patch all .real Perl scripts to replace hardcoded /usr/bin tool
+        # paths with env-var lookups.  autoconf 2.72 bakes @AUTOCONF@,
+        # @AUTOHEADER@, @AUTOM4TE@ etc. at configure time; the wrappers
+        # export env vars but some code paths use the Perl variable
+        # directly, bypassing $ENV{}.
+        for real in "$BINDIR"/*.real; do
+            [ -f "$real" ] || continue
+            sed -i \
+                -e "s|'/usr/bin/autoconf'|\$ENV{'AUTOCONF'} // 'autoconf'|g" \
+                -e "s|'/usr/bin/autoheader'|\$ENV{'AUTOHEADER'} // 'autoheader'|g" \
+                -e "s|'/usr/bin/autom4te'|\$ENV{'AUTOM4TE'} // 'autom4te'|g" \
+                -e "s|'/usr/bin/autoreconf'|\$ENV{'AUTORECONF'} // 'autoreconf'|g" \
+                -e "s|'/usr/bin/m4'|\$ENV{'M4'} // 'm4'|g" \
+                "$real"
         done
 
         # Final cleanup: delete any file whose name contains characters that

@@ -122,12 +122,9 @@ def main():
     # like zlib and libelf when building kernel host tools (resolve_btfids).
     # CC (the cross-compiler) has its own --sysroot and ignores these.
     #
-    # Also extract --sysroot from make flags to add sysroot headers/libs.
-    # The seed's host-tools gcc (x86_64-pc-linux-gnu) doesn't carry its
-    # own glibc headers — it uses the system /usr/include by default.
-    # On hosts with a different glibc, this causes type mismatches
-    # (e.g. __time64_t).  Pointing C_INCLUDE_PATH to the sysroot fixes
-    # HOSTCC compilation.
+    # Set C_INCLUDE_PATH and LIBRARY_PATH from hermetic PATH dirs so
+    # HOSTCC finds headers and libs from seed host-tools (glibc, zlib,
+    # elfutils, etc.) instead of the host system.
     _all_bin_dirs = (args.hermetic_path or []) + (args.path_prepend or [])
     _lib_parts, _inc_parts = [], []
     for bin_dir in _all_bin_dirs:
@@ -140,22 +137,11 @@ def main():
             d = os.path.join(parent, inc)
             if os.path.isdir(d) and d not in _inc_parts:
                 _inc_parts.append(d)
-    # Extract sysroot from CC= make flag (e.g. CC=gcc --sysroot=/path).
-    # Used for C_INCLUDE_PATH/LIBRARY_PATH AND for HOSTCFLAGS/HOSTLDFLAGS
-    # to override the host-tools gcc's hardcoded multiarch search paths.
-    _sysroot = None
-    for flag in args.make_flags:
-        if flag.startswith("CC=") and "--sysroot=" in flag:
-            _sysroot = flag.split("--sysroot=", 1)[1].split()[0]
-            _sysroot = os.path.abspath(_sysroot)
-            for inc in ("usr/include", "include"):
-                d = os.path.join(_sysroot, inc)
-                if os.path.isdir(d) and d not in _inc_parts:
-                    _inc_parts.append(d)
-            for ld in ("usr/lib64", "usr/lib", "lib64", "lib"):
-                d = os.path.join(_sysroot, ld)
-                if os.path.isdir(d) and d not in _lib_parts:
-                    _lib_parts.append(d)
+    # Note: sysroot paths are intentionally NOT added to
+    # C_INCLUDE_PATH/LIBRARY_PATH.  HOSTCC gets all headers from
+    # host-tools (glibc, zlib, elfutils via C_INCLUDE_PATH above).
+    # Adding sysroot glibc alongside host gcc's include-fixed causes
+    # __time64_t type mismatches.
     if _lib_parts:
         os.environ["LIBRARY_PATH"] = ":".join(_lib_parts)
     if _inc_parts:
@@ -223,13 +209,14 @@ def main():
         make_cmd.append(f"KCFLAGS={args.kcflags}")
     if args.cross_compile:
         make_cmd.append(f"CROSS_COMPILE={args.cross_compile}")
-    # When a sysroot was extracted from CC=, pass it to HOSTCC via
-    # HOSTCFLAGS/HOSTLDFLAGS.  The host-tools gcc has multiarch search
-    # paths hardcoded from its build host — --sysroot redirects the
-    # entire header/library search to the seed's sysroot.
-    if _sysroot:
-        make_cmd.append(f"HOSTCFLAGS=--sysroot={_sysroot}")
-        make_cmd.append(f"HOSTLDFLAGS=--sysroot={_sysroot}")
+    # HOSTCC gets headers/libs from the seed's host-tools via
+    # C_INCLUDE_PATH and LIBRARY_PATH (set above from hermetic PATH
+    # bin dirs).  All HOSTCC deps (glibc, zlib, elfutils) must be in
+    # tc/bootstrap/host-tools/packages.bzl.
+    #
+    # Do NOT use --sysroot for HOSTCFLAGS: it interacts with gcc's
+    # include-fixed headers, and C_INCLUDE_PATH already provides the
+    # seed's glibc/zlib/elfutils headers from host-tools.
     if cc_override:
         make_cmd.extend(cc_override)
     for flag in args.make_flags:

@@ -244,14 +244,30 @@ def filter_path_flags(flags):
     ({prefix}/usr/lib64, usr/lib, lib64, lib) but most only exist
     for one or two.  Filtering avoids blowing the execve arg limit
     on packages with 100+ transitive deps.
+
+    Only filters layout variants (usr/lib vs lib64 etc.) — if an
+    entire dep prefix is missing, all its flags pass through to
+    preserve the link error signal rather than silently dropping deps.
     """
+    # Group flags by prefix to detect entirely missing dep prefixes.
+    # A missing prefix means Buck2 didn't materialize the dep — pass
+    # the flags through so the link error is visible rather than
+    # manifesting as a confusing "function not found" configure check.
     result = []
     for flag in flags:
         if flag.startswith("-I"):
-            if os.path.isdir(os.path.abspath(flag[2:])):
+            path = os.path.abspath(flag[2:])
+            if os.path.isdir(path):
                 result.append(flag)
         elif flag.startswith("-L"):
-            if os.path.isdir(os.path.abspath(flag[2:])):
+            path = os.path.abspath(flag[2:])
+            if os.path.isdir(path):
+                result.append(flag)
+            elif not os.path.isdir(os.path.dirname(path)):
+                # Parent dir missing — entire dep prefix absent.
+                # Keep the flag to surface the real error.
+                import sys
+                print(f"⚠ filter_path_flags: keeping {flag} (dep prefix not materialized?)", file=sys.stderr)
                 result.append(flag)
         elif flag.startswith("-Wl,-rpath-link,"):
             if os.path.isdir(os.path.abspath(flag[16:])):

@@ -105,7 +105,7 @@ jobs:
           name: seed-toolchain
           path: .
       - name: Install dependencies
-        run: sudo apt-get install -yq zstd binutils libelf-dev zlib1g-dev lzip build-essential pkg-config python3-pip cmake ninja-build m4 nasm
+        run: sudo apt-get install -yq zstd
       - name: Install buck2
         run: |
           mkdir -p "$HOME/.local/bin"
@@ -127,7 +127,7 @@ jobs:
 
   release:
     needs: [test-setup, test-seed]
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule')
+    if: github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: write
