@@ -105,6 +105,8 @@ HOST_TOOL_PACKAGES = [
     "//packages/linux/dev-tools/dev-utils/dwarves:dwarves",
 
     # ISO image tools (xorriso, grub-mkimage, mksquashfs, mtools)
+    "//packages/linux/dev-libs/iso/libisofs:libisofs",
+    "//packages/linux/dev-libs/iso/libburn:libburn",
     "//packages/linux/dev-libs/iso/libisoburn:libisoburn",
     "//packages/linux/system/apps/mtools:mtools",
 

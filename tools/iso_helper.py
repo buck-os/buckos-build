@@ -206,11 +206,23 @@ def _setup_efi(work, arch):
         "test", "all_video", "loadenv", "exfat", "ext2", "ntfs", "serial",
     ]
 
-    result = subprocess.run(
-        [grub_mkimage, "-o", efi_binary, "-O", grub_format,
-         "-p", "/boot/grub", "-c", early_cfg] + grub_modules,
-        capture_output=True,
-    )
+    # Find grub module directory — grub-mkimage defaults to /usr/lib64/grub/
+    # which doesn't exist when running from the seed's host-tools.  Locate
+    # the modules relative to grub-mkimage's installation.
+    grub_cmd = [grub_mkimage, "-o", efi_binary, "-O", grub_format,
+                "-p", "/boot/grub", "-c", early_cfg]
+    grub_bin_dir = os.path.dirname(os.path.realpath(grub_mkimage))
+    grub_prefix = os.path.dirname(grub_bin_dir)  # up from bin/
+    for candidate in (
+        os.path.join(grub_prefix, "lib64", "grub", grub_format),
+        os.path.join(grub_prefix, "lib", "grub", grub_format),
+    ):
+        if os.path.isdir(candidate):
+            grub_cmd.extend(["-d", candidate])
+            break
+    grub_cmd.extend(grub_modules)
+
+    result = subprocess.run(grub_cmd, capture_output=True)
     if result.returncode != 0:
         print(f"warning: {grub_mkimage} failed: {result.stderr.decode()!s:.200}",
               file=sys.stderr)
