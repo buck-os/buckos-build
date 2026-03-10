@@ -8,8 +8,13 @@ targets automatically.
 The two-target split (http_file -> extract_source) preserves http_file's
 native benefits: content-addressed CAS lookup by sha256, deferred
 execution, and RE-native download handling.
+
+PATH handling: uses the toolchain's hermetic PATH when a seed archive is
+configured (provides lzip, zstd, tar etc. from host-tools/bin).  Falls
+back to --allow-host-path when bootstrapping from source (no seed).
 """
 
+load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_path_args")
 load("//tc:transitions.bzl", "strip_toolchain_mode")
 
 def _extract_source_impl(ctx):
@@ -26,7 +31,7 @@ def _extract_source_impl(ctx):
         cmd.add("--format", ctx.attrs.format)
     for pattern in ctx.attrs.exclude_patterns:
         cmd.add("--exclude", pattern)
-    cmd.add("--allow-host-path")
+    cmd.add(toolchain_path_args(ctx))
 
     ctx.actions.run(cmd, category = "extract", identifier = ctx.attrs.name, allow_cache_upload = True)
 
@@ -43,6 +48,6 @@ extract_source = rule(
         "_extract_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:extract"),
         ),
-    },
+    } | TOOLCHAIN_ATTRS,
     cfg = strip_toolchain_mode,
 )
