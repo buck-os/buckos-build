@@ -46,7 +46,13 @@ def _toolchain_import_impl(ctx):
         ar = host_bin.project("ar")
         strip_bin = host_bin.project("strip")
         gcc_lib_dir = unpacked.project("tools/" + triple + "/lib64")
+        host_lib_dir = unpacked.project("host-tools/lib64")
         ldflags = list(ctx.attrs.extra_ldflags)
+        # Native gcc with --sysroot can't find its own runtime libs
+        # (libgcc_s.so, libstdc++.so) because the sysroot prefix
+        # redirects /usr/lib64 to sysroot/usr/lib64.  Add explicit
+        # -L for host-tools/lib64 where the native runtime lives.
+        ldflags.append(cmd_args("-L", host_lib_dir, delimiter = ""))
         ldflags.append(cmd_args("-Wl,-rpath-link,", gcc_lib_dir, delimiter = ""))
     else:
         # Cross mode: cross-compiler for building target packages.

@@ -234,6 +234,80 @@ def _scrub_home_paths(directory):
 
 
 
+def _pad_unpadded_interpreters(host_tools_dir):
+    """Pad standard ELF interpreters so the unpack step can rewrite them.
+
+    Some packages (e.g. lzip) use non-standard configure scripts that
+    don't pass through GCC specs, producing binaries with the standard
+    27-byte /lib64/ld-linux-x86-64.so.2 interpreter.  The unpack step
+    can only rewrite padded interpreters (it needs space to overwrite
+    in-place).  Pad any unpadded interpreters to the standard 256-byte
+    format so they get properly rewritten at unpack time.
+    """
+    STANDARD_INTERP = "/lib64/ld-linux-x86-64.so.2"
+    PADDED_INTERP = "/" * 228 + "lib64/ld-linux-x86-64.so.2"  # 256 bytes total
+    padded = 0
+
+    for dirpath, _, filenames in os.walk(host_tools_dir):
+        for name in filenames:
+            fpath = os.path.join(dirpath, name)
+            if os.path.islink(fpath) or not os.path.isfile(fpath):
+                continue
+            try:
+                with open(fpath, "rb") as f:
+                    magic = f.read(4)
+                if magic != b"\x7fELF":
+                    continue
+                with open(fpath, "rb") as f:
+                    data = bytearray(f.read())
+
+                # Only handle 64-bit little-endian (x86_64)
+                if data[4] != 2 or data[5] != 1:
+                    continue
+
+                e_phoff = struct.unpack_from("<Q", data, 32)[0]
+                e_phentsize = struct.unpack_from("<H", data, 54)[0]
+                e_phnum = struct.unpack_from("<H", data, 56)[0]
+
+                for i in range(e_phnum):
+                    off = e_phoff + i * e_phentsize
+                    p_type = struct.unpack_from("<I", data, off)[0]
+                    if p_type != 3:  # PT_INTERP
+                        continue
+
+                    p_offset = struct.unpack_from("<Q", data, off + 8)[0]
+                    p_filesz = struct.unpack_from("<Q", data, off + 32)[0]
+                    seg_end = p_offset + p_filesz
+                    try:
+                        end = data.index(0, p_offset, seg_end)
+                    except ValueError:
+                        end = seg_end
+                    old_interp = data[p_offset:end].decode("ascii", errors="replace")
+
+                    if old_interp == STANDARD_INTERP:
+                        # Pad by appending to end of file
+                        new_bytes = PADDED_INTERP.encode("ascii") + b"\x00"
+                        new_offset = len(data)
+                        data.extend(new_bytes)
+                        struct.pack_into("<Q", data, off + 8, new_offset)
+                        struct.pack_into("<Q", data, off + 32, len(new_bytes))
+                        struct.pack_into("<Q", data, off + 40, len(new_bytes))
+
+                        orig_mode = os.stat(fpath).st_mode
+                        os.chmod(fpath, stat.S_IRUSR | stat.S_IWUSR)
+                        with open(fpath, "wb") as f:
+                            f.write(data)
+                        os.chmod(fpath, orig_mode)
+                        padded += 1
+                    break
+            except (PermissionError, OSError, struct.error):
+                pass
+
+    if padded:
+        print(f"  padded {padded} host-tools binaries with standard interpreter",
+              file=sys.stderr)
+
+
 def _create_rpath_symlinks(host_tools_dir):
     """Create lib64/lib symlinks so $ORIGIN/../lib64 resolves from any depth.
 
@@ -339,11 +413,15 @@ def main():
         if has_host_tools:
             _scrub_home_paths(host_tools_dst)
 
-        # All host-tools binaries are built by our GCC with specs, so they
-        # have padded interp + $ORIGIN RPATH at link time.  Unpack
-        # rewrites the padded interp to the actual seed path.
-        #
-        # However, specs inject $ORIGIN/../lib64 which only resolves for
+        # Most host-tools binaries are built by our GCC with specs, so
+        # they have padded interp + $ORIGIN RPATH at link time.  Some
+        # packages (lzip, etc.) use non-standard build systems that
+        # don't pass through GCC specs, leaving the standard 27-byte
+        # interpreter.  Pad those so the unpack step can rewrite them.
+        if has_host_tools:
+            _pad_unpadded_interpreters(host_tools_dst)
+
+        # specs inject $ORIGIN/../lib64 which only resolves for
         # binaries directly in bin/.  Deeply-nested binaries (e.g.
         # libexec/gcc/.../cc1) need more ../ levels.  Create lib64
         # symlinks in intermediate directories so $ORIGIN/../lib64

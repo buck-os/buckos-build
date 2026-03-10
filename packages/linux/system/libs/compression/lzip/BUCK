@@ -13,7 +13,9 @@ package(
     description = "Lossless data compressor based on LZMA algorithm",
     homepage = "https://www.nongnu.org/lzip/",
     license = "GPL-2.0-or-later",
-    # lzip uses a custom configure script that takes CC/CXX as env vars
-    # GitHub tarballs may not have execute permission on configure
+    # lzip uses a hand-written configure that ignores CC/CXX from env —
+    # must be passed as command-line KEY=VALUE args so GCC specs
+    # (padded interpreter, $ORIGIN RPATH) are applied at link time.
+    cc_as_configure_arg = True,
     deps = [],
 )
