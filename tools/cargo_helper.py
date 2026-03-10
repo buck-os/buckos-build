@@ -163,6 +163,15 @@ def main():
             _existing = env.get("LD_LIBRARY_PATH", "")
             env["LD_LIBRARY_PATH"] = ":".join(_dep_lib_dirs) + (":" + _existing if _existing else "")
 
+    # Use the toolchain CC as the Rust linker so rustc invokes GCC
+    # instead of rust-lld.  GCC knows about --sysroot (via specs) and
+    # finds CRT files (Scrt1.o, crti.o) + system libraries (-lc, -lm)
+    # that rust-lld cannot locate on minimal hosts.
+    cc = env.get("CC", "")
+    if cc and "CARGO_BUILD_RUSTFLAGS" not in env:
+        cc_bin = cc.split()[0]
+        env["CARGO_BUILD_RUSTFLAGS"] = f"-C linker={cc_bin}"
+
     # Set up vendored dependencies if provided
     if args.vendor_dir:
         vendor_dir = os.path.abspath(args.vendor_dir)

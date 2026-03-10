@@ -256,11 +256,23 @@ def _install_gcc_specs(toolchain_dir, target_triple="x86_64-buckos-linux-gnu"):
     built-in link spec.  ld uses the last --dynamic-linker, so our append
     overrides the default.
 
+    Also injects --sysroot into *self_spec so that ALL GCC invocations
+    (including bare "gcc" calls from Rust build scripts, configure tests,
+    etc.) find CRT files and headers without explicit --sysroot.  Build
+    rules that pass their own --sysroot override the specs default since
+    command-line args take precedence.
+
     Combined with $ORIGIN-relative RPATH (also in specs), compiled
     programs find the matching buckos ld-linux + libc at runtime
     without LD_LIBRARY_PATH.
     """
     installed = 0
+
+    # Sysroot shared by cross-compiler and host-tools gcc.
+    sysroot = os.path.join(
+        toolchain_dir, "tools", target_triple, "sys-root",
+    )
+    sysroot_abs = os.path.abspath(sysroot) if os.path.isdir(sysroot) else None
 
     # Cross-compiler: tools/lib/gcc/<triple>/<ver>/specs
     # Uses sysroot ld-linux as dynamic linker.
@@ -274,7 +286,7 @@ def _install_gcc_specs(toolchain_dir, target_triple="x86_64-buckos-linux-gnu"):
             toolchain_dir, "tools", "lib", "gcc", target_triple, "*",
         )
         for gcc_libdir in sorted(_glob.glob(pattern)):
-            _write_specs(gcc_libdir, sysroot_ld_abs)
+            _write_specs(gcc_libdir, sysroot_ld_abs, sysroot=sysroot_abs)
             installed += 1
 
     # Host-tools GCC: host-tools/lib64/gcc/<triple>/<ver>/specs
@@ -290,7 +302,7 @@ def _install_gcc_specs(toolchain_dir, target_triple="x86_64-buckos-linux-gnu"):
         )
         for gcc_libdir in sorted(_glob.glob(pattern)):
             if os.path.isdir(gcc_libdir):
-                _write_specs(gcc_libdir, host_ld_abs)
+                _write_specs(gcc_libdir, host_ld_abs, sysroot=sysroot_abs)
                 installed += 1
 
     if installed:
@@ -298,18 +310,21 @@ def _install_gcc_specs(toolchain_dir, target_triple="x86_64-buckos-linux-gnu"):
               file=sys.stderr)
 
 
-def _write_specs(gcc_libdir, ld_linux_abs):
+def _write_specs(gcc_libdir, ld_linux_abs, sysroot=None):
     """Write a specs override into a GCC lib directory.
 
     Uses $ORIGIN-relative RPATH so compiled binaries find their libs
     at runtime without LD_LIBRARY_PATH.  Works in both seed layout
     (bin/foo → ../lib64/) and rootfs (/usr/bin/foo → /usr/lib64/).
 
-    Only overrides the dynamic linker and RPATH — CRT files (crt1.o,
-    crti.o) are found via --sysroot for both the cross-compiler and
-    host-tools GCC.  Overriding startfile_prefix_spec would break
-    the linker's ability to find libc.so.6 through the sysroot-mapped
-    library search paths.
+    When sysroot is provided, injects --sysroot via *self_spec so bare
+    gcc invocations (Rust build scripts, configure tests) find CRT files
+    and headers without explicit --sysroot on the command line.
+
+    Only overrides the dynamic linker and RPATH in *link — CRT files
+    (crt1.o, crti.o) are found via --sysroot.  Overriding
+    startfile_prefix_spec would break the linker's ability to find
+    libc.so.6 through the sysroot-mapped library search paths.
     """
     # ld-linux is at <prefix>/lib64/ld-linux-x86-64.so.2.
     ld_dir = os.path.dirname(ld_linux_abs)
@@ -329,7 +344,15 @@ def _write_specs(gcc_libdir, ld_linux_abs):
     if abs_parts:
         rpath_str += ":" + ":".join(abs_parts)
 
-    specs_content = (
+    specs_content = ""
+
+    # Inject --sysroot so all gcc invocations find CRT files and headers.
+    # Build rules pass their own --sysroot which overrides this default
+    # (command-line args take precedence over *self_spec).
+    if sysroot:
+        specs_content += f"*self_spec:\n+ --sysroot={sysroot}\n\n"
+
+    specs_content += (
         "*link:\n"
         f"+ %{{!shared:%{{!static:--dynamic-linker {ld_linux_abs}"
         f" -rpath {rpath_str}}}}}\n"
