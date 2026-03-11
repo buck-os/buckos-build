@@ -68,11 +68,42 @@ def _toolchain_import_impl(ctx):
         cxx_args = cmd_args(cxx)
         cxx_args.add(cmd_args("--sysroot=", sysroot, delimiter = ""))
 
+        # Extract dynamic-linker and rpath from extra_ldflags and inject
+        # them via GCC specs instead.  Specs are applied at link time
+        # regardless of whether the build system honours LDFLAGS, which
+        # ensures every linked binary gets the padded interpreter and
+        # RPATH placeholder.  Matches buckos_bootstrap_toolchain logic.
+        interp_val = None
+        rpath_val = None
+        remaining_ldflags = []
+        for flag in ctx.attrs.extra_ldflags:
+            if "--dynamic-linker," in flag and "rpath" not in flag:
+                interp_val = flag.split("--dynamic-linker,", 1)[1]
+            elif "-rpath," in flag and "rpath-link" not in flag:
+                rpath_val = flag.split("-rpath,", 1)[1]
+            else:
+                remaining_ldflags.append(flag)
+
+        if interp_val or rpath_val:
+            spec_parts = []
+            if interp_val:
+                spec_parts.append("--dynamic-linker " + interp_val)
+            if rpath_val:
+                spec_parts.append("-rpath " + rpath_val)
+            specs_content = (
+                "*link:\n" +
+                "+ %{!shared:%{!static:" + " ".join(spec_parts) + "}}\n" +
+                "\n"
+            )
+            specs_file = ctx.actions.write("gcc-link.specs", specs_content)
+            cc_args.add(cmd_args("-specs=", specs_file, delimiter = ""))
+            cxx_args.add(cmd_args("-specs=", specs_file, delimiter = ""))
+
         # ld.bfd resolves DT_NEEDED chains and needs to find libstdc++.so
         # when linking C programs against C++ shared libraries.  The GCC
         # runtime libs live outside the sysroot — add them as rpath-link.
         gcc_lib_dir = unpacked.project("tools/" + triple + "/lib64")
-        ldflags = list(ctx.attrs.extra_ldflags)
+        ldflags = list(remaining_ldflags)
         ldflags.append(cmd_args("-Wl,-rpath-link,", gcc_lib_dir, delimiter = ""))
 
     info = BuildToolchainInfo(

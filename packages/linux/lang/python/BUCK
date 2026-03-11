@@ -24,6 +24,7 @@ package(
     # major.minor version. Since the host has 3.13 and we build 3.12,
     # use the host toolchain instead. Python's configure also runs test
     # programs making true cross-compilation impractical.
+    skip_host_arg = True,
     configure_args = [
         "--enable-shared",
         "--with-system-expat",
@@ -88,6 +89,7 @@ package(
 
     # No USE flags - this is a minimal build
 
+    skip_host_arg = True,
     # Disable optional modules that would require target libraries
     configure_args = [
         "--enable-shared",

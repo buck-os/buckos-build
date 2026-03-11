@@ -101,6 +101,21 @@ def _src_configure(ctx, source, cflags_file = None, ldflags_file = None,
         # Default prefix for FHS layout
         cmd.add("--configure-arg=--prefix=/usr")
 
+        # Auto-inject --host for cross-compilation.  This tells autotools
+        # the target system differs from the build host, which prevents
+        # configure from trying to execute compiled test programs (conftest
+        # binaries crash when the padded interpreter resolves to a host
+        # ld-linux that is ABI-incompatible with the target libc).
+        # Packages with hand-written configure that reject --host (e.g.
+        # zlib) set skip_host_arg = True.  Skip when configure_args
+        # already contains --host (e.g. Python sets its own).
+        has_host = False
+        for arg in ctx.attrs.configure_args:
+            if arg.startswith("--host"):
+                has_host = True
+        if not ctx.attrs.skip_host_arg and not has_host:
+            cmd.add(cmd_args("--configure-arg=--host=", tc.target_triple, delimiter = ""))
+
         # Configure arguments (use = syntax so argparse handles --prefix=... values)
         for arg in ctx.attrs.configure_args:
             cmd.add(cmd_args("--configure-arg=", arg, delimiter = ""))
@@ -356,6 +371,7 @@ autotools_package = rule(
         "configure_script": attrs.option(attrs.string(), default = None),
         "skip_configure": attrs.bool(default = False),
         "cc_as_configure_arg": attrs.bool(default = False),
+        "skip_host_arg": attrs.bool(default = False),
         "build_subdir": attrs.option(attrs.string(), default = None),
         "pre_build_cmds": attrs.list(attrs.string(), default = []),
         "make_args": attrs.list(attrs.string(), default = []),

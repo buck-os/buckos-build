@@ -66,6 +66,10 @@ def seed_toolchain():
             target_triple = "x86_64-buckos-linux-gnu",
             has_host_tools = True,
             extra_cflags = ["-march=x86-64-v3"],
+            extra_ldflags = [
+                "-Wl,--dynamic-linker," + "/" * 228 + "lib64/ld-linux-x86-64.so.2",
+                "-Wl,-rpath,$ORIGIN/../lib64:$ORIGIN/../lib",
+            ],
             labels = ["buckos:seed"],
             visibility = ["PUBLIC"],
         )

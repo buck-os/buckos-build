@@ -56,6 +56,13 @@ def _cmake_configure(ctx, source, cflags_file = None, ldflags_file = None,
     if ctx.attrs.source_subdir:
         cmd.add("--source-subdir", ctx.attrs.source_subdir)
 
+    # Cross-compilation: optionally tell cmake the target system so it
+    # doesn't try to run compiled test programs.  Disabled by default
+    # because CMAKE_CROSSCOMPILING changes too much behaviour (NATIVE
+    # sub-builds, find_package logic, utempter checks, etc.) for
+    # same-arch semi-cross builds.  CMake's try_run() fails gracefully
+    # when conftest crashes, so most packages work without this flag.
+
     # CMake arguments (use = form so argparse doesn't treat -D... as a flag)
     for arg in ctx.attrs.cmake_args:
         cmd.add(cmd_args("--cmake-arg=", arg, delimiter = ""))

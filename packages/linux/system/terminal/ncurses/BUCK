@@ -26,6 +26,7 @@ package(
 
     configure_args = [
         "--with-shared",
+        "--libdir=/usr/lib64",
         "--enable-pc-files",
         "--with-pkg-config-libdir=/usr/lib64/pkgconfig",
         "--enable-widec",
@@ -39,7 +40,15 @@ package(
         "--disable-stripping",
         "--without-ada",
         "--without-tests",
+        # Fallback terminal entries compiled into the library.  In cross-
+        # compilation mode (--host), tic can't run to compile the full
+        # terminfo database, so these fallbacks ensure basic terminal
+        # types work without a terminfo directory.
+        "--with-fallbacks=xterm,linux,vt100,vt220,screen,xterm-256color,tmux,tmux-256color",
     ],
+    # Skip install.data (tic terminfo compilation) — tic is cross-compiled
+    # and can't run on the build host.  Fallback entries cover basic use.
+    install_targets = ["install.libs", "install.progs", "install.includes", "install.man"],
 
     post_install_cmds = [
         # Non-wide compatibility symlinks

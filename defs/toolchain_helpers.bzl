@@ -83,6 +83,10 @@ def toolchain_ld_linux_args(ctx):
         return [cmd_args("--ld-linux", tc.sysroot.project("lib64/ld-linux-x86-64.so.2"))]
     return []
 
+def toolchain_target_triple(ctx):
+    """Return the target triple from BuildToolchainInfo."""
+    return ctx.attrs._toolchain[BuildToolchainInfo].target_triple
+
 def toolchain_extra_cflags(ctx):
     """Return toolchain-injected CFLAGS (e.g. hardening flags)."""
     return ctx.attrs._toolchain[BuildToolchainInfo].extra_cflags

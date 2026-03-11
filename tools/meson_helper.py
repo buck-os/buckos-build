@@ -7,6 +7,7 @@ Runs meson setup with specified source dir, build dir, and arguments.
 import argparse
 import glob as _glob
 import os
+import shutil as _shutil
 import subprocess
 import sys
 
@@ -96,6 +97,8 @@ def main():
                         help="Start with empty PATH (populated by --path-prepend)")
     parser.add_argument("--ld-linux", default=None,
                         help="Buckos ld-linux path (disables posix_spawn)")
+    parser.add_argument("--cross-triple", default=None,
+                        help="Target triple for cross-compilation (generates cross file)")
     parser.add_argument("--pre-cmd", action="append", dest="pre_cmds", default=[],
                         help="Shell command to run in source dir before meson setup (repeatable)")
     parser.add_argument("--cflags-file", default=None,
@@ -279,6 +282,11 @@ def main():
     if _dep_python3:
         _native_lines.append(f"python3 = '{_dep_python3}'")
         _native_lines.append(f"python = '{_dep_python3}'")
+    # Pin a build-machine C compiler so cross builds can compile native
+    # code generators (e.g. fribidi gen.tab).  Look for cc/gcc on PATH.
+    _native_cc = _shutil.which("cc", path=env.get("PATH", "")) or _shutil.which("gcc", path=env.get("PATH", ""))
+    if _native_cc:
+        _native_lines.append(f"c = '{_native_cc}'")
     _native_file = os.path.join(_build_dir_abs, "buckos-native.ini")
     with open(_native_file, "w") as _nf:
         _nf.write("\n".join(_native_lines) + "\n")
@@ -299,6 +307,46 @@ def main():
         f"--prefix={args.prefix}",
         f"--native-file={_native_file}",
     ])
+
+    # Generate and inject cross file for cross-compilation.
+    # This tells meson the target system differs from the build host,
+    # preventing it from trying to execute compiled test programs
+    # (which crash when the padded interpreter is ABI-incompatible
+    # with the host ld-linux).
+    if args.cross_triple:
+        parts = args.cross_triple.split("-")
+        cpu = parts[0]
+        cpu_family = {"x86_64": "x86_64", "aarch64": "aarch64",
+                      "arm": "arm", "i686": "x86"}.get(cpu, cpu)
+        # Pin pkg-config in cross file [binaries] so meson finds it for
+        # host-machine dependency lookups (e.g. systemd → libcap).
+        _cross_pkgconfig = os.path.join(wrapper_dir, "pkg-config")
+        # lib_suffix: 64-bit arches use lib64, 32-bit use lib
+        _lib_suffix = "lib64" if cpu_family in ("x86_64", "aarch64") else "lib"
+        cross_lines = [
+            "[binaries]",
+            f"pkg-config = '{_cross_pkgconfig}'",
+            "",
+            "[host_machine]",
+            "system = 'linux'",
+            f"cpu_family = '{cpu_family}'",
+            f"cpu = '{cpu}'",
+            "endian = 'little'",
+            "",
+            "[built-in options]",
+            f"libdir = '{_lib_suffix}'",
+        ]
+        _cross_file = os.path.join(_build_dir_abs, "buckos-cross.ini")
+        with open(_cross_file, "w") as _cf:
+            _cf.write("\n".join(cross_lines) + "\n")
+        cmd.append(f"--cross-file={_cross_file}")
+
+        # In cross mode, meson routes PKG_CONFIG_PATH to the host
+        # machine (target).  Native (build-machine) deps like
+        # wayland-scanner need PKG_CONFIG_PATH_FOR_BUILD instead.
+        _pkg_for_build = env.get("PKG_CONFIG_PATH", "")
+        if _pkg_for_build:
+            env["PKG_CONFIG_PATH_FOR_BUILD"] = _pkg_for_build
 
     for define in args.meson_defines:
         # Resolve relative Buck2 paths in define values (e.g.

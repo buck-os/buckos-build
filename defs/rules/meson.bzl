@@ -20,7 +20,7 @@ load("//defs/rules:_common.bzl",
      "write_bin_dirs", "write_compile_flags", "write_lib_dirs_with_hosts",
      "write_link_flags", "write_pkg_config_paths",
 )
-load("//defs:toolchain_helpers.bzl", "toolchain_env_args", "toolchain_extra_cflags", "toolchain_extra_ldflags", "toolchain_path_args")
+load("//defs:toolchain_helpers.bzl", "toolchain_env_args", "toolchain_extra_cflags", "toolchain_extra_ldflags", "toolchain_path_args", "toolchain_target_triple")
 load("//defs:host_tools.bzl", "host_tool_path_args")
 
 # ── Phase helpers ─────────────────────────────────────────────────────
@@ -50,6 +50,13 @@ def _meson_setup(ctx, source, cflags_file = None, ldflags_file = None,
     # Hermetic PATH from seed toolchain
     for arg in toolchain_path_args(ctx):
         cmd.add(arg)
+
+    # Cross-compilation: pass target triple so the helper generates a
+    # meson cross file.  This prevents meson from trying to execute
+    # compiled test programs (which crash when the padded interpreter
+    # resolves to a host ld-linux that is ABI-incompatible with the
+    # target libc).
+    cmd.add("--cross-triple", toolchain_target_triple(ctx))
 
     # Inject user-specified environment variables
     for key, value in ctx.attrs.env.items():
