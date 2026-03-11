@@ -354,12 +354,12 @@ buckos_test(
     test = "verify_ch_vm_boot.py",
     deps = [
         "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
-        "//packages/linux/kernel/buckos-kernel:buckos-kernel-ch",
+        "//tests/fixtures:test-kernel",
         "//packages/linux/system/cloud-hypervisor:ch-initramfs",
     ],
     env = {
         "CH_BINARY": "$(location //packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor)",
-        "KERNEL": "$(location //packages/linux/kernel/buckos-kernel:buckos-kernel-ch)",
+        "KERNEL": "$(location //tests/fixtures:test-kernel)",
         "INITRAMFS": "$(location //packages/linux/system/cloud-hypervisor:ch-initramfs)",
     },
     run_test_separately = True,
