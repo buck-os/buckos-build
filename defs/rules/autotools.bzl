@@ -101,20 +101,26 @@ def _src_configure(ctx, source, cflags_file = None, ldflags_file = None,
         # Default prefix for FHS layout
         cmd.add("--configure-arg=--prefix=/usr")
 
-        # Auto-inject --host for cross-compilation.  This tells autotools
-        # the target system differs from the build host, which prevents
-        # configure from trying to execute compiled test programs (conftest
-        # binaries crash when the padded interpreter resolves to a host
-        # ld-linux that is ABI-incompatible with the target libc).
+        # Auto-inject --host and --build for cross-compilation.  Setting
+        # both to the target triple tells autotools "building ON target
+        # FOR target" — the cross-compiler makes this true.  When host
+        # == build, autotools stays in native mode (no cross-link quirks
+        # like binutils gas failing to find in-tree libbfd) while the
+        # correct system tuple is set for config.h / feature detection.
         # Packages with hand-written configure that reject --host (e.g.
         # zlib) set skip_host_arg = True.  Skip when configure_args
         # already contains --host (e.g. Python sets its own).
         has_host = False
+        has_build = False
         for arg in ctx.attrs.configure_args:
             if arg.startswith("--host"):
                 has_host = True
+            if arg.startswith("--build"):
+                has_build = True
         if not ctx.attrs.skip_host_arg and not has_host:
             cmd.add(cmd_args("--configure-arg=--host=", tc.target_triple, delimiter = ""))
+        if not ctx.attrs.skip_host_arg and not has_build:
+            cmd.add(cmd_args("--configure-arg=--build=", tc.target_triple, delimiter = ""))
 
         # Configure arguments (use = syntax so argparse handles --prefix=... values)
         for arg in ctx.attrs.configure_args:
