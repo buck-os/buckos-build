@@ -20,4 +20,18 @@ package(
         "//packages/linux/dev-tools/build-systems/cmake:cmake",
         "//packages/linux/dev-tools/build-systems/ninja:ninja",
     ],
+    # CMake hardcodes absolute paths in the .pc file (exec_prefix=/usr,
+    # libdir=/usr/lib64) instead of using variable references.  This breaks
+    # pkg-config --define-prefix in cross-compilation.
+    post_install_cmds = ["""
+        for pc in "$DESTDIR"/usr/lib64/pkgconfig/*.pc "$DESTDIR"/usr/lib/pkgconfig/*.pc; do
+            [ -f "$pc" ] || continue
+            sed -i \
+                -e 's|^exec_prefix=/usr$|exec_prefix=${prefix}|' \
+                -e 's|^libdir=/usr/lib64$|libdir=${exec_prefix}/lib64|' \
+                -e 's|^libdir=/usr/lib$|libdir=${exec_prefix}/lib|' \
+                -e 's|^includedir=/usr/include$|includedir=${prefix}/include|' \
+                "$pc"
+        done
+    """],
 )

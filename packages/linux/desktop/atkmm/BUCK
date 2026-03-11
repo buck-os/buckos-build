@@ -1,0 +1,26 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "meson",
+    name = "atkmm",
+    url = "https://download.gnome.org/sources/atkmm/2.28/atkmm-2.28.4.tar.xz",
+    sha256 = "0a142a8128f83c001efb8014ee463e9a766054ef84686af953135e04d28fdab3",
+    version = "2.28.4",
+    description = "C++ bindings for ATK",
+    homepage = "https://gtkmm.gnome.org/",
+    license = "LGPL-2.1+",
+    configure_args = [
+        "-Dbuild-documentation=false",
+        "-Dmaintainer-mode=false",
+    ],
+    deps = [
+        "//packages/linux/desktop/glibmm:glibmm",
+        "//packages/linux/desktop/libsigcpp:libsigcpp",
+        # at-spi2-core 2.52+ provides libatk-1.0.so (supersedes standalone atk 2.38)
+        "//packages/linux/desktop/at-spi2-core:at-spi2-core",
+        "//packages/linux/dev-libs/glib:glib",
+        "//packages/linux/system/libs/utility/pcre2:pcre2",
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/core/zlib:zlib",
+    ],
+)

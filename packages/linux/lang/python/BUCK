@@ -30,6 +30,13 @@ package(
         "--with-system-expat",
         "--with-system-ffi",
         "--with-ensurepip=install",
+        # Disable curses auto-detection from system headers. Without this,
+        # Python detects host curses.h but the host ncurses may lack wide-char
+        # support, causing -Werror=implicit-function-declaration failures on
+        # the exec platform build. Curses support requires the ncurses USE flag.
+        "ac_cv_header_curses_h=no",
+        "ac_cv_header_ncurses_h=no",
+        "ac_cv_header_ncursesw_curses_h=no",
     ],
 
     # GCC 14+ false positive in libmpdec io.c (upstream CPython issue)
