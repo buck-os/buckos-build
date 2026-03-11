@@ -1,0 +1,32 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cmake",
+    name = "monado",
+    version = "24.0.0",
+    url = "https://gitlab.freedesktop.org/monado/monado/-/archive/v24.0.0/monado-v24.0.0.tar.gz",
+    sha256 = "96d2c4761ea86c8e6c832297a92e8479a560e601712d9f25ede36ade533ddc22",
+    configure_args = [
+        "-DXRT_HAVE_VULKAN=ON",
+        "-DXRT_HAVE_OPENGL=ON",
+        "-DXRT_HAVE_EGL=ON",
+        "-DXRT_HAVE_OPENCV=ON",
+        "-DXRT_HAVE_LIBUDEV=ON",
+        "-DXRT_HAVE_LIBUSB=ON",
+        "-DXRT_FEATURE_OPENXR=ON",
+        "-DXRT_MODULE_COMPOSITOR=ON",
+        "-DXRT_MODULE_COMPOSITOR_MAIN=ON",
+        "-DBUILD_TESTING=OFF",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/misc/eigen:eigen",
+        "//packages/linux/graphics/vulkan:vulkan",
+        "//packages/linux/desktop/mesa:mesa",
+        "//packages/linux/ai/vision/opencv:opencv",
+        "//packages/linux/system/libs/libudev:libudev",
+        "//packages/linux/system/libs/libusb:libusb",
+        "//packages/linux/dev-libs/json/cJSON:cJSON",
+        "//packages/linux/dev-libs/compression/zlib:zlib",
+    ],
+    labels = ["buckos:hw:vulkan"],
+)

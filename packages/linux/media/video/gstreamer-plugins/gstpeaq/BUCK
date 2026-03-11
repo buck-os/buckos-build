@@ -1,0 +1,19 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "gstpeaq",
+    version = "0.6.1",
+    url = "https://github.com/HSU-ANT/gstpeaq/archive/refs/tags/version-0.6.1.tar.gz",
+    sha256 = "da1c4e2d572c2e2a8c107d62cdc813eb63cf46f89fc052f0a3ea9026fa867109",
+    description = "GStreamer plugin for PEAQ audio quality measurement",
+    homepage = "https://github.com/HSU-ANT/gstpeaq",
+    license = "GPL-2.0",
+    deps = [
+        "//packages/linux/graphics/video/gstreamer:gstreamer",
+    ],
+    configure_args = [
+        "--disable-static",
+        "--disable-gtk-doc",
+    ],
+)

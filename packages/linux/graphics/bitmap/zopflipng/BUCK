@@ -1,0 +1,39 @@
+load("//defs:package.bzl", "package")
+
+package(
+    name = "zopflipng",
+    build_rule = "cmake",
+    version = "1.0.3",
+    url = "https://github.com/google/zopfli/archive/refs/tags/zopfli-1.0.3.tar.gz",
+    sha256 = "e955a7739f71af37ef3349c4fa141c648e8775bceb2195be07e86f8e638814bd",
+    description = "Zopfli PNG optimizer using Zopfli compression",
+    homepage = "https://github.com/google/zopfli",
+    license = "Apache-2.0",
+    deps = [
+        "//packages/linux/dev-libs/compression/zopfli:zopfli",
+        "//packages/linux/graphics/bitmap/lodepng:lodepng",
+    ],
+    pre_configure_cmds = [
+        """cat > CMakeLists.txt << 'CEOF'
+cmake_minimum_required(VERSION 3.10)
+project(zopflipng LANGUAGES CXX)
+include(GNUInstallDirs)
+find_library(ZOPFLI_LIB NAMES zopfli)
+find_path(ZOPFLI_INC NAMES zopfli.h PATH_SUFFIXES zopfli)
+file(GLOB LODEPNG_SRCS "src/zopflipng/lodepng/*.cpp")
+add_executable(zopflipng
+    src/zopflipng/zopflipng_bin.cc
+    src/zopflipng/zopflipng_lib.cc
+    ${LODEPNG_SRCS}
+)
+target_include_directories(zopflipng PRIVATE
+    src/zopfli
+    src/zopflipng/lodepng
+    ${ZOPFLI_INC}
+)
+target_link_libraries(zopflipng PRIVATE ${ZOPFLI_LIB})
+install(TARGETS zopflipng RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(FILES src/zopflipng/zopflipng_lib.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/zopflipng)
+CEOF""",
+    ],
+)

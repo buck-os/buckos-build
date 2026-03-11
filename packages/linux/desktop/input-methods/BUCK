@@ -1,0 +1,234 @@
+load("//defs:package.bzl", "package")
+
+# =============================================================================
+# Input Method Frameworks
+# =============================================================================
+
+# IBus - Intelligent Input Bus
+package(
+    build_rule = "autotools",
+    name = "ibus",
+    url = "https://github.com/ibus/ibus/releases/download/1.5.29/ibus-1.5.29.tar.gz",
+
+    sha256 = "4a457f10e29da0623e96cbbaca89cc529145587141f8e64c305f17dc875d5e6e",
+    use_configure = {
+        "X": ("--with-x", "--without-x"),
+        "appindicator": ("--enable-appindicator", "--disable-appindicator"),
+        "emoji": ("--enable-emoji", "--disable-emoji"),
+        "gtk2": ("--enable-gtk2", "--disable-gtk2"),
+        "gtk3": ("--enable-gtk3", "--disable-gtk3"),
+        "gtk4": ("--enable-gtk4", "--disable-gtk4"),
+        "gui": ("--enable-gui", "--disable-gui"),
+        "introspection": ("--enable-introspection", "--disable-introspection"),
+        "libnotify": ("--enable-libnotify", "--disable-libnotify"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "python": ("--enable-python", "--disable-python"),
+        "systemd": ("--enable-systemd", "--disable-systemd"),
+        "unicode": ("--enable-unicode", "--disable-unicode"),
+        "vala": ("--enable-vala", "--disable-vala"),
+        "wayland": ("--enable-wayland", "--disable-wayland"),
+    },
+    version = "1.5.29",
+    description = "Intelligent Input Bus for Linux/Unix",
+    homepage = "https://github.com/ibus/ibus",
+    license = "LGPL-2.1-or-later",
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--disable-gtk2",
+        "--enable-gtk3",
+        "--enable-gtk4",
+        "--enable-wayland",
+        "--disable-appindicator",
+        "--disable-emoji-dict",
+        "--disable-unicode-dict",
+        "--disable-python2",
+        "--enable-python-library",
+        "--with-python=python3",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/glib:glib",
+        "//packages/linux/system/libs/ipc/dbus:dbus",
+        "//packages/linux/graphics/rendering/wayland:wayland",
+        "//packages/linux/lang/python:python",
+    ],
+)
+
+# Fcitx5 - Input method framework
+package(
+    build_rule = "autotools",
+    name = "fcitx5",
+    url = "https://download.fcitx-im.org/fcitx5/fcitx5/fcitx5-5.1.8.tar.xz",
+
+    sha256 = "e7558003e06e41fcd112b7bd66a884f42df732682f0a29327ccef119cae90a9b",
+    version = "5.1.8",
+    description = "Next generation input method framework",
+    homepage = "https://fcitx-im.org/",
+    license = "LGPL-2.1-or-later",
+    configure_args = [],
+    make_args = ["-C", "build"],
+    post_install_cmds = ["""
+        cd build
+        DESTDIR=$OUT make install
+    """, """
+        cd build
+        DESTDIR=$OUT make install
+    """, """
+        cd build
+        DESTDIR=$OUT make install
+    """, """
+        cd build
+        DESTDIR=$OUT make install
+    """],
+    deps = [
+        "//packages/linux/dev-libs/glib:glib",
+        "//packages/linux/system/libs/ipc/dbus:dbus",
+        "//packages/linux/graphics/rendering/wayland:wayland",
+        "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
+    ],
+)
+
+# Fcitx5 GTK module
+package(
+    build_rule = "autotools",
+    name = "fcitx5-gtk",
+    url = "https://download.fcitx-im.org/fcitx5/fcitx5-gtk/fcitx5-gtk-5.1.1.tar.xz",
+
+    sha256 = "d6cda72de020031daf8da4dbc6c7923c8025edadec1a3acb9aa28e9efb78b013",
+    version = "5.1.1",
+    description = "GTK input method module for Fcitx5",
+    homepage = "https://fcitx-im.org/",
+    license = "LGPL-2.1-or-later",
+    configure_args = [],
+    make_args = ["-C", "build"],
+    deps = [
+        ":fcitx5",
+    ],
+)
+
+# Fcitx5 Qt module
+package(
+    build_rule = "autotools",
+    name = "fcitx5-qt",
+    url = "https://download.fcitx-im.org/fcitx5/fcitx5-qt/fcitx5-qt-5.1.5.tar.xz",
+
+    sha256 = "f663f12f0c3806684f43dcc64decc4f81c853e9027e2203188e20d7507b39c31",
+    version = "5.1.5",
+    description = "Qt input method module for Fcitx5",
+    homepage = "https://fcitx-im.org/",
+    license = "LGPL-2.1-or-later",
+    configure_args = [],
+    make_args = ["-C", "build"],
+    deps = [
+        ":fcitx5",
+        "//packages/linux/desktop/qt:qt5",
+    ],
+)
+
+# Fcitx5 Chinese Addons (Pinyin, etc.)
+package(
+    build_rule = "autotools",
+    name = "fcitx5-chinese-addons",
+    url = "https://download.fcitx-im.org/fcitx5/fcitx5-chinese-addons/fcitx5-chinese-addons-5.1.4.tar.xz",
+
+    sha256 = "39b582d76543582d59c71fe4a0f1e082d032bd7f145b3320d34d38f961317ed2",
+    version = "5.1.4",
+    description = "Chinese addons for Fcitx5 (Pinyin, Wubi, etc.)",
+    homepage = "https://fcitx-im.org/",
+    license = "LGPL-2.1-or-later",
+    configure_args = [],
+    make_args = ["-C", "build"],
+    deps = [
+        ":fcitx5",
+        "//packages/linux/desktop/qt:qt5",
+    ],
+)
+
+# IBus Anthy - Japanese input for IBus
+package(
+    build_rule = "autotools",
+    name = "ibus-anthy",
+    url = "https://github.com/ibus/ibus-anthy/releases/download/1.5.15/ibus-anthy-1.5.15.tar.gz",
+
+    sha256 = "58c4e6d5836a4ac9e33aa9e84e58c4deb67ada98f3b544b2440c5783237ed98b",
+    version = "1.5.15",
+    description = "Japanese Anthy engine for IBus",
+    homepage = "https://github.com/ibus/ibus-anthy",
+    license = "GPL-2.0-or-later",
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--libexecdir=/usr/lib/ibus",
+    ],
+    deps = [
+        ":ibus",
+        "//packages/linux/lang/python:python",
+    ],
+)
+
+# IBus Libpinyin - Chinese Pinyin for IBus
+package(
+    build_rule = "autotools",
+    name = "ibus-libpinyin",
+    url = "https://github.com/libpinyin/ibus-libpinyin/releases/download/1.15.3/ibus-libpinyin-1.15.3.tar.gz",
+
+    sha256 = "58bfe019208f2326c10394be9e3835bee153d72155effea2a395ab25918625dc",
+    version = "1.15.3",
+    description = "Intelligent Chinese Pinyin engine for IBus",
+    homepage = "https://github.com/libpinyin/ibus-libpinyin",
+    license = "GPL-3.0-or-later",
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--libexecdir=/usr/lib/ibus",
+    ],
+    deps = [
+        ":ibus",
+    ],
+)
+
+# IBus Hangul - Korean input for IBus
+package(
+    build_rule = "autotools",
+    name = "ibus-hangul",
+    url = "https://github.com/libhangul/ibus-hangul/releases/download/1.5.5/ibus-hangul-1.5.5.tar.xz",
+
+    sha256 = "a5aac88286cd18960229860e3e1a778978a7aeaa484ad9acfa48284b87fdc3bb",
+    version = "1.5.5",
+    description = "Korean Hangul engine for IBus",
+    homepage = "https://github.com/libhangul/ibus-hangul",
+    license = "GPL-2.0-or-later",
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--libexecdir=/usr/lib/ibus",
+    ],
+    deps = [
+        ":ibus",
+    ],
+)
+
+# Filegroup for all input method packages
+filegroup(
+    name = "input-methods",
+    srcs = [
+        ":ibus",
+        ":fcitx5",
+        ":fcitx5-gtk",
+        ":fcitx5-qt",
+    ],
+    default_target_platform = "//platforms:linux-target",
+)
+
+# Filegroup for complete CJK support
+filegroup(
+    name = "input-methods-cjk",
+    srcs = [
+        ":input-methods",
+        ":fcitx5-chinese-addons",
+        ":ibus-anthy",
+        ":ibus-libpinyin",
+        ":ibus-hangul",
+    ],
+    default_target_platform = "//platforms:linux-target",
+)

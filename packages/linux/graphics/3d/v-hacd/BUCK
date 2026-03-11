@@ -1,0 +1,22 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cmake",
+    name = "v-hacd",
+    version = "4.1.0",
+    url = "https://github.com/kmammou/v-hacd/archive/refs/tags/v4.1.0.tar.gz",
+    sha256 = "9fe895cd10ec995d2171b11bde97aaaa221b418a3aaed0f5d9a068ae057d626b",
+    description = "Volumetric Hierarchical Approximate Convex Decomposition",
+    homepage = "https://github.com/kmammou/v-hacd",
+    license = "BSD-3-Clause",
+    patches = [
+        "patches/add-cmake.patch",
+    ],
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+    ],
+    deps = [],
+    pre_configure_cmds = [
+        """printf '#define ENABLE_VHACD_IMPLEMENTATION 1\n#include "VHACD.h"\n' > vhacd_impl.cpp""",
+    ],
+)

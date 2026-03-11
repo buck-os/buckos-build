@@ -1,0 +1,27 @@
+load("//defs:package.bzl", "package")
+
+# libvpx - VP8/VP9 video codec
+
+package(
+    build_rule = "autotools",
+    name = "libvpx",
+    version = "1.14.0",
+    url = "https://github.com/webmproject/libvpx/archive/refs/tags/v1.14.0.tar.gz",
+    sha256 = "5f21d2db27071c8a46f1725928a10227ae45c5cd1cad3727e4aafbe476e321fa",
+    description = "VP8/VP9 codec library",
+    homepage = "https://www.webmproject.org/",
+    license = "BSD-3-Clause",
+    deps = [
+        "//packages/linux/dev-tools/assemblers/nasm:nasm",
+    ],
+    use_configure = {
+        "cpu_flags_ppc_vsx3": ("--enable-cpu_flags_ppc_vsx3", "--disable-cpu_flags_ppc_vsx3"),
+        "examples": ("--enable-examples", "--disable-examples"),
+        "highbitdepth": ("--enable-highbitdepth", "--disable-highbitdepth"),
+        "postproc": ("--enable-postproc", "--disable-postproc"),
+        "static-libs": ("--enable-static", "--disable-static"),
+        "threads": ("--enable-multithread", "--disable-multithread"),
+        "vp8": ("--enable-vp8", "--disable-vp8"),
+        "vp9": ("--enable-vp9", "--disable-vp9"),
+    },
+)

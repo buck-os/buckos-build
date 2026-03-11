@@ -1,0 +1,37 @@
+load("//defs:package.bzl", "package")
+
+# =============================================================================
+# GDM - GNOME Display Manager
+# =============================================================================
+
+package(
+    build_rule = "autotools",
+    name = "gdm",
+    url = "https://download.gnome.org/sources/gdm/45/gdm-45.0.1.tar.xz",
+
+    sha256 = "6572578c05e3c6569d6ed269f7de2aaf3a035657654586d8243907bb7a6ffa85",
+    use_configure = {
+        "X": ("--with-x", "--without-x"),
+        "accessibility": ("--enable-accessibility", "--disable-accessibility"),
+        "audit": ("--enable-audit", "--disable-audit"),
+        "bluetooth-sound": ("--enable-bluetooth-sound", "--disable-bluetooth-sound"),
+        "branding": ("--enable-branding", "--disable-branding"),
+        "elogind": ("--enable-elogind", "--disable-elogind"),
+        "fprint": ("--enable-fprint", "--disable-fprint"),
+        "plymouth": ("--enable-plymouth", "--disable-plymouth"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "systemd": ("--enable-systemd", "--disable-systemd"),
+        "tcpd": ("--enable-tcpd", "--disable-tcpd"),
+        "wayland": ("--enable-wayland", "--disable-wayland"),
+    },
+    version = "45.0.1",
+    description = "GNOME Display Manager",
+    homepage = "https://wiki.gnome.org/Projects/GDM",
+    license = "GPL-2.0",
+    deps = [
+        "//packages/linux/system/libs/utility/libffi:libffi",
+                "//packages/linux/graphics/rendering/wayland:wayland",
+                "//packages/linux/dev-tools/build-systems/meson:meson",
+                "//packages/linux/dev-tools/build-systems/ninja:ninja"
+    ],
+)

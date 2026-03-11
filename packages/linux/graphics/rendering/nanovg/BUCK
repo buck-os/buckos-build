@@ -1,0 +1,20 @@
+load("//defs:package.bzl", "package")
+
+# NanoVG - Antialiased 2D vector drawing library
+
+package(
+    name = "nanovg",
+    build_rule = "binary",
+    version = "f93799c",
+    url = "https://github.com/memononen/nanovg/archive/f93799c078fa11ed61c078c65a53914c8782c00b.tar.gz",
+    sha256 = "48c37a18fd68c7ccb8b788ff19c0756bb10164d6e891c1086e0c493b0ee28e1a",
+    description = "Antialiased 2D vector drawing library on top of OpenGL",
+    homepage = "https://github.com/memononen/nanovg",
+    license = "Zlib",
+    deps = [],
+    install_script = """
+mkdir -p $OUT/usr/include/nanovg
+cp src/*.h $OUT/usr/include/nanovg/
+cp src/*.c $OUT/usr/include/nanovg/
+""",
+)

@@ -1,0 +1,133 @@
+load("//defs:package.bzl", "package")
+
+# =============================================================================
+# Sway - i3-compatible Wayland compositor
+# =============================================================================
+#
+# USE flags:
+#   xwayland        - Enable XWayland support (default: enabled)
+#   man-pages       - Build man pages
+#   bash-completion - Install bash completions
+#   zsh-completion  - Install zsh completions
+#   fish-completion - Install fish completions
+
+package(
+    build_rule = "meson",
+    name = "sway",
+    version = "1.9",
+    url = "https://github.com/swaywm/sway/releases/download/1.9/sway-1.9.tar.gz",
+    sha256 = "a63b2df8722ee595695a0ec6c84bf29a055a9767e63d8e4c07ff568cb6ee0b51",
+    description = "Sway - i3-compatible Wayland compositor",
+    homepage = "https://swaywm.org/",
+    license = "MIT",
+    # Patch to use find_program for wayland-scanner
+    patches = [
+        "patches/0002-sway-use-find_program-for-wayland-scanner.patch",
+    ],
+# No xwayland for pure Wayland build
+    # wayland-scanner provides wayland-scanner for host (exec_bdepend builds for host platform)
+    # Python mako is needed for code generation
+    # Work around pkg-config path resolution issues in cross-compilation
+    env = {"CFLAGS": "-Wno-missing-include-dirs"},
+    configure_args = [
+        "-Ddefault-wallpaper=false",
+        "-Dwerror=false",
+    ],
+    use_configure = {
+        "X": ("-Dxwayland=enabled", "-Dxwayland=disabled"),
+        "bash-completion": ("-Dbash-completions=true", "-Dbash-completions=false"),
+        "fish-completion": ("-Dfish-completions=true", "-Dfish-completions=false"),
+        "man": ("-Dman-pages=enabled", "-Dman-pages=disabled"),
+        "man-pages": ("-Dman-pages=enabled", "-Dman-pages=disabled"),
+        "swaybar": ("-Dswaybar=true", "-Dswaybar=false"),
+        "swaynag": ("-Dswaynag=true", "-Dswaynag=false"),
+        "tray": ("-Dtray=enabled", "-Dtray=disabled"),
+        "wallpapers": ("-Ddefault-wallpaper=true", "-Ddefault-wallpaper=false"),
+        "xwayland": ("-Dxwayland=enabled", "-Dxwayland=disabled"),
+        "zsh-completion": ("-Dzsh-completions=true", "-Dzsh-completions=false"),
+    },
+    deps = [
+        "//packages/linux/system/libs/utility/libffi:libffi",
+                "//packages/linux/core/zlib:zlib",
+                "//packages/linux/system/libs/data/expat:expat",
+                "//packages/linux/system/libs/image/libpng:libpng",
+                "//packages/linux/system/libs/compression/brotli:brotli",
+                "//packages/linux/system/libs/compression/bzip2:bzip2",
+                "//packages/linux/system/libs/input/libevdev:libevdev",
+                "//packages/linux/system/init/eudev:eudev",
+                "//packages/linux/system/libs/font/freetype:freetype",
+                "//packages/linux/system/libs/font/fontconfig:fontconfig",
+                "//packages/linux/system/libs/font/harfbuzz:harfbuzz",
+                "//packages/linux/system/libs/font/graphite2:graphite2",
+                "//packages/linux/graphics/rendering/wayland:wayland",
+                "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
+                "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
+                "//packages/linux/desktop/mesa:mesa",
+                "//packages/linux/system/libs/input/libinput:libinput",
+                "//packages/linux/desktop/libdrm:libdrm",
+                "//packages/linux/system/security/auth/biometric:pixman",
+                "//packages/linux/system/libs/data/json-c:json-c",
+                "//packages/linux/system/libs/utility/pcre2:pcre2",
+                "//packages/linux/system/libs/graphics/cairo:cairo",
+                "//packages/linux/fonts/libraries/pango:pango",
+                "//packages/linux/dev-libs/glib:glib",
+                "//packages/linux/system/libs/font/fribidi:fribidi",
+                "//packages/linux/desktop/sway:wlroots",
+                "//packages/linux/system/libs/libseat:libseat",
+                # Transitive dep via wlroots - needed for pkg-config resolution
+        "//packages/linux/system/libs/input/mtdev:mtdev",
+                # Transitive dep via libinput - needed for linking,
+                "//packages/linux/dev-libs/python/mako:mako",
+                "//packages/linux/graphics/rendering/wayland:wayland-scanner",
+                "//packages/linux/graphics/rendering/wayland:wayland-scanner"
+    ],
+)
+
+package(
+    build_rule = "meson",
+    name = "wlroots",
+    url = "https://gitlab.freedesktop.org/wlroots/wlroots/-/releases/0.17.1/downloads/wlroots-0.17.1.tar.gz",
+
+    sha256 = "d58d68e3f90d92de4d49fa43b4d75dc78f8af1d920d090729331cefbdfcf361b",
+    version = "0.17.1",
+    description = "wlroots - Modular Wayland compositor library",
+    homepage = "https://gitlab.freedesktop.org/wlroots/wlroots",
+    license = "MIT",
+    # Patch to use find_program for wayland-scanner
+    patches = [
+        "patches/0001-wlroots-use-find_program-for-wayland-scanner.patch",
+    ],
+    # wayland-scanner provides wayland-scanner for host (exec_bdepend builds for host platform)
+    # Work around pkg-config path resolution issues in cross-compilation
+    # where Mesa's dri.pc references libdrm but the resolved include path
+    # ends up pointing to mesa/usr/include/libdrm (which doesn't exist)
+    env = {"CFLAGS": "-Wno-missing-include-dirs"},
+    configure_args = [
+        "-Dexamples=false",
+        "-Dwerror=false",  # Also disable -Werror for cross-compilation safety
+    ],
+    deps = [
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/graphics/rendering/wayland:wayland",
+        "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
+        "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
+        "//packages/linux/desktop/mesa:mesa",
+        "//packages/linux/system/libs/input/libinput:libinput",
+        "//packages/linux/desktop/libdrm:libdrm",
+        "//packages/linux/system/security/auth/biometric:pixman",
+        "//packages/linux/system/libs/libseat:libseat",  # Session management (required for DRM access)
+        "//packages/linux/system/init/eudev:eudev",  # libudev - required for session support (libseat + libudev = session)
+    ],
+)
+
+# Sway meta-package
+filegroup(
+    name = "sway-desktop",
+    srcs = [
+        ":sway",
+        ":wlroots",
+        "//packages/linux/graphics/rendering/wayland:wayland",
+        "//packages/linux/desktop/mesa:mesa",
+    ],
+    default_target_platform = "//platforms:linux-target",
+)

@@ -1,0 +1,18 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cmake",
+    name = "libosmpbfreader",
+    version = "4d955ca",
+    url = "https://github.com/hove-io/libosmpbfreader/archive/4d955caae46fc74b44f36a3dc34e96f1ee071c87.tar.gz",
+    sha256 = "c16e466ad0b7e94a1ff23ff0a23cecb9aac4206f7590ddfa68abfd8c4c8a8b14",
+    description = "Simple C++ library to read OpenStreetMap binary files",
+    homepage = "https://github.com/hove-io/libosmpbfreader",
+    license = "BSD-3-Clause",
+    configure_args = [
+        "-DFPIC=ON",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/serialization/protobuf:protobuf",
+    ],
+)

@@ -1,0 +1,26 @@
+load("//defs:package.bzl", "package")
+
+# light - Backlight controller
+# A program to control backlight controllers
+
+# NOTE: 'light' has been replaced by acpilight - a Python-based backlight controller
+# The original 'light' project is archived. Use acpilight instead.
+# USE flags: See use_flags.bzl for available flags
+
+package(
+    name = "light",
+    build_rule = "autotools",
+    skip_configure = True,
+    url = "https://gitlab.com/wavexx/acpilight/-/archive/v1.2/acpilight-v1.2.tar.bz2",
+
+    sha256 = "0b80cbe7edaf48307fc26dbb34c260ec9ed0c19c56743291e5a7cc23044ff9ae",
+    use_configure = {
+        "udev": ("--enable-udev", "--disable-udev"),
+    },
+    version = "1.2",
+    description = "Replacement for xbacklight that uses the ACPI interface (acpilight)",
+    homepage = "https://gitlab.com/wavexx/acpilight/",
+    license = "GPL-3.0",
+    deps = [
+    ],
+)

@@ -1,0 +1,55 @@
+load("//defs:package.bzl", "package")
+
+# wpa_supplicant - WPA/WPA2/IEEE 802.1X Supplicant
+# Wi-Fi Protected Access client and IEEE 802.1X supplicant
+
+# USE flags: See use_flags.bzl for available flags
+
+package(
+    build_rule = "autotools",
+    name = "wpa_supplicant",
+    url = "https://w1.fi/releases/wpa_supplicant-2.10.tar.gz",
+
+    sha256 = "20df7ae5154b3830355f8ab4269123a87affdea59fe74fe9292a91d0d7e17b2f",
+    use_configure = {
+        "ap": ("--enable-ap", "--disable-ap"),
+        "broadcom-sta": ("--enable-broadcom-sta", "--disable-broadcom-sta"),
+        "dbus": ("--enable-dbus", "--disable-dbus"),
+        "eap-sim": ("--enable-eap-sim", "--disable-eap-sim"),
+        "eapol-test": ("--enable-eapol-test", "--disable-eapol-test"),
+        "fils": ("--enable-fils", "--disable-fils"),
+        "gui": ("--enable-gui", "--disable-gui"),
+        "macsec": ("--enable-macsec", "--disable-macsec"),
+        "mbo": ("--enable-mbo", "--disable-mbo"),
+        "mesh": ("--enable-mesh", "--disable-mesh"),
+        "p2p": ("--enable-p2p", "--disable-p2p"),
+        "privsep": ("--enable-privsep", "--disable-privsep"),
+        "readline": ("--with-readline", "--without-readline"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "smartcard": ("--enable-smartcard", "--disable-smartcard"),
+        "tkip": ("--enable-tkip", "--disable-tkip"),
+        "uncommon-eap-types": ("--enable-uncommon-eap-types", "--disable-uncommon-eap-types"),
+        "wep": ("--enable-wep", "--disable-wep"),
+        "wps": ("--enable-wps", "--disable-wps"),
+    },
+    version = "2.10",
+    description = "WPA/WPA2/IEEE 802.1X Supplicant",
+    homepage = "https://w1.fi/wpa_supplicant/",
+    license = "BSD-3-Clause",
+    configure_args = [],
+    make_args = [
+        "-C", "wpa_supplicant",
+        "BINDIR=/usr/bin",
+        "LIBDIR=/usr/lib",
+        "-C", "wpa_supplicant",
+        "DESTDIR=${DESTDIR}",
+        "BINDIR=/usr/bin",
+        "LIBDIR=/usr/lib",
+    ],
+    deps = [
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/system/libs/ipc/dbus:dbus",
+        "//packages/linux/system/terminal/readline:readline",
+        "//packages/linux/core/libnl:libnl",
+    ],
+)

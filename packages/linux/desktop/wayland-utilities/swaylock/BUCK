@@ -1,0 +1,23 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "meson",
+    name = "swaylock",
+    url = "https://github.com/swaywm/swaylock/releases/download/v1.8.0/swaylock-1.8.0.tar.gz",
+
+    sha256 = "6a1175442380b87b2d2868c4a5366ee3592163158d02e3a7fbf3a0bfe07d8b00",
+    use_configure = {
+        "gdk-pixbuf": ("-Dgdk-pixbuf=enabled", "-Dgdk-pixbuf=disabled"),
+        "pam": ("-Dpam=enabled", "-Dpam=disabled"),
+    },
+    version = "1.8.0",
+    description = "Screen locker for Wayland",
+    homepage = "https://github.com/swaywm/swaylock",
+    license = "MIT",
+    configure_args = [],
+    deps = [
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/graphics/rendering/wayland:wayland",
+        "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
+    ],
+)

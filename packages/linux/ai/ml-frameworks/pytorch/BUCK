@@ -1,0 +1,56 @@
+load("//defs:package.bzl", "package")
+
+# PyTorch - Open source machine learning framework
+#
+# PyTorch is a complex package with many optional dependencies.
+# This package builds the CPU-only version by default.
+#
+# USE flags:
+#   cuda      - Enable NVIDIA CUDA support (requires CUDA toolkit)
+#   cudnn     - Enable cuDNN for optimized deep learning ops
+#   mkl       - Use Intel MKL for BLAS/LAPACK
+#   openblas  - Use OpenBLAS for BLAS/LAPACK
+#   distributed - Enable distributed training support
+#   nnpack    - Enable NNPACK for mobile inference
+#
+# Note: CUDA support requires proprietary NVIDIA drivers and toolkit
+# which are not included in BuckOS. For CUDA builds, install CUDA
+# toolkit separately and set CUDA_HOME.
+
+package(
+    build_rule = "cmake",
+    name = "pytorch",
+    version = "2.2.1",
+    url = "https://github.com/pytorch/pytorch/releases/download/v2.2.1/pytorch-v2.2.1.tar.gz",
+    sha256 = "8069467387b8ab7a7279671b9144d80a5c5342b4fa022eb3c1db629a6fd806c9",  # Large file, checksum needs verification
+    description = "Tensors and Dynamic neural networks in Python with strong GPU acceleration",
+    homepage = "https://pytorch.org/",
+    license = "BSD-3-Clause",
+    deps = [
+        "//packages/linux/lang/python:python",
+        "//packages/linux/dev-libs/python/numpy:numpy",
+        "//packages/linux/dev-libs/serialization/protobuf:protobuf",
+        "//packages/linux/core/zlib:zlib",
+    ],
+    use_deps = {
+        "openblas": "//packages/linux/dev-libs/math/openblas:openblas",
+        "mkl": [],  # MKL is proprietary, not in BuckOS,
+    },
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DBUILD_TEST=OFF",
+        "-DUSE_CUDA=OFF",  # CPU only by default
+        "-DUSE_CUDNN=OFF",
+        "-DUSE_MKLDNN=OFF",
+        "-DUSE_NCCL=OFF",
+        "-DUSE_DISTRIBUTED=OFF",
+        "-DUSE_NUMPY=ON",
+        "-DUSE_OPENMP=ON",
+    ],
+    use_configure = {
+        "cuda": ("-DUSE_CUDA=ON", "-DUSE_CUDA=OFF"),
+        "cudnn": ("-DUSE_CUDNN=ON", "-DUSE_CUDNN=OFF"),
+        "distributed": ("-DUSE_DISTRIBUTED=ON", "-DUSE_DISTRIBUTED=OFF"),
+    },
+)

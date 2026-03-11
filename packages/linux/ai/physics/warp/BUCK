@@ -1,0 +1,20 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "python",
+    name = "warp",
+    version = "1.9.1",
+    use_configure = {
+        "debug": ("--enable-debug", "--disable-debug"),
+        "x509": ("--enable-x509", "--disable-x509"),
+    },
+    url = "https://github.com/NVIDIA/warp/archive/refs/tags/v1.9.1.tar.gz",
+    sha256 = "cdcf16c891aaa8337e0bc47787852600174f10ce4841950b226502c815900f8d",
+    description = "Python framework for high-performance simulation and graphics",
+    homepage = "https://github.com/NVIDIA/warp",
+    license = "Apache-2.0",
+    deps = [
+        "//packages/linux/lang/python:python",
+        "//packages/linux/dev-libs/python/numpy:numpy",
+    ],
+)

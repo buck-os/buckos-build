@@ -1,0 +1,38 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cmake",
+    name = "spz",
+    version = "bf30541",
+    url = "https://github.com/nianticlabs/spz/archive/bf305418722bb0663a3074f3828699df44b8c1d2.tar.gz",
+    sha256 = "4f7439ab5d08bbdbb350f2987f1fb1fdd44f3ff6cefdb8ea68a862d05f75be59",
+    description = "Compressed 3D Gaussian splat file format library",
+    homepage = "https://github.com/nianticlabs/spz",
+    license = "MIT",
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+    ],
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+    ],
+    pre_configure_cmds = [
+        """cat > CMakeLists.txt << 'CEOF'
+cmake_minimum_required(VERSION 3.10)
+project(spz LANGUAGES CXX)
+find_package(ZLIB REQUIRED)
+file(GLOB SPZ_SOURCES "src/cc/*.cc")
+add_library(spz SHARED ${SPZ_SOURCES})
+target_compile_options(spz PRIVATE -include algorithm)
+target_include_directories(spz PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/cc>
+    $<INSTALL_INTERFACE:include/spz>
+)
+target_link_libraries(spz PRIVATE ZLIB::ZLIB)
+target_compile_features(spz PUBLIC cxx_std_17)
+install(TARGETS spz LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
+file(GLOB SPZ_HEADERS "src/cc/*.h")
+install(FILES ${SPZ_HEADERS} DESTINATION include/spz)
+CEOF""",
+    ],
+)

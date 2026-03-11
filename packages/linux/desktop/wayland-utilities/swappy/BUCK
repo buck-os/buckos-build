@@ -1,0 +1,18 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "meson",
+    name = "swappy",
+    url = "https://github.com/jtheoof/swappy/archive/v1.5.1.tar.gz",
+
+    sha256 = "266fac289d4b903d80d44746044bafe8a8b663c6032be696c651ad390bcb1850",
+    version = "1.5.1",
+    description = "A Wayland native snapshot and editor tool",
+    homepage = "https://github.com/jtheoof/swappy",
+    license = "MIT",
+    configure_args = [],
+    deps = [
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/graphics/rendering/wayland:wayland",
+    ],
+)

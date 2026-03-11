@@ -1,0 +1,77 @@
+load("//defs:package.bzl", "package")
+
+# nginx - High-performance HTTP server and reverse proxy
+#
+# NOTE: nginx uses a custom configure script (not autotools) so we use
+# binary build rule with custom build steps.
+
+package(
+    name = "nginx",
+    build_rule = "binary",
+    version = "1.26.2",
+    url = "https://nginx.org/download/nginx-1.26.2.tar.gz",
+    sha256 = "627fe086209bba80a2853a0add9d958d7ebbdffa1a8467a5784c9a6b4f03d738",
+    description = "High-performance HTTP server and reverse proxy",
+    homepage = "https://nginx.org/",
+    license = "BSD-2-Clause",
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/system/libs/utility/pcre2:pcre2",
+        "//packages/linux/system/libs/crypto/libxcrypt:libxcrypt",
+    ],
+    install_script = """
+mkdir -p "$OUT"
+BUILD=$(mktemp -d)
+cp -a "$SRCS"/. "$BUILD/"
+cd "$BUILD"
+
+# Build include and lib paths from all dependencies
+INCLUDE_OPTS=""
+LIB_OPTS=""
+IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
+for _dep in "${_DEP_ARRAY[@]}"; do
+    for _incdir in "$_dep/usr/include" "$_dep/include"; do
+        if [ -d "$_incdir" ]; then
+            INCLUDE_OPTS="$INCLUDE_OPTS -I$_incdir"
+        fi
+    done
+    for _libdir in "$_dep/usr/lib64" "$_dep/usr/lib" "$_dep/lib64" "$_dep/lib"; do
+        if [ -d "$_libdir" ]; then
+            LIB_OPTS="$LIB_OPTS -L$_libdir -Wl,-rpath-link,$_libdir"
+        fi
+    done
+done
+
+./configure \
+    --prefix=/etc/nginx \
+    --sbin-path=/usr/sbin/nginx \
+    --modules-path=/usr/lib/nginx/modules \
+    --conf-path=/etc/nginx/nginx.conf \
+    --error-log-path=/var/log/nginx/error.log \
+    --http-log-path=/var/log/nginx/access.log \
+    --pid-path=/var/run/nginx.pid \
+    --lock-path=/var/run/nginx.lock \
+    --http-client-body-temp-path=/var/cache/nginx/client_temp \
+    --http-proxy-temp-path=/var/cache/nginx/proxy_temp \
+    --http-fastcgi-temp-path=/var/cache/nginx/fastcgi_temp \
+    --http-uwsgi-temp-path=/var/cache/nginx/uwsgi_temp \
+    --http-scgi-temp-path=/var/cache/nginx/scgi_temp \
+    --with-http_ssl_module \
+    --with-http_v2_module \
+    --with-http_gzip_static_module \
+    --with-http_realip_module \
+    --with-http_stub_status_module \
+    --with-cc-opt="$INCLUDE_OPTS" \
+    --with-ld-opt="$LIB_OPTS"
+
+make -j${MAKEOPTS:-$(nproc)}
+make DESTDIR="$OUT" install
+
+mkdir -p "$OUT/var/cache/nginx"
+mkdir -p "$OUT/var/log/nginx"
+mkdir -p "$OUT/etc/nginx/conf.d"
+mkdir -p "$OUT/etc/nginx/sites-available"
+mkdir -p "$OUT/etc/nginx/sites-enabled"
+""",
+)

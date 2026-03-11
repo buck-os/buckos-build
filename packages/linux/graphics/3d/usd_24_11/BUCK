@@ -1,0 +1,33 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cmake",
+    name = "usd_24_11",
+    version = "24.11",
+    url = "https://github.com/PixarAnimationStudios/OpenUSD/archive/refs/tags/v24.11.tar.gz",
+    sha256 = "1ab3dc387c8ce8c650d66143c86fb44ed6fe5c9638522bcb3226e85a401c4f69",
+    description = "Universal Scene Description (OpenUSD)",
+    homepage = "https://github.com/PixarAnimationStudios/USD",
+    license = "Apache-2.0",
+    deps = [
+        "//packages/linux/dev-libs/misc/tbb:tbb",
+    ],
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DPXR_BUILD_TESTS=OFF",
+        "-DPXR_BUILD_EXAMPLES=OFF",
+        "-DPXR_BUILD_TUTORIALS=OFF",
+        "-DPXR_BUILD_DOCUMENTATION=OFF",
+        "-DPXR_ENABLE_PYTHON_SUPPORT=OFF",
+        "-DPXR_BUILD_IMAGING=ON",
+        "-DPXR_BUILD_USD_IMAGING=ON",
+        "-DPXR_BUILD_USDVIEW=OFF",
+        "-DPXR_BUILD_EMBREE_PLUGIN=OFF",
+        "-DPXR_BUILD_ALEMBIC_PLUGIN=OFF",
+        "-DPXR_BUILD_DRACO_PLUGIN=OFF",
+        "-DPXR_ENABLE_MATERIALX_SUPPORT=OFF",
+        "-DPXR_ENABLE_OPENVDB_SUPPORT=OFF",
+        "-DPXR_ENABLE_GL_SUPPORT=ON",
+    ],
+)

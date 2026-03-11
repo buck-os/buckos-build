@@ -1,0 +1,43 @@
+load("//defs:package.bzl", "package")
+
+# Note: glew dep removed (package not available yet), OpenGL disabled
+package(
+    build_rule = "cmake",
+    name = "opensubdiv",
+    version = "3.4.4",
+    use_configure = {
+        "X": ("-DENABLE_X=ON", "-DENABLE_X=OFF"),
+        "cuda": ("-DWITH_CUDA=ON", "-DWITH_CUDA=OFF"),
+        "examples": ("-DBUILD_EXAMPLES=ON", "-DBUILD_EXAMPLES=OFF"),
+        "glfw": ("-DENABLE_GLFW=ON", "-DENABLE_GLFW=OFF"),
+        "opencl": ("-DWITH_OPENCL=ON", "-DWITH_OPENCL=OFF"),
+        "opengl": ("-DENABLE_OPENGL=ON", "-DENABLE_OPENGL=OFF"),
+        "openmp": ("-DWITH_OPENMP=ON", "-DWITH_OPENMP=OFF"),
+        "ptex": ("-DENABLE_PTEX=ON", "-DENABLE_PTEX=OFF"),
+        "python": ("-DENABLE_PYTHON=ON", "-DENABLE_PYTHON=OFF"),
+        "tbb": ("-DENABLE_TBB=ON", "-DENABLE_TBB=OFF"),
+        "tutorials": ("-DENABLE_TUTORIALS=ON", "-DENABLE_TUTORIALS=OFF"),
+    },
+    url = "https://github.com/PixarAnimationStudios/OpenSubdiv/archive/refs/tags/v3_4_4.tar.gz",
+    sha256 = "20d49f80a2b778ad4d01f091ad88d8c2f91cf6c7363940c6213241ce6f1048fb",
+    description = "High performance subdivision surface (subdiv) evaluation",
+    homepage = "https://graphics.pixar.com/opensubdiv/",
+    license = "Apache-2.0",
+    deps = [],
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DNO_EXAMPLES=ON",
+        "-DNO_TUTORIALS=ON",
+        "-DNO_REGRESSION=ON",
+        "-DNO_DOC=ON",
+        "-DNO_OMP=ON",
+        "-DNO_TBB=ON",
+        "-DNO_CUDA=ON",
+        "-DNO_OPENCL=ON",
+        "-DNO_CLEW=ON",
+        "-DNO_PTEX=ON",
+        "-DNO_OPENGL=ON",
+        "-DNO_GLEW=ON",
+    ],
+)

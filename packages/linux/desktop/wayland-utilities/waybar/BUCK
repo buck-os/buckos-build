@@ -1,0 +1,42 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "meson",
+    name = "waybar",
+    url = "https://github.com/Alexays/Waybar/archive/0.10.0.tar.gz",
+
+    sha256 = "3af6665889868f2334ba1793c8b0f3104c4c3b176a8c759f0d08f07266ad2620",
+    use_configure = {
+        "backlight": ("-Dbacklight=enabled", "-Dbacklight=disabled"),
+        "evdev": ("-Devdev=enabled", "-Devdev=disabled"),
+        "experimental": ("-Dexperimental=enabled", "-Dexperimental=disabled"),
+        "gps": ("-Dgps=enabled", "-Dgps=disabled"),
+        "jack": ("-Djack=enabled", "-Djack=disabled"),
+        "libinput": ("-Dlibinput=enabled", "-Dlibinput=disabled"),
+        "logind": ("-Dlogind=enabled", "-Dlogind=disabled"),
+        "mpd": ("-Dmpd=enabled", "-Dmpd=disabled"),
+        "mpris": ("-Dmpris=enabled", "-Dmpris=disabled"),
+        "network": ("-Dnetwork=enabled", "-Dnetwork=disabled"),
+        "niri": ("-Dniri=enabled", "-Dniri=disabled"),
+        "pipewire": ("-Dpipewire=enabled", "-Dpipewire=disabled"),
+        "pulseaudio": ("-Dpulseaudio=enabled", "-Dpulseaudio=disabled"),
+        "sndio": ("-Dsndio=enabled", "-Dsndio=disabled"),
+        "systemd": ("-Dsystemd=enabled", "-Dsystemd=disabled"),
+        "tray": ("-Dtray=enabled", "-Dtray=disabled"),
+        "udev": ("-Dudev=enabled", "-Dudev=disabled"),
+        "upower": ("-Dupower=enabled", "-Dupower=disabled"),
+        "wifi": ("-Dwifi=enabled", "-Dwifi=disabled"),
+    },
+    version = "0.10.0",
+    description = "Highly customizable Wayland bar for Sway and wlroots compositors",
+    homepage = "https://github.com/Alexays/Waybar",
+    license = "MIT",
+    configure_args = [
+        "-Dtests=disabled",
+    ],
+    deps = [
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/graphics/rendering/wayland:wayland",
+        "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
+    ],
+)

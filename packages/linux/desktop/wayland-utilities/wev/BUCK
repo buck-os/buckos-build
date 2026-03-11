@@ -1,0 +1,26 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "wev",
+    version = "1.0.0",
+    url = "https://git.sr.ht/~sircmpwn/wev/archive/1.0.0.tar.gz",
+    sha256 = "613a1df1a4879d50ce72023de14aaf05be2e6f51346e84a69f50fc6d8502bbf4",
+    skip_configure = True,
+    description = "Wayland event viewer",
+    homepage = "https://git.sr.ht/~sircmpwn/wev",
+    license = "MIT",
+    make_args = ["wev"],
+    pre_configure_cmds = [
+        "sed -i 's|$(LIBS) -lrt|$(LIBS) -lrt $(LDFLAGS)|' Makefile",
+        "echo 'no-scdoc' > wev.1",
+    ],
+    install_args = ["PREFIX=/usr"],
+    deps = [
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/graphics/rendering/wayland:wayland",
+        "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
+        "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
+        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
+    ],
+)

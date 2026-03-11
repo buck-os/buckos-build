@@ -1,0 +1,30 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cmake",
+    name = "yocto-gl",
+    version = "4.0",
+    url = "https://github.com/xelatihy/yocto-gl/archive/refs/heads/main.tar.gz",
+    sha256 = "5e55acb880bf8b99b9cf69a091279cdd2a83b29e7c0d6ee791c8ba73905c47b6",
+    description = "Tiny C++ Libraries for Data-Driven Physically-based Graphics",
+    homepage = "https://github.com/xelatihy/yocto-gl",
+    license = "MIT",
+    deps = [
+        "//packages/linux/dev-libs/misc/stb:stb",
+        "//packages/linux/dev-libs/misc/fast_float:fast_float",
+        "//packages/linux/dev-libs/json/nlohmann-json:nlohmann-json",
+    ],
+    use_deps = {
+        "embree": "//packages/linux/graphics/3d/embree:embree",
+    },
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DYOCTO_APPS=OFF",
+        "-DYOCTO_TESTING=OFF",
+    ],
+    use_configure = {
+        "denoise": ("-DYOCTO_DENOISE=ON", "-DYOCTO_DENOISE=OFF"),
+        "embree": ("-DYOCTO_EMBREE=ON", "-DYOCTO_EMBREE=OFF"),
+        "opengl": ("-DYOCTO_OPENGL=ON", "-DYOCTO_OPENGL=OFF"),
+    },
+)

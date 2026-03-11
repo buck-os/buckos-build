@@ -1,0 +1,23 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cmake",
+    name = "bemenu",
+    url = "https://github.com/Cloudef/bemenu/releases/download/0.6.18/bemenu-0.6.18.tar.gz",
+
+    sha256 = "66e0fafc198937ffbff47513bf79742126f1f674c74c0a95a878582a2f2cb0de",
+    use_configure = {
+        "X": ("-DENABLE_X=ON", "-DENABLE_X=OFF"),
+        "ncurses": ("-DENABLE_NCURSES=ON", "-DENABLE_NCURSES=OFF"),
+        "wayland": ("-DENABLE_WAYLAND=ON", "-DENABLE_WAYLAND=OFF"),
+    },
+    version = "0.6.18",
+    description = "Dynamic menu library and client program inspired by dmenu",
+    homepage = "https://github.com/Cloudef/bemenu",
+    license = "GPL-3.0",
+    configure_args = [],
+    deps = [
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/graphics/rendering/wayland:wayland",
+    ],
+)

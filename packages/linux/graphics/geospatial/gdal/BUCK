@@ -1,0 +1,94 @@
+load("//defs:package.bzl", "package")
+
+# GDAL - Geospatial Data Abstraction Library
+# A translator library for raster and vector geospatial data formats
+
+package(
+    build_rule = "autotools",
+    name = "gdal",
+    version = "3.11.5",
+    url = "https://github.com/OSGeo/gdal/releases/download/v3.11.5/gdal-3.11.5.tar.xz",
+    sha256 = "79f66756f1c843b5ee52c8482d4f6bd2a8b7706d6161cc11f0b27c83d638796a",
+    description = "Geospatial Data Abstraction Library for raster and vector formats",
+    homepage = "https://gdal.org",
+    license = "MIT",
+
+    # USE flags this package supports
+
+    # Default USE flags - enable common format support
+
+    # Base dependencies (always required)
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+    ],
+
+    # Conditional dependencies based on USE flags
+    use_deps = {
+        "curl": "//packages/linux/system/libs/network/curl:curl",
+        "expat": "//packages/linux/system/libs/data/expat:expat",
+        # "geos": ["//packages/linux/graphics/geospatial/geos:geos"],  # Not yet available
+        "hdf5": "//packages/linux/dev-libs/misc/hdf5:hdf5",
+        "jpeg": "//packages/linux/system/libs/image/libjpeg-turbo:libjpeg-turbo",
+        "png": "//packages/linux/system/libs/image/libpng:libpng",
+        # "proj": ["//packages/linux/graphics/geospatial/proj:proj"],  # Not yet available
+        "sqlite": "//packages/linux/system/libs/database/sqlite:sqlite",
+        "tiff": "//packages/linux/system/libs/image/libtiff:libtiff",
+        "xml2": "//packages/linux/core/libxml2:libxml2",
+    },
+
+    # Conditional configure arguments based on USE flags
+    use_configure = {
+        "armadillo": ("--enable-armadillo", "--disable-armadillo"),
+        "cpu_flags_x86_sse": ("--enable-cpu_flags_x86_sse", "--disable-cpu_flags_x86_sse"),
+        "cpu_flags_x86_ssse3": ("--enable-cpu_flags_x86_ssse3", "--disable-cpu_flags_x86_ssse3"),
+        "curl": ("--with-curl", "--without-curl"),
+        "expat": ("--with-expat", "--without-expat"),
+        "fits": ("--enable-fits", "--disable-fits"),
+        "geos": ("--with-geos", "--without-geos"),
+        "gif": ("--with-gif", "--without-gif"),
+        "gml": ("--enable-gml", "--disable-gml"),
+        "hdf5": ("--with-hdf5", "--without-hdf5"),
+        "heif": ("--enable-heif", "--disable-heif"),
+        "java": ("--enable-java", "--disable-java"),
+        "jpeg": ("--with-jpeg", "--without-jpeg"),
+        "jpeg2k": ("--enable-jpeg2k", "--disable-jpeg2k"),
+        "lerc": ("--enable-lerc", "--disable-lerc"),
+        "lzma": ("--with-lzma", "--without-lzma"),
+        "mysql": ("--enable-mysql", "--disable-mysql"),
+        "netcdf": ("--enable-netcdf", "--disable-netcdf"),
+        "odbc": ("--enable-odbc", "--disable-odbc"),
+        "ogdi": ("--enable-ogdi", "--disable-ogdi"),
+        "opencl": ("--enable-opencl", "--disable-opencl"),
+        "oracle": ("--enable-oracle", "--disable-oracle"),
+        "parquet": ("--enable-parquet", "--disable-parquet"),
+        "pdf": ("--enable-pdf", "--disable-pdf"),
+        "png": ("--with-png", "--without-png"),
+        "postgres": ("--enable-postgres", "--disable-postgres"),
+        "proj": ("--with-proj", "--without-proj"),
+        "python": ("--enable-python", "--disable-python"),
+        "spatialite": ("--enable-spatialite", "--disable-spatialite"),
+        "sqlite": ("--with-sqlite3", "--without-sqlite3"),
+        "tiff": ("--with-libtiff=internal", "--without-libtiff"),
+        "webp": ("--with-webp", "--without-webp"),
+        "xls": ("--enable-xls", "--disable-xls"),
+        "xml2": ("--with-libxml2", "--without-libxml2"),
+        "zstd": ("--with-zstd", "--without-zstd"),
+    },
+
+    # Base configure arguments
+    configure_args = [
+        "--with-threads",
+        "--with-hide-internal-symbols",
+        # Disable formats we don't have dependencies for yet
+        "--without-geos",
+        "--without-proj",
+        "--without-geotiff",
+        "--without-gif",
+        "--without-webp",
+        "--without-pcre",
+        "--without-pcre2",
+        # Python bindings handled separately
+        "--without-python",
+    ],
+
+)

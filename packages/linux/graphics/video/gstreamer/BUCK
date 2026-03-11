@@ -1,0 +1,151 @@
+load("//defs:package.bzl", "package")
+
+# GStreamer - Open source multimedia framework
+
+package(
+    build_rule = "meson",
+    name = "gstreamer",
+    version = "1.24.6",
+    use_configure = {
+        "introspection": ("-Dintrospection=enabled", "-Dintrospection=disabled"),
+        "ptp": ("-Dptp-helper=enabled", "-Dptp-helper=disabled"),
+        "unwind": ("-Dlibunwind=enabled", "-Dlibunwind=disabled"),
+    },
+    url = "https://gstreamer.freedesktop.org/src/gstreamer/gstreamer-1.24.6.tar.xz",
+    sha256 = "64342060d7c6f9e36a35e3be38a4f5ac3b41ed93b0853619be45141ef3cc1b9d",
+    description = "Open source multimedia framework",
+    homepage = "https://gstreamer.freedesktop.org/",
+    license = "LGPL-2.0-or-later",
+    configure_args = [
+        "-Dexamples=disabled",
+        "-Dtests=disabled",
+        "-Dbenchmarks=disabled",
+        "-Ddoc=disabled",
+        "-Dintrospection=disabled",
+        "-Ddbghelp=disabled",
+        "-Dbash-completion=disabled",
+        "-Dptp-helper-permissions=none",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/glib:glib",
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/utility/pcre2:pcre2",
+    ],
+)
+
+# GStreamer plugins - base set
+package(
+    build_rule = "meson",
+    name = "gst-plugins-base",
+    version = "1.24.6",
+    url = "https://gstreamer.freedesktop.org/src/gst-plugins-base/gst-plugins-base-1.24.6.tar.xz",
+    sha256 = "cf52b535a0ce7ec974756891818f34f06317c2e136abb24149e18c23ecc229b5",
+    description = "GStreamer base plugins",
+    homepage = "https://gstreamer.freedesktop.org/",
+    license = "LGPL-2.0-or-later",
+    configure_args = [
+        "-Dexamples=disabled",
+        "-Dtests=disabled",
+        "-Ddoc=disabled",
+        "-Dintrospection=enabled",
+    ],
+    deps = [
+        ":gstreamer",
+        "//packages/linux/system/libs/audio/opus:opus",
+        "//packages/linux/system/libs/audio/libvorbis:libvorbis",
+        "//packages/linux/core/zlib:zlib",
+    ],
+)
+
+# GStreamer plugins - good set
+# Note: libvpx dep removed (package not available yet)
+package(
+    build_rule = "meson",
+    name = "gst-plugins-good",
+    version = "1.24.6",
+    url = "https://gstreamer.freedesktop.org/src/gst-plugins-good/gst-plugins-good-1.24.6.tar.xz",
+    sha256 = "996b9c8d1d246ed43be304718b6086e5a17d4ae8114d1920aed9ea75b920ba2d",
+    description = "GStreamer good plugins",
+    homepage = "https://gstreamer.freedesktop.org/",
+    license = "LGPL-2.0-or-later",
+    configure_args = [
+        "-Dexamples=disabled",
+        "-Dtests=disabled",
+        "-Ddoc=disabled",
+        "-Dvpx=disabled",
+    ],
+    deps = [
+        ":gstreamer",
+        ":gst-plugins-base",
+    ],
+)
+
+# GStreamer plugins - bad set
+# Note: x265 dep removed (package not available yet)
+package(
+    build_rule = "meson",
+    name = "gst-plugins-bad",
+    version = "1.24.6",
+    url = "https://gstreamer.freedesktop.org/src/gst-plugins-bad/gst-plugins-bad-1.24.6.tar.xz",
+    sha256 = "8f4d965513e7827c1f547c1e749e4ef2812b371974fe64857fe5029a19c5b64c",
+    description = "GStreamer bad plugins (less tested)",
+    homepage = "https://gstreamer.freedesktop.org/",
+    license = "LGPL-2.0-or-later",
+    configure_args = [
+        "-Dexamples=disabled",
+        "-Dtests=disabled",
+        "-Ddoc=disabled",
+        "-Daom=enabled",
+        "-Dx265=disabled",
+    ],
+    deps = [
+        ":gstreamer",
+        ":gst-plugins-base",
+        "//packages/linux/graphics/video/aom:aom",
+    ],
+)
+
+# GStreamer plugins - ugly set (may have licensing issues)
+package(
+    build_rule = "meson",
+    name = "gst-plugins-ugly",
+    version = "1.24.6",
+    url = "https://gstreamer.freedesktop.org/src/gst-plugins-ugly/gst-plugins-ugly-1.24.6.tar.xz",
+    sha256 = "5dfdbb2978ab282e637255cd875cf5b7b93fc83db62f8a0b1af02c85c84a75c4",
+    description = "GStreamer ugly plugins (may have licensing issues)",
+    homepage = "https://gstreamer.freedesktop.org/",
+    license = "LGPL-2.0-or-later",
+    configure_args = [
+        "-Dexamples=disabled",
+        "-Dtests=disabled",
+        "-Ddoc=disabled",
+        "-Dx264=enabled",
+    ],
+    deps = [
+        ":gstreamer",
+        ":gst-plugins-base",
+        "//packages/linux/media/video/x264:x264",
+    ],
+)
+
+# GStreamer libav - FFmpeg plugin
+# Note: ffmpeg dep removed (package not available yet), disabled gst-libav for now
+# package(
+#     build_rule = "meson",
+#     name = "gst-libav",
+#     version = "1.24.6",
+#     url = "https://gstreamer.freedesktop.org/src/gst-libav/gst-libav-1.24.6.tar.xz",
+#     sha256 = "4bbd08481a390f907e342aa3f25ab885c80ec0a53f3b14244cf733cc8622f2bf",
+#     description = "GStreamer FFmpeg plugin",
+#     homepage = "https://gstreamer.freedesktop.org/",
+#     license = "LGPL-2.0-or-later",
+#     configure_args = [
+#         "-Ddoc=disabled",
+#     ],
+#     deps = [
+#         ":gstreamer",
+#         ":gst-plugins-base",
+#         "//packages/linux/media/video/ffmpeg:ffmpeg",
+#     ],
+# )

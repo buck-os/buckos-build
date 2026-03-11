@@ -1,0 +1,20 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cmake",
+    name = "rtl-sdr",
+    version = "2.0.1",
+    url = "https://github.com/osmocom/rtl-sdr/archive/refs/tags/v2.0.1.tar.gz",
+    sha256 = "ee9b76568cde94674816e99f918b01718f9dd88a1804a3227808c0ef744fbc18",
+    deps = [
+        "//packages/linux/system/libs/libusb:libusb",
+    ],
+    configure_args = [
+        "-DCMAKE_INSTALL_PREFIX=/usr",
+        "-DINSTALL_UDEV_RULES=OFF",
+        "-DDETACH_KERNEL_DRIVER=ON",
+    ],
+    description = "RTL-SDR library and tools for DVB-T dongles based on Realtek RTL2832U",
+    homepage = "https://osmocom.org/projects/rtl-sdr",
+    license = "GPL-2.0-or-later",
+)
