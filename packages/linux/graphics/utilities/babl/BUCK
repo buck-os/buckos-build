@@ -1,32 +1,20 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "autotools",
+    build_rule = "meson",
     name = "babl",
     url = "https://download.gimp.org/babl/0.1/babl-0.1.108.tar.xz",
-
     sha256 = "26defe9deaab7ac4d0e076cab49c2a0d6ebd0df0c31fd209925a5f07edee1475",
-    use_configure = {
-        "cpu_flags_x86_f16c": ("--enable-cpu_flags_x86_f16c", "--disable-cpu_flags_x86_f16c"),
-        "cpu_flags_x86_mmx": ("--enable-cpu_flags_x86_mmx", "--disable-cpu_flags_x86_mmx"),
-        "cpu_flags_x86_sse": ("--enable-cpu_flags_x86_sse", "--disable-cpu_flags_x86_sse"),
-        "introspection": ("--enable-introspection", "--disable-introspection"),
-        "lcms": ("--enable-lcms", "--disable-lcms"),
-        "vala": ("--enable-vala", "--disable-vala"),
-    },
     version = "0.1.108",
     description = "Dynamic pixel format translation library",
     homepage = "https://gegl.org/babl/",
     license = "LGPL-3.0-or-later",
-    configure_args = [],
-    make_args = ["-C", "build"],
-    post_install_cmds = ["""
-cd build
-DESTDIR=$OUT meson install
-"""],
+    configure_args = [
+        "-Denable-gir=false",
+        "-Denable-vapi=false",
+    ],
     deps = [
         "//packages/linux/dev-libs/glib:glib",
-                "//packages/linux/system/libs/graphics/lcms2:lcms2",
-                "//packages/linux/lang/vala:vala"
+        "//packages/linux/system/libs/graphics/lcms2:lcms2",
     ],
 )

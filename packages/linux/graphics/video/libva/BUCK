@@ -7,9 +7,9 @@ package(
     name = "libva",
     version = "2.21.0",
     use_configure = {
-        "X": ("-DENABLE_X=ON", "-DENABLE_X=OFF"),
-        "glx": ("-DENABLE_GLX=ON", "-DENABLE_GLX=OFF"),
-        "wayland": ("-DENABLE_WAYLAND=ON", "-DENABLE_WAYLAND=OFF"),
+        "X": ("-Dwith_x11=yes", "-Dwith_x11=no"),
+        "glx": ("-Dwith_glx=yes", "-Dwith_glx=no"),
+        "wayland": ("-Dwith_wayland=yes", "-Dwith_wayland=no"),
     },
     url = "https://github.com/intel/libva/archive/refs/tags/2.21.0.tar.gz",
     sha256 = "f7c3fffef3f04eb146e036dad2587d852bfb70e4926d014bf437244915ef7425",
