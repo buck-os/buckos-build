@@ -10,6 +10,11 @@ package(
     homepage = "https://www.gnu.org/software/binutils/",
     license = "GPL-3.0-or-later",
 
+    # binutils' multi-directory build system (gas, ld, libbfd) breaks when
+    # --host/--build are set: make install triggers a full rebuild that
+    # creates a truncated libbfd.a.  Cross-compiler --sysroot provides
+    # the actual hermeticity boundary — skip_host_arg is safe here.
+    skip_host_arg = True,
     configure_args = [
         "--disable-nls",
         "--disable-werror",
