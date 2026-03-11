@@ -123,7 +123,7 @@ jobs:
           sed -n '/^\[cell_aliases\]/,/^[[:space:]]*$/p' "$tmpdir/.buckconfig" >> .buckconfig.local
       - name: Tests
         run: |
-          targets=$(buck2 uquery 'kind(sh_test, //tests:) - set(//tests:test-kde-iso-boot)' 2>/dev/null)
+          targets=$(buck2 uquery 'kind(sh_test, //tests:) - attrfilter(labels, heavy, kind(sh_test, //tests:))' 2>/dev/null)
           buck2 test $targets
 
   release:

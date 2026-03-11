@@ -354,6 +354,23 @@ buckos_test(
     test = "verify_ch_vm_boot.py",
     deps = [
         "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
+        "//packages/linux/kernel/buckos-kernel:buckos-kernel-ch",
+        "//packages/linux/system/cloud-hypervisor:ch-initramfs",
+    ],
+    env = {
+        "CH_BINARY": "$(location //packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor)",
+        "KERNEL": "$(location //packages/linux/kernel/buckos-kernel:buckos-kernel-ch)",
+        "INITRAMFS": "$(location //packages/linux/system/cloud-hypervisor:ch-initramfs)",
+    },
+    run_test_separately = True,
+    labels = ["vm", "slow", "integration", "heavy"],
+)
+
+buckos_test(
+    name = "test-ch-vm-boot-light",
+    test = "verify_ch_vm_boot.py",
+    deps = [
+        "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
         "//tests/fixtures:test-kernel",
         "//packages/linux/system/cloud-hypervisor:ch-initramfs",
     ],
@@ -427,6 +444,27 @@ buckos_test(
     name = "test-iso-boot",
     test = "verify_iso_boot.py",
     deps = [
+        "//packages/linux/kernel/buckos-kernel:buckos-kernel",
+        "//packages/linux/system:buckos-initramfs",
+        "//packages/linux/system:buckos-minimal-iso",
+        "//packages/linux/emulation/hypervisors/qemu:qemu",
+        ":qemu-env",
+    ],
+    env = {
+        "KERNEL": "$(location //packages/linux/kernel/buckos-kernel:buckos-kernel)",
+        "INITRAMFS": "$(location //packages/linux/system:buckos-initramfs)",
+        "ISO": "$(location //packages/linux/system:buckos-minimal-iso)",
+        "QEMU_DIR": "$(location //packages/linux/emulation/hypervisors/qemu:qemu)",
+        "RUN_ENV": "$(location :qemu-env)",
+    },
+    run_test_separately = True,
+    labels = ["vm", "slow", "integration", "heavy"],
+)
+
+buckos_test(
+    name = "test-iso-boot-light",
+    test = "verify_iso_boot.py",
+    deps = [
         "//tests/fixtures:test-kernel",
         "//packages/linux/system:buckos-initramfs",
         "//tests/fixtures:test-minimal-iso",
@@ -462,7 +500,7 @@ buckos_test(
         "RUN_ENV": "$(location :qemu-env)",
     },
     run_test_separately = True,
-    labels = ["vm", "slow", "integration"],
+    labels = ["vm", "slow", "integration", "heavy"],
 )
 
 # ── Seed isolation ────────────────────────────────────────────────
