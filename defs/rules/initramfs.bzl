@@ -7,7 +7,7 @@ Two variants:
 """
 
 load("//defs:providers.bzl", "KernelInfo", "get_kernel_image")
-load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_path_args")
+load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_ld_linux_args", "toolchain_path_args")
 
 def _initramfs_impl(ctx):
     """Create an initramfs cpio archive from a rootfs."""
@@ -22,6 +22,8 @@ def _initramfs_impl(ctx):
     cmd.add("--init-path", init_path)
     cmd.add("--compression", ctx.attrs.compression)
     for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
         cmd.add(arg)
 
     if ctx.attrs.init_script:
@@ -81,6 +83,8 @@ def _dracut_initramfs_impl(ctx):
     if modules_dir:
         cmd.add(modules_dir)
     for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
         cmd.add(arg)
 
     ctx.actions.run(cmd, category = "dracut_initramfs", identifier = ctx.attrs.name, allow_cache_upload = True)

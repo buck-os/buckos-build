@@ -16,7 +16,7 @@ import subprocess
 import sys
 import tempfile
 
-from _env import sanitize_global_env
+from _env import sanitize_global_env, sysroot_lib_paths
 
 
 def _resolve_path(path):
@@ -402,18 +402,30 @@ def _create_iso_xorriso(work, output, volume_label, boot_mode, search_dirs=None)
     return True
 
 
-def _create_iso_fallback(work, output, volume_label):
+def _create_iso_fallback(work, output, volume_label, boot_mode):
     """Create ISO using genisoimage or mkisofs as fallback."""
     tool = _find_tool("genisoimage") or _find_tool("mkisofs")
     if not tool:
         return False
 
-    cmd = [tool, "-o", output,
-           "-b", "isolinux/isolinux.bin",
-           "-c", "isolinux/boot.cat",
-           "-no-emul-boot", "-boot-load-size", "4",
-           "-boot-info-table",
-           "-V", volume_label, "-J", "-R", work]
+    has_bios = os.path.isfile(os.path.join(work, "isolinux", "isolinux.bin"))
+    has_efi = os.path.isfile(os.path.join(work, "boot", "efi.img"))
+
+    cmd = [tool, "-o", output]
+
+    if boot_mode in ("bios", "hybrid") and has_bios:
+        cmd += ["-b", "isolinux/isolinux.bin",
+                "-c", "isolinux/boot.cat",
+                "-no-emul-boot", "-boot-load-size", "4",
+                "-boot-info-table"]
+        if boot_mode == "hybrid" and has_efi:
+            cmd += ["-eltorito-alt-boot",
+                    "-e", "boot/efi.img",
+                    "-no-emul-boot"]
+    elif has_efi:
+        cmd += ["-e", "boot/efi.img", "-no-emul-boot"]
+
+    cmd += ["-V", volume_label, "-J", "-R", work]
     _run(cmd)
     return True
 
@@ -528,6 +540,9 @@ def main():
             _existing = os.environ.get("LD_LIBRARY_PATH", "")
             os.environ["LD_LIBRARY_PATH"] = ":".join(_dep_lib_dirs) + (":" + _existing if _existing else "")
 
+    if args.ld_linux:
+        sysroot_lib_paths(args.ld_linux, os.environ)
+
     epoch = int(os.environ.get("SOURCE_DATE_EPOCH", "315576000"))
 
     # Resolve syslinux search dirs (empty list → use default host paths)
@@ -568,7 +583,7 @@ def main():
         # Create ISO
         print(f"Creating ISO image ({boot_mode} boot)...")
         if not _create_iso_xorriso(work, output, args.volume_label, boot_mode, syslinux_dirs):
-            if not _create_iso_fallback(work, output, args.volume_label):
+            if not _create_iso_fallback(work, output, args.volume_label, boot_mode):
                 print("error: no ISO creation tool found "
                       "(xorriso, genisoimage, or mkisofs required)",
                       file=sys.stderr)

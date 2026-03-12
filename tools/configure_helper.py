@@ -16,7 +16,7 @@ import shutil
 import subprocess
 import sys
 
-from _env import clean_env, disable_posix_spawn, derive_lib_paths, file_prefix_map_flags, filter_path_flags, find_buckos_shell, register_cleanup, rewrite_shebangs, sanitize_filenames, write_pkg_config_wrapper
+from _env import clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, find_buckos_shell, find_dep_python3, register_cleanup, rewrite_shebangs, sanitize_filenames, sysroot_lib_paths, write_pkg_config_wrapper
 
 
 def _resolve_env_paths(value):
@@ -164,10 +164,6 @@ def main():
         shutil.rmtree(output_dir)
     shutil.copytree(source_dir, output_dir, symlinks=True)
 
-    # Create a pkg-config wrapper that always passes --define-prefix so
-    # .pc files in Buck2 dep directories resolve paths correctly.
-    wrapper_dir = write_pkg_config_wrapper(os.path.join(output_dir, ".pkgconf-wrapper"))
-
     env = clean_env()
 
     # Expose the project root so pre-cmds can resolve Buck2 artifact
@@ -262,10 +258,14 @@ def main():
         if append:
             env["PATH"] = env.get("PATH", "") + ":" + append
 
-    # Merge tset-provided lib dirs into LD_LIBRARY_PATH so dynamically
-    # linked dep tools (e.g. buckos python needing libpython3.12.so)
-    # can execute during configure probes.
-    if file_lib_dirs:
+    # Tset-provided lib dirs for dep libraries.  With sysroot ld-linux
+    # and per-package RPATH from specs, buckos binaries find deps via
+    # RPATH.  Skip adding to LD_LIBRARY_PATH — it contaminates host
+    # tools (e.g. /usr/bin/awk) that load buckos .so files and crash
+    # on glibc version mismatches.
+    #
+    # Only add when no sysroot is available (bootstrap/host mode).
+    if file_lib_dirs and not args.ld_linux:
         resolved = [os.path.abspath(d) for d in file_lib_dirs if os.path.isdir(d)]
         if resolved:
             existing = env.get("LD_LIBRARY_PATH", "")
@@ -325,13 +325,17 @@ def main():
             # ACLOCAL_PATH adds extra search directories
             env["ACLOCAL_PATH"] = ":".join(aclocal_dirs)
 
+    # Create a pkg-config wrapper that always passes --define-prefix so
+    # .pc files in Buck2 dep directories resolve paths correctly.
+    wrapper_dir = write_pkg_config_wrapper(os.path.join(output_dir, ".pkgconf-wrapper"), python=find_dep_python3(env))
+
     # Prepend pkg-config wrapper to PATH
     env["PATH"] = wrapper_dir + ":" + env.get("PATH", os.environ.get("PATH", ""))
 
-    # Disable posix_spawn in child processes to avoid ENOEXEC with
-    # padded ELF interpreters on buckos-native dep binaries.
+    # Set up sysroot lib paths and disable posix_spawn to avoid
+    # ENOEXEC with padded ELF interpreters on buckos-native dep binaries.
     if args.ld_linux:
-        disable_posix_spawn(env)
+        sysroot_lib_paths(args.ld_linux, env)
 
     # Find buckos shell on PATH for running configure, pre-cmds, and
     # shebang rewriting.  CONFIG_SHELL tells autotools to re-exec

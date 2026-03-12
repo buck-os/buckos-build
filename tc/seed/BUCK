@@ -1,17 +1,11 @@
 """
 Seed toolchain resolution.
 
-Resolves the seed toolchain from one of four sources (highest priority first):
+Resolves the seed toolchain from one of three sources (highest priority first):
 
-  1. buckos.source_mode = true  — force bootstrap, ignore any seed config
-  2. buckos.seed_path           — local archive  (export_file at repo root)
-  3. buckos.seed_url            — remote download (http_file)
-  4. neither                    — bootstrap from source (stage 1 cross-compiler)
-
-To force source build even if a seed is configured:
-
-  [buckos]
-  source_mode = true
+  1. buckos.seed_path  — local archive  (export_file at repo root)
+  2. buckos.seed_url   — remote download (http_file)
+  3. neither           — bootstrap from source (stage 1 cross-compiler)
 
 To use a local prebuilt seed (drop seed-toolchain.zip at repo root):
 

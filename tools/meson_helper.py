@@ -11,7 +11,7 @@ import shutil as _shutil
 import subprocess
 import sys
 
-from _env import clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, register_cleanup, sanitize_filenames, write_pkg_config_wrapper
+from _env import clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, find_dep_python3, register_cleanup, sanitize_filenames, sysroot_lib_paths, write_pkg_config_wrapper
 
 
 def _resolve_env_paths(value):
@@ -137,31 +137,29 @@ def main():
     os.makedirs(_build_dir_abs, exist_ok=True)
     register_cleanup(_build_dir_abs)
 
-    # Create a pkg-config wrapper that always passes --define-prefix so
-    # .pc files in Buck2 dep directories resolve paths correctly.
-    # Write into build_dir so the path is stable across meson reconfigures.
-    # Use absolute path so meson native file embeds an executable path, not a name.
-    wrapper_dir = write_pkg_config_wrapper(os.path.join(_build_dir_abs, ".pkgconf-wrapper"))
-
     env = clean_env()
 
     if args.hermetic_path:
         env["PATH"] = ":".join(os.path.abspath(p) for p in args.hermetic_path)
         # Derive LD_LIBRARY_PATH from hermetic bin dirs so dynamically
         # linked tools (e.g. cross-ar needing libzstd) find their libs.
-        _lib_dirs = []
-        for _bp in args.hermetic_path:
-            _parent = os.path.dirname(os.path.abspath(_bp))
-            for _ld in ("lib", "lib64"):
-                _d = os.path.join(_parent, _ld)
-                if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")):
-                    _lib_dirs.append(_d)
-                    _glibc_d = os.path.join(_d, "glibc")
-                    if os.path.isdir(_glibc_d):
-                        _lib_dirs.append(_glibc_d)
-        if _lib_dirs:
-            _existing = env.get("LD_LIBRARY_PATH", "")
-            env["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (":" + _existing if _existing else "")
+        # With sysroot ld-linux and per-package RPATH, buckos binaries
+        # find deps via RPATH.  Skip LD_LIBRARY_PATH to avoid
+        # contaminating host tools.
+        if not args.ld_linux:
+            _lib_dirs = []
+            for _bp in args.hermetic_path:
+                _parent = os.path.dirname(os.path.abspath(_bp))
+                for _ld in ("lib", "lib64"):
+                    _d = os.path.join(_parent, _ld)
+                    if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")):
+                        _lib_dirs.append(_d)
+                        _glibc_d = os.path.join(_d, "glibc")
+                        if os.path.isdir(_glibc_d):
+                            _lib_dirs.append(_glibc_d)
+            if _lib_dirs:
+                _existing = env.get("LD_LIBRARY_PATH", "")
+                env["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (":" + _existing if _existing else "")
     elif args.hermetic_empty:
         env["PATH"] = ""
     elif args.allow_host_path:
@@ -185,16 +183,28 @@ def main():
     # Merge tset-provided lib dirs into LD_LIBRARY_PATH so dynamically
     # linked dep tools (e.g. buckos python needing libpython3.12.so)
     # can execute during meson setup.
-    if file_lib_dirs:
+    # With sysroot ld-linux and per-package RPATH, buckos binaries find
+    # deps via RPATH.  Skip LD_LIBRARY_PATH to avoid contaminating host
+    # tools.
+    if file_lib_dirs and not args.ld_linux:
         resolved = [os.path.abspath(d) for d in file_lib_dirs if os.path.isdir(d)]
         if resolved:
             existing = env.get("LD_LIBRARY_PATH", "")
             merged = ":".join(resolved)
             env["LD_LIBRARY_PATH"] = (merged + ":" + existing).rstrip(":") if existing else merged
 
-    # Derive LD_LIBRARY_PATH from path-prepend dirs so host tools with
-    # shared libraries (e.g. python → libpython3.so) can execute.
+    # Derive GCONV_PATH, BISON_PKGDATADIR (and LD_LIBRARY_PATH when no
+    # sysroot ld-linux) from path-prepend dirs so host tools find shared
+    # libraries and data.  With sysroot ld-linux and per-package RPATH,
+    # buckos binaries find deps via RPATH.  Skip LD_LIBRARY_PATH to
+    # avoid contaminating host tools.
+    _save_ldlp = env.get("LD_LIBRARY_PATH") if args.ld_linux else None
     derive_lib_paths(all_path_prepend, env)
+    if args.ld_linux:
+        if _save_ldlp is not None:
+            env["LD_LIBRARY_PATH"] = _save_ldlp
+        else:
+            env.pop("LD_LIBRARY_PATH", None)
 
     # Apply extra environment variables first (toolchain flags like -march).
     for entry in args.extra_env:
@@ -252,6 +262,12 @@ def main():
             existing = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = ":".join(python_paths) + (":" + existing if existing else "")
 
+    # Create a pkg-config wrapper that always passes --define-prefix so
+    # .pc files in Buck2 dep directories resolve paths correctly.
+    # Write into build_dir so the path is stable across meson reconfigures.
+    # Use absolute path so meson native file embeds an executable path, not a name.
+    wrapper_dir = write_pkg_config_wrapper(os.path.join(_build_dir_abs, ".pkgconf-wrapper"), python=find_dep_python3(env))
+
     # Prepend pkg-config wrapper to PATH (after hermetic/prepend logic
     # so the wrapper is always available regardless of PATH mode)
     env["PATH"] = wrapper_dir + ":" + env.get("PATH", "")
@@ -259,6 +275,9 @@ def main():
         env["CC"] = _resolve_env_paths(args.cc)
     if args.cxx:
         env["CXX"] = _resolve_env_paths(args.cxx)
+
+    if args.ld_linux:
+        sysroot_lib_paths(args.ld_linux, env)
 
     # Find buckos python3 from dep dirs — prefer it over host python.
     # Buckos python is ABI-matched to buckos libs in LD_LIBRARY_PATH.
@@ -300,7 +319,14 @@ def main():
                   file=sys.stderr)
             sys.exit(1)
 
-    cmd = ["meson", "setup"]
+    # Resolve meson from the build env PATH.  The buckos-built meson
+    # package is a host_dep of all meson-rule packages, so its bin dir
+    # is on PATH via --path-prepend.
+    _meson_bin = _shutil.which("meson", path=env.get("PATH", ""))
+    if not _meson_bin:
+        print(f"error: meson not found on PATH: {env.get('PATH', '')}", file=sys.stderr)
+        sys.exit(1)
+    cmd = [_meson_bin, "setup"]
     cmd.extend([
         _build_dir_abs,
         source_abs,

@@ -10,7 +10,7 @@ import os
 import subprocess
 import sys
 
-from _env import clean_env
+from _env import clean_env, sysroot_lib_paths
 
 
 def _can_unshare_net():
@@ -163,26 +163,32 @@ def main():
             _existing = env.get("LD_LIBRARY_PATH", "")
             env["LD_LIBRARY_PATH"] = ":".join(_dep_lib_dirs) + (":" + _existing if _existing else "")
 
+    if args.ld_linux:
+        sysroot_lib_paths(args.ld_linux, env)
+
     # Use the toolchain CC as the Rust linker so rustc invokes GCC
     # instead of rust-lld.  Modern Rust passes -fuse-ld=lld to the
     # linker driver, making GCC delegate to rust-lld which doesn't
     # honour --sysroot and can't find CRT files on minimal hosts.
     # Override with -fuse-ld=bfd so GCC invokes ld.bfd which does
     # honour --sysroot (injected via GCC specs at unpack time).
+    # Use the toolchain CC as the Rust linker for all targets.
+    # Write to .cargo/config.toml so it overrides any upstream
+    # [target.*] sections that might set linker = "clang" or similar.
     cc = env.get("CC", "")
-    if cc and "CARGO_BUILD_RUSTFLAGS" not in env:
-        cc_bin = cc.split()[0]
-        env["CARGO_BUILD_RUSTFLAGS"] = (
-            f"-C linker={cc_bin} -C link-arg=-fuse-ld=bfd"
-        )
-
-    # Set up vendored dependencies if provided
-    if args.vendor_dir:
-        vendor_dir = os.path.abspath(args.vendor_dir)
-        cargo_config_dir = os.path.join(args.source_dir, ".cargo")
-        os.makedirs(cargo_config_dir, exist_ok=True)
-        with open(os.path.join(cargo_config_dir, "config.toml"), "a") as f:
-            f.write(f'\n[source.crates-io]\nreplace-with = "vendored-sources"\n\n')
+    cc_bin = cc.split()[0] if cc else ""
+    # Append buckos overrides to .cargo/config.toml, preserving any
+    # upstream config (vendor sources, target settings, etc.).
+    cargo_config_dir = os.path.join(args.source_dir, ".cargo")
+    os.makedirs(cargo_config_dir, exist_ok=True)
+    config_path = os.path.join(cargo_config_dir, "config.toml")
+    with open(config_path, "a") as f:
+        f.write("\n# buckos overrides\n")
+        if cc_bin:
+            f.write(f'[build]\nrustflags = ["-C", "linker={cc_bin}", "-C", "link-arg=-fuse-ld=bfd"]\n\n')
+        if args.vendor_dir:
+            vendor_dir = os.path.abspath(args.vendor_dir)
+            f.write(f'[source.crates-io]\nreplace-with = "vendored-sources"\n\n')
             f.write(f'[source.vendored-sources]\ndirectory = "{vendor_dir}"\n')
 
     cmd = [

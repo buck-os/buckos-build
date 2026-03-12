@@ -11,7 +11,7 @@ Rules:
 
 load("//defs:empty_registry.bzl", "PATCH_REGISTRY")
 load("//defs:providers.bzl", "BuildToolchainInfo", "KernelBtfInfo", "KernelConfigInfo", "KernelHeadersInfo", "KernelInfo")
-load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_env_args", "toolchain_path_args")
+load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_env_args", "toolchain_ld_linux_args", "toolchain_path_args")
 load("//tc:transitions.bzl", "strip_toolchain_mode")
 
 # ── kernel_config ────────────────────────────────────────────────────
@@ -52,6 +52,8 @@ def _kernel_config_impl(ctx: AnalysisContext) -> list[Provider]:
 
     # Hermetic PATH from toolchain
     for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
         cmd.add(arg)
 
     ctx.actions.run(
@@ -185,6 +187,8 @@ def _kernel_build_impl(ctx: AnalysisContext) -> list[Provider]:
     # Hermetic PATH from toolchain
     for arg in toolchain_path_args(ctx):
         cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
+        cmd.add(arg)
 
     ctx.actions.run(
         cmd,
@@ -309,6 +313,8 @@ def _kernel_headers_impl(ctx: AnalysisContext) -> list[Provider]:
     # Hermetic PATH from toolchain
     for arg in toolchain_path_args(ctx):
         cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
+        cmd.add(arg)
 
     ctx.actions.run(cmd, category = "kernel_headers", identifier = ctx.attrs.name, allow_cache_upload = True)
 
@@ -416,6 +422,8 @@ def _kernel_modules_install_impl(ctx: AnalysisContext) -> list[Provider]:
 
     # Hermetic PATH from toolchain
     for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
         cmd.add(arg)
 
     ctx.actions.run(cmd, category = "kernel_modules", identifier = ctx.attrs.name, allow_cache_upload = True)

@@ -10,7 +10,7 @@ import os
 import subprocess
 import sys
 
-from _env import clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, register_cleanup, sanitize_filenames, write_pkg_config_wrapper
+from _env import clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, find_dep_python3, register_cleanup, sanitize_filenames, sysroot_lib_paths, write_pkg_config_wrapper
 
 
 def _resolve_env_paths(value):
@@ -138,10 +138,7 @@ def main():
     os.makedirs(args.build_dir, exist_ok=True)
     register_cleanup(os.path.abspath(args.build_dir))
 
-    # Create a pkg-config wrapper that always passes --define-prefix so
-    # .pc files in Buck2 dep directories resolve paths correctly.
     import tempfile
-    wrapper_dir = write_pkg_config_wrapper(tempfile.mkdtemp(prefix="pkgconf-wrapper-"))
 
     env = clean_env()
 
@@ -153,19 +150,23 @@ def main():
         env["PATH"] = ":".join(os.path.abspath(p) for p in args.hermetic_path)
         # Derive LD_LIBRARY_PATH from hermetic bin dirs so dynamically
         # linked tools (e.g. cross-ar needing libzstd) find their libs.
-        _lib_dirs = []
-        for _bp in args.hermetic_path:
-            _parent = os.path.dirname(os.path.abspath(_bp))
-            for _ld in ("lib", "lib64"):
-                _d = os.path.join(_parent, _ld)
-                if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")):
-                    _lib_dirs.append(_d)
-                    _glibc_d = os.path.join(_d, "glibc")
-                    if os.path.isdir(_glibc_d):
-                        _lib_dirs.append(_glibc_d)
-        if _lib_dirs:
-            _existing = env.get("LD_LIBRARY_PATH", "")
-            env["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (":" + _existing if _existing else "")
+        # With sysroot ld-linux and per-package RPATH, buckos binaries
+        # find deps via RPATH.  Skip LD_LIBRARY_PATH to avoid
+        # contaminating host tools.
+        if not args.ld_linux:
+            _lib_dirs = []
+            for _bp in args.hermetic_path:
+                _parent = os.path.dirname(os.path.abspath(_bp))
+                for _ld in ("lib", "lib64"):
+                    _d = os.path.join(_parent, _ld)
+                    if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")):
+                        _lib_dirs.append(_d)
+                        _glibc_d = os.path.join(_d, "glibc")
+                        if os.path.isdir(_glibc_d):
+                            _lib_dirs.append(_glibc_d)
+            if _lib_dirs:
+                _existing = env.get("LD_LIBRARY_PATH", "")
+                env["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (":" + _existing if _existing else "")
         _py_paths = []
         for _bp in args.hermetic_path:
             _parent = os.path.dirname(os.path.abspath(_bp))
@@ -202,6 +203,10 @@ def main():
         existing = env.get("PKG_CONFIG_PATH", "")
         merged = _resolve_env_paths(":".join(file_pkg_config))
         env["PKG_CONFIG_PATH"] = (merged + ":" + existing).rstrip(":") if existing else merged
+
+    # Create a pkg-config wrapper that always passes --define-prefix so
+    # .pc files in Buck2 dep directories resolve paths correctly.
+    wrapper_dir = write_pkg_config_wrapper(tempfile.mkdtemp(prefix="pkgconf-wrapper-"), python=find_dep_python3(env))
 
     # Prepend pkg-config wrapper to PATH (after hermetic/prepend logic
     # so the wrapper is always available regardless of PATH mode)
@@ -264,17 +269,32 @@ def main():
     if all_prefix_paths:
         cmd.append("-DCMAKE_PREFIX_PATH=" + ";".join(all_prefix_paths))
 
-    # Merge flag-file lib dirs into LD_LIBRARY_PATH for dep tools
-    if file_lib_dirs:
+    # Merge flag-file lib dirs into LD_LIBRARY_PATH for dep tools.
+    # With sysroot ld-linux and per-package RPATH, buckos binaries find
+    # deps via RPATH.  Skip LD_LIBRARY_PATH to avoid contaminating host
+    # tools.
+    if file_lib_dirs and not args.ld_linux:
         resolved_lib_dirs = [os.path.abspath(d) for d in file_lib_dirs if os.path.isdir(d)]
         if resolved_lib_dirs:
             existing = env.get("LD_LIBRARY_PATH", "")
             merged = ":".join(resolved_lib_dirs)
             env["LD_LIBRARY_PATH"] = (merged + ":" + existing).rstrip(":") if existing else merged
 
-    # Derive LD_LIBRARY_PATH from path-prepend dirs so host tools with
-    # shared libraries (e.g. python → libpython3.so) can execute.
+    # Derive GCONV_PATH, BISON_PKGDATADIR (and LD_LIBRARY_PATH when no
+    # sysroot ld-linux) from path-prepend dirs so host tools find shared
+    # libraries and data.  With sysroot ld-linux and per-package RPATH,
+    # buckos binaries find deps via RPATH.  Skip LD_LIBRARY_PATH to
+    # avoid contaminating host tools.
+    _save_ldlp = env.get("LD_LIBRARY_PATH") if args.ld_linux else None
     derive_lib_paths(all_path_prepend, env)
+    if args.ld_linux:
+        if _save_ldlp is not None:
+            env["LD_LIBRARY_PATH"] = _save_ldlp
+        else:
+            env.pop("LD_LIBRARY_PATH", None)
+
+    if args.ld_linux:
+        sysroot_lib_paths(args.ld_linux, env)
 
     # Auto-detect Perl5 lib dirs from dep prefixes so build-time perl
     # modules (e.g. URI::Escape for kdoctools) are found by cmake's

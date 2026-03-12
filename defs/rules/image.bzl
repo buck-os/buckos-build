@@ -6,7 +6,7 @@ Assembly rules that take rootfs/kernel/initramfs deps and produce images.
 
 load("//defs:providers.bzl", "IsoImageInfo", "KernelInfo", "Stage3Info", "get_kernel_image")
 load("//defs:host_tools.bzl", "host_tool_path_args")
-load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_path_args")
+load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_ld_linux_args", "toolchain_path_args")
 
 # =============================================================================
 # RAW DISK IMAGE
@@ -28,6 +28,8 @@ def _raw_disk_image_impl(ctx: AnalysisContext) -> list[Provider]:
     if ctx.attrs.partition_table:
         cmd.add("--partition-table")
     for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
         cmd.add(arg)
 
     ctx.actions.run(
@@ -92,6 +94,8 @@ def _iso_image_impl(ctx: AnalysisContext) -> list[Provider]:
 
     # Hermetic PATH from toolchain
     for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
         cmd.add(arg)
     for arg in host_tool_path_args(ctx):
         cmd.add(arg)
@@ -185,6 +189,8 @@ def _stage3_tarball_impl(ctx: AnalysisContext) -> list[Provider]:
     cmd.add("--version", version if version else "0.1")
     cmd.add("--compression", compression)
     for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
         cmd.add(arg)
 
     ctx.actions.run(

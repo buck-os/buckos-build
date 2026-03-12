@@ -10,7 +10,7 @@ import shutil
 import subprocess
 import sys
 
-from _env import sanitize_global_env
+from _env import sanitize_global_env, sysroot_lib_paths
 
 
 _ELF_MAGIC = b"\x7fELF"
@@ -103,6 +103,9 @@ def main():
         if _dep_lib_dirs:
             _existing = os.environ.get("LD_LIBRARY_PATH", "")
             os.environ["LD_LIBRARY_PATH"] = ":".join(_dep_lib_dirs) + (":" + _existing if _existing else "")
+
+    if args.ld_linux:
+        sysroot_lib_paths(args.ld_linux, os.environ)
 
     # Copy input to output
     if os.path.exists(args.output):

@@ -60,6 +60,11 @@ def clean_env():
     # isolation (mozbuild_helper) set RUSTUP_HOME themselves.
     scratch = env.get("BUCK_SCRATCH_PATH") or env.get("TMPDIR") or "/tmp"
     env["CARGO_HOME"] = os.path.join(scratch, "buckos-cargo-home")
+    # Disable posix_spawn in the current process — buckos-built
+    # binaries have padded ELF interpreters that cause ENOEXEC/ENOTCONN.
+    # Child processes get it via sysroot_lib_paths or explicit calls.
+    import subprocess as _subprocess
+    _subprocess._USE_POSIX_SPAWN = False
     return env
 
 
@@ -174,16 +179,21 @@ def setup_path(args, env, host_path=""):
 
 
 def disable_posix_spawn(env, scratch_dir=None):
-    """Install a sitecustomize.py that disables posix_spawn in subprocess.
+    """Disable posix_spawn in this process and all child Python processes.
 
-    Python 3.14+ defaults to posix_spawn for subprocess.Popen, which
-    fails with ENOEXEC on some kernels/configurations when the ELF
-    interpreter is padded (///...///lib64/ld-linux-x86-64.so.2).
+    Python 3.12+ defaults to posix_spawn for subprocess.Popen, which
+    fails with ENOEXEC/ENOTCONN on some kernels/configurations when
+    the ELF interpreter is padded (///...///lib64/ld-linux-x86-64.so.2).
     Fork+exec handles padded interpreters correctly everywhere.
 
-    Creates a sitecustomize.py in a scratch directory and prepends it
-    to PYTHONPATH so all child Python processes inherit the fix.
+    Disables in the current process immediately, and creates a
+    sitecustomize.py in a scratch directory (prepended to PYTHONPATH)
+    so all child Python processes inherit the fix.
     """
+    # Disable in the current process immediately.
+    import subprocess as _subprocess
+    _subprocess._USE_POSIX_SPAWN = False
+    # Disable in child Python processes via sitecustomize.
     if scratch_dir is None:
         scratch_dir = os.environ.get("BUCK_SCRATCH_PATH",
                                      os.environ.get("TMPDIR", "/tmp"))
@@ -196,6 +206,48 @@ def disable_posix_spawn(env, scratch_dir=None):
             f.write("_sp._USE_POSIX_SPAWN = False\n")
     existing = env.get("PYTHONPATH", "")
     env["PYTHONPATH"] = pysite + (":" + existing if existing else "")
+
+
+def sysroot_lib_paths(ld_linux_path, env):
+    """Set LD_LIBRARY_PATH for sysroot so buckos compiler can execute.
+
+    The buckos GCC binary runs via the host's dynamic linker (its
+    PT_INTERP resolves to /lib64/ld-linux on the host).  GCC's
+    libstdc++ needs buckos glibc symbols (GLIBC_2.38+) that the
+    host glibc may lack.  Adding sysroot glibc and GCC runtime
+    lib dirs to LD_LIBRARY_PATH lets the host ld-linux satisfy
+    those references.
+
+    Only sysroot dirs (glibc + gcc runtime) are added — dep-specific
+    lib dirs are handled separately by derive_lib_paths() which
+    excludes glibc to avoid host tool contamination.
+    """
+    disable_posix_spawn(env)
+
+    ld_linux = os.path.abspath(ld_linux_path)
+    # sysroot is two dirs up from ld-linux:
+    # <sysroot>/lib64/ld-linux-x86-64.so.2
+    sysroot = os.path.dirname(os.path.dirname(ld_linux))
+
+    lib_dirs = []
+    for sub in ("lib64", "lib", "usr/lib64", "usr/lib"):
+        d = os.path.join(sysroot, sub)
+        if os.path.isdir(d):
+            lib_dirs.append(d)
+
+    # GCC's libstdc++/libgcc_s live alongside the sysroot:
+    # sysroot = <prefix>/x86_64-buckos-linux-gnu/sys-root
+    # libstdc++ = <prefix>/x86_64-buckos-linux-gnu/lib64
+    gcc_target = os.path.dirname(sysroot)
+    for sub in ("lib64", "lib"):
+        d = os.path.join(gcc_target, sub)
+        if os.path.isdir(d):
+            lib_dirs.append(d)
+
+    if lib_dirs:
+        existing = env.get("LD_LIBRARY_PATH", "")
+        merged = ":".join(lib_dirs)
+        env["LD_LIBRARY_PATH"] = (merged + ":" + existing).rstrip(":") if existing else merged
 
 
 def derive_lib_paths(bin_dirs, env):
@@ -277,24 +329,50 @@ def filter_path_flags(flags):
     return result
 
 
-def write_pkg_config_wrapper(wrapper_dir):
+def find_dep_python3(env):
+    """Find buckos python3 from PATH in the given env dict.
+
+    Returns the absolute path if found, None otherwise.  Used to
+    pick buckos python over host python for generated wrapper scripts.
+    """
+    path = env.get("PATH", "")
+    for d in path.split(":"):
+        candidate = os.path.join(d, "python3")
+        if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
+            return os.path.abspath(candidate)
+    return None
+
+
+def write_pkg_config_wrapper(wrapper_dir, python=None):
     """Write a pkg-config wrapper that passes --define-prefix.
 
-    Uses a Python script (not shell) so it works in environments
-    without /bin/sh (e.g. remote execution).  The wrapper removes
-    its own directory from PATH to avoid infinite recursion, then
-    execs the real pkg-config with --define-prefix prepended.
+    Uses a Python script so it works in environments without /bin/sh
+    (e.g. remote execution).  When ``python`` is provided (buckos
+    python from deps), the wrapper uses it instead of the host python
+    to avoid glibc ABI mismatches when buckos libs are on
+    LD_LIBRARY_PATH.
+
+    Before bootstrap completes, ``python`` is None and the wrapper
+    falls back to ``/usr/bin/env python3`` (host python), which is
+    fine because buckos libs aren't on LD_LIBRARY_PATH yet.
     """
     os.makedirs(wrapper_dir, exist_ok=True)
     wrapper = os.path.join(wrapper_dir, "pkg-config")
+    if python:
+        shebang = "#!" + os.path.abspath(python)
+    else:
+        shebang = "#!/usr/bin/env python3"
     with open(wrapper, "w") as f:
         f.write(
-            '#!/usr/bin/env python3\n'
-            'import os, sys\n'
+            shebang + '\n'
+            'import os, shutil, sys\n'
             'sd = os.path.dirname(os.path.abspath(__file__))\n'
             'p = os.environ.get("PATH", "").split(":")\n'
             'os.environ["PATH"] = ":".join(d for d in p if os.path.abspath(d) != sd)\n'
-            'os.execvp("pkg-config", ["pkg-config", "--define-prefix"] + sys.argv[1:])\n'
+            '_pc = shutil.which("pkg-config")\n'
+            'if not _pc:\n'
+            '    print("pkg-config: not found on PATH", file=sys.stderr); sys.exit(1)\n'
+            'os.execv(_pc, [_pc, "--define-prefix"] + sys.argv[1:])\n'
         )
     os.chmod(wrapper, 0o755)
     return wrapper_dir
@@ -542,3 +620,5 @@ def sanitize_global_env():
     os.environ.clear()
     os.environ.update(keep)
     os.environ.update(_DETERMINISM_PINS)
+    import subprocess as _subprocess
+    _subprocess._USE_POSIX_SPAWN = False

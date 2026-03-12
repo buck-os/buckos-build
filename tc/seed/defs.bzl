@@ -17,37 +17,29 @@ def maybe_export_seed():
             visibility = ["PUBLIC"],
         )
 
-_DEFAULT_SEED_URL = read_config("buckos", "default_seed_url", "")
-_DEFAULT_SEED_SHA256 = read_config("buckos", "default_seed_sha256", "")
-
 def seed_toolchain():
     """Declare the seed-toolchain target based on .buckconfig.
 
     Priority (highest first):
-      1. buckos.source_mode = true  — force bootstrap regardless of seed config
-      2. buckos.seed_path           — local archive (export_file)
-      3. buckos.seed_url            — explicit remote URL (http_file)
-      4. default seed URL           — auto-download from buckos.default_seed_url
-      5. none configured            — bootstrap from source (stage 1 cross-compiler)
+      1. buckos.seed_path  — local archive (export_file)
+      2. buckos.seed_url   — remote URL (http_file)
+      3. neither           — bootstrap from source (stage 1 cross-compiler)
 
     The full seed archive (//tc/bootstrap:seed-export) must be built
     explicitly — it cannot be the seed-toolchain dep because
     seed-export → host-tools → packages → seed-toolchain creates a
     configured target cycle.
     """
-    source_mode = read_config("buckos", "source_mode", "") in ("true", "1", "yes")
-    url = read_config("buckos", "seed_url", "")
     path = read_config("buckos", "seed_path", "")
+    url = read_config("buckos", "seed_url", "")
 
-    if source_mode:
-        archive = None
-    elif path:
+    if path:
         archive = "//:" + path
-    elif url or _DEFAULT_SEED_URL:
+    elif url:
         native.http_file(
             name = "seed-archive",
-            urls = [url or _DEFAULT_SEED_URL],
-            sha256 = read_config("buckos", "seed_sha256", "") or _DEFAULT_SEED_SHA256,
+            urls = [url],
+            sha256 = read_config("buckos", "seed_sha256", ""),
             out = "buckos-seed.tar.zst",
         )
         archive = ":seed-archive"
@@ -84,20 +76,30 @@ def seed_toolchain():
         )
     else:
         # Source mode: no prebuilt seed, bootstrap from scratch.
-        # Cannot depend on host-tools-exec here — that creates a cycle
-        # (seed-toolchain → host-tools-exec → stage1 → extract_source
-        # → resolve exec platform → seed-toolchain).  Bootstrap builds
-        # use host PATH for make/sed/etc. via allows_host_path=True.
+        # Mirror stage3-toolchain config so packages get the stage2
+        # cross-compiler with sysroot ld-linux + RPATH specs.
+        # Host tools (make, sed, etc.) come from per-rule exec_deps
+        # via auto_tool_deps in package.bzl.  The dynamic linker
+        # comes from the sysroot directly (via gen_specs).
         buckos_bootstrap_toolchain(
             name = "seed-toolchain",
-            bootstrap_stage = "//tc/bootstrap/stage1:stage1",
+            bootstrap_stage = "//tc/bootstrap/stage2:stage2",
             extra_cflags = ["-march=x86-64-v3"],
+            extra_ldflags = [
+                "-Wl,-rpath,$ORIGIN/../lib64:$ORIGIN/../lib",
+            ],
             visibility = ["PUBLIC"],
         )
-        # Bootstrap mode: no seed, fall back to host PATH toolchain.
-        # Can't alias a toolchain rule into a toolchain_dep, so create
-        # a separate instance with the same host PATH settings.
-        buckos_toolchain(
+        # Exec deps use the same bootstrap toolchain so exec_dep
+        # binaries (awk, sed, bash, etc.) use buckos ld-linux and
+        # buckos glibc.  Without this, exec_dep tools built against
+        # buckos libs fail on hosts with older glibc.
+        buckos_bootstrap_toolchain(
             name = "seed-exec-toolchain",
+            bootstrap_stage = "//tc/bootstrap/stage2:stage2",
+            extra_cflags = ["-march=x86-64-v3"],
+            extra_ldflags = [
+                "-Wl,-rpath,$ORIGIN/../lib64:$ORIGIN/../lib",
+            ],
             visibility = ["PUBLIC"],
         )

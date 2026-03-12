@@ -10,7 +10,7 @@ import os
 import subprocess
 import sys
 
-from _env import clean_env
+from _env import clean_env, sysroot_lib_paths
 
 
 def _can_unshare_net():
@@ -174,6 +174,10 @@ def main():
         if _dep_lib_dirs:
             _existing = env.get("LD_LIBRARY_PATH", "")
             env["LD_LIBRARY_PATH"] = ":".join(_dep_lib_dirs) + (":" + _existing if _existing else "")
+
+    if args.ld_linux:
+        sysroot_lib_paths(args.ld_linux, env)
+
     env["GOFLAGS"] = env.get("GOFLAGS", "")
 
     # Ensure writable GOPATH/GOMODCACHE (defaults may point to read-only locations)

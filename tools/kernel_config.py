@@ -14,7 +14,7 @@ import shutil
 import subprocess
 import sys
 
-from _env import derive_lib_paths, sanitize_global_env
+from _env import derive_lib_paths, sanitize_global_env, sysroot_lib_paths
 
 
 def main():
@@ -71,6 +71,9 @@ def main():
         derive_lib_paths(args.hermetic_path, os.environ)
     if args.path_prepend:
         derive_lib_paths(args.path_prepend, os.environ)
+
+    if args.ld_linux:
+        sysroot_lib_paths(args.ld_linux, os.environ)
 
     # Derive LIBRARY_PATH and C_INCLUDE_PATH from hermetic bin dirs so
     # HOSTCC finds headers and libs (kconfig compiles host tools like fixdep).

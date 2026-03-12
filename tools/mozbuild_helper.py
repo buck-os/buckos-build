@@ -21,7 +21,7 @@ import subprocess
 import sys
 import json
 
-from _env import clean_env, disable_posix_spawn, sanitize_filenames, sanitize_global_env, write_pkg_config_wrapper
+from _env import clean_env, find_dep_python3, sanitize_filenames, sanitize_global_env, sysroot_lib_paths, write_pkg_config_wrapper
 
 
 # ── Portable path placeholders (cross-machine cache) ─────────────────
@@ -117,9 +117,9 @@ def _setup_writable_source(source_dir, work_dir):
     return writable
 
 
-def _setup_pkg_config_wrapper(bin_dir):
+def _setup_pkg_config_wrapper(bin_dir, env=None):
     """Create pkg-config wrapper that uses --define-prefix."""
-    return write_pkg_config_wrapper(bin_dir)
+    return write_pkg_config_wrapper(bin_dir, python=find_dep_python3(env) if env else None)
 
 
 def _build_dep_env(dep_base_dirs, pkg_config_path, base_path=None):
@@ -346,10 +346,11 @@ def _common_env(args, src_dir, pkg_config_bin_dir):
     mozconfig = os.path.join(src_dir, "mozconfig")
     env["MOZCONFIG"] = mozconfig
 
-    # Disable posix_spawn in child Python processes (mach) to avoid
-    # ENOEXEC with padded ELF interpreters on buckos-native dep binaries.
+    # Set up sysroot lib paths and disable posix_spawn in child Python
+    # processes (mach) to avoid ENOEXEC with padded ELF interpreters on
+    # buckos-native dep binaries.
     if hasattr(args, 'ld_linux') and args.ld_linux:
-        disable_posix_spawn(env, args.work_dir)
+        sysroot_lib_paths(args.ld_linux, env)
 
     return env
 
@@ -362,6 +363,8 @@ def phase_configure(args):
         os.path.join(args.work_dir, "bin"))
 
     env = _common_env(args, src_dir, pkg_config_bin)
+    # Re-create wrapper with buckos python now that env is available
+    _setup_pkg_config_wrapper(os.path.join(args.work_dir, "bin"), env=env)
 
     # Write mozconfig
     _dep_dirs = [_resolve(d) for d in args.dep_base_dirs.split(":") if d] if args.dep_base_dirs else []
@@ -404,6 +407,8 @@ def phase_rust_deps(args):
     pkg_config_bin = _setup_pkg_config_wrapper(
         os.path.join(args.work_dir, "bin"))
     env = _common_env(args, src_dir, pkg_config_bin)
+    # Re-create wrapper with buckos python now that env is available
+    _setup_pkg_config_wrapper(os.path.join(args.work_dir, "bin"), env=env)
     _dep_dirs = [_resolve(d) for d in args.dep_base_dirs.split(":") if d] if args.dep_base_dirs else []
     _write_mozconfig(os.path.join(src_dir, "mozconfig"), args.mozconfig_options, _dep_dirs)
 
@@ -495,6 +500,8 @@ def phase_build(args):
     pkg_config_bin = _setup_pkg_config_wrapper(
         os.path.join(args.work_dir, "bin"))
     env = _common_env(args, src_dir, pkg_config_bin)
+    # Re-create wrapper with buckos python now that env is available
+    _setup_pkg_config_wrapper(os.path.join(args.work_dir, "bin"), env=env)
     _dep_dirs = [_resolve(d) for d in args.dep_base_dirs.split(":") if d] if args.dep_base_dirs else []
     _write_mozconfig(os.path.join(src_dir, "mozconfig"), args.mozconfig_options, _dep_dirs)
 
@@ -529,6 +536,8 @@ def phase_install(args):
     pkg_config_bin = _setup_pkg_config_wrapper(
         os.path.join(args.work_dir, "bin"))
     env = _common_env(args, src_dir, pkg_config_bin)
+    # Re-create wrapper with buckos python now that env is available
+    _setup_pkg_config_wrapper(os.path.join(args.work_dir, "bin"), env=env)
     _dep_dirs = [_resolve(d) for d in args.dep_base_dirs.split(":") if d] if args.dep_base_dirs else []
     _write_mozconfig(os.path.join(src_dir, "mozconfig"), args.mozconfig_options, _dep_dirs)
 
@@ -555,6 +564,8 @@ def phase_full(args):
         os.path.join(args.work_dir, "bin"))
 
     env = _common_env(args, src_dir, pkg_config_bin)
+    # Re-create wrapper with buckos python now that env is available
+    _setup_pkg_config_wrapper(os.path.join(args.work_dir, "bin"), env=env)
 
     _dep_dirs = [_resolve(d) for d in args.dep_base_dirs.split(":") if d] if args.dep_base_dirs else []
     _write_mozconfig(os.path.join(src_dir, "mozconfig"), args.mozconfig_options, _dep_dirs)

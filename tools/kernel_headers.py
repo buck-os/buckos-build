@@ -11,7 +11,7 @@ import shutil
 import subprocess
 import sys
 
-from _env import sanitize_global_env
+from _env import sanitize_global_env, sysroot_lib_paths
 
 
 def main():
@@ -56,6 +56,9 @@ def main():
         prepend = ":".join(os.path.abspath(p) for p in args.path_prepend if os.path.isdir(p))
         if prepend:
             os.environ["PATH"] = prepend + ":" + os.environ.get("PATH", "")
+
+    if args.ld_linux:
+        sysroot_lib_paths(args.ld_linux, os.environ)
 
     source_dir = os.path.abspath(args.source_dir)
     config_file = os.path.abspath(args.config) if args.config else None

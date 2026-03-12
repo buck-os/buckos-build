@@ -10,7 +10,7 @@ it is a zero-cost passthrough when the controlling USE flag is off.
 """
 
 load("//defs:providers.bzl", "PackageInfo")
-load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_path_args")
+load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_ld_linux_args", "toolchain_path_args")
 
 # ── Helpers ───────────────────────────────────────────────────────────
 
@@ -63,6 +63,8 @@ def _strip_package_impl(ctx):
     # Hermetic PATH from toolchain
     for arg in toolchain_path_args(ctx):
         cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
+        cmd.add(arg)
 
     ctx.actions.run(cmd, category = "strip", identifier = pkg.name, allow_cache_upload = True)
     return [DefaultInfo(default_output = output), _rebase_pkg(pkg, output)]
@@ -96,6 +98,8 @@ def _stamp_package_impl(ctx):
     # Hermetic PATH from toolchain
     for arg in toolchain_path_args(ctx):
         cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
+        cmd.add(arg)
 
     ctx.actions.run(cmd, category = "stamp", identifier = pkg.name, allow_cache_upload = True)
     return [DefaultInfo(default_output = output), _rebase_pkg(pkg, output)]
@@ -127,6 +131,8 @@ def _ima_sign_package_impl(ctx):
 
     # Hermetic PATH from toolchain
     for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
         cmd.add(arg)
 
     ctx.actions.run(cmd, category = "ima_sign", identifier = pkg.name, allow_cache_upload = True)

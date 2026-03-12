@@ -10,7 +10,7 @@ Three discrete cacheable actions:
 
 load("//defs:providers.bzl", "PackageInfo")
 load("//defs/rules:_common.bzl", "COMMON_PACKAGE_ATTRS", "build_package_tsets", "src_prepare")
-load("//defs:toolchain_helpers.bzl", "toolchain_env_args", "toolchain_path_args")
+load("//defs:toolchain_helpers.bzl", "toolchain_env_args", "toolchain_ld_linux_args", "toolchain_path_args")
 load("//defs:host_tools.bzl", "host_tool_path_args")
 
 # ── Phase helpers ─────────────────────────────────────────────────────
@@ -24,6 +24,8 @@ def _perl_build(ctx, source):
 
     # Hermetic PATH from toolchain
     for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
         cmd.add(arg)
 
     # Add host_deps bin dirs to PATH

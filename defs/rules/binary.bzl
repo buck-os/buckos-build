@@ -14,7 +14,8 @@ load("//defs/rules:_common.bzl",
      "collect_host_path_children", "write_host_lib_dirs",
 )
 load("//defs:toolchain_helpers.bzl",
-     "toolchain_extra_cflags", "toolchain_extra_ldflags")
+     "toolchain_extra_cflags", "toolchain_extra_ldflags",
+     "toolchain_ld_linux_args", "toolchain_path_args")
 load("//defs:host_tools.bzl", "host_tool_env_paths")
 
 # ── Phase helpers ─────────────────────────────────────────────────────

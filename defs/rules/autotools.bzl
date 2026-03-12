@@ -26,7 +26,7 @@ load("//defs/rules:_common.bzl",
      "write_bin_dirs", "write_compile_flags", "write_lib_dirs_with_hosts",
      "write_link_flags", "write_pkg_config_paths",
 )
-load("//defs:toolchain_helpers.bzl", "toolchain_env_args", "toolchain_extra_cflags", "toolchain_extra_ldflags", "toolchain_path_args")
+load("//defs:toolchain_helpers.bzl", "toolchain_env_args", "toolchain_extra_cflags", "toolchain_extra_ldflags", "toolchain_ld_linux_args", "toolchain_path_args")
 load("//defs:host_tools.bzl", "host_tool_path_args")
 
 # ── Phase helpers ─────────────────────────────────────────────────────
@@ -76,8 +76,10 @@ def _src_configure(ctx, source, cflags_file = None, ldflags_file = None,
         cmd.add("--cc", cmd_args(tc.cc.args, delimiter = " "))
         cmd.add("--cxx", cmd_args(tc.cxx.args, delimiter = " "))
 
-    # Hermetic PATH from seed toolchain
+    # Hermetic PATH and ld-linux from seed toolchain
     for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
         cmd.add(arg)
 
     # Inject user-specified environment variables
@@ -185,8 +187,10 @@ def _src_compile(ctx, configured, cflags_file = None, ldflags_file = None,
     for env_arg in toolchain_env_args(ctx):
         cmd.add("--env", env_arg)
 
-    # Hermetic PATH from seed toolchain
+    # Hermetic PATH and ld-linux from seed toolchain
     for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
         cmd.add(arg)
 
     # Toolchain-injected CFLAGS / LDFLAGS for build phase
@@ -253,8 +257,10 @@ def _src_install(ctx, built, cflags_file = None, ldflags_file = None,
     for env_arg in toolchain_env_args(ctx):
         cmd.add("--env", env_arg)
 
-    # Hermetic PATH from seed toolchain
+    # Hermetic PATH and ld-linux from seed toolchain
     for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
         cmd.add(arg)
 
     # Toolchain-injected CFLAGS / LDFLAGS for install phase

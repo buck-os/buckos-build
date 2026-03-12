@@ -120,11 +120,6 @@ def _buckos_bootstrap_toolchain_impl(ctx: AnalysisContext) -> list[Provider]:
     Uses the bootstrap-built compiler and sysroot artifacts directly.
     When host_tools is provided, its bin/ dir becomes the hermetic PATH
     and its make/pkg-config are used instead of host PATH lookups.
-
-    The host_tools attr uses the default transition to ensure host-tools
-    are resolved in DEFAULT config (stage 2 build), even when this
-    toolchain is itself resolved in stage3 config.  This breaks the
-    stage3 → stage2-toolchain → host-tools → stage2-toolchain cycle.
     """
     stage = ctx.attrs.bootstrap_stage[BootstrapStageInfo]
 
@@ -139,7 +134,7 @@ def _buckos_bootstrap_toolchain_impl(ctx: AnalysisContext) -> list[Provider]:
     if stage.python:
         python_run_info = RunInfo(args = cmd_args(stage.python))
 
-    # Wire host tools when provided (stage 2 toolchain for hermetic rebuild)
+    # Wire host tools when provided (stage 3 toolchain for hermetic rebuild)
     host_bin = None
     make_cmd = cmd_args(ctx.attrs.make)
     pkg_config_cmd = cmd_args(ctx.attrs.pkg_config)
@@ -151,37 +146,38 @@ def _buckos_bootstrap_toolchain_impl(ctx: AnalysisContext) -> list[Provider]:
         if not python_run_info:
             python_run_info = RunInfo(args = cmd_args(host_bin.project("python3")))
 
-    # Extract linker flags that must be unconditional (specs) vs optional
-    # (LDFLAGS).  Build systems that ignore LDFLAGS (perl, bzip2, rust,
-    # glibc utils) still get the padded interpreter and RPATH placeholder
-    # because GCC specs are applied at link time regardless.
-    interp_val = None
+    # Generate GCC link specs that inject the sysroot dynamic linker
+    # and RPATH unconditionally at link time.  Uses the actual sysroot
+    # ld-linux path (not a padded host path) so build-time binaries
+    # execute with buckos glibc — no host glibc version dependency.
+    # The path is left-padded with '/' so stale_root rewriting can
+    # replace it in-place across machines.
+    #
+    # Extract RPATH from extra_ldflags (still passed as a string).
     rpath_val = None
     remaining_ldflags = []
     for flag in ctx.attrs.extra_ldflags:
-        if "--dynamic-linker," in flag and "rpath" not in flag:
-            # "-Wl,--dynamic-linker,///...///lib64/ld-linux-x86-64.so.2"
-            interp_val = flag.split("--dynamic-linker,", 1)[1]
-        elif "-rpath," in flag and "rpath-link" not in flag:
-            # "-Wl,-rpath,$ORIGIN/../lib64:$ORIGIN/../lib"
+        if "-rpath," in flag and "rpath-link" not in flag:
             rpath_val = flag.split("-rpath,", 1)[1]
+        elif "--dynamic-linker," in flag:
+            pass  # Ignored — interpreter comes from sysroot directly
         else:
             remaining_ldflags.append(flag)
 
-    if interp_val or rpath_val:
-        spec_parts = []
-        if interp_val:
-            spec_parts.append("--dynamic-linker " + interp_val)
-        if rpath_val:
-            spec_parts.append("-rpath " + rpath_val)
-        specs_content = (
-            "*link:\n" +
-            "+ %{!shared:%{!static:" + " ".join(spec_parts) + "}}\n" +
-            "\n"
-        )
-        specs_file = ctx.actions.write("gcc-link.specs", specs_content)
-        cc_args.add(cmd_args("-specs=", specs_file, delimiter = ""))
-        cxx_args.add(cmd_args("-specs=", specs_file, delimiter = ""))
+    sysroot_ld = stage.sysroot.project("lib64/ld-linux-x86-64.so.2")
+    specs_file = ctx.actions.declare_output("gcc-link.specs")
+    gen_cmd = cmd_args(ctx.attrs._gen_specs_tool[RunInfo])
+    gen_cmd.add("--ld-linux", sysroot_ld)
+    if stage.gcc_lib_dir:
+        gen_cmd.add("--gcc-lib-dir", stage.gcc_lib_dir)
+    if rpath_val:
+        gen_cmd.add("--rpath", rpath_val)
+    gen_cmd.add("--output", specs_file.as_output())
+    ctx.actions.run(gen_cmd, category = "gen_specs",
+                    identifier = ctx.label.name)
+
+    cc_args.add(cmd_args("-specs=", specs_file, delimiter = ""))
+    cxx_args.add(cmd_args("-specs=", specs_file, delimiter = ""))
 
     # ld.bfd resolves DT_NEEDED chains and needs to find libstdc++.so
     # when linking C programs against C++ shared libraries.  The GCC
@@ -218,6 +214,9 @@ buckos_bootstrap_toolchain = rule(
         "pkg_config": attrs.string(default = "pkg-config"),
         "extra_cflags": attrs.list(attrs.string(), default = []),
         "extra_ldflags": attrs.list(attrs.string(), default = []),
+        "_gen_specs_tool": attrs.default_only(
+            attrs.exec_dep(default = "//tools:gen_specs"),
+        ),
     },
 )
 
