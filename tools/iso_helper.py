@@ -16,7 +16,7 @@ import subprocess
 import sys
 import tempfile
 
-from _env import sanitize_global_env
+from _env import sanitize_global_env, sysroot_lib_paths
 
 
 def _resolve_path(path):
@@ -206,11 +206,23 @@ def _setup_efi(work, arch):
         "test", "all_video", "loadenv", "exfat", "ext2", "ntfs", "serial",
     ]
 
-    result = subprocess.run(
-        [grub_mkimage, "-o", efi_binary, "-O", grub_format,
-         "-p", "/boot/grub", "-c", early_cfg] + grub_modules,
-        capture_output=True,
-    )
+    # Find grub module directory — grub-mkimage defaults to /usr/lib64/grub/
+    # which doesn't exist when running from the seed's host-tools.  Locate
+    # the modules relative to grub-mkimage's installation.
+    grub_cmd = [grub_mkimage, "-o", efi_binary, "-O", grub_format,
+                "-p", "/boot/grub", "-c", early_cfg]
+    grub_bin_dir = os.path.dirname(os.path.realpath(grub_mkimage))
+    grub_prefix = os.path.dirname(grub_bin_dir)  # up from bin/
+    for candidate in (
+        os.path.join(grub_prefix, "lib64", "grub", grub_format),
+        os.path.join(grub_prefix, "lib", "grub", grub_format),
+    ):
+        if os.path.isdir(candidate):
+            grub_cmd.extend(["-d", candidate])
+            break
+    grub_cmd.extend(grub_modules)
+
+    result = subprocess.run(grub_cmd, capture_output=True)
     if result.returncode != 0:
         print(f"warning: {grub_mkimage} failed: {result.stderr.decode()!s:.200}",
               file=sys.stderr)
@@ -390,18 +402,30 @@ def _create_iso_xorriso(work, output, volume_label, boot_mode, search_dirs=None)
     return True
 
 
-def _create_iso_fallback(work, output, volume_label):
+def _create_iso_fallback(work, output, volume_label, boot_mode):
     """Create ISO using genisoimage or mkisofs as fallback."""
     tool = _find_tool("genisoimage") or _find_tool("mkisofs")
     if not tool:
         return False
 
-    cmd = [tool, "-o", output,
-           "-b", "isolinux/isolinux.bin",
-           "-c", "isolinux/boot.cat",
-           "-no-emul-boot", "-boot-load-size", "4",
-           "-boot-info-table",
-           "-V", volume_label, "-J", "-R", work]
+    has_bios = os.path.isfile(os.path.join(work, "isolinux", "isolinux.bin"))
+    has_efi = os.path.isfile(os.path.join(work, "boot", "efi.img"))
+
+    cmd = [tool, "-o", output]
+
+    if boot_mode in ("bios", "hybrid") and has_bios:
+        cmd += ["-b", "isolinux/isolinux.bin",
+                "-c", "isolinux/boot.cat",
+                "-no-emul-boot", "-boot-load-size", "4",
+                "-boot-info-table"]
+        if boot_mode == "hybrid" and has_efi:
+            cmd += ["-eltorito-alt-boot",
+                    "-e", "boot/efi.img",
+                    "-no-emul-boot"]
+    elif has_efi:
+        cmd += ["-e", "boot/efi.img", "-no-emul-boot"]
+
+    cmd += ["-V", volume_label, "-J", "-R", work]
     _run(cmd)
     return True
 
@@ -437,6 +461,8 @@ def main():
                         help="Allow host PATH (bootstrap escape hatch)")
     parser.add_argument("--hermetic-empty", action="store_true",
                         help="Start with empty PATH (populated by --path-prepend)")
+    parser.add_argument("--ld-linux", default=None,
+                        help="Buckos ld-linux path (disables posix_spawn)")
     parser.add_argument("--path-prepend", action="append", dest="path_prepend", default=[],
                         help="Directory to prepend to PATH (repeatable, resolved to absolute)")
     parser.add_argument("--syslinux-dir", action="append", dest="syslinux_dirs", default=[],
@@ -464,11 +490,20 @@ def main():
             _parent = os.path.dirname(_bp)
             for _ld in ("lib", "lib64"):
                 _d = os.path.join(_parent, _ld)
-                if os.path.isdir(_d):
+                if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")):
                     _lib_dirs.append(_d)
+                    _glibc_d = os.path.join(_d, "glibc")
+                    if os.path.isdir(_glibc_d):
+                        _lib_dirs.append(_glibc_d)
         if _lib_dirs:
             _existing = os.environ.get("LD_LIBRARY_PATH", "")
             os.environ["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (":" + _existing if _existing else "")
+        # glibc iconv needs GCONV_PATH for charset conversion (mformat)
+        for _bp in resolved:
+            _parent = os.path.dirname(_bp)
+            _gconv = os.path.join(_parent, "lib", "gconv")
+            if os.path.isdir(_gconv) and "GCONV_PATH" not in os.environ:
+                os.environ["GCONV_PATH"] = _gconv
         _py_paths = []
         for _bp in resolved:
             _parent = os.path.dirname(_bp)
@@ -496,11 +531,17 @@ def main():
             _parent = os.path.dirname(os.path.abspath(_bp))
             for _ld in ("lib", "lib64"):
                 _d = os.path.join(_parent, _ld)
-                if os.path.isdir(_d):
+                if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")):
                     _dep_lib_dirs.append(_d)
+                    _glibc_d = os.path.join(_d, "glibc")
+                    if os.path.isdir(_glibc_d):
+                        _dep_lib_dirs.append(_glibc_d)
         if _dep_lib_dirs:
             _existing = os.environ.get("LD_LIBRARY_PATH", "")
             os.environ["LD_LIBRARY_PATH"] = ":".join(_dep_lib_dirs) + (":" + _existing if _existing else "")
+
+    if args.ld_linux:
+        sysroot_lib_paths(args.ld_linux, os.environ)
 
     epoch = int(os.environ.get("SOURCE_DATE_EPOCH", "315576000"))
 
@@ -542,7 +583,7 @@ def main():
         # Create ISO
         print(f"Creating ISO image ({boot_mode} boot)...")
         if not _create_iso_xorriso(work, output, args.volume_label, boot_mode, syslinux_dirs):
-            if not _create_iso_fallback(work, output, args.volume_label):
+            if not _create_iso_fallback(work, output, args.volume_label, boot_mode):
                 print("error: no ISO creation tool found "
                       "(xorriso, genisoimage, or mkisofs required)",
                       file=sys.stderr)

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Unit tests for small helper utilities."""
+import io
 import os
 import shutil
 import stat
@@ -17,21 +18,26 @@ from initramfs_builder import _fix_lib64
 
 passed = 0
 failed = 0
+_output_lines = []
 
 
 def ok(msg):
     global passed
-    print(f"  PASS: {msg}")
+    _output_lines.append(f"  PASS: {msg}")
     passed += 1
 
 
 def fail(msg):
     global failed
-    print(f"  FAIL: {msg}")
+    _output_lines.append(f"  FAIL: {msg}")
     failed += 1
 
 
 def main():
+    _real_stdout = sys.stdout
+    _buf = io.StringIO()
+    sys.stdout = _buf
+
     # ----------------------------------------------------------------
     # is_elf / _is_elf tests
     # ----------------------------------------------------------------
@@ -328,7 +334,12 @@ def main():
             fail("one or both lib64 dirs not fixed")
 
     # -- Summary --
-    print(f"\n--- {passed} passed, {failed} failed ---")
+    sys.stdout = _real_stdout
+    if failed:
+        _real_stdout.write(_buf.getvalue())
+        for _line in _output_lines:
+            print(_line)
+        print(f"\n--- {passed} passed, {failed} failed ---")
     sys.exit(1 if failed else 0)
 
 

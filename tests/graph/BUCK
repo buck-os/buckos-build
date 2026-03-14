@@ -17,6 +17,7 @@
 #   buck2 bxl buckos//tests/graph/test_dedup.bxl:test_dedup
 #   buck2 bxl buckos//tests/graph/test_bootstrap_isolation.bxl:test_bootstrap_isolation
 #   buck2 bxl buckos//tests/graph/test_hermiticity.bxl:test_hermiticity
+#   buck2 bxl buckos//tests/graph/test_sources.bxl:test_sources
 #
 # Static analysis (no buck2 needed):
 #   python3 tests/graph/verify_package_completeness.py
@@ -107,5 +108,11 @@ export_file(
 export_file(
     name = "test_hermiticity.bxl",
     src = "test_hermiticity.bxl",
+    visibility = ["PUBLIC"],
+)
+
+export_file(
+    name = "test_sources.bxl",
+    src = "test_sources.bxl",
     visibility = ["PUBLIC"],
 )

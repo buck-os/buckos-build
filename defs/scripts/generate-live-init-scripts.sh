@@ -80,7 +80,8 @@ mountpoint -q /run || mount -t tmpfs tmpfs /run 2>/dev/null || true
 mountpoint -q /tmp || mount -t tmpfs tmpfs /tmp 2>/dev/null || true
 
 # Set hostname
-hostname buckos-live
+echo buckos-live > /etc/hostname
+command -v hostname >/dev/null 2>&1 && hostname buckos-live
 
 # Configure loopback
 ip link set lo up 2>/dev/null || ifconfig lo up 2>/dev/null

@@ -15,12 +15,14 @@ package(
         "//packages/linux/system/libs/utility/libffi:libffi",
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/graphics/rendering/wayland:wayland",
-        "//packages/linux/lang/vala:vala",
         # glib provides gio-2.0, glib-2.0, gobject-2.0
         "//packages/linux/dev-libs/glib:glib",
         # glib's transitive dependencies
         "//packages/linux/system/libs/utility/pcre2:pcre2",
         # GTK3 for the GUI
         "//packages/linux/desktop/gtk:gtk3",
+    ],
+    host_deps = [
+        "//packages/linux/lang/vala:vala",
     ],
 )

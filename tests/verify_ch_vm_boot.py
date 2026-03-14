@@ -12,11 +12,14 @@ Env vars from sh_test:
 
 import multiprocessing
 import os
+import re
 import selectors
 import signal
 import subprocess
 import sys
 import time
+
+_CLEAR_RE = re.compile(r"\x1bc|\x1b\[[0-9]*[JH]|\x1b\[\?[0-9;]*[hl]")
 
 
 def find_file(base, patterns):
@@ -121,13 +124,20 @@ def main():
 
     stderr = proc.stderr.read() if proc.stderr else ""
 
+    output = _CLEAR_RE.sub("", output)
+
     if boot_string in output:
+        tail = "\n".join(output.splitlines()[-10:])
+        print(tail)
+        print("---")
         print(f"PASS: found '{boot_string}' in VM output")
         sys.exit(0)
     else:
+        print(output)
+        if stderr:
+            print(f"stderr (last 500): {stderr[-500:]}")
+        print("---")
         print(f"FAIL: '{boot_string}' not found in VM output")
-        print(f"Last 2000 chars of stdout:\n{output[-2000:]}")
-        print(f"Last 500 chars of stderr:\n{stderr[-500:]}")
         sys.exit(1)
 
 

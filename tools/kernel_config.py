@@ -14,7 +14,7 @@ import shutil
 import subprocess
 import sys
 
-from _env import sanitize_global_env
+from _env import derive_lib_paths, sanitize_global_env, sysroot_lib_paths
 
 
 def main():
@@ -41,6 +41,8 @@ def main():
                         help="Set PATH to only these dirs (replaces host PATH, repeatable)")
     parser.add_argument("--hermetic-empty", action="store_true",
                         help="Start with empty PATH (populated by --path-prepend)")
+    parser.add_argument("--ld-linux", default=None,
+                        help="Buckos ld-linux path (disables posix_spawn)")
     parser.add_argument("--path-prepend", action="append", dest="path_prepend", default=[],
                         help="Directory to prepend to PATH (repeatable, resolved to absolute)")
     args = parser.parse_args()
@@ -63,6 +65,34 @@ def main():
         prepend = ":".join(os.path.abspath(p) for p in args.path_prepend if os.path.isdir(p))
         if prepend:
             os.environ["PATH"] = prepend + ":" + os.environ.get("PATH", "")
+
+    # Derive LD_LIBRARY_PATH and BISON_PKGDATADIR from bin dirs
+    if args.hermetic_path:
+        derive_lib_paths(args.hermetic_path, os.environ)
+    if args.path_prepend:
+        derive_lib_paths(args.path_prepend, os.environ)
+
+    if args.ld_linux:
+        sysroot_lib_paths(args.ld_linux, os.environ)
+
+    # Derive LIBRARY_PATH and C_INCLUDE_PATH from hermetic bin dirs so
+    # HOSTCC finds headers and libs (kconfig compiles host tools like fixdep).
+    _all_bin_dirs = (args.hermetic_path or []) + (args.path_prepend or [])
+    _lib_parts, _inc_parts = [], []
+    for bin_dir in _all_bin_dirs:
+        parent = os.path.dirname(os.path.abspath(bin_dir))
+        for ld in ("usr/lib64", "usr/lib", "lib64", "lib"):
+            d = os.path.join(parent, ld)
+            if os.path.isdir(d) and d not in _lib_parts:
+                _lib_parts.append(d)
+        for inc in ("usr/include", "include"):
+            d = os.path.join(parent, inc)
+            if os.path.isdir(d) and d not in _inc_parts:
+                _inc_parts.append(d)
+    if _lib_parts:
+        os.environ["LIBRARY_PATH"] = ":".join(_lib_parts)
+    if _inc_parts:
+        os.environ["C_INCLUDE_PATH"] = ":".join(_inc_parts)
 
     source_dir = os.path.abspath(args.source_dir)
     output_config = os.path.abspath(args.output)
@@ -97,9 +127,16 @@ def main():
     if cc_override:
         make_base.extend(cc_override)
     elif cc:
-        make_base.append(f"CC={cc}")
-        if hostcc:
-            make_base.append(f"HOSTCC={hostcc}")
+        # Kernel doesn't use --sysroot or -specs — bare compiler only.
+        # scripts/cc-version.sh quotes "$CC" so multi-word values fail.
+        bare_cc = cc.split()[0]
+        make_base.append(f"CC={bare_cc}")
+
+    # HOSTCC is independent of CC — always set when provided.
+    # Uses the native gcc (not cross-compiler) with --sysroot to avoid
+    # picking up incompatible host headers.
+    if hostcc:
+        make_base.append(f"HOSTCC={hostcc}")
 
     # Step 1: Generate base config
     if args.defconfig:
@@ -156,7 +193,7 @@ def _resolve_cc_path(cc_str):
     parts = cc_str.split()
     resolved = []
     for p in parts:
-        for prefix in ("--sysroot=", "-I", "-L"):
+        for prefix in ("--sysroot=", "-specs=", "-I", "-L"):
             if p.startswith(prefix):
                 path = p[len(prefix):]
                 if not os.path.isabs(path) and (path.startswith("buck-out") or os.path.exists(path)):
@@ -200,20 +237,8 @@ def _gcc14_workaround(build_dir, cc_bin):
     if major < 14:
         return []
 
-    # Find actual gcc path
-    cc_path = shutil.which(cc)
-    if not cc_path:
-        return []
-
-    print(f"GCC {major} detected, creating -std=gnu11 wrapper")
-    wrapper_dir = os.path.join(build_dir, ".cc-wrapper")
-    os.makedirs(wrapper_dir, exist_ok=True)
-    wrapper_path = os.path.join(wrapper_dir, "gcc")
-    with open(wrapper_path, "w") as f:
-        f.write(f"#!/bin/bash\nexec {cc_path} \"$@\" -std=gnu11\n")
-    os.chmod(wrapper_path, 0o755)
-
-    return [f"CC={wrapper_path}", f"HOSTCC={wrapper_path}"]
+    print(f"GCC {major} detected, adding -std=gnu11")
+    return [f"CC={cc} -std=gnu11"]
 
 
 def _run(cmd, cwd=None, env=None):

@@ -16,18 +16,19 @@ load("//defs:providers.bzl", "PackageInfo")
 load("//defs/rules:_common.bzl",
      "COMMON_PACKAGE_ATTRS",
      "add_flag_file", "build_package_tsets", "collect_dep_tsets",
-     "src_prepare",
+     "collect_host_path_children", "src_prepare",
      "write_bin_dirs", "write_cmake_prefix_paths", "write_compile_flags",
-     "write_lib_dirs", "write_link_flags", "write_pkg_config_paths",
+     "write_lib_dirs_with_hosts", "write_link_flags", "write_pkg_config_paths",
 )
-load("//defs:toolchain_helpers.bzl", "toolchain_env_args", "toolchain_extra_cflags", "toolchain_extra_ldflags", "toolchain_path_args")
+load("//defs:toolchain_helpers.bzl", "toolchain_env_args", "toolchain_extra_cflags", "toolchain_extra_ldflags", "toolchain_ld_linux_args", "toolchain_path_args")
 load("//defs:host_tools.bzl", "host_tool_path_args")
 
 # ── Phase helpers ─────────────────────────────────────────────────────
 
 def _cmake_configure(ctx, source, cflags_file = None, ldflags_file = None,
-                     pkg_config_file = None, path_file = None,
-                     prefix_path_file = None, lib_dirs_file = None):
+                     pkg_config_file = None,
+                     prefix_path_file = None, lib_dirs_file = None,
+                     bin_dirs_file = None):
     """Run cmake configure with toolchain env and dep flags.
 
     Dep flags are propagated via tset projection files — the cmake_helper
@@ -43,8 +44,10 @@ def _cmake_configure(ctx, source, cflags_file = None, ldflags_file = None,
     for env_arg in toolchain_env_args(ctx):
         cmd.add("--env", env_arg)
 
-    # Hermetic PATH from seed toolchain
+    # Hermetic PATH and ld-linux from seed toolchain
     for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
         cmd.add(arg)
 
     # Inject user-specified environment variables
@@ -54,6 +57,13 @@ def _cmake_configure(ctx, source, cflags_file = None, ldflags_file = None,
     # Source subdirectory (e.g. LLVM has CMakeLists.txt in llvm/)
     if ctx.attrs.source_subdir:
         cmd.add("--source-subdir", ctx.attrs.source_subdir)
+
+    # Cross-compilation: optionally tell cmake the target system so it
+    # doesn't try to run compiled test programs.  Disabled by default
+    # because CMAKE_CROSSCOMPILING changes too much behaviour (NATIVE
+    # sub-builds, find_package logic, utempter checks, etc.) for
+    # same-arch semi-cross builds.  CMake's try_run() fails gracefully
+    # when conftest crashes, so most packages work without this flag.
 
     # CMake arguments (use = form so argparse doesn't treat -D... as a flag)
     for arg in ctx.attrs.cmake_args:
@@ -81,9 +91,12 @@ def _cmake_configure(ctx, source, cflags_file = None, ldflags_file = None,
     add_flag_file(cmd, "--cflags-file", cflags_file)
     add_flag_file(cmd, "--ldflags-file", ldflags_file)
     add_flag_file(cmd, "--pkg-config-file", pkg_config_file)
-    add_flag_file(cmd, "--path-file", path_file)
+
     add_flag_file(cmd, "--prefix-path-file", prefix_path_file)
     add_flag_file(cmd, "--lib-dirs-file", lib_dirs_file)
+
+    # Dep bin dirs appended to PATH for *-config discovery scripts
+    add_flag_file(cmd, "--path-append-file", bin_dirs_file)
 
     # Add host_deps bin dirs to PATH
     for arg in host_tool_path_args(ctx):
@@ -104,7 +117,7 @@ def _cmake_configure(ctx, source, cflags_file = None, ldflags_file = None,
     ctx.actions.run(cmd, category = "cmake_configure", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
-def _src_compile(ctx, configured, source, path_file = None, lib_dirs_file = None):
+def _src_compile(ctx, configured, source, lib_dirs_file = None):
     """Run ninja in the cmake build tree."""
     output = ctx.actions.declare_output("built", dir = True)
     cmd = cmd_args(ctx.attrs._build_tool[RunInfo])
@@ -114,7 +127,7 @@ def _src_compile(ctx, configured, source, path_file = None, lib_dirs_file = None
 
     # Ensure source dir is available — cmake out-of-tree builds
     # reference source files by absolute path in build.ninja.
-    # Dep prefixes are materialised via tset projections (path_file,
+    # Dep prefixes are materialised via tset projections (lib_dirs_file,
     # lib_dirs_file) passed to add_flag_file below.
     cmd.add(cmd_args(hidden = source))
 
@@ -122,8 +135,10 @@ def _src_compile(ctx, configured, source, path_file = None, lib_dirs_file = None
     for env_arg in toolchain_env_args(ctx):
         cmd.add("--env", env_arg)
 
-    # Hermetic PATH from seed toolchain
+    # Hermetic PATH and ld-linux from seed toolchain
     for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
         cmd.add(arg)
 
     # Inject user-specified environment variables
@@ -133,7 +148,7 @@ def _src_compile(ctx, configured, source, path_file = None, lib_dirs_file = None
     # Dep bin dirs and lib dirs via tset projection files.
     # Build tools (moc, rcc, qtwaylandscanner, etc.) need shared libs
     # and executables from deps at runtime.
-    add_flag_file(cmd, "--path-file", path_file)
+
     add_flag_file(cmd, "--lib-dirs-file", lib_dirs_file)
 
     # Add host_deps bin dirs to PATH
@@ -146,7 +161,7 @@ def _src_compile(ctx, configured, source, path_file = None, lib_dirs_file = None
     ctx.actions.run(cmd, category = "cmake_compile", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
-def _src_install(ctx, built, source, path_file = None, lib_dirs_file = None):
+def _src_install(ctx, built, source, lib_dirs_file = None):
     """Run ninja install into the output prefix."""
     output = ctx.actions.declare_output("installed", dir = True)
     cmd = cmd_args(ctx.attrs._install_tool[RunInfo])
@@ -161,8 +176,10 @@ def _src_install(ctx, built, source, path_file = None, lib_dirs_file = None):
     for env_arg in toolchain_env_args(ctx):
         cmd.add("--env", env_arg)
 
-    # Hermetic PATH from seed toolchain
+    # Hermetic PATH and ld-linux from seed toolchain
     for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
         cmd.add(arg)
 
     # Inject user-specified environment variables
@@ -170,7 +187,7 @@ def _src_install(ctx, built, source, path_file = None, lib_dirs_file = None):
         cmd.add("--env", "{}={}".format(key, value))
 
     # Dep bin/lib dirs — install rules may run tools or need shared libs
-    add_flag_file(cmd, "--path-file", path_file)
+
     add_flag_file(cmd, "--lib-dirs-file", lib_dirs_file)
 
     # Add host_deps bin dirs to PATH
@@ -201,20 +218,21 @@ def _cmake_package_impl(ctx):
     cflags_file = write_compile_flags(ctx, dep_compile)
     ldflags_file = write_link_flags(ctx, dep_link)
     pkg_config_file = write_pkg_config_paths(ctx, dep_compile)
-    path_file = write_bin_dirs(ctx, dep_path)
     prefix_path_file = write_cmake_prefix_paths(ctx, dep_path)
-    lib_dirs_file = write_lib_dirs(ctx, dep_path)
+    host_path_children = collect_host_path_children(ctx)
+    lib_dirs_file = write_lib_dirs_with_hosts(ctx, dep_path, host_path_children)
+    bin_dirs_file = write_bin_dirs(ctx, dep_path)
 
     # Phase 3: cmake_configure
     configured = _cmake_configure(ctx, prepared, cflags_file, ldflags_file,
-                                  pkg_config_file, path_file,
-                                  prefix_path_file, lib_dirs_file)
+                                  pkg_config_file,
+                                  prefix_path_file, lib_dirs_file, bin_dirs_file)
 
     # Phase 4: src_compile (source passed as hidden input for cmake out-of-tree builds)
-    built = _src_compile(ctx, configured, prepared, path_file, lib_dirs_file)
+    built = _src_compile(ctx, configured, prepared, lib_dirs_file)
 
     # Phase 5: src_install
-    installed = _src_install(ctx, built, prepared, path_file, lib_dirs_file)
+    installed = _src_install(ctx, built, prepared, lib_dirs_file)
 
     # Build transitive sets
     compile_tset, link_tset, path_tset, runtime_tset = build_package_tsets(ctx, installed)

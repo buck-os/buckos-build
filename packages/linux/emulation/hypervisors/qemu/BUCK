@@ -55,6 +55,15 @@ package(
         "--sysconfdir=/etc",
         "--localstatedir=/var",
         "--libexecdir=/usr/lib/qemu",
+        # QEMU's configure detects the buckos CC triple prefix and enters
+        # cross-compilation mode, telling meson to find a separate build-
+        # machine compiler.  Point --host-cc at the gcc symlink on PATH
+        # so meson uses it as the native compiler.
+        "--host-cc=gcc",
+        # QEMU's ./configure ignores env CFLAGS — pass -std=gnu17 via
+        # --extra-cflags so meson includes it in build.ninja compile
+        # commands.  Prevents GCC 14 C23 header redirects (__isoc23_*).
+        "--extra-cflags=-std=gnu17",
         "--enable-kvm",
         "--enable-linux-aio",
         "--enable-linux-io-uring",
@@ -90,6 +99,15 @@ package(
     ],
     # snappy is C++ — meson's C link test needs -lstdc++ to resolve symbols
     extra_ldflags = ["-lstdc++"],
+    # QEMU's Makefile runs `ninja ... | cat` and relies on `bash -o pipefail`
+    # to propagate ninja failures.  build_helper.py overrides SHELL with
+    # buckos bash (no pipefail), so ninja failures are silently swallowed.
+    # Work around by invoking ninja directly in pre_build_cmds and letting
+    # make run as a no-op (everything already built by ninja).
+    pre_build_cmds = [
+        "ninja -C build -j$(nproc)",
+    ],
+    make_args = [],
     deps = [
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/dev-libs/python/packaging:packaging",
@@ -122,6 +140,9 @@ package(
         "//packages/linux/system/libs/crypto/openssl:openssl",
         "//packages/linux/system/libs/crypto/libgcrypt:libgcrypt",
     ],
+    host_deps = [
+        "//packages/linux/dev-tools/build-systems/ninja:ninja",
+    ],
     visibility = ["PUBLIC"],
 )
 
@@ -131,9 +152,8 @@ package(
 package(
     build_rule = "autotools",
     name = "qemu-guest-agent",
-    url = "https://download.qemu.org/qemu-9.1.0.tar.xz",
-    sha256 = "816b7022a8ba7c2ac30e2e0cf973e826f6bcc8505339603212c5ede8e94d7834",
     version = "9.1.0",
+    source = ":qemu-src",
     description = "QEMU Guest Agent for improved host-guest communication",
     homepage = "https://www.qemu.org/",
     license = "GPL-2.0",
@@ -158,9 +178,8 @@ package(
 package(
     build_rule = "autotools",
     name = "qemu-user",
-    url = "https://download.qemu.org/qemu-9.1.0.tar.xz",
-    sha256 = "816b7022a8ba7c2ac30e2e0cf973e826f6bcc8505339603212c5ede8e94d7834",
     version = "9.1.0",
+    source = ":qemu-src",
     description = "QEMU user-space emulation for running foreign binaries",
     homepage = "https://www.qemu.org/",
     license = "GPL-2.0",
@@ -189,9 +208,8 @@ package(
 package(
     build_rule = "autotools",
     name = "qemu-img",
-    url = "https://download.qemu.org/qemu-9.1.0.tar.xz",
-    sha256 = "816b7022a8ba7c2ac30e2e0cf973e826f6bcc8505339603212c5ede8e94d7834",
     version = "9.1.0",
+    source = ":qemu-src",
     description = "QEMU disk image utility (qemu-img, qemu-nbd)",
     homepage = "https://www.qemu.org/",
     license = "GPL-2.0",

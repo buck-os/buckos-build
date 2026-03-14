@@ -1,0 +1,34 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cmake",
+    name = "libarchive",
+    version = "3.7.7",
+    url = "https://github.com/libarchive/libarchive/releases/download/v3.7.7/libarchive-3.7.7.tar.xz",
+    sha256 = "879acd83c3399c7caaee73fe5f7418e06087ab2aaf40af3e99b9e29beb29faee",
+    description = "Multi-format archive and compression library",
+    homepage = "https://libarchive.org/",
+    license = "BSD-2-Clause",
+    configure_args = [
+        "-DENABLE_TEST=OFF",
+        "-DENABLE_TAR=ON",
+        "-DENABLE_CPIO=OFF",
+        "-DENABLE_CAT=OFF",
+        "-DENABLE_UNZIP=ON",
+        "-DENABLE_OPENSSL=OFF",
+        "-DENABLE_LZ4=OFF",
+        "-DENABLE_LIBB2=OFF",
+    ],
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/compression/bzip2:bzip2",
+        "//packages/linux/system/libs/compression/xz:xz",
+        "//packages/linux/system/libs/compression/zstd:zstd",
+    ],
+    # Create 'unzip' symlink to bsdunzip for compatibility
+    post_install_cmds = ["""
+        if [ -f "$DESTDIR/usr/bin/bsdunzip" ] && [ ! -e "$DESTDIR/usr/bin/unzip" ]; then
+            ln -sf bsdunzip "$DESTDIR/usr/bin/unzip"
+        fi
+    """],
+)

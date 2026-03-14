@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Unit tests for language-specific build helper utilities."""
+import io
 import os
 import sys
 import tempfile
@@ -17,17 +18,18 @@ from mozbuild_helper import _build_dep_env, _write_mozconfig, _resolve
 
 passed = 0
 failed = 0
+_output_lines = []
 
 
 def ok(msg):
     global passed
-    print(f"  PASS: {msg}")
+    _output_lines.append(f"  PASS: {msg}")
     passed += 1
 
 
 def fail(msg):
     global failed
-    print(f"  FAIL: {msg}")
+    _output_lines.append(f"  FAIL: {msg}")
     failed += 1
 
 
@@ -39,6 +41,10 @@ def check(condition, msg):
 
 
 def main():
+    _real_stdout = sys.stdout
+    _buf = io.StringIO()
+    sys.stdout = _buf
+
     saved_cwd = os.getcwd()
     tmpdir = tempfile.mkdtemp(prefix="test-lang-helpers-")
 
@@ -306,12 +312,10 @@ def main():
         check(os.path.join(dep_dir, "usr/share/pkgconfig") in pc_path,
               f"share/pkgconfig in PKG_CONFIG_PATH")
 
-        print("=== _build_dep_env: bin paths prepended to PATH ===")
+        print("=== _build_dep_env: dep bin dirs NOT added to PATH ===")
         path = env.get("PATH", "")
-        check(path.startswith(os.path.join(dep_dir, "usr/bin")),
-              f"usr/bin first in PATH: {path[:80]}")
-        check(path.endswith("/usr/bin"),
-              f"base_path at end of PATH: ...{path[-20:]}")
+        check(os.path.join(dep_dir, "usr/bin") not in path,
+              "dep usr/bin not in PATH (deps provide libs, not build tools)")
 
         print("=== _build_dep_env: LIBRARY_PATH set from lib dirs ===")
         lib_path = env.get("LIBRARY_PATH", "")
@@ -361,18 +365,20 @@ def main():
         check(env4["DEP_BASE_DIRS"] == empty_dep,
               "DEP_BASE_DIRS always set")
 
-        print("=== _build_dep_env: no base_path -> no host PATH leakage ===")
+        print("=== _build_dep_env: no base_path -> no PATH set ===")
         env5 = _build_dep_env([dep_dir], None, base_path=None)
-        path5 = env5.get("PATH", "")
-        # base_path=None falls back to "" — no host PATH leakage
-        # PATH should contain dep bin dirs and end with empty base_path
-        check(path5.endswith(":"),
-              f"no base_path -> PATH ends with empty base")
+        check("PATH" not in env5,
+              "no base_path and no dep bins -> no PATH set")
 
     finally:
         os.chdir(saved_cwd)
 
-    print(f"\n--- {passed} passed, {failed} failed ---")
+    sys.stdout = _real_stdout
+    if failed:
+        _real_stdout.write(_buf.getvalue())
+        for _line in _output_lines:
+            print(_line)
+        print(f"\n--- {passed} passed, {failed} failed ---")
     sys.exit(1 if failed else 0)
 
 

@@ -41,8 +41,10 @@ DESTDIR=$OUT make install
                 "//packages/linux/system/libs/data/jansson:jansson",
                 # "//packages/linux/core/numactl:numactl",
                 # TODO: not packaged yet,
-                "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
-                "//packages/linux/dev-tools/assemblers/nasm:nasm",
                 "//packages/linux/lang/python:python"
+    ],
+    host_deps = [
+        "//packages/linux/dev-tools/assemblers/nasm:nasm",
+        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
     ],
 )

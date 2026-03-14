@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Unit tests for vm_test_runner and disk_image_helper pure functions."""
 import argparse
+import io
 import os
 import sys
 import tempfile
@@ -14,21 +15,26 @@ from disk_image_helper import _parse_size, _parse_sgdisk_output, _build_debugfs_
 
 passed = 0
 failed = 0
+_output_lines = []
 
 
 def ok(msg):
     global passed
-    print(f"  PASS: {msg}")
+    _output_lines.append(f"  PASS: {msg}")
     passed += 1
 
 
 def fail(msg):
     global failed
-    print(f"  FAIL: {msg}")
+    _output_lines.append(f"  FAIL: {msg}")
     failed += 1
 
 
 def main():
+    _real_stdout = sys.stdout
+    _buf = io.StringIO()
+    sys.stdout = _buf
+
     # ----------------------------------------------------------------
     # parse_inject tests
     # ----------------------------------------------------------------
@@ -538,7 +544,12 @@ Number  Start (sector)    End (sector)  Size       Code  Name
         shutil.rmtree(tmpdir, ignore_errors=True)
 
     # -- Summary --
-    print(f"\n--- {passed} passed, {failed} failed ---")
+    sys.stdout = _real_stdout
+    if failed:
+        _real_stdout.write(_buf.getvalue())
+        for _line in _output_lines:
+            print(_line)
+        print(f"\n--- {passed} passed, {failed} failed ---")
     sys.exit(1 if failed else 0)
 
 

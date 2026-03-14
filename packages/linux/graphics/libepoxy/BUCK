@@ -13,6 +13,12 @@ package(
         "-Dtests=false",
         "-Ddocs=false",
     ],
+    # libepoxy's meson generates 'Requires.private: x11, ' with a trailing comma
+    # when EGL is enabled without a named EGL provider. pkg-config rejects empty
+    # package names, so strip any trailing commas from the generated .pc file.
+    post_install_cmds = [
+        "sed -i 's/Requires\\.private:.*,\\s*$/Requires.private: x11/' usr/lib64/pkgconfig/epoxy.pc",
+    ],
     deps = [
         "//packages/linux/desktop/mesa:mesa",
         "//packages/linux/graphics/xorg/libX11:libX11",

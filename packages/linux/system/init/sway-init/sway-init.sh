@@ -16,7 +16,8 @@ mountpoint -q /tmp     || mount -t tmpfs tmpfs /tmp
 mountpoint -q /run     || mount -t tmpfs tmpfs /run
 
 # Set hostname
-hostname buckos-live
+echo buckos-live > /etc/hostname
+command -v hostname >/dev/null 2>&1 && hostname buckos-live
 
 # Create XDG runtime directory
 export XDG_RUNTIME_DIR=/run/user/0

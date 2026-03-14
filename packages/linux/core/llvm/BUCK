@@ -1,41 +1,5 @@
 load("//defs:package.bzl", "package")
 
-# LLVM monorepo has CMakeLists.txt in the llvm/ subdirectory
-package(
-    build_rule = "cmake",
-    name = "llvm",
-    version = "21.1.6",
-    url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.6/llvm-project-21.1.6.src.tar.xz",
-    sha256 = "ae67086eb04bed7ca11ab880349b5f1ab6f50e1b88cda376eaf8a845b935762b",
-    description = "Low Level Virtual Machine - compiler infrastructure",
-    homepage = "https://llvm.org/",
-    license = "Apache-2.0 WITH LLVM-exception",
-    source_subdir = "llvm",
-    configure_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DLLVM_ENABLE_PROJECTS=clang",
-        "-DLLVM_ENABLE_RUNTIMES=",
-        "-DLLVM_BUILD_LLVM_DYLIB=ON",
-        "-DLLVM_LINK_LLVM_DYLIB=ON",
-        "-DLLVM_ENABLE_RTTI=ON",
-        "-DLLVM_ENABLE_FFI=ON",
-        "-DLLVM_ENABLE_ZLIB=ON",
-        "-DLLVM_ENABLE_ZSTD=OFF",
-        "-DLLVM_INCLUDE_BENCHMARKS=OFF",
-        "-DLLVM_INCLUDE_EXAMPLES=OFF",
-        "-DLLVM_INCLUDE_TESTS=OFF",
-        "-DLLVM_INCLUDE_DOCS=OFF",
-        "-DLLVM_TARGETS_TO_BUILD=AMDGPU;X86;AArch64;ARM;WebAssembly;BPF",
-        "-DLLVM_INSTALL_UTILS=ON",
-    ],
-    deps = [
-        "//packages/linux/system/terminal/ncurses:ncurses",
-        "//packages/linux/system/libs/data/libxml2:libxml2",
-        "//packages/linux/core/zlib:zlib",
-        "//packages/linux/system/libs/utility/libffi:libffi",
-    ],
-)
-
 # =============================================================================
 # LLVM Native - host tools build of LLVM, Clang, and LLD
 # =============================================================================
@@ -57,6 +21,7 @@ package(
     source_subdir = "llvm",
     configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_POSITION_INDEPENDENT_CODE=ON",
         "-DLLVM_ENABLE_PROJECTS=clang;lld",
         "-DLLVM_ENABLE_RUNTIMES=",
         "-DLLVM_BUILD_LLVM_DYLIB=ON",
@@ -71,6 +36,12 @@ package(
         "-DLLVM_INCLUDE_DOCS=OFF",
         "-DLLVM_TARGETS_TO_BUILD=AMDGPU;X86;AArch64;ARM;WebAssembly;BPF",
         "-DLLVM_INSTALL_UTILS=ON",
+    ],
+    # Strip static libraries post-install — everything links against
+    # libLLVM.so (LINK_LLVM_DYLIB=ON), so the .a files are dead weight
+    # and bloat the seed by ~2GB.
+    post_install_cmds = [
+        "find $OUT -name '*.a' -path '*/lib/*' -delete",
     ],
     deps = [
         "//packages/linux/system/terminal/ncurses:ncurses",

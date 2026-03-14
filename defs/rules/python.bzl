@@ -10,7 +10,7 @@ Four discrete cacheable actions:
 
 load("//defs:providers.bzl", "BuildToolchainInfo", "PackageInfo")
 load("//defs/rules:_common.bzl", "COMMON_PACKAGE_ATTRS", "build_package_tsets", "src_prepare")
-load("//defs:toolchain_helpers.bzl", "toolchain_env_args", "toolchain_path_args")
+load("//defs:toolchain_helpers.bzl", "toolchain_env_args", "toolchain_ld_linux_args", "toolchain_path_args")
 load("//defs:host_tools.bzl", "host_tool_path_args")
 
 # ── Phase helpers ─────────────────────────────────────────────────────
@@ -24,6 +24,8 @@ def _python_install(ctx, source):
 
     # Hermetic PATH from toolchain
     for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
         cmd.add(arg)
 
     # Add host_deps bin dirs to PATH
@@ -51,6 +53,9 @@ def _python_install(ctx, source):
         else:
             prefix = dep[DefaultInfo].default_outputs[0]
         cmd.add("--dep-prefix", prefix)
+
+    if ctx.attrs.use_setup_py:
+        cmd.add("--use-setup-py")
 
     for arg in ctx.attrs.pip_args:
         cmd.add("--pip-arg", arg)
@@ -101,6 +106,7 @@ python_package = rule(
     impl = _python_package_impl,
     attrs = COMMON_PACKAGE_ATTRS | {
         # Python-specific
+        "use_setup_py": attrs.bool(default = False),
         "pip_args": attrs.list(attrs.string(), default = []),
         "_python_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:python_helper"),

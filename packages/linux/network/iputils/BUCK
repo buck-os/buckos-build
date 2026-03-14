@@ -16,7 +16,10 @@ package(
         "tracepath": ("-DBUILD_TRACEPATH=true", "-DBUILD_TRACEPATH=false"),
     },
 
-    configure_args = [],
+    configure_args = [
+        "-DBUILD_HTML_MANS=false",
+        "-DBUILD_MANS=false",
+    ],
 
     deps = [
         "//packages/linux/system/libs/ipc/libcap:libcap",

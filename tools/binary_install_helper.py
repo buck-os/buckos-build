@@ -16,14 +16,14 @@ import stat
 import subprocess
 import sys
 
-from _env import clean_env, register_cleanup, sanitize_filenames, write_stub_script
+from _env import clean_env, file_prefix_map_flags, find_buckos_shell, portabilize_shebangs, register_cleanup, rewrite_shebangs, sanitize_filenames, write_stub_script
 
 
 def _resolve_flag_paths(value, project_root):
     """Resolve relative buck-out paths in compiler/linker flag strings."""
     parts = []
     for token in value.split():
-        for prefix in ("-I", "-L", "-Wl,-rpath-link,", "-Wl,-rpath,"):
+        for prefix in ("-I", "-L", "-Wl,-rpath-link,", "-Wl,-rpath,", "-specs="):
             if token.startswith(prefix) and len(token) > len(prefix):
                 path = token[len(prefix):]
                 if not os.path.isabs(path):
@@ -75,7 +75,7 @@ def main():
                 "_HERMETIC_EMPTY", "_PATH_PREPEND",
                 "CFLAGS", "LDFLAGS",
                 "CPPFLAGS", "PKG_CONFIG_PATH", "_DEP_BIN_PATHS", "DEP_BASE_DIRS",
-                "_DEP_LD_LIBRARY_PATH", "MAKE_JOBS"):
+                "_DEP_LD_LIBRARY_PATH", "_HOST_LIB_DIRS_FILE", "MAKE_JOBS"):
         val = os.environ.get(key)
         if val is not None:
             starlark_vars[key] = val
@@ -133,6 +133,7 @@ def main():
     for key in ("CFLAGS", "LDFLAGS", "CPPFLAGS"):
         if key in starlark_vars:
             env[key] = _resolve_flag_paths(starlark_vars[key], project_root)
+
     for key in ("PKG_CONFIG_PATH", "_DEP_BIN_PATHS", "DEP_BASE_DIRS",
                 "_DEP_LD_LIBRARY_PATH", "_HERMETIC_PATH", "_PATH_PREPEND"):
         if key in starlark_vars:
@@ -141,6 +142,12 @@ def main():
     for key in ("_ALLOW_HOST_PATH", "_HERMETIC_EMPTY"):
         if key in starlark_vars:
             env[key] = starlark_vars[key]
+
+    # Scrub absolute build paths from debug info and __FILE__ expansions.
+    pfm = " ".join(file_prefix_map_flags())
+    for var in ("CFLAGS", "CXXFLAGS"):
+        existing = env.get(var, "")
+        env[var] = (pfm + " " + existing).strip() if existing else pfm
 
     # Re-inject user env attrs
     for key, val in user_env.items():
@@ -159,11 +166,18 @@ def main():
             parent = os.path.dirname(bd)
             for ld in ("lib", "lib64"):
                 d = os.path.join(parent, ld)
-                if os.path.isdir(d):
+                if os.path.isdir(d) and not os.path.exists(os.path.join(d, "libc.so.6")):
                     ld_lib_parts.append(d)
         if ld_lib_parts:
             existing = env.get("LD_LIBRARY_PATH", "")
             env["LD_LIBRARY_PATH"] = ":".join(ld_lib_parts) + (":" + existing if existing else "")
+        # Auto-detect BISON_PKGDATADIR
+        if "BISON_PKGDATADIR" not in env:
+            for bd in hermetic_path.split(":"):
+                bison_data = os.path.join(os.path.dirname(bd), "share", "bison")
+                if os.path.isdir(bison_data):
+                    env["BISON_PKGDATADIR"] = bison_data
+                    break
         # Auto-detect PYTHONPATH
         py_paths = []
         for bd in hermetic_path.split(":"):
@@ -194,11 +208,18 @@ def main():
             parent = os.path.dirname(bd)
             for ld in ("lib", "lib64"):
                 d = os.path.join(parent, ld)
-                if os.path.isdir(d):
+                if os.path.isdir(d) and not os.path.exists(os.path.join(d, "libc.so.6")):
                     _pp_lib_dirs.append(d)
         if _pp_lib_dirs:
             existing = env.get("LD_LIBRARY_PATH", "")
             env["LD_LIBRARY_PATH"] = ":".join(_pp_lib_dirs) + (":" + existing if existing else "")
+        # Auto-detect BISON_PKGDATADIR from prepend dirs
+        if "BISON_PKGDATADIR" not in env:
+            for bd in path_prepend.split(":"):
+                bison_data = os.path.join(os.path.dirname(bd), "share", "bison")
+                if os.path.isdir(bison_data):
+                    env["BISON_PKGDATADIR"] = bison_data
+                    break
 
     # Translate _DEP_LD_LIBRARY_PATH → LD_LIBRARY_PATH for the subprocess.
     # The underscore-prefixed name prevents the dynamic linker from seeing
@@ -208,10 +229,37 @@ def main():
         existing = env.get("LD_LIBRARY_PATH", "")
         env["LD_LIBRARY_PATH"] = _dep_ld + (":" + existing if existing else "")
 
-    # Prepend dep bin paths to PATH
+    # Merge host tool transitive dep lib dirs into LD_LIBRARY_PATH.
+    # Host tool binaries cached in NativeLink CAS may have RUNPATH with
+    # absolute paths from the original build machine.  On a different
+    # machine those paths don't exist — LD_LIBRARY_PATH bridges the gap.
+    _host_lib_file = env.pop("_HOST_LIB_DIRS_FILE", None)
+    if _host_lib_file:
+        _host_lib_file = resolve(_host_lib_file)
+        if os.path.isfile(_host_lib_file):
+            _host_dirs = []
+            with open(_host_lib_file) as f:
+                for line in f:
+                    d = line.strip()
+                    if d:
+                        d = resolve(d) if not os.path.isabs(d) else d
+                        if os.path.isdir(d):
+                            _host_dirs.append(d)
+            if _host_dirs:
+                existing = env.get("LD_LIBRARY_PATH", "")
+                merged = ":".join(_host_dirs)
+                env["LD_LIBRARY_PATH"] = (merged + ":" + existing).rstrip(":") if existing else merged
+
+    # Prepend dep bin paths to PATH and derive tool data dirs
     dep_bin = env.get("_DEP_BIN_PATHS")
     if dep_bin:
         env["PATH"] = dep_bin + ":" + env.get("PATH", "")
+        # Derive BISON_PKGDATADIR so relocated bison finds its data files.
+        for _bp in dep_bin.split(":"):
+            _parent = os.path.dirname(_bp)
+            bison_data = os.path.join(_parent, "share", "bison")
+            if os.path.isdir(bison_data) and "BISON_PKGDATADIR" not in env:
+                env["BISON_PKGDATADIR"] = bison_data
 
     # Stub makeinfo if not on PATH
     workdir = env["WORKDIR"]
@@ -223,6 +271,29 @@ def main():
         stub_dir = os.path.join(workdir, ".stub-bin")
         write_stub_script(os.path.join(stub_dir, "makeinfo"))
         env["PATH"] = stub_dir + ":" + env.get("PATH", "")
+
+    # Create gcc/cc/g++/c++ symlinks so install scripts that invoke bare
+    # `gcc` (e.g. libcap _makenames, busybox gcc-version.sh) find the
+    # buckos compiler.  Mirrors build_helper.py:666-689.
+    _cc_val = env.get("CC", "")
+    if _cc_val:
+        _cc_bin = os.path.abspath(_cc_val.split()[0])
+        if os.path.isfile(_cc_bin):
+            _symlink_dir = os.path.join(workdir, "cc-symlinks")
+            os.makedirs(_symlink_dir, exist_ok=True)
+            for _name in ("gcc", "cc", "clang"):
+                _link = os.path.join(_symlink_dir, _name)
+                if not os.path.exists(_link):
+                    os.symlink(_cc_bin, _link)
+            _cxx_val = env.get("CXX", "")
+            if _cxx_val:
+                _cxx_bin = os.path.abspath(_cxx_val.split()[0])
+                if os.path.isfile(_cxx_bin):
+                    for _name in ("g++", "c++", "clang++"):
+                        _link = os.path.join(_symlink_dir, _name)
+                        if not os.path.exists(_link):
+                            os.symlink(_cxx_bin, _link)
+            env["PATH"] = _symlink_dir + ":" + env.get("PATH", "")
 
     # Copy source to writable directory
     if os.path.isdir(source_dir):
@@ -283,25 +354,27 @@ def main():
     else:
         cwd = project_root
 
-    # Override make's SHELL via MAKEFLAGS so any make invocation inside
-    # the install script uses buckos bash instead of /bin/sh (which
-    # doesn't exist on remote execution workers).
-    for _d in env.get("PATH", "").split(":"):
-        _bash = os.path.join(_d, "bash") if _d else ""
-        if _bash and os.path.isfile(_bash) and os.access(_bash, os.X_OK):
-            existing_flags = env.get("MAKEFLAGS", "")
-            if "SHELL=" not in existing_flags:
-                env["MAKEFLAGS"] = (existing_flags + " " if existing_flags else "") + f"SHELL={_bash}"
-            break
+    # Find buckos shell and use it for install script execution, make
+    # SHELL override, and shebang rewriting in the writable source copy.
+    _buckos_bash = find_buckos_shell(env)
+    if _buckos_bash:
+        env["SHELL"] = _buckos_bash
+        existing_flags = env.get("MAKEFLAGS", "")
+        if "SHELL=" not in existing_flags:
+            env["MAKEFLAGS"] = (existing_flags + " " if existing_flags else "") + f"SHELL={_buckos_bash}"
+        if os.path.isdir(source_dir):
+            rewrite_shebangs(writable_src, env)
 
     # Run install script via bash -e (matching original `source` semantics)
+    _bash_cmd = _buckos_bash or "bash"
     result = subprocess.run(
-        ["bash", "-e", install_script],
+        [_bash_cmd, "-e", install_script],
         env=env,
         cwd=cwd,
     )
 
     sanitize_filenames(output_dir, workdir)
+    portabilize_shebangs(output_dir)
 
     sys.exit(result.returncode)
 

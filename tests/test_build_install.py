@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Unit tests for build and install helper utilities."""
 import glob as _glob
+import io
 import os
 import shutil
 import sys
@@ -15,19 +16,29 @@ from build_helper import _rewrite_file, _can_unshare_net
 from install_helper import _resolve_env_paths as install_resolve
 from install_helper import _suppress_phony_rebuilds
 
+# Module-level stub cache for pickling support — pickle needs to
+# find the reconstructor function via importable module path.
+_stub_cache = {}
+
+
+def _make_stub(type_key):
+    return _stub_cache[type_key]()
+
+
 passed = 0
 failed = 0
+_output_lines = []
 
 
 def ok(msg):
     global passed
-    print(f"  PASS: {msg}")
+    _output_lines.append(f"  PASS: {msg}")
     passed += 1
 
 
 def fail(msg):
     global failed
-    print(f"  FAIL: {msg}")
+    _output_lines.append(f"  FAIL: {msg}")
     failed += 1
 
 
@@ -39,6 +50,10 @@ def check(condition, msg):
 
 
 def main():
+    _real_stdout = sys.stdout
+    _buf = io.StringIO()
+    sys.stdout = _buf
+
     saved_cwd = os.getcwd()
     tmpdir = tempfile.mkdtemp()
 
@@ -427,10 +442,6 @@ def main():
         # (mesonbuild is not importable — this is the whole point)
 
         # Inline the StubUnpickler logic — import it the same way build_helper does
-        _stub_cache = {}
-
-        def _make_stub(type_key):
-            return _stub_cache[type_key]()
 
         class _StubUnpickler(pickle.Unpickler):
             def find_class(self, module, name):
@@ -675,7 +686,12 @@ def main():
 
     # ── Summary ──────────────────────────────────────────────────────
 
-    print(f"\n--- {passed} passed, {failed} failed ---")
+    sys.stdout = _real_stdout
+    if failed:
+        _real_stdout.write(_buf.getvalue())
+        for _line in _output_lines:
+            print(_line)
+        print(f"\n--- {passed} passed, {failed} failed ---")
     sys.exit(1 if failed else 0)
 
 

@@ -29,11 +29,18 @@ package(
             "//packages/linux/graphics/xorg/xorgproto:xorgproto",
         ],
         "llvm": [
-            "//packages/linux/core/llvm:llvm",
+            "//packages/linux/core/llvm:llvm-native",
             "//packages/linux/core/libclc:libclc",
         ],
     },
+    pre_configure_cmds = [
+        # Mesa 26 ships all subproject .wrap files as empty placeholders (0 bytes).
+        # Meson rejects empty wrap files with "Missing sections". Remove them all;
+        # dependencies are provided via pkg-config from deps, not subproject downloads.
+        "rm -f subprojects/*.wrap",
+    ],
     configure_args = [
+        "--wrap-mode=nofallback",
         # Core features for mesa 26.0.0
         "-Degl=enabled",
         "-Dgbm=enabled",
@@ -45,6 +52,7 @@ package(
         "-Dgallium-rusticl=false",
     ],
     deps = [
+        "//packages/linux/graphics/libglvnd:libglvnd",
         "//packages/linux/system/init/eudev:eudev",
         "//packages/linux/system/libs/input/libinput:libinput",
         "//packages/linux/desktop/libdrm:libdrm",
@@ -56,11 +64,16 @@ package(
         "//packages/linux/system/libs/compression/zstd:zstd",
         "//packages/linux/dev-libs/elfutils:elfutils",
         "//packages/linux/dev-libs/spirv:spirv-tools",
+    ],
+    host_deps = [
         # Python modules needed for mesa code generation (mako templates + glsl compiler)
         "//packages/linux/dev-libs/python/mako:mako",
         "//packages/linux/dev-libs/python/markupsafe:markupsafe",
         "//packages/linux/dev-libs/python/packaging:packaging",
         "//packages/linux/dev-libs/python/pyyaml:pyyaml",
+        # GLSL parser needs bison/flex
+        "//packages/linux/dev-tools/dev-utils/bison:bison",
+        "//packages/linux/dev-tools/dev-utils/flex:flex",
     ],
 )
 

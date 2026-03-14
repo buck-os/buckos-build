@@ -1,0 +1,16 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cargo",
+    name = "cbindgen",
+    version = "0.29.1",
+    url = "https://github.com/mozilla/cbindgen/archive/refs/tags/v0.29.1.tar.gz",
+    sha256 = "86f9137b9fa4cc7139bc19b9f1d6cf6c989244c69276182b3a93a8cbcabd830a",
+    description = "Tool to generate C bindings from Rust code",
+    homepage = "https://github.com/mozilla/cbindgen",
+    license = "MPL-2.0",
+    bins = ["cbindgen"],
+    host_deps = [
+        "//packages/linux/lang/rust:rust",
+    ],
+)

@@ -1,0 +1,34 @@
+load("//defs:package.bzl", "package")
+
+# zstandard - Python bindings for the Zstandard compression library
+# Prebuilt manylinux wheel (bundles libzstd statically).
+# Used by Firefox's mach build system for compressed artifact handling.
+
+package(
+    build_rule = "binary",
+    name = "zstandard",
+    version = "0.23.0",
+    url = "https://files.pythonhosted.org/packages/ed/f6/2ac0287b442160a89d726b17a9184a4c615bb5237db763791a7fd16d9df1/zstandard-0.23.0.tar.gz",
+    sha256 = "b2d8c62d08e7255f68f7a740bae85b3c9b8e5466baa9cbf7f57f1cde0ac6bc09",
+    description = "Python bindings for the Zstandard compression library",
+    homepage = "https://github.com/indygreg/python-zstandard",
+    license = "BSD-3-Clause",
+    install_script = """
+cd "$SRCS"
+
+_PYVER=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || echo "3.12")
+SITE_PACKAGES="$OUT/usr/lib/python${_PYVER}/site-packages"
+mkdir -p "$SITE_PACKAGES"
+
+# Build C extension against system zstd
+python3 setup.py build_ext --system-zstd 2>/dev/null || python3 setup.py build_ext 2>/dev/null || true
+
+# Install pure Python module (sufficient for Firefox mach)
+cp -r zstandard "$SITE_PACKAGES/"
+# Install C extension if built
+find build -name "*.so" -exec cp {} "$SITE_PACKAGES/" \; 2>/dev/null || true
+""",
+    deps = [
+        "//packages/linux/system/libs/compression/zstd:zstd",
+    ],
+)

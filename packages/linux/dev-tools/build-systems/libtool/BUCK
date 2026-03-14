@@ -40,10 +40,10 @@ package(
         # libltdl/Makefile.am with fresh timestamps during build, triggering
         # automake which isn't available
         make -j${MAKEOPTS:-$(nproc)} \
-            ACLOCAL=true AUTOMAKE=true AUTOCONF=true AUTOHEADER=true MAKEINFO=true
+            ACLOCAL=true AUTOMAKE=true AUTOCONF=true AUTOHEADER=true MAKEINFO=true HELP2MAN=true
 
         make DESTDIR="$OUT" install \
-            ACLOCAL=true AUTOMAKE=true AUTOCONF=true AUTOHEADER=true MAKEINFO=true
+            ACLOCAL=true AUTOMAKE=true AUTOCONF=true AUTOHEADER=true MAKEINFO=true HELP2MAN=true
 
         # Create wrapper scripts that set the correct data directory
         # libtoolize has hardcoded paths that need to be overridden
@@ -97,6 +97,11 @@ ACLOCAL_DIR="${SCRIPT_DIR}/../share/aclocal"
 # libtoolize uses _lt_pkgdatadir to override the master repository location
 export _lt_pkgdatadir="$SHARE_DIR"
 export aclocaldir="$ACLOCAL_DIR"
+# Override configure-baked absolute paths to sed/grep with PATH lookups
+export SED="sed"
+export GREP="grep"
+export EGREP="grep -E"
+export FGREP="grep -F"
 exec "$SCRIPT_DIR/libtoolize.real" "$@"
 WRAPPER_EOF
             chmod +x "$BINDIR/libtoolize"
@@ -111,6 +116,11 @@ WRAPPER_EOF
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SHARE_DIR="${SCRIPT_DIR}/../share/libtool"
 export pkgdatadir="$SHARE_DIR"
+# Override configure-baked absolute paths to sed/grep with PATH lookups
+export SED="sed"
+export GREP="grep"
+export EGREP="grep -E"
+export FGREP="grep -F"
 exec "$SCRIPT_DIR/libtool.real" "$@"
 WRAPPER_EOF
             chmod +x "$BINDIR/libtool"

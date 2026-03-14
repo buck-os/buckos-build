@@ -8,8 +8,8 @@ package(
     build_rule = "meson",
     name = "dtc",
     version = "1.7.2",
-    url = "https://git.kernel.org/pub/scm/utils/dtc/dtc.git/snapshot/dtc-1.7.2.tar.gz",
-    sha256 = "8f1486962f093f28a2f79f01c1fd82f144ef640ceabe555536d43362212ceb7c",
+    url = "https://cdn.kernel.org/pub/software/utils/dtc/dtc-1.7.2.tar.gz",
+    sha256 = "f200e5ebd7afd20d4b3804a3085af0870fcf3c194f8d7f0f6985cf8bbb4ac0f4",
     description = "Device Tree Compiler and libfdt library",
     homepage = "https://git.kernel.org/pub/scm/utils/dtc/dtc.git",
     license = "GPL-2.0-or-later AND BSD-2-Clause",
@@ -21,8 +21,9 @@ package(
         "-Dstatic-build=false",
         "-Dtests=false",
     ],
-    deps = [
-        "//packages/linux/dev-tools/dev-utils/flex:flex",
+    deps = [],
+    host_deps = [
         "//packages/linux/dev-tools/dev-utils/bison:bison",
+        "//packages/linux/dev-tools/dev-utils/flex:flex",
     ],
 )

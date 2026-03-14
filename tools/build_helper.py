@@ -15,7 +15,7 @@ import shutil
 import subprocess
 import sys
 
-from _env import clean_env, derive_lib_paths, filter_path_flags, register_cleanup, sanitize_filenames, write_pkg_config_wrapper
+from _env import clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, find_buckos_shell, find_dep_python3, register_cleanup, rewrite_shebangs, sanitize_filenames, sysroot_lib_paths, write_pkg_config_wrapper
 
 
 def _can_unshare_net():
@@ -56,7 +56,7 @@ def _resolve_env_paths(value):
                 resolved.append(p)
         return ":".join(resolved)
 
-    _FLAG_PREFIXES = ["-I", "-L", "-Wl,-rpath-link,", "-Wl,-rpath,"]
+    _FLAG_PREFIXES = ["-I", "-L", "-Wl,-rpath-link,", "-Wl,-rpath,", "-specs="]
 
     parts = []
     for token in value.split():
@@ -174,6 +174,8 @@ def main():
                         help="Allow host PATH (bootstrap escape hatch)")
     parser.add_argument("--hermetic-empty", action="store_true",
                         help="Start with empty PATH (populated by --path-prepend)")
+    parser.add_argument("--ld-linux", default=None,
+                        help="Buckos ld-linux path (disables posix_spawn)")
     parser.add_argument("--cflags-file", default=None,
                         help="File with CFLAGS (one per line, from tset projection)")
     parser.add_argument("--ldflags-file", default=None,
@@ -184,6 +186,8 @@ def main():
                         help="File with PATH dirs to prepend (one per line, from tset projection)")
     parser.add_argument("--lib-dirs-file", default=None,
                         help="File with lib dirs for LD_LIBRARY_PATH (one per line, from tset projection)")
+    parser.add_argument("--path-append-file", default=None,
+                        help="File with dep bin dirs to append to PATH (one per line, from tset projection)")
     args = parser.parse_args()
 
     # Read flag files early — tset-propagated values are base defaults.
@@ -198,6 +202,7 @@ def main():
     file_pkg_config = [p for p in _read_flag_file(args.pkg_config_file) if os.path.isdir(os.path.abspath(p))]
     file_path_dirs = _read_flag_file(args.path_file)
     file_lib_dirs = _read_flag_file(args.lib_dirs_file)
+    file_path_append_dirs = _read_flag_file(args.path_append_file)
 
     env = clean_env()
 
@@ -364,62 +369,52 @@ def main():
     # rewrite above skips it due to UnicodeDecodeError.  Unpickle, patch
     # path attributes, and re-pickle so `meson install` finds files at
     # the new location.
+    #
+    # install.dat contains serialised mesonbuild.* objects.  We must use
+    # the REAL mesonbuild classes (not stubs) so the re-pickled file is
+    # loadable by meson's safe unpickler.  Find mesonbuild from the
+    # hermetic PATH's Python site-packages and add it to sys.path
+    # temporarily.
+    import pickle as _pickle
+
+    def _patch_pickle_paths(obj, old, new):
+        """Recursively replace old prefix with new in string attributes."""
+        if isinstance(obj, str):
+            return obj.replace(old, new) if old in obj else obj
+        if isinstance(obj, list):
+            return [_patch_pickle_paths(item, old, new) for item in obj]
+        if isinstance(obj, tuple):
+            return tuple(_patch_pickle_paths(item, old, new) for item in obj)
+        if hasattr(obj, "__dict__"):
+            for k, v in obj.__dict__.items():
+                patched = _patch_pickle_paths(v, old, new)
+                if patched is not v:
+                    setattr(obj, k, patched)
+        return obj
+
+    # Locate mesonbuild from hermetic path or path-prepend dirs
+    _meson_added_paths = []
+    for _bp in list(args.hermetic_path) + list(args.path_prepend):
+        _parent = os.path.dirname(os.path.abspath(_bp))
+        for _pattern in ("lib/python*/site-packages", "lib64/python*/site-packages"):
+            for _sp in _glob.glob(os.path.join(_parent, _pattern)):
+                if os.path.isdir(os.path.join(_sp, "mesonbuild")):
+                    if _sp not in sys.path:
+                        sys.path.insert(0, _sp)
+                        _meson_added_paths.append(_sp)
+
     _install_dat = os.path.join(output_dir, "meson-private", "install.dat")
     if os.path.isfile(_install_dat):
-        import pickle as _pickle
-
-        class _StubUnpickler(_pickle.Unpickler):
-            """Unpickler that stubs missing modules (e.g. mesonbuild).
-
-            install.dat contains serialised mesonbuild.* objects but the
-            build_helper pex doesn't ship mesonbuild.  We only need to
-            walk __dict__ and rewrite strings, so a generic stub class
-            that preserves attributes is sufficient.
-            """
-            def find_class(self, module, name):
-                try:
-                    return super().find_class(module, name)
-                except (ModuleNotFoundError, AttributeError):
-                    # Return a stub that accepts arbitrary pickle state
-                    type_key = f"{module}.{name}"
-                    if type_key not in _stub_cache:
-                        class _Stub:
-                            def __reduce__(self):
-                                return (_make_stub, (type_key,), self.__dict__)
-                            def __setstate__(self, state):
-                                if isinstance(state, dict):
-                                    self.__dict__.update(state)
-                        _Stub.__qualname__ = _Stub.__name__ = name
-                        _Stub.__module__ = module
-                        _stub_cache[type_key] = _Stub
-                    return _stub_cache[type_key]
-
-        _stub_cache = {}
-
-        def _make_stub(type_key):
-            return _stub_cache[type_key]()
-
-        stat = os.stat(_install_dat)
-        with open(_install_dat, "rb") as f:
-            _idata = _StubUnpickler(f).load()
-        def _patch_paths(obj, old, new):
-            """Recursively replace old prefix with new in string attributes."""
-            if isinstance(obj, str):
-                return obj.replace(old, new) if old in obj else obj
-            if isinstance(obj, list):
-                return [_patch_paths(item, old, new) for item in obj]
-            if isinstance(obj, tuple):
-                return tuple(_patch_paths(item, old, new) for item in obj)
-            if hasattr(obj, "__dict__"):
-                for k, v in obj.__dict__.items():
-                    patched = _patch_paths(v, old, new)
-                    if patched is not v:
-                        setattr(obj, k, patched)
-            return obj
-        _patch_paths(_idata, build_dir, output_dir)
-        with open(_install_dat, "wb") as f:
-            _pickle.dump(_idata, f)
-        os.utime(_install_dat, (stat.st_atime, stat.st_mtime))
+        try:
+            _dat_stat = os.stat(_install_dat)
+            with open(_install_dat, "rb") as f:
+                _idata = _pickle.load(f)
+            _patch_pickle_paths(_idata, build_dir, output_dir)
+            with open(_install_dat, "wb") as f:
+                _pickle.dump(_idata, f)
+            os.utime(_install_dat, (_dat_stat.st_atime, _dat_stat.st_mtime))
+        except Exception as _e:
+            print(f"warning: could not rewrite install.dat: {_e}", file=sys.stderr)
 
     # Detect and rewrite stale cross-machine paths.  When Buck2 restores
     # cached configure outputs from a different machine, files contain the
@@ -505,15 +500,21 @@ def main():
         # Also fix the meson install.dat pickle which the text rewrite
         # skips (binary).  Apply both stale_root→current_root and
         # build_dir→output_dir so paths resolve to the new location.
+        # Uses real mesonbuild classes (added to sys.path earlier) so
+        # the re-pickled file is loadable by meson's safe unpickler.
         if os.path.isfile(_install_dat):
-            stat = os.stat(_install_dat)
-            with open(_install_dat, "rb") as f:
-                _idata = _StubUnpickler(f).load()
-            _patch_paths(_idata, _stale_root, _current_root)
-            _patch_paths(_idata, build_dir, output_dir)
-            with open(_install_dat, "wb") as f:
-                _pickle.dump(_idata, f)
-            os.utime(_install_dat, (stat.st_atime, stat.st_mtime))
+            try:
+                _dat_stat2 = os.stat(_install_dat)
+                with open(_install_dat, "rb") as f:
+                    _idata = _pickle.load(f)
+                _patch_pickle_paths(_idata, _stale_root, _current_root)
+                _patch_pickle_paths(_idata, build_dir, output_dir)
+                with open(_install_dat, "wb") as f:
+                    _pickle.dump(_idata, f)
+                os.utime(_install_dat, (_dat_stat2.st_atime, _dat_stat2.st_mtime))
+            except Exception as _e:
+                print(f"warning: could not rewrite install.dat (stale root): {_e}",
+                      file=sys.stderr)
 
     # Reset all file timestamps to a single fixed instant so make doesn't
     # try to regenerate autotools/cmake/meson outputs.  The copytree
@@ -594,15 +595,17 @@ def main():
     # survives into subprocesses (e.g. Python test-imports during compile).
     _patch_runshared(output_dir)
 
-    # Create a pkg-config wrapper that always passes --define-prefix so
-    # .pc files in Buck2 dep directories resolve paths correctly.
-    wrapper_dir = write_pkg_config_wrapper(os.path.join(output_dir, ".pkgconf-wrapper"))
-
     # Apply extra environment variables first (toolchain flags like -march).
     for entry in args.extra_env:
         key, _, value = entry.partition("=")
         if key:
             env[key] = _resolve_env_paths(value)
+
+    # Scrub absolute build paths from debug info and __FILE__ expansions.
+    pfm = " ".join(file_prefix_map_flags())
+    for var in ("CFLAGS", "CXXFLAGS"):
+        existing = env.get(var, "")
+        env[var] = (pfm + " " + existing).strip() if existing else pfm
 
     # Prepend flag file values — dep-provided -I/-L flags must appear before
     # toolchain flags so headers/libs from deps are found.  Extract -I flags
@@ -629,16 +632,23 @@ def main():
         env["PATH"] = ":".join(os.path.abspath(p) for p in args.hermetic_path)
         # Derive LD_LIBRARY_PATH from hermetic bin dirs so dynamically
         # linked tools (e.g. cross-ar needing libzstd) find their libs.
-        _lib_dirs = []
-        for _bp in args.hermetic_path:
-            _parent = os.path.dirname(os.path.abspath(_bp))
-            for _ld in ("lib", "lib64"):
-                _d = os.path.join(_parent, _ld)
-                if os.path.isdir(_d):
-                    _lib_dirs.append(_d)
-        if _lib_dirs:
-            _existing = env.get("LD_LIBRARY_PATH", "")
-            env["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (":" + _existing if _existing else "")
+        # With sysroot ld-linux and per-package RPATH, buckos binaries
+        # find deps via RPATH.  Skip LD_LIBRARY_PATH to avoid
+        # contaminating host tools.
+        if not args.ld_linux:
+            _lib_dirs = []
+            for _bp in args.hermetic_path:
+                _parent = os.path.dirname(os.path.abspath(_bp))
+                for _ld in ("lib", "lib64"):
+                    _d = os.path.join(_parent, _ld)
+                    if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")):
+                        _lib_dirs.append(_d)
+                        _glibc_d = os.path.join(_d, "glibc")
+                        if os.path.isdir(_glibc_d):
+                            _lib_dirs.append(_glibc_d)
+            if _lib_dirs:
+                _existing = env.get("LD_LIBRARY_PATH", "")
+                env["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (":" + _existing if _existing else "")
     elif args.hermetic_empty:
         env["PATH"] = ""
     elif args.allow_host_path:
@@ -653,33 +663,84 @@ def main():
         if prepend:
             env["PATH"] = prepend + ":" + env.get("PATH", "")
 
-    # Merge tset-provided lib dirs into LD_LIBRARY_PATH so dynamically
-    # linked dep libraries (e.g. libbz2.so, libexpat.so) are found at
-    # build time.  Scoped to the subprocess env dict — never poisons the
-    # host Python process (fixes pyexpat ABI mismatch with buckos expat).
-    if file_lib_dirs:
+    # Create gcc/cc/g++ symlinks so scripts that invoke bare `gcc`
+    # (e.g. busybox scripts/gcc-version.sh) find the buckos compiler.
+    # These are real symlinks, not wrapper scripts — no recursion risk.
+    # Use scratch dir (not build_dir which is a buck2 input artifact).
+    _cc_val = env.get("CC", "")
+    if _cc_val:
+        _cc_bin = os.path.abspath(_cc_val.split()[0])
+        if os.path.isfile(_cc_bin):
+            _scratch = env.get("BUCK_SCRATCH_PATH", env.get("TMPDIR", "/tmp"))
+            _symlink_dir = os.path.join(os.path.abspath(_scratch), "cc-symlinks")
+            os.makedirs(_symlink_dir, exist_ok=True)
+            for _name in ("gcc", "cc", "clang"):
+                _link = os.path.join(_symlink_dir, _name)
+                if not os.path.exists(_link):
+                    os.symlink(_cc_bin, _link)
+            _cxx_val = env.get("CXX", "")
+            if _cxx_val:
+                _cxx_bin = os.path.abspath(_cxx_val.split()[0])
+                if os.path.isfile(_cxx_bin):
+                    for _name in ("g++", "c++", "clang++"):
+                        _link = os.path.join(_symlink_dir, _name)
+                        if not os.path.exists(_link):
+                            os.symlink(_cxx_bin, _link)
+            env["PATH"] = _symlink_dir + ":" + env.get("PATH", "")
+
+    # Append dep bin dirs for *-config discovery scripts (gpg-error-config,
+    # curl-config, etc.).  Appended so seed/host tools take priority.
+    if file_path_append_dirs:
+        append = ":".join(os.path.abspath(p) for p in file_path_append_dirs if os.path.isdir(p))
+        if append:
+            env["PATH"] = env.get("PATH", "") + ":" + append
+
+    # Merge tset-provided lib dirs into LD_LIBRARY_PATH when no sysroot
+    # ld-linux.  With sysroot ld-linux, buckos binaries find deps via
+    # RPATH.  Packages whose build tools need non-sysroot libs at runtime
+    # should add those deps as host_deps (puts lib dirs in path-prepend
+    # → derive_lib_paths → LD_LIBRARY_PATH).
+    if file_lib_dirs and not args.ld_linux:
         resolved = [os.path.abspath(d) for d in file_lib_dirs if os.path.isdir(d)]
         if resolved:
             existing = env.get("LD_LIBRARY_PATH", "")
             merged = ":".join(resolved)
             env["LD_LIBRARY_PATH"] = (merged + ":" + existing).rstrip(":") if existing else merged
 
-    # Derive LD_LIBRARY_PATH from path-prepend dirs so host tools with
-    # shared libraries (e.g. python → libpython3.so) can execute.
+    # Derive GCONV_PATH, BISON_PKGDATADIR, GETTEXTDATADIRS, and
+    # LD_LIBRARY_PATH from hermetic and path-prepend dirs.  Host_dep
+    # tools (gdk-pixbuf-pixdata, glib-compile-resources, etc.) use
+    # the sysroot ld-linux but need LD_LIBRARY_PATH for non-sysroot
+    # package libs (e.g. libglib-2.0.so from the glib package).
+    # derive_lib_paths excludes dirs containing libc.so.6 to prevent
+    # loading buckos glibc via LD_LIBRARY_PATH.
+    if args.hermetic_path:
+        derive_lib_paths(args.hermetic_path, env)
     derive_lib_paths(all_path_prepend, env)
 
     # Auto-detect Python site-packages from dep prefixes so build-time
     # Python modules (e.g. mako for mesa) are found by custom generators.
-    _path_sources = list(args.hermetic_path) + list(all_path_prepend)
-    if _path_sources:
+    _path_sources = list(args.hermetic_path) + list(all_path_prepend) + list(file_path_append_dirs)
+    if _path_sources or file_lib_dirs:
         python_paths = []
+        _seen_sp = set()
         for bin_dir in _path_sources:
             usr_dir = os.path.dirname(os.path.abspath(bin_dir))
             for pattern in ("lib/python*/site-packages", "lib/python*/dist-packages",
                             "lib64/python*/site-packages", "lib64/python*/dist-packages"):
                 for sp in _glob.glob(os.path.join(usr_dir, pattern)):
-                    if os.path.isdir(sp):
+                    if os.path.isdir(sp) and sp not in _seen_sp:
                         python_paths.append(sp)
+                        _seen_sp.add(sp)
+        # Also scan tset-provided lib dirs — deps without bin dirs (e.g.
+        # python packaging) only expose lib dirs via the tset.
+        for lib_dir in file_lib_dirs:
+            abs_ld = os.path.abspath(lib_dir)
+            for pattern in ("python*/site-packages", "python*/dist-packages"):
+                for sp in _glob.glob(os.path.join(abs_ld, pattern)):
+                    if os.path.isdir(sp) and sp not in _seen_sp:
+                        python_paths.append(sp)
+                        _seen_sp.add(sp)
         if python_paths:
             existing = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = ":".join(python_paths) + (":" + existing if existing else "")
@@ -708,6 +769,9 @@ def main():
             _candidate = os.path.join(_abs_bp, "meson")
             if os.path.isfile(_candidate):
                 _dep_meson = _candidate
+    if _dep_python3:
+        env.setdefault("PYTHON", _dep_python3)
+        env.setdefault("PYTHON3", _dep_python3)
     _host_python = shutil.which("python3") if _dep_python3 else None
     if _dep_python3 and _host_python:
         _dep_python3_abs = os.path.abspath(_dep_python3)
@@ -746,10 +810,19 @@ def main():
                 with open(_nf, "r") as f:
                     _nf_content = f.read()
                 _nf_orig = _nf_content
-                # Replace host python references (skip if it would corrupt
-                # an already-correct dep python path via substring match)
+                # Replace host python references.  Use regex with
+                # lookbehind and lookahead to avoid corrupting longer
+                # paths that contain the host python as a substring —
+                # e.g. .../installed/usr/bin/python3 contains
+                # /usr/bin/python3.  Only match when preceded by
+                # whitespace/= (path start) and not followed by path
+                # continuation chars.
                 if not _skip_host_replace and _host_python in _nf_content:
-                    _nf_content = _nf_content.replace(_host_python, _dep_python3_abs)
+                    _nf_content = re.sub(
+                        r'(?<=[\s=])' + re.escape(_host_python) + r'(?![.\w/])',
+                        _dep_python3_abs,
+                        _nf_content,
+                    )
                 # Replace pyvenv python/meson references
                 for _old, _new in _pyvenv_replacements:
                     if _old in _nf_content:
@@ -761,17 +834,31 @@ def main():
             except (UnicodeDecodeError, PermissionError, FileNotFoundError):
                 pass
 
+    # Create a pkg-config wrapper that always passes --define-prefix so
+    # .pc files in Buck2 dep directories resolve paths correctly.
+    wrapper_dir = write_pkg_config_wrapper(os.path.join(output_dir, ".pkgconf-wrapper"), python=find_dep_python3(env))
+
     # Prepend pkg-config wrapper to PATH (after hermetic/prepend logic
     # so the wrapper is always available regardless of PATH mode)
     env["PATH"] = wrapper_dir + ":" + env.get("PATH", "")
 
-    # Find buckos bash for shell=True subprocesses (pre-cmds).
-    _buckos_bash = None
-    for _d in env.get("PATH", "").split(":"):
-        _bash = os.path.join(_d, "bash") if _d else ""
-        if _bash and os.path.isfile(_bash) and os.access(_bash, os.X_OK):
-            _buckos_bash = _bash
-            break
+    # When buckos ld-linux is available, add sysroot lib dirs to
+    # LD_LIBRARY_PATH and disable posix_spawn for padded interpreters.
+    if args.ld_linux:
+        sysroot_lib_paths(args.ld_linux, env)
+
+    # Find buckos shell for pre-cmds and make SHELL override.
+    _buckos_bash = find_buckos_shell(env)
+    if _buckos_bash:
+        env["SHELL"] = _buckos_bash
+        # Rewrite shebangs in the build tree so scripts invoked by
+        # make recipes use buckos shell instead of host /bin/sh.
+        rewrite_shebangs(output_dir, env)
+
+    # Set HOSTCC from CC so Kconfig (busybox, kernel) builds don't
+    # search PATH for bare `gcc`.  HOSTCC ?= gcc in Makefiles.
+    if "CC" in env and "HOSTCC" not in env:
+        env["HOSTCC"] = env["CC"]
 
     # Run pre-build commands (e.g. Kconfig setup)
     for cmd_str in args.pre_cmds:
@@ -805,6 +892,18 @@ def main():
             cmd.append(f"{key}={_resolve_env_paths(value)}")
         else:
             cmd.append(arg)
+
+    # Inject CC/CXX/AR as make command-line overrides for Makefile-only
+    # packages (skip_configure=True).  Kbuild-style Makefiles (busybox,
+    # pciutils) define CC=gcc internally, which overrides env CC.  Make
+    # command-line variables have highest precedence.  Skip this for
+    # autotools packages that ran configure — configure already captured
+    # CC and the Makefile uses the configured value.
+    if args.build_system == "make" and not os.path.exists(os.path.join(make_dir, "config.status")):
+        for _var in ("CC", "CXX", "AR"):
+            _val = env.get(_var, "")
+            if _val and not any(a.startswith(f"{_var}=") for a in args.make_args):
+                cmd.append(f"{_var}={_val}")
 
     # Override make's SHELL so recipe lines use buckos bash instead of
     # /bin/sh (which doesn't exist on remote execution workers).

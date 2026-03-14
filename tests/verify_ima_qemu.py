@@ -16,8 +16,12 @@ Env vars from sh_test:
 """
 
 import os
+import re
 import subprocess
 import sys
+import threading
+
+_CLEAR_RE = re.compile(r"\x1bc|\x1b\[[0-9]*[JH]|\x1b\[\?[0-9;]*[hl]")
 
 
 def find_file(base, name):
@@ -82,8 +86,8 @@ def main():
         "-initrd", initramfs,
         "-drive", f"file={disk},format=raw,if=virtio,readonly=on,file.locking=off",
         "-append", f"console=ttyS0 panic=-1 {cmdline_extra}",
-        "-nographic", "-no-reboot", "-m", "256M",
-        "-enable-kvm", "-cpu", "host",
+        "-nographic", "-no-reboot", "-m", "1G",
+        "-enable-kvm", "-cpu", "host", "-smp", "4",
     ]
 
     # Prepend the runtime environment wrapper so QEMU finds its shared libs
@@ -92,34 +96,64 @@ def main():
         os.chmod(run_env, 0o755)
         cmd = [run_env] + cmd
 
-    try:
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-        output = r.stdout + r.stderr
-    except subprocess.TimeoutExpired:
-        output = ""
+    # Collect positive markers to watch for (early exit once all found)
+    pos_markers = {expect_marker: False}
+    if expect_test_output:
+        pos_markers[expect_test_output] = False
 
-    print(output)
-    print("---")
+    lines = []
+    proc = subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+    )
+
+    timer = threading.Timer(30, lambda: proc.kill())
+    timer.start()
+
+    try:
+        for line in proc.stdout:
+            lines.append(line)
+            for m in pos_markers:
+                if m in line:
+                    pos_markers[m] = True
+            if all(pos_markers.values()):
+                proc.kill()
+                break
+    finally:
+        timer.cancel()
+        proc.wait()
+
+    output = "".join(lines)
+    output = _CLEAR_RE.sub("", output)
 
     failures = 0
+    if expect_marker not in output:
+        failures += 1
+    if expect_test_output and expect_test_output not in output:
+        failures += 1
+    if expect_no_test_output and expect_no_test_output in output:
+        failures += 1
+
+    if failures:
+        print(output)
+    else:
+        tail = "\n".join(output.splitlines()[-10:])
+        print(tail)
+    print("---")
 
     if expect_marker in output:
         print(f"PASS: found '{expect_marker}'")
     else:
         print(f"FAIL: '{expect_marker}' not found")
-        failures += 1
 
     if expect_test_output:
         if expect_test_output in output:
             print(f"PASS: found '{expect_test_output}'")
         else:
             print(f"FAIL: '{expect_test_output}' not found")
-            failures += 1
 
     if expect_no_test_output:
         if expect_no_test_output in output:
             print(f"FAIL: '{expect_no_test_output}' should not appear")
-            failures += 1
         else:
             print(f"PASS: '{expect_no_test_output}' correctly absent")
 

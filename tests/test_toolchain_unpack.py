@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Unit tests for toolchain_unpack.py: detect_compression and sha256_directory."""
 import hashlib
+import io
 import os
 import sys
 import tempfile
@@ -14,17 +15,18 @@ from toolchain_pack import sha256_directory as pack_sha256_directory
 
 passed = 0
 failed = 0
+_output_lines = []
 
 
 def ok(msg):
     global passed
-    print(f"  PASS: {msg}")
+    _output_lines.append(f"  PASS: {msg}")
     passed += 1
 
 
 def fail(msg):
     global failed
-    print(f"  FAIL: {msg}")
+    _output_lines.append(f"  FAIL: {msg}")
     failed += 1
 
 
@@ -42,6 +44,10 @@ def _write(path, content=b"hello"):
 
 
 def main():
+    _real_stdout = sys.stdout
+    _buf = io.StringIO()
+    sys.stdout = _buf
+
     # ── detect_compression tests ────────────────────────────────────
 
     print("=== detect_compression: .tar.zst ===")
@@ -69,8 +75,8 @@ def main():
           ".tar -> auto")
 
     print("=== detect_compression: .zip ===")
-    check(detect_compression("archive.zip") == "auto",
-          ".zip -> auto")
+    check(detect_compression("archive.zip") == "zip",
+          ".zip -> zip")
 
     print("=== detect_compression: full path preserved ===")
     check(detect_compression("/tmp/builds/seed.tar.zst") == "zst",
@@ -262,7 +268,12 @@ def main():
 
     # ── Summary ─────────────────────────────────────────────────────
 
-    print(f"\n--- {passed} passed, {failed} failed ---")
+    sys.stdout = _real_stdout
+    if failed:
+        _real_stdout.write(_buf.getvalue())
+        for _line in _output_lines:
+            print(_line)
+        print(f"\n--- {passed} passed, {failed} failed ---")
     sys.exit(1 if failed else 0)
 
 

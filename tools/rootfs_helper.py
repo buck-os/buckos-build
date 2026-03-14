@@ -303,10 +303,20 @@ def main():
     # Merge acct entries
     _merge_acct_entries(rootfs)
 
-    # Run ldconfig
+    # Run ldconfig — use the rootfs's own ldconfig (from glibc) since the
+    # host ldconfig may not be on the hermetic PATH.
     ld_so_conf = os.path.join(rootfs, "etc", "ld.so.conf")
-    if os.path.isfile(ld_so_conf):
-        subprocess.run(["ldconfig", "-r", rootfs], env=env,
+    _ldconfig = shutil.which("ldconfig", path=env.get("PATH", ""))
+    if not _ldconfig:
+        # Fall back to the rootfs's own copy
+        for _candidate in (os.path.join(rootfs, "usr", "sbin", "ldconfig"),
+                           os.path.join(rootfs, "usr", "bin", "ldconfig"),
+                           os.path.join(rootfs, "sbin", "ldconfig")):
+            if os.path.isfile(_candidate):
+                _ldconfig = _candidate
+                break
+    if os.path.isfile(ld_so_conf) and _ldconfig:
+        subprocess.run([_ldconfig, "-r", rootfs], env=env,
                         capture_output=True)
 
     # Compute manifest if requested

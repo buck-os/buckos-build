@@ -5,7 +5,6 @@ toolchain_env_args() (inject CC/CXX/AR into Python helper cmd_args).
 
 The _toolchain attr uses select() on the bootstrap mode constraint:
   DEFAULT        → [buckos].default_toolchain from .buckconfig
-  is-stage3-mode → stage 2 toolchain (stage 1 + stage 2 host tools)
   is-bootstrap-mode → host PATH toolchain (escape hatch)
 """
 
@@ -16,14 +15,16 @@ def _buckos_toolchain_select():
 
     Four modes:
       DEFAULT        — read from [buckos].default_toolchain in .buckconfig
-      stage3         — stage 2 toolchain (hermetic rebuild)
-      bootstrap      — host PATH toolchain (escape hatch)
-      host-target    — host toolchain (for exec_dep targets / cross-build)
+      bootstrap      — host PATH toolchain (escape hatch for stage2 build)
+      host-tools     — bootstrap-toolchain (buckos compiler + host PATH,
+                        no host_tools dep — breaks cycle for base tool builds)
+      host-target    — seed exec toolchain (native gcc + hermetic PATH),
+                        falls back to host PATH when bootstrapping
     """
     return select({
-        "//tc/exec:is-stage3-mode": "//tc/bootstrap:stage2-toolchain",
         "//tc/exec:is-bootstrap-mode": "//tc/host:host-toolchain",
-        "//tc/exec:is-host-target": "//tc/host:host-toolchain",
+        "//tc/exec:is-host-tools-mode": "//tc/bootstrap:bootstrap-toolchain",
+        "//tc/exec:is-host-target": "//tc/seed:seed-exec-toolchain",
         "DEFAULT": read_config("buckos", "default_toolchain", "toolchains//:buckos"),
     })
 
@@ -68,6 +69,23 @@ def toolchain_path_args(ctx):
         return [cmd_args("--allow-host-path")]
     # Hermetic empty: PATH built entirely from per-rule host tool deps
     return [cmd_args("--hermetic-empty")]
+
+def toolchain_ld_linux_args(ctx):
+    """Return --ld-linux flag pointing to the buckos dynamic linker.
+
+    Build helpers use this to disable posix_spawn in child Python
+    processes, avoiding ENOEXEC with padded ELF interpreters.
+    Only needed for rules whose builds execute buckos-native dep
+    binaries (e.g. mozbuild running rustc/cargo via mach).
+    """
+    tc = ctx.attrs._toolchain[BuildToolchainInfo]
+    if tc.sysroot:
+        return [cmd_args("--ld-linux", tc.sysroot.project("lib64/ld-linux-x86-64.so.2"))]
+    return []
+
+def toolchain_target_triple(ctx):
+    """Return the target triple from BuildToolchainInfo."""
+    return ctx.attrs._toolchain[BuildToolchainInfo].target_triple
 
 def toolchain_extra_cflags(ctx):
     """Return toolchain-injected CFLAGS (e.g. hardening flags)."""

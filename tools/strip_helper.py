@@ -10,7 +10,7 @@ import shutil
 import subprocess
 import sys
 
-from _env import sanitize_global_env
+from _env import sanitize_global_env, sysroot_lib_paths
 
 
 _ELF_MAGIC = b"\x7fELF"
@@ -39,6 +39,8 @@ def main():
                         help="Allow host PATH (bootstrap escape hatch)")
     parser.add_argument("--hermetic-empty", action="store_true",
                         help="Start with empty PATH (populated by --path-prepend)")
+    parser.add_argument("--ld-linux", default=None,
+                        help="Buckos ld-linux path (disables posix_spawn)")
     parser.add_argument("--path-prepend", action="append", dest="path_prepend", default=[],
                         help="Directory to prepend to PATH (repeatable, resolved to absolute)")
     args = parser.parse_args()
@@ -58,8 +60,11 @@ def main():
             _parent = os.path.dirname(os.path.abspath(_bp))
             for _ld in ("lib", "lib64"):
                 _d = os.path.join(_parent, _ld)
-                if os.path.isdir(_d):
+                if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")):
                     _lib_dirs.append(_d)
+                    _glibc_d = os.path.join(_d, "glibc")
+                    if os.path.isdir(_glibc_d):
+                        _lib_dirs.append(_glibc_d)
         if _lib_dirs:
             _existing = os.environ.get("LD_LIBRARY_PATH", "")
             os.environ["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (":" + _existing if _existing else "")
@@ -90,11 +95,17 @@ def main():
             _parent = os.path.dirname(os.path.abspath(_bp))
             for _ld in ("lib", "lib64"):
                 _d = os.path.join(_parent, _ld)
-                if os.path.isdir(_d):
+                if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")):
                     _dep_lib_dirs.append(_d)
+                    _glibc_d = os.path.join(_d, "glibc")
+                    if os.path.isdir(_glibc_d):
+                        _dep_lib_dirs.append(_glibc_d)
         if _dep_lib_dirs:
             _existing = os.environ.get("LD_LIBRARY_PATH", "")
             os.environ["LD_LIBRARY_PATH"] = ":".join(_dep_lib_dirs) + (":" + _existing if _existing else "")
+
+    if args.ld_linux:
+        sysroot_lib_paths(args.ld_linux, os.environ)
 
     # Copy input to output
     if os.path.exists(args.output):

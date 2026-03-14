@@ -19,7 +19,7 @@ QT6_FONT_DEPS = [
 # These must be added to all packages that link against Mesa's EGL/OpenGL
 # so the linker can resolve these symbols during linking.
 MESA_LLVM_DEPS = [
-    # "//packages/linux/core/llvm:llvm",  # disabled: long build, not needed yet
+    # "//packages/linux/core/llvm:llvm-native",  # disabled: long build, not needed yet
     "//packages/linux/dev-libs/elfutils:elfutils",
     "//packages/linux/system/libs/data/libxml2:libxml2",
 ]
@@ -30,7 +30,7 @@ MESA_LLVM_DEPS = [
 # Qt6Core links against ICU.  Host tools (qtpaths) need ICU in
 # LD_LIBRARY_PATH since the cmake rule only exposes direct deps.
 QT6_RUNTIME_DEPS = [
-    "//packages/linux/system/libs/utility/icu:icu",
+    "//packages/linux/system/libs/utility/icu:icu-native",
 ]
 
 # =============================================================================
@@ -68,11 +68,9 @@ package(
     deps = [
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
                 "//packages/linux/graphics/rendering/wayland:wayland",
-                "//packages/linux/graphics/rendering/wayland:wayland-scanner",
-                "//packages/linux/graphics/rendering/wayland:wayland-scanner",
-                "//packages/linux/graphics/rendering/wayland:wayland-scanner",
-                "//packages/linux/graphics/rendering/wayland:wayland-scanner",
-                "//packages/linux/graphics/rendering/wayland:wayland-scanner"
+    ],
+    host_deps = [
+        "//packages/linux/graphics/rendering/wayland:wayland-scanner",
     ],
 )
 
@@ -317,7 +315,7 @@ package(
     # Comment out ecm_install_po_files_as_qm to skip translations - Qt6LinguistTools not available
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         "//packages/linux/system/init/eudev:eudev",  # For libudev.h
         # Qt6 runtime dependencies needed for Qt6 tools (qtpaths, moc, etc.)
@@ -351,7 +349,7 @@ package(
 sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true
 """],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
@@ -391,7 +389,7 @@ package(
 sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true
 """],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
@@ -432,7 +430,7 @@ package(
     # Patch CMakeLists.txt to disable zstd and translations
     pre_configure_cmds = ["sed -i '/pkg_check_modules.*libzstd/d' CMakeLists.txt && sed -i 's/set(HAVE_ZSTD.*/set(HAVE_ZSTD FALSE)/' CMakeLists.txt && sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/compression/xz:xz",
@@ -471,7 +469,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/system/libs/utility/pcre2:pcre2",
@@ -516,7 +514,7 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
 sed -i '/add_subdirectory.*geo-scheme-handler/d' src/CMakeLists.txt || true
 """],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         "//packages/linux/graphics/rendering/wayland:wayland",
         "//packages/linux/dev-libs/glib:glib",
@@ -562,7 +560,7 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
 sed -i '/find_package.*Shiboken/d; /find_package.*PySide/d' CMakeLists.txt || true
 """],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/system/libs/utility/pcre2:pcre2",
@@ -599,7 +597,7 @@ package(
         "-DWITH_X11=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         "//packages/linux/system/libs/ipc/dbus:dbus",
         "//packages/linux/system/init/systemd:systemd",  # dbus depends on libsystemd
@@ -640,7 +638,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/system/libs/utility/pcre2:pcre2",
@@ -676,7 +674,7 @@ package(
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/system/libs/utility/pcre2:pcre2",
@@ -714,7 +712,7 @@ package(
     # Disable translations - Qt6LinguistTools not available
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kconfig",
         ":kguiaddons",
@@ -757,7 +755,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -807,7 +805,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -874,7 +872,7 @@ sed -i 's/BreezeIcons COMPONENTS icons/BreezeIcons/' CMakeLists.txt || true
 
 """],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
         "//packages/linux/desktop/mesa:mesa",
@@ -910,7 +908,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":karchive",
         ":kconfig",
@@ -967,7 +965,7 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
 sed -i '/add_subdirectory.*examples/d' CMakeLists.txt || true
 """],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         "//packages/linux/system/security/auth/privilege:polkit",
@@ -1011,7 +1009,7 @@ package(
         "-DWITH_X11=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         "//packages/linux/dev-libs/glib:glib",
@@ -1060,7 +1058,7 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
 
 """],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":plasma-wayland-protocols",
         "//packages/linux/graphics/rendering/wayland:wayland",
@@ -1120,7 +1118,7 @@ sed -i '/add_subdirectory.*examples/d' CMakeLists.txt || true
 """],
     # Find native wayland-scanner from exec_bdepend before configure
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -1163,7 +1161,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kconfig",
         ":kwindowsystem",
@@ -1208,7 +1206,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kconfig",
         ":kwidgetsaddons",
@@ -1242,7 +1240,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":knotifications",
@@ -1288,7 +1286,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         "//packages/linux/system/init/eudev:eudev",
         "//packages/linux/dev-libs/glib:glib",
@@ -1330,7 +1328,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kconfig",
         ":kcoreaddons",
@@ -1373,7 +1371,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -1454,7 +1452,7 @@ cd "$S"
 
 """],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":karchive",
         ":kauth",
@@ -1541,7 +1539,7 @@ touch src/core/trigrams.qrc || true
 
 """],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         "//packages/linux/editors/hunspell:hunspell",
         "//packages/linux/dev-libs/glib:glib",
@@ -1584,7 +1582,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kconfig",
         ":kcompletion",
@@ -1630,7 +1628,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcodecs",
         ":kconfig",
@@ -1683,7 +1681,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":ki18n",
@@ -1724,7 +1722,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -1814,7 +1812,7 @@ sed -i '/Q_INIT_RESOURCE(theme_data)/d' src/lib/repository.cpp || true
 
 """],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/system/libs/utility/pcre2:pcre2",
@@ -1878,7 +1876,7 @@ sed -i '/chkAutoReloadOnExternalChanges/d' src/dialogs/katedialogs.cpp
 
 """],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -1952,7 +1950,7 @@ package(
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/system/libs/utility/pcre2:pcre2",
@@ -1993,7 +1991,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -2042,7 +2040,7 @@ package(
 sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true
 """],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":karchive",
         ":kconfig",
@@ -2087,7 +2085,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -2132,7 +2130,7 @@ package(
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":karchive",
         ":kcolorscheme",
@@ -2183,7 +2181,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kconfig",
         ":kcoreaddons",
@@ -2229,7 +2227,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcodecs",
         "//packages/linux/dev-libs/glib:glib",
@@ -2270,7 +2268,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":attica",
         ":karchive",
@@ -2327,7 +2325,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcompletion",
         ":kconfig",
@@ -2415,12 +2413,14 @@ mkdir -p src/customization/xsl
 touch src/customization/xsl/all-l10n.xml
 """],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":karchive",
         ":ki18n",
         "//packages/linux/system/libs/data/libxslt:libxslt",
         "//packages/linux/system/libs/data/libxml2:libxml2",
+        "//packages/linux/system/libs/data/docbook:docbook-xml",
+        "//packages/linux/system/libs/data/docbook:docbook-xsl",
         "//packages/linux/lang/perl/web:uri",  # Perl URI::Escape for uriencode.cmake
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/system/libs/utility/pcre2:pcre2",
@@ -2460,7 +2460,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kconfig",
         ":kconfigwidgets",
@@ -2542,7 +2542,7 @@ sed -i '/devicenotifications/d' src/dataengines/CMakeLists.txt || true
 
 """],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -2660,7 +2660,7 @@ done
 
 """],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         # KF6 Core
         ":kcoreaddons",
@@ -2737,7 +2737,7 @@ done
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
         # ICU (required by plasma-desktop)
-        "//packages/linux/system/libs/utility/icu:icu",
+        "//packages/linux/system/libs/utility/icu:icu-native",
         # Transitive link dependencies
         "//packages/linux/system/init/eudev:eudev",
         "//packages/linux/system/libs/ipc/dbus:dbus",
@@ -2796,7 +2796,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -2874,7 +2874,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":plasma-wayland-protocols",
         "//packages/linux/graphics/rendering/wayland:wayland",
@@ -2917,7 +2917,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":ki18n",
         ":kcoreaddons",
@@ -2971,7 +2971,7 @@ sed -i '/qCDebug(KSCREENLOCKER) << "Event received"/a\\    (void)event;' ksldapp
 
 """],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -3056,7 +3056,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -3106,7 +3106,7 @@ sed -i 's/connect(KX11Extras::self/\\/\\/connect(KX11Extras::self/' src/service/
 
 """],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -3205,7 +3205,7 @@ sed -i '/isPlatformX11.*{/,/^    }/d' src/plasma/private/theme_p.cpp
 
 """],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -3299,7 +3299,7 @@ sed -i 's/^add_library(LayerShellQtInterface)/add_library(LayerShellQtInterface 
     # Prepend native wayland-scanner to PATH and set CMAKE var
     # Need native wayland-scanner for cross-compilation
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         "//packages/linux/graphics/rendering/wayland:wayland",
         "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
@@ -3373,7 +3373,7 @@ bool OrientationSensor::isEnabled() const { return false; }
 SENSOR_CPP
 """],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         # KF6 Core
         ":kcoreaddons",
@@ -3480,7 +3480,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -3525,7 +3525,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kconfig",
         ":kcoreaddons",
@@ -3573,7 +3573,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kwindowsystem",
         "//packages/linux/dev-libs/glib:glib",
@@ -3622,7 +3622,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true\nsed -i '/find_package(Qca-qt6/d' CMakeLists.txt || true\nsed -i '/ki18n_install/d' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kconfig",
         ":kcoreaddons",
@@ -3670,7 +3670,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":ki18n",
         "//packages/linux/dev-libs/glib:glib",
@@ -3734,7 +3734,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":qrencode",
         "//packages/linux/dev-libs/glib:glib",
@@ -3810,7 +3810,7 @@ EOF
 
 """],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
         "//packages/linux/system/libs/utility/pcre2:pcre2",
@@ -3847,7 +3847,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kconfig",
         ":kcoreaddons",
@@ -3906,7 +3906,7 @@ sed -i '/add_subdirectory.*backendlauncher/d' src/CMakeLists.txt || true
 """],
     # Find native wayland-scanner from exec_bdepend before configure
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -3956,7 +3956,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true\nsed -i 's/find_package(Sensors REQUIRED)/find_package(Sensors)/' CMakeLists.txt || true\nsed -i 's/find_package(libpcap REQUIRED)/find_package(libpcap)/' CMakeLists.txt || true\nsed -i '/add_subdirectory(nvidia)/d' processcore/plugins/CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kauth",
         ":kconfig",
@@ -4073,7 +4073,7 @@ STUB
 
 """],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         # KF6 core
         ":kcoreaddons",
@@ -4168,7 +4168,7 @@ STUB
         "//packages/linux/dev-tools/build-systems/libtool:libtool",
         "//packages/linux/system/libs/crypto/openssl:openssl",
         "//packages/linux/system/libs/input/libinput:libinput",
-        "//packages/linux/system/libs/utility/icu:icu",
+        "//packages/linux/system/libs/utility/icu:icu-native",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
         # Fontconfig for font rendering
         "//packages/linux/system/libs/font/fontconfig:fontconfig",
@@ -4231,7 +4231,7 @@ sed -i '/ki18n_install/d' CMakeLists.txt 2>/dev/null || true
         ":kguiaddons",
         ":kcodecs",
         ":kcolorscheme",
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/system/security/auth/pam:pam",
         "//packages/linux/system/init/systemd:systemd",
         "//packages/linux/desktop/mesa:mesa",  # For EGL/GLESv2
@@ -4411,7 +4411,7 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -4466,7 +4466,7 @@ sed -i 's/#include <xcb/#\\/\\/#include <xcb/g' qt6/src/platformtheme/*.cpp 2>/d
 
 """],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -4533,7 +4533,7 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
 
 """],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         "//packages/linux/dev-libs/glib:glib",
@@ -4570,7 +4570,7 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
 
 """],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -4616,7 +4616,7 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
 
 """],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",

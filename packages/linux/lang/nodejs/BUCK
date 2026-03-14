@@ -21,6 +21,14 @@ package(
     install_script = """
 cd "$SRCS"
 
+# Node's configure calls bare 'python'; create symlink if python3 exists
+_py3=$(command -v python3 2>/dev/null || true)
+if [ -n "$_py3" ]; then
+    _pydir=$(mktemp -d)
+    ln -s "$_py3" "$_pydir/python"
+    export PATH="$_pydir:$PATH"
+fi
+
 # Node.js uses its own configure script that doesn't accept standard autotools flags
 # Only pass Node.js-compatible options
 ./configure \
@@ -33,5 +41,8 @@ make -j${MAKEOPTS:-$(nproc)}
 
 make DESTDIR="$OUT" install
 """,
+    host_deps = [
+        "//packages/linux/lang/python:python-host",
+    ],
     deps = [],
 )

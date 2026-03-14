@@ -10,13 +10,27 @@ import os
 import subprocess
 import sys
 
-from _env import clean_env
+from _env import clean_env, sysroot_lib_paths
 
 
 def _resolve_env_paths(value):
     """Resolve relative Buck2 artifact paths in env values to absolute."""
+    _FLAG_PREFIXES = ["-specs="]
+
     parts = []
     for token in value.split():
+        flag_resolved = False
+        for prefix in _FLAG_PREFIXES:
+            if token.startswith(prefix) and len(token) > len(prefix):
+                path = token[len(prefix):]
+                if not os.path.isabs(path) and os.path.exists(path):
+                    parts.append(prefix + os.path.abspath(path))
+                else:
+                    parts.append(token)
+                flag_resolved = True
+                break
+        if flag_resolved:
+            continue
         if token.startswith("--") and "=" in token:
             idx = token.index("=")
             flag = token[: idx + 1]
@@ -52,10 +66,14 @@ def main():
                         help="Allow host PATH (bootstrap escape hatch)")
     parser.add_argument("--hermetic-empty", action="store_true",
                         help="Start with empty PATH (populated by --path-prepend)")
+    parser.add_argument("--ld-linux", default=None,
+                        help="Buckos ld-linux path (disables posix_spawn)")
     parser.add_argument("--path-prepend", action="append", dest="path_prepend", default=[],
                         help="Directory to prepend to PATH (repeatable, resolved to absolute)")
     parser.add_argument("--dep-prefix", action="append", dest="dep_prefixes", default=[],
                         help="Dependency prefix dir — site-packages added to PYTHONPATH (repeatable)")
+    parser.add_argument("--use-setup-py", action="store_true",
+                        help="Use setup.py install instead of pip (avoids pip dependency)")
     args = parser.parse_args()
 
     if not os.path.isdir(args.source_dir):
@@ -67,16 +85,41 @@ def main():
     # Use bootstrap Python if specified, otherwise fall back to sys.executable
     python_exe = args.python if args.python else sys.executable
 
-    cmd = [
-        python_exe, "-m", "pip", "install",
-        "--no-deps",
-        "--no-build-isolation",
-        "--ignore-installed",
-        "--prefix=/usr",
-        f"--root={os.path.abspath(args.output_dir)}",
-    ]
-    cmd.extend(args.pip_args)
-    cmd.append(os.path.abspath(args.source_dir))
+    source_abs = os.path.abspath(args.source_dir)
+    output_abs = os.path.abspath(args.output_dir)
+
+    # Check if pip is available when not explicitly using setup.py.
+    # Fall back to setup.py install if pip is missing (e.g. host
+    # Python without pip, or minimal bootstrap Python).
+    use_setup_py = args.use_setup_py
+    if not use_setup_py:
+        pip_check = subprocess.run(
+            [python_exe, "-m", "pip", "--version"],
+            capture_output=True, timeout=10,
+        )
+        if pip_check.returncode != 0:
+            use_setup_py = True
+
+    if use_setup_py:
+        cmd = [
+            python_exe, "setup.py", "install",
+            "--prefix=/usr",
+            f"--root={output_abs}",
+            "--single-version-externally-managed",
+            "--record=/dev/null",
+        ]
+        cmd.extend(args.pip_args)
+    else:
+        cmd = [
+            python_exe, "-m", "pip", "install",
+            "--no-deps",
+            "--no-build-isolation",
+            "--ignore-installed",
+            "--prefix=/usr",
+            f"--root={output_abs}",
+        ]
+        cmd.extend(args.pip_args)
+        cmd.append(source_abs)
 
     env = clean_env()
 
@@ -108,8 +151,11 @@ def main():
             _parent = os.path.dirname(os.path.abspath(_bp))
             for _ld in ("lib", "lib64"):
                 _d = os.path.join(_parent, _ld)
-                if os.path.isdir(_d):
+                if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")):
                     _lib_dirs.append(_d)
+                    _glibc_d = os.path.join(_d, "glibc")
+                    if os.path.isdir(_glibc_d):
+                        _lib_dirs.append(_glibc_d)
         if _lib_dirs:
             _existing = env.get("LD_LIBRARY_PATH", "")
             env["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (":" + _existing if _existing else "")
@@ -140,11 +186,17 @@ def main():
             _parent = os.path.dirname(os.path.abspath(_bp))
             for _ld in ("lib", "lib64"):
                 _d = os.path.join(_parent, _ld)
-                if os.path.isdir(_d):
+                if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")):
                     _dep_lib_dirs.append(_d)
+                    _glibc_d = os.path.join(_d, "glibc")
+                    if os.path.isdir(_glibc_d):
+                        _dep_lib_dirs.append(_glibc_d)
         if _dep_lib_dirs:
             _existing = env.get("LD_LIBRARY_PATH", "")
             env["LD_LIBRARY_PATH"] = ":".join(_dep_lib_dirs) + (":" + _existing if _existing else "")
+
+    if args.ld_linux:
+        sysroot_lib_paths(args.ld_linux, env)
 
     # Add dep prefix site-packages to PYTHONPATH so build deps
     # (setuptools, wheel, etc.) are found by pip --no-build-isolation.
@@ -162,9 +214,11 @@ def main():
             existing = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = ":".join(dep_py_paths) + (":" + existing if existing else "")
 
-    result = subprocess.run(cmd, env=env)
+    cwd = source_abs if args.use_setup_py else None
+    result = subprocess.run(cmd, env=env, cwd=cwd)
     if result.returncode != 0:
-        print(f"error: pip install failed with exit code {result.returncode}", file=sys.stderr)
+        label = "setup.py install" if args.use_setup_py else "pip install"
+        print(f"error: {label} failed with exit code {result.returncode}", file=sys.stderr)
         sys.exit(1)
 
 

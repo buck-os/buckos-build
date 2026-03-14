@@ -1,8 +1,8 @@
 """
 BXL graph structure test: hermiticity check.
 
-Verifies that stage3-mode targets have the correct configuration constraints
-(stage3-mode-true but NOT bootstrap-mode-true).
+Verifies that host-tools targets have correct configuration constraints
+(no bootstrap-mode-true leak).
 
 Run:
     buck2 bxl buckos//tests/graph/test_hermiticity.bxl:test_hermiticity
@@ -16,7 +16,7 @@ def _impl(ctx):
         fail("{} assertion(s) failed\n{}".format(failed, details))
 
 test_hermiticity = bxl_main(
-    doc = "Verify stage3-mode targets have correct constraints.",
+    doc = "Verify host-tools targets have correct constraints.",
     impl = _impl,
     cli_args = {},
 )

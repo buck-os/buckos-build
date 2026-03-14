@@ -13,6 +13,11 @@ package(
     license = "MPL-2.0",
     pre_configure_cmds = [
         "sed -i 's/kwarg_dict\\[name\\] = arg\\.s/kwarg_dict[name] = arg.value/' python/mach/mach/command_util.py",
+        # Patch sentry import to handle missing _ssl module gracefully.
+        # mach/main.py unconditionally imports sentry at module load time,
+        # before MACH_NO_TELEMETRY is checked.  sentry_sdk imports ssl
+        # which needs _ssl (unavailable in python-host).
+        "sed -i 's/import sentry_sdk/try:\\n    import sentry_sdk\\nexcept ImportError:\\n    sentry_sdk = None/' python/mach/mach/sentry.py",
         """python3 << 'PYEOF'
 import pathlib
 p = pathlib.Path('python/mach/mach/site.py')
@@ -30,7 +35,7 @@ PYEOF""",
     # Override TMPDIR to avoid AF_UNIX socket path length limit (108 bytes).
     # Firefox's IPDL code generator uses multiprocessing.Manager() which
     # creates Unix sockets under $TMPDIR.  Buck2's scratch dir is too long.
-    env = {"TMPDIR": "/tmp"},
+    env = {"TMPDIR": "/tmp", "MACH_NO_TELEMETRY": "1"},
 
     mozconfig_options = [
         "--enable-application=browser",
@@ -41,13 +46,10 @@ PYEOF""",
         "--libdir=/usr/lib",
         "--enable-audio-backends=alsa",
         "--enable-system-ffi",
-        "--with-libclang-path=/usr/lib64",
         "--without-wasm-sandboxed-libraries",
         "--enable-linker=mold",
     ],
     deps = [
-        "//packages/linux/lang/rust:rust",
-        "//packages/linux/lang/nodejs:nodejs",
         "//packages/linux/desktop/gtk:gtk3",
         "//packages/linux/core/glib:glib",
         "//packages/linux/dev-libs/glib:glib",
@@ -102,5 +104,20 @@ PYEOF""",
         "//packages/linux/system/security/capabilities:libcap",
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/terminal/ncurses:ncurses",
+    ],
+    host_deps = [
+        "//packages/linux/core/llvm:llvm-native",
+        "//packages/linux/lang/linkers:mold",
+        "//packages/linux/lang/rust:rust",
+        "//packages/linux/lang/nodejs:nodejs",
+        "//packages/linux/dev-tools/build-systems/cbindgen:cbindgen",
+        "//packages/linux/dev-tools/compilers/nasm:nasm",
+        "//packages/linux/system/libs/compression/libarchive:libarchive",
+        # Full Python with ssl — Firefox's configure requires import ssl.
+        # python-host omits OpenSSL to avoid dep cycles, but Firefox needs it.
+        "//packages/linux/lang/python:python",
+        # Python modules needed by mach build system
+        "//packages/linux/dev-libs/python/pyyaml:pyyaml",
+        "//packages/linux/dev-libs/python/zstandard:zstandard",
     ],
 )

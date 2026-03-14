@@ -18,7 +18,9 @@ package(
     license = "GPL-3.0",
     deps = [
         "//packages/linux/system/libs/utility/pcre2:pcre2",
-                "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config"
+    ],
+    host_deps = [
+        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
     ],
     configure_args = [
         "--prefix=${PREFIX}",

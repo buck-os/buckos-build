@@ -1,12 +1,21 @@
+load("//defs/rules:buckos_test.bzl", "buckos_test")
 load("//defs/rules:runtime_env.bzl", "runtime_env")
+load("//defs/rules:test_host_env.bzl", "test_host_env")
 
 # Test targets — run with: buck2 test //tests:
+
+# Expose seed host-tools (make, file, cc, etc.) to tests via PATH wrapper.
+# With seed: wrapper sets PATH + LD_LIBRARY_PATH from host-tools.
+# Without seed: wrapper is a passthrough.
+test_host_env(
+    name = "host-tools-env",
+)
 
 # ── Provenance stamp unit tests ──────────────────────────────────────
 # Tests defs/scripts/provenance-stamp.sh directly with controlled env.
 # No buck build deps — pure unit test.
 
-sh_test(
+buckos_test(
     name = "test-provenance-stamp",
     test = "test_provenance_stamp.py",
     labels = ["unit"],
@@ -16,103 +25,103 @@ sh_test(
 # Pure unit tests of tools/*.py logic — no buck build deps.
 # Run with: buck2 test //tests: --labels tools-unit
 
-sh_test(
+buckos_test(
     name = "test-env-unit",
     test = "test_env_unit.py",
     labels = ["unit", "tools-unit"],
 )
 
-sh_test(
+buckos_test(
     name = "test-env-path",
     test = "test_env_path.py",
     labels = ["unit", "tools-unit"],
 )
 
-sh_test(
+buckos_test(
     name = "test-path-resolution",
     test = "test_path_resolution.py",
     labels = ["unit", "tools-unit"],
 )
 
-sh_test(
+buckos_test(
     name = "test-extract-unit",
     test = "test_extract_unit.py",
     labels = ["unit", "tools-unit"],
 )
 
-sh_test(
+buckos_test(
     name = "test-rootfs-unit",
     test = "test_rootfs_unit.py",
     labels = ["unit", "tools-unit"],
 )
 
-sh_test(
+buckos_test(
     name = "test-small-helpers",
     test = "test_small_helpers.py",
     labels = ["unit", "tools-unit"],
 )
 
-sh_test(
+buckos_test(
     name = "test-merge-and-hash",
     test = "test_merge_and_hash.py",
     labels = ["unit", "tools-unit"],
 )
 
-sh_test(
+buckos_test(
     name = "test-kernel-helpers",
     test = "test_kernel_helpers.py",
     labels = ["unit", "tools-unit"],
 )
 
-sh_test(
+buckos_test(
     name = "test-iso-config",
     test = "test_iso_config.py",
     labels = ["unit", "tools-unit"],
 )
 
-sh_test(
+buckos_test(
     name = "test-build-install",
     test = "test_build_install.py",
     labels = ["unit", "tools-unit"],
 )
 
-sh_test(
+buckos_test(
     name = "test-stage3-strip",
     test = "test_stage3_strip.py",
     labels = ["unit", "tools-unit"],
 )
 
-sh_test(
+buckos_test(
     name = "test-bootstrap-helpers",
     test = "test_bootstrap_helpers.py",
     labels = ["unit", "tools-unit"],
 )
 
-sh_test(
+buckos_test(
     name = "test-lang-helpers",
     test = "test_lang_helpers.py",
     labels = ["unit", "tools-unit"],
 )
 
-sh_test(
+buckos_test(
     name = "test-patch-acct",
     test = "test_patch_acct.py",
     labels = ["unit", "tools-unit"],
 )
 
-sh_test(
+buckos_test(
     name = "test-sysroot-merge",
     test = "test_sysroot_merge.py",
     labels = ["unit", "tools-unit"],
 )
 
-sh_test(
+buckos_test(
     name = "test-toolchain-unpack",
     test = "test_toolchain_unpack.py",
     labels = ["unit", "tools-unit"],
 )
 
-sh_test(
+buckos_test(
     name = "test-vm-helpers",
     test = "test_vm_helpers.py",
     labels = ["unit", "tools-unit"],
@@ -120,7 +129,7 @@ sh_test(
 
 # ── Provenance integration: hello executable ─────────────────────────
 
-sh_test(
+buckos_test(
     name = "test-hello-provenance",
     test = "verify_provenance.py",
     deps = ["//tests/fixtures/hello:hello"],
@@ -133,7 +142,7 @@ sh_test(
     labels = ["integration"],
 )
 
-sh_test(
+buckos_test(
     name = "test-hello-no-provenance",
     test = "verify_provenance.py",
     deps = ["//tests/fixtures/hello:hello-no-stamp"],
@@ -146,7 +155,7 @@ sh_test(
 
 # ── Provenance integration: shared library ───────────────────────────
 
-sh_test(
+buckos_test(
     name = "test-testlib-provenance",
     test = "verify_provenance.py",
     deps = ["//tests/fixtures/testlib:testlib"],
@@ -162,7 +171,7 @@ sh_test(
 
 # ── IMA signing ──────────────────────────────────────────────────────
 
-sh_test(
+buckos_test(
     name = "test-hello-ima",
     test = "verify_provenance.py",
     deps = ["//tests/fixtures/hello:hello-ima"],
@@ -178,7 +187,7 @@ sh_test(
 
 # ── IMA QEMU enforcement ────────────────────────────────────────────
 
-sh_test(
+buckos_test(
     name = "test-ima-enforce-signed",
     test = "verify_ima_qemu.py",
     deps = [
@@ -202,7 +211,7 @@ sh_test(
     labels = ["vm", "slow"],
 )
 
-sh_test(
+buckos_test(
     name = "test-ima-enforce-unsigned",
     test = "verify_ima_qemu.py",
     deps = [
@@ -226,7 +235,7 @@ sh_test(
     labels = ["vm", "slow"],
 )
 
-sh_test(
+buckos_test(
     name = "test-ima-noima",
     test = "verify_ima_qemu.py",
     deps = [
@@ -253,7 +262,7 @@ sh_test(
 # ── IMA QEMU FILE_CHECK enforcement ─────────────────────────────────
 
 # FILE_CHECK: signed binary + signed data file — both pass
-sh_test(
+buckos_test(
     name = "test-ima-file-signed",
     test = "verify_ima_qemu.py",
     deps = [
@@ -278,7 +287,7 @@ sh_test(
 )
 
 # FILE_CHECK: signed binary + unsigned data file — file read denied
-sh_test(
+buckos_test(
     name = "test-ima-file-unsigned",
     test = "verify_ima_qemu.py",
     deps = [
@@ -305,7 +314,7 @@ sh_test(
 
 # ── Build smoke tests ────────────────────────────────────────────────
 
-sh_test(
+buckos_test(
     name = "build-smoke-zlib",
     test = "verify_build_smoke.py",
     deps = ["//packages/linux/core/zlib:zlib"],
@@ -316,7 +325,7 @@ sh_test(
     labels = ["build"],
 )
 
-sh_test(
+buckos_test(
     name = "build-smoke-ch",
     test = "verify_build_smoke.py",
     deps = ["//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor"],
@@ -328,7 +337,7 @@ sh_test(
 
 # ── Cloud Hypervisor: boot script verification ───────────────────────
 
-sh_test(
+buckos_test(
     name = "test-ch-boot-script",
     test = "verify_ch_boot_script.py",
     deps = ["//packages/linux/boot/cloud-hypervisor-boot:ch-boot-direct-minimal"],
@@ -340,7 +349,7 @@ sh_test(
 
 # ── Cloud Hypervisor: VM boot integration ────────────────────────────
 
-sh_test(
+buckos_test(
     name = "test-ch-vm-boot",
     test = "verify_ch_vm_boot.py",
     deps = [
@@ -354,6 +363,23 @@ sh_test(
         "INITRAMFS": "$(location //packages/linux/system/cloud-hypervisor:ch-initramfs)",
     },
     run_test_separately = True,
+    labels = ["vm", "slow", "integration", "heavy"],
+)
+
+buckos_test(
+    name = "test-ch-vm-boot-light",
+    test = "verify_ch_vm_boot.py",
+    deps = [
+        "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
+        "//tests/fixtures:test-kernel",
+        "//packages/linux/system/cloud-hypervisor:ch-initramfs",
+    ],
+    env = {
+        "CH_BINARY": "$(location //packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor)",
+        "KERNEL": "$(location //tests/fixtures:test-kernel)",
+        "INITRAMFS": "$(location //packages/linux/system/cloud-hypervisor:ch-initramfs)",
+    },
+    run_test_separately = True,
     labels = ["vm", "slow", "integration"],
 )
 
@@ -362,7 +388,7 @@ sh_test(
 # The CH kernel config includes security.config which has CONFIG_IMA=y.
 
 # Non-IMA: unsigned binary runs when IMA is off
-sh_test(
+buckos_test(
     name = "test-ch-ima-noima",
     test = "verify_ch_ima.py",
     deps = [
@@ -385,7 +411,7 @@ sh_test(
 )
 
 # IMA enforce: signed binary runs under IMA enforcement
-sh_test(
+buckos_test(
     name = "test-ch-ima-enforce-signed",
     test = "verify_ch_ima.py",
     deps = [
@@ -414,33 +440,41 @@ runtime_env(
     package = "//packages/linux/emulation/hypervisors/qemu:qemu",
 )
 
-sh_test(
+buckos_test(
     name = "test-iso-boot",
     test = "verify_iso_boot.py",
     deps = [
+        "//packages/linux/kernel/buckos-kernel:buckos-kernel",
+        "//packages/linux/system:buckos-live-initramfs-busybox",
         "//packages/linux/system:buckos-minimal-iso",
         "//packages/linux/emulation/hypervisors/qemu:qemu",
         ":qemu-env",
     ],
     env = {
+        "KERNEL": "$(location //packages/linux/kernel/buckos-kernel:buckos-kernel)",
+        "INITRAMFS": "$(location //packages/linux/system:buckos-live-initramfs-busybox)",
         "ISO": "$(location //packages/linux/system:buckos-minimal-iso)",
         "QEMU_DIR": "$(location //packages/linux/emulation/hypervisors/qemu:qemu)",
         "RUN_ENV": "$(location :qemu-env)",
     },
     run_test_separately = True,
-    labels = ["vm", "slow", "integration"],
+    labels = ["vm", "slow", "integration", "heavy"],
 )
 
-sh_test(
-    name = "test-kde-iso-boot",
-    test = "verify_kde_iso_boot.py",
+buckos_test(
+    name = "test-iso-boot-light",
+    test = "verify_iso_boot.py",
     deps = [
-        "//packages/linux/system:buckos-live-installer-kde",
+        "//tests/fixtures:test-kernel",
+        "//packages/linux/system:buckos-live-initramfs-busybox",
+        "//tests/fixtures:test-minimal-iso",
         "//packages/linux/emulation/hypervisors/qemu:qemu",
         ":qemu-env",
     ],
     env = {
-        "ISO": "$(location //packages/linux/system:buckos-live-installer-kde)",
+        "KERNEL": "$(location //tests/fixtures:test-kernel)",
+        "INITRAMFS": "$(location //packages/linux/system:buckos-live-initramfs-busybox)",
+        "ISO": "$(location //tests/fixtures:test-minimal-iso)",
         "QEMU_DIR": "$(location //packages/linux/emulation/hypervisors/qemu:qemu)",
         "RUN_ENV": "$(location :qemu-env)",
     },
@@ -448,24 +482,50 @@ sh_test(
     labels = ["vm", "slow", "integration"],
 )
 
+buckos_test(
+    name = "test-kde-iso-boot",
+    test = "verify_kde_iso_boot.py",
+    deps = [
+        "//packages/linux/kernel/buckos-kernel:buckos-kernel-live",
+        "//packages/linux/system:buckos-live-initramfs-systemd",
+        "//packages/linux/system:buckos-live-installer-kde",
+        "//packages/linux/emulation/hypervisors/qemu:qemu",
+        ":qemu-env",
+    ],
+    env = {
+        "KERNEL": "$(location //packages/linux/kernel/buckos-kernel:buckos-kernel-live)",
+        "INITRAMFS": "$(location //packages/linux/system:buckos-live-initramfs-systemd)",
+        "ISO": "$(location //packages/linux/system:buckos-live-installer-kde)",
+        "QEMU_DIR": "$(location //packages/linux/emulation/hypervisors/qemu:qemu)",
+        "RUN_ENV": "$(location :qemu-env)",
+    },
+    run_test_separately = True,
+    labels = ["vm", "slow", "integration", "heavy"],
+)
+
 # ── Seed isolation ────────────────────────────────────────────────
 # Verifies the seed archive has no build-path leaks in RPATH/RUNPATH,
 # no cross-contamination between host-tools and sysroot, valid metadata.
-# Requires full bootstrap so tagged slow.
+# When a prebuilt seed is configured, verifies it directly (fast).
+# When building from source, requires full bootstrap (slow).
 
-sh_test(
+_seed_path = read_config("buckos", "seed_path", "")
+_seed_url = read_config("buckos", "seed_url", "")
+_prebuilt_seed = bool(_seed_path or _seed_url)
+
+buckos_test(
     name = "test-seed-isolation",
     test = "verify_seed_isolation.py",
-    deps = ["//tc/bootstrap:seed-export"],
+    deps = ["//tc/seed:seed-archive-ref"] if _prebuilt_seed else ["//tc/bootstrap:seed-export"],
     env = {
-        "SEED_ARCHIVE": "$(location //tc/bootstrap:seed-export)",
+        "SEED_ARCHIVE": "$(location //tc/seed:seed-archive-ref)" if _prebuilt_seed else "$(location //tc/bootstrap:seed-export)",
     },
     run_test_separately = True,
-    labels = ["slow"],
+    labels = [] if _prebuilt_seed else ["slow"],
 )
 
 # IMA enforce: unsigned binary rejected
-sh_test(
+buckos_test(
     name = "test-ch-ima-enforce-unsigned",
     test = "verify_ch_ima.py",
     deps = [
@@ -490,7 +550,7 @@ sh_test(
 # ── Cloud Hypervisor: IMA FILE_CHECK enforcement ────────────────────
 
 # CH FILE_CHECK: signed binary + signed data file — both pass
-sh_test(
+buckos_test(
     name = "test-ch-ima-file-signed",
     test = "verify_ch_ima.py",
     deps = [
@@ -513,7 +573,7 @@ sh_test(
 )
 
 # CH FILE_CHECK: signed binary + unsigned data file — file read denied
-sh_test(
+buckos_test(
     name = "test-ch-ima-file-unsigned",
     test = "verify_ch_ima.py",
     deps = [
@@ -535,4 +595,3 @@ sh_test(
     run_test_separately = True,
     labels = ["vm", "slow", "integration"],
 )
-

@@ -21,6 +21,7 @@ package(
     homepage = "https://wiki.gnome.org/Projects/GLib",
     license = "LGPL-2.1+",
     configure_args = [
+        "--wrap-mode=nofallback",
         "-Dgtk_doc=false",
         "-Dtests=false",
         "-Ddtrace=false",
@@ -32,6 +33,9 @@ package(
         "//packages/linux/system/libs/utility/libffi:libffi",
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/utility/pcre2:pcre2",
+        # packaging is needed by gdbus-codegen (glib's code generator).
+        # Regular dep so it propagates via tset to downstream packages
+        # that invoke gdbus-codegen (libsecret, etc.).
         "//packages/linux/dev-libs/python/packaging:packaging",
     ],
 )

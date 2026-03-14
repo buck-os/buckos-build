@@ -13,6 +13,12 @@ package(
     # Makefile lives in squashfs-tools/ subdirectory (no top-level Makefile).
     # squashfs uses INSTALL_PREFIX not DESTDIR; we override it via make_args
     # so make install puts binaries into $DESTDIR/usr/bin.
+    # install-manpages.sh requires non-builtin echo which bash's builtin
+    # shadows on the hermetic PATH.  Replace it with a no-op; the pre-built
+    # man pages are relocated in post_install_cmds.
+    pre_build_cmds = [
+        "printf '#!/bin/sh\\nexit 0\\n' > generate-manpages/install-manpages.sh",
+    ],
     make_args = ["-C", "squashfs-tools", "XZ_SUPPORT=1", "LZO_SUPPORT=1", "ZSTD_SUPPORT=1"],
     install_prefix_var = "INSTALL_PREFIX",
     post_install_cmds = [

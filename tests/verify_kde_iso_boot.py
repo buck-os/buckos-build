@@ -1,21 +1,27 @@
 #!/usr/bin/env python3
 """QEMU KDE ISO boot test.
 
-Extracts kernel and initramfs from the KDE live ISO, then boots them
-directly with -kernel/-initrd/-append so we can inject console=ttyS0
-for serial output capture.  The KDE ISO uses a systemd-based initramfs
-so we verify systemd starts as PID 1 in initrd mode.
+Boots kernel and initramfs directly with -kernel/-initrd/-append so we
+can inject console=ttyS0 for serial output capture.  The KDE ISO uses a
+systemd-based initramfs so we verify systemd starts as PID 1 in initrd
+mode.  The ISO is attached as a virtio block device.
 
 Env vars from sh_test:
+    KERNEL    — path to kernel image (file or directory with vmlinuz*)
+    INITRAMFS — path to initramfs image (file or directory with *.img)
     ISO       — path to .iso file or directory containing it
     QEMU_DIR  — path to buckos-built QEMU package (contains qemu-system-x86_64)
     RUN_ENV   — optional path to runtime env wrapper (sets LD_LIBRARY_PATH)
 """
 
 import os
+import re
+import signal
 import subprocess
 import sys
-import tempfile
+import threading
+
+_CLEAR_RE = re.compile(r"\x1bc|\x1b\[[0-9]*[JH]|\x1b\[\?[0-9;]*[hl]")
 
 
 def find_file(base, name):
@@ -28,58 +34,53 @@ def find_file(base, name):
     return None
 
 
-def extract_from_iso(iso_file, tmpdir):
-    """Mount ISO and copy kernel + initramfs to tmpdir."""
-    mnt = os.path.join(tmpdir, "mnt")
-    os.makedirs(mnt, exist_ok=True)
+def find_kernel(path):
+    """Find a vmlinuz file under path."""
+    if os.path.isfile(path):
+        return path
+    for dirpath, _, filenames in os.walk(path):
+        for f in sorted(filenames):
+            if f.startswith("vmlinuz"):
+                return os.path.join(dirpath, f)
+    return None
 
-    # Try mount (needs privileges) then fall back to xorriso/7z
-    r = subprocess.run(
-        ["mount", "-o", "loop,ro", iso_file, mnt],
-        capture_output=True,
-    )
-    if r.returncode != 0:
-        # Try xorriso extraction
-        r2 = subprocess.run(
-            ["xorriso", "-osirrox", "on", "-indev", iso_file,
-             "-extract", "/boot", os.path.join(tmpdir, "boot")],
-            capture_output=True,
-        )
-        if r2.returncode != 0:
-            return None, None
-        vmlinuz = os.path.join(tmpdir, "boot", "vmlinuz")
-        initramfs = os.path.join(tmpdir, "boot", "initramfs.img")
-        if os.path.isfile(vmlinuz) and os.path.isfile(initramfs):
-            return vmlinuz, initramfs
-        return None, None
 
-    # Copy from mount
-    vmlinuz_src = os.path.join(mnt, "boot", "vmlinuz")
-    initramfs_src = os.path.join(mnt, "boot", "initramfs.img")
-    vmlinuz = initramfs = None
-
-    if os.path.isfile(vmlinuz_src) and os.path.isfile(initramfs_src):
-        vmlinuz = os.path.join(tmpdir, "vmlinuz")
-        initramfs = os.path.join(tmpdir, "initramfs.img")
-        subprocess.run(["cp", vmlinuz_src, vmlinuz], check=True)
-        subprocess.run(["cp", initramfs_src, initramfs], check=True)
-
-    subprocess.run(["umount", mnt], capture_output=True)
-    return vmlinuz, initramfs
+def find_initramfs(path):
+    """Find an initramfs image under path."""
+    if os.path.isfile(path):
+        return path
+    for dirpath, _, filenames in os.walk(path):
+        for f in sorted(filenames):
+            if f.endswith(".img") or "initramfs" in f or "initrd" in f:
+                return os.path.join(dirpath, f)
+    return None
 
 
 def main():
+    kernel_path = os.environ.get("KERNEL", "")
+    initramfs_path = os.environ.get("INITRAMFS", "")
     iso = os.environ.get("ISO", "")
     qemu_dir = os.environ.get("QEMU_DIR", "")
 
-    for name, val in [("ISO", iso), ("QEMU_DIR", qemu_dir)]:
+    for name, val in [("KERNEL", kernel_path), ("INITRAMFS", initramfs_path),
+                      ("ISO", iso), ("QEMU_DIR", qemu_dir)]:
         if not val:
             print(f"ERROR: {name} not set")
             sys.exit(1)
 
-    # KVM is required — fail, don't skip
+    # KVM is hardware — skip gracefully when unavailable (e.g. CI ubuntu-latest)
     if not os.access("/dev/kvm", os.R_OK | os.W_OK):
-        print("FAIL: /dev/kvm not accessible")
+        print("SKIP: /dev/kvm not accessible")
+        sys.exit(0)
+
+    vmlinuz = find_kernel(kernel_path)
+    if not vmlinuz:
+        print(f"FAIL: no vmlinuz in {kernel_path}")
+        sys.exit(1)
+
+    initramfs = find_initramfs(initramfs_path)
+    if not initramfs:
+        print(f"FAIL: no initramfs in {initramfs_path}")
         sys.exit(1)
 
     # Resolve ISO
@@ -106,54 +107,65 @@ def main():
         sys.exit(1)
     os.chmod(qemu_bin, 0o755)
 
-    # Extract kernel + initramfs so we can inject console=ttyS0
-    with tempfile.TemporaryDirectory() as tmpdir:
-        vmlinuz, initramfs = extract_from_iso(iso_file, tmpdir)
-        if not vmlinuz or not initramfs:
-            print(f"FAIL: could not extract kernel/initramfs from {iso_file}")
-            sys.exit(1)
+    cmd = [
+        qemu_bin,
+        "-kernel", vmlinuz,
+        "-initrd", initramfs,
+        "-append", "console=ttyS0 loglevel=7 rd.systemd.show_status=true panic=1",
+        "-drive", f"file={iso_file},if=virtio,media=cdrom,readonly=on",
+        "-nographic", "-no-reboot", "-m", "4G",
+        "-enable-kvm", "-cpu", "host", "-smp", "4",
+    ]
 
-        # systemd initramfs needs more memory and systemd-specific kernel args
-        cmd = [
-            qemu_bin,
-            "-kernel", vmlinuz,
-            "-initrd", initramfs,
-            "-append", "console=ttyS0 loglevel=7 rd.systemd.show_status=true panic=1",
-            "-cdrom", iso_file,
-            "-nographic", "-no-reboot", "-m", "4G",
-            "-enable-kvm", "-cpu", "host",
-        ]
+    # Prepend the runtime environment wrapper so QEMU finds its shared libs
+    run_env = os.environ.get("RUN_ENV")
+    if run_env:
+        os.chmod(run_env, 0o755)
+        cmd = [run_env] + cmd
 
-        # Prepend the runtime environment wrapper so QEMU finds its shared libs
-        run_env = os.environ.get("RUN_ENV")
-        if run_env:
-            os.chmod(run_env, 0o755)
-            cmd = [run_env] + cmd
+    markers = {
+        "kernel": "Run /init as init process",
+        "systemd": "systemd[1]: Running in initrd.",
+    }
+    found = set()
+    lines = []
 
-        try:
-            r = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
-            output = r.stdout + r.stderr
-        except subprocess.TimeoutExpired as e:
-            # stdout/stderr may be bytes despite text=True
-            def _decode(b):
-                if b is None:
-                    return ""
-                return b.decode("utf-8", errors="replace") if isinstance(b, bytes) else b
-            output = _decode(e.stdout) + _decode(e.stderr)
+    proc = subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+    )
 
-    kernel_marker = "Run /init as init process"
-    systemd_marker = "systemd[1]: Running in initrd."
+    timer = threading.Timer(120, lambda: proc.kill())
+    timer.start()
 
-    print(output[-3000:] if len(output) > 3000 else output)
+    try:
+        for line in proc.stdout:
+            lines.append(line)
+            for label, marker in markers.items():
+                if marker in line and label not in found:
+                    found.add(label)
+            if found == set(markers.keys()):
+                proc.kill()
+                break
+    finally:
+        timer.cancel()
+        proc.wait()
+
+    output = "".join(lines)
+    output = _CLEAR_RE.sub("", output)
+    ok = found == set(markers.keys())
+
+    if ok:
+        tail = "\n".join(output.splitlines()[-10:])
+        print(tail)
+    else:
+        print(output)
     print("---")
 
-    ok = True
-    for label, marker in [("kernel", kernel_marker), ("systemd", systemd_marker)]:
-        if marker in output:
+    for label, marker in markers.items():
+        if label in found:
             print(f"PASS: {label}: found '{marker}'")
         else:
             print(f"FAIL: {label}: '{marker}' not found in output")
-            ok = False
 
     sys.exit(0 if ok else 1)
 

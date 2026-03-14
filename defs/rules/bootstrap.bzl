@@ -76,6 +76,7 @@ def _bootstrap_binutils_impl(ctx):
         "--disable-readline",
         "--enable-gprofng=no",
         "--enable-default-hash-style=gnu",
+        "--without-xxhash",
     ]:
         conf_cmd.add(cmd_args("--configure-arg=", arg, delimiter = ""))
     for arg in ctx.attrs.extra_configure_args:
@@ -569,6 +570,8 @@ def _bootstrap_glibc_impl(ctx):
 
     # Phase 4: compile — use build_helper for timestamp management.
     # Standard make -j$(nproc) in build subdir, just needs cross-tool PATH.
+    # headers_dir is a hidden dep because configure bakes its absolute path
+    # into the Makefile — buck2 must materialise it before make runs.
     built = ctx.actions.declare_output("built", dir = True)
     build_cmd = cmd_args(ctx.attrs._build_tool[RunInfo])
     build_cmd.add("--build-dir", configured)
@@ -577,6 +580,7 @@ def _bootstrap_glibc_impl(ctx):
     build_cmd.add("--path-prepend", cmd_args(compiler_dir, "/tools/bin", delimiter = ""))
     if binutils_dir:
         build_cmd.add("--path-prepend", cmd_args(binutils_dir, "/tools/bin", delimiter = ""))
+    build_cmd.add(cmd_args(hidden = [headers_dir]))
     build_cmd.add("--allow-host-path")
     ctx.actions.run(build_cmd, category = "bootstrap_compile", identifier = ctx.attrs.name, allow_cache_upload = True)
 

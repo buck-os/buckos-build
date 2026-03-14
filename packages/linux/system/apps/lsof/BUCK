@@ -22,5 +22,10 @@ package(
     env = {
         "CFLAGS": "-std=gnu17 -O2",
     },
+    # soelim (groff) isn't available in the hermetic build — pre-create
+    # the man page so make doesn't try to regenerate it.
+    pre_build_cmds = [
+        "test -f Lsof.8 && cp Lsof.8 lsof.man || true",
+    ],
     deps = [],
 )

@@ -10,7 +10,7 @@ import os
 import subprocess
 import sys
 
-from _env import clean_env, derive_lib_paths, filter_path_flags, register_cleanup, sanitize_filenames, write_pkg_config_wrapper
+from _env import clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, find_dep_python3, register_cleanup, sanitize_filenames, sysroot_lib_paths, write_pkg_config_wrapper
 
 
 def _resolve_env_paths(value):
@@ -36,7 +36,7 @@ def _resolve_env_paths(value):
                 resolved.append(p)
         return ":".join(resolved)
 
-    _FLAG_PREFIXES = ["-I", "-L", "-Wl,-rpath-link,", "-Wl,-rpath,"]
+    _FLAG_PREFIXES = ["-I", "-L", "-Wl,-rpath-link,", "-Wl,-rpath,", "-specs="]
 
     parts = []
     for token in value.split():
@@ -98,6 +98,8 @@ def main():
                         help="Allow host PATH (bootstrap escape hatch)")
     parser.add_argument("--hermetic-empty", action="store_true",
                         help="Start with empty PATH (populated by --path-prepend)")
+    parser.add_argument("--ld-linux", default=None,
+                        help="Buckos ld-linux path (disables posix_spawn)")
     parser.add_argument("--cflags-file", default=None,
                         help="File with CFLAGS (one per line, from tset projection)")
     parser.add_argument("--ldflags-file", default=None,
@@ -106,6 +108,8 @@ def main():
                         help="File with PKG_CONFIG_PATH entries (one per line, from tset projection)")
     parser.add_argument("--path-file", default=None,
                         help="File with PATH dirs to prepend (one per line, from tset projection)")
+    parser.add_argument("--path-append-file", default=None,
+                        help="File with PATH dirs to append (one per line, from tset projection)")
     parser.add_argument("--prefix-path-file", default=None,
                         help="File with CMAKE_PREFIX_PATH entries (one per line, from tset projection)")
     parser.add_argument("--lib-dirs-file", default=None,
@@ -123,6 +127,7 @@ def main():
     file_ldflags = filter_path_flags(_read_flag_file(args.ldflags_file))
     file_pkg_config = [p for p in _read_flag_file(args.pkg_config_file) if os.path.isdir(os.path.abspath(p))]
     file_path_dirs = _read_flag_file(args.path_file)
+    file_path_append_dirs = _read_flag_file(args.path_append_file)
     file_prefix_paths = _read_flag_file(args.prefix_path_file)
     file_lib_dirs = _read_flag_file(args.lib_dirs_file)
 
@@ -133,10 +138,7 @@ def main():
     os.makedirs(args.build_dir, exist_ok=True)
     register_cleanup(os.path.abspath(args.build_dir))
 
-    # Create a pkg-config wrapper that always passes --define-prefix so
-    # .pc files in Buck2 dep directories resolve paths correctly.
     import tempfile
-    wrapper_dir = write_pkg_config_wrapper(tempfile.mkdtemp(prefix="pkgconf-wrapper-"))
 
     env = clean_env()
 
@@ -148,16 +150,23 @@ def main():
         env["PATH"] = ":".join(os.path.abspath(p) for p in args.hermetic_path)
         # Derive LD_LIBRARY_PATH from hermetic bin dirs so dynamically
         # linked tools (e.g. cross-ar needing libzstd) find their libs.
-        _lib_dirs = []
-        for _bp in args.hermetic_path:
-            _parent = os.path.dirname(os.path.abspath(_bp))
-            for _ld in ("lib", "lib64"):
-                _d = os.path.join(_parent, _ld)
-                if os.path.isdir(_d):
-                    _lib_dirs.append(_d)
-        if _lib_dirs:
-            _existing = env.get("LD_LIBRARY_PATH", "")
-            env["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (":" + _existing if _existing else "")
+        # With sysroot ld-linux and per-package RPATH, buckos binaries
+        # find deps via RPATH.  Skip LD_LIBRARY_PATH to avoid
+        # contaminating host tools.
+        if not args.ld_linux:
+            _lib_dirs = []
+            for _bp in args.hermetic_path:
+                _parent = os.path.dirname(os.path.abspath(_bp))
+                for _ld in ("lib", "lib64"):
+                    _d = os.path.join(_parent, _ld)
+                    if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")):
+                        _lib_dirs.append(_d)
+                        _glibc_d = os.path.join(_d, "glibc")
+                        if os.path.isdir(_glibc_d):
+                            _lib_dirs.append(_glibc_d)
+            if _lib_dirs:
+                _existing = env.get("LD_LIBRARY_PATH", "")
+                env["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (":" + _existing if _existing else "")
         _py_paths = []
         for _bp in args.hermetic_path:
             _parent = os.path.dirname(os.path.abspath(_bp))
@@ -183,28 +192,47 @@ def main():
         if prepend:
             env["PATH"] = prepend + ":" + env.get("PATH", "")
 
+    # Append dep bin dirs for *-config discovery scripts
+    if file_path_append_dirs:
+        append = ":".join(os.path.abspath(p) for p in file_path_append_dirs if os.path.isdir(p))
+        if append:
+            env["PATH"] = env.get("PATH", "") + ":" + append
+
     # Merge flag file pkg-config paths into env
     if file_pkg_config:
         existing = env.get("PKG_CONFIG_PATH", "")
         merged = _resolve_env_paths(":".join(file_pkg_config))
         env["PKG_CONFIG_PATH"] = (merged + ":" + existing).rstrip(":") if existing else merged
 
+    # Create a pkg-config wrapper that always passes --define-prefix so
+    # .pc files in Buck2 dep directories resolve paths correctly.
+    wrapper_dir = write_pkg_config_wrapper(tempfile.mkdtemp(prefix="pkgconf-wrapper-"), python=find_dep_python3(env))
+
     # Prepend pkg-config wrapper to PATH (after hermetic/prepend logic
     # so the wrapper is always available regardless of PATH mode)
     env["PATH"] = wrapper_dir + ":" + env.get("PATH", "")
 
-    # Extract --sysroot= from CC/CXX and pass as CMAKE_SYSROOT instead.
-    # CMake's automoc mishandles sysroot embedded in the compiler command,
-    # generating broken ninja rules with escaped-space before --sysroot.
+    # Extract --sysroot= and -specs= from CC/CXX.  When cmake sees a
+    # multi-word CXX it splits into CMAKE_CXX_COMPILER + COMPILER_ARG1.
+    # COMPILER_ARG1 gets a leading space that ninja escapes as "\ ",
+    # which the shell turns into a literal space in the argument —
+    # gcc then treats " -specs=..." as a filename, not a flag.
+    #
+    # Pass --sysroot as CMAKE_SYSROOT and -specs via CMAKE_*_FLAGS
+    # so the compiler variable is a bare binary path.
     _cmake_sysroot = None
+    _specs_flags = []
     for _cc_key in ("CC", "CXX"):
         _cc_val = env.get(_cc_key, "")
-        if "--sysroot=" in _cc_val:
+        if "--sysroot=" in _cc_val or "-specs=" in _cc_val:
             parts = _cc_val.split()
             clean = []
             for p in parts:
                 if p.startswith("--sysroot="):
                     _cmake_sysroot = p[len("--sysroot="):]
+                elif p.startswith("-specs="):
+                    if p not in _specs_flags:
+                        _specs_flags.append(p)
                 else:
                     clean.append(p)
             env[_cc_key] = " ".join(clean)
@@ -241,17 +269,27 @@ def main():
     if all_prefix_paths:
         cmd.append("-DCMAKE_PREFIX_PATH=" + ";".join(all_prefix_paths))
 
-    # Merge flag-file lib dirs into LD_LIBRARY_PATH for dep tools
-    if file_lib_dirs:
+    # Merge flag-file lib dirs into LD_LIBRARY_PATH for dep tools.
+    # With sysroot ld-linux and per-package RPATH, buckos binaries find
+    # deps via RPATH.  Skip LD_LIBRARY_PATH to avoid contaminating host
+    # tools.
+    if file_lib_dirs and not args.ld_linux:
         resolved_lib_dirs = [os.path.abspath(d) for d in file_lib_dirs if os.path.isdir(d)]
         if resolved_lib_dirs:
             existing = env.get("LD_LIBRARY_PATH", "")
             merged = ":".join(resolved_lib_dirs)
             env["LD_LIBRARY_PATH"] = (merged + ":" + existing).rstrip(":") if existing else merged
 
-    # Derive LD_LIBRARY_PATH from path-prepend dirs so host tools with
-    # shared libraries (e.g. python → libpython3.so) can execute.
+    # Derive GCONV_PATH, BISON_PKGDATADIR (and LD_LIBRARY_PATH when no
+    # sysroot ld-linux) from path-prepend dirs so host tools find shared
+    # Derive LD_LIBRARY_PATH, GETTEXTDATADIRS, BISON_PKGDATADIR from
+    # path-prepend dirs.  Host_dep tools (qtpaths, moc) need non-sysroot
+    # package libs via LD_LIBRARY_PATH.  derive_lib_paths excludes dirs
+    # containing libc.so.6 to prevent glibc contamination.
     derive_lib_paths(all_path_prepend, env)
+
+    if args.ld_linux:
+        sysroot_lib_paths(args.ld_linux, env)
 
     # Auto-detect Perl5 lib dirs from dep prefixes so build-time perl
     # modules (e.g. URI::Escape for kdoctools) are found by cmake's
@@ -283,6 +321,12 @@ def main():
         else:
             cmake_defines[define] = ""
 
+    # Scrub absolute build paths from debug info and __FILE__ expansions.
+    pfm = " ".join(file_prefix_map_flags())
+    for key in ("CMAKE_C_FLAGS", "CMAKE_CXX_FLAGS"):
+        existing = cmake_defines.get(key, "")
+        cmake_defines[key] = (pfm + " " + existing).strip() if existing else pfm
+
     # Merge flag-file cflags into CMAKE_C_FLAGS and CMAKE_CXX_FLAGS.
     # File flags (dep tset) come first; --cmake-define flags (toolchain/
     # per-package) are appended so they can override.
@@ -299,6 +343,16 @@ def main():
                      "CMAKE_MODULE_LINKER_FLAGS"):
             existing = cmake_defines.get(key, "")
             cmake_defines[key] = (_ld + " " + existing).strip() if existing else _ld
+
+    # Inject -specs= flags stripped from CC/CXX into all flag variables
+    # so they apply to both compile and link commands.
+    if _specs_flags:
+        _sf = _resolve_env_paths(" ".join(_specs_flags))
+        for key in ("CMAKE_C_FLAGS", "CMAKE_CXX_FLAGS",
+                     "CMAKE_EXE_LINKER_FLAGS", "CMAKE_SHARED_LINKER_FLAGS",
+                     "CMAKE_MODULE_LINKER_FLAGS"):
+            existing = cmake_defines.get(key, "")
+            cmake_defines[key] = (_sf + " " + existing).strip() if existing else _sf
 
     # Write long defines (CMAKE_*_FLAGS with hundreds of dep flags) to an
     # initial-cache file instead of the command line.  Packages with 100+

@@ -32,5 +32,8 @@ ima_sign_package(
     package = ":hello",
     enabled = True,
     signing_key = "//defs/keys:ima-test-key",
+    # Explicit dep — can't be a default attr because ima-evm-utils →
+    # openssl → openssl-signed creates a cycle.
+    evmctl_pkg = "//packages/linux/system/security/ima-evm-utils:ima-evm-utils",
     visibility = ["PUBLIC"],
 )

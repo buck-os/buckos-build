@@ -11,7 +11,7 @@ import shutil
 import subprocess
 import sys
 
-from _env import sanitize_global_env
+from _env import sanitize_global_env, sysroot_lib_paths
 
 
 def main():
@@ -32,12 +32,32 @@ def main():
                         help="Set PATH to only these dirs (replaces host PATH, repeatable)")
     parser.add_argument("--hermetic-empty", action="store_true",
                         help="Start with empty PATH (populated by --path-prepend)")
+    parser.add_argument("--ld-linux", default=None,
+                        help="Buckos ld-linux path (disables posix_spawn)")
     parser.add_argument("--path-prepend", action="append", dest="path_prepend", default=[],
                         help="Directory to prepend to PATH (repeatable, resolved to absolute)")
     args = parser.parse_args()
 
     _host_path = os.environ.get("PATH", "")
+    _cc_val = os.environ.get("CC", "")
+    _project_root = os.getcwd()
     sanitize_global_env()
+    # Resolve CC paths to absolute (relative buck-out paths break after make -C)
+    if _cc_val:
+        _resolved_parts = []
+        for _tok in _cc_val.split():
+            for _pfx in ("--sysroot=", "-specs="):
+                if _tok.startswith(_pfx):
+                    _path = _tok[len(_pfx):]
+                    if not os.path.isabs(_path):
+                        _tok = _pfx + os.path.join(_project_root, _path)
+                    break
+            else:
+                if not _tok.startswith("-") and "/" in _tok and not os.path.isabs(_tok):
+                    _tok = os.path.join(_project_root, _tok)
+            _resolved_parts.append(_tok)
+        _cc_val = " ".join(_resolved_parts)
+        os.environ["CC"] = _cc_val
 
     # Apply PATH from toolchain flags
     if args.hermetic_path:
@@ -54,6 +74,9 @@ def main():
         prepend = ":".join(os.path.abspath(p) for p in args.path_prepend if os.path.isdir(p))
         if prepend:
             os.environ["PATH"] = prepend + ":" + os.environ.get("PATH", "")
+
+    if args.ld_linux:
+        sysroot_lib_paths(args.ld_linux, os.environ)
 
     source_dir = os.path.abspath(args.source_dir)
     config_file = os.path.abspath(args.config) if args.config else None
@@ -90,6 +113,14 @@ def main():
     ]
     if args.cross_compile:
         make_cmd.append(f"CROSS_COMPILE={args.cross_compile}")
+    # Pass HOSTCC and flags so make uses buckos compiler for fixdep.
+    # Split multi-token CC into HOSTCC (binary) + HOSTCFLAGS (flags).
+    _cc_val = os.environ.get("CC", "")
+    if _cc_val:
+        _parts = _cc_val.split()
+        make_cmd.append(f"HOSTCC={_parts[0]}")
+        if len(_parts) > 1:
+            make_cmd.append(f"HOSTCFLAGS={' '.join(_parts[1:])}")
 
     print(f"Installing kernel headers to {output_dir}")
     print(f"  + {' '.join(make_cmd)}")

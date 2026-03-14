@@ -35,6 +35,11 @@ package(
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc",
+        # Pre-set: readpassphrase() is in libbsd.  AC_SEARCH_LIBS fails
+        # because libbsd.so is a GNU ld linker script (GROUP(...)) and
+        # the cross-compiler's ld can't resolve it during configure tests
+        # when the libraries are in Buck2 dep prefixes.
+        "ac_cv_search_readpassphrase=-lbsd",
     ],
     deps = [
         "//packages/linux/system/libs/crypto/libxcrypt:libxcrypt",

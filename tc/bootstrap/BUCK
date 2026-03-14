@@ -3,54 +3,75 @@ Bootstrap toolchain instantiation and export.
 
 Gentoo-style staged bootstrap:
 
-  Stage 1  — cross-compiler (host GCC → buckos cross-compiler)
-  Stage 2  — temporary tools (cross-compiled, host PATH leaks in)
-  Stage 3  — hermetic rebuild (rebuilt with stage 2 tools on PATH)
+  Stage 2  — cross-compiler (host GCC → buckos cross-compiler)
+  Stage 3  — toolchain (stage 2 cross-compiler, PATH from per-rule deps)
 
 Provides:
-  :bootstrap-toolchain  — BuildToolchainInfo wrapping Stage 1 output
-  :stage2-toolchain     — Stage 1 cross-compiler (PATH from per-rule deps)
+  :bootstrap-toolchain  — BuildToolchainInfo wrapping Stage 2 output
+  :stage3-toolchain     — Stage 2 cross-compiler (PATH from per-rule deps)
   :seed-export          — distributable tar.zst (cross-compiler +
-                          stage 3 buckos-native host tools)
+                          buckos-native host tools)
 """
 
 load("//tc:toolchain_rules.bzl", "buckos_bootstrap_toolchain")
 load("//tc:transitions.bzl", "default_dep")
 load("//defs/rules:toolchain_export.bzl", "toolchain_export")
+load("//defs/rules:host_tools_exec.bzl", "host_tools_exec")
+
+# Patchelf built with host compiler for toolchain interpreter patching.
+# Must not depend on the buckos toolchain to avoid circular deps.
+genrule(
+    name = "patchelf-host",
+    srcs = ["//packages/linux/dev-tools/dev-utils/patchelf:patchelf-src"],
+    out = "patchelf",
+    cmd = "g++ -O2 -std=c++17 -o $OUT $SRCS/src/patchelf.cc",
+    visibility = ["PUBLIC"],
+)
 
 buckos_bootstrap_toolchain(
     name = "bootstrap-toolchain",
-    bootstrap_stage = "//tc/bootstrap/stage1:stage1",
+    bootstrap_stage = "//tc/bootstrap/stage2:stage2",
+    extra_ldflags = [
+        "-Wl,-rpath,$ORIGIN/../lib64:$ORIGIN/../lib",
+    ],
     visibility = ["PUBLIC"],
 )
 
-# Stage 2 host tools resolved in DEFAULT config via default_dep wrapper.
-# No longer a stage2-toolchain dep (PATH now comes from per-rule host
-# tool exec_deps), but kept for seed-export bundling and direct use.
-default_dep(
-    name = "stage2-host-tools",
-    dep = "//tc/bootstrap/host-tools:host-tools",
-    visibility = ["PUBLIC"],
-)
-
-# Stage 2 toolchain: stage 1 cross-compiler, no host_tools.
+# Stage 3 toolchain: stage 2 cross-compiler, no host_tools.
 # PATH is assembled from per-rule host tool exec_deps via --hermetic-empty
 # + --path-prepend instead of a single host_bin_dir.  This removes the
 # tight coupling between the toolchain and the host_tools_aggregator
 # mega target, which now only exists for seed-export bundling.
 buckos_bootstrap_toolchain(
-    name = "stage2-toolchain",
-    bootstrap_stage = "//tc/bootstrap/stage1:stage1",
+    name = "stage3-toolchain",
+    bootstrap_stage = "//tc/bootstrap/stage2:stage2",
     extra_cflags = ["-march=x86-64-v3"],
+    extra_ldflags = [
+        # $ORIGIN-relative RPATH so buckos binaries find their libs at
+        # runtime without LD_LIBRARY_PATH.  Works in both seed layout
+        # (bin/foo → ../lib64/) and rootfs (/usr/bin/foo → /usr/lib64/).
+        # The dynamic linker comes from the sysroot directly (via specs).
+        "-Wl,-rpath,$ORIGIN/../lib64:$ORIGIN/../lib",
+    ],
     visibility = ["PUBLIC"],
 )
 
-# Seed export: stage 1 cross-compiler + stage 3 hermetic host tools.
-# The stage3 transition (on host_tools attr) rebuilds host-tools with
-# the stage 2 toolchain, ensuring no host PATH leakage in the output.
+# Host tools with ELF interpreters rewritten to the sysroot's
+# ld-linux.  This makes host tools directly executable on the
+# build host (using buckos ld-linux, not the host's) while keeping
+# them hermetically built.  Used as host_bin_dir for the source-mode
+# seed-toolchain so packages get a hermetic PATH without a prebuilt seed.
+host_tools_exec(
+    name = "host-tools-exec",
+    stage = "//tc/bootstrap/stage2:stage2",
+    host_tools = "//tc/bootstrap/host-tools:host-tools",
+    visibility = ["PUBLIC"],
+)
+
+# Seed export: stage 2 cross-compiler + buckos-native host tools.
 toolchain_export(
     name = "seed-export",
-    stage = "//tc/bootstrap/stage1:stage1",
+    stage = "//tc/bootstrap/stage2:stage2",
     host_tools = "//tc/bootstrap/host-tools:host-tools",
     gcc_version = "14.3.0",
     glibc_version = "2.42",

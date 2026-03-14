@@ -20,11 +20,7 @@ load("//tc:defs.bzl", "buckos_execution_platforms")
 #
 # TOOLCHAIN_ATTRS select() uses these to choose between toolchains:
 #   is-bootstrap-mode → host PATH toolchain (escape hatch)
-#   is-stage3-mode    → stage 2 toolchain (hermetic rebuild)
 #   DEFAULT           → seed toolchain (toolchains//:buckos)
-#
-# The stage3 transition is the active one: applied by toolchain_export
-# to the host_tools dep so stage 3 tools are built hermetically.
 
 constraint_setting(
     name = "bootstrap-mode-setting",
@@ -43,21 +39,9 @@ constraint_value(
     visibility = ["PUBLIC"],
 )
 
-constraint_value(
-    name = "stage3-mode-true",
-    constraint_setting = ":bootstrap-mode-setting",
-    visibility = ["PUBLIC"],
-)
-
 config_setting(
     name = "is-bootstrap-mode",
     constraint_values = [":bootstrap-mode-true"],
-    visibility = ["PUBLIC"],
-)
-
-config_setting(
-    name = "is-stage3-mode",
-    constraint_values = [":stage3-mode-true"],
     visibility = ["PUBLIC"],
 )
 
@@ -73,17 +57,37 @@ config_setting(
     visibility = ["PUBLIC"],
 )
 
+# Host-tools mode: buckos compiler + host PATH fallback, no host_tools
+# dep.  Used by host_tools_aggregator to build base tools without
+# creating a cycle back to the seed toolchain.
+constraint_value(
+    name = "host-tools-mode",
+    constraint_setting = ":bootstrap-mode-setting",
+    visibility = ["PUBLIC"],
+)
+
+config_setting(
+    name = "is-host-tools-mode",
+    constraint_values = [":host-tools-mode"],
+    visibility = ["PUBLIC"],
+)
+
 # ── Transition targets ─────────────────────────────────────────────
 
-load("//tc:transitions.bzl", "default_transition", "stage3_transition")
+load("//tc:transitions.bzl", "bootstrap_transition", "default_transition", "host_tools_transition")
 
 default_transition(
     name = "default-transition",
     visibility = ["PUBLIC"],
 )
 
-stage3_transition(
-    name = "stage3-transition",
+bootstrap_transition(
+    name = "bootstrap-transition",
+    visibility = ["PUBLIC"],
+)
+
+host_tools_transition(
+    name = "host-tools-transition",
     visibility = ["PUBLIC"],
 )
 

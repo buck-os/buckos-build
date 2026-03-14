@@ -12,11 +12,13 @@ only — routing nodes don't produce actions.
 
 load("//tests/graph:helpers.bzl", "assert_result", "starts_with", "summarize")
 
-# Stage 1 bootstrap targets pinned via cfg = strip_toolchain_mode.
+# Bootstrap targets pinned via cfg = strip_toolchain_mode.
 # Each must have exactly one <base> configuration node — if zero,
 # the transition was removed; if multiple, the transition is broken.
-_PINNED_TARGETS = [
-    # extract_source targets
+
+# extract_source targets live in the shared sources package.
+_SOURCES_PATH = "//tc/bootstrap/sources"
+_SOURCE_TARGETS = [
     ":gcc-src",
     ":binutils-src",
     ":glibc-src",
@@ -24,15 +26,17 @@ _PINNED_TARGETS = [
     ":gmp-src",
     ":mpfr-src",
     ":mpc-src",
-    # bootstrap rule targets
+]
+
+# Bootstrap rule targets remain in stage2.
+_STAGE2_PATH = "//tc/bootstrap/stage2"
+_STAGE2_TARGETS = [
     ":cross-binutils",
     ":gcc-pass1",
     ":gcc-pass2",
     ":glibc",
     ":linux-headers",
 ]
-
-_STAGE1_PATH = "//tc/bootstrap/stage1"
 
 def _normalize(label_str):
     """Strip cell prefix, leaving canonical '//path:name'."""
@@ -42,7 +46,7 @@ def _normalize(label_str):
     return label_str
 
 def run(ctx):
-    """Verify pinned stage 1 targets have exactly one <base> configuration.
+    """Verify pinned stage 2 targets have exactly one <base> configuration.
 
     Returns:
         (passed, failed, details) tuple.
@@ -68,33 +72,33 @@ def run(ctx):
                 base_configs[raw] = []
             base_configs[raw].append(full)
 
-    for suffix in _PINNED_TARGETS:
-        target = _STAGE1_PATH + suffix
-        short = suffix.lstrip(":")
-        total = all_configs.get(target, [])
-        base = base_configs.get(target, [])
+    for path, suffixes in [(_SOURCES_PATH, _SOURCE_TARGETS), (_STAGE2_PATH, _STAGE2_TARGETS)]:
+        for suffix in suffixes:
+            target = path + suffix
+            short = suffix.lstrip(":")
+            total = all_configs.get(target, [])
+            base = base_configs.get(target, [])
 
-        assert_result(
-            ctx, results,
-            short + " exists in dep graph",
-            len(total) > 0,
-            target + " not found in deps(//tc/bootstrap:seed-export)",
-        )
+            assert_result(
+                ctx, results,
+                short + " exists in dep graph",
+                len(total) > 0,
+                target + " not found in deps(//tc/bootstrap:seed-export)",
+            )
 
-        assert_result(
-            ctx, results,
-            short + " has <base> config",
-            len(base) == 1,
-            "expected 1 <base> config, got {}: {}".format(
-                len(base), ", ".join(base) if base else ", ".join(total),
-            ),
-        )
+            assert_result(
+                ctx, results,
+                short + " has <base> config",
+                len(base) == 1,
+                "expected 1 <base> config, got {}: {}".format(
+                    len(base), ", ".join(base) if base else ", ".join(total),
+                ),
+            )
 
     # ── Host-tools dedup ──────────────────────────────────────────────
     #
-    # Host-tools targets (stage 2 packages) should appear in at most 2
-    # distinct configurations: DEFAULT and stage3-transition.  More than
-    # 2 means duplicate actions.
+    # Host-tools targets should appear in at most 2
+    # distinct configurations.  More than 2 means duplicate actions.
     host_tools_configs = {}
     for node in all_deps:
         raw = _normalize(str(node.label.raw_target()))

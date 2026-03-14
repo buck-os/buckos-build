@@ -98,7 +98,8 @@ if grep -q "rootfstype=virtiofs" /proc/cmdline; then
 fi
 
 # Set hostname
-hostname buckos-ch
+echo buckos-ch > /etc/hostname
+command -v hostname >/dev/null 2>&1 && hostname buckos-ch
 
 # Configure loopback
 ip link set lo up 2>/dev/null || true

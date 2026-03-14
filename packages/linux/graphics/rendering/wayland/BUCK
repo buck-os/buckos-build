@@ -3,143 +3,76 @@ load("//defs:package.bzl", "package")
 # wayland - Wayland display protocol libraries and scanner tool
 # Following Gentoo's approach: disable dtd_validation to avoid libxml2 runtime dependency
 
-# Native wayland-scanner build for cross-compilation
-# This builds wayland-scanner with the host toolchain so it can run during cross builds
+# wayland-scanner — built with buckos compiler for hermeticity.
+# Uses buckos expat (both linked against buckos glibc, no ABI mismatch).
+# The scanner binary gets sysroot ld-linux via GCC specs, runs on host
+# through the sysroot dynamic linker.
+#
+# pre_configure_cmds patches out the bootstrap circularity where
+# meson's dependency('wayland-scanner') requires a pre-existing
+# scanner to build the scanner itself.
 package(
     name = "wayland-scanner",
-    build_rule = "binary",
+    build_rule = "meson",
     version = "1.23.1",
     url = "https://gitlab.freedesktop.org/wayland/wayland/-/releases/1.23.1/downloads/wayland-1.23.1.tar.xz",
     sha256 = "864fb2a8399e2d0ec39d56e9d9b753c093775beadc6022ce81f441929a81e5ed",
     description = "Native wayland-scanner for cross-compilation",
     homepage = "https://gitlab.freedesktop.org/wayland/wayland",
     license = "MIT",
-    deps = [
-        "//packages/linux/system/libs/data/expat:expat-host",
+    pre_configure_cmds = [
+        # wayland's meson.build does dependency('wayland-scanner') to find
+        # a pre-existing scanner for code generation.  When building the
+        # scanner itself there is no pre-existing one — make it optional.
+        # The scanner binary is self-contained (scanner.c + expat) and
+        # doesn't need protocol code generation.
+        # The cross-build path (line 83) tries to find a pre-existing
+        # wayland-scanner binary, which doesn't exist when building
+        # the scanner itself.  Force the else branch (use the scanner
+        # we're building) by making the condition always false.
+        "sed -i 's/meson.is_cross_build() or not /false and not /' src/meson.build",
     ],
-    install_script = """
-# Use host compiler for native build
-unset CC CXX AR RANLIB LD STRIP
-unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS
-export CC=gcc
-export CXX=g++
-
-# Find buckos-built expat-host in deps
-for dep in $DEPS_DIRS; do
-    if [ -f "$dep/usr/lib64/pkgconfig/expat.pc" ]; then
-        export PKG_CONFIG_PATH="$dep/usr/lib64/pkgconfig:$dep/usr/share/pkgconfig"
-        export CFLAGS="-I$dep/usr/include"
-        export LDFLAGS="-L$dep/usr/lib64 -Wl,-rpath,$dep/usr/lib64"
-        echo "Found expat-host at: $dep"
-        break
-    elif [ -f "$dep/usr/lib/pkgconfig/expat.pc" ]; then
-        export PKG_CONFIG_PATH="$dep/usr/lib/pkgconfig:$dep/usr/share/pkgconfig"
-        export CFLAGS="-I$dep/usr/include"
-        export LDFLAGS="-L$dep/usr/lib -Wl,-rpath,$dep/usr/lib"
-        echo "Found expat-host at: $dep"
-        break
-    fi
-done
-
-# Ensure host meson/ninja are in PATH
-export PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
-
-mkdir -p build
-meson setup build \
-    --prefix=/usr \
-    --libdir=lib64 \
-    --buildtype=release \
-    -Ddocumentation=false \
-    -Dtests=false \
-    -Ddtd_validation=false \
-    -Dlibraries=false \
-    -Dscanner=true
-
-# List available targets and find the scanner
-echo "Available ninja targets:"
-ninja -C build -t targets | head -20 || true
-
-# Try to find the wayland-scanner target
-SCANNER_TARGET=""
-if ninja -C build -t targets | grep -q "^wayland-scanner:"; then
-    SCANNER_TARGET="wayland-scanner"
-elif ninja -C build -t targets | grep -q "^src/wayland-scanner:"; then
-    SCANNER_TARGET="src/wayland-scanner"
-else
-    # Just build all targets
-    SCANNER_TARGET=""
-fi
-
-if [ -n "$SCANNER_TARGET" ]; then
-    ninja -C build "$SCANNER_TARGET"
-else
-    # Build everything if we can't find the specific target
-    ninja -C build
-fi
-
-mkdir -p "$DESTDIR/usr/bin"
-cp build/src/wayland-scanner "$DESTDIR/usr/bin/"
-chmod +x "$DESTDIR/usr/bin/wayland-scanner"
-
-# Install wayland protocol files needed by Qt and KDE
-mkdir -p "$DESTDIR/usr/share/wayland"
-cp protocol/wayland.xml "$DESTDIR/usr/share/wayland/"
-
-# Also install pkg-config file for wayland-scanner
-mkdir -p "$DESTDIR/usr/lib64/pkgconfig"
-cat > "$DESTDIR/usr/lib64/pkgconfig/wayland-scanner.pc" << 'EOF'
-prefix=/usr
-exec_prefix=${prefix}
-bindir=${exec_prefix}/bin
-datarootdir=${prefix}/share
-pkgdatadir=${datarootdir}/wayland
-wayland_scanner=${bindir}/wayland-scanner
-
-Name: Wayland Scanner
-Description: Wayland scanner tool
-Version: 1.23.1
-EOF
-
-# Install CMake config for WaylandScanner so find_package(WaylandScanner) works
-mkdir -p "$DESTDIR/usr/lib64/cmake/WaylandScanner"
-cat > "$DESTDIR/usr/lib64/cmake/WaylandScanner/WaylandScannerConfig.cmake" << 'EOF'
-# WaylandScanner CMake config for cross-compilation
-# This is the native (host) scanner tool
-
-# Get the directory where this config file is located
+    meson_args = [
+        "-Ddocumentation=false",
+        "-Dtests=false",
+        "-Ddtd_validation=false",
+        "-Dlibraries=false",
+        "-Dscanner=true",
+    ],
+    deps = [
+        "//packages/linux/system/libs/data/expat:expat",
+    ],
+    post_install_cmds = [
+        # CMake config for find_package(WaylandScanner)
+        "mkdir -p \"$DESTDIR/usr/lib64/cmake/WaylandScanner\"",
+        """cat > "$DESTDIR/usr/lib64/cmake/WaylandScanner/WaylandScannerConfig.cmake" << 'CMEOF'
 get_filename_component(_WaylandScanner_PREFIX "${CMAKE_CURRENT_LIST_DIR}/../../.." ABSOLUTE)
-
 set(WaylandScanner_FOUND TRUE)
 set(WaylandScanner_VERSION "1.23.1")
-set(WaylandScanner_EXECUTABLE "${_WaylandScanner_PREFIX}/bin/wayland-scanner" CACHE FILEPATH "Path to wayland-scanner executable")
-
-# For compatibility with different CMake variable names
-set(WAYLAND_SCANNER_EXECUTABLE "${WaylandScanner_EXECUTABLE}" CACHE FILEPATH "Path to wayland-scanner executable")
-
+set(WaylandScanner_EXECUTABLE "${_WaylandScanner_PREFIX}/bin/wayland-scanner" CACHE FILEPATH "wayland-scanner")
+set(WAYLAND_SCANNER_EXECUTABLE "${WaylandScanner_EXECUTABLE}" CACHE FILEPATH "wayland-scanner")
 mark_as_advanced(WaylandScanner_EXECUTABLE WAYLAND_SCANNER_EXECUTABLE)
 unset(_WaylandScanner_PREFIX)
-EOF
-
-cat > "$DESTDIR/usr/lib64/cmake/WaylandScanner/WaylandScannerConfigVersion.cmake" << 'EOF'
+CMEOF""",
+        """cat > "$DESTDIR/usr/lib64/cmake/WaylandScanner/WaylandScannerConfigVersion.cmake" << 'CMEOF'
 set(PACKAGE_VERSION "1.23.1")
 if(PACKAGE_VERSION VERSION_LESS PACKAGE_FIND_VERSION)
-    set(PACKAGE_VERSION_COMPATIBLE FALSE)
+  set(PACKAGE_VERSION_COMPATIBLE FALSE)
 else()
-    set(PACKAGE_VERSION_COMPATIBLE TRUE)
-    if(PACKAGE_FIND_VERSION STREQUAL PACKAGE_VERSION)
-        set(PACKAGE_VERSION_EXACT TRUE)
-    endif()
+  set(PACKAGE_VERSION_COMPATIBLE TRUE)
+  if(PACKAGE_FIND_VERSION STREQUAL PACKAGE_VERSION)
+    set(PACKAGE_VERSION_EXACT TRUE)
+  endif()
 endif()
-EOF
-""",
+CMEOF""",
+    ],
 )
 
 package(
     name = "wayland",
     build_rule = "meson",
     version = "1.23.1",
-    url = "https://gitlab.freedesktop.org/wayland/wayland/-/releases/1.23.1/downloads/wayland-1.23.1.tar.xz",
-    sha256 = "864fb2a8399e2d0ec39d56e9d9b753c093775beadc6022ce81f441929a81e5ed",
+    source = ":wayland-scanner-src",
     description = "Wayland display protocol libraries and scanner",
     homepage = "https://gitlab.freedesktop.org/wayland/wayland",
     license = "MIT",

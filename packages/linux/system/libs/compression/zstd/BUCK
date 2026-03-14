@@ -16,7 +16,11 @@ package(
 
     configure_args = [
         "-Dbin_programs=true",
-        "-Dbin_contrib=true",
+        # Contrib programs (gen_html, pzstd) are C++ and fail to link
+        # against libgcc_s in the cross-compiler sysroot due to
+        # meson's --as-needed.  They're optional utilities — skip them.
+        "-Dbin_contrib=false",
+        "-Db_lundef=false",
     ],
 
     # USE flag to meson option mapping

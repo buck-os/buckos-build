@@ -1,0 +1,28 @@
+load("//defs/rules:kernel.bzl", "kernel_build")
+load("//defs/rules:image.bzl", "iso_image")
+
+# ── Shared test kernel (tinyconfig + minimal virtio/serial/fs) ───────
+# Fast to build (~2 min), boots in both Cloud Hypervisor and QEMU.
+# Used by CH boot, ISO boot, and IMA tests.
+
+kernel_build(
+    name = "test-kernel",
+    source = "//packages/linux/kernel/src:linux-src",
+    version = "6.18",
+    config = "test-kernel.config",
+    config_base = "tinyconfig",
+    visibility = ["PUBLIC"],
+)
+
+# ── Lightweight test ISO (test-kernel + buckos-initramfs) ────────────
+# Same ISO build pipeline as production but with the fast test kernel.
+
+iso_image(
+    name = "test-minimal-iso",
+    kernel = ":test-kernel",
+    initramfs = "//packages/linux/system:buckos-live-initramfs-busybox",
+    boot_mode = "efi",
+    volume_label = "BUCKOS",
+    kernel_args = "quiet rdinit=/init",
+    visibility = ["PUBLIC"],
+)

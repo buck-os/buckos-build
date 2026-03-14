@@ -9,8 +9,8 @@ action runs, no copy.  The target always exists in the graph regardless;
 it is a zero-cost passthrough when the controlling USE flag is off.
 """
 
-load("//defs:providers.bzl", "PackageInfo")
-load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_path_args")
+load("//defs:providers.bzl", "BuildToolchainInfo", "PackageInfo")
+load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_ld_linux_args", "toolchain_path_args")
 
 # ── Helpers ───────────────────────────────────────────────────────────
 
@@ -58,10 +58,13 @@ def _strip_package_impl(ctx):
     cmd = cmd_args(ctx.attrs._strip_tool[RunInfo])
     cmd.add("--input", pkg.prefix)
     cmd.add("--output", output.as_output())
-    cmd.add("--strip", "strip")
+    tc = ctx.attrs._toolchain[BuildToolchainInfo]
+    cmd.add("--strip", tc.strip.args)
 
     # Hermetic PATH from toolchain
     for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
         cmd.add(arg)
 
     ctx.actions.run(cmd, category = "strip", identifier = pkg.name, allow_cache_upload = True)
@@ -96,6 +99,8 @@ def _stamp_package_impl(ctx):
     # Hermetic PATH from toolchain
     for arg in toolchain_path_args(ctx):
         cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
+        cmd.add(arg)
 
     ctx.actions.run(cmd, category = "stamp", identifier = pkg.name, allow_cache_upload = True)
     return [DefaultInfo(default_output = output), _rebase_pkg(pkg, output)]
@@ -128,6 +133,16 @@ def _ima_sign_package_impl(ctx):
     # Hermetic PATH from toolchain
     for arg in toolchain_path_args(ctx):
         cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
+        cmd.add(arg)
+
+    # evmctl is an EXTENDED tool — not in the base host_tools PATH.
+    # When evmctl_pkg is provided, prepend its bin dirs.  This cannot
+    # be a default attr because it creates a cycle: ima-evm-utils →
+    # openssl → openssl-signed → ima-evm-utils.
+    if ctx.attrs.evmctl_pkg:
+        evmctl_prefix = ctx.attrs.evmctl_pkg[PackageInfo].prefix
+        cmd.add("--path-prepend", evmctl_prefix.project("usr/bin"))
 
     ctx.actions.run(cmd, category = "ima_sign", identifier = pkg.name, allow_cache_upload = True)
     return [DefaultInfo(default_output = output), _rebase_pkg(pkg, output)]
@@ -138,6 +153,7 @@ ima_sign_package = rule(
         "package": attrs.dep(),
         "enabled": attrs.bool(default = True),
         "signing_key": attrs.option(attrs.source(), default = None),
+        "evmctl_pkg": attrs.option(attrs.dep(providers = [PackageInfo]), default = None),
         "_ima_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:ima_helper"),
         ),

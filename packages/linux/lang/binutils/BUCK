@@ -14,10 +14,12 @@ package(
     homepage = "https://www.gnu.org/software/binutils/",
     license = "GPL-3.0",
     deps = [
+        "//packages/linux/core/zlib:zlib",
+    ],
+    host_deps = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
         "//packages/linux/dev-tools/build-systems/automake:automake",
         "//packages/linux/dev-tools/build-systems/libtool:libtool",
-        "//packages/linux/core/zlib:zlib",
     ],
     use_configure = {
         "cet": ("--enable-cet", "--disable-cet"),
@@ -56,15 +58,16 @@ cd "$SRCS"
     --disable-gprofng \
     --with-system-zlib
 
-# Build native host tools before cross-compilation starts
-# These tools generate code/data and can't be cross-compiled
+# Build native host tools before cross-compilation starts.
+# These tools generate code/data and can't be cross-compiled.
+# Use $CC (specs-stripped) instead of bare gcc.
 
 # 1. bfd/doc/chew - documentation tool
 for chew_c in bfd/doc/chew.c; do
     if [ -f "$chew_c" ]; then
         dir=$(dirname "$chew_c")
         echo "Building native chew tool in $dir..."
-        gcc -o "$dir/chew" "$chew_c"
+        $CC -o "$dir/chew" "$chew_c"
         touch "$dir/chew.stamp"
     fi
 done
@@ -75,11 +78,11 @@ if [ -f binutils/sysinfo.y ]; then
     cd binutils
     # Build syslex
     flex -o syslex.c syslex.l 2>/dev/null || true
-    gcc -c -o syslex_wrap.o syslex.c -I.
+    $CC -c -o syslex_wrap.o syslex.c -I.
     # Build sysinfo using bison/yacc
     bison -o sysinfo.c -d sysinfo.y 2>/dev/null || yacc -o sysinfo.c -d sysinfo.y 2>/dev/null || true
-    gcc -c -o sysinfo.o sysinfo.c -I.
-    gcc -o sysinfo sysinfo.o syslex_wrap.o
+    $CC -c -o sysinfo.o sysinfo.c -I.
+    $CC -o sysinfo sysinfo.o syslex_wrap.o
     touch sysinfo syslex_wrap.o sysinfo.o
     cd ..
 fi

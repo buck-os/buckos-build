@@ -48,6 +48,13 @@ COMMON_PACKAGE_ATTRS = {
     "_patch_tool": attrs.default_only(
         attrs.exec_dep(default = "//tools:patch_helper"),
     ),
+
+    # Base host tools: fundamental build prerequisites that every package
+    # needs (shell, coreutils, make, etc.).  These are exec_deps so they
+    # provide hermetic PATH entries.  Currently empty — auto_tool_deps in
+    # package.bzl handles injection in source mode; seed mode provides
+    # tools via hermetic PATH.
+    "_base_host_tools": attrs.default_only(attrs.list(attrs.exec_dep(), default = [])),
 } | TOOLCHAIN_ATTRS
 
 # ── Tset construction ────────────────────────────────────────────────
@@ -196,7 +203,12 @@ def write_pkg_config_paths(ctx, compile_tset):
     return _write_tset_file(ctx, "tset_pkg_config_paths.txt", compile_tset.project_as_args("pkg_config_paths", ordering = "preorder"))
 
 def write_bin_dirs(ctx, path_tset):
-    """Write bin directories (one per line) from path tset projection."""
+    """Write bin directories (one per line) from path tset projection.
+
+    Used by configure phases to find dep *-config discovery scripts
+    (gpg-error-config, curl-config, etc.).  These dirs are appended
+    (not prepended) to PATH so seed tools always take priority.
+    """
     if not path_tset:
         return None
     return _write_tset_file(ctx, "tset_bin_dirs.txt", path_tset.project_as_args("bin_dirs", ordering = "preorder"))
@@ -206,6 +218,52 @@ def write_lib_dirs(ctx, path_tset):
     if not path_tset:
         return None
     return _write_tset_file(ctx, "tset_lib_dirs.txt", path_tset.project_as_args("lib_dirs", ordering = "preorder"))
+
+def collect_host_path_children(ctx):
+    """Collect PathInfoTSet children from host_deps.
+
+    Host tool binaries may be cached in NativeLink CAS with absolute
+    RUNPATH entries from the original build machine.  When fetched on
+    a different machine, those paths don't exist and the host tool
+    can't find its transitive dep shared libraries.
+
+    Including host tool dep lib dirs in LD_LIBRARY_PATH ensures host
+    tools always find their deps regardless of stale RUNPATH.
+    """
+    children = []
+    all_host = []
+    if hasattr(ctx.attrs, "_base_host_tools"):
+        all_host.extend(ctx.attrs._base_host_tools)
+    if hasattr(ctx.attrs, "host_deps"):
+        all_host.extend(ctx.attrs.host_deps)
+    for hd in all_host:
+        if PackageInfo in hd and hd[PackageInfo].path_info:
+            children.append(hd[PackageInfo].path_info)
+    return children
+
+def write_lib_dirs_with_hosts(ctx, dep_path, host_path_children):
+    """Write lib dirs from deps + host_deps' transitive deps to file.
+
+    Merges host tool dep lib dirs so host tools can find their
+    transitive dep shared libs via LD_LIBRARY_PATH.
+    """
+    all_children = list(host_path_children)
+    if dep_path:
+        all_children.append(dep_path)
+    if not all_children:
+        return None
+    combined = ctx.actions.tset(PathInfoTSet, children = all_children)
+    return _write_tset_file(ctx, "tset_lib_dirs.txt", combined.project_as_args("lib_dirs", ordering = "preorder"))
+
+def write_host_lib_dirs(ctx, host_path_children):
+    """Write host tool dep lib dirs to a separate file.
+
+    For rules that don't use --lib-dirs-file (e.g. binary_package).
+    """
+    if not host_path_children:
+        return None
+    combined = ctx.actions.tset(PathInfoTSet, children = host_path_children)
+    return _write_tset_file(ctx, "tset_host_lib_dirs.txt", combined.project_as_args("lib_dirs", ordering = "preorder"))
 
 def write_cmake_prefix_paths(ctx, path_tset):
     """Write cmake prefix paths (one per line) from path tset projection."""

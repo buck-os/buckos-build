@@ -41,19 +41,20 @@ def main():
 
     content = open(script_path).read()
     failed = 0
+    lines = []
 
     # No unresolved artifact references
     if "<build artifact" in content:
-        print("FAIL: script contains unresolved artifact references")
+        lines.append("FAIL: script contains unresolved artifact references")
         failed += 1
     else:
-        print("PASS: no unresolved artifact references")
+        lines.append("PASS: no unresolved artifact references")
 
     # KERNEL variable present
     if "KERNEL=" in content:
-        print("PASS: KERNEL variable present")
+        lines.append("PASS: KERNEL variable present")
     else:
-        print("FAIL: KERNEL variable missing")
+        lines.append("FAIL: KERNEL variable missing")
         failed += 1
 
     # KERNEL is not empty or a placeholder
@@ -61,14 +62,16 @@ def main():
     if m:
         val = m.group(1)
         if val and "PLACEHOLDER" not in val:
-            print("PASS: KERNEL has resolved value")
+            lines.append("PASS: KERNEL has resolved value")
         else:
-            print(f"FAIL: KERNEL unresolved: {val}")
+            lines.append(f"FAIL: KERNEL unresolved: {val}")
             failed += 1
     elif "KERNEL=" in content:
-        # Non-quoted assignment
-        print("PASS: KERNEL assigned (non-quoted)")
+        lines.append("PASS: KERNEL assigned (non-quoted)")
 
+    if failed:
+        for line in lines:
+            print(line)
     sys.exit(1 if failed else 0)
 
 

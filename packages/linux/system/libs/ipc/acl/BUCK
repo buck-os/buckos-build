@@ -76,10 +76,12 @@ make -j${MAKEOPTS:-$(nproc)}
 make DESTDIR="$DESTDIR" install
 ''',
     deps = [
+        "//packages/linux/dev-libs/misc/gettext:gettext",
+        "//packages/linux/system/libs/ipc/attr:attr",
+    ],
+    host_deps = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
         "//packages/linux/dev-tools/build-systems/automake:automake",
         "//packages/linux/dev-tools/build-systems/libtool:libtool",
-        "//packages/linux/dev-libs/misc/gettext:gettext",
-        "//packages/linux/system/libs/ipc/attr:attr",
     ],
 )

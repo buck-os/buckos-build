@@ -2,7 +2,7 @@
 """Verify seed toolchain isolation and integrity.
 
 Unpacks the seed archive and scans all ELF binaries to ensure:
-  - No build directory paths leak into RPATH/RUNPATH
+  - No build directory paths in RPATH/RUNPATH
   - Host tools don't reference cross-compiler sysroot paths
   - Sysroot libraries are self-contained
   - All symlinks resolve within the archive
@@ -62,8 +62,51 @@ def check_rpath(elf_path, forbidden_patterns):
     return violations
 
 
-def check_strings_for_leaks(elf_path, forbidden_patterns):
-    """Scan binary strings for leaked build paths."""
+def check_interp_padded(elf_path):
+    """Check that .interp has a padded interpreter (leading ///).
+
+    Uses readelf -l (program headers) because the dynamic linker reads
+    PT_INTERP, not the .interp section header.  Some linkers (LLD) set
+    the section size smaller than the program header filesz, causing
+    readelf -p .interp to show a truncated string.
+    """
+    output = run(["readelf", "-l", elf_path])
+    if not output:
+        return None  # no program headers
+    for line in output.splitlines():
+        if "Requesting program interpreter:" not in line:
+            continue
+        # Format: "[Requesting program interpreter: /path...]"
+        start = line.find(": ")
+        if start < 0:
+            continue
+        interp = line[start + 2:].rstrip("]").strip()
+        if interp and not interp.startswith("///"):
+            return interp  # unpadded — return the bad value
+        return None  # padded — OK
+    return None
+
+
+def check_has_rpath(elf_path):
+    """Check that a dynamically-linked binary has RPATH/RUNPATH with $ORIGIN."""
+    output = run(["readelf", "-d", elf_path])
+    if not output:
+        return None
+    has_needed = False
+    has_rpath = False
+    for line in output.splitlines():
+        if "NEEDED" in line:
+            has_needed = True
+        if "RPATH" in line or "RUNPATH" in line:
+            if "$ORIGIN" in line:
+                has_rpath = True
+    if has_needed and not has_rpath:
+        return True  # dynamically linked but no $ORIGIN RPATH
+    return None
+
+
+def check_strings_for_forbidden(elf_path, forbidden_patterns):
+    """Scan binary strings for build paths that should not be shipped."""
     violations = []
     output = run(["strings", elf_path])
     if not output:
@@ -107,12 +150,24 @@ def main():
     warnings = []
 
     with tempfile.TemporaryDirectory(prefix="seed-verify-") as tmpdir:
-        # Unpack
+        # Unpack — handle .zip wrapper (contains a single .tar.zst inside)
         print(f"Unpacking seed archive ...")
-        r = subprocess.run(
-            ["tar", "-xf", archive_path, "-C", tmpdir],
-            capture_output=True, text=True, timeout=300,
-        )
+        if archive_path.endswith(".zip"):
+            import zipfile
+            with zipfile.ZipFile(archive_path) as zf:
+                names = zf.namelist()
+                zf.extractall(tmpdir)
+                inner = os.path.join(tmpdir, names[0])
+            r = subprocess.run(
+                f"zstd -dc {inner} | tar -xf - -C {tmpdir}",
+                shell=True, capture_output=True, text=True, timeout=300,
+            )
+            os.unlink(inner)
+        else:
+            r = subprocess.run(
+                ["tar", "-xf", archive_path, "-C", tmpdir],
+                capture_output=True, text=True, timeout=300,
+            )
         if r.returncode != 0:
             print(f"FAIL: tar extract failed: {r.stderr}", file=sys.stderr)
             sys.exit(1)
@@ -147,6 +202,12 @@ def main():
             ".cache/buck",
         ]
 
+        # ── Patterns that must never appear in any binary string ─────
+        # Build-machine home dirs should not appear in shipped artifacts.
+        string_forbidden = [
+            "/home/",
+        ]
+
         # ── Scan tools/ (cross-compiler + sysroot) ───────────────────
         tools_dir = os.path.join(tmpdir, "tools")
         if os.path.isdir(tools_dir):
@@ -160,8 +221,10 @@ def main():
             # Binaries in tools/bin/ — check for build path strings
             for elf in tools_elfs:
                 if "/bin/" in os.path.relpath(elf, tools_dir):
-                    for v in check_strings_for_leaks(elf, rpath_forbidden):
+                    for v in check_strings_for_forbidden(elf, rpath_forbidden):
                         warnings.append(f"tools string: {v}")
+                    for v in check_strings_for_forbidden(elf, string_forbidden):
+                        failures.append(f"tools build path: {v}")
         else:
             failures.append("tools/ directory not found in archive")
 
@@ -196,11 +259,71 @@ def main():
                 for v in check_rpath(elf, ht_forbidden):
                     failures.append(f"host-tools RPATH: {v}")
 
-            # String leak check on host-tools binaries
+            # Forbidden string check on host-tools binaries
             for elf in ht_elfs:
                 if "/bin/" in os.path.relpath(elf, ht_dir):
-                    for v in check_strings_for_leaks(elf, rpath_forbidden):
+                    for v in check_strings_for_forbidden(elf, rpath_forbidden):
                         warnings.append(f"host-tools string: {v}")
+
+            # Build path check for host-tools executables.  Home paths
+            # are scrubbed section-aware at pack time (data sections
+            # only, never executable code).
+            #
+            # Only executables in bin/ are checked — shared libraries
+            # and upstream artifacts contain source-level string literals
+            # with /home/ (Rust stdlib test examples, Go debug fixtures,
+            # QEMU firmware paths) that are not build-path issues.
+            for elf in ht_elfs:
+                if "/bin/" not in os.path.relpath(elf, ht_dir):
+                    continue
+                for v in check_strings_for_forbidden(elf, string_forbidden):
+                    failures.append(f"host-tools build path: {v}")
+
+            # Every dynamically-linked host-tools binary must have been
+            # built by our GCC (padded interp + $ORIGIN RPATH).  Binaries
+            # missing these fall back to host libc — a hermeticity issue.
+            #
+            # Excluded from this check:
+            # - testdata/: Go stdlib ships upstream ELF test fixtures
+            # - libc.so.6: glibc itself has .interp for ldd(1) but is
+            #   not a regular executable
+            # - share/qemu/: non-x86_64 firmware images (hppa, s390x)
+            unpadded = []
+            no_rpath = []
+            for elf in ht_elfs:
+                rel = os.path.relpath(elf, ht_dir)
+                if "/testdata/" in rel:
+                    continue
+                if os.path.basename(rel) == "libc.so.6":
+                    continue
+                # QEMU firmware images are non-x86_64 ELFs (hppa, s390x)
+                if "share/qemu/" in rel:
+                    continue
+                bad_interp = check_interp_padded(elf)
+                if bad_interp is not None:
+                    unpadded.append(f"{rel}: interp={bad_interp}")
+                # Only check RPATH on executables (have .interp), not
+                # shared libs which are found via the executable's RPATH.
+                has_interp = run(["readelf", "-l", elf])
+                if has_interp and "Requesting program interpreter:" in has_interp:
+                    if "/testdata/" not in rel and check_has_rpath(elf):
+                        no_rpath.append(rel)
+            if unpadded:
+                failures.append(
+                    f"{len(unpadded)} host-tools binaries have unpadded "
+                    f"interpreter (not built by buckos GCC):\n"
+                    + "\n".join(f"    {u}" for u in unpadded[:20])
+                    + (f"\n    ... and {len(unpadded) - 20} more"
+                       if len(unpadded) > 20 else "")
+                )
+            if no_rpath:
+                failures.append(
+                    f"{len(no_rpath)} host-tools binaries have no $ORIGIN "
+                    f"RPATH (will fall back to host libc):\n"
+                    + "\n".join(f"    {p}" for p in no_rpath[:20])
+                    + (f"\n    ... and {len(no_rpath) - 20} more"
+                       if len(no_rpath) > 20 else "")
+                )
 
             # Positive check: host-tools ELFs should be buckos-linked
             for elf in ht_elfs:

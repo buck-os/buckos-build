@@ -6,8 +6,7 @@ package(
     build_rule = "cmake",
     name = "libclc",
     version = "21.1.6",
-    url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.6/llvm-project-21.1.6.src.tar.xz",
-    sha256 = "ae67086eb04bed7ca11ab880349b5f1ab6f50e1b88cda376eaf8a845b935762b",
+    source = "//packages/linux/core/llvm:llvm-native-src",
     description = "OpenCL C library - part of LLVM",
     homepage = "https://libclc.llvm.org/",
     license = "Apache-2.0 WITH LLVM-exception",
@@ -16,7 +15,7 @@ package(
         "-DLIBCLC_TARGETS_TO_BUILD=amdgcn-mesa-mesa3d;amdgcn--amdhsa;clspv--;clspv64--",
     ],
     deps = [
-        "//packages/linux/core/llvm:llvm",
+        "//packages/linux/core/llvm:llvm-native",
     ],
     labels = ["buckos:hw:opencl"],
 )

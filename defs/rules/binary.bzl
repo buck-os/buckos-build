@@ -9,9 +9,13 @@ Four discrete cacheable actions:
 """
 
 load("//defs:providers.bzl", "BuildToolchainInfo", "PackageInfo")
-load("//defs/rules:_common.bzl", "COMMON_PACKAGE_ATTRS", "build_package_tsets")
+load("//defs/rules:_common.bzl",
+     "COMMON_PACKAGE_ATTRS", "build_package_tsets",
+     "collect_host_path_children", "write_host_lib_dirs",
+)
 load("//defs:toolchain_helpers.bzl",
-     "toolchain_extra_cflags", "toolchain_extra_ldflags")
+     "toolchain_extra_cflags", "toolchain_extra_ldflags",
+     "toolchain_ld_linux_args", "toolchain_path_args")
 load("//defs:host_tools.bzl", "host_tool_env_paths")
 
 # ── Phase helpers ─────────────────────────────────────────────────────
@@ -49,13 +53,12 @@ def _src_prepare(ctx, source):
     return output
 
 def _dep_env_args(ctx):
-    """Build environment variables and PATH dirs from deps.
+    """Build environment variables from deps.
 
-    Returns (env dict entries, dep_bin_paths list).
-    Models on autotools' _dep_env_args() for consistent dep propagation.
+    Returns env dict entries with CFLAGS, LDFLAGS, PKG_CONFIG_PATH, etc.
+    Dep bin dirs are NOT added to PATH — use host_deps for build tools.
     """
     pkg_config_paths = []
-    path_dirs = []
     lib_dirs = []
     dep_base_dirs = []
     cflags = list(toolchain_extra_cflags(ctx)) + list(ctx.attrs.extra_cflags)
@@ -81,8 +84,6 @@ def _dep_env_args(ctx):
         pkg_config_paths.append(cmd_args(prefix, format = "{}/usr/lib64/pkgconfig"))
         pkg_config_paths.append(cmd_args(prefix, format = "{}/usr/lib/pkgconfig"))
         pkg_config_paths.append(cmd_args(prefix, format = "{}/usr/share/pkgconfig"))
-        path_dirs.append(cmd_args(prefix, format = "{}/usr/bin"))
-        path_dirs.append(cmd_args(prefix, format = "{}/usr/sbin"))
         # Bootstrap packages use /tools prefix
         cflags.append(cmd_args(prefix, format = "-I{}/tools/include"))
         ldflags.append(cmd_args(prefix, format = "-L{}/tools/lib64"))
@@ -94,8 +95,6 @@ def _dep_env_args(ctx):
 
         pkg_config_paths.append(cmd_args(prefix, format = "{}/tools/lib64/pkgconfig"))
         pkg_config_paths.append(cmd_args(prefix, format = "{}/tools/lib/pkgconfig"))
-        path_dirs.append(cmd_args(prefix, format = "{}/tools/bin"))
-        path_dirs.append(cmd_args(prefix, format = "{}/tools/sbin"))
 
     env = {}
     if pkg_config_paths:
@@ -113,7 +112,7 @@ def _dep_env_args(ctx):
         # only for the install subprocess.
         env["_DEP_LD_LIBRARY_PATH"] = cmd_args(lib_dirs, delimiter = ":")
 
-    return env, path_dirs
+    return env
 
 def _install(ctx, source):
     """Run install_script with SRC pointing to source and OUT to output prefix."""
@@ -140,17 +139,31 @@ def _install(ctx, source):
     else:
         env["_HERMETIC_EMPTY"] = "1"
 
+    # Signal host-target builds (exec_deps on exec platform) so install
+    # scripts can skip buckos-specific post-processing (e.g. interp padding).
+    if not tc.sysroot:
+        env["BUCKOS_HOST_BUILD"] = "1"
 
-    # Inject dep environment (CFLAGS, LDFLAGS, PKG_CONFIG_PATH, PATH)
-    dep_env, dep_paths = _dep_env_args(ctx)
+
+    # Inject dep environment (CFLAGS, LDFLAGS, PKG_CONFIG_PATH)
+    dep_env = _dep_env_args(ctx)
     for key, value in dep_env.items():
         env[key] = value
 
-    # Add host_deps bin dirs to dep paths
-    dep_paths.extend(host_tool_env_paths(ctx))
+    # Add host_deps bin dirs to PATH (dep bin dirs excluded —
+    # deps provide libraries, host_deps provide build tools)
+    host_paths = list(host_tool_env_paths(ctx))
+    if host_paths:
+        env["_DEP_BIN_PATHS"] = cmd_args(host_paths, delimiter = ":")
 
-    if dep_paths:
-        env["_DEP_BIN_PATHS"] = cmd_args(dep_paths, delimiter = ":")
+    # Write host tool transitive dep lib dirs so host tools can find
+    # their shared lib deps even when cached from a different machine.
+    host_path_children = collect_host_path_children(ctx)
+    host_lib_result = write_host_lib_dirs(ctx, host_path_children)
+    if host_lib_result:
+        artifact, projection = host_lib_result
+        env["_HOST_LIB_DIRS_FILE"] = cmd_args(artifact)
+        cmd.add(cmd_args(hidden = [projection]))
 
     # Inject user-specified environment variables (last — overrides everything)
     for key, value in ctx.attrs.env.items():

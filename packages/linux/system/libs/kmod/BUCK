@@ -19,17 +19,11 @@ package(
         "zstd": ("--with-zstd", "--without-zstd"),
     },
     version = "32",
-    url = "https://git.kernel.org/pub/scm/utils/kernel/kmod/kmod.git/snapshot/kmod-32.tar.gz",
-    sha256 = "9477fa096acfcddaa56c74b988045ad94ee0bac22e0c1caa84ba1b7d408da76e",
+    url = "https://cdn.kernel.org/pub/linux/utils/kernel/kmod/kmod-32.tar.gz",
+    sha256 = "415ed9997376ea58ccea64bf86b1d63acd31524a6baab09a9c11de6bed667a05",
     description = "Linux kernel module handling tools (modprobe, insmod, rmmod, lsmod, depmod)",
     homepage = "https://git.kernel.org/pub/scm/utils/kernel/kmod/kmod.git",
     license = "LGPL-2.1-or-later",
-    # Git snapshot tarball has no configure script
-    pre_configure_cmds = [
-        # Stub gtk-doc.make so automake doesn't error on missing doc infra
-        "mkdir -p libkmod/docs && touch libkmod/docs/gtk-doc.make",
-        "autoreconf -fiv",
-    ],
     configure_args = [
         "--with-xz",
         "--with-zlib",
@@ -43,10 +37,9 @@ package(
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/compression/xz:xz",
         "//packages/linux/system/libs/compression/zstd:zstd",
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
         "//packages/linux/dev-libs/misc/gettext:gettext",
+    ],
+    host_deps = [
         "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
     ],
     visibility = ["PUBLIC"],
@@ -57,15 +50,10 @@ package(
     build_rule = "autotools",
     name = "kmod-static",
     version = "32",
-    url = "https://git.kernel.org/pub/scm/utils/kernel/kmod/kmod.git/snapshot/kmod-32.tar.gz",
-    sha256 = "9477fa096acfcddaa56c74b988045ad94ee0bac22e0c1caa84ba1b7d408da76e",
+    source = ":kmod-src",
     description = "Linux kernel module handling tools (static build for initramfs)",
     homepage = "https://git.kernel.org/pub/scm/utils/kernel/kmod/kmod.git",
     license = "LGPL-2.1-or-later",
-    pre_configure_cmds = [
-        "mkdir -p libkmod/docs && touch libkmod/docs/gtk-doc.make",
-        "autoreconf -fiv",
-    ],
     configure_args = [
         "--with-xz",
         "--with-zlib",
@@ -79,10 +67,9 @@ package(
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/compression/xz:xz",
         "//packages/linux/system/libs/compression/zstd:zstd",
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
         "//packages/linux/dev-libs/misc/gettext:gettext",
+    ],
+    host_deps = [
         "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
     ],
     visibility = ["PUBLIC"],

@@ -24,7 +24,9 @@ package(
         ./target/release/himalaya completion fish > "$OUT/usr/share/fish/vendor_completions.d/himalaya.fish"
     """,
     deps = [
-        "//packages/linux/lang/rust:rust",
         "//packages/linux/system/libs/crypto/openssl:openssl",
+    ],
+    host_deps = [
+        "//packages/linux/lang/rust:rust",
     ],
 )

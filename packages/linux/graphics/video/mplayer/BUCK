@@ -141,8 +141,10 @@ DESTDIR=$OUT make install
                 "//packages/linux/core/zlib:zlib",
                 "//packages/linux/system/libs/font/freetype:freetype",
                 "//packages/linux/system/libs/font/fontconfig:fontconfig",
-                "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
                 # "//packages/linux/lang/yasm:yasm",
                 # TODO: not packaged yet
+    ],
+    host_deps = [
+        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
     ],
 )
