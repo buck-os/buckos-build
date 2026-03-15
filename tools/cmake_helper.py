@@ -10,7 +10,7 @@ import os
 import subprocess
 import sys
 
-from _env import clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, find_dep_python3, register_cleanup, sanitize_filenames, sysroot_lib_paths, write_pkg_config_wrapper
+from _env import apply_cache_config, clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, find_dep_python3, preferred_linker_flag, register_cleanup, sanitize_filenames, sysroot_lib_paths, write_pkg_config_wrapper
 
 
 def _resolve_env_paths(value):
@@ -146,6 +146,12 @@ def main():
         key, _, value = entry.partition("=")
         if key:
             env[key] = _resolve_env_paths(value)
+
+    # cmake uses CMAKE_COMPILER_LAUNCHER for ccache, not CC prefix.
+    env["_BUCKOS_CCACHE_NO_CC_PREFIX"] = "1"
+    apply_cache_config(env)
+    env.pop("_BUCKOS_CCACHE_NO_CC_PREFIX", None)
+
     if args.hermetic_path:
         env["PATH"] = ":".join(os.path.abspath(p) for p in args.hermetic_path)
         # Derive LD_LIBRARY_PATH from hermetic bin dirs so dynamically
@@ -262,6 +268,15 @@ def main():
     if _cmake_sysroot:
         cmd.append(f"-DCMAKE_SYSROOT={_cmake_sysroot}")
 
+    # ccache integration via cmake's native compiler launcher mechanism.
+    # cmake doesn't use PATH-based symlinks — CC is a bare binary in env.
+    if env.get("BUCKOS_CCACHE") == "1":
+        import shutil as _shutil
+        _ccache = _shutil.which("ccache", path=env.get("PATH", ""))
+        if _ccache:
+            cmd.append(f"-DCMAKE_C_COMPILER_LAUNCHER={_ccache}")
+            cmd.append(f"-DCMAKE_CXX_COMPILER_LAUNCHER={_ccache}")
+
     # Build CMAKE_PREFIX_PATH from dep prefixes so find_package() works.
     # Merge flag-file prefix paths with CLI --prefix-path args.
     all_prefix_paths = [os.path.abspath(p) for p in file_prefix_paths] + \
@@ -269,12 +284,14 @@ def main():
     if all_prefix_paths:
         cmd.append("-DCMAKE_PREFIX_PATH=" + ";".join(all_prefix_paths))
 
-    # Merge flag-file lib dirs into LD_LIBRARY_PATH for dep tools.
-    # With sysroot ld-linux and per-package RPATH, buckos binaries find
-    # deps via RPATH.  Skip LD_LIBRARY_PATH to avoid contaminating host
-    # tools.
-    if file_lib_dirs and not args.ld_linux:
-        resolved_lib_dirs = [os.path.abspath(d) for d in file_lib_dirs if os.path.isdir(d)]
+    # Dep lib dirs in LD_LIBRARY_PATH so build-time tools and test
+    # programs can find dep shared libs at runtime.  Exclude dirs with
+    # libc.so.6 to avoid poisoning host tools with sysroot glibc.
+    if file_lib_dirs:
+        resolved_lib_dirs = [
+            os.path.abspath(d) for d in file_lib_dirs
+            if os.path.isdir(d) and not os.path.exists(os.path.join(os.path.abspath(d), "libc.so.6"))
+        ]
         if resolved_lib_dirs:
             existing = env.get("LD_LIBRARY_PATH", "")
             merged = ":".join(resolved_lib_dirs)
@@ -290,6 +307,10 @@ def main():
 
     if args.ld_linux:
         sysroot_lib_paths(args.ld_linux, env)
+        _ld_flag = preferred_linker_flag(env)
+        if _ld_flag:
+            existing = env.get("LDFLAGS", "")
+            env["LDFLAGS"] = (existing + " " + _ld_flag).strip()
 
     # Auto-detect Perl5 lib dirs from dep prefixes so build-time perl
     # modules (e.g. URI::Escape for kdoctools) are found by cmake's

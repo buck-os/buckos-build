@@ -16,7 +16,7 @@ import stat
 import subprocess
 import sys
 
-from _env import clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, find_buckos_shell, find_dep_python3, portabilize_shebangs, register_cleanup, sanitize_filenames, sysroot_lib_paths, write_pkg_config_wrapper
+from _env import apply_cache_config, clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, find_buckos_shell, find_dep_python3, portabilize_shebangs, preferred_linker_flag, register_cleanup, sanitize_filenames, setup_ccache_symlinks, sysroot_lib_paths, write_pkg_config_wrapper
 
 
 def _rewrite_file(fpath, old, new):
@@ -336,6 +336,8 @@ def main():
         if key:
             env[key] = _resolve_env_paths(value)
 
+    apply_cache_config(env)
+
     # Scrub absolute build paths from debug info and __FILE__ expansions.
     pfm = " ".join(file_prefix_map_flags())
     for var in ("CFLAGS", "CXXFLAGS"):
@@ -405,15 +407,15 @@ def main():
         if append:
             env["PATH"] = env.get("PATH", "") + ":" + append
 
-    # Merge tset-provided lib dirs into LD_LIBRARY_PATH so dynamically
-    # linked dep libraries are found at install time (e.g. Python
-    # test-imports extension modules during make install).  Scoped to the
-    # subprocess env dict — never poisons the host Python process.
-    # With sysroot ld-linux and per-package RPATH, buckos binaries find
-    # deps via RPATH.  Skip LD_LIBRARY_PATH to avoid contaminating host
-    # tools.
-    if file_lib_dirs and not args.ld_linux:
-        resolved = [os.path.abspath(d) for d in file_lib_dirs if os.path.isdir(d)]
+    # Dep lib dirs in LD_LIBRARY_PATH so dep shared libs are found at
+    # install time (e.g. Python test-imports extension modules during
+    # make install).  Exclude dirs with libc.so.6 to avoid poisoning
+    # host tools with sysroot glibc.
+    if file_lib_dirs:
+        resolved = [
+            os.path.abspath(d) for d in file_lib_dirs
+            if os.path.isdir(d) and not os.path.exists(os.path.join(os.path.abspath(d), "libc.so.6"))
+        ]
         if resolved:
             existing = env.get("LD_LIBRARY_PATH", "")
             merged = ":".join(resolved)
@@ -463,6 +465,10 @@ def main():
     # ENOEXEC with padded ELF interpreters on buckos-native dep binaries.
     if args.ld_linux:
         sysroot_lib_paths(args.ld_linux, env)
+        _ld_flag = preferred_linker_flag(env)
+        if _ld_flag:
+            existing = env.get("LDFLAGS", "")
+            env["LDFLAGS"] = (existing + " " + _ld_flag).strip()
 
     # Find buckos shell for pre/post-cmds and make SHELL override.
     _buckos_bash = find_buckos_shell(env)
@@ -474,8 +480,11 @@ def main():
     # Mirrors build_helper.py:666-689 and binary_install_helper.py.
     _cc_val = env.get("CC", "")
     if _cc_val:
-        _cc_bin = os.path.abspath(_cc_val.split()[0])
-        if os.path.isfile(_cc_bin):
+        _cc_parts = _cc_val.split()
+        if _cc_parts and os.path.basename(_cc_parts[0]) == "ccache":
+            _cc_parts = _cc_parts[1:]
+        _cc_bin = os.path.abspath(_cc_parts[0]) if _cc_parts else ""
+        if _cc_bin and os.path.isfile(_cc_bin):
             _scratch = os.environ.get("BUCK_SCRATCH_PATH", os.environ.get("TMPDIR", "/tmp"))
             _symlink_dir = os.path.join(os.path.abspath(_scratch), "cc-symlinks")
             os.makedirs(_symlink_dir, exist_ok=True)
@@ -485,13 +494,20 @@ def main():
                     os.symlink(_cc_bin, _link)
             _cxx_val = env.get("CXX", "")
             if _cxx_val:
-                _cxx_bin = os.path.abspath(_cxx_val.split()[0])
-                if os.path.isfile(_cxx_bin):
+                _cxx_parts = _cxx_val.split()
+                if _cxx_parts and os.path.basename(_cxx_parts[0]) == "ccache":
+                    _cxx_parts = _cxx_parts[1:]
+                _cxx_bin = os.path.abspath(_cxx_parts[0]) if _cxx_parts else ""
+                if _cxx_bin and os.path.isfile(_cxx_bin):
                     for _name in ("g++", "c++", "clang++"):
                         _link = os.path.join(_symlink_dir, _name)
                         if not os.path.exists(_link):
                             os.symlink(_cxx_bin, _link)
             env["PATH"] = _symlink_dir + ":" + env.get("PATH", "")
+
+    # ccache masquerade symlinks — prepended before gcc symlinks.
+    _scratch = env.get("BUCK_SCRATCH_PATH", env.get("TMPDIR", "/tmp"))
+    setup_ccache_symlinks(env, _scratch)
 
     prefix = os.path.abspath(args.prefix)
     os.makedirs(prefix, exist_ok=True)

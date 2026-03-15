@@ -26,4 +26,7 @@ package(
         "--without-xxhash",
     ],
 
+    # Serialize install — parallel make install races between gas/ and bfd/
+    # cause the linker to read a truncated libbfd.a mid-replacement (SIGBUS).
+    install_args = ["-j1"],
 )

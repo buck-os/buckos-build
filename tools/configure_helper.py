@@ -16,7 +16,7 @@ import shutil
 import subprocess
 import sys
 
-from _env import clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, find_buckos_shell, find_dep_python3, register_cleanup, rewrite_shebangs, sanitize_filenames, sysroot_lib_paths, write_pkg_config_wrapper
+from _env import apply_cache_config, clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, find_buckos_shell, find_dep_python3, preferred_linker_flag, register_cleanup, rewrite_shebangs, sanitize_filenames, setup_ccache_symlinks, sysroot_lib_paths, write_pkg_config_wrapper
 
 
 def _resolve_env_paths(value):
@@ -210,6 +210,8 @@ def main():
             else:
                 env[key] = resolved
 
+    apply_cache_config(env)
+
     # Create gcc/cc symlinks on PATH so libtool sub-configures
     # (which search PATH for gcc/cc independently of the parent's CC)
     # find the buckos compiler.  CC stays multi-token — don't split it.
@@ -275,6 +277,9 @@ def main():
     if _need_symlink_path:
         env["PATH"] = _symlink_dir + ":" + env.get("PATH", "")
 
+    # ccache masquerade symlinks — prepended before gcc symlinks.
+    setup_ccache_symlinks(env, output_dir)
+
     # Append dep bin dirs AFTER hermetic PATH for *-config discovery scripts
     # (gpg-error-config, curl-config, xml2-config, etc.).  Appended so seed
     # host-tools always take priority — prevents ENOEXEC from dep binaries
@@ -284,15 +289,14 @@ def main():
         if append:
             env["PATH"] = env.get("PATH", "") + ":" + append
 
-    # Tset-provided lib dirs for dep libraries.  With sysroot ld-linux
-    # and per-package RPATH from specs, buckos binaries find deps via
-    # RPATH.  Skip adding to LD_LIBRARY_PATH — it contaminates host
-    # tools (e.g. /usr/bin/awk) that load buckos .so files and crash
-    # on glibc version mismatches.
-    #
-    # Only add when no sysroot is available (bootstrap/host mode).
-    if file_lib_dirs and not args.ld_linux:
-        resolved = [os.path.abspath(d) for d in file_lib_dirs if os.path.isdir(d)]
+    # Dep lib dirs in LD_LIBRARY_PATH so configure test programs can
+    # find dep shared libs at runtime.  Exclude dirs with libc.so.6
+    # to avoid poisoning host tools with sysroot glibc.
+    if file_lib_dirs:
+        resolved = [
+            os.path.abspath(d) for d in file_lib_dirs
+            if os.path.isdir(d) and not os.path.exists(os.path.join(os.path.abspath(d), "libc.so.6"))
+        ]
         if resolved:
             existing = env.get("LD_LIBRARY_PATH", "")
             merged = ":".join(resolved)
@@ -362,6 +366,12 @@ def main():
     # ENOEXEC with padded ELF interpreters on buckos-native dep binaries.
     if args.ld_linux:
         sysroot_lib_paths(args.ld_linux, env)
+        # Use mold linker if available on PATH (faster than ld.bfd).
+        # Only for buckos toolchain builds, not bootstrap.
+        _ld_flag = preferred_linker_flag(env)
+        if _ld_flag:
+            existing = env.get("LDFLAGS", "")
+            env["LDFLAGS"] = (existing + " " + _ld_flag).strip()
 
     # Find buckos shell on PATH for running configure, pre-cmds, and
     # shebang rewriting.  CONFIG_SHELL tells autotools to re-exec

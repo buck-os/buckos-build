@@ -11,7 +11,7 @@ import shutil as _shutil
 import subprocess
 import sys
 
-from _env import clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, find_dep_python3, register_cleanup, sanitize_filenames, sysroot_lib_paths, write_pkg_config_wrapper
+from _env import apply_cache_config, clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, find_dep_python3, preferred_linker_flag, register_cleanup, sanitize_filenames, setup_ccache_symlinks, sysroot_lib_paths, write_pkg_config_wrapper
 
 
 def _resolve_env_paths(value):
@@ -180,14 +180,14 @@ def main():
         if append:
             env["PATH"] = env.get("PATH", "") + ":" + append
 
-    # Merge tset-provided lib dirs into LD_LIBRARY_PATH so dynamically
-    # linked dep tools (e.g. buckos python needing libpython3.12.so)
-    # can execute during meson setup.
-    # With sysroot ld-linux and per-package RPATH, buckos binaries find
-    # deps via RPATH.  Skip LD_LIBRARY_PATH to avoid contaminating host
-    # tools.
-    if file_lib_dirs and not args.ld_linux:
-        resolved = [os.path.abspath(d) for d in file_lib_dirs if os.path.isdir(d)]
+    # Dep lib dirs in LD_LIBRARY_PATH so dep tools (e.g. buckos python
+    # needing libpython3.12.so) can execute during meson setup.  Exclude
+    # dirs with libc.so.6 to avoid poisoning host tools.
+    if file_lib_dirs:
+        resolved = [
+            os.path.abspath(d) for d in file_lib_dirs
+            if os.path.isdir(d) and not os.path.exists(os.path.join(os.path.abspath(d), "libc.so.6"))
+        ]
         if resolved:
             existing = env.get("LD_LIBRARY_PATH", "")
             merged = ":".join(resolved)
@@ -200,6 +200,8 @@ def main():
         key, _, value = entry.partition("=")
         if key:
             env[key] = _resolve_env_paths(value)
+
+    apply_cache_config(env)
 
     # Scrub absolute build paths from debug info and __FILE__ expansions.
     pfm = " ".join(file_prefix_map_flags())
@@ -267,6 +269,10 @@ def main():
 
     if args.ld_linux:
         sysroot_lib_paths(args.ld_linux, env)
+        _ld_flag = preferred_linker_flag(env)
+        if _ld_flag:
+            existing = env.get("LDFLAGS", "")
+            env["LDFLAGS"] = (existing + " " + _ld_flag).strip()
 
     # Find buckos python3 from dep dirs — prefer it over host python.
     # Buckos python is ABI-matched to buckos libs in LD_LIBRARY_PATH.
@@ -287,8 +293,12 @@ def main():
     # cross-compiler (x86_64-buckos-linux-gnu-gcc), not bare cc/gcc.
     _cc_val = env.get("CC", "")
     if _cc_val:
-        _cc_bin = os.path.abspath(_cc_val.split()[0])
-        if os.path.isfile(_cc_bin):
+        _cc_parts = _cc_val.split()
+        # Skip ccache prefix to find real compiler binary
+        if _cc_parts and os.path.basename(_cc_parts[0]) == "ccache":
+            _cc_parts = _cc_parts[1:]
+        _cc_bin = os.path.abspath(_cc_parts[0]) if _cc_parts else ""
+        if _cc_bin and os.path.isfile(_cc_bin):
             _symlink_dir = os.path.join(_build_dir_abs, ".cc-symlinks")
             os.makedirs(_symlink_dir, exist_ok=True)
             for _name in ("gcc", "cc", "clang"):
@@ -297,13 +307,19 @@ def main():
                     os.symlink(_cc_bin, _link)
             _cxx_val = env.get("CXX", "")
             if _cxx_val:
-                _cxx_bin = os.path.abspath(_cxx_val.split()[0])
-                if os.path.isfile(_cxx_bin):
+                _cxx_parts = _cxx_val.split()
+                if _cxx_parts and os.path.basename(_cxx_parts[0]) == "ccache":
+                    _cxx_parts = _cxx_parts[1:]
+                _cxx_bin = os.path.abspath(_cxx_parts[0]) if _cxx_parts else ""
+                if _cxx_bin and os.path.isfile(_cxx_bin):
                     for _name in ("g++", "c++", "clang++"):
                         _link = os.path.join(_symlink_dir, _name)
                         if not os.path.exists(_link):
                             os.symlink(_cxx_bin, _link)
             env["PATH"] = _symlink_dir + ":" + env.get("PATH", "")
+
+    # ccache masquerade symlinks — prepended before gcc symlinks.
+    setup_ccache_symlinks(env, _build_dir_abs)
 
     # Generate a meson native file pinning tool paths so meson embeds
     # the correct absolute paths in build.ninja from the start, rather
