@@ -68,9 +68,12 @@ def run(ctx):
 
     # No stage2 target should appear in more than 2 configs
     # (<base>, default).  More means a new config path is reaching
-    # bootstrap internals.
+    # bootstrap internals.  Skip aggregators — they're routing-only
+    # and appear in every config that references them (target, exec, etc.).
     over_limit = []
     for target, configs in stage2_configs.items():
+        if target in _AGGREGATORS:
+            continue
         if len(configs) > 2:
             over_limit.append("{} has {} configs".format(target, len(configs)))
 
