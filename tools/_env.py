@@ -22,6 +22,11 @@ _PASSTHROUGH = frozenset({
     "TMPDIR", "TEMP", "TMP",
     "TERM",
     "BUCK_SCRATCH_PATH",
+    # Proxy — needed for cargo crate fetches when building behind squid.
+    "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY",
+    "http_proxy", "https_proxy", "no_proxy",
+    # TLS trust — squid TLS interception CA and system bundle.
+    "SSL_CERT_FILE", "REQUESTS_CA_BUNDLE", "NODE_EXTRA_CA_CERTS",
 })
 
 # Vars pinned to fixed values for determinism.
