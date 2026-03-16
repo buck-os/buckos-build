@@ -1,7 +1,10 @@
 # BuckOs Linux Distribution - Root Build File
 # A Buck2-based Linux distribution similar to Gentoo's ebuild system
 
+load("//tc/seed:defs.bzl", "maybe_export_seed")
 load("//defs/rules:rootfs.bzl", "rootfs")
+
+maybe_export_seed()
 
 # =============================================================================
 # Main build targets

@@ -42,6 +42,11 @@ def check_buck_file(path):
     if re.search(r'\blocal_only\s*=\s*True\b', content):
         return []
 
+    # Packages using a shared source target (source = "//...") get their
+    # archive from another BUCK target — no inline url/sha256 needed.
+    if re.search(r'\bsource\s*=\s*"//[^"]+"\s*,', content):
+        return []
+
     issues = []
     has_url = re.search(r'\burl\s*=', content) is not None
     has_sha = re.search(r'\bsha256\s*=', content) is not None

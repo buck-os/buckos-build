@@ -89,6 +89,128 @@ def main():
         # Fix lib64 paths
         _fix_lib64(staging)
 
+        # Symlink non-standard lib dirs into standard locations so
+        # ld.so finds them without RPATH (glibc 2.42 rejects RPATH
+        # for init/PID1).
+        for _subdir in ("usr/lib/systemd",):
+            _sd = os.path.join(staging, _subdir)
+            if os.path.isdir(_sd):
+                _target = os.path.join(staging, "usr/lib64")
+                os.makedirs(_target, exist_ok=True)
+                for _f in os.listdir(_sd):
+                    if _f.endswith(".so") or ".so." in _f:
+                        _src = os.path.join(_sd, _f)
+                        _dst = os.path.join(_target, _f)
+                        if not os.path.exists(_dst):
+                            os.symlink(os.path.join("..", "lib", "systemd", _f), _dst)
+
+        # Create /etc/ld.so.conf listing non-standard lib dirs.
+        _ldconf = os.path.join(staging, "etc", "ld.so.conf")
+        os.makedirs(os.path.dirname(_ldconf), exist_ok=True)
+        with open(_ldconf, "w") as f:
+            f.write("/usr/lib/systemd\n/usr/lib\n/lib\n")
+
+        # Rewrite padded sysroot ELF interpreters to standard path.
+        # Buckos-built binaries have padded interpreters pointing to
+        # build-time sysroot paths — those don't exist inside the
+        # initramfs.  The padded path is longer than the standard one,
+        # so we can overwrite it in-place (null-padded).
+        _std_interp = b"/lib64/ld-linux-x86-64.so.2\x00"
+        _std_rpath = b"/lib64:/usr/lib64:/usr/lib\x00"
+        _sysroot_marker = b"buck-out/"
+        import struct
+        for dirpath, _, filenames in os.walk(staging):
+            for fname in filenames:
+                fpath = os.path.join(dirpath, fname)
+                if os.path.islink(fpath):
+                    continue
+                try:
+                    with open(fpath, "rb") as f:
+                        data = f.read()
+                    if data[:4] != b"\x7fELF" or len(data) < 64:
+                        continue
+                    if data[4] != 2:  # not 64-bit
+                        continue
+                    little = data[5] == 1
+                    fmt = "<" if little else ">"
+                    phoff = struct.unpack(fmt + "Q", data[32:40])[0]
+                    phentsize = struct.unpack(fmt + "H", data[54:56])[0]
+                    phnum = struct.unpack(fmt + "H", data[56:58])[0]
+                    modified = False
+                    mdata = bytearray(data)
+                    for i in range(phnum):
+                        off = phoff + i * phentsize
+                        if off + 40 > len(mdata):
+                            break
+                        p_type = struct.unpack(fmt + "I", mdata[off:off+4])[0]
+                        if p_type == 3:  # PT_INTERP
+                            p_offset = struct.unpack(fmt + "Q", mdata[off+8:off+16])[0]
+                            p_filesz = struct.unpack(fmt + "Q", mdata[off+32:off+40])[0]
+                            if p_filesz >= len(_std_interp):
+                                mdata[p_offset:p_offset+p_filesz] = _std_interp.ljust(p_filesz, b"\x00")
+                                modified = True
+                    # Rewrite DT_RPATH/DT_RUNPATH by parsing the
+                    # .dynamic section.  Find PT_DYNAMIC to locate it,
+                    # then find DT_STRTAB for the string table, then
+                    # find DT_RPATH/DT_RUNPATH entries and rewrite
+                    # their strings.
+                    dyn_off = dyn_sz = 0
+                    loads = []
+                    for i in range(phnum):
+                        off = phoff + i * phentsize
+                        if off + 48 > len(mdata):
+                            break
+                        p_type = struct.unpack(fmt + "I", mdata[off:off+4])[0]
+                        if p_type == 2:  # PT_DYNAMIC
+                            dyn_off = struct.unpack(fmt + "Q", mdata[off+8:off+16])[0]
+                            dyn_sz = struct.unpack(fmt + "Q", mdata[off+32:off+40])[0]
+                        elif p_type == 1:  # PT_LOAD
+                            p_vaddr = struct.unpack(fmt + "Q", mdata[off+16:off+24])[0]
+                            p_off = struct.unpack(fmt + "Q", mdata[off+8:off+16])[0]
+                            p_memsz = struct.unpack(fmt + "Q", mdata[off+40:off+48])[0]
+                            loads.append((p_vaddr, p_off, p_memsz))
+                    if dyn_off and dyn_sz:
+                        def vaddr_to_off(va):
+                            for v, o, s in loads:
+                                if v <= va < v + s:
+                                    return o + (va - v)
+                            return va  # fallback
+                        strtab_va = 0
+                        rpath_entries = []  # (d_tag, d_val, dyn_entry_off)
+                        j = dyn_off
+                        while j < dyn_off + dyn_sz:
+                            if j + 16 > len(mdata):
+                                break
+                            d_tag = struct.unpack(fmt + "q", mdata[j:j+8])[0]
+                            d_val = struct.unpack(fmt + "Q", mdata[j+8:j+16])[0]
+                            if d_tag == 0:  # DT_NULL
+                                break
+                            elif d_tag == 5:  # DT_STRTAB
+                                strtab_va = d_val
+                            elif d_tag in (15, 29):  # DT_RPATH=15, DT_RUNPATH=29
+                                rpath_entries.append((d_tag, d_val, j))
+                            j += 16
+                        if strtab_va and rpath_entries:
+                            strtab_file = vaddr_to_off(strtab_va)
+                            has_runpath = any(t == 29 for t, _, _ in rpath_entries)
+                            for d_tag, str_off, entry_off in rpath_entries:
+                                # glibc asserts DT_RPATH==NULL when DT_RUNPATH
+                                # exists.  Zero out DT_RPATH if DT_RUNPATH present.
+                                # glibc 2.42 rejects both DT_RPATH and
+                                # DT_RUNPATH for init (AT_SECURE).
+                                # Remove them entirely — initramfs has
+                                # libs in standard paths (/lib64 etc.)
+                                # that ld.so finds by default.
+                                struct.pack_into(fmt + "q", mdata, entry_off, 0x70000000)
+                                struct.pack_into(fmt + "Q", mdata, entry_off + 8, 0)
+                                modified = True
+                    if modified:
+                        os.chmod(fpath, os.stat(fpath).st_mode | 0o200)
+                        with open(fpath, "wb") as f:
+                            f.write(mdata)
+                except (PermissionError, OSError):
+                    pass
+
         # Install custom init script if provided
         init_script = args.init_script
         if init_script and os.path.isfile(init_script):

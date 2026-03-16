@@ -12,6 +12,12 @@ package(
     use_configure = {
         "static-libs": ("--enable-static", "--disable-static"),
     },
+    # python3 + perl needed by configure (blocklisted from auto_tool_deps).
+    # No cycle: perl no longer depends on libxcrypt (crypt disabled).
+    host_deps = [
+        "//packages/linux/lang/python:python-host",
+        "//packages/linux/lang/perl:perl",
+    ],
     configure_args = [
         "--disable-werror",
         "--disable-dependency-tracking",

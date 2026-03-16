@@ -4,13 +4,9 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "cmake",
     name = "ccache",
-    version = "4.9.1",
-    use_configure = {
-        "redis": ("-DENABLE_REDIS=ON", "-DENABLE_REDIS=OFF"),
-        "static-c++": ("-DENABLE_STATIC_C++=ON", "-DENABLE_STATIC_C++=OFF"),
-    },
-    url = "https://github.com/ccache/ccache/releases/download/v4.9.1/ccache-4.9.1.tar.xz",
-    sha256 = "4c03bc840699127d16c3f0e6112e3f40ce6a230d5873daa78c60a59c7ef59d25",
+    version = "4.13.1",
+    url = "https://github.com/ccache/ccache/releases/download/v4.13.1/ccache-4.13.1.tar.xz",
+    sha256 = "85638df95c4d3907d9dd686583f2e0b2bd4c232d36e025a5c48e91524b491c4b",
     description = "Fast C/C++ compiler cache",
     homepage = "https://ccache.dev/",
     license = "GPL-3+",
@@ -18,6 +14,18 @@ package(
         "-DREDIS_STORAGE_BACKEND=OFF",  # Disable redis to avoid network fetch of hiredis
         "-DENABLE_DOCUMENTATION=OFF",
         "-DENABLE_TESTING=OFF",
+        "-DDEP_XXHASH=SYSTEM",  # Use packaged deps instead of FetchContent download
+        "-DDEP_FMT=SYSTEM",
     ],
-    deps = [],
+    deps = [
+        "//packages/linux/system/libs/compression/zstd:zstd",
+        "//packages/linux/dev-libs/misc/xxhash:xxhash",
+        "//packages/linux/dev-libs/misc/fmt:fmt",
+    ],
+    # ccache is in _TOOL_BLOCKLIST (prevents self-cycle), so cmake/ninja
+    # aren't auto-injected — declare them explicitly.
+    host_deps = [
+        "//packages/linux/dev-tools/build-systems/cmake:cmake",
+        "//packages/linux/dev-tools/build-systems/ninja:ninja",
+    ],
 )

@@ -22,10 +22,7 @@ def main():
     expect_files = [f for f in expect_files if f]  # filter empty strings
 
     if not expect_files:
-        # No specific files requested — just verify the output dir exists
-        # and is non-empty
         if os.path.isdir(output_dir) and os.listdir(output_dir):
-            print(f"PASS: {output_dir} exists and is non-empty")
             sys.exit(0)
         else:
             print(f"FAIL: {output_dir} missing or empty")
@@ -33,16 +30,20 @@ def main():
 
     passed = 0
     failed = 0
+    lines = []
     for f in expect_files:
         path = os.path.join(output_dir, f)
         if os.path.exists(path):
-            print(f"  PASS: {f}")
+            lines.append(f"  PASS: {f}")
             passed += 1
         else:
-            print(f"  FAIL: {f} missing")
+            lines.append(f"  FAIL: {f} missing")
             failed += 1
 
-    print(f"--- {passed} passed, {failed} failed ---")
+    if failed:
+        for line in lines:
+            print(line)
+        print(f"--- {passed} passed, {failed} failed ---")
     sys.exit(1 if failed else 0)
 
 

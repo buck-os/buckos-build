@@ -19,6 +19,10 @@ package(
         "--enable-editline=yes",
         "--enable-blkid=yes",
     ],
+    # Disable parallel make to avoid jobserver auth mismatch between
+    # buckos make (FIFO-based, 4.4+) and host gmake (pipe-based).
+    # MAKEFLAGS= prevents the FIFO auth string from leaking to sub-makes.
+    make_args = ["-j1", "MAKEFLAGS="],
     # xfsprogs' make install triggers relinking with broken cross-subdir
     # dependencies — xfs_copy links ../libxlog/.libs/libxlog.a before it
     # exists.  Serialize install to avoid the race.

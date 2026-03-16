@@ -9,6 +9,9 @@ package(
     description = "Small build system with a focus on speed",
     homepage = "https://ninja-build.org/",
     license = "Apache-2.0",
+    host_deps = [
+        "//packages/linux/lang/python:python-host",
+    ],
     install_script = """
 mkdir -p "$OUT"
 BUILD=$(mktemp -d)

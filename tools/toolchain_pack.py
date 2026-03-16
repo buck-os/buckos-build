@@ -3,6 +3,11 @@
 
 Collects compiler binaries, sysroot, support libraries, and GCC internal
 tools, generates metadata.json, and packs everything into a compressed tar.
+
+Archive layout:
+  tools/                  cross-compiler (stage 1 output)
+  host-tools/             merged FHS tree (hermetic PATH)
+  metadata.json           provenance
 """
 
 import argparse
@@ -12,6 +17,7 @@ import os
 import re
 import shutil
 import stat
+import struct
 import subprocess
 import sys
 import tempfile
@@ -95,6 +101,360 @@ def _scrub_build_paths(directory):
         print(f"  scrubbed build paths from {scrubbed} ELF files", file=sys.stderr)
 
 
+def _elf_data_ranges(data):
+    """Return list of (start, end) byte ranges for ELF data sections.
+
+    Only returns ranges for sections that contain string/path data
+    (rodata, strtab, comment, debug sections).  Excludes executable
+    code sections (.text, .init, .fini, .plt) to avoid corrupting
+    machine code that happens to match path patterns.
+    """
+    if len(data) < 64 or data[:4] != b'\x7fELF':
+        return []
+    # Only handle 64-bit LE
+    if data[4] != 2 or data[5] != 1:
+        return []
+
+    SHT_PROGBITS = 1
+    SHT_STRTAB = 3
+    SHT_NOTE = 7
+
+    e_shoff = struct.unpack_from('<Q', data, 40)[0]
+    e_shentsize = struct.unpack_from('<H', data, 58)[0]
+    e_shnum = struct.unpack_from('<H', data, 60)[0]
+    e_shstrndx = struct.unpack_from('<H', data, 62)[0]
+
+    if e_shoff == 0 or e_shnum == 0:
+        return []
+
+    # Read section header string table to get section names
+    shstrtab_off = 0
+    if e_shstrndx < e_shnum:
+        idx_off = e_shoff + e_shstrndx * e_shentsize
+        shstrtab_off = struct.unpack_from('<Q', data, idx_off + 24)[0]
+
+    # Executable section names to skip
+    _EXEC_NAMES = {b'.text', b'.init', b'.fini', b'.plt', b'.plt.got',
+                   b'.plt.sec'}
+
+    ranges = []
+    for i in range(e_shnum):
+        sh_off = e_shoff + i * e_shentsize
+        sh_type = struct.unpack_from('<I', data, sh_off + 4)[0]
+        sh_flags = struct.unpack_from('<Q', data, sh_off + 8)[0]
+        sh_offset = struct.unpack_from('<Q', data, sh_off + 24)[0]
+        sh_size = struct.unpack_from('<Q', data, sh_off + 32)[0]
+        sh_name_idx = struct.unpack_from('<I', data, sh_off)[0]
+
+        if sh_size == 0:
+            continue
+
+        # Get section name
+        sec_name = b''
+        if shstrtab_off and sh_name_idx:
+            end = data.find(0, shstrtab_off + sh_name_idx)
+            if end > 0:
+                sec_name = data[shstrtab_off + sh_name_idx:end]
+
+        # Skip executable sections
+        SHF_EXECINSTR = 0x4
+        if sh_flags & SHF_EXECINSTR:
+            continue
+        if sec_name in _EXEC_NAMES:
+            continue
+
+        # Include string tables, rodata, comment, debug, note sections
+        if sh_type == SHT_STRTAB:
+            ranges.append((sh_offset, sh_offset + sh_size))
+        elif sh_type == SHT_NOTE:
+            ranges.append((sh_offset, sh_offset + sh_size))
+        elif sh_type == SHT_PROGBITS and sec_name in (
+            b'.rodata', b'.rodata.str1.1', b'.rodata.str1.8',
+            b'.comment', b'.GCC.command.line',
+        ):
+            ranges.append((sh_offset, sh_offset + sh_size))
+        elif sec_name.startswith(b'.debug'):
+            ranges.append((sh_offset, sh_offset + sh_size))
+
+    return ranges
+
+
+def _scrub_home_paths(directory):
+    """Replace /home/... paths in ELF data sections with zeroes.
+
+    Build-machine home directories should not appear in shipped
+    artifacts.  Only scrubs data sections (rodata, strtab, debug
+    info) — never touches executable code sections.
+    """
+    pattern = re.compile(rb'/home/[^\x00]+')
+    scrubbed = 0
+
+    for dirpath, _, filenames in os.walk(directory):
+        for name in filenames:
+            path = os.path.join(dirpath, name)
+            if os.path.islink(path) or not os.path.isfile(path):
+                continue
+            try:
+                with open(path, 'rb') as f:
+                    magic = f.read(4)
+                if magic != b'\x7fELF':
+                    continue
+                with open(path, 'rb') as f:
+                    data = bytearray(f.read())
+                if b'/home/' not in data:
+                    continue
+
+                ranges = _elf_data_ranges(bytes(data))
+                if not ranges:
+                    continue
+
+                modified = False
+                for m in pattern.finditer(bytes(data)):
+                    start, end = m.start(), m.end()
+                    # Only scrub if the match falls entirely within a data section
+                    in_data = any(rs <= start and end <= re
+                                  for rs, re in ranges)
+                    if in_data:
+                        for j in range(start, end):
+                            data[j] = 0
+                        modified = True
+
+                if modified:
+                    orig_mode = os.stat(path).st_mode
+                    os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
+                    with open(path, 'wb') as f:
+                        f.write(data)
+                    os.chmod(path, orig_mode)
+                    scrubbed += 1
+            except (PermissionError, OSError, struct.error):
+                pass
+
+    if scrubbed:
+        print(f"  scrubbed home paths from {scrubbed} ELF files", file=sys.stderr)
+
+
+
+def _sanitize_rpath(directory):
+    """Strip build-machine paths from ELF RPATH/RUNPATH, keep $ORIGIN.
+
+    GCC specs inject RPATH with both absolute sysroot paths (build-machine
+    specific) and $ORIGIN-relative paths (portable).  The general home-path
+    scrub would zero the entire RPATH string because the regex matches from
+    /home/ to null, destroying the $ORIGIN entries too.
+
+    This pass runs first: split RPATH by ':', discard build-path entries,
+    keep $ORIGIN entries, and write back.  After this, _scrub_home_paths
+    safely handles any remaining /home/ strings in other .dynstr entries.
+    """
+    sanitized = 0
+    for dirpath, _, filenames in os.walk(directory):
+        for name in filenames:
+            fpath = os.path.join(dirpath, name)
+            if os.path.islink(fpath) or not os.path.isfile(fpath):
+                continue
+            try:
+                with open(fpath, "rb") as f:
+                    data = bytearray(f.read())
+                if data[:4] != b"\x7fELF" or data[4] != 2 or data[5] != 1:
+                    continue
+                if b"/home/" not in data and b"buck-out" not in data:
+                    continue
+
+                e_shoff = struct.unpack_from("<Q", data, 40)[0]
+                e_shentsize = struct.unpack_from("<H", data, 58)[0]
+                e_shnum = struct.unpack_from("<H", data, 60)[0]
+
+                # Find .dynamic section to get RPATH/RUNPATH string offsets
+                SHT_DYNAMIC = 6
+                SHT_STRTAB = 3
+                dyn_offset = dyn_size = dyn_link = 0
+                strtab_sections = {}
+                for i in range(e_shnum):
+                    sh_off = e_shoff + i * e_shentsize
+                    sh_type = struct.unpack_from("<I", data, sh_off + 4)[0]
+                    sh_offset = struct.unpack_from("<Q", data, sh_off + 24)[0]
+                    sh_size = struct.unpack_from("<Q", data, sh_off + 32)[0]
+                    sh_link = struct.unpack_from("<I", data, sh_off + 40)[0]
+                    if sh_type == SHT_DYNAMIC:
+                        dyn_offset = sh_offset
+                        dyn_size = sh_size
+                        dyn_link = sh_link
+                    if sh_type == SHT_STRTAB:
+                        strtab_sections[i] = sh_offset
+
+                if not dyn_offset or dyn_link not in strtab_sections:
+                    continue
+
+                dynstr_offset = strtab_sections[dyn_link]
+
+                # Parse .dynamic entries for DT_RPATH(15) and DT_RUNPATH(29)
+                DT_RPATH = 15
+                DT_RUNPATH = 29
+                modified = False
+                pos = dyn_offset
+                while pos < dyn_offset + dyn_size:
+                    d_tag = struct.unpack_from("<q", data, pos)[0]
+                    d_val = struct.unpack_from("<Q", data, pos + 8)[0]
+                    if d_tag == 0:  # DT_NULL
+                        break
+                    if d_tag in (DT_RPATH, DT_RUNPATH):
+                        # d_val is offset into .dynstr
+                        str_off = dynstr_offset + d_val
+                        str_end = data.find(0, str_off)
+                        if str_end < 0:
+                            pos += 16
+                            continue
+                        rpath = data[str_off:str_end].decode("ascii", errors="replace")
+                        parts = rpath.split(":")
+                        clean = [p for p in parts
+                                 if p and "/home/" not in p and "buck-out" not in p
+                                 and "/usr/lib" not in p]
+                        new_rpath = ":".join(clean)
+                        new_bytes = new_rpath.encode("ascii")
+                        old_len = str_end - str_off
+                        if len(new_bytes) <= old_len:
+                            data[str_off:str_off + len(new_bytes)] = new_bytes
+                            for j in range(len(new_bytes), old_len):
+                                data[str_off + j] = 0
+                            modified = True
+                    pos += 16
+
+                if modified:
+                    orig_mode = os.stat(fpath).st_mode
+                    os.chmod(fpath, stat.S_IRUSR | stat.S_IWUSR)
+                    with open(fpath, "wb") as f:
+                        f.write(data)
+                    os.chmod(fpath, orig_mode)
+                    sanitized += 1
+            except (PermissionError, OSError, struct.error):
+                pass
+
+    if sanitized:
+        print(f"  sanitized RPATH in {sanitized} ELF files", file=sys.stderr)
+
+
+def _pad_unpadded_interpreters(host_tools_dir):
+    """Pad standard ELF interpreters so the unpack step can rewrite them.
+
+    Some packages (e.g. lzip) use non-standard configure scripts that
+    don't pass through GCC specs, producing binaries with the standard
+    27-byte /lib64/ld-linux-x86-64.so.2 interpreter.  The unpack step
+    can only rewrite padded interpreters (it needs space to overwrite
+    in-place).  Pad any unpadded interpreters to the standard 256-byte
+    format so they get properly rewritten at unpack time.
+    """
+    STANDARD_INTERP = "/lib64/ld-linux-x86-64.so.2"
+    PADDED_INTERP = "/" * 228 + "lib64/ld-linux-x86-64.so.2"  # 256 bytes total
+    padded = 0
+
+    for dirpath, _, filenames in os.walk(host_tools_dir):
+        for name in filenames:
+            fpath = os.path.join(dirpath, name)
+            if os.path.islink(fpath) or not os.path.isfile(fpath):
+                continue
+            try:
+                with open(fpath, "rb") as f:
+                    magic = f.read(4)
+                if magic != b"\x7fELF":
+                    continue
+                with open(fpath, "rb") as f:
+                    data = bytearray(f.read())
+
+                # Only handle 64-bit little-endian (x86_64)
+                if data[4] != 2 or data[5] != 1:
+                    continue
+
+                e_phoff = struct.unpack_from("<Q", data, 32)[0]
+                e_phentsize = struct.unpack_from("<H", data, 54)[0]
+                e_phnum = struct.unpack_from("<H", data, 56)[0]
+
+                for i in range(e_phnum):
+                    off = e_phoff + i * e_phentsize
+                    p_type = struct.unpack_from("<I", data, off)[0]
+                    if p_type != 3:  # PT_INTERP
+                        continue
+
+                    p_offset = struct.unpack_from("<Q", data, off + 8)[0]
+                    p_filesz = struct.unpack_from("<Q", data, off + 32)[0]
+                    seg_end = p_offset + p_filesz
+                    try:
+                        end = data.index(0, p_offset, seg_end)
+                    except ValueError:
+                        end = seg_end
+                    old_interp = data[p_offset:end].decode("ascii", errors="replace")
+
+                    if old_interp == STANDARD_INTERP:
+                        # Pad by appending to end of file
+                        new_bytes = PADDED_INTERP.encode("ascii") + b"\x00"
+                        new_offset = len(data)
+                        data.extend(new_bytes)
+                        struct.pack_into("<Q", data, off + 8, new_offset)
+                        struct.pack_into("<Q", data, off + 32, len(new_bytes))
+                        struct.pack_into("<Q", data, off + 40, len(new_bytes))
+
+                        orig_mode = os.stat(fpath).st_mode
+                        os.chmod(fpath, stat.S_IRUSR | stat.S_IWUSR)
+                        with open(fpath, "wb") as f:
+                            f.write(data)
+                        os.chmod(fpath, orig_mode)
+                        padded += 1
+                    break
+            except (PermissionError, OSError, struct.error):
+                pass
+
+    if padded:
+        print(f"  padded {padded} host-tools binaries with standard interpreter",
+              file=sys.stderr)
+
+
+def _create_rpath_symlinks(host_tools_dir):
+    """Create lib64/lib symlinks so $ORIGIN/../lib64 resolves from any depth.
+
+    GCC specs inject RPATH=$ORIGIN/../lib64:$ORIGIN/../lib.  For a binary
+    at host-tools/bin/foo this resolves to host-tools/lib64/ — correct.
+    For host-tools/libexec/gcc/triple/ver/cc1 it resolves to
+    host-tools/libexec/gcc/triple/lib64/ — wrong.
+
+    Walk all directories containing ELF files and create lib64/lib
+    symlinks in their parent directories pointing back to the prefix root.
+    """
+    root = os.path.abspath(host_tools_dir)
+    # Directories that already have real lib64/lib
+    skip = {root}
+    created = 0
+
+    # Find all directories containing ELF executables/shared libs
+    elf_dirs = set()
+    for dirpath, _, filenames in os.walk(root):
+        for name in filenames:
+            fpath = os.path.join(dirpath, name)
+            if os.path.islink(fpath) or not os.path.isfile(fpath):
+                continue
+            try:
+                with open(fpath, "rb") as f:
+                    if f.read(4) == b"\x7fELF":
+                        elf_dirs.add(dirpath)
+            except (PermissionError, OSError):
+                pass
+
+    for elf_dir in elf_dirs:
+        # $ORIGIN/../lib64 means the parent of the binary's directory
+        parent = os.path.dirname(elf_dir)
+        if parent in skip or parent == elf_dir:
+            continue
+        for libdir in ("lib64", "lib"):
+            target = os.path.join(root, libdir)
+            link = os.path.join(parent, libdir)
+            if os.path.isdir(target) and not os.path.exists(link):
+                rel = os.path.relpath(target, parent)
+                os.symlink(rel, link)
+                created += 1
+
+    if created:
+        print(f"  created {created} RPATH symlinks for nested binaries",
+              file=sys.stderr)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Pack bootstrap toolchain into archive")
     parser.add_argument("--stage-dir", required=True, help="Stage 2 output directory")
@@ -126,8 +486,8 @@ def main():
 
         # If host tools are provided, stage them under host-tools/ in the
         # temp dir so the archive layout matches what toolchain_import expects.
-        host_tools_tar = ""
         has_host_tools = False
+        host_tools_dst = None
         if args.host_tools_dir:
             host_tools_src = os.path.abspath(args.host_tools_dir)
             if not os.path.isdir(host_tools_src):
@@ -135,14 +495,47 @@ def main():
                 sys.exit(1)
             host_tools_dst = os.path.join(tmpdir, "host-tools")
             shutil.copytree(host_tools_src, host_tools_dst, symlinks=True)
-            host_tools_tar = f" -C {tmpdir} host-tools"
             has_host_tools = True
 
-        # Scrub absolute buck-out paths from ELF binaries in both trees
+        # Scrub absolute buck-out paths from ELF binaries in the cross-compiler
+        # tree only.  Host-tools binaries must NOT be scrubbed because tools
+        # like flex and bison store paths to helper programs (m4) at compile
+        # time — scrubbing truncates those to "/build" which breaks exec().
         print("Scrubbing build paths...", file=sys.stderr)
         _scrub_build_paths(stage_copy)
+
+        # Sanitize RPATH/RUNPATH: strip build-machine paths, keep $ORIGIN.
+        # Must run BEFORE _scrub_home_paths because the general scrub's
+        # regex matches /home/ to null, destroying $ORIGIN entries that
+        # follow sysroot paths in the same RPATH string.
+        print("Sanitizing RPATH...", file=sys.stderr)
+        _sanitize_rpath(stage_copy)
         if has_host_tools:
-            _scrub_build_paths(os.path.join(tmpdir, "host-tools"))
+            _sanitize_rpath(host_tools_dst)
+
+        # Scrub /home/... paths from data sections so build-machine
+        # paths don't appear in shipped artifacts.  Section-aware:
+        # only touches rodata, strtab, debug — never executable code.
+        print("Scrubbing home paths...", file=sys.stderr)
+        _scrub_home_paths(stage_copy)
+        if has_host_tools:
+            _scrub_home_paths(host_tools_dst)
+
+        # Most host-tools binaries are built by our GCC with specs, so
+        # they have padded interp + $ORIGIN RPATH at link time.  Some
+        # packages (lzip, etc.) use non-standard build systems that
+        # don't pass through GCC specs, leaving the standard 27-byte
+        # interpreter.  Pad those so the unpack step can rewrite them.
+        if has_host_tools:
+            _pad_unpadded_interpreters(host_tools_dst)
+
+        # specs inject $ORIGIN/../lib64 which only resolves for
+        # binaries directly in bin/.  Deeply-nested binaries (e.g.
+        # libexec/gcc/.../cc1) need more ../ levels.  Create lib64
+        # symlinks in intermediate directories so $ORIGIN/../lib64
+        # resolves from any depth.
+        if has_host_tools:
+            _create_rpath_symlinks(host_tools_dst)
 
         # Compute content hash from scrubbed stage
         print("Computing content hash...", file=sys.stderr)
@@ -167,21 +560,34 @@ def main():
 
         print(f"Packing {stage_dir} -> {output}", file=sys.stderr)
 
-        if args.compression == "zst":
-            tar_cmd = (
-                f"tar -C {stage_copy} -cf - . -C {tmpdir} metadata.json{host_tools_tar}"
-                f" | zstd -T0 -19 -o {output}"
-            )
-        elif args.compression == "xz":
-            tar_cmd = (
-                f"tar -C {stage_copy} -cJf {output} . -C {tmpdir} metadata.json{host_tools_tar}"
-            )
-        else:
-            tar_cmd = (
-                f"tar -C {stage_copy} -czf {output} . -C {tmpdir} metadata.json{host_tools_tar}"
-            )
+        # Build tar command with multiple -C flags to collect all
+        # archive components without symlinks or --dereference.
+        tar_items = ["-C", stage_copy, "."]
+        tar_items.extend(["-C", tmpdir, "metadata.json"])
+        if has_host_tools:
+            tar_items.extend(["-C", tmpdir, "host-tools"])
 
-        result = subprocess.run(tar_cmd, shell=True, env=clean_env())
+        if args.compression == "zst":
+            tar_p = subprocess.Popen(
+                ["tar", "-cf", "-"] + tar_items,
+                stdout=subprocess.PIPE, env=clean_env(),
+            )
+            zstd_p = subprocess.Popen(
+                ["zstd", "-T0", "-19", "-o", output],
+                stdin=tar_p.stdout, env=clean_env(),
+            )
+            tar_p.stdout.close()
+            zstd_p.wait()
+            rc = tar_p.wait() or zstd_p.returncode
+            result = type("R", (), {"returncode": rc})()
+        elif args.compression == "xz":
+            result = subprocess.run(
+                ["tar", "-cJf", output] + tar_items,
+                env=clean_env())
+        else:
+            result = subprocess.run(
+                ["tar", "-czf", output] + tar_items,
+                env=clean_env())
 
     if result.returncode != 0:
         print(f"error: tar failed with exit code {result.returncode}", file=sys.stderr)

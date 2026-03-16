@@ -12,8 +12,7 @@ load("//defs/rules:kernel.bzl", "kernel_build", "kernel_btf_headers", "kernel_he
 # with USE flag integration via select() for debug/ima/lockdown/apparmor.
 #
 # Available kernel versions:
-# - Mainline: 6.18 (kernel//src:linux-mainline-src)
-# - Stable: 6.17.10 (default, kernel//src:linux-stable-src)
+# - Default: 6.18 (kernel//src:linux-src)
 # - LTS: 6.12.60 (kernel//src:linux-lts-src)
 
 # ── Headers (early — glibc/musl depend on this, not vmlinux) ────────
@@ -22,7 +21,7 @@ kernel_headers(
     name = "linux-headers",
     source = "//packages/linux/kernel/src:linux-src",
     config = "//packages/linux/kernel/configs:buckos-default",
-    version = "6.17.10",
+    version = "6.18",
 )
 
 # ── Default kernel build ─────────────────────────────────────────────
@@ -31,7 +30,7 @@ kernel_build(
     name = "buckos-kernel",
     source = "//packages/linux/kernel/src:linux-src",
     config = "//packages/linux/kernel/configs:buckos-default",
-    version = "6.17.10",
+    version = "6.18",
     labels = ["buckos:compile", "buckos:build:kbuild"],
 )
 
@@ -47,7 +46,7 @@ kernel_btf_headers(
 kernel_modules_install(
     name = "linux-modules",
     kernel = ":buckos-kernel",
-    version = "6.17.10",
+    version = "6.18",
     extra_modules = [
         # Out-of-tree modules listed here, e.g.:
         # "//packages/linux/drivers/nvidia:nvidia-ko",
@@ -61,7 +60,7 @@ kernel_build(
     name = "buckos-kernel-minimal",
     source = "//packages/linux/kernel/src:linux-src",
     config = "//packages/linux/kernel/configs:buckos-minimal",
-    version = "6.17.10",
+    version = "6.18",
     labels = ["buckos:compile", "buckos:build:kbuild"],
 )
 
@@ -70,7 +69,7 @@ kernel_build(
     name = "buckos-kernel-server",
     source = "//packages/linux/kernel/src:linux-src",
     config = "//packages/linux/kernel/configs:buckos-server",
-    version = "6.17.10",
+    version = "6.18",
     labels = ["buckos:compile", "buckos:build:kbuild"],
 )
 
@@ -79,7 +78,7 @@ kernel_build(
     name = "buckos-kernel-vm",
     source = "//packages/linux/kernel/src:linux-src",
     config = "//packages/linux/kernel/configs:buckos-vm-guest",
-    version = "6.17.10",
+    version = "6.18",
     labels = ["buckos:compile", "buckos:build:kbuild"],
 )
 
@@ -88,7 +87,7 @@ kernel_build(
     name = "buckos-kernel-defconfig",
     source = "//packages/linux/kernel/src:linux-src",
     config = "//packages/linux/kernel/configs:buckos-minimal",
-    version = "6.17.10",
+    version = "6.18",
     labels = ["buckos:compile", "buckos:build:kbuild"],
 )
 
@@ -97,7 +96,7 @@ kernel_build(
     name = "buckos-kernel-live",
     source = "//packages/linux/kernel/src:linux-src",
     config = "//packages/linux/kernel/configs:buckos-live",
-    version = "6.17.10",
+    version = "6.18",
     # GCC 15 trips -Werror=address in libbpf tools (hashmap__find NULL check)
     patches = ["fix-libbpf-werror-address.patch"],
     labels = ["buckos:compile", "buckos:build:kbuild"],
@@ -106,7 +105,7 @@ kernel_build(
 # Cloud Hypervisor Guest kernel
 kernel_build(
     name = "buckos-kernel-ch",
-    source = "//packages/linux/kernel/src:linux-mainline-src",
+    source = "//packages/linux/kernel/src:linux-src",
     config = "//packages/linux/kernel/configs:buckos-ch-guest",
     version = "6.18",
     kcflags = "-Wno-error -Wno-unterminated-string-initialization",
@@ -119,7 +118,7 @@ kernel_build(
     name = "buckos-kernel-aarch64",
     source = "//packages/linux/kernel/src:linux-src",
     config = "//packages/linux/kernel/configs:buckos-aarch64-default",
-    version = "6.17.10",
+    version = "6.18",
     arch = "aarch64",
     cross_toolchain = "//tc/bootstrap/aarch64:cross-toolchain-aarch64",
     labels = ["buckos:compile", "buckos:build:kbuild", "buckos:arch:aarch64"],
@@ -129,7 +128,7 @@ kernel_build(
     name = "buckos-kernel-aarch64-cloud",
     source = "//packages/linux/kernel/src:linux-src",
     config = "//packages/linux/kernel/configs:buckos-aarch64-cloud",
-    version = "6.17.10",
+    version = "6.18",
     arch = "aarch64",
     cross_toolchain = "//tc/bootstrap/aarch64:cross-toolchain-aarch64",
     labels = ["buckos:compile", "buckos:build:kbuild", "buckos:arch:aarch64"],
@@ -139,7 +138,7 @@ kernel_build(
     name = "buckos-kernel-aarch64-minimal",
     source = "//packages/linux/kernel/src:linux-src",
     config = "//packages/linux/kernel/configs:buckos-aarch64-minimal",
-    version = "6.17.10",
+    version = "6.18",
     arch = "aarch64",
     cross_toolchain = "//tc/bootstrap/aarch64:cross-toolchain-aarch64",
     labels = ["buckos:compile", "buckos:build:kbuild", "buckos:arch:aarch64"],

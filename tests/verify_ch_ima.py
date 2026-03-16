@@ -16,13 +16,22 @@ Env vars from sh_test:
     EXPECT_NO_TEST_OUTPUT — string that must NOT appear (optional)
 """
 
+import ctypes
 import multiprocessing
 import os
+import re
 import selectors
 import signal
 import subprocess
 import sys
 import time
+
+
+def _pdeathsig():
+    """Ensure VM process is killed when test runner exits."""
+    ctypes.CDLL("libc.so.6", use_errno=True).prctl(1, signal.SIGKILL)
+
+_CLEAR_RE = re.compile(r"\x1bc|\x1b\[[0-9]*[JH]|\x1b\[\?[0-9;]*[hl]")
 
 
 def find_file(base, patterns):
@@ -101,7 +110,8 @@ def main():
         "--console", "off",
     ]
 
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                            preexec_fn=_pdeathsig, start_new_session=True)
 
     output = ""
     try:
@@ -126,38 +136,53 @@ def main():
         sel.close()
     finally:
         if proc.poll() is None:
-            proc.send_signal(signal.SIGTERM)
+            try:
+                os.killpg(proc.pid, signal.SIGTERM)
+            except (ProcessLookupError, PermissionError):
+                pass
             try:
                 proc.wait(timeout=10)
             except subprocess.TimeoutExpired:
-                proc.kill()
+                try:
+                    os.killpg(proc.pid, signal.SIGKILL)
+                except (ProcessLookupError, PermissionError):
+                    pass
                 proc.wait()
 
     stderr = proc.stderr.read() if proc.stderr else ""
-    print(output[-3000:] if len(output) > 3000 else output)
-    print("---")
+    output = _CLEAR_RE.sub("", output)
 
     failures = 0
+    if expect_marker not in output:
+        failures += 1
+    if expect_test_output and expect_test_output not in output:
+        failures += 1
+    if expect_no_test_output and expect_no_test_output in output:
+        failures += 1
+
+    if failures:
+        print(output)
+        if stderr:
+            print(f"stderr (last 500): {stderr[-500:]}")
+    else:
+        tail = "\n".join(output.splitlines()[-10:])
+        print(tail)
+    print("---")
 
     if expect_marker in output:
         print(f"PASS: found '{expect_marker}'")
     else:
         print(f"FAIL: '{expect_marker}' not found")
-        if stderr:
-            print(f"stderr (last 500): {stderr[-500:]}")
-        failures += 1
 
     if expect_test_output:
         if expect_test_output in output:
             print(f"PASS: found '{expect_test_output}'")
         else:
             print(f"FAIL: '{expect_test_output}' not found")
-            failures += 1
 
     if expect_no_test_output:
         if expect_no_test_output in output:
             print(f"FAIL: '{expect_no_test_output}' should not appear")
-            failures += 1
         else:
             print(f"PASS: '{expect_no_test_output}' correctly absent")
 

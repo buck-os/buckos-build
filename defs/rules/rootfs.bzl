@@ -3,7 +3,7 @@ rootfs rule: assemble a root filesystem from packages.
 """
 
 load("//defs:providers.bzl", "KernelInfo", "PackageInfo")
-load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_path_args")
+load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_ld_linux_args", "toolchain_path_args")
 load("//defs/rules:_common.bzl", "add_flag_file", "write_runtime_prefixes")
 load("//defs:tsets.bzl", "RuntimeDepTSet")
 
@@ -40,6 +40,8 @@ def _rootfs_impl(ctx):
     add_flag_file(cmd, "--prefix-list", prefix_list_file)
     cmd.add("--version", ctx.attrs.version)
     for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
         cmd.add(arg)
 
     # Write version to a file that contributes to action cache key.

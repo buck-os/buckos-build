@@ -1,0 +1,20 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cmake",
+    name = "xxhash",
+    version = "0.8.3",
+    url = "https://github.com/Cyan4973/xxHash/archive/refs/tags/v0.8.3.tar.gz",
+    sha256 = "aae608dfe8213dfd05d909a57718ef82f30722c392344583d3f39050c7f29a80",
+    description = "Extremely fast non-cryptographic hash algorithm",
+    homepage = "https://xxhash.com/",
+    license = "BSD-2-Clause",
+    configure_args = [
+        "-DBUILD_SHARED_LIBS=OFF",
+    ],
+    source_subdir = "cmake_unofficial",
+    host_deps = [
+        "//packages/linux/dev-tools/build-systems/cmake:cmake",
+        "//packages/linux/dev-tools/build-systems/ninja:ninja",
+    ],
+)

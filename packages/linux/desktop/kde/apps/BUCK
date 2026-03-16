@@ -1,6 +1,22 @@
 load("//defs:package.bzl", "package")
 load("//packages/linux/desktop/kde:meta.bzl", "KF_FRAMEWORKS")
 
+# Qt6 runtime deps needed as host_deps so qtpaths/moc can find shared
+# libs at configure time via LD_LIBRARY_PATH.
+_QT6_HOST_DEPS = [
+    "//packages/linux/desktop/qt:qt6-native",
+    "//packages/linux/system/libs/utility/icu:icu-native",
+    "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
+    "//packages/linux/system/libs/font/freetype:freetype",
+    "//packages/linux/system/libs/crypto/openssl:openssl",
+    "//packages/linux/core/zlib:zlib",
+    "//packages/linux/system/libs/compression/zstd:zstd",
+    "//packages/linux/system/libs/utility/pcre2:pcre2",
+    "//packages/linux/dev-libs/glib:glib",
+    "//packages/linux/graphics/libglvnd:libglvnd",
+    "//packages/linux/desktop/mesa:mesa",
+]
+
 # =============================================================================
 # KDE Applications - Popular KDE apps collection
 # =============================================================================
@@ -110,7 +126,7 @@ _KDE_APP_COMPILE = _KDE_HOST_LD_SETUP + """cmake --build "$S/build" -j${MAKEOPTS
 # Shared transitive deps needed for rpath-link when linking against KDE/Qt6
 _KDE_COMMON_DEPS = [
 ] + KF_FRAMEWORKS + [
-    "//packages/linux/desktop/qt:qt6",
+    "//packages/linux/desktop/qt:qt6-native",
     "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
     "//packages/linux/dev-libs/glib:glib",
     "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
@@ -128,7 +144,7 @@ _KDE_COMMON_DEPS = [
     "//packages/linux/system/libs/font/fontconfig:fontconfig",
     "//packages/linux/desktop/mesa:mesa",
     # Mesa's radeonsi driver depends on LLVM and elfutils; LLVM depends on libxml2
-    # "//packages/linux/core/llvm:llvm",  # disabled: long build, not needed yet
+    # "//packages/linux/core/llvm:llvm-native",  # disabled: long build, not needed yet
     "//packages/linux/dev-libs/elfutils:elfutils",
     "//packages/linux/system/libs/data/libxml2:libxml2",
     "//packages/linux/desktop/libdrm:libdrm",
@@ -141,7 +157,7 @@ _KDE_COMMON_DEPS = [
     "//packages/linux/system/libs/audio/libogg:libogg",
     "//packages/linux/core/util-linux:util-linux",
     "//packages/linux/dev-tools/build-systems/libtool:libtool",
-    "//packages/linux/system/libs/utility/icu:icu",
+    "//packages/linux/system/libs/utility/icu:icu-native",
     "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     "//packages/linux/desktop/kde:syndication",  # KNewStuff depends on syndication
 ]
@@ -185,6 +201,7 @@ sed -i 's/auto.*QMediaPlayer/\\/\\/ &/' src/terminalDisplay/TerminalBell.cpp || 
 sed -i 's/m_bell->setSource/\\/\\/ &/' src/terminalDisplay/TerminalBell.cpp || true
 sed -i 's/m_bell->play/\\/\\/ &/' src/terminalDisplay/TerminalBell.cpp || true
 """],
+    host_deps = _QT6_HOST_DEPS,
     deps = _KDE_COMMON_DEPS,
     visibility = ["PUBLIC"],
 )
@@ -225,6 +242,7 @@ sed -i 's/set(HAVE_X11 TRUE)/set(HAVE_X11 FALSE)/' CMakeLists.txt
 # Add GENERATE_MOC to all kconfig_add_kcfg_files calls that don't have it
 sed -i '/kconfig_add_kcfg_files(/{/GENERATE_MOC/!s/kconfig_add_kcfg_files(\\([^ ]*\\)/kconfig_add_kcfg_files(\\1 GENERATE_MOC/}' src/CMakeLists.txt
 """],
+    host_deps = _QT6_HOST_DEPS,
     deps = _KDE_COMMON_DEPS,
     visibility = ["PUBLIC"],
 )
@@ -251,6 +269,7 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
 # Disable X11 (Wayland-only build)
 sed -i 's/set(HAVE_X11 TRUE)/set(HAVE_X11 FALSE)/' apps/kate/CMakeLists.txt
 """],
+    host_deps = _QT6_HOST_DEPS,
     deps = _KDE_COMMON_DEPS,
     visibility = ["PUBLIC"],
 )
@@ -345,6 +364,7 @@ package(
         "-DCMAKE_DISABLE_FIND_PACKAGE_KF6DocTools=ON",
     ],
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = _QT6_HOST_DEPS,
     deps = _KDE_COMMON_DEPS,
     visibility = ["PUBLIC"],
 )
@@ -392,6 +412,7 @@ package(
         "-DCMAKE_DISABLE_FIND_PACKAGE_KF6DocTools=ON",
     ],
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = _QT6_HOST_DEPS,
     deps = _KDE_COMMON_DEPS,
     visibility = ["PUBLIC"],
 )
@@ -415,6 +436,7 @@ package(
         "-DCMAKE_DISABLE_FIND_PACKAGE_KF6DocTools=ON",
     ],
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = _QT6_HOST_DEPS,
     deps = _KDE_COMMON_DEPS,
     visibility = ["PUBLIC"],
 )
@@ -461,6 +483,7 @@ package(
         "-DCMAKE_DISABLE_FIND_PACKAGE_KF6DocTools=ON",
     ],
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = _QT6_HOST_DEPS,
     deps = _KDE_COMMON_DEPS,
     visibility = ["PUBLIC"],
 )
@@ -483,6 +506,7 @@ package(
         "-DCMAKE_DISABLE_FIND_PACKAGE_KF6DocTools=ON",
     ],
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = _QT6_HOST_DEPS,
     deps = _KDE_COMMON_DEPS,
     visibility = ["PUBLIC"],
 )
@@ -546,49 +570,6 @@ package(
 #
 # )
 
-# -----------------------------------------------------------------------------
-# KTorrent - BitTorrent Client
-# -----------------------------------------------------------------------------
-package(
-    build_rule = "cmake",
-    name = "ktorrent",
-    url = "https://download.kde.org/stable/release-service/24.02.0/src/ktorrent-24.02.0.tar.xz",
-    sha256 = "FIXME",
-    version = "24.02.0",
-    description = "KDE's feature-rich BitTorrent client",
-    homepage = "https://apps.kde.org/ktorrent/",
-    license = "GPL-2.0-or-later",
-    configure_args = [
-        "-DBUILD_TESTING=OFF",
-        "-DCMAKE_DISABLE_FIND_PACKAGE_KF6DocTools=ON",
-    ],
-    pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    deps = _KDE_COMMON_DEPS + [
-        "//packages/linux/dev-libs/boost:boost",
-    ],
-    visibility = ["PUBLIC"],
-)
-
-# -----------------------------------------------------------------------------
-# Krusader - Twin Panel File Manager
-# -----------------------------------------------------------------------------
-package(
-    build_rule = "cmake",
-    name = "krusader",
-    url = "https://download.kde.org/stable/release-service/24.02.0/src/krusader-24.02.0.tar.xz",
-    sha256 = "FIXME",
-    version = "2.8.1",
-    description = "KDE's twin-panel (commander style) file manager",
-    homepage = "https://krusader.org/",
-    license = "GPL-2.0-or-later",
-    configure_args = [
-        "-DBUILD_TESTING=OFF",
-        "-DCMAKE_DISABLE_FIND_PACKAGE_KF6DocTools=ON",
-    ],
-    pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
-    deps = _KDE_COMMON_DEPS,
-    visibility = ["PUBLIC"],
-)
 
 # =============================================================================
 # Meta-packages for KDE Applications

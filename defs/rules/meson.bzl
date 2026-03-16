@@ -16,21 +16,22 @@ load("//defs:providers.bzl", "PackageInfo")
 load("//defs/rules:_common.bzl",
      "COMMON_PACKAGE_ATTRS",
      "add_flag_file", "build_package_tsets", "collect_dep_tsets",
-     "src_prepare",
-     "write_bin_dirs", "write_compile_flags", "write_lib_dirs",
+     "collect_host_path_children", "src_prepare",
+     "write_bin_dirs", "write_compile_flags", "write_lib_dirs_with_hosts",
      "write_link_flags", "write_pkg_config_paths",
 )
-load("//defs:toolchain_helpers.bzl", "toolchain_env_args", "toolchain_extra_cflags", "toolchain_extra_ldflags", "toolchain_path_args")
+load("//defs:toolchain_helpers.bzl", "toolchain_env_args", "toolchain_extra_cflags", "toolchain_extra_ldflags", "toolchain_ld_linux_args", "toolchain_path_args", "toolchain_target_triple")
 load("//defs:host_tools.bzl", "host_tool_path_args")
 
 # ── Phase helpers ─────────────────────────────────────────────────────
 
 def _meson_setup(ctx, source, cflags_file = None, ldflags_file = None,
-                 pkg_config_file = None, path_file = None, lib_dirs_file = None):
+                 pkg_config_file = None, lib_dirs_file = None,
+                 bin_dirs_file = None):
     """Run meson setup with toolchain env and dep flags.
 
     Dep flags are propagated via tset projection files — the meson_helper
-    reads them and merges into CFLAGS, LDFLAGS, PKG_CONFIG_PATH, and PATH.
+    reads them and merges into CFLAGS, LDFLAGS, and PKG_CONFIG_PATH.
     """
     output = ctx.actions.declare_output("configured", dir = True)
     cmd = cmd_args(ctx.attrs._meson_tool[RunInfo])
@@ -46,9 +47,18 @@ def _meson_setup(ctx, source, cflags_file = None, ldflags_file = None,
     for env_arg in toolchain_env_args(ctx):
         cmd.add("--env", env_arg)
 
-    # Hermetic PATH from seed toolchain
+    # Hermetic PATH and ld-linux from seed toolchain
     for arg in toolchain_path_args(ctx):
         cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
+        cmd.add(arg)
+
+    # Cross-compilation: pass target triple so the helper generates a
+    # meson cross file.  This prevents meson from trying to execute
+    # compiled test programs (which crash when the padded interpreter
+    # resolves to a host ld-linux that is ABI-incompatible with the
+    # target libc).
+    cmd.add("--cross-triple", toolchain_target_triple(ctx))
 
     # Inject user-specified environment variables
     for key, value in ctx.attrs.env.items():
@@ -82,8 +92,10 @@ def _meson_setup(ctx, source, cflags_file = None, ldflags_file = None,
     add_flag_file(cmd, "--cflags-file", cflags_file)
     add_flag_file(cmd, "--ldflags-file", ldflags_file)
     add_flag_file(cmd, "--pkg-config-file", pkg_config_file)
-    add_flag_file(cmd, "--path-file", path_file)
     add_flag_file(cmd, "--lib-dirs-file", lib_dirs_file)
+
+    # Dep bin dirs appended to PATH for *-config discovery scripts
+    add_flag_file(cmd, "--path-append-file", bin_dirs_file)
 
     # Add host_deps bin dirs to PATH
     for arg in host_tool_path_args(ctx):
@@ -96,7 +108,7 @@ def _meson_setup(ctx, source, cflags_file = None, ldflags_file = None,
     ctx.actions.run(cmd, category = "meson_configure", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
-def _src_compile(ctx, configured, source, path_file = None, lib_dirs_file = None):
+def _src_compile(ctx, configured, source, lib_dirs_file = None):
     """Run ninja in the meson build tree."""
     output = ctx.actions.declare_output("built", dir = True)
     cmd = cmd_args(ctx.attrs._build_tool[RunInfo])
@@ -106,16 +118,18 @@ def _src_compile(ctx, configured, source, path_file = None, lib_dirs_file = None
 
     # Ensure source dir is available — meson out-of-tree builds
     # reference source files by absolute path in build.ninja.
-    # Dep prefixes are materialised via tset projections (path_file,
-    # lib_dirs_file) passed to add_flag_file below.
+    # Dep prefixes are materialised via tset projections (lib_dirs_file)
+    # passed to add_flag_file below.
     cmd.add(cmd_args(hidden = source))
 
     # Inject toolchain CC/CXX/AR
     for env_arg in toolchain_env_args(ctx):
         cmd.add("--env", env_arg)
 
-    # Hermetic PATH from seed toolchain
+    # Hermetic PATH and ld-linux from seed toolchain
     for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
         cmd.add(arg)
 
     # Inject user-specified environment variables
@@ -125,7 +139,6 @@ def _src_compile(ctx, configured, source, path_file = None, lib_dirs_file = None
     # Dep bin dirs and lib dirs via tset projection files.
     # Build tools (moc, rcc, wayland-scanner, etc.) need shared libs
     # and executables from deps at runtime.
-    add_flag_file(cmd, "--path-file", path_file)
     add_flag_file(cmd, "--lib-dirs-file", lib_dirs_file)
 
     # Add host_deps bin dirs to PATH
@@ -138,7 +151,7 @@ def _src_compile(ctx, configured, source, path_file = None, lib_dirs_file = None
     ctx.actions.run(cmd, category = "meson_compile", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
-def _src_install(ctx, built, source, path_file = None, lib_dirs_file = None):
+def _src_install(ctx, built, source, lib_dirs_file = None):
     """Run ninja install into the output prefix."""
     output = ctx.actions.declare_output("installed", dir = True)
     cmd = cmd_args(ctx.attrs._install_tool[RunInfo])
@@ -153,8 +166,10 @@ def _src_install(ctx, built, source, path_file = None, lib_dirs_file = None):
     for env_arg in toolchain_env_args(ctx):
         cmd.add("--env", env_arg)
 
-    # Hermetic PATH from seed toolchain
+    # Hermetic PATH and ld-linux from seed toolchain
     for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
         cmd.add(arg)
 
     # Inject user-specified environment variables
@@ -162,7 +177,6 @@ def _src_install(ctx, built, source, path_file = None, lib_dirs_file = None):
         cmd.add("--env", "{}={}".format(key, value))
 
     # Dep bin/lib dirs — install rules may run tools or need shared libs
-    add_flag_file(cmd, "--path-file", path_file)
     add_flag_file(cmd, "--lib-dirs-file", lib_dirs_file)
 
     # Add host_deps bin dirs to PATH
@@ -193,18 +207,19 @@ def _meson_package_impl(ctx):
     cflags_file = write_compile_flags(ctx, dep_compile)
     ldflags_file = write_link_flags(ctx, dep_link)
     pkg_config_file = write_pkg_config_paths(ctx, dep_compile)
-    path_file = write_bin_dirs(ctx, dep_path)
-    lib_dirs_file = write_lib_dirs(ctx, dep_path) if dep_path else None
+    host_path_children = collect_host_path_children(ctx)
+    lib_dirs_file = write_lib_dirs_with_hosts(ctx, dep_path, host_path_children)
+    bin_dirs_file = write_bin_dirs(ctx, dep_path)
 
     # Phase 3: meson_setup
     configured = _meson_setup(ctx, prepared, cflags_file, ldflags_file,
-                              pkg_config_file, path_file, lib_dirs_file)
+                              pkg_config_file, lib_dirs_file, bin_dirs_file)
 
     # Phase 4: src_compile (source passed as hidden input for out-of-tree builds)
-    built = _src_compile(ctx, configured, prepared, path_file, lib_dirs_file)
+    built = _src_compile(ctx, configured, prepared, lib_dirs_file)
 
     # Phase 5: src_install
-    installed = _src_install(ctx, built, prepared, path_file, lib_dirs_file)
+    installed = _src_install(ctx, built, prepared, lib_dirs_file)
 
     # Build transitive sets
     compile_tset, link_tset, path_tset, runtime_tset = build_package_tsets(ctx, installed)

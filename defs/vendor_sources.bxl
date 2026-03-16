@@ -36,14 +36,38 @@ def _filename_from_url(url: str) -> str | None:
         return None
     return filename
 
+def _get_build_rule(target) -> str | None:
+    """Extract build rule from buckos:build:* label."""
+    labels_val = target.get_attr("labels")
+    if labels_val:
+        for label in labels_val:
+            if label.startswith("buckos:build:"):
+                return label[len("buckos:build:"):]
+    return None
+
+def _lookup_sibling_build_rule(ctx: bxl.Context, target) -> str | None:
+    """Look up the build rule from the sibling -build target."""
+    tgt_name = str(target.label.name)
+    if tgt_name.endswith("-archive"):
+        build_name = tgt_name[:-len("-archive")] + "-build"
+        pkg_path = str(target.label).rsplit(":", 1)[0]
+        build_label = pkg_path + ":" + build_name
+        query = ctx.uquery()
+        build_set = query.eval(build_label)
+        for bt in build_set:
+            rule = _get_build_rule(bt)
+            if rule:
+                return rule
+    return None
+
 def _get_source_info_from_target(ctx: bxl.Context, target) -> dict | None:
     """
     Extract source vendoring info from a target.
-    Returns dict with src_uri, sha256, etc. or None if not a source target.
+    Returns dict with src_uri, sha256, build_rule, etc. or None if not a source target.
     """
     # Use the new attribute access API
     src_uri_val = target.get_attr("src_uri")
-    sha256_val = target.get_attr("sha256")
+    sha256_val = target.get_attr("src_sha256") or target.get_attr("sha256")
 
     if src_uri_val and sha256_val:
         version_val = target.get_attr("version")
@@ -72,6 +96,8 @@ def _get_source_info_from_target(ctx: bxl.Context, target) -> dict | None:
             "sha256": sha256_val,
             "signature_sha256": sig_sha256_val,
             "filename": filename,
+            "version": version_val,
+            "build_rule": _get_build_rule(target),
         }
 
     # Check for http_file targets (urls/sha256/out attributes)
@@ -80,6 +106,23 @@ def _get_source_info_from_target(ctx: bxl.Context, target) -> dict | None:
 
     if urls_val and sha256_val and len(urls_val) > 0:
         src_uri_val = urls_val[0]
+        # Archive targets with mirror-prefix URLs have computed names,
+        # not upstream sources.  Look up the sibling -build target to
+        # get the real upstream URL and version.
+        mirror_prefix = read_config("mirror", "prefix", "")
+        if mirror_prefix and src_uri_val.startswith(mirror_prefix):
+            tgt_name = str(target.label.name)
+            if tgt_name.endswith("-archive"):
+                build_name = tgt_name[:-len("-archive")] + "-build"
+                pkg_path = str(target.label).rsplit(":", 1)[0]
+                build_label = pkg_path + ":" + build_name
+                query = ctx.uquery()
+                build_set = query.eval(build_label)
+                for bt in build_set:
+                    build_info = _get_source_info_from_target(ctx, bt)
+                    if build_info:
+                        return build_info
+            return None
         filename = out_val if out_val else _filename_from_url(src_uri_val)
 
         # Get vendor directory (flat structure)
@@ -92,6 +135,8 @@ def _get_source_info_from_target(ctx: bxl.Context, target) -> dict | None:
             "sha256": sha256_val,
             "signature_sha256": None,
             "filename": filename,
+            "version": None,
+            "build_rule": _lookup_sibling_build_rule(ctx, target),
         }
 
     return None
@@ -113,17 +158,26 @@ def _collect_sources_from_deps(ctx: bxl.Context, targets: list) -> list:
         # Get all dependencies
         all_targets = query.deps(target_set)
 
-        # Process each target
+        # De-duplicate by (package_path, package_name).  Collapse
+        # -archive and -build variants of the same package.  Prefer
+        # build targets (upstream URL + version) over archive targets
+        # (may carry mirror URLs).  Every unique package name is kept
+        # so the syncer uploads under every name package.bzl requests.
         for target in all_targets:
-            label_str = str(target.label)
-
-            # Skip if already processed
-            if label_str in sources:
-                continue
-
             source_info = _get_source_info_from_target(ctx, target)
             if source_info:
-                sources[label_str] = source_info
+                tgt_name = str(target.label.name)
+                for suffix in ("-archive", "-build"):
+                    if tgt_name.endswith(suffix):
+                        tgt_name = tgt_name[:-len(suffix)]
+                        break
+                label = str(target.label)
+                pkg_path = label.rsplit(":", 1)[0]
+                pkg_key = pkg_path + ":" + tgt_name
+
+                existing = sources.get(pkg_key)
+                if not existing or (source_info["version"] and not existing["version"]):
+                    sources[pkg_key] = source_info
 
     return list(sources.values())
 
@@ -176,10 +230,12 @@ def _vendor_sources_impl(ctx: bxl.Context) -> None:
     if dry_run:
         ctx.output.print("Would vendor {} sources:".format(len(sources)))
         for source in sources:
-            ctx.output.print("  {} -> {}/{}".format(
+            rule_suffix = " [{}]".format(source["build_rule"]) if source.get("build_rule") else ""
+            ctx.output.print("  {} -> {}/{}{}".format(
                 source["target"],
                 source["vendor_dir"],
                 source["filename"],
+                rule_suffix,
             ))
         return
 
@@ -195,6 +251,10 @@ def _vendor_sources_impl(ctx: bxl.Context) -> None:
         ctx.output.print(prefix + "SRC_URI=" + source["src_uri"])
         ctx.output.print(prefix + "SHA256=" + source["sha256"])
         ctx.output.print(prefix + "FILENAME=" + source["filename"])
+        if source["version"]:
+            ctx.output.print(prefix + "VERSION=" + source["version"])
+        if source["build_rule"]:
+            ctx.output.print(prefix + "BUILD_RULE=" + source["build_rule"])
         if source["signature_sha256"]:
             ctx.output.print(prefix + "SIG_SHA256=" + source["signature_sha256"])
 

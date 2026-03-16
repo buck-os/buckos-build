@@ -1,90 +1,6 @@
 load("//defs:package.bzl", "package")
 
 # =============================================================================
-# GCC - GNU Compiler Collection (from bootstrap toolchain)
-# =============================================================================
-# Extracts the GCC compiler from the bootstrap toolchain for installation
-# in the rootfs.  Does not build from source — uses the pre-built toolchain.
-
-package(
-    build_rule = "binary",
-    name = "gcc",
-    version = "14.3.0",
-    url = "https://mirror.buckos.org/g/gcc-14.3.0.tar.gz",
-    sha256 = "ace8b8b0dbfe6abfc22f821cb093e195aa5498b7ccf7cd23e4424b9f14afed22",
-    description = "GNU Compiler Collection - C, C++, and Fortran compilers",
-    homepage = "https://gcc.gnu.org/",
-    license = "GPL-3.0",
-    install_script = """
-# Extract GCC from stage 1 gcc-pass2 output
-mkdir -p "$OUT/usr/bin" "$OUT/usr/lib64" "$OUT/usr/lib" "$OUT/usr/include"
-
-BUCKOS_TARGET="x86_64-buckos-linux-gnu"
-
-IFS=':' read -ra _deps <<< "$DEP_BASE_DIRS"
-for dep_dir in "${_deps[@]}"; do
-    # Detect gcc-pass2 by the cross-compiler binary
-    if [ -f "$dep_dir/tools/bin/${BUCKOS_TARGET}-gcc" ] || [ -f "$dep_dir/tools/bin/gcc" ]; then
-        echo "Found gcc-pass2 at: $dep_dir"
-        TOOLS="$dep_dir/tools"
-
-        # Copy compiler binaries, dereferencing symlinks so the copies
-        # are standalone (gcc -> x86_64-buckos-linux-gnu-gcc is a symlink
-        # in gcc-pass2 whose target won't exist in $OUT).
-        for bin in gcc g++ cpp gcov gcc-ar gcc-nm gcc-ranlib; do
-            if [ -e "$TOOLS/bin/$bin" ]; then
-                cp -aL "$TOOLS/bin/$bin" "$OUT/usr/bin/$bin"
-                echo "Installed $bin"
-            elif [ -e "$TOOLS/bin/${BUCKOS_TARGET}-$bin" ]; then
-                cp -aL "$TOOLS/bin/${BUCKOS_TARGET}-$bin" "$OUT/usr/bin/$bin"
-                echo "Installed $bin (from ${BUCKOS_TARGET}-$bin)"
-            fi
-        done
-
-        # Create standard symlinks
-        [ -f "$OUT/usr/bin/gcc" ] && ln -sf gcc "$OUT/usr/bin/cc"
-        [ -f "$OUT/usr/bin/g++" ] && ln -sf g++ "$OUT/usr/bin/c++"
-
-        # Copy libexec (cc1, cc1plus, collect2, lto-wrapper)
-        if [ -d "$TOOLS/libexec/gcc" ]; then
-            mkdir -p "$OUT/usr/lib/gcc"
-            cp -a "$TOOLS/libexec/gcc"/* "$OUT/usr/lib/gcc/"
-        fi
-
-        # Copy compiler support libraries from target-specific directories
-        # gcc-pass2 installs to tools/<target>/lib*/ rather than tools/lib/
-        for libdir in "$TOOLS/${BUCKOS_TARGET}/lib" "$TOOLS/${BUCKOS_TARGET}/lib64" \
-                      "$TOOLS/lib" "$TOOLS/lib64"; do
-            for f in "$libdir"/libgcc_s.so* "$libdir"/libstdc++.so* \
-                     "$libdir"/libgomp.so* "$libdir"/libatomic.so* \
-                     "$libdir"/libitm.so* "$libdir"/libquadmath.so*; do
-                [ -e "$f" ] && cp -aL "$f" "$OUT/usr/lib64/" 2>/dev/null
-            done
-        done
-
-        # Copy headers (C++ stdlib headers from target-specific include dir)
-        for incdir in "$TOOLS/${BUCKOS_TARGET}/include/c++" "$TOOLS/include/c++"; do
-            if [ -d "$incdir" ]; then
-                cp -a "$incdir" "$OUT/usr/include/"
-                break
-            fi
-        done
-
-        break
-    fi
-done
-
-# Verify
-if [ ! -f "$OUT/usr/bin/gcc" ]; then
-    echo "ERROR: gcc not found in gcc-pass2 output!"
-    exit 1
-fi
-echo "GCC installed from gcc-pass2"
-""",
-    deps = ["//tc/bootstrap/stage1:gcc-pass2"],
-)
-
-# =============================================================================
 # GCC Native - from-source build for hermetic host tools
 # =============================================================================
 # Full GCC with C and C++ for the seed toolchain.  Must be capable of
@@ -102,6 +18,7 @@ echo "GCC installed from gcc-pass2"
 package(
     build_rule = "autotools",
     name = "gcc-native",
+    skip_host_arg = True,
     version = "14.3.0",
     url = "https://mirror.buckos.org/g/gcc-14.3.0.tar.gz",
     sha256 = "ace8b8b0dbfe6abfc22f821cb093e195aa5498b7ccf7cd23e4424b9f14afed22",
@@ -147,54 +64,4 @@ package(
         # Create standard symlinks
         "cd usr/bin && ln -sf gcc cc && ln -sf g++ c++",
     ],
-)
-
-# =============================================================================
-# GCC Runtime Libraries - C/C++ runtime for target systems
-# =============================================================================
-
-package(
-    build_rule = "binary",
-    name = "gcc-runtime",
-    version = "14.3.0",
-    url = "https://mirror.buckos.org/g/gcc-14.3.0.tar.gz",
-    sha256 = "ace8b8b0dbfe6abfc22f821cb093e195aa5498b7ccf7cd23e4424b9f14afed22",
-    description = "GCC runtime libraries (libstdc++, libgcc_s) for C/C++ applications",
-    homepage = "https://gcc.gnu.org/",
-    license = "GPL-3.0",
-    install_script = """
-mkdir -p "$OUT/usr/lib64"
-
-BUCKOS_TARGET="x86_64-buckos-linux-gnu"
-
-IFS=':' read -ra _deps <<< "$DEP_BASE_DIRS"
-for dep_dir in "${_deps[@]}"; do
-    # Detect gcc-pass2 by the cross-compiler binary
-    if [ -f "$dep_dir/tools/bin/${BUCKOS_TARGET}-gcc" ] || [ -f "$dep_dir/tools/bin/gcc" ]; then
-        echo "Found gcc-pass2 at: $dep_dir"
-
-        # Copy runtime libraries from target-specific directories
-        # gcc-pass2 installs to tools/<target>/lib*/ rather than tools/lib/
-        for libdir in "$dep_dir/tools/${BUCKOS_TARGET}/lib" "$dep_dir/tools/${BUCKOS_TARGET}/lib64" \
-                      "$dep_dir/tools/lib" "$dep_dir/tools/lib64"; do
-            for f in "$libdir"/libstdc++.so* "$libdir"/libgcc_s.so*; do
-                [ -e "$f" ] && cp -aL "$f" "$OUT/usr/lib64/"
-            done
-        done
-
-        # Create symlinks
-        [ -f "$OUT/usr/lib64/libstdc++.so.6" ] && ln -sf libstdc++.so.6 "$OUT/usr/lib64/libstdc++.so"
-        [ -f "$OUT/usr/lib64/libgcc_s.so.1" ] && ln -sf libgcc_s.so.1 "$OUT/usr/lib64/libgcc_s.so"
-
-        break
-    fi
-done
-
-if [ ! -f "$OUT/usr/lib64/libstdc++.so.6" ]; then
-    echo "ERROR: libstdc++.so.6 not found!"
-    exit 1
-fi
-echo "GCC runtime libraries installed"
-""",
-    deps = ["//tc/bootstrap/stage1:gcc-pass2"],
 )

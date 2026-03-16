@@ -23,7 +23,7 @@ printf '#!/bin/sh\\n' > "$BUILD/.bin/ldconfig"
 chmod +x "$BUILD/.bin/ldconfig"
 export PATH="$BUILD/.bin:$PATH"
 
-make -j$(nproc) PREFIX=/usr
+make -j$(nproc) CC="${CC:-gcc}" PREFIX=/usr
 
 # Install manually
 mkdir -p "$OUT/usr/sbin" "$OUT/usr/lib" "$OUT/usr/include"

@@ -34,6 +34,11 @@ package(
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/compression/zstd:zstd",
     ],
+    # gcc -fuse-ld=mold looks for ld.mold on PATH
+    post_install_cmds = [
+        'ln -sf mold "$DESTDIR/usr/bin/ld.mold"',
+        'ln -sf mold "$DESTDIR/usr/libexec/mold/ld"',
+    ],
 )
 
 # =============================================================================

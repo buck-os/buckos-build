@@ -19,6 +19,31 @@ TARGET_TRIPLE = "x86_64-buckos-linux-gnu"
 
 # ── Shared helpers ───────────────────────────────────────────────────
 
+# ── Compiler cache for bootstrap (opportunistic host ccache) ─────────
+_BOOTSTRAP_CACHE_MODE = read_config("buckos.cache", "mode", "enabled")
+_BOOTSTRAP_CACHE_LOCATION = read_config("buckos.cache", "location", "homedir")
+_BOOTSTRAP_CCACHE_SIZE = read_config("buckos.cache", "ccache_size", "100G")
+
+def _bootstrap_cache_env():
+    """Return cache env dict for bootstrap builds.
+
+    Uses the same buckconfig-controlled settings as normal builds
+    (CCACHE_DIR, COMPILERCHECK, etc.) but relies on the host's ccache
+    binary.  If ccache isn't on the host PATH, setup_ccache_symlinks()
+    in the helper is a no-op — no error.
+    """
+    if _BOOTSTRAP_CACHE_MODE != "enabled":
+        return {}
+    ccache_dir = ".buckos/cache/ccache" if _BOOTSTRAP_CACHE_LOCATION == "projectdir" else "~/.buckos/caches/ccache"
+    return {
+        "BUCKOS_CCACHE": "1",
+        "CCACHE_DIR": ccache_dir,
+        "CCACHE_COMPILERCHECK": "content",
+        "CCACHE_NOHASHDIR": "1",
+        "CCACHE_MAXSIZE": _BOOTSTRAP_CCACHE_SIZE,
+        "CCACHE_SLOPPINESS": "pch_defines,time_macros,include_file_mtime",
+    }
+
 def _env_args(cmd, env_dict):
     """Append --env KEY=VALUE flags to a cmd_args."""
     for k, v in env_dict.items():
@@ -27,6 +52,8 @@ def _env_args(cmd, env_dict):
 def _toolchain_env(ctx):
     """Build environment dict from BootstrapStageInfo or host_cc attrs."""
     env = {}
+    # Compiler cache env first — toolchain env can override if needed.
+    env.update(_bootstrap_cache_env())
     if getattr(ctx.attrs, "prev_stage", None) and BootstrapStageInfo in ctx.attrs.prev_stage:
         stage = ctx.attrs.prev_stage[BootstrapStageInfo]
         env["CC"] = stage.cc
@@ -76,6 +103,7 @@ def _bootstrap_binutils_impl(ctx):
         "--disable-readline",
         "--enable-gprofng=no",
         "--enable-default-hash-style=gnu",
+        "--without-xxhash",
     ]:
         conf_cmd.add(cmd_args("--configure-arg=", arg, delimiter = ""))
     for arg in ctx.attrs.extra_configure_args:
@@ -569,6 +597,8 @@ def _bootstrap_glibc_impl(ctx):
 
     # Phase 4: compile — use build_helper for timestamp management.
     # Standard make -j$(nproc) in build subdir, just needs cross-tool PATH.
+    # headers_dir is a hidden dep because configure bakes its absolute path
+    # into the Makefile — buck2 must materialise it before make runs.
     built = ctx.actions.declare_output("built", dir = True)
     build_cmd = cmd_args(ctx.attrs._build_tool[RunInfo])
     build_cmd.add("--build-dir", configured)
@@ -577,6 +607,7 @@ def _bootstrap_glibc_impl(ctx):
     build_cmd.add("--path-prepend", cmd_args(compiler_dir, "/tools/bin", delimiter = ""))
     if binutils_dir:
         build_cmd.add("--path-prepend", cmd_args(binutils_dir, "/tools/bin", delimiter = ""))
+    build_cmd.add(cmd_args(hidden = [headers_dir]))
     build_cmd.add("--allow-host-path")
     ctx.actions.run(build_cmd, category = "bootstrap_compile", identifier = ctx.attrs.name, allow_cache_upload = True)
 

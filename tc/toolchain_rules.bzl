@@ -120,26 +120,50 @@ def _buckos_bootstrap_toolchain_impl(ctx: AnalysisContext) -> list[Provider]:
     Uses the bootstrap-built compiler and sysroot artifacts directly.
     When host_tools is provided, its bin/ dir becomes the hermetic PATH
     and its make/pkg-config are used instead of host PATH lookups.
-
-    The host_tools attr uses the default transition to ensure host-tools
-    are resolved in DEFAULT config (stage 2 build), even when this
-    toolchain is itself resolved in stage3 config.  This breaks the
-    stage3 → stage2-toolchain → host-tools → stage2-toolchain cycle.
     """
     stage = ctx.attrs.bootstrap_stage[BootstrapStageInfo]
+    stage_dir = ctx.attrs.bootstrap_stage[DefaultInfo].default_outputs[0]
+    triple = stage.target_triple
 
-    cc_args = cmd_args(stage.cc)
-    cc_args.add(cmd_args("--sysroot=", stage.sysroot, delimiter = ""))
+    # Patch compiler binary ELF interpreters to the sysroot ld-linux.
+    # Compiler binaries have padded interpreters (///...///lib64/ld-linux)
+    # that resolve to the HOST ld-linux.  When host glibc is older than
+    # buckos glibc, the binaries segfault or fail with missing symbols.
+    # Rewriting to the sysroot ld-linux ensures the compiler loads buckos
+    # glibc (matching version).  Same approach as host_tools_exec.
+    patched = ctx.actions.declare_output("patched-compiler", dir = True)
+    sysroot_ld = stage.sysroot.project("lib64/ld-linux-x86-64.so.2")
+    patchelf_bin = ctx.attrs._patchelf[DefaultInfo].default_outputs[0]
+    rewrite_cmd = cmd_args(ctx.attrs._rewrite_tool[RunInfo])
+    rewrite_cmd.add("--tools-dir", stage_dir)
+    rewrite_cmd.add("--ld-linux", sysroot_ld)
+    rewrite_cmd.add("--patch-standard")
+    rewrite_cmd.add("--patchelf", patchelf_bin)
+    rewrite_cmd.add("--output-dir", patched.as_output())
+    ctx.actions.run(
+        rewrite_cmd,
+        category = "patch_compiler",
+        identifier = ctx.label.name,
+        local_only = True,
+        allow_cache_upload = False,
+    )
 
-    cxx_args = cmd_args(stage.cxx)
-    cxx_args.add(cmd_args("--sysroot=", stage.sysroot, delimiter = ""))
+    # Use patched compiler binaries + sysroot
+    patched_sysroot = patched.project("tools/" + triple + "/sys-root")
+    patched_ld = patched_sysroot.project("lib64/ld-linux-x86-64.so.2")
+
+    cc_args = cmd_args(patched.project("tools/bin/" + triple + "-gcc"))
+    cc_args.add(cmd_args("--sysroot=", patched_sysroot, delimiter = ""))
+
+    cxx_args = cmd_args(patched.project("tools/bin/" + triple + "-g++"))
+    cxx_args.add(cmd_args("--sysroot=", patched_sysroot, delimiter = ""))
 
     # Expose Python from bootstrap stage if available
     python_run_info = None
     if stage.python:
         python_run_info = RunInfo(args = cmd_args(stage.python))
 
-    # Wire host tools when provided (stage 2 toolchain for hermetic rebuild)
+    # Wire host tools when provided (stage 3 toolchain for hermetic rebuild)
     host_bin = None
     make_cmd = cmd_args(ctx.attrs.make)
     pkg_config_cmd = cmd_args(ctx.attrs.pkg_config)
@@ -148,27 +172,77 @@ def _buckos_bootstrap_toolchain_impl(ctx: AnalysisContext) -> list[Provider]:
         host_bin = ht_dir.project("bin")
         make_cmd = cmd_args(host_bin.project("make"))
         pkg_config_cmd = cmd_args(host_bin.project("pkg-config"))
-        if not python_run_info:
-            python_run_info = RunInfo(args = cmd_args(host_bin.project("python3")))
+        # Python comes from auto_tool_deps (python-host exec_dep)
+        # when not in the base host tools.
 
-    # ld.bfd resolves DT_NEEDED chains and needs to find libstdc++.so
-    # when linking C programs against C++ shared libraries.  The GCC
-    # runtime libs live outside the sysroot — add them as rpath-link.
-    ldflags = list(ctx.attrs.extra_ldflags)
-    if stage.gcc_lib_dir:
-        ldflags.append(cmd_args("-Wl,-rpath-link,", stage.gcc_lib_dir, delimiter = ""))
+    # Generate GCC link specs that inject the sysroot dynamic linker
+    # and RPATH unconditionally at link time.  Uses the actual sysroot
+    # ld-linux path (not a padded host path) so build-time binaries
+    # execute with buckos glibc — no host glibc version dependency.
+    # The path is left-padded with '/' so stale_root rewriting can
+    # replace it in-place across machines.
+    #
+    # Extract RPATH from extra_ldflags (still passed as a string).
+    rpath_val = None
+    remaining_ldflags = []
+    for flag in ctx.attrs.extra_ldflags:
+        if "-rpath," in flag and "rpath-link" not in flag:
+            rpath_val = flag.split("-rpath,", 1)[1]
+        elif "--dynamic-linker," in flag:
+            pass  # Ignored — interpreter comes from sysroot directly
+        else:
+            remaining_ldflags.append(flag)
+
+    # Generate machine-independent specs using %R (GCC's sysroot
+    # substitution).  The specs file content is the same on every
+    # machine — safely cacheable by remote action caches.
+    specs_file = ctx.actions.declare_output("gcc-link.specs")
+    gen_cmd = cmd_args(ctx.attrs._gen_specs_tool[RunInfo])
+    gen_cmd.add("--ld-linux-subpath", "lib64/ld-linux-x86-64.so.2")
+    if rpath_val:
+        gen_cmd.add("--rpath", rpath_val)
+    gen_cmd.add("--output", specs_file.as_output())
+    ctx.actions.run(gen_cmd, category = "gen_specs",
+                    identifier = ctx.label.name)
+
+    cc_args.add(cmd_args("-specs=", specs_file, delimiter = ""))
+    cxx_args.add(cmd_args("-specs=", specs_file, delimiter = ""))
+
+    # GCC runtime libs (libstdc++, libgcc_s) live outside the sysroot.
+    # Add them as both -rpath (runtime discovery) and -rpath-link
+    # (link-time DT_NEEDED chain resolution).  Uses --disable-new-dtags
+    # so RPATH entries use DT_RPATH (propagates to loaded shared libs).
+    # These are buck2 cmd_args with artifacts, resolved to local paths
+    # at analysis time — no remote cache portability issues.
+    patched_gcc_lib_dir = patched.project("tools/" + triple + "/" + "lib64") if stage.gcc_lib_dir else None
+    ldflags = list(remaining_ldflags)
+    if patched_gcc_lib_dir:
+        ldflags.append("-Wl,--disable-new-dtags")
+        ldflags.append(cmd_args("-Wl,-rpath,", patched_gcc_lib_dir, delimiter = ""))
+        ldflags.append(cmd_args("-Wl,-rpath-link,", patched_gcc_lib_dir, delimiter = ""))
+
+    # Explicit -L for sysroot lib dirs so the linker finds sysroot libc
+    # before any stray host paths (-L/usr/lib64) injected by pkg-config
+    # or meson.  --sysroot only affects default search paths, not explicit
+    # -L flags — a stray -L/usr/lib64 makes ld find the host's older libc
+    # instead of the sysroot glibc, causing undefined __isoc23_* symbols.
+    ldflags.append(cmd_args("-L", patched_sysroot.project("usr/lib64"), delimiter = ""))
+    ldflags.append(cmd_args("-L", patched_sysroot.project("usr/lib"), delimiter = ""))
 
     info = BuildToolchainInfo(
         cc = RunInfo(args = cc_args),
         cxx = RunInfo(args = cxx_args),
-        ar = RunInfo(args = cmd_args(stage.ar)),
-        strip = RunInfo(args = cmd_args(ctx.attrs.strip_bin)),
+        ar = RunInfo(args = cmd_args(patched.project("tools/bin/" + triple + "-ar"))),
+        strip = RunInfo(args = cmd_args(patched.project("tools/bin/" + triple + "-strip"))),
         make = RunInfo(args = make_cmd),
         pkg_config = RunInfo(args = pkg_config_cmd),
-        target_triple = stage.target_triple,
-        sysroot = stage.sysroot,
+        target_triple = triple,
+        sysroot = patched_sysroot,
         python = python_run_info,
         host_bin_dir = host_bin,
+        # Host PATH fallback only when no host_tools provided (bootstrap
+        # cycle-breaker for base tool builds).  When host_tools is set
+        # (seed toolchains), PATH is fully hermetic from host_bin_dir.
         allows_host_path = ctx.attrs.host_tools == None,
         extra_cflags = ctx.attrs.extra_cflags,
         extra_ldflags = ldflags,
@@ -186,6 +260,15 @@ buckos_bootstrap_toolchain = rule(
         "pkg_config": attrs.string(default = "pkg-config"),
         "extra_cflags": attrs.list(attrs.string(), default = []),
         "extra_ldflags": attrs.list(attrs.string(), default = []),
+        "_gen_specs_tool": attrs.default_only(
+            attrs.exec_dep(default = "//tools:gen_specs"),
+        ),
+        "_rewrite_tool": attrs.default_only(
+            attrs.exec_dep(default = "//tools:rewrite_interps"),
+        ),
+        "_patchelf": attrs.default_only(
+            attrs.dep(default = "//tc/bootstrap:patchelf-host"),
+        ),
     },
 )
 

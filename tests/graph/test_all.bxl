@@ -19,6 +19,7 @@ load("//tests/graph:test_cloud_hypervisor_impl.bzl", test_cloud_hypervisor_run =
 load("//tests/graph:test_dedup_impl.bzl", test_dedup_run = "run")
 load("//tests/graph:test_bootstrap_isolation_impl.bzl", test_bootstrap_isolation_run = "run")
 load("//tests/graph:test_hermiticity_impl.bzl", test_hermiticity_run = "run")
+load("//tests/graph:test_sources_impl.bzl", test_sources_run = "run")
 
 _SUITES = [
     ("test_deps", test_deps_run),
@@ -34,6 +35,7 @@ _SUITES = [
     ("test_dedup", test_dedup_run),
     ("test_bootstrap_isolation", test_bootstrap_isolation_run),
     ("test_hermiticity", test_hermiticity_run),
+    ("test_sources", test_sources_run),
 ]
 
 def _impl(ctx):

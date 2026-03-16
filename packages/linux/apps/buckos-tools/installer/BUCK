@@ -5,9 +5,7 @@ package(
     name = "buckos-installer",
     build_rule = "binary",
     version = "0.0.1",
-    url = "https://github.com/buck-os/buckos/archive/refs/heads/main.tar.gz",
-    sha256 = "122f786c036ef7289c4fc988f5d1bc903d860c982ec1b9738717cd72d552a8b8",
-    source = "//packages/linux/apps/buckos-tools:buckos-src",
+    source = "//packages/linux/apps/buckos-tools:buckos-tools-src",
     description = "Graphical installer for BuckOS",
     homepage = "https://github.com/buck-os/buckos",
     license = "GPL-2",
@@ -28,8 +26,11 @@ cargo build --release -p buckos-installer
 mkdir -p "$OUT/usr/bin"
 install -m 0755 target/release/buckos-installer "$OUT/usr/bin/buckos-installer"
 """,
+    host_deps = [
+        "//packages/linux/lang/rust:rust",
+    ],
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/system/libs/crypto/openssl:openssl",
     ],
 )

@@ -5,9 +5,7 @@ package(
     name = "buckos-cli",
     build_rule = "binary",
     version = "0.0.3",
-    url = "https://github.com/hodgesds/buckos/archive/refs/heads/main.tar.gz",
-    sha256 = "122f786c036ef7289c4fc988f5d1bc903d860c982ec1b9738717cd72d552a8b8",
-    source = "//packages/linux/apps/buckos-tools:buckos-src",
+    source = "//packages/linux/apps/buckos-tools:buckos-tools-src",
     description = "BuckOS command-line interface for system management",
     homepage = "https://github.com/hodgesds/buckos",
     license = "Apache-2.0 OR MIT",
@@ -33,5 +31,8 @@ ln -sf buckos-cli "$OUT/usr/bin/buckos"
 """,
     deps = [
         "//packages/linux/system/libs/crypto/openssl:openssl",
+    ],
+    host_deps = [
+        "//packages/linux/lang/rust:rust",
     ],
 )

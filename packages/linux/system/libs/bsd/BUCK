@@ -23,9 +23,17 @@ package(
     # libbsd.so is a GNU ld script: GROUP(/usr/lib64/libbsd.so.0.12.2 AS_NEEDED(-lmd))
     # The absolute path breaks cross-compilation. Rewrite with relative name.
     post_install_cmds = ["""
-# Fix libbsd.so linker script: replace absolute host paths with relative names
-if [ -f "$DESTDIR/usr/lib64/libbsd.so" ]; then
-    echo "Fixing libbsd.so linker script..."
+# Fix libbsd.so linker script: replace absolute host paths with relative names.
+# libbsd installs to lib/ or lib64/ depending on --libdir; check both.
+LIBDIR=""
+for d in "$DESTDIR/usr/lib64" "$DESTDIR/usr/lib"; do
+    if [ -f "$d/libbsd.so" ]; then
+        LIBDIR="$d"
+        break
+    fi
+done
+if [ -n "$LIBDIR" ]; then
+    echo "Fixing libbsd.so linker script in $LIBDIR..."
     # Detect output format based on target architecture
     if [ -n "$CHOST" ]; then
         case "$CHOST" in
@@ -36,16 +44,16 @@ if [ -f "$DESTDIR/usr/lib64/libbsd.so" ]; then
     else
         OUTPUT_FORMAT="elf64-x86-64"
     fi
-    cat > "$DESTDIR/usr/lib64/libbsd.so" << LDSCRIPT
+    cat > "$LIBDIR/libbsd.so" << LDSCRIPT
 /* GNU ld script */
 OUTPUT_FORMAT($OUTPUT_FORMAT)
 GROUP(libbsd.so.0 AS_NEEDED(-lmd))
 LDSCRIPT
-fi
-# Remove host path references from libbsd.la
-if [ -f "$DESTDIR/usr/lib64/libbsd.la" ]; then
-    echo "Fixing libbsd.la to remove host path references..."
-    sed -i "s|/usr/lib64/libmd.la|-lmd|g" "$DESTDIR/usr/lib64/libbsd.la"
+    # Remove host path references from libbsd.la
+    if [ -f "$LIBDIR/libbsd.la" ]; then
+        echo "Fixing libbsd.la to remove host path references..."
+        sed -i "s|/usr/lib64/libmd.la|-lmd|g;s|/usr/lib/libmd.la|-lmd|g" "$LIBDIR/libbsd.la"
+    fi
 fi
 """],
     deps = [

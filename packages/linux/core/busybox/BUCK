@@ -11,8 +11,6 @@ package(
     name = "busybox-static",
     build_rule = "binary",
     version = "1.36.1",
-    url = "https://github.com/mirror/busybox/archive/refs/tags/1_36_1.tar.gz",
-    sha256 = "ea5494846c51d946e5e801d1c099b438f683af8147e0be24ca4001073143110f",
     source = ":busybox-src",
     description = "Static busybox for initramfs with all essential applets",
     homepage = "https://busybox.net/",
@@ -23,7 +21,7 @@ package(
 export KCONFIG_NOTIMESTAMP=1
 
 # Start with allnoconfig (all disabled) for minimal build
-make allnoconfig > /dev/null 2>&1
+make HOSTCC="${CC:-gcc}" allnoconfig > /dev/null 2>&1
 
 # Create minimal config with only what we need for initramfs
 cat > .config << 'EOF'
@@ -37,6 +35,11 @@ CONFIG_LONG_OPTS=y
 
 # Static build - no shared libraries needed
 CONFIG_STATIC=y
+
+# glibc 2.42 libc.a references _Unwind_Resume from libgcc_eh.
+# LDLIBS is appended after -lc in the link line, resolving the
+# circular dependency (LDFLAGS goes before -lc and doesn't help).
+CONFIG_EXTRA_LDLIBS="gcc_eh"
 
 # Disable problematic features
 # CONFIG_PAM is not set
@@ -119,15 +122,17 @@ CONFIG_ZCAT=y
 EOF
 
 # Regenerate with our settings
-yes "" | make oldconfig > /dev/null 2>&1
+yes "" | make HOSTCC="${CC:-gcc}" oldconfig > /dev/null 2>&1
 
 echo "Generated minimal static busybox config for initramfs"
 
 # Build with static flags
+# HOSTCC defaults to CC — on the hermetic PATH, bare "gcc" is not
+# available (only the toolchain cross-compiler via $CC).
 make -j$(nproc) \
     CROSS_COMPILE="${CROSS_COMPILE:-}" \
     CC="${CC:-gcc}" \
-    HOSTCC="${HOSTCC:-gcc}" \
+    HOSTCC="${HOSTCC:-${CC:-gcc}}" \
     LDFLAGS="-static"
 
 # Install busybox binary
@@ -212,6 +217,10 @@ package(
     ],
     install_prefix_var = "CONFIG_PREFIX",
     deps = [],
+    host_deps = [
+        "//packages/linux/dev-tools/dev-utils/flex:flex",
+        "//packages/linux/dev-tools/dev-utils/bison:bison",
+    ],
     patches = glob(["patches/*.patch"]),
     transforms = ["strip", "stamp"],
     use_transforms = {"ima": "ima"},

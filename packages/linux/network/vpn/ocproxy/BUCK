@@ -20,9 +20,11 @@ autoreconf -fiv
 
     deps = [
         "//packages/linux/system/libs/utility/libevent:libevent",
-                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-                "//packages/linux/dev-tools/build-systems/automake:automake",
-                "//packages/linux/dev-tools/build-systems/libtool:libtool"
+    ],
+    host_deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
     ],
 
     description = "User-level SOCKS and port-forwarding proxy for OpenConnect",

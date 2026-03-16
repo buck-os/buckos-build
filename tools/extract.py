@@ -10,8 +10,11 @@ external decompressors (zstd, lzip, lz4) for others.
 """
 
 import argparse
+import io
+import lzma
 import os
 import shutil
+import struct
 import subprocess
 import sys
 import tarfile
@@ -21,6 +24,7 @@ from _env import add_path_args, sanitize_global_env, setup_path
 
 
 # Map of format string -> (tarfile mode or None, external decompressor or None)
+# "lzip_native" signals Python-native lzip decompression (no external tool).
 _FORMATS = {
     "tar.gz":  ("r:gz",  None),
     "tgz":     ("r:gz",  None),
@@ -29,7 +33,7 @@ _FORMATS = {
     "tar.bz2": ("r:bz2", None),
     "tbz2":    ("r:bz2", None),
     "tar.zst": (None,     "zstd"),
-    "tar.lz":  (None,     "lzip"),
+    "tar.lz":  ("lzip_native", None),
     "tar.lz4": (None,     "lz4"),
     "tar":     ("r:",     None),
     "zip":     (None,     None),    # handled separately
@@ -94,6 +98,78 @@ def extract_tar_native(archive, output, strip_components, mode, exclude_patterns
                 if target == os.path.basename(member.name):
                     continue
             # Security: prevent path traversal
+            dest = os.path.join(output, member.name)
+            if not os.path.abspath(dest).startswith(os.path.abspath(output)):
+                print(f"error: path traversal detected: {member.name}", file=sys.stderr)
+                sys.exit(1)
+            tf.extract(member, output, filter="tar")
+
+
+def _open_lzip(path):
+    """Decompress a lzip file and return a BytesIO of the raw tar data.
+
+    Lzip uses LZMA1 with a thin framing header:
+      4 bytes magic "LZIP", 1 byte version (1), 1 byte dict_size encoding,
+      then raw LZMA1 stream, then 20-byte trailer (CRC32 + sizes).
+    Python's lzma module handles the LZMA1 decompression natively.
+    """
+    with open(path, "rb") as f:
+        magic = f.read(4)
+        if magic != b"LZIP":
+            raise ValueError(f"Not a lzip file: bad magic {magic!r}")
+        version = struct.unpack("B", f.read(1))[0]
+        if version != 1:
+            raise ValueError(f"Unsupported lzip version: {version}")
+        ds_byte = struct.unpack("B", f.read(1))[0]
+        base = ds_byte & 0x1F
+        fraction = (ds_byte >> 5) & 7
+        dict_size = (1 << base) - (fraction * (1 << (base - 4)))
+        compressed = f.read()
+
+    # LZMA1 stream ends with an end-of-stream marker; the decompressor
+    # stops there and ignores the trailing CRC32 + size fields.
+    decompressor = lzma.LZMADecompressor(
+        format=lzma.FORMAT_RAW,
+        filters=[{
+            "id": lzma.FILTER_LZMA1,
+            "dict_size": dict_size,
+            "lc": 3,
+            "lp": 0,
+            "pb": 2,
+        }],
+    )
+    data = decompressor.decompress(compressed)
+    return io.BytesIO(data)
+
+
+def extract_tar_lzip(archive, output, strip_components, exclude_patterns=None):
+    """Extract a .tar.lz archive using Python-native lzip decompression."""
+    exclude_patterns = exclude_patterns or []
+    tar_data = _open_lzip(archive)
+    with tarfile.open(fileobj=tar_data, mode="r:") as tf:
+        for member in tf.getmembers():
+            if strip_components > 0:
+                parts = member.name.split("/", strip_components)
+                if len(parts) <= strip_components:
+                    continue
+                member.name = parts[-1]
+                if not member.name:
+                    continue
+                if member.islnk() and member.linkname:
+                    link_parts = member.linkname.split("/", strip_components)
+                    if len(link_parts) > strip_components:
+                        member.linkname = link_parts[-1]
+            member.name = os.path.normpath(member.name)
+            if exclude_patterns and _matches_exclude(member.name, exclude_patterns):
+                continue
+            if "\\" in member.name:
+                continue
+            if member.issym():
+                target = member.linkname
+                if target in ("", "."):
+                    continue
+                if target == os.path.basename(member.name):
+                    continue
             dest = os.path.join(output, member.name)
             if not os.path.abspath(dest).startswith(os.path.abspath(output)):
                 print(f"error: path traversal detected: {member.name}", file=sys.stderr)
@@ -186,7 +262,10 @@ def main():
         extract_zip(args.archive, args.output, args.strip_components)
     else:
         tar_mode, decompressor = _FORMATS[fmt]
-        if decompressor:
+        if tar_mode == "lzip_native":
+            extract_tar_lzip(args.archive, args.output, args.strip_components,
+                             exclude_patterns=args.exclude)
+        elif decompressor:
             extract_tar_external(args.archive, args.output, args.strip_components, decompressor)
         else:
             extract_tar_native(args.archive, args.output, args.strip_components, tar_mode,

@@ -47,9 +47,11 @@ HOST_SYSTEM=${CHOST:-$(${CC:-gcc} -dumpmachine)}
 # rejects the non-PIC relocations.
 sed -i 's/^bigcrypt_CFLAGS = .*/& $(EXE_CFLAGS)/' modules/pam_unix/Makefile
 
-make -j${MAKEOPTS:-$(nproc)}
+make -j${MAKEOPTS:-$(nproc)} \
+    ACLOCAL=true AUTOMAKE=true AUTOCONF=true AUTOHEADER=true MAKEINFO=true
 
-make DESTDIR="$DESTDIR" install
+make DESTDIR="$DESTDIR" install \
+    ACLOCAL=true AUTOMAKE=true AUTOCONF=true AUTOHEADER=true MAKEINFO=true
 
 # Remove libtool .la files to prevent host path contamination
 # The .la files reference /usr/lib/libpam.la which breaks cross-builds

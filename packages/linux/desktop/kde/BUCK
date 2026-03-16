@@ -19,7 +19,7 @@ QT6_FONT_DEPS = [
 # These must be added to all packages that link against Mesa's EGL/OpenGL
 # so the linker can resolve these symbols during linking.
 MESA_LLVM_DEPS = [
-    # "//packages/linux/core/llvm:llvm",  # disabled: long build, not needed yet
+    # "//packages/linux/core/llvm:llvm-native",  # disabled: long build, not needed yet
     "//packages/linux/dev-libs/elfutils:elfutils",
     "//packages/linux/system/libs/data/libxml2:libxml2",
 ]
@@ -30,7 +30,21 @@ MESA_LLVM_DEPS = [
 # Qt6Core links against ICU.  Host tools (qtpaths) need ICU in
 # LD_LIBRARY_PATH since the cmake rule only exposes direct deps.
 QT6_RUNTIME_DEPS = [
-    "//packages/linux/system/libs/utility/icu:icu",
+    "//packages/linux/desktop/qt:qt6-native",
+    "//packages/linux/system/libs/utility/icu:icu-native",
+    "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
+    "//packages/linux/system/libs/font/freetype:freetype",
+    "//packages/linux/system/libs/font/fontconfig:fontconfig",
+    "//packages/linux/system/libs/crypto/openssl:openssl",
+    "//packages/linux/core/zlib:zlib",
+    "//packages/linux/system/libs/compression/zstd:zstd",
+    "//packages/linux/system/libs/utility/pcre2:pcre2",
+    "//packages/linux/system/libs/data/expat:expat",
+    "//packages/linux/system/libs/utility/libffi:libffi",
+    "//packages/linux/dev-libs/glib:glib",
+    "//packages/linux/graphics/libglvnd:libglvnd",
+    "//packages/linux/desktop/mesa:mesa",
+    "//packages/linux/desktop/libdrm:libdrm",
 ]
 
 # =============================================================================
@@ -65,14 +79,12 @@ package(
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
     ] + KDE_DISABLE_PYTHON_ARGS,
+    host_deps = QT6_RUNTIME_DEPS + [
+        "//packages/linux/graphics/rendering/wayland:wayland-scanner",
+    ],
     deps = [
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
                 "//packages/linux/graphics/rendering/wayland:wayland",
-                "//packages/linux/graphics/rendering/wayland:wayland-scanner",
-                "//packages/linux/graphics/rendering/wayland:wayland-scanner",
-                "//packages/linux/graphics/rendering/wayland:wayland-scanner",
-                "//packages/linux/graphics/rendering/wayland:wayland-scanner",
-                "//packages/linux/graphics/rendering/wayland:wayland-scanner"
     ],
 )
 
@@ -316,8 +328,9 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     # Comment out ecm_install_po_files_as_qm to skip translations - Qt6LinguistTools not available
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         "//packages/linux/system/init/eudev:eudev",  # For libudev.h
         # Qt6 runtime dependencies needed for Qt6 tools (qtpaths, moc, etc.)
@@ -350,8 +363,9 @@ package(
 
 sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true
 """],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
@@ -390,8 +404,9 @@ package(
 
 sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true
 """],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
@@ -431,8 +446,9 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     # Patch CMakeLists.txt to disable zstd and translations
     pre_configure_cmds = ["sed -i '/pkg_check_modules.*libzstd/d' CMakeLists.txt && sed -i 's/set(HAVE_ZSTD.*/set(HAVE_ZSTD FALSE)/' CMakeLists.txt && sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/compression/xz:xz",
@@ -470,8 +486,9 @@ package(
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/system/libs/utility/pcre2:pcre2",
@@ -515,8 +532,9 @@ package(
 sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt && \
 sed -i '/add_subdirectory.*geo-scheme-handler/d' src/CMakeLists.txt || true
 """],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         "//packages/linux/graphics/rendering/wayland:wayland",
         "//packages/linux/dev-libs/glib:glib",
@@ -561,8 +579,9 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
 # Disable Python/Shiboken bindings - not needed for cross-compilation
 sed -i '/find_package.*Shiboken/d; /find_package.*PySide/d' CMakeLists.txt || true
 """],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/system/libs/utility/pcre2:pcre2",
@@ -598,8 +617,9 @@ package(
         "-DBUILD_TESTING=OFF",
         "-DWITH_X11=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         "//packages/linux/system/libs/ipc/dbus:dbus",
         "//packages/linux/system/init/systemd:systemd",  # dbus depends on libsystemd
@@ -639,8 +659,9 @@ package(
         "-DBUILD_DESIGNERPLUGIN=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/system/libs/utility/pcre2:pcre2",
@@ -675,8 +696,9 @@ package(
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/system/libs/utility/pcre2:pcre2",
@@ -713,8 +735,9 @@ package(
     ] + KDE_DISABLE_PYTHON_ARGS,
     # Disable translations - Qt6LinguistTools not available
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kconfig",
         ":kguiaddons",
@@ -756,8 +779,9 @@ package(
         "-DBUILD_DESIGNERPLUGIN=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -806,8 +830,9 @@ package(
         "-DBUILD_QT6=ON",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -873,8 +898,9 @@ sed -i '/add_library.*breeze-icons-rcc/d' icons/CMakeLists.txt || true
 sed -i 's/BreezeIcons COMPONENTS icons/BreezeIcons/' CMakeLists.txt || true
 
 """],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
         "//packages/linux/desktop/mesa:mesa",
@@ -909,8 +935,9 @@ package(
         "-DBUILD_DESIGNERPLUGIN=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":karchive",
         ":kconfig",
@@ -966,8 +993,9 @@ package(
 sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt && \
 sed -i '/add_subdirectory.*examples/d' CMakeLists.txt || true
 """],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         "//packages/linux/system/security/auth/privilege:polkit",
@@ -1010,8 +1038,9 @@ package(
         # Disable X11 - we're Wayland-only
         "-DWITH_X11=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         "//packages/linux/dev-libs/glib:glib",
@@ -1059,8 +1088,9 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
 # Keep QML module enabled for Plasma shell
 
 """],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":plasma-wayland-protocols",
         "//packages/linux/graphics/rendering/wayland:wayland",
@@ -1119,8 +1149,9 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
 sed -i '/add_subdirectory.*examples/d' CMakeLists.txt || true
 """],
     # Find native wayland-scanner from exec_bdepend before configure
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -1162,8 +1193,9 @@ package(
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kconfig",
         ":kwindowsystem",
@@ -1207,8 +1239,9 @@ package(
         "-DBUILD_DESIGNERPLUGIN=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kconfig",
         ":kwidgetsaddons",
@@ -1241,8 +1274,9 @@ package(
         "-DWITH_X11=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":knotifications",
@@ -1287,8 +1321,9 @@ package(
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         "//packages/linux/system/init/eudev:eudev",
         "//packages/linux/dev-libs/glib:glib",
@@ -1329,8 +1364,9 @@ package(
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kconfig",
         ":kcoreaddons",
@@ -1372,8 +1408,9 @@ package(
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -1453,8 +1490,9 @@ fi
 cd "$S"
 
 """],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":karchive",
         ":kauth",
@@ -1540,8 +1578,9 @@ sed -i '/trigrams\.qrc/d' src/core/CMakeLists.txt || true
 touch src/core/trigrams.qrc || true
 
 """],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         "//packages/linux/editors/hunspell:hunspell",
         "//packages/linux/dev-libs/glib:glib",
@@ -1583,8 +1622,9 @@ package(
         "-DBUILD_DESIGNERPLUGIN=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kconfig",
         ":kcompletion",
@@ -1629,8 +1669,9 @@ package(
         "-DBUILD_DESIGNERPLUGIN=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcodecs",
         ":kconfig",
@@ -1682,8 +1723,9 @@ package(
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":ki18n",
@@ -1723,8 +1765,9 @@ package(
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -1813,8 +1856,9 @@ sed -i '/Q_INIT_RESOURCE(syntax_data)/d' src/lib/repository.cpp || true
 sed -i '/Q_INIT_RESOURCE(theme_data)/d' src/lib/repository.cpp || true
 
 """],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/system/libs/utility/pcre2:pcre2",
@@ -1877,8 +1921,9 @@ sed -i '/cbCycleBookmarks/d' src/dialogs/katedialogs.cpp
 sed -i '/chkAutoReloadOnExternalChanges/d' src/dialogs/katedialogs.cpp
 
 """],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -1951,8 +1996,9 @@ package(
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/system/libs/utility/pcre2:pcre2",
@@ -1992,8 +2038,9 @@ package(
         "-DWITH_X11=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -2041,8 +2088,9 @@ package(
 
 sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true
 """],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":karchive",
         ":kconfig",
@@ -2086,8 +2134,9 @@ package(
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -2131,8 +2180,9 @@ package(
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":karchive",
         ":kcolorscheme",
@@ -2182,8 +2232,9 @@ package(
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kconfig",
         ":kcoreaddons",
@@ -2228,8 +2279,9 @@ package(
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcodecs",
         "//packages/linux/dev-libs/glib:glib",
@@ -2269,8 +2321,9 @@ package(
         "-DCMAKE_CXX_STANDARD=20",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":attica",
         ":karchive",
@@ -2326,8 +2379,9 @@ package(
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcompletion",
         ":kconfig",
@@ -2414,13 +2468,16 @@ sed -i '/all-l10n.xml/,/)/d' src/CMakeLists.txt || true
 mkdir -p src/customization/xsl
 touch src/customization/xsl/all-l10n.xml
 """],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":karchive",
         ":ki18n",
         "//packages/linux/system/libs/data/libxslt:libxslt",
         "//packages/linux/system/libs/data/libxml2:libxml2",
+        "//packages/linux/system/libs/data/docbook:docbook-xml",
+        "//packages/linux/system/libs/data/docbook:docbook-xsl",
         "//packages/linux/lang/perl/web:uri",  # Perl URI::Escape for uriencode.cmake
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/system/libs/utility/pcre2:pcre2",
@@ -2459,8 +2516,9 @@ package(
         "-DBUILD_DESIGNERPLUGIN=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kconfig",
         ":kconfigwidgets",
@@ -2541,8 +2599,9 @@ sed -i 's/find_package(KSysGuard CONFIG REQUIRED)/# find_package(KSysGuard CONFI
 sed -i '/devicenotifications/d' src/dataengines/CMakeLists.txt || true
 
 """],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -2659,8 +2718,9 @@ for _dep in "${_DEP_ARRAY[@]}"; do
 done
 
 """],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         # KF6 Core
         ":kcoreaddons",
@@ -2737,7 +2797,7 @@ done
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
         # ICU (required by plasma-desktop)
-        "//packages/linux/system/libs/utility/icu:icu",
+        "//packages/linux/system/libs/utility/icu:icu-native",
         # Transitive link dependencies
         "//packages/linux/system/init/eudev:eudev",
         "//packages/linux/system/libs/ipc/dbus:dbus",
@@ -2795,8 +2855,9 @@ package(
         "-DWITH_X11=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -2873,8 +2934,9 @@ package(
         "-DCMAKE_SKIP_INSTALL_RPATH=TRUE",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":plasma-wayland-protocols",
         "//packages/linux/graphics/rendering/wayland:wayland",
@@ -2916,8 +2978,9 @@ package(
         "-DHAVE_GLESv2=TRUE",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":ki18n",
         ":kcoreaddons",
@@ -2970,8 +3033,9 @@ sed -i 's/COMPONENTS DBus Widgets Quick Test/COMPONENTS DBus Widgets Quick Test 
 sed -i '/qCDebug(KSCREENLOCKER) << "Event received"/a\\    (void)event;' ksldapp.cpp
 
 """],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -3055,8 +3119,9 @@ package(
         "-DHAVE_GLESv2=TRUE",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -3105,8 +3170,9 @@ sed -i 's/#include <KX11Extras>/\\/\\/#include <KX11Extras>/' src/service/Resour
 sed -i 's/connect(KX11Extras::self/\\/\\/connect(KX11Extras::self/' src/service/Resources.cpp || true
 
 """],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -3204,8 +3270,9 @@ sed -i '/find_package(ECM/a\\include_directories(BEFORE SYSTEM "${CMAKE_SOURCE_D
 sed -i '/isPlatformX11.*{/,/^    }/d' src/plasma/private/theme_p.cpp
 
 """],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -3298,8 +3365,9 @@ sed -i 's/^add_library(LayerShellQtInterface)/add_library(LayerShellQtInterface 
 """],
     # Prepend native wayland-scanner to PATH and set CMAKE var
     # Need native wayland-scanner for cross-compilation
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         "//packages/linux/graphics/rendering/wayland:wayland",
         "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
@@ -3372,8 +3440,9 @@ bool OrientationSensor::isEnabled() const { return false; }
 #include "moc_orientationsensor.cpp"
 SENSOR_CPP
 """],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         # KF6 Core
         ":kcoreaddons",
@@ -3479,8 +3548,9 @@ package(
         "-DCMAKE_DISABLE_FIND_PACKAGE_KF6DocTools=ON",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -3524,8 +3594,9 @@ package(
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kconfig",
         ":kcoreaddons",
@@ -3572,8 +3643,9 @@ package(
         "-DWITHOUT_X11=ON",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kwindowsystem",
         "//packages/linux/dev-libs/glib:glib",
@@ -3621,8 +3693,9 @@ package(
         "-DCMAKE_DISABLE_FIND_PACKAGE_KF6DocTools=ON",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true\nsed -i '/find_package(Qca-qt6/d' CMakeLists.txt || true\nsed -i '/ki18n_install/d' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kconfig",
         ":kcoreaddons",
@@ -3669,8 +3742,9 @@ package(
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":ki18n",
         "//packages/linux/dev-libs/glib:glib",
@@ -3707,6 +3781,7 @@ package(
         "-DWITHOUT_PNG=ON",
         "-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
     ] + KDE_DISABLE_PYTHON_ARGS,
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
         "//packages/linux/core/zlib:zlib",
     ],
@@ -3733,8 +3808,9 @@ package(
         "-DCMAKE_DISABLE_FIND_PACKAGE_ZXing=ON",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":qrencode",
         "//packages/linux/dev-libs/glib:glib",
@@ -3809,8 +3885,9 @@ endfunction()
 EOF
 
 """],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
         "//packages/linux/system/libs/utility/pcre2:pcre2",
@@ -3846,8 +3923,9 @@ package(
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kconfig",
         ":kcoreaddons",
@@ -3905,8 +3983,9 @@ sed -i '/add_subdirectory.*backendlauncher/d' src/CMakeLists.txt || true
 
 """],
     # Find native wayland-scanner from exec_bdepend before configure
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -3955,8 +4034,9 @@ package(
         "-DENABLE_KAUTH_HELPER=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true\nsed -i 's/find_package(Sensors REQUIRED)/find_package(Sensors)/' CMakeLists.txt || true\nsed -i 's/find_package(libpcap REQUIRED)/find_package(libpcap)/' CMakeLists.txt || true\nsed -i '/add_subdirectory(nvidia)/d' processcore/plugins/CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kauth",
         ":kconfig",
@@ -4072,8 +4152,9 @@ cat > kcms/krdb/krdb_export.h << 'STUB'
 STUB
 
 """],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         # KF6 core
         ":kcoreaddons",
@@ -4168,7 +4249,7 @@ STUB
         "//packages/linux/dev-tools/build-systems/libtool:libtool",
         "//packages/linux/system/libs/crypto/openssl:openssl",
         "//packages/linux/system/libs/input/libinput:libinput",
-        "//packages/linux/system/libs/utility/icu:icu",
+        "//packages/linux/system/libs/utility/icu:icu-native",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
         # Fontconfig for font rendering
         "//packages/linux/system/libs/font/fontconfig:fontconfig",
@@ -4201,6 +4282,7 @@ sed -i '/ki18n_install/d' CMakeLists.txt 2>/dev/null || true
 
 """],
     # Custom src_configure to handle EGL/GLESv2 cross-compilation
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":plasma-workspace",
@@ -4231,7 +4313,7 @@ sed -i '/ki18n_install/d' CMakeLists.txt 2>/dev/null || true
         ":kguiaddons",
         ":kcodecs",
         ":kcolorscheme",
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/system/security/auth/pam:pam",
         "//packages/linux/system/init/systemd:systemd",
         "//packages/linux/desktop/mesa:mesa",  # For EGL/GLESv2
@@ -4410,8 +4492,9 @@ package(
         "-DBUILD_TESTING=OFF",
     ] + KDE_DISABLE_PYTHON_ARGS,
     pre_configure_cmds = ["sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true"],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -4465,8 +4548,9 @@ sed -i 's/#include <X11/#\\/\\/#include <X11/g' qt6/src/platformtheme/*.cpp 2>/d
 sed -i 's/#include <xcb/#\\/\\/#include <xcb/g' qt6/src/platformtheme/*.cpp 2>/dev/null || true
 
 """],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -4532,8 +4616,9 @@ package(
 sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true
 
 """],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         "//packages/linux/dev-libs/glib:glib",
@@ -4569,8 +4654,9 @@ package(
 sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true
 
 """],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",
@@ -4615,8 +4701,9 @@ package(
 sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.txt || true
 
 """],
+    host_deps = QT6_RUNTIME_DEPS,
     deps = [
-        "//packages/linux/desktop/qt:qt6",
+        "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
         ":kcoreaddons",
         ":kconfig",

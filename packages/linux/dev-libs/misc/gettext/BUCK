@@ -23,6 +23,8 @@ package(
     description = "GNU internationalization and localization utilities",
     homepage = "https://www.gnu.org/software/gettext",
     license = "GPL-3+",
+    # GCC 14 rejects implicit function pointer casts in libtextstyle
+    extra_cflags = ["-Wno-error=incompatible-pointer-types"],
     configure_args = [
         "--disable-java",
         "--disable-csharp",

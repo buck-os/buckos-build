@@ -10,8 +10,14 @@ package(
     homepage = "https://fmt.dev/",
     license = "MIT",
     configure_args = [
-        "-DBUILD_SHARED_LIBS=ON",
+        "-DBUILD_SHARED_LIBS=OFF",
         "-DFMT_TEST=OFF",
         "-DFMT_DOC=OFF",
+    ],
+    # fmt is in _TOOL_BLOCKLIST (ccache dep, prevents cycle), so
+    # cmake/ninja aren't auto-injected — declare them explicitly.
+    host_deps = [
+        "//packages/linux/dev-tools/build-systems/cmake:cmake",
+        "//packages/linux/dev-tools/build-systems/ninja:ninja",
     ],
 )

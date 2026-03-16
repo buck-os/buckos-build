@@ -1,0 +1,24 @@
+load("//defs:package.bzl", "package")
+
+# GNU ed uses a hand-written configure that ignores CFLAGS from the
+# environment.  Pass -std=gnu11 via configure_args (which GNU ed does
+# accept as KEY=VALUE pairs) to fix GCC 14+ C23 keyword conflicts.
+package(
+    build_rule = "autotools",
+    name = "ed",
+    version = "1.20.2",
+    url = "https://mirrors.kernel.org/gnu/ed/ed-1.20.2.tar.lz",
+    sha256 = "65fec7318f48c2ca17f334ac0f4703defe62037bb13cc23920de077b5fa24523",
+    description = "GNU line editor",
+    homepage = "https://www.gnu.org/software/ed",
+    license = "GPL-3+",
+    configure_args = [
+        "--prefix=/usr",
+        "CFLAGS=-std=gnu11 -Wall -W -O2",
+    ],
+    # GNU ed's hand-written configure ignores CC from env — must be
+    # passed as a command-line arg (CC=<compiler>).
+    cc_as_configure_arg = True,
+    skip_host_arg = True,
+    visibility = ["PUBLIC"],
+)

@@ -13,6 +13,12 @@ python_binary(
 )
 
 python_binary(
+    name = "gen_specs",
+    main = "gen_specs.py",
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
     name = "patch_helper",
     main = "patch_helper.py",
     deps = [":_env"],
@@ -134,6 +140,12 @@ python_binary(
 python_binary(
     name = "merge_host_tools",
     main = "merge_host_tools.py",
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "rewrite_interps",
+    main = "rewrite_interps.py",
     visibility = ["PUBLIC"],
 )
 
@@ -266,6 +278,18 @@ python_binary(
 python_binary(
     name = "gen_runtime_env",
     main = "gen_runtime_env.py",
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "gen_test_host_env",
+    main = "gen_test_host_env.py",
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "cache-stats",
+    main = "cache_stats.py",
     visibility = ["PUBLIC"],
 )
 

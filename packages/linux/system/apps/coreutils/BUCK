@@ -41,6 +41,7 @@ package(
 chmod -R u+w . 2>/dev/null || true
 touch man/*.1 2>/dev/null || true
 """],
-    env = {"HELP2MAN": "true", "FORCE_UNSAFE_CONFIGURE": "1"},
+    make_args = ["HELP2MAN=true"],
+    env = {"FORCE_UNSAFE_CONFIGURE": "1"},
     deps = [],
 )

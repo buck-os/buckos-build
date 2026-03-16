@@ -634,7 +634,7 @@ LANGUAGE_DEVELOPMENT_SETS = {
     "cpp-dev": {
         "description": "C/C++ development with GCC/Clang toolchain",
         "packages": [
-            "//packages/linux/lang/gcc:gcc",
+            "//packages/linux/lang/gcc:gcc-native",
             "//packages/linux/lang/clang:clang",
             "//packages/linux/lang/binutils:binutils",
             "//packages/linux/dev-tools/build-systems/cmake:cmake",
@@ -734,7 +734,7 @@ STAGE3_PACKAGE_SETS = {
             "//packages/linux/network/curl:curl",
             "//packages/linux/network/iproute2:iproute2",
             # Toolchain
-            "//packages/linux/lang/gcc:gcc",
+            "//packages/linux/lang/gcc:gcc-native",
             "//packages/linux/lang/binutils:binutils",
             # Build systems
             "//packages/linux/dev-tools/build-systems/make:make",
@@ -789,7 +789,7 @@ STAGE3_PACKAGE_SETS = {
             "//packages/linux/lang/rust:rust",
             "//packages/linux/lang/go:go",
             # LLVM toolchain
-            "//packages/linux/dev-tools/compilers/llvm:llvm",
+            "//packages/linux/core/llvm:llvm-native",
             "//packages/linux/dev-tools/compilers/clang:clang",
             # Additional editors
             "//packages/linux/editors/neovim:neovim:neovim",

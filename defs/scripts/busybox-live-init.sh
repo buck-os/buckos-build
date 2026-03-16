@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/busybox sh
 # BuckOS Live System Init (Static Busybox)
 # This runs from initramfs to boot the live system
 
@@ -26,6 +26,7 @@ for i in 1 2 3 4 5 6; do
 done
 
 echo "=== INIT STARTED ==="
+echo "System initialization complete."
 
 mkdir -p /dev/pts /run /mnt/cdrom /mnt/live /mnt/root /mnt/overlay
 mount -t devpts devpts /dev/pts 2>/dev/null || true

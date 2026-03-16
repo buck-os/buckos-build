@@ -1,50 +1,27 @@
 """
 Seed toolchain resolution.
 
-Resolves the seed toolchain from one of three sources:
+Resolves the seed toolchain from one of three sources (highest priority first):
 
-  1. buckos.seed_url   — remote download via http_file
-  2. buckos.seed_path  — local file via export_file
+  1. buckos.seed_path  — local archive  (export_file at repo root)
+  2. buckos.seed_url   — remote download (http_file)
   3. neither           — bootstrap from source (stage 1 cross-compiler)
 
-To use a prebuilt seed, add to .buckconfig:
+To use a local prebuilt seed (drop seed-toolchain.zip at repo root):
+
+  [buckos]
+  seed_path = seed-toolchain.zip
+
+To download a prebuilt seed:
 
   [buckos]
   seed_url = https://...
   seed_sha256 = abc123...
 
-or for a local file:
-
-  [buckos]
-  seed_path = /path/to/buckos-seed.tar.zst
-
-When a prebuilt seed is configured, toolchain_import unpacks it into a
-BuildToolchainInfo with hermetic host tools.
-
-When neither is set, seed-toolchain wraps the stage 1 cross-compiler
-directly (bootstrap-toolchain with host PATH).  The full seed archive
-(//tc/bootstrap:seed-export) is built explicitly — it cannot be the
-seed-toolchain dep because seed-export → host-tools → packages →
-seed-toolchain creates a configured target cycle.
-
-NOTE: When seed_url or seed_path is configured, uncomment the
-corresponding target declaration below.
+When a prebuilt seed is active, also declares //tc/seed:seed-archive-ref
+as a stable alias to the archive target, used by tests.
 """
 
 load(":defs.bzl", "seed_toolchain")
-
-# Uncomment when buckos.seed_url is set in .buckconfig:
-# http_file(
-#     name = "seed-archive",
-#     urls = [read_config("buckos", "seed_url", "")],
-#     sha256 = read_config("buckos", "seed_sha256", ""),
-#     out = "buckos-seed.tar.zst",
-# )
-
-# Uncomment when buckos.seed_path is set in .buckconfig:
-# export_file(
-#     name = "seed-local-archive",
-#     src = read_config("buckos", "seed_path", ""),
-# )
 
 seed_toolchain()

@@ -18,14 +18,15 @@ inputs haven't changed.
    (post_install_cmds run in the prefix dir after make install)
 """
 
-load("//defs:providers.bzl", "PackageInfo")
+load("//defs:providers.bzl", "BuildToolchainInfo", "PackageInfo")
 load("//defs/rules:_common.bzl",
      "COMMON_PACKAGE_ATTRS",
      "add_flag_file", "build_package_tsets", "collect_dep_tsets",
-     "write_bin_dirs", "write_compile_flags", "write_lib_dirs",
+     "collect_host_path_children",
+     "write_bin_dirs", "write_compile_flags", "write_lib_dirs_with_hosts",
      "write_link_flags", "write_pkg_config_paths",
 )
-load("//defs:toolchain_helpers.bzl", "toolchain_env_args", "toolchain_extra_cflags", "toolchain_extra_ldflags", "toolchain_path_args")
+load("//defs:toolchain_helpers.bzl", "toolchain_env_args", "toolchain_extra_cflags", "toolchain_extra_ldflags", "toolchain_ld_linux_args", "toolchain_path_args")
 load("//defs:host_tools.bzl", "host_tool_path_args")
 
 # ── Phase helpers ─────────────────────────────────────────────────────
@@ -46,7 +47,8 @@ def _src_prepare(ctx, source):
     return output
 
 def _src_configure(ctx, source, cflags_file = None, ldflags_file = None,
-                   pkg_config_file = None, path_file = None, lib_dirs_file = None):
+                   pkg_config_file = None, lib_dirs_file = None,
+                   bin_dirs_file = None):
     """Run ./configure with toolchain env and dep flags.
 
     When skip_configure is True, only copies the source tree without
@@ -63,11 +65,23 @@ def _src_configure(ctx, source, cflags_file = None, ldflags_file = None,
     cmd.add("--output-dir", output.as_output())
 
     # Inject toolchain CC/CXX/AR
+    tc = ctx.attrs._toolchain[BuildToolchainInfo]
     for env_arg in toolchain_env_args(ctx):
         cmd.add("--env", env_arg)
 
-    # Hermetic PATH from seed toolchain
+    # Hand-written configure scripts (GNU ed, lzip) ignore CC from env
+    # and only accept it as a command-line KEY=VALUE arg.  Pass --cc/--cxx
+    # so configure_helper injects them as configure args.
+    if ctx.attrs.cc_as_configure_arg:
+        cmd.add("--cc", cmd_args(tc.cc.args, delimiter = " "))
+        cmd.add("--cxx", cmd_args(tc.cxx.args, delimiter = " "))
+    if ctx.attrs.skip_cc_auto_arg:
+        cmd.add("--skip-cc-arg")
+
+    # Hermetic PATH and ld-linux from seed toolchain
     for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
         cmd.add(arg)
 
     # Inject user-specified environment variables
@@ -90,6 +104,27 @@ def _src_configure(ctx, source, cflags_file = None, ldflags_file = None,
     else:
         # Default prefix for FHS layout
         cmd.add("--configure-arg=--prefix=/usr")
+
+        # Auto-inject --host and --build for cross-compilation.  Setting
+        # both to the target triple tells autotools "building ON target
+        # FOR target" — the cross-compiler makes this true.  When host
+        # == build, autotools stays in native mode (no cross-link quirks
+        # like binutils gas failing to find in-tree libbfd) while the
+        # correct system tuple is set for config.h / feature detection.
+        # Packages with hand-written configure that reject --host (e.g.
+        # zlib) set skip_host_arg = True.  Skip when configure_args
+        # already contains --host (e.g. Python sets its own).
+        has_host = False
+        has_build = False
+        for arg in ctx.attrs.configure_args:
+            if arg.startswith("--host"):
+                has_host = True
+            if arg.startswith("--build"):
+                has_build = True
+        if not ctx.attrs.skip_host_arg and not has_host:
+            cmd.add(cmd_args("--configure-arg=--host=", tc.target_triple, delimiter = ""))
+        if not ctx.attrs.skip_host_arg and not has_build:
+            cmd.add(cmd_args("--configure-arg=--build=", tc.target_triple, delimiter = ""))
 
         # Configure arguments (use = syntax so argparse handles --prefix=... values)
         for arg in ctx.attrs.configure_args:
@@ -127,14 +162,20 @@ def _src_configure(ctx, source, cflags_file = None, ldflags_file = None,
         add_flag_file(cmd, "--cflags-file", cflags_file)
         add_flag_file(cmd, "--ldflags-file", ldflags_file)
         add_flag_file(cmd, "--pkg-config-file", pkg_config_file)
-        add_flag_file(cmd, "--path-file", path_file)
+
         add_flag_file(cmd, "--lib-dirs-file", lib_dirs_file)
+
+        # Dep bin dirs appended to PATH for *-config discovery scripts
+        # (gpg-error-config, curl-config, etc.).  Appended, not prepended,
+        # so seed host-tools always take priority.
+        add_flag_file(cmd, "--path-append-file", bin_dirs_file)
 
     ctx.actions.run(cmd, category = "autotools_configure", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
 def _src_compile(ctx, configured, cflags_file = None, ldflags_file = None,
-                 pkg_config_file = None, path_file = None, lib_dirs_file = None):
+                 pkg_config_file = None, lib_dirs_file = None,
+                 bin_dirs_file = None):
     """Run make (or equivalent) in the configured source tree.
 
     When pre_build_cmds is non-empty, each command runs in the build
@@ -148,8 +189,10 @@ def _src_compile(ctx, configured, cflags_file = None, ldflags_file = None,
     for env_arg in toolchain_env_args(ctx):
         cmd.add("--env", env_arg)
 
-    # Hermetic PATH from seed toolchain
+    # Hermetic PATH and ld-linux from seed toolchain
     for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
         cmd.add(arg)
 
     # Toolchain-injected CFLAGS / LDFLAGS for build phase
@@ -164,8 +207,8 @@ def _src_compile(ctx, configured, cflags_file = None, ldflags_file = None,
     add_flag_file(cmd, "--cflags-file", cflags_file)
     add_flag_file(cmd, "--ldflags-file", ldflags_file)
     add_flag_file(cmd, "--pkg-config-file", pkg_config_file)
-    add_flag_file(cmd, "--path-file", path_file)
     add_flag_file(cmd, "--lib-dirs-file", lib_dirs_file)
+    add_flag_file(cmd, "--path-append-file", bin_dirs_file)
 
     # Add host_deps bin dirs to PATH
     for arg in host_tool_path_args(ctx):
@@ -199,7 +242,8 @@ def _src_compile(ctx, configured, cflags_file = None, ldflags_file = None,
     return output
 
 def _src_install(ctx, built, cflags_file = None, ldflags_file = None,
-                 pkg_config_file = None, path_file = None, lib_dirs_file = None):
+                 pkg_config_file = None, lib_dirs_file = None,
+                 bin_dirs_file = None):
     """Run make install DESTDIR=... into the output prefix.
 
     install_prefix_var overrides the make variable name for the install
@@ -215,8 +259,10 @@ def _src_install(ctx, built, cflags_file = None, ldflags_file = None,
     for env_arg in toolchain_env_args(ctx):
         cmd.add("--env", env_arg)
 
-    # Hermetic PATH from seed toolchain
+    # Hermetic PATH and ld-linux from seed toolchain
     for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
         cmd.add(arg)
 
     # Toolchain-injected CFLAGS / LDFLAGS for install phase
@@ -231,8 +277,8 @@ def _src_install(ctx, built, cflags_file = None, ldflags_file = None,
     add_flag_file(cmd, "--cflags-file", cflags_file)
     add_flag_file(cmd, "--ldflags-file", ldflags_file)
     add_flag_file(cmd, "--pkg-config-file", pkg_config_file)
-    add_flag_file(cmd, "--path-file", path_file)
     add_flag_file(cmd, "--lib-dirs-file", lib_dirs_file)
+    add_flag_file(cmd, "--path-append-file", bin_dirs_file)
 
     # Add host_deps bin dirs to PATH
     for arg in host_tool_path_args(ctx):
@@ -279,26 +325,27 @@ def _autotools_package_impl(ctx):
     prepared = _src_prepare(ctx, source)
 
     # Collect dep-only tsets and write flag files for build phases.
-    # These contain transitive dep flags (includes, libs, pkgconfig, bins)
+    # These contain transitive dep flags (includes, libs, pkgconfig)
     # that replace the old manual dep iteration loops.
     dep_compile, dep_link, dep_path = collect_dep_tsets(ctx)
     cflags_file = write_compile_flags(ctx, dep_compile)
     ldflags_file = write_link_flags(ctx, dep_link)
     pkg_config_file = write_pkg_config_paths(ctx, dep_compile)
-    path_file = write_bin_dirs(ctx, dep_path)
-    lib_dirs_file = write_lib_dirs(ctx, dep_path) if dep_path else None
+    host_path_children = collect_host_path_children(ctx)
+    lib_dirs_file = write_lib_dirs_with_hosts(ctx, dep_path, host_path_children)
+    bin_dirs_file = write_bin_dirs(ctx, dep_path)
 
     # Phase 3: src_configure
     configured = _src_configure(ctx, prepared, cflags_file, ldflags_file,
-                                pkg_config_file, path_file, lib_dirs_file)
+                                pkg_config_file, lib_dirs_file, bin_dirs_file)
 
     # Phase 4: src_compile
     built = _src_compile(ctx, configured, cflags_file, ldflags_file,
-                         pkg_config_file, path_file, lib_dirs_file)
+                         pkg_config_file, lib_dirs_file, bin_dirs_file)
 
     # Phase 5: src_install
     installed = _src_install(ctx, built, cflags_file, ldflags_file,
-                             pkg_config_file, path_file, lib_dirs_file)
+                             pkg_config_file, lib_dirs_file, bin_dirs_file)
 
     # Build transitive sets
     compile_tset, link_tset, path_tset, runtime_tset = build_package_tsets(ctx, installed)
@@ -337,6 +384,9 @@ autotools_package = rule(
         "configure_prefix_deps": attrs.dict(attrs.string(), attrs.dep(), default = {}),
         "configure_script": attrs.option(attrs.string(), default = None),
         "skip_configure": attrs.bool(default = False),
+        "cc_as_configure_arg": attrs.bool(default = False),
+        "skip_cc_auto_arg": attrs.bool(default = False),
+        "skip_host_arg": attrs.bool(default = False),
         "build_subdir": attrs.option(attrs.string(), default = None),
         "pre_build_cmds": attrs.list(attrs.string(), default = []),
         "make_args": attrs.list(attrs.string(), default = []),

@@ -14,27 +14,42 @@ package(
     homepage = "https://www.boost.org/",
     license = "BSL-1.0",
     install_script = """
-        # Sources are in $SRCS, work in $SRCS to build
         cd "$SRCS"
-        ls -la
+
+        # bootstrap.sh uses 'which'; stub it if missing from hermetic PATH
+        if ! command -v which >/dev/null 2>&1; then
+            _stubdir=$(mktemp -d)
+            printf '#!/bin/sh\\ncommand -v "$1"\\n' > "$_stubdir/which"
+            chmod +x "$_stubdir/which"
+            export PATH="$_stubdir:$PATH"
+        fi
+
         # Find the boost directory
         if [ -f bootstrap.sh ]; then
-            # Already in the right directory
             echo "Found bootstrap.sh in current directory"
         elif [ -d boost_1_84_0 ]; then
-            echo "Found boost_1_84_0 directory"
             cd boost_1_84_0
         else
-            # Try to find boost directory
             BOOST_DIR=$(find . -maxdepth 2 -name "bootstrap.sh" -type f | head -1 | xargs dirname)
             if [ -n "$BOOST_DIR" ]; then
-                echo "Found boost in: $BOOST_DIR"
                 cd "$BOOST_DIR"
             else
                 echo "Cannot find boost directory with bootstrap.sh"
                 exit 1
             fi
         fi
+
+        # bootstrap.sh compiles b2 with bare 'g++' from the gcc toolset.
+        # Create a g++ wrapper that passes the full CXX flags (--sysroot,
+        # -specs) so b2 gets the sysroot interpreter + rpath and can
+        # run on the host.
+        _wrapdir=$(mktemp -d)
+        _cxx_bin=$(echo $CXX | cut -d' ' -f1)
+        _cxx_flags=$(echo $CXX | cut -d' ' -f2-)
+        printf '#!/bin/sh\nexec %s %s "$@"\n' "$_cxx_bin" "$_cxx_flags" > "$_wrapdir/g++"
+        chmod +x "$_wrapdir/g++"
+        cp "$_wrapdir/g++" "$_wrapdir/gcc"
+        export PATH="$_wrapdir:$PATH"
         ./bootstrap.sh --prefix=/usr --with-toolset=gcc
         ./b2 install \
             --prefix="$OUT/usr" \
@@ -51,6 +66,6 @@ package(
         "//packages/linux/system/libs/compression/bzip2:bzip2",
         "//packages/linux/system/libs/compression/xz:xz",
         "//packages/linux/core/zlib:zlib",
-        "//packages/linux/system/libs/utility/icu:icu",
+        "//packages/linux/system/libs/utility/icu:icu-native",
     ],
 )

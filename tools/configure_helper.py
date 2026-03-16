@@ -16,7 +16,7 @@ import shutil
 import subprocess
 import sys
 
-from _env import clean_env, derive_lib_paths, filter_path_flags, register_cleanup, sanitize_filenames, write_pkg_config_wrapper
+from _env import apply_cache_config, clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, find_buckos_shell, find_dep_python3, preferred_linker_flag, register_cleanup, rewrite_shebangs, sanitize_filenames, setup_ccache_symlinks, sysroot_lib_paths, write_pkg_config_wrapper
 
 
 def _resolve_env_paths(value):
@@ -42,7 +42,7 @@ def _resolve_env_paths(value):
                 resolved.append(p)
         return ":".join(resolved)
 
-    _FLAG_PREFIXES = ["-I", "-L", "-Wl,-rpath-link,", "-Wl,-rpath,"]
+    _FLAG_PREFIXES = ["-I", "-L", "-Wl,-rpath-link,", "-Wl,-rpath,", "-specs=", "--sysroot="]
 
     parts = []
     for token in value.split():
@@ -102,6 +102,8 @@ def main():
                         help="PKG_CONFIG_PATH entries (repeatable)")
     parser.add_argument("--skip-configure", action="store_true",
                         help="Copy source but skip running ./configure (for Kconfig packages)")
+    parser.add_argument("--skip-cc-arg", action="store_true",
+                        help="Don't auto-inject CC as a configure argument")
     parser.add_argument("--configure-script", default="configure",
                         help="Name of the configure script (default: configure, e.g. Configure for OpenSSL)")
     parser.add_argument("--env", action="append", dest="extra_env", default=[],
@@ -116,6 +118,8 @@ def main():
                         help="Allow host PATH (bootstrap escape hatch)")
     parser.add_argument("--hermetic-empty", action="store_true",
                         help="Start with empty PATH (populated by --path-prepend)")
+    parser.add_argument("--ld-linux", default=None,
+                        help="Buckos ld-linux path (disables posix_spawn)")
     parser.add_argument("--pre-cmd", action="append", dest="pre_cmds", default=[],
                         help="Shell command to run in source dir before configure (repeatable)")
     parser.add_argument("--cflags-file", default=None,
@@ -126,6 +130,8 @@ def main():
                         help="File with PKG_CONFIG_PATH entries (one per line, from tset projection)")
     parser.add_argument("--path-file", default=None,
                         help="File with PATH dirs to prepend (one per line, from tset projection)")
+    parser.add_argument("--path-append-file", default=None,
+                        help="File with PATH dirs to append (one per line, from tset projection)")
     parser.add_argument("--lib-dirs-file", default=None,
                         help="File with lib dirs for LD_LIBRARY_PATH (one per line, from tset projection)")
     args = parser.parse_args()
@@ -142,6 +148,7 @@ def main():
     file_ldflags = filter_path_flags(_read_flag_file(args.ldflags_file))
     file_pkg_config = [p for p in _read_flag_file(args.pkg_config_file) if os.path.isdir(os.path.abspath(p))]
     file_path_dirs = _read_flag_file(args.path_file)
+    file_path_append_dirs = _read_flag_file(args.path_append_file)
     file_lib_dirs = _read_flag_file(args.lib_dirs_file)
 
     source_dir = os.path.abspath(args.source_dir)
@@ -159,10 +166,6 @@ def main():
         shutil.rmtree(output_dir)
     shutil.copytree(source_dir, output_dir, symlinks=True)
 
-    # Create a pkg-config wrapper that always passes --define-prefix so
-    # .pc files in Buck2 dep directories resolve paths correctly.
-    wrapper_dir = write_pkg_config_wrapper(os.path.join(output_dir, ".pkgconf-wrapper"))
-
     env = clean_env()
 
     # Expose the project root so pre-cmds can resolve Buck2 artifact
@@ -173,7 +176,7 @@ def main():
         env["CC"] = args.cc
     if args.cxx:
         env["CXX"] = args.cxx
-    all_cflags = file_cflags + args.cflags
+    all_cflags = file_prefix_map_flags() + file_cflags + args.cflags
     all_ldflags = file_ldflags + args.ldflags
     all_pkg_config = file_pkg_config + args.pkg_config_paths
 
@@ -206,6 +209,29 @@ def main():
                 env[key] = resolved + " " + env[key]
             else:
                 env[key] = resolved
+
+    apply_cache_config(env)
+
+    # Create gcc/cc symlinks on PATH so libtool sub-configures
+    # (which search PATH for gcc/cc independently of the parent's CC)
+    # find the buckos compiler.  CC stays multi-token — don't split it.
+    # Every invocation of $CC includes --sysroot and -specs, ensuring
+    # compiled programs get the right interpreter and RPATH.
+    _symlink_dir = os.path.join(output_dir, ".cc-symlinks")
+    _need_symlink_path = False
+    _cc_has_spaces = False
+    for _var, _names in [("CC", ("cc", "gcc")), ("CXX", ("c++", "g++"))]:
+        _val = env.get(_var, "")
+        if " " in _val:
+            _cc_has_spaces = True
+            _cc_bin = os.path.abspath(_val.split()[0])
+            if os.path.isfile(_cc_bin):
+                os.makedirs(_symlink_dir, exist_ok=True)
+                for _name in _names:
+                    _link = os.path.join(_symlink_dir, _name)
+                    if not os.path.exists(_link):
+                        os.symlink(_cc_bin, _link)
+                _need_symlink_path = True
     if args.hermetic_path:
         env["PATH"] = ":".join(os.path.abspath(p) for p in args.hermetic_path)
         # Derive LD_LIBRARY_PATH from hermetic bin dirs so dynamically
@@ -215,8 +241,11 @@ def main():
             _parent = os.path.dirname(os.path.abspath(_bp))
             for _ld in ("lib", "lib64"):
                 _d = os.path.join(_parent, _ld)
-                if os.path.isdir(_d):
+                if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")):
                     _lib_dirs.append(_d)
+                    _glibc_d = os.path.join(_d, "glibc")
+                    if os.path.isdir(_glibc_d):
+                        _lib_dirs.append(_glibc_d)
         if _lib_dirs:
             _existing = env.get("LD_LIBRARY_PATH", "")
             env["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (":" + _existing if _existing else "")
@@ -244,25 +273,55 @@ def main():
         prepend = ":".join(os.path.abspath(p) for p in all_path_prepend if os.path.isdir(p))
         if prepend:
             env["PATH"] = prepend + ":" + env.get("PATH", "")
+    # Add CC symlink dir to PATH so libtool sub-configures find gcc/cc.
+    if _need_symlink_path:
+        env["PATH"] = _symlink_dir + ":" + env.get("PATH", "")
 
-    # Merge tset-provided lib dirs into LD_LIBRARY_PATH so dynamically
-    # linked dep tools (e.g. buckos python needing libpython3.12.so)
-    # can execute during configure probes.
+    # ccache masquerade symlinks — prepended before gcc symlinks.
+    setup_ccache_symlinks(env, output_dir)
+
+    # Append dep bin dirs AFTER hermetic PATH for *-config discovery scripts
+    # (gpg-error-config, curl-config, xml2-config, etc.).  Appended so seed
+    # host-tools always take priority — prevents ENOEXEC from dep binaries
+    # with unrewritten padded ELF interpreters shadowing seed tools.
+    if file_path_append_dirs:
+        append = ":".join(os.path.abspath(p) for p in file_path_append_dirs if os.path.isdir(p))
+        if append:
+            env["PATH"] = env.get("PATH", "") + ":" + append
+
+    # Dep lib dirs in LD_LIBRARY_PATH so configure test programs can
+    # find dep shared libs at runtime.  Exclude dirs with libc.so.6
+    # to avoid poisoning host tools with sysroot glibc.
     if file_lib_dirs:
-        resolved = [os.path.abspath(d) for d in file_lib_dirs if os.path.isdir(d)]
+        resolved = [
+            os.path.abspath(d) for d in file_lib_dirs
+            if os.path.isdir(d) and not os.path.exists(os.path.join(os.path.abspath(d), "libc.so.6"))
+        ]
         if resolved:
             existing = env.get("LD_LIBRARY_PATH", "")
             merged = ":".join(resolved)
             env["LD_LIBRARY_PATH"] = (merged + ":" + existing).rstrip(":") if existing else merged
 
-    # Derive LD_LIBRARY_PATH from path-prepend dirs so host tools with
-    # shared libraries (e.g. python → libpython3.so) can execute.
+    # Derive LD_LIBRARY_PATH, GCONV_PATH, BISON_PKGDATADIR from hermetic
+    # and path-prepend dirs so host tools find shared libraries and data.
+    if args.hermetic_path:
+        derive_lib_paths(args.hermetic_path, env)
     derive_lib_paths(all_path_prepend, env)
+
+    # Pin PYTHON/PYTHON3 to buckos python so autotools build scripts
+    # (e.g. AC_PATH_PROG([PYTHON3]), Makefile rules invoking $(PYTHON))
+    # use the ABI-matched buckos python rather than host python.
+    for _bp in list(args.hermetic_path) + list(all_path_prepend):
+        _candidate = os.path.join(os.path.abspath(_bp), "python3")
+        if os.path.isfile(_candidate):
+            env.setdefault("PYTHON", _candidate)
+            env.setdefault("PYTHON3", _candidate)
+            break
 
     # Auto-detect automake Perl modules and aclocal dirs from dep
     # prefixes.  The Buck2-installed automake hardcodes /usr/share/...
     # paths which don't resolve to the artifact directory.
-    _path_sources = list(args.hermetic_path) + list(all_path_prepend)
+    _path_sources = list(args.hermetic_path) + list(all_path_prepend) + list(file_path_append_dirs)
     if _path_sources:
         perl5lib = []
         aclocal_dirs = []
@@ -296,20 +355,34 @@ def main():
             # ACLOCAL_PATH adds extra search directories
             env["ACLOCAL_PATH"] = ":".join(aclocal_dirs)
 
+    # Create a pkg-config wrapper that always passes --define-prefix so
+    # .pc files in Buck2 dep directories resolve paths correctly.
+    wrapper_dir = write_pkg_config_wrapper(os.path.join(output_dir, ".pkgconf-wrapper"), python=find_dep_python3(env))
+
     # Prepend pkg-config wrapper to PATH
     env["PATH"] = wrapper_dir + ":" + env.get("PATH", os.environ.get("PATH", ""))
 
-    # Find buckos bash on PATH for running configure and pre-cmds.
-    # CONFIG_SHELL tells autotools configure to re-exec sub-configures
-    # under this shell instead of #!/bin/sh (which doesn't exist on
-    # remote execution workers).
-    _config_shell = None
-    for _d in env.get("PATH", "").split(":"):
-        _bash = os.path.join(_d, "bash") if _d else ""
-        if _bash and os.path.isfile(_bash) and os.access(_bash, os.X_OK):
-            _config_shell = _bash
-            env["CONFIG_SHELL"] = _bash
-            break
+    # Set up sysroot lib paths and disable posix_spawn to avoid
+    # ENOEXEC with padded ELF interpreters on buckos-native dep binaries.
+    if args.ld_linux:
+        sysroot_lib_paths(args.ld_linux, env)
+        # Use mold linker if available on PATH (faster than ld.bfd).
+        # Only for buckos toolchain builds, not bootstrap.
+        _ld_flag = preferred_linker_flag(env)
+        if _ld_flag:
+            existing = env.get("LDFLAGS", "")
+            env["LDFLAGS"] = (existing + " " + _ld_flag).strip()
+
+    # Find buckos shell on PATH for running configure, pre-cmds, and
+    # shebang rewriting.  CONFIG_SHELL tells autotools to re-exec
+    # sub-configures under this shell.  SHELL is inherited by make.
+    _config_shell = find_buckos_shell(env)
+    if _config_shell:
+        env["CONFIG_SHELL"] = _config_shell
+        env["SHELL"] = _config_shell
+        # Rewrite #!/bin/sh, #!/usr/bin/bash, etc. in the copied source
+        # tree so the kernel uses buckos shell instead of host shell.
+        rewrite_shebangs(output_dir, env)
 
     # Run pre-configure commands (e.g. autoreconf, libtoolize, or
     # bootstrap src_prepare steps like symlinking in-tree libraries).
@@ -364,10 +437,37 @@ def main():
         except OSError:
             _use_config_shell = True
 
+    # Pass CC/CXX as configure arguments.  Required for:
+    # 1. Hand-written scripts (GNU ed, lzip) that ignore env vars
+    # 2. Autotools with multi-token CC — `test -f "$CC"` fails when CC
+    #    has spaces, but CC=... as a configure argument bypasses this
+    #    via eval.  Only autotools scripts handle CC= arguments; non-
+    #    autotools scripts (zlib) reject them as unknown options.
+    _arg_keys = {a.split("=", 1)[0] for a in resolved_args if "=" in a}
+    _cc_args = []
+    # Detect autotools by checking for "GNU Autoconf" marker
+    _is_autotools = False
+    _abs_configure = os.path.join(configure_cwd, configure) if not os.path.isabs(configure) else configure
+    try:
+        with open(_abs_configure, "rb") as _f:
+            _head = _f.read(1024)
+            _is_autotools = b"Autoconf" in _head
+    except OSError:
+        pass
+    _inject_cc = args.cc or (_cc_has_spaces and _is_autotools and not args.skip_cc_arg)
+    if _inject_cc and "CC" not in _arg_keys:
+        _cc_val = args.cc or env.get("CC", "")
+        if _cc_val:
+            _cc_args.append(f"CC={_resolve_env_paths(_cc_val)}")
+    if _inject_cc and "CXX" not in _arg_keys:
+        _cxx_val = args.cxx or env.get("CXX", "")
+        if _cxx_val:
+            _cc_args.append(f"CXX={_resolve_env_paths(_cxx_val)}")
+
     if _use_config_shell:
-        cmd = [_config_shell, configure] + resolved_args
+        cmd = [_config_shell, configure] + resolved_args + _cc_args
     else:
-        cmd = [configure] + resolved_args
+        cmd = [configure] + resolved_args + _cc_args
     result = subprocess.run(cmd, cwd=configure_cwd, env=env)
     if result.returncode != 0:
         print(f"error: configure failed with exit code {result.returncode}", file=sys.stderr)

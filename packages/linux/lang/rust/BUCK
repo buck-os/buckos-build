@@ -1,29 +1,236 @@
 load("//defs:package.bzl", "package")
+load("//defs/rules:source.bzl", "extract_source")
 
 # =============================================================================
-# Rust - Systems programming language (Pre-built binaries)
+# Rust - Systems programming language (built from source)
 # =============================================================================
-# Using official standalone installers from rust-lang.org
-# Building from source is complex and requires git submodules.
-# Pre-built binaries are recommended for most use cases.
+# Build Rust 1.91.0 from source using a prebuilt 1.91.0 stage0 compiler.
+# The stage0 runs during the build only — the OUTPUT is compiled by our
+# GCC with specs, giving every binary padded interp + RPATH.
+#
+# Stage 1 is sufficient: bootstrap.toml sets cc/cxx/linker to our GCC
+# wrappers, so stage 1 binaries are linked by buckos GCC with specs
+# (padded interp + RPATH).  Stage 2 would only re-compile with a
+# Rust compiler that is itself GCC-linked — the C/C++ link step that
+# determines interp/RPATH is the same either way.
+#
+# Per Rust policy, bootstrap requires version N or N-1.  Using the same
+# version (1.91.0) as stage0 is the simplest approach.
 
+# Stage0 bootstrap compiler (not shipped — only used during build)
 package(
+    name = "rust-stage0",
     build_rule = "binary",
-    name = "rust",
     version = "1.91.0",
     url = "https://static.rust-lang.org/dist/rust-1.91.0-x86_64-unknown-linux-gnu.tar.xz",
     sha256 = "5bea12c1911dda5c0a91cee4e9b617a65bcf23a21e2852a17b544936de1f83e3",
+    description = "Rust bootstrap compiler (stage 0) for building Rust from source",
+    homepage = "https://www.rust-lang.org/",
+    license = "Apache-2.0 OR MIT",
+    install_script = """
+mkdir -p "$OUT/tools/rust-stage0"
+cd "$SRCS"
+./install.sh --prefix="$OUT/tools/rust-stage0" --disable-ldconfig
+echo "Stage0 rustc: $($OUT/tools/rust-stage0/bin/rustc --version)"
+""",
+    visibility = [],
+)
+
+# Rust source archive
+# Build Rust from source with our GCC (specs → padded interp + RPATH)
+package(
+    name = "rust",
+    build_rule = "binary",
+    version = "1.91.0",
+    url = "https://static.rust-lang.org/dist/rustc-1.91.0-src.tar.xz",
+    sha256 = "9b94161dba3aa32192e0e75f7891912d98095ffb86087b07a05af35a0265a938",
     description = "Rust is a systems programming language focused on safety, speed, and concurrency",
     homepage = "https://www.rust-lang.org/",
     license = "Apache-2.0 AND MIT",
+    deps = [
+        ":rust-stage0",
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+    ],
+    host_deps = [
+        "//packages/linux/lang/python:python-host",
+        "//packages/linux/dev-tools/build-systems/cmake:cmake",
+        "//packages/linux/dev-tools/build-systems/ninja:ninja",
+    ],
     install_script = """
-        cd $SRCS
+export RUST_BACKTRACE=1
 
-        # The standalone installer includes install.sh
-        # Install to a temporary destdir
-        ./install.sh --prefix=/usr --destdir="$OUT" --disable-ldconfig
+# Find stage0 in dependencies
+RUST_STAGE0=""
+IFS=':' read -ra DEPS <<< "$DEP_BASE_DIRS"
+for dep in "${DEPS[@]}"; do
+    if [ -x "$dep/tools/rust-stage0/bin/rustc" ]; then
+        RUST_STAGE0="$dep/tools/rust-stage0"
+        break
+    fi
+done
 
-        echo "Rust installation complete"
-        ls -la "$OUT/usr/bin/" | head -10
-    """,
+if [ -z "$RUST_STAGE0" ]; then
+    echo "ERROR: Could not find rust-stage0 in dependencies"
+    echo "Searched in: $DEP_BASE_DIRS"
+    exit 1
+fi
+
+echo "Using stage0: $($RUST_STAGE0/bin/rustc --version)"
+echo "Using CC=$CC"
+
+# Rust's x.py expects cc/cxx as a single binary path, but our CC is
+# "path/to/gcc --sysroot=... -specs=...".  Create wrapper scripts
+# that also pass CFLAGS/LDFLAGS so LLVM can find dep headers/libs.
+# No LD_LIBRARY_PATH needed — compiler interpreters are patched to
+# the sysroot ld-linux by the toolchain rule.
+mkdir -p "$WORKDIR/cc-wrappers"
+cat > "$WORKDIR/cc-wrappers/buckos-cc" << CCEOF
+#!/bin/sh
+exec $CC $CFLAGS "\$@" $LDFLAGS
+CCEOF
+cat > "$WORKDIR/cc-wrappers/buckos-cxx" << CXXEOF
+#!/bin/sh
+exec $CXX $CFLAGS "\$@" $LDFLAGS
+CXXEOF
+chmod +x "$WORKDIR/cc-wrappers/buckos-cc" "$WORKDIR/cc-wrappers/buckos-cxx"
+
+# Generate bootstrap.toml — Rust 1.91+ uses bootstrap.toml
+cat > bootstrap.toml << EOF
+change-id = 144675
+
+[build]
+cargo = "$RUST_STAGE0/bin/cargo"
+rustc = "$RUST_STAGE0/bin/rustc"
+rustfmt = "$RUST_STAGE0/bin/rustfmt"
+docs = false
+compiler-docs = false
+extended = true
+tools = ["cargo", "clippy", "rustfmt", "rustdoc"]
+vendor = true
+python = "$(command -v python3)"
+target = ["x86_64-unknown-linux-gnu"]
+host = ["x86_64-unknown-linux-gnu"]
+
+[install]
+prefix = "/usr"
+libdir = "lib"
+
+[rust]
+optimize = true
+debug = false
+codegen-units-std = 0
+lto = "thin"
+download-rustc = false
+# Enable Rust's RPATH so binaries get $ORIGIN/../lib at link time.
+# This makes rustc/cargo self-contained (find their own libs without
+# LD_LIBRARY_PATH).  GCC specs also append $ORIGIN/../lib64, so the
+# combined RPATH covers both lib/ and lib64/.
+rpath = true
+
+[target.x86_64-unknown-linux-gnu]
+# Wrapper scripts invoke our GCC with specs — LLVM and other C/C++
+# components get padded interp + RPATH at link time.
+cc = "$WORKDIR/cc-wrappers/buckos-cc"
+cxx = "$WORKDIR/cc-wrappers/buckos-cxx"
+# Force Rust to use our GCC for linking Rust binaries (rustc, cargo,
+# clippy, etc.) instead of LLD.  Without this, Rust uses cc crate's
+# linker detection which may pick LLD — LLD doesn't read GCC specs,
+# so binaries would miss padded interp + RPATH placeholder.
+linker = "$WORKDIR/cc-wrappers/buckos-cc"
+EOF
+
+# Export CC/CXX to the wrapper scripts so the Rust cc crate (used by
+# rustc for final linking of Rust binaries) also uses our compiler.
+export CC="$WORKDIR/cc-wrappers/buckos-cc"
+export CXX="$WORKDIR/cc-wrappers/buckos-cxx"
+
+# librustc_driver.so has DT_RUNPATH=$ORIGIN/../lib (set by LLD, not
+# GCC specs).  x.py builds the stage1 compiler then immediately uses
+# it to compile stdlib — no chance to inject a step between.  Pre-create
+# stage1/lib/ with buckos libstdc++/libgcc_s symlinks so they're in
+# place when x.py first invokes the stage1 rustc.
+GCC_LIBDIR=$(dirname $(${CC%% *} -print-file-name=libstdc++.so))
+STAGE1_LIB="$WORKDIR/src/build/x86_64-unknown-linux-gnu/stage1/lib"
+mkdir -p "$STAGE1_LIB"
+for lib in "$GCC_LIBDIR"/libstdc++.so* "$GCC_LIBDIR"/libgcc_s.so*; do
+    [ -f "$lib" ] && ln -sf "$lib" "$STAGE1_LIB/" 2>/dev/null || true
+done
+echo "Pre-linked GCC runtime libs into stage1/lib/"
+ls -la "$STAGE1_LIB"/lib{std,gcc}* 2>/dev/null || true
+
+# Stage 1 is built by our GCC (cc/cxx/linker in bootstrap.toml point to
+# buckos wrappers) — binaries get padded interp + RPATH from specs.
+python3 x.py build --stage 1 -j$(nproc)
+
+# Install
+DESTDIR="$OUT" python3 x.py install --stage 1
+
+mkdir -p "$OUT/usr/bin"
+echo "Rust 1.91.0 installed"
+echo "Version: $($OUT/usr/bin/rustc --version 2>/dev/null || echo 'installed')"
+
+# Patch interp in any LLVM LLD tools that were linked by LLD internally
+# (not by our GCC), so they have the padded interp for unpack rewriting.
+# Skip when building for the host target (exec_dep) — host binaries must
+# keep their standard interp to be directly executable.
+if [ "${BUCKOS_HOST_BUILD:-}" = "1" ]; then
+    echo "Host target build — skipping interp patching"
+else
+python3 - "$OUT" << 'PYEOF'
+import struct, os, sys, glob
+out = sys.argv[1]
+# Match GCC specs padding: 228 leading slashes + suffix + NUL = 255 bytes.
+# p_filesz includes the NUL terminator.
+suffix = b"lib64/ld-linux-x86-64.so.2"
+n_slashes = 228
+new_interp = b"/" * n_slashes + suffix + b"\x00"
+STANDARD = [b"/lib64/ld-linux-x86-64.so.2", b"/usr/lib64/ld-linux-x86-64.so.2"]
+patched = 0
+for root, _, files in os.walk(out):
+    for name in files:
+        path = os.path.join(root, name)
+        if os.path.islink(path) or not os.path.isfile(path):
+            continue
+        try:
+            with open(path, "rb") as f:
+                data = bytearray(f.read())
+        except (PermissionError, OSError):
+            continue
+        if data[:4] != b"\x7fELF" or data[4] != 2 or data[5] != 1:
+            continue
+        e_phoff = struct.unpack_from("<Q", data, 32)[0]
+        e_phentsize = struct.unpack_from("<H", data, 54)[0]
+        e_phnum = struct.unpack_from("<H", data, 56)[0]
+        for i in range(e_phnum):
+            off = e_phoff + i * e_phentsize
+            if struct.unpack_from("<I", data, off)[0] != 3:
+                continue
+            p_offset = struct.unpack_from("<Q", data, off + 8)[0]
+            p_filesz = struct.unpack_from("<Q", data, off + 32)[0]
+            end = data.find(0, p_offset)
+            if end < 0:
+                break
+            old_interp = data[p_offset:end]
+            if old_interp not in STANDARD:
+                break
+            if len(new_interp) <= p_filesz:
+                data[p_offset:p_offset + len(new_interp)] = new_interp
+                for j in range(len(new_interp), p_filesz):
+                    data[p_offset + j] = 0
+            else:
+                new_off = len(data)
+                data.extend(new_interp)
+                struct.pack_into("<Q", data, off + 8, new_off)
+                struct.pack_into("<Q", data, off + 32, len(new_interp))
+                struct.pack_into("<Q", data, off + 40, len(new_interp))
+            os.chmod(path, 0o755)
+            with open(path, "wb") as f:
+                f.write(data)
+            patched += 1
+            break
+print(f"Patched interp in {patched} binaries")
+PYEOF
+fi
+""",
 )

@@ -5,7 +5,8 @@ Produces PackageInfo so outputs can feed through stamp_package /
 ima_sign_package transforms from defs/rules/transforms.bzl.
 """
 
-load("//defs:providers.bzl", "PackageInfo")
+load("//defs:providers.bzl", "BuildToolchainInfo", "PackageInfo")
+load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS")
 
 def _test_c_binary_impl(ctx):
     """Compile a single C file into an install layout."""
@@ -20,15 +21,34 @@ set -e
 OUT="$1"; shift
 SRC="$1"; shift
 mkdir -p "$OUT/usr/bin"
-cc "$@" -o "$OUT/usr/bin/{binary}" "$SRC"
+# Absolutize relative buck-out paths in CC so GCC specs %R produces
+# correct absolute interpreter paths in the binary.
+_CC=""
+for _w in $CC; do
+    case "$_w" in
+        --sysroot=buck-out*|-specs=buck-out*)
+            _f="${{_w%%=*}}="
+            _p="${{_w#*=}}"
+            _CC="$_CC ${{_f}}$(pwd)/$_p"
+            ;;
+        *) _CC="$_CC $_w" ;;
+    esac
+done
+CC=$_CC
+$CC "$@" -o "$OUT/usr/bin/{binary}" "$SRC"
 """.format(binary = ctx.attrs.binary_name),
         is_executable = True,
     )
 
+    tc = ctx.attrs._toolchain[BuildToolchainInfo]
     cmd = cmd_args(script, output.as_output(), src)
     cmd.add(ctx.attrs.cflags)
 
-    ctx.actions.run(cmd, category = "test_compile", identifier = ctx.attrs.name)
+    env = {"CC": cmd_args(tc.cc.args, delimiter = " ")}
+    if tc.host_bin_dir:
+        env["PATH"] = tc.host_bin_dir
+
+    ctx.actions.run(cmd, category = "test_compile", identifier = ctx.attrs.name, env = env)
 
     return [
         DefaultInfo(default_output = output),
@@ -61,7 +81,7 @@ test_c_binary = rule(
         "binary_name": attrs.string(),
         "version": attrs.string(default = "0.1.0"),
         "cflags": attrs.list(attrs.string(), default = []),
-    },
+    } | TOOLCHAIN_ATTRS,
 )
 
 def _test_c_library_impl(ctx):
@@ -77,15 +97,33 @@ set -e
 OUT="$1"; shift
 SRC="$1"; shift
 mkdir -p "$OUT/usr/lib64"
-cc -shared -fPIC "$@" -o "$OUT/usr/lib64/{lib}" "$SRC"
+# Absolutize relative buck-out paths in CC (see test_c_binary).
+_CC=""
+for _w in $CC; do
+    case "$_w" in
+        --sysroot=buck-out*|-specs=buck-out*)
+            _f="${{_w%%=*}}="
+            _p="${{_w#*=}}"
+            _CC="$_CC ${{_f}}$(pwd)/$_p"
+            ;;
+        *) _CC="$_CC $_w" ;;
+    esac
+done
+CC=$_CC
+$CC -shared -fPIC "$@" -o "$OUT/usr/lib64/{lib}" "$SRC"
 """.format(lib = ctx.attrs.lib_name),
         is_executable = True,
     )
 
+    tc = ctx.attrs._toolchain[BuildToolchainInfo]
     cmd = cmd_args(script, output.as_output(), src)
     cmd.add(ctx.attrs.cflags)
 
-    ctx.actions.run(cmd, category = "test_compile", identifier = ctx.attrs.name)
+    env = {"CC": cmd_args(tc.cc.args, delimiter = " ")}
+    if tc.host_bin_dir:
+        env["PATH"] = tc.host_bin_dir
+
+    ctx.actions.run(cmd, category = "test_compile", identifier = ctx.attrs.name, env = env)
 
     return [
         DefaultInfo(default_output = output),
@@ -118,5 +156,5 @@ test_c_library = rule(
         "lib_name": attrs.string(),
         "version": attrs.string(default = "0.1.0"),
         "cflags": attrs.list(attrs.string(), default = []),
-    },
+    } | TOOLCHAIN_ATTRS,
 )

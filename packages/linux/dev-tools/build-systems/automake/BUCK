@@ -57,7 +57,7 @@ WRAPPER_EOF
         for real in "\\$BINDIR"/*.real; do
             [ -f "\\$real" ] || continue
             head -1 "\\$real" | grep -q '/perl' || continue
-            sed -i '1s|#!.*/perl.*|#!/usr/bin/env perl|' "\\$real"
+            sed -i '1 s|.*|#!/usr/bin/env perl|' "\\$real"
         done
 
         # Wrap automake and automake-$VER
@@ -83,6 +83,9 @@ WRAPPER_EOF
     ],
     deps = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+    ],
+    host_deps = [
+        "//packages/linux/lang/perl:perl",
     ],
     visibility = ["PUBLIC"],
 )

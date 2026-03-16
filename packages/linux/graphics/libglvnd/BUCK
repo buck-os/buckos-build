@@ -3,23 +3,20 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "meson",
     name = "libglvnd",
-    version = "1.4.0",
-    use_configure = {
-        "X": ("--with-x", "--without-x"),
-    },
-    url = "https://gitlab.freedesktop.org/glvnd/libglvnd/-/archive/v1.4.0/libglvnd-v1.4.0.tar.gz",
-    sha256 = "33b8b993adf47a21bc1c46bcf970927edeb9884390d5b09b1aed051d600c0b2f",
+    version = "1.7.0",
+    url = "https://gitlab.freedesktop.org/glvnd/libglvnd/-/archive/v1.7.0/libglvnd-v1.7.0.tar.gz",
+    sha256 = "2b6e15b06aafb4c0b6e2348124808cbd9b291c647299eaaba2e3202f51ff2f3d",
+    description = "GL Vendor-Neutral Dispatch library",
+    homepage = "https://gitlab.freedesktop.org/glvnd/libglvnd",
+    license = "MIT",
     configure_args = [
-        "-Dasm=enabled",
-        "-Dx11=enabled",
-        "-Dglx=enabled",
+        # Disable X11/GLX to avoid X11 dependency; EGL/GLES suffice for Wayland
+        "-Dx11=disabled",
+        "-Dglx=disabled",
         "-Degl=true",
         "-Dgles1=true",
         "-Dgles2=true",
+        "-Dasm=enabled",
     ],
-    deps = [
-        "//packages/linux/graphics/xorg/libs/libx11:libx11",
-        "//packages/linux/graphics/xorg/libs/libxext:libxext",
-        "//packages/linux/graphics/xorg/protos/glproto:glproto",
-    ],
+    visibility = ["PUBLIC"],
 )

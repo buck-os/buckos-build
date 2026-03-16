@@ -15,7 +15,7 @@ import subprocess
 import sys
 import tempfile
 
-from _env import sanitize_global_env
+from _env import derive_lib_paths, sanitize_global_env, sysroot_lib_paths
 
 
 def main():
@@ -71,6 +71,8 @@ def main():
                         help="Set PATH to only these dirs (replaces host PATH, repeatable)")
     parser.add_argument("--hermetic-empty", action="store_true",
                         help="Start with empty PATH (populated by --path-prepend)")
+    parser.add_argument("--ld-linux", default=None,
+                        help="Buckos ld-linux path (disables posix_spawn)")
     parser.add_argument("--path-prepend", action="append", dest="path_prepend", default=[],
                         help="Directory to prepend to PATH (repeatable, resolved to absolute)")
     args = parser.parse_args()
@@ -108,6 +110,51 @@ def main():
         prepend = ":".join(os.path.abspath(p) for p in args.path_prepend if os.path.isdir(p))
         if prepend:
             os.environ["PATH"] = prepend + ":" + os.environ.get("PATH", "")
+
+    # Derive LD_LIBRARY_PATH and BISON_PKGDATADIR from bin dirs
+    if args.hermetic_path:
+        derive_lib_paths(args.hermetic_path, os.environ)
+    if args.path_prepend:
+        derive_lib_paths(args.path_prepend, os.environ)
+
+    if args.ld_linux:
+        sysroot_lib_paths(args.ld_linux, os.environ)
+
+    # Derive LIBRARY_PATH and C_INCLUDE_PATH from hermetic bin dirs so
+    # the seed's native gcc (HOSTCC) can find seed-provided libraries
+    # like zlib and libelf when building kernel host tools (resolve_btfids).
+    # CC (the cross-compiler) has its own --sysroot and ignores these.
+    #
+    # Set C_INCLUDE_PATH and LIBRARY_PATH from hermetic PATH dirs so
+    # HOSTCC finds headers and libs from seed host-tools (glibc, zlib,
+    # elfutils, etc.) instead of the host system.
+    _all_bin_dirs = (args.hermetic_path or []) + (args.path_prepend or [])
+    _lib_parts, _inc_parts = [], []
+    for bin_dir in _all_bin_dirs:
+        parent = os.path.dirname(os.path.abspath(bin_dir))
+        # Check both flat layout (<prefix>/bin → <prefix>/usr/include)
+        # and FHS layout (<prefix>/usr/bin → <prefix>/usr/include)
+        search_roots = [parent]
+        grandparent = os.path.dirname(parent)
+        if os.path.basename(parent) in ("usr", "local"):
+            search_roots.append(grandparent)
+        for root in search_roots:
+            for ld in ("usr/lib64", "usr/lib", "lib64", "lib"):
+                d = os.path.join(root, ld)
+                if os.path.isdir(d) and d not in _lib_parts:
+                    _lib_parts.append(d)
+            for inc in ("usr/include", "include"):
+                d = os.path.join(root, inc)
+                if os.path.isdir(d) and d not in _inc_parts:
+                    _inc_parts.append(d)
+    # Note: cross-toolchain sysroot paths are intentionally NOT added
+    # here.  HOSTCC gets all headers from host-tools (glibc, linux-headers,
+    # zlib, elfutils) via C_INCLUDE_PATH above.  The cross-compiler (CC)
+    # has its own --sysroot and ignores these env vars.
+    if _lib_parts:
+        os.environ["LIBRARY_PATH"] = ":".join(_lib_parts)
+    if _inc_parts:
+        os.environ["C_INCLUDE_PATH"] = ":".join(_inc_parts)
 
     os.environ.setdefault("KBUILD_BUILD_TIMESTAMP", "Thu Jan  1 00:00:00 UTC 1970")
     os.environ.setdefault("KBUILD_BUILD_USER", "buckos")
@@ -171,8 +218,15 @@ def main():
         make_cmd.append(f"KCFLAGS={args.kcflags}")
     if args.cross_compile:
         make_cmd.append(f"CROSS_COMPILE={args.cross_compile}")
+    # HOSTCC headers/libs come from C_INCLUDE_PATH and LIBRARY_PATH
+    # (set above from hermetic PATH bin dirs).  The seed's gcc-native
+    # has --disable-fixincludes so there's no include-fixed conflict.
+    # All HOSTCC deps (glibc, linux-headers, zlib, elfutils) must be
+    # in tc/bootstrap/host-tools/packages.bzl.
     if cc_override:
         make_cmd.extend(cc_override)
+    _hostcflags = []
+    _hostldflags = []
     for flag in args.make_flags:
         # Resolve relative buck-out paths in KEY=VALUE flags so they
         # work when make runs in the build tree directory.
@@ -182,7 +236,7 @@ def main():
             resolved = []
             for t in tokens:
                 # Handle --sysroot=path and bare path tokens
-                for prefix in ("--sysroot=", "-I", "-L"):
+                for prefix in ("--sysroot=", "-specs=", "-I", "-L", "-Wl,-rpath-link,"):
                     if t.startswith(prefix):
                         path = t[len(prefix):]
                         if not os.path.isabs(path) and (path.startswith("buck-out") or os.path.exists(path)):
@@ -192,9 +246,39 @@ def main():
                     if not os.path.isabs(t) and (t.startswith("buck-out") or os.path.exists(t)):
                         t = os.path.abspath(t)
                 resolved.append(t)
-            make_cmd.append(f"{key}={' '.join(resolved)}")
+            if key in ("CC", "CXX", "HOSTCC", "HOSTCXX") and len(resolved) > 1:
+                # Kernel/make quotes "$CC"/"$HOSTCC" so multi-word values
+                # fail.  Split into binary + flags.  Extra flags go into
+                # HOSTCFLAGS/HOSTLDFLAGS for HOSTCC.
+                make_cmd.append(f"{key}={resolved[0]}")
+                if key.startswith("HOST"):
+                    _extra_flags = " ".join(resolved[1:])
+                    _hostcflags.append(_extra_flags)
+                    _hostldflags.append(_extra_flags)
+            else:
+                make_cmd.append(f"{key}={' '.join(resolved)}")
         else:
             make_cmd.append(flag)
+
+    # Merge HOSTCC-split flags into existing HOSTCFLAGS/HOSTLDFLAGS.
+    # The loop above may have already appended HOSTCFLAGS=... from make_flags;
+    # update those entries to include the HOSTCC-derived flags.
+    if _hostcflags or _hostldflags:
+        _new_make_cmd = []
+        _found_hcf = _found_hlf = False
+        for _mc in make_cmd:
+            if _mc.startswith("HOSTCFLAGS=") and _hostcflags:
+                _mc = _mc + " " + " ".join(_hostcflags)
+                _found_hcf = True
+            elif _mc.startswith("HOSTLDFLAGS=") and _hostldflags:
+                _mc = _mc + " " + " ".join(_hostldflags)
+                _found_hlf = True
+            _new_make_cmd.append(_mc)
+        if not _found_hcf and _hostcflags:
+            _new_make_cmd.append(f"HOSTCFLAGS={' '.join(_hostcflags)}")
+        if not _found_hlf and _hostldflags:
+            _new_make_cmd.append(f"HOSTLDFLAGS={' '.join(_hostldflags)}")
+        make_cmd = _new_make_cmd
 
     # Configure
     config_file = os.path.abspath(args.config) if args.config else ""
@@ -331,10 +415,14 @@ def _gcc14_workaround(build_dir):
     os.makedirs(wrapper_dir, exist_ok=True)
     wrapper_path = os.path.join(wrapper_dir, "gcc")
     with open(wrapper_path, "w") as f:
-        f.write(f"#!/bin/bash\nexec {gcc_path} \"$@\" -std=gnu11\n")
+        f.write(
+            '#!/usr/bin/env python3\n'
+            'import os, sys\n'
+            f'os.execv("{gcc_path}", ["{gcc_path}"] + sys.argv[1:] + ["-std=gnu11"])\n'
+        )
     os.chmod(wrapper_path, 0o755)
 
-    return [f"CC={wrapper_path}", f"HOSTCC={wrapper_path}"]
+    return [f"CC={wrapper_path}"]
 
 
 def _copy_output(build_dir, rel_path, output_path):

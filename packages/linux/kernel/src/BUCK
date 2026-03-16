@@ -1,69 +1,38 @@
-load("//defs/rules:source.bzl", "extract_source")
+load("//defs:package.bzl", "package")
 
 # Linux Kernel Source Packages
-# Updated: 2025-12-06
 
 # Mainline - Latest development kernel
-http_file(
-    name = "linux-6.18-archive",
-    urls = ["https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.18.tar.xz"],
+package(
+    name = "linux-6.18",
+    build_rule = "binary",
+    version = "6.18",
+    url = "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.18.tar.xz",
     sha256 = "9106a4605da9e31ff17659d958782b815f9591ab308d03b0ee21aad6c7dced4b",
-)
-
-extract_source(
-    name = "linux-6.18-src",
-    source = ":linux-6.18-archive",
-    strip_components = 1,
     format = "tar.xz",
-)
-
-# Stable - Latest stable kernel
-http_file(
-    name = "linux-6.17-archive",
-    urls = ["https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.17.10.tar.xz"],
-    sha256 = "fa7f344f3a50dad0af2e0066d51bd3b9183fd24587861042343ded3d1fd5c8cd",
-)
-
-extract_source(
-    name = "linux-6.17-src",
-    source = ":linux-6.17-archive",
-    strip_components = 1,
-    format = "tar.xz",
+    description = "Linux kernel source (mainline)",
+    homepage = "https://kernel.org/",
+    license = "GPL-2.0",
+    install_script = "true",
 )
 
 # LTS - Long Term Support (6.12.x series)
 # Supported until December 2026
-http_file(
-    name = "linux-6.12-archive",
-    urls = ["https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.60.tar.xz"],
+package(
+    name = "linux-6.12",
+    build_rule = "binary",
+    version = "6.12.60",
+    url = "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.60.tar.xz",
     sha256 = "a63096b2147411d683cecbf87622bb2ff4885bac2b3641d3d4f10250c89cdcf8",
-)
-
-extract_source(
-    name = "linux-6.12-src",
-    source = ":linux-6.12-archive",
-    strip_components = 1,
     format = "tar.xz",
+    description = "Linux kernel source (LTS)",
+    homepage = "https://kernel.org/",
+    license = "GPL-2.0",
+    install_script = "true",
 )
 
-# Default alias points to stable (recommended for most users)
-alias(
-    name = "linux-src",
-    actual = ":linux-6.17-src",
-)
-
-# Convenience aliases
-alias(
-    name = "linux-mainline-src",
-    actual = ":linux-6.18-src",
-)
-
-alias(
-    name = "linux-stable-src",
-    actual = ":linux-6.17-src",
-)
-
-alias(
-    name = "linux-lts-src",
-    actual = ":linux-6.12-src",
-)
+# Default alias — all kernel builds use this
+alias(name = "linux-src", actual = ":linux-6.18-src")
+alias(name = "linux-mainline-src", actual = ":linux-6.18-src")
+alias(name = "linux-stable-src", actual = ":linux-6.18-src")
+alias(name = "linux-lts-src", actual = ":linux-6.12-src")

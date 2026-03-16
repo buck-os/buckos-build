@@ -62,7 +62,52 @@ _MIRROR_BASE_URL = read_config("mirror", "base_url", "")
 _MIRROR_VENDOR_DIR = read_config("mirror", "vendor_dir", "")
 _MIRROR_PREFIX = read_config("mirror", "prefix", "")
 _MIRROR_PARAMS = read_config("mirror", "params", "")
-_MIRROR_PREPEND_NAME = read_config("mirror", "prepend_name", "true") == "true"
+_MIRROR_COMPOUND_EXTS = (".tar.gz", ".tar.xz", ".tar.bz2", ".tar.zst", ".tar.lz4", ".tar.lz")
+
+# ── Seed detection (read once at module load) ─────────────────────────
+# Seed present: seed_path (local archive) or seed_url (remote).
+# When a seed is present, its host-tools/bin provides build tools
+# via hermetic PATH.  When absent, tools are built from source.
+_HAS_PREBUILT_SEED = bool(
+    read_config("buckos", "seed_path", "") or
+    read_config("buckos", "seed_url", ""),
+)
+_SOURCE_MODE = not _HAS_PREBUILT_SEED
+
+# ── Compiler cache configuration (read once at module load) ───────────
+_CACHE_MODE = read_config("buckos.cache", "mode", "enabled")
+_CACHE_LOCATION = read_config("buckos.cache", "location", "homedir")
+_CCACHE_SIZE = read_config("buckos.cache", "ccache_size", "100G")
+_SCCACHE_SIZE = read_config("buckos.cache", "sccache_size", "100G")
+_CACHE_ENABLED = _CACHE_MODE == "enabled"
+
+def _cache_env(build_rule, name = ""):
+    """Return env dict entries for ccache/sccache when caching is enabled."""
+    if not _CACHE_ENABLED:
+        return {}
+    _CACHE_BLOCKLIST = ("ccache", "sccache")
+    if name in _CACHE_BLOCKLIST:
+        return {}
+    ccache_dir = ".buckos/cache/ccache" if _CACHE_LOCATION == "projectdir" else "~/.buckos/caches/ccache"
+    sccache_dir = ".buckos/cache/sccache" if _CACHE_LOCATION == "projectdir" else "~/.buckos/caches/sccache"
+    env = {
+        "BUCKOS_CCACHE": "1",
+        "CCACHE_DIR": ccache_dir,
+        "CCACHE_COMPILERCHECK": "content",
+        "CCACHE_NOHASHDIR": "1",
+        "CCACHE_MAXSIZE": _CCACHE_SIZE,
+        "CCACHE_SLOPPINESS": "pch_defines,time_macros,include_file_mtime",
+    }
+    if build_rule in ("cargo", "mozbuild"):
+        env.update({
+            "BUCKOS_SCCACHE": "1",
+            "SCCACHE_DIR": sccache_dir,
+            "SCCACHE_CACHE_SIZE": _SCCACHE_SIZE,
+            "SCCACHE_IDLE_TIMEOUT": "0",
+            # buck-out paths exceed the 108-char Unix socket limit
+            "SCCACHE_SERVER_UDS": "/tmp/buckos-sccache.sock",
+        })
+    return env
 
 
 def _merge_private_registry(name, patches, configure_args, extra_cflags):
@@ -150,8 +195,8 @@ def package(
     if local_only:
         if "source" not in build_kwargs and not filename:
             fail("local_only package '{}' requires 'filename' (no url to derive it from)".format(name))
-    elif url == None:
-        fail("package '{}' requires 'url' (or set local_only = True)".format(name))
+    elif url == None and "source" not in build_kwargs:
+        fail("package '{}' requires 'url', 'source', or local_only = True".format(name))
 
     # -- 1. Merge private patch registry ------------------------------------
     all_patches, all_configure_args, all_cflags = _merge_private_registry(
@@ -164,19 +209,18 @@ def package(
     # -- 1b. Auto-create source targets from inline parameters --------------
     _filename = filename or (url.rsplit("/", 1)[-1] if url else None)
 
-    if "source" not in build_kwargs:
-        # Provenance labels for download targets
+    _has_source = "source" in build_kwargs
+
+    # Create -archive target when url/sha256 are provided, even if
+    # source is already set (e.g. ca-certificates uses source to skip
+    # extraction while still needing the mirror-aware download).
+    if url and sha256:
         _dl_labels = ["buckos:download"]
-        if url:
-            _dl_host = url.split("://")[-1].split("/")[0]
-            _dl_labels.append("buckos:source:" + _dl_host)
-            _dl_labels.append("buckos:url:" + url)
-            _dl_labels.append("buckos:sig:none")
-        if sha256:
-            _dl_labels.append("buckos:sha256:" + sha256)
-        if local_only and not url:
-            _dl_labels.append("buckos:vendor:" + name)
-            _dl_labels.append("buckos:sig:none")
+        _dl_host = url.split("://")[-1].split("/")[0]
+        _dl_labels.append("buckos:source:" + _dl_host)
+        _dl_labels.append("buckos:url:" + url)
+        _dl_labels.append("buckos:sig:none")
+        _dl_labels.append("buckos:sha256:" + sha256)
 
         if _MIRROR_MODE == "vendor" and _MIRROR_VENDOR_DIR:
             native.export_file(
@@ -184,49 +228,64 @@ def package(
                 src = "{}/{}".format(_MIRROR_VENDOR_DIR, _filename),
                 labels = _dl_labels,
             )
-        elif local_only:
-            # Stub target that exists in the graph but fails at build time.
-            # Allows graph queries (buck2 targets //...) to succeed while
-            # making it clear the package needs vendor mode to build.
+        elif _MIRROR_PREFIX:
+            _ext = ""
+            for _ce in _MIRROR_COMPOUND_EXTS:
+                if _filename.endswith(_ce):
+                    _ext = _ce
+                    break
+            if not _ext:
+                _ext = "." + _filename.rsplit(".", 1)[-1] if "." in _filename else ""
+            _dl_filename = "{}-{}-{}{}".format(name, version, sha256[:12], _ext)
+
+            _url = "{}/{}/{}{}".format(
+                _MIRROR_PREFIX,
+                name[0],
+                _dl_filename,
+                _MIRROR_PARAMS,
+            )
+
+            native.http_file(
+                name = name + "-archive",
+                urls = [_url],
+                sha256 = sha256,
+                out = _dl_filename,
+                labels = _dl_labels,
+            )
+        else:
+            _urls = []
+            if _MIRROR_BASE_URL:
+                _urls.append("{}/{}".format(_MIRROR_BASE_URL, _filename))
+            _urls.append(url)
+            native.http_file(
+                name = name + "-archive",
+                urls = _urls,
+                sha256 = sha256,
+                out = _filename,
+                labels = _dl_labels,
+            )
+    elif not _has_source and local_only:
+        _dl_labels = ["buckos:download"]
+        if local_only and not url:
+            _dl_labels.append("buckos:vendor:" + name)
+            _dl_labels.append("buckos:sig:none")
+        if _MIRROR_MODE == "vendor" and _MIRROR_VENDOR_DIR:
+            native.export_file(
+                name = name + "-archive",
+                src = "{}/{}".format(_MIRROR_VENDOR_DIR, _filename),
+                labels = _dl_labels,
+            )
+        else:
             native.genrule(
                 name = name + "-archive",
                 out = _filename,
                 cmd = "echo 'ERROR: local_only package \"{}\" requires mirror.mode=vendor (or provide source explicitly)' >&2 && exit 1".format(name),
                 labels = _dl_labels,
             )
-        else:
-            if _MIRROR_PREFIX:
-                _dl_filename = _filename
-                if _MIRROR_PREPEND_NAME and name not in _dl_filename:
-                    _dl_filename = name + "-" + _dl_filename
 
-                _url = "{}/{}/{}{}".format(
-                    _MIRROR_PREFIX,
-                    name[0],
-                    _dl_filename,
-                    _MIRROR_PARAMS,
-                )
-
-                native.http_file(
-                    name = name + "-archive",
-                    urls = [_url],
-                    sha256 = sha256,
-                    out = _dl_filename,
-                    labels = _dl_labels,
-                )
-            else:
-                _urls = []
-                if _MIRROR_BASE_URL:
-                    _urls.append("{}/{}".format(_MIRROR_BASE_URL, _filename))
-                _urls.append(url)
-                native.http_file(
-                    name = name + "-archive",
-                    urls = _urls,
-                    sha256 = sha256,
-                    out = _filename,
-                    labels = _dl_labels,
-                )
-
+    # Create -src (extraction) and wire it up, unless source is
+    # already provided (e.g. for raw files that can't be extracted).
+    if not _has_source:
         extract_source(
             name = name + "-src",
             source = ":" + name + "-archive",
@@ -243,6 +302,34 @@ def package(
     if sha256 != None:
         build_kwargs.setdefault("src_sha256", sha256)
 
+    # -- Auto-create vendor deps for cargo packages in mirror mode -----------
+    # When the mirror/syncer provides vendored crate deps, auto-wire them
+    # so cargo packages build offline without pre-vendored source tarballs.
+    # The syncer generates vendor deps for all cargo packages (BUILD_RULE
+    # in BXL output) and uploads them alongside source archives.
+    # Pre-vendored packages (cloud-hypervisor) get redundant vendor deps
+    # but the --vendor-dir flag takes precedence over in-source vendor/.
+    if build_rule == "cargo" and "vendor_deps" not in build_kwargs and url and sha256:
+        _vendor_filename = "{}-{}-vendor.tar.zst".format(name, version)
+        _vendor_labels = ["buckos:download", "buckos:cargo-vendor"]
+        _have_vendor = False
+
+        if _MIRROR_MODE == "vendor" and _MIRROR_VENDOR_DIR:
+            native.export_file(
+                name = name + "-vendor-archive",
+                src = "{}/{}".format(_MIRROR_VENDOR_DIR, _vendor_filename),
+                labels = _vendor_labels,
+            )
+            _have_vendor = True
+
+        if _have_vendor:
+            extract_source(
+                name = name + "-vendor-src",
+                source = ":" + name + "-vendor-archive",
+                strip_components = 1,
+            )
+            build_kwargs["vendor_deps"] = ":" + name + "-vendor-src"
+
     # -- Auto-inject build host tools for isolation from host /usr/bin --------
     # Without this, configure/make/ninja find host python, perl, sh, sed,
     # coreutils, etc.  Host python crashes on ABI mismatches; host tools
@@ -257,11 +344,16 @@ def package(
         "coreutils", "findutils", "sed", "gawk", "grep",
         "diffutils", "patch", "tar", "gzip", "xz", "bzip2",
         "m4", "pkg-config", "meson", "ninja", "cmake",
+        # Compiler caches (prevent self-cycles)
+        "ccache", "sccache",
         # Deps of the above (would create cycles if injected)
         "zlib", "expat", "libffi", "ncurses", "readline", "pcre2",
         "sqlite",  # dep of python-host (_sqlite3)
         "acl", "attr", "libcap", "gettext", "autoconf", "automake", "libtool",
+        "libxcrypt", "help2man",
+        "fmt", "xxhash",  # deps of ccache
     )
+
     _CONFIGURABLE_RULES = ("autotools", "meson", "cmake", "mozbuild")
     _auto_tool_deps = []
     if name not in _TOOL_BLOCKLIST and build_rule in _CONFIGURABLE_RULES:
@@ -298,18 +390,61 @@ def package(
                 "//packages/linux/dev-tools/build-systems/cmake:cmake",
                 "//packages/linux/dev-tools/build-systems/ninja:ninja",
             ])
+        # Compiler caches when [buckos.cache] mode = enabled.
+        # ccache for C/C++ (all configurable rules), sccache for Rust.
+        # Separate blocklist for cache tools — ccache's own deps (zstd)
+        # must not get ccache injected (cycle), but still get their
+        # normal build tools (meson, ninja, etc.).
+        _CACHE_BLOCKLIST = _TOOL_BLOCKLIST + ("zstd",)
+        if _CACHE_ENABLED and name not in _CACHE_BLOCKLIST:
+            _auto_tool_deps.append(
+                "//packages/linux/dev-tools/dev-utils/ccache:ccache",
+            )
+        if _CACHE_ENABLED and name not in _CACHE_BLOCKLIST and build_rule in ("cargo", "mozbuild"):
+            _auto_tool_deps.append(
+                "//packages/linux/dev-tools/dev-utils/sccache:sccache",
+            )
+
+    # Auto-inject build host tools.  In source mode, tools must be built
+    # as exec_deps since the host may not have them.  With a prebuilt
+    # seed, the seed's hermetic PATH provides tools — auto_tool_deps
+    # are only needed in source mode.
+    raw_host_deps = build_kwargs.pop("host_deps", [])
+
+    # In bootstrap/host-tools mode, ALL host tools come from host PATH —
+    # explicit host_deps would create cycles back to seed-exec-toolchain
+    # via their exec_dep resolution.
+    if _SOURCE_MODE and (type(raw_host_deps) == "Select" or raw_host_deps):
+        raw_host_deps = select({
+            "//tc/exec:is-bootstrap-mode": [],
+            "//tc/exec:is-host-tools-mode": [],
+            "DEFAULT": raw_host_deps,
+        })
+
     if _auto_tool_deps:
-        raw_host_deps = build_kwargs.pop("host_deps", [])
-        if type(raw_host_deps) == "Select":
-            all_host_deps = raw_host_deps
-            for td in _auto_tool_deps:
-                all_host_deps = all_host_deps + [td]
+        if _SOURCE_MODE:
+            # In bootstrap/host-tools mode, tools come from host PATH —
+            # no exec_deps needed.  Injecting them would create a cycle:
+            # seed-toolchain → host-tools → package → auto_tool_dep
+            # (exec) → seed-toolchain.
+            staged_auto_deps = select({
+                "//tc/exec:is-bootstrap-mode": [],
+                "//tc/exec:is-host-tools-mode": [],
+                "DEFAULT": _auto_tool_deps,
+            })
         else:
-            all_host_deps = list(raw_host_deps)
-            for td in _auto_tool_deps:
-                if td not in all_host_deps:
-                    all_host_deps.append(td)
+            # With a prebuilt seed, hermetic PATH provides tools.
+            staged_auto_deps = []
+        # staged_auto_deps may be a select — always merge it
+        if type(raw_host_deps) == "Select":
+            all_host_deps = raw_host_deps + staged_auto_deps
+        elif raw_host_deps:
+            all_host_deps = list(raw_host_deps) + staged_auto_deps
+        else:
+            all_host_deps = staged_auto_deps
         build_kwargs["host_deps"] = all_host_deps
+    elif type(raw_host_deps) == "Select" or raw_host_deps:
+        build_kwargs["host_deps"] = raw_host_deps
 
     # -- 2. Resolve USE-conditional deps -------------------------------------
     raw_deps = build_kwargs.pop("deps", [])
@@ -389,6 +524,15 @@ def package(
 
     _all_labels = _auto_labels + build_kwargs.pop("labels", [])
     build_kwargs["labels"] = _all_labels
+
+    # -- Inject compiler cache env vars (ccache/sccache) ---------------------
+    _cache = _cache_env(build_rule, name)
+    if _cache:
+        _existing_env = build_kwargs.pop("env", {})
+        # Cache env vars go first, package-specific env can override
+        _merged_env = dict(_cache)
+        _merged_env.update(_existing_env)
+        build_kwargs["env"] = _merged_env
 
     # -- 4. Create the build target -----------------------------------------
     build_target = name + "-build"

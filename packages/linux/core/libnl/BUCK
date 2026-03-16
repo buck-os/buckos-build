@@ -14,6 +14,10 @@ package(
         # sources use time/strftime without including time.h.
         "for f in lib/socket.c lib/xfrm/*.c; do grep -qE 'strftime|\\btime\\(' \"$f\" && sed -i '1i #include <time.h>' \"$f\" || true; done",
     ],
+    host_deps = [
+        "//packages/linux/dev-tools/dev-utils/flex:flex",
+        "//packages/linux/dev-tools/dev-utils/bison:bison",
+    ],
     use_configure = {
         "cli": ("--enable-cli", "--disable-cli"),
         "debug": ("--enable-debug", "--disable-debug"),

@@ -27,7 +27,7 @@ AARCH64 = "aarch64-buckos-linux-gnu"
 
 bootstrap_binutils(
     name = "cross-binutils-aarch64",
-    source = "//tc/bootstrap/stage1:binutils-src",
+    source = "//tc/bootstrap/sources:binutils-src",
     target_triple = AARCH64,
     visibility = ["PUBLIC"],
 )
@@ -36,7 +36,7 @@ bootstrap_binutils(
 
 bootstrap_linux_headers(
     name = "cross-linux-headers-aarch64",
-    source = "//tc/bootstrap/stage1:linux-src",
+    source = "//tc/bootstrap/sources:linux-src",
     kernel_arch = "arm64",
     visibility = ["PUBLIC"],
 )
@@ -45,10 +45,10 @@ bootstrap_linux_headers(
 
 bootstrap_gcc(
     name = "cross-gcc-aarch64-pass1",
-    source = "//tc/bootstrap/stage1:gcc-src",
-    gmp_source = "//tc/bootstrap/stage1:gmp-src",
-    mpfr_source = "//tc/bootstrap/stage1:mpfr-src",
-    mpc_source = "//tc/bootstrap/stage1:mpc-src",
+    source = "//tc/bootstrap/sources:gcc-src",
+    gmp_source = "//tc/bootstrap/sources:gmp-src",
+    mpfr_source = "//tc/bootstrap/sources:mpfr-src",
+    mpc_source = "//tc/bootstrap/sources:mpc-src",
     binutils = ":cross-binutils-aarch64",
     libc_headers = ":cross-linux-headers-aarch64",
     languages = "c",
@@ -64,7 +64,7 @@ bootstrap_gcc(
 
 bootstrap_glibc(
     name = "cross-glibc-aarch64",
-    source = "//tc/bootstrap/stage1:glibc-src",
+    source = "//tc/bootstrap/sources:glibc-src",
     compiler = ":cross-gcc-aarch64-pass1",
     binutils = ":cross-binutils-aarch64",
     linux_headers = ":cross-linux-headers-aarch64",
@@ -78,10 +78,10 @@ bootstrap_glibc(
 
 bootstrap_gcc(
     name = "cross-gcc-aarch64-pass2",
-    source = "//tc/bootstrap/stage1:gcc-src",
-    gmp_source = "//tc/bootstrap/stage1:gmp-src",
-    mpfr_source = "//tc/bootstrap/stage1:mpfr-src",
-    mpc_source = "//tc/bootstrap/stage1:mpc-src",
+    source = "//tc/bootstrap/sources:gcc-src",
+    gmp_source = "//tc/bootstrap/sources:gmp-src",
+    mpfr_source = "//tc/bootstrap/sources:mpfr-src",
+    mpc_source = "//tc/bootstrap/sources:mpc-src",
     binutils = ":cross-binutils-aarch64",
     libc_dep = ":cross-glibc-aarch64",
     libc_headers = ":cross-linux-headers-aarch64",

@@ -14,30 +14,100 @@ package(
     homepage = "https://www.perl.org/",
     license = "Artistic-1.0-Perl OR GPL-1.0-or-later",
     # Perl uses its own Configure script (capital C), not autotools.
-    # Perl Configure compiles and RUNS test programs, so it CANNOT cross-compile
-    # inside the network-isolated mount namespace (host gcc can't link against
-    # sysroot's glibc). Build with host compiler instead.
+    # Pass -Dcc/-Dld to force Configure to use our GCC (with specs) so
+    # the output perl binary gets padded interp + $ORIGIN RPATH.
+    # Test programs and perl itself run at build time via the host
+    # ld-linux (padded path collapses to /lib64/ld-linux-*) and
+    # $ORIGIN RPATH resolves correctly relative to the binary.
     install_script = """
+set -e
 cd "$SRCS"
 
+# Force clean extension state — buck2 reuses tmp dirs across runs,
+# so stale extension Makefiles (with incorrect processPL targets)
+# and pm_to_blib markers persist.  Without this, make skips
+# extension rebuilds and Pod-Usage/blib/script/pod2usage is missing.
+make distclean 2>/dev/null || true
+
 chmod +x Configure
+
+# Convert -L paths to -rpath so the perl binary can find dep libs at
+# runtime.  In stage 2 these are Buck-out paths (works on build host).
+# In stage 3, specs add $ORIGIN-relative RPATH directly.
+RPATH_FLAGS=""
+for flag in $LDFLAGS; do
+    case "$flag" in
+        -L*) RPATH_FLAGS="$RPATH_FLAGS -Wl,-rpath,${flag#-L}" ;;
+    esac
+done
+PERL_LDFLAGS="$LDFLAGS $RPATH_FLAGS"
+
+# Pass dep CFLAGS/LDFLAGS to Configure so it can find dep headers/libs
+# (e.g. libxcrypt, zlib).  Perl Configure ignores env LDFLAGS for its
+# test programs — must use -Dccflags/-Dldflags instead.
 ./Configure -des \
+    -Dcc="$CC" \
+    -Dld="$CC" \
+    -Dccflags="$CFLAGS" \
+    -Dldflags="$PERL_LDFLAGS" \
     -Dprefix=/usr \
     -Dvendorprefix=/usr \
     -Dman1dir=/usr/share/man/man1 \
     -Dman3dir=/usr/share/man/man3 \
     -Dusethreads \
-    -Duserelocatableinc
+    -Duserelocatableinc \
+    -Dinstallstyle=lib/perl5 \
+    -Dd_crypt=undef \
+    -Dlibs='-lpthread -ldl -lm -lutil -lc'
 
-# Override LD_RUN_PATH to prevent ExtUtils::MakeMaker from embedding
-# host library paths (e.g. /usr/lib64) as RUNPATH in XS .so modules.
-# Must be a make variable override — env var alone doesn't win.
-make LD_RUN_PATH= -j${MAKEOPTS:-$(nproc)}
+# Build everything sequentially — perl's cpan extensions have
+# undeclared inter-module deps that break under parallel make.
+make -j1
 
-make LD_RUN_PATH= DESTDIR="$OUT" install
+# Pod-Usage's auto-generated Makefile.PL uses glob('scripts/pod*.PL')
+# which sometimes returns empty, producing a Makefile without processPL.
+# If pod2usage wasn't generated, rebuild Pod-Usage with a fixed Makefile.
+if [ ! -f cpan/Pod-Usage/blib/script/pod2usage ] && [ -f cpan/Pod-Usage/scripts/pod2usage.PL ]; then
+    echo "Rebuilding Pod-Usage (processPL was empty)..." >&2
+    chmod -R u+w cpan/Pod-Usage 2>/dev/null || true
+    rm -rf cpan/Pod-Usage/blib cpan/Pod-Usage/Makefile cpan/Pod-Usage/pm_to_blib
+    cp cpan/Pod-Usage/scripts/pod2usage.PL cpan/Pod-Usage/pod2usage.PL
+    ./miniperl -Ilib make_ext.pl cpan/Pod-Usage/pm_to_blib MAKE="make" LIBPERL_A=libperl.a
+fi
+if [ ! -f cpan/Pod-Checker/blib/script/podchecker ] && [ -f cpan/Pod-Checker/scripts/podchecker.PL ]; then
+    echo "Rebuilding Pod-Checker (processPL was empty)..." >&2
+    chmod -R u+w cpan/Pod-Checker 2>/dev/null || true
+    rm -rf cpan/Pod-Checker/blib cpan/Pod-Checker/Makefile cpan/Pod-Checker/pm_to_blib
+    cp cpan/Pod-Checker/scripts/podchecker.PL cpan/Pod-Checker/podchecker.PL
+    ./miniperl -Ilib make_ext.pl cpan/Pod-Checker/pm_to_blib MAKE="make" LIBPERL_A=libperl.a
+fi
+
+# Create install dirs before make install
+mkdir -p "$OUT/usr/bin" "$OUT/usr/lib" "$OUT/usr/share/man/man1" "$OUT/usr/share/man/man3"
+
+# Create stub scripts to prevent installman abort — perl's processPL
+# for Pod-Usage/Pod-Checker intermittently fails to generate these.
+for ext in cpan/Pod-Usage cpan/Pod-Checker; do
+    for script in "$ext"/blib/script/*; do true; done  # ensure dir exists
+    mkdir -p "$ext/blib/script"
+    if [ -f "$ext/scripts/pod2usage.PL" ] && [ ! -f "$ext/blib/script/pod2usage" ]; then
+        echo '#!/usr/bin/perl' > "$ext/blib/script/pod2usage"
+        echo 'require Pod::Usage; Pod::Usage::pod2usage(@ARGV);' >> "$ext/blib/script/pod2usage"
+    fi
+    if [ -f "$ext/scripts/podchecker.PL" ] && [ ! -f "$ext/blib/script/podchecker" ]; then
+        echo '#!/usr/bin/perl' > "$ext/blib/script/podchecker"
+        echo 'require Pod::Checker; Pod::Checker::podchecker(@ARGV);' >> "$ext/blib/script/podchecker"
+    fi
+done
+
+make -j1 DESTDIR="$OUT" install
 """,
     deps = [
         "//packages/linux/core/zlib:zlib",
+        # libxcrypt omitted — perl is an auto_tool_dep, and libxcrypt
+        # needs perl at configure time.  Adding libxcrypt here creates
+        # a cycle: perl → libxcrypt → perl.  The crypt() function is
+        # not needed for build-tool perl usage.
     ],
     visibility = ["PUBLIC"],
 )
