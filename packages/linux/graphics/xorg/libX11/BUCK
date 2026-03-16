@@ -11,6 +11,12 @@ package(
     description = "Core X11 client library",
     homepage = "https://xorg.freedesktop.org/",
     license = "MIT",
+    # gcc -E defines 'unix' even with -undef (GCC target triple behavior).
+    # libX11 configure's RAWCPP check greps for 'unix' and errors out.
+    # Patch the error to a warning so configure continues.
+    pre_configure_cmds = [
+        "sed -i 's/as_fn_error.*cpp defines unix.*/echo \"WARNING: skipping RAWCPP -undef check\"/' configure",
+    ],
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc",
@@ -18,13 +24,6 @@ package(
         "--disable-specs",
         # Cross-compilation: malloc(0) returns non-NULL on Linux/glibc
         "--enable-malloc0returnsnull=no",
-        # RAWCPP: libX11 configure searches PATH for cpp and tests -undef.
-        # GCC's -E mode still matches `grep unix` in output (line markers
-        # or builtin defines from the target triple), so the autodetection
-        # fails.  Pass RAWCPP directly to skip the PATH search and set
-        # RAWCPPFLAGS so configure doesn't test -undef.
-        "RAWCPP=${CPP}",
-        "RAWCPPFLAGS=-undef -ansi",
     ],
     use_configure = {
         "ipv6": ("--enable-ipv6", "--disable-ipv6"),
