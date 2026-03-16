@@ -10,7 +10,7 @@ import os
 import subprocess
 import sys
 
-from _env import apply_cache_config, clean_env, preferred_linker_flag, setup_ccache_symlinks, sysroot_lib_paths
+from _env import apply_cache_config, clean_env, filter_path_flags, preferred_linker_flag, setup_ccache_symlinks, sysroot_lib_paths
 
 
 def _can_unshare_net():
@@ -91,6 +91,10 @@ def main():
                         help="Specific binary name to install (repeatable; default: all executables)")
     parser.add_argument("--vendor-dir", default=None,
                         help="Vendor directory containing pre-downloaded dependencies")
+    parser.add_argument("--pkg-config-file", default=None,
+                        help="File with PKG_CONFIG_PATH entries (one per line, from tset projection)")
+    parser.add_argument("--lib-dirs-file", default=None,
+                        help="File with lib dirs (one per line, from tset projection)")
     args = parser.parse_args()
 
     if not os.path.isdir(args.source_dir):
@@ -105,6 +109,36 @@ def main():
     target_dir = args.target_dir or os.path.join(args.source_dir, "target")
 
     env = clean_env()
+
+    # Read dep flag files (PKG_CONFIG_PATH, lib dirs from tset projections)
+    def _read_flag_file(path):
+        if not path or not os.path.isfile(path):
+            return []
+        with open(path) as f:
+            return [line.rstrip("\n") for line in f if line.strip()]
+
+    file_pkg_config = [p for p in _read_flag_file(args.pkg_config_file) if os.path.isdir(os.path.abspath(p))]
+    file_lib_dirs = _read_flag_file(args.lib_dirs_file)
+
+    # Set PKG_CONFIG_PATH from dep tset so cargo build scripts (e.g.
+    # openssl-sys) can find .pc files via pkg-config.
+    if file_pkg_config:
+        merged = ":".join(os.path.abspath(p) for p in file_pkg_config)
+        existing = env.get("PKG_CONFIG_PATH", "")
+        env["PKG_CONFIG_PATH"] = (merged + ":" + existing).rstrip(":") if existing else merged
+
+    # Set LIBRARY_PATH and LD_LIBRARY_PATH from dep lib dirs so linker
+    # and build scripts find dep shared libraries.
+    if file_lib_dirs:
+        resolved = [
+            os.path.abspath(d) for d in file_lib_dirs
+            if os.path.isdir(d) and not os.path.exists(os.path.join(os.path.abspath(d), "libc.so.6"))
+        ]
+        if resolved:
+            merged = ":".join(resolved)
+            for var in ("LIBRARY_PATH", "LD_LIBRARY_PATH"):
+                existing = env.get(var, "")
+                env[var] = (merged + ":" + existing).rstrip(":") if existing else merged
 
     for entry in args.extra_env:
         key, _, value = entry.partition("=")
@@ -187,7 +221,15 @@ def main():
         link_args = " ".join(f"-C link-arg={flag}" for flag in cc_parts[1:])
         _ld_flag = preferred_linker_flag(env)
         _fuse_ld = f'-C link-arg={_ld_flag}' if _ld_flag else ''
-        rustflags = f'-C linker={cc_bin} {link_args} {_fuse_ld}'.strip()
+        # Add dep lib dirs as -L flags so the linker finds dep shared
+        # libs (e.g. libssl.so from openssl dep).
+        _dep_link_dirs = ""
+        if file_lib_dirs:
+            _dep_link_dirs = " ".join(
+                f"-L native={os.path.abspath(d)}" for d in file_lib_dirs
+                if os.path.isdir(d) and not os.path.exists(os.path.join(os.path.abspath(d), "libc.so.6"))
+            )
+        rustflags = f'-C linker={cc_bin} {link_args} {_fuse_ld} {_dep_link_dirs}'.strip()
         env["RUSTFLAGS"] = rustflags
 
         # Create gcc/cc/clang symlinks so build scripts that invoke

@@ -10,13 +10,18 @@ Four discrete cacheable actions:
 """
 
 load("//defs:providers.bzl", "PackageInfo")
-load("//defs/rules:_common.bzl", "COMMON_PACKAGE_ATTRS", "build_package_tsets", "src_prepare")
+load("//defs/rules:_common.bzl",
+     "COMMON_PACKAGE_ATTRS",
+     "add_flag_file", "build_package_tsets", "collect_dep_tsets",
+     "collect_host_path_children", "src_prepare",
+     "write_lib_dirs_with_hosts", "write_pkg_config_paths",
+)
 load("//defs:toolchain_helpers.bzl", "toolchain_env_args", "toolchain_ld_linux_args", "toolchain_path_args")
 load("//defs:host_tools.bzl", "host_tool_path_args")
 
 # ── Phase helpers ─────────────────────────────────────────────────────
 
-def _cargo_build(ctx, source):
+def _cargo_build(ctx, source, pkg_config_file = None, lib_dirs_file = None):
     """Run cargo build --release via cargo_helper.py."""
     output = ctx.actions.declare_output("built", dir = True)
     cmd = cmd_args(ctx.attrs._cargo_tool[RunInfo])
@@ -32,6 +37,10 @@ def _cargo_build(ctx, source):
     # Add host_deps bin dirs to PATH
     for arg in host_tool_path_args(ctx):
         cmd.add(arg)
+
+    # Dep flags via tset projection files (PKG_CONFIG_PATH, lib dirs)
+    add_flag_file(cmd, "--pkg-config-file", pkg_config_file)
+    add_flag_file(cmd, "--lib-dirs-file", lib_dirs_file)
 
     # Inject toolchain CC/CXX/AR
     for env_arg in toolchain_env_args(ctx):
@@ -66,8 +75,13 @@ def _cargo_package_impl(ctx):
     # Phase 2: src_prepare — apply patches
     prepared = src_prepare(ctx, source, "cargo_prepare")
 
+    # Collect dep tsets for C library deps (openssl, zlib, etc.)
+    dep_compile, _dep_link, dep_path = collect_dep_tsets(ctx)
+    pkg_config_file = write_pkg_config_paths(ctx, dep_compile)
+    lib_dirs_file = write_lib_dirs_with_hosts(ctx, dep_path, collect_host_path_children(ctx))
+
     # Phase 3: cargo_build
-    installed = _cargo_build(ctx, prepared)
+    installed = _cargo_build(ctx, prepared, pkg_config_file, lib_dirs_file)
 
     # Build transitive sets
     compile_tset, link_tset, path_tset, runtime_tset = build_package_tsets(ctx, installed)
