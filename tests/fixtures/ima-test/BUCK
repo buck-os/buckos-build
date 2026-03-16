@@ -48,9 +48,8 @@ genrule(
         OPENSSL=$(location //packages/linux/system/libs/crypto/openssl:openssl)
         KEYUTILS=$(location //packages/linux/system/security/keyutils:keyutils)
         E2FS=$(location //packages/linux/system/filesystem/native/e2fsprogs:e2fsprogs)
-        UTIL_LINUX=$(location //packages/linux/core/util-linux:util-linux)
         export PATH="$IMA_UTILS/usr/bin:$IMA_UTILS/usr/sbin:$E2FS/usr/sbin:$E2FS/usr/bin:$PATH"
-        export LD_LIBRARY_PATH="$IMA_UTILS/usr/lib64:$IMA_UTILS/usr/lib:$OPENSSL/usr/lib64:$OPENSSL/usr/lib:$KEYUTILS/usr/lib64:$KEYUTILS/usr/lib:$E2FS/lib:$E2FS/lib64:$UTIL_LINUX/usr/lib64:$UTIL_LINUX/usr/lib"
+        export LD_LIBRARY_PATH="$IMA_UTILS/usr/lib64:$IMA_UTILS/usr/lib:$OPENSSL/usr/lib64:$OPENSSL/usr/lib:$KEYUTILS/usr/lib64:$KEYUTILS/usr/lib:$E2FS/lib:$E2FS/lib64"
 
         BINARY=$(location :ima-test-binary)/usr/bin/ima-test
         KEY=$(location //defs/keys:ima-test-key)
@@ -89,9 +88,8 @@ genrule(
     cmd = """
         set -e
         E2FS=$(location //packages/linux/system/filesystem/native/e2fsprogs:e2fsprogs)
-        UTIL_LINUX=$(location //packages/linux/core/util-linux:util-linux)
         export PATH="$E2FS/usr/sbin:$E2FS/usr/bin:$PATH"
-        export LD_LIBRARY_PATH="$E2FS/lib:$E2FS/lib64:$UTIL_LINUX/usr/lib64:$UTIL_LINUX/usr/lib"
+        export LD_LIBRARY_PATH="$E2FS/lib:$E2FS/lib64"
 
         BINARY=$(location :ima-test-binary)/usr/bin/ima-test
         WORK=$BUCK_SCRATCH_PATH/work
@@ -122,9 +120,8 @@ genrule(
         OPENSSL=$(location //packages/linux/system/libs/crypto/openssl:openssl)
         KEYUTILS=$(location //packages/linux/system/security/keyutils:keyutils)
         E2FS=$(location //packages/linux/system/filesystem/native/e2fsprogs:e2fsprogs)
-        UTIL_LINUX=$(location //packages/linux/core/util-linux:util-linux)
         export PATH="$IMA_UTILS/usr/bin:$IMA_UTILS/usr/sbin:$E2FS/usr/sbin:$E2FS/usr/bin:$PATH"
-        export LD_LIBRARY_PATH="$IMA_UTILS/usr/lib64:$IMA_UTILS/usr/lib:$OPENSSL/usr/lib64:$OPENSSL/usr/lib:$KEYUTILS/usr/lib64:$KEYUTILS/usr/lib:$E2FS/lib:$E2FS/lib64:$UTIL_LINUX/usr/lib64:$UTIL_LINUX/usr/lib"
+        export LD_LIBRARY_PATH="$IMA_UTILS/usr/lib64:$IMA_UTILS/usr/lib:$OPENSSL/usr/lib64:$OPENSSL/usr/lib:$KEYUTILS/usr/lib64:$KEYUTILS/usr/lib:$E2FS/lib:$E2FS/lib64"
 
         BINARY=$(location :ima-test-binary)/usr/bin/ima-test
         KEY=$(location //defs/keys:ima-test-key)
