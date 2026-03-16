@@ -27,9 +27,7 @@ _PASSTHROUGH = frozenset({
     "http_proxy", "https_proxy", "no_proxy",
     # TLS trust — squid TLS interception CA and system bundle.
     "SSL_CERT_FILE", "REQUESTS_CA_BUNDLE", "NODE_EXTRA_CA_CERTS",
-    # GitHub Actions cache API — sccache GHA backend needs these to
-    # store/retrieve cached objects via the Actions cache service.
-    # Only present in CI; absent on dev machines (no effect).
+    # GitHub Actions cache API — present in CI, absent on dev machines.
     "ACTIONS_RESULTS_URL",
     "ACTIONS_RUNTIME_TOKEN",
     "ACTIONS_CACHE_SERVICE_V2",
@@ -110,17 +108,6 @@ def apply_cache_config(env):
                     _val = env.get(_var, "")
                     if _val and "ccache" not in _val:
                         env[_var] = _ccache_bin + " " + _val
-    if env.get("BUCKOS_SCCACHE") == "1":
-        # Set RUSTC_WRAPPER to bare "sccache" — cargo_helper resolves
-        # it to an absolute path after PATH is configured.  Bare name
-        # here because apply_cache_config runs before PATH setup.
-        env["RUSTC_WRAPPER"] = "sccache"
-        env["CARGO_BUILD_RUSTC_WRAPPER"] = "sccache"
-        sccache_dir = env.get("SCCACHE_DIR", "")
-        if sccache_dir:
-            sccache_dir = os.path.abspath(os.path.expanduser(sccache_dir))
-            env["SCCACHE_DIR"] = sccache_dir
-            os.makedirs(sccache_dir, exist_ok=True)
 
 
 def setup_ccache_symlinks(env, scratch_dir):

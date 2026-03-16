@@ -78,7 +78,6 @@ _SOURCE_MODE = not _HAS_PREBUILT_SEED
 _CACHE_MODE = read_config("buckos.cache", "mode", "enabled")
 _CACHE_LOCATION = read_config("buckos.cache", "location", "homedir")
 _CCACHE_SIZE = read_config("buckos.cache", "ccache_size", "100G")
-_SCCACHE_SIZE = read_config("buckos.cache", "sccache_size", "100G")
 _CACHE_ENABLED = _CACHE_MODE == "enabled"
 
 def _cache_env(build_rule, name = ""):
@@ -89,7 +88,6 @@ def _cache_env(build_rule, name = ""):
     if name in _CACHE_BLOCKLIST:
         return {}
     ccache_dir = ".buckos/cache/ccache" if _CACHE_LOCATION == "projectdir" else "~/.buckos/caches/ccache"
-    sccache_dir = ".buckos/cache/sccache" if _CACHE_LOCATION == "projectdir" else "~/.buckos/caches/sccache"
     env = {
         "BUCKOS_CCACHE": "1",
         "CCACHE_DIR": ccache_dir,
@@ -98,15 +96,6 @@ def _cache_env(build_rule, name = ""):
         "CCACHE_MAXSIZE": _CCACHE_SIZE,
         "CCACHE_SLOPPINESS": "pch_defines,time_macros,include_file_mtime",
     }
-    if build_rule in ("cargo", "mozbuild"):
-        env.update({
-            "BUCKOS_SCCACHE": "1",
-            "SCCACHE_DIR": sccache_dir,
-            "SCCACHE_CACHE_SIZE": _SCCACHE_SIZE,
-            "SCCACHE_IDLE_TIMEOUT": "0",
-            # buck-out paths exceed the 108-char Unix socket limit
-            "SCCACHE_SERVER_UDS": "/tmp/buckos-sccache.sock",
-        })
     return env
 
 
@@ -344,8 +333,8 @@ def package(
         "coreutils", "findutils", "sed", "gawk", "grep",
         "diffutils", "patch", "tar", "gzip", "xz", "bzip2",
         "m4", "pkg-config", "meson", "ninja", "cmake",
-        # Compiler caches (prevent self-cycles)
-        "ccache", "sccache",
+        # Compiler cache (prevent self-cycle)
+        "ccache",
         # Deps of the above (would create cycles if injected)
         "zlib", "expat", "libffi", "ncurses", "readline", "pcre2",
         "sqlite",  # dep of python-host (_sqlite3)
@@ -391,7 +380,7 @@ def package(
                 "//packages/linux/dev-tools/build-systems/ninja:ninja",
             ])
         # Compiler caches when [buckos.cache] mode = enabled.
-        # ccache for C/C++ (all configurable rules), sccache for Rust.
+        # ccache for C/C++ (all configurable rules).
         # Separate blocklist for cache tools — ccache's own deps (zstd)
         # must not get ccache injected (cycle), but still get their
         # normal build tools (meson, ninja, etc.).
@@ -399,10 +388,6 @@ def package(
         if _CACHE_ENABLED and name not in _CACHE_BLOCKLIST:
             _auto_tool_deps.append(
                 "//packages/linux/dev-tools/dev-utils/ccache:ccache",
-            )
-        if _CACHE_ENABLED and name not in _CACHE_BLOCKLIST and build_rule in ("cargo", "mozbuild"):
-            _auto_tool_deps.append(
-                "//packages/linux/dev-tools/dev-utils/sccache:sccache",
             )
 
     # Auto-inject build host tools.  In source mode, tools must be built

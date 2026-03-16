@@ -7,7 +7,6 @@ under the target directory.
 
 import argparse
 import os
-import shutil
 import subprocess
 import sys
 
@@ -150,14 +149,10 @@ def main():
 
     # Isolate cargo from user-level config (~/.cargo/config.toml) which
     # may set linker=clang, rustc-wrapper, or other host-specific options.
-    # Use /tmp to keep the path short — sccache creates a Unix socket
-    # inside CARGO_HOME and paths > 108 chars hit the SUN_LEN limit.
-    import hashlib as _hl
-    _scratch = os.environ.get("BUCK_SCRATCH_PATH", "cargo")
-    _cargo_hash = _hl.sha256(_scratch.encode()).hexdigest()[:12]
-    _cargo_home = f"/tmp/buckos-cargo-{_cargo_hash}"
-    os.makedirs(_cargo_home, exist_ok=True)
-    env["CARGO_HOME"] = _cargo_home
+    # clean_env() already sets CARGO_HOME; override RUSTC_WRAPPER to
+    # prevent ~/.cargo/config from setting it via parent-dir search.
+    env["RUSTC_WRAPPER"] = ""
+    env["CARGO_BUILD_RUSTC_WRAPPER"] = ""
 
     if args.hermetic_path:
         env["PATH"] = ":".join(os.path.abspath(p) for p in args.hermetic_path)
@@ -214,16 +209,6 @@ def main():
 
     if args.ld_linux:
         sysroot_lib_paths(args.ld_linux, env)
-
-    # Disable sccache as RUSTC_WRAPPER — sccache checks its default
-    # Unix socket path (from current_exe(), >108 chars in buck-out)
-    # against SUN_LEN BEFORE reading SCCACHE_SERVER_PORT/UDS env vars.
-    # buck2's action cache makes sccache redundant for cargo builds
-    # anyway — each build starts from a clean source extract.
-    # Set to empty string to override ~/.cargo/config's rustc-wrapper
-    # which cargo finds via parent-dir config search.
-    env["RUSTC_WRAPPER"] = ""
-    env["CARGO_BUILD_RUSTC_WRAPPER"] = ""
 
     # Pass the FULL CC (with --sysroot and -specs) through RUSTFLAGS
     # so rustc invokes GCC with the buckos specs file.  The specs
