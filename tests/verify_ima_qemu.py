@@ -74,10 +74,21 @@ def main():
         print(f"FAIL: no vmlinuz in {kernel_path}")
         sys.exit(1)
 
-    # Resolve QEMU binary from buckos package
-    qemu_bin = find_file(qemu_dir, "qemu-system-x86_64")
+    # Resolve QEMU binary from buckos package (arch-aware)
+    import platform
+    arch = platform.machine()
+    if arch == "aarch64":
+        qemu_name = "qemu-system-aarch64"
+        console = "ttyAMA0"
+        machine_args = ["-machine", "virt"]
+    else:
+        qemu_name = "qemu-system-x86_64"
+        console = "ttyS0"
+        machine_args = []
+
+    qemu_bin = find_file(qemu_dir, qemu_name)
     if not qemu_bin:
-        print(f"FAIL: qemu-system-x86_64 not found in {qemu_dir}")
+        print(f"FAIL: {qemu_name} not found in {qemu_dir}")
         sys.exit(1)
     os.chmod(qemu_bin, 0o755)
 
@@ -92,10 +103,10 @@ def main():
         "-kernel", kernel,
         "-initrd", initramfs,
         "-drive", f"file={disk},format=raw,if=virtio,readonly=on,file.locking=off",
-        "-append", f"console=ttyS0 panic=-1 {cmdline_extra}",
+        "-append", f"console={console} panic=-1 {cmdline_extra}",
         "-nographic", "-no-reboot", "-m", "1G",
         "-enable-kvm", "-cpu", "host", "-smp", "4",
-    ]
+    ] + machine_args
 
     # Prepend the runtime environment wrapper so QEMU finds its shared libs
     run_env = os.environ.get("RUN_ENV")

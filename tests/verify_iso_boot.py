@@ -105,10 +105,21 @@ def main():
             print(f"FAIL: no .iso found in {iso}")
             sys.exit(1)
 
-    # Resolve QEMU binary
-    qemu_bin = find_file(qemu_dir, "qemu-system-x86_64")
+    # Resolve QEMU binary (arch-aware)
+    import platform
+    arch = platform.machine()
+    if arch == "aarch64":
+        qemu_name = "qemu-system-aarch64"
+        console = "ttyAMA0"
+        machine_args = ["-machine", "virt"]
+    else:
+        qemu_name = "qemu-system-x86_64"
+        console = "ttyS0"
+        machine_args = []
+
+    qemu_bin = find_file(qemu_dir, qemu_name)
     if not qemu_bin:
-        print(f"FAIL: qemu-system-x86_64 not found in {qemu_dir}")
+        print(f"FAIL: {qemu_name} not found in {qemu_dir}")
         sys.exit(1)
     os.chmod(qemu_bin, 0o755)
 
@@ -116,11 +127,11 @@ def main():
         qemu_bin,
         "-kernel", vmlinuz,
         "-initrd", initramfs,
-        "-append", "console=ttyS0 rdinit=/init panic=1",
+        "-append", f"console={console} rdinit=/init panic=1",
         "-drive", f"file={iso_file},if=virtio,media=cdrom,readonly=on",
         "-nographic", "-no-reboot", "-m", "2G",
         "-enable-kvm", "-cpu", "host", "-smp", "4",
-    ]
+    ] + machine_args
 
     # Prepend the runtime environment wrapper so QEMU finds its shared libs
     run_env = os.environ.get("RUN_ENV")
