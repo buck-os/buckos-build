@@ -136,10 +136,9 @@ jobs:
         uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
         with:
           path: .buckos/cache/ccache
-          key: ccache-seed-${{ hashFiles('tc/bootstrap/host-tools/packages.bzl') }}-${{ github.sha }}
+          key: seed-test-x86_64-${{ github.run_id }}
           restore-keys: |
-            ccache-seed-${{ hashFiles('tc/bootstrap/host-tools/packages.bzl') }}-
-            ccache-seed-
+            seed-test-x86_64-
       - name: Install buck2
         run: |
           mkdir -p "$HOME/.local/bin"
@@ -149,7 +148,7 @@ jobs:
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Configure seed
         run: |
-          printf '[buckos]\nseed_path = seed-toolchain.tar.zst\n' >> .buckconfig.local
+          printf '[buckos]\nseed_path = seed-toolchain.tar.zst\n\n[buckos.cache]\nlocation = projectdir\n' >> .buckconfig.local
           tmpdir=$(mktemp -d)
           buck2 init "$tmpdir"
           printf '\n[cells]\n' >> .buckconfig.local
