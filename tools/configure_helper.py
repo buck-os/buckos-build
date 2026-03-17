@@ -210,6 +210,11 @@ def main():
             else:
                 env[key] = resolved
 
+    # Derive CPP from CC to prevent autotools falling back to host
+    # /bin/cpp which can't find cc1 under hermetic PATH.
+    if "CC" in env and "CPP" not in env:
+        env["CPP"] = env["CC"] + " -E"
+
     apply_cache_config(env)
 
     # Create gcc/cc symlinks on PATH so libtool sub-configures
@@ -231,6 +236,25 @@ def main():
                     _link = os.path.join(_symlink_dir, _name)
                     if not os.path.exists(_link):
                         os.symlink(_cc_bin, _link)
+                # Create a cpp wrapper so AC_PATH_PROGS([RAWCPP], [cpp])
+                # finds the buckos preprocessor instead of host /bin/cpp.
+                # Use buckos bash from hermetic PATH — no host /bin/sh dep.
+                if _var == "CC":
+                    _cpp_link = os.path.join(_symlink_dir, "cpp")
+                    if not os.path.exists(_cpp_link):
+                        _wrapper_shell = None
+                        for _hp in (args.hermetic_path or []):
+                            _c = os.path.join(os.path.abspath(_hp), "bash")
+                            if os.path.isfile(_c):
+                                _wrapper_shell = _c
+                                break
+                        if _wrapper_shell:
+                            with open(_cpp_link, "w") as _f:
+                                _f.write("#!{}\nexec {} -E \"$@\"\n".format(
+                                    _wrapper_shell,
+                                    " ".join("'{}'".format(t) if " " in t else t
+                                             for t in _val.split())))
+                            os.chmod(_cpp_link, 0o755)
                 _need_symlink_path = True
     if args.hermetic_path:
         env["PATH"] = ":".join(os.path.abspath(p) for p in args.hermetic_path)

@@ -49,7 +49,7 @@ genrule(
         KEYUTILS=$(location //packages/linux/system/security/keyutils:keyutils)
         E2FS=$(location //packages/linux/system/filesystem/native/e2fsprogs:e2fsprogs)
         export PATH="$IMA_UTILS/usr/bin:$IMA_UTILS/usr/sbin:$E2FS/usr/sbin:$E2FS/usr/bin:$PATH"
-        export LD_LIBRARY_PATH="$IMA_UTILS/usr/lib64:$IMA_UTILS/usr/lib:$OPENSSL/usr/lib64:$OPENSSL/usr/lib:$KEYUTILS/usr/lib64:$KEYUTILS/usr/lib"
+        export LD_LIBRARY_PATH="$IMA_UTILS/usr/lib64:$IMA_UTILS/usr/lib:$OPENSSL/usr/lib64:$OPENSSL/usr/lib:$KEYUTILS/usr/lib64:$KEYUTILS/usr/lib:$E2FS/lib:$E2FS/lib64"
 
         BINARY=$(location :ima-test-binary)/usr/bin/ima-test
         KEY=$(location //defs/keys:ima-test-key)
@@ -59,23 +59,23 @@ genrule(
         # $OUT is relative — ensure parent dir exists
         mkdir -p `dirname $OUT`
 
-        mke2fs -t ext4 -d "$WORK/empty" "$OUT" 8M 2>/dev/null
+        mke2fs -t ext4 -d "$WORK/empty" "$OUT" 8M
 
         cp "$BINARY" "$WORK/ima-test"
         # evmctl --sigfile exits non-zero (xattr set fails on raw files
-        # without CAP_SYS_ADMIN) but still creates the .sig sidecar
-        evmctl ima_sign --sigfile --key "$KEY" "$WORK/ima-test" 2>/dev/null || true
+        # without CAP_SYS_ADMIN) but still creates the .sig sidecar.
+        evmctl ima_sign --sigfile --key "$KEY" "$WORK/ima-test" || true
         test -f "$WORK/ima-test.sig"
 
         echo "IMA-FILE-CONTENT" > "$WORK/test-data.txt"
-        evmctl ima_sign --sigfile --key "$KEY" "$WORK/test-data.txt" 2>/dev/null || true
+        evmctl ima_sign --sigfile --key "$KEY" "$WORK/test-data.txt" || true
         test -f "$WORK/test-data.txt.sig"
 
         printf 'write %s /ima-test\\nset_inode_field /ima-test mode 0100755\\nea_set /ima-test security.ima -f %s\\n' \
             "$WORK/ima-test" "$WORK/ima-test.sig" > "$WORK/debugfs.cmds"
         printf 'write %s /test-data.txt\\nset_inode_field /test-data.txt mode 0100644\\nea_set /test-data.txt security.ima -f %s\\n' \
             "$WORK/test-data.txt" "$WORK/test-data.txt.sig" >> "$WORK/debugfs.cmds"
-        debugfs -w -f "$WORK/debugfs.cmds" "$OUT" 2>/dev/null
+        debugfs -w -f "$WORK/debugfs.cmds" "$OUT"
     """,
     visibility = ["PUBLIC"],
 )
@@ -89,13 +89,14 @@ genrule(
         set -e
         E2FS=$(location //packages/linux/system/filesystem/native/e2fsprogs:e2fsprogs)
         export PATH="$E2FS/usr/sbin:$E2FS/usr/bin:$PATH"
+        export LD_LIBRARY_PATH="$E2FS/lib:$E2FS/lib64"
 
         BINARY=$(location :ima-test-binary)/usr/bin/ima-test
         WORK=$BUCK_SCRATCH_PATH/work
         mkdir -p "$WORK/empty"
         mkdir -p `dirname $OUT`
 
-        mke2fs -t ext4 -d "$WORK/empty" "$OUT" 8M 2>/dev/null
+        mke2fs -t ext4 -d "$WORK/empty" "$OUT" 8M
 
         echo "IMA-FILE-CONTENT" > "$WORK/test-data.txt"
 
@@ -103,7 +104,7 @@ genrule(
             "$BINARY" > "$WORK/debugfs.cmds"
         printf 'write %s /test-data.txt\\nset_inode_field /test-data.txt mode 0100644\\n' \
             "$WORK/test-data.txt" >> "$WORK/debugfs.cmds"
-        debugfs -w -f "$WORK/debugfs.cmds" "$OUT" 2>/dev/null
+        debugfs -w -f "$WORK/debugfs.cmds" "$OUT"
     """,
     visibility = ["PUBLIC"],
 )
@@ -120,7 +121,7 @@ genrule(
         KEYUTILS=$(location //packages/linux/system/security/keyutils:keyutils)
         E2FS=$(location //packages/linux/system/filesystem/native/e2fsprogs:e2fsprogs)
         export PATH="$IMA_UTILS/usr/bin:$IMA_UTILS/usr/sbin:$E2FS/usr/sbin:$E2FS/usr/bin:$PATH"
-        export LD_LIBRARY_PATH="$IMA_UTILS/usr/lib64:$IMA_UTILS/usr/lib:$OPENSSL/usr/lib64:$OPENSSL/usr/lib:$KEYUTILS/usr/lib64:$KEYUTILS/usr/lib"
+        export LD_LIBRARY_PATH="$IMA_UTILS/usr/lib64:$IMA_UTILS/usr/lib:$OPENSSL/usr/lib64:$OPENSSL/usr/lib:$KEYUTILS/usr/lib64:$KEYUTILS/usr/lib:$E2FS/lib:$E2FS/lib64"
 
         BINARY=$(location :ima-test-binary)/usr/bin/ima-test
         KEY=$(location //defs/keys:ima-test-key)
@@ -128,10 +129,10 @@ genrule(
         mkdir -p "$WORK/empty"
         mkdir -p `dirname $OUT`
 
-        mke2fs -t ext4 -d "$WORK/empty" "$OUT" 8M 2>/dev/null
+        mke2fs -t ext4 -d "$WORK/empty" "$OUT" 8M
 
         cp "$BINARY" "$WORK/ima-test"
-        evmctl ima_sign --sigfile --key "$KEY" "$WORK/ima-test" 2>/dev/null || true
+        evmctl ima_sign --sigfile --key "$KEY" "$WORK/ima-test" || true
         test -f "$WORK/ima-test.sig"
 
         echo "IMA-FILE-CONTENT" > "$WORK/test-data.txt"
@@ -140,7 +141,7 @@ genrule(
             "$WORK/ima-test" "$WORK/ima-test.sig" > "$WORK/debugfs.cmds"
         printf 'write %s /test-data.txt\\nset_inode_field /test-data.txt mode 0100644\\n' \
             "$WORK/test-data.txt" >> "$WORK/debugfs.cmds"
-        debugfs -w -f "$WORK/debugfs.cmds" "$OUT" 2>/dev/null
+        debugfs -w -f "$WORK/debugfs.cmds" "$OUT"
     """,
     visibility = ["PUBLIC"],
 )

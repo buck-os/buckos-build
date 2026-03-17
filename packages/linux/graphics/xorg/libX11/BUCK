@@ -11,6 +11,15 @@ package(
     description = "Core X11 client library",
     homepage = "https://xorg.freedesktop.org/",
     license = "MIT",
+    # gcc -E defines 'unix' even with -undef (GCC target triple behavior).
+    # libX11 configure's RAWCPP check greps for 'unix' and errors out.
+    # Patch the error to a warning so configure continues.
+    # gcc -E fails libX11's RAWCPP heuristics (unix define, whitespace
+    # preservation) because it behaves differently from standalone cpp.
+    # Downgrade all RAWCPP "I don't know what to do" errors to warnings.
+    pre_configure_cmds = [
+        "sed -i \"/I don't know what to do/s/as_fn_error/echo WARNING:/\" configure",
+    ],
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc",
@@ -28,6 +37,7 @@ package(
 find \"$DESTDIR\" -name '*.la' -delete
 """],
     deps = [
+        "//packages/linux/graphics/xorg/util-macros:util-macros",
         "//packages/linux/graphics/xorg/xorgproto:xorgproto",
         "//packages/linux/graphics/xorg/xtrans:xtrans",
         "//packages/linux/graphics/xorg/libxcb:libxcb",

@@ -47,7 +47,12 @@ def main():
     # $ORIGIN-relative RPATH only works for installed binaries in
     # the FHS layout; test programs in build dirs need sysroot paths.
     # Non-existent dirs are silently skipped by ld.so.
-    sysroot_rpath = "%R/usr/lib64:%R/usr/lib:%R/lib64:%R/lib"
+    # %R/../lib64 reaches the GCC runtime lib dir (libgcc_s, libstdc++)
+    # which sits at <sysroot>/../lib64 — outside the sysroot but at a
+    # fixed relative position.  Without this, binaries fall back to the
+    # host's /lib64/libgcc_s.so.1 which needs GLIBC_ABI_GNU2_TLS that
+    # the sysroot glibc doesn't provide.
+    sysroot_rpath = "%R/usr/lib64:%R/usr/lib:%R/lib64:%R/lib:%R/../lib64"
 
     # Build spec parts
     parts = [f"--dynamic-linker {padded_ld}"]
