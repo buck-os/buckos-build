@@ -86,6 +86,10 @@ def _src_configure(ctx, source, cflags_file = None, ldflags_file = None,
     for arg in toolchain_ld_linux_args(ctx):
         cmd.add(arg)
 
+    # Inject target triple so post-install scripts can derive arch-specific values
+    cmd.add("--env", "TARGET_TRIPLE=" + tc.target_triple)
+    cmd.add("--env", "CHOST=" + tc.target_triple)
+
     # Inject user-specified environment variables
     for key, value in ctx.attrs.env.items():
         cmd.add("--env", "{}={}".format(key, value))
@@ -148,6 +152,7 @@ def _src_configure(ctx, source, cflags_file = None, ldflags_file = None,
         # flags from configure_prefix_deps.
         # GCC needs both: --with-gmp for headers, --with-gmp-lib for the
         # library directory (defaults to <prefix>/lib which misses lib64).
+        libdir = "lib" if tc.target_triple.startswith("aarch64") else "lib64"
         for flag_name, dep in ctx.attrs.configure_prefix_deps.items():
             if PackageInfo in dep:
                 prefix = dep[PackageInfo].prefix
@@ -155,7 +160,7 @@ def _src_configure(ctx, source, cflags_file = None, ldflags_file = None,
                 prefix = dep[DefaultInfo].default_outputs[0]
             fmt = "--with-" + flag_name + "={}/usr"
             cmd.add(cmd_args("--configure-arg=", cmd_args(prefix, format = fmt), delimiter = ""))
-            fmt_lib = "--with-" + flag_name + "-lib={}/usr/lib64"
+            fmt_lib = "--with-" + flag_name + "-lib={}/usr/" + libdir
             cmd.add(cmd_args("--configure-arg=", cmd_args(prefix, format = fmt_lib), delimiter = ""))
 
         # Dep flags via tset projection files (replaces manual dep iteration).
@@ -285,6 +290,11 @@ def _src_install(ctx, built, cflags_file = None, ldflags_file = None,
     # Add host_deps bin dirs to PATH
     for arg in host_tool_path_args(ctx):
         cmd.add(arg)
+
+    # Inject target triple so post-install scripts can derive arch-specific values
+    _tc_install = ctx.attrs._toolchain[BuildToolchainInfo]
+    cmd.add("--env", "TARGET_TRIPLE=" + _tc_install.target_triple)
+    cmd.add("--env", "CHOST=" + _tc_install.target_triple)
 
     # Inject user-specified environment variables
     for key, value in ctx.attrs.env.items():
