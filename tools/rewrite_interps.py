@@ -273,6 +273,21 @@ def main():
         print(f"Rewrote {rewritten} script shebangs (buck-out -> /usr/bin/env)",
               file=sys.stderr)
 
+    # Symlink sysroot gconv modules so msgfmt/iconv find charset conversions.
+    # The sysroot gconv is at <sysroot>/usr/lib/gconv/ — symlink it into
+    # the output's lib/gconv/ where derive_lib_paths() expects it.
+    sysroot_dir = os.path.dirname(os.path.dirname(ld_linux))
+    for gconv_subdir in ("usr/lib/gconv", "usr/lib64/gconv", "lib/gconv"):
+        gconv_src = os.path.join(sysroot_dir, gconv_subdir)
+        if os.path.isdir(gconv_src):
+            gconv_dst = os.path.join(output_dir, "lib", "gconv")
+            if not os.path.exists(gconv_dst):
+                os.makedirs(os.path.dirname(gconv_dst), exist_ok=True)
+                os.symlink(os.path.abspath(gconv_src), gconv_dst)
+                print(f"Symlinked sysroot gconv: {gconv_dst} -> {gconv_src}",
+                      file=sys.stderr)
+            break
+
     # Cross-link lib/ and lib64/ so RPATH entries for either directory
     # resolve all shared libraries.  Some binaries (e.g. librustc_driver)
     # have RUNPATH=$ORIGIN/../lib while others search lib64/.  The linker
