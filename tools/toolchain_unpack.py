@@ -157,10 +157,14 @@ def _rewrite_interpreters(toolchain_dir):
             candidate = os.path.join(triple_dir, "sys-root", "lib64", "ld-linux-x86-64.so.2")
             if os.path.exists(candidate):
                 ld_linux = candidate
+                print(f"  using sysroot ld-linux: {ld_linux}", file=sys.stderr)
                 break
         else:
-            print("warning: no ld-linux found, skipping interpreter rewrite", file=sys.stderr)
+            print(f"warning: no ld-linux found in {toolchain_dir}, skipping interpreter rewrite", file=sys.stderr)
+            print(f"  tools dirs: {_glob.glob(os.path.join(toolchain_dir, 'tools', '*'))}", file=sys.stderr)
             return
+    else:
+        print(f"  using host-tools ld-linux: {ld_linux}", file=sys.stderr)
 
     new_interp = os.path.abspath(ld_linux)
     patched = 0
