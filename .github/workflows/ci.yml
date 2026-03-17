@@ -41,8 +41,8 @@ jobs:
               fd --version || fdfind --version
             '
 
-  test:
-    name: build & test
+  build:
+    name: build seed
     runs-on: [self-hosted, X64]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -76,9 +76,24 @@ jobs:
           name: seed-toolchain
           path: seed-toolchain.tar.zst
           compression-level: 0
-      - name: Unit tests
+
+  test:
+    name: test
+    needs: [build]
+    runs-on: [self-hosted, X64]
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          clean: false
+      - name: Install buck2
         run: |
-          buck2 test //tests:
+          mkdir -p "$HOME/.local/bin"
+          curl -sL https://github.com/facebook/buck2/releases/download/2026-02-01/buck2-x86_64-unknown-linux-gnu.zst \
+            | zstd -d -f -o "$HOME/.local/bin/buck2"
+          chmod +x "$HOME/.local/bin/buck2"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Unit tests
+        run: buck2 test //tests:
       - name: Build minimal ISO
         run: buck2 build //packages/linux/system:buckos-minimal-iso --out buckos-minimal.iso
       - name: Build KDE ISO
@@ -96,8 +111,7 @@ jobs:
 
   test-seed:
     name: test with seed
-    needs: [test]
-    if: always() && needs.test.result != 'cancelled'
+    needs: [build]
     runs-on: ubuntu-latest
     env:
       SCCACHE_GHA_ENABLED: "true"
@@ -152,7 +166,7 @@ jobs:
           buck2 test $targets
 
   release:
-    needs: [test-setup, test-seed]
+    needs: [test-setup, test, test-seed]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
@@ -165,9 +179,7 @@ jobs:
           name: Development Build
           prerelease: true
           make_latest: false
-          body: |
-            Rolling development build from `main` at ${{ github.sha }}.
           files: |
+            seed-toolchain/seed-toolchain.tar.zst
             buckos-minimal-iso/buckos-minimal.iso
             buckos-kde-iso/buckos-kde.iso
-            seed-toolchain/seed-toolchain.tar.zst
