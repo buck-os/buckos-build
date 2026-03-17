@@ -30,10 +30,7 @@ kernel_build(
     source = "//packages/linux/kernel/src:linux-src",
     version = "6.18",
     config = "ima-test-kernel.config",
-    config_base = select({
-        "//platforms:is_aarch64": "defconfig",
-        "DEFAULT": "tinyconfig",
-    }),
+    config_base = "tinyconfig",
     arch = select({
         "//platforms:is_aarch64": "aarch64",
         "DEFAULT": "x86_64",
