@@ -82,8 +82,26 @@ def main():
 
     os.makedirs(args.output_dir, exist_ok=True)
 
-    # Use bootstrap Python if specified, otherwise fall back to sys.executable
+    # Use bootstrap Python if specified, otherwise fall back to sys.executable.
+    # When --ld-linux is provided, the seed python may have a build-machine
+    # ELF interpreter that doesn't exist locally.  Invoke through the
+    # explicit ld-linux to bypass the broken PT_INTERP.
     python_exe = args.python if args.python else sys.executable
+    if args.python and args.ld_linux and os.path.isfile(args.ld_linux):
+        _ld = os.path.abspath(args.ld_linux)
+        _py = os.path.abspath(args.python)
+        # Test if python is directly executable
+        try:
+            subprocess.run([_py, "--version"], capture_output=True, timeout=5)
+        except (FileNotFoundError, OSError):
+            # Broken interpreter — invoke through ld-linux
+            python_exe = _py
+            # We'll prefix cmd with ld-linux later
+            args._use_ld_linux = (_ld, _py)
+        else:
+            args._use_ld_linux = None
+    else:
+        args._use_ld_linux = None
 
     source_abs = os.path.abspath(args.source_dir)
     output_abs = os.path.abspath(args.output_dir)
@@ -213,6 +231,11 @@ def main():
         if dep_py_paths:
             existing = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = ":".join(dep_py_paths) + (":" + existing if existing else "")
+
+    # If python has a broken ELF interpreter, invoke through ld-linux
+    if getattr(args, '_use_ld_linux', None):
+        _ld, _py = args._use_ld_linux
+        cmd = [_ld, _py] + cmd[1:]  # replace python_exe with ld-linux + python
 
     cwd = source_abs if args.use_setup_py else None
     result = subprocess.run(cmd, env=env, cwd=cwd)
