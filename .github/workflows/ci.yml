@@ -93,7 +93,7 @@ jobs:
           chmod +x "$HOME/.local/bin/buck2"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Unit tests
-        run: buck2 test //tests:
+        run: "buck2 test //tests:"
       - name: Build minimal ISO
         run: buck2 build //packages/linux/system:buckos-minimal-iso --out buckos-minimal.iso
       - name: Build KDE ISO
