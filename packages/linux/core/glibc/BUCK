@@ -92,10 +92,6 @@ echo "rootsbindir=/usr/sbin" > configparms
     libc_cv_pde_load_address=0x0000000000400000
 
 make -j${MAKEOPTS:-$(nproc)}
-# Remove po build dir so make install skips translations.
-# msgfmt from host-tools gettext was built without iconv support
-# and can't convert charsets (ISO-8859-1 → UTF-8).
-rm -rf po
 make DESTDIR="$OUT" install
 
 # Fix glibc linker scripts to use relative paths

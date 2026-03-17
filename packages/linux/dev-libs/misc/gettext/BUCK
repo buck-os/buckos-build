@@ -36,6 +36,11 @@ package(
         "--disable-libasprintf",
         # Prevent libtool from embedding absolute build-time paths in RPATH
         "--disable-rpath",
+        # Force iconv detection — glibc provides iconv_open but configure
+        # can't run test programs under cross-compilation detection
+        # (host=x86_64-buckos-linux-gnu != build machine x86_64-pc-linux-gnu).
+        "am_cv_func_iconv=yes",
+        "am_cv_func_iconv_works=yes",
     ],
     deps = [
         "//packages/linux/system/terminal/ncurses:ncurses",
