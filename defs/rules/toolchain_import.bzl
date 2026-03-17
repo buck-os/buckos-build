@@ -32,28 +32,27 @@ def _toolchain_import_impl(ctx):
         python_cmd = RunInfo(args = cmd_args(host_bin.project("python3")))
 
     if ctx.attrs.exec_mode:
-        # Exec mode: native compiler from host-tools for building
-        # exec deps (tools that run on the host during builds).
-        # Uses gcc-native from host-tools/bin with the cross-toolchain's
-        # sysroot.  The sysroot is needed because gcc-native has
-        # --prefix=/usr baked in and would otherwise find incompatible
-        # host headers (e.g. Ubuntu multiarch glibc) at /usr/include.
+        # Exec mode: cross-compiler for building exec deps (tools
+        # that run on the host).  Same arch (x86_64 → x86_64) so
+        # cross-compiled binaries execute on the host.  Uses the
+        # cross-compiler from tools/ rather than requiring gcc-native
+        # in host-tools — keeps the seed small (no gcc-native needed).
         sysroot = unpacked.project("tools/" + triple + "/sys-root")
-        cc_args = cmd_args(host_bin.project("gcc"))
+        cc = unpacked.project("tools/bin/" + triple + "-gcc")
+        cxx = unpacked.project("tools/bin/" + triple + "-g++")
+        ar = unpacked.project("tools/bin/" + triple + "-ar")
+        strip_bin = unpacked.project("tools/bin/" + triple + "-strip")
+
+        cc_args = cmd_args(cc)
         cc_args.add(cmd_args("--sysroot=", sysroot, delimiter = ""))
-        cxx_args = cmd_args(host_bin.project("g++"))
+        cxx_args = cmd_args(cxx)
         cxx_args.add(cmd_args("--sysroot=", sysroot, delimiter = ""))
-        ar = host_bin.project("ar")
-        strip_bin = host_bin.project("strip")
+
         gcc_lib_dir = unpacked.project("tools/" + triple + "/lib64")
-        host_lib_dir = unpacked.project("host-tools/lib64")
         ldflags = list(ctx.attrs.extra_ldflags)
-        # Native gcc with --sysroot can't find its own runtime libs
-        # (libgcc_s.so, libstdc++.so) because the sysroot prefix
-        # redirects /usr/lib64 to sysroot/usr/lib64.  Add explicit
-        # -L for host-tools/lib64 where the native runtime lives.
-        ldflags.append(cmd_args("-L", host_lib_dir, delimiter = ""))
         ldflags.append(cmd_args("-Wl,-rpath-link,", gcc_lib_dir, delimiter = ""))
+        ldflags.append(cmd_args("-L", sysroot.project("usr/lib64"), delimiter = ""))
+        ldflags.append(cmd_args("-L", sysroot.project("usr/lib"), delimiter = ""))
     else:
         # Cross mode: cross-compiler for building target packages.
         sysroot = unpacked.project("tools/" + triple + "/sys-root")
