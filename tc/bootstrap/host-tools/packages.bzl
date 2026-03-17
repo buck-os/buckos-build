@@ -2,8 +2,9 @@
 
 BASE_TOOL_PACKAGES: simple POSIX tools with no deep dep chains.
 
-EXTENDED_TOOL_PACKAGES: complex packages with deep dep chains (glibc,
-gcc, llvm, rust, kernel tools, etc.).
+EXTENDED_TOOL_PACKAGES: build system tools and compilers needed for
+building packages.  Only includes tools actually used at build time —
+NOT test tools (qemu), image tools (grub, mtools), or signing tools.
 
 Both are built via host_tools_transition → bootstrap-toolchain (stage 2
 cross-compiler + host PATH fallback).  The transition breaks the
@@ -44,14 +45,10 @@ BASE_TOOL_PACKAGES = [
     "//packages/linux/dev-tools/build-systems/make:make",
     "//packages/linux/dev-tools/build-systems/m4:m4",
     "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
-
-    # Code generators (needed by extended tool deps like libseccomp)
-    "//packages/linux/dev-tools/dev-utils/gperf:gperf",
 ]
 
 EXTENDED_TOOL_PACKAGES = [
     # Core utilities with deeper deps
-    "//packages/linux/system/apps/rsync:rsync",
     "//packages/linux/core/file:file",
     "//packages/linux/core/util-linux:util-linux",
 
@@ -64,9 +61,7 @@ EXTENDED_TOOL_PACKAGES = [
     # NOTE: glibc, linux-headers, and libxcrypt are NOT included here.
     # They're already in the sysroot (tools/<triple>/sys-root/) and
     # host-tools binaries find them via RPATH symlinks created at
-    # unpack time.  Including glibc here creates a cycle:
-    # host-tools → glibc → linux-headers → kernel-config → flex
-    # (exec) → tar (exec) → seed-exec-toolchain → host-tools.
+    # unpack time.
 
     # GCC dependencies
     "//packages/linux/system/libs/utility/gmp:gmp",
@@ -82,6 +77,7 @@ EXTENDED_TOOL_PACKAGES = [
     "//packages/linux/dev-tools/dev-utils/bc:bc",
     "//packages/linux/dev-tools/dev-utils/bison:bison",
     "//packages/linux/dev-tools/dev-utils/flex:flex",
+    "//packages/linux/dev-tools/dev-utils/gperf:gperf",
 
     # ELF tools
     "//packages/linux/system/libs/elfutils:elfutils",
@@ -121,28 +117,8 @@ EXTENDED_TOOL_PACKAGES = [
     # ELF / DWARF
     "//packages/linux/dev-tools/dev-utils/dwarves:dwarves",
 
-    # ISO image tools
-    "//packages/linux/dev-libs/iso/libisofs:libisofs",
-    "//packages/linux/dev-libs/iso/libburn:libburn",
-    "//packages/linux/dev-libs/iso/libisoburn:libisoburn",
-    "//packages/linux/system/apps/mtools:mtools",
-
-    # Image / filesystem tools
-    "//packages/linux/system/filesystem/native/squashfs-tools:squashfs-tools",
-    "//packages/linux/system/filesystem/native/e2fsprogs:e2fsprogs",
-    "//packages/linux/system/filesystem/native/dosfstools:dosfstools",
-    "//packages/linux/system/filesystem/native/btrfs-progs:btrfs-progs",
-    "//packages/linux/system/filesystem/native/xfsprogs:xfsprogs",
-    "//packages/linux/system/filesystem/management/gptfdisk:gptfdisk",
-    "//packages/linux/system/libs/cpio:cpio",
-    "//packages/linux/boot/grub:grub",
-    "//packages/linux/emulation/hypervisors/qemu:qemu",
-
-    # Crypto / TLS
+    # Crypto / TLS (needed by many packages at configure time)
     "//packages/linux/system/libs/crypto/openssl:openssl",
-
-    # Security / signing
-    "//packages/linux/system/security/ima-evm-utils:ima-evm-utils",
 ]
 
 HOST_TOOL_PACKAGES = BASE_TOOL_PACKAGES + EXTENDED_TOOL_PACKAGES
