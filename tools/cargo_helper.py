@@ -7,6 +7,7 @@ under the target directory.
 
 import argparse
 import os
+import shutil
 import subprocess
 import sys
 
@@ -106,7 +107,18 @@ def main():
         print(f"error: Cargo.toml not found in {args.source_dir}", file=sys.stderr)
         sys.exit(1)
 
-    target_dir = args.target_dir or os.path.join(args.source_dir, "target")
+    # Copy source to scratch to avoid mutating the previous action's output.
+    # cargo_helper writes .cargo/config.toml and may place build artifacts
+    # inside the source tree.
+    source_dir = os.path.abspath(args.source_dir)
+    _scratch = os.path.abspath(os.environ.get("BUCK_SCRATCH_PATH",
+                                              os.environ.get("TMPDIR", "/tmp")))
+    _scratch_src = os.path.join(_scratch, "source")
+    shutil.copytree(source_dir, _scratch_src, symlinks=True)
+    source_dir = _scratch_src
+    cargo_toml = os.path.join(source_dir, "Cargo.toml")
+
+    target_dir = args.target_dir or os.path.join(source_dir, "target")
 
     env = clean_env()
 
@@ -297,7 +309,7 @@ def main():
     # Still write .cargo/config.toml for vendor_dir support; comment out
     # any existing [build] or [target.x86_64-unknown-linux-gnu] sections
     # that might conflict.
-    cargo_config_dir = os.path.join(args.source_dir, ".cargo")
+    cargo_config_dir = os.path.join(source_dir, ".cargo")
     os.makedirs(cargo_config_dir, exist_ok=True)
     config_path = os.path.join(cargo_config_dir, "config.toml")
     existing_content = ""

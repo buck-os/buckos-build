@@ -316,13 +316,25 @@ def main():
     env["PROJECT_ROOT"] = os.getcwd()
 
     build_dir = os.path.abspath(args.build_dir)
-    register_cleanup(build_dir)
     make_dir = build_dir
     if args.build_subdir:
         make_dir = os.path.join(build_dir, args.build_subdir)
     if not os.path.isdir(make_dir):
         print(f"error: build directory not found: {make_dir}", file=sys.stderr)
         sys.exit(1)
+
+    # Copy build tree to scratch to avoid mutating the previous action's
+    # sealed output.  All build-tree prep (chmod, hardlink breaking, path
+    # rewrites, libtool suppression, timestamp resets) operates on scratch.
+    _scratch = os.path.abspath(os.environ.get("BUCK_SCRATCH_PATH",
+                                              os.environ.get("TMPDIR", "/tmp")))
+    _scratch_build = os.path.join(_scratch, "build")
+    shutil.copytree(build_dir, _scratch_build, symlinks=True)
+    build_dir = _scratch_build
+    register_cleanup(_scratch_build)
+    make_dir = _scratch_build
+    if args.build_subdir:
+        make_dir = os.path.join(_scratch_build, args.build_subdir)
 
     # Expose the build directory so post-cmds can reference build
     # artifacts (e.g. copying objects not handled by make install).
@@ -1047,7 +1059,7 @@ def main():
     # Inject CC/CXX/AR as make command-line overrides for Makefile-only
     # packages (no config.status = no configure ran).  Same logic as
     # build_helper.py.
-    if args.build_system == "make" and not os.path.exists(os.path.join(os.path.abspath(args.build_dir), "config.status")):
+    if args.build_system == "make" and not os.path.exists(os.path.join(build_dir, "config.status")):
         for _var in ("CC", "CXX", "AR"):
             _val = env.get(_var, "")
             if _val and not any(a.startswith(f"{_var}=") for a in args.make_args):

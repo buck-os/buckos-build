@@ -8,6 +8,7 @@ suitable for use as a Linux initramfs.
 import argparse
 import gzip
 import os
+import shutil
 import subprocess
 import sys
 
@@ -29,10 +30,18 @@ def main():
     output_dir = os.path.dirname(os.path.abspath(args.output))
     os.makedirs(output_dir, exist_ok=True)
 
-    # Normalize file timestamps in root dir so cpio embeds deterministic mtimes.
+    # Copy input to scratch to avoid mutating the previous action's output.
+    _scratch = os.path.abspath(os.environ.get("BUCK_SCRATCH_PATH",
+                                              os.environ.get("TMPDIR", "/tmp")))
+    pack_root = os.path.join(_scratch, "initramfs-root")
+    if os.path.exists(pack_root):
+        shutil.rmtree(pack_root)
+    shutil.copytree(args.root_dir, pack_root, symlinks=True)
+
+    # Normalize file timestamps so cpio embeds deterministic mtimes.
     epoch = int(os.environ.get("SOURCE_DATE_EPOCH", "315576000"))
     stamp = (epoch, epoch)
-    for dirpath, _dirnames, filenames in os.walk(args.root_dir):
+    for dirpath, _dirnames, filenames in os.walk(pack_root):
         for fname in filenames:
             try:
                 os.utime(os.path.join(dirpath, fname), stamp)
@@ -47,12 +56,12 @@ def main():
     # cpio -o -H newc is the standard initramfs format.
     find_proc = subprocess.Popen(
         ["find", ".", "-print0"],
-        cwd=args.root_dir,
+        cwd=pack_root,
         stdout=subprocess.PIPE,
     )
     cpio_proc = subprocess.Popen(
         ["cpio", "--null", "-o", "-H", "newc", "--quiet"],
-        cwd=args.root_dir,
+        cwd=pack_root,
         stdin=find_proc.stdout,
         stdout=subprocess.PIPE,
     )

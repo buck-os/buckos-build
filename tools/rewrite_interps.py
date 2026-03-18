@@ -121,9 +121,59 @@ def main():
         print(f"error: ld-linux not found: {ld_linux}", file=sys.stderr)
         sys.exit(1)
 
-    # Copy the entire tools directory tree
-    shutil.copytree(tools_dir, output_dir, symlinks=True,
-                    dirs_exist_ok=True)
+    # Build output tree file-by-file from input.  Files that will be
+    # modified (ELFs for interpreter rewriting, scripts with buck-out
+    # shebangs) are copied; everything else is hardlinked.
+    for dirpath, dirnames, filenames in os.walk(tools_dir):
+        reldir = os.path.relpath(dirpath, tools_dir)
+        outdir = os.path.join(output_dir, reldir) if reldir != "." else output_dir
+        os.makedirs(outdir, exist_ok=True)
+
+        # Recreate directory symlinks; don't descend into them.
+        real_dirs = []
+        for dname in dirnames:
+            src = os.path.join(dirpath, dname)
+            if os.path.islink(src):
+                dst = os.path.join(outdir, dname)
+                if not os.path.lexists(dst):
+                    os.symlink(os.readlink(src), dst)
+            else:
+                real_dirs.append(dname)
+        dirnames[:] = real_dirs
+
+        for filename in filenames:
+            src = os.path.join(dirpath, filename)
+            dst = os.path.join(outdir, filename)
+            if os.path.lexists(dst):
+                continue
+
+            if os.path.islink(src):
+                os.symlink(os.readlink(src), dst)
+                continue
+            if not os.path.isfile(src):
+                continue
+
+            # Determine if the file will be modified by later passes.
+            needs_copy = False
+            try:
+                with open(src, "rb") as f:
+                    hdr = f.read(4)
+                    if hdr == b"\x7fELF":
+                        needs_copy = True
+                    elif hdr[:2] == b"#!":
+                        line = hdr + f.readline()
+                        if b"buck-out" in line:
+                            needs_copy = True
+            except (OSError, IOError):
+                pass
+
+            if needs_copy:
+                shutil.copy2(src, dst)
+            else:
+                try:
+                    os.link(src, dst)
+                except OSError:
+                    shutil.copy2(src, dst)
 
     if args.patch_standard:
         # Compiler binaries from bootstrap have NO RPATH and standard

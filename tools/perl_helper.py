@@ -11,6 +11,7 @@ build systems:
 import argparse
 import glob
 import os
+import shutil
 import subprocess
 import sys
 
@@ -104,6 +105,14 @@ def main():
     if not os.path.isdir(source_dir):
         print(f"error: source directory not found: {source_dir}", file=sys.stderr)
         sys.exit(1)
+
+    # Copy source to scratch to avoid mutating the previous action's output.
+    # Perl builds (Makefile.PL, Build.PL, make) generate artifacts in-place.
+    _scratch = os.path.abspath(os.environ.get("BUCK_SCRATCH_PATH",
+                                              os.environ.get("TMPDIR", "/tmp")))
+    _scratch_src = os.path.join(_scratch, "source")
+    shutil.copytree(source_dir, _scratch_src, symlinks=True)
+    source_dir = _scratch_src
 
     os.makedirs(output_dir, exist_ok=True)
 

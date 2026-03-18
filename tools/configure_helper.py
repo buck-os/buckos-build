@@ -153,6 +153,13 @@ def main():
 
     source_dir = os.path.abspath(args.source_dir)
     output_dir = os.path.abspath(args.output_dir)
+    _final_output = output_dir
+
+    # Redirect build operations to scratch — the declared output is written
+    # once at the end (clean copy of the finished configure, never mutated).
+    _scratch = os.path.abspath(os.environ.get("BUCK_SCRATCH_PATH",
+                                              os.environ.get("TMPDIR", "/tmp")))
+    output_dir = os.path.join(_scratch, "configure-tree")
 
     # Register cleanup early so unsafe filenames are removed on any exit
     register_cleanup(output_dir)
@@ -425,6 +432,9 @@ def main():
 
     if args.skip_configure:
         sanitize_filenames(output_dir)
+        if os.path.exists(_final_output):
+            shutil.rmtree(_final_output)
+        shutil.copytree(output_dir, _final_output, symlinks=True)
         return
 
     configure = os.path.join(output_dir, args.configure_script)
@@ -499,6 +509,11 @@ def main():
         sys.exit(1)
 
     sanitize_filenames(output_dir)
+
+    # Copy finished configure tree from scratch to the declared output.
+    if os.path.exists(_final_output):
+        shutil.rmtree(_final_output)
+    shutil.copytree(output_dir, _final_output, symlinks=True)
 
 
 if __name__ == "__main__":

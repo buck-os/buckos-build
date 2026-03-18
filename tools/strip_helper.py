@@ -107,37 +107,59 @@ def main():
     if args.ld_linux:
         sysroot_lib_paths(args.ld_linux, os.environ)
 
-    # Copy input to output
+    # Build output file-by-file from input.  ELF files are copied and
+    # stripped; everything else is hardlinked (no copy needed since the
+    # file won't be modified).  The input directory is never touched.
     if os.path.exists(args.output):
         shutil.rmtree(args.output)
-    shutil.copytree(args.input, args.output, symlinks=True)
+    input_dir = os.path.abspath(args.input)
+    output_dir = os.path.abspath(args.output)
 
-    # Find and strip ELF files
     stripped = 0
     errors = 0
-    for dirpath, _dirnames, filenames in os.walk(args.output):
+    for dirpath, dirnames, filenames in os.walk(input_dir):
+        reldir = os.path.relpath(dirpath, input_dir)
+        outdir = os.path.join(output_dir, reldir) if reldir != "." else output_dir
+        os.makedirs(outdir, exist_ok=True)
+
+        # Recreate directory symlinks; don't descend into them.
+        real_dirs = []
+        for dname in dirnames:
+            src = os.path.join(dirpath, dname)
+            if os.path.islink(src):
+                os.symlink(os.readlink(src), os.path.join(outdir, dname))
+            else:
+                real_dirs.append(dname)
+        dirnames[:] = real_dirs
+
         for filename in filenames:
-            filepath = os.path.join(dirpath, filename)
-            if os.path.islink(filepath):
+            src = os.path.join(dirpath, filename)
+            dst = os.path.join(outdir, filename)
+
+            if os.path.islink(src):
+                os.symlink(os.readlink(src), dst)
                 continue
-            if not os.path.isfile(filepath):
-                continue
-            if not is_elf(filepath):
+            if not os.path.isfile(src):
                 continue
 
-            result = subprocess.run(
-                [args.strip_bin, filepath],
-                capture_output=True,
-                text=True,
-            )
-            if result.returncode != 0:
-                # Some ELF files (e.g. static archives with debug info)
-                # may fail to strip; warn but continue
-                rel = os.path.relpath(filepath, args.output)
-                print(f"warning: strip failed for {rel}: {result.stderr.strip()}", file=sys.stderr)
-                errors += 1
+            if is_elf(src):
+                shutil.copy2(src, dst)
+                result = subprocess.run(
+                    [args.strip_bin, dst],
+                    capture_output=True,
+                    text=True,
+                )
+                if result.returncode != 0:
+                    rel = os.path.relpath(dst, output_dir)
+                    print(f"warning: strip failed for {rel}: {result.stderr.strip()}", file=sys.stderr)
+                    errors += 1
+                else:
+                    stripped += 1
             else:
-                stripped += 1
+                try:
+                    os.link(src, dst)
+                except OSError:
+                    shutil.copy2(src, dst)
 
     print(f"stripped {stripped} ELF files ({errors} warnings)")
 

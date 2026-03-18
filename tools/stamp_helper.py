@@ -129,10 +129,47 @@ def main():
     if args.ld_linux:
         sysroot_lib_paths(args.ld_linux, os.environ)
 
-    # Copy input to output
+    # Build output file-by-file from input.  ELF files are copied (will be
+    # modified by objcopy stamping); everything else is hardlinked (no copy
+    # needed since the file won't be modified).  The input directory is
+    # never touched.
     if os.path.exists(args.output):
         shutil.rmtree(args.output)
-    shutil.copytree(args.input, args.output, symlinks=True)
+    input_dir = os.path.abspath(args.input)
+    output_dir = os.path.abspath(args.output)
+
+    for dirpath, dirnames, filenames in os.walk(input_dir):
+        reldir = os.path.relpath(dirpath, input_dir)
+        outdir = os.path.join(output_dir, reldir) if reldir != "." else output_dir
+        os.makedirs(outdir, exist_ok=True)
+
+        # Recreate directory symlinks; don't descend into them.
+        real_dirs = []
+        for dname in dirnames:
+            src = os.path.join(dirpath, dname)
+            if os.path.islink(src):
+                os.symlink(os.readlink(src), os.path.join(outdir, dname))
+            else:
+                real_dirs.append(dname)
+        dirnames[:] = real_dirs
+
+        for filename in filenames:
+            src = os.path.join(dirpath, filename)
+            dst = os.path.join(outdir, filename)
+
+            if os.path.islink(src):
+                os.symlink(os.readlink(src), dst)
+                continue
+            if not os.path.isfile(src):
+                continue
+
+            if is_elf(src):
+                shutil.copy2(src, dst)
+            else:
+                try:
+                    os.link(src, dst)
+                except OSError:
+                    shutil.copy2(src, dst)
 
     # Build own provenance record
     rec = {
@@ -181,7 +218,13 @@ def main():
                     dep_lines.append(line)
 
     # Write .buckos-provenance.jsonl
+    # Break hardlink first — the file may have been hardlinked from the
+    # input during output construction.
     jsonl_path = os.path.join(args.output, ".buckos-provenance.jsonl")
+    try:
+        os.unlink(jsonl_path)
+    except FileNotFoundError:
+        pass
     with open(jsonl_path, "w") as f:
         f.write(own_line + "\n")
         for line in dep_lines:
@@ -189,6 +232,10 @@ def main():
 
     # Write .buckos-subgraph-hash
     hash_path = os.path.join(args.output, ".buckos-subgraph-hash")
+    try:
+        os.unlink(hash_path)
+    except FileNotFoundError:
+        pass
     with open(hash_path, "w") as f:
         f.write(args.graph_hash + "\n")
 
