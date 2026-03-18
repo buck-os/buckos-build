@@ -46,7 +46,7 @@ def _read(path):
 def _run_patch_helper(args, env=None):
     """Run patch_helper.py as a subprocess, return CompletedProcess."""
     import subprocess
-    cmd = [sys.executable, str(_REPO / "tools" / "patch_helper.py")] + args
+    cmd = [sys.executable, str(_REPO / "tools" / "patch_helper.py"), "--allow-host-path"] + args
     return subprocess.run(cmd, capture_output=True, text=True, env=env)
 
 

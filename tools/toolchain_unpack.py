@@ -539,7 +539,7 @@ def _write_specs(gcc_libdir, ld_linux_abs, sysroot=None, host_prefix=None):
         # Cross-compiler: %R-relative paths (machine-independent)
         pad = "/" * 260
         interp = f"{pad}%R/lib64/ld-linux-x86-64.so.2"
-        sysroot_rpath = "%R/lib64:%R/lib:%R/usr/lib64:%R/usr/lib"
+        sysroot_rpath = "%R/../lib64:%R/lib64:%R/lib:%R/usr/lib64:%R/usr/lib"
         link_extra = (
             f"%{{!shared:%{{!static:--dynamic-linker {interp}}}}}"
             f" %{{!static:--disable-new-dtags"
