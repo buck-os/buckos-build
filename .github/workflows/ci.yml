@@ -43,7 +43,7 @@ jobs:
 
   build:
     name: build seed
-    runs-on: [self-hosted, X64]
+    runs-on: [self-hosted, large]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -80,7 +80,7 @@ jobs:
   test:
     name: test
     needs: [build]
-    runs-on: [self-hosted, X64]
+    runs-on: [self-hosted, large]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -112,33 +112,13 @@ jobs:
   test-seed:
     name: test with seed
     needs: [build]
-    runs-on: ubuntu-latest
-    env:
-      SCCACHE_GHA_ENABLED: "true"
-      ACTIONS_CACHE_SERVICE_V2: "on"
+    runs-on: [self-hosted, mini]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: seed-toolchain
           path: .
-      - name: Install dependencies
-        run: sudo apt-get install -yq zstd udev ccache
-      - name: Enable KVM
-        run: |
-          if [ -e /dev/kvm ] && [ ! -f /etc/udev/rules.d/99-kvm4all.rules ]; then
-            echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
-              | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-            sudo udevadm control --reload-rules
-            sudo udevadm trigger --name-match=kvm
-          fi
-      - name: Restore ccache
-        uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
-        with:
-          path: .buckos/cache/ccache
-          key: seed-test-x86_64-${{ github.run_id }}
-          restore-keys: |
-            seed-test-x86_64-
       - name: Install buck2
         run: |
           mkdir -p "$HOME/.local/bin"
@@ -147,13 +127,7 @@ jobs:
           chmod +x "$HOME/.local/bin/buck2"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Configure seed
-        run: |
-          printf '[buckos]\nseed_path = seed-toolchain.tar.zst\n\n[buckos.cache]\nlocation = projectdir\n' >> .buckconfig.local
-          tmpdir=$(mktemp -d)
-          buck2 init "$tmpdir"
-          printf '\n[cells]\n' >> .buckconfig.local
-          grep 'none = none' "$tmpdir/.buckconfig" >> .buckconfig.local
-          sed -n '/^\[cell_aliases\]/,/^[[:space:]]*$/p' "$tmpdir/.buckconfig" >> .buckconfig.local
+        run: printf '[buckos]\nseed_path = seed-toolchain.tar.zst\n' >> .buckconfig.local
       - name: Verify seed archive
         run: |
           echo "Archive size: $(stat -c%s seed-toolchain.tar.zst) bytes"
@@ -163,12 +137,6 @@ jobs:
         run: |
           targets=$(buck2 uquery 'kind(sh_test, //tests:) - set(//tests:test-seed-isolation //tests:test-kde-iso-boot) - attrfilter(labels, heavy, kind(sh_test, //tests:))' 2>/dev/null)
           buck2 test $targets
-      - name: Save ccache
-        if: always()
-        uses: actions/cache/save@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
-        with:
-          path: .buckos/cache/ccache
-          key: seed-test-x86_64-${{ github.run_id }}
 
   release:
     needs: [test-setup, test, test-seed]
