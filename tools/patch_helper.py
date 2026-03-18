@@ -12,7 +12,7 @@ import shutil
 import subprocess
 import sys
 
-from _env import sanitize_global_env
+from _env import add_path_args, clean_env, setup_path
 
 
 def main():
@@ -25,12 +25,17 @@ def main():
                         help="Strip N leading path components from patch paths (default: 1)")
     parser.add_argument("--cmd", action="append", dest="cmds", default=[],
                         help="Shell command to run in source dir after patches (repeatable)")
+    add_path_args(parser)
     args = parser.parse_args()
 
-    # Save action-declared env vars before sanitize wipes them
+    # Save action-declared env vars before clean_env wipes them
     dep_base_dirs = os.environ.get("DEP_BASE_DIRS")
+    host_path = os.environ.get("PATH", "")
 
-    sanitize_global_env()
+    env = clean_env()
+    setup_path(args, env, host_path=host_path)
+    os.environ.clear()
+    os.environ.update(env)
 
     # Restore action-declared vars after sanitization
     if dep_base_dirs is not None:

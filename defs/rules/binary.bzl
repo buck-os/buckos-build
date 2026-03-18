@@ -38,6 +38,9 @@ def _src_prepare(ctx, source):
     for c in ctx.attrs.pre_configure_cmds:
         cmd.add("--cmd", c)
 
+    for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+
     # Pass dep base dirs so pre_configure_cmds can locate dep sources
     env = {}
     dep_base_dirs = []

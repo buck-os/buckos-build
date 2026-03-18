@@ -42,6 +42,8 @@ def _src_prepare(ctx, source):
     cmd.add("--output-dir", output.as_output())
     for p in ctx.attrs.patches:
         cmd.add("--patch", p)
+    for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
 
     ctx.actions.run(cmd, category = "autotools_prepare", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output

@@ -1,7 +1,7 @@
 """Shared helpers for package rules."""
 
 load("//defs:providers.bzl", "PackageInfo")
-load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS")
+load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_path_args")
 load("//defs:tsets.bzl",
      "CompileInfoTSet", "CompileInfoValue",
      "LinkInfoTSet", "LinkInfoValue",
@@ -304,6 +304,8 @@ def src_prepare(ctx, source, category):
         cmd.add("--patch", p)
     for c in ctx.attrs.pre_configure_cmds:
         cmd.add("--cmd", c)
+    for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
 
     ctx.actions.run(cmd, category = category, identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
