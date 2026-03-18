@@ -22,6 +22,9 @@ package(
         # inject padded interpreter + RPATH unconditionally at link time,
         # so no CFLAGS/LDFLAGS needed.  Disable ccmake (curses GUI) to
         # avoid NCURSES_BOOL/std::function conflict with GCC 15.
+        # Patch bundled curl to disable libidn2 (hardcoded ON, -D flag
+        # cannot override the set() call in cmcurl/CMakeLists.txt).
+        "sed -i 's/^set(USE_LIBIDN2 ON)/set(USE_LIBIDN2 OFF)/' Utilities/cmcurl/CMakeLists.txt",
         "./bootstrap --prefix=/usr --parallel=$(nproc) --no-qt-gui -- -DCMAKE_USE_OPENSSL=OFF -DBUILD_CursesDialog=OFF",
     ],
     deps = [],

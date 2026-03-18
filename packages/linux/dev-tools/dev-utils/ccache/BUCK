@@ -14,6 +14,7 @@ package(
         "-DREDIS_STORAGE_BACKEND=OFF",  # Disable redis to avoid network fetch of hiredis
         "-DENABLE_DOCUMENTATION=OFF",
         "-DENABLE_TESTING=OFF",
+        "-DDEP_BLAKE3=BUNDLED",  # Use bundled blake3 (no network for FetchContent)
         "-DDEP_XXHASH=SYSTEM",  # Use packaged deps instead of FetchContent download
         "-DDEP_FMT=SYSTEM",
     ],
