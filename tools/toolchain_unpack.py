@@ -148,18 +148,30 @@ def _rewrite_interpreters(toolchain_dir):
     ld-linux versions causes segfaults.  Patch all binaries to use the
     bundled buckos ld-linux so the toolchain is self-contained.
     """
+    # Find ld-linux by globbing — name varies by arch.
     # Try host-tools first, fall back to sysroot ld-linux.
-    # host-tools/lib64/ may not have ld-linux if glibc wasn't copied there.
-    ld_linux = os.path.join(toolchain_dir, "host-tools", "lib64", "ld-linux-x86-64.so.2")
-    if not os.path.exists(ld_linux):
+    ld_linux = None
+    for _libdir in ("lib64", "lib"):
+        for _candidate in sorted(_glob.glob(os.path.join(toolchain_dir, "host-tools", _libdir, "ld-linux*.so.*"))):
+            if os.path.exists(_candidate):
+                ld_linux = _candidate
+                break
+        if ld_linux:
+            break
+    if not ld_linux:
         # Sysroot ld-linux — always present in cross-compiler output.
         for triple_dir in _glob.glob(os.path.join(toolchain_dir, "tools", "*-linux-gnu")):
-            candidate = os.path.join(triple_dir, "sys-root", "lib64", "ld-linux-x86-64.so.2")
-            if os.path.exists(candidate):
-                ld_linux = candidate
-                print(f"  using sysroot ld-linux: {ld_linux}", file=sys.stderr)
+            for _libdir in ("lib64", "lib"):
+                for _candidate in sorted(_glob.glob(os.path.join(triple_dir, "sys-root", _libdir, "ld-linux*.so.*"))):
+                    if os.path.exists(_candidate):
+                        ld_linux = _candidate
+                        print(f"  using sysroot ld-linux: {ld_linux}", file=sys.stderr)
+                        break
+                if ld_linux:
+                    break
+            if ld_linux:
                 break
-        else:
+        if not ld_linux:
             print(f"warning: no ld-linux found in {toolchain_dir}, skipping interpreter rewrite", file=sys.stderr)
             print(f"  tools dirs: {_glob.glob(os.path.join(toolchain_dir, 'tools', '*'))}", file=sys.stderr)
             return
@@ -218,14 +230,26 @@ def _inject_missing_rpath(toolchain_dir):
     # Set up env so patchelf can run (it needs the bundled ld-linux)
     env = clean_env()
     # Find ld-linux for LD_LIBRARY_PATH — try host-tools then sysroot.
-    ld_linux = os.path.join(host_tools, "lib64", "ld-linux-x86-64.so.2")
-    if not os.path.exists(ld_linux):
-        for triple_dir in _glob.glob(os.path.join(toolchain_dir, "tools", "*-linux-gnu")):
-            candidate = os.path.join(triple_dir, "sys-root", "lib64", "ld-linux-x86-64.so.2")
-            if os.path.exists(candidate):
-                ld_linux = candidate
+    ld_linux = None
+    for _libdir in ("lib64", "lib"):
+        for _candidate in sorted(_glob.glob(os.path.join(host_tools, _libdir, "ld-linux*.so.*"))):
+            if os.path.exists(_candidate):
+                ld_linux = _candidate
                 break
-    if os.path.exists(ld_linux):
+        if ld_linux:
+            break
+    if not ld_linux:
+        for triple_dir in _glob.glob(os.path.join(toolchain_dir, "tools", "*-linux-gnu")):
+            for _libdir in ("lib64", "lib"):
+                for _candidate in sorted(_glob.glob(os.path.join(triple_dir, "sys-root", _libdir, "ld-linux*.so.*"))):
+                    if os.path.exists(_candidate):
+                        ld_linux = _candidate
+                        break
+                if ld_linux:
+                    break
+            if ld_linux:
+                break
+    if ld_linux:
         env["LD_LIBRARY_PATH"] = os.path.abspath(os.path.dirname(ld_linux))
 
     rpath = "$ORIGIN/../lib64:$ORIGIN/../lib"
@@ -411,17 +435,29 @@ def _install_gcc_specs(toolchain_dir, target_triple="x86_64-buckos-linux-gnu"):
 
     # Cross-compiler: tools/lib/gcc/<triple>/<ver>/specs
     # Uses sysroot ld-linux as dynamic linker.
-    sysroot_ld = os.path.join(
-        toolchain_dir, "tools", target_triple, "sys-root",
-        "lib64", "ld-linux-x86-64.so.2",
-    )
-    if os.path.exists(sysroot_ld):
+    # Find ld-linux by globbing — name varies by arch (ld-linux-x86-64.so.2,
+    # ld-linux-aarch64.so.1) and may be in lib64/ or lib/.
+    sysroot_ld = None
+    sysroot_base = os.path.join(toolchain_dir, "tools", target_triple, "sys-root")
+    for _libdir in ("lib64", "lib"):
+        for _candidate in sorted(_glob.glob(os.path.join(sysroot_base, _libdir, "ld-linux*.so.*"))):
+            if os.path.isfile(_candidate) and not os.path.islink(_candidate):
+                sysroot_ld = _candidate
+                break
+            elif os.path.islink(_candidate) and os.path.exists(_candidate):
+                sysroot_ld = _candidate
+                break
+        if sysroot_ld:
+            break
+    if sysroot_ld:
         sysroot_ld_abs = os.path.abspath(sysroot_ld)
+        # Compute ld-linux path relative to sysroot for %R substitution in specs
+        _ld_subpath = os.path.relpath(sysroot_ld, sysroot_base)
         pattern = os.path.join(
             toolchain_dir, "tools", "lib", "gcc", target_triple, "*",
         )
         for gcc_libdir in sorted(_glob.glob(pattern)):
-            _write_specs(gcc_libdir, sysroot_ld_abs, sysroot=sysroot_abs)
+            _write_specs(gcc_libdir, sysroot_ld_abs, sysroot=sysroot_abs, ld_linux_subpath=_ld_subpath)
             installed += 1
 
     # Host-tools GCC: host-tools/lib64/gcc/<triple>/<ver>/specs
@@ -431,10 +467,16 @@ def _install_gcc_specs(toolchain_dir, target_triple="x86_64-buckos-linux-gnu"):
     # gcc-native was built with --prefix=/usr and doesn't apply
     # --sysroot to startfile search (not built with --with-sysroot),
     # so CRTs (crt1.o, crti.o) need explicit -L paths.
-    host_ld = os.path.join(
-        toolchain_dir, "host-tools", "lib64", "ld-linux-x86-64.so.2",
-    )
-    if os.path.exists(host_ld):
+    # Find host-tools ld-linux by globbing (arch-independent).
+    host_ld = None
+    for _libdir in ("lib64", "lib"):
+        for _candidate in sorted(_glob.glob(os.path.join(toolchain_dir, "host-tools", _libdir, "ld-linux*.so.*"))):
+            if os.path.exists(_candidate):
+                host_ld = _candidate
+                break
+        if host_ld:
+            break
+    if host_ld:
         host_ld_abs = os.path.abspath(host_ld)
         host_prefix = os.path.abspath(
             os.path.join(toolchain_dir, "host-tools"),
@@ -456,7 +498,7 @@ def _install_gcc_specs(toolchain_dir, target_triple="x86_64-buckos-linux-gnu"):
               file=sys.stderr)
 
 
-def _write_specs(gcc_libdir, ld_linux_abs, sysroot=None, host_prefix=None):
+def _write_specs(gcc_libdir, ld_linux_abs, sysroot=None, host_prefix=None, ld_linux_subpath=None):
     """Write a specs override into a GCC lib directory.
 
     Uses $ORIGIN-relative RPATH so compiled binaries find their libs
@@ -538,8 +580,9 @@ def _write_specs(gcc_libdir, ld_linux_abs, sysroot=None, host_prefix=None):
     else:
         # Cross-compiler: %R-relative paths (machine-independent)
         pad = "/" * 260
-        interp = f"{pad}%R/lib64/ld-linux-x86-64.so.2"
-        sysroot_rpath = "%R/../lib64:%R/lib64:%R/lib:%R/usr/lib64:%R/usr/lib"
+        _ld_subpath = ld_linux_subpath or "lib64/ld-linux-x86-64.so.2"
+        interp = f"{pad}%R/{_ld_subpath}"
+        sysroot_rpath = "%R/../lib64:%R/../lib:%R/lib64:%R/lib:%R/usr/lib64:%R/usr/lib"
         link_extra = (
             f"%{{!shared:%{{!static:--dynamic-linker {interp}}}}}"
             f" %{{!static:--disable-new-dtags"
