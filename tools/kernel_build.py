@@ -85,7 +85,9 @@ def main():
     symvers_out = os.path.abspath(args.symvers_out)
     config_out = os.path.abspath(args.config_out)
     headers_out = os.path.abspath(args.headers_out) if args.headers_out else ""
-    targets = args.targets or ["vmlinux", "bzImage", "modules"]
+    # Derive image make target from --image-path: bzImage for x86, Image for arm64
+    image_target = os.path.basename(args.image_path)
+    targets = args.targets or ["vmlinux", image_target, "modules"]
     jobs = args.jobs or multiprocessing.cpu_count()
 
     if not os.path.isdir(source_dir):

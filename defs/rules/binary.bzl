@@ -133,6 +133,7 @@ def _install(ctx, source):
     env["CC"] = cmd_args(tc.cc.args, delimiter = " ")
     env["CXX"] = cmd_args(tc.cxx.args, delimiter = " ")
     env["AR"] = cmd_args(tc.ar.args, delimiter = " ")
+    env["TARGET_TRIPLE"] = tc.target_triple
 
     # Hermetic PATH from toolchain (replaces host PATH in wrapper)
     if tc.host_bin_dir:

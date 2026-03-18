@@ -31,6 +31,10 @@ kernel_build(
     version = "6.18",
     config = "ima-test-kernel.config",
     config_base = "tinyconfig",
+    arch = select({
+        "//platforms:is_aarch64": "aarch64",
+        "DEFAULT": "x86_64",
+    }),
     inject_files = {
         "certs/signing_key.pem": "//defs/keys:ima-test-cert",
     },
@@ -159,6 +163,9 @@ genrule(
         FINDUTILS=$(location //packages/linux/system/apps/findutils:findutils)
         COREUTILS=$(location //packages/linux/system/apps/coreutils:coreutils)
         export PATH="$OPENSSL/usr/bin:$CPIO/usr/bin:$GZIP/usr/bin:$FINDUTILS/usr/bin:$COREUTILS/usr/bin:$PATH"
+        # Prevent buckos-built openssl from loading host openssl.cnf
+        # (Fedora adds rh-allow-sha1-signatures which upstream doesn't know)
+        export OPENSSL_CONF=/dev/null
 
         INIT=$(location :ima-init)/usr/bin/init
         CERT=$(location //defs/keys:ima-test-cert)

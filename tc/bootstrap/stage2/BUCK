@@ -1,11 +1,13 @@
 """
 Bootstrap Stage 2: Cross-compilation toolchain (Gentoo stage 2).
 
-Builds a cross-compiler with its own glibc using the host GCC:
+Builds a cross-compiler with its own glibc using the host GCC.
+Architecture-aware: selects target triple, kernel arch, lib layout,
+and compiler flags based on the target platform CPU constraint.
 
   Host GCC + host binutils
-    -> cross-binutils (--target=x86_64-buckos-linux-gnu)
-    -> linux-headers (make ARCH=x86_64 headers + stub sys/sdt.h)
+    -> cross-binutils
+    -> linux-headers
     -> cross-gcc-pass1 (C only, --without-headers, --with-newlib)
     -> glibc (full build with cross-gcc-pass1)
     -> cross-gcc-pass2 (C + C++, --with-sysroot, libstdc++)
@@ -20,11 +22,22 @@ load("//defs/rules:bootstrap.bzl",
 )
 load(":defs.bzl", "stage2_aggregator")
 
+_TRIPLE = select({
+    "//platforms:is_aarch64": "aarch64-buckos-linux-gnu",
+    "DEFAULT": "x86_64-buckos-linux-gnu",
+})
+
+_KERNEL_ARCH = select({
+    "//platforms:is_aarch64": "arm64",
+    "DEFAULT": "x86_64",
+})
+
 # ── Cross-binutils ───────────────────────────────────────────────────
 
 bootstrap_binutils(
     name = "cross-binutils",
     source = "//tc/bootstrap/sources:binutils-src",
+    target_triple = _TRIPLE,
     visibility = ["PUBLIC"],
 )
 
@@ -33,6 +46,7 @@ bootstrap_binutils(
 bootstrap_linux_headers(
     name = "linux-headers",
     source = "//tc/bootstrap/sources:linux-src",
+    kernel_arch = _KERNEL_ARCH,
     visibility = ["PUBLIC"],
 )
 
@@ -46,6 +60,7 @@ bootstrap_gcc(
     mpc_source = "//tc/bootstrap/sources:mpc-src",
     binutils = ":cross-binutils",
     libc_headers = ":linux-headers",
+    target_triple = _TRIPLE,
     languages = "c",
     is_cross = True,
     with_headers = False,
@@ -62,12 +77,24 @@ bootstrap_glibc(
     compiler = ":gcc-pass1",
     binutils = ":cross-binutils",
     linux_headers = ":linux-headers",
-    extra_configure_args = [
-        "--enable-cet=no",
-        "libc_cv_pde_load_address=0x0000000000400000",
-        "CFLAGS=-O2 -g -fcf-protection=none",
-        "CXXFLAGS=-O2 -g -fcf-protection=none",
-    ],
+    target_triple = _TRIPLE,
+    lib_dir = select({
+        "//platforms:is_aarch64": "lib",
+        "DEFAULT": "lib64",
+    }),
+    dynamic_linker = select({
+        "//platforms:is_aarch64": "ld-linux-aarch64.so.1",
+        "DEFAULT": "ld-linux-x86-64.so.2",
+    }),
+    extra_configure_args = select({
+        "//platforms:is_aarch64": [],
+        "DEFAULT": [
+            "--enable-cet=no",
+            "libc_cv_pde_load_address=0x0000000000400000",
+            "CFLAGS=-O2 -g -fcf-protection=none",
+            "CXXFLAGS=-O2 -g -fcf-protection=none",
+        ],
+    }),
     visibility = ["PUBLIC"],
 )
 
@@ -82,11 +109,22 @@ bootstrap_gcc(
     binutils = ":cross-binutils",
     libc_dep = ":glibc",
     libc_headers = ":linux-headers",
+    target_triple = _TRIPLE,
+    lib_dir = select({
+        "//platforms:is_aarch64": "lib",
+        "DEFAULT": "lib64",
+    }),
     languages = "c,c++",
     is_cross = True,
     with_headers = True,
-    host_cc = "gcc -std=gnu11 -Wno-error=implicit-function-declaration -fcf-protection=none",
-    host_cxx = "g++ -std=gnu++11 -fcf-protection=none",
+    host_cc = select({
+        "//platforms:is_aarch64": "gcc -std=gnu11 -Wno-error=implicit-function-declaration",
+        "DEFAULT": "gcc -std=gnu11 -Wno-error=implicit-function-declaration -fcf-protection=none",
+    }),
+    host_cxx = select({
+        "//platforms:is_aarch64": "g++ -std=gnu++11",
+        "DEFAULT": "g++ -std=gnu++11 -fcf-protection=none",
+    }),
     stage_number = 2,
     visibility = ["PUBLIC"],
 )

@@ -13,13 +13,21 @@ package(
 set -e
 cd "$SRCS"
 
-# Fix library paths for systems using /lib64 instead of /lib
-if [ -f /lib64/ld-linux-x86-64.so.2 ] && [ ! -e /lib/ld-linux-x86-64.so.2 ]; then
-    export LIBRARY_PATH="/lib64:/usr/lib64:${LIBRARY_PATH:-}"
-    export RUSTFLAGS="${RUSTFLAGS:-} -C link-arg=-L/lib64 -C link-arg=-L/usr/lib64"
-    export RUSTFLAGS="${RUSTFLAGS} -C link-arg=-Wl,-rpath-link,/lib64 -C link-arg=-Wl,-rpath-link,/usr/lib64"
-    export RUSTFLAGS="${RUSTFLAGS} -C link-arg=-Wl,--dynamic-linker=/lib64/ld-linux-x86-64.so.2"
-fi
+# Point openssl-sys crate to the buckos-built OpenSSL from deps
+IFS=':' read -ra _DEPS <<< "${DEP_BASE_DIRS:-}"
+for _dep in "${_DEPS[@]}"; do
+    if [ -f "$_dep/usr/lib/libcrypto.so" ] || [ -f "$_dep/usr/lib64/libcrypto.so" ]; then
+        export OPENSSL_DIR="$_dep/usr"
+        break
+    fi
+done
+
+# Pass dep library paths to the Rust linker via RUSTFLAGS
+for _ldflag in $LDFLAGS; do
+    case "$_ldflag" in
+        -L*) export RUSTFLAGS="${RUSTFLAGS:-} -C link-arg=$_ldflag" ;;
+    esac
+done
 
 cargo build --release -p buckos
 

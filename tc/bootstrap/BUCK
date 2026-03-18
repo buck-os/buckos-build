@@ -45,7 +45,10 @@ buckos_bootstrap_toolchain(
 buckos_bootstrap_toolchain(
     name = "stage3-toolchain",
     bootstrap_stage = "//tc/bootstrap/stage2:stage2",
-    extra_cflags = ["-march=x86-64-v3"],
+    extra_cflags = select({
+        "//platforms:is_aarch64": [],
+        "DEFAULT": ["-march=x86-64-v3"],
+    }),
     extra_ldflags = [
         # $ORIGIN-relative RPATH so buckos binaries find their libs at
         # runtime without LD_LIBRARY_PATH.  Works in both seed layout

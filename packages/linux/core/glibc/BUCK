@@ -26,10 +26,31 @@ package(
     install_script = """
 cd "$SRCS"
 
+# Derive arch-specific values from TARGET_TRIPLE
+ARCH="${TARGET_TRIPLE%%-*}"
+case "$ARCH" in
+    aarch64)
+        MARCH_FLAG=""
+        SLIBDIR="/usr/lib"
+        LIBDIR_SUFFIX=""
+        CET_FLAG=""
+        PDE_ADDR=""
+        LD_LINUX_SUFFIX="lib/ld-linux-aarch64.so.1"
+        ;;
+    *)
+        MARCH_FLAG="-march=x86-64-v3"
+        SLIBDIR="/usr/lib64"
+        LIBDIR_SUFFIX="64"
+        CET_FLAG="--enable-cet=no"
+        PDE_ADDR="libc_cv_pde_load_address=0x0000000000400000"
+        LD_LINUX_SUFFIX="lib64/ld-linux-x86-64.so.2"
+        ;;
+esac
+
 # glibc's configure is sensitive to CFLAGS/LDFLAGS — override with
 # minimal flags.  Specs handle the padded interp + RPATH via CC.
-export CFLAGS="-O2 -march=x86-64-v3"
-export CXXFLAGS="-O2 -march=x86-64-v3"
+export CFLAGS="-O2 $MARCH_FLAG"
+export CXXFLAGS="-O2 $MARCH_FLAG"
 export LDFLAGS=""
 
 # Patch .eh_frame section attributes — the cross-compiler generates
@@ -77,19 +98,19 @@ echo "rootsbindir=/usr/sbin" > configparms
 
 ../configure \
     --prefix=/usr \
-    --host=x86_64-buckos-linux-gnu \
+    --host="$TARGET_TRIPLE" \
     --build="$BUILD_TRIPLE" \
     --enable-kernel=4.19 \
     --with-headers="$KERNEL_HEADERS" \
     --disable-nscd \
     --disable-werror \
-    --enable-cet=no \
-    libc_cv_slibdir=/usr/lib64 \
+    ${CET_FLAG:+"$CET_FLAG"} \
+    libc_cv_slibdir="$SLIBDIR" \
     libc_cv_forced_unwind=yes \
     libc_cv_c_cleanup=yes \
     libc_cv_pde=yes \
     libc_cv_cxx_link_ok=no \
-    libc_cv_pde_load_address=0x0000000000400000
+    ${PDE_ADDR:+"$PDE_ADDR"}
 
 make -j${MAKEOPTS:-$(nproc)}
 make DESTDIR="$OUT" install
@@ -111,7 +132,7 @@ done
 echo "Generating C.UTF-8 locale..."
 mkdir -p "$OUT/usr/lib/locale"
 if [ -x "$OUT/usr/bin/localedef" ]; then
-    LD_LIBRARY_PATH="$OUT/usr/lib64" "$OUT/usr/bin/localedef" \
+    LD_LIBRARY_PATH="$OUT/usr/lib${LIBDIR_SUFFIX}" "$OUT/usr/bin/localedef" \
         --prefix="$OUT" -i C -f UTF-8 C.UTF-8 2>/dev/null || \
         echo "Warning: localedef failed, C.UTF-8 may not be available"
 else
@@ -127,15 +148,19 @@ fi
 if [ "${BUCKOS_HOST_BUILD:-}" = "1" ]; then
     echo "Host target build — skipping interp patching"
 else
-python3 - "$OUT" << 'PYEOF'
+python3 - "$OUT" "$LD_LINUX_SUFFIX" << 'PYEOF'
 import struct, os, sys
 out = sys.argv[1]
-# Match GCC specs padding: 228 leading slashes + suffix + NUL = 255 bytes.
+ld_linux_suffix = sys.argv[2].encode()
+# Match GCC specs padding: leading slashes + suffix + NUL = 255 bytes.
 # p_filesz includes the NUL terminator.
-suffix = b"lib64/ld-linux-x86-64.so.2"
-n_slashes = 228
-new_interp = b"/" * n_slashes + suffix + b"\x00"
-STANDARD = [b"/lib64/ld-linux-x86-64.so.2", b"/usr/lib64/ld-linux-x86-64.so.2"]
+n_slashes = 255 - len(ld_linux_suffix) - 1
+new_interp = b"/" * n_slashes + ld_linux_suffix + b"\x00"
+# Standard interpreters that glibc's build system may set
+STANDARD = [
+    b"/lib64/ld-linux-x86-64.so.2", b"/usr/lib64/ld-linux-x86-64.so.2",
+    b"/lib/ld-linux-aarch64.so.1", b"/usr/lib/ld-linux-aarch64.so.1",
+]
 patched = 0
 for root, _, files in os.walk(out):
     for name in files:
@@ -184,7 +209,7 @@ PYEOF
 fi
 
 echo "glibc 2.42 built from source"
-ls -la "$OUT/usr/lib64/"*.so* 2>/dev/null | head -5 || true
+ls -la "$OUT/usr/lib${LIBDIR_SUFFIX}/"*.so* 2>/dev/null | head -5 || true
 """,
 
     # Only depend on linux-headers for kernel headers.

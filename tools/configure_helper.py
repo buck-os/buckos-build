@@ -313,18 +313,19 @@ def main():
         if append:
             env["PATH"] = env.get("PATH", "") + ":" + append
 
-    # Dep lib dirs in LD_LIBRARY_PATH so configure test programs can
-    # find dep shared libs at runtime.  Exclude dirs with libc.so.6
-    # to avoid poisoning host tools with sysroot glibc.
+    # Dep lib dirs: inject as -rpath in LDFLAGS so configure test programs
+    # find dep shared libs at runtime via ELF RPATH.  Do NOT use
+    # LD_LIBRARY_PATH — it leaks into host tool processes (awk, sed, etc.)
+    # and on aarch64 (or any host with older glibc) causes "GLIBC_2.42
+    # not found" crashes when host tools load buckos-linked shared libs.
     if file_lib_dirs:
         resolved = [
             os.path.abspath(d) for d in file_lib_dirs
             if os.path.isdir(d) and not os.path.exists(os.path.join(os.path.abspath(d), "libc.so.6"))
         ]
-        if resolved:
-            existing = env.get("LD_LIBRARY_PATH", "")
-            merged = ":".join(resolved)
-            env["LD_LIBRARY_PATH"] = (merged + ":" + existing).rstrip(":") if existing else merged
+        for d in resolved:
+            all_ldflags.append(f"-Wl,-rpath,{d}")
+            all_ldflags.append(f"-Wl,-rpath-link,{d}")
 
     # Derive LD_LIBRARY_PATH, GCONV_PATH, BISON_PKGDATADIR from hermetic
     # and path-prepend dirs so host tools find shared libraries and data.

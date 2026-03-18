@@ -70,6 +70,12 @@ def toolchain_path_args(ctx):
     # Hermetic empty: PATH built entirely from per-rule host tool deps
     return [cmd_args("--hermetic-empty")]
 
+def _ld_linux_subpath(triple):
+    """Return the sysroot-relative path to the dynamic linker for a given triple."""
+    if triple.startswith("aarch64"):
+        return "lib/ld-linux-aarch64.so.1"
+    return "lib64/ld-linux-x86-64.so.2"
+
 def toolchain_ld_linux_args(ctx):
     """Return --ld-linux flag pointing to the buckos dynamic linker.
 
@@ -80,7 +86,7 @@ def toolchain_ld_linux_args(ctx):
     """
     tc = ctx.attrs._toolchain[BuildToolchainInfo]
     if tc.sysroot:
-        return [cmd_args("--ld-linux", tc.sysroot.project("lib64/ld-linux-x86-64.so.2"))]
+        return [cmd_args("--ld-linux", tc.sysroot.project(_ld_linux_subpath(tc.target_triple)))]
     return []
 
 def toolchain_target_triple(ctx):

@@ -18,6 +18,9 @@ buckos_toolchain(
     strip_bin = "strip",
     make = "make",
     pkg_config = "pkg-config",
-    target_triple = "x86_64-linux-gnu",
+    target_triple = select({
+        "//platforms:is_aarch64": "aarch64-linux-gnu",
+        "DEFAULT": "x86_64-linux-gnu",
+    }),
     visibility = ["PUBLIC"],
 )

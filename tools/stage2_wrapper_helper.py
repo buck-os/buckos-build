@@ -17,6 +17,16 @@ from _env import clean_env
 
 TARGET_TRIPLE = "x86_64-buckos-linux-gnu"
 
+_LD_LINUX = {
+    "aarch64": "lib/ld-linux-aarch64.so.1",
+    "x86_64": "lib64/ld-linux-x86-64.so.2",
+}
+
+
+def _ld_linux_subpath(triple):
+    arch = triple.split("-")[0]
+    return _LD_LINUX.get(arch, _LD_LINUX["x86_64"])
+
 
 def _is_elf(path):
     """Check if a file is an ELF binary."""
@@ -38,7 +48,7 @@ REAL_TOOL="${{SCRIPT_DIR}}/../../.stage2-real/tools/bin/${{TOOL_NAME}}"
 LIB_PATH="$SYSROOT/usr/lib64:$SYSROOT/lib64:$SYSROOT/usr/lib:$SYSROOT/lib"
 
 # Invoke the sysroot's dynamic linker to run the stage2 binary
-exec "$SYSROOT/lib64/ld-linux-x86-64.so.2" \\
+exec "$SYSROOT/{ld_linux}" \\
     --library-path "$LIB_PATH" \\
     "$REAL_TOOL" "$@"
 """
@@ -80,7 +90,6 @@ def main():
     # Generate wrappers for each tool
     stage2_bin = os.path.join(stage2_dir, "tools", "bin")
     if os.path.isdir(stage2_bin):
-        wrapper_content = _WRAPPER_TEMPLATE.format(triple=triple)
         for name in sorted(os.listdir(stage2_bin)):
             tool = os.path.join(stage2_bin, name)
             if not os.path.isfile(tool) or not os.access(tool, os.X_OK):
@@ -88,6 +97,10 @@ def main():
             wrapper_path = os.path.join(tools_bin, name)
 
             if _is_elf(tool):
+                wrapper_content = _WRAPPER_TEMPLATE.format(
+                    triple=triple,
+                    ld_linux=_ld_linux_subpath(triple),
+                )
                 with open(wrapper_path, "w") as f:
                     f.write(wrapper_content)
                 os.chmod(wrapper_path, 0o755)

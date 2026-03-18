@@ -12,7 +12,7 @@ _REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_REPO / "tools"))
 
 from stamp_helper import is_elf
-from stage2_wrapper_helper import _is_elf, _WRAPPER_TEMPLATE
+from stage2_wrapper_helper import _is_elf, _WRAPPER_TEMPLATE, _ld_linux_subpath
 from boot_script_helper import _SCRIPT_TEMPLATE
 from initramfs_builder import _fix_lib64
 
@@ -207,9 +207,9 @@ def main():
     # Stage2 wrapper template tests
     # ----------------------------------------------------------------
 
-    print("=== wrapper_template: renders with triple ===")
+    print("=== wrapper_template: renders with triple (x86_64) ===")
     triple = "x86_64-buckos-linux-gnu"
-    wrapper = _WRAPPER_TEMPLATE.format(triple=triple)
+    wrapper = _WRAPPER_TEMPLATE.format(triple=triple, ld_linux=_ld_linux_subpath(triple))
     if triple in wrapper:
         ok("triple rendered in wrapper template")
     else:
@@ -220,6 +220,14 @@ def main():
         ok("ld-linux-x86-64.so.2 present")
     else:
         fail("ld-linux-x86-64.so.2 not found")
+
+    print("=== wrapper_template: renders with triple (aarch64) ===")
+    triple_aarch64 = "aarch64-buckos-linux-gnu"
+    wrapper_aarch64 = _WRAPPER_TEMPLATE.format(triple=triple_aarch64, ld_linux=_ld_linux_subpath(triple_aarch64))
+    if "ld-linux-aarch64.so.1" in wrapper_aarch64:
+        ok("ld-linux-aarch64.so.1 present for aarch64")
+    else:
+        fail("ld-linux-aarch64.so.1 not found for aarch64")
 
     print("=== wrapper_template: contains --library-path ===")
     if "--library-path" in wrapper:

@@ -46,6 +46,15 @@ def seed_toolchain():
     else:
         archive = None
 
+    _triple = select({
+        "//platforms:is_aarch64": "aarch64-buckos-linux-gnu",
+        "DEFAULT": "x86_64-buckos-linux-gnu",
+    })
+    _march = select({
+        "//platforms:is_aarch64": [],
+        "DEFAULT": ["-march=x86-64-v3"],
+    })
+
     if archive:
         native.alias(
             name = "seed-archive-ref",
@@ -55,9 +64,9 @@ def seed_toolchain():
         toolchain_import(
             name = "seed-toolchain",
             archive = archive,
-            target_triple = "x86_64-buckos-linux-gnu",
+            target_triple = _triple,
             has_host_tools = True,
-            extra_cflags = ["-march=x86-64-v3"],
+            extra_cflags = _march,
             labels = ["buckos:seed"],
             visibility = ["PUBLIC"],
         )
@@ -68,7 +77,7 @@ def seed_toolchain():
         toolchain_import(
             name = "seed-exec-toolchain",
             archive = archive,
-            target_triple = "x86_64-buckos-linux-gnu",
+            target_triple = _triple,
             has_host_tools = True,
             exec_mode = True,
             labels = ["buckos:seed-exec"],
@@ -89,7 +98,7 @@ def seed_toolchain():
             name = "seed-toolchain",
             bootstrap_stage = "//tc/bootstrap/stage2:stage2",
             host_tools = "//tc/bootstrap:host-tools-exec",
-            extra_cflags = ["-march=x86-64-v3"],
+            extra_cflags = _march,
             extra_ldflags = [
                 "-Wl,-rpath,$ORIGIN/../lib64:$ORIGIN/../lib",
             ],
@@ -99,7 +108,7 @@ def seed_toolchain():
             name = "seed-exec-toolchain",
             bootstrap_stage = "//tc/bootstrap/stage2:stage2",
             host_tools = "//tc/bootstrap:host-tools-exec",
-            extra_cflags = ["-march=x86-64-v3"],
+            extra_cflags = _march,
             extra_ldflags = [
                 "-Wl,-rpath,$ORIGIN/../lib64:$ORIGIN/../lib",
             ],

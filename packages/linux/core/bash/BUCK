@@ -35,7 +35,16 @@ package(
     # Base configure arguments (always applied)
     configure_args = [
         "--without-bash-malloc",
-    ],
+    ] + select({
+        "//platforms:is_aarch64": [
+            # Force POSIX signal detection — configure test programs may
+            # not execute under cross-sysroot, causing fallback to BSD
+            # sigblock/sigsetmask which fail on aarch64 (sigset_t != int).
+            "ac_cv_func_sigprocmask=yes",
+            "bash_cv_must_reinstall_sighandlers=no",
+        ],
+        "DEFAULT": [],
+    }),
 
     post_install_cmds = ["""
 # Create sh symlink

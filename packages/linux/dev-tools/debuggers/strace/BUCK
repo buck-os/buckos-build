@@ -20,6 +20,11 @@ package(
 
     # Default USE flags
 
+    configure_args = select({
+        "//platforms:is_aarch64": ["--enable-mpers=no"],
+        "DEFAULT": [],
+    }),
+
     use_configure = {
         "unwind": ("--with-libunwind", "--without-libunwind"),
     },

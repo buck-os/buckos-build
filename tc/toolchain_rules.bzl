@@ -19,6 +19,29 @@ helper scripts which invoke the tools.
 
 load("//defs:providers.bzl", "BootstrapStageInfo", "BuildToolchainInfo", "PackageInfo")
 
+def _ld_linux_subpath(triple):
+    """Return the sysroot-relative path to the dynamic linker for a given triple."""
+    if triple.startswith("aarch64"):
+        return "lib/ld-linux-aarch64.so.1"
+    return "lib64/ld-linux-x86-64.so.2"
+
+def _gcc_lib_subdir(triple):
+    """Return the GCC runtime lib subdirectory name for a given triple.
+
+    GCC installs runtime libs (libstdc++, libgcc_s) to lib64/ on both
+    x86_64 and aarch64 targets.
+    """
+    return "lib64"
+
+def _sysroot_lib_subdir(triple):
+    """Return the sysroot lib subdirectory name for a given triple.
+
+    glibc installs to lib/ on aarch64, lib64/ on x86_64.
+    """
+    if triple.startswith("aarch64"):
+        return "lib"
+    return "lib64"
+
 # ── Host toolchain ───────────────────────────────────────────────────
 
 def _buckos_toolchain_impl(ctx: AnalysisContext) -> list[Provider]:
@@ -131,8 +154,10 @@ def _buckos_bootstrap_toolchain_impl(ctx: AnalysisContext) -> list[Provider]:
     # buckos glibc, the binaries segfault or fail with missing symbols.
     # Rewriting to the sysroot ld-linux ensures the compiler loads buckos
     # glibc (matching version).  Same approach as host_tools_exec.
+    ld_subpath = _ld_linux_subpath(triple)
+    lib_subdir = _gcc_lib_subdir(triple)
     patched = ctx.actions.declare_output("patched-compiler", dir = True)
-    sysroot_ld = stage.sysroot.project("lib64/ld-linux-x86-64.so.2")
+    sysroot_ld = stage.sysroot.project(ld_subpath)
     patchelf_bin = ctx.attrs._patchelf[DefaultInfo].default_outputs[0]
     rewrite_cmd = cmd_args(ctx.attrs._rewrite_tool[RunInfo])
     rewrite_cmd.add("--tools-dir", stage_dir)
@@ -150,7 +175,7 @@ def _buckos_bootstrap_toolchain_impl(ctx: AnalysisContext) -> list[Provider]:
 
     # Use patched compiler binaries + sysroot
     patched_sysroot = patched.project("tools/" + triple + "/sys-root")
-    patched_ld = patched_sysroot.project("lib64/ld-linux-x86-64.so.2")
+    patched_ld = patched_sysroot.project(ld_subpath)
 
     cc_args = cmd_args(patched.project("tools/bin/" + triple + "-gcc"))
     cc_args.add(cmd_args("--sysroot=", patched_sysroot, delimiter = ""))
@@ -198,7 +223,7 @@ def _buckos_bootstrap_toolchain_impl(ctx: AnalysisContext) -> list[Provider]:
     # machine — safely cacheable by remote action caches.
     specs_file = ctx.actions.declare_output("gcc-link.specs")
     gen_cmd = cmd_args(ctx.attrs._gen_specs_tool[RunInfo])
-    gen_cmd.add("--ld-linux-subpath", "lib64/ld-linux-x86-64.so.2")
+    gen_cmd.add("--ld-linux-subpath", ld_subpath)
     if rpath_val:
         gen_cmd.add("--rpath", rpath_val)
     gen_cmd.add("--output", specs_file.as_output())
@@ -214,7 +239,7 @@ def _buckos_bootstrap_toolchain_impl(ctx: AnalysisContext) -> list[Provider]:
     # so RPATH entries use DT_RPATH (propagates to loaded shared libs).
     # These are buck2 cmd_args with artifacts, resolved to local paths
     # at analysis time — no remote cache portability issues.
-    patched_gcc_lib_dir = patched.project("tools/" + triple + "/" + "lib64") if stage.gcc_lib_dir else None
+    patched_gcc_lib_dir = patched.project("tools/" + triple + "/" + lib_subdir) if stage.gcc_lib_dir else None
     ldflags = list(remaining_ldflags)
     if patched_gcc_lib_dir:
         ldflags.append("-Wl,--disable-new-dtags")
@@ -226,7 +251,8 @@ def _buckos_bootstrap_toolchain_impl(ctx: AnalysisContext) -> list[Provider]:
     # or meson.  --sysroot only affects default search paths, not explicit
     # -L flags — a stray -L/usr/lib64 makes ld find the host's older libc
     # instead of the sysroot glibc, causing undefined __isoc23_* symbols.
-    ldflags.append(cmd_args("-L", patched_sysroot.project("usr/lib64"), delimiter = ""))
+    sysroot_libdir = _sysroot_lib_subdir(triple)
+    ldflags.append(cmd_args("-L", patched_sysroot.project("usr/" + sysroot_libdir), delimiter = ""))
     ldflags.append(cmd_args("-L", patched_sysroot.project("usr/lib"), delimiter = ""))
 
     info = BuildToolchainInfo(

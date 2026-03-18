@@ -121,25 +121,40 @@ def kvm_available():
     return os.access("/dev/kvm", os.R_OK | os.W_OK)
 
 
+def _host_arch():
+    import platform
+    return platform.machine()
+
 def run_qemu(kernel, initramfs, timeout, memory, cpus, success_marker):
     """Boot QEMU, capture serial output, check for success marker."""
+    arch = _host_arch()
+    if arch == "aarch64":
+        qemu_bin = "qemu-system-aarch64"
+        console = "ttyAMA0"
+        machine_args = ["-machine", "virt", "-cpu", "host"]
+    else:
+        qemu_bin = "qemu-system-x86_64"
+        console = "ttyS0"
+        machine_args = []
+
     qemu_cmd = [
-        "qemu-system-x86_64",
+        qemu_bin,
         "-nographic",
         "-serial", "stdio",
         "-m", str(memory),
         "-smp", str(cpus),
         "-kernel", kernel,
         "-initrd", initramfs,
-        "-append", "console=ttyS0",
+        "-append", f"console={console}",
         "-no-reboot",
-    ]
+    ] + machine_args
 
     if kvm_available():
         qemu_cmd.insert(1, "-enable-kvm")
     else:
         print("warning: KVM not available, using -cpu max (slow)", file=sys.stderr)
-        qemu_cmd.extend(["-cpu", "max"])
+        if arch != "aarch64":  # aarch64 already has -cpu host
+            qemu_cmd.extend(["-cpu", "max"])
 
     proc = subprocess.Popen(
         qemu_cmd,

@@ -47,6 +47,10 @@ _DETERMINISM_PINS = {
     # replaced with a nonexistent dir — helpers set PKG_CONFIG_PATH to
     # buckos deps.  Empty string doesn't work: pkgconf treats "" as unset.
     "PKG_CONFIG_LIBDIR": "/nonexistent-buckos-pkgconfig",
+    # Prevent openssl from reading host system config (e.g. Fedora's
+    # /etc/pki/tls/openssl.cnf has rh-allow-sha1-signatures which
+    # upstream openssl doesn't understand).
+    "OPENSSL_CONF": "/dev/null",
 }
 
 

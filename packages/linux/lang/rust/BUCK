@@ -19,7 +19,7 @@ load("//defs/rules:source.bzl", "extract_source")
 
 # Stage0 bootstrap compiler (not shipped — only used during build)
 package(
-    name = "rust-stage0",
+    name = "rust-stage0-x86_64",
     build_rule = "binary",
     version = "1.91.0",
     url = "https://static.rust-lang.org/dist/rust-1.91.0-x86_64-unknown-linux-gnu.tar.xz",
@@ -33,6 +33,33 @@ cd "$SRCS"
 ./install.sh --prefix="$OUT/tools/rust-stage0" --disable-ldconfig
 echo "Stage0 rustc: $($OUT/tools/rust-stage0/bin/rustc --version)"
 """,
+    visibility = [],
+)
+
+package(
+    name = "rust-stage0-aarch64",
+    build_rule = "binary",
+    version = "1.91.0",
+    url = "https://static.rust-lang.org/dist/rust-1.91.0-aarch64-unknown-linux-gnu.tar.xz",
+    sha256 = "62b2b7aeba3a629783263742fc50e7a097349f8dd2d7cdf394ab2723a6b3c7ee",
+    description = "Rust bootstrap compiler (stage 0, aarch64) for building Rust from source",
+    homepage = "https://www.rust-lang.org/",
+    license = "Apache-2.0 OR MIT",
+    install_script = """
+mkdir -p "$OUT/tools/rust-stage0"
+cd "$SRCS"
+./install.sh --prefix="$OUT/tools/rust-stage0" --disable-ldconfig
+echo "Stage0 rustc: $($OUT/tools/rust-stage0/bin/rustc --version)"
+""",
+    visibility = [],
+)
+
+alias(
+    name = "rust-stage0",
+    actual = select({
+        "//platforms:is_aarch64": ":rust-stage0-aarch64",
+        "DEFAULT": ":rust-stage0-x86_64",
+    }),
     visibility = [],
 )
 
@@ -95,6 +122,10 @@ exec $CXX $CFLAGS "\$@" $LDFLAGS
 CXXEOF
 chmod +x "$WORKDIR/cc-wrappers/buckos-cc" "$WORKDIR/cc-wrappers/buckos-cxx"
 
+# Derive Rust target triple from TARGET_TRIPLE
+RUST_ARCH="${TARGET_TRIPLE%%-*}"
+RUST_TARGET="${RUST_ARCH}-unknown-linux-gnu"
+
 # Generate bootstrap.toml — Rust 1.91+ uses bootstrap.toml
 cat > bootstrap.toml << EOF
 change-id = 144675
@@ -109,8 +140,8 @@ extended = true
 tools = ["cargo", "clippy", "rustfmt", "rustdoc"]
 vendor = true
 python = "$(command -v python3)"
-target = ["x86_64-unknown-linux-gnu"]
-host = ["x86_64-unknown-linux-gnu"]
+target = ["$RUST_TARGET"]
+host = ["$RUST_TARGET"]
 
 [install]
 prefix = "/usr"
@@ -128,7 +159,7 @@ download-rustc = false
 # combined RPATH covers both lib/ and lib64/.
 rpath = true
 
-[target.x86_64-unknown-linux-gnu]
+[target.$RUST_TARGET]
 # Wrapper scripts invoke our GCC with specs — LLVM and other C/C++
 # components get padded interp + RPATH at link time.
 cc = "$WORKDIR/cc-wrappers/buckos-cc"
@@ -151,7 +182,7 @@ export CXX="$WORKDIR/cc-wrappers/buckos-cxx"
 # stage1/lib/ with buckos libstdc++/libgcc_s symlinks so they're in
 # place when x.py first invokes the stage1 rustc.
 GCC_LIBDIR=$(dirname $(${CC%% *} -print-file-name=libstdc++.so))
-STAGE1_LIB="$WORKDIR/src/build/x86_64-unknown-linux-gnu/stage1/lib"
+STAGE1_LIB="$WORKDIR/src/build/$RUST_TARGET/stage1/lib"
 mkdir -p "$STAGE1_LIB"
 for lib in "$GCC_LIBDIR"/libstdc++.so* "$GCC_LIBDIR"/libgcc_s.so*; do
     [ -f "$lib" ] && ln -sf "$lib" "$STAGE1_LIB/" 2>/dev/null || true

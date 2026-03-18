@@ -9,6 +9,19 @@ includes host-tools/, those are wired as the hermetic PATH directory.
 
 load("//defs:providers.bzl", "BuildToolchainInfo")
 
+def _lib_subdir(triple):
+    """Return the GCC runtime lib subdirectory name for a given triple.
+
+    GCC installs runtime libs to lib64/ on both x86_64 and aarch64.
+    """
+    return "lib64"
+
+def _sysroot_lib_subdir(triple):
+    """Return the sysroot lib subdirectory name for a given triple."""
+    if triple.startswith("aarch64"):
+        return "lib"
+    return "lib64"
+
 def _toolchain_import_impl(ctx):
     unpacked = ctx.actions.declare_output("toolchain", dir = True)
 
@@ -19,6 +32,7 @@ def _toolchain_import_impl(ctx):
     ctx.actions.run(cmd, category = "toolchain_import", identifier = ctx.attrs.name, allow_cache_upload = False)
 
     triple = ctx.attrs.target_triple
+    libdir = _lib_subdir(triple)
 
     # Wire host tools from the seed archive when present.
     # The archive layout is: host-tools/bin/{make,sed,...}
@@ -49,7 +63,7 @@ def _toolchain_import_impl(ctx):
         cxx_args = cmd_args(cxx)
         cxx_args.add(cmd_args("--sysroot=", sysroot, delimiter = ""))
 
-        gcc_lib_dir = unpacked.project("tools/" + triple + "/lib64")
+        gcc_lib_dir = unpacked.project("tools/" + triple + "/" + libdir)
         ldflags = list(ctx.attrs.extra_ldflags)
         ldflags.append(cmd_args("-Wl,-rpath-link,", gcc_lib_dir, delimiter = ""))
         ldflags.append(cmd_args("-L", sysroot.project("usr/lib64"), delimiter = ""))
@@ -71,11 +85,12 @@ def _toolchain_import_impl(ctx):
         # ld.bfd resolves DT_NEEDED chains and needs to find libstdc++.so
         # when linking C programs against C++ shared libraries.  The GCC
         # runtime libs live outside the sysroot — add them as rpath-link.
-        gcc_lib_dir = unpacked.project("tools/" + triple + "/lib64")
+        gcc_lib_dir = unpacked.project("tools/" + triple + "/" + libdir)
+        sysroot_libdir = _sysroot_lib_subdir(triple)
         ldflags = list(ctx.attrs.extra_ldflags)
         ldflags.append(cmd_args("-Wl,-rpath-link,", gcc_lib_dir, delimiter = ""))
         # Explicit -L for sysroot lib dirs — see toolchain_rules.bzl comment.
-        ldflags.append(cmd_args("-L", sysroot.project("usr/lib64"), delimiter = ""))
+        ldflags.append(cmd_args("-L", sysroot.project("usr/" + sysroot_libdir), delimiter = ""))
         ldflags.append(cmd_args("-L", sysroot.project("usr/lib"), delimiter = ""))
 
     info = BuildToolchainInfo(

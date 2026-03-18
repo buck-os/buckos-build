@@ -120,7 +120,7 @@ def _merge_private_registry(name, patches, configure_args, extra_cflags):
     private = PATCH_REGISTRY.get(name, {})
 
     all_patches = list(patches) + private.get("patches", [])
-    all_configure_args = list(configure_args) + private.get("extra_configure_args", [])
+    all_configure_args = configure_args + private.get("extra_configure_args", [])
     all_cflags = list(extra_cflags) + private.get("extra_cflags", [])
 
     return all_patches, all_configure_args, all_cflags

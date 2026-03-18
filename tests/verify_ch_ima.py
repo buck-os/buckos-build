@@ -19,6 +19,7 @@ Env vars from sh_test:
 import ctypes
 import multiprocessing
 import os
+import platform
 import re
 import selectors
 import signal
@@ -103,7 +104,9 @@ def main():
         "--kernel", kernel_bin,
         "--initramfs", initramfs_bin,
         "--disk", f"path={disk},readonly=on",
-        "--cmdline", f"console=ttyS0 panic=-1 {cmdline_extra}",
+        "--cmdline", "console={} panic=-1 {}".format(
+            "ttyAMA0" if platform.machine() == "aarch64" else "ttyS0",
+            cmdline_extra),
         "--cpus", f"boot={host_cpus}",
         "--memory", f"size={vm_mem_mb}M",
         "--serial", "tty",

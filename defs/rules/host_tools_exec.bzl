@@ -27,7 +27,12 @@ def _host_tools_exec_impl(ctx):
     output = ctx.actions.declare_output("host-tools-exec", dir = True)
 
     # The sysroot contains the buckos ld-linux that matches our glibc.
-    ld_linux = stage.sysroot.project("lib64/ld-linux-x86-64.so.2")
+    triple = stage.target_triple
+    if triple.startswith("aarch64"):
+        ld_subpath = "lib/ld-linux-aarch64.so.1"
+    else:
+        ld_subpath = "lib64/ld-linux-x86-64.so.2"
+    ld_linux = stage.sysroot.project(ld_subpath)
 
     cmd = cmd_args(ctx.attrs._rewrite_tool[RunInfo])
     cmd.add("--tools-dir", tools_dir)

@@ -17,11 +17,15 @@ Wrapper pattern:
 
 load("//defs:providers.bzl", "BootstrapStageInfo")
 
-TARGET_TRIPLE = "x86_64-buckos-linux-gnu"
+def _gcc_lib_subdir(triple):
+    # GCC installs runtime libs to lib64/ on both x86_64 and aarch64
+    return "lib64"
 
 def _stage2_wrapper_impl(ctx):
     stage2 = ctx.attrs.stage2[BootstrapStageInfo]
     stage2_output = ctx.attrs.stage2[DefaultInfo].default_outputs[0]
+    triple = stage2.target_triple
+    lib_subdir = _gcc_lib_subdir(triple)
 
     # Output directory for wrapper scripts
     output = ctx.actions.declare_output("wrappers", dir = True)
@@ -29,7 +33,7 @@ def _stage2_wrapper_impl(ctx):
     cmd = cmd_args(ctx.attrs._wrapper_tool[RunInfo])
     cmd.add("--stage2-dir", stage2_output)
     cmd.add("--output-dir", output.as_output())
-    cmd.add("--target-triple", TARGET_TRIPLE)
+    cmd.add("--target-triple", triple)
     ctx.actions.run(cmd, category = "create_wrappers", identifier = ctx.attrs.name, allow_cache_upload = True)
 
     # Return BootstrapStageInfo with wrapper paths
@@ -37,12 +41,12 @@ def _stage2_wrapper_impl(ctx):
         DefaultInfo(default_output = output),
         BootstrapStageInfo(
             stage = 2,
-            cc = output.project("tools/bin/" + TARGET_TRIPLE + "-gcc"),
-            cxx = output.project("tools/bin/" + TARGET_TRIPLE + "-g++"),
-            ar = output.project("tools/bin/" + TARGET_TRIPLE + "-ar"),
-            sysroot = output.project("tools/" + TARGET_TRIPLE + "/sys-root"),
-            gcc_lib_dir = output.project("tools/" + TARGET_TRIPLE + "/lib64"),
-            target_triple = TARGET_TRIPLE,
+            cc = output.project("tools/bin/" + triple + "-gcc"),
+            cxx = output.project("tools/bin/" + triple + "-g++"),
+            ar = output.project("tools/bin/" + triple + "-ar"),
+            sysroot = output.project("tools/" + triple + "/sys-root"),
+            gcc_lib_dir = output.project("tools/" + triple + "/" + lib_subdir),
+            target_triple = triple,
             python = None,
             python_version = None,
         ),

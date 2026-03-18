@@ -29,7 +29,14 @@ kernel_headers(
 kernel_build(
     name = "buckos-kernel",
     source = "//packages/linux/kernel/src:linux-src",
-    config = "//packages/linux/kernel/configs:buckos-default",
+    config = select({
+        "//platforms:is_aarch64": "//packages/linux/kernel/configs:buckos-aarch64-default",
+        "DEFAULT": "//packages/linux/kernel/configs:buckos-default",
+    }),
+    arch = select({
+        "//platforms:is_aarch64": "aarch64",
+        "DEFAULT": "x86_64",
+    }),
     version = "6.18",
     labels = ["buckos:compile", "buckos:build:kbuild"],
 )
@@ -95,7 +102,14 @@ kernel_build(
 kernel_build(
     name = "buckos-kernel-live",
     source = "//packages/linux/kernel/src:linux-src",
-    config = "//packages/linux/kernel/configs:buckos-live",
+    config = select({
+        "//platforms:is_aarch64": "//packages/linux/kernel/configs:buckos-aarch64-default",
+        "DEFAULT": "//packages/linux/kernel/configs:buckos-live",
+    }),
+    arch = select({
+        "//platforms:is_aarch64": "aarch64",
+        "DEFAULT": "x86_64",
+    }),
     version = "6.18",
     # GCC 15 trips -Werror=address in libbpf tools (hashmap__find NULL check)
     patches = ["fix-libbpf-werror-address.patch"],
@@ -106,7 +120,14 @@ kernel_build(
 kernel_build(
     name = "buckos-kernel-ch",
     source = "//packages/linux/kernel/src:linux-src",
-    config = "//packages/linux/kernel/configs:buckos-ch-guest",
+    config = select({
+        "//platforms:is_aarch64": "//packages/linux/kernel/configs:buckos-aarch64-cloud",
+        "DEFAULT": "//packages/linux/kernel/configs:buckos-ch-guest",
+    }),
+    arch = select({
+        "//platforms:is_aarch64": "aarch64",
+        "DEFAULT": "x86_64",
+    }),
     version = "6.18",
     kcflags = "-Wno-error -Wno-unterminated-string-initialization",
     labels = ["buckos:compile", "buckos:build:kbuild"],

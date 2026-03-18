@@ -109,6 +109,39 @@ jobs:
           path: buckos-kde.iso
           compression-level: 0
 
+  test-aarch64:
+    name: build & test (aarch64)
+    runs-on: [self-hosted, ARM64]
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          clean: false
+      - name: Apply local config
+        run: cp /opt/gha/.buckconfig.local .buckconfig.local
+      - name: Install buck2
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -sL https://github.com/facebook/buck2/releases/download/2026-02-01/buck2-aarch64-unknown-linux-gnu.zst \
+            | zstd -d -f -o "$HOME/.local/bin/buck2"
+          chmod +x "$HOME/.local/bin/buck2"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Restart buck2 daemon
+        run: buck2 kill 2>/dev/null || true
+      - name: Resolve targets
+        run: buck2 targets //...
+      - name: Graph tests
+        run: |
+          failed=0
+          for bxl in tests/graph/test_*.bxl; do
+            name=$(basename "$bxl" .bxl)
+            echo "::group::$name"
+            buck2 bxl "//tests/graph/${name}.bxl:${name}" || failed=1
+            echo "::endgroup::"
+          done
+          [ "$failed" -eq 0 ]
+      - name: Tests
+        run: "buck2 test //tests:"
+
   test-seed:
     name: test with seed
     needs: [build]
