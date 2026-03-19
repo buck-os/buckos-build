@@ -354,6 +354,10 @@ def main():
                             os.unlink(p)
                             os.symlink(target.replace(_orig_build_dir, _scratch_build), p)
         for dirpath, _dirnames, filenames in os.walk(_scratch_build):
+            # Skip meson-private — install.dat is a binary pickle that
+            # would be corrupted by text-mode string replacement.
+            if os.path.basename(dirpath) == "meson-private":
+                continue
             for fname in filenames:
                 if os.path.splitext(fname)[1] in _BINARY_EXTS:
                     continue
