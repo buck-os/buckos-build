@@ -329,12 +329,46 @@ def main():
     _scratch = os.path.abspath(os.environ.get("BUCK_SCRATCH_PATH",
                                               os.environ.get("TMPDIR", "/tmp")))
     _scratch_build = os.path.join(_scratch, "build")
+    _orig_build_dir = build_dir
     shutil.copytree(build_dir, _scratch_build, symlinks=True)
     build_dir = _scratch_build
     register_cleanup(_scratch_build)
     make_dir = _scratch_build
     if args.build_subdir:
         make_dir = os.path.join(_scratch_build, args.build_subdir)
+
+    # Rewrite embedded paths from the sealed declared output to the
+    # scratch copy.  cmake_install.cmake files contain include() with
+    # absolute paths — without this rewrite those include() directives
+    # reference the read-only declared output, bypassing any
+    # modifications we make to the scratch copies (e.g. RPATH_CHANGE
+    # suppression).  Also rewrite symlinks that point into the old tree.
+    if _orig_build_dir != _scratch_build:
+        for dirpath, dirnames, filenames in os.walk(_scratch_build):
+            for entries in (dirnames, filenames):
+                for name in entries:
+                    p = os.path.join(dirpath, name)
+                    if os.path.islink(p):
+                        target = os.readlink(p)
+                        if _orig_build_dir in target:
+                            os.unlink(p)
+                            os.symlink(target.replace(_orig_build_dir, _scratch_build), p)
+        for dirpath, _dirnames, filenames in os.walk(_scratch_build):
+            # Skip meson-private — install.dat is a binary pickle that
+            # would be corrupted by text-mode string replacement.
+            if os.path.basename(dirpath) == "meson-private":
+                continue
+            for fname in filenames:
+                if os.path.splitext(fname)[1] in _BINARY_EXTS:
+                    continue
+                fpath = os.path.join(dirpath, fname)
+                if os.path.islink(fpath):
+                    continue
+                try:
+                    _rewrite_file(fpath, _orig_build_dir, _scratch_build)
+                except (UnicodeDecodeError, PermissionError, IsADirectoryError,
+                        FileNotFoundError):
+                    pass
 
     # Expose the build directory so post-cmds can reference build
     # artifacts (e.g. copying objects not handled by make install).
@@ -423,7 +457,9 @@ def main():
     # install time (e.g. Python test-imports extension modules during
     # make install).  Exclude dirs with libc.so.6 to avoid poisoning
     # host tools with sysroot glibc.
-    if file_lib_dirs:
+    # Skip in --allow-host-path mode: host tools crash loading buckos
+    # libs linked against a newer glibc.  Buckos tools use RPATH.
+    if file_lib_dirs and not args.allow_host_path:
         resolved = [
             os.path.abspath(d) for d in file_lib_dirs
             if os.path.isdir(d) and not os.path.exists(os.path.join(os.path.abspath(d), "libc.so.6"))
@@ -638,54 +674,63 @@ def main():
         _fix_stale_symlinks(make_dir, _stale_root, _new_root)
         _rewrite_stale_paths(make_dir, _stale_root, _new_root)
 
-        # Rewrite meson's install.dat pickle which the text rewrite
-        # skips (binary).  install.dat stores absolute source paths
-        # used by `meson install` to locate headers and other files.
-        # Use real mesonbuild classes (from hermetic PATH site-packages)
-        # so the re-pickled file is loadable by meson's safe unpickler.
-        _install_dat = os.path.join(make_dir, "meson-private", "install.dat")
-        if os.path.isfile(_install_dat):
-            import pickle as _pickle
+    # Ensure stale absolute paths in meson install.dat files resolve.
+    # install.dat is a binary pickle with absolute build-dir paths.
+    # When the build tree moves (scratch relocation, cross-machine
+    # cache), those paths become stale.  Create symlinks from stale
+    # paths to the current location so meson follows them.
+    # Glob recursively to handle nested meson builds (e.g. QEMU wraps
+    # meson in autotools, placing install.dat at build/meson-private/).
+    import pickletools as _pt
 
-            # Add mesonbuild to sys.path from hermetic or path-prepend dirs
-            _meson_sp_added = []
-            for _bp in list(args.hermetic_path) + list(all_path_prepend):
-                _parent = os.path.dirname(os.path.abspath(_bp))
-                for _pattern in ("lib/python*/site-packages", "lib64/python*/site-packages"):
-                    for _sp in _glob.glob(os.path.join(_parent, _pattern)):
-                        if os.path.isdir(os.path.join(_sp, "mesonbuild")):
-                            if _sp not in sys.path:
-                                sys.path.insert(0, _sp)
-                                _meson_sp_added.append(_sp)
-
-            def _patch_paths(obj, old, new):
-                """Recursively replace old prefix with new in string attributes."""
-                if isinstance(obj, str):
-                    return obj.replace(old, new) if old in obj else obj
-                if isinstance(obj, list):
-                    return [_patch_paths(item, old, new) for item in obj]
-                if isinstance(obj, tuple):
-                    return tuple(_patch_paths(item, old, new) for item in obj)
-                if hasattr(obj, "__dict__"):
-                    for k, v in obj.__dict__.items():
-                        patched = _patch_paths(v, old, new)
-                        if patched is not v:
-                            setattr(obj, k, patched)
-                return obj
-
-            try:
-                _dat_stat = os.stat(_install_dat)
-                with open(_install_dat, "rb") as f:
-                    _idata = _pickle.load(f)
-                _patch_paths(_idata, _stale_root, _new_root)
-                with open(_install_dat, "wb") as f:
-                    _pickle.dump(_idata, f)
-                os.utime(_install_dat, (_dat_stat.st_atime, _dat_stat.st_mtime))
-            except Exception:
-                pass  # Best-effort — don't block install on pickle errors
-            finally:
-                for _sp in _meson_sp_added:
-                    sys.path.remove(_sp)
+    for _install_dat in _glob.glob(os.path.join(make_dir, "**/meson-private/install.dat"), recursive=True):
+        # The meson build dir is the parent of meson-private/
+        _meson_build_dir = os.path.dirname(os.path.dirname(_install_dat))
+        try:
+            with open(_install_dat, "rb") as f:
+                _raw = f.read()
+            _meson_stale = set()  # stale meson build dirs → _meson_build_dir
+            _scratch_stale = set()  # stale scratch dirs → make_dir
+            for _op, _arg, _ in _pt.genops(_raw):
+                if _op.name not in ('SHORT_BINUNICODE', 'BINUNICODE', 'BINUNICODE8'):
+                    continue
+                if not isinstance(_arg, str):
+                    continue
+                for _m in ('/meson-private/', '/meson-info/'):
+                    _idx = _arg.find(_m)
+                    if _idx > 0 and os.path.isabs(_arg[:_idx]) and _arg[:_idx] != _meson_build_dir:
+                        _meson_stale.add(_arg[:_idx])
+                # Stale scratch paths (buck-out/v2/tmp/) from cached outputs
+                if '/buck-out/v2/tmp/' in _arg and os.path.isabs(_arg):
+                    _idx = _arg.find('/buck-out/v2/tmp/')
+                    _tmp_prefix = _arg[:_idx] + '/buck-out/v2/tmp/'
+                    _after = _arg[len(_tmp_prefix):]
+                    _parts = _after.split('/', 5)
+                    if len(_parts) >= 5:
+                        _scratch_dir = _tmp_prefix + '/'.join(_parts[:5])
+                        if not os.path.exists(_scratch_dir):
+                            _scratch_stale.add(_scratch_dir)
+            for _sb in _meson_stale:
+                if os.path.islink(_sb):
+                    os.unlink(_sb)
+                if not os.path.exists(_sb):
+                    os.makedirs(os.path.dirname(_sb), exist_ok=True)
+                    os.symlink(_meson_build_dir, _sb)
+                    register_cleanup(_sb)
+            # Stale scratch dirs map to build_dir (the build tree root),
+            # not make_dir (which may be a subdirectory when --build-subdir
+            # is used).  The scratch work dir contained source + build at
+            # the same level; source file references need the tree root.
+            for _sb in _scratch_stale:
+                if os.path.islink(_sb):
+                    os.unlink(_sb)
+                if not os.path.exists(_sb):
+                    os.makedirs(os.path.dirname(_sb), exist_ok=True)
+                    os.symlink(build_dir, _sb)
+                    register_cleanup(_sb)
+        except Exception as _e:
+            print(f"warning: could not fixup install.dat paths: {_e}",
+                  file=sys.stderr)
 
     # --- Meson install fast-path ---
     # For meson-wrapped builds (including autotools wrappers like QEMU),
@@ -808,6 +853,33 @@ def main():
                 with open(_nf, "w") as f:
                     f.write(_nf_new)
                 os.utime(_nf, (_nf_stat.st_atime, _nf_stat.st_mtime))
+        except (UnicodeDecodeError, PermissionError, FileNotFoundError):
+            pass
+
+    # Suppress cmake RPATH_CHANGE during install.  In Buck2's split-
+    # action model the build tree moves between scratch dirs and declared
+    # outputs.  cmake_install.cmake (text) gets path-rewritten but ELF
+    # binaries don't — so RPATH_CHANGE fails because the binary's RPATH
+    # (scratch path) doesn't match what cmake_install.cmake expects
+    # (declared output path).  The buckos specs file already injects
+    # correct RPATH via DT_RUNPATH, so cmake's RPATH management is
+    # unnecessary.  Comment out file(RPATH_CHANGE ...) blocks.
+    _rpath_change_re = re.compile(
+        r'^\s*file\s*\(\s*RPATH_CHANGE\b.*?\)',
+        re.MULTILINE | re.DOTALL,
+    )
+    for _ci in _glob.glob(os.path.join(make_dir, "**/cmake_install.cmake"), recursive=True):
+        try:
+            _ci_stat = os.stat(_ci)
+            with open(_ci, "r") as f:
+                _ci_content = f.read()
+            if 'RPATH_CHANGE' not in _ci_content:
+                continue
+            _ci_new = _rpath_change_re.sub('# RPATH_CHANGE suppressed by install_helper', _ci_content)
+            if _ci_new != _ci_content:
+                with open(_ci, "w") as f:
+                    f.write(_ci_new)
+                os.utime(_ci, (_ci_stat.st_atime, _ci_stat.st_mtime))
         except (UnicodeDecodeError, PermissionError, FileNotFoundError):
             pass
 

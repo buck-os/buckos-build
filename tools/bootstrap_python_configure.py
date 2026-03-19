@@ -34,7 +34,7 @@ def main():
 
     project_root = os.getcwd()
     source_dir = os.path.abspath(args.source_dir)
-    output_dir = os.path.abspath(args.output_dir)
+    declared_output = os.path.abspath(args.output_dir)
 
     def resolve(p):
         return p if os.path.isabs(p) else os.path.join(project_root, p)
@@ -46,7 +46,13 @@ def main():
     ar_path = resolve(args.ar)
     dep_dirs = [resolve(d) for d in args.dep_dirs]
 
-    # Copy prepared source to output dir
+    # Work in scratch to avoid mutating the declared output (in buck-out)
+    # during configure.  Only the final result is placed at declared_output.
+    _scratch_base = os.path.abspath(os.environ.get("BUCK_SCRATCH_PATH",
+                                                    os.environ.get("TMPDIR", "/tmp")))
+    output_dir = os.path.join(_scratch_base, "python-configure-work")
+
+    # Copy prepared source to scratch
     if os.path.exists(output_dir):
         shutil.rmtree(output_dir)
     shutil.copytree(source_dir, output_dir, symlinks=True)
@@ -98,6 +104,35 @@ def main():
     if result.returncode != 0:
         print(f"error: configure failed with exit code {result.returncode}", file=sys.stderr)
         sys.exit(1)
+
+    # Move completed tree to declared output.  Rewrite embedded scratch
+    # paths (--sysroot in CC, build dir in config.status) so the downstream
+    # build phase sees the final artifact location.
+    if os.path.exists(declared_output):
+        shutil.rmtree(declared_output)
+    _scratch_path = output_dir
+    shutil.move(output_dir, declared_output)
+    for dirpath, _dn, filenames in os.walk(declared_output):
+        for fname in filenames:
+            fpath = os.path.join(dirpath, fname)
+            if os.path.islink(fpath):
+                target = os.readlink(fpath)
+                if _scratch_path in target:
+                    os.unlink(fpath)
+                    os.symlink(target.replace(_scratch_path, declared_output), fpath)
+                continue
+            try:
+                st = os.stat(fpath)
+                with open(fpath, "r") as f:
+                    fc = f.read()
+                if _scratch_path not in fc:
+                    continue
+                with open(fpath, "w") as f:
+                    f.write(fc.replace(_scratch_path, declared_output))
+                os.utime(fpath, (st.st_atime, st.st_mtime))
+            except (UnicodeDecodeError, PermissionError, IsADirectoryError,
+                    FileNotFoundError):
+                pass
 
 
 if __name__ == "__main__":

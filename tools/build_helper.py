@@ -211,14 +211,20 @@ def main():
     env["PROJECT_ROOT"] = os.getcwd()
 
     build_dir = os.path.abspath(args.build_dir)
-    output_dir = os.path.abspath(args.output_dir)
+    declared_output = os.path.abspath(args.output_dir)
+
+    # Work in scratch to avoid mutating the declared output (in buck-out)
+    # during the build.  Only the final result is placed at declared_output.
+    _scratch_base = os.path.abspath(os.environ.get("BUCK_SCRATCH_PATH",
+                                                    os.environ.get("TMPDIR", "/tmp")))
+    output_dir = os.path.join(_scratch_base, "build-work")
     register_cleanup(output_dir)
 
     if not os.path.isdir(build_dir):
         print(f"error: build directory not found: {build_dir}", file=sys.stderr)
         sys.exit(1)
 
-    # Copy build tree to output dir (Buck2 outputs are read-only after creation)
+    # Copy build tree to scratch for building
     if os.path.exists(output_dir):
         shutil.rmtree(output_dir)
     shutil.copytree(build_dir, output_dir, symlinks=True)
@@ -403,18 +409,17 @@ def main():
                         sys.path.insert(0, _sp)
                         _meson_added_paths.append(_sp)
 
-    _install_dat = os.path.join(output_dir, "meson-private", "install.dat")
-    if os.path.isfile(_install_dat):
+    for _mdat in _glob.glob(os.path.join(output_dir, "**/meson-private/*.dat"), recursive=True):
         try:
-            _dat_stat = os.stat(_install_dat)
-            with open(_install_dat, "rb") as f:
+            _dat_stat = os.stat(_mdat)
+            with open(_mdat, "rb") as f:
                 _idata = _pickle.load(f)
             _patch_pickle_paths(_idata, build_dir, output_dir)
-            with open(_install_dat, "wb") as f:
+            with open(_mdat, "wb") as f:
                 _pickle.dump(_idata, f)
-            os.utime(_install_dat, (_dat_stat.st_atime, _dat_stat.st_mtime))
+            os.utime(_mdat, (_dat_stat.st_atime, _dat_stat.st_mtime))
         except Exception as _e:
-            print(f"warning: could not rewrite install.dat: {_e}", file=sys.stderr)
+            print(f"warning: could not rewrite {os.path.basename(_mdat)}: {_e}", file=sys.stderr)
 
     # Detect and rewrite stale cross-machine paths.  When Buck2 restores
     # cached configure outputs from a different machine, files contain the
@@ -502,18 +507,18 @@ def main():
         # build_dir→output_dir so paths resolve to the new location.
         # Uses real mesonbuild classes (added to sys.path earlier) so
         # the re-pickled file is loadable by meson's safe unpickler.
-        if os.path.isfile(_install_dat):
+        for _mdat in _glob.glob(os.path.join(output_dir, "**/meson-private/*.dat"), recursive=True):
             try:
-                _dat_stat2 = os.stat(_install_dat)
-                with open(_install_dat, "rb") as f:
+                _dat_stat2 = os.stat(_mdat)
+                with open(_mdat, "rb") as f:
                     _idata = _pickle.load(f)
                 _patch_pickle_paths(_idata, _stale_root, _current_root)
                 _patch_pickle_paths(_idata, build_dir, output_dir)
-                with open(_install_dat, "wb") as f:
+                with open(_mdat, "wb") as f:
                     _pickle.dump(_idata, f)
-                os.utime(_install_dat, (_dat_stat2.st_atime, _dat_stat2.st_mtime))
+                os.utime(_mdat, (_dat_stat2.st_atime, _dat_stat2.st_mtime))
             except Exception as _e:
-                print(f"warning: could not rewrite install.dat (stale root): {_e}",
+                print(f"warning: could not rewrite {os.path.basename(_mdat)} (stale root): {_e}",
                       file=sys.stderr)
 
     # Reset all file timestamps to a single fixed instant so make doesn't
@@ -714,7 +719,9 @@ def main():
     # they lack RPATH for dep prefixes, so LD_LIBRARY_PATH is needed
     # even with sysroot ld-linux.  Exclude dirs with libc.so.6 to avoid
     # poisoning host tools with sysroot glibc.
-    if file_lib_dirs:
+    # Skip in --allow-host-path mode: host tools crash loading buckos
+    # libs linked against a newer glibc.  Buckos tools use RPATH.
+    if file_lib_dirs and not args.allow_host_path:
         resolved = [
             os.path.abspath(d) for d in file_lib_dirs
             if os.path.isdir(d) and not os.path.exists(os.path.join(os.path.abspath(d), "libc.so.6"))
@@ -892,6 +899,37 @@ def main():
 
     if args.skip_make:
         sanitize_filenames(output_dir)
+        # Merge scratch into declared output.  Pre-cmds may have written
+        # directly to declared_output (e.g. bootstrap_linux_headers writes
+        # sdt.h there).  copytree with dirs_exist_ok preserves those writes
+        # while bringing in the scratch content.
+        _skip_scratch = output_dir
+        if os.path.isdir(declared_output):
+            shutil.copytree(output_dir, declared_output, symlinks=True, dirs_exist_ok=True)
+        else:
+            shutil.move(output_dir, declared_output)
+        shutil.rmtree(output_dir, ignore_errors=True)
+        for dirpath, dirnames, filenames in os.walk(declared_output):
+            for entries in (dirnames, filenames):
+                for name in entries:
+                    p = os.path.join(dirpath, name)
+                    if os.path.islink(p):
+                        target = os.readlink(p)
+                        if _skip_scratch in target:
+                            os.unlink(p)
+                            os.symlink(target.replace(_skip_scratch, declared_output), p)
+        for dirpath, _dn, filenames in os.walk(declared_output):
+            for fname in filenames:
+                if os.path.splitext(fname)[1] in _BINARY_EXTS:
+                    continue
+                fpath = os.path.join(dirpath, fname)
+                if os.path.islink(fpath):
+                    continue
+                try:
+                    _rewrite_file(fpath, _skip_scratch, declared_output)
+                except (UnicodeDecodeError, PermissionError, IsADirectoryError,
+                        FileNotFoundError):
+                    pass
         return
 
     jobs = args.jobs or multiprocessing.cpu_count()
@@ -955,6 +993,55 @@ def main():
                 os.makedirs(p, exist_ok=True)
 
     sanitize_filenames(output_dir)
+
+    # Merge scratch into declared output.  Pre-cmds may have written
+    # directly to declared_output via absolute artifact paths.  Merge
+    # preserves those writes while bringing in the build result.
+    _scratch_path = output_dir
+    if os.path.isdir(declared_output):
+        shutil.copytree(output_dir, declared_output, symlinks=True, dirs_exist_ok=True)
+    else:
+        shutil.move(output_dir, declared_output)
+    shutil.rmtree(output_dir, ignore_errors=True)
+    for dirpath, dirnames, filenames in os.walk(declared_output):
+        for entries in (dirnames, filenames):
+            for name in entries:
+                p = os.path.join(dirpath, name)
+                if os.path.islink(p):
+                    target = os.readlink(p)
+                    if _scratch_path in target:
+                        os.unlink(p)
+                        os.symlink(target.replace(_scratch_path, declared_output), p)
+    for dirpath, _dirnames, filenames in os.walk(declared_output):
+        for fname in filenames:
+            if os.path.splitext(fname)[1] in _BINARY_EXTS:
+                continue
+            fpath = os.path.join(dirpath, fname)
+            if os.path.islink(fpath):
+                continue
+            try:
+                _rewrite_file(fpath, _scratch_path, declared_output)
+            except (UnicodeDecodeError, PermissionError, IsADirectoryError,
+                    FileNotFoundError):
+                pass
+
+    # Rewrite ALL meson pickle files — the text rewrite above skips
+    # them (UnicodeDecodeError).  Meson pickles (install.dat, build.dat,
+    # custom command serializations) embed build/source directory paths
+    # as workdir and in command arguments.  Without rewriting, these
+    # point to the deleted scratch dir, causing FileNotFoundError.
+    for _mdat in _glob.glob(os.path.join(declared_output, "**/meson-private/*.dat"), recursive=True):
+        try:
+            _dat_stat = os.stat(_mdat)
+            with open(_mdat, "rb") as f:
+                _idata = _pickle.load(f)
+            _patch_pickle_paths(_idata, _scratch_path, declared_output)
+            with open(_mdat, "wb") as f:
+                _pickle.dump(_idata, f)
+            os.utime(_mdat, (_dat_stat.st_atime, _dat_stat.st_mtime))
+        except Exception as _e:
+            print(f"warning: could not rewrite install.dat: {_e}",
+                  file=sys.stderr)
 
 
 if __name__ == "__main__":

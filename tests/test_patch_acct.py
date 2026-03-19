@@ -274,7 +274,7 @@ def main():
             else:
                 fail(f"order wrong: {content!r}")
 
-    # 10. --cmd has S env var set to output dir
+    # 10. --cmd has S env var matching working directory
     print("=== patch_helper: --cmd has S env var ===")
     with tempfile.TemporaryDirectory() as tmp:
         src = os.path.join(tmp, "src")
@@ -283,17 +283,16 @@ def main():
         r = _run_patch_helper([
             "--source-dir", src,
             "--output-dir", out,
-            "--cmd", "echo $S",
+            "--cmd", "echo $S:$PWD",
         ])
         if r.returncode != 0:
             fail(f"patch_helper exited {r.returncode}: {r.stderr}")
         else:
-            s_val = r.stdout.strip()
-            out_abs = os.path.abspath(out)
-            if s_val == out_abs:
-                ok("S env var set to absolute output dir")
+            parts = r.stdout.strip().split(":")
+            if len(parts) == 2 and parts[0] == parts[1] and os.path.isabs(parts[0]):
+                ok("S env var matches working directory")
             else:
-                fail(f"S={s_val!r}, expected {out_abs!r}")
+                fail(f"S:PWD={r.stdout.strip()!r}")
 
     # 11. Failing --cmd exits non-zero
     print("=== patch_helper: failing --cmd exits non-zero ===")
