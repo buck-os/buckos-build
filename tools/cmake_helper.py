@@ -7,6 +7,7 @@ Runs cmake with specified source dir, build dir, and arguments.
 import argparse
 import glob as _glob
 import os
+import shutil
 import subprocess
 import sys
 
@@ -135,6 +136,13 @@ def main():
         print(f"error: source directory not found: {args.source_dir}", file=sys.stderr)
         sys.exit(1)
 
+    declared_output = os.path.abspath(args.build_dir)
+
+    # Work in scratch to avoid mutating the declared output (in buck-out)
+    # during cmake configure.  Only the final result is placed at declared_output.
+    _scratch_base = os.path.abspath(os.environ.get("BUCK_SCRATCH_PATH",
+                                                    os.environ.get("TMPDIR", "/tmp")))
+    args.build_dir = os.path.join(_scratch_base, "cmake-work")
     os.makedirs(args.build_dir, exist_ok=True)
     register_cleanup(os.path.abspath(args.build_dir))
 
@@ -287,7 +295,10 @@ def main():
     # Dep lib dirs in LD_LIBRARY_PATH so build-time tools and test
     # programs can find dep shared libs at runtime.  Exclude dirs with
     # libc.so.6 to avoid poisoning host tools with sysroot glibc.
-    if file_lib_dirs:
+    # Skip entirely in --allow-host-path mode: host tools (cmake, make)
+    # use host ld-linux and crash loading buckos-built libs linked
+    # against a newer glibc.  Buckos tools use RPATH via specs.
+    if file_lib_dirs and not args.allow_host_path:
         resolved_lib_dirs = [
             os.path.abspath(d) for d in file_lib_dirs
             if os.path.isdir(d) and not os.path.exists(os.path.join(os.path.abspath(d), "libc.so.6"))
@@ -398,6 +409,47 @@ def main():
         sys.exit(1)
 
     sanitize_filenames(os.path.abspath(args.build_dir))
+
+    # Move completed build dir to declared output.  Rewrite embedded
+    # scratch paths so the build phase sees the final artifact location.
+    _BINARY_EXTS = frozenset((
+        ".o", ".a", ".so", ".gch", ".pcm", ".pch", ".d",
+        ".png", ".jpg", ".gif", ".ico", ".gz", ".xz", ".bz2",
+        ".wasm", ".pyc", ".qm",
+    ))
+    if os.path.exists(declared_output):
+        shutil.rmtree(declared_output)
+    _scratch_path = os.path.abspath(args.build_dir)
+    shutil.move(_scratch_path, declared_output)
+    for dirpath, dirnames, filenames in os.walk(declared_output):
+        for entries in (dirnames, filenames):
+            for name in entries:
+                p = os.path.join(dirpath, name)
+                if os.path.islink(p):
+                    target = os.readlink(p)
+                    if _scratch_path in target:
+                        os.unlink(p)
+                        os.symlink(target.replace(_scratch_path, declared_output), p)
+    for dirpath, _dirnames, filenames in os.walk(declared_output):
+        for fname in filenames:
+            if os.path.splitext(fname)[1] in _BINARY_EXTS:
+                continue
+            fpath = os.path.join(dirpath, fname)
+            if os.path.islink(fpath):
+                continue
+            try:
+                stat = os.stat(fpath)
+                with open(fpath, "r") as f:
+                    fc = f.read()
+                if _scratch_path not in fc:
+                    continue
+                fc = fc.replace(_scratch_path, declared_output)
+                with open(fpath, "w") as f:
+                    f.write(fc)
+                os.utime(fpath, (stat.st_atime, stat.st_mtime))
+            except (UnicodeDecodeError, PermissionError, IsADirectoryError,
+                    FileNotFoundError):
+                pass
 
 
 if __name__ == "__main__":

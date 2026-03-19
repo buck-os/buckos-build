@@ -141,7 +141,9 @@ def main():
 
     # Set LIBRARY_PATH and LD_LIBRARY_PATH from dep lib dirs so linker
     # and build scripts find dep shared libraries.
-    if file_lib_dirs:
+    # Skip in --allow-host-path mode: host tools crash loading buckos
+    # libs linked against a newer glibc.  Buckos tools use RPATH.
+    if file_lib_dirs and not args.allow_host_path:
         resolved = [
             os.path.abspath(d) for d in file_lib_dirs
             if os.path.isdir(d) and not os.path.exists(os.path.join(os.path.abspath(d), "libc.so.6"))

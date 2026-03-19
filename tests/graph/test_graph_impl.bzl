@@ -1,6 +1,6 @@
 """Test implementation: cross-reference label assignment."""
 
-load("//tests/graph:helpers.bzl", "assert_result", "starts_with", "target_exists", "target_has_label", "summarize")
+load("//tests/graph:helpers.bzl", "assert_result", "fmt_actual", "get_labels", "starts_with", "target_exists", "target_has_label", "summarize")
 
 def _target_has_label_prefix(query, target_pattern, prefix):
     """Check whether a target has any label starting with prefix (with non-empty value)."""
@@ -24,11 +24,13 @@ def _check_compile_labels(ctx, query, results, target_label, display_name, build
         )
         return
 
+    labels = get_labels(query, target_label)
+
     assert_result(
         ctx, results,
         "{} has buckos:compile label".format(display_name),
         target_has_label(query, target_label, "buckos:compile"),
-        "buckos:compile not found on {}".format(target_label),
+        "buckos:compile not found on {}; got: [{}]".format(target_label, fmt_actual(labels)),
     )
 
     expected = "buckos:build:" + build_system
@@ -36,7 +38,7 @@ def _check_compile_labels(ctx, query, results, target_label, display_name, build
         ctx, results,
         "{} has {} label".format(display_name, expected),
         target_has_label(query, target_label, expected),
-        "{} not found on {}".format(expected, target_label),
+        "{} not found on {}; got: [{}]".format(expected, target_label, fmt_actual(labels)),
     )
 
 def run(ctx):
@@ -115,21 +117,21 @@ def run(ctx):
         ctx, results,
         "image targets exist (buckos:image)",
         image_count > 0,
-        "no targets with buckos:image found",
+        "expected >0 targets with buckos:image, found 0",
     )
 
     assert_result(
         ctx, results,
         "bootscript targets exist (buckos:bootscript)",
         bootscript_count > 0,
-        "no targets with buckos:bootscript found",
+        "expected >0 targets with buckos:bootscript, found 0",
     )
 
     assert_result(
         ctx, results,
         "config targets exist (buckos:config)",
         config_count > 0,
-        "no targets with buckos:config found",
+        "expected >0 targets with buckos:config, found 0",
     )
 
     # ================================================================
@@ -138,6 +140,7 @@ def run(ctx):
     # ================================================================
 
     provenance_missing = []
+    provenance_detail = []
     all_targets_3 = query.eval("//...")
     for t in all_targets_3:
         labels = t.get_attr("labels")
@@ -161,15 +164,22 @@ def run(ctx):
 
         if is_compile and has_url:
             if not (has_source and has_sig):
-                provenance_missing.append(str(t.label))
+                target_str = str(t.label)
+                missing = []
+                if not has_source:
+                    missing.append("source")
+                if not has_sig:
+                    missing.append("sig")
+                provenance_missing.append(target_str)
+                provenance_detail.append("{} missing: {}".format(target_str, ", ".join(missing)))
 
     assert_result(
         ctx, results,
         "compile+url targets have source and sig labels",
         len(provenance_missing) == 0,
-        "{} target(s) with url but missing source/sig (first: {})".format(
+        "{} target(s) with url but missing source/sig; first: {}".format(
             len(provenance_missing),
-            provenance_missing[0] if provenance_missing else "n/a",
+            provenance_detail[0] if provenance_detail else "n/a",
         ),
     )
 

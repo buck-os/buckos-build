@@ -1,15 +1,6 @@
 """Test implementation: target label assignment."""
 
-load("//tests/graph:helpers.bzl", "assert_result", "starts_with", "target_exists", "target_has_label", "summarize")
-
-def _get_labels(query, target_pattern):
-    """Return the list of labels on a target, or [] if none."""
-    target_set = query.eval(target_pattern)
-    for t in target_set:
-        labels = t.get_attr("labels")
-        if labels != None:
-            return labels
-    return []
+load("//tests/graph:helpers.bzl", "assert_result", "fmt_actual", "get_labels", "starts_with", "target_exists", "target_has_label", "summarize")
 
 def _check_compile_and_build_label(ctx, query, results, target_label, display_name, build_system):
     """Verify a build target has buckos:compile and the correct buckos:build:* label."""
@@ -22,12 +13,14 @@ def _check_compile_and_build_label(ctx, query, results, target_label, display_na
         )
         return
 
+    labels = get_labels(query, target_label)
+
     # buckos:compile label
     assert_result(
         ctx, results,
         "{} has buckos:compile label".format(display_name),
         target_has_label(query, target_label, "buckos:compile"),
-        "buckos:compile not found in labels of {}".format(target_label),
+        "buckos:compile not found in labels of {}; got: [{}]".format(target_label, fmt_actual(labels)),
     )
 
     # buckos:build:<system> label
@@ -36,7 +29,7 @@ def _check_compile_and_build_label(ctx, query, results, target_label, display_na
         ctx, results,
         "{} has {} label".format(display_name, expected_build_label),
         target_has_label(query, target_label, expected_build_label),
-        "{} not found in labels of {}".format(expected_build_label, target_label),
+        "{} not found in labels of {}; got: [{}]".format(expected_build_label, target_label, fmt_actual(labels)),
     )
 
 def run(ctx):
@@ -95,11 +88,14 @@ def run(ctx):
             ctx.output.print("SKIP: {} (target not found)".format(display_name))
             continue
 
+        labels = get_labels(query, target_label)
         assert_result(
             ctx, results,
             "{} does NOT have buckos:compile label".format(display_name),
             not target_has_label(query, target_label, "buckos:compile"),
-            "buckos:compile found on source target {} (should only be on build targets)".format(target_label),
+            "buckos:compile found on source target {} (should only be on build targets); labels: [{}]".format(
+                target_label, fmt_actual(labels),
+            ),
         )
 
     # ================================================================
@@ -120,11 +116,14 @@ def run(ctx):
             ctx.output.print("SKIP: {} (target not found)".format(display_name))
             continue
 
+        labels = get_labels(query, target_label)
         assert_result(
             ctx, results,
             "{} does NOT have buckos:compile label".format(display_name),
             not target_has_label(query, target_label, "buckos:compile"),
-            "buckos:compile found on transform target {} (should only be on build targets)".format(target_label),
+            "buckos:compile found on transform target {} (should only be on build targets); labels: [{}]".format(
+                target_label, fmt_actual(labels),
+            ),
         )
 
     return summarize(ctx, results)
@@ -218,42 +217,42 @@ def run_coverage(ctx):
         ctx, results,
         ">100 targets with buckos:compile",
         compile_count > 100,
-        "got {} compile targets".format(compile_count),
+        "expected >100, got {} compile targets".format(compile_count),
     )
 
     assert_result(
         ctx, results,
         ">100 targets with buckos:download",
         download_count > 100,
-        "got {} download targets".format(download_count),
+        "expected >100, got {} download targets".format(download_count),
     )
 
     assert_result(
         ctx, results,
         ">100 targets with buckos:build:*",
         build_type_count > 100,
-        "got {} build-type targets".format(build_type_count),
+        "expected >100, got {} build-type targets".format(build_type_count),
     )
 
     assert_result(
         ctx, results,
         ">0 targets with buckos:image",
         image_count > 0,
-        "got {} image targets".format(image_count),
+        "expected >0, got {} image targets".format(image_count),
     )
 
     assert_result(
         ctx, results,
         ">0 targets with buckos:bootscript",
         bootscript_count > 0,
-        "got {} bootscript targets".format(bootscript_count),
+        "expected >0, got {} bootscript targets".format(bootscript_count),
     )
 
     assert_result(
         ctx, results,
         ">0 targets with buckos:config",
         config_count > 0,
-        "got {} config targets".format(config_count),
+        "expected >0, got {} config targets".format(config_count),
     )
 
     # TODO: enable once prebuilt targets exist
@@ -261,21 +260,21 @@ def run_coverage(ctx):
     #     ctx, results,
     #     ">0 targets with buckos:prebuilt",
     #     prebuilt_count > 0,
-    #     "got {} prebuilt targets".format(prebuilt_count),
+    #     "expected >0, got {} prebuilt targets".format(prebuilt_count),
     # )
 
     assert_result(
         ctx, results,
         ">0 targets with buckos:firmware",
         firmware_count > 0,
-        "got {} firmware targets".format(firmware_count),
+        "expected >0, got {} firmware targets".format(firmware_count),
     )
 
     assert_result(
         ctx, results,
         ">0 targets with buckos:hw:*",
         hw_count > 0,
-        "got {} hw targets".format(hw_count),
+        "expected >0, got {} hw targets".format(hw_count),
     )
 
     # ── Coverage: >=95% compile targets have buckos:build:* ──
@@ -288,7 +287,10 @@ def run_coverage(ctx):
         ctx, results,
         ">=90% compile targets have buckos:build:*",
         compile_count > 0 and coverage_ok,
-        "{}/{} compile targets have build type".format(compile_with_build_type, compile_count),
+        "{}/{} compile targets have build type ({}%)".format(
+            compile_with_build_type, compile_count,
+            compile_with_build_type * 100 // compile_count if compile_count > 0 else 0,
+        ),
     )
 
     # ── USE flag labels ──
@@ -297,7 +299,7 @@ def run_coverage(ctx):
         ctx, results,
         ">10 targets with buckos:iuse:*",
         iuse_count > 10,
-        "got {} iuse targets".format(iuse_count),
+        "expected >10, got {} iuse targets".format(iuse_count),
     )
 
     # buckos:use:* labels require analysis-time resolution (select-based USE

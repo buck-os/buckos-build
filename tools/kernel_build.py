@@ -78,7 +78,14 @@ def main():
     args = parser.parse_args()
 
     source_dir = os.path.abspath(args.source_dir)
-    build_tree_out = os.path.abspath(args.build_tree_out)
+    declared_build_tree = os.path.abspath(args.build_tree_out)
+
+    # Work in scratch to avoid mutating the declared output (in buck-out)
+    # during the kernel build.  Only the final result is placed at declared_build_tree.
+    _scratch_base = os.path.abspath(os.environ.get("BUCK_SCRATCH_PATH",
+                                                    os.environ.get("TMPDIR", "/tmp")))
+    build_tree_out = os.path.join(_scratch_base, "kernel-build-work")
+
     vmlinux_out = os.path.abspath(args.vmlinux_out)
     bzimage_out = os.path.abspath(args.bzimage_out)
     modules_dir_out = os.path.abspath(args.modules_dir_out)
@@ -326,6 +333,47 @@ def main():
     # Install headers
     if headers_out:
         _install_headers(make_cmd, build_tree_out, headers_out)
+
+    # Move completed build tree to declared output.  Rewrite embedded
+    # scratch paths so kernel_modules_install (a separate action that
+    # runs make -C on this tree) sees the correct location.
+    if os.path.exists(declared_build_tree):
+        shutil.rmtree(declared_build_tree)
+    _scratch_path = build_tree_out
+    shutil.move(build_tree_out, declared_build_tree)
+    _BINARY_EXTS = frozenset((
+        ".o", ".a", ".so", ".gch", ".pcm", ".pch", ".d",
+        ".png", ".jpg", ".gif", ".ico", ".gz", ".xz", ".bz2",
+        ".wasm", ".pyc", ".qm", ".ko", ".cmd", ".order",
+    ))
+    for dirpath, dirnames, filenames in os.walk(declared_build_tree):
+        for entries in (dirnames, filenames):
+            for name in entries:
+                p = os.path.join(dirpath, name)
+                if os.path.islink(p):
+                    target = os.readlink(p)
+                    if _scratch_path in target:
+                        os.unlink(p)
+                        os.symlink(target.replace(_scratch_path, declared_build_tree), p)
+    for dirpath, _dn, filenames in os.walk(declared_build_tree):
+        for fname in filenames:
+            if os.path.splitext(fname)[1] in _BINARY_EXTS:
+                continue
+            fpath = os.path.join(dirpath, fname)
+            if os.path.islink(fpath):
+                continue
+            try:
+                st = os.stat(fpath)
+                with open(fpath, "r") as f:
+                    fc = f.read()
+                if _scratch_path not in fc:
+                    continue
+                with open(fpath, "w") as f:
+                    f.write(fc.replace(_scratch_path, declared_build_tree))
+                os.utime(fpath, (st.st_atime, st.st_mtime))
+            except (UnicodeDecodeError, PermissionError, IsADirectoryError,
+                    FileNotFoundError):
+                pass
 
     print("Kernel build complete")
 

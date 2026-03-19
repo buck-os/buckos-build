@@ -1,6 +1,6 @@
 """Test implementation: Cloud Hypervisor target validation."""
 
-load("//tests/graph:helpers.bzl", "assert_result", "starts_with", "summarize")
+load("//tests/graph:helpers.bzl", "assert_result", "fmt_actual", "starts_with", "summarize")
 
 CH_TARGET = "buckos//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor-build"
 
@@ -59,7 +59,7 @@ def run(ctx):
     assert_result(ctx, results,
         "cloud-hypervisor binary target exists",
         ch_found,
-        "cloud-hypervisor binary target not found")
+        "no target ending with :cloud-hypervisor found in buckos//packages/linux/...")
 
     # -- Boot script targets --
     boot_targets = [t for t in all_targets if "cloud-hypervisor-boot:" in t and ":ch-boot-" in t]
@@ -67,7 +67,8 @@ def run(ctx):
         assert_result(ctx, results,
             "boot script {} exists".format(name),
             _has_match(boot_targets, name),
-            "Missing boot script target: " + name)
+            "missing boot script target: {}; found boot targets: [{}]".format(
+                name, fmt_actual(boot_targets, max_items = 10)))
 
     # -- System image targets --
     sys_targets = [t for t in all_targets if "system/cloud-hypervisor:" in t]
@@ -75,17 +76,18 @@ def run(ctx):
         assert_result(ctx, results,
             "system image {} exists".format(name),
             _has_match(sys_targets, name),
-            "Missing system image target: " + name)
+            "missing system image target: {}; found image targets: [{}]".format(
+                name, fmt_actual(sys_targets, max_items = 10)))
 
     # -- Kernel targets --
     assert_result(ctx, results,
         "buckos-kernel-ch target exists",
         _has_suffix(all_targets, ":buckos-kernel-ch"),
-        "buckos-kernel-ch not found")
+        "buckos-kernel-ch not found in buckos//packages/linux/...")
     assert_result(ctx, results,
         "buckos-ch-guest target exists",
         _has_suffix(all_targets, ":buckos-ch-guest"),
-        "buckos-ch-guest not found")
+        "buckos-ch-guest not found in buckos//packages/linux/...")
 
     # -- Labels on CH target --
     ch_nodes = ctx.uquery().eval(CH_TARGET)
@@ -95,11 +97,11 @@ def run(ctx):
         assert_result(ctx, results,
             "CH target has buckos:compile label",
             "buckos:compile" in labels,
-            "CH target missing buckos:compile label")
+            "buckos:compile not in CH target labels; got: [{}]".format(fmt_actual(labels)))
         assert_result(ctx, results,
             "CH target has buckos:build:cargo label",
             "buckos:build:cargo" in labels,
-            "CH target missing buckos:build:cargo label")
+            "buckos:build:cargo not in CH target labels; got: [{}]".format(fmt_actual(labels)))
 
         # Provenance labels
         has_url = False
@@ -112,11 +114,11 @@ def run(ctx):
         assert_result(ctx, results,
             "CH target has buckos:url:* provenance label",
             has_url,
-            "CH target missing buckos:url:* provenance label")
+            "no buckos:url:* label on CH target; got: [{}]".format(fmt_actual(labels)))
         assert_result(ctx, results,
             "CH target has buckos:sha256:* provenance label",
             has_sha,
-            "CH target missing buckos:sha256:* provenance label")
+            "no buckos:sha256:* label on CH target; got: [{}]".format(fmt_actual(labels)))
 
     # -- Boot script labels --
     boot_nodes = ctx.uquery().eval("buckos//packages/linux/boot/cloud-hypervisor-boot/...")
@@ -130,13 +132,13 @@ def run(ctx):
         assert_result(ctx, results,
             "{} has buckos:bootscript label".format(target),
             "buckos:bootscript" in labels,
-            target + " missing buckos:bootscript label")
+            "{} missing buckos:bootscript label; got: [{}]".format(target, fmt_actual(labels)))
         boot_with_label += 1
 
     assert_result(ctx, results,
         ">=8 boot scripts have buckos:bootscript label",
         boot_with_label >= 8,
-        "Expected >=8 labeled boot targets, got {}".format(boot_with_label))
+        "expected >=8 labeled boot targets, got {}".format(boot_with_label))
 
     # -- System image labels --
     image_names = [
@@ -155,7 +157,7 @@ def run(ctx):
         assert_result(ctx, results,
             "{} has buckos:image label".format(name),
             "buckos:image" in labels,
-            target + " missing buckos:image label")
+            "{} missing buckos:image label; got: [{}]".format(target, fmt_actual(labels)))
 
     # -- USE flag defaults --
     ch_nodes_2 = ctx.uquery().eval(CH_TARGET)
@@ -166,6 +168,6 @@ def run(ctx):
             assert_result(ctx, results,
                 "CH default USE flags are [io-uring, kvm]",
                 flags == ["io-uring", "kvm"],
-                "CH default USE flags: expected [io-uring, kvm], got " + str(flags))
+                "expected [io-uring, kvm], got " + str(flags))
 
     return summarize(ctx, results)

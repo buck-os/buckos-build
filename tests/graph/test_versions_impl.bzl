@@ -18,23 +18,26 @@ def _check_archive_target(ctx, query, results, target_label, display_name):
             ctx, results,
             "{} has non-empty urls".format(display_name),
             urls != None and str(urls) != "[]",
-            "urls is empty or missing on {}".format(target_label),
+            "urls is empty or missing on {}; got: {}".format(target_label, str(urls)),
         )
 
         assert_result(
             ctx, results,
             "{} has non-empty sha256".format(display_name),
             sha256 != None and sha256 != "",
-            "sha256 is empty or missing on {}".format(target_label),
+            "sha256 is empty or missing on {}; got: {}".format(
+                target_label, repr(sha256) if sha256 != None else "None",
+            ),
         )
 
         assert_result(
             ctx, results,
             "{} sha256 is 64 hex chars".format(display_name),
             sha256 != None and len(sha256) == 64,
-            "sha256 length is {} (expected 64) on {}".format(
+            "sha256 length is {} (expected 64) on {}; got: {}".format(
                 len(sha256) if sha256 != None else "None",
                 target_label,
+                sha256 if sha256 != None else "None",
             ),
         )
 
@@ -42,7 +45,9 @@ def _check_archive_target(ctx, query, results, target_label, display_name):
             ctx, results,
             "{} has non-empty out (filename)".format(display_name),
             out != None and out != "",
-            "out is empty or missing on {}".format(target_label),
+            "out is empty or missing on {}; got: {}".format(
+                target_label, repr(out) if out != None else "None",
+            ),
         )
 
     if not found:
@@ -114,7 +119,10 @@ def run(ctx):
         ctx, results,
         "openssl 3.6 and 3.3 have distinct URLs",
         urls_36 != None and urls_33 != None and urls_36 != urls_33,
-        "openssl slots should have different source URLs",
+        "openssl slots have same URLs; 3.6: {}, 3.3: {}".format(
+            urls_36 if urls_36 != None else "None",
+            urls_33 if urls_33 != None else "None",
+        ),
     )
 
     # ── Verify openssl slots have distinct sha256 ──
@@ -129,7 +137,10 @@ def run(ctx):
         ctx, results,
         "openssl 3.6 and 3.3 have distinct sha256",
         sha_36 != None and sha_33 != None and sha_36 != sha_33,
-        "openssl slots should have different sha256 values",
+        "openssl slots have same sha256; 3.6: {}, 3.3: {}".format(
+            sha_36 if sha_36 != None else "None",
+            sha_33 if sha_33 != None else "None",
+        ),
     )
 
     return summarize(ctx, results)

@@ -1,6 +1,6 @@
 """Test implementation: transform chain wiring."""
 
-load("//tests/graph:helpers.bzl", "assert_result", "get_dep_strings", "has_dep_matching", "summarize")
+load("//tests/graph:helpers.bzl", "assert_result", "fmt_actual", "get_dep_strings", "has_dep_matching", "summarize")
 
 def _target_exists_in_pkg(query, pkg_path, target_name):
     """Return True if target_name exists in the package.
@@ -14,6 +14,17 @@ def _target_exists_in_pkg(query, pkg_path, target_name):
         if label.endswith(":" + target_name):
             return True
     return False
+
+def _pkg_target_names(query, pkg_path):
+    """Return a list of target names in the package (for diagnostics)."""
+    target_set = query.eval(pkg_path + ":")
+    names = []
+    for t in target_set:
+        label = str(t.label)
+        idx = label.rfind(":")
+        if idx >= 0:
+            names.append(label[idx + 1:])
+    return names
 
 def run(ctx):
     """Verify transform chain wiring in migrated packages.
@@ -39,7 +50,9 @@ def run(ctx):
             ctx, results,
             "target {} exists".format(suffix),
             _target_exists_in_pkg(query, pkg, suffix),
-            "{}:{} does not exist".format(pkg, suffix),
+            "{}:{} does not exist; targets in package: [{}]".format(
+                pkg, suffix, fmt_actual(_pkg_target_names(query, pkg), max_items = 10),
+            ),
         )
 
     # ── zlib-stripped depends on zlib-build (via package attr) ──
@@ -48,7 +61,7 @@ def run(ctx):
         ctx, results,
         "zlib-stripped depends on zlib-build",
         has_dep_matching(stripped_deps, "zlib-build"),
-        "zlib-build not in attrs of zlib-stripped",
+        "zlib-build not in attrs of zlib-stripped; got: [{}]".format(fmt_actual(stripped_deps)),
     )
 
     # ── zlib-stamped depends on zlib-stripped (via package attr) ──
@@ -57,7 +70,7 @@ def run(ctx):
         ctx, results,
         "zlib-stamped depends on zlib-stripped",
         has_dep_matching(stamped_deps, "zlib-stripped"),
-        "zlib-stripped not in attrs of zlib-stamped",
+        "zlib-stripped not in attrs of zlib-stamped; got: [{}]".format(fmt_actual(stamped_deps)),
     )
 
     # ── zlib-signed depends on zlib-stamped (via package attr) ──
@@ -66,7 +79,7 @@ def run(ctx):
         ctx, results,
         "zlib-signed depends on zlib-stamped",
         has_dep_matching(signed_deps, "zlib-stamped"),
-        "zlib-stamped not in attrs of zlib-signed",
+        "zlib-stamped not in attrs of zlib-signed; got: [{}]".format(fmt_actual(signed_deps)),
     )
 
     # ── zlib alias depends on the last transform (zlib-signed) via actual attr ──
@@ -75,7 +88,7 @@ def run(ctx):
         ctx, results,
         "zlib alias depends on zlib-signed (last transform)",
         has_dep_matching(alias_deps, "zlib-signed"),
-        "zlib-signed not in attrs of zlib alias",
+        "zlib-signed not in attrs of zlib alias; got: [{}]".format(fmt_actual(alias_deps)),
     )
 
     # ================================================================
@@ -93,7 +106,7 @@ def run(ctx):
         ctx, results,
         "musl-stripped depends on musl-build",
         has_dep_matching(musl_stripped_deps, "musl-build"),
-        "musl-build not in attrs of musl-stripped",
+        "musl-build not in attrs of musl-stripped; got: [{}]".format(fmt_actual(musl_stripped_deps)),
     )
 
     # ── musl alias depends on musl-stripped (last transform) via actual attr ──
@@ -102,7 +115,7 @@ def run(ctx):
         ctx, results,
         "musl alias depends on musl-stripped (last transform)",
         has_dep_matching(musl_alias_deps, "musl-stripped"),
-        "musl-stripped not in attrs of musl alias",
+        "musl-stripped not in attrs of musl alias; got: [{}]".format(fmt_actual(musl_alias_deps)),
     )
 
     # ── musl has no -signed target (no use_transforms for ima) ──
@@ -128,7 +141,7 @@ def run(ctx):
         ctx, results,
         "openssl-3.6-stripped depends on openssl-3.6-build",
         has_dep_matching(ossl_stripped_deps, "openssl-3.6-build"),
-        "openssl-3.6-build not in attrs of openssl-3.6-stripped",
+        "openssl-3.6-build not in attrs of openssl-3.6-stripped; got: [{}]".format(fmt_actual(ossl_stripped_deps)),
     )
 
     ossl_stamped_deps = get_dep_strings(query, "{}:openssl-3.6-stamped".format(ossl_pkg))
@@ -136,7 +149,7 @@ def run(ctx):
         ctx, results,
         "openssl-3.6-stamped depends on openssl-3.6-stripped",
         has_dep_matching(ossl_stamped_deps, "openssl-3.6-stripped"),
-        "openssl-3.6-stripped not in attrs of openssl-3.6-stamped",
+        "openssl-3.6-stripped not in attrs of openssl-3.6-stamped; got: [{}]".format(fmt_actual(ossl_stamped_deps)),
     )
 
     ossl_signed_deps = get_dep_strings(query, "{}:openssl-3.6-signed".format(ossl_pkg))
@@ -144,7 +157,7 @@ def run(ctx):
         ctx, results,
         "openssl-3.6-signed depends on openssl-3.6-stamped",
         has_dep_matching(ossl_signed_deps, "openssl-3.6-stamped"),
-        "openssl-3.6-stamped not in attrs of openssl-3.6-signed",
+        "openssl-3.6-stamped not in attrs of openssl-3.6-signed; got: [{}]".format(fmt_actual(ossl_signed_deps)),
     )
 
     # ================================================================
@@ -161,7 +174,7 @@ def run(ctx):
         ctx, results,
         "busybox-stripped depends on busybox-build",
         has_dep_matching(bb_stripped_deps, "busybox-build"),
-        "busybox-build not in attrs of busybox-stripped",
+        "busybox-build not in attrs of busybox-stripped; got: [{}]".format(fmt_actual(bb_stripped_deps)),
     )
 
     bb_stamped_deps = get_dep_strings(query, "{}:busybox-stamped".format(bb_pkg))
@@ -169,7 +182,7 @@ def run(ctx):
         ctx, results,
         "busybox-stamped depends on busybox-stripped",
         has_dep_matching(bb_stamped_deps, "busybox-stripped"),
-        "busybox-stripped not in attrs of busybox-stamped",
+        "busybox-stripped not in attrs of busybox-stamped; got: [{}]".format(fmt_actual(bb_stamped_deps)),
     )
 
     return summarize(ctx, results)

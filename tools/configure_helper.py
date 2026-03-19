@@ -152,7 +152,13 @@ def main():
     file_lib_dirs = _read_flag_file(args.lib_dirs_file)
 
     source_dir = os.path.abspath(args.source_dir)
-    output_dir = os.path.abspath(args.output_dir)
+    declared_output = os.path.abspath(args.output_dir)
+
+    # Work in scratch to avoid mutating the declared output (in buck-out)
+    # during configure.  Only the final result is placed at declared_output.
+    _scratch_base = os.path.abspath(os.environ.get("BUCK_SCRATCH_PATH",
+                                                    os.environ.get("TMPDIR", "/tmp")))
+    output_dir = os.path.join(_scratch_base, "configure-work")
 
     # Register cleanup early so unsafe filenames are removed on any exit
     register_cleanup(output_dir)
@@ -161,7 +167,7 @@ def main():
         print(f"error: source directory not found: {source_dir}", file=sys.stderr)
         sys.exit(1)
 
-    # Copy source to output dir for building
+    # Copy source to scratch for configuring
     if os.path.exists(output_dir):
         shutil.rmtree(output_dir)
     shutil.copytree(source_dir, output_dir, symlinks=True)
@@ -425,6 +431,44 @@ def main():
 
     if args.skip_configure:
         sanitize_filenames(output_dir)
+        # Move completed tree to declared output (same as end-of-main).
+        _BINARY_EXTS_SKIP = frozenset((
+            ".o", ".a", ".so", ".gch", ".pcm", ".pch", ".d",
+            ".png", ".jpg", ".gif", ".ico", ".gz", ".xz", ".bz2",
+            ".wasm", ".pyc", ".qm",
+        ))
+        if os.path.exists(declared_output):
+            shutil.rmtree(declared_output)
+        _skip_scratch = output_dir
+        shutil.move(output_dir, declared_output)
+        for dirpath, dirnames, filenames in os.walk(declared_output):
+            for entries in (dirnames, filenames):
+                for name in entries:
+                    p = os.path.join(dirpath, name)
+                    if os.path.islink(p):
+                        target = os.readlink(p)
+                        if _skip_scratch in target:
+                            os.unlink(p)
+                            os.symlink(target.replace(_skip_scratch, declared_output), p)
+        for dirpath, _dn, filenames in os.walk(declared_output):
+            for fname in filenames:
+                if os.path.splitext(fname)[1] in _BINARY_EXTS_SKIP:
+                    continue
+                fpath = os.path.join(dirpath, fname)
+                if os.path.islink(fpath):
+                    continue
+                try:
+                    st = os.stat(fpath)
+                    with open(fpath, "r") as f:
+                        fc = f.read()
+                    if _skip_scratch not in fc:
+                        continue
+                    with open(fpath, "w") as f:
+                        f.write(fc.replace(_skip_scratch, declared_output))
+                    os.utime(fpath, (st.st_atime, st.st_mtime))
+                except (UnicodeDecodeError, PermissionError, IsADirectoryError,
+                        FileNotFoundError):
+                    pass
         return
 
     configure = os.path.join(output_dir, args.configure_script)
@@ -499,6 +543,89 @@ def main():
         sys.exit(1)
 
     sanitize_filenames(output_dir)
+
+    # Move configured tree to declared output.  Rewrite embedded scratch
+    # paths so the build phase sees the final artifact location.
+    _BINARY_EXTS = frozenset((
+        ".o", ".a", ".so", ".gch", ".pcm", ".pch", ".d",
+        ".png", ".jpg", ".gif", ".ico", ".gz", ".xz", ".bz2",
+        ".wasm", ".pyc", ".qm",
+    ))
+    if os.path.exists(declared_output):
+        shutil.rmtree(declared_output)
+    _scratch_path = output_dir
+    shutil.move(output_dir, declared_output)
+    for dirpath, dirnames, filenames in os.walk(declared_output):
+        for entries in (dirnames, filenames):
+            for name in entries:
+                p = os.path.join(dirpath, name)
+                if os.path.islink(p):
+                    target = os.readlink(p)
+                    if _scratch_path in target:
+                        os.unlink(p)
+                        os.symlink(target.replace(_scratch_path, declared_output), p)
+    for dirpath, _dirnames, filenames in os.walk(declared_output):
+        for fname in filenames:
+            if os.path.splitext(fname)[1] in _BINARY_EXTS:
+                continue
+            fpath = os.path.join(dirpath, fname)
+            if os.path.islink(fpath):
+                continue
+            try:
+                st = os.stat(fpath)
+                with open(fpath, "r") as f:
+                    fc = f.read()
+                if _scratch_path not in fc:
+                    continue
+                with open(fpath, "w") as f:
+                    f.write(fc.replace(_scratch_path, declared_output))
+                os.utime(fpath, (st.st_atime, st.st_mtime))
+            except (UnicodeDecodeError, PermissionError, IsADirectoryError,
+                    FileNotFoundError):
+                pass
+
+    # Rewrite meson pickle files (install.dat, build.dat, custom command
+    # serializations).  These embed the build directory as workdir and in
+    # command arguments.  Text rewrite above skips them (binary).
+    # Needed for packages that wrap meson inside autotools (e.g. QEMU).
+    import pickle as _pickle
+
+    def _patch_pickle_paths(obj, old, new):
+        if isinstance(obj, str):
+            return obj.replace(old, new) if old in obj else obj
+        if isinstance(obj, list):
+            return [_patch_pickle_paths(item, old, new) for item in obj]
+        if isinstance(obj, tuple):
+            return tuple(_patch_pickle_paths(item, old, new) for item in obj)
+        if hasattr(obj, "__dict__"):
+            for k, v in obj.__dict__.items():
+                patched = _patch_pickle_paths(v, old, new)
+                if patched is not v:
+                    setattr(obj, k, patched)
+        return obj
+
+    # Locate mesonbuild from PATH so pickle.load can deserialise
+    # meson-internal dataclasses.
+    for _bp in list(getattr(args, 'hermetic_path', [])) + list(getattr(args, 'path_prepend', [])):
+        _parent = os.path.dirname(os.path.abspath(_bp))
+        for _pat in ("lib/python*/site-packages", "lib64/python*/site-packages"):
+            for _sp in _glob.glob(os.path.join(_parent, _pat)):
+                if os.path.isdir(os.path.join(_sp, "mesonbuild")):
+                    if _sp not in sys.path:
+                        sys.path.insert(0, _sp)
+
+    for _mdat in _glob.glob(os.path.join(declared_output, "**/meson-private/*.dat"), recursive=True):
+        try:
+            _dat_stat = os.stat(_mdat)
+            with open(_mdat, "rb") as f:
+                _idata = _pickle.load(f)
+            _patch_pickle_paths(_idata, _scratch_path, declared_output)
+            with open(_mdat, "wb") as f:
+                _pickle.dump(_idata, f)
+            os.utime(_mdat, (_dat_stat.st_atime, _dat_stat.st_mtime))
+        except Exception as _e:
+            print(f"warning: could not rewrite {os.path.basename(_mdat)}: {_e}",
+                  file=sys.stderr)
 
 
 if __name__ == "__main__":

@@ -63,6 +63,34 @@ def target_has_label(query, target_pattern, label):
                     return True
     return False
 
+def get_labels(query, target_pattern):
+    """Return the combined list of labels across all matching targets."""
+    target_set = query.eval(target_pattern)
+    result = []
+    for t in target_set:
+        labels = t.get_attr("labels")
+        if labels != None:
+            result.extend(list(labels))
+    return result
+
+def fmt_actual(items, max_items = 5, max_item_len = 80, max_len = 300):
+    """Format a list for display in error messages, truncating if needed."""
+    if not items:
+        return "(empty)"
+    shown = items[:max_items]
+    parts = []
+    for item in shown:
+        s = str(item)
+        if len(s) > max_item_len:
+            s = s[:max_item_len] + "..."
+        parts.append(s)
+    result = ", ".join(parts)
+    if len(items) > max_items:
+        result = result + " ... ({} total)".format(len(items))
+    if len(result) > max_len:
+        result = result[:max_len] + "..."
+    return result
+
 def summarize(ctx, results):
     """Print summary and return (passed, failed, fail_details) tuple."""
     passed = 0

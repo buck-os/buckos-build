@@ -1,6 +1,6 @@
 """Test implementation: USE flag select() resolution."""
 
-load("//tests/graph:helpers.bzl", "assert_result", "summarize")
+load("//tests/graph:helpers.bzl", "assert_result", "fmt_actual", "summarize")
 
 def _get_deps_str(query, target_pattern):
     """Return the string representation of the deps attribute.
@@ -14,6 +14,12 @@ def _get_deps_str(query, target_pattern):
         if deps_attr != None:
             return str(deps_attr)
     return ""
+
+def _truncate(s, max_len = 200):
+    """Truncate a string for display in error messages."""
+    if len(s) <= max_len:
+        return s
+    return s[:max_len] + "..."
 
 def run(ctx):
     """Verify USE flag select() wiring controls dependency edges.
@@ -57,14 +63,14 @@ def run(ctx):
         ctx, results,
         "curl-build has zlib as unconditional dep",
         "zlib" in unconditional_part,
-        "zlib not found in unconditional part of curl-build deps",
+        "zlib not found in unconditional deps; got: {}".format(_truncate(unconditional_part)),
     )
 
     assert_result(
         ctx, results,
         "curl-build has libpsl as unconditional dep",
         "libpsl" in unconditional_part,
-        "libpsl not found in unconditional part of curl-build deps",
+        "libpsl not found in unconditional deps; got: {}".format(_truncate(unconditional_part)),
     )
 
     # ── USE-gated deps: openssl, nghttp2, libssh2 are NOT unconditional ──
@@ -72,21 +78,21 @@ def run(ctx):
         ctx, results,
         "openssl is NOT unconditional dep of curl-build (gated by ssl)",
         "openssl" not in unconditional_part,
-        "openssl found in unconditional part of curl-build deps (should be in select)",
+        "openssl found in unconditional deps (should be in select); got: {}".format(_truncate(unconditional_part)),
     )
 
     assert_result(
         ctx, results,
         "nghttp2 is NOT unconditional dep of curl-build (gated by http2)",
         "nghttp2" not in unconditional_part,
-        "nghttp2 found in unconditional part of curl-build deps (should be in select)",
+        "nghttp2 found in unconditional deps (should be in select); got: {}".format(_truncate(unconditional_part)),
     )
 
     assert_result(
         ctx, results,
         "libssh2 is NOT unconditional dep of curl-build (gated by ssh)",
         "libssh2" not in unconditional_part,
-        "libssh2 found in unconditional part of curl-build deps (should be in select)",
+        "libssh2 found in unconditional deps (should be in select); got: {}".format(_truncate(unconditional_part)),
     )
 
     # ── USE-gated deps ARE present inside select() branches ──────
@@ -94,21 +100,24 @@ def run(ctx):
         ctx, results,
         "openssl appears in select() branches (ssl USE flag)",
         has_select and "openssl" in deps_str,
-        "openssl not found in deps_str (select wiring broken)",
+        "openssl not found in deps (select wiring broken); has_select={}; deps: {}".format(
+            has_select, _truncate(deps_str)),
     )
 
     assert_result(
         ctx, results,
         "nghttp2 appears in select() branches (http2 USE flag)",
         has_select and "nghttp2" in deps_str,
-        "nghttp2 not found in deps_str (select wiring broken)",
+        "nghttp2 not found in deps (select wiring broken); has_select={}; deps: {}".format(
+            has_select, _truncate(deps_str)),
     )
 
     assert_result(
         ctx, results,
         "libssh2 appears in select() branches (ssh USE flag)",
         has_select and "libssh2" in deps_str,
-        "libssh2 not found in deps_str (select wiring broken)",
+        "libssh2 not found in deps (select wiring broken); has_select={}; deps: {}".format(
+            has_select, _truncate(deps_str)),
     )
 
     # ── select() keys reference the correct constraint values ────
@@ -116,21 +125,21 @@ def run(ctx):
         ctx, results,
         "ssl-on constraint key in curl deps select()",
         "ssl-on" in deps_str,
-        "ssl-on not found in curl-build deps select keys",
+        "ssl-on not found in curl-build deps; deps: {}".format(_truncate(deps_str)),
     )
 
     assert_result(
         ctx, results,
         "http2-on constraint key in curl deps select()",
         "http2-on" in deps_str,
-        "http2-on not found in curl-build deps select keys",
+        "http2-on not found in curl-build deps; deps: {}".format(_truncate(deps_str)),
     )
 
     assert_result(
         ctx, results,
         "ssh-on constraint key in curl deps select()",
         "ssh-on" in deps_str,
-        "ssh-on not found in curl-build deps select keys",
+        "ssh-on not found in curl-build deps; deps: {}".format(_truncate(deps_str)),
     )
 
     # ── Verify USE flag constraint targets exist ─────────────────
