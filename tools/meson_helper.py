@@ -500,10 +500,16 @@ def main():
                         setattr(obj, k, patched)
             return obj
 
-        # Add mesonbuild to sys.path so pickle can reconstruct objects
+        # Add mesonbuild to sys.path so pickle can reconstruct objects.
+        # Search hermetic/prepend dirs AND the resolved env PATH (for
+        # --allow-host-path mode where meson comes from the host).
         import sys as _sys
         _meson_sp_added = []
-        for _bp in list(args.hermetic_path) + list(all_path_prepend):
+        _search_dirs = list(args.hermetic_path) + list(all_path_prepend)
+        for _d in env.get("PATH", "").split(":"):
+            if _d and _d not in _search_dirs:
+                _search_dirs.append(_d)
+        for _bp in _search_dirs:
             _parent = os.path.dirname(os.path.abspath(_bp))
             for _pattern in ("lib/python*/site-packages", "lib64/python*/site-packages"):
                 for _sp in __import__("glob").glob(os.path.join(_parent, _pattern)):
