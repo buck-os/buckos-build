@@ -78,13 +78,13 @@ def run(ctx):
         "openssl-3.6-src found in attrs of openssl-3.3-build (should be independent); got: [{}]".format(fmt_actual(ossl33_deps)),
     )
 
-    # ── openssl default alias points to openssl-3.3 (via actual attr) ──
+    # ── openssl default alias points to openssl-3.6 (via actual attr) ──
     ossl_alias_deps = get_dep_strings(query, "//packages/linux/system/libs/crypto/openssl:openssl")
     assert_result(
         ctx, results,
-        "openssl alias depends on openssl-3.3",
-        has_dep_matching(ossl_alias_deps, "openssl-3.3"),
-        "openssl-3.3 not found in attrs of openssl alias; got: [{}]".format(fmt_actual(ossl_alias_deps)),
+        "openssl alias depends on openssl-3.6",
+        has_dep_matching(ossl_alias_deps, "openssl-3.6"),
+        "openssl-3.6 not found in attrs of openssl alias; got: [{}]".format(fmt_actual(ossl_alias_deps)),
     )
 
     # ── both openssl slots depend on zlib (via deps attr) ──
