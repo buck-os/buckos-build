@@ -689,35 +689,43 @@ def main():
         try:
             with open(_install_dat, "rb") as f:
                 _raw = f.read()
-            _stale_bases = set()
+            _meson_stale = set()  # stale meson build dirs → _meson_build_dir
+            _scratch_stale = set()  # stale scratch dirs → make_dir
             for _op, _arg, _ in _pt.genops(_raw):
                 if _op.name not in ('SHORT_BINUNICODE', 'BINUNICODE', 'BINUNICODE8'):
                     continue
                 if not isinstance(_arg, str):
                     continue
-                # Match paths containing meson-private or meson-info
                 for _m in ('/meson-private/', '/meson-info/'):
                     _idx = _arg.find(_m)
                     if _idx > 0 and os.path.isabs(_arg[:_idx]) and _arg[:_idx] != _meson_build_dir:
-                        _stale_bases.add(_arg[:_idx])
-                # Also match stale scratch paths (buck-out/v2/tmp/) that
-                # survived through cached configure/build outputs.
+                        _meson_stale.add(_arg[:_idx])
+                # Stale scratch paths (buck-out/v2/tmp/) from cached outputs
                 if '/buck-out/v2/tmp/' in _arg and os.path.isabs(_arg):
                     _idx = _arg.find('/buck-out/v2/tmp/')
                     _tmp_prefix = _arg[:_idx] + '/buck-out/v2/tmp/'
-                    # Path structure: cell/hash/category/name/scratch-subdir/...
                     _after = _arg[len(_tmp_prefix):]
                     _parts = _after.split('/', 5)
                     if len(_parts) >= 5:
                         _scratch_dir = _tmp_prefix + '/'.join(_parts[:5])
                         if not os.path.exists(_scratch_dir):
-                            _stale_bases.add(_scratch_dir)
-            for _sb in _stale_bases:
+                            _scratch_stale.add(_scratch_dir)
+            for _sb in _meson_stale:
                 if os.path.islink(_sb):
                     os.unlink(_sb)
                 if not os.path.exists(_sb):
                     os.makedirs(os.path.dirname(_sb), exist_ok=True)
                     os.symlink(_meson_build_dir, _sb)
+                    register_cleanup(_sb)
+            # Stale scratch dirs map to make_dir (the full build tree),
+            # not _meson_build_dir, because scratch contained both source
+            # and build dirs at the same level.
+            for _sb in _scratch_stale:
+                if os.path.islink(_sb):
+                    os.unlink(_sb)
+                if not os.path.exists(_sb):
+                    os.makedirs(os.path.dirname(_sb), exist_ok=True)
+                    os.symlink(make_dir, _sb)
                     register_cleanup(_sb)
         except Exception as _e:
             print(f"warning: could not fixup install.dat paths: {_e}",
