@@ -187,14 +187,6 @@ def main():
     output = _CLEAR_RE.sub("", output)
     ok = found == set(markers.keys())
 
-    # On aarch64, the KDE ISO boot test uses a generic aarch64 kernel
-    # that lacks the full driver set needed for systemd live boot
-    # (squashfs, dm-verity, loop, etc.).  Skip rather than fail.
-    import platform
-    if not ok and platform.machine() == "aarch64":
-        print("SKIP: aarch64 kernel config lacks drivers for KDE live boot")
-        sys.exit(0)
-
     if ok:
         tail = "\n".join(output.splitlines()[-10:])
         print(tail)

@@ -115,8 +115,14 @@ def main():
         # build-time sysroot paths — those don't exist inside the
         # initramfs.  The padded path is longer than the standard one,
         # so we can overwrite it in-place (null-padded).
-        _std_interp = b"/lib64/ld-linux-x86-64.so.2\x00"
-        _std_rpath = b"/lib64:/usr/lib64:/usr/lib\x00"
+        _interp_by_machine = {
+            0xB7: b"/lib/ld-linux-aarch64.so.1\x00",    # EM_AARCH64
+            0x3E: b"/lib64/ld-linux-x86-64.so.2\x00",   # EM_X86_64
+        }
+        _rpath_by_machine = {
+            0xB7: b"/lib:/usr/lib\x00",
+            0x3E: b"/lib64:/usr/lib64:/usr/lib\x00",
+        }
         _sysroot_marker = b"buck-out/"
         import struct
         for dirpath, _, filenames in os.walk(staging):
@@ -133,6 +139,11 @@ def main():
                         continue
                     little = data[5] == 1
                     fmt = "<" if little else ">"
+                    e_machine = struct.unpack(fmt + "H", data[18:20])[0]
+                    _std_interp = _interp_by_machine.get(e_machine)
+                    _std_rpath = _rpath_by_machine.get(e_machine)
+                    if not _std_interp:
+                        continue
                     phoff = struct.unpack(fmt + "Q", data[32:40])[0]
                     phentsize = struct.unpack(fmt + "H", data[54:56])[0]
                     phnum = struct.unpack(fmt + "H", data[56:58])[0]

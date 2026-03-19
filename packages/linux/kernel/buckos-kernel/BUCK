@@ -103,7 +103,7 @@ kernel_build(
     name = "buckos-kernel-live",
     source = "//packages/linux/kernel/src:linux-src",
     config = select({
-        "//platforms:is_aarch64": "//packages/linux/kernel/configs:buckos-aarch64-default",
+        "//platforms:is_aarch64": "//packages/linux/kernel/configs:buckos-aarch64-live",
         "DEFAULT": "//packages/linux/kernel/configs:buckos-live",
     }),
     arch = select({
