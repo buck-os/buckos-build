@@ -30,6 +30,9 @@ package(
     description = "A modern, high-performance linker",
     homepage = "https://github.com/rui314/mold",
     license = "MIT",
+    configure_args = [
+        "-DCMAKE_DISABLE_FIND_PACKAGE_BLAKE3=ON",  # Use vendored BLAKE3 (system one links TBB)
+    ],
     deps = [
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/compression/zstd:zstd",

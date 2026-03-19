@@ -7,15 +7,14 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "meson",
     name = "systemd",
-    version = "256.7",
-    url = "https://github.com/systemd/systemd/archive/refs/tags/v256.7.tar.gz",
-    sha256 = "896d76ff65c88f5fd9e42f90d152b0579049158a163431dd77cdc57748b1d7b0",
+    version = "259.5",
+    url = "https://github.com/systemd/systemd/archive/refs/tags/v259.5.tar.gz",
+    sha256 = "80ed55a8a69c4bd1fb12a36659303372b37baf9ee224ef4f032db4b748be0f76",
     pre_configure_cmds = [
         # Stub out test/fuzz meson.build (exclude_patterns dropped those files)
-        "mkdir -p test/fuzz && printf 'fuzz_sanitizers = []\\nfuzz_testsdir = '\"'\"'test/fuzz'\"'\"'\\n' > test/fuzz/meson.build",
+        "mkdir -p test/fuzz && printf 'fuzz_regression_tests = {}\\nfuzz_testsdir = '\"'\"'test/fuzz'\"'\"'\\n' > test/fuzz/meson.build",
         # Remove unit file entries with \\x2d in names (Buck2 can't handle escaped paths)
-        "perl -i -0777 -pe 's/\\{[^{}]*x2dcryptsetup[^{}]*\\},?\\s*//gs' units/meson.build",
-        "perl -i -0777 -pe 's/\\{[^{}]*x2dveritysetup[^{}]*\\},?\\s*//gs' units/meson.build",
+        "perl -i -0777 -pe 's/\\{[^{}]*x2d[^{}]*\\},?\\s*//gs' units/meson.build",
         # Skip dbus_exporter which tries to run cross-compiled binary
         "sed -i 's/if not meson.is_cross_build()/if false/' meson.build",
         # Disable SystemTap tracing - sysroot has old sys/sdt.h
@@ -27,7 +26,6 @@ package(
     configure_args = [
         "-Dsysconfdir=/etc",
         "-Dmode=release",
-        "-Dstrip=false",  # Disable stripping (causes issues with cross-compilation)
         "-Dutmp=true",  # Enable utmp/wtmp support for login tracking (needed by SDDM)
         # Override auto-detected paths - meson finds build-time paths, we need runtime paths
         "-Dmount-path=/bin/mount",
@@ -89,7 +87,6 @@ package(
         "-Daudit=disabled",
         "-Dbootloader=disabled",
         "-Dbpf-framework=disabled",
-        "-Ddefault-hierarchy=unified",
         "-Dlibcryptsetup=disabled",
         "-Dlibcurl=disabled",
         "-Ddns-over-tls=false",
@@ -100,7 +97,6 @@ package(
         "-Dmicrohttpd=disabled",
         "-Dlibidn2=disabled",
         "-Dimportd=disabled",
-        "-Dlibiptc=disabled",
         "-Dkernel-install=false",
         "-Dkmod=enabled",  # kmod in deps
         "-Dxz=enabled",  # xz in deps
@@ -131,7 +127,6 @@ package(
         "//packages/linux/system/libs/compression/lz4:lz4",
         "//packages/linux/system/libs/compression/xz:xz",
         "//packages/linux/system/libs/compression/zstd:zstd",
-        "//packages/linux/system/libs/ipc/libcap:libcap",
         "//packages/linux/system/libs/kmod:kmod",
         "//packages/linux/system/libs/crypto/openssl:openssl",
         "//packages/linux/system/libs/crypto/libxcrypt:libxcrypt",
