@@ -687,6 +687,91 @@ def main():
                 for _sp in _meson_sp_added:
                     sys.path.remove(_sp)
 
+    # Rewrite stale scratch paths in meson's install.dat.  The configure
+    # phase works in BUCK_SCRATCH_PATH and rewrites paths to the declared
+    # output, but the install.dat pickle may retain scratch paths that
+    # survived through the build phase.  Unpickle, walk all string
+    # attributes, replace any /buck-out/v2/tmp/ path with make_dir.
+    _install_dat_scratch = os.path.join(make_dir, "meson-private", "install.dat")
+    if os.path.isfile(_install_dat_scratch):
+        import pickle as _pickle_s
+
+        _meson_sp_added_s = []
+        _search_dirs_s = list(args.hermetic_path) + list(all_path_prepend)
+        for _d in env.get("PATH", "").split(":"):
+            if _d and _d not in _search_dirs_s:
+                _search_dirs_s.append(_d)
+        for _bp in _search_dirs_s:
+            _parent = os.path.dirname(os.path.abspath(_bp))
+            for _pattern in ("lib/python*/site-packages", "lib64/python*/site-packages"):
+                for _sp in _glob.glob(os.path.join(_parent, _pattern)):
+                    if os.path.isdir(os.path.join(_sp, "mesonbuild")):
+                        if _sp not in sys.path:
+                            sys.path.insert(0, _sp)
+                            _meson_sp_added_s.append(_sp)
+
+        def _collect_stale_strings(obj, seen):
+            """Walk pickle object, collect strings containing /buck-out/v2/tmp/."""
+            if isinstance(obj, str):
+                if "/buck-out/v2/tmp/" in obj:
+                    seen.add(obj)
+                return
+            if isinstance(obj, (list, tuple)):
+                for item in obj:
+                    _collect_stale_strings(item, seen)
+                return
+            if hasattr(obj, "__dict__"):
+                for v in obj.__dict__.values():
+                    _collect_stale_strings(v, seen)
+
+        def _patch_scratch(obj, replacements):
+            if isinstance(obj, str):
+                for old, new in replacements:
+                    if old in obj:
+                        obj = obj.replace(old, new)
+                return obj
+            if isinstance(obj, list):
+                return [_patch_scratch(item, replacements) for item in obj]
+            if isinstance(obj, tuple):
+                return tuple(_patch_scratch(item, replacements) for item in obj)
+            if hasattr(obj, "__dict__"):
+                for k, v in obj.__dict__.items():
+                    patched = _patch_scratch(v, replacements)
+                    if patched is not v:
+                        setattr(obj, k, patched)
+            return obj
+
+        try:
+            _dat_stat_s = os.stat(_install_dat_scratch)
+            with open(_install_dat_scratch, "rb") as f:
+                _idata_s = _pickle_s.load(f)
+
+            # Collect all stale scratch strings from the pickle
+            _stale_strings = set()
+            _collect_stale_strings(_idata_s, _stale_strings)
+
+            if _stale_strings:
+                # Build replacement pairs: each stale path → make_dir
+                import re as _re_s
+                _replacements = []
+                for s in _stale_strings:
+                    # Extract the scratch base (up to and including the action-specific dir)
+                    # e.g. /path/buck-out/v2/tmp/buckos/HASH/meson_configure/NAME/meson-work
+                    m = _re_s.search(r'(.*/buck-out/v2/tmp/[^/]+/[^/]+/[^/]+/[^/]+/[^/]+)', s)
+                    if m:
+                        _replacements.append((m.group(1), make_dir))
+
+                if _replacements:
+                    _patch_scratch(_idata_s, _replacements)
+                    with open(_install_dat_scratch, "wb") as f:
+                        _pickle_s.dump(_idata_s, f)
+                    os.utime(_install_dat_scratch, (_dat_stat_s.st_atime, _dat_stat_s.st_mtime))
+        except Exception:
+            pass
+        finally:
+            for _sp in _meson_sp_added_s:
+                sys.path.remove(_sp)
+
     # --- Meson install fast-path ---
     # For meson-wrapped builds (including autotools wrappers like QEMU),
     # use `meson install --no-rebuild` and skip all Makefile/build.ninja
