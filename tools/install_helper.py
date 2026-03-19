@@ -705,10 +705,11 @@ def main():
                 if '/buck-out/v2/tmp/' in _arg and os.path.isabs(_arg):
                     _idx = _arg.find('/buck-out/v2/tmp/')
                     _tmp_prefix = _arg[:_idx] + '/buck-out/v2/tmp/'
+                    # Path structure: cell/hash/category/name/scratch-subdir/...
                     _after = _arg[len(_tmp_prefix):]
-                    _parts = _after.split('/', 4)
-                    if len(_parts) >= 4:
-                        _scratch_dir = _tmp_prefix + '/'.join(_parts[:4])
+                    _parts = _after.split('/', 5)
+                    if len(_parts) >= 5:
+                        _scratch_dir = _tmp_prefix + '/'.join(_parts[:5])
                         if not os.path.exists(_scratch_dir):
                             _stale_bases.add(_scratch_dir)
             for _sb in _stale_bases:
