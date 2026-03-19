@@ -97,7 +97,7 @@ jobs:
       - name: Build systemd container rootfs
         run: |
           buck2 build //packages/linux/system:systemd-container-rootfs --out systemd-container-rootfs.tar
-          xz -9 systemd-container-rootfs.tar
+          xz -9f systemd-container-rootfs.tar
       - name: Build minimal ISO
         run: buck2 build //packages/linux/system:buckos-minimal-iso --out buckos-minimal.iso
       - name: Build KDE ISO
