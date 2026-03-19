@@ -220,6 +220,22 @@ kernel_config(
 )
 
 kernel_config(
+    name = "buckos-aarch64-live",
+    source = "//packages/linux/kernel/src:linux-src",
+    version = "6.18",
+    arch = "aarch64",
+    fragments = [
+        "aarch64-base.config",
+        "filesystem.config",
+        "network.config",
+        "security.config",
+        "hardware.config",
+        "virtualization.config",
+    ],
+    labels = ["buckos:config"],
+)
+
+kernel_config(
     name = "buckos-aarch64-cloud",
     source = "//packages/linux/kernel/src:linux-src",
     version = "6.18",
