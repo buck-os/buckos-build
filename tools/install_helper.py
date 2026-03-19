@@ -717,15 +717,16 @@ def main():
                     os.makedirs(os.path.dirname(_sb), exist_ok=True)
                     os.symlink(_meson_build_dir, _sb)
                     register_cleanup(_sb)
-            # Stale scratch dirs map to make_dir (the full build tree),
-            # not _meson_build_dir, because scratch contained both source
-            # and build dirs at the same level.
+            # Stale scratch dirs map to build_dir (the build tree root),
+            # not make_dir (which may be a subdirectory when --build-subdir
+            # is used).  The scratch work dir contained source + build at
+            # the same level; source file references need the tree root.
             for _sb in _scratch_stale:
                 if os.path.islink(_sb):
                     os.unlink(_sb)
                 if not os.path.exists(_sb):
                     os.makedirs(os.path.dirname(_sb), exist_ok=True)
-                    os.symlink(make_dir, _sb)
+                    os.symlink(build_dir, _sb)
                     register_cleanup(_sb)
         except Exception as _e:
             print(f"warning: could not fixup install.dat paths: {_e}",
