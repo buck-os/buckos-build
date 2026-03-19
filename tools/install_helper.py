@@ -674,16 +674,18 @@ def main():
         _fix_stale_symlinks(make_dir, _stale_root, _new_root)
         _rewrite_stale_paths(make_dir, _stale_root, _new_root)
 
-    # Ensure stale absolute paths in meson's install.dat resolve.
+    # Ensure stale absolute paths in meson install.dat files resolve.
     # install.dat is a binary pickle with absolute build-dir paths.
     # When the build tree moves (scratch relocation, cross-machine
-    # cache), those paths become stale.  Rather than modifying the
-    # pickle (which requires understanding pickle internals), create
-    # a symlink from the stale path to make_dir so meson follows it.
-    _install_dat = os.path.join(make_dir, "meson-private", "install.dat")
-    if os.path.isfile(_install_dat):
-        import pickletools as _pt
+    # cache), those paths become stale.  Create symlinks from stale
+    # paths to the current location so meson follows them.
+    # Glob recursively to handle nested meson builds (e.g. QEMU wraps
+    # meson in autotools, placing install.dat at build/meson-private/).
+    import pickletools as _pt
 
+    for _install_dat in _glob.glob(os.path.join(make_dir, "**/meson-private/install.dat"), recursive=True):
+        # The meson build dir is the parent of meson-private/
+        _meson_build_dir = os.path.dirname(os.path.dirname(_install_dat))
         try:
             with open(_install_dat, "rb") as f:
                 _raw = f.read()
@@ -696,14 +698,13 @@ def main():
                 # Match paths containing meson-private or meson-info
                 for _m in ('/meson-private/', '/meson-info/'):
                     _idx = _arg.find(_m)
-                    if _idx > 0 and os.path.isabs(_arg[:_idx]) and _arg[:_idx] != make_dir:
+                    if _idx > 0 and os.path.isabs(_arg[:_idx]) and _arg[:_idx] != _meson_build_dir:
                         _stale_bases.add(_arg[:_idx])
                 # Also match stale scratch paths (buck-out/v2/tmp/) that
                 # survived through cached configure/build outputs.
                 if '/buck-out/v2/tmp/' in _arg and os.path.isabs(_arg):
                     _idx = _arg.find('/buck-out/v2/tmp/')
                     _tmp_prefix = _arg[:_idx] + '/buck-out/v2/tmp/'
-                    # Extract: hash/category/name/scratch-subdir
                     _after = _arg[len(_tmp_prefix):]
                     _parts = _after.split('/', 4)
                     if len(_parts) >= 4:
@@ -715,7 +716,7 @@ def main():
                     os.unlink(_sb)
                 if not os.path.exists(_sb):
                     os.makedirs(os.path.dirname(_sb), exist_ok=True)
-                    os.symlink(make_dir, _sb)
+                    os.symlink(_meson_build_dir, _sb)
                     register_cleanup(_sb)
         except Exception as _e:
             print(f"warning: could not fixup install.dat paths: {_e}",
