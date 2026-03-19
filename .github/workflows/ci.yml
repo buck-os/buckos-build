@@ -94,10 +94,19 @@ jobs:
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Unit tests
         run: "buck2 test //tests:"
+      - name: Build systemd container rootfs
+        run: |
+          buck2 build //packages/linux/system:systemd-container-rootfs --out systemd-container-rootfs.tar
+          xz -9f systemd-container-rootfs.tar
       - name: Build minimal ISO
         run: buck2 build //packages/linux/system:buckos-minimal-iso --out buckos-minimal.iso
       - name: Build KDE ISO
         run: buck2 build //packages/linux/system:buckos-live-installer-kde --out buckos-kde.iso
+      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: systemd-container-rootfs
+          path: systemd-container-rootfs.tar.xz
+          compression-level: 0
       - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: buckos-minimal-iso
