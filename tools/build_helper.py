@@ -720,7 +720,9 @@ def main():
     # they lack RPATH for dep prefixes, so LD_LIBRARY_PATH is needed
     # even with sysroot ld-linux.  Exclude dirs with libc.so.6 to avoid
     # poisoning host tools with sysroot glibc.
-    if file_lib_dirs:
+    # Skip in --allow-host-path mode: host tools crash loading buckos
+    # libs linked against a newer glibc.  Buckos tools use RPATH.
+    if file_lib_dirs and not args.allow_host_path:
         resolved = [
             os.path.abspath(d) for d in file_lib_dirs
             if os.path.isdir(d) and not os.path.exists(os.path.join(os.path.abspath(d), "libc.so.6"))

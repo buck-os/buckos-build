@@ -295,7 +295,10 @@ def main():
     # Dep lib dirs in LD_LIBRARY_PATH so build-time tools and test
     # programs can find dep shared libs at runtime.  Exclude dirs with
     # libc.so.6 to avoid poisoning host tools with sysroot glibc.
-    if file_lib_dirs:
+    # Skip entirely in --allow-host-path mode: host tools (cmake, make)
+    # use host ld-linux and crash loading buckos-built libs linked
+    # against a newer glibc.  Buckos tools use RPATH via specs.
+    if file_lib_dirs and not args.allow_host_path:
         resolved_lib_dirs = [
             os.path.abspath(d) for d in file_lib_dirs
             if os.path.isdir(d) and not os.path.exists(os.path.join(os.path.abspath(d), "libc.so.6"))

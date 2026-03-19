@@ -189,7 +189,9 @@ def main():
     # Dep lib dirs in LD_LIBRARY_PATH so dep tools (e.g. buckos python
     # needing libpython3.12.so) can execute during meson setup.  Exclude
     # dirs with libc.so.6 to avoid poisoning host tools.
-    if file_lib_dirs:
+    # Skip in --allow-host-path mode: host tools crash loading buckos
+    # libs linked against a newer glibc.  Buckos tools use RPATH.
+    if file_lib_dirs and not args.allow_host_path:
         resolved = [
             os.path.abspath(d) for d in file_lib_dirs
             if os.path.isdir(d) and not os.path.exists(os.path.join(os.path.abspath(d), "libc.so.6"))
@@ -479,59 +481,10 @@ def main():
                     FileNotFoundError):
                 pass
 
-    # Rewrite meson's install.dat pickle — the text rewrite above skips
-    # it (binary).  install.dat stores absolute source paths that meson
-    # install uses to locate .pc files, headers, etc.
-    _install_dat = os.path.join(declared_output, "meson-private", "install.dat")
-    if os.path.isfile(_install_dat):
-        import pickle as _pickle
-
-        def _patch_pickle_paths(obj, old, new):
-            if isinstance(obj, str):
-                return obj.replace(old, new) if old in obj else obj
-            if isinstance(obj, list):
-                return [_patch_pickle_paths(item, old, new) for item in obj]
-            if isinstance(obj, tuple):
-                return tuple(_patch_pickle_paths(item, old, new) for item in obj)
-            if hasattr(obj, "__dict__"):
-                for k, v in obj.__dict__.items():
-                    patched = _patch_pickle_paths(v, old, new)
-                    if patched is not v:
-                        setattr(obj, k, patched)
-            return obj
-
-        # Add mesonbuild to sys.path so pickle can reconstruct objects.
-        # Search hermetic/prepend dirs AND the resolved env PATH (for
-        # --allow-host-path mode where meson comes from the host).
-        import sys as _sys
-        _meson_sp_added = []
-        _search_dirs = list(args.hermetic_path) + list(all_path_prepend)
-        for _d in env.get("PATH", "").split(":"):
-            if _d and _d not in _search_dirs:
-                _search_dirs.append(_d)
-        for _bp in _search_dirs:
-            _parent = os.path.dirname(os.path.abspath(_bp))
-            for _pattern in ("lib/python*/site-packages", "lib64/python*/site-packages"):
-                for _sp in __import__("glob").glob(os.path.join(_parent, _pattern)):
-                    if os.path.isdir(os.path.join(_sp, "mesonbuild")):
-                        if _sp not in _sys.path:
-                            _sys.path.insert(0, _sp)
-                            _meson_sp_added.append(_sp)
-
-        try:
-            _dat_stat = os.stat(_install_dat)
-            with open(_install_dat, "rb") as f:
-                _idata = _pickle.load(f)
-            _patch_pickle_paths(_idata, _scratch_path, declared_output)
-            with open(_install_dat, "wb") as f:
-                _pickle.dump(_idata, f)
-            os.utime(_install_dat, (_dat_stat.st_atime, _dat_stat.st_mtime))
-        except Exception as _e:
-            print(f"warning: could not rewrite install.dat: {_e}",
-                  file=__import__("sys").stderr)
-        finally:
-            for _sp in _meson_sp_added:
-                _sys.path.remove(_sp)
+    # Note: install.dat (meson's binary pickle) retains stale scratch
+    # paths after the text rewrite above.  The install_helper handles
+    # this by creating a symlink from the stale path to make_dir
+    # before running meson install — no pickle modification needed.
 
 
 if __name__ == "__main__":
