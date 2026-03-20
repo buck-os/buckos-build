@@ -297,13 +297,38 @@ def package(
     if sha256 != None:
         build_kwargs.setdefault("src_sha256", sha256)
 
-    # -- Auto-create vendor deps for cargo packages in mirror mode -----------
-    # When the mirror/syncer provides vendored crate deps, auto-wire them
-    # so cargo packages build offline without pre-vendored source tarballs.
-    # The syncer generates vendor deps for all cargo packages (BUILD_RULE
-    # in BXL output) and uploads them alongside source archives.
-    # Pre-vendored packages (cloud-hypervisor) get redundant vendor deps
-    # but the --vendor-dir flag takes precedence over in-source vendor/.
+    # -- Auto-create vendor deps for cargo/go packages ----------------------
+    # When vendor_deps is a sha256 string (64 hex chars), download the
+    # vendor archive from the mirror and create extraction targets.
+    # When in vendor mirror mode without explicit vendor_deps, auto-wire
+    # from the vendor directory.
+    if build_rule in ("cargo", "go") and "vendor_deps" in build_kwargs:
+        _vendor_sha = build_kwargs["vendor_deps"]
+        if type(_vendor_sha) == "string" and len(_vendor_sha) == 64:
+            build_kwargs.pop("vendor_deps")
+            if _MIRROR_PREFIX:
+                _vendor_filename = "{}-{}-vendor.tar.zst".format(name, version)
+                _vendor_labels = ["buckos:download", "buckos:{}-vendor".format(build_rule)]
+                _vendor_urls = ["{}/{}/{}{}".format(
+                    _MIRROR_PREFIX,
+                    _vendor_filename[0].lower(),
+                    _vendor_filename,
+                    _MIRROR_PARAMS,
+                )]
+                native.http_file(
+                    name = name + "-vendor-archive",
+                    urls = _vendor_urls,
+                    sha256 = _vendor_sha,
+                    out = _vendor_filename,
+                    labels = _vendor_labels,
+                )
+                extract_source(
+                    name = name + "-vendor-src",
+                    source = ":" + name + "-vendor-archive",
+                    strip_components = 0,
+                )
+                build_kwargs["vendor_deps"] = ":" + name + "-vendor-src"
+
     if build_rule == "cargo" and "vendor_deps" not in build_kwargs and url and sha256:
         _vendor_filename = "{}-{}-vendor.tar.zst".format(name, version)
         _vendor_labels = ["buckos:download", "buckos:cargo-vendor"]
@@ -391,7 +416,7 @@ def package(
         # must not get ccache injected (cycle), but still get their
         # normal build tools (meson, ninja, etc.).
         _CACHE_BLOCKLIST = _TOOL_BLOCKLIST + ("zstd",)
-        if _CACHE_ENABLED and name not in _CACHE_BLOCKLIST:
+        if _CACHE_ENABLED and name not in _CACHE_BLOCKLIST and build_rule in _CONFIGURABLE_RULES:
             _auto_tool_deps.append(
                 "//packages/linux/dev-tools/dev-utils/ccache:ccache",
             )

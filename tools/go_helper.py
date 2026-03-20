@@ -7,6 +7,7 @@ directory.
 
 import argparse
 import os
+import shutil
 import subprocess
 import sys
 
@@ -97,7 +98,7 @@ def main():
         print(f"error: source directory not found: {args.source_dir}", file=sys.stderr)
         sys.exit(1)
 
-    bin_dir = os.path.join(args.output_dir, "usr", "bin")
+    bin_dir = os.path.join(os.path.abspath(args.output_dir), "usr", "bin")
     os.makedirs(bin_dir, exist_ok=True)
 
     cmd = [
@@ -136,7 +137,8 @@ def main():
                     _glibc_d = os.path.join(_d, "glibc")
                     if os.path.isdir(_glibc_d):
                         _lib_dirs.append(_glibc_d)
-        if _lib_dirs:
+        # Skip when ld-linux active for hermetic isolation
+        if _lib_dirs and not args.ld_linux:
             _existing = env.get("LD_LIBRARY_PATH", "")
             env["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (":" + _existing if _existing else "")
         _py_paths = []
@@ -171,7 +173,8 @@ def main():
                     _glibc_d = os.path.join(_d, "glibc")
                     if os.path.isdir(_glibc_d):
                         _dep_lib_dirs.append(_glibc_d)
-        if _dep_lib_dirs:
+        # Skip when ld-linux active for hermetic isolation
+        if _dep_lib_dirs and not args.ld_linux:
             _existing = env.get("LD_LIBRARY_PATH", "")
             env["LD_LIBRARY_PATH"] = ":".join(_dep_lib_dirs) + (":" + _existing if _existing else "")
 
@@ -188,9 +191,29 @@ def main():
 
     # Set up vendored dependencies if provided
     if args.vendor_dir:
-        vendor_dir = os.path.abspath(args.vendor_dir)
+        vendor_src = os.path.abspath(args.vendor_dir)
+        target_vendor = os.path.join(args.source_dir, "vendor")
+        # Copy vendor/ from the deps archive into the source tree
+        if os.path.isdir(os.path.join(vendor_src, "vendor")):
+            shutil.copytree(os.path.join(vendor_src, "vendor"), target_vendor, dirs_exist_ok=True)
+        else:
+            # vendor_dir IS the vendor directory itself
+            shutil.copytree(vendor_src, target_vendor, dirs_exist_ok=True)
         env["GOFLAGS"] = env.get("GOFLAGS", "") + " -mod=vendor"
-        env["GOPATH"] = vendor_dir
+
+    # Copy source to a writable working directory (source may be a read-only
+    # Buck2 artifact and go build needs to write to the module cache/vendor).
+    work_src = os.path.join(os.path.dirname(os.path.abspath(args.output_dir)), ".go-src")
+    shutil.copytree(args.source_dir, work_src, dirs_exist_ok=True)
+
+    # When no vendor deps are provided, fetch Go modules before network
+    # isolation.
+    if not args.vendor_dir:
+        dl_cmd = ["go", "mod", "download"]
+        dl_result = subprocess.run(dl_cmd, cwd=work_src, env=env)
+        if dl_result.returncode != 0:
+            print("error: go mod download failed", file=sys.stderr)
+            sys.exit(1)
 
     # Wrap with unshare --net for network isolation (reproducibility)
     if _NETWORK_ISOLATED:
@@ -199,7 +222,7 @@ def main():
         print("⚠ Warning: unshare --net unavailable, building without network isolation",
               file=sys.stderr)
 
-    result = subprocess.run(cmd, cwd=args.source_dir, env=env)
+    result = subprocess.run(cmd, cwd=work_src, env=env)
     if result.returncode != 0:
         print(f"error: go build failed with exit code {result.returncode}", file=sys.stderr)
         sys.exit(1)
@@ -217,7 +240,8 @@ def main():
         binaries = [f for f in binaries if f in args.bins]
 
     if not binaries:
-        print("warning: no executable binaries found in output directory", file=sys.stderr)
+        print("error: no executable binaries found in output directory", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
