@@ -5,7 +5,7 @@ load("//defs:package.bzl", "package")
 # =============================================================================
 
 package(
-    build_rule = "binary",
+    build_rule = "autotools",
     name = "binutils",
     version = "2.45.1",
     url = "https://mirror.buckos.org/b/binutils-2.45.1.tar.xz",
@@ -22,6 +22,14 @@ package(
         "//packages/linux/dev-tools/build-systems/libtool:libtool",
         "//packages/linux/lang/perl:perl",
     ],
+    configure_args = [
+        "--libdir=/usr/lib64",
+        "--enable-gold",
+        "--enable-ld=default",
+        "--enable-shared",
+        "--disable-werror",
+        "--with-system-zlib",
+    ],
     use_configure = {
         "cet": ("--enable-cet", "--disable-cet"),
         "debuginfod": ("--enable-debuginfod", "--disable-debuginfod"),
@@ -36,63 +44,17 @@ package(
         "xxhash": ("--enable-xxhash", "--disable-xxhash"),
         "zstd": ("--with-zstd", "--without-zstd"),
     },
+    extra_ldflags = ["-no-pie"],
     pre_configure_cmds = [
         # Remove any stale config.cache files that cause CPPFLAGS conflicts
         "find . -name 'config.cache' -delete",
+        # Build native host tools before cross-compilation starts.
+        # These tools generate code/data and can't be cross-compiled.
+        # 1. bfd/doc/chew - documentation tool
+        "for chew_c in bfd/doc/chew.c; do if [ -f \"$chew_c\" ]; then dir=$(dirname \"$chew_c\"); echo \"Building native chew tool in $dir...\"; $CC -o \"$dir/chew\" \"$chew_c\"; touch \"$dir/chew.stamp\"; fi; done",
+        # 2. binutils/sysinfo and syslex - system info generator
+        "if [ -f binutils/sysinfo.y ]; then cd binutils; flex -o syslex.c syslex.l 2>/dev/null || true; $CC -c -o syslex_wrap.o syslex.c -I.; bison -o sysinfo.c -d sysinfo.y 2>/dev/null || yacc -o sysinfo.c -d sysinfo.y 2>/dev/null || true; $CC -c -o sysinfo.o sysinfo.c -I.; $CC -o sysinfo sysinfo.o syslex_wrap.o; touch sysinfo syslex_wrap.o sysinfo.o; cd ..; fi",
+        # Touch all texi/info files to prevent regeneration
+        "find . -name '*.texi' -o -name '*.info' -o -name '*.stamp' | xargs touch 2>/dev/null || true",
     ],
-    install_script = """
-# The cross-compiler linker defaults to -pie (--enable-default-pie) but
-# binutils' internal build system compiles some objects without -fPIE.
-# Override with -no-pie so the linker doesn't reject non-PIC relocations.
-export LDFLAGS="${LDFLAGS:+$LDFLAGS }-no-pie"
-
-cd "$SRCS"
-
-./configure \
-    --prefix=/usr \
-    --libdir=/usr/lib64 \
-    --enable-gold \
-    --enable-ld=default \
-    --enable-plugins \
-    --enable-shared \
-    --disable-werror \
-    --disable-gprofng \
-    --with-system-zlib
-
-# Build native host tools before cross-compilation starts.
-# These tools generate code/data and can't be cross-compiled.
-# Use $CC (specs-stripped) instead of bare gcc.
-
-# 1. bfd/doc/chew - documentation tool
-for chew_c in bfd/doc/chew.c; do
-    if [ -f "$chew_c" ]; then
-        dir=$(dirname "$chew_c")
-        echo "Building native chew tool in $dir..."
-        $CC -o "$dir/chew" "$chew_c"
-        touch "$dir/chew.stamp"
-    fi
-done
-
-# 2. binutils/sysinfo and syslex - system info generator
-if [ -f binutils/sysinfo.y ]; then
-    echo "Building native sysinfo tools..."
-    cd binutils
-    # Build syslex
-    flex -o syslex.c syslex.l 2>/dev/null || true
-    $CC -c -o syslex_wrap.o syslex.c -I.
-    # Build sysinfo using bison/yacc
-    bison -o sysinfo.c -d sysinfo.y 2>/dev/null || yacc -o sysinfo.c -d sysinfo.y 2>/dev/null || true
-    $CC -c -o sysinfo.o sysinfo.c -I.
-    $CC -o sysinfo sysinfo.o syslex_wrap.o
-    touch sysinfo syslex_wrap.o sysinfo.o
-    cd ..
-fi
-
-# Touch all texi/info files to prevent regeneration
-find . -name '*.texi' -o -name '*.info' -o -name '*.stamp' | xargs touch 2>/dev/null || true
-
-make -j${MAKEOPTS:-$(nproc)} MAKEINFO=true
-
-make DESTDIR="$OUT" MAKEINFO=true install
-""",
 )
