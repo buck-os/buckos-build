@@ -47,6 +47,16 @@ changelog:
 
 The USE flag system provides fine-grained control over package features, dependencies, and build configuration in BuckOS. Similar to Gentoo's USE flags but implemented for Buck2, this system enables conditional compilation, optional feature toggling, and dependency management based on user preferences and system profiles.
 
+> **Implementation note**: USE flags are implemented using Buck2's native
+> constraint/modifier system. Flag definitions live in `use/constraints/`,
+> packages use `select()` for conditional behavior, and configuration flows
+> through `set_cfg_modifiers()` in PACKAGE files. Global flags are stored in
+> `config/local_modifiers.bzl` (gitignored); per-package overrides use
+> generated PACKAGE files in each package directory (also gitignored).
+> See SPEC.md §8 and the "USE Flags" section for the architecture rationale.
+> The `set_use_flags()` and `package_use()` APIs described below are the
+> user-facing Starlark API; the underlying mechanism is Buck2 constraints.
+
 BuckOs implements a USE flag system similar to Gentoo's, allowing fine-grained control over package features, dependencies, and build configuration.
 
 ## Overview
@@ -142,12 +152,13 @@ Profiles are predefined USE flag configurations for common use cases:
 
 ### Flag Resolution Order
 
-USE flags are resolved in this order (later overrides earlier):
+USE flags are resolved via Buck2's modifier system (highest priority first):
 
-1. Package IUSE defaults (`use_defaults`)
-2. Profile defaults
-3. Global USE flags (`set_use_flags`)
-4. Per-package overrides (`package_use`)
+1. **CLI modifiers** (`buck2 build ... -m flag` or `buckos use` one-shot) — overrides all
+2. **Per-package PACKAGE modifiers** (`set_cfg_modifiers()` in package directory) — like Gentoo `package.use`
+3. **Global PACKAGE modifiers** (`config/local_modifiers.bzl` loaded by root PACKAGE) — like Gentoo `make.conf USE=`
+4. **Profile defaults** (`use/profiles/`) — like Gentoo profiles
+5. **Package IUSE defaults** (`use_defaults` in package definition)
 
 ## API Reference
 

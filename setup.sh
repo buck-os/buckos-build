@@ -225,6 +225,32 @@ configure_buck2() {
     echo ""
 }
 
+configure_local_modifiers() {
+    local modifiers_file="$SCRIPT_DIR/config/local_modifiers.bzl"
+    local default_file="$SCRIPT_DIR/config/local_modifiers.bzl.default"
+
+    if [ -f "$modifiers_file" ]; then
+        echo "--- config/local_modifiers.bzl already exists, skipping ---"
+        echo ""
+        return
+    fi
+
+    echo "--- Creating config/local_modifiers.bzl from default ---"
+    if [ -f "$default_file" ]; then
+        cp "$default_file" "$modifiers_file"
+    else
+        cat > "$modifiers_file" << 'BZLEOF'
+# Local Buck2 modifier configuration for BuckOS
+# Edit via: buckos use [flags] or buckos use profile <profile>
+LOCAL_MODIFIERS = [
+]
+BZLEOF
+    fi
+    echo "  Created $modifiers_file"
+    echo "  Configure USE flags with: buckos use profile <desktop|server|minimal>"
+    echo ""
+}
+
 verify() {
     echo "--- Verification ---"
     local failed=false
@@ -321,6 +347,7 @@ main() {
     install_buck2
     download_seed || true
     configure_buck2
+    configure_local_modifiers
     verify
 }
 

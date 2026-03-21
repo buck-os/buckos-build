@@ -67,8 +67,28 @@ buck2 test //tests:
 tc/              toolchain — bootstrap stages, seed, cross-compiler
 packages/        all distro packages (autotools, cmake, meson, cargo, ...)
 defs/            build rules and package macro
+use/             USE flag constraints, profiles, and modifier aliases
+config/          local configuration (local_modifiers.bzl — gitignored)
 tools/           build-time helpers (Python)
 tests/           integration and VM tests
 platforms/       target platform definitions
 patches/         private patch registry
+```
+
+### USE flag configuration
+
+USE flags use Buck2's native constraint/modifier system. Configure them with
+the `buckos` CLI or edit `config/local_modifiers.bzl` directly:
+
+```sh
+buckos use profile desktop           # apply a profile (desktop, server, minimal, ...)
+buckos use +wayland -gtk             # toggle individual flags
+buckos use package vim +python +lua  # per-package overrides
+```
+
+Or use Buck2 modifiers directly:
+
+```sh
+buck2 build //packages/linux/core:curl -m desktop           # profile alias
+buck2 build //packages/linux/core:curl -m ssl_on -m http2_on  # individual flags
 ```
