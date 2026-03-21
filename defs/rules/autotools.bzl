@@ -90,7 +90,9 @@ def _src_configure(ctx, source, cflags_file = None, ldflags_file = None,
     cmd.add("--env", "TARGET_TRIPLE=" + tc.target_triple)
     cmd.add("--env", "CHOST=" + tc.target_triple)
 
-    # Inject user-specified environment variables
+    # Inject USE flag and user-specified environment variables
+    for entry in ctx.attrs.use_env:
+        cmd.add("--env", entry)
     for key, value in ctx.attrs.env.items():
         cmd.add("--env", "{}={}".format(key, value))
 
@@ -221,7 +223,9 @@ def _src_compile(ctx, configured, cflags_file = None, ldflags_file = None,
     for arg in host_tool_path_args(ctx):
         cmd.add(arg)
 
-    # Inject user-specified environment variables
+    # Inject USE flag and user-specified environment variables
+    for entry in ctx.attrs.use_env:
+        cmd.add("--env", entry)
     for key, value in ctx.attrs.env.items():
         cmd.add("--env", "{}={}".format(key, value))
 
@@ -296,7 +300,9 @@ def _src_install(ctx, built, cflags_file = None, ldflags_file = None,
     cmd.add("--env", "TARGET_TRIPLE=" + _tc_install.target_triple)
     cmd.add("--env", "CHOST=" + _tc_install.target_triple)
 
-    # Inject user-specified environment variables
+    # Inject USE flag and user-specified environment variables
+    for entry in ctx.attrs.use_env:
+        cmd.add("--env", entry)
     for key, value in ctx.attrs.env.items():
         cmd.add("--env", "{}={}".format(key, value))
 

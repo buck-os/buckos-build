@@ -60,7 +60,9 @@ def _meson_setup(ctx, source, cflags_file = None, ldflags_file = None,
     # target libc).
     cmd.add("--cross-triple", toolchain_target_triple(ctx))
 
-    # Inject user-specified environment variables
+    # Inject USE flag and user-specified environment variables
+    for entry in ctx.attrs.use_env:
+        cmd.add("--env", entry)
     for key, value in ctx.attrs.env.items():
         cmd.add("--env", "{}={}".format(key, value))
 
@@ -132,7 +134,9 @@ def _src_compile(ctx, configured, source, lib_dirs_file = None):
     for arg in toolchain_ld_linux_args(ctx):
         cmd.add(arg)
 
-    # Inject user-specified environment variables
+    # Inject USE flag and user-specified environment variables
+    for entry in ctx.attrs.use_env:
+        cmd.add("--env", entry)
     for key, value in ctx.attrs.env.items():
         cmd.add("--env", "{}={}".format(key, value))
 
@@ -172,7 +176,9 @@ def _src_install(ctx, built, source, lib_dirs_file = None):
     for arg in toolchain_ld_linux_args(ctx):
         cmd.add(arg)
 
-    # Inject user-specified environment variables
+    # Inject USE flag and user-specified environment variables
+    for entry in ctx.attrs.use_env:
+        cmd.add("--env", entry)
     for key, value in ctx.attrs.env.items():
         cmd.add("--env", "{}={}".format(key, value))
 

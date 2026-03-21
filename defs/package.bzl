@@ -548,6 +548,18 @@ def package(
     _all_labels = _auto_labels + build_kwargs.pop("labels", [])
     build_kwargs["labels"] = _all_labels
 
+    # -- Expose USE flags as env vars (USE_FLAG=1/0) -------------------------
+    # All rules get use_env so install_scripts can branch on USE flags.
+    _use_env = []
+    for flag in _all_use_flags.keys():
+        _use_env += select({
+            "//use/constraints:{}-on".format(flag): ["USE_{}=1".format(flag.upper())],
+            "//use/constraints:{}-off".format(flag): ["USE_{}=0".format(flag.upper())],
+            "DEFAULT": ["USE_{}=0".format(flag.upper())],
+        })
+    if _use_env:
+        build_kwargs["use_env"] = _use_env
+
     # -- Inject compiler cache env vars (ccache/sccache) ---------------------
     _cache = _cache_env(build_rule, name)
     if _cache:

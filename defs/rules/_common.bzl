@@ -25,6 +25,7 @@ COMMON_PACKAGE_ATTRS = {
     "pre_configure_cmds": attrs.list(attrs.string(), default = []),
     "post_install_cmds": attrs.list(attrs.string(), default = []),
     "env": attrs.dict(attrs.string(), attrs.string(), default = {}),
+    "use_env": attrs.list(attrs.string(), default = []),
     "deps": attrs.list(attrs.dep(), default = []),
     "host_deps": attrs.list(attrs.exec_dep(), default = []),
     "runtime_deps": attrs.list(attrs.dep(), default = []),
@@ -309,6 +310,13 @@ def src_prepare(ctx, source, category):
 
     ctx.actions.run(cmd, category = category, identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
+
+def inject_use_env(ctx, env):
+    """Inject USE flag env vars (USE_FLAG=1/0) from the use_env attr into env dict."""
+    for entry in ctx.attrs.use_env:
+        key, _, value = entry.partition("=")
+        if key:
+            env[key] = value
 
 def add_flag_file(cmd, flag_name, writer_result):
     """Add a flag-file argument to cmd, handling None and hidden deps.
