@@ -1,4 +1,3 @@
-load("//defs:download.bzl", "download_file")
 load("//defs:package.bzl", "package")
 load("//defs/rules:source.bzl", "extract_source")
 load(":go_toolchain_rule.bzl", "buckos_go_toolchain")
@@ -64,17 +63,10 @@ package(
 # =============================================================================
 # Build Go from source using the bootstrap Go compiler
 
-# Shared source archive for all go-native variants
-download_file(
-    name = "go-native-archive",
-    urls = ["https://go.dev/dl/go1.26.1.src.tar.gz"],
-    sha256 = "3172293d04b209dc1144698e7ba13f0477f6ba8c5ffd0be66c20fdbc9785dfbb",
-    version = "1.26.1",
-)
-
+# Reuse the archive from packages/linux/lang/go to avoid duplicate downloads
 extract_source(
     name = "go-native-src",
-    source = ":go-native-archive",
+    source = "//packages/linux/lang/go:go-archive",
 )
 
 package(
