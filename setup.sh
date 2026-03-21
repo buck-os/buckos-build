@@ -27,15 +27,18 @@ detect_distro() {
             DISTRO="debian" ;;
         fedora|rhel|centos|rocky|alma)
             DISTRO="fedora" ;;
+        gentoo)
+            DISTRO="gentoo" ;;
         *)
             # Check ID_LIKE for derivatives
             case "${ID_LIKE:-}" in
                 *arch*)   DISTRO="arch" ;;
                 *debian*) DISTRO="debian" ;;
                 *fedora*|*rhel*) DISTRO="fedora" ;;
+                *gentoo*) DISTRO="gentoo" ;;
                 *)
                     echo "Error: Unsupported distribution: ${ID:-unknown} (ID_LIKE=${ID_LIKE:-})" >&2
-                    echo "Supported: Arch, Debian/Ubuntu, Fedora/RHEL" >&2
+                    echo "Supported: Arch, Debian/Ubuntu, Fedora/RHEL, Gentoo" >&2
                     exit 1
                     ;;
             esac
@@ -88,6 +91,23 @@ define_packages() {
                 ima-evm-utils
             )
             ;;
+        gentoo)
+            PACKAGES=(
+                sys-devel/gcc sys-devel/binutils dev-build/cmake dev-build/meson
+                dev-build/ninja dev-lang/python dev-lang/perl sys-devel/m4
+                sys-devel/autoconf sys-devel/automake dev-build/libtool
+                virtual/pkgconfig net-misc/curl app-arch/tar app-arch/xz-utils
+                app-arch/bzip2 app-arch/gzip app-arch/lzip app-arch/zstd
+                sys-apps/file sys-devel/patch app-arch/unzip sys-apps/gawk
+                sys-apps/sed sys-apps/grep sys-apps/diffutils sys-apps/findutils
+                sys-apps/coreutils app-shells/bash sys-devel/gettext
+                sys-apps/texinfo sys-devel/bison sys-devel/flex dev-util/gperf
+                sys-apps/help2man sys-libs/zlib sys-kernel/linux-headers
+                dev-vcs/git app-crypt/gnupg virtual/rust
+                sys-apps/fd sys-apps/ripgrep
+                app-crypt/ima-evm-utils
+            )
+            ;;
     esac
 }
 
@@ -117,6 +137,9 @@ install_packages() {
             ;;
         fedora)
             $SUDO dnf install -y "${PACKAGES[@]}"
+            ;;
+        gentoo)
+            $SUDO emerge --noreplace "${PACKAGES[@]}"
             ;;
     esac
     echo ""
@@ -300,6 +323,7 @@ main() {
         arch)   PKG_CMD="pacman" ;;
         debian) PKG_CMD="apt" ;;
         fedora) PKG_CMD="dnf" ;;
+        gentoo) PKG_CMD="emerge" ;;
     esac
 
     show_plan
