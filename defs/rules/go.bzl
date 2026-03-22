@@ -50,7 +50,7 @@ def _go_build(ctx, source):
     if ctx.attrs.ldflags:
         cmd.add("--ldflags", ctx.attrs.ldflags)
     for arg in ctx.attrs.go_args:
-        cmd.add("--go-arg", arg)
+        cmd.add(cmd_args("--go-arg=", arg, delimiter = ""))
 
     # Explicit binary names to install
     for b in ctx.attrs.bins:
@@ -119,7 +119,7 @@ go_package = rule(
             attrs.exec_dep(default = "//tools:go_helper"),
         ),
         "_go_sdk": attrs.default_only(
-            attrs.exec_dep(default = "toolchains//bootstrap/go:go-native"),
+            attrs.exec_dep(default = "//tc/bootstrap/go:go-native"),
         ),
     },
 )

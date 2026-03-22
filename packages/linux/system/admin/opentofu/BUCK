@@ -1,0 +1,34 @@
+load("//defs:package.bzl", "package")
+
+# OpenTofu - Open-source Infrastructure as Code tool
+#
+# OpenTofu is an open-source fork of Terraform, created in response to
+# HashiCorp's license change to BUSL-1.1. It is a drop-in replacement
+# for Terraform with full compatibility and community-driven development.
+#
+# OpenTofu is licensed under MPL-2.0, making it suitable for production
+# use without licensing concerns.
+
+package(
+    build_rule = "go",
+    name = "opentofu",
+    version = "1.11.5",
+    url = "https://github.com/opentofu/opentofu/archive/refs/tags/v1.11.5.tar.gz",
+    sha256 = "450f962f262d9f484ad1fb73454650740cdce0d83a854ad8b6c183cc5822eb09",
+    vendor_deps = "049a8f6c08d9cec8b017a48f92d1428310abe2c60235d2e81aebb9aa8771caa8",
+    description = "Open-source infrastructure as code tool (Terraform fork)",
+    homepage = "https://opentofu.org",
+    license = "MPL-2.0",
+    ldflags = "-s -w -X github.com/opentofu/opentofu/version.Version=1.11.5 -X github.com/opentofu/opentofu/version.Prerelease=",
+    go_args = ["-trimpath"],
+    env = {
+        "CGO_ENABLED": "0",
+        "GO111MODULE": "on",
+        "GOTOOLCHAIN": "local",
+        "GONOSUMCHECK": "*",
+        "GONOSUMDB": "*",
+    },
+    packages = ["./cmd/tofu"],
+    bins = ["tofu"],
+    visibility = ["PUBLIC"],
+)

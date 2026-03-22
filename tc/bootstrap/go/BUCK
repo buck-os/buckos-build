@@ -1,29 +1,29 @@
-load("@buckos//defs:package.bzl", "package")
-load("@buckos//defs/rules:source.bzl", "extract_source")
+load("//defs:package.bzl", "package")
+load("//defs/rules:source.bzl", "extract_source")
 load(":go_toolchain_rule.bzl", "buckos_go_toolchain")
 
 # =============================================================================
 # Go Bootstrap Toolchain
 # =============================================================================
 # Go requires a prior Go compiler to build from source.
-# We use a pre-built Go 1.23.x as stage0 to bootstrap Go 1.25.x from source.
+# We use a pre-built Go 1.24.x as stage0 to bootstrap Go 1.26.x from source.
 #
 # Bootstrap chain:
-#   go-bootstrap (pre-built 1.23.x) -> go-native (source 1.25.x) -> go-toolchain
+#   go-bootstrap (pre-built 1.24.x) -> go-native (source 1.26.x) -> go-toolchain
 #
-# Per Go project policy, bootstrap requires N-2 version (Go 1.25 requires >= 1.22.12)
+# Per Go project policy, bootstrap requires N-2 version (Go 1.26 requires >= 1.24.6)
 
 # =============================================================================
-# Stage 0: Pre-built Go Bootstrap (1.23.6)
+# Stage 0: Pre-built Go Bootstrap (1.24.6)
 # =============================================================================
-# Go 1.23.x is used to bootstrap Go 1.25.x
+# Go 1.24.x is used to bootstrap Go 1.26.x
 
 package(
     name = "go-bootstrap",
     build_rule = "binary",
-    version = "1.23.6",
-    url = "https://go.dev/dl/go1.23.6.linux-amd64.tar.gz",
-    sha256 = "9379441ea310de000f33a4dc767bd966e72ab2826270e038e78b2c53c2e7802d",
+    version = "1.24.6",
+    url = "https://go.dev/dl/go1.24.6.linux-amd64.tar.gz",
+    sha256 = "bbca37cc395c974ffa4893ee35819ad23ebb27426df87af92e93a9ec66ef8712",
     description = "Go bootstrap compiler (stage 0) for building Go from source",
     homepage = "https://go.dev/",
     license = "BSD-3-Clause",
@@ -41,9 +41,9 @@ package(
 package(
     name = "go-bootstrap-aarch64",
     build_rule = "binary",
-    version = "1.23.6",
-    url = "https://go.dev/dl/go1.23.6.linux-arm64.tar.gz",
-    sha256 = "561c780e8f4a8955d32bf72e46af0b5ee5e0debe1e4633df9a03781878219202",
+    version = "1.24.6",
+    url = "https://go.dev/dl/go1.24.6.linux-arm64.tar.gz",
+    sha256 = "124ea6033a8bf98aa9fbab53e58d134905262d45a022af3a90b73320f3c3afd5",
     description = "Go bootstrap compiler (stage 0) for aarch64",
     homepage = "https://go.dev/",
     license = "BSD-3-Clause",
@@ -59,28 +59,21 @@ package(
 )
 
 # =============================================================================
-# Stage 1: Go Native Build from Source (1.25.5)
+# Stage 1: Go Native Build from Source (1.26.1)
 # =============================================================================
 # Build Go from source using the bootstrap Go compiler
 
-# Shared source archive for all go-native variants
-http_file(
-    name = "go-native-archive",
-    urls = ["https://go.dev/dl/go1.25.5.src.tar.gz"],
-    sha256 = "22a5fd0a91efcd28a1b0537106b9959b2804b61f59c3758b51e8e5429c1a954f",
-    out = "go1.25.5.src.tar.gz",
-)
-
+# Reuse the archive from packages/linux/lang/go to avoid duplicate downloads
 extract_source(
     name = "go-native-src",
-    source = ":go-native-archive",
+    source = "//packages/linux/lang/go:go-archive",
 )
 
 package(
     name = "go-native",
     build_rule = "binary",
     local_only = True,
-    version = "1.25.5",
+    version = "1.26.1",
     source = ":go-native-src",
     description = "Go programming language - built from source",
     homepage = "https://go.dev/",
@@ -137,7 +130,7 @@ ln -sf ../lib/go/bin/gofmt "$OUT/usr/bin/gofmt"
 echo "Go $PV installed to /usr/lib/go"
 echo "Version: $($OUT/usr/lib/go/bin/go version 2>/dev/null || echo 'installed')"
     """,
-    deps = [":go-bootstrap"],
+    host_deps = [":go-bootstrap"],
     visibility = ["PUBLIC"],
 )
 
@@ -151,7 +144,7 @@ package(
     name = "go-toolchain",
     build_rule = "binary",
     local_only = True,
-    version = "1.25.5",
+    version = "1.26.1",
     source = ":go-native-src",
     description = "Go toolchain for BuckOS package builds",
     homepage = "https://go.dev/",
@@ -185,18 +178,18 @@ fi
 # Create marker file
 cat > "$OUT/tools/.go-toolchain" << 'MARKER'
 BuckOS Go Toolchain
-Go version: 1.25.5
-Built from source with go-bootstrap 1.23.6
+Go version: 1.26.1
+Built from source with go-bootstrap 1.24.6
 MARKER
 
 echo "Go toolchain assembled in /tools"
     """,
-    deps = [":go-native"],
+    host_deps = [":go-native"],
     visibility = ["PUBLIC"],
 )
 
 # =============================================================================
-# ARM64 Go Native Build from Source (1.25.5)
+# ARM64 Go Native Build from Source (1.26.1)
 # =============================================================================
 # Build Go from source for aarch64 using the aarch64 bootstrap Go compiler
 
@@ -204,7 +197,7 @@ package(
     name = "go-native-aarch64",
     build_rule = "binary",
     local_only = True,
-    version = "1.25.5",
+    version = "1.26.1",
     source = ":go-native-src",
     description = "Go programming language for aarch64 - built from source",
     homepage = "https://go.dev/",
@@ -261,7 +254,7 @@ ln -sf ../lib/go/bin/gofmt "$OUT/usr/bin/gofmt"
 echo "Go $PV (aarch64) installed to /usr/lib/go"
 echo "Version: $($OUT/usr/lib/go/bin/go version 2>/dev/null || echo 'installed')"
     """,
-    deps = [":go-bootstrap-aarch64"],
+    host_deps = [":go-bootstrap-aarch64"],
     visibility = ["PUBLIC"],
 )
 
@@ -274,7 +267,7 @@ package(
     name = "go-toolchain-aarch64",
     build_rule = "binary",
     local_only = True,
-    version = "1.25.5",
+    version = "1.26.1",
     source = ":go-native-src",
     description = "Go toolchain for BuckOS aarch64 package builds",
     homepage = "https://go.dev/",
@@ -308,13 +301,13 @@ fi
 # Create marker file
 cat > "$OUT/tools/.go-toolchain" << 'MARKER'
 BuckOS Go Toolchain (aarch64)
-Go version: 1.25.5
-Built from source with go-bootstrap-aarch64 1.23.6
+Go version: 1.26.1
+Built from source with go-bootstrap-aarch64 1.24.6
 MARKER
 
 echo "Go toolchain (aarch64) assembled in /tools"
     """,
-    deps = [":go-native-aarch64"],
+    host_deps = [":go-native-aarch64"],
     visibility = ["PUBLIC"],
 )
 
@@ -327,13 +320,13 @@ echo "Go toolchain (aarch64) assembled in /tools"
 buckos_go_toolchain(
     name = "go-buckos-toolchain",
     toolchain_package = ":go-toolchain",
-    version = "1.25.5",
+    version = "1.26.1",
     visibility = ["PUBLIC"],
 )
 
 buckos_go_toolchain(
     name = "go-buckos-toolchain-aarch64",
     toolchain_package = ":go-toolchain-aarch64",
-    version = "1.25.5",
+    version = "1.26.1",
     visibility = ["PUBLIC"],
 )
