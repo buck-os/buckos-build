@@ -25,6 +25,8 @@ package(
         "opengl": "//packages/linux/desktop/mesa:mesa",
         "vulkan": "//packages/linux/desktop/mesa:mesa",
     },
-    configure_args = [],
+    # Disable libsamplerate autodetection — cmake finds the host lib
+    # but headers are absent from the cross sysroot, breaking the build.
+    configure_args = ["-DSDL_LIBSAMPLERATE=OFF"],
     deps = [],
 )

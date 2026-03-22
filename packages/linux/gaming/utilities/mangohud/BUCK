@@ -1,0 +1,46 @@
+load("//defs:package.bzl", "package")
+
+# MangoHud - Vulkan and OpenGL overlay for monitoring performance
+# Displays FPS, CPU/GPU usage, temperatures, and more
+#
+# USE flags:
+#   dbus     - Enable D-Bus support (default: disabled)
+#
+# X11 and Wayland are always enabled — MangoHud requires at least one
+# display protocol, and the OpenGL overlay unconditionally compiles GLX code.
+
+package(
+    build_rule = "meson",
+    name = "mangohud",
+    url = "https://github.com/flightlessmango/MangoHud/archive/refs/tags/v0.7.2.tar.gz",
+
+    sha256 = "67d2425c0cc634574d8bd8a924e0e1a2e909b47ed9b8c02029b5baffe46657fc",
+    version = "0.7.2",
+    description = "Vulkan and OpenGL overlay for monitoring FPS, temperatures, CPU/GPU load",
+    homepage = "https://github.com/flightlessmango/MangoHud",
+    license = "MIT",
+    use_configure = {
+        "dbus": ("-Dwith_dbus=enabled", "-Dwith_dbus=disabled"),
+    },
+    use_deps = {
+        "dbus": "//packages/linux/system/libs/ipc/dbus:dbus",
+    },
+    configure_args = [
+        "-Dwith_xnvctrl=disabled",
+        "-Dwith_nvml=disabled",
+        "-Dwith_x11=enabled",
+        "-Dwith_wayland=enabled",
+    ],
+    deps = [
+        "//packages/linux/graphics/rendering/glslang:glslang",
+        "//packages/linux/graphics/rendering/wayland:wayland",
+        "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
+        "//packages/linux/graphics/xorg/libX11:libX11",
+    ],
+    host_deps = [
+        "//packages/linux/dev-libs/python/mako:mako",
+        "//packages/linux/dev-libs/python/markupsafe:markupsafe",
+    ],
+    labels = ["buckos:hw:vulkan"],
+    visibility = ["PUBLIC"],
+)
