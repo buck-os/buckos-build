@@ -11,7 +11,7 @@ Four discrete cacheable actions:
 load("//defs:providers.bzl", "BuildToolchainInfo", "PackageInfo")
 load("//defs/rules:_common.bzl",
      "COMMON_PACKAGE_ATTRS", "build_package_tsets",
-     "collect_host_path_children", "write_host_lib_dirs",
+     "collect_host_path_children", "inject_use_env", "write_host_lib_dirs",
 )
 load("//defs:toolchain_helpers.bzl",
      "toolchain_extra_cflags", "toolchain_extra_ldflags",
@@ -168,6 +168,9 @@ def _install(ctx, source):
         artifact, projection = host_lib_result
         env["_HOST_LIB_DIRS_FILE"] = cmd_args(artifact)
         cmd.add(cmd_args(hidden = [projection]))
+
+    # Inject USE flag environment variables (USE_FLAG=1/0)
+    inject_use_env(ctx, env)
 
     # Inject user-specified environment variables (last — overrides everything)
     for key, value in ctx.attrs.env.items():

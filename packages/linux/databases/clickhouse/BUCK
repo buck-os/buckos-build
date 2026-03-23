@@ -1,0 +1,79 @@
+load("//defs:package.bzl", "package")
+
+# ClickHouse - Fast open-source column-oriented database management system
+#
+# ClickHouse is an open-source column-oriented DBMS for online analytical
+# processing (OLAP). It allows generating analytical reports using SQL
+# queries in real-time, processing billions of rows per second.
+#
+# Uses the official statically-linked release binary to avoid the complex
+# C++ build dependencies (LLVM, Boost, etc.) that don't integrate well
+# with the rest of the build graph.
+#
+# USE flags:
+#   systemd - Install systemd service, sysusers.d, and tmpfiles.d configs
+
+package(
+    build_rule = "binary",
+    name = "clickhouse-bin",
+    version = "26.1.3.52",
+    url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.1.3.52-stable/clickhouse-common-static-26.1.3.52-amd64.tgz",
+    sha256 = "24dbc8f576eeac5671511e8a8ddad38fe820992c4131a506e76d942d748df7d1",
+    description = "Fast open-source column-oriented OLAP database",
+    homepage = "https://clickhouse.com/",
+    license = "Apache-2.0",
+    use_configure = {
+        "systemd": ("--with-systemd", "--without-systemd"),
+    },
+    install_script = """
+set -e
+
+# Install the static clickhouse binary
+install -Dm755 "$SRCS/usr/bin/clickhouse" "$OUT/usr/bin/clickhouse"
+
+# Create symlinks for sub-commands
+for cmd in clickhouse-server clickhouse-client clickhouse-local clickhouse-keeper; do
+    ln -sf clickhouse "$OUT/usr/bin/$cmd"
+done
+
+# Create default configuration directories
+mkdir -p "$OUT/etc/clickhouse-server"
+mkdir -p "$OUT/etc/clickhouse-client"
+
+if [ "$USE_SYSTEMD" = "1" ]; then
+    # Create systemd service file
+    mkdir -p "$OUT/usr/lib/systemd/system"
+    cat > "$OUT/usr/lib/systemd/system/clickhouse-server.service" << 'EOF'
+[Unit]
+Description=ClickHouse Server
+After=network.target
+
+[Service]
+Type=notify
+User=clickhouse
+Group=clickhouse
+ExecStart=/usr/bin/clickhouse-server --config=/etc/clickhouse-server/config.xml
+Restart=on-failure
+LimitNOFILE=500000
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_IPC_LOCK CAP_SYS_NICE
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    # Create sysusers.d configuration
+    mkdir -p "$OUT/usr/lib/sysusers.d"
+    cat > "$OUT/usr/lib/sysusers.d/clickhouse.conf" << 'EOF'
+u clickhouse - "ClickHouse Server" /var/lib/clickhouse
+EOF
+
+    # Create tmpfiles configuration
+    mkdir -p "$OUT/usr/lib/tmpfiles.d"
+    cat > "$OUT/usr/lib/tmpfiles.d/clickhouse.conf" << 'EOF'
+d /var/lib/clickhouse 0750 clickhouse clickhouse -
+d /var/log/clickhouse-server 0750 clickhouse clickhouse -
+EOF
+fi
+    """,
+    visibility = ["PUBLIC"],
+)

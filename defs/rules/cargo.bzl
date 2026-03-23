@@ -46,7 +46,9 @@ def _cargo_build(ctx, source, pkg_config_file = None, lib_dirs_file = None):
     for env_arg in toolchain_env_args(ctx):
         cmd.add("--env", env_arg)
 
-    # Inject user-specified environment variables
+    # Inject USE flag and user-specified environment variables
+    for entry in ctx.attrs.use_env:
+        cmd.add("--env", entry)
     for key, value in ctx.attrs.env.items():
         cmd.add("--env", "{}={}".format(key, value))
 

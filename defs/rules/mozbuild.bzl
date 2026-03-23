@@ -47,6 +47,9 @@ def _build_and_install(ctx, source, dep_prefixes_file = None):
     for arg in toolchain_path_args(ctx):
         cmd.add(arg)
 
+    # Inject USE flag and user-specified environment variables
+    for entry in ctx.attrs.use_env:
+        cmd.add("--env", entry)
     for key, value in ctx.attrs.env.items():
         cmd.add("--env", "{}={}".format(key, value))
 
