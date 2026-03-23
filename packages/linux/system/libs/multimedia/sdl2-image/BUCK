@@ -1,7 +1,7 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "autotools",
+    build_rule = "cmake",
     name = "sdl2-image",
     version = "2.8.2",
     url = "https://github.com/libsdl-org/SDL_image/releases/download/release-2.8.2/SDL2_image-2.8.2.tar.gz",
@@ -11,11 +11,8 @@ package(
     license = "Zlib",
     use_configure = {
         "avif": ("-DSDL2IMAGE_AVIF=ON", "-DSDL2IMAGE_AVIF=OFF"),
-        "gif": ("--with-gif", "--without-gif"),
         "jpeg": ("-DSDL2IMAGE_JPG=ON", "-DSDL2IMAGE_JPG=OFF"),
-        "jpegxl": ("--enable-jpegxl", "--disable-jpegxl"),
         "png": ("-DSDL2IMAGE_PNG=ON", "-DSDL2IMAGE_PNG=OFF"),
-        "samples": ("--enable-samples", "--disable-samples"),
         "static-libs": ("-DBUILD_SHARED_LIBS=OFF", "-DBUILD_SHARED_LIBS=ON"),
         "tiff": ("-DSDL2IMAGE_TIF=ON", "-DSDL2IMAGE_TIF=OFF"),
         "webp": ("-DSDL2IMAGE_WEBP=ON", "-DSDL2IMAGE_WEBP=OFF"),
@@ -26,7 +23,12 @@ package(
         "webp": "//packages/linux/system/libs/image/libwebp:libwebp",
         "tiff": "//packages/linux/system/libs/image/libtiff:libtiff",
     },
-    configure_args = [],
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DSDL2IMAGE_SAMPLES=OFF",
+        "-DSDL2IMAGE_TESTS=OFF",
+    ],
     deps = [
         "//packages/linux/system/libs/multimedia/sdl2:sdl2",
     ],

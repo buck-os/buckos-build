@@ -10,5 +10,10 @@ package(
     homepage = "https://github.com/akuukka/quickhull",
     license = "public-domain",
     deps = [],
-    install_script = """mkdir -p ${PREFIX}/include/quickhull\nmkdir -p ${PREFIX}/include/quickhull/Structs\ncp quickhull/*.hpp ${PREFIX}/include/quickhull/\ncp quickhull/*.cpp ${PREFIX}/include/quickhull/\ncp quickhull/Structs/*.hpp ${PREFIX}/include/quickhull/Structs/""",
+    install_script = """
+mkdir -p "$OUT/usr/include/quickhull/Structs"
+cp QuickHull.hpp "$OUT/usr/include/quickhull/"
+cp QuickHull.cpp "$OUT/usr/include/quickhull/"
+cp Structs/*.hpp "$OUT/usr/include/quickhull/Structs/" 2>/dev/null || true
+""",
 )

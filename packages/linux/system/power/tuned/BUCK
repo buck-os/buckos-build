@@ -1,20 +1,26 @@
 load("//defs:package.bzl", "package")
 
 # tuned - Adaptive System Tuning Daemon
-# Dynamic system tuning based on usage patterns
-
+# Uses Makefile for installation, not pip/setuptools.
 package(
-    build_rule = "python",
+    build_rule = "binary",
     name = "tuned",
     version = "2.22.1",
-    use_configure = {
-        "ppd": ("--enable-ppd", "--disable-ppd"),
-    },
     url = "https://github.com/redhat-performance/tuned/archive/refs/tags/v2.22.1.tar.gz",
     sha256 = "b0b4cf3d02a4c002bde141cdb18301177a94316f63e9d69162cedd7ebccd4d22",
     description = "Adaptive system tuning daemon with power-saving profiles",
     homepage = "https://github.com/redhat-performance/tuned",
     license = "GPL-2.0",
+    install_script = """
+cd "$SRCS"
+
+make DESTDIR="$OUT" PREFIX=/usr \
+    SYSCONFDIR=/etc \
+    DATADIR=/usr/share \
+    DOCDIR=/usr/share/doc/tuned \
+    PYTHON=/usr/bin/python3 \
+    install
+""",
     deps = [
         "//packages/linux/lang/python:python",
         "//packages/linux/system/libs/ipc/dbus:dbus",

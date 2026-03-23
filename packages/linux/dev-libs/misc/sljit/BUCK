@@ -1,7 +1,7 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "sljit",
     version = "0.0.20250107",
     url = "https://github.com/zherczeg/sljit/archive/7779da89dc7e00a540712fcb859b762d4eca2a26.tar.gz",
@@ -9,8 +9,11 @@ package(
     description = "Platform-independent low-level JIT compiler",
     homepage = "https://zherczeg.github.io/sljit/",
     license = "BSD-2-Clause",
-    configure_args = [
-        "-DBUILD_SHARED_LIBS=OFF",
-    ],
     deps = [],
+    # sljit is a single-file library; install the headers
+    install_script = """
+mkdir -p "$OUT/usr/include/sljit"
+cp sljit_src/*.h "$OUT/usr/include/sljit/"
+cp sljit_src/sljitLir.c "$OUT/usr/include/sljit/"
+""",
 )

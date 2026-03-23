@@ -1,7 +1,7 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "nigh",
     version = "0.0.1",
     url = "https://github.com/UNC-Robotics/nigh/archive/10f523cebda502b120204baf73017d0e4771530e.tar.gz",
@@ -9,10 +9,11 @@ package(
     description = "C++ nearest neighbor data structures for robotics",
     homepage = "https://github.com/UNC-Robotics/nigh",
     license = "BSD-3-Clause",
-    configure_args = [
-        "-DBUILD_TESTING=OFF",
-    ],
     deps = [
         "//packages/linux/dev-libs/eigen:eigen",
     ],
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/include
+cp -r src/nigh $INSTALL_DIR/usr/include/
+""",
 )

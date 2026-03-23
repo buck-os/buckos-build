@@ -12,7 +12,10 @@ package(
     build_rule = "autotools",
     name = "fcgiwrap",
     # Disable -Werror for implicit-fallthrough warning
-    env = {"CFLAGS": "-O2 -Wno-implicit-fallthrough"},
+    env = {
+        "CFLAGS": "-O2 -Wno-implicit-fallthrough",
+        "ac_cv_func_malloc_0_nonnull": "yes",
+    },
     pre_configure_cmds = ["""
 autoreconf -fiv
 """],

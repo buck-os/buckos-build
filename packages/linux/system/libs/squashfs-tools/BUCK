@@ -17,12 +17,13 @@ package(
     description = "Tools for creating and extracting SquashFS filesystems",
     homepage = "https://github.com/plougher/squashfs-tools",
     license = "GPL-2.0",
-    pre_configure_cmds = ["""
-# squashfs-tools builds in subdirectory
-cd squashfs-tools
-"""],
+    build_subdir = "squashfs-tools",
     make_args = [
         "GZIP_SUPPORT=1",
+        "XZ_SUPPORT=0",
+        "LZ4_SUPPORT=0",
+        "ZSTD_SUPPORT=0",
+        "XATTR_SUPPORT=0",
     ],
     post_install_cmds = ["""\
 mkdir -p $DESTDIR/usr/bin

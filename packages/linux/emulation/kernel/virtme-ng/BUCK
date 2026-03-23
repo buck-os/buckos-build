@@ -4,36 +4,15 @@ load("//defs:package.bzl", "package")
 # USE flags: See use_flags.bzl for available flags
 
 package(
-    build_rule = "autotools",
+    build_rule = "python",
     name = "virtme-ng",
     url = "https://github.com/arighi/virtme-ng/archive/refs/tags/v1.31.tar.gz",
-
     sha256 = "53e39a37781ae1495d3cca57c6a219a7602c442b7f58b207b449057fd8e13e9f",
     version = "1.31",
     description = "Quickly run kernels inside a virtualized snapshot of your live system",
     homepage = "https://github.com/arighi/virtme-ng",
     license = "GPL-2.0",
-    post_install_cmds = ["""
-#!/bin/bash
-set -e
-
-# Create symlinks for compatibility
-mkdir -p "$DESTDIR/usr/bin"
-ln -sf virtme-ng "$DESTDIR/usr/bin/vng" 2>/dev/null || true
-
-# Install default configuration
-mkdir -p "$DESTDIR/etc/virtme-ng"
-cat > "$DESTDIR/etc/virtme-ng/virtme-ng.conf" << 'EOF'
-# virtme-ng default configuration
-[virtme]
-# Default number of CPUs
-cpus = 2
-# Default memory
-memory = 2G
-# Enable KVM acceleration if available
-kvm = true
-EOF
-    """],
+    use_setup_py = True,
     deps = [
         "//packages/linux/lang/python:python",
         "//packages/linux/emulation/hypervisors/qemu:qemu",

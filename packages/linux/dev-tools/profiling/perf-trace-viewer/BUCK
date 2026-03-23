@@ -1,7 +1,7 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "python",
+    build_rule = "binary",
     name = "perf-trace-viewer",
     version = "0.1.0",
     url = "https://github.com/cisco-open/perf-trace-viewer/archive/256de5eea3d3e2717302d6ca0a85cae1fb9a7dce.tar.gz",
@@ -9,4 +9,24 @@ package(
     description = "Visualize thread scheduling data from perf sched as Trace Events",
     homepage = "https://github.com/cisco-open/perf-trace-viewer",
     license = "Apache-2.0",
+    deps = [
+        "//packages/linux/lang/python:python",
+    ],
+    install_script = """
+mkdir -p ${PREFIX}/bin ${PREFIX}/lib/perf-trace-viewer
+cp -r *.py ${PREFIX}/lib/perf-trace-viewer/ 2>/dev/null || true
+cp -r perf_trace_viewer ${PREFIX}/lib/perf-trace-viewer/ 2>/dev/null || true
+if [ -f perf_trace_viewer ]; then
+    install -Dm755 perf_trace_viewer ${PREFIX}/bin/perf-trace-viewer
+else
+    cat > ${PREFIX}/bin/perf-trace-viewer << 'WRAPPER'
+#!/usr/bin/env python3
+import sys, os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'lib', 'perf-trace-viewer'))
+from perf_trace_viewer.__main__ import main
+main()
+WRAPPER
+    chmod +x ${PREFIX}/bin/perf-trace-viewer
+fi
+""",
 )

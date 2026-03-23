@@ -1,7 +1,7 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "safeint",
     version = "3.0.28a",
     url = "https://github.com/dcleblanc/SafeInt/archive/refs/tags/3.0.28a.tar.gz",
@@ -10,7 +10,8 @@ package(
     homepage = "https://github.com/dcleblanc/SafeInt",
     license = "MIT",
     deps = [],
-    configure_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-    ],
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/include
+cp SafeInt.hpp $INSTALL_DIR/usr/include/
+""",
 )

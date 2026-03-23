@@ -6,18 +6,22 @@ package(
     build_rule = "autotools",
     name = "pigz",
     version = "2.8",
-    use_configure = {
-        "static": ("--enable-static", "--disable-static"),
-    },
+    skip_configure = True,
     url = "https://zlib.net/pigz/pigz-2.8.tar.gz",
     sha256 = "eb872b4f0e1f0ebe59c9f7bd8c506c4204893ba6a8492de31df416f0d5170fd0",
     description = "Parallel implementation of gzip for modern multi-processor machines",
     homepage = "https://zlib.net/pigz/",
     license = "Zlib",
+    make_args = [
+        "CC=$CC",
+        "CFLAGS=$CFLAGS",
+        "LDFLAGS=$LDFLAGS",
+    ],
     post_install_cmds = ["""\
+mkdir -p "$DESTDIR/usr/bin"
 install -Dm755 pigz "$DESTDIR/usr/bin/pigz"
-install -Dm755 unpigz "$DESTDIR/usr/bin/unpigz"
-install -Dm644 pigz.1 "$DESTDIR/usr/share/man/man1/pigz.1"
+ln -sf pigz "$DESTDIR/usr/bin/unpigz"
+install -Dm644 pigz.1 "$DESTDIR/usr/share/man/man1/pigz.1" 2>/dev/null || true
 """],
     deps = [
         "//packages/linux/core/zlib:zlib",

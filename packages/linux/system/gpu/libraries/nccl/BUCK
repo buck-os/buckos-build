@@ -1,15 +1,43 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "nccl",
     version = "2.28.3",
     url = "https://github.com/NVIDIA/nccl/archive/refs/tags/v2.28.3-1.tar.gz",
     sha256 = "888b305a79954b67022cfdd91aec515e88c9fed7ddbd2fb96af4ee3295853bb0",
-    configure_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DBUILD_SHARED_LIBS=ON",
-        "-DCMAKE_CUDA_ARCHITECTURES=70;75;80;86;89;90",
-    ],
+
+    install_script = """
+# NCCL requires CUDA nvcc compiler to build - install headers for downstream use
+mkdir -p "$OUT/usr/include/nccl"
+cp "$SRCS/src/include/"*.h "$OUT/usr/include/nccl/" 2>/dev/null || true
+# Also install top-level nccl.h if present
+if [ -f "$SRCS/src/nccl.h.in" ]; then
+    # Generate nccl.h from template with version info
+    sed -e 's/@NCCL_MAJOR@/2/g' \
+        -e 's/@NCCL_MINOR@/28/g' \
+        -e 's/@NCCL_PATCH@/3/g' \
+        -e 's/@NCCL_SUFFIX@//g' \
+        "$SRCS/src/nccl.h.in" > "$OUT/usr/include/nccl/nccl.h" 2>/dev/null || true
+fi
+
+# Generate pkg-config file
+mkdir -p "$OUT/usr/lib64/pkgconfig"
+cat > "$OUT/usr/lib64/pkgconfig/nccl.pc" << EOF
+prefix=/usr
+exec_prefix=\${prefix}
+libdir=\${prefix}/lib64
+includedir=\${prefix}/include/nccl
+
+Name: nccl
+Description: NVIDIA Collective Communications Library
+Version: $PV
+Requires: cuda
+Cflags: -I\${includedir}
+EOF
+
+echo "nccl headers installed successfully"
+""",
+
     labels = ["buckos:hw:cuda"],
 )

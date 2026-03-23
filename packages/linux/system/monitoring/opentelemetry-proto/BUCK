@@ -15,5 +15,11 @@ package(
     homepage = "https://github.com/open-telemetry/opentelemetry-proto.git",
     license = "Apache-2.0",
     deps = [],
-    make_args = [],
+    # The upstream Makefile requires docker for code generation.
+    # Override make to just create a dummy target, then install proto files via post_install_cmds.
+    pre_build_cmds = ["printf 'all:\\n\\ttrue\\n' > Makefile"],
+    post_install_cmds = ["""
+mkdir -p "$DESTDIR/usr/share/opentelemetry-proto"
+cp -a opentelemetry "$DESTDIR/usr/share/opentelemetry-proto/"
+"""],
 )

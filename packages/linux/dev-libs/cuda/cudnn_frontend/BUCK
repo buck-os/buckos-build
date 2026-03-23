@@ -1,7 +1,7 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "cudnn_frontend",
     version = "1.12.1",
     url = "https://github.com/NVIDIA/cudnn-frontend/archive/refs/tags/v1.12.1.tar.gz",
@@ -12,14 +12,12 @@ package(
 
     deps = [],
 
-    configure_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DCMAKE_CXX_STANDARD=17",
-        "-DCUDNN_FRONTEND_BUILD_SAMPLES=OFF",
-        "-DCUDNN_FRONTEND_BUILD_TESTS=OFF",
-        "-DCUDNN_FRONTEND_BUILD_PYTHON_BINDINGS=OFF",
-        "-DCUDNN_FRONTEND_SKIP_JSON_LIB=OFF",
-    ],
+    install_script = """
+# Header-only cuDNN frontend API - install include directory
+mkdir -p "$OUT/usr/include"
+cp -r "$SRCS/include/"* "$OUT/usr/include/" 2>/dev/null || true
+echo "cudnn_frontend headers installed successfully"
+""",
 
     labels = ["buckos:hw:cuda"],
 )

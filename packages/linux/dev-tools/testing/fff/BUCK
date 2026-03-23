@@ -1,7 +1,7 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "fff",
     version = "1.1",
     url = "https://github.com/meekrosoft/fff/archive/refs/tags/v1.1.tar.gz",
@@ -10,9 +10,5 @@ package(
     homepage = "https://github.com/meekrosoft/fff",
     license = "MIT",
     deps = [],
-    configure_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DFFF_UNIT_TESTING=OFF",
-        "-DFFF_GENERATE=OFF",
-    ],
+    install_script = "install -Dm644 fff.h $OUT/usr/include/fff.h",
 )

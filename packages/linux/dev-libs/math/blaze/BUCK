@@ -3,7 +3,7 @@ load("//defs:package.bzl", "package")
 # Blaze - High performance C++ math library
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "blaze",
     version = "3.8.2",
     url = "https://bitbucket.org/blaze-lib/blaze/downloads/blaze-3.8.2.tar.gz",
@@ -12,12 +12,8 @@ package(
     homepage = "https://bitbucket.org/blaze-lib/blaze",
     license = "BSD-3-Clause",
     deps = [],
-    use_deps = {
-        "blas": "//packages/linux/dev-libs/math/openblas:openblas",
-        "lapack": "//packages/linux/dev-libs/math/lapack:lapack",
-    },
-    configure_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DBLAZE_SMP_THREADS=C++11",
-    ],
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/include
+cp -r blaze $INSTALL_DIR/usr/include/
+""",
 )

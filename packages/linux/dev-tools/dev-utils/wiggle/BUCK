@@ -10,8 +10,24 @@ package(
     description = "Tool for applying patches with conflicts",
     homepage = "https://github.com/neilbrown/wiggle",
     license = "GPL-2.0-or-later",
-# No configure script - plain Makefile
-    configure_args = [],
+    skip_configure = True,
+    pre_configure_cmds = ["""
+# Create config.h needed by ccan/hash
+echo '#define HAVE_LITTLE_ENDIAN 1' > config.h
+# Disable man page generation (no nroff available)
+sed -i 's/^all:.*/all: wiggle/' Makefile
+"""],
+    make_args = [
+        "CC=$CC",
+        "OptDbg=$CFLAGS",
+        "LDLIBS=$LDFLAGS -lncursesw",
+    ],
+    post_install_cmds = ["""\
+mkdir -p "$DESTDIR/usr/bin"
+install -m755 wiggle "$DESTDIR/usr/bin/" 2>/dev/null || true
+mkdir -p "$DESTDIR/usr/share/man/man1"
+install -m644 wiggle.1 "$DESTDIR/usr/share/man/man1/" 2>/dev/null || true
+"""],
     deps = [
         "//packages/linux/system/terminal/ncurses:ncurses",
     ],

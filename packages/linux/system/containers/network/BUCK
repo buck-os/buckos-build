@@ -6,7 +6,7 @@ load("//defs:package.bzl", "package")
 
 # cni-plugins - Container Network Interface plugins
 package(
-    build_rule = "binary",
+    build_rule = "go",
     name = "cni-plugins",
     version = "1.4.1",
     url = "https://github.com/containernetworking/plugins/archive/refs/tags/v1.4.1.tar.gz",
@@ -14,12 +14,6 @@ package(
     description = "Standard CNI network plugins for container networking",
     homepage = "https://github.com/containernetworking/plugins",
     license = "Apache-2.0",
-    install_script = """
-export CGO_ENABLED=0
-./build_linux.sh
-mkdir -p "$OUT/usr/lib/cni"
-install -m 755 bin/* "$OUT/usr/lib/cni/"
-""",
     deps = [
         "//packages/linux/lang/go:go",
     ],
@@ -80,11 +74,15 @@ package(
     description = "User-mode networking for unprivileged network namespaces",
     homepage = "https://github.com/rootless-containers/slirp4netns",
     license = "GPL-2.0",
+    pre_configure_cmds = ["autoreconf -fi"],
     deps = [
         "//packages/linux/dev-libs/glib:glib",
         # TODO: libslirp package needs to be created
         # "//packages/linux/system/libs/network/libslirp:libslirp",
         "//packages/linux/system/libs/ipc/libseccomp:libseccomp",
         "//packages/linux/system/libs/ipc/libcap:libcap",
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
     ],
 )

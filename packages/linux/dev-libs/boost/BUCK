@@ -40,12 +40,11 @@ package(
         fi
 
         # bootstrap.sh compiles b2 with bare 'g++' from the gcc toolset.
-        # Create a g++ wrapper that passes the full CXX flags (--sysroot,
-        # -specs) so b2 gets the sysroot interpreter + rpath and can
-        # run on the host.
+        # Create a g++ wrapper so b2 uses our cross-compiler.
         _wrapdir=$(mktemp -d)
-        _cxx_bin=$(echo $CXX | cut -d' ' -f1)
-        _cxx_flags=$(echo $CXX | cut -d' ' -f2-)
+        _cxx_bin="${CXX%% *}"
+        _cxx_flags=""
+        case "$CXX" in *" "*) _cxx_flags="${CXX#* }" ;; esac
         printf '#!/bin/sh\nexec %s %s "$@"\n' "$_cxx_bin" "$_cxx_flags" > "$_wrapdir/g++"
         chmod +x "$_wrapdir/g++"
         cp "$_wrapdir/g++" "$_wrapdir/gcc"

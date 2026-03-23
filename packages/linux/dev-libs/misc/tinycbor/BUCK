@@ -3,7 +3,7 @@ load("//defs:package.bzl", "package")
 # tinycbor - Concise Binary Object Representation (CBOR) Library
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "tinycbor",
     version = "0.6.0",
     url = "https://github.com/intel/tinycbor/archive/refs/tags/v0.6.0.tar.gz",
@@ -12,8 +12,12 @@ package(
     homepage = "https://github.com/intel/tinycbor",
     license = "MIT",
     deps = [],
-    configure_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DBUILD_SHARED_LIBS=ON",
-    ],
+    install_script = """
+cd "$SRCS"
+
+make -j${MAKEOPTS:-$(nproc)} CC="$CC" AR="$AR" \
+    CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS"
+
+make prefix=/usr DESTDIR=$OUT install
+""",
 )

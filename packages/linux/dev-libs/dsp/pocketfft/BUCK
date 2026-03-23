@@ -4,7 +4,7 @@ load("//defs:package.bzl", "package")
 
 package(
     name = "pocketfft",
-    build_rule = "autotools",
+    build_rule = "binary",
     version = "release_for_eigen",
     url = "https://github.com/mreineck/pocketfft/archive/refs/tags/release_for_eigen.tar.gz",
     sha256 = "e8e495811077109198b2653f0c85fd34defa5b6a21551a538465445118bb7f7b",
@@ -12,9 +12,9 @@ package(
     homepage = "https://github.com/mreineck/pocketfft",
     license = "BSD-3-Clause",
     deps = [],
-    post_install_cmds = ["""\
-mkdir -p "${DESTDIR}/usr/include/pocketfft"
-        cp pocketfft_hdronly.h "${DESTDIR}/usr/include/pocketfft/"
-        cp pocketfft_hdronly.h "${DESTDIR}/usr/include/pocketfft_hdronly.h"
-"""],
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/include/pocketfft
+cp pocketfft_hdronly.h $INSTALL_DIR/usr/include/pocketfft/
+cp pocketfft_hdronly.h $INSTALL_DIR/usr/include/pocketfft_hdronly.h
+""",
 )

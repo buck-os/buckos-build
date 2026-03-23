@@ -1,7 +1,7 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "opengm",
     version = "2.3.6",
     url = "https://github.com/opengm/opengm/archive/refs/tags/v2.3.6.tar.gz",
@@ -10,9 +10,8 @@ package(
     homepage = "https://github.com/opengm/opengm",
     license = "GPL-1.0-or-later",
     deps = [],
-    configure_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DBUILD_TESTING=OFF",
-        "-DBUILD_EXAMPLES=OFF",
-    ],
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/include
+cp -r include/opengm $INSTALL_DIR/usr/include/
+""",
 )

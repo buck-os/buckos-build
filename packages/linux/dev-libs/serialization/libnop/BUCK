@@ -3,7 +3,7 @@ load("//defs:package.bzl", "package")
 # libnop - C++ Native Object Protocols for serialization
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "libnop",
     version = "2020.01.01",
     url = "https://github.com/google/libnop/archive/35e800d81f28c632956c5a592e3cbe8085ecd430.tar.gz",
@@ -12,7 +12,8 @@ package(
     homepage = "https://github.com/google/libnop",
     license = "Apache-2.0",
     deps = [],
-    configure_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-    ],
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/include
+cp -r include/nop $INSTALL_DIR/usr/include/
+""",
 )

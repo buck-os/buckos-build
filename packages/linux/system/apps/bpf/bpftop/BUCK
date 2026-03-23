@@ -1,7 +1,7 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "binary",
+    build_rule = "cargo",
     name = "bpftop",
     version = "0.5.1",
     url = "https://github.com/Netflix/bpftop/archive/refs/tags/v0.5.1.tar.gz",
@@ -9,19 +9,6 @@ package(
     description = "Top-like tool for monitoring BPF programs in real-time",
     homepage = "https://github.com/Netflix/bpftop",
     license = "Apache-2.0",
-    install_script = """
-        cd $SRCS
-
-        # Build with Cargo (Rust)
-        export CARGO_HOME=$PWD/.cargo
-        export RUSTFLAGS="-C target-feature=-crt-static"
-
-        cargo build --release
-
-        # Install
-        mkdir -p $OUT/usr/bin
-        cp target/release/bpftop $OUT/usr/bin/
-    """,
     deps = [
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/elfutils:elfutils",

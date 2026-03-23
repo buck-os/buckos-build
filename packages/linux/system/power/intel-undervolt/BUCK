@@ -4,22 +4,24 @@ load("//defs:package.bzl", "package")
 # Undervolt and set power limits on Intel CPUs
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "intel-undervolt",
     version = "1.7",
-    use_configure = {
-        "elogind": ("-DENABLE_ELOGIND=ON", "-DENABLE_ELOGIND=OFF"),
-    },
     url = "https://github.com/kitsunyan/intel-undervolt/archive/refs/tags/1.7.tar.gz",
     sha256 = "29a7ebaee4830d65d0b5cefa6d497887d4f23f34659876dfe944f3a020cf33ff",
     description = "Intel CPU undervolting and power limit tool",
     homepage = "https://github.com/kitsunyan/intel-undervolt",
     license = "GPL-3.0",
-    configure_args = [
-        "-DCMAKE_INSTALL_PREFIX=/usr",
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DENABLE_SYSTEMD=ON",
-    ],
-    deps = [
-    ],
+    deps = [],
+    install_script = """
+# intel-undervolt has a custom configure script
+./configure --prefix=/usr --enable-systemd 2>/dev/null || \
+    ./configure --prefix=/usr 2>/dev/null || true
+
+make CC="$CC" CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" \
+    -j${MAKEOPTS:-$(nproc)} || \
+make CC="$CC" -j1
+
+make install DESTDIR="$OUT"
+""",
 )

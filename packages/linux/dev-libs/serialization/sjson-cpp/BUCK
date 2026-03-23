@@ -1,7 +1,7 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "sjson-cpp",
     version = "0.8.3",
     url = "https://github.com/nfrechette/sjson-cpp/archive/refs/tags/v0.8.3.tar.gz",
@@ -10,7 +10,8 @@ package(
     homepage = "https://github.com/nfrechette/sjson-cpp",
     license = "MIT",
     deps = [],
-    configure_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-    ],
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/include
+cp -r includes/sjson $INSTALL_DIR/usr/include/
+""",
 )

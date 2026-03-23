@@ -1,7 +1,7 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "python",
+    build_rule = "binary",
     name = "nvidia-gpu-admin-tools",
     version = "2024.08.09",
     url = "https://github.com/nvidia/gpu-admin-tools/archive/refs/tags/v2024.08.09.tar.gz",
@@ -12,5 +12,20 @@ package(
     deps = [
         "//packages/linux/lang/python:python",
     ],
+
+    install_script = """
+# Install Python scripts as executables
+mkdir -p "$OUT/usr/bin"
+for script in "$SRCS"/*.py; do
+    [ -f "$script" ] || continue
+    install -m 755 "$script" "$OUT/usr/bin/"
+done
+
+# Install any library modules
+mkdir -p "$OUT/usr/lib/python3/nvidia-gpu-admin-tools"
+cp -r "$SRCS/"*.py "$OUT/usr/lib/python3/nvidia-gpu-admin-tools/" 2>/dev/null || true
+echo "nvidia-gpu-admin-tools installed successfully"
+""",
+
     labels = ["buckos:hw:cuda"],
 )

@@ -1,7 +1,7 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "autotools",
+    build_rule = "make",
     name = "hash-library",
     version = "8",
     url = "https://github.com/stbrumme/hash-library/archive/refs/tags/hash_library_v8.tar.gz",
@@ -9,17 +9,26 @@ package(
     description = "Portable C++ hashing library (CRC32, MD5, SHA1, SHA256, SHA3, Keccak, HMAC)",
     homepage = "https://create.stephan-brumme.com/hash-library/",
     license = "Zlib",
-    post_install_cmds = ["""\
-cd hash-library-8
-install -Dm644 libhash-library.a "$DESTDIR/usr/lib/libhash-library.a"
-install -Dm644 crc32.h "$DESTDIR/usr/include/hash-library/crc32.h"
-install -Dm644 endian.h "$DESTDIR/usr/include/hash-library/endian.h"
-install -Dm644 hash.h "$DESTDIR/usr/include/hash-library/hash.h"
-install -Dm644 hmac.h "$DESTDIR/usr/include/hash-library/hmac.h"
-install -Dm644 keccak.h "$DESTDIR/usr/include/hash-library/keccak.h"
-install -Dm644 md5.h "$DESTDIR/usr/include/hash-library/md5.h"
-install -Dm644 sha1.h "$DESTDIR/usr/include/hash-library/sha1.h"
-install -Dm644 sha256.h "$DESTDIR/usr/include/hash-library/sha256.h"
-install -Dm644 sha3.h "$DESTDIR/usr/include/hash-library/sha3.h"
-"""],
+    skip_configure = True,
+    src_compile = """
+$CXX $CXXFLAGS -fPIC -c crc32.cpp -o crc32.o
+$CXX $CXXFLAGS -fPIC -c md5.cpp -o md5.o
+$CXX $CXXFLAGS -fPIC -c sha1.cpp -o sha1.o
+$CXX $CXXFLAGS -fPIC -c sha256.cpp -o sha256.o
+$CXX $CXXFLAGS -fPIC -c sha3.cpp -o sha3.o
+$CXX $CXXFLAGS -fPIC -c keccak.cpp -o keccak.o
+$AR rcs libhash-library.a crc32.o md5.o sha1.o sha256.o sha3.o keccak.o
+""",
+    src_install = """
+install -Dm644 libhash-library.a "$INSTALL_DIR/usr/lib64/libhash-library.a"
+install -Dm644 crc32.h "$INSTALL_DIR/usr/include/hash-library/crc32.h"
+install -Dm644 endian.h "$INSTALL_DIR/usr/include/hash-library/endian.h"
+install -Dm644 hash.h "$INSTALL_DIR/usr/include/hash-library/hash.h"
+install -Dm644 hmac.h "$INSTALL_DIR/usr/include/hash-library/hmac.h"
+install -Dm644 keccak.h "$INSTALL_DIR/usr/include/hash-library/keccak.h"
+install -Dm644 md5.h "$INSTALL_DIR/usr/include/hash-library/md5.h"
+install -Dm644 sha1.h "$INSTALL_DIR/usr/include/hash-library/sha1.h"
+install -Dm644 sha256.h "$INSTALL_DIR/usr/include/hash-library/sha256.h"
+install -Dm644 sha3.h "$INSTALL_DIR/usr/include/hash-library/sha3.h"
+""",
 )

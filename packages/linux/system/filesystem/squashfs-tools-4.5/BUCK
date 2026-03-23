@@ -11,10 +11,11 @@ package(
     description = "Tools for creating and extracting SquashFS filesystems",
     homepage = "https://github.com/plougher/squashfs-tools",
     license = "GPL-2.0",
-    pre_configure_cmds = ["""
-cd squashfs-tools
-"""],
+    build_subdir = "squashfs-tools",
     make_args = [
+        "CC=$CC",
+        "CFLAGS=$CFLAGS",
+        "LDFLAGS=$LDFLAGS",
         "GZIP_SUPPORT=1",
         "XZ_SUPPORT=1",
         "LZ4_SUPPORT=1",

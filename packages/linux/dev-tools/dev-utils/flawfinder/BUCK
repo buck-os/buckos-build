@@ -1,5 +1,7 @@
 load("//defs:package.bzl", "package")
 
+# flawfinder - Examines C/C++ source code for security flaws
+# This has a setup.py and installs as a Python package.
 package(
     build_rule = "python",
     name = "flawfinder",
@@ -9,4 +11,8 @@ package(
     description = "Examines C/C++ source code for security flaws",
     homepage = "https://dwheeler.com/flawfinder/",
     license = "GPL-2+",
+    use_setup_py = True,
+    deps = [
+        "//packages/linux/lang/python:python",
+    ],
 )

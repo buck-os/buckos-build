@@ -1,19 +1,16 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "autotools",
+    build_rule = "meson",
     name = "ndctl",
     version = "79",
-    use_configure = {
-        "libtracefs": ("--enable-libtracefs", "--disable-libtracefs"),
-        "systemd": ("--enable-systemd", "--disable-systemd"),
-    },
     url = "https://github.com/pmem/ndctl/archive/refs/tags/v79.tar.gz",
     sha256 = "c4c4e698c38ba8be4c08f3a9554cca3db8e71db1ace13906e3f8490db13418f0",
     configure_args = [
-        "--disable-docs",
-        "--disable-asciidoctor",
-        "--without-bash",
+        "-Ddocs=disabled",
+        "-Dasciidoctor=disabled",
+        "-Dbash_completion=disabled",
+        "-Dsystemd=disabled",
     ],
     deps = [
         "//packages/linux/system/libs/kmod:kmod",

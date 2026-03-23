@@ -2,12 +2,8 @@ load("//defs:package.bzl", "package")
 
 # NumPy - Fundamental package for scientific computing with Python
 #
-# NumPy is built using Meson and requires BLAS/LAPACK for optimized
-# linear algebra operations.
-#
-# USE flags:
-#   openblas  - Use OpenBLAS for BLAS/LAPACK
-#   simd      - Enable SIMD optimizations (AVX, SSE, etc.)
+# NumPy 1.26.x uses meson-python as its build backend.
+# pip install handles the meson build internally.
 
 package(
     build_rule = "python",
@@ -18,20 +14,15 @@ package(
     description = "Fundamental package for array computing with Python",
     homepage = "https://numpy.org/",
     license = "BSD-3-Clause",
-    use_configure = {
-        "big-endian": ("--enable-big-endian", "--disable-big-endian"),
-        "cpudetection": ("--enable-cpudetection", "--disable-cpudetection"),
-        "index64": ("--enable-index64", "--disable-index64"),
-        "lapack": ("--enable-lapack", "--disable-lapack"),
+    use_setup_py = True,
+    env = {
+        # Disable BLAS/LAPACK detection to build without external deps
+        "NPY_DISABLE_SVML": "1",
+        "BLAS": "None",
+        "LAPACK": "None",
     },
     deps = [
         "//packages/linux/lang/python:python",
+        "//packages/linux/dev-libs/python/setuptools:setuptools",
     ],
-    use_deps = {
-        "openblas": "//packages/linux/dev-libs/math/openblas:openblas",
-    },
-    env = {
-        "NPY_BLAS_ORDER": "openblas",
-        "NPY_LAPACK_ORDER": "openblas",
-    },
 )

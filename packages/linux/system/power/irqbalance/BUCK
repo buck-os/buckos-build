@@ -7,8 +7,8 @@ package(
     build_rule = "autotools",
     name = "irqbalance",
     url = "https://github.com/Irqbalance/irqbalance/archive/refs/tags/v1.9.3.tar.gz",
-
     sha256 = "8d698799251ea8518f342f36be26f2f092df51189f6777db33116d40cf0dae6c",
+    pre_configure_cmds = ["autoreconf -fi"],
     use_configure = {
         "caps": ("--enable-libcap", "--disable-libcap"),
         "numa": ("--enable-numa", "--disable-numa"),
@@ -29,5 +29,8 @@ package(
     deps = [
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/core/libnl:libnl",
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
     ],
 )

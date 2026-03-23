@@ -10,7 +10,9 @@ package(
     description = "FUSE filesystem for mounting archive files (tar, zip, etc.)",
     homepage = "https://www.cybernoia.de/software/archivemount.html",
     license = "LGPL-2.0",
-    configure_args = [],
+    configure_args = [
+        "--with-fuse3",
+    ],
     pre_configure_cmds = ["""
 autoreconf -fi
 """],

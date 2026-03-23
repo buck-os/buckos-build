@@ -1,7 +1,7 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "inja",
     version = "3.4.0",
     url = "https://github.com/pantor/inja/archive/refs/tags/v3.4.0.tar.gz",
@@ -12,10 +12,8 @@ package(
     deps = [
         "//packages/linux/dev-libs/json/nlohmann-json:nlohmann-json",
     ],
-    configure_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DINJA_USE_EMBEDDED_JSON=OFF",
-        "-DBUILD_TESTING=OFF",
-        "-DINJA_BUILD_TESTS=OFF",
-    ],
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/include/inja
+cp -r include/inja/* $INSTALL_DIR/usr/include/inja/
+""",
 )

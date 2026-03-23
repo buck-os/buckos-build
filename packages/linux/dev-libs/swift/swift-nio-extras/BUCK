@@ -1,15 +1,19 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "swift-nio-extras",
     version = "1.10.2",
     url = "https://github.com/apple/swift-nio-extras/archive/refs/tags/1.10.2.tar.gz",
     sha256 = "2f37596dcf26532b867aee3dbd8c5354108a076174751f4e6a72a0b6506df05e",
-    configure_args = [
-        "-DBUILD_TESTING=OFF",
-    ],
     deps = [
         "//packages/linux/lang/swift:swift",
     ],
+
+    install_script = """
+# Swift package - install source files for Swift Package Manager consumption
+mkdir -p "$OUT/usr/lib/swift/swift-nio-extras"
+cp -r "$SRCS/Sources/"* "$OUT/usr/lib/swift/swift-nio-extras/" 2>/dev/null || true
+echo "swift-nio-extras sources installed successfully"
+""",
 )

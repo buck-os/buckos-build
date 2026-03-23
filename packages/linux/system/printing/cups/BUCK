@@ -41,7 +41,8 @@ package(
         "--with-system-groups=lpadmin",
         "--enable-libpaper",
         "--enable-ssl",
-        "--enable-gnutls",
+        "--disable-gnutls",
+        "--enable-openssl",
         "--enable-dbus",
         "--disable-avahi",
         "--disable-systemd",
@@ -108,5 +109,8 @@ autoreconf -fi
         "--sysconfdir=/etc",
     ],
     deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
     ],
 )

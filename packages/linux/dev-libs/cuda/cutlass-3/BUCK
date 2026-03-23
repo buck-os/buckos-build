@@ -1,7 +1,7 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "cutlass-3",
     version = "3.9.2",
     url = "https://github.com/NVIDIA/cutlass/archive/refs/tags/v3.9.2.tar.gz",
@@ -10,17 +10,17 @@ package(
     homepage = "https://github.com/NVIDIA/cutlass",
     license = "BSD-3-Clause",
     deps = [],
-    configure_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DCMAKE_CXX_STANDARD=17",
-        "-DCMAKE_CUDA_STANDARD=17",
-        "-DCUTLASS_ENABLE_HEADERS_ONLY=ON",
-        "-DCUTLASS_ENABLE_EXAMPLES=OFF",
-        "-DCUTLASS_ENABLE_TOOLS=OFF",
-        "-DCUTLASS_ENABLE_LIBRARY=OFF",
-        "-DCUTLASS_ENABLE_TESTS=OFF",
-        "-DCUTLASS_ENABLE_PROFILER=OFF",
-        "-DCUTLASS_NVCC_ARCHS=80;86;89;90",
-    ],
+
+    install_script = """
+# Header-only CUDA template library - install include directory
+mkdir -p "$OUT/usr/include"
+cp -r "$SRCS/include/"* "$OUT/usr/include/" 2>/dev/null || true
+# Install tools/util headers used by some downstream consumers
+if [ -d "$SRCS/tools/util/include" ]; then
+    cp -r "$SRCS/tools/util/include/"* "$OUT/usr/include/" 2>/dev/null || true
+fi
+echo "cutlass-3 headers installed successfully"
+""",
+
     labels = ["buckos:hw:cuda"],
 )

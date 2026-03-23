@@ -24,7 +24,7 @@ package(
 
 # libvdpau-va-gl - VDPAU driver using OpenGL/VAAPI as backend
 package(
-    build_rule = "meson",
+    build_rule = "cmake",
     name = "libvdpau-va-gl",
     version = "0.4.2",
     url = "https://github.com/i-rinat/libvdpau-va-gl/archive/refs/tags/v0.4.2.tar.gz",
@@ -32,7 +32,9 @@ package(
     description = "VDPAU driver using OpenGL/VAAPI as backend",
     homepage = "https://github.com/i-rinat/libvdpau-va-gl",
     license = "MIT",
-    configure_args = [],
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+    ],
     deps = [
         ":vdpau",
     ],

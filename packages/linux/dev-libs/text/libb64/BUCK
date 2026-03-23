@@ -1,7 +1,7 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "autotools",
+    build_rule = "binary",
     name = "libb64",
     version = "2.0.0.1",
     url = "https://github.com/libb64/libb64/archive/refs/tags/v2.0.0.1.tar.gz",
@@ -9,10 +9,13 @@ package(
     description = "Base64 encoding/decoding library in C",
     homepage = "https://github.com/libb64/libb64",
     license = "CC0-1.0",
-    post_install_cmds = ["""\
-mkdir -p "$DESTDIR/usr/lib"
-mkdir -p "$DESTDIR/usr/include/b64"
-cp src/libb64.a "$DESTDIR/usr/lib/"
-cp include/b64/*.h "$DESTDIR/usr/include/b64/"
-"""],
+    deps = [],
+    install_script = """
+mkdir -p "$OUT/usr/lib64"
+mkdir -p "$OUT/usr/include/b64"
+$CC -c -O2 -fPIC -Iinclude src/cencode.c -o cencode.o
+$CC -c -O2 -fPIC -Iinclude src/cdecode.c -o cdecode.o
+$AR rcs "$OUT/usr/lib64/libb64.a" cencode.o cdecode.o
+cp include/b64/*.h "$OUT/usr/include/b64/"
+""",
 )

@@ -1,7 +1,7 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "unique_resource",
     version = "0.0.1",
     url = "https://github.com/okdshin/unique_resource/archive/22f857bf18105a7b99d8a3b28f5afe30d2dbe6fa.tar.gz",
@@ -10,7 +10,8 @@ package(
     homepage = "https://github.com/okdshin/unique_resource",
     license = "BSL-1.0",
     deps = [],
-    configure_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-    ],
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/include
+cp -r include/* $INSTALL_DIR/usr/include/ 2>/dev/null || cp *.hpp $INSTALL_DIR/usr/include/ 2>/dev/null || true
+""",
 )

@@ -13,43 +13,17 @@ package(
     homepage = "http://glew.sourceforge.net/",
     license = "BSD-3-Clause",
     install_script = """
-mkdir -p "$OUT"
-BUILD=$(mktemp -d)
-cp -a "$SRCS"/. "$BUILD/"
-cd "$BUILD"
+cd "$SRCS"
 
-mkdir -p lib
+make -j${MAKEOPTS:-$(nproc)} SYSTEM=linux-egl GLEW_DEST=/usr GLEW_NO_GLX=1 \
+    CC="$CC" LD="$CC" AR="$AR" STRIP= \
+    CFLAGS.EXTRA="$CFLAGS" LDFLAGS.EXTRA="$LDFLAGS"
 
-# Build with EGL support (no X11)
-echo "Building GLEW with EGL support (no X11)..."
-make -j$(nproc) SYSTEM=linux-egl GLEW_DEST=/usr GLEW_NO_GLX=1
+make SYSTEM=linux-egl GLEW_DEST=/usr DESTDIR=$OUT \
+    LIBDIR=/usr/lib64 PKGDIR=/usr/lib64/pkgconfig \
+    CC="$CC" LD="$CC" AR="$AR" STRIP= install
 
-mkdir -p "$OUT/usr/lib64" "$OUT/usr/include/GL"
-
-# Install library
-if ls lib/libGLEW.so.* 1>/dev/null 2>&1; then
-    cp -P lib/libGLEW.so* "$OUT/usr/lib64/"
-fi
-if [ -f lib/libGLEW.a ]; then
-    cp lib/libGLEW.a "$OUT/usr/lib64/"
-fi
-
-# Install headers
-cp include/GL/*.h "$OUT/usr/include/GL/"
-
-# Generate pkg-config file
-mkdir -p "$OUT/usr/lib64/pkgconfig"
-cat > "$OUT/usr/lib64/pkgconfig/glew.pc" << EOF
-prefix=/usr
-exec_prefix=\${prefix}
-libdir=\${prefix}/lib64
-includedir=\${prefix}/include
-
-Name: glew
-Description: OpenGL Extension Wrangler Library
-Version: $PV
-Libs: -lGLEW
-Cflags: -I\${includedir}
-EOF
+# Fix pkgconfig libdir
+sed -i 's|libdir=.*|libdir=\${prefix}/lib64|' $OUT/usr/lib64/pkgconfig/glew.pc 2>/dev/null || true
 """,
 )

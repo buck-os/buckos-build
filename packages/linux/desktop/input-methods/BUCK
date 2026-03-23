@@ -56,7 +56,7 @@ package(
 
 # Fcitx5 - Input method framework
 package(
-    build_rule = "autotools",
+    build_rule = "cmake",
     name = "fcitx5",
     url = "https://download.fcitx-im.org/fcitx5/fcitx5/fcitx5-5.1.8.tar.xz",
 
@@ -65,21 +65,10 @@ package(
     description = "Next generation input method framework",
     homepage = "https://fcitx-im.org/",
     license = "LGPL-2.1-or-later",
-    configure_args = [],
-    make_args = ["-C", "build"],
-    post_install_cmds = ["""
-        cd build
-        DESTDIR=$OUT make install
-    """, """
-        cd build
-        DESTDIR=$OUT make install
-    """, """
-        cd build
-        DESTDIR=$OUT make install
-    """, """
-        cd build
-        DESTDIR=$OUT make install
-    """],
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DENABLE_TEST=OFF",
+    ],
     deps = [
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/system/libs/ipc/dbus:dbus",
@@ -90,7 +79,7 @@ package(
 
 # Fcitx5 GTK module
 package(
-    build_rule = "autotools",
+    build_rule = "cmake",
     name = "fcitx5-gtk",
     url = "https://download.fcitx-im.org/fcitx5/fcitx5-gtk/fcitx5-gtk-5.1.1.tar.xz",
 
@@ -99,8 +88,9 @@ package(
     description = "GTK input method module for Fcitx5",
     homepage = "https://fcitx-im.org/",
     license = "LGPL-2.1-or-later",
-    configure_args = [],
-    make_args = ["-C", "build"],
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+    ],
     deps = [
         ":fcitx5",
     ],
@@ -108,7 +98,7 @@ package(
 
 # Fcitx5 Qt module
 package(
-    build_rule = "autotools",
+    build_rule = "cmake",
     name = "fcitx5-qt",
     url = "https://download.fcitx-im.org/fcitx5/fcitx5-qt/fcitx5-qt-5.1.5.tar.xz",
 
@@ -117,8 +107,9 @@ package(
     description = "Qt input method module for Fcitx5",
     homepage = "https://fcitx-im.org/",
     license = "LGPL-2.1-or-later",
-    configure_args = [],
-    make_args = ["-C", "build"],
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+    ],
     deps = [
         ":fcitx5",
         "//packages/linux/desktop/qt:qt5",
@@ -127,7 +118,7 @@ package(
 
 # Fcitx5 Chinese Addons (Pinyin, etc.)
 package(
-    build_rule = "autotools",
+    build_rule = "cmake",
     name = "fcitx5-chinese-addons",
     url = "https://download.fcitx-im.org/fcitx5/fcitx5-chinese-addons/fcitx5-chinese-addons-5.1.4.tar.xz",
 
@@ -136,8 +127,9 @@ package(
     description = "Chinese addons for Fcitx5 (Pinyin, Wubi, etc.)",
     homepage = "https://fcitx-im.org/",
     license = "LGPL-2.1-or-later",
-    configure_args = [],
-    make_args = ["-C", "build"],
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+    ],
     deps = [
         ":fcitx5",
         "//packages/linux/desktop/qt:qt5",

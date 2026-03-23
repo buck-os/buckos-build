@@ -12,13 +12,12 @@ package(
     homepage = "https://lz4.github.io/lz4/",
     license = "BSD-2-Clause OR GPL-2.0-only",
     deps = [],
+    # CMakeLists.txt is in build/cmake/ subdirectory
+    source_subdir = "build/cmake",
     configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DLZ4_BUILD_LEGACY_LZ4C=OFF",
+        "-DLZ4_BUILD_CLI=ON",
     ],
-    use_configure = {
-        "cli": ("-DLZ4_BUILD_CLI=ON", "-DLZ4_BUILD_CLI=OFF"),
-        "static-libs": ("-DBUILD_STATIC_LIBS=ON", "-DBUILD_STATIC_LIBS=OFF"),
-    },
 )

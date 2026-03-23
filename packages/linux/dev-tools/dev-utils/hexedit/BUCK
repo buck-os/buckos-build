@@ -9,11 +9,14 @@ package(
     description = "View and edit files in hexadecimal or ASCII",
     homepage = "https://github.com/pixel/hexedit",
     license = "GPL-2+",
-    use_deps = {
-        "ncurses": "//packages/linux/system/terminal/ncurses:ncurses",
-    },
-    use_configure = {
-        "ncurses": ("--with-ncurses", "--without-ncurses"),
-    },
-
+    deps = [
+        "//packages/linux/system/terminal/ncurses:ncurses",
+    ],
+    host_deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+    ],
+    pre_configure_cmds = [
+        "autoreconf -fiv",
+    ],
 )

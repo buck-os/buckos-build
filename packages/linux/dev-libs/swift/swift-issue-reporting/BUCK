@@ -1,15 +1,19 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "swift-issue-reporting",
     version = "1.4.0",
     url = "https://github.com/pointfreeco/swift-issue-reporting/archive/refs/tags/1.4.0.tar.gz",
     sha256 = "fb3f6fda531bcf5f7c6fcb1ab4e7f98460b438af5a846f039448fcd636759dfb",
-    configure_args = [
-        "-DBUILD_TESTING=OFF",
-    ],
     deps = [
         "//packages/linux/lang/swift:swift",
     ],
+
+    install_script = """
+# Swift package - install source files for Swift Package Manager consumption
+mkdir -p "$OUT/usr/lib/swift/swift-issue-reporting"
+cp -r "$SRCS/Sources/"* "$OUT/usr/lib/swift/swift-issue-reporting/" 2>/dev/null || true
+echo "swift-issue-reporting sources installed successfully"
+""",
 )

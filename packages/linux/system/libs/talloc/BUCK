@@ -1,30 +1,60 @@
 load("//defs:package.bzl", "package")
 
 # talloc - Memory allocator from Samba project
+# Uses waf build system (Python-based), not autoconf.
 package(
-    build_rule = "autotools",
+    build_rule = "binary",
     name = "talloc",
-    # talloc uses waf (Python-based build system), not autoconf
-    # The ./configure script is a waf wrapper
     url = "https://www.samba.org/ftp/talloc/talloc-2.4.3.tar.gz",
-
     sha256 = "dc46c40b9f46bb34dd97fe41f548b0e8b247b77a918576733c528e83abd854dd",
-    use_configure = {
-        "compat": ("--enable-compat", "--disable-compat"),
-        "python": ("--enable-python", "--disable-python"),
-        "valgrind": ("--enable-valgrind", "--disable-valgrind"),
-    },
     version = "2.4.3",
     description = "Hierarchical pool based memory allocator with destructors",
     homepage = "https://talloc.samba.org/",
     license = "LGPL-3.0",
-    configure_args = [
-        "--prefix=/usr",
-        "--sysconfdir=/etc",
-        "--disable-python",
-    ],
-    # Custom phases for waf build system
-    # Samba's waf configure wrapper script generates a Makefile
+    install_script = """
+cd "$SRCS"
+
+# Create cross-answers file for waf cross-compilation
+cat > cross-answers.txt << 'CROSS_EOF'
+Checking uname sysname type: "Linux"
+Checking uname machine type: "x86_64"
+Checking uname release type: "6.6.0"
+Checking uname version type: "#1"
+Checking simple C program: OK
+building in /tmp/tmp.talloc
+Checking for large file support without additional flags: OK
+Checking for -D_FILE_OFFSET_BITS=64: OK
+Checking for WORDS_BIGENDIAN: OK
+Checking for C99 vsnprintf: OK
+Checking for HAVE_SECURE_MKSTEMP: OK
+rpath library support: OK
+-Wl,--version-script support: FAIL
+Checking correct behavior of strtoll: OK
+Checking for working strptime: OK
+Checking for C99 vsnprintf: OK
+Checking for HAVE_SHARED_MMAP: OK
+Checking for HAVE_MREMAP: OK
+Checking getconf LFS_CFLAGS: OK
+Checking for kernel change notify support: OK
+Checking for Linux kernel oplocks: OK
+Checking for kernel share modes: OK
+Checking if can we convert from CP850 to UCS-2LE: OK
+Checking if can we convert from UTF-8 to UCS-2LE: OK
+vfs_fileid checking for statfs() and target struct statfs.f_fsid: OK
+Checking whether sector aligned: OK
+CROSS_EOF
+
+./configure \
+    --prefix=/usr \
+    --sysconfdir=/etc \
+    --disable-python \
+    --cross-compile \
+    --cross-answers=cross-answers.txt
+
+make -j${MAKEOPTS:-$(nproc)}
+
+make DESTDIR="$OUT" install
+""",
     deps = [
     ],
 )

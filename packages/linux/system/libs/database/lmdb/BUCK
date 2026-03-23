@@ -7,16 +7,26 @@ package(
     url = "https://git.openldap.org/openldap/openldap/-/archive/LMDB_0.9.33/openldap-LMDB_0.9.33.tar.gz",
 
     sha256 = "476801f5239c88c7de61c3390502a5d13965ecedef80105b5fb0fcb8373d1e53",
-    use_configure = {
-        "static-libs": ("--enable-static", "--disable-static"),
-    },
     version = "0.9.33",
     description = "Lightning Memory-Mapped Database",
     homepage = "https://symas.com/lmdb/",
     license = "OLDAP-2.8",
-    # No autotools - just Makefile
+    skip_configure = True,
+    build_subdir = "libraries/liblmdb",
+    make_args = [
+        "CC=$CC",
+        "XCFLAGS=$CFLAGS",
+        "LDFLAGS=$LDFLAGS",
+        "SOEXT=.so",
+        "prefix=/usr",
+    ],
     post_install_cmds = ["""\
-cd libraries/liblmdb
-make install DESTDIR="$DESTDIR" prefix=/usr
+mkdir -p "$DESTDIR/usr/lib64" "$DESTDIR/usr/include" "$DESTDIR/usr/bin"
+cd "$BUILD_DIR"
+install -m644 liblmdb.a "$DESTDIR/usr/lib64/" 2>/dev/null || true
+install -m755 liblmdb.so "$DESTDIR/usr/lib64/" 2>/dev/null || true
+install -m644 lmdb.h "$DESTDIR/usr/include/" 2>/dev/null || true
+install -m755 mdb_stat "$DESTDIR/usr/bin/" 2>/dev/null || true
+install -m755 mdb_copy "$DESTDIR/usr/bin/" 2>/dev/null || true
 """],
 )

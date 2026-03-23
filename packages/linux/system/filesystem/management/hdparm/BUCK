@@ -14,9 +14,14 @@ package(
     description = "Get/set hard disk parameters",
     homepage = "https://sourceforge.net/projects/hdparm/",
     license = "BSD-2-Clause",
-    post_install_cmds = ["""\
-install -Dm755 hdparm "$DESTDIR/usr/sbin/hdparm"
-install -Dm644 hdparm.8 "$DESTDIR/usr/share/man/man8/hdparm.8"
-"""],
+    make_args = [
+        "CC=$CC",
+        "CFLAGS=$CFLAGS",
+        "LDFLAGS=$LDFLAGS",
+    ],
+    install_args = [
+        "binprefix=/usr",
+        "manprefix=/usr/share",
+    ],
     deps = [],
 )

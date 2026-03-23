@@ -148,22 +148,36 @@ def _buckos_bootstrap_toolchain_impl(ctx: AnalysisContext) -> list[Provider]:
     stage_dir = ctx.attrs.bootstrap_stage[DefaultInfo].default_outputs[0]
     triple = stage.target_triple
 
-    # Patch compiler binary ELF interpreters to the sysroot ld-linux.
-    # Compiler binaries have padded interpreters (///...///lib64/ld-linux)
-    # that resolve to the HOST ld-linux.  When host glibc is older than
-    # buckos glibc, the binaries segfault or fail with missing symbols.
-    # Rewriting to the sysroot ld-linux ensures the compiler loads buckos
-    # glibc (matching version).  Same approach as host_tools_exec.
+    # Patch compiler binary ELF interpreters to the sysroot ld-linux
+    # and install GCC auto-loaded specs with padded dynamic linker + RPATH.
+    # This makes CC a single binary path (no --sysroot= or -specs= needed),
+    # fixing Makefiles that do `type $(CC)` or `test -x $(CC)`.
     ld_subpath = _ld_linux_subpath(triple)
     lib_subdir = _gcc_lib_subdir(triple)
     patched = ctx.actions.declare_output("patched-compiler", dir = True)
     sysroot_ld = stage.sysroot.project(ld_subpath)
     patchelf_bin = ctx.attrs._patchelf[DefaultInfo].default_outputs[0]
+
+    # Extract RPATH from extra_ldflags for specs generation.
+    rpath_val = None
+    remaining_ldflags = []
+    for flag in ctx.attrs.extra_ldflags:
+        if "-rpath," in flag and "rpath-link" not in flag:
+            rpath_val = flag.split("-rpath,", 1)[1]
+        elif "--dynamic-linker," in flag:
+            pass  # Ignored — interpreter comes from specs
+        else:
+            remaining_ldflags.append(flag)
+
     rewrite_cmd = cmd_args(ctx.attrs._rewrite_tool[RunInfo])
     rewrite_cmd.add("--tools-dir", stage_dir)
     rewrite_cmd.add("--ld-linux", sysroot_ld)
     rewrite_cmd.add("--patch-standard")
     rewrite_cmd.add("--patchelf", patchelf_bin)
+    rewrite_cmd.add("--specs-gcc-triple", triple)
+    rewrite_cmd.add("--specs-ld-subpath", ld_subpath)
+    if rpath_val:
+        rewrite_cmd.add("--specs-rpath", rpath_val)
     rewrite_cmd.add("--output-dir", patched.as_output())
     ctx.actions.run(
         rewrite_cmd,
@@ -173,15 +187,14 @@ def _buckos_bootstrap_toolchain_impl(ctx: AnalysisContext) -> list[Provider]:
         allow_cache_upload = False,
     )
 
-    # Use patched compiler binaries + sysroot
+    # Use patched compiler binaries.  GCC finds sysroot via built-in
+    # --with-sysroot (relative to exec prefix) and loads specs from
+    # lib/gcc/<triple>/<version>/specs automatically.
     patched_sysroot = patched.project("tools/" + triple + "/sys-root")
     patched_ld = patched_sysroot.project(ld_subpath)
 
     cc_args = cmd_args(patched.project("tools/bin/" + triple + "-gcc"))
-    cc_args.add(cmd_args("--sysroot=", patched_sysroot, delimiter = ""))
-
     cxx_args = cmd_args(patched.project("tools/bin/" + triple + "-g++"))
-    cxx_args.add(cmd_args("--sysroot=", patched_sysroot, delimiter = ""))
 
     # Expose Python from bootstrap stage if available
     python_run_info = None
@@ -199,39 +212,6 @@ def _buckos_bootstrap_toolchain_impl(ctx: AnalysisContext) -> list[Provider]:
         pkg_config_cmd = cmd_args(host_bin.project("pkg-config"))
         # Python comes from auto_tool_deps (python-host exec_dep)
         # when not in the base host tools.
-
-    # Generate GCC link specs that inject the sysroot dynamic linker
-    # and RPATH unconditionally at link time.  Uses the actual sysroot
-    # ld-linux path (not a padded host path) so build-time binaries
-    # execute with buckos glibc — no host glibc version dependency.
-    # The path is left-padded with '/' so stale_root rewriting can
-    # replace it in-place across machines.
-    #
-    # Extract RPATH from extra_ldflags (still passed as a string).
-    rpath_val = None
-    remaining_ldflags = []
-    for flag in ctx.attrs.extra_ldflags:
-        if "-rpath," in flag and "rpath-link" not in flag:
-            rpath_val = flag.split("-rpath,", 1)[1]
-        elif "--dynamic-linker," in flag:
-            pass  # Ignored — interpreter comes from sysroot directly
-        else:
-            remaining_ldflags.append(flag)
-
-    # Generate machine-independent specs using %R (GCC's sysroot
-    # substitution).  The specs file content is the same on every
-    # machine — safely cacheable by remote action caches.
-    specs_file = ctx.actions.declare_output("gcc-link.specs")
-    gen_cmd = cmd_args(ctx.attrs._gen_specs_tool[RunInfo])
-    gen_cmd.add("--ld-linux-subpath", ld_subpath)
-    if rpath_val:
-        gen_cmd.add("--rpath", rpath_val)
-    gen_cmd.add("--output", specs_file.as_output())
-    ctx.actions.run(gen_cmd, category = "gen_specs",
-                    identifier = ctx.label.name)
-
-    cc_args.add(cmd_args("-specs=", specs_file, delimiter = ""))
-    cxx_args.add(cmd_args("-specs=", specs_file, delimiter = ""))
 
     # GCC runtime libs (libstdc++, libgcc_s) live outside the sysroot.
     # Add them as both -rpath (runtime discovery) and -rpath-link
@@ -286,9 +266,6 @@ buckos_bootstrap_toolchain = rule(
         "pkg_config": attrs.string(default = "pkg-config"),
         "extra_cflags": attrs.list(attrs.string(), default = []),
         "extra_ldflags": attrs.list(attrs.string(), default = []),
-        "_gen_specs_tool": attrs.default_only(
-            attrs.exec_dep(default = "//tools:gen_specs"),
-        ),
         "_rewrite_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:rewrite_interps"),
         ),

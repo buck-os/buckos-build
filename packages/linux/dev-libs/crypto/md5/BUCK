@@ -1,7 +1,7 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "md5",
     version = "04d0d68",
     url = "https://github.com/BZFlag-Dev/bzflag/archive/04d0d68acb4960fc056f0c9b662abe82d373e540.tar.gz",
@@ -9,8 +9,9 @@ package(
     description = "MD5 hash implementation from bzflag",
     homepage = "https://github.com/BZFlag-Dev/bzflag",
     license = "RSA-MD",
-    configure_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DBUILD_SHARED_LIBS=ON",
-    ],
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/include
+find . -name 'MD5.h' -exec cp {} $INSTALL_DIR/usr/include/ \; 2>/dev/null || true
+find . -name 'MD5.cxx' -o -name 'MD5.cpp' -o -name 'md5.c' | head -1 | xargs -I{} cp {} $INSTALL_DIR/usr/include/ 2>/dev/null || true
+""",
 )

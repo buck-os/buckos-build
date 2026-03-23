@@ -7,82 +7,54 @@ load("//defs:package.bzl", "package")
 # Supports LVM, LUKS, software RAID, multipath, and more.
 
 package(
-    build_rule = "autotools",
+    build_rule = "binary",
     name = "genkernel",
     url = "https://github.com/gentoo/genkernel/archive/refs/tags/v4.3.5.tar.gz",
-
     sha256 = "b3f2b8791ff031ec6d7adea21b873bcd57978565f216b5a224c8ef82db109236",
-    use_configure = {
-        "firmware": ("--enable-firmware", "--disable-firmware"),
-        "ibm": ("--enable-ibm", "--disable-ibm"),
-        "systemd": ("--enable-systemd", "--disable-systemd"),
-    },
     version = "4.3.5",
     description = "Gentoo automatic kernel/initramfs builder",
     homepage = "https://wiki.gentoo.org/wiki/Genkernel",
     license = "GPL-2.0",
-# No configure script
-    configure_args = [],
-    make_args = [
-        "PREFIX=/usr",
-    ],
-    post_install_cmds = ["""
-# Install using make
-make DESTDIR=$OUT PREFIX=/usr install
-
-# Create configuration directories
-mkdir -p $OUT/etc/genkernel.d
+    install_script = """
+# Install genkernel scripts and data
+mkdir -p $OUT/usr/bin
 mkdir -p $OUT/usr/share/genkernel
+mkdir -p $OUT/etc/genkernel.d
+
+# Copy genkernel binary
+if [ -f genkernel ]; then
+    install -Dm755 genkernel "$OUT/usr/bin/genkernel"
+fi
+
+# Copy support files
+for dir in defaults gen_cmdline.sh gen_compile.sh gen_configkernel.sh gen_determineargs.sh gen_funcs.sh gen_initramfs.sh gen_moddeps.sh gen_worker.sh; do
+    if [ -f "$dir" ]; then
+        install -Dm755 "$dir" "$OUT/usr/share/genkernel/$dir"
+    fi
+done
+
+# Copy defaults directory
+if [ -d defaults ]; then
+    cp -a defaults $OUT/usr/share/genkernel/
+fi
 
 # Create default configuration
-cat > $OUT/etc/genkernel.conf << 'EOF'
+cat > $OUT/etc/genkernel.conf << 'EOFCONF'
 # Genkernel configuration file
-
-# Architecture
 ARCH="x86_64"
-
-# Build options
-MAKEOPTS="-j${MAKEOPTS:-$(nproc)}"
+MAKEOPTS="-j$(nproc)"
 INSTALL="yes"
 OLDCONFIG="yes"
 MENUCONFIG="no"
 CLEAN="yes"
 MRPROPER="no"
-
-# Initramfs options
-INITRAMFS_BUILD="yes"
-BUSYBOX="yes"
-LVM="no"
-LUKS="no"
-GPG="no"
-MDADM="no"
-MULTIPATH="no"
-DMRAID="no"
-ISCSI="no"
-BTRFS="no"
-ZFS="no"
-
-# Compression
 COMPRESS_INITRD="yes"
 COMPRESS_INITRD_TYPE="xz"
-
-# Boot loader
-BOOTLOADER=""
-
-# Kernel location
 KERNEL_DIR="/usr/src/linux"
-
-# Output
 LOGFILE="/var/log/genkernel.log"
 LOGLEVEL=1
-EOF
-
-# Create modules directory
-mkdir -p $OUT/usr/share/genkernel/defaults
-""", """
-make DESTDIR=$OUT PREFIX=/usr install
-mkdir -p $OUT/etc/genkernel.d
-"""],
+EOFCONF
+""",
     deps = [
         "//packages/linux/system/libs/kmod:kmod",
         "//packages/linux/core/bash:bash",
@@ -96,14 +68,13 @@ mkdir -p $OUT/etc/genkernel.d
 package(
     build_rule = "autotools",
     name = "genkernel-next",
+    skip_configure = True,
     url = "https://github.com/Sabayon/genkernel-next/archive/refs/tags/v70.tar.gz",
-
     sha256 = "62f97f0fee1d2c54e90d1f5b3d805527ce2582d93757a2ce34060b9340d67c43",
     version = "70",
     description = "Fork of genkernel with additional features and improvements",
     homepage = "https://github.com/Sabayon/genkernel-next",
     license = "GPL-2.0",
-    configure_args = [],
     make_args = ["PREFIX=/usr"],
     deps = [
         "//packages/linux/system/libs/kmod:kmod",

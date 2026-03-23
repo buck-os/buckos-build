@@ -1,7 +1,7 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "cukd",
     version = "1.0.1+git20251104",
     url = "https://github.com/ingowald/cudaKDTree/archive/0e174fe3f2662b2ee7530c73aedcb85114ef6a3b.tar.gz",
@@ -10,13 +10,13 @@ package(
     homepage = "https://github.com/ingowald/cudaKDTree",
     license = "Apache-2.0",
 
-    configure_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DCMAKE_CXX_STANDARD=14",
-        "-DCMAKE_CUDA_STANDARD=14",
-        "-DBUILD_ALL_TESTS=OFF",
-        "-DCUKD_CUDA_ARCHITECTURES=70;80;86;89;90",
-    ],
+    install_script = """
+# Header-only CUDA KD-Tree library - install header files
+mkdir -p "$OUT/usr/include/cukd"
+cp "$SRCS"/cukd/*.h "$OUT/usr/include/cukd/" 2>/dev/null || true
+cp "$SRCS"/cukd/*.cuh "$OUT/usr/include/cukd/" 2>/dev/null || true
+echo "cukd headers installed successfully"
+""",
 
     labels = ["buckos:hw:cuda"],
 )

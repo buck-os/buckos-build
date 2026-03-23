@@ -19,17 +19,17 @@ package(
     description = "GPU process monitoring tool (htop-like for GPUs)",
     homepage = "https://github.com/Syllo/nvtop",
     license = "GPL-3.0",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
-        "-DNVIDIA_SUPPORT=ON",
+        "-DNVIDIA_SUPPORT=OFF",
         "-DAMDGPU_SUPPORT=ON",
-        "-DINTEL_SUPPORT=ON",
+        "-DINTEL_SUPPORT=OFF",
     ],
-    env = {
-        "CFLAGS": "-O2 -march=x86-64 -pipe",
-        "LDFLAGS": "-Wl,-O1,--as-needed",
-    },
+    deps = [
+        "//packages/linux/system/terminal/ncurses:ncurses",
+        "//packages/linux/desktop/libdrm:libdrm",
+    ],
     labels = ["buckos:hw:gpu"],
 )
 

@@ -9,6 +9,12 @@ package(
     description = "Command line loader for Teensy microcontroller boards",
     homepage = "https://www.pjrc.com/teensy/loader_cli.html",
     license = "GPL-3.0",
+    skip_configure = True,
+    make_args = [
+        "CC=$CC",
+        "CFLAGS=$CFLAGS",
+        "LDFLAGS=$LDFLAGS",
+    ],
     post_install_cmds = ["""\
 mkdir -p "$DESTDIR/usr/bin"
 install -m 755 teensy_loader_cli "$DESTDIR/usr/bin/"

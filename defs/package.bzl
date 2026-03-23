@@ -49,6 +49,7 @@ _BUILD_RULES = {
     "cargo": cargo_package,
     "cmake": cmake_package,
     "go": go_package,
+    "make": autotools_package,
     "meson": meson_package,
     "perl": perl_module,
     "mozbuild": mozbuild_package,
@@ -350,6 +351,30 @@ def package(
             )
             build_kwargs["vendor_deps"] = ":" + name + "-vendor-src"
 
+    # -- Auto-create vendor deps for go packages in mirror mode ----------------
+    # Same pattern as cargo: when the mirror/syncer provides vendored Go module
+    # deps, auto-wire them so go packages build offline (unshare --net).
+    if build_rule == "go" and "vendor_deps" not in build_kwargs and url and sha256:
+        _vendor_filename = "{}-{}-vendor.tar.zst".format(name, version)
+        _vendor_labels = ["buckos:download", "buckos:go-vendor"]
+        _have_vendor = False
+
+        if _MIRROR_MODE == "vendor" and _MIRROR_VENDOR_DIR:
+            native.export_file(
+                name = name + "-vendor-archive",
+                src = "{}/{}".format(_MIRROR_VENDOR_DIR, _vendor_filename),
+                labels = _vendor_labels,
+            )
+            _have_vendor = True
+
+        if _have_vendor:
+            extract_source(
+                name = name + "-vendor-src",
+                source = ":" + name + "-vendor-archive",
+                strip_components = 1,
+            )
+            build_kwargs["vendor_deps"] = ":" + name + "-vendor-src"
+
     # -- Auto-inject build host tools for isolation from host /usr/bin --------
     # Without this, configure/make/ninja find host python, perl, sh, sed,
     # coreutils, etc.  Host python crashes on ABI mismatches; host tools
@@ -374,7 +399,7 @@ def package(
         "fmt", "xxhash",  # deps of ccache
     )
 
-    _CONFIGURABLE_RULES = ("autotools", "meson", "cmake", "mozbuild")
+    _CONFIGURABLE_RULES = ("autotools", "make", "meson", "cmake", "mozbuild")
     _auto_tool_deps = []
     if name not in _TOOL_BLOCKLIST and build_rule in _CONFIGURABLE_RULES:
         # Core POSIX utilities (sh, coreutils, text processing)
@@ -513,6 +538,7 @@ def package(
         "autotools": "buckos:build:autotools",
         "binary": "buckos:build:binary",
         "cmake": "buckos:build:cmake",
+        "make": "buckos:build:make",
         "meson": "buckos:build:meson",
         "cargo": "buckos:build:cargo",
         "go": "buckos:build:go",
@@ -570,6 +596,36 @@ def package(
         build_kwargs["env"] = _merged_env
 
     # -- 4. Create the build target -----------------------------------------
+    # "make" is an alias for autotools with skip_configure=True by default.
+    # When src_compile or src_install are provided, auto-convert to "binary"
+    # rule with an install_script that combines them.
+    _src_compile = build_kwargs.pop("src_compile", None)
+    _src_install = build_kwargs.pop("src_install", None)
+    if _src_compile or _src_install:
+        # Convert to binary rule with combined install_script
+        _script_parts = ['cd "$SRCS"']
+        _src_configure = build_kwargs.pop("src_configure", None)
+        if _src_configure:
+            _script_parts.append(_src_configure.strip())
+        if _src_compile:
+            _script_parts.append(_src_compile.strip())
+        if _src_install:
+            # Replace common autotools install vars with binary rule vars
+            _install_script = _src_install.strip()
+            _install_script = _install_script.replace("$INSTALL_DIR", "$OUT")
+            _script_parts.append(_install_script)
+        build_kwargs["install_script"] = "\n".join(_script_parts)
+        # Remove autotools-specific attrs that binary rule doesn't accept
+        for _pop_key in ("skip_configure", "make_args", "skip_host_arg",
+                         "cc_as_configure_arg", "skip_cc_auto_arg",
+                         "build_subdir", "pre_build_cmds", "install_args",
+                         "install_targets", "install_prefix_var",
+                         "configure_script", "configure_prefix_deps"):
+            build_kwargs.pop(_pop_key, None)
+        build_rule = "binary"
+    elif build_rule == "make":
+        build_kwargs.setdefault("skip_configure", True)
+
     build_target = name + "-build"
     rule_fn = _BUILD_RULES.get(build_rule)
     if rule_fn == None:

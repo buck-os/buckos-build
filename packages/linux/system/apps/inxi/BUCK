@@ -1,12 +1,9 @@
 load("//defs:package.bzl", "package")
 
 # inxi - Full featured CLI system information tool
-# USE flags: (script-based package)
-
-# inxi - Full featured CLI system information tool
-# Uses plain Makefile (actually just a Perl script), not autotools
+# Just a Perl script, no compilation needed
 package(
-    build_rule = "autotools",
+    build_rule = "binary",
     name = "inxi",
     version = "3.3.31",
     url = "https://github.com/smxi/inxi/archive/refs/tags/3.3.31-1.tar.gz",
@@ -14,13 +11,15 @@ package(
     description = "Full featured CLI system information tool",
     homepage = "https://github.com/smxi/inxi",
     license = "GPL-3.0-or-later",
-# No configure script - just a Perl script
-    configure_args = [],
-# Nothing to compile
-    post_install_cmds = ["""\
-mkdir -p "$DESTDIR/usr/bin"
-install -m 755 inxi "$DESTDIR/usr/bin/inxi"
-"""],
+    install_script = """
+cd "$SRCS"
+mkdir -p "$OUT/usr/bin" "$OUT/usr/share/man/man1"
+install -m 755 inxi "$OUT/usr/bin/inxi"
+# Install man page if available
+if [ -f inxi.1 ]; then
+    install -m 644 inxi.1 "$OUT/usr/share/man/man1/inxi.1"
+fi
+""",
     deps = [
         "//packages/linux/core/bash:bash",
     ],

@@ -3,7 +3,7 @@ load("//defs:package.bzl", "package")
 # cpp-httplib - A C++ header-only HTTP/HTTPS server and client library
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "cpp-httplib",
     version = "0.15.3",
     url = "https://github.com/yhirose/cpp-httplib/archive/refs/tags/v0.15.3.tar.gz",
@@ -12,19 +12,8 @@ package(
     homepage = "https://github.com/yhirose/cpp-httplib",
     license = "MIT",
     deps = [],
-    use_deps = {
-        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
-        "zlib": "//packages/linux/core/zlib:zlib",
-        "brotli": "//packages/linux/system/libs/compression/brotli:brotli",
-    },
-    configure_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DHTTPLIB_COMPILE=ON",
-    ],
-    use_configure = {
-        "brotli": ("-DHTTPLIB_REQUIRE_BROTLI=ON", "-DHTTPLIB_REQUIRE_BROTLI=OFF"),
-        "ssl": ("-DHTTPLIB_REQUIRE_OPENSSL=ON", "-DHTTPLIB_REQUIRE_OPENSSL=OFF"),
-        "zlib": ("-DHTTPLIB_REQUIRE_ZLIB=ON", "-DHTTPLIB_REQUIRE_ZLIB=OFF"),
-        "zstd": ("-DENABLE_ZSTD=ON", "-DENABLE_ZSTD=OFF"),
-    },
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/include
+cp httplib.h $INSTALL_DIR/usr/include/
+""",
 )

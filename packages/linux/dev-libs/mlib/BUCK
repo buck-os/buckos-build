@@ -4,7 +4,7 @@ load("//defs:package.bzl", "package")
 
 package(
     name = "mlib",
-    build_rule = "autotools",
+    build_rule = "binary",
     version = "0.0.1",
     url = "https://github.com/cy94/mlib/archive/eb523a1d80930f13de8e5eccfe915f0ad8a68bac.tar.gz",
     sha256 = "82596f7f7bc59f1b398f9b38c49e46293044edcb562189069d55b5604854edbd",
@@ -12,9 +12,9 @@ package(
     homepage = "https://github.com/cy94/mlib",
     license = "MIT",
     deps = [],
-    post_install_cmds = ["""\
-mkdir -p "$DESTDIR/usr/include/mLib"
-cp -r include/* "$DESTDIR/usr/include/mLib/"
-cp -r src/* "$DESTDIR/usr/include/mLib/"
-"""],
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/include/mLib
+cp -r include/* $INSTALL_DIR/usr/include/mLib/
+cp -r src/* $INSTALL_DIR/usr/include/mLib/
+""",
 )

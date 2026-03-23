@@ -13,6 +13,7 @@ package(
     license = "Apache-2.0",
     deps = [
         "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/system/libs/crypto/libsodium:libsodium",
         "//packages/linux/dev-libs/serialization/protobuf:protobuf",
         "//packages/linux/core/zlib:zlib",
     ],
@@ -20,5 +21,6 @@ package(
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTING=OFF",
         "-DDISABLE_VCPKG=ON",
+        "-DDISABLE_SENTRY=ON",
     ],
 )

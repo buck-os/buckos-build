@@ -10,5 +10,8 @@ package(
     homepage = "https://github.com/intel/ARM_NEON_2_x86_SSE",
     license = "BSD-2-Clause",
     deps = [],
-    install_script = """mkdir -p ${PREFIX}/include\ncp NEON_2_SSE.h ${PREFIX}/include/""",
+    install_script = """
+mkdir -p "$OUT/usr/include"
+cp NEON_2_SSE.h "$OUT/usr/include/"
+""",
 )

@@ -3,7 +3,7 @@ load("//defs:package.bzl", "package")
 # continuable - C++14 asynchronous allocation aware futures
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "continuable",
     version = "4.2.2",
     url = "https://github.com/Naios/continuable/archive/refs/tags/4.2.2.tar.gz",
@@ -14,9 +14,8 @@ package(
     deps = [
         "//packages/linux/dev-libs/misc/function2:function2",
     ],
-    configure_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DCTI_CONTINUABLE_WITH_TESTS=OFF",
-        "-DCTI_CONTINUABLE_WITH_EXAMPLES=OFF",
-    ],
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/include
+cp -r include/continuable $INSTALL_DIR/usr/include/
+""",
 )

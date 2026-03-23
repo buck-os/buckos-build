@@ -2,19 +2,39 @@ load("//defs:package.bzl", "package")
 
 # CLD2 - Compact Language Detector 2
 # Probabilistically detects over 80 languages in Unicode UTF-8 text
+# CLD2 uses a simple Makefile in internal/, no cmake or autotools
 
 package(
-    build_rule = "cmake",
+    build_rule = "autotools",
     name = "cld2",
+    skip_configure = True,
     version = "20131028",
     url = "https://github.com/CLD2Owners/cld2/archive/b56fa78a2fe44ac2851bae5bf4f4693a0644da7b.tar.gz",
     sha256 = "2bd0f8aa344698c0ce6b2c89f5540af10e69e92d4c74f9fe66ffe25281be1111",
     description = "Compact Language Detector 2 - Detects over 80 languages in UTF-8 text",
     homepage = "https://github.com/CLD2Owners/cld2",
     license = "Apache-2.0",
-    configure_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DBUILD_SHARED_LIBS=ON",
-    ],
+    src_compile = """
+cd internal
+make -j${MAKEOPTS:-$(nproc)} CXXFLAGS="$CXXFLAGS -std=c++11 -fPIC"
+""",
+    post_install_cmds = ["""\
+mkdir -p "$DESTDIR/usr/lib"
+mkdir -p "$DESTDIR/usr/include/cld2"
+mkdir -p "$DESTDIR/usr/include/cld2/internal"
+mkdir -p "$DESTDIR/usr/include/cld2/public"
+
+# Install library
+if [ -f internal/libcld2.so ]; then
+    cp internal/libcld2.so "$DESTDIR/usr/lib/"
+fi
+if [ -f internal/libcld2_full.so ]; then
+    cp internal/libcld2_full.so "$DESTDIR/usr/lib/"
+fi
+
+# Install headers
+cp public/*.h "$DESTDIR/usr/include/cld2/public/" 2>/dev/null || true
+cp internal/*.h "$DESTDIR/usr/include/cld2/internal/" 2>/dev/null || true
+"""],
     deps = [],
 )

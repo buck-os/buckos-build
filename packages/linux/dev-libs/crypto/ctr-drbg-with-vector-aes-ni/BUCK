@@ -2,7 +2,7 @@ load("//defs:package.bzl", "package")
 
 package(
     name = "ctr-drbg-with-vector-aes-ni",
-    build_rule = "autotools",
+    build_rule = "make",
     skip_configure = True,
     version = "20231015",
     url = "https://github.com/aws-samples/ctr-drbg-with-vector-aes-ni/archive/dc6e4ebae380a0f3ea708dfc87bc0a27af03e189.tar.gz",
@@ -11,18 +11,17 @@ package(
     homepage = "https://github.com/aws-samples/ctr-drbg-with-vector-aes-ni",
     license = "Apache-2.0",
     deps = [],
-    make_args = [],
-    post_install_cmds = ["""
-# Install headers
-mkdir -p "$DESTDIR/usr/include/ctr-drbg"
-cp src/aes.h src/ctr_drbg.h src/defs.h "$DESTDIR/usr/include/ctr-drbg/"
+    src_compile = """
+$CC $CFLAGS -c -m64 -maes -mavx2 -msse2 -std=c99 -fPIC -I. src/aes.c -o aes.o
+$CC $CFLAGS -c -m64 -maes -mavx2 -msse2 -std=c99 -fPIC -I. src/ctr_drbg.c -o ctr_drbg.o
+$CC $CFLAGS -c -m64 -maes -mavx2 -msse2 -std=c99 -fPIC -I. src/vaes256_key_expansion.S -o vaes256_key_expansion.o
+$AR rcs libctr_drbg.a aes.o ctr_drbg.o vaes256_key_expansion.o
+""",
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/include/ctr-drbg
+cp src/aes.h src/ctr_drbg.h src/defs.h $INSTALL_DIR/usr/include/ctr-drbg/
 
-# Build and install static library
-mkdir -p "$DESTDIR/usr/lib"
-gcc -c -m64 -maes -mavx2 -msse2 -O3 -std=c99 -fPIC -I. src/aes.c -o aes.o
-gcc -c -m64 -maes -mavx2 -msse2 -O3 -std=c99 -fPIC -I. src/ctr_drbg.c -o ctr_drbg.o
-gcc -c -m64 -maes -mavx2 -msse2 -O3 -std=c99 -fPIC -I. src/vaes256_key_expansion.S -o vaes256_key_expansion.o
-ar rcs libctr_drbg.a aes.o ctr_drbg.o vaes256_key_expansion.o
-cp libctr_drbg.a "$DESTDIR/usr/lib/"
-"""],
+mkdir -p $INSTALL_DIR/usr/lib64
+cp libctr_drbg.a $INSTALL_DIR/usr/lib64/
+""",
 )

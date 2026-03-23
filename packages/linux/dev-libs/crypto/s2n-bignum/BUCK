@@ -7,7 +7,7 @@ load("//defs:package.bzl", "package")
 
 package(
     name = "s2n-bignum",
-    build_rule = "autotools",
+    build_rule = "make",
     skip_configure = True,
     version = "0.0.1",
     url = "https://mirror.buckos.org/s/s2n-bignum-main.tar.gz",
@@ -16,13 +16,20 @@ package(
     homepage = "https://github.com/awslabs/s2n-bignum",
     license = "Apache-2.0",
     deps = [],
-
-    # No configure script - just Makefiles in architecture-specific subdirectories
-
-    # Build using the Makefile in the architecture-specific directory
-
-    # Install headers and library
-    post_install_cmds = ["""\
+    src_compile = """
+ARCH=$(uname -m)
+if [ "$ARCH" = "x86_64" ]; then
+    ARCHDIR=x86
+elif [ "$ARCH" = "aarch64" ]; then
+    ARCHDIR=arm
+else
+    echo "Unsupported architecture: $ARCH" >&2
+    exit 1
+fi
+cd "$ARCHDIR"
+make -j${MAKEOPTS:-$(nproc)}
+""",
+    src_install = """
 ARCH=$(uname -m)
 if [ "$ARCH" = "x86_64" ]; then
     ARCHDIR=x86
@@ -33,15 +40,12 @@ else
     exit 1
 fi
 
-# Install library
-install -d "${DESTDIR}/usr/lib"
-install -m 644 "${ARCHDIR}/libs2nbignum.a" "${DESTDIR}/usr/lib/"
+install -d "$INSTALL_DIR/usr/lib64"
+install -m 644 "${ARCHDIR}/libs2nbignum.a" "$INSTALL_DIR/usr/lib64/"
 
-# Install headers
-install -d "${DESTDIR}/usr/include"
-install -m 644 include/s2n-bignum.h "${DESTDIR}/usr/include/"
-install -m 644 include/s2n-bignum-c89.h "${DESTDIR}/usr/include/"
-install -m 644 include/_internal_s2n_bignum.h "${DESTDIR}/usr/include/"
-"""],
-
+install -d "$INSTALL_DIR/usr/include"
+install -m 644 include/s2n-bignum.h "$INSTALL_DIR/usr/include/"
+install -m 644 include/s2n-bignum-c89.h "$INSTALL_DIR/usr/include/"
+install -m 644 include/_internal_s2n_bignum.h "$INSTALL_DIR/usr/include/"
+""",
 )

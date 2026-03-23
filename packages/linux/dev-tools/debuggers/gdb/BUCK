@@ -47,9 +47,19 @@ package(
     configure_args = [
         "--with-system-zlib",
         "--disable-werror",
+        "--disable-nls",
+        "--disable-source-highlight",
+    ],
+
+    extra_cflags = [
+        "-Wno-error=dangling-pointer",
+        "-Wno-error=redundant-decls",
     ],
 
     deps = [
         "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/data/expat:expat",
+        "//packages/linux/system/libs/utility/gmp:gmp",
+        "//packages/linux/system/libs/utility/mpfr:mpfr",
     ],
 )

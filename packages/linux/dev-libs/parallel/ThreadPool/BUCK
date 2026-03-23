@@ -1,7 +1,7 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "ThreadPool",
     version = "1.0.0",
     url = "https://github.com/progschj/ThreadPool/archive/9a42ec1329f259a5f4881a291db1dcb8f2ad9040.tar.gz",
@@ -10,10 +10,8 @@ package(
     homepage = "https://github.com/progschj/ThreadPool",
     license = "Zlib",
     deps = [],
-    patches = ["CMakeLists.txt"],
-    configure_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DCMAKE_INSTALL_PREFIX=/usr",
-        "-DCMAKE_INSTALL_LIBDIR=lib64",
-    ],
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/include
+cp ThreadPool.h $INSTALL_DIR/usr/include/
+""",
 )

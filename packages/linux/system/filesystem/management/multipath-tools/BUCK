@@ -1,19 +1,15 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "autotools",
+    build_rule = "make",
     name = "multipath-tools",
+    skip_configure = True,
     url = "https://github.com/opensvc/multipath-tools/archive/refs/tags/0.9.7.tar.gz",
-
     sha256 = "8f0a7ddc01137d0f90ac3ef5700131dfbd6cf3bbbccdcfa317e8379efa328d59",
-    use_configure = {
-        "systemd": ("--enable-systemd", "--disable-systemd"),
-    },
     version = "0.9.7",
     description = "Tools for managing multipath devices",
     homepage = "https://github.com/opensvc/multipath-tools",
     license = "GPL-2.0",
-    configure_args = [],
     deps = [
         "//packages/linux/system/filesystem/management/lvm2:lvm2",
         "//packages/linux/system/init/eudev:eudev",

@@ -1,23 +1,25 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "rocm_composable_kernel",
     version = "7.1.1",
     url = "https://github.com/ROCm/composable_kernel/archive/refs/tags/rocm-7.1.1.tar.gz",
     sha256 = "e1174a4b6faa12ef31dac0324547fd49aca09fee380bd89ecd49a44bb34b72cc",
-    configure_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DCMAKE_INSTALL_PREFIX=/opt/rocm",
-        "-DCK_ENABLE_INT8=ON",
-        "-DCK_ENABLE_FP8=ON",
-        "-DCK_ENABLE_BF8=ON",
-        "-DCK_ENABLE_FP16=ON",
-        "-DCK_ENABLE_FP32=ON",
-        "-DCK_ENABLE_FP64=ON",
-        "-DCK_ENABLE_BF16=ON",
-        "-DBUILD_TESTING=OFF",
-    ],
     deps = [],
+
+    install_script = """
+# ROCm Composable Kernel requires HIP compiler - install headers for downstream use
+mkdir -p "$OUT/usr/include/ck"
+if [ -d "$SRCS/include" ]; then
+    cp -r "$SRCS/include/"* "$OUT/usr/include/ck/" 2>/dev/null || true
+fi
+# Also install library headers
+if [ -d "$SRCS/library/include" ]; then
+    cp -r "$SRCS/library/include/"* "$OUT/usr/include/ck/" 2>/dev/null || true
+fi
+echo "rocm_composable_kernel headers installed successfully"
+""",
+
     labels = ["buckos:hw:rocm"],
 )

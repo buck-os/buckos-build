@@ -3,7 +3,7 @@ load("//defs:package.bzl", "package")
 # backward-cpp - A stack trace pretty printer for C++
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "backward-cpp",
     version = "1.6",
     url = "https://github.com/bombela/backward-cpp/archive/refs/tags/v1.6.tar.gz",
@@ -12,11 +12,8 @@ package(
     homepage = "https://github.com/bombela/backward-cpp",
     license = "MIT",
     deps = [],
-    use_deps = {
-        "dw": "//packages/linux/system/libs/elfutils:elfutils",
-    },
-    configure_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DBACKWARD_TESTS=OFF",
-    ],
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/include
+cp backward.hpp $INSTALL_DIR/usr/include/
+""",
 )

@@ -7,23 +7,19 @@ load("//defs:package.bzl", "package")
 # Uses hook-based architecture with scripts in /etc/initramfs-tools.
 
 package(
-    build_rule = "autotools",
+    build_rule = "binary",
     name = "initramfs-tools",
     url = "https://mirror.buckos.org/i/initramfs-tools-v0.142.tar.gz",
-
     sha256 = "27a78cc25acc3ca3d9c78deca165bf001b09b260ce25a3f3756e47a0e7bc0554",
     version = "0.142",
     description = "Generic initramfs generation tool (Debian/Ubuntu default)",
     homepage = "https://salsa.debian.org/kernel-team/initramfs-tools",
     license = "GPL-2.0",
-# Uses Makefile
-    configure_args = [],
-    make_args = [],
-    post_install_cmds = ["""
-# Install using make
-make DESTDIR=$OUT install
-
-# Create configuration directories
+    install_script = """
+# Install scripts and hooks
+mkdir -p $OUT/usr/sbin
+mkdir -p $OUT/usr/share/initramfs-tools/hooks
+mkdir -p $OUT/usr/share/initramfs-tools/scripts
 mkdir -p $OUT/etc/initramfs-tools/conf.d
 mkdir -p $OUT/etc/initramfs-tools/hooks
 mkdir -p $OUT/etc/initramfs-tools/scripts/init-top
@@ -32,46 +28,43 @@ mkdir -p $OUT/etc/initramfs-tools/scripts/local-top
 mkdir -p $OUT/etc/initramfs-tools/scripts/local-premount
 mkdir -p $OUT/etc/initramfs-tools/scripts/local-bottom
 mkdir -p $OUT/etc/initramfs-tools/scripts/init-bottom
-mkdir -p $OUT/usr/share/initramfs-tools/hooks
-mkdir -p $OUT/usr/share/initramfs-tools/scripts
+
+# Copy scripts
+for f in mkinitramfs update-initramfs lsinitramfs unmkinitramfs; do
+    if [ -f "$f" ]; then
+        install -Dm755 "$f" "$OUT/usr/sbin/$f"
+    fi
+done
+
+# Copy hook and script directories
+cp -a hooks/* $OUT/usr/share/initramfs-tools/hooks/ 2>/dev/null || true
+cp -a scripts/* $OUT/usr/share/initramfs-tools/scripts/ 2>/dev/null || true
+
+# Copy init script
+if [ -f init ]; then
+    install -Dm755 init "$OUT/usr/share/initramfs-tools/init"
+fi
+
+# Copy hook-functions
+if [ -f hook-functions ]; then
+    install -Dm644 hook-functions "$OUT/usr/share/initramfs-tools/hook-functions"
+fi
 
 # Create default configuration
-cat > $OUT/etc/initramfs-tools/initramfs.conf << 'EOF'
-# initramfs.conf - Configuration for initramfs-tools
-
-# MODULES: Specifies which modules should be included
-# Most systems want "most" or "dep"
-#   most - include most filesystem and storage drivers
-#   dep - include only what's needed for this system
-#   netboot - include modules needed for NFS root
-#   list - only the modules from /etc/initramfs-tools/modules
+cat > $OUT/etc/initramfs-tools/initramfs.conf << 'EOFCONF'
 MODULES=most
-
-# BUSYBOX: Include busybox in initramfs (auto/yes/no)
 BUSYBOX=auto
-
-# KEYMAP: Include a keymap in initramfs (yes/no)
 KEYMAP=n
-
-# COMPRESS: Compression algorithm (gzip, bzip2, lz4, lzma, lzop, xz, zstd)
 COMPRESS=zstd
-
-# DEVICE: Root device to mount (required only if not using UUID)
-# DEVICE=
-
-# NFSROOT: NFS server for netboot
-# NFSROOT=auto
-
-# RUNSIZE: Size of /run in the initramfs (in bytes, or with suffix like 10%)
 RUNSIZE=10%
-EOF
+EOFCONF
 
 # Create modules list file
-cat > $OUT/etc/initramfs-tools/modules << 'EOF'
+cat > $OUT/etc/initramfs-tools/modules << 'EOFMOD'
 # List of modules to include in initramfs
 # One module per line, optionally followed by parameters
-EOF
-"""],
+EOFMOD
+""",
     deps = [
         "//packages/linux/system/libs/kmod:kmod",
         "//packages/linux/core/bash:bash",

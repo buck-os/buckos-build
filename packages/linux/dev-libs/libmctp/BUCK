@@ -1,8 +1,8 @@
 load("//defs:package.bzl", "package")
 
-# libmctp actually uses autotools, not meson
+# libmctp uses meson build system
 package(
-    build_rule = "autotools",
+    build_rule = "meson",
     name = "libmctp",
     version = "0.11",
     url = "https://github.com/openbmc/libmctp/archive/refs/tags/v0.11.tar.gz",
@@ -10,42 +10,8 @@ package(
     description = "Library implementation of MCTP (Management Component Transport Protocol)",
     homepage = "https://github.com/openbmc/libmctp",
     license = "Apache-2.0",
-    # GitHub archive requires autoreconf - create missing files first
-    pre_configure_cmds = ["""
-# autotools eclass default src_prepare follows
-# Run autoreconf if needed
-if [ -f configure.ac ] || [ -f configure.in ]; then
-    if [ ! -f configure ] || [ configure.ac -nt configure ] 2>/dev/null; then
-        # Create m4 directory if it doesn't exist (required by configure.ac)
-        mkdir -p m4
-
-        # Create empty aminclude_static.am if it doesn't exist
-        # This file is referenced by Makefile.am but not included in GitHub archive
-        touch aminclude_static.am
-
-        # Create a dummy autopoint if not available (gettext not installed)
-        # autopoint is only needed for i18n, and many packages don't actually need it
-        if ! command -v autopoint >/dev/null 2>&1; then
-            mkdir -p "$T/bin"
-            cat > "$T/bin/autopoint" << 'AUTOPOINT_STUB'
-#!/bin/sh
-# Stub autopoint - gettext not available
-# This allows autoreconf to complete for packages that don't need i18n
-echo "autopoint: stub (gettext not installed, skipping)"
-exit 0
-AUTOPOINT_STUB
-            chmod +x "$T/bin/autopoint"
-            export PATH="$T/bin:$PATH"
-        fi
-        autoreconf -fiv
-    fi
-fi
-"""],
-    configure_args = [],
-    deps = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-        "//packages/linux/dev-tools/build-systems/pkgconf:pkgconf",
+    configure_args = [
+        "-Dtests=disabled",
     ],
+    deps = [],
 )

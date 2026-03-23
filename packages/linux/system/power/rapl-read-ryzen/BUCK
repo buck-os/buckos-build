@@ -4,19 +4,19 @@ load("//defs:package.bzl", "package")
 # Read power consumption from AMD Ryzen processors via RAPL
 
 package(
-    build_rule = "autotools",
+    build_rule = "binary",
     name = "rapl-read-ryzen",
     url = "https://github.com/djselbeck/rapl-read-ryzen/archive/refs/heads/master.tar.gz",
-
     sha256 = "f2611e6c2290ff72714722beb6f8beb7a60f0954ca93101ba55e5b9d50ad1ce1",
     version = "0.2",
     description = "Read power consumption from AMD Ryzen CPUs via RAPL",
     homepage = "https://github.com/djselbeck/rapl-read-ryzen",
     license = "GPL-2.0",
-    # Single C file project - no Makefile
-    post_install_cmds = ["""\
-install -d "$DESTDIR/usr/bin"
-install -m 755 rapl-read-ryzen "$DESTDIR/usr/bin/"
-"""],
+    # Single C file project - compile directly
+    install_script = """
+$CC $CFLAGS $LDFLAGS -o rapl-read-ryzen rapl-read-ryzen.c -lm
+mkdir -p "$OUT/usr/bin"
+install -m 755 rapl-read-ryzen "$OUT/usr/bin/"
+""",
     deps = [],
 )

@@ -1,14 +1,26 @@
 load("//defs:package.bzl", "package")
 
+# liblinear - A Library for Large Linear Classification
+# Uses Makefile, no configure step. Install headers + libraries manually.
 package(
     name = "liblinear",
-    build_rule = "autotools",
-    skip_configure = True,
+    build_rule = "binary",
     version = "1.94",
     url = "https://github.com/cjlin1/liblinear/archive/refs/tags/v194.tar.gz",
     sha256 = "cce039e66cb82c77e7e816c42f2c1808fcb8df6a1050c94999c419cd20be9f55",
     description = "A Library for Large Linear Classification",
     homepage = "https://github.com/cjlin1/liblinear",
     license = "BSD-3-Clause",
+    install_script = """
+cd "$SRCS"
 
+make -j${MAKEOPTS:-$(nproc)} lib CC="$CC" CXX="$CXX" AR="$AR" \
+    CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS"
+
+mkdir -p "$OUT/usr/lib64" "$OUT/usr/include"
+cp -a linear.h "$OUT/usr/include/"
+cp -a liblinear.so* "$OUT/usr/lib64/" 2>/dev/null || true
+# Also install the static lib if built
+cp -a liblinear.a "$OUT/usr/lib64/" 2>/dev/null || true
+""",
 )

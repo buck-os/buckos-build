@@ -16,5 +16,11 @@ package(
         "emacs": ("--enable-emacs", "--disable-emacs"),
         "ncurses": ("--with-ncurses", "--without-ncurses"),
     },
-
+    # ncurses is required for curses.h and -lncurses
+    deps = [
+        "//packages/linux/system/terminal/ncurses:ncurses",
+    ],
+    env = {
+        "LIBS": "-lncurses",
+    },
 )

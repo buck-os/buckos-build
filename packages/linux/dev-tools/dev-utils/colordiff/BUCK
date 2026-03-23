@@ -2,16 +2,16 @@ load("//defs:package.bzl", "package")
 
 package(
     name = "colordiff",
-    build_rule = "autotools",
-    skip_configure = True,
+    build_rule = "binary",
     version = "1.0.21",
     url = "https://www.colordiff.org/colordiff-1.0.21.tar.gz",
     sha256 = "9b30f4257ef0f0806dea5a27c9ad8edc3f7999f05ddaff6f0627064dc927e615",
     description = "Colorizes diff output",
     homepage = "https://www.colordiff.org/",
     license = "GPL-2+",
-
-    # Skip building docs (requires xmlto) by disabling make
-    make_args = [],
-
+    install_script = """
+install -Dm755 colordiff.pl "$OUT/usr/bin/colordiff"
+install -Dm644 colordiffrc "$OUT/etc/colordiffrc"
+install -Dm644 colordiff.1 "$OUT/usr/share/man/man1/colordiff.1"
+""",
 )

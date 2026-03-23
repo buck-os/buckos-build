@@ -2,7 +2,7 @@ load("//defs:package.bzl", "package")
 
 package(
     name = "ideep",
-    build_rule = "autotools",
+    build_rule = "binary",
     version = "3.7.1",
     url = "https://github.com/intel/ideep/archive/refs/tags/pytorch-rls-v3.7.1.tar.gz",
     sha256 = "247223139d5ffc7f4eb0203db4b74e84ff574206d155f595fbd548247dac950d",
@@ -10,12 +10,11 @@ package(
     homepage = "https://github.com/intel/ideep",
     license = "MIT",
     deps = [],
-    post_install_cmds = ["""\
-mkdir -p "$DESTDIR${PREFIX}/include"
-cd ${S}
-cp -r include/ideep "$DESTDIR${PREFIX}/include/"
-cp include/ideep.hpp "$DESTDIR${PREFIX}/include/"
-cp include/ideep_pin_singletons.hpp "$DESTDIR${PREFIX}/include/"
-cp include/mkldnn_compat.hpp "$DESTDIR${PREFIX}/include/"
-"""],
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/include
+cp -r include/ideep $INSTALL_DIR/usr/include/
+cp include/ideep.hpp $INSTALL_DIR/usr/include/
+cp include/ideep_pin_singletons.hpp $INSTALL_DIR/usr/include/
+cp include/mkldnn_compat.hpp $INSTALL_DIR/usr/include/
+""",
 )

@@ -1,12 +1,16 @@
 load("//defs:package.bzl", "package")
 
+# pyre2 - Python bindings for RE2 regular expression library
+# Requires Cython to build from source.
 package(
     build_rule = "python",
     name = "pyre2",
     version = "0.3.6",
     url = "https://github.com/andreasvc/pyre2/archive/refs/tags/v0.3.6.tar.gz",
     sha256 = "6a0a2c70b1ce98d870ce9423368cc83bbacc8a41f6e066296e197a26a842ede7",
+    use_setup_py = True,
     deps = [
         "//packages/linux/dev-libs/text/re2:re2",
+        "//packages/linux/lang/python:python",
     ],
 )

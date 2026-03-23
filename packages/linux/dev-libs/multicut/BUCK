@@ -1,6 +1,7 @@
 load("//defs:package.bzl", "package")
 
 # multicut - C++ graph algorithms library (multicut and graph components)
+# Header-only library, install via binary rule
 
 package(
     name = "multicut",
@@ -11,8 +12,21 @@ package(
     description = "C++ template library for directed/undirected graphs with constant-time random access",
     homepage = "https://github.com/bjoern-andres/graph",
     license = "BSD-3-Clause",
-    deps = [
-        "//packages/linux/dev-libs/eigen:eigen",
-    ],
-    install_script = """mkdir -p ${PREFIX}/include\ncp -r include/andres ${PREFIX}/include/\ncp -r include/nl-lmp ${PREFIX}/include/""",
+    deps = [],
+    install_script = """
+mkdir -p "$OUT/usr/include"
+# Copy header files preserving directory structure
+if [ -d include ]; then
+    cp -r include/* "$OUT/usr/include/"
+elif [ -d src ]; then
+    cp -r src/* "$OUT/usr/include/"
+else
+    # Copy all header files from the root
+    find . -name '*.hxx' -o -name '*.hpp' -o -name '*.h' | while read f; do
+        dir=$(dirname "$f")
+        mkdir -p "$OUT/usr/include/$dir"
+        cp "$f" "$OUT/usr/include/$dir/"
+    done
+fi
+""",
 )

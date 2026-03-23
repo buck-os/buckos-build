@@ -3,7 +3,7 @@ load("//defs:package.bzl", "package")
 # hapPLY - Header-only C++ PLY file format reader/writer
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "happly",
     version = "2019.07.20",
     url = "https://github.com/nmwsharp/happly/archive/refs/heads/master.tar.gz",
@@ -12,7 +12,8 @@ package(
     homepage = "https://github.com/nmwsharp/happly",
     license = "MIT",
     deps = [],
-    configure_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-    ],
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/include
+cp happly.h $INSTALL_DIR/usr/include/
+""",
 )

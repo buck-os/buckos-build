@@ -1,19 +1,24 @@
 load("//defs:package.bzl", "package")
 
 # itstool - ITS-based XML translation tool
+# This is a Python script with autotools build system.
 package(
-    build_rule = "autotools",
+    build_rule = "binary",
     name = "itstool",
     url = "https://files.itstool.org/itstool/itstool-2.0.7.tar.bz2",
-
     sha256 = "6b9a7cd29a12bb95598f5750e8763cee78836a1a207f85b74d8b3275b27e87ca",
     version = "2.0.7",
     description = "ITS-based XML translation tool",
     homepage = "http://itstool.org",
     license = "GPL-3+",
-    configure_args = [
-        "--prefix=/usr",
-    ],
+    install_script = """
+cd "$SRCS"
+
+# itstool is a Python script with autotools
+./configure --prefix=/usr
+make -j${MAKEOPTS:-$(nproc)}
+make DESTDIR="$OUT" install
+""",
     deps = [
         "//packages/linux/lang/python:python",
     ],

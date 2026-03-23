@@ -1,35 +1,24 @@
 load("//defs:package.bzl", "package")
 
 # gemmlowp - Low-precision matrix multiplication library
-# A small self-contained low-precision GEMM library optimized for mobile/embedded devices
-# GitHub: https://github.com/google/gemmlowp
-# Commit: daf630d3d0c439dbe22229838a5ba1bc5f82908d
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "gemmlowp",
     version = "0.0.0_git20231031",
     url = "https://github.com/google/gemmlowp/archive/daf630d3d0c439dbe22229838a5ba1bc5f82908d.tar.gz",
-    sha256 = "772ff926dad042175ca1977bbcdb98d2d28d0e045011d995ce17611b3c9020ea",  # TODO: Compute actual SHA256
+    sha256 = "772ff926dad042175ca1977bbcdb98d2d28d0e045011d995ce17611b3c9020ea",
     description = "Low-precision matrix multiplication library optimized for mobile and embedded devices",
     homepage = "https://github.com/google/gemmlowp",
     license = "Apache-2.0",
     deps = [],
-    pre_configure_cmds = ["""
-        # Copy CMakeLists.txt from contrib to root for building
-        if [ -d gemmlowp/contrib ]; then
-            cp gemmlowp/contrib/CMakeLists.txt .
-        elif [ -f contrib/CMakeLists.txt ]; then
-            cp contrib/CMakeLists.txt .
-        else
-            echo "Error: Cannot find CMakeLists.txt in contrib directory"
-            ls -la
-            exit 1
-        fi
-    """],
-    configure_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DBUILD_SHARED_LIBS=ON",
-        "-DBUILD_TESTING=OFF",
-    ],
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/include/gemmlowp
+cp -r public $INSTALL_DIR/usr/include/gemmlowp/
+cp -r fixedpoint $INSTALL_DIR/usr/include/gemmlowp/
+cp -r internal $INSTALL_DIR/usr/include/gemmlowp/
+cp -r meta $INSTALL_DIR/usr/include/gemmlowp/ 2>/dev/null || true
+cp -r profiling $INSTALL_DIR/usr/include/gemmlowp/ 2>/dev/null || true
+cp -r eight_bit_int_gemm $INSTALL_DIR/usr/include/gemmlowp/ 2>/dev/null || true
+""",
 )

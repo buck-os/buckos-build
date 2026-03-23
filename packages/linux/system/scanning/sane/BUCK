@@ -77,23 +77,3 @@ package(
         "//packages/linux/dev-libs/glib:glib",
     ],
 )
-
-# Skanlite - KDE scanning application
-package(
-    build_rule = "autotools",
-    name = "skanlite",
-    url = "https://download.kde.org/stable/release-service/24.02.0/src/skanlite-24.02.0.tar.xz",
-
-    sha256 = "c15ee8defcfb05da1fd1deea2c9aaa3cc6fb32489794f571ec09dd8b4d938aa6",
-    version = "24.02.0",
-    description = "KDE scanner application",
-    homepage = "https://apps.kde.org/skanlite/",
-    license = "GPL-2.0-or-later",
-    configure_args = [],
-    make_args = ["-C", "build"],
-    deps = [
-        ":sane-backends",
-        "//packages/linux/desktop/kde:kf5",
-        "//packages/linux/desktop/qt:qt5",
-    ],
-)

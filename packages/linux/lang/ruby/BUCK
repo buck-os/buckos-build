@@ -20,12 +20,8 @@ package(
         "--disable-dtrace",  # Disable DTrace - not properly available in build environment
         "--with-compress-debug-sections=no",
     ],
-    env = {
-        # Required: enable optimization for _FORTIFY_SOURCE compatibility
-        # Prepend -O2 to ensure optimization is enabled even if other flags are set
-        "CFLAGS": "-O2 ${CFLAGS:-}",
-        "CXXFLAGS": "-O2 ${CXXFLAGS:-}",
-    },
+    # Required: enable optimization for _FORTIFY_SOURCE compatibility
+    extra_cflags = ["-O2"],
     deps = [
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/crypto/openssl:openssl",

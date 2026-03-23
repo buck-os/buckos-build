@@ -21,13 +21,6 @@ package(
     deps = [
         "//packages/linux/lang/python:python",
     ],
-    use_configure = {
-        "debug": ("--enable-debug", "--disable-debug"),
-        "kerberos": ("--enable-kerberos", "--disable-kerberos"),
-        "mongosh": ("--enable-mongosh", "--disable-mongosh"),
-        "ssl": ("--enable-ssl", "--disable-ssl"),
-        "tools": ("--enable-tools", "--disable-tools"),
-    },
     install_script = """
 mkdir -p "$OUT"
 BUILD=$(mktemp -d)

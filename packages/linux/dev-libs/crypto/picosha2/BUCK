@@ -1,7 +1,7 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "autotools",
+    build_rule = "binary",
     name = "picosha2",
     version = "1.0.0",
     url = "https://github.com/okdshin/PicoSHA2/archive/27fcf6979298949e8a462e16d09a0351c18fcaf2.tar.gz",
@@ -9,7 +9,7 @@ package(
     description = "Header-only C++ SHA256 hash generator",
     homepage = "https://github.com/okdshin/PicoSHA2",
     license = "MIT",
-    post_install_cmds = ["""\
-install -Dm644 picosha2.h "$DESTDIR/usr/include/picosha2.h"
-"""],
+    src_install = """
+install -Dm644 picosha2.h "$INSTALL_DIR/usr/include/picosha2.h"
+""",
 )

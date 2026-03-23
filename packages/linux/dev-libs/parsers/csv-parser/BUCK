@@ -1,18 +1,19 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "vince_csv_parser",
     version = "2.1.3",
     url = "https://github.com/vincentlaucsb/csv-parser/archive/refs/tags/2.1.3.tar.gz",
     sha256 = "3f6ce9212e66d273de12a9671dcbf7be7da0241334dc690585dd434dce5e5acf",
-    description = "CSV for Modern C++ - fast CSV parser library",
+    description = "CSV for Modern C++ - fast CSV parser library (header-only)",
     homepage = "https://github.com/vincentlaucsb/csv-parser",
     license = "MIT",
     deps = [],
-    configure_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DCSV_BUILD_TESTS=OFF",
-        "-DCSV_BUILD_PROGRAMS=OFF",
-    ],
+    # Header-only library: install headers and single-include
+    install_script = """
+mkdir -p "$OUT/usr/include/csv"
+cp -a include/csv.hpp "$OUT/usr/include/"
+cp -a include/internal "$OUT/usr/include/csv/"
+""",
 )

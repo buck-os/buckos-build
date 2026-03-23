@@ -10,5 +10,21 @@ package(
     homepage = "https://github.com/arturoc/ofxEasing",
     license = "MIT",
     deps = [],
-    install_script = """mkdir -p ${PREFIX}/include/ofxEasing\ncp ofxEasing/include/*.h ${PREFIX}/include/ofxEasing/""",
+    install_script = """
+mkdir -p "$OUT/usr/include/ofxEasing"
+# ofxEasing repo has headers in src/ directory
+if [ -d src ]; then
+    cp src/*.h "$OUT/usr/include/ofxEasing/" 2>/dev/null || true
+    cp src/*.hpp "$OUT/usr/include/ofxEasing/" 2>/dev/null || true
+fi
+# Also check for include/ directory
+if [ -d include ]; then
+    cp include/*.h "$OUT/usr/include/ofxEasing/" 2>/dev/null || true
+    cp include/*.hpp "$OUT/usr/include/ofxEasing/" 2>/dev/null || true
+fi
+# Fallback: find all headers
+find . -maxdepth 3 -name '*.h' -o -name '*.hpp' | head -20 | while read f; do
+    cp "$f" "$OUT/usr/include/ofxEasing/" 2>/dev/null || true
+done
+""",
 )

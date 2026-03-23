@@ -20,15 +20,21 @@ package(
     homepage = "https://www.ezix.org/project/wiki/HardwareLiSter",
     license = "GPL-2.0",
     make_args = [
+        "CXX=$CXX",
+        "CC=$CC",
+        "CXXFLAGS=$CXXFLAGS",
+        "LDFLAGS=$LDFLAGS",
         "PREFIX=/usr",
         "SBINDIR=/usr/sbin",
         "MANDIR=/usr/share/man",
         "DATADIR=/usr/share",
         "RPM_OPT_FLAGS=",
     ],
-    post_install_cmds = ["""
-        make DESTDIR=$OUT PREFIX=/usr SBINDIR=/usr/sbin install
-    """],
+    install_args = [
+        "PREFIX=/usr",
+        "SBINDIR=/usr/sbin",
+        "MANDIR=/usr/share/man",
+    ],
     deps = [
     ],
 )

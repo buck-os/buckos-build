@@ -1,7 +1,9 @@
 load("//defs:package.bzl", "package")
 
+# applescript-disassembler - Disassembler for run-only AppleScript binaries
+# This is a simple Python script, not a pip-installable package.
 package(
-    build_rule = "python",
+    build_rule = "binary",
     name = "applescript_disassembler",
     version = "1.0",
     url = "https://github.com/Jinmo/applescript-disassembler/archive/35796d1dbf2fbc33d807f4dcd72ccb9b3355f641.tar.gz",
@@ -9,6 +11,23 @@ package(
     description = "Disassembler for run-only AppleScript binaries",
     homepage = "https://github.com/Jinmo/applescript-disassembler",
     license = "MIT",
+    install_script = """
+mkdir -p "$OUT/usr/bin" "$OUT/usr/lib/applescript-disassembler"
+cp -a "$SRCS"/. "$OUT/usr/lib/applescript-disassembler/"
+# Create a wrapper script if there's a main script
+for f in "$SRCS"/*.py; do
+    if [ -f "$f" ]; then
+        name=$(basename "$f" .py)
+        cat > "$OUT/usr/bin/$name" << 'WRAPPER'
+#!/usr/bin/env python3
+import sys, os
+sys.path.insert(0, '/usr/lib/applescript-disassembler')
+exec(open(os.path.join('/usr/lib/applescript-disassembler', os.path.basename(sys.argv[0]) + '.py')).read())
+WRAPPER
+        chmod +x "$OUT/usr/bin/$name"
+    fi
+done
+""",
     deps = [
         "//packages/linux/lang/python:python",
     ],

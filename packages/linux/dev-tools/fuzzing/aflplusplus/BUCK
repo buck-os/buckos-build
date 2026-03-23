@@ -12,7 +12,19 @@ package(
     description = "American Fuzzy Lop plus plus - A security-oriented fuzzer",
     homepage = "https://github.com/AFLplusplus/AFLplusplus",
     license = "Apache-2.0",
-    # AFL++ uses GNUmakefile directly, skip configure
+    skip_configure = True,
+    make_args = [
+        "CC=$CC",
+        "CXX=$CXX",
+        "CFLAGS=$CFLAGS",
+        "LDFLAGS=$LDFLAGS",
+        "PREFIX=/usr",
+        "NO_PYTHON=1",
+        "NO_NYX=1",
+    ],
+    install_args = [
+        "PREFIX=/usr",
+    ],
     deps = [
     ],
 )

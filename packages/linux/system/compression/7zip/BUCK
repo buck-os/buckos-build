@@ -10,13 +10,20 @@ package(
     homepage = "https://www.7-zip.org/",
     license = "LGPL-2.1",
     install_script = """
-        cd "$SRCS/CPP/7zip/Bundles/Alone2"
-        make -f ../../cmpl_gcc.mak -j${MAKEOPTS:-$(nproc)}
+cd CPP/7zip/Bundles/Alone2
+make -f ../../cmpl_gcc.mak -j${MAKEOPTS:-$(nproc)} \
+    CC="$CC" CXX="$CXX" \
+    MY_ARCH="" CFLAGS_WARN="" 2>/dev/null || \
+make -f ../../cmpl_gcc.mak -j1 \
+    CC="$CC" CXX="$CXX" \
+    MY_ARCH="" CFLAGS_WARN=""
 
-        # Install
-        mkdir -p "$OUT/usr/bin"
-        cp _o/7zz "$OUT/usr/bin/" || cp b/g/7zz "$OUT/usr/bin/"
-        ln -sf 7zz "$OUT/usr/bin/7z"
-    """,
+# Install
+mkdir -p "$OUT/usr/bin"
+cp _o/7zz "$OUT/usr/bin/" 2>/dev/null || \
+    cp b/g/7zz "$OUT/usr/bin/" 2>/dev/null || \
+    find . -name '7zz' -type f -exec cp {} "$OUT/usr/bin/" \;
+ln -sf 7zz "$OUT/usr/bin/7z"
+""",
     deps = [],
 )

@@ -2,7 +2,7 @@ load("//defs:package.bzl", "package")
 
 package(
     name = "tinycrypt",
-    build_rule = "autotools",
+    build_rule = "make",
     skip_configure = True,
     version = "0.2.8",
     url = "https://github.com/intel/tinycrypt/archive/refs/tags/v0.2.8.tar.gz",
@@ -10,23 +10,16 @@ package(
     description = "TinyCrypt Cryptographic Library",
     homepage = "https://github.com/intel/tinycrypt",
     license = "Apache-2.0",
-
-    post_install_cmds = ["""
-cd "$SRCDIR"
-
-# Build the library
+    src_compile = """
 cd lib
-make clean
-make CC=cc CFLAGS="-O2 -Wall -fPIC" libtinycrypt.a
+make CC=$CC CFLAGS="$CFLAGS -Wall -fPIC" libtinycrypt.a
+""",
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/lib64
+cp lib/libtinycrypt.a $INSTALL_DIR/usr/lib64/
 
-# Install static library
-mkdir -p "$DESTDIR/usr/lib"
-cp -f libtinycrypt.a "$DESTDIR/usr/lib/"
-
-# Install headers
-mkdir -p "$DESTDIR/usr/include/tinycrypt"
-cp -f include/tinycrypt/*.h "$DESTDIR/usr/include/tinycrypt/"
-"""],
-
+mkdir -p $INSTALL_DIR/usr/include/tinycrypt
+cp lib/include/tinycrypt/*.h $INSTALL_DIR/usr/include/tinycrypt/
+""",
     deps = [],
 )

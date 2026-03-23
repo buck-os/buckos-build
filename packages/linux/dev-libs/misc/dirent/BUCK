@@ -6,19 +6,17 @@ load("//defs:package.bzl", "package")
 # may be useful for cross-platform projects or Windows emulation.
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "dirent",
     version = "1.23.2",
     url = "https://github.com/tronkko/dirent/archive/refs/tags/1.23.2.tar.gz",
-    sha256 = "f72d39e3c39610b6901e391b140aa69b51e0eb99216939ed5e547b5dad03afb1",  # Placeholder - needs actual checksum
+    sha256 = "f72d39e3c39610b6901e391b140aa69b51e0eb99216939ed5e547b5dad03afb1",
     description = "C/C++ library for directory traversal on Windows (header-only)",
     homepage = "https://github.com/tronkko/dirent",
     license = "MIT",
     deps = [],
-    patches = ["CMakeLists.txt"],
-    configure_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DCMAKE_INSTALL_PREFIX=/usr",
-        "-DCMAKE_INSTALL_LIBDIR=lib64",
-    ],
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/include
+cp include/dirent.h $INSTALL_DIR/usr/include/
+""",
 )

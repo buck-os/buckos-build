@@ -10,5 +10,21 @@ package(
     description = "Implementation of the XDG Base Directory Specification",
     homepage = "https://github.com/devnev/libxdg-basedir",
     license = "MIT",
-    # libxdg-basedir uses autotools but requires autoreconf
+    # libxdg-basedir uses autotools but GitHub archive needs autoreconf
+    pre_configure_cmds = ["""
+autoreconf -fi
+"""],
+    configure_args = [
+        "--prefix=/usr",
+        "--libdir=/usr/lib64",
+        "--disable-static",
+    ],
+    extra_cflags = [
+        "-Wno-error",
+    ],
+    deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+    ],
 )

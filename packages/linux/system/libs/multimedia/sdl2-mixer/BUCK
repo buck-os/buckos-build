@@ -1,7 +1,7 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "autotools",
+    build_rule = "cmake",
     name = "sdl2-mixer",
     version = "2.8.0",
     url = "https://github.com/libsdl-org/SDL_mixer/releases/download/release-2.8.0/SDL2_mixer-2.8.0.tar.gz",
@@ -11,23 +11,11 @@ package(
     license = "Zlib",
     use_configure = {
         "flac": ("-DSDL2MIXER_FLAC=ON", "-DSDL2MIXER_FLAC=OFF"),
-        "fluidsynth": ("--enable-fluidsynth", "--disable-fluidsynth"),
-        "gme": ("--enable-gme", "--disable-gme"),
-        "midi": ("--enable-midi", "--disable-midi"),
-        "mod": ("--enable-mod", "--disable-mod"),
-        "modplug": ("--enable-modplug", "--disable-modplug"),
         "mp3": ("-DSDL2MIXER_MP3=ON", "-DSDL2MIXER_MP3=OFF"),
         "ogg": ("-DSDL2MIXER_OGG=ON", "-DSDL2MIXER_OGG=OFF"),
         "opus": ("-DSDL2MIXER_OPUS=ON", "-DSDL2MIXER_OPUS=OFF"),
-        "playtools": ("--enable-playtools", "--disable-playtools"),
         "static-libs": ("-DBUILD_SHARED_LIBS=OFF", "-DBUILD_SHARED_LIBS=ON"),
-        "stb": ("--enable-stb", "--disable-stb"),
-        "timidity": ("--enable-timidity", "--disable-timidity"),
-        "tremor": ("--enable-tremor", "--disable-tremor"),
-        "vorbis": ("--enable-vorbis", "--disable-vorbis"),
-        "wav": ("--enable-wav", "--disable-wav"),
         "wavpack": ("-DSDL2MIXER_WAVPACK=ON", "-DSDL2MIXER_WAVPACK=OFF"),
-        "xmp": ("--enable-xmp", "--disable-xmp"),
     },
     use_deps = {
         "flac": "//packages/linux/system/libs/audio/flac:flac",
@@ -35,7 +23,11 @@ package(
         "//packages/linux/system/libs/audio/libvorbis:libvorbis"],
         "opus": "//packages/linux/system/libs/audio/opus:opus",
     },
-    configure_args = [],
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DSDL2MIXER_SAMPLES=OFF",
+    ],
     deps = [
         "//packages/linux/system/libs/multimedia/sdl2:sdl2",
     ],

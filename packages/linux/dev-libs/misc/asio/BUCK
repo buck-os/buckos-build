@@ -3,7 +3,7 @@ load("//defs:package.bzl", "package")
 # Asio - Cross-platform C++ library for network programming (standalone)
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "asio",
     version = "1.28.2",
     url = "https://github.com/chriskohlhoff/asio/archive/refs/tags/asio-1-28-2.tar.gz",
@@ -11,16 +11,9 @@ package(
     description = "Cross-platform C++ library for network and low-level I/O programming",
     homepage = "https://think-async.com/Asio/",
     license = "BSL-1.0",
-    use_configure = {
-        "examples": ("-DBUILD_EXAMPLES=ON", "-DBUILD_EXAMPLES=OFF"),
-    },
     deps = [],
-    use_deps = {
-        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
-    },
-    source_subdir = "asio",
-    configure_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DASIO_STANDALONE=ON",
-    ],
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/include
+cp -r asio/include/* $INSTALL_DIR/usr/include/
+""",
 )

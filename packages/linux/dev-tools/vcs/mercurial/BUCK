@@ -1,7 +1,9 @@
 load("//defs:package.bzl", "package")
 
+# mercurial - Scalable distributed SCM tool
+# Uses make install for proper installation.
 package(
-    build_rule = "autotools",
+    build_rule = "binary",
     name = "mercurial",
     version = "6.6",
     url = "https://www.mercurial-scm.org/release/mercurial-6.6.tar.gz",
@@ -9,24 +11,15 @@ package(
     description = "Scalable distributed SCM tool",
     homepage = "https://www.mercurial-scm.org/",
     license = "GPL-2+",
+    install_script = """
+cd "$SRCS"
 
-    # USE flags this package supports
-
-    # Default USE flags
-
-    # Conditional configure arguments
-    use_configure = {
-        "chg": ("--enable-chg", "--disable-chg"),
-        "emacs": ("--enable-emacs", "--disable-emacs"),
-        "gpg": ("--enable-gpg", "--disable-gpg"),
-        "rust": "HGWITHRUSTEXT=cpython",
-        "tk": ("--enable-tk", "--disable-tk"),
-    },
-
-    make_args = [
-        "PREFIX=/usr",
-        "PYTHON=/usr/bin/python3",
-    ],
+make install \
+    PREFIX=/usr \
+    DESTDIR="$OUT" \
+    PYTHON=python3 \
+    PURE=--pure
+""",
     deps = [
         "//packages/linux/lang/python:python",
     ],

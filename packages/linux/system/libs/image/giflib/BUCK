@@ -6,16 +6,25 @@ package(
     build_rule = "autotools",
     name = "giflib",
     version = "5.2.2",
-    use_configure = {
-        "static-libs": ("--enable-static", "--disable-static"),
-    },
+    skip_configure = True,
     url = "https://github.com/sailfishos-mirror/giflib/archive/refs/tags/5.2.2.tar.gz",
-    sha256 = "d61f8ca6736d44a53888894858e085cf9266883c98dbbcd9ca0f222b13699190",
+    sha256 = "0aab9d7ccbcd9f1feaf27d363c7cd146e30e4a3ab97586a9a9234b7ad9284eb9",
     description = "Library to handle, display and manipulate GIF images",
     homepage = "https://sourceforge.net/projects/giflib/",
     license = "MIT",
     pre_configure_cmds = ["""
-# Remove doc building from Makefile (we don't need docs)
-sed -i -e '/$(MAKE) -C doc/d' Makefile
+# Remove doc building from Makefile (we don't need docs and it requires xmlto)
+sed -i -e '/$(MAKE) -C doc/d' Makefile 2>/dev/null || true
+sed -i -e 's/all: .*doc.*/all: libgif.a libgif.so gif2rgb gifbuild giffix giftext giftool/' Makefile 2>/dev/null || true
 """],
+    make_args = [
+        "CC=$CC",
+        "CFLAGS=$CFLAGS -fPIC",
+        "LDFLAGS=$LDFLAGS",
+        "OFLAGS=",
+    ],
+    install_args = [
+        "PREFIX=/usr",
+        "LIBDIR=/usr/lib64",
+    ],
 )

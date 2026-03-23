@@ -19,7 +19,7 @@ package(
     build_rule = "cmake",
     name = "libmysqlclient",
     version = "8.3.0",
-    url = "https://dev.mysql.com/get/Downloads/MySQL-8.3/mysql-8.3.0.tar.gz",
+    url = "https://cdn.mysql.com/archives/mysql-8.3/mysql-8.3.0.tar.gz",
     sha256 = "1f21495a0b7a82b24a453d52e2153a814b3ca704eccf999766d545bce52f386e",
     description = "MySQL C client library",
     homepage = "https://dev.mysql.com/doc/c-api/8.3/en/",
@@ -52,6 +52,9 @@ package(
         # Disable unnecessary components
         "-DWITH_ROUTER=OFF",
         "-DWITH_MYSQLX=OFF",
+        "-DWITH_GROUP_REPLICATION=OFF",
+        "-DWITH_NDB=OFF",
+        "-DWITH_NDBCLUSTER=OFF",
     ],
 
     # CMake options based on USE flags
@@ -63,6 +66,8 @@ package(
     },
 
     # Base dependencies (always required)
-    deps = [],
+    deps = [
+        "//packages/linux/system/libs/ipc/libtirpc:libtirpc",
+    ],
 
 )

@@ -13,7 +13,9 @@ package(
     pre_configure_cmds = ["""
 autoreconf -fiv
 """],
-    configure_args = [],
+    configure_args = [
+        "--with-neon=included",
+    ],
     deps = [
         "//packages/linux/system/security/encryption:fuse3",
                 "//packages/linux/system/libs/network/curl:curl",

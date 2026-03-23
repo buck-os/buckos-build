@@ -24,10 +24,12 @@ package(
     license = "Apache-2.0",
     deps = [
         "//packages/linux/dev-libs/misc/apr:apr",
-                "//packages/linux/system/libs/data/expat:expat",
-                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-                "//packages/linux/dev-tools/build-systems/automake:automake",
-                "//packages/linux/dev-tools/build-systems/libtool:libtool"
+        "//packages/linux/system/libs/data/expat:expat",
+    ],
+    host_deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
     ],
     # apr-1-config should be in PATH from the apr dependency
     pre_configure_cmds = ["""

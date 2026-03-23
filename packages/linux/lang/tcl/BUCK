@@ -14,9 +14,8 @@ package(
     homepage = "https://www.tcl.tk/",
     license = "BSD",
     # Tcl's configure is in the unix subdirectory
+    configure_script = "unix/configure",
     post_install_cmds = ["""\
-cd unix
-        make DESTDIR="$DESTDIR" install install-private-headers
-        ln -sf tclsh8.6 "$DESTDIR/usr/bin/tclsh"
+ln -sf tclsh8.6 "$DESTDIR/usr/bin/tclsh"
 """],
 )

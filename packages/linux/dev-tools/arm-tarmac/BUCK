@@ -14,7 +14,7 @@ load("//defs:package.bzl", "package")
 #   - tarmac-vcd: Convert traces to IEEE 1364 Value Change Dump format
 
 package(
-    build_rule = "autotools",
+    build_rule = "cmake",
     name = "arm-tarmac",
     version = "0.0.1",
     url = "https://github.com/ARM-software/tarmac-trace-utilities/archive/e9b24783c2be2a47aaf5f85e6bbd54f1fa8e7122.tar.gz",
@@ -22,21 +22,8 @@ package(
     description = "Arm Tarmac Trace Utilities - tools to analyze trace files in Tarmac format",
     homepage = "https://github.com/ARM-software/tarmac-trace-utilities",
     license = "Apache-2.0",
-
-    # arm-tarmac uses CMake, not autotools
-
-    post_install_cmds = ["""\
-echo "=== Installing arm-tarmac ==="
-cd build
-make install DESTDIR="$DESTDIR"
-
-# Install library and headers
-if [ -f libtarmac.a ]; then
-    install -D -m 644 libtarmac.a "$DESTDIR/usr/lib64/libtarmac.a"
-fi
-"""],
-
-    deps = [
-        "//packages/linux/dev-tools/build-systems/cmake:cmake",
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
     ],
+    deps = [],
 )

@@ -1,11 +1,21 @@
 load("//defs:package.bzl", "package")
 
+# libelfin - C++11 ELF/DWARF parser
+# Uses Makefile directly, no configure step.
 package(
-    build_rule = "autotools",
+    build_rule = "binary",
     name = "libelfin",
     version = "0.3",
     url = "https://github.com/aclements/libelfin/archive/v0.3.tar.gz",
     sha256 = "c338942b967582922b3514b54b93175ca9051a9668db92dd8ef619824d443ac7",
+    install_script = """
+cd "$SRCS"
+
+make -j${MAKEOPTS:-$(nproc)} PREFIX=/usr \
+    CXX="$CXX" CXXFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS"
+
+make PREFIX=/usr DESTDIR="$OUT" install
+""",
     deps = [
         "//packages/linux/lang/python:python",
     ],

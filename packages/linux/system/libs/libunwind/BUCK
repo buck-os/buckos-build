@@ -26,13 +26,8 @@ package(
         "--disable-documentation",
         "--enable-minidebuginfo",
     ],
-    # Custom install to avoid libtool relinking issues with missing .la files
-    # Libtool tries to relink during install which fails when .la files are deleted
+    # Remove .la files after install to avoid libtool relinking issues
     post_install_cmds = ["""\
-cp "$pc" "$DESTDIR/usr/lib64/pkgconfig/"
-    done
-}
-# Remove .la files
 find "$DESTDIR" -name '*.la' -type f -delete 2>/dev/null || true
 """],
     deps = [

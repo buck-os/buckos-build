@@ -3,7 +3,7 @@ load("//defs:package.bzl", "package")
 # Better Enums - Reflective compile-time enum library with clean syntax
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "better_enums",
     version = "0.11.3",
     url = "https://github.com/aantron/better-enums/archive/refs/tags/0.11.3.tar.gz",
@@ -12,7 +12,8 @@ package(
     homepage = "https://github.com/aantron/better-enums",
     license = "BSD",
     deps = [],
-    configure_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-    ],
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/include
+cp enum.h $INSTALL_DIR/usr/include/enum.h
+""",
 )

@@ -1,7 +1,8 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "binary",
+    build_rule = "autotools",
+    skip_configure = True,
     name = "tippecanoe",
     version = "2.22.0",
     url = "https://github.com/felt/tippecanoe/archive/refs/tags/2.22.0.tar.gz",
@@ -13,10 +14,16 @@ package(
         "//packages/linux/system/libs/database/sqlite:sqlite",
         "//packages/linux/core/zlib:zlib",
     ],
-    install_script = """
-        cd $SRCS
-        make -j${MAKEOPTS:-$(nproc)}
-        mkdir -p $OUT/usr/bin
-        cp tippecanoe tippecanoe-enumerate tippecanoe-decode tippecanoe-json-tool tile-join $OUT/usr/bin/
-    """,
+    make_args = [
+        "CC=$CC",
+        "CXX=$CXX",
+        "CFLAGS=$CFLAGS",
+        "CXXFLAGS=$CXXFLAGS",
+        "LDFLAGS=$LDFLAGS",
+        "PREFIX=/usr",
+    ],
+    install_args = [
+        "DESTDIR=$DESTDIR",
+        "PREFIX=/usr",
+    ],
 )

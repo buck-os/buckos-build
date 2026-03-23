@@ -11,16 +11,16 @@ package(
     homepage = "https://micropython.org/",
     license = "MIT",
 
-    # USE flags
-
-    # Make args based on USE flags
-
     # Conditional dependencies
     use_deps = {
         "ffi": "//packages/linux/system/libs/utility/libffi:libffi",
     },
 
-    # Custom build phases for micropython's non-standard build
+    # Build mpy-cross first, then the unix port
+    pre_build_cmds = [
+        "make -C mpy-cross -j$(nproc)",
+    ],
+    make_args = ["-C", "ports/unix"],
 
     post_install_cmds = ["""\
 mkdir -p "$DESTDIR/usr/bin"

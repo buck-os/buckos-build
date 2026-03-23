@@ -3,7 +3,7 @@ load("//defs:package.bzl", "package")
 # xtensor - C++ tensors with broadcasting and lazy computing
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "xtensor",
     version = "0.24.7",
     url = "https://github.com/xtensor-stack/xtensor/archive/refs/tags/0.24.7.tar.gz",
@@ -12,9 +12,8 @@ package(
     homepage = "https://xtensor.readthedocs.io/",
     license = "BSD-3-Clause",
     deps = [],
-    configure_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DBUILD_TESTS=OFF",
-        "-DBUILD_BENCHMARK=OFF",
-    ],
+    install_script = """
+mkdir -p "$OUT/usr/include"
+cp -a include/xtensor "$OUT/usr/include/"
+""",
 )

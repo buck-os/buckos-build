@@ -28,7 +28,13 @@ package(
     # Base configure arguments (always applied)
     configure_args = [
         "--with-external-zlib",
+        "--with-editor=/usr/bin/vi",
     ],
+    # Fix conflicting malloc/calloc declarations on modern glibc
+    env = {
+        "ac_cv_func_malloc_0_nonnull": "yes",
+        "ac_cv_func_realloc_0_nonnull": "yes",
+    },
 
     deps = [
         "//packages/linux/core/zlib:zlib",

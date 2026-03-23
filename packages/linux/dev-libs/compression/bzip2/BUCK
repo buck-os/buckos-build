@@ -9,10 +9,29 @@ package(
     sha256 = "ab5a03176ee106d3f0fa90e381da478ddae405918153cca248e682cd0c4a2269",
     deps = [],
     make_args = [
-        "CC=${CC:-gcc}",
+        "CC=$CC",
+        "CFLAGS=$CFLAGS",
+        "LDFLAGS=$LDFLAGS",
         "PREFIX=/usr",
-        "PREFIX=/usr",
-        "DESTDIR=$DESTDIR",
     ],
-    # bzip2 also needs to build the shared library
+    install_args = [
+        "PREFIX=/usr",
+    ],
+    post_install_cmds = ["""\
+# Build and install shared library
+cd "$BUILD_DIR"
+make -f Makefile-libbz2_so CC="$CC" CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" clean 2>/dev/null || true
+make -f Makefile-libbz2_so CC="$CC" CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" || true
+if [ -f libbz2.so.1.0.8 ]; then
+    install -Dm755 libbz2.so.1.0.8 "$DESTDIR/usr/lib64/libbz2.so.1.0.8"
+    ln -sf libbz2.so.1.0.8 "$DESTDIR/usr/lib64/libbz2.so.1.0"
+    ln -sf libbz2.so.1.0.8 "$DESTDIR/usr/lib64/libbz2.so.1"
+    ln -sf libbz2.so.1.0.8 "$DESTDIR/usr/lib64/libbz2.so"
+fi
+# Move libraries to lib64 if needed
+if [ -d "$DESTDIR/usr/lib" ] && [ ! -d "$DESTDIR/usr/lib64" ]; then
+    mkdir -p "$DESTDIR/usr/lib64"
+    mv "$DESTDIR/usr/lib/"*.a "$DESTDIR/usr/lib64/" 2>/dev/null || true
+fi
+"""],
 )

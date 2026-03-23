@@ -5,19 +5,35 @@ load("//defs:package.bzl", "package")
 # unzip uses a Makefile, not autotools
 # Old C code has format string issues that trigger -Werror=format-security
 package(
-    build_rule = "autotools",
+    build_rule = "binary",
     name = "unzip",
     url = "https://downloads.sourceforge.net/infozip/unzip60.tar.gz",
-
     sha256 = "036d96991646d0449ed0aa952e4fbe21b476ce994abc276e49d30e686708bd37",
-    use_configure = {
-        "bzip2": ("--with-bzip2", "--without-bzip2"),
-        "natspec": ("--enable-natspec", "--disable-natspec"),
-        "unicode": ("--enable-unicode", "--disable-unicode"),
-    },
     version = "6.0",
     description = "Info-ZIP extraction utility for .zip archives",
     homepage = "https://infozip.sourceforge.net/UnZip.html",
     license = "Info-ZIP",
-    env = {"CFLAGS": "-O2 -Wno-format-security -Wno-implicit-function-declaration -Wno-old-style-definition -Wno-implicit-int"},
+    deps = [],
+    install_script = """
+# Fix CFLAGS in unix/Makefile
+sed -i 's/CFLAGS=.*//' unix/Makefile || true
+
+make -f unix/Makefile generic \
+    CC="$CC" \
+    CF="$CFLAGS -O2 -Wno-format-security -Wno-implicit-function-declaration -Wno-implicit-int -DUNIX -I." \
+    LF2="$LDFLAGS" \
+    LOCAL_UNZIP="$CFLAGS" \
+    -j${MAKEOPTS:-$(nproc)} || \
+make -f unix/Makefile generic \
+    CC="$CC" \
+    -j1
+
+mkdir -p "$OUT/usr/bin"
+install -m755 unzip "$OUT/usr/bin/" 2>/dev/null || true
+install -m755 funzip "$OUT/usr/bin/" 2>/dev/null || true
+install -m755 unzipsfx "$OUT/usr/bin/" 2>/dev/null || true
+install -m755 unix/zipgrep "$OUT/usr/bin/" 2>/dev/null || true
+mkdir -p "$OUT/usr/share/man/man1"
+install -m644 man/*.1 "$OUT/usr/share/man/man1/" 2>/dev/null || true
+""",
 )

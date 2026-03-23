@@ -16,9 +16,17 @@ package(
     homepage = "http://glaros.dtc.umn.edu/gkhome/metis/metis/overview",
     license = "Apache-2.0",
     deps = [],
+    # METIS requires build/xinclude with generated metis.h and CMakeLists.txt
+    # Normally created by 'make config', replicate here
+    pre_configure_cmds = ["""
+mkdir -p build/xinclude
+echo '#define IDXTYPEWIDTH 32' > build/xinclude/metis.h
+echo '#define REALTYPEWIDTH 32' >> build/xinclude/metis.h
+cat include/metis.h >> build/xinclude/metis.h
+cp include/CMakeLists.txt build/xinclude/
+"""],
     configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
-        "-DGKLIB_PATH=GKlib",
     ],
 )

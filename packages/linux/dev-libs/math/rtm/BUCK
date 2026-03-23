@@ -1,7 +1,7 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "rtm",
     version = "2.2.0",
     url = "https://github.com/nfrechette/rtm/archive/refs/tags/v2.2.0.tar.gz",
@@ -9,9 +9,9 @@ package(
     description = "Realtime Math - header-only C++ library for 3D math (SIMD optimized)",
     homepage = "https://github.com/nfrechette/rtm",
     license = "MIT",
-    configure_args = [
-        "-DBUILD_BENCHMARK_EXE=OFF",
-        "-DWITH_VECTOR_MIX_TESTS=OFF",
-    ],
     deps = [],
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/include
+cp -r includes/rtm $INSTALL_DIR/usr/include/
+""",
 )

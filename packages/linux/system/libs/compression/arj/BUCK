@@ -2,51 +2,47 @@ load("//defs:package.bzl", "package")
 
 # arj - ARJ archive utility
 package(
-    build_rule = "autotools",
+    build_rule = "binary",
     name = "arj",
     url = "https://downloads.sourceforge.net/arj/arj-3.10.22.tar.gz",
-
     sha256 = "589e4c9bccc8669e7b6d8d6fcd64e01f6a2c21fe10aad56a83304ecc3b96a7db",
     version = "3.10.22",
     description = "Open-source ARJ archiver",
     homepage = "https://arj.sourceforge.net",
     license = "GPL-2",
-    pre_configure_cmds = ["""
-# Update config.sub and config.guess in the gnu directory
-if [ -d gnu ]; then
-    # Try to find modern config.sub and config.guess from automake
-    found=0
-    for dir in /usr/share/automake-* /usr/share/automake /usr/share/misc /usr/share/gnuconfig; do
-        if [ -f "$dir/config.sub" ] && [ -f "$dir/config.guess" ]; then
-            echo "Copying config.sub and config.guess from $dir"
-            cp -f "$dir/config.sub" gnu/config.sub
-            cp -f "$dir/config.guess" gnu/config.guess
-            chmod +x gnu/config.sub gnu/config.guess
-            found=1
-            break
-        fi
-    done
-
-    if [ $found -eq 0 ]; then
-        echo "Warning: Could not find config.sub and config.guess, trying alternative locations"
-        # Try to use automake's config scripts via automake package
-        if command -v automake >/dev/null 2>&1; then
-            automake_dir=$(automake --print-libdir 2>/dev/null || echo "")
-            if [ -n "$automake_dir" ] && [ -f "$automake_dir/config.sub" ]; then
-                echo "Using automake's config files from $automake_dir"
-                cp -f "$automake_dir/config.sub" gnu/config.sub
-                cp -f "$automake_dir/config.guess" gnu/config.guess
-                chmod +x gnu/config.sub gnu/config.guess
-            fi
-        fi
-    fi
-
-    # Make configure executable
-    if [ -f gnu/configure ]; then
-        chmod +x gnu/configure
-    fi
+    deps = [],
+    install_script = """
+# arj uses autotools in the gnu/ subdirectory
+cd gnu
+if [ -f configure.in ] && ! [ -f configure ]; then
+    autoconf 2>/dev/null || true
 fi
-"""],
-    deps = [
+# Update config.sub and config.guess
+for dir in /usr/share/automake-* /usr/share/automake /usr/share/misc /usr/share/gnuconfig; do
+    if [ -f "$dir/config.sub" ] && [ -f "$dir/config.guess" ]; then
+        cp -f "$dir/config.sub" config.sub 2>/dev/null || true
+        cp -f "$dir/config.guess" config.guess 2>/dev/null || true
+        chmod +x config.sub config.guess 2>/dev/null || true
+        break
+    fi
+done
+chmod +x configure 2>/dev/null || true
+cd ..
+
+# Configure
+cd gnu && ./configure --host=$TARGET_TRIPLE && cd ..
+
+# Build
+make prepare 2>/dev/null || true
+make CC="$CC" CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" -j${MAKEOPTS:-$(nproc)} || \
+    make CC="$CC" -j1
+
+# Install
+mkdir -p "$OUT/usr/bin"
+install -m755 linux-gnu/en/rs/arj/arj "$OUT/usr/bin/arj" 2>/dev/null || \
+    find . -name arj -type f -executable -exec install -m755 {} "$OUT/usr/bin/arj" \; 2>/dev/null || true
+""",
+    host_deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
     ],
 )

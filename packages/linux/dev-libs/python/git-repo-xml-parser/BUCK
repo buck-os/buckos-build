@@ -1,9 +1,24 @@
 load("//defs:package.bzl", "package")
 
+# git-repo - Google's repo tool for managing multiple git repositories
+# This is a standalone Python script, not a pip-installable package.
 package(
-    build_rule = "python",
+    build_rule = "binary",
     name = "git-repo-xml-parser",
     version = "2.59",
     url = "https://mirror.buckos.org/g/git-repo-v2.59.tar.gz",
     sha256 = "6b1db26f9c0a0f44305fc1829e8e06d5edc92cc678fd1da8f8ff057dcd843150",
+    install_script = """
+mkdir -p "$OUT/usr/bin"
+if [ -f "$SRCS/repo" ]; then
+    install -m 755 "$SRCS/repo" "$OUT/usr/bin/repo"
+else
+    # Copy all Python files to a lib directory
+    mkdir -p "$OUT/usr/lib/git-repo"
+    cp -a "$SRCS"/. "$OUT/usr/lib/git-repo/"
+fi
+""",
+    deps = [
+        "//packages/linux/lang/python:python",
+    ],
 )
