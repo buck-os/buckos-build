@@ -49,7 +49,7 @@ autoreconf -fi
         ln -sf ../lib/python3/site-packages/bin/ykman "$OUT/usr/bin/ykman" || true
     """],
     deps = [
-        "//packages/linux/system/security/encryption:linux-pam",
+        "//packages/linux/system/security/linux-pam:linux-pam",
                 "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
                 "//packages/linux/dev-tools/build-systems/automake:automake",
                 "//packages/linux/dev-tools/build-systems/libtool:libtool",
@@ -93,7 +93,7 @@ package(
         "--libdir=/lib/security",
     ],
     deps = [
-        "//packages/linux/system/security/encryption:linux-pam",
+        "//packages/linux/system/security/linux-pam:linux-pam",
     ],
 )
 
@@ -156,7 +156,7 @@ package(
         "--with-pam-dir=/lib/security",
     ],
     deps = [
-        "//packages/linux/system/security/encryption:linux-pam",
+        "//packages/linux/system/security/linux-pam:linux-pam",
         ":libfido2",
     ],
 )
@@ -196,7 +196,7 @@ package(
         "--with-pam-dir=/lib/security",
     ],
     deps = [
-        "//packages/linux/system/security/encryption:linux-pam",
+        "//packages/linux/system/security/linux-pam:linux-pam",
         ":ykclient",
         ":ykpers",
     ],

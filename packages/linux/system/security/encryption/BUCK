@@ -256,28 +256,12 @@ package(
     license = "Apache-2.0",
     deps = [
         "//packages/linux/lang/go:go",
-        ":linux-pam",
+        "//packages/linux/system/security/linux-pam:linux-pam",
     ],
 )
 
-# =============================================================================
-# LINUX-PAM - Pluggable Authentication Modules
-# =============================================================================
-
-package(
-    name = "linux-pam",
-    build_rule = "autotools",
-    skip_configure = True,
-    url = "https://github.com/linux-pam/linux-pam/releases/download/v1.6.1/Linux-PAM-1.6.1.tar.xz",
-
-    sha256 = "f8923c740159052d719dbfc2a2f81942d68dd34fcaf61c706a02c9b80feeef8e",
-    version = "1.6.1",
-    description = "Pluggable Authentication Modules for Linux",
-    homepage = "http://www.linux-pam.org/",
-    license = "BSD-3-Clause",
-    deps = [
-    ],
-)
+# linux-pam removed: duplicate of //packages/linux/system/security/linux-pam:linux-pam
+# (which sources from //packages/linux/system/security/auth/pam:pam-src)
 
 # =============================================================================
 # ECRYPTFS-UTILS - eCryptfs userspace utilities

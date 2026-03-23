@@ -54,38 +54,39 @@ package(
 )
 
 # PCManFM - Lightweight file manager
-package(
-    name = "pcmanfm",
-    build_rule = "autotools",
-    skip_configure = True,
-    url = "https://downloads.sourceforge.net/pcmanfm/pcmanfm-1.3.2.tar.xz",
-
-    sha256 = "14cb7b247493c4cce65fbb5902611e3ad00a7a870fbc1e50adc50428c5140cf7",
-    version = "1.3.2",
-    description = "Extremely fast and lightweight file manager",
-    homepage = "https://github.com/lxde/pcmanfm",
-    license = "GPL-2.0-or-later",
-    deps = [
-        ":libfm",
-    ],
-)
+# DISABLED: Requires libfm which requires menu-cache (not packaged yet)
+# package(
+#     name = "pcmanfm",
+#     build_rule = "autotools",
+#     skip_configure = True,
+#     url = "https://downloads.sourceforge.net/pcmanfm/pcmanfm-1.3.2.tar.xz",
+#     sha256 = "14cb7b247493c4cce65fbb5902611e3ad00a7a870fbc1e50adc50428c5140cf7",
+#     version = "1.3.2",
+#     description = "Extremely fast and lightweight file manager",
+#     homepage = "https://github.com/lxde/pcmanfm",
+#     license = "GPL-2.0-or-later",
+#     deps = [
+#         ":libfm",
+#     ],
+# )
 
 # libfm - File management support library
-package(
-    name = "libfm",
-    build_rule = "autotools",
-    skip_configure = True,
-    url = "https://github.com/lxde/libfm/archive/1.3.2.tar.gz",
-
-    sha256 = "e65aa86650879fcd6c06983164b95409b92724482191f06472c567cbd8cf5ddd",
-    version = "1.3.2",
-    description = "Library for file management",
-    homepage = "https://github.com/lxde/libfm",
-    license = "GPL-2.0-or-later",
-    deps = [
-        "//packages/linux/dev-libs/glib:glib",
-    ],
-)
+# DISABLED: Requires menu-cache (not packaged yet) and autotools bootstrap
+# from GitHub archive. Also needs gtk+-2.0 (only gtk3/gtk4 available).
+# package(
+#     name = "libfm",
+#     build_rule = "autotools",
+#     skip_configure = True,
+#     url = "https://github.com/lxde/libfm/archive/1.3.2.tar.gz",
+#     sha256 = "e65aa86650879fcd6c06983164b95409b92724482191f06472c567cbd8cf5ddd",
+#     version = "1.3.2",
+#     description = "Library for file management",
+#     homepage = "https://github.com/lxde/libfm",
+#     license = "GPL-2.0-or-later",
+#     deps = [
+#         "//packages/linux/dev-libs/glib:glib",
+#     ],
+# )
 
 # Nemo - Cinnamon File Manager (fork of Nautilus)
 package(
@@ -128,23 +129,14 @@ package(
 # Ranger - Console file manager with VI key bindings
 package(
     name = "ranger",
-    build_rule = "autotools",
-    skip_configure = True,
+    build_rule = "python",
+    use_setup_py = True,
     url = "https://github.com/ranger/ranger/archive/refs/tags/v1.9.3.tar.gz",
-
     sha256 = "ce088a04c91c25263a9675dc5c43514b7ec1b38c8ea43d9a9d00923ff6cdd251",
     version = "1.9.3",
     description = "Console file manager with VI key bindings",
     homepage = "https://github.com/ranger/ranger",
     license = "GPL-3.0-or-later",
-    make_args = [],
-    post_install_cmds = ["""
-        python setup.py install --prefix=/usr --root="$OUT"
-    """, """
-        go build -o lf
-        mkdir -p "$OUT/usr/bin"
-        cp lf "$OUT/usr/bin/"
-    """],
     deps = [
         "//packages/linux/lang/python:python",
     ],
@@ -152,20 +144,16 @@ package(
 
 # lf - Terminal file manager
 package(
+    build_rule = "go",
     name = "lf",
-    build_rule = "autotools",
-    skip_configure = True,
-    url = "https://github.com/gokcehan/lf/archive/refs/tags/r31.tar.gz",
-
-    sha256 = "ed47fc22c58cf4f4e4116a58c500bdb9f9ccc0b89f87be09f321e8d1431226ab",
     version = "r31",
+    url = "https://github.com/gokcehan/lf/archive/refs/tags/r31.tar.gz",
+    sha256 = "ed47fc22c58cf4f4e4116a58c500bdb9f9ccc0b89f87be09f321e8d1431226ab",
     description = "Terminal file manager written in Go",
     homepage = "https://github.com/gokcehan/lf",
     license = "MIT",
-    make_args = [],
-    deps = [
-        "//packages/linux/lang/go:go",
-    ],
+    ldflags = "-s -w",
+    deps = [],
 )
 
 # Filegroup for all file managers
@@ -174,7 +162,7 @@ filegroup(
     srcs = [
         ":nautilus",
         ":thunar",
-        ":pcmanfm",
+        # ":pcmanfm",  # DISABLED: needs libfm/menu-cache
         ":nemo",
         ":caja",
         ":ranger",

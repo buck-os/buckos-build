@@ -73,8 +73,7 @@ package(
     name = "curl-gnutls-example",
     build_rule = "autotools",
     version = "8.5.0",
-    url = "https://curl.se/download/curl-8.5.0.tar.xz",
-    sha256 = "42ab8db9e20d8290a3b633e7fbb3cec15db34df65fd1015ef8ac1e4723750eeb",
+    source = ":curl-example-src",
     use_deps = {
         "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
         "gnutls": "//packages/linux/system/libs/crypto/gnutls:gnutls",
@@ -132,8 +131,7 @@ package(
     name = "openssh-hardened-example",
     build_rule = "autotools",
     version = "9.9p1",
-    url = "https://cdn.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-9.9p1.tar.gz",
-    sha256 = "b343fbcdbff87f15b1986e6e15d6d4fc9a7d36066be6b7fb507087ba8f966c02",
+    source = "//packages/linux/network/openssh:openssh-src",
     pre_configure_cmds = [
         # Patch configure to accept newer OpenSSL versions
         # OpenSSH 9.9p1 doesn't recognize OpenSSL 3.5.x, so we patch the version check

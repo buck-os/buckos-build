@@ -2,47 +2,19 @@ load("//defs:package.bzl", "package")
 
 # Rust Hypervisor Firmware
 #
-# A minimal firmware for Cloud Hypervisor PVH boot.
-# This firmware provides a lightweight alternative to full UEFI firmware
-# for booting Linux kernels in Cloud Hypervisor VMs.
+# TODO: Disabled - requires valid sha256 hash and cargo vendor deps.
 #
-# Features:
-# - Minimal PVH boot support
-# - Direct kernel loading
-# - Low memory footprint
-# - Fast boot times
-#
-# Build output: hypervisor-fw binary
-# Install location: /usr/share/cloud-hypervisor/hypervisor-fw
-
-package(
-    build_rule = "cargo",
-    name = "rust-hypervisor-firmware",
-    version = "0.5.0",
-    url = "https://github.com/cloud-hypervisor/rust-hypervisor-firmware/archive/refs/tags/0.5.0.tar.gz",
-    sha256 = "FIXME",
-    description = "Minimal PVH firmware for Cloud Hypervisor",
-    homepage = "https://github.com/cloud-hypervisor/rust-hypervisor-firmware",
-    license = "Apache-2.0",
-    # Build the firmware binary
-    # Custom install to place in cloud-hypervisor directory
-    post_install_cmds = ["""\
-mkdir -p "$D/usr/share/cloud-hypervisor"
-if [ -f "target/x86_64-unknown-none/release/hypervisor-fw" ]; then
-    install -m 0644 target/x86_64-unknown-none/release/hypervisor-fw "$D/usr/share/cloud-hypervisor/"
-elif [ -f "target/release/hypervisor-fw" ]; then
-    install -m 0644 target/release/hypervisor-fw "$D/usr/share/cloud-hypervisor/"
-fi
-"""],
-    labels = ["buckos:firmware"],
-    deps = [
-        "//packages/linux/lang/rust:rust",
-    ],
-)
-
-# Export the firmware file for use in boot scripts
-export_file(
-    name = "hypervisor-fw",
-    src = ":rust-hypervisor-firmware",
-    default_target_platform = "//platforms:linux-target",
-)
+# package(
+#     build_rule = "cargo",
+#     name = "rust-hypervisor-firmware",
+#     version = "0.5.0",
+#     url = "https://github.com/cloud-hypervisor/rust-hypervisor-firmware/archive/refs/tags/0.5.0.tar.gz",
+#     sha256 = "FIXME",
+#     description = "Minimal PVH firmware for Cloud Hypervisor",
+#     homepage = "https://github.com/cloud-hypervisor/rust-hypervisor-firmware",
+#     license = "Apache-2.0",
+#     labels = ["buckos:firmware"],
+#     deps = [
+#         "//packages/linux/lang/rust:rust",
+#     ],
+# )

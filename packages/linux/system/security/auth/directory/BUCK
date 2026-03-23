@@ -124,9 +124,7 @@ autoreconf -fi
 package(
     build_rule = "autotools",
     name = "e2fsprogs-libs",
-    url = "https://mirrors.edge.kernel.org/pub/linux/kernel/people/tytso/e2fsprogs/v1.47.0/e2fsprogs-1.47.0.tar.xz",
-
-    sha256 = "144af53f2bbd921cef6f8bea88bb9faddca865da3fbc657cc9b4d2001097d5db",
+    source = "//packages/linux/system/filesystem/native/e2fsprogs:e2fsprogs-src",
     version = "1.47.0",
     description = "E2fsprogs libraries (libcom_err, libss)",
     homepage = "https://e2fsprogs.sourceforge.net/",
@@ -211,7 +209,7 @@ package(
     ],
     deps = [
         "//packages/linux/system/libs/crypto/openssl:openssl",
-        "//packages/linux/system/security/encryption:linux-pam",
+        "//packages/linux/system/security/linux-pam:linux-pam",
         "//packages/linux/system/libs/database/lmdb:lmdb",
     ],
 )
@@ -246,7 +244,7 @@ package(
     ],
     deps = [
         "//packages/linux/system/libs/ipc/dbus:dbus",
-        "//packages/linux/system/security/encryption:linux-pam",
+        "//packages/linux/system/security/linux-pam:linux-pam",
         ":krb5",
         ":openldap",
         ":cyrus-sasl",
@@ -359,6 +357,6 @@ package(
     ],
     deps = [
         ":openldap",
-        "//packages/linux/system/security/encryption:linux-pam",
+        "//packages/linux/system/security/linux-pam:linux-pam",
     ],
 )

@@ -25,7 +25,7 @@ package(
         mkdir -p "$OUT/etc/pam_pkcs11"
     """],
     deps = [
-        "//packages/linux/system/security/encryption:linux-pam",
+        "//packages/linux/system/security/linux-pam:linux-pam",
         "//packages/linux/core/util-linux:util-linux",
         "//packages/linux/system/filesystem/management/cryptsetup:cryptsetup",
     ],
@@ -47,7 +47,7 @@ package(
         "--libdir=/lib/security",
     ],
     deps = [
-        "//packages/linux/system/security/encryption:linux-pam",
+        "//packages/linux/system/security/linux-pam:linux-pam",
     ],
 )
 
@@ -68,7 +68,7 @@ package(
         "--with-mantype=man",
     ],
     deps = [
-        "//packages/linux/system/security/encryption:linux-pam",
+        "//packages/linux/system/security/linux-pam:linux-pam",
         "//packages/linux/system/libs/crypto/openssl:openssl",
     ],
 )
@@ -90,7 +90,7 @@ package(
         "--with-pam-dir=/lib/security",
     ],
     deps = [
-        "//packages/linux/system/security/encryption:linux-pam",
+        "//packages/linux/system/security/linux-pam:linux-pam",
         "//packages/linux/system/libs/crypto/openssl:openssl",
         "//packages/linux/system/security/encryption:pcsc-lite",
     ],
@@ -113,6 +113,6 @@ package(
         "--with-pam-lib-dir=/lib/security",
     ],
     deps = [
-        "//packages/linux/system/security/encryption:linux-pam",
+        "//packages/linux/system/security/linux-pam:linux-pam",
     ],
 )

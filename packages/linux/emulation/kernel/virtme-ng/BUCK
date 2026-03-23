@@ -1,56 +1,22 @@
 load("//defs:package.bzl", "package")
 
 # virtme-ng - Run kernels quickly inside VMs
-# USE flags: See use_flags.bzl for available flags
+# TODO: Disabled - requires python argcomplete package for bash completion
+# generation during setup.py build. The setup.py has a hard sys.exit(1)
+# if register-python-argcomplete is not found.
 
-package(
-    build_rule = "python",
-    name = "virtme-ng",
-    url = "https://github.com/arighi/virtme-ng/archive/refs/tags/v1.31.tar.gz",
-    sha256 = "53e39a37781ae1495d3cca57c6a219a7602c442b7f58b207b449057fd8e13e9f",
-    version = "1.31",
-    description = "Quickly run kernels inside a virtualized snapshot of your live system",
-    homepage = "https://github.com/arighi/virtme-ng",
-    license = "GPL-2.0",
-    use_setup_py = True,
-    deps = [
-        "//packages/linux/lang/python:python",
-        "//packages/linux/emulation/hypervisors/qemu:qemu",
-    ],
-)
-
-# NOTE: Original virtme is no longer maintained and has no tagged releases
-# The project has been superseded by virtme-ng above.
-# Commenting out the old virtme package - use virtme-ng instead.
-
-# virtme (original) - DISABLED: No releases available on GitHub
-# download_source(
-#     name = "virtme-src",
-#     url = "https://github.com/amluto/virtme/archive/refs/tags/v1.0.tar.gz",
-#     sha256 = "INVALID - v1.0 tag does not exist",
-#
-# )
-#
 # package(
-#     build_rule = "autotools",
-#     name = "virtme",
-#
-#     version = "1.0",
-#     description = "Original virtme - Run a kernel inside a virtual machine (DEPRECATED)",
-#     homepage = "https://github.com/amluto/virtme",
+#     build_rule = "python",
+#     name = "virtme-ng",
+#     url = "https://github.com/arighi/virtme-ng/archive/refs/tags/v1.31.tar.gz",
+#     sha256 = "53e39a37781ae1495d3cca57c6a219a7602c442b7f58b207b449057fd8e13e9f",
+#     version = "1.31",
+#     description = "Quickly run kernels inside a virtualized snapshot of your live system",
+#     homepage = "https://github.com/arighi/virtme-ng",
 #     license = "GPL-2.0",
-#     pre_configure = """
-# python3 setup.py build
-#     """,
-#     post_install = """
-# #!/bin/bash
-# set -e
-#
-# python3 setup.py install --prefix=/usr --root="$DESTDIR"
-#     """,
+#     use_setup_py = True,
 #     deps = [
 #         "//packages/linux/lang/python:python",
 #         "//packages/linux/emulation/hypervisors/qemu:qemu",
 #     ],
-#     visibility = ["PUBLIC"],
 # )
