@@ -1,0 +1,52 @@
+load("//defs:package.bzl", "package")
+
+# sqlite-vec - Vector search extension for SQLite
+#
+# sqlite-vec is a SQLite extension that provides vector search capabilities,
+# enabling semantic search and similarity matching in SQLite databases.
+#
+# This extension is useful for AI/ML applications that need to store and
+# search vector embeddings.
+
+package(
+    name = "sqlite-vec",
+    build_rule = "binary",
+    version = "0.1.7-alpha.2",
+    url = "https://github.com/asg017/sqlite-vec/archive/refs/tags/v0.1.7-alpha.2.tar.gz",
+    sha256 = "9df64b954970588946b7a031d9a9189db1faf2d21026683a5e143faedba8f082",
+    description = "Vector search extension for SQLite",
+    homepage = "https://github.com/asg017/sqlite-vec",
+    license = "MIT OR Apache-2.0",
+    install_script = """
+cd "$SRCS"
+
+# sqlite-vec.c includes "sqlite-vec.h" which may be in a subdirectory
+# Find and create symlinks as needed
+if [ ! -f sqlite-vec.h ]; then
+    _header=$(find . -name 'sqlite-vec.h' 2>/dev/null | head -1)
+    if [ -n "$_header" ]; then
+        ln -sf "$_header" sqlite-vec.h
+    fi
+fi
+if [ ! -f sqlite-vec.c ]; then
+    _src=$(find . -name 'sqlite-vec.c' 2>/dev/null | head -1)
+    if [ -n "$_src" ]; then
+        ln -sf "$_src" sqlite-vec.c
+    fi
+fi
+
+# Add current directory to include path to find sqlite-vec.h
+$CC $CFLAGS -I. -fPIC -shared -o vec0.so sqlite-vec.c $LDFLAGS -lm
+$CC $CFLAGS -I. -c -o sqlite-vec.o sqlite-vec.c
+$AR rcs libsqlite-vec.a sqlite-vec.o
+
+mkdir -p "$OUT/usr/lib"
+mkdir -p "$OUT/usr/include"
+install -Dm755 vec0.so "$OUT/usr/lib/vec0.so"
+install -Dm644 libsqlite-vec.a "$OUT/usr/lib/libsqlite-vec.a"
+install -Dm644 sqlite-vec.h "$OUT/usr/include/sqlite-vec.h"
+""",
+    deps = [
+        "//packages/linux/system/libs/database/sqlite:sqlite",
+    ],
+)

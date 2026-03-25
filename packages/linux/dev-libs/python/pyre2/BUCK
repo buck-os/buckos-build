@@ -1,0 +1,42 @@
+load("//defs:package.bzl", "package")
+
+# pyre2 - Python bindings for RE2 regular expression library
+# Requires Cython to build from source.
+package(
+    build_rule = "python",
+    name = "pyre2",
+    version = "0.3.6",
+    url = "https://github.com/andreasvc/pyre2/archive/refs/tags/v0.3.6.tar.gz",
+    sha256 = "6a0a2c70b1ce98d870ce9423368cc83bbacc8a41f6e066296e197a26a842ede7",
+    use_setup_py = True,
+    pre_configure_cmds = [
+        # Fix setuptools deprecation: use setuptools instead of distutils
+        "sed -i 's/from distutils.core import setup/from setuptools import setup/' setup.py || true",
+        "sed -i 's/from distutils.extension import Extension/from setuptools import Extension/' setup.py || true",
+        # Create re2/stringpiece.h shim (removed in newer re2, replaced by std::string_view)
+        # The scikit-build/CMake adds -I<source_root> so this will be found via
+        # that include path, providing the missing header for older pyre2 code.
+        """
+mkdir -p re2
+cat > re2/stringpiece.h << 'SHIMEOF'
+#ifndef RE2_STRINGPIECE_H_
+#define RE2_STRINGPIECE_H_
+#include <string>
+#include <string_view>
+namespace re2 {
+using StringPiece = std::string_view;
+}
+#endif
+SHIMEOF
+""",
+    ],
+    env = {
+        "SETUPTOOLS_USE_DISTUTILS": "local",
+    },
+    deps = [
+        "//packages/linux/dev-libs/text/re2:re2",
+        "//packages/linux/dev-libs/python/cython:cython",
+        "//packages/linux/lang/python:python",
+        "//packages/linux/dev-libs/python/setuptools:setuptools",
+    ],
+)

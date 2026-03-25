@@ -1,0 +1,36 @@
+load("//defs:package.bzl", "package")
+
+# Bloaty - Binary size profiler
+
+package(
+    build_rule = "cmake",
+    name = "bloaty",
+    version = "1.1",
+    url = "https://github.com/google/bloaty/archive/refs/tags/v1.1.tar.gz",
+    sha256 = "682640678a748d043eea65df48831f807d39a1e761eacc461c756256f7ec6a26",
+    description = "A size profiler for binaries (ELF, Mach-O, PE, WebAssembly)",
+    homepage = "https://github.com/google/bloaty",
+    license = "Apache-2.0",
+    deps = [
+        "//packages/linux/dev-libs/google/abseil-cpp:abseil-cpp",
+        "//packages/linux/system/security/capstone:capstone",
+        "//packages/linux/dev-libs/serialization/protobuf:protobuf",
+        "//packages/linux/dev-libs/text/re2:re2",
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/compression/zstd:zstd",
+    ],
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_STANDARD=20",
+        "-DBLOATY_PREFER_SYSTEM_ABSL=YES",
+        "-DBLOATY_PREFER_SYSTEM_CAPSTONE=YES",
+        "-DBLOATY_PREFER_SYSTEM_PROTOBUF=YES",
+        "-DBLOATY_PREFER_SYSTEM_RE2=YES",
+        "-DBLOATY_PREFER_SYSTEM_ZLIB=YES",
+        "-DBLOATY_PREFER_SYSTEM_ZSTD=YES",
+        "-DBLOATY_ENABLE_RE2=ON",
+        "-DBLOATY_ENABLE_BUILDID=ON",
+        "-DBLOATY_ENABLE_CMAKETARGETS=OFF",
+        "-DBUILD_TESTING=OFF",
+    ],
+)

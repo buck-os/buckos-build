@@ -1,0 +1,20 @@
+load("//defs:package.bzl", "package")
+
+# D3D12 Memory Allocator - Header-only
+
+package(
+    name = "d3d12allocator",
+    build_rule = "binary",
+    version = "3.0.0",
+    url = "https://github.com/GPUOpen-LibrariesAndSDKs/D3D12MemoryAllocator/archive/refs/tags/v3.0.0.tar.gz",
+    sha256 = "bcbcdc6273f599cd1bf2ca651626bffef226d9d13e263369224bede9d9482f83",
+    description = "Easy to integrate memory allocation library for Direct3D 12",
+    homepage = "https://gpuopen.com/gaming-product/d3d12-memory-allocator/",
+    license = "MIT",
+    deps = [],
+    install_script = """
+mkdir -p $OUT/usr/include/d3d12allocator
+cp include/D3D12MemAlloc.h $OUT/usr/include/d3d12allocator/ 2>/dev/null || true
+cp src/D3D12MemAlloc.h $OUT/usr/include/d3d12allocator/ 2>/dev/null || true
+""",
+)

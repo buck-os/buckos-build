@@ -1,0 +1,21 @@
+load("//defs:package.bzl", "package")
+
+# intltool - Internationalization tool collection
+package(
+    build_rule = "autotools",
+    name = "intltool",
+    url = "https://launchpad.net/intltool/trunk/0.51.0/+download/intltool-0.51.0.tar.gz",
+
+    sha256 = "67c74d94196b153b774ab9f89b2fa6c6ba79352407037c8c14d5aeb334e959cd",
+    version = "0.51.0",
+    description = "Internationalization tool collection for XML and desktop files",
+    homepage = "https://launchpad.net/intltool",
+    license = "GPL-2+",
+    configure_args = [
+        "--prefix=/usr",
+    ],
+    deps = [
+        "//packages/linux/lang/perl:perl",
+        "//packages/linux/lang/perl/data:xml-parser",
+    ],
+)

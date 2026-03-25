@@ -1,0 +1,32 @@
+load("//defs:package.bzl", "package")
+
+# doas - Simple sudo alternative from OpenBSD
+# OpenDoas has its own configure script, not autotools
+
+package(
+    build_rule = "binary",
+    name = "doas",
+    version = "6.8.2",
+    url = "https://github.com/Duncaen/OpenDoas/archive/v6.8.2.tar.gz",
+    sha256 = "6da058a0e70b7543bc60624389b0b00b686189ec933828c522bf8b2600495a67",
+    description = "Simple sudo alternative from OpenBSD",
+    homepage = "https://github.com/Duncaen/OpenDoas",
+    license = "ISC",
+    deps = [
+        "//packages/linux/system/libs/crypto/libxcrypt:libxcrypt",
+    ],
+    host_deps = [
+        "//packages/linux/dev-tools/dev-utils/bison:bison",
+    ],
+    install_script = """
+# OpenDoas has a custom configure script
+./configure --prefix=/usr --without-pam --with-timestamp 2>/dev/null || \
+    ./configure --prefix=/usr --without-pam 2>/dev/null || true
+
+make CC="$CC" CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS -lcrypt" \
+    -j${MAKEOPTS:-$(nproc)} || \
+make CC="$CC" LDFLAGS="$LDFLAGS -lcrypt" -j1
+
+make install DESTDIR="$OUT"
+""",
+)

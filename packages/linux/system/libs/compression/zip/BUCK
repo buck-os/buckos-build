@@ -1,0 +1,40 @@
+load("//defs:package.bzl", "package")
+
+# zip - Info-ZIP compression utility
+
+package(
+    build_rule = "binary",
+    name = "zip",
+    url = "https://downloads.sourceforge.net/infozip/zip30.tar.gz",
+    sha256 = "f0e8bb1f9b7eb0b01285495a2699df3a4b766784c1765a8f1aeedf63c0806369",
+    version = "3.0",
+    description = "Info-ZIP compression utility",
+    homepage = "https://infozip.sourceforge.net/Zip.html",
+    license = "Info-ZIP",
+    deps = [
+        "//packages/linux/system/libs/compression/bzip2:bzip2",
+    ],
+    install_script = """
+# Fix conflicting types for memset/memcpy: zip.h defines its own prototypes
+# when ZMEM is set. Remove -DZMEM from the Makefile flags and add -DHAVE_STRING_H
+# to use the system string.h versions instead.
+sed -i 's/-DZMEM//g' unix/Makefile 2>/dev/null || true
+
+make -f unix/Makefile generic \
+    CC="$CC" \
+    CF="$CFLAGS -DUNIX -I. -DHAVE_STRING_H -Wno-error=incompatible-pointer-types -Wno-error=int-conversion -Wno-error" \
+    LF2="$LDFLAGS" \
+    -j${MAKEOPTS:-$(nproc)} || \
+make -f unix/Makefile generic \
+    CC="$CC" \
+    CF="$CFLAGS -DUNIX -I. -DHAVE_STRING_H -Wno-error=incompatible-pointer-types -Wno-error=int-conversion -Wno-error" \
+    LF2="$LDFLAGS" \
+    -j1
+
+mkdir -p "$OUT/usr/bin"
+install -m755 zip "$OUT/usr/bin/" 2>/dev/null || true
+install -m755 zipcloak "$OUT/usr/bin/" 2>/dev/null || true
+install -m755 zipnote "$OUT/usr/bin/" 2>/dev/null || true
+install -m755 zipsplit "$OUT/usr/bin/" 2>/dev/null || true
+""",
+)

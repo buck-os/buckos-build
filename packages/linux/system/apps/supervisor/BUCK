@@ -1,0 +1,45 @@
+load("//defs:package.bzl", "package")
+
+# supervisor - Process control system
+
+package(
+    build_rule = "binary",
+    name = "supervisor",
+    version = "4.2.5",
+    url = "https://github.com/Supervisor/supervisor/archive/refs/tags/4.2.5.tar.gz",
+    sha256 = "d612a48684cf41ea7ce8cdc559eaa4bf9cbaa4687c5aac3f355c6d2df4e4f170",
+    description = "Process control system for Unix",
+    homepage = "http://supervisord.org",
+    license = "BSD",
+    install_script = """
+        cd $SRCS
+
+        # Find Python with pip from dependency
+        PYTHON_CMD=""
+        IFS=':' read -ra _dep_array <<< "${DEP_BASE_DIRS:-}"
+        for dep in "${_dep_array[@]}"; do
+            if [ -x "$dep/usr/bin/python3" ]; then
+                # Check if this Python has pip
+                if "$dep/usr/bin/python3" -m pip --version >/dev/null 2>&1; then
+                    PYTHON_CMD="$dep/usr/bin/python3"
+                    break
+                fi
+            fi
+        done
+
+        if [ -z "$PYTHON_CMD" ]; then
+            # Fall back to system python with pip
+            if python3 -m pip --version >/dev/null 2>&1; then
+                PYTHON_CMD="python3"
+            else
+                echo "Error: No Python with pip module found"
+                exit 1
+            fi
+        fi
+
+        $PYTHON_CMD -m pip install --prefix=/usr --root="$OUT" .
+    """,
+    deps = [
+        "//packages/linux/lang/python:python",
+    ],
+)

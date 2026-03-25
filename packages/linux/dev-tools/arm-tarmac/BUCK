@@ -1,0 +1,32 @@
+load("//defs:package.bzl", "package")
+
+# =============================================================================
+# Arm Tarmac Trace Utilities - Tools for analyzing Tarmac trace files
+# =============================================================================
+# This package provides tools to read, analyze and browse traces of running
+# programs in the 'Tarmac' textual format used by Arm simulators and tools.
+#
+# Main tools installed:
+#   - tarmac-callinfo: Generate call information reports
+#   - tarmac-calltree: Show tree of function calls and returns
+#   - tarmac-flamegraph: Generate flamegraph data from traces
+#   - tarmac-profile: Generate per-function profiling reports
+#   - tarmac-vcd: Convert traces to IEEE 1364 Value Change Dump format
+
+package(
+    build_rule = "cmake",
+    name = "arm-tarmac",
+    version = "0.0.1",
+    url = "https://github.com/ARM-software/tarmac-trace-utilities/archive/e9b24783c2be2a47aaf5f85e6bbd54f1fa8e7122.tar.gz",
+    sha256 = "ec238d3e61ee8c1e445e274890b094fbf5f0ba02c6d0bb024d489f2bfb630728",
+    description = "Arm Tarmac Trace Utilities - tools to analyze trace files in Tarmac format",
+    homepage = "https://github.com/ARM-software/tarmac-trace-utilities",
+    license = "Apache-2.0",
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_FLAGS=-include cstdint",
+    ],
+    deps = [
+        "//packages/linux/system/terminal/ncurses:ncurses",
+    ],
+)

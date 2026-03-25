@@ -1,0 +1,55 @@
+load("//defs:package.bzl", "package")
+
+# libpq - PostgreSQL C client library
+#
+# The libpq C library provides the official PostgreSQL client API.
+# It's extracted from the PostgreSQL source and can be used standalone
+# for applications that need to connect to PostgreSQL databases.
+#
+# NOTE: PostgreSQL 16.x does not have meson build support (added in PG 17).
+# Use autotools and build only the libpq client library.
+
+package(
+    build_rule = "autotools",
+    name = "libpq",
+    version = "16.4",
+    source = "//packages/linux/databases/postgresql:postgresql-src",
+    description = "PostgreSQL C client library",
+    homepage = "https://www.postgresql.org/",
+    license = "PostgreSQL",
+
+    configure_args = [
+        "--prefix=/usr",
+        "--with-system-tzdata=/usr/share/zoneinfo",
+        "--with-ssl=openssl",
+        "--with-zlib",
+        "--without-readline",
+        "--without-icu",
+        "--without-ldap",
+        "--without-pam",
+    ],
+
+    # Only build the libpq client library (not the full server)
+    src_compile = """
+make -j${MAKEOPTS:-$(nproc)} -C src/common
+make -j${MAKEOPTS:-$(nproc)} -C src/port
+make -j${MAKEOPTS:-$(nproc)} -C src/interfaces/libpq
+make -j${MAKEOPTS:-$(nproc)} -C src/bin/pg_config
+make -j${MAKEOPTS:-$(nproc)} -C src/include
+""",
+
+    src_install = """
+make -C src/common install DESTDIR="$OUT"
+make -C src/port install DESTDIR="$OUT"
+make -C src/interfaces/libpq install DESTDIR="$OUT"
+make -C src/bin/pg_config install DESTDIR="$OUT"
+make -C src/include install DESTDIR="$OUT"
+""",
+
+    # Dependencies
+    deps = [
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/core/zlib:zlib",
+    ],
+
+)

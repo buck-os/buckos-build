@@ -1,0 +1,24 @@
+load("//defs:package.bzl", "package")
+
+package(
+    name = "pptp-linux",
+    build_rule = "autotools",
+    skip_configure = True,
+    version = "1.10.0",
+    url = "https://sourceforge.net/projects/pptpclient/files/pptp/pptp-1.10.0/pptp-1.10.0.tar.gz",
+    sha256 = "82492db8e487ce73b182ee7f444251d20c44f5c26d6e96c553ec7093aefb5af4",
+
+    make_args = [
+        "PPPD=/usr/sbin/pppd",
+        "IP=/sbin/ip",
+    ],
+
+    post_install_cmds = ["""
+make DESTDIR=$DESTDIR install
+mkdir -p "$DESTDIR/etc/ppp/peers"
+"""],
+
+    description = "PPTP client for Linux (legacy VPN protocol)",
+    homepage = "https://pptpclient.sourceforge.net/",
+    license = "GPL-2.0",
+)

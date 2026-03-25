@@ -1,0 +1,17 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "buddy",
+    # SourceForge release tarball includes pre-generated configure script
+    version = "2.4",
+    use_configure = {
+        "examples": ("--enable-examples", "--disable-examples"),
+    },
+    url = "https://sourceforge.net/projects/buddy/files/buddy/BuDDy%202.4/buddy-2.4.tar.gz/download",
+    filename = "buddy-2.4.tar.gz",
+    sha256 = "d3df80a6a669d9ae408cb46012ff17bd33d855529d20f3a7e563d0d913358836",
+    description = "Binary Decision Diagram library",
+    homepage = "http://buddy.sourceforge.net/",
+    license = "MIT",
+)

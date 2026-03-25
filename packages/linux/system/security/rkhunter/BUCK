@@ -1,0 +1,28 @@
+load("//defs:package.bzl", "package")
+
+# rkhunter - Rootkit Hunter
+# Shell script tool, manually install files.
+package(
+    name = "rkhunter",
+    build_rule = "binary",
+    url = "https://downloads.sourceforge.net/project/rkhunter/rkhunter/1.4.6/rkhunter-1.4.6.tar.gz",
+    sha256 = "f750aa3e22f839b637a073647510d7aa3adf7496e21f3c875b7a368c71d37487",
+    version = "1.4.6",
+    description = "Rootkit Hunter - scans for rootkits, backdoors and local exploits",
+    homepage = "http://rkhunter.sourceforge.net/",
+    license = "GPL-2.0",
+    install_script = """
+cd "$SRCS"
+
+# rkhunter's installer.sh needs to be run from the source directory
+# Use --layout default so it installs to standard paths under --striproot
+./installer.sh --install \
+    --layout default \
+    --striproot "$OUT"
+
+mkdir -p "$OUT/etc/rkhunter.d"
+mkdir -p "$OUT/var/lib/rkhunter/db"
+mkdir -p "$OUT/var/lib/rkhunter/tmp"
+mkdir -p "$OUT/var/log"
+""",
+)

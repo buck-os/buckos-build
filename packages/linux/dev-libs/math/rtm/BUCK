@@ -1,0 +1,17 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "binary",
+    name = "rtm",
+    version = "2.2.0",
+    url = "https://github.com/nfrechette/rtm/archive/refs/tags/v2.2.0.tar.gz",
+    sha256 = "e627c46de1895b78eee63612ce4e5ade3af28e040edab6ec6f6521366b4e8b9b",
+    description = "Realtime Math - header-only C++ library for 3D math (SIMD optimized)",
+    homepage = "https://github.com/nfrechette/rtm",
+    license = "MIT",
+    deps = [],
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/include
+cp -r includes/rtm $INSTALL_DIR/usr/include/
+""",
+)

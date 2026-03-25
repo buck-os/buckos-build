@@ -1,0 +1,39 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cmake",
+    name = "aocl-blas",
+    version = "5.2",
+    url = "https://mirror.buckos.org/a/aocl-blas-5.2.tar.gz",
+    sha256 = "c553bd543eedc87920df9b82634ae4c02662145ed737f51fdf4c9bca5e588028",
+    description = "AMD Optimizing CPU Libraries - BLAS Library (BLIS)",
+    homepage = "https://www.amd.com/en/developer/aocl.html",
+    license = "BSD-3-Clause",
+    deps = [],
+    pre_configure_cmds = ["""
+# Disable Fortran requirement - patch CMakeLists.txt to not enable Fortran language
+sed -i 's/project(blis.*LANGUAGES.*C.*CXX.*Fortran)/project(blis LANGUAGES C CXX)/' CMakeLists.txt || true
+sed -i 's/enable_language(Fortran)/#enable_language(Fortran)/' CMakeLists.txt || true
+sed -i '/CMAKE_Fortran_COMPILER/d' CMakeLists.txt || true
+# Remove all Fortran-related if/endif blocks that break flow control nesting
+sed -i '/if.*CMAKE_Fortran_COMPILER/,/endif/d' CMakeLists.txt || true
+sed -i '/if.*ENABLE_FORTRAN/,/endif/d' CMakeLists.txt || true
+# Also comment out any remaining Fortran references
+sed -i 's/.*Fortran_FLAGS.*/#&/' CMakeLists.txt || true
+"""],
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DBLIS_CONFIG_FAMILY=x86_64",
+        "-DENABLE_THREADING=openmp",
+        "-DENABLE_MIXED_DT=ON",
+        "-DENABLE_SUP_HANDLING=ON",
+        "-DENABLE_AOCL_DYNAMIC=OFF",
+        "-DBUILD_ILP64=OFF",
+    ],
+    use_configure = {
+        "blas": ("-DENABLE_BLAS=ON", "-DENABLE_BLAS=OFF"),
+        "cblas": ("-DENABLE_CBLAS=ON", "-DENABLE_CBLAS=OFF"),
+        "openmp": ("-DENABLE_THREADING=openmp", "-DENABLE_THREADING=no"),
+    },
+)

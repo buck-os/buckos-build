@@ -1,0 +1,24 @@
+load("//defs:package.bzl", "package")
+
+# USE flags: See use_flags.bzl for available flags
+
+package(
+    build_rule = "autotools",
+    name = "ttfautohint",
+    url = "https://sourceforge.net/projects/freetype/files/ttfautohint/1.8.4/ttfautohint-1.8.4.tar.gz",
+
+    sha256 = "8a876117fa6ebfd2ffe1b3682a9a98c802c0f47189f57d3db4b99774206832e1",
+    version = "1.8.4",
+    description = "Automatic hinting tool for TrueType fonts",
+    homepage = "https://freetype.org/ttfautohint/",
+    license = "FTL GPL-2.0",
+    configure_args = [
+        "--prefix=/usr",
+        "--with-qt=no",
+        "--with-doc=no",
+    ],
+    deps = [
+        "//packages/linux/system/libs/font/freetype:freetype",
+        "//packages/linux/system/libs/font/harfbuzz:harfbuzz",
+    ],
+)

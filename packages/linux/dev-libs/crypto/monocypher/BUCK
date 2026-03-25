@@ -1,0 +1,26 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "make",
+    name = "monocypher",
+    version = "4.0.2",
+    url = "https://github.com/LoupVaillant/Monocypher/archive/4.0.2.tar.gz",
+    sha256 = "bc1ca30b1b2654e4e7daf2492c0d204200e55137f23fda6b7142fd7d523bd6b4",
+    description = "Easy to use, easy to deploy crypto library",
+    homepage = "https://monocypher.org/",
+    license = "BSD-2-Clause OR CC0-1.0",
+    skip_configure = True,
+    src_compile = """
+$CC $CFLAGS -fPIC -c -o monocypher.o src/monocypher.c -Isrc
+$CC $CFLAGS -fPIC -c -o monocypher-ed25519.o src/optional/monocypher-ed25519.c -Isrc -Isrc/optional
+$CC -shared -o libmonocypher.so monocypher.o monocypher-ed25519.o $LDFLAGS
+$AR rcs libmonocypher.a monocypher.o monocypher-ed25519.o
+""",
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/include $INSTALL_DIR/usr/lib64
+cp src/monocypher.h $INSTALL_DIR/usr/include/
+cp src/optional/monocypher-ed25519.h $INSTALL_DIR/usr/include/
+cp libmonocypher.so $INSTALL_DIR/usr/lib64/
+cp libmonocypher.a $INSTALL_DIR/usr/lib64/
+""",
+)

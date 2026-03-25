@@ -1,0 +1,17 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "wdns",
+    version = "0.10.0",
+    url = "https://github.com/farsightsec/wdns/archive/refs/tags/tags/v0.10.0.tar.gz",
+    sha256 = "9fe4b64aa4cca781cc61fc125fc396c5d600bf459bf06d0d323bbe9eb5327664",
+    pre_configure_cmds = ["autoreconf -fi"],
+    configure_args = [
+        "--disable-static",
+    ],
+    deps = [],
+    description = "Low-level DNS library for parsing and handling DNS messages",
+    homepage = "https://github.com/farsightsec/wdns",
+    license = "Apache-2.0",
+)

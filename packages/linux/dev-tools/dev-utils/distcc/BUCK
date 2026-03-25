@@ -1,0 +1,41 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "distcc",
+    # GitHub release tarball includes pre-generated configure script
+    url = "https://github.com/distcc/distcc/releases/download/v3.4/distcc-3.4.tar.gz",
+
+    sha256 = "2b99edda9dad9dbf283933a02eace6de7423fe5650daa4a728c950e5cd37bd7d",
+    version = "3.4",
+    description = "Distributed C/C++/ObjC compiler with distcc-pump extensions",
+    homepage = "https://github.com/distcc/distcc",
+    license = "GPL-2+",
+    configure_args = [
+        "--without-gtk",
+        "--without-gnome",
+        "--with-included-popt",
+        "--without-libiberty",
+        "--without-python",
+        "--disable-pump-mode",
+    ],
+    env = {
+        "PYTHON": "/bin/false",
+    },
+    src_compile = """
+# Build only distcc/distccd, skip include-server which needs Python
+make -j${MAKEOPTS:-$(nproc)} PYTHON=/bin/false \
+    distcc distccd distcc-pump lsdistcc 2>&1 || \
+make -j1 PYTHON=/bin/false distcc distccd lsdistcc 2>&1 || true
+""",
+    src_install = """
+mkdir -p "$OUT/usr/bin"
+for bin in distcc distccd distcc-pump lsdistcc; do
+    [ -f "$bin" ] && install -m755 "$bin" "$OUT/usr/bin/"
+done
+mkdir -p "$OUT/usr/share/man/man1"
+for man in man/*.1; do
+    [ -f "$man" ] && install -m644 "$man" "$OUT/usr/share/man/man1/" 2>/dev/null || true
+done
+""",
+)

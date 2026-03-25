@@ -1,0 +1,19 @@
+load("//defs:package.bzl", "package")
+
+package(
+    name = "quickhull",
+    build_rule = "binary",
+    version = "1.0.0",
+    url = "https://github.com/akuukka/quickhull/archive/1ffbc6f884ea1da89e104a5996cf8a726db673d5.tar.gz",
+    sha256 = "55c87e78bf990509ff35e3e039213ca6e3890ce988c2891647d65079696ae3a9",
+    description = "C++ implementation of the Quickhull algorithm for convex hulls",
+    homepage = "https://github.com/akuukka/quickhull",
+    license = "public-domain",
+    deps = [],
+    install_script = """
+mkdir -p "$OUT/usr/include/quickhull/Structs"
+cp QuickHull.hpp "$OUT/usr/include/quickhull/"
+cp QuickHull.cpp "$OUT/usr/include/quickhull/"
+cp Structs/*.hpp "$OUT/usr/include/quickhull/Structs/" 2>/dev/null || true
+""",
+)

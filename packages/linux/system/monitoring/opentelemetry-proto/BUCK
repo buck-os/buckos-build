@@ -1,0 +1,25 @@
+load("//defs:package.bzl", "package")
+
+# opentelemetry-proto - OpenTelemetry Protocol Definitions
+# This package contains .proto files - the Makefile requires docker for code generation
+# We install the proto files directly without code generation
+
+package(
+    name = "opentelemetry-proto",
+    build_rule = "make",
+    version = "v1.8.0",
+    url = "https://github.com/open-telemetry/opentelemetry-proto/archive/refs/tags/v1.8.0.tar.gz",
+    sha256 = "057812cab50122c0fd504aae57b0b58424a5ec05d1b07889814bdfc7699abbe7",
+    description = "OpenTelemetry Protocol (OTLP) specification and language-independent protocol definitions",
+    homepage = "https://github.com/open-telemetry/opentelemetry-proto.git",
+    license = "Apache-2.0",
+    deps = [],
+    # No compilation needed - just install proto files
+    src_compile = """
+true
+""",
+    src_install = """
+mkdir -p "$INSTALL_DIR/usr/share/opentelemetry-proto"
+cp -a opentelemetry "$INSTALL_DIR/usr/share/opentelemetry-proto/"
+""",
+)

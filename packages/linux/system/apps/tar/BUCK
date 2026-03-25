@@ -12,7 +12,6 @@ package(
     description = "GNU tape archiver for creating and extracting archives",
     homepage = "https://www.gnu.org/software/tar",
     license = "GPL-3+",
-    # TEMPORARILY DISABLED acl for aarch64 cross-compilation (Fix #26 - acl/libattr linking issue)
     use_deps = {
         "acl": "//packages/linux/system/libs/ipc/acl:acl",
     },
@@ -21,6 +20,7 @@ package(
         "nls": ("--enable-nls", "--disable-nls"),
         "xattr": ("--with-xattrs", "--without-xattrs"),
     },
+    env = {"FORCE_UNSAFE_CONFIGURE": "1"},
     configure_args = [
         "--prefix=/usr",
     ],

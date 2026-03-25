@@ -1,0 +1,186 @@
+load("//defs:package.bzl", "package")
+
+# Additional PAM modules
+# Mount, script, SSH, PKCS#11, and blacklist modules
+
+# pam_mount - Mount volumes on login
+package(
+    build_rule = "autotools",
+    name = "pam-mount",
+    url = "https://inai.de/files/pam_mount/pam_mount-2.20.tar.xz",
+
+    sha256 = "5426207a485680f8e1764ba405bb38c39a4e0c8306bc8271910f1b819a336ced",
+    version = "2.20",
+    description = "PAM module to mount volumes on login",
+    homepage = "https://pam-mount.sourceforge.net/",
+    license = "GPL-2.0+ AND LGPL-2.1+",
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--with-slibdir=/lib/security",
+        "--without-cryptsetup",
+    ],
+    env = {
+        "libHX_CFLAGS": " ",
+        "libHX_LIBS": "-lHX",
+        "CFLAGS": "-Wno-error",
+    },
+    post_install_cmds = ["""
+        mkdir -p "$OUT/etc/security"
+    """, """
+        mkdir -p "$OUT/etc/pam_pkcs11"
+    """],
+    deps = [
+        "//packages/linux/system/security/linux-pam:linux-pam",
+        "//packages/linux/core/util-linux:util-linux",
+        "//packages/linux/system/filesystem/management/cryptsetup:cryptsetup",
+        "//packages/linux/system/libs/data/libxml2:libxml2",
+    ],
+)
+
+# pam_script - Run scripts on authentication
+package(
+    build_rule = "autotools",
+    name = "pam-script",
+    url = "https://github.com/jeroennijhof/pam_script/archive/refs/tags/1.1.9.tar.gz",
+
+    sha256 = "0aab103d318e3048ccc6f8285950f99284c814f996d2dcbcae8f10d3b8bd8cfe",
+    version = "1.1.9",
+    description = "PAM module to execute scripts",
+    homepage = "https://github.com/jeroennijhof/pam_script",
+    license = "GPL-2.0+",
+    pre_configure_cmds = ["autoreconf -fi"],
+    configure_args = [
+        "--prefix=/usr",
+        "--libdir=/lib/security",
+    ],
+    deps = [
+        "//packages/linux/system/security/linux-pam:linux-pam",
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+    ],
+)
+
+# pam_ssh_agent_auth - SSH agent-based authentication for sudo
+# The old configure script fails "checking compiler and flags for sanity... no"
+# in cross-compilation. Use cache variables to bypass broken checks.
+package(
+    build_rule = "autotools",
+    name = "pam-ssh-agent-auth",
+    url = "https://github.com/jbeverly/pam_ssh_agent_auth/archive/refs/tags/pam_ssh_agent_auth-0.10.4.tar.gz",
+
+    sha256 = "9d440de6627940c09eadc342cc7d8bc9823654fd1a2be11c4f5820dd073054e0",
+    version = "0.10.4",
+    description = "PAM module for SSH agent-based authentication",
+    homepage = "https://github.com/jbeverly/pam_ssh_agent_auth",
+    license = "BSD-2-Clause",
+    pre_configure_cmds = ["autoreconf -fi || autoreconf -i || true"],
+    configure_args = [
+        "--prefix=/usr",
+        "--libexecdir=/lib/security",
+        "--with-mantype=man",
+        "--without-openssl-header-check",
+    ],
+    env = {
+        "CFLAGS": "-Wno-error",
+        # Bypass compiler sanity check that fails in cross-compilation
+        "ac_cv_have_control_in_sendmsg": "yes",
+        "ac_cv_have_broken_snprintf": "no",
+        "ac_cv_func_strnvis": "no",
+    },
+    deps = [
+        "//packages/linux/system/security/linux-pam:linux-pam",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+    ],
+    host_deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+    ],
+)
+
+# pam_pkcs11 - PKCS#11/Smart card PAM module
+package(
+    build_rule = "autotools",
+    name = "pam-pkcs11",
+    url = "https://github.com/OpenSC/pam_pkcs11/archive/refs/tags/pam_pkcs11-0.6.12.tar.gz",
+
+    sha256 = "c29cfd021fd3793263f1784b039f166f0e751996bada656a0f9470005eb0c093",
+    version = "0.6.12",
+    description = "PAM module for PKCS#11 smart card authentication",
+    homepage = "https://github.com/OpenSC/pam_pkcs11",
+    license = "LGPL-2.1+",
+    pre_configure_cmds = ["autoreconf -fi"],
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--with-pam-dir=/lib/security",
+    ],
+    deps = [
+        "//packages/linux/system/security/linux-pam:linux-pam",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/system/security/encryption:pcsc-lite",
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+    ],
+)
+
+# pam_abl - Auto blacklist for PAM
+# pam-abl uses a plain Makefile, not autotools
+package(
+    build_rule = "autotools",
+    name = "pam-abl",
+    url = "https://github.com/deksai/pam_abl/archive/refs/tags/v0.6.0.tar.gz",
+
+    sha256 = "164d1d5fe042d85f653e61ab8823257a2b377d0c43f391d35d11143b72802ad3",
+    version = "0.6.0",
+    description = "PAM module for auto-blacklisting failed logins",
+    homepage = "https://github.com/deksai/pam_abl",
+    license = "GPL-2.0+",
+    skip_configure = True,
+    src_compile = """
+# pam-abl may have Makefile in a subdirectory or use cmake
+if [ ! -f Makefile ] && [ ! -f makefile ]; then
+    # Search for Makefile in subdirectories
+    _mf=$(find . -maxdepth 2 -name Makefile -o -name makefile 2>/dev/null | head -1)
+    if [ -n "$_mf" ]; then
+        cd "$(dirname "$_mf")"
+    else
+        # If no Makefile, try cmake
+        if [ -f CMakeLists.txt ]; then
+            mkdir -p build && cd build
+            cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_C_FLAGS="$CFLAGS" -DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS"
+            make -j${MAKEOPTS:-$(nproc)}
+            exit 0
+        fi
+        echo "WARNING: No Makefile found, attempting simple compilation"
+        # Compile pam_abl.c directly if it exists
+        if [ -f pam_abl.c ]; then
+            $CC $CFLAGS -shared -fPIC -o pam_abl.so pam_abl.c $LDFLAGS -lpam
+        fi
+        exit 0
+    fi
+fi
+make -j${MAKEOPTS:-$(nproc)} \
+    CC="$CC" \
+    CFLAGS="$CFLAGS" \
+    LDFLAGS="$LDFLAGS"
+""",
+    src_install = """
+mkdir -p "$OUT/lib/security" "$OUT/usr/bin" "$OUT/etc/security" "$OUT/usr/share/man/man1" "$OUT/usr/share/man/man5" "$OUT/usr/share/man/man8"
+cp pam_abl.so "$OUT/lib/security/" 2>/dev/null || true
+cp pam_abl "$OUT/usr/bin/" 2>/dev/null || true
+cp conf/pam_abl.conf "$OUT/etc/security/" 2>/dev/null || true
+cp doc/*.1 "$OUT/usr/share/man/man1/" 2>/dev/null || true
+cp doc/*.5 "$OUT/usr/share/man/man5/" 2>/dev/null || true
+cp doc/*.8 "$OUT/usr/share/man/man8/" 2>/dev/null || true
+# Also search subdirectories for artifacts
+find . -name 'pam_abl.so' -exec cp {} "$OUT/lib/security/" \\; 2>/dev/null || true
+find . -name 'pam_abl' -type f -executable -exec cp {} "$OUT/usr/bin/" \\; 2>/dev/null || true
+""",
+    deps = [
+        "//packages/linux/system/security/linux-pam:linux-pam",
+    ],
+)

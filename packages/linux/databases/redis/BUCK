@@ -1,0 +1,31 @@
+load("//defs:package.bzl", "package")
+
+# Redis - In-memory data structure store
+#
+# Redis uses a custom Makefile-based build system, not autotools.
+# We use simple_package with custom build commands.
+#
+# USE flags:
+#   ssl       - Enable SSL/TLS support
+#   systemd   - Enable systemd integration
+#   jemalloc  - Use jemalloc memory allocator (recommended)
+
+package(
+    name = "redis",
+    build_rule = "autotools",
+    skip_configure = True,
+    version = "7.4.1",
+    url = "https://github.com/redis/redis/archive/refs/tags/7.4.1.tar.gz",
+    sha256 = "e85fd212307c8b453ae9361e882b6c1cefcc6a988a6f135faf7ef770a13bb05d",
+    description = "In-memory data structure store, used as database, cache, and message broker",
+    homepage = "https://redis.io/",
+    license = "BSD-3-Clause",
+    deps = [],
+    use_deps = {
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "jemalloc": "//packages/linux/dev-libs/allocators/jemalloc:jemalloc",
+    },
+    env = {
+        "PREFIX": "/usr",
+    },
+)

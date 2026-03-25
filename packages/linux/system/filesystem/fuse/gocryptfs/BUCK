@@ -1,0 +1,17 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "go",
+    name = "gocryptfs",
+    url = "https://github.com/rfjakob/gocryptfs/archive/refs/tags/v2.4.0.tar.gz",
+    sha256 = "a36d47f546b7deb87e291066a09d324015dbada123de355f41d035ba7a9d6b2b",
+    version = "2.4.0",
+    description = "Encrypted overlay filesystem written in Go",
+    homepage = "https://nuetzlich.net/gocryptfs/",
+    license = "MIT",
+    deps = [
+        "//packages/linux/lang/go:go",
+        "//packages/linux/system/security/encryption:fuse3",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+    ],
+)

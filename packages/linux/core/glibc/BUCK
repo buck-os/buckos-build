@@ -59,26 +59,30 @@ export LDFLAGS=""
 find . -name 'libc_sigaction.c' \
     -exec sed -i 's/eh_frame,\\"a\\"/eh_frame,\\"aw\\"/g' {} +
 
-# Extract sysroot from CC for kernel headers (CC includes --sysroot=...)
-SYSROOT=""
-for word in $CC; do
-    case "$word" in
-        --sysroot=*) SYSROOT="${word#--sysroot=}" ;;
-    esac
-done
-
-# Also check DEP_BASE_DIRS for explicit linux-headers dep
+# Find kernel headers from DEP_BASE_DIRS or sysroot
 KERNEL_HEADERS=""
-if [ -n "$SYSROOT" ] && [ -d "$SYSROOT/usr/include/linux" ]; then
-    KERNEL_HEADERS="$SYSROOT/usr/include"
-fi
 IFS=':' read -ra DEPS <<< "${DEP_BASE_DIRS:-}"
 for dep in "${DEPS[@]}"; do
-    if [ -d "$dep/usr/include/linux" ]; then
-        KERNEL_HEADERS="$dep/usr/include"
-        break
-    fi
+    for subdir in "usr/include" "include"; do
+        if [ -d "$dep/$subdir/linux" ]; then
+            KERNEL_HEADERS="$dep/$subdir"
+            break 2
+        fi
+    done
 done
+
+# Fallback: extract sysroot from CC specs if still not found
+if [ -z "$KERNEL_HEADERS" ]; then
+    SYSROOT=""
+    for word in $CC; do
+        case "$word" in
+            --sysroot=*) SYSROOT="${word#--sysroot=}" ;;
+        esac
+    done
+    if [ -n "$SYSROOT" ] && [ -d "$SYSROOT/usr/include/linux" ]; then
+        KERNEL_HEADERS="$SYSROOT/usr/include"
+    fi
+fi
 
 if [ -z "$KERNEL_HEADERS" ]; then
     echo "ERROR: Could not find kernel headers" >&2

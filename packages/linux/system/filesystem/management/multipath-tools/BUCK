@@ -1,0 +1,54 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "make",
+    name = "multipath-tools",
+    skip_configure = True,
+    url = "https://github.com/opensvc/multipath-tools/archive/refs/tags/0.9.7.tar.gz",
+    sha256 = "8f0a7ddc01137d0f90ac3ef5700131dfbd6cf3bbbccdcfa317e8379efa328d59",
+    version = "0.9.7",
+    description = "Tools for managing multipath devices",
+    homepage = "https://github.com/opensvc/multipath-tools",
+    license = "GPL-2.0",
+    src_compile = """
+# Ensure pkg-config can find devmapper from lvm2 and mount from util-linux
+IFS=':' read -ra _DEPS <<< "${DEP_BASE_DIRS:-}"
+_EXTRA_INC=""
+_EXTRA_LIB=""
+for _dep in "${_DEPS[@]}"; do
+    for _pc in "$_dep/usr/lib64/pkgconfig" "$_dep/usr/lib/pkgconfig"; do
+        if [ -d "$_pc" ]; then
+            export PKG_CONFIG_PATH="${_pc}${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+        fi
+    done
+    for _inc in "$_dep/usr/include"; do
+        [ -d "$_inc" ] && _EXTRA_INC="$_EXTRA_INC -I$_inc"
+    done
+    for _lib in "$_dep/usr/lib64" "$_dep/usr/lib"; do
+        [ -d "$_lib" ] && _EXTRA_LIB="$_EXTRA_LIB -L$_lib -Wl,-rpath-link,$_lib"
+    done
+done
+export CFLAGS="$CFLAGS $_EXTRA_INC"
+export LDFLAGS="$LDFLAGS $_EXTRA_LIB"
+
+make -j${MAKEOPTS:-$(nproc)} \
+    CC="$CC" \
+    CFLAGS="$CFLAGS" \
+    LDFLAGS="$LDFLAGS" \
+    prefix=/usr \
+    SYSTEMDPATH=/usr/lib || \
+make -j1 \
+    CC="$CC" \
+    CFLAGS="$CFLAGS" \
+    LDFLAGS="$LDFLAGS" \
+    prefix=/usr \
+    SYSTEMDPATH=/usr/lib
+""",
+    deps = [
+        "//packages/linux/system/filesystem/management/lvm2:lvm2",
+        "//packages/linux/system/init/eudev:eudev",
+        "//packages/linux/system/libs/data/json-c:json-c",
+        "//packages/linux/system/libs/liburcu:liburcu",
+        "//packages/linux/core/util-linux:util-linux",
+    ],
+)

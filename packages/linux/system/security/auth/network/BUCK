@@ -1,0 +1,66 @@
+load("//defs:package.bzl", "package")
+
+# Network authentication packages
+# RADIUS and TACACS+ PAM modules
+
+# pam_radius - RADIUS PAM module
+# No install target in Makefile, use manual install
+package(
+    build_rule = "autotools",
+    name = "pam-radius",
+    url = "https://github.com/FreeRADIUS/pam_radius/archive/refs/tags/release_2_0_0.tar.gz",
+
+    sha256 = "798dc358e7a143163e103bd38c4101645b2e93d82aa0ec63d32c0cb929d9c65c",
+    version = "2.0.0",
+    description = "PAM module for RADIUS authentication",
+    homepage = "https://github.com/FreeRADIUS/pam_radius",
+    license = "GPL-2.0+",
+    src_configure = """
+autoreconf -fi
+./configure --prefix=/usr
+""",
+    src_compile = """
+make -j${MAKEOPTS:-$(nproc)} PAMDIR=/lib/security
+""",
+    src_install = """
+mkdir -p "$OUT/lib/security" "$OUT/etc/raddb"
+cp pam_radius_auth.so "$OUT/lib/security/" 2>/dev/null || true
+cp pam_radius_auth.conf "$OUT/etc/raddb/" 2>/dev/null || true
+""",
+    host_deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+    ],
+    deps = [
+        "//packages/linux/system/security/linux-pam:linux-pam",
+    ],
+)
+
+# pam_tacplus - TACACS+ PAM module
+# GitHub tarball needs gnulib bootstrap; stub out the missing gnulib includes
+package(
+    build_rule = "autotools",
+    name = "pam-tacplus",
+    url = "https://github.com/kravietz/pam_tacplus/archive/refs/tags/v1.7.0.tar.gz",
+
+    sha256 = "b6c102eef0a42e3946bcdc29bbf7145c6dd13aa1fb6c58f6d282826166391837",
+    version = "1.7.0",
+    description = "PAM module for TACACS+ authentication",
+    homepage = "https://github.com/kravietz/pam_tacplus",
+    license = "GPL-2.0+",
+    pre_configure_cmds = [
+        "mkdir -p lib && touch lib/Makefile.gnulib",
+        "autoreconf -fi",
+    ],
+    configure_args = [
+        "--prefix=/usr",
+        "--with-pam-module-dir=/lib/security",
+    ],
+    deps = [
+        "//packages/linux/system/security/linux-pam:linux-pam",
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+    ],
+)

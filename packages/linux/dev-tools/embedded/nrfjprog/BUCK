@@ -1,0 +1,27 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "binary",
+    name = "nrfjprog",
+    version = "10.24.1",
+    local_only = True,
+    filename = "nRFCommandLineTools-10.24.1-Linux-amd64.tar.gz",
+    install_script = """
+        mkdir -p "$OUT/opt/nrfjprog"
+        cp -r "$SRCS"/* "$OUT/opt/nrfjprog/"
+
+        # Create symlinks in /usr/bin
+        mkdir -p "$OUT/usr/bin"
+        for bin in nrfjprog mergehex; do
+            if [ -f "$OUT/opt/nrfjprog/bin/$bin" ]; then
+                ln -sf "/opt/nrfjprog/bin/$bin" "$OUT/usr/bin/$bin"
+            elif [ -f "$OUT/opt/nrfjprog/$bin" ]; then
+                ln -sf "/opt/nrfjprog/$bin" "$OUT/usr/bin/$bin"
+            fi
+        done
+
+        # Symlink libraries
+        mkdir -p "$OUT/usr/lib64"
+        find "$OUT/opt/nrfjprog" -name "*.so*" -exec ln -sf {} "$OUT/usr/lib64/" \; 2>/dev/null || true
+    """,
+)

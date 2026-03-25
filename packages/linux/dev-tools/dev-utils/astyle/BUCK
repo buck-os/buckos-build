@@ -1,0 +1,31 @@
+load("//defs:package.bzl", "package")
+
+# Artistic Style - source code indenter, formatter, and beautifier
+# Makefile-only project (no configure script), build from build/gcc/
+package(
+    build_rule = "autotools",
+    name = "astyle",
+    skip_configure = True,
+    version = "3.4.13",
+    url = "https://sourceforge.net/projects/astyle/files/astyle/astyle%203.4/astyle-3.4.13.tar.bz2",
+    sha256 = "78a610abd39e94e0f913e9ee5cda1e85bb62cd633553decb9e00d3d9201019ce",
+    description = "Artistic Style - source code indenter, formatter, and beautifier",
+    homepage = "https://astyle.sourceforge.net/",
+    license = "MIT",
+    src_compile = """
+cd build/gcc
+make -j${MAKEOPTS:-$(nproc)} CXXFLAGS="$CXXFLAGS -Wno-unused-parameter"
+""",
+    src_install = """
+# Binary may be in build/gcc/bin/ or build/gcc/ depending on version
+if [ -f build/gcc/bin/astyle ]; then
+    install -Dm755 build/gcc/bin/astyle "$OUT/usr/bin/astyle"
+elif [ -f build/gcc/astyle ]; then
+    install -Dm755 build/gcc/astyle "$OUT/usr/bin/astyle"
+fi
+# Install man page if it exists
+if [ -f doc/astyle.1 ]; then
+    install -Dm644 doc/astyle.1 "$OUT/usr/share/man/man1/astyle.1"
+fi
+""",
+)

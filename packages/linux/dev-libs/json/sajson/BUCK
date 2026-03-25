@@ -1,0 +1,17 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "binary",
+    name = "sajson",
+    version = "8e893214",
+    url = "https://github.com/chadaustin/sajson/archive/8e8932148a2e4dcd1209a0438ec84acedf165077.tar.gz",
+    sha256 = "4371abb2e91151c585882baa8209c7f983f253ca4d17343e29315551b72dd23a",
+    description = "Lightweight, extremely high-performance JSON parser for C++11",
+    homepage = "https://github.com/chadaustin/sajson",
+    license = "MIT",
+    deps = [],
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/include
+cp include/sajson.h $INSTALL_DIR/usr/include/
+""",
+)

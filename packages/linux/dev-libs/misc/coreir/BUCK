@@ -1,0 +1,39 @@
+load("//defs:package.bzl", "package")
+
+# CoreIR - An LLVM-style hardware compiler with first class support for generators
+
+package(
+    build_rule = "cmake",
+    name = "coreir",
+    version = "0.1.61",
+    url = "https://github.com/rdaly525/coreir/archive/refs/tags/v0.1.61.tar.gz",
+    sha256 = "2a8f8344fe073a73cc11c48837c9f1ba8021d83b4d161114b4c205a7220ed07c",  # TODO: Update with actual hash
+    description = "An LLVM-style hardware compiler with first class support for generators",
+    homepage = "https://github.com/rdaly525/coreir",
+    license = "BSD-3-Clause",
+    deps = [],
+    pre_configure_cmds = ["""
+# Fix CMake minimum version and create stub for verilogAST submodule
+sed -i 's/cmake_minimum_required(VERSION 2\.[0-9]*)/cmake_minimum_required(VERSION 3.10)/' CMakeLists.txt || true
+# Create stub verilogAST directory with minimal CMakeLists
+mkdir -p lib/verilogAST/include
+cat > lib/verilogAST/CMakeLists.txt << 'VAEOF'
+cmake_minimum_required(VERSION 3.10)
+project(verilogAST LANGUAGES CXX)
+add_library(verilogAST INTERFACE)
+target_include_directories(verilogAST INTERFACE include)
+VAEOF
+# Patch the ExternalProject_Add for verilogAST to use local stub instead
+sed -i '/ExternalProject_Add.*verilogAST/,/)/{ s/GIT_REPOSITORY.*//; s/GIT_TAG.*//; }' CMakeLists.txt || true
+# Replace the fetchcontent/externalproject block with add_subdirectory
+sed -i '/cmake_step for verilogAST/d' CMakeLists.txt || true
+"""],
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DCMAKE_CXX_STANDARD=17",
+        "-DCMAKE_POSITION_INDEPENDENT_CODE=ON",
+        "-DBUILD_TESTS=OFF",
+        "-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
+    ],
+)

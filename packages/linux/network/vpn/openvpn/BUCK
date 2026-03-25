@@ -1,0 +1,43 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "openvpn",
+    version = "2.6.8",
+    url = "https://swupdate.openvpn.org/community/releases/openvpn-2.6.8.tar.gz",
+    sha256 = "5ede1565c8a6d880100f7f235317a7ee9eea83d5052db5547f13a9e76af7805d",
+
+    deps = [
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/system/libs/compression/lzo:lzo",
+        "//packages/linux/system/libs/compression/lz4:lz4",
+        "//packages/linux/system/libs/ipc/libcap-ng:libcap-ng",
+    ],
+
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--localstatedir=/var",
+        "--enable-server",
+        "--enable-management",
+        "--enable-crypto",
+        "--enable-lzo",
+        "--enable-lz4",
+        "--enable-plugins",
+        "--disable-systemd",
+        "--disable-dco",
+        "--disable-plugin-auth-pam",
+    ],
+
+    post_install_cmds = ["""
+# Create OpenVPN directories
+mkdir -p "$DESTDIR/etc/openvpn/client"
+mkdir -p "$DESTDIR/etc/openvpn/server"
+mkdir -p "$DESTDIR/var/log/openvpn"
+mkdir -p "$DESTDIR/run/openvpn"
+"""],
+
+    description = "Full-featured SSL VPN solution",
+    homepage = "https://openvpn.net/",
+    license = "GPL-2.0",
+)

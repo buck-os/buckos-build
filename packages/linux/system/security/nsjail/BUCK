@@ -1,0 +1,21 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "make",
+    name = "nsjail",
+    skip_configure = True,
+    version = "3.0",
+    url = "https://github.com/google/nsjail/archive/refs/tags/3.0.tar.gz",
+    sha256 = "cfa66d3ed136b2e221752287b95e544915e8a6760aa866f023b604d14a374919",
+    description = "A light-weight process isolation tool using Linux namespaces and seccomp-bpf",
+    homepage = "https://github.com/google/nsjail",
+    license = "Apache-2.0",
+    deps = [
+        "//packages/linux/core/libnl:libnl",
+        "//packages/linux/dev-libs/serialization/protobuf:protobuf",
+    ],
+    post_install_cmds = ["""\
+install -Dm755 nsjail "$DESTDIR/usr/bin/nsjail"
+install -Dm644 nsjail.1 "$DESTDIR/usr/share/man/man1/nsjail.1"
+"""],
+)

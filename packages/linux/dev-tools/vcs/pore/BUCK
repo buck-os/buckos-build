@@ -1,0 +1,16 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cargo",
+    name = "pore",
+    version = "0.1.17",
+    url = "https://github.com/jmgao/pore/archive/refs/tags/v0.1.17.tar.gz",
+    sha256 = "8dd5632af35178bb989cf1e6c7fd87a1c97f22f7ce7757afcfacf696eaaf5ee0",
+    vendor_deps = True,
+    description = "Performance oriented reimplementation of repo",
+    homepage = "https://github.com/jmgao/pore",
+    license = "Apache-2.0",
+    deps = [
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+    ],
+)

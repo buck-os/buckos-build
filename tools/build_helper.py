@@ -33,6 +33,24 @@ def _can_unshare_net():
 _NETWORK_ISOLATED = _can_unshare_net()
 
 
+def _expand_env_refs(value, env):
+    """Expand $VAR, ${VAR}, and ${VAR:-default} references against the build env.
+
+    make_args like CC=$CC or CFLAGS=$CFLAGS -fPIC need shell-style variable
+    expansion.  Since make_args are passed via Python subprocess (not shell),
+    $VAR references are not expanded automatically.  This resolves them
+    against the hermetic build environment dict.
+    """
+    if "$" not in value:
+        return value
+    def _repl(m):
+        var = m.group(1) or m.group(3)
+        default = m.group(2) or ""
+        val = env.get(var, "")
+        return val if val else default
+    return re.sub(r'\$\{(\w+)(?::-([^}]*))?\}|\$(\w+)', _repl, value)
+
+
 def _resolve_env_paths(value):
     """Resolve relative Buck2 artifact paths in env values to absolute.
 
@@ -944,10 +962,12 @@ def main():
     else:
         cmd = ["make", "-C", make_dir, f"-j{jobs}"]
 
-    # Resolve paths in make args (e.g. CC=buck-out/.../gcc → absolute)
+    # Resolve $VAR references and paths in make args.
+    # e.g. CC=$CC → CC=/abs/path/to/gcc, CFLAGS=$CFLAGS -fPIC → CFLAGS=... -fPIC
     for arg in args.make_args:
         if "=" in arg:
             key, _, value = arg.partition("=")
+            value = _expand_env_refs(value, env)
             cmd.append(f"{key}={_resolve_env_paths(value)}")
         else:
             cmd.append(arg)

@@ -1,0 +1,17 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "binary",
+    name = "opengm",
+    version = "2.3.6",
+    url = "https://github.com/opengm/opengm/archive/refs/tags/v2.3.6.tar.gz",
+    sha256 = "b8e8d69b87f602072160e9b483128cbb04a4cdf0c505c9b1c1e1f42165d47afa",
+    description = "OpenGM - A C++ Library for Discrete Graphical Models",
+    homepage = "https://github.com/opengm/opengm",
+    license = "GPL-1.0-or-later",
+    deps = [],
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/include
+cp -r include/opengm $INSTALL_DIR/usr/include/
+""",
+)

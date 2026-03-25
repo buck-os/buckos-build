@@ -1,0 +1,32 @@
+load("//defs:package.bzl", "package")
+
+# xerces-c - Validating XML parser written in C++
+package(
+    build_rule = "cmake",
+    name = "xerces-c",
+    version = "3.2.5",
+    use_configure = {
+        "curl": ("-DENABLE_CURL=ON", "-DENABLE_CURL=OFF"),
+        "examples": ("-DBUILD_EXAMPLES=ON", "-DBUILD_EXAMPLES=OFF"),
+        "iconv": ("-DENABLE_ICONV=ON", "-DENABLE_ICONV=OFF"),
+        "icu": ("-DENABLE_ICU=ON", "-DENABLE_ICU=OFF"),
+        "static-libs": ("-DBUILD_STATIC_LIBS=ON", "-DBUILD_STATIC_LIBS=OFF"),
+        "threads": ("-DENABLE_THREADS=ON", "-DENABLE_THREADS=OFF"),
+    },
+    url = "https://archive.apache.org/dist/xerces/c/3/sources/xerces-c-3.2.5.tar.gz",
+    sha256 = "545cfcce6c4e755207bd1f27e319241e50e37c0c27250f11cda116018f1ef0f5",
+    description = "Validating XML parser written in portable C++",
+    homepage = "https://xerces.apache.org/xerces-c/",
+    license = "Apache-2.0",
+    configure_args = [
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DCMAKE_INSTALL_LIBDIR=lib",
+        "-Dtranscoder=gnuiconv",
+        "-Dnetwork-accessor=socket",
+        "-DCMAKE_DISABLE_FIND_PACKAGE_ICU=ON",
+        "-DCMAKE_DISABLE_FIND_PACKAGE_CURL=ON",
+        "-DCMAKE_C_FLAGS=-Wno-error=switch-default",
+        "-DCMAKE_CXX_FLAGS=-Wno-error=switch-default",
+    ],
+    deps = [],
+)

@@ -1,0 +1,26 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "cscope",
+    version = "15.9",
+    url = "https://downloads.sourceforge.net/cscope/cscope-15.9.tar.gz",
+    sha256 = "c5505ae075a871a9cd8d9801859b0ff1c09782075df281c72c23e72115d9f159",
+    description = "Tool for browsing source code",
+    homepage = "http://cscope.sourceforge.net/",
+    license = "BSD-3-Clause",
+    use_deps = {
+        "ncurses": "//packages/linux/system/terminal/ncurses:ncurses",
+    },
+    use_configure = {
+        "emacs": ("--enable-emacs", "--disable-emacs"),
+        "ncurses": ("--with-ncurses", "--without-ncurses"),
+    },
+    # ncurses is required for curses.h and -lncurses
+    deps = [
+        "//packages/linux/system/terminal/ncurses:ncurses",
+    ],
+    env = {
+        "LIBS": "-lncurses",
+    },
+)

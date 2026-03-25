@@ -1,0 +1,27 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cmake",
+    name = "intel-pcm",
+    version = "202409",
+    url = "https://github.com/intel/pcm/archive/refs/tags/202409.tar.gz",
+    sha256 = "cb8e40528940967a62e16eb6371317b8cd74d3d7bab20aa78e0c5f885146ee38",
+    description = "Intel Performance Counter Monitor - CPU performance monitoring tools",
+    homepage = "https://github.com/intel/pcm",
+    license = "BSD-3-Clause",
+    deps = [],
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DPCM_NO_PERF=ON",
+        "-DNO_SSL=ON",
+        "-DPCM_NO_SIMDJSON=ON",
+        "-DPCM_NO_ASAN=ON",
+        "-DCMAKE_CXX_FLAGS=-Wno-error -Wno-deprecated-declarations -Wno-redundant-move",
+        "-DCMAKE_CXX_STANDARD=17",
+    ],
+    # Patch CMakeLists.txt to remove -Werror that overrides our -Wno-error
+    pre_configure_cmds = [
+        "sed -i 's/-Werror//g' CMakeLists.txt src/CMakeLists.txt || true",
+        "sed -i 's/COMPILE_FLAGS.*-Wall/COMPILE_FLAGS \"-Wall -Wno-error/g' CMakeLists.txt || true",
+    ],
+)

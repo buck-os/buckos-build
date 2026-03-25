@@ -1,0 +1,30 @@
+load("//defs:package.bzl", "package")
+
+# giflib - Library to handle, display and manipulate GIF images
+# Based on Gentoo media-libs/giflib-5.2.2.ebuild
+package(
+    build_rule = "autotools",
+    name = "giflib",
+    version = "5.2.2",
+    skip_configure = True,
+    url = "https://github.com/sailfishos-mirror/giflib/archive/refs/tags/5.2.2.tar.gz",
+    sha256 = "0aab9d7ccbcd9f1feaf27d363c7cd146e30e4a3ab97586a9a9234b7ad9284eb9",
+    description = "Library to handle, display and manipulate GIF images",
+    homepage = "https://sourceforge.net/projects/giflib/",
+    license = "MIT",
+    pre_configure_cmds = ["""
+# Remove doc building from Makefile (we don't need docs and it requires xmlto)
+sed -i -e '/$(MAKE) -C doc/d' Makefile 2>/dev/null || true
+sed -i -e 's/all: .*doc.*/all: libgif.a libgif.so gif2rgb gifbuild giffix giftext giftool/' Makefile 2>/dev/null || true
+"""],
+    make_args = [
+        "CC=$CC",
+        "CFLAGS=$CFLAGS -fPIC",
+        "LDFLAGS=$LDFLAGS",
+        "OFLAGS=",
+    ],
+    install_args = [
+        "PREFIX=/usr",
+        "LIBDIR=/usr/lib64",
+    ],
+)

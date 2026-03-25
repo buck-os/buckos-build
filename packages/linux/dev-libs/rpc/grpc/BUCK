@@ -1,0 +1,38 @@
+load("//defs:package.bzl", "package")
+
+# gRPC - High performance RPC framework
+
+package(
+    build_rule = "cmake",
+    name = "grpc",
+    version = "1.60.0",
+    url = "https://github.com/grpc/grpc/archive/refs/tags/v1.60.0.tar.gz",
+    sha256 = "437068b8b777d3b339da94d3498f1dc20642ac9bfa76db43abdd522186b1542b",
+    description = "High performance, open source universal RPC framework",
+    homepage = "https://grpc.io/",
+    license = "Apache-2.0",
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/dev-libs/serialization/protobuf:protobuf",
+        "//packages/linux/dev-libs/google/abseil-cpp:abseil-cpp",
+        "//packages/linux/system/libs/network/c-ares:c-ares",
+        "//packages/linux/dev-libs/text/re2:re2",
+    ],
+    use_deps = {
+        "python": "//packages/linux/lang/python:python",
+    },
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DgRPC_BUILD_TESTS=OFF",
+        "-DBUILD_TESTING=OFF",
+        "-DgRPC_BUILD_GRPC_PYTHON_PLUGIN=OFF",
+        "-DgRPC_ZLIB_PROVIDER=package",
+        "-DgRPC_SSL_PROVIDER=package",
+        "-DgRPC_PROTOBUF_PROVIDER=package",
+        "-DgRPC_ABSL_PROVIDER=package",
+        "-DgRPC_CARES_PROVIDER=module",
+        "-DgRPC_RE2_PROVIDER=package",
+    ],
+)

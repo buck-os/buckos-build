@@ -1,0 +1,32 @@
+load("//defs:package.bzl", "package")
+
+# libelfin - C++11 ELF/DWARF parser
+# Uses Makefile directly, no configure step.
+package(
+    build_rule = "binary",
+    name = "libelfin",
+    version = "0.3",
+    url = "https://github.com/aclements/libelfin/archive/v0.3.tar.gz",
+    sha256 = "c338942b967582922b3514b54b93175ca9051a9668db92dd8ef619824d443ac7",
+    install_script = """
+cd "$SRCS"
+
+# Stub out git so version detection doesn't fail
+mkdir -p /tmp/libelfin-tools
+printf '#!/bin/sh\\necho "v0.3"\\n' > /tmp/libelfin-tools/git
+chmod +x /tmp/libelfin-tools/git
+export PATH="/tmp/libelfin-tools:$PATH"
+
+# Fix const-correctness error in data.hh: set_binding assigns to const member
+# Patch the method to cast away const
+find . -name 'data.hh' -exec sed -i 's/void set_binding(stb v) const/void set_binding(stb v)/g' {} \\;
+
+make -j${MAKEOPTS:-$(nproc)} PREFIX=/usr \
+    CXX="$CXX" CXXFLAGS="$CFLAGS -include cstdint -fpermissive -Wno-error" LDFLAGS="$LDFLAGS"
+
+make PREFIX=/usr DESTDIR="$OUT" install
+""",
+    deps = [
+        "//packages/linux/lang/python:python",
+    ],
+)

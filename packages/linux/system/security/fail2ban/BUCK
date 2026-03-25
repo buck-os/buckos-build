@@ -1,0 +1,18 @@
+load("//defs:package.bzl", "package")
+
+# fail2ban - Daemon to ban hosts that cause multiple authentication errors
+# Uses setup.py for installation.
+package(
+    build_rule = "python",
+    name = "fail2ban",
+    url = "https://github.com/fail2ban/fail2ban/archive/refs/tags/1.0.2.tar.gz",
+    sha256 = "ae8b0b41f27a7be12d40488789d6c258029b23a01168e3c0d347ee80b325ac23",
+    version = "1.0.2",
+    description = "Daemon to ban hosts that cause multiple authentication errors",
+    homepage = "https://www.fail2ban.org/",
+    license = "GPL-2.0+",
+    use_setup_py = True,
+    deps = [
+        "//packages/linux/lang/python:python",
+    ],
+)

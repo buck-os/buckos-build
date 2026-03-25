@@ -1,0 +1,27 @@
+load("//defs:package.bzl", "package")
+
+# containerd - An industry-standard container runtime
+
+package(
+    name = "containerd",
+    build_rule = "binary",
+    version = "1.7.13",
+    url = "https://github.com/containerd/containerd/releases/download/v1.7.13/containerd-1.7.13-linux-amd64.tar.gz",
+    sha256 = "c2371c009dd8b7738663333d91e5ab50d204f8bcae24201f45d59060d12c3a23",
+    description = "An open and reliable container runtime",
+    homepage = "https://containerd.io/",
+    license = "Apache-2.0",
+    deps = [
+        "//packages/linux/system/containers/runc:runc",
+    ],
+    install_script = """
+mkdir -p "$OUT/usr/bin"
+# containerd binary tarball has bin/ at top level; with strip_components=1
+# the bin/ prefix is stripped, so binaries are directly in $SRCS
+if [ -d "$SRCS/bin" ]; then
+    cp -r "$SRCS/bin/"* "$OUT/usr/bin/"
+else
+    find "$SRCS" -maxdepth 1 -type f -executable -exec cp {} "$OUT/usr/bin/" \;
+fi
+""",
+)

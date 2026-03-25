@@ -1,0 +1,66 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "binary",
+    name = "7zip",
+    version = "24.09",
+    url = "https://7-zip.org/a/7z2409-src.tar.xz",
+    sha256 = "49c05169f49572c1128453579af1632a952409ced028259381dac30726b6133a",
+    description = "7-Zip file archiver with high compression ratio",
+    homepage = "https://www.7-zip.org/",
+    license = "LGPL-2.1",
+    install_script = """
+cd "$SRCS"
+
+# 7zip 24.09 source layout: CPP/7zip/Bundles/Alone2/makefile.gcc
+# The makefile.gcc in Alone2 uses relative paths like ../../../../C/7zBuf2.c
+# which only work when run from the Alone2 directory with the correct tree structure.
+# Use the Console Alone makefile (simpler, no relative C paths) as fallback.
+
+# Try Alone2 console first (most reliable)
+if [ -f "CPP/7zip/Bundles/Alone2/makefile.gcc" ]; then
+    cd "CPP/7zip/Bundles/Alone2"
+    make -f makefile.gcc -j${MAKEOPTS:-$(nproc)} \
+        CC="$CC" CXX="$CXX" MY_ARCH="" CFLAGS_WARN="" || \
+    make -f makefile.gcc -j1 \
+        CC="$CC" CXX="$CXX" MY_ARCH="" CFLAGS_WARN=""
+elif [ -f "CPP/7zip/Bundles/Alone/makefile.gcc" ]; then
+    cd "CPP/7zip/Bundles/Alone"
+    make -f makefile.gcc -j${MAKEOPTS:-$(nproc)} \
+        CC="$CC" CXX="$CXX" MY_ARCH="" CFLAGS_WARN="" || \
+    make -f makefile.gcc -j1 \
+        CC="$CC" CXX="$CXX" MY_ARCH="" CFLAGS_WARN=""
+elif [ -f "C/Util/7z/makefile.gcc" ]; then
+    cd "C/Util/7z"
+    make -f makefile.gcc -j${MAKEOPTS:-$(nproc)} \
+        CC="$CC" CXX="$CXX" MY_ARCH="" CFLAGS_WARN="" || \
+    make -f makefile.gcc -j1 \
+        CC="$CC" CXX="$CXX" MY_ARCH="" CFLAGS_WARN=""
+else
+    echo "ERROR: Cannot find 7zip build files"
+    find . -name 'makefile.gcc' 2>/dev/null
+    exit 1
+fi
+
+# Install - 7zip output location varies by platform and build config
+mkdir -p "$OUT/usr/bin"
+cd "$SRCS"
+_found=$(find . -name '7zz' -type f 2>/dev/null | head -1)
+if [ -n "$_found" ]; then
+    cp "$_found" "$OUT/usr/bin/7zz"
+else
+    # Try 7z binary name
+    _found=$(find . -name '7z' -type f -executable 2>/dev/null | head -1)
+    if [ -n "$_found" ]; then
+        cp "$_found" "$OUT/usr/bin/7zz"
+    else
+        echo "ERROR: Could not find 7zz binary"
+        find . -type f -name '7z*' 2>/dev/null
+        exit 1
+    fi
+fi
+chmod +x "$OUT/usr/bin/7zz"
+ln -sf 7zz "$OUT/usr/bin/7z"
+""",
+    deps = [],
+)

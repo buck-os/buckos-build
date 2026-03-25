@@ -1,0 +1,24 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "meson",
+    name = "tofi",
+    url = "https://github.com/philj56/tofi/archive/v0.9.1.tar.gz",
+
+    sha256 = "dd55347b509af786f133def64f3a86f1db258b5e196de80e53d62827bdcc37bc",
+    version = "0.9.1",
+    description = "Tiny dynamic menu for Wayland",
+    homepage = "https://github.com/philj56/tofi",
+    license = "MIT",
+    configure_args = [],
+    deps = [
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/graphics/rendering/wayland:wayland",
+        "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
+        "//packages/linux/system/libs/font/freetype:freetype",
+        "//packages/linux/system/libs/font/harfbuzz:harfbuzz",
+        "//packages/linux/system/libs/graphics/cairo:cairo",
+        "//packages/linux/fonts/libraries/pango:pango",
+        "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
+    ],
+)

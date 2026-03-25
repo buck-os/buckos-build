@@ -1,0 +1,16 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "go",
+    name = "go-uber-mock-new",
+    version = "0.5.0",
+    url = "https://github.com/uber-go/mock/archive/refs/tags/v0.5.0.tar.gz",
+    sha256 = "41c16668926118ccfe8606e335487c0213efbb1330061e3ab7e97650b78e7737",
+    description = "Mock generation framework for Go interfaces (uber fork)",
+    homepage = "https://github.com/uber-go/mock",
+    license = "Apache-2.0",
+    # Build mockgen binary from mockgen subdirectory
+    deps = [
+        "//packages/linux/lang/go:go",
+    ],
+)

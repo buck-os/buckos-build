@@ -1,0 +1,52 @@
+load("//defs:package.bzl", "package")
+
+# tuned - Adaptive System Tuning Daemon
+# Uses Makefile for installation, not pip/setuptools.
+package(
+    build_rule = "binary",
+    name = "tuned",
+    version = "2.22.1",
+    url = "https://github.com/redhat-performance/tuned/archive/refs/tags/v2.22.1.tar.gz",
+    sha256 = "b0b4cf3d02a4c002bde141cdb18301177a94316f63e9d69162cedd7ebccd4d22",
+    description = "Adaptive system tuning daemon with power-saving profiles",
+    homepage = "https://github.com/redhat-performance/tuned",
+    license = "GPL-2.0",
+    install_script = """
+cd "$SRCS"
+
+# Create a stub desktop-file-install that just copies the .desktop file
+mkdir -p /tmp/bin
+cat > /tmp/bin/desktop-file-install << 'STUB'
+#!/bin/sh
+# Stub: just copy the .desktop file to --dir
+dir=""
+file=""
+for arg in "$@"; do
+    case "$arg" in
+        --dir=*) dir="${arg#--dir=}" ;;
+        -*) ;;
+        *) file="$arg" ;;
+    esac
+done
+if [ -n "$dir" ] && [ -n "$file" ]; then
+    mkdir -p "$dir"
+    cp "$file" "$dir/"
+fi
+STUB
+chmod +x /tmp/bin/desktop-file-install
+export PATH="/tmp/bin:$PATH"
+
+make DESTDIR="$OUT" PREFIX=/usr \
+    SYSCONFDIR=/etc \
+    DATADIR=/usr/share \
+    DOCDIR=/usr/share/doc/tuned \
+    PYTHON=/usr/bin/python3 \
+    TUNED_NO_SYSTEMD=1 \
+    install
+""",
+    deps = [
+        "//packages/linux/lang/python:python",
+        "//packages/linux/system/libs/ipc/dbus:dbus",
+        "//packages/linux/system/init/systemd:systemd",
+    ],
+)

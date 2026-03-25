@@ -1,0 +1,33 @@
+load("//defs:package.bzl", "package")
+
+# glew - OpenGL Extension Wrangler Library
+# NOTE: GLEW is specifically for GLX (X11 OpenGL). It does NOT support Wayland.
+# For Wayland OpenGL, use libepoxy or direct EGL calls instead.
+package(
+    name = "glew",
+    build_rule = "binary",
+    version = "2.2.0",
+    url = "https://github.com/nigels-com/glew/releases/download/glew-2.2.0/glew-2.2.0.tgz",
+    sha256 = "d4fc82893cfb00109578d0a1a2337fb8ca335b3ceccf97b97e5cc7f08e4353e1",
+    description = "OpenGL Extension Wrangler Library (GLX/X11 only)",
+    homepage = "http://glew.sourceforge.net/",
+    license = "BSD-3-Clause",
+    install_script = """
+cd "$SRCS"
+
+make -j${MAKEOPTS:-$(nproc)} SYSTEM=linux-egl GLEW_DEST=/usr GLEW_NO_GLX=1 \
+    CC="$CC" LD="$CC" AR="$AR" STRIP= \
+    CFLAGS.EXTRA="$CFLAGS -Wno-address" LDFLAGS.EXTRA="$LDFLAGS"
+
+make SYSTEM=linux-egl GLEW_DEST=/usr DESTDIR=$OUT \
+    LIBDIR=/usr/lib64 PKGDIR=/usr/lib64/pkgconfig \
+    CC="$CC" LD="$CC" AR="$AR" STRIP= install
+
+# Fix pkgconfig libdir
+sed -i 's|libdir=.*|libdir=\${prefix}/lib64|' $OUT/usr/lib64/pkgconfig/glew.pc 2>/dev/null || true
+""",
+    deps = [
+        "//packages/linux/graphics/xorg/libX11:libX11",
+        "//packages/linux/graphics/xorg/xorgproto:xorgproto",
+    ],
+)

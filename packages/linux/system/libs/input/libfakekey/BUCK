@@ -1,0 +1,28 @@
+load("//defs:package.bzl", "package")
+
+# Use GitHub mirror since yoctoproject.org blocks Buck2's user-agent with bot detection
+package(
+    build_rule = "autotools",
+    name = "libfakekey",
+    pre_configure_cmds = ["""
+autoreconf -fi
+"""],
+    url = "https://github.com/veyon/libfakekey/archive/refs/tags/0.3.tar.gz",
+    sha256 = "d282fa6481a5b85f71e36e8bad4cfa938cc8eaac4c42ffa27f9203ac634813f4",
+    use_configure = {
+        "debug": ("--enable-debug", "--disable-debug"),
+    },
+    version = "0.3",
+    description = "Library for faking X keyboard events",
+    homepage = "https://www.yoctoproject.org/tools-resources/projects/matchbox",
+    license = "GPL-2.0-or-later",
+    configure_args = [
+        "--disable-static",
+    ],
+    deps = [
+        "//packages/linux/graphics/xorg/libXtst:libXtst",
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+    ],
+)

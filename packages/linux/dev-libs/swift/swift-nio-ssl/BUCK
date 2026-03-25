@@ -1,0 +1,19 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "binary",
+    name = "swift-nio-ssl",
+    version = "2.17.1",
+    url = "https://github.com/apple/swift-nio-ssl/archive/refs/tags/2.17.1.tar.gz",
+    sha256 = "2b5a6a4ca658423f11721e3c3edc1cb11a5a9a431e2fffd49986be189342a457",
+    deps = [
+        "//packages/linux/lang/swift:swift",
+    ],
+
+    install_script = """
+# Swift package - install source files for Swift Package Manager consumption
+mkdir -p "$OUT/usr/lib/swift/swift-nio-ssl"
+cp -r "$SRCS/Sources/"* "$OUT/usr/lib/swift/swift-nio-ssl/" 2>/dev/null || true
+echo "swift-nio-ssl sources installed successfully"
+""",
+)

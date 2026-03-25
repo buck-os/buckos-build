@@ -11,18 +11,18 @@ package(
     description = "Fast C++ logging library",
     homepage = "https://github.com/gabime/spdlog",
     license = "MIT",
-    deps = [],
-    use_deps = {
-        "fmt_external": "//packages/linux/dev-libs/misc/fmt:fmt",
-    },
+    # Use system fmt to avoid ABI mismatch when consumers (e.g. waybar)
+    # also link against system fmt.
+    deps = [
+        "//packages/linux/dev-libs/misc/fmt:fmt",
+    ],
     configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_POSITION_INDEPENDENT_CODE=ON",
         "-DSPDLOG_BUILD_SHARED=ON",
         "-DSPDLOG_BUILD_EXAMPLE=OFF",
         "-DSPDLOG_BUILD_TESTS=OFF",
         "-DSPDLOG_BUILD_BENCH=OFF",
+        "-DSPDLOG_FMT_EXTERNAL=ON",
     ],
-    use_configure = {
-        "fmt_external": ("-DSPDLOG_FMT_EXTERNAL=ON", "-DSPDLOG_FMT_EXTERNAL=OFF"),
-    },
 )

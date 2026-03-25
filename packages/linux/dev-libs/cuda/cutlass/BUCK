@@ -1,0 +1,33 @@
+load("//defs:package.bzl", "package")
+
+# NVIDIA CUTLASS - CUDA Templates for Linear Algebra Subroutines
+# CUTLASS is a collection of CUDA C++ template abstractions for implementing
+# high-performance matrix-multiplication (GEMM) and related computations at all levels
+# and scales within CUDA. It incorporates strategies for hierarchical decomposition and
+# data movement similar to those used to implement cuBLAS and cuDNN.
+
+package(
+    build_rule = "binary",
+    name = "cutlass",
+    version = "3.9.2",
+    url = "https://github.com/NVIDIA/cutlass/archive/refs/tags/v3.9.2.tar.gz",
+    sha256 = "4b97bd6cece9701664eec3a634a1f2f2061d85bf76d843fa5799e1a692b4db0d",
+    description = "CUDA Templates for Linear Algebra Subroutines",
+    homepage = "https://github.com/NVIDIA/cutlass",
+    license = "BSD-3-Clause",
+
+    deps = [],
+
+    install_script = """
+# Header-only CUDA template library - install include directory
+mkdir -p "$OUT/usr/include"
+cp -r "$SRCS/include/"* "$OUT/usr/include/" 2>/dev/null || true
+# Install tools/util headers used by some downstream consumers
+if [ -d "$SRCS/tools/util/include" ]; then
+    cp -r "$SRCS/tools/util/include/"* "$OUT/usr/include/" 2>/dev/null || true
+fi
+echo "cutlass headers installed successfully"
+""",
+
+    labels = ["buckos:hw:cuda"],
+)

@@ -1,0 +1,19 @@
+load("//defs:package.bzl", "package")
+
+# cpp-httplib - A C++ header-only HTTP/HTTPS server and client library
+
+package(
+    build_rule = "binary",
+    name = "cpp-httplib",
+    version = "0.15.3",
+    url = "https://github.com/yhirose/cpp-httplib/archive/refs/tags/v0.15.3.tar.gz",
+    sha256 = "2121bbf38871bb2aafb5f7f2b9b94705366170909f434428352187cb0216124e",
+    description = "A C++ header-only HTTP/HTTPS server and client library",
+    homepage = "https://github.com/yhirose/cpp-httplib",
+    license = "MIT",
+    deps = [],
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/include
+cp httplib.h $INSTALL_DIR/usr/include/
+""",
+)

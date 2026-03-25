@@ -1,0 +1,27 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "meson",
+    name = "yambar",
+    url = "https://codeberg.org/dnkl/yambar/archive/1.11.0.tar.gz",
+    sha256 = "3649878ae7282203b4ff2aa9f45afad32a6fc8c921d94b6abdac2a1d21045aaf",
+    version = "1.11.0",
+    description = "Modular status panel for X11 and Wayland",
+    homepage = "https://codeberg.org/dnkl/yambar",
+    license = "MIT",
+    configure_args = [
+        "-Dbackend-x11=disabled",
+        "-Dbackend-wayland=enabled",
+        "-Dwerror=false",
+    ],
+    deps = [
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/graphics/rendering/wayland:wayland",
+        "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
+        "//packages/linux/dev-libs/serialization/libyaml:libyaml",
+        "//packages/linux/system/security/auth/biometric:pixman",
+        "//packages/linux/system/libs/font/fcft:fcft",
+        "//packages/linux/dev-tools/doc-tools/scdoc:scdoc",
+        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
+    ],
+)

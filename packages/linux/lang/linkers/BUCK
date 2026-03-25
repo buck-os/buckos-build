@@ -31,7 +31,7 @@ package(
     homepage = "https://github.com/rui314/mold",
     license = "MIT",
     configure_args = [
-        "-DCMAKE_DISABLE_FIND_PACKAGE_BLAKE3=ON",  # Use vendored BLAKE3 (system one links TBB)
+        "-DCMAKE_DISABLE_FIND_PACKAGE_BLAKE3=ON",  # Use bundled blake3 to avoid host system header leakage
     ],
     deps = [
         "//packages/linux/core/zlib:zlib",

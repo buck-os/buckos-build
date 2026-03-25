@@ -1,0 +1,38 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "python",
+    name = "grako",
+    version = "3.99.9",
+    url = "https://files.pythonhosted.org/packages/33/0d/6db911c7f6458974745c91c1e71841e347364798a5cc01e8149e84352c77/grako-3.99.9.zip",
+    sha256 = "fcc37309eab7cd0cbbb26cfd6a54303fbb80a00a58ab295d1e665bc69189c364",
+    use_setup_py = True,
+    pre_configure_cmds = ["""
+# Fix Python 3.10+ collections.abc migration in all Python files.
+python3 -c '
+import os, pathlib
+for root, dirs, files in os.walk("."):
+    for fn in files:
+        if not fn.endswith(".py"):
+            continue
+        p = pathlib.Path(root, fn)
+        t = p.read_text()
+        orig = t
+        t = t.replace("from collections import defaultdict, Mapping",
+                       "from collections import defaultdict\\nfrom collections.abc import Mapping")
+        t = t.replace("from collections import Mapping",
+                       "from collections.abc import Mapping")
+        t = t.replace("from collections import MutableMapping",
+                       "from collections.abc import MutableMapping")
+        t = t.replace("from collections import OrderedDict, Mapping",
+                       "from collections import OrderedDict\\nfrom collections.abc import Mapping")
+        t = t.replace("collections.Mapping", "collections.abc.Mapping")
+        if t != orig:
+            p.write_text(t)
+'
+"""],
+    deps = [
+        "//packages/linux/lang/python:python",
+        "//packages/linux/dev-libs/python/setuptools:setuptools",
+    ],
+)

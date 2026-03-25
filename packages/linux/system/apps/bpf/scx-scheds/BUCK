@@ -1,0 +1,73 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "binary",
+    name = "scx-scheds",
+    version = "1.0.19",
+    url = "https://github.com/sched-ext/scx/archive/refs/tags/v1.0.19.tar.gz",
+    sha256 = "1240edfdec50a915405571ba375b8b803201d23e6509e975bc101e633e8bdfeb",
+    description = "sched_ext schedulers and tools - BPF-based CPU schedulers",
+    homepage = "https://github.com/sched-ext/scx",
+    license = "GPL-2.0",
+    install_script = """
+        cd $SRCS
+
+        # Add Rust/Cargo to PATH from dependencies
+        IFS=':' read -ra _dep_array <<< "${DEP_BASE_DIRS:-}"
+        for dep in "${_dep_array[@]}"; do
+            if [ -x "$dep/usr/bin/cargo" ]; then
+                export PATH="$dep/usr/bin:$PATH"
+                echo "Found Cargo at $dep/usr/bin"
+            fi
+        done
+
+        # Fix sccache "path must be shorter than SUN_LEN" error
+        # Buck-out paths are too long for Unix socket paths, so use /tmp
+        # Set unconditionally since sccache may be configured in ~/.cargo/config.toml
+        export SCCACHE_DIR="/tmp/sccache-${USER:-build}"
+        export SCCACHE_SERVER_UDS="/tmp/sccache-${USER:-build}.sock"
+        # Stop any existing sccache server that might be using a bad path
+        sccache --stop-server 2>/dev/null || true
+        # Use short cargo target dir and temp dir to avoid path issues
+        export CARGO_TARGET_DIR="/tmp/cargo-scx-target"
+        export TMPDIR="/tmp"
+        echo "Using SCCACHE_DIR=$SCCACHE_DIR, socket=$SCCACHE_SERVER_UDS, target=$CARGO_TARGET_DIR, TMPDIR=$TMPDIR"
+        # Start sccache server with correct paths
+        sccache --start-server 2>/dev/null || true
+
+        echo "PATH=$PATH"
+        echo "Using cargo: $(which cargo || echo 'NOT FOUND')"
+        echo "Using CC=$CC CXX=$CXX"
+
+        # Build scx schedulers using cargo (meson builds deprecated in v1.0.19+)
+        cd rust
+        cargo build --release --jobs ${MAKE_JOBS:-$(nproc)}
+
+        # Install
+        mkdir -p $OUT/usr/bin
+
+        # Install scheduler binaries from cargo build (use CARGO_TARGET_DIR)
+        echo "Looking for binaries in $CARGO_TARGET_DIR/release/"
+        for sched in $CARGO_TARGET_DIR/release/scx_*; do
+            if [ -f "$sched" ] && [ -x "$sched" ]; then
+                install -m 755 "$sched" $OUT/usr/bin/
+                echo "Installed: $(basename $sched)"
+            fi
+        done
+
+        # Install scx_loader if present
+        if [ -f "$CARGO_TARGET_DIR/release/scx_loader" ]; then
+            install -m 755 "$CARGO_TARGET_DIR/release/scx_loader" $OUT/usr/bin/
+            echo "Installed: scx_loader"
+        fi
+
+        echo "Installed schedulers:"
+        ls -la $OUT/usr/bin/
+    """,
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/elfutils:elfutils",
+        "//packages/linux/system/libs/bpf/libbpf:libbpf",
+        "//packages/linux/lang/rust:rust",
+    ],
+)

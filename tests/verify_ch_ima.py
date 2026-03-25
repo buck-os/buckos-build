@@ -133,7 +133,14 @@ def main():
                 # Check for our marker — can stop early
                 if expect_marker in output:
                     break
-            if expect_marker in output or proc.poll() is not None:
+            if expect_marker in output:
+                break
+            if proc.poll() is not None:
+                # Process exited — drain remaining pipe data before giving up.
+                # The pipe buffer may still contain lines written before exit.
+                remaining = proc.stdout.read()
+                if remaining:
+                    output += remaining
                 break
 
         sel.close()

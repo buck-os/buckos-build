@@ -1,0 +1,33 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "libelf",
+    # Release tarball includes pre-generated configure script
+    version = "0.8.13",
+    url = "https://fossies.org/linux/misc/old/libelf-0.8.13.tar.gz",
+    sha256 = "591a9b4ec81c1f2042a97aa60564e0cb79d041c52faa7416acb38bc95bd2c76d",
+    description = "ELF object file access library",
+    homepage = "https://directory.fsf.org/wiki/Libelf",
+    license = "LGPL-2.0",
+    use_configure = {
+        "compat": ("--enable-compat", "--disable-compat"),
+        "debug": ("--enable-debug", "--disable-debug"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "static-libs": ("--enable-static", "--disable-static"),
+    },
+    configure_args = [
+        "--prefix=/usr",
+        "--libdir=/usr/lib64",
+    ],
+    env = {
+        "mr_cv_target_elf": "yes",
+        "libelf_cv_struct_elf64_ehdr": "yes",
+        "ac_cv_sizeof_long_long": "8",
+        "ac_cv_prog_cc_works": "yes",
+    },
+    extra_cflags = [
+        "-Wno-error",
+    ],
+    deps = [],
+)

@@ -1,0 +1,24 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "meson",
+    name = "grim",
+    url = "https://github.com/emersion/grim/archive/refs/tags/v1.4.0.tar.gz",
+
+    sha256 = "b6786e889ed93568634189a59f6b6429c041bf74883c10e8b6e2ed6772ae7ffb",
+    use_configure = {
+        "jpeg": ("-Djpeg=enabled", "-Djpeg=disabled"),
+    },
+    version = "1.4.0",
+    description = "Grab images from a Wayland compositor",
+    homepage = "https://sr.ht/~emersion/grim/",
+    license = "MIT",
+    configure_args = [],
+    deps = [
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/graphics/rendering/wayland:wayland",
+        "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
+        "//packages/linux/system/libs/image/libpng:libpng",
+        "//packages/linux/system/security/auth/biometric:pixman",
+    ],
+)

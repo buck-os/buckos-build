@@ -1,0 +1,22 @@
+load("//defs:package.bzl", "package")
+
+# yt-dlp - A youtube-dl fork with additional features
+# Note: ffmpeg dep removed (package not available yet)
+
+package(
+    build_rule = "python",
+    name = "yt-dlp",
+    version = "2024.08.06",
+    use_configure = {
+        "deno": ("--enable-deno", "--disable-deno"),
+        "man": ("--enable-man", "--disable-man"),
+    },
+    url = "https://github.com/yt-dlp/yt-dlp/releases/download/2024.08.06/yt-dlp.tar.gz",
+    sha256 = "e08331fb9a36eba56b4efd074b5b25fbf08413e9cb47009a28ecbffe47150310",
+    description = "A youtube-dl fork with additional features and fixes",
+    homepage = "https://github.com/yt-dlp/yt-dlp",
+    license = "Unlicense",
+    deps = [
+        "//packages/linux/lang/python:python",
+    ],
+)

@@ -102,6 +102,18 @@ def _rewrite_stale_paths(build_dir, old_root, new_root):
                 pass
 
 
+def _expand_env_refs(value, env):
+    """Expand $VAR, ${VAR}, and ${VAR:-default} references against the build env."""
+    if "$" not in value:
+        return value
+    def _repl(m):
+        var = m.group(1) or m.group(3)
+        default = m.group(2) or ""
+        val = env.get(var, "")
+        return val if val else default
+    return re.sub(r'\$\{(\w+)(?::-([^}]*))?\}|\$(\w+)', _repl, value)
+
+
 def _resolve_env_paths(value):
     """Resolve relative Buck2 artifact paths in env values to absolute.
 
@@ -1118,12 +1130,13 @@ def main():
             f"-j{jobs}",
             f"{args.destdir_var}={prefix}",
         ] + targets
-    # Resolve paths in make args (e.g. CC=buck-out/.../gcc → absolute).
+    # Resolve $VAR references and paths in make args.
     # Skipped for cmake --install which doesn't accept make arguments.
     if not _use_cmake_install:
         for arg in args.make_args:
             if "=" in arg:
                 key, _, value = arg.partition("=")
+                value = _expand_env_refs(value, env)
                 cmd.append(f"{key}={_resolve_env_paths(value)}")
             else:
                 cmd.append(arg)

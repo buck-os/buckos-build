@@ -1,0 +1,36 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "aide",
+    url = "https://github.com/aide/aide/releases/download/v0.18.6/aide-0.18.6.tar.gz",
+
+    sha256 = "8ff36ce47d37d0cc987762d5d961346d475de74bba8a1832fd006db6edd3c10e",
+    use_configure = {
+        "acl": ("--enable-acl", "--disable-acl"),
+        "audit": ("--enable-audit", "--disable-audit"),
+        "curl": ("--with-curl", "--without-curl"),
+        "e2fs": ("--enable-e2fs", "--disable-e2fs"),
+        "mhash": ("--enable-mhash", "--disable-mhash"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "xattr": ("--enable-xattr", "--disable-xattr"),
+    },
+    version = "0.18.6",
+    description = "Advanced Intrusion Detection Environment - file integrity checker",
+    homepage = "https://aide.github.io/",
+    license = "GPL-2.0+",
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--with-mhash",
+        "--without-posix-acl",
+        "--without-selinux",
+        "--without-xattr",
+        "--without-e2fsattrs",
+        "--with-zlib",
+    ],
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/utility/pcre2:pcre2",
+    ],
+)

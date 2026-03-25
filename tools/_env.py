@@ -3,7 +3,7 @@
 Buck2's local executor inherits the daemon's full host environment into
 action subprocesses, but action cache keys only include explicitly declared
 env={}.  Two hosts sharing a NativeLink CAS compute identical digests but
-may produce different outputs when host env differs — cache poisoning.
+may produce different outputs when host env differs -- cache poisoning.
 
 This module provides a whitelist-based approach: start from a clean env
 with only functional vars, pin determinism vars, and let each helper add

@@ -1,0 +1,106 @@
+load("//defs:package.bzl", "package")
+
+# =============================================================================
+# Container Utilities
+# =============================================================================
+
+# umoci - OCI image tool
+package(
+    build_rule = "go",
+    name = "umoci",
+    version = "0.4.7",
+    url = "https://github.com/opencontainers/umoci/releases/download/v0.4.7/umoci.tar.xz",
+    sha256 = "693a3780937c785de8f6dd233786c1ea870bbe8ccba2f6f1e20339329394743b",
+    vendor_deps = True,
+    description = "Modify Open Container images",
+    homepage = "https://github.com/opencontainers/umoci",
+    license = "Apache-2.0",
+    packages = ["./cmd/umoci"],
+    deps = [
+        "//packages/linux/lang/go:go",
+    ],
+)
+
+# dive - Explore container image layers
+package(
+    build_rule = "go",
+    name = "dive",
+    version = "0.12.0",
+    url = "https://github.com/wagoodman/dive/archive/refs/tags/v0.12.0.tar.gz",
+    sha256 = "2b69b8d28220c66e2575a782a370a0c05077936ae3ce69180525412fcca09230",
+    description = "A tool for exploring container image layer contents",
+    homepage = "https://github.com/wagoodman/dive",
+    license = "MIT",
+    ldflags = "-s -w -X main.version=0.12.0",
+    deps = [
+        "//packages/linux/lang/go:go",
+    ],
+)
+
+# ctop - Container metrics viewer
+package(
+    build_rule = "go",
+    name = "ctop",
+    version = "0.7.7",
+    url = "https://github.com/bcicen/ctop/archive/refs/tags/v0.7.7.tar.gz",
+    sha256 = "0db439f2030af73ad5345884b08a33a762c3b41b30604223dd0ebddde72d2741",
+    description = "Top-like interface for container metrics",
+    homepage = "https://github.com/bcicen/ctop",
+    license = "MIT",
+    ldflags = "-s -w",
+    deps = [
+        "//packages/linux/lang/go:go",
+    ],
+)
+
+# lazydocker - Terminal UI for docker and docker-compose (works with podman)
+package(
+    build_rule = "go",
+    name = "lazydocker",
+    version = "0.23.1",
+    url = "https://github.com/jesseduffield/lazydocker/archive/refs/tags/v0.23.1.tar.gz",
+    sha256 = "3f0b8ca1c721191e543d5992d822b41c13e3561bb5e761695031f8ddb961a137",
+    vendor_deps = True,
+    description = "Terminal UI for docker and docker-compose",
+    homepage = "https://github.com/jesseduffield/lazydocker",
+    license = "MIT",
+    ldflags = "-s -w",
+    deps = [
+        "//packages/linux/lang/go:go",
+    ],
+)
+
+# trivy - Security scanner for containers
+package(
+    build_rule = "go",
+    name = "trivy",
+    version = "0.50.1",
+    url = "https://github.com/aquasecurity/trivy/archive/refs/tags/v0.50.1.tar.gz",
+    sha256 = "1b5acce5580a401998946d9eeb2aaa0312f243c001809a83eb9557efda628d2d",
+    description = "Vulnerability scanner for containers and other artifacts",
+    homepage = "https://github.com/aquasecurity/trivy",
+    license = "Apache-2.0",
+    packages = ["./cmd/trivy"],
+    ldflags = "-s -w -X main.version=0.50.1",
+    deps = [
+        "//packages/linux/lang/go:go",
+    ],
+)
+
+# docker-credential-helpers - Credential helpers for container registries
+package(
+    build_rule = "go",
+    name = "docker-credential-helpers",
+    version = "0.8.1",
+    url = "https://github.com/docker/docker-credential-helpers/archive/refs/tags/v0.8.1.tar.gz",
+    sha256 = "c9006b2acf159d54fd00a1713422ab70914dae87270b4f44d05edab526199e20",
+    vendor_deps = True,
+    description = "Credential helpers for container registries",
+    homepage = "https://github.com/docker/docker-credential-helpers",
+    license = "MIT",
+    packages = ["./pass/cmd/"],
+    ldflags = "-s -w",
+    deps = [
+        "//packages/linux/lang/go:go",
+    ],
+)

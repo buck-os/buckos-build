@@ -1,0 +1,17 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "binary",
+    name = "safeint",
+    version = "3.0.28a",
+    url = "https://github.com/dcleblanc/SafeInt/archive/refs/tags/3.0.28a.tar.gz",
+    sha256 = "9e652d065a3cef80623287d5dc61edcf6a95ddab38a9dfeb34f155261fc9cef7",
+    description = "SafeInt - C++ class library for managing integer overflows",
+    homepage = "https://github.com/dcleblanc/SafeInt",
+    license = "MIT",
+    deps = [],
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/include
+cp SafeInt.hpp $INSTALL_DIR/usr/include/
+""",
+)

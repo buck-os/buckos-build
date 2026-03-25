@@ -1,0 +1,65 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "gdb",
+    version = "14.1",
+    url = "https://mirrors.kernel.org/gnu/gdb/gdb-14.1.tar.xz",
+    sha256 = "d66df51276143451fcbff464cc8723d68f1e9df45a6a2d5635a54e71643edb80",
+    description = "GNU Debugger",
+    homepage = "https://www.gnu.org/software/gdb/",
+    license = "GPL-3+",
+
+    # USE flags this package supports
+
+    # Default USE flags
+
+    # Conditional dependencies
+    use_deps = {
+        "readline": "//packages/linux/system/terminal/readline:readline",
+        "ncurses": "//packages/linux/system/terminal/ncurses:ncurses",
+        "python": "//packages/linux/lang/python:python",
+    },
+
+    # Conditional configure arguments
+    use_configure = {
+        "babeltrace": ("--enable-babeltrace", "--disable-babeltrace"),
+        "cet": ("--enable-cet", "--disable-cet"),
+        "debuginfod": ("--enable-debuginfod", "--disable-debuginfod"),
+        "guile": ("--enable-guile", "--disable-guile"),
+        "lzma": ("--with-lzma", "--without-lzma"),
+        "multitarget": ("--enable-multitarget", "--disable-multitarget"),
+        "ncurses": (["--enable-tui", "--with-curses"], ["--disable-tui", "--without-curses"]),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "python": ("--with-python=/usr/bin/python3", "--without-python"),
+        "readline": ("--with-system-readline", "--without-system-readline"),
+        "rocm": ("--enable-rocm", "--disable-rocm"),
+        "server": ("--enable-server", "--disable-server"),
+        "sim": ("--enable-sim", "--disable-sim"),
+        "source-highlight": ("--enable-source-highlight", "--disable-source-highlight"),
+        "vanilla": ("--enable-vanilla", "--disable-vanilla"),
+        "xml": ("--with-expat", "--without-expat"),
+        "xxhash": ("--enable-xxhash", "--disable-xxhash"),
+        "zstd": ("--with-zstd", "--without-zstd"),
+    },
+
+    # Base configure arguments (always applied)
+    configure_args = [
+        "--with-system-zlib",
+        "--disable-werror",
+        "--disable-nls",
+        "--disable-source-highlight",
+    ],
+
+    extra_cflags = [
+        "-Wno-error=dangling-pointer",
+        "-Wno-error=redundant-decls",
+    ],
+
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/data/expat:expat",
+        "//packages/linux/system/libs/utility/gmp:gmp",
+        "//packages/linux/system/libs/utility/mpfr:mpfr",
+    ],
+)

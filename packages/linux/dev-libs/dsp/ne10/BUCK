@@ -1,0 +1,20 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cmake",
+    name = "ne10",
+    version = "1.0.1",
+    url = "https://github.com/projectNe10/Ne10/archive/refs/tags/v1.0.1.tar.gz",
+    sha256 = "08b85c8692aa7243f225c007a8c5f8165d92def01e80163e50f43d48da1f7a26",
+    configure_args = [
+        "-DNE10_BUILD_SHARED=OFF",
+        "-DNE10_BUILD_STATIC=ON",
+        "-DNE10_BUILD_EXAMPLES=OFF",
+        "-DNE10_BUILD_UNIT_TEST=OFF",
+        "-DNE10_ENABLE_DSP=ON",
+        "-DNE10_ENABLE_MATH=ON",
+        "-DNE10_ENABLE_IMGPROC=ON",
+        "-DNE10_ENABLE_PHYSICS=ON",
+        "-DGNULINUX_PLATFORM=ON",
+    ],
+)

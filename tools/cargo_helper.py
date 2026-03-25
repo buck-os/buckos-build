@@ -10,6 +10,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 
 from _env import apply_cache_config, clean_env, filter_path_flags, preferred_linker_flag, setup_ccache_symlinks, sysroot_lib_paths
 
@@ -167,6 +168,11 @@ def main():
     # prevent ~/.cargo/config from setting it via parent-dir search.
     env["RUSTC_WRAPPER"] = ""
     env["CARGO_BUILD_RUSTC_WRAPPER"] = ""
+
+    # Configure cargo's built-in network resilience: increase retry count
+    # and timeout to handle slow/unreliable connections during crate fetches.
+    env.setdefault("CARGO_NET_RETRY", "10")
+    env.setdefault("CARGO_HTTP_TIMEOUT", "120")
 
     if args.hermetic_path:
         env["PATH"] = ":".join(os.path.abspath(p) for p in args.hermetic_path)
@@ -336,6 +342,7 @@ def main():
             else:
                 new_lines.append(line)
         existing_content = "\n".join(new_lines)
+    _have_vendor = False
     with open(config_path, "w") as f:
         f.write(existing_content)
         f.write("\n# buckos overrides\n")
@@ -343,6 +350,41 @@ def main():
             vendor_dir = os.path.abspath(args.vendor_dir)
             f.write(f'[source.crates-io]\nreplace-with = "vendored-sources"\n\n')
             f.write(f'[source.vendored-sources]\ndirectory = "{vendor_dir}"\n')
+            _have_vendor = True
+        else:
+            # Auto-detect bundled vendor/ in source tree (vendor_deps = True)
+            _bundled_vendor = os.path.join(source_dir, "vendor")
+            if os.path.isdir(_bundled_vendor):
+                _bundled_vendor = os.path.abspath(_bundled_vendor)
+                f.write(f'[source.crates-io]\nreplace-with = "vendored-sources"\n\n')
+                f.write(f'[source.vendored-sources]\ndirectory = "{_bundled_vendor}"\n')
+                _have_vendor = True
+
+    # Fetch dependencies before network isolation (like go mod download).
+    # Skip if vendor directory is available (explicit or auto-detected).
+    # Retry with exponential backoff to handle transient network timeouts.
+    _FETCH_MAX_RETRIES = 5
+    _FETCH_INITIAL_DELAY = 5  # seconds
+
+    if not _have_vendor:
+        fetch_cmd = [
+            "cargo", "fetch",
+            "--manifest-path", cargo_toml,
+        ]
+        fetch_ok = False
+        for attempt in range(_FETCH_MAX_RETRIES):
+            fetch_result = subprocess.run(fetch_cmd, env=env)
+            if fetch_result.returncode == 0:
+                fetch_ok = True
+                break
+            delay = _FETCH_INITIAL_DELAY * (2 ** attempt)
+            if attempt < _FETCH_MAX_RETRIES - 1:
+                print(f"warning: cargo fetch failed (attempt {attempt + 1}/{_FETCH_MAX_RETRIES}), "
+                      f"retrying in {delay}s...", file=sys.stderr)
+                time.sleep(delay)
+        if not fetch_ok:
+            print(f"warning: cargo fetch failed after {_FETCH_MAX_RETRIES} attempts (non-fatal), "
+                  "build may fail if network-isolated", file=sys.stderr)
 
     cmd = [
         "cargo", "build",

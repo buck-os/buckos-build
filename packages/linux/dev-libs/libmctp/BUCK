@@ -1,0 +1,19 @@
+load("//defs:package.bzl", "package")
+
+# libmctp uses cmake build system (v0.11 has no meson.build)
+package(
+    build_rule = "cmake",
+    name = "libmctp",
+    version = "0.11",
+    url = "https://github.com/openbmc/libmctp/archive/refs/tags/v0.11.tar.gz",
+    sha256 = "65ae18c0ea35d67bbd36f6b54fa9d3f8b95cef876c5fe8794f1f9bc2150ceeed",
+    description = "Library implementation of MCTP (Management Component Transport Protocol)",
+    homepage = "https://github.com/openbmc/libmctp",
+    license = "Apache-2.0",
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DMCTP_BUILD_TESTS=OFF",
+    ],
+    deps = [],
+)

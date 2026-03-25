@@ -1,0 +1,26 @@
+load("//defs:package.bzl", "package")
+
+# libpcap - Packet capture library
+# Using cmake build because autotools VPATH build has duplicate Makefile rules
+
+package(
+    build_rule = "cmake",
+    name = "libpcap",
+    version = "1.10.5",
+    url = "https://www.tcpdump.org/release/libpcap-1.10.5.tar.gz",
+    sha256 = "37ced90a19a302a7f32e458224a00c365c117905c2cd35ac544b6880a81488f0",
+    description = "Library for network traffic capture",
+    homepage = "https://www.tcpdump.org/",
+    license = "BSD-3-Clause",
+    deps = [],
+    configure_args = [
+        "-DCMAKE_INSTALL_PREFIX=/usr",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DENABLE_REMOTE=OFF",
+        "-DDISABLE_DBUS=ON",
+        "-DDISABLE_RDMA=ON",
+        "-DDISABLE_BLUETOOTH=ON",
+        "-DDISABLE_NETMAP=ON",
+        "-DDISABLE_USB=ON",
+    ],
+)

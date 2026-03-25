@@ -1,0 +1,26 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cmake",
+    name = "n2n",
+    version = "3.0",
+    url = "https://github.com/ntop/n2n/archive/refs/tags/3.0.tar.gz",
+    sha256 = "25fcabba7bfcf25f4c9cd7fecc7ce11de48beb0b0f3506053d8485604ea8f50d",
+
+    use_deps = {
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "zlib": "//packages/linux/core/zlib:zlib",
+    },
+
+    configure_args = [
+        "-DCMAKE_INSTALL_PREFIX=/usr",
+    ],
+
+    post_install_cmds = ["""
+mkdir -p "$DESTDIR/etc/n2n"
+"""],
+
+    description = "Peer-to-peer VPN daemon",
+    homepage = "https://www.ntop.org/products/n2n/",
+    license = "GPL-3.0",
+)

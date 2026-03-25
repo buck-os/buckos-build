@@ -1,0 +1,34 @@
+load("//defs:package.bzl", "package")
+
+# AppArmor: The tarball has no configure.ac at the top level.
+# libraries/libapparmor has its own autotools setup but the build_subdir
+# approach fails because autoreconf runs at the wrong level.
+# Use binary build rule to build libapparmor directly with make.
+package(
+    build_rule = "binary",
+    name = "apparmor",
+    url = "https://gitlab.com/apparmor/apparmor/-/archive/v3.1.6/apparmor-v3.1.6.tar.gz",
+    sha256 = "a7899f1529ad7f1e33fb07109075be3827edf43997040ecdec601590748f1039",
+    version = "3.1.6",
+    description = "AppArmor userspace utilities and profiles",
+    homepage = "https://apparmor.net/",
+    license = "GPL-2.0",
+    install_script = """
+cd "$SRCS/libraries/libapparmor"
+# Generate configure from autotools
+autoreconf -fi 2>&1 | grep -v 'warning:' || true
+export CFLAGS="${CFLAGS:-} -Wno-error"
+./configure --prefix=/usr --disable-static --without-python \
+    --host=${CHOST:-x86_64-buckos-linux-gnu}
+make -j${MAKEOPTS:-$(nproc)}
+make install DESTDIR="$OUT"
+mkdir -p "$OUT/etc/apparmor.d"
+mkdir -p "$OUT/var/lib/apparmor"
+""",
+    deps = [
+        "//packages/linux/lang/python:python",
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+    ],
+)

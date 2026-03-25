@@ -10,7 +10,8 @@ package(
         "-DTINYEXR_BUILD_SAMPLE=OFF",
         "-DTINYEXR_USE_MINIZ=OFF",
     ],
+    extra_cflags = ["-DTINYEXR_USE_MINIZ=0", "-include", "zlib.h"],
     deps = [
-        "//packages/linux/dev-libs/compression/zlib:zlib",
+        "//packages/linux/core/zlib:zlib",
     ],
 )

@@ -1,0 +1,28 @@
+load("//defs:package.bzl", "package")
+
+package(
+    name = "wireguard-tools",
+    build_rule = "autotools",
+    skip_configure = True,
+    version = "1.0.20210914",
+    url = "https://github.com/WireGuard/wireguard-tools/archive/refs/tags/v1.0.20210914.tar.gz",
+    sha256 = "acb8517eed8f352bbf0758a70573c665521a4300d0c4865afebd6b643738c640",
+    use_configure = {
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "wg-quick": ("--enable-wg-quick", "--disable-wg-quick"),
+    },
+
+    make_args = [
+        "-C", "src",
+        "WITH_BASHCOMPLETION=yes",
+        "WITH_WGQUICK=yes",
+        "WITH_SYSTEMDUNITS=yes",
+        "PREFIX=/usr",
+    ],
+
+    install_targets = ["DESTDIR=${DESTDIR} PREFIX=/usr -C src install"],
+
+    description = "WireGuard userspace tools (wg, wg-quick)",
+    homepage = "https://www.wireguard.com/",
+    license = "GPL-2.0",
+)

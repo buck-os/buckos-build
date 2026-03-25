@@ -1,0 +1,52 @@
+load("//defs:package.bzl", "package")
+
+# OpenBLAS - Optimized BLAS library
+
+package(
+    build_rule = "cmake",
+    name = "openblas",
+    version = "0.3.27",
+    url = "https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.27/OpenBLAS-0.3.27.tar.gz",
+    sha256 = "aa2d68b1564fe2b13bc292672608e9cdeeeb6dc34995512e65c3b10f4599e897",
+    description = "Optimized BLAS library based on GotoBLAS2 1.13 BSD version",
+    homepage = "https://www.openblas.net/",
+    license = "BSD-3-Clause",
+    deps = [],
+    pre_configure_cmds = ["""
+# OpenBLAS CMake needs to compile and run getarch on the host.
+# In cross-compilation, we need a host C compiler.
+# Create a wrapper that uses the host gcc for getarch compilation.
+mkdir -p _host_tools
+cat > _host_tools/hostcc << 'HEOF'
+#!/bin/sh
+exec /usr/bin/gcc "$@"
+HEOF
+chmod +x _host_tools/hostcc
+"""],
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DBUILD_TESTING=OFF",
+        "-DUSE_THREAD=ON",
+        "-DTARGET=HASWELL",
+        "-DNO_LAPACK=1",
+        "-DNOFORTRAN=1",
+        "-DCROSS=1",
+        "-DCROSS_SUFFIX=",
+        "-DNO_EXPRECISION=1",
+        "-DCMAKE_CROSSCOMPILING=FALSE",
+        '-DCMAKE_C_FLAGS=-march=x86-64',
+        '-DCMAKE_CXX_FLAGS=-march=x86-64',
+        '-DCMAKE_ASM_FLAGS=-march=x86-64',
+        "-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
+    ],
+    use_configure = {
+        "cpudetection": ("-DENABLE_CPUDETECTION=ON", "-DENABLE_CPUDETECTION=OFF"),
+        "eselect-ldso": ("-DENABLE_ESELECT_LDSO=ON", "-DENABLE_ESELECT_LDSO=OFF"),
+        "index64": ("-DENABLE_INDEX64=ON", "-DENABLE_INDEX64=OFF"),
+        "lapack": ("-DBUILD_LAPACK=ON", "-DBUILD_LAPACK=OFF"),
+        "openmp": ("-DUSE_OPENMP=ON", "-DUSE_OPENMP=OFF"),
+        "pthread": "-DUSE_PTHREAD=ON",
+        "relapack": ("-DENABLE_RELAPACK=ON", "-DENABLE_RELAPACK=OFF"),
+    },
+)

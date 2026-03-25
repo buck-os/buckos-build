@@ -1,0 +1,23 @@
+load("//defs:package.bzl", "package")
+
+# powertop - Power consumption analysis tool
+# TODO: Disabled - autoreconf fails with undefined macro AC_MSG_ERROR.
+# The configure.ac uses PKG_CHECK_MODULES which requires pkg-config m4
+# macros (pkg.m4) to be available during autoreconf. The host-tools
+# autoconf doesn't have these macros installed yet.
+
+# package(
+#     build_rule = "autotools",
+#     name = "powertop",
+#     url = "https://github.com/fenrus75/powertop/archive/refs/tags/v2.15.tar.gz",
+#     sha256 = "e58ab3fd7b8ff5f4dd0d17f11848817e7d83c0a6918145ac81de03b5dccf8f49",
+#     version = "2.15",
+#     description = "Power consumption and power management diagnosis tool",
+#     homepage = "https://github.com/fenrus75/powertop",
+#     license = "GPL-2.0",
+#     pre_configure_cmds = ["autoreconf -fi"],
+#     deps = [
+#         "//packages/linux/system/terminal/ncurses:ncurses",
+#         "//packages/linux/core/libnl:libnl",
+#     ],
+# )

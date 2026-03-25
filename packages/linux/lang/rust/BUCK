@@ -111,14 +111,19 @@ echo "Using CC=$CC"
 # that also pass CFLAGS/LDFLAGS so LLVM can find dep headers/libs.
 # No LD_LIBRARY_PATH needed — compiler interpreters are patched to
 # the sysroot ld-linux by the toolchain rule.
+#
+# Strip any -fuse-ld= from LDFLAGS and force -fuse-ld=bfd at the end.
+# Stage0's ld.lld defaults to elf32-i386 when invoked as "ld.lld",
+# which breaks x86_64 linking.  Force GCC's bfd linker instead.
+_RUST_LDFLAGS=$(echo "$LDFLAGS" | sed 's/-fuse-ld=[^ ]*//g')
 mkdir -p "$WORKDIR/cc-wrappers"
 cat > "$WORKDIR/cc-wrappers/buckos-cc" << CCEOF
 #!/bin/sh
-exec $CC $CFLAGS "\$@" $LDFLAGS
+exec $CC $CFLAGS "\$@" $_RUST_LDFLAGS -fuse-ld=bfd
 CCEOF
 cat > "$WORKDIR/cc-wrappers/buckos-cxx" << CXXEOF
 #!/bin/sh
-exec $CXX $CFLAGS "\$@" $LDFLAGS
+exec $CXX $CFLAGS "\$@" $_RUST_LDFLAGS -fuse-ld=bfd
 CXXEOF
 chmod +x "$WORKDIR/cc-wrappers/buckos-cc" "$WORKDIR/cc-wrappers/buckos-cxx"
 

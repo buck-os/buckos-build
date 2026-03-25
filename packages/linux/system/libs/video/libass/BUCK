@@ -1,0 +1,32 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "libass",
+    url = "https://github.com/libass/libass/releases/download/0.17.3/libass-0.17.3.tar.xz",
+
+    sha256 = "eae425da50f0015c21f7b3a9c7262a910f0218af469e22e2931462fed3c50959",
+    use_configure = {
+        "fontconfig": ("--enable-fontconfig", "--disable-fontconfig"),
+        "libunibreak": ("--enable-libunibreak", "--disable-libunibreak"),
+    },
+    version = "0.17.3",
+    description = "Portable subtitle renderer for ASS/SSA format",
+    homepage = "https://github.com/libass/libass",
+    license = "ISC",
+    configure_args = [
+        "--prefix=/usr",
+        "--disable-static",
+        "--enable-shared",
+        "--disable-asm",
+        "--enable-fontconfig",
+        "--disable-require-system-font-provider",
+    ],
+    deps = [
+        "//packages/linux/system/libs/font/freetype:freetype",
+        "//packages/linux/system/libs/font/fontconfig:fontconfig",
+        "//packages/linux/system/libs/font/harfbuzz:harfbuzz",
+        "//packages/linux/system/libs/font/fribidi:fribidi",
+        "//packages/linux/system/libs/data/expat:expat",
+    ],
+)

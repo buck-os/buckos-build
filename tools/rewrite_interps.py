@@ -13,8 +13,15 @@ import argparse
 import os
 import shutil
 import struct
+import subprocess
 import stat
 import sys
+
+
+# Fixed padding length for ELF interpreter path.
+# Prepended '/' characters ensure PT_INTERP is long enough for
+# in-place rewriting regardless of sysroot path length.
+PADDED_LENGTH = 260
 
 
 _STANDARD_INTERPS = (
@@ -92,6 +99,98 @@ def _patch_elf_interpreter(path, new_interp_bytes, patch_standard=False):
     return False
 
 
+def _extract_gcc_spec(gcc_bin, spec_name):
+    """Extract a single spec entry from a GCC binary's built-in specs.
+
+    Runs ``gcc -dumpspecs`` and returns the value line for *spec_name,
+    or None if not found.
+    """
+    try:
+        result = subprocess.run(
+            [gcc_bin, "-dumpspecs"],
+            capture_output=True, text=True, timeout=30,
+        )
+        if result.returncode != 0:
+            return None
+        lines = result.stdout.splitlines()
+        marker = f"*{spec_name}:"
+        for i, line in enumerate(lines):
+            if line.strip() == marker and i + 1 < len(lines):
+                return lines[i + 1]
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+    return None
+
+
+def _install_gcc_specs(output_dir, gcc_triple, ld_subpath, rpath_val=None):
+    """Install GCC auto-loaded specs with padded dynamic linker and RPATH.
+
+    Writes a specs file to tools/lib/gcc/<triple>/<version>/specs so GCC
+    auto-loads it without needing -specs= on the command line.  Uses %R
+    (GCC's sysroot substitution) so the specs content is machine-independent.
+
+    Also preserves the built-in *libgcc: spec, because GCC has a quirk
+    where the mere existence of an auto-loaded specs file causes it to
+    drop -lgcc_s from the link line unless *libgcc: is explicitly present.
+    """
+    gcc_lib_base = os.path.join(output_dir, "tools", "lib", "gcc", gcc_triple)
+    if not os.path.isdir(gcc_lib_base):
+        print(f"warning: GCC lib dir not found: {gcc_lib_base}",
+              file=sys.stderr)
+        return False
+
+    versions = [d for d in os.listdir(gcc_lib_base)
+                if os.path.isdir(os.path.join(gcc_lib_base, d))]
+    if not versions:
+        print(f"warning: no GCC version dirs in {gcc_lib_base}",
+              file=sys.stderr)
+        return False
+
+    version = versions[0]
+    specs_dir = os.path.join(gcc_lib_base, version)
+
+    # Build padded interpreter using %R (GCC's sysroot substitution).
+    padded_ld = "/" * PADDED_LENGTH + "%R/" + ld_subpath
+
+    # Sysroot lib dirs for RPATH using %R.
+    sysroot_rpath = "%R/usr/lib64:%R/usr/lib:%R/lib64:%R/lib:%R/../lib64"
+
+    parts = [f"--dynamic-linker {padded_ld}"]
+    if rpath_val:
+        combined_rpath = sysroot_rpath + ":" + rpath_val
+        parts.append(f"--disable-new-dtags -rpath {combined_rpath}")
+
+    # Split: --dynamic-linker only for executables, RPATH for exes + shared libs
+    interp_parts = [p for p in parts if "dynamic-linker" in p]
+    rpath_parts = [p for p in parts if "dynamic-linker" not in p]
+
+    clauses = []
+    if interp_parts:
+        clauses.append(f"%{{!shared:%{{!static:{' '.join(interp_parts)}}}}}")
+    if rpath_parts:
+        clauses.append(f"%{{!static:{' '.join(rpath_parts)}}}")
+
+    specs_content = ""
+
+    # Extract and preserve *libgcc: from the GCC binary.  Without this,
+    # GCC silently drops -lgcc_s when any auto-loaded specs file exists.
+    gcc_bin = os.path.join(output_dir, "tools", "bin",
+                           gcc_triple + "-gcc")
+    libgcc_spec = _extract_gcc_spec(gcc_bin, "libgcc")
+    if libgcc_spec:
+        specs_content += f"*libgcc:\n{libgcc_spec}\n\n"
+
+    specs_content += f"*link:\n+ {' '.join(clauses)}\n\n"
+
+    specs_path = os.path.join(specs_dir, "specs")
+    with open(specs_path, "w") as f:
+        f.write(specs_content)
+
+    print(f"Installed GCC auto-loaded specs: {specs_path} (version {version})",
+          file=sys.stderr)
+    return True
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Copy host tools and rewrite ELF interpreters")
@@ -107,6 +206,13 @@ def main():
     parser.add_argument("--patchelf", default=None,
                         help="Path to patchelf binary (required with "
                              "--patch-standard)")
+    parser.add_argument("--specs-gcc-triple", default=None,
+                        help="GCC target triple for auto-loaded specs install")
+    parser.add_argument("--specs-ld-subpath", default=None,
+                        help="ld-linux subpath for specs dynamic linker "
+                             "(e.g. lib64/ld-linux-x86-64.so.2)")
+    parser.add_argument("--specs-rpath", default=None,
+                        help="RPATH value to bake into GCC specs")
     args = parser.parse_args()
 
     tools_dir = os.path.abspath(args.tools_dir)
@@ -280,6 +386,11 @@ def main():
 
         print(f"Rewrote interpreter in {patched} binaries -> {ld_linux}",
               file=sys.stderr)
+
+    # Install GCC auto-loaded specs if requested.
+    if args.specs_ld_subpath and args.specs_gcc_triple:
+        _install_gcc_specs(output_dir, args.specs_gcc_triple,
+                          args.specs_ld_subpath, args.specs_rpath)
 
     # Rewrite script shebangs containing buck-out paths.  Build-time
     # shebangs like #!/.../buck-out/.../bash become stale when the remote

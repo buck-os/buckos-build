@@ -1,0 +1,39 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cmake",
+    name = "sdl2-mixer",
+    version = "2.8.0",
+    url = "https://github.com/libsdl-org/SDL_mixer/releases/download/release-2.8.0/SDL2_mixer-2.8.0.tar.gz",
+    sha256 = "1cfb34c87b26dbdbc7afd68c4f545c0116ab5f90bbfecc5aebe2a9cb4bb31549",
+    description = "SDL2 multi-channel audio mixer library",
+    homepage = "https://www.libsdl.org/projects/SDL_mixer/",
+    license = "Zlib",
+    use_configure = {
+        "flac": ("-DSDL2MIXER_FLAC=ON", "-DSDL2MIXER_FLAC=OFF"),
+        "mp3": ("-DSDL2MIXER_MP3=ON", "-DSDL2MIXER_MP3=OFF"),
+        "ogg": ("-DSDL2MIXER_OGG=ON", "-DSDL2MIXER_OGG=OFF"),
+        "opus": ("-DSDL2MIXER_OPUS=ON", "-DSDL2MIXER_OPUS=OFF"),
+        "static-libs": ("-DBUILD_SHARED_LIBS=OFF", "-DBUILD_SHARED_LIBS=ON"),
+        "wavpack": ("-DSDL2MIXER_WAVPACK=ON", "-DSDL2MIXER_WAVPACK=OFF"),
+    },
+    use_deps = {
+        "flac": "//packages/linux/system/libs/audio/flac:flac",
+        "ogg": ["//packages/linux/system/libs/audio/libogg:libogg",
+        "//packages/linux/system/libs/audio/libvorbis:libvorbis"],
+        "opus": "//packages/linux/system/libs/audio/opus:opus",
+    },
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DSDL2MIXER_SAMPLES=OFF",
+        "-DSDL2MIXER_MOD_XMP=OFF",
+        "-DSDL2MIXER_MOD=OFF",
+        "-DSDL2MIXER_MIDI_FLUIDSYNTH=OFF",
+        "-DSDL2MIXER_MIDI=OFF",
+        "-DCMAKE_DISABLE_FIND_PACKAGE_FluidSynth=ON",
+    ],
+    deps = [
+        "//packages/linux/system/libs/multimedia/sdl2:sdl2",
+    ],
+)

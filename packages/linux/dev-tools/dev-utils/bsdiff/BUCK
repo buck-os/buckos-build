@@ -1,0 +1,28 @@
+load("//defs:package.bzl", "package")
+
+# bsdiff - Binary diff/patch utility for efficient delta compression
+# Original by Colin Percival: http://www.daemonology.net/bsdiff/
+
+package(
+    build_rule = "binary",
+    name = "bsdiff",
+    version = "4.3",
+    url = "https://mirror.buckos.org/b/bsdiff-4.3.tar.gz",
+    sha256 = "18821588b2dc5bf159aa37d3bcb7b885d85ffd1e19f23a0c57a58723fea85f48",
+    description = "Binary diff/patch utility for efficient delta compression",
+    homepage = "http://www.daemonology.net/bsdiff/",
+    license = "BSD-2-Clause",
+    deps = [
+        "//packages/linux/system/libs/compression/bzip2:bzip2",
+    ],
+    install_script = """
+$CC $CFLAGS $LDFLAGS -o bsdiff bsdiff.c -lbz2 2>/dev/null || \
+    $CC $CFLAGS $LDFLAGS -o bsdiff bsdiff.c -lbz2 -Wno-implicit-function-declaration
+$CC $CFLAGS $LDFLAGS -o bspatch bspatch.c -lbz2 2>/dev/null || \
+    $CC $CFLAGS $LDFLAGS -o bspatch bspatch.c -lbz2 -Wno-implicit-function-declaration
+
+mkdir -p "$OUT/usr/bin"
+install -m755 bsdiff "$OUT/usr/bin/bsdiff"
+install -m755 bspatch "$OUT/usr/bin/bspatch"
+""",
+)

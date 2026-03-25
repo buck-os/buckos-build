@@ -1,0 +1,53 @@
+load("//defs:package.bzl", "package")
+
+# =============================================================================
+# LightDM - Cross-desktop display manager
+# =============================================================================
+
+package(
+    build_rule = "autotools",
+    name = "lightdm",
+    url = "https://github.com/canonical/lightdm/releases/download/1.32.0/lightdm-1.32.0.tar.xz",
+
+    sha256 = "12f5ab432748f0387c7cf8b94430495a558a035a4f8465e5181af6faff133e4b",
+    version = "1.32.0",
+    description = "LightDM - A lightweight display manager",
+    homepage = "https://github.com/canonical/lightdm",
+    license = "GPL-3.0",
+    use_configure = {
+        "X": ("--with-x", "--without-x"),
+        "gtk": ("--enable-gtk3", "--disable-gtk3"),
+        "introspection": ("--enable-introspection", "--disable-introspection"),
+        "pam": ("--enable-pam", "--disable-pam"),
+        "vala": ("--enable-vala", "--disable-vala"),
+    },
+    use_deps = {
+        # X11 dependencies
+        "X": [
+            "//packages/linux/graphics/xorg/libX11:libX11",
+            "//packages/linux/graphics/xorg/libxcb:libxcb",
+            "//packages/linux/graphics/xorg/libXau:libXau",
+            "//packages/linux/graphics/xorg/libXdmcp:libXdmcp",
+        ],
+        # GTK greeter dependencies
+        "gtk": [
+            "//packages/linux/desktop/gtk:gtk3",
+        ],
+        # GObject introspection
+        "introspection": [
+            "//packages/linux/desktop/gobject-introspection:gobject-introspection",
+        ],
+        # PAM support
+        "pam": [
+            "//packages/linux/system/security/linux-pam:linux-pam",
+        ],
+    },
+    configure_args = [
+        "--disable-tests",
+        "--with-greeter-session=lightdm-gtk-greeter",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/glib:glib",
+                "//packages/linux/dev-tools/dev-utils/intltool:intltool"
+    ],
+)

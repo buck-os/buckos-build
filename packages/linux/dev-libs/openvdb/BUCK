@@ -1,0 +1,24 @@
+load("//defs:package.bzl", "package")
+
+# openvdb - Sparse volume data structure and tools
+package(
+    build_rule = "cmake",
+    name = "openvdb",
+    version = "11.0.0",
+    url = "https://github.com/AcademySoftwareFoundation/openvdb/archive/v11.0.0.tar.gz",
+    sha256 = "6314ff1db057ea90050763e7b7d7ed86d8224fcd42a82cdbb9c515e001b96c74",
+    description = "Sparse volume data structure and tools",
+    homepage = "https://www.openvdb.org/",
+    license = "MPL-2.0",
+    configure_args = [
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DOPENVDB_BUILD_BINARIES=OFF",
+        "-DOPENVDB_BUILD_PYTHON_MODULE=OFF",
+        "-DUSE_BLOSC=OFF",
+        "-DUSE_EXPLICIT_INSTANTIATION=OFF",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/boost:boost",
+        "//packages/linux/dev-libs/misc/tbb:tbb",
+    ],
+)

@@ -1,0 +1,50 @@
+load("//defs:package.bzl", "package")
+
+# metalog - Modern replacement for syslogd and klogd
+
+package(
+    build_rule = "autotools",
+    name = "metalog",
+    version = "20230719",
+    url = "https://github.com/hvisage/metalog/archive/metalog-20230719.tar.gz",
+    sha256 = "563b41409ee9e396c3709f002b59ccd9aff901b7d7e3adee6344e4b599a02105",
+    description = "Modern replacement for syslogd and klogd",
+    homepage = "https://github.com/hvisage/metalog",
+    license = "GPL-2.0",
+    use_configure = {},
+    pre_configure_cmds = ["""
+# GitHub archive does not include pre-generated configure script
+# Fix missing AX_CHECK_COMPILE_FLAG macro
+if [ ! -d m4 ]; then mkdir m4; fi
+cat > m4/ax_check_compile_flag.m4 << 'MACROEOF'
+AC_DEFUN([AX_CHECK_COMPILE_FLAG],
+[AC_PREREQ(2.64)dnl
+AS_VAR_PUSHDEF([CACHEVAR],[ax_cv_check_[]_AC_LANG_ABBREV[]flags_$4_$1])dnl
+AC_CACHE_CHECK([whether _AC_LANG compiler accepts $1], CACHEVAR, [
+  ax_check_save_flags=$[]_AC_LANG_PREFIX[]FLAGS
+  _AC_LANG_PREFIX[]FLAGS="$[]_AC_LANG_PREFIX[]FLAGS $4 $1"
+  AC_COMPILE_IFELSE([m4_default([$5],[AC_LANG_PROGRAM()])],
+    [AS_VAR_SET(CACHEVAR,[yes])],
+    [AS_VAR_SET(CACHEVAR,[no])])
+  _AC_LANG_PREFIX[]FLAGS=$ax_check_save_flags])
+AS_VAR_IF(CACHEVAR,yes,
+  [m4_default([$2], :)],
+  [m4_default([$3], :)])
+AS_VAR_POPDEF([CACHEVAR])dnl
+])dnl AX_CHECK_COMPILE_FLAG
+MACROEOF
+autoreconf -fi -I m4
+"""],
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--without-pcre",
+    ],
+    deps = [
+        "//packages/linux/system/libs/utility/pcre2:pcre2",
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
+    ],
+)

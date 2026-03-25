@@ -1,0 +1,33 @@
+load("//defs:package.bzl", "package")
+
+# cppack - Modern C++17 implementation of msgpack serialization
+
+package(
+    build_rule = "binary",
+    name = "cppack",
+    version = "1.0.0",
+    url = "https://github.com/mikeloomisgg/cppack/archive/51655ec8f2b8fed84f685e3bcf8f226b139a263b.tar.gz",
+    sha256 = "039cd8ba7314a27e68155c81f85bd34da9b79d31be44952899b55ef6ebcd4bad",
+    description = "Modern C++17 implementation of msgpack serialization",
+    homepage = "https://github.com/mikeloomisgg/cppack",
+    license = "MIT",
+    deps = [],
+    src_install = """
+mkdir -p "$INSTALL_DIR/usr/include/cppack"
+# cppack source may have headers in include/cppack, include/, or msgpack/
+if [ -d include/cppack ]; then
+    cp -r include/cppack "$INSTALL_DIR/usr/include/"
+elif [ -d include ]; then
+    cp -r include/* "$INSTALL_DIR/usr/include/cppack/"
+elif [ -d msgpack ]; then
+    # cppack's actual header directory is msgpack/
+    cp -r msgpack "$INSTALL_DIR/usr/include/"
+    cp -r msgpack "$INSTALL_DIR/usr/include/cppack/" 2>/dev/null || true
+else
+    # Fallback: copy all header files
+    find . -name '*.h' -o -name '*.hpp' | while read f; do
+        install -Dm644 "$f" "$INSTALL_DIR/usr/include/cppack/$(basename "$f")"
+    done
+fi
+""",
+)

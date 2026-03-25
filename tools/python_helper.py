@@ -216,11 +216,12 @@ def main():
     if args.ld_linux:
         sysroot_lib_paths(args.ld_linux, env)
 
-    # Add dep prefix site-packages to PYTHONPATH so build deps
-    # (setuptools, wheel, etc.) are found by pip --no-build-isolation.
+    # Add dep prefix site-packages to PYTHONPATH and bin dirs to PATH
+    # so build deps (setuptools, wheel, argcomplete scripts, etc.) are found.
     if args.dep_prefixes:
         import glob as _glob
         dep_py_paths = []
+        dep_bin_paths = []
         for prefix in args.dep_prefixes:
             prefix = os.path.abspath(prefix)
             for pattern in ("usr/lib/python*/site-packages", "usr/lib/python*/dist-packages",
@@ -228,9 +229,16 @@ def main():
                 for sp in _glob.glob(os.path.join(prefix, pattern)):
                     if os.path.isdir(sp):
                         dep_py_paths.append(sp)
+            for bindir in ("usr/bin", "usr/sbin", "bin"):
+                bd = os.path.join(prefix, bindir)
+                if os.path.isdir(bd):
+                    dep_bin_paths.append(bd)
         if dep_py_paths:
             existing = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = ":".join(dep_py_paths) + (":" + existing if existing else "")
+        if dep_bin_paths:
+            existing = env.get("PATH", "")
+            env["PATH"] = existing + ":" + ":".join(dep_bin_paths) if existing else ":".join(dep_bin_paths)
 
     # If python has a broken ELF interpreter, invoke through ld-linux
     if getattr(args, '_use_ld_linux', None):

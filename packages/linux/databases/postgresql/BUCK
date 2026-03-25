@@ -1,0 +1,80 @@
+load("//defs:package.bzl", "package")
+
+# PostgreSQL - Advanced open source relational database
+#
+# USE flags:
+#   ssl       - Enable SSL/TLS support with OpenSSL
+#   readline  - Enable command-line editing in psql
+#   zlib      - Enable compression support
+#   xml       - Enable XML support
+#   python    - Enable PL/Python stored procedures
+#   perl      - Enable PL/Perl stored procedures
+#   tcl       - Enable PL/Tcl stored procedures
+#   uuid      - Enable UUID support
+#   ldap      - Enable LDAP authentication
+#   pam       - Enable PAM authentication
+#   systemd   - Enable systemd integration
+
+package(
+    build_rule = "autotools",
+    name = "postgresql",
+    version = "16.4",
+    url = "https://ftp.postgresql.org/pub/source/v16.4/postgresql-16.4.tar.bz2",
+    sha256 = "971766d645aa73e93b9ef4e3be44201b4f45b5477095b049125403f9f3386d6f",
+    description = "Advanced open source relational database",
+    homepage = "https://www.postgresql.org/",
+    license = "PostgreSQL",
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/terminal/readline:readline",
+        "//packages/linux/system/libs/utility/icu:icu",
+    ],
+    use_deps = {
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "xml": "//packages/linux/system/libs/data/libxml2:libxml2",
+    },
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc/postgresql",
+        "--localstatedir=/var",
+        "--enable-thread-safety",
+        "--with-system-tzdata=/usr/share/zoneinfo",
+        "--with-icu",
+    ],
+    use_configure = {
+        "debug": ("--enable-debug", "--disable-debug"),
+        "icu": ("--enable-icu", "--disable-icu"),
+        "kerberos": ("--enable-kerberos", "--disable-kerberos"),
+        "ldap": ("--with-ldap", "--without-ldap"),
+        "llvm": ("--enable-llvm", "--disable-llvm"),
+        "lz4": ("--with-lz4", "--without-lz4"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "numa": ("--enable-numa", "--disable-numa"),
+        "oauth": ("--enable-oauth", "--disable-oauth"),
+        "pam": ("--with-pam", "--without-pam"),
+        "perl": ("--with-perl", "--without-perl"),
+        "python": ("--with-python", "--without-python"),
+        "readline": ("--with-readline", "--without-readline"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "ssl": ("--with-ssl=openssl", "--without-ssl"),
+        "static-libs": ("--enable-static", "--disable-static"),
+        "systemd": ("--with-systemd", "--without-systemd"),
+        "tcl": ("--with-tcl", "--without-tcl"),
+        "uring": ("--enable-uring", "--disable-uring"),
+        "uuid": ("--with-uuid=e2fs", "--without-uuid"),
+        "xml": ("--with-libxml", "--without-libxml"),
+        "zlib": ("--with-zlib", "--without-zlib"),
+        "zstd": ("--with-zstd", "--without-zstd"),
+    },
+    post_install_cmds = ["""
+# Create data directory
+mkdir -p "$DESTDIR/var/lib/postgresql/data"
+chmod 700 "$DESTDIR/var/lib/postgresql/data"
+
+# Create log directory
+mkdir -p "$DESTDIR/var/log/postgresql"
+
+# Create run directory
+mkdir -p "$DESTDIR/run/postgresql"
+"""],
+)

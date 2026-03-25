@@ -1,0 +1,55 @@
+load("//defs:package.bzl", "package")
+
+# =============================================================================
+# eSpeak NG - Open source speech synthesizer
+# =============================================================================
+#
+# eSpeak NG is a compact open source software text-to-speech synthesizer for
+# Linux, Windows, Android and other operating systems. It supports more than
+# 100 languages and accents.
+#
+# eSpeak NG uses a "formant synthesis" method. This allows many languages to be
+# provided in a small size. The speech is clear, and can be used at high speeds,
+# but is not as natural or smooth as larger synthesizers which are based on human
+# speech recordings. It also supports Klatt formant synthesis, and the ability
+# to use MBROLA as backend speech synthesizer.
+#
+# Key features:
+# - Supports more than 100 languages and accents
+# - Compact size (few megabytes including data)
+# - Command line program to speak text from file or stdin
+# - Shared library for use by other programs
+# - SSML (Speech Synthesis Markup Language) support
+# - Can produce speech output as WAV file
+# - Can translate text into phoneme codes
+# - Includes different voices with alterable characteristics
+# - Written in C
+#
+# =============================================================================
+
+package(
+    build_rule = "cmake",
+    name = "espeak-ng",
+    version = "1.52.0",
+    url = "https://github.com/espeak-ng/espeak-ng/archive/refs/tags/1.52.0.tar.gz",
+    sha256 = "bb4338102ff3b49a81423da8a1a158b420124b055b60fa76cfb4b18677130a23",  # Placeholder - verify with update_checksums.py
+    description = "Open source speech synthesizer supporting over 100 languages and accents",
+    homepage = "https://github.com/espeak-ng/espeak-ng",
+    license = "GPL-3.0",
+    use_configure = {
+        "l10n_ru": ("-DENABLE_L10N_RU=ON", "-DENABLE_L10N_RU=OFF"),
+        "l10n_zh": ("-DENABLE_L10N_ZH=ON", "-DENABLE_L10N_ZH=OFF"),
+        "man": ("-DENABLE_MAN=ON", "-DENABLE_MAN=OFF"),
+        "sound": ("-DENABLE_SOUND=ON", "-DENABLE_SOUND=OFF"),
+    },
+    deps = [],
+    use_deps = {
+        # pcaudiolib is optional for audio output
+        # mbrola is optional for additional voice synthesis
+    },
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DCOMPILE_INTONATIONS=ON",
+    ],
+)

@@ -1,0 +1,26 @@
+load("//defs:package.bzl", "package")
+
+# FarmHash - Family of hash functions from Google
+
+package(
+    build_rule = "autotools",
+    name = "farmhash",
+    version = "master",
+    url = "https://github.com/google/farmhash/archive/refs/heads/master.tar.gz",
+    sha256 = "88a7846c155001bc5d3a716cac2b696bdd558b9b3daca643104fb32dcb1bef75",
+    description = "Family of hash functions from Google",
+    homepage = "https://github.com/google/farmhash",
+    license = "MIT",
+    pre_configure_cmds = ["autoreconf -fi"],
+    configure_args = [
+        "--disable-static",
+    ],
+    # farmhash uses 'using namespace std' and 'data' conflicts with std::data in C++17
+    # Force C++14 to avoid the ambiguity
+    env = {"CXXFLAGS": "-O2 -std=c++14"},
+    deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+    ],
+)

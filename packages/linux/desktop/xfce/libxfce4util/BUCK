@@ -1,0 +1,33 @@
+load("//defs:package.bzl", "package")
+
+# libxfce4util - XFCE utility library
+
+package(
+    build_rule = "autotools",
+    name = "libxfce4util",
+    version = "4.18.2",
+    url = "https://archive.xfce.org/src/xfce/libxfce4util/4.18/libxfce4util-4.18.2.tar.bz2",
+    sha256 = "d9a329182b78f7e2520cd4aafcbb276bbbf162f6a89191676539ad2e3889c353",
+    description = "XFCE utility library",
+    homepage = "https://xfce.org/",
+    license = "LGPL-2.0+",
+    deps = [
+        "//packages/linux/dev-libs/glib:glib",
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/system/libs/utility/pcre2:pcre2",
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
+    ],
+    configure_args = [
+        "--disable-nls",
+    ],
+    pre_configure_cmds = [
+        "sed -i 's/intltool-update/true/g' configure",
+        "sed -i 's/intltool-merge/true/g' configure",
+        "sed -i 's/intltool-extract/true/g' configure",
+        "sed -i 's/Your intltool is too old.*/Intltool check bypassed/' configure",
+        "sed -i 's/as_fn_error.*[Ii]ntltool.*/true/' configure",
+        "touch po/Makefile.in.in",
+        "mkdir -p po && echo '' > po/POTFILES.in",
+    ],
+)

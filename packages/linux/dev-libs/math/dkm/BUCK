@@ -1,0 +1,19 @@
+load("//defs:package.bzl", "package")
+
+# dkm - A generic C++11 k-means clustering implementation
+
+package(
+    build_rule = "binary",
+    name = "dkm",
+    version = "master",
+    url = "https://github.com/genbattle/dkm/archive/refs/heads/master.tar.gz",
+    sha256 = "fa96783a65a18a7138e38e449327f786b98a7a9c5364be8d341c080f19d3a13b",
+    description = "A generic C++11 k-means clustering implementation - header-only library",
+    homepage = "https://github.com/genbattle/dkm",
+    license = "MIT",
+    deps = [],
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/include
+cp -r include/* $INSTALL_DIR/usr/include/ 2>/dev/null || cp *.hpp $INSTALL_DIR/usr/include/ 2>/dev/null || true
+""",
+)

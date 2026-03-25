@@ -1,0 +1,64 @@
+load("//defs:package.bzl", "package")
+
+# hostapd uses a .config file + plain Makefile, not autotools
+
+package(
+    name = "hostapd",
+    build_rule = "binary",
+    version = "2.10",
+    url = "https://w1.fi/releases/hostapd-2.10.tar.gz",
+    sha256 = "206e7c799b678572c2e3d12030238784bc4a9f82323b0156b4c9466f1498915d",
+    description = "IEEE 802.11 AP, IEEE 802.1X/WPA/WPA2/EAP/RADIUS Authenticator",
+    homepage = "https://w1.fi/hostapd/",
+    license = "BSD-3-Clause",
+    deps = [
+        "//packages/linux/core/libnl:libnl",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+    ],
+    install_script = """
+mkdir -p "$OUT"
+BUILD=$(mktemp -d)
+cp -a "$SRCS"/. "$BUILD/"
+cd "$BUILD/hostapd"
+
+# Build include and lib paths from all dependencies
+EXTRA_CFLAGS=""
+EXTRA_LDFLAGS=""
+IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
+for _dep in "${_DEP_ARRAY[@]}"; do
+    for _incdir in "$_dep/usr/include" "$_dep/include"; do
+        if [ -d "$_incdir" ]; then
+            EXTRA_CFLAGS="$EXTRA_CFLAGS -I$_incdir"
+        fi
+    done
+    for _libdir in "$_dep/usr/lib64" "$_dep/usr/lib" "$_dep/lib64" "$_dep/lib"; do
+        if [ -d "$_libdir" ]; then
+            EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$_libdir -Wl,-rpath-link,$_libdir"
+        fi
+    done
+done
+
+# Create .config from defconfig
+cp defconfig .config
+
+# Enable OpenSSL
+echo "CONFIG_TLS=openssl" >> .config
+echo "CONFIG_IEEE80211W=y" >> .config
+echo "CONFIG_IEEE80211R=y" >> .config
+echo "CONFIG_IEEE80211N=y" >> .config
+echo "CONFIG_IEEE80211AC=y" >> .config
+echo "CONFIG_LIBNL32=y" >> .config
+
+make -j${MAKEOPTS:-$(nproc)} \
+    EXTRA_CFLAGS="$EXTRA_CFLAGS" \
+    LDFLAGS="$EXTRA_LDFLAGS"
+
+install -d "$OUT/usr/sbin"
+install -d "$OUT/usr/share/man/man1"
+install -d "$OUT/usr/share/man/man8"
+install -m 755 hostapd "$OUT/usr/sbin/"
+install -m 755 hostapd_cli "$OUT/usr/sbin/"
+install -m 644 hostapd.8 "$OUT/usr/share/man/man8/" 2>/dev/null || true
+install -m 644 hostapd_cli.1 "$OUT/usr/share/man/man1/" 2>/dev/null || true
+""",
+)
