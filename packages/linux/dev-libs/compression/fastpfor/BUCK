@@ -10,8 +10,14 @@ package(
     homepage = "https://github.com/lemire/FastPFor",
     license = "Apache-2.0",
     deps = [],
+    # Strip -march=native from CMakeLists.txt to avoid cross-compilation failure
+    pre_configure_cmds = [
+        "sed -i 's/-march=native//g' CMakeLists.txt",
+    ],
     configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
+        '-DCMAKE_C_FLAGS=-march=x86-64-v3',
+        '-DCMAKE_CXX_FLAGS=-march=x86-64-v3',
     ],
 )

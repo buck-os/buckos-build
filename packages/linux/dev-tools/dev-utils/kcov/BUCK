@@ -14,6 +14,13 @@ package(
     configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
+        "-DKCOV_ENABLE_BFD=OFF",
+        "-DCMAKE_C_FLAGS=-Wno-error -Wno-deprecated-declarations",
+        "-DCMAKE_CXX_FLAGS=-Wno-error -Wno-deprecated-declarations",
+    ],
+    # Remove -Werror from CMakeLists.txt which overrides -Wno-error
+    pre_configure_cmds = [
+        "sed -i 's/-Werror//g' CMakeLists.txt src/CMakeLists.txt || true",
     ],
     deps = [
         "//packages/linux/system/libs/elfutils:elfutils",

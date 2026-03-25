@@ -1,7 +1,7 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "rmm",
     version = "24.12.00",
     url = "https://github.com/rapidsai/rmm/archive/refs/tags/v24.12.00.tar.gz",
@@ -9,15 +9,30 @@ package(
     description = "RAPIDS Memory Manager - CUDA memory allocation library",
     homepage = "https://github.com/rapidsai/rmm",
     license = "Apache-2.0",
+    install_script = """
+cd "$SRCS"
+
+# RMM is a header-only C++ library (requires CUDA at runtime).
+# Install headers and cmake config without building (no rapids-cmake available).
+mkdir -p "$OUT/usr/include"
+cp -r include/rmm "$OUT/usr/include/"
+
+# Install cmake config
+mkdir -p "$OUT/usr/lib/cmake/rmm"
+cat > "$OUT/usr/lib/cmake/rmm/rmm-config.cmake" << 'CMAKEOF'
+# RMM header-only package config
+if(NOT TARGET rmm::rmm)
+    add_library(rmm::rmm INTERFACE IMPORTED)
+    set_target_properties(rmm::rmm PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_LIST_DIR}/../../../include"
+    )
+endif()
+CMAKEOF
+""",
     deps = [
         "//packages/linux/dev-libs/misc/fmt:fmt",
         "//packages/linux/dev-libs/logging/spdlog:spdlog",
         "//packages/linux/dev-libs/cuda/nvtx:nvtx",
-    ],
-    configure_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DBUILD_TESTS=OFF",
-        "-DBUILD_BENCHMARKS=OFF",
     ],
     labels = ["buckos:hw:cuda"],
 )

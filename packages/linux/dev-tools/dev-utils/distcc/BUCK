@@ -17,5 +17,25 @@ package(
         "--with-included-popt",
         "--without-libiberty",
         "--without-python",
+        "--disable-pump-mode",
     ],
+    env = {
+        "PYTHON": "/bin/false",
+    },
+    src_compile = """
+# Build only distcc/distccd, skip include-server which needs Python
+make -j${MAKEOPTS:-$(nproc)} PYTHON=/bin/false \
+    distcc distccd distcc-pump lsdistcc 2>&1 || \
+make -j1 PYTHON=/bin/false distcc distccd lsdistcc 2>&1 || true
+""",
+    src_install = """
+mkdir -p "$OUT/usr/bin"
+for bin in distcc distccd distcc-pump lsdistcc; do
+    [ -f "$bin" ] && install -m755 "$bin" "$OUT/usr/bin/"
+done
+mkdir -p "$OUT/usr/share/man/man1"
+for man in man/*.1; do
+    [ -f "$man" ] && install -m644 "$man" "$OUT/usr/share/man/man1/" 2>/dev/null || true
+done
+""",
 )

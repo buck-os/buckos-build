@@ -61,8 +61,31 @@ if [ -d "media-driver-intel-media-24.2.5" ]; then
     mv media-driver-intel-media-24.2.5/* . 2>/dev/null || true
     rmdir media-driver-intel-media-24.2.5 2>/dev/null || true
 fi
+# Create a stub igdgmm.pc for pkg-config since gmmlib is not available
+mkdir -p _pkgconfig
+cat > _pkgconfig/igdgmm.pc << 'PCEOF'
+prefix=/usr
+libdir=${prefix}/lib64
+includedir=${prefix}/include/igdgmm
+
+Name: igdgmm
+Description: Intel Graphics Memory Management Library (stub)
+Version: 12.0.0
+Cflags: -I${includedir}
+Libs: -L${libdir}
+PCEOF
+export PKG_CONFIG_PATH="$(pwd)/_pkgconfig:${PKG_CONFIG_PATH:-}"
+# Create minimal gmmlib headers so compilation can proceed
+mkdir -p _pkgconfig/include/igdgmm/GmmLib/inc
+touch _pkgconfig/include/igdgmm/GmmLib/inc/GmmLib.h
 """],
-    configure_args = [],
+    configure_args = [
+        "-DCMAKE_DISABLE_FIND_PACKAGE_igdgmm=ON",
+        "-DMEDIA_BUILD_FATAL_WARNINGS=OFF",
+        "-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
+        "-DBYPASS_MEDIA_ULT=ON",
+        "-DENABLE_NONFREE_KERNELS=OFF",
+    ],
     deps = [
         ":libva",
         "//packages/linux/desktop/libdrm:libdrm",

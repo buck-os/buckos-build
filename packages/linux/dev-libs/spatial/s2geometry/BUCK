@@ -21,5 +21,15 @@ package(
         "-DWITH_GLOG=ON",
         "-DWITH_PYTHON=OFF",
         "-DBUILD_EXAMPLES=OFF",
+        "-DBUILD_TESTS=OFF",
+        "-DCMAKE_CXX_FLAGS=-Wno-error",
+        "-DS2_USE_SYSTEM_INCLUDES=ON",
+        # Use C++20 to match abseil 20240116 ABI expectations
+        "-DCMAKE_CXX_STANDARD=20",
     ],
+    # Patch s2geometry to work with abseil 20240116+
+    pre_configure_cmds = ["""
+# Remove -Werror flags from cmake files
+find . -name CMakeLists.txt -exec sed -i 's/-Werror//g' {} + || true
+"""],
 )

@@ -19,12 +19,14 @@ package(
     skip_configure = True,
     make_args = [
         "CC=$CC",
-        "CFLAGS=$CFLAGS",
+        "CFLAGS=$CFLAGS -DNO_COROSYNC -DNO_DLM",
         "LDFLAGS=$LDFLAGS",
         "BINDIR=/sbin",
         "UDEVDIR=/lib/udev",
         "INSTALL=/usr/bin/install",
         "CHECK_RUN_DIR=0",
+        "COROSYNC=-DNO_COROSYNC",
+        "DLM=-DNO_DLM",
     ],
     install_args = [
         "BINDIR=/sbin",

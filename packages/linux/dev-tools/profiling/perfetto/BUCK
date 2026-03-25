@@ -14,8 +14,16 @@ package(
     deps = [
         "//packages/linux/core/zlib:zlib",
     ],
+    cmake_subdir = "sdk",
     configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DPERFETTO_BUILD_SDK_ONLY=ON",
     ],
+    pre_configure_cmds = ["""
+# Perfetto SDK has a CMakeLists.txt in sdk/ subdirectory
+# Create a minimal CMakeLists.txt at root if missing
+if [ ! -f CMakeLists.txt ] && [ -f sdk/CMakeLists.txt ]; then
+    cp sdk/CMakeLists.txt CMakeLists.txt
+fi
+"""],
 )

@@ -13,7 +13,22 @@ package(
     license = "BSD-3-Clause",
     deps = [],
     src_install = """
-mkdir -p $INSTALL_DIR/usr/include
-cp -r blaze $INSTALL_DIR/usr/include/
+mkdir -p "$INSTALL_DIR/usr/include"
+# The blaze/ directory may be at the source root or one level deeper
+if [ -d blaze ]; then
+    cp -r blaze "$INSTALL_DIR/usr/include/"
+elif [ -d blaze-*/blaze ]; then
+    cp -r blaze-*/blaze "$INSTALL_DIR/usr/include/"
+else
+    # Find the blaze header directory wherever it is
+    _blaze_dir=$(find . -type d -name "blaze" -maxdepth 3 | head -1)
+    if [ -n "$_blaze_dir" ]; then
+        cp -r "$_blaze_dir" "$INSTALL_DIR/usr/include/"
+    else
+        echo "ERROR: Cannot find blaze include directory" >&2
+        ls -la .
+        exit 1
+    fi
+fi
 """,
 )

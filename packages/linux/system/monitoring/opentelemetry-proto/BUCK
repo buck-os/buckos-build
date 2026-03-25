@@ -6,8 +6,7 @@ load("//defs:package.bzl", "package")
 
 package(
     name = "opentelemetry-proto",
-    build_rule = "autotools",
-    skip_configure = True,
+    build_rule = "make",
     version = "v1.8.0",
     url = "https://github.com/open-telemetry/opentelemetry-proto/archive/refs/tags/v1.8.0.tar.gz",
     sha256 = "057812cab50122c0fd504aae57b0b58424a5ec05d1b07889814bdfc7699abbe7",
@@ -15,11 +14,12 @@ package(
     homepage = "https://github.com/open-telemetry/opentelemetry-proto.git",
     license = "Apache-2.0",
     deps = [],
-    # The upstream Makefile requires docker for code generation.
-    # Override make to just create a dummy target, then install proto files via post_install_cmds.
-    pre_build_cmds = ["printf 'all:\\n\\ttrue\\n' > Makefile"],
-    post_install_cmds = ["""
-mkdir -p "$DESTDIR/usr/share/opentelemetry-proto"
-cp -a opentelemetry "$DESTDIR/usr/share/opentelemetry-proto/"
-"""],
+    # No compilation needed - just install proto files
+    src_compile = """
+true
+""",
+    src_install = """
+mkdir -p "$INSTALL_DIR/usr/share/opentelemetry-proto"
+cp -a opentelemetry "$INSTALL_DIR/usr/share/opentelemetry-proto/"
+""",
 )

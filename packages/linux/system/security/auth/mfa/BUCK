@@ -7,29 +7,15 @@ load("//defs:package.bzl", "package")
 package(
     build_rule = "autotools",
     name = "oath-toolkit",
-    pre_configure_cmds = ["""
-autoreconf -fi
-""", """
-autoreconf -fi
-""", """
-autoreconf -fi
-""", """
-autoreconf -fi
-""", """
-autoreconf -fi
-""", """
-autoreconf -fi
-""", """
-autoreconf -fi
-""", """
-autoreconf -fi
-"""],
+    pre_configure_cmds = [
+        "touch gtk-doc.make && mkdir -p /tmp/oath-stubs && printf '#!/bin/sh\\nexit 0\\n' > /tmp/oath-stubs/gtkdocize && chmod +x /tmp/oath-stubs/gtkdocize && export PATH=\"/tmp/oath-stubs:$PATH\" && autoreconf -fi",
+    ],
     url = "https://mirror.csclub.uwaterloo.ca/nongnu/oath-toolkit/oath-toolkit-2.6.9.tar.gz",
 
     sha256 = "333ac831c8f1a6dbd7feb897339bba453ff34d3b0f4cfaa6b5a20dba55c8e985",
     use_configure = {
-        "pam": ("-DENABLE_PAM=ON", "-DENABLE_PAM=OFF"),
-        "static-libs": ("-DBUILD_STATIC_LIBS=ON", "-DBUILD_STATIC_LIBS=OFF"),
+        "pam": ("--enable-pam", "--disable-pam"),
+        "static-libs": ("--enable-static", "--disable-static"),
     },
     version = "2.6.9",
     description = "OATH one-time password toolkit",
@@ -50,30 +36,9 @@ autoreconf -fi
     """],
     deps = [
         "//packages/linux/system/security/linux-pam:linux-pam",
-                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-                "//packages/linux/dev-tools/build-systems/automake:automake",
-                "//packages/linux/dev-tools/build-systems/libtool:libtool",
-                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-                "//packages/linux/dev-tools/build-systems/automake:automake",
-                "//packages/linux/dev-tools/build-systems/libtool:libtool",
-                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-                "//packages/linux/dev-tools/build-systems/automake:automake",
-                "//packages/linux/dev-tools/build-systems/libtool:libtool",
-                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-                "//packages/linux/dev-tools/build-systems/automake:automake",
-                "//packages/linux/dev-tools/build-systems/libtool:libtool",
-                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-                "//packages/linux/dev-tools/build-systems/automake:automake",
-                "//packages/linux/dev-tools/build-systems/libtool:libtool",
-                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-                "//packages/linux/dev-tools/build-systems/automake:automake",
-                "//packages/linux/dev-tools/build-systems/libtool:libtool",
-                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-                "//packages/linux/dev-tools/build-systems/automake:automake",
-                "//packages/linux/dev-tools/build-systems/libtool:libtool",
-                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-                "//packages/linux/dev-tools/build-systems/automake:automake",
-                "//packages/linux/dev-tools/build-systems/libtool:libtool"
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
     ],
 )
 
@@ -88,12 +53,16 @@ package(
     description = "Google Authenticator PAM module for two-factor authentication",
     homepage = "https://github.com/google/google-authenticator-libpam",
     license = "Apache-2.0",
+    pre_configure_cmds = ["autoreconf -fi"],
     configure_args = [
         "--prefix=/usr",
         "--libdir=/lib/security",
     ],
     deps = [
         "//packages/linux/system/security/linux-pam:linux-pam",
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
     ],
 )
 
@@ -113,11 +82,14 @@ package(
         "-DBUILD_EXAMPLES=OFF",
         "-DBUILD_MANPAGES=OFF",
         "-DBUILD_STATIC_LIBS=OFF",
+        "-DCMAKE_C_FLAGS=-Wno-error",
     ],
     deps = [
         "//packages/linux/system/libs/crypto/openssl:openssl",
         "//packages/linux/system/libs/libusb:libusb",
         ":libcbor",
+        "//packages/linux/system/libs/compat/libbsd:libbsd",
+        "//packages/linux/system/init/eudev:eudev",
     ],
 )
 
@@ -235,15 +207,23 @@ package(
     description = "YubiKey personalization library and tools",
     homepage = "https://developers.yubico.com/yubikey-personalization/",
     license = "BSD-2-Clause",
+    # Fix for json-c API change: TRUE/FALSE macros removed in newer json-c
+    extra_cflags = ["-DTRUE=1", "-DFALSE=0"],
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc",
         "--enable-shared",
         "--disable-static",
     ],
+    src_compile = """
+# Fix duplicate symbol errors from mold linker: build sequentially
+# and avoid linking static libs into shared libs
+make -j1 V=1
+""",
     deps = [
         "//packages/linux/system/security/encryption:libusb",
         ":libyubikey",
+        "//packages/linux/system/libs/compat/libbsd:libbsd",
     ],
 )
 

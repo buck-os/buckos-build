@@ -10,18 +10,39 @@ package(
     description = "FUSE filesystem for mounting archive files (tar, zip, etc.)",
     homepage = "https://www.cybernoia.de/software/archivemount.html",
     license = "LGPL-2.0",
-    configure_args = [
-        "--with-fuse3",
-    ],
-    pre_configure_cmds = ["""
-autoreconf -fi
-"""],
+    configure_args = [],
+    pre_configure_cmds = ["autoreconf -fi"],
+    env = {
+        "FUSE_CFLAGS": "-DFUSE_USE_VERSION=30 -I/usr/include/fuse3",
+        "FUSE_LIBS": "-lfuse3",
+        "PKG_CONFIG": "true",
+    },
+    src_compile = """
+# Find fuse3 include directory from deps
+_FUSE_INC=""
+IFS=':' read -ra _DEPS <<< "${DEP_BASE_DIRS:-}"
+for _dep in "${_DEPS[@]}"; do
+    if [ -d "$_dep/usr/include/fuse3" ]; then
+        _FUSE_INC="$_dep/usr/include/fuse3"
+        break
+    fi
+    # Also check for fuse.h directly in include
+    if [ -f "$_dep/usr/include/fuse3/fuse.h" ]; then
+        _FUSE_INC="$_dep/usr/include/fuse3"
+        break
+    fi
+done
+export FUSE_CFLAGS="-DFUSE_USE_VERSION=30 ${_FUSE_INC:+-I$_FUSE_INC}"
+make -j${MAKEOPTS:-$(nproc)} || make -j1
+""",
     deps = [
         "//packages/linux/system/security/encryption:fuse3",
-                "//packages/linux/system/libs/compression/libarchive:libarchive",
-                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-                "//packages/linux/dev-tools/build-systems/automake:automake",
-                "//packages/linux/dev-tools/build-systems/libtool:libtool",
-                "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config"
+        "//packages/linux/system/libs/compression/libarchive:libarchive",
+    ],
+    host_deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
     ],
 )

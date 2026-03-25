@@ -18,23 +18,23 @@ package(
 cd internal
 make -j${MAKEOPTS:-$(nproc)} CXXFLAGS="$CXXFLAGS -std=c++11 -fPIC"
 """,
-    post_install_cmds = ["""\
-mkdir -p "$DESTDIR/usr/lib"
-mkdir -p "$DESTDIR/usr/include/cld2"
-mkdir -p "$DESTDIR/usr/include/cld2/internal"
-mkdir -p "$DESTDIR/usr/include/cld2/public"
+    src_install = """
+mkdir -p "$OUT/usr/lib"
+mkdir -p "$OUT/usr/include/cld2"
+mkdir -p "$OUT/usr/include/cld2/internal"
+mkdir -p "$OUT/usr/include/cld2/public"
 
 # Install library
 if [ -f internal/libcld2.so ]; then
-    cp internal/libcld2.so "$DESTDIR/usr/lib/"
+    cp internal/libcld2.so "$OUT/usr/lib/"
 fi
 if [ -f internal/libcld2_full.so ]; then
-    cp internal/libcld2_full.so "$DESTDIR/usr/lib/"
+    cp internal/libcld2_full.so "$OUT/usr/lib/"
 fi
 
 # Install headers
-cp public/*.h "$DESTDIR/usr/include/cld2/public/" 2>/dev/null || true
-cp internal/*.h "$DESTDIR/usr/include/cld2/internal/" 2>/dev/null || true
-"""],
+cp public/*.h "$OUT/usr/include/cld2/public/" 2>/dev/null || true
+cp internal/*.h "$OUT/usr/include/cld2/internal/" 2>/dev/null || true
+""",
     deps = [],
 )

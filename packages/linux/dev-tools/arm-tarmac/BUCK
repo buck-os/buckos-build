@@ -24,6 +24,9 @@ package(
     license = "Apache-2.0",
     configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_FLAGS=-include cstdint",
     ],
-    deps = [],
+    deps = [
+        "//packages/linux/system/terminal/ncurses:ncurses",
+    ],
 )

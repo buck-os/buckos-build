@@ -9,9 +9,17 @@ package(
     configure_args = [
         "-DLIB_PROTO_MUTATOR_TESTING=OFF",
         "-DLIB_PROTO_MUTATOR_DOWNLOAD_PROTOBUF=OFF",
-        "-DCMAKE_CXX_FLAGS=-DHAVE_PTHREAD",
+        "-DCMAKE_CXX_FLAGS=-DHAVE_PTHREAD -Wno-error",
+        "-DCMAKE_BUILD_TYPE=Release",
     ],
     deps = [
         "//packages/linux/dev-libs/serialization/protobuf:protobuf",
+        "//packages/linux/dev-libs/google/abseil-cpp:abseil-cpp",
     ],
+    # Ensure abseil include path is found by protobuf headers
+    pre_configure_cmds = ["""
+# The protobuf headers include abseil headers directly.
+# Ensure CMake can find abseil by looking through the dep directories.
+sed -i 's/find_package(Protobuf REQUIRED)/find_package(Protobuf REQUIRED)\nfind_package(absl QUIET)/' CMakeLists.txt || true
+"""],
 )

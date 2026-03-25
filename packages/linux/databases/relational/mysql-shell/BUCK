@@ -22,15 +22,33 @@ package(
         "//packages/linux/databases/mysql:mysql",
         "//packages/linux/dev-libs/serialization/protobuf:protobuf",
         "//packages/linux/core/zlib:zlib",
+        "//packages/linux/dev-libs/parsers/antlr4-cpp:antlr4-cpp",
     ],
     use_deps = {
         "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
         "python": "//packages/linux/lang/python:python",
     },
+    pre_configure_cmds = ["""
+# Find MySQL installation from deps
+_MYSQL_DIR=""
+IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
+for _dep in "${_DEP_ARRAY[@]}"; do
+    if [ -f "$_dep/usr/include/mysql/mysql.h" ] || [ -f "$_dep/usr/include/mysql.h" ]; then
+        _MYSQL_DIR="$_dep/usr"
+        break
+    fi
+done
+# Store for cmake to pick up
+echo "$_MYSQL_DIR" > .mysql_prefix
+"""],
     configure_args = [
-        "-DMYSQL_SOURCE_DIR=/usr",
-        "-DMYSQL_BUILD_DIR=/usr",
         "-DHAVE_V8=0",
+        "-DWITH_PROTOBUF=bundled",
+        "-DWITH_GMOCK=bundled",
+        "-DWITH_ZLIB=system",
+        "-DBUILD_SOURCE_PACKAGE=OFF",
+        "-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
+        "-Wno-dev",
     ],
     use_configure = {
         "python": ("-DHAVE_PYTHON=1", "-DHAVE_PYTHON=0"),

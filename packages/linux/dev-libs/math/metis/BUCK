@@ -24,9 +24,14 @@ echo '#define IDXTYPEWIDTH 32' > build/xinclude/metis.h
 echo '#define REALTYPEWIDTH 32' >> build/xinclude/metis.h
 cat include/metis.h >> build/xinclude/metis.h
 cp include/CMakeLists.txt build/xinclude/
+""", """
+# Strip -march=native from ALL cmake files to avoid cross-compilation failure
+find . -name '*.cmake' -o -name 'CMakeLists.txt' | xargs sed -i 's/-march=native/-march=x86-64-v3/g' || true
 """],
     configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
+        "-DGKLIB_PATH=GKlib",
+        '-DCMAKE_C_FLAGS=-march=x86-64-v3',
     ],
 )

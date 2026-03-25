@@ -19,13 +19,11 @@ package(
     configure_args = [
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_TESTS=OFF",
-        "-DUSE_SSH=ON",
-        "-DUSE_HTTPS=OpenSSL",
+        "-DUSE_SSH=OFF",
+        "-DUSE_HTTPS=OFF",
+        "-DREGEX_BACKEND=builtin",
     ],
     deps = [
-        "//packages/linux/system/libs/crypto/openssl:openssl",
-        "//packages/linux/system/libs/network/libssh2:libssh2",
         "//packages/linux/core/zlib:zlib",
-        "//packages/linux/system/libs/utility/pcre2:pcre2",
     ],
 )

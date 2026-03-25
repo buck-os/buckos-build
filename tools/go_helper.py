@@ -92,6 +92,8 @@ def main():
                         help="Go package to build (repeatable; default: ./...)")
     parser.add_argument("--vendor-dir", default=None,
                         help="Vendor directory containing pre-downloaded dependencies")
+    parser.add_argument("--lib-only", action="store_true",
+                        help="Library-only mode: build to verify compilation but install source instead of binaries")
     args = parser.parse_args()
 
     if not os.path.isdir(args.source_dir):
@@ -101,10 +103,14 @@ def main():
     bin_dir = os.path.join(os.path.abspath(args.output_dir), "usr", "bin")
     os.makedirs(bin_dir, exist_ok=True)
 
-    cmd = [
-        "go", "build",
-        "-o", bin_dir,
-    ]
+    if args.lib_only:
+        # Library-only mode: compile to verify but don't produce binaries
+        cmd = ["go", "build"]
+    else:
+        cmd = [
+            "go", "build",
+            "-o", bin_dir,
+        ]
 
     if args.ldflags:
         cmd.extend(["-ldflags", args.ldflags])
@@ -195,25 +201,76 @@ def main():
         target_vendor = os.path.join(args.source_dir, "vendor")
         # Copy vendor/ from the deps archive into the source tree
         if os.path.isdir(os.path.join(vendor_src, "vendor")):
-            shutil.copytree(os.path.join(vendor_src, "vendor"), target_vendor, dirs_exist_ok=True)
+            shutil.copytree(os.path.join(vendor_src, "vendor"), target_vendor,
+                            dirs_exist_ok=True, symlinks=True, ignore_dangling_symlinks=True)
         else:
             # vendor_dir IS the vendor directory itself
-            shutil.copytree(vendor_src, target_vendor, dirs_exist_ok=True)
+            shutil.copytree(vendor_src, target_vendor,
+                            dirs_exist_ok=True, symlinks=True, ignore_dangling_symlinks=True)
         env["GOFLAGS"] = env.get("GOFLAGS", "") + " -mod=vendor"
 
     # Copy source to a writable working directory (source may be a read-only
     # Buck2 artifact and go build needs to write to the module cache/vendor).
     work_src = os.path.join(os.path.dirname(os.path.abspath(args.output_dir)), ".go-src")
-    shutil.copytree(args.source_dir, work_src, dirs_exist_ok=True)
+
+    def _ignore_bad_symlinks(directory, entries):
+        """Skip symlink loops and broken symlinks that cause copytree to fail."""
+        ignored = []
+        for entry in entries:
+            full = os.path.join(directory, entry)
+            if os.path.islink(full):
+                try:
+                    os.stat(full)  # resolves symlink — fails on broken/loop
+                except OSError:
+                    ignored.append(entry)
+        return set(ignored)
+
+    shutil.copytree(args.source_dir, work_src, dirs_exist_ok=True,
+                    symlinks=True, ignore=_ignore_bad_symlinks)
 
     # When no vendor deps are provided, fetch Go modules before network
-    # isolation.
-    if not args.vendor_dir:
-        dl_cmd = ["go", "mod", "download"]
-        dl_result = subprocess.run(dl_cmd, cwd=work_src, env=env)
-        if dl_result.returncode != 0:
-            print("error: go mod download failed", file=sys.stderr)
-            sys.exit(1)
+    # isolation.  Skip download when -mod=vendor is set (source already
+    # includes a vendor/ directory) or when GO111MODULE=off (GOPATH mode).
+    _goflags = env.get("GOFLAGS", "")
+    _go111module = env.get("GO111MODULE", "")
+    if not args.vendor_dir and "-mod=vendor" not in _goflags and _go111module != "off":
+        # Check for go.mod existence before attempting module download
+        if os.path.isfile(os.path.join(work_src, "go.mod")):
+            dl_cmd = ["go", "mod", "download"]
+            dl_result = subprocess.run(dl_cmd, cwd=work_src, env=env)
+            if dl_result.returncode != 0:
+                print("error: go mod download failed", file=sys.stderr)
+                sys.exit(1)
+        else:
+            print("warning: no go.mod found, skipping go mod download", file=sys.stderr)
+
+    # Fix stale vendor/modules.txt: when -mod=vendor is set and vendor/
+    # exists but modules.txt is inconsistent, regenerate it with
+    # `go mod vendor` before network isolation.
+    if "-mod=vendor" in _goflags and os.path.isdir(os.path.join(work_src, "vendor")):
+        if os.path.isfile(os.path.join(work_src, "go.mod")):
+            _fix_env = dict(env)
+            # Temporarily remove -mod=vendor so `go mod vendor` can run
+            _fix_env["GOFLAGS"] = _fix_env.get("GOFLAGS", "").replace("-mod=vendor", "").strip()
+            # Skip sum verification to avoid network issues with sum.golang.org
+            _fix_env["GONOSUMCHECK"] = "*"
+            _fix_env["GONOSUMDB"] = "*"
+            # First download modules to cache (needs network, before isolation)
+            dl_result = subprocess.run(
+                ["go", "mod", "download"], cwd=work_src, env=_fix_env,
+                capture_output=True, text=True,
+            )
+            if dl_result.returncode != 0:
+                print(f"warning: go mod download for vendor fix failed (non-fatal): {dl_result.stderr}",
+                      file=sys.stderr)
+            # Now regenerate vendor/
+            vend_result = subprocess.run(
+                ["go", "mod", "vendor"], cwd=work_src, env=_fix_env,
+                capture_output=True, text=True,
+            )
+            if vend_result.returncode != 0:
+                print(f"warning: go mod vendor failed (non-fatal): {vend_result.stderr}",
+                      file=sys.stderr)
 
     # Wrap with unshare --net for network isolation (reproducibility)
     if _NETWORK_ISOLATED:
@@ -227,21 +284,48 @@ def main():
         print(f"error: go build failed with exit code {result.returncode}", file=sys.stderr)
         sys.exit(1)
 
-    # Verify at least one binary was produced
-    binaries = [f for f in os.listdir(bin_dir)
-                if os.path.isfile(os.path.join(bin_dir, f))
-                and os.access(os.path.join(bin_dir, f), os.X_OK)]
+    if args.lib_only:
+        # Library-only mode: install Go source files instead of binaries
+        go_src_dir = os.path.join(os.path.abspath(args.output_dir), "usr", "share", "go", "src")
+        os.makedirs(go_src_dir, exist_ok=True)
+        # Detect module path from go.mod
+        go_mod = os.path.join(work_src, "go.mod")
+        mod_path = None
+        if os.path.isfile(go_mod):
+            with open(go_mod) as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith("module "):
+                        mod_path = line.split(None, 1)[1].strip()
+                        break
+        if mod_path:
+            dest = os.path.join(go_src_dir, mod_path)
+        else:
+            dest = go_src_dir
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+        shutil.copytree(work_src, dest, dirs_exist_ok=True)
+        # Remove empty bin_dir created earlier
+        if os.path.isdir(bin_dir) and not os.listdir(bin_dir):
+            os.rmdir(bin_dir)
+            usr_bin_parent = os.path.dirname(bin_dir)
+            if os.path.isdir(usr_bin_parent) and not os.listdir(usr_bin_parent):
+                os.rmdir(usr_bin_parent)
+    else:
+        # Verify at least one binary was produced
+        binaries = [f for f in os.listdir(bin_dir)
+                    if os.path.isfile(os.path.join(bin_dir, f))
+                    and os.access(os.path.join(bin_dir, f), os.X_OK)]
 
-    # If specific bins were requested, remove any extras
-    if args.bins:
-        for f in list(binaries):
-            if f not in args.bins:
-                os.remove(os.path.join(bin_dir, f))
-        binaries = [f for f in binaries if f in args.bins]
+        # If specific bins were requested, remove any extras
+        if args.bins:
+            for f in list(binaries):
+                if f not in args.bins:
+                    os.remove(os.path.join(bin_dir, f))
+            binaries = [f for f in binaries if f in args.bins]
 
-    if not binaries:
-        print("error: no executable binaries found in output directory", file=sys.stderr)
-        sys.exit(1)
+        if not binaries:
+            print("error: no executable binaries found in output directory", file=sys.stderr)
+            sys.exit(1)
 
 
 if __name__ == "__main__":

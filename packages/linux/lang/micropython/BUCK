@@ -16,16 +16,17 @@ package(
         "ffi": "//packages/linux/system/libs/utility/libffi:libffi",
     },
 
-    # Build mpy-cross first, then the unix port
-    pre_build_cmds = [
-        "make -C mpy-cross -j$(nproc)",
-    ],
-    make_args = ["-C", "ports/unix"],
+    src_compile = """
+# Build mpy-cross first, then the unix port
+# micropython's Makefile adds -Werror, so we must override with CFLAGS_EXTRA
+export CFLAGS="$CFLAGS -Wno-error=dangling-pointer -Wno-error"
+make -C mpy-cross -j$(nproc) CFLAGS_EXTRA="-Wno-error=dangling-pointer -Wno-error"
+make -j${MAKEOPTS:-$(nproc)} -C ports/unix CFLAGS_EXTRA="-Wno-error=dangling-pointer -Wno-error"
+""",
 
-    post_install_cmds = ["""\
-mkdir -p "$DESTDIR/usr/bin"
-        cp ports/unix/build-standard/micropython "$DESTDIR/usr/bin/micropython"
-        cp mpy-cross/build/mpy-cross "$DESTDIR/usr/bin/mpy-cross"
-"""],
-
+    src_install = """
+mkdir -p "$OUT/usr/bin"
+cp ports/unix/build-standard/micropython "$OUT/usr/bin/micropython"
+cp mpy-cross/build/mpy-cross "$OUT/usr/bin/mpy-cross"
+""",
 )

@@ -64,6 +64,7 @@ export BUILD_OPT=1
 export NSS_ENABLE_WERROR=0
 export NSDISTMODE=copy
 export NSS_DISABLE_GTESTS=1
+export NSS_DISABLE_DBM=1
 export USE_64=1
 
 # Pass dependency paths via direct make variables (not environment)
@@ -74,12 +75,16 @@ export NSPR_LIB_DIR="$NSPR_LIB"
 export CC=gcc
 export CXX=g++
 
+# Suppress Makefile recipe override warnings by redirecting stderr
+# and ensure make doesn't treat them as fatal
+
 # Build coreconf first (sequential to avoid race conditions)
-make -j1 -C coreconf
-make -j1 -C lib/dbm
+make -j1 -C coreconf 2>&1
 
 # Build NSS with explicit paths (use -j1 to avoid jobserver issues)
-make -j1 NSPRINCLUDE="-I$NSPR_INC" CC=gcc CXX=g++
+# Skip lib/dbm build since NSS_DISABLE_DBM=1
+# NSS_ENABLE_WERROR=0 ensures compiler warnings don't cause build failure
+make -j1 NSPRINCLUDE="-I$NSPR_INC" CC=gcc CXX=g++ NSS_ENABLE_WERROR=0 2>&1
 
 # Install
 mkdir -p "$OUT/usr/lib" "$OUT/usr/include/nss" "$OUT/usr/bin"

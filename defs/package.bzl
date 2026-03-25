@@ -301,11 +301,24 @@ def package(
     # -- Auto-create vendor deps for cargo/go packages ----------------------
     # When vendor_deps is a sha256 string (64 hex chars), download the
     # vendor archive from the mirror and create extraction targets.
+    # When vendor_deps = True, the source tarball already includes a vendor/
+    # directory — skip auto-wiring from the mirror and inject -mod=vendor
+    # so go build uses the bundled vendor directory.
     # When in vendor mirror mode without explicit vendor_deps, auto-wire
     # from the vendor directory.
     if build_rule in ("cargo", "go") and "vendor_deps" in build_kwargs:
         _vendor_sha = build_kwargs["vendor_deps"]
-        if type(_vendor_sha) == "string" and len(_vendor_sha) == 64:
+        if type(_vendor_sha) == "bool" and _vendor_sha:
+            # Source tarball already includes vendor/ — skip mirror auto-wire
+            # and inject -mod=vendor so go build uses the bundled deps.
+            build_kwargs.pop("vendor_deps")
+            if build_rule == "go":
+                _env = build_kwargs.get("env", {})
+                _existing_goflags = _env.get("GOFLAGS", "")
+                if "-mod=vendor" not in _existing_goflags:
+                    _env["GOFLAGS"] = (_existing_goflags + " -mod=vendor").strip()
+                    build_kwargs["env"] = _env
+        elif type(_vendor_sha) == "string" and len(_vendor_sha) == 64:
             build_kwargs.pop("vendor_deps")
             if _MIRROR_PREFIX:
                 _vendor_filename = "{}-{}-vendor.tar.zst".format(name, version)

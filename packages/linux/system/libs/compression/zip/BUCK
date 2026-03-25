@@ -15,13 +15,20 @@ package(
         "//packages/linux/system/libs/compression/bzip2:bzip2",
     ],
     install_script = """
+# Fix conflicting types for memset/memcpy: zip.h defines its own prototypes
+# when ZMEM is set. Remove -DZMEM from the Makefile flags and add -DHAVE_STRING_H
+# to use the system string.h versions instead.
+sed -i 's/-DZMEM//g' unix/Makefile 2>/dev/null || true
+
 make -f unix/Makefile generic \
     CC="$CC" \
-    CF="$CFLAGS -DUNIX -I." \
+    CF="$CFLAGS -DUNIX -I. -DHAVE_STRING_H -Wno-error=incompatible-pointer-types -Wno-error=int-conversion -Wno-error" \
     LF2="$LDFLAGS" \
     -j${MAKEOPTS:-$(nproc)} || \
 make -f unix/Makefile generic \
     CC="$CC" \
+    CF="$CFLAGS -DUNIX -I. -DHAVE_STRING_H -Wno-error=incompatible-pointer-types -Wno-error=int-conversion -Wno-error" \
+    LF2="$LDFLAGS" \
     -j1
 
 mkdir -p "$OUT/usr/bin"

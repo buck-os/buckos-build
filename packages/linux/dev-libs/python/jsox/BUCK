@@ -1,5 +1,8 @@
 load("//defs:package.bzl", "package")
 
+# jsox - JSON extension library
+# The source archive has no setup.py, only __init__.py at root.
+# We create a minimal setup.py and reorganize into a package directory.
 package(
     build_rule = "python",
     name = "jsox",
@@ -7,7 +10,23 @@ package(
     url = "https://github.com/seidefrank/jsox/archive/refs/heads/master.tar.gz",
     sha256 = "8fe5108888960f2950a3172f468632c108c38f5840f54bc5724c8d9513f87706",
     use_setup_py = True,
+    pre_configure_cmds = ['''
+# Source has no setup.py - create one
+if [ -f __init__.py ] && [ ! -d jsox ]; then
+    mkdir -p jsox
+    mv __init__.py jsox/__init__.py
+fi
+cat > setup.py << 'SETUP_EOF'
+from setuptools import setup, find_packages
+setup(
+    name="jsox",
+    version="0.0.1",
+    packages=find_packages(),
+)
+SETUP_EOF
+'''],
     deps = [
         "//packages/linux/lang/python:python",
+        "//packages/linux/dev-libs/python/setuptools:setuptools",
     ],
 )

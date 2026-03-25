@@ -19,22 +19,18 @@ package(
     description = "Hardware lister - provides detailed hardware information",
     homepage = "https://www.ezix.org/project/wiki/HardwareLiSter",
     license = "GPL-2.0",
-    make_args = [
-        "CXX=$CXX",
-        "CC=$CC",
-        "CXXFLAGS=$CXXFLAGS",
-        "LDFLAGS=$LDFLAGS",
-        "PREFIX=/usr",
-        "SBINDIR=/usr/sbin",
-        "MANDIR=/usr/share/man",
-        "DATADIR=/usr/share",
-        "RPM_OPT_FLAGS=",
-    ],
-    install_args = [
-        "PREFIX=/usr",
-        "SBINDIR=/usr/sbin",
-        "MANDIR=/usr/share/man",
-    ],
+    src_compile = """
+# Build liblshw.a first to avoid race condition with parallel make
+make -C src/core CXX="$CXX" CC="$CC" RPM_OPT_FLAGS="$CXXFLAGS" PREFIX=/usr VERSION=B.02.20 -j${MAKEOPTS:-$(nproc)}
+# Then build the main binary with explicit library path
+make CXX="$CXX" CC="$CC" RPM_OPT_FLAGS="$CXXFLAGS" \
+    LDFLAGS="$LDFLAGS -Lsrc/core" \
+    PREFIX=/usr SBINDIR=/usr/sbin MANDIR=/usr/share/man DATADIR=/usr/share \
+    VERSION=B.02.20 -j${MAKEOPTS:-$(nproc)}
+""",
+    src_install = """
+make install PREFIX=/usr SBINDIR=/usr/sbin MANDIR=/usr/share/man DESTDIR="$OUT"
+""",
     deps = [
     ],
 )

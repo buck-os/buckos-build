@@ -27,9 +27,11 @@ package(
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc",
+        "--with-protobuf",
     ],
     host_deps = [
         "//packages/linux/dev-libs/serialization/protobuf:protobuf",
+        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
     ],
     deps = [
         "//packages/linux/system/terminal/ncurses:ncurses",

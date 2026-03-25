@@ -12,5 +12,13 @@ package(
         "-DSLEEF_BUILD_DFT=OFF",
         "-DSLEEF_BUILD_GNUABI_LIBS=OFF",
         "-DSLEEF_BUILD_SCALAR_LIB=ON",
+        "-DSLEEF_BUILD_INLINE_HEADERS=OFF",
+        "-DSLEEF_BUILD_QUAD=OFF",
+        "-DCMAKE_C_FLAGS=-Wno-error",
+        "-DDISABLE_FENV_ACCESS=ON",
+    ],
+    deps = [
+        "//packages/linux/system/libs/utility/mpfr:mpfr",
+        "//packages/linux/system/libs/utility/gmp:gmp",
     ],
 )

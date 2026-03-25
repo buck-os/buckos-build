@@ -11,11 +11,35 @@ package(
     license = "Apache-2.0",
     install_script = """
         cd "$SRCS/cpp"
+
+        # Build CMAKE_PREFIX_PATH from DEP_BASE_DIRS
+        _CMAKE_PREFIX=""
+        IFS=':' read -ra _DEPS <<< "${DEP_BASE_DIRS:-}"
+        for _dep in "${_DEPS[@]}"; do
+            if [ -d "$_dep/usr" ]; then
+                _CMAKE_PREFIX="${_CMAKE_PREFIX:+${_CMAKE_PREFIX};}$_dep/usr"
+            fi
+        done
+
+        # Find snappy paths explicitly
+        _SNAPPY_LIB=""
+        _SNAPPY_INC=""
+        for _dep in "${_DEPS[@]}"; do
+            if [ -f "$_dep/usr/lib64/libsnappy.so" ]; then
+                _SNAPPY_LIB="$_dep/usr/lib64/libsnappy.so"
+                _SNAPPY_INC="$_dep/usr/include"
+            elif [ -f "$_dep/usr/lib/libsnappy.so" ]; then
+                _SNAPPY_LIB="$_dep/usr/lib/libsnappy.so"
+                _SNAPPY_INC="$_dep/usr/include"
+            fi
+        done
+
         mkdir -p build && cd build
         cmake .. \
             -DCMAKE_INSTALL_PREFIX=/usr \
             -DCMAKE_INSTALL_LIBDIR=lib64 \
             -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_PREFIX_PATH="$_CMAKE_PREFIX" \
             -DARROW_BUILD_SHARED=ON \
             -DARROW_BUILD_STATIC=OFF \
             -DARROW_COMPUTE=ON \
@@ -27,7 +51,15 @@ package(
             -DARROW_WITH_LZ4=ON \
             -DARROW_WITH_SNAPPY=ON \
             -DARROW_WITH_ZLIB=ON \
-            -DARROW_WITH_ZSTD=ON
+            -DARROW_WITH_ZSTD=ON \
+            -DARROW_DEPENDENCY_SOURCE=SYSTEM \
+            -DARROW_DEPENDENCY_USE_SHARED=ON \
+            -DFETCHCONTENT_FULLY_DISCONNECTED=ON \
+            -DARROW_ENABLE_TIMING_TESTS=OFF \
+            -DARROW_BUILD_TESTS=OFF \
+            -DARROW_USE_TIDY=OFF \
+            ${_SNAPPY_LIB:+-DSnappy_LIB="$_SNAPPY_LIB"} \
+            ${_SNAPPY_INC:+-DSnappy_INCLUDE_DIR="$_SNAPPY_INC"}
         make -j${MAKEOPTS:-$(nproc)}
         make install DESTDIR="$OUT"
     """,
@@ -36,5 +68,6 @@ package(
         "//packages/linux/dev-libs/compression/lz4:lz4",
         "//packages/linux/system/libs/compression/snappy:snappy",
         "//packages/linux/system/libs/compression/zstd:zstd",
+        "//packages/linux/dev-libs/math/xsimd:xsimd",
     ],
 )

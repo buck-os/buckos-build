@@ -15,9 +15,10 @@ package(
 cd "$SRCS"
 
 # rkhunter's installer.sh needs to be run from the source directory
-./installer.sh --layout custom \
-    --striproot "$OUT" \
-    --install
+# Use --layout default so it installs to standard paths under --striproot
+./installer.sh --install \
+    --layout default \
+    --striproot "$OUT"
 
 mkdir -p "$OUT/etc/rkhunter.d"
 mkdir -p "$OUT/var/lib/rkhunter/db"

@@ -11,6 +11,10 @@ package(
     homepage = "http://curlftpfs.sourceforge.net/",
     license = "GPL-2.0",
     configure_args = [],
+    env = {
+        "FUSE_CFLAGS": "-D_FILE_OFFSET_BITS=64",
+        "FUSE_LIBS": "-lfuse3 -lpthread",
+    },
     deps = [
         "//packages/linux/system/security/encryption:fuse3",
         "//packages/linux/system/libs/network/curl:curl",

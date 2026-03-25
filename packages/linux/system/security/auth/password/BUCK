@@ -48,7 +48,7 @@ autoreconf -fi
 
 # passwdqc - Password quality check tool
 package(
-    build_rule = "autotools",
+    build_rule = "make",
     name = "passwdqc",
     url = "https://www.openwall.com/passwdqc/passwdqc-2.0.3.tar.gz",
 
@@ -57,8 +57,10 @@ package(
     description = "Password strength checking and policy enforcement toolset",
     homepage = "https://www.openwall.com/passwdqc/",
     license = "BSD-3-Clause",
-    configure_args = [],
     make_args = [
+        "CC=$CC",
+        "CFLAGS=$CFLAGS",
+        "LDFLAGS=$LDFLAGS",
         "PREFIX=/usr",
         "SECUREDIR=/lib/security",
         "SHARED_LIBDIR=/usr/lib",

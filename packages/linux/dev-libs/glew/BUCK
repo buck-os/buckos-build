@@ -17,7 +17,7 @@ cd "$SRCS"
 
 make -j${MAKEOPTS:-$(nproc)} SYSTEM=linux-egl GLEW_DEST=/usr GLEW_NO_GLX=1 \
     CC="$CC" LD="$CC" AR="$AR" STRIP= \
-    CFLAGS.EXTRA="$CFLAGS" LDFLAGS.EXTRA="$LDFLAGS"
+    CFLAGS.EXTRA="$CFLAGS -Wno-address" LDFLAGS.EXTRA="$LDFLAGS"
 
 make SYSTEM=linux-egl GLEW_DEST=/usr DESTDIR=$OUT \
     LIBDIR=/usr/lib64 PKGDIR=/usr/lib64/pkgconfig \
@@ -26,4 +26,8 @@ make SYSTEM=linux-egl GLEW_DEST=/usr DESTDIR=$OUT \
 # Fix pkgconfig libdir
 sed -i 's|libdir=.*|libdir=\${prefix}/lib64|' $OUT/usr/lib64/pkgconfig/glew.pc 2>/dev/null || true
 """,
+    deps = [
+        "//packages/linux/graphics/xorg/libX11:libX11",
+        "//packages/linux/graphics/xorg/xorgproto:xorgproto",
+    ],
 )

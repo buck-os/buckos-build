@@ -12,7 +12,18 @@ package(
     homepage = "https://dwheeler.com/flawfinder/",
     license = "GPL-2+",
     use_setup_py = True,
+    pre_configure_cmds = ['''
+# The setup.py references flawfinder.1.gz but it's not pre-built.
+# Create it from the man page source if it exists, or create a stub.
+if [ -f flawfinder.1 ] && ! [ -f flawfinder.1.gz ]; then
+    gzip -k flawfinder.1 || gzip -c flawfinder.1 > flawfinder.1.gz
+elif ! [ -f flawfinder.1.gz ]; then
+    # No man page source either - remove data_files from setup.py
+    sed -i "/data_files/,/\\]/d" setup.py || true
+fi
+'''],
     deps = [
         "//packages/linux/lang/python:python",
+        "//packages/linux/dev-libs/python/setuptools:setuptools",
     ],
 )

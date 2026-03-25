@@ -2,12 +2,16 @@ load("//defs:package.bzl", "package")
 
 # This is a Go library package, not a binary.
 # It provides Go modules for systemd integration.
-# Libraries don't produce binaries, so we skip the build.
+# Note: v22 is the module-aware version (github.com/coreos/go-systemd/v22).
+# v20 tag doesn't have go.mod; use v22.5.0 which has proper Go module support.
 package(
     build_rule = "go",
     name = "go-systemd",
-    version = "20",
-    url = "https://github.com/coreos/go-systemd/archive/v20.tar.gz",
-    sha256 = "e9d844f7425fdc1e67020c65816485692fb6656325a2b6c6c23d78891af2306c",
-    # Library package - no bins means default src_install will install Go source files
+    version = "22.5.0",
+    url = "https://github.com/coreos/go-systemd/archive/refs/tags/v22.5.0.tar.gz",
+    sha256 = "b56f4a5aa5cd8a5a2e8b323fb8e76b4a45c6ea6a319a42d9bb2851c54e97a3a1",
+    description = "Go bindings for systemd D-Bus APIs",
+    homepage = "https://github.com/coreos/go-systemd",
+    license = "Apache-2.0",
+    lib_only = True,
 )

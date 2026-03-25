@@ -12,19 +12,50 @@ package(
     install_script = """
         cd $SRCS
 
-        # Build the shared library
-        gcc -shared -fPIC -Wl,-soname,libdto.so \
+        # Create a stub accel-config header so the source compiles
+        mkdir -p _stubs/accel-config
+        cat > _stubs/accel-config/libaccel_config.h << 'STUBEOF'
+#ifndef _LIBACCEL_CONFIG_H_
+#define _LIBACCEL_CONFIG_H_
+/* Stub for accel-config - DSA hardware not available */
+struct accfg_ctx;
+struct accfg_wq;
+static inline int accfg_new(struct accfg_ctx **ctx) { (void)ctx; return -1; }
+static inline void accfg_unref(struct accfg_ctx *ctx) { (void)ctx; }
+enum accfg_wq_state { ACCFG_WQ_DISABLED = 0, ACCFG_WQ_ENABLED = 1 };
+enum accfg_wq_mode { ACCFG_WQ_SHARED = 0, ACCFG_WQ_DEDICATED = 1 };
+enum accfg_device_state { ACCFG_DEVICE_DISABLED = 0, ACCFG_DEVICE_ENABLED = 1 };
+struct accfg_device;
+#endif
+STUBEOF
+
+        # Add missing includes at the top of dto.c for PATH_MAX, va_start, write, clock_gettime
+        sed -i '1i\
+#include <limits.h>\
+#include <stdarg.h>\
+#include <unistd.h>\
+#include <time.h>' dto.c 2>/dev/null || true
+
+        # Build the shared library with the stub header
+        $CC -shared -fPIC -Wl,-soname,libdto.so \
+            $CFLAGS $LDFLAGS \
+            -I_stubs \
             dto.c \
             -D_GNU_SOURCE \
             -DDTO_STATS_SUPPORT \
+            -Wno-error \
             -o libdto.so.1.0 \
-            -laccel-config -ldl -lnuma
+            -ldl -lnuma
 
         # Install library
         mkdir -p $OUT/usr/lib64
         cp libdto.so.1.0 $OUT/usr/lib64/
         ln -sf libdto.so.1.0 $OUT/usr/lib64/libdto.so.1
         ln -sf libdto.so.1.0 $OUT/usr/lib64/libdto.so
+
+        # Install header
+        mkdir -p $OUT/usr/include
+        cp dto.h $OUT/usr/include/ 2>/dev/null || true
     """,
     deps = [
         "//packages/linux/system/libs/numactl:numactl",

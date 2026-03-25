@@ -13,7 +13,21 @@ package(
     license = "MIT",
     deps = [],
     src_install = """
-mkdir -p $INSTALL_DIR/usr/include
-cp -r include/cppack $INSTALL_DIR/usr/include/
+mkdir -p "$INSTALL_DIR/usr/include/cppack"
+# cppack source may have headers in include/cppack, include/, or msgpack/
+if [ -d include/cppack ]; then
+    cp -r include/cppack "$INSTALL_DIR/usr/include/"
+elif [ -d include ]; then
+    cp -r include/* "$INSTALL_DIR/usr/include/cppack/"
+elif [ -d msgpack ]; then
+    # cppack's actual header directory is msgpack/
+    cp -r msgpack "$INSTALL_DIR/usr/include/"
+    cp -r msgpack "$INSTALL_DIR/usr/include/cppack/" 2>/dev/null || true
+else
+    # Fallback: copy all header files
+    find . -name '*.h' -o -name '*.hpp' | while read f; do
+        install -Dm644 "$f" "$INSTALL_DIR/usr/include/cppack/$(basename "$f")"
+    done
+fi
 """,
 )

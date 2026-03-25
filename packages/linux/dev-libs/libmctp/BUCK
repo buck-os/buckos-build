@@ -1,8 +1,8 @@
 load("//defs:package.bzl", "package")
 
-# libmctp uses meson build system
+# libmctp uses cmake build system (v0.11 has no meson.build)
 package(
-    build_rule = "meson",
+    build_rule = "cmake",
     name = "libmctp",
     version = "0.11",
     url = "https://github.com/openbmc/libmctp/archive/refs/tags/v0.11.tar.gz",
@@ -11,7 +11,9 @@ package(
     homepage = "https://github.com/openbmc/libmctp",
     license = "Apache-2.0",
     configure_args = [
-        "-Dtests=disabled",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DMCTP_BUILD_TESTS=OFF",
     ],
     deps = [],
 )

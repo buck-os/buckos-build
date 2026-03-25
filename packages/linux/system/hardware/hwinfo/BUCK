@@ -13,10 +13,38 @@ package(
     homepage = "https://github.com/openSUSE/hwinfo",
     license = "GPL-2.0",
     deps = [
+        "//packages/linux/core/util-linux:util-linux",
     ],
     install_script = """
 # Create VERSION file expected by the build system
 echo "23.2" > VERSION
+
+# Generate hwclass_names.h from hd.h (normally done by Makefile perl target)
+{
+    echo '/* generated automatically, do not edit */'
+    echo ''
+    echo 'char *hw_ids[] = {'
+    sed -n 's/^[[:space:]]*hw_\([a-zA-Z0-9_]*\)[[:space:]]*=.*/  "\1",/p' src/hd/hd.h
+    echo '};'
+} > src/hd/hwclass_names.h
+
+# Create the hd.h symlink expected by src/ Makefile (points to src/hd/hd.h)
+ln -sf hd/hd.h src/hd.h 2>/dev/null || true
+
+# Create a stub x86emu.h since libx86emu is not available
+mkdir -p _stubs
+cat > _stubs/x86emu.h << 'STUBEOF'
+#ifndef _X86EMU_H
+#define _X86EMU_H
+/* Stub x86emu.h - libx86emu not available */
+typedef struct { int dummy; } x86emu_t;
+#endif
+STUBEOF
+
+# Disable x86emu usage in the build (remove -lx86emu from Makefiles)
+find . -name Makefile -o -name '*.mak' | xargs sed -i 's/-lx86emu//g' 2>/dev/null || true
+# Add stub include path
+export CFLAGS="$CFLAGS -I$(pwd)/_stubs"
 
 make CC="$CC" CXX="$CXX" CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" \
     LIBDIR=/usr/lib64 \

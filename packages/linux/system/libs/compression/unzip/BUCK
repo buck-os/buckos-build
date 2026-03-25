@@ -18,9 +18,12 @@ package(
 # Fix CFLAGS in unix/Makefile
 sed -i 's/CFLAGS=.*//' unix/Makefile || true
 
+# Strip -DNO_DIR which cross-compilation incorrectly sets
+sed -i 's/-DNO_DIR//g' unix/configure || true
+
 make -f unix/Makefile generic \
     CC="$CC" \
-    CF="$CFLAGS -O2 -Wno-format-security -Wno-implicit-function-declaration -Wno-implicit-int -DUNIX -I." \
+    CF="$CFLAGS -O2 -Wno-error -Wno-format-security -Wno-implicit-function-declaration -Wno-implicit-int -DUNIX -DHAVE_DIRENT_H -DHAVE_TERMIOS_H -I." \
     LF2="$LDFLAGS" \
     LOCAL_UNZIP="$CFLAGS" \
     -j${MAKEOPTS:-$(nproc)} || \

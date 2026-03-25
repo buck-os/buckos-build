@@ -15,6 +15,27 @@ package(
     configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTS=OFF",
+        "-Ddisable32bit=ON",
+    ],
+    # Pass capnproto prefix to cmake so we can find schema import path
+    cmake_dep_defines = {
+        "CAPNPROTO_PREFIX": "//packages/linux/dev-libs/serialization/capnproto:capnproto",
+    },
+    # capnp compiler needs --import-path to find /capnp/c++.capnp schema.
+    # Patch the cmake files to inject --import-path using the CAPNPROTO_PREFIX
+    # variable that cmake_dep_defines will set to the dep's installed prefix.
+    pre_configure_cmds = ["""
+# Patch cmake files to add --import-path=${CAPNPROTO_PREFIX}/include to capnp compile
+# Note: CAPNPROTO_PREFIX will be set as a cmake define by cmake_dep_defines.
+# The value will be <dep-prefix>/usr, so the include dir is ${CAPNPROTO_PREFIX}/include.
+find . -name '*.cmake' -o -name 'CMakeLists.txt' | while read f; do
+    sed -i 's|COMMAND capnp compile|COMMAND capnp compile --import-path=\${CAPNPROTO_PREFIX}/include|g' "$f" 2>/dev/null || true
+    sed -i 's|COMMAND \${CAPNP_EXECUTABLE} compile|COMMAND \${CAPNP_EXECUTABLE} compile --import-path=\${CAPNPROTO_PREFIX}/include|g' "$f" 2>/dev/null || true
+    sed -i 's|COMMAND capnpc|COMMAND capnpc --import-path=\${CAPNPROTO_PREFIX}/include|g' "$f" 2>/dev/null || true
+done
+"""],
+    host_deps = [
+        "//packages/linux/dev-libs/serialization/capnproto:capnproto",
     ],
     deps = [
         "//packages/linux/dev-libs/serialization/capnproto:capnproto",

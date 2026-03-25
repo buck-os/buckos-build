@@ -6,6 +6,7 @@ package(
     url = "https://people.redhat.com/~heinzm/sw/dmraid/src/dmraid-1.0.0.rc16-3.tar.bz2",
     strip_components = 2,
     sha256 = "93421bd169d71ff5e7d2db95b62b030bfa205a12010b6468dcdef80337d6fbd8",
+    pre_configure_cmds = ["autoreconf -fi"],
     use_configure = {
         "intel-led": ("--enable-intel-led", "--disable-intel-led"),
         "led": ("--enable-led", "--disable-led"),
@@ -19,5 +20,8 @@ package(
     configure_args = [],
     deps = [
         "//packages/linux/system/filesystem/management/lvm2:lvm2",
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
     ],
 )

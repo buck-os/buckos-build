@@ -11,15 +11,24 @@ package(
     homepage = "https://ipxe.org/",
     license = "GPL-2.0",
     make_args = ["-C", "src"],
-    post_install_cmds = ["""\
-mkdir -p "$DESTDIR/usr/share/ipxe"
-cp -v src/bin-x86_64-efi/*.efi "$DESTDIR/usr/share/ipxe/" 2>/dev/null || true
-cp -v src/bin/*.iso "$DESTDIR/usr/share/ipxe/" 2>/dev/null || true
-cp -v src/bin/*.usb "$DESTDIR/usr/share/ipxe/" 2>/dev/null || true
-cp -v src/bin/*.kpxe "$DESTDIR/usr/share/ipxe/" 2>/dev/null || true
-mkdir -p "$DESTDIR/usr/share/doc/ipxe"
-cp -v README COPYING* "$DESTDIR/usr/share/doc/ipxe/" 2>/dev/null || true
-"""],
+    src_compile = """
+# Build only specific commonly-used iPXE targets (not the full matrix)
+make -j${MAKEOPTS:-$(nproc)} -C src \
+    CFLAGS="$CFLAGS -Wno-error=array-bounds" \
+    bin-x86_64-efi/ipxe.efi \
+    bin/ipxe.iso \
+    bin/ipxe.usb \
+    bin/undionly.kpxe
+""",
+    src_install = """
+mkdir -p "$OUT/usr/share/ipxe"
+cp -v src/bin-x86_64-efi/ipxe.efi "$OUT/usr/share/ipxe/" 2>/dev/null || true
+cp -v src/bin/ipxe.iso "$OUT/usr/share/ipxe/" 2>/dev/null || true
+cp -v src/bin/ipxe.usb "$OUT/usr/share/ipxe/" 2>/dev/null || true
+cp -v src/bin/undionly.kpxe "$OUT/usr/share/ipxe/" 2>/dev/null || true
+mkdir -p "$OUT/usr/share/doc/ipxe"
+cp -v README COPYING* "$OUT/usr/share/doc/ipxe/" 2>/dev/null || true
+""",
     labels = ["buckos:firmware"],
     deps = [],
 )

@@ -10,7 +10,11 @@ package(
     homepage = "https://github.com/dparrini/python-comtrade",
     license = "MIT",
     use_setup_py = True,
+    pre_configure_cmds = [
+        "cat > setup.py << 'PYEOF'\nfrom setuptools import setup\nsetup(name='python-comtrade', version='0.1.2', py_modules=['comtrade'])\nPYEOF",
+    ],
     deps = [
         "//packages/linux/lang/python:python",
+        "//packages/linux/dev-libs/python/setuptools:setuptools",
     ],
 )

@@ -13,13 +13,44 @@ package(
     license = "BSD-3-Clause",
     deps = [
         "//packages/linux/dev-libs/boost:boost",
-                "//packages/linux/dev-libs/boost:boost"
     ],
+    host_deps = [
+        "//packages/linux/dev-tools/parsers/ragel:ragel",
+    ],
+    pre_configure_cmds = ["""
+# Ensure ragel is findable - check all possible install locations
+if ! command -v ragel >/dev/null 2>&1; then
+    # Search for ragel in host_deps installed dirs
+    for dir in ${DEP_BASE_DIRS//:/ }; do
+        for candidate in "$dir/usr/bin/ragel" "$dir/bin/ragel" "$dir"/'${PREFIX}'/bin/ragel; do
+            if [ -x "$candidate" ]; then
+                mkdir -p "$HOME/.local/bin"
+                ln -sf "$candidate" "$HOME/.local/bin/ragel"
+                export PATH="$HOME/.local/bin:$PATH"
+                break 2
+            fi
+        done
+    done
+    # Also search in PATH directories for ragel installed under non-standard prefix
+    for dir in $(echo "$PATH" | tr ':' ' '); do
+        parent=$(dirname "$dir" 2>/dev/null || true)
+        for candidate in "$parent/bin/ragel" "$dir/../bin/ragel"; do
+            if [ -x "$candidate" ]; then
+                ln -sf "$(readlink -f "$candidate")" /tmp/ragel
+                export PATH="/tmp:$PATH"
+                break 2
+            fi
+        done
+    done
+fi
+"""],
     configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_EXAMPLES=OFF",
         "-DBUILD_BENCHMARKS=OFF",
+        "-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
+        "-Wno-dev",
     ],
     use_configure = {
         "debug": "-DCMAKE_BUILD_TYPE=Debug",

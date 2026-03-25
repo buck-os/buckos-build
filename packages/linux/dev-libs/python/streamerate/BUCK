@@ -1,7 +1,8 @@
 load("//defs:package.bzl", "package")
 
+# streamerate - Downloaded as pre-built wheel, installed directly to site-packages
 package(
-    build_rule = "python",
+    build_rule = "binary",
     name = "streamerate",
     version = "1.1.2",
     url = "https://files.pythonhosted.org/packages/d0/0f/8900082442b72bb345273d3610496e7ac8f4f1922da4d8deb364692c96ae/streamerate-1.1.2-py3-none-any.whl",
@@ -9,7 +10,19 @@ package(
     description = "Fluent and expressive Python library for chainable iterable processing",
     homepage = "https://github.com/asuiu/streamerate",
     license = "MIT",
+    strip_components = 0,
+    format = "whl",
     deps = [
         "//packages/linux/lang/python:python",
     ],
+    host_deps = [
+        "//packages/linux/lang/python:python-host",
+    ],
+    install_script = """
+# Wheel contents are already the raw package - copy into site-packages
+_PYVER=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || echo "3.13")
+SITE="$OUT/usr/lib/python${_PYVER}/site-packages"
+mkdir -p "$SITE"
+cp -a "$SRCS"/. "$SITE/"
+""",
 )

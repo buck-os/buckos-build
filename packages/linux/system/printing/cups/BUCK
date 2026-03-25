@@ -47,19 +47,28 @@ package(
         "--disable-avahi",
         "--disable-systemd",
     ],
+    make_args = [
+        "LIBS=-lz",
+    ],
     post_install_cmds = ["""
         mkdir -p "$OUT/etc/cups"
         mkdir -p "$OUT/var/log/cups"
         mkdir -p "$OUT/var/spool/cups"
         mkdir -p "$OUT/var/cache/cups"
     """],
+    extra_cflags = [
+        "-Wno-error",
+    ],
     deps = [
         "//packages/linux/core/zlib:zlib",
-                "//packages/linux/system/libs/ipc/dbus:dbus",
-                "//packages/linux/system/libs/crypto/openssl:openssl",
-                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-                "//packages/linux/dev-tools/build-systems/automake:automake",
-                "//packages/linux/dev-tools/build-systems/libtool:libtool"
+        "//packages/linux/system/libs/ipc/dbus:dbus",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        ":libpaper",
+    ],
+    host_deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
     ],
 )
 
@@ -91,26 +100,21 @@ package(
 )
 
 # libpaper - Paper size handling library
+# Use the release tarball (not the GitHub archive) which includes pre-generated
+# configure and gnulib files.
 package(
     build_rule = "autotools",
     name = "libpaper",
-    pre_configure_cmds = ["""
-autoreconf -fi
-"""],
-    url = "https://github.com/rrthomas/libpaper/archive/refs/tags/v2.1.3.tar.gz",
-
-    sha256 = "77633a495878f9c226e28dd574a13b65ac254082f65530ff7cf9b22670da9856",
+    url = "https://github.com/rrthomas/libpaper/releases/download/v2.1.3/libpaper-2.1.3.tar.gz",
+    sha256 = "b798be7c52036e684a90a68f0be954f173fea87886f8a1d25c6514a279216f4a",
     version = "2.1.3",
     description = "Library for handling paper characteristics",
-    homepage = "https://github.com/naota/libpaper",
+    homepage = "https://github.com/rrthomas/libpaper",
     license = "GPL-2.0-or-later",
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc",
+        "--disable-static",
     ],
-    deps = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-    ],
+    deps = [],
 )

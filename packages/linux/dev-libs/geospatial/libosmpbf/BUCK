@@ -8,5 +8,11 @@ package(
     sha256 = "a109f338ce6a8438a8faae4627cd08599d0403b8977c185499de5c17b92d0798",
     deps = [
         "//packages/linux/dev-libs/serialization/protobuf:protobuf",
+        "//packages/linux/dev-libs/google/abseil-cpp:abseil-cpp",
+        "//packages/linux/core/zlib:zlib",
+    ],
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
     ],
 )

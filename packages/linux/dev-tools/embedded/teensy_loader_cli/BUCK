@@ -10,15 +10,46 @@ package(
     homepage = "https://www.pjrc.com/teensy/loader_cli.html",
     license = "GPL-3.0",
     skip_configure = True,
-    make_args = [
-        "CC=$CC",
-        "CFLAGS=$CFLAGS",
-        "LDFLAGS=$LDFLAGS",
-    ],
-    post_install_cmds = ["""\
-mkdir -p "$DESTDIR/usr/bin"
-install -m 755 teensy_loader_cli "$DESTDIR/usr/bin/"
-"""],
+    # teensy_loader_cli uses <usb.h> (libusb-0.1 API) by default.
+    # We need to create a wrapper since only libusb-1.0 is available.
+    src_compile = """
+# Create a minimal usb.h wrapper that maps to libusb-1.0 API
+mkdir -p _compat
+cat > _compat/usb.h << 'STUBEOF'
+/* Minimal libusb-0.1 compat wrapper for libusb-1.0 */
+#ifndef _USB_H_
+#define _USB_H_
+#include <libusb-1.0/libusb.h>
+/* teensy_loader_cli only needs basic USB operations */
+/* Provide minimal 0.1 API stubs */
+#define USB_ENDPOINT_IN LIBUSB_ENDPOINT_IN
+#define USB_ENDPOINT_OUT LIBUSB_ENDPOINT_OUT
+#define USB_TYPE_CLASS LIBUSB_REQUEST_TYPE_CLASS
+#define USB_RECIP_INTERFACE LIBUSB_RECIPIENT_INTERFACE
+#define USB_REQ_SET_CONFIGURATION 0x09
+#define usb_dev_handle libusb_device_handle
+struct usb_device { int dummy; };
+struct usb_bus { struct usb_bus *next; struct usb_device *devices; };
+static inline void usb_init(void) {}
+static inline int usb_find_busses(void) { return 0; }
+static inline int usb_find_devices(void) { return 0; }
+static inline struct usb_bus *usb_get_busses(void) { return NULL; }
+#endif
+STUBEOF
+make CC="$CC" \
+    CFLAGS="$CFLAGS -I_compat -DUSE_LIBUSB" \
+    LDFLAGS="$LDFLAGS" \
+    USBLIB="-lusb-1.0" \
+    -j${MAKEOPTS:-$(nproc)} || \
+make CC="$CC" \
+    CFLAGS="$CFLAGS -I_compat -DUSE_LIBUSB" \
+    LDFLAGS="$LDFLAGS" \
+    USBLIB="-lusb-1.0" -j1
+""",
+    src_install = """
+mkdir -p "$OUT/usr/bin"
+install -m 755 teensy_loader_cli "$OUT/usr/bin/"
+""",
     deps = [
         "//packages/linux/system/libs/libusb:libusb",
     ],

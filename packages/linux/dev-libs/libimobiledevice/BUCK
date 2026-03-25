@@ -11,6 +11,31 @@ package(
     },
     url = "https://github.com/libimobiledevice/libimobiledevice/releases/download/1.3.0/libimobiledevice-1.3.0.tar.bz2",
     sha256 = "53f2640c6365cd9f302a6248f531822dc94a6cced3f17128d4479a77bd75b0f6",
+    pre_configure_cmds = ["""
+# Fix plist_format_t conflict with newer libplist which already defines the enum.
+# The original sed commands deleted lines including the #endif guard, causing
+# an unterminated #ifndef error. Use Python to safely patch only the enum.
+python3 << 'PYEOF'
+import pathlib, re
+
+# Fix utils.h - remove local enum definition, keep include guard intact
+p = pathlib.Path("common/utils.h")
+if p.exists():
+    text = p.read_text()
+    # Remove the enum plist_format_t { ... }; block
+    text = re.sub(r'enum\s+plist_format_t\s*\{[^}]*\}\s*;', '/* plist_format_t provided by libplist */', text, flags=re.DOTALL)
+    # Replace remaining references to 'enum plist_format_t' with just 'plist_format_t'
+    text = text.replace('enum plist_format_t', 'plist_format_t')
+    p.write_text(text)
+
+# Fix utils.c
+p = pathlib.Path("common/utils.c")
+if p.exists():
+    text = p.read_text()
+    text = text.replace('enum plist_format_t', 'plist_format_t')
+    p.write_text(text)
+PYEOF
+"""],
     configure_args = [
         "--disable-static",
         "--with-openssl",

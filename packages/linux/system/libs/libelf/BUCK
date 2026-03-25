@@ -20,6 +20,12 @@ package(
         "--prefix=/usr",
         "--libdir=/usr/lib64",
     ],
+    env = {
+        "mr_cv_target_elf": "yes",
+        "libelf_cv_struct_elf64_ehdr": "yes",
+        "ac_cv_sizeof_long_long": "8",
+        "ac_cv_prog_cc_works": "yes",
+    },
     extra_cflags = [
         "-Wno-error",
     ],

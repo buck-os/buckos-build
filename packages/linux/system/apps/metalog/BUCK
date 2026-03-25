@@ -33,17 +33,18 @@ AS_VAR_IF(CACHEVAR,yes,
 AS_VAR_POPDEF([CACHEVAR])dnl
 ])dnl AX_CHECK_COMPILE_FLAG
 MACROEOF
-autoreconf -fi
+autoreconf -fi -I m4
 """],
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc",
+        "--without-pcre",
     ],
     deps = [
         "//packages/linux/system/libs/utility/pcre2:pcre2",
-                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-                "//packages/linux/dev-tools/build-systems/automake:automake",
-                "//packages/linux/dev-tools/build-systems/libtool:libtool",
-                "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config"
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
     ],
 )

@@ -25,7 +25,17 @@ package(
     homepage = "http://www.sane-project.org/",
     license = "GPL-2.0-or-later",
     pre_configure_cmds = ["""
-autoreconf -fiv
+touch ChangeLog NEWS AUTHORS
+# Disable autopoint by removing AM_GNU_GETTEXT from configure.ac
+# to avoid needing full gettext infrastructure
+if grep -q 'AM_GNU_GETTEXT' configure.ac; then
+    sed -i 's/AM_GNU_GETTEXT_VERSION/dnl AM_GNU_GETTEXT_VERSION/' configure.ac
+    sed -i 's/AM_GNU_GETTEXT\\b/dnl AM_GNU_GETTEXT/' configure.ac
+fi
+# Create po/Makefile.in.in stub if needed
+mkdir -p po
+touch po/Makefile.in.in po/POTFILES.in
+autoreconf -fi 2>&1 | tail -5 || true
 """],
     configure_args = [
         "--prefix=/usr",
@@ -36,25 +46,22 @@ autoreconf -fiv
         "--enable-libusb_1_0",
         "--disable-avahi",
         "--disable-locking",
+        "--disable-nls",
     ],
     post_install_cmds = ["""
         mkdir -p "$OUT/etc/sane.d"
         mkdir -p "$OUT/var/lock/sane"
-    """, """
-        cd build
-        DESTDIR=$OUT ninja install
-    """, """
-        cd build
-        DESTDIR=$OUT make install
     """],
     deps = [
         "//packages/linux/system/libs/libusb:libusb",
-                "//packages/linux/system/libs/image/libtiff:libtiff",
-                "//packages/linux/system/libs/image/libjpeg-turbo:libjpeg-turbo",
-                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-                "//packages/linux/dev-tools/build-systems/automake:automake",
-                "//packages/linux/dev-tools/build-systems/libtool:libtool",
-                "//packages/linux/dev-libs/misc/gettext:gettext"
+        "//packages/linux/system/libs/image/libtiff:libtiff",
+        "//packages/linux/system/libs/image/libjpeg-turbo:libjpeg-turbo",
+    ],
+    host_deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
     ],
 )
 

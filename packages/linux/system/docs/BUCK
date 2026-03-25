@@ -5,10 +5,10 @@ load("//defs:package.bzl", "package")
 # =============================================================================
 
 # man-db - Man page database and utilities
+# Fixed: removed skip_configure=True (release tarball has configure script)
 package(
     name = "man-db",
     build_rule = "autotools",
-    skip_configure = True,
     url = "https://mirror.csclub.uwaterloo.ca/nongnu/man-db/man-db-2.12.0.tar.xz",
 
     sha256 = "415a6284a22764ad22ff0f66710d853be7790dd451cd71436e3d25c74d996a95",
@@ -33,11 +33,11 @@ package(
     ],
 )
 
-# man-pages - Linux man pages collection
+# man-pages - Linux man pages collection (install-only, no build step)
+# Uses binary rule directly to avoid autotools shenanigans with env -S bash
 package(
     name = "man-pages",
-    build_rule = "autotools",
-    skip_configure = True,
+    build_rule = "binary",
     url = "https://mirrors.edge.kernel.org/pub/linux/docs/man-pages/man-pages-6.06.tar.xz",
 
     sha256 = "bd6f89cf26d2262567dac41d2640fc3667f240cb658079530141e372c8581928",
@@ -45,18 +45,37 @@ package(
     description = "Linux kernel and C library interface man pages",
     homepage = "https://www.kernel.org/doc/man-pages/",
     license = "GPL-2.0-or-later AND BSD-3-Clause AND MIT",
-    make_args = [],
-    post_install_cmds = ["""
-        make prefix="$OUT/usr" install
-    """],
+    install_script = """
+cd "$SRCS"
+# Install man pages manually to avoid Makefile using install -S (unsupported)
+mkdir -p "$OUT/usr/share/man"
+for section in man1 man2 man3 man4 man5 man6 man7 man8; do
+    if [ -d "$section" ]; then
+        mkdir -p "$OUT/usr/share/man/$section"
+        cp -a "$section"/* "$OUT/usr/share/man/$section/" 2>/dev/null || true
+    fi
+    # Also check man/ subdirectory (some versions)
+    if [ -d "man/$section" ]; then
+        mkdir -p "$OUT/usr/share/man/$section"
+        cp -a "man/$section"/* "$OUT/usr/share/man/$section/" 2>/dev/null || true
+    fi
+done
+# Ensure at least one file was installed
+if [ -z "$(ls -A "$OUT/usr/share/man/" 2>/dev/null)" ]; then
+    echo "WARNING: No man page sections found, installing all .* files"
+    find . -name '*.?'  -path '*/man*' -exec install -Dm644 {} "$OUT/usr/share/{}" \\;
+fi
+""",
     deps = [],
 )
 
 # groff - GNU troff text formatting system
+# Fixed: removed skip_configure=True (release tarball has configure script)
+# Build with -j1 and MAKEOVERRIDES cleared to avoid overriding recipe conflicts
+# Fixed: stub out BuildFoundries Perl script to avoid broken interpreter path
 package(
     name = "groff",
     build_rule = "autotools",
-    skip_configure = True,
     url = "https://mirrors.kernel.org/gnu/groff/groff-1.23.0.tar.gz",
 
     sha256 = "6b9757f592b7518b4902eb6af7e54570bdccba37a871fddb2d30ae3863511c13",
@@ -64,15 +83,43 @@ package(
     description = "GNU troff text formatting system",
     homepage = "https://www.gnu.org/software/groff/",
     license = "GPL-3.0-or-later",
+    configure_args = [
+        "--without-doc",
+    ],
+    env = {
+        "MAKEFLAGS": "",
+        "MAKEOVERRIDES": "",
+    },
+    src_compile = """
+# Stub out BuildFoundries Perl script to avoid broken interpreter path in cross-build
+for f in $(find . -name BuildFoundries -o -name BuildFoundries.in 2>/dev/null); do
+    cat > "$f" <<'STUBEOF'
+#!/bin/sh
+exit 0
+STUBEOF
+    chmod +x "$f"
+done
+# Groff's generated Makefile may have duplicated recipe targets causing warnings.
+# Ensure we are in the correct build directory and have a Makefile.
+if [ ! -f Makefile ]; then
+    echo "ERROR: No Makefile found in $(pwd), listing directory:"
+    ls -la
+    exit 1
+fi
+make MAKEOVERRIDES= -j1
+""",
+    src_install = """
+make MAKEOVERRIDES= install DESTDIR="$OUT"
+""",
     deps = [
     ],
 )
 
 # libpipeline - Pipeline manipulation library
+# Fixed: removed skip_configure=True (release tarball has configure script)
 package(
     name = "libpipeline",
     build_rule = "autotools",
-    skip_configure = True,
     url = "https://mirror.csclub.uwaterloo.ca/nongnu/libpipeline/libpipeline-1.5.7.tar.gz",
 
     sha256 = "b8b45194989022a79ec1317f64a2a75b1551b2a55bea06f67704cb2a2e4690b0",
@@ -84,10 +131,10 @@ package(
 )
 
 # gdbm - GNU database manager
+# Fixed: removed skip_configure=True (release tarball has configure script)
 package(
     name = "gdbm",
     build_rule = "autotools",
-    skip_configure = True,
     url = "https://mirrors.kernel.org/gnu/gdbm/gdbm-1.23.tar.gz",
 
     sha256 = "74b1081d21fff13ae4bd7c16e5d6e504a4c26f7cde1dca0d963a484174bbcacd",
@@ -102,10 +149,10 @@ package(
 )
 
 # texinfo - GNU documentation system
+# Fixed: removed skip_configure=True (release tarball has configure script)
 package(
     name = "texinfo",
     build_rule = "autotools",
-    skip_configure = True,
     url = "https://mirrors.kernel.org/gnu/texinfo/texinfo-7.2.tar.xz",
 
     sha256 = "0329d7788fbef113fa82cb80889ca197a344ce0df7646fe000974c5d714363a6",

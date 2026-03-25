@@ -23,17 +23,14 @@ package(
         "-Dmode=release",
         "-Dstatic-libsystemd=false",
         "-Dstandalone-binaries=true",
-        "-Dsplit-usr=false",
         "-Dsplit-bin=true",
-        "-Drootprefix=/usr",
-        "-Drootlibdir=/usr/lib",
         "-Dsysvrcnd-path=/etc",
         "-Dlink-udev-shared=false",
         "-Dlink-systemctl-shared=false",
     ],
     use_configure = {
         "acl": ("-Dacl=enabled", "-Dacl=disabled"),
-        "boot": ("-Dgnu-efi=enabled", "-Dgnu-efi=disabled"),
+        "boot": ("-Dbootloader=enabled", "-Dbootloader=disabled"),
         "kernel-install": ("-Dkernel-install=true", "-Dkernel-install=false"),
         "kmod": ("-Dkmod=enabled", "-Dkmod=disabled"),
         "selinux": ("-Dselinux=enabled", "-Dselinux=disabled"),
@@ -44,5 +41,6 @@ package(
     deps = [
         "//packages/linux/system/libs/ipc/libcap:libcap",
         "//packages/linux/system/libs/ipc/libseccomp:libseccomp",
+        "//packages/linux/system/libs/crypto/libxcrypt:libxcrypt",
     ],
 )

@@ -4,6 +4,7 @@ load("//defs:package.bzl", "package")
 # RADIUS and TACACS+ PAM modules
 
 # pam_radius - RADIUS PAM module
+# No install target in Makefile, use manual install
 package(
     build_rule = "autotools",
     name = "pam-radius",
@@ -14,21 +15,30 @@ package(
     description = "PAM module for RADIUS authentication",
     homepage = "https://github.com/FreeRADIUS/pam_radius",
     license = "GPL-2.0+",
-    configure_args = [],
-    make_args = [
-        "PAMDIR=/lib/security",
+    src_configure = """
+autoreconf -fi
+./configure --prefix=/usr
+""",
+    src_compile = """
+make -j${MAKEOPTS:-$(nproc)} PAMDIR=/lib/security
+""",
+    src_install = """
+mkdir -p "$OUT/lib/security" "$OUT/etc/raddb"
+cp pam_radius_auth.so "$OUT/lib/security/" 2>/dev/null || true
+cp pam_radius_auth.conf "$OUT/etc/raddb/" 2>/dev/null || true
+""",
+    host_deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
     ],
-    post_install_cmds = ["""
-        mkdir -p "$OUT/lib/security" "$OUT/etc/raddb"
-        cp pam_radius_auth.so "$OUT/lib/security/"
-        cp pam_radius_auth.conf "$OUT/etc/raddb/"
-    """],
     deps = [
         "//packages/linux/system/security/linux-pam:linux-pam",
     ],
 )
 
 # pam_tacplus - TACACS+ PAM module
+# GitHub tarball needs gnulib bootstrap; stub out the missing gnulib includes
 package(
     build_rule = "autotools",
     name = "pam-tacplus",
@@ -39,11 +49,18 @@ package(
     description = "PAM module for TACACS+ authentication",
     homepage = "https://github.com/kravietz/pam_tacplus",
     license = "GPL-2.0+",
+    pre_configure_cmds = [
+        "mkdir -p lib && touch lib/Makefile.gnulib",
+        "autoreconf -fi",
+    ],
     configure_args = [
         "--prefix=/usr",
         "--with-pam-module-dir=/lib/security",
     ],
     deps = [
         "//packages/linux/system/security/linux-pam:linux-pam",
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
     ],
 )

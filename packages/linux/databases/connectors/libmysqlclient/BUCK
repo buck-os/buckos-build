@@ -54,6 +54,13 @@ package(
         "-DWITH_GROUP_REPLICATION=OFF",
         "-DWITH_NDB=OFF",
         "-DWITH_NDBCLUSTER=OFF",
+        # GCC 14 warnings treated as errors
+        "-DCMAKE_C_FLAGS=-Wno-error",
+        "-DCMAKE_CXX_FLAGS=-Wno-error",
+    ],
+    # MySQL's CMake adds -Werror internally
+    pre_configure_cmds = [
+        "find . -name CMakeLists.txt -exec sed -i 's/-Werror//g' {} + || true",
     ],
 
     # CMake options based on USE flags
@@ -67,6 +74,8 @@ package(
     # Base dependencies (always required)
     deps = [
         "//packages/linux/system/libs/ipc/libtirpc:libtirpc",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/core/zlib:zlib",
     ],
 
 )

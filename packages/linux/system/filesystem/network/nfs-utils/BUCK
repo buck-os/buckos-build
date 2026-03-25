@@ -32,9 +32,13 @@ package(
         "--without-systemd",
         "--with-rpcgen=internal",
     ],
+    env = {
+        "ac_cv_lib_sqlite3_sqlite3_errstr": "yes",
+    },
     deps = [
         "//packages/linux/core/util-linux:util-linux",
         "//packages/linux/system/libs/ipc/libtirpc:libtirpc",
         "//packages/linux/system/libs/utility/libevent:libevent",
+        "//packages/linux/system/libs/database/sqlite:sqlite",
     ],
 )

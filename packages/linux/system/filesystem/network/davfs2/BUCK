@@ -1,27 +1,48 @@
 load("//defs:package.bzl", "package")
 
+# davfs2 requires libneon (WebDAV library). The release tarball doesn't
+# bundle neon sources; use pkg-config to find the neon dep.
 package(
     build_rule = "autotools",
     name = "davfs2",
-    url = "https://github.com/alisarctl/davfs2/archive/refs/tags/rel-1-7-2.tar.gz",
+    url = "https://download-mirror.savannah.gnu.org/releases/davfs2/davfs2-1.7.2.tar.gz",
 
-    sha256 = "6511fd787315840ffa8bd365837126a116c854f5f060ac349734bdef7cde07a2",
+    sha256 = "1bdc2bb235a9f2e546a6a13c559ecf43c64407e3c4497d77b8ec3f62f4b84e46",
     version = "1.7.2",
     description = "WebDAV filesystem driver (mount.davfs)",
     homepage = "https://savannah.nongnu.org/projects/davfs2",
     license = "GPL-3.0",
-    pre_configure_cmds = ["""
-autoreconf -fiv
-"""],
     configure_args = [
-        "--with-neon=included",
+        "--disable-nls",
     ],
     deps = [
+        ":neon",
         "//packages/linux/system/security/encryption:fuse3",
-                "//packages/linux/system/libs/network/curl:curl",
-                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-                "//packages/linux/dev-tools/build-systems/automake:automake",
-                "//packages/linux/dev-tools/build-systems/libtool:libtool",
-                "//packages/linux/dev-libs/misc/gettext:gettext"
+        "//packages/linux/system/libs/network/curl:curl",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/dev-libs/misc/gettext:gettext",
+    ],
+)
+
+# neon - HTTP/WebDAV client library (required by davfs2)
+package(
+    build_rule = "autotools",
+    name = "neon",
+    url = "https://notroj.github.io/neon/neon-0.33.0.tar.gz",
+    sha256 = "659a5cc9cea05e6e7864094f1e13a77abbbdbab452f04d751a8c16a9447cf4b8",
+    version = "0.33.0",
+    description = "HTTP and WebDAV client library",
+    homepage = "https://notroj.github.io/neon/",
+    license = "LGPL-2.0+",
+    configure_args = [
+        "--prefix=/usr",
+        "--enable-shared",
+        "--with-ssl=openssl",
+        "--with-expat",
+    ],
+    deps = [
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/system/libs/data/expat:expat",
+        "//packages/linux/core/zlib:zlib",
     ],
 )

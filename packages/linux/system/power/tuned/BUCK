@@ -14,15 +14,39 @@ package(
     install_script = """
 cd "$SRCS"
 
+# Create a stub desktop-file-install that just copies the .desktop file
+mkdir -p /tmp/bin
+cat > /tmp/bin/desktop-file-install << 'STUB'
+#!/bin/sh
+# Stub: just copy the .desktop file to --dir
+dir=""
+file=""
+for arg in "$@"; do
+    case "$arg" in
+        --dir=*) dir="${arg#--dir=}" ;;
+        -*) ;;
+        *) file="$arg" ;;
+    esac
+done
+if [ -n "$dir" ] && [ -n "$file" ]; then
+    mkdir -p "$dir"
+    cp "$file" "$dir/"
+fi
+STUB
+chmod +x /tmp/bin/desktop-file-install
+export PATH="/tmp/bin:$PATH"
+
 make DESTDIR="$OUT" PREFIX=/usr \
     SYSCONFDIR=/etc \
     DATADIR=/usr/share \
     DOCDIR=/usr/share/doc/tuned \
     PYTHON=/usr/bin/python3 \
+    TUNED_NO_SYSTEMD=1 \
     install
 """,
     deps = [
         "//packages/linux/lang/python:python",
         "//packages/linux/system/libs/ipc/dbus:dbus",
+        "//packages/linux/system/init/systemd:systemd",
     ],
 )

@@ -1,7 +1,7 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "proxy-wasm-cpp-sdk",
     version = "0.0.1",
     url = "https://github.com/proxy-wasm/proxy-wasm-cpp-sdk/archive/c32d380ca6c9b1afac38a3841be99c37af2698bf.tar.gz",
@@ -10,7 +10,13 @@ package(
     homepage = "https://github.com/proxy-wasm/proxy-wasm-cpp-sdk",
     license = "Apache-2.0",
     deps = [],
-    configure_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-    ],
+    install_script = """
+# Header-only SDK - just install the headers
+mkdir -p "$OUT/usr/include/proxy-wasm-cpp-sdk"
+cp -r *.h "$OUT/usr/include/proxy-wasm-cpp-sdk/" 2>/dev/null || true
+cp -r proxy_wasm_*.h "$OUT/usr/include/proxy-wasm-cpp-sdk/" 2>/dev/null || true
+if [ -d include ]; then
+    cp -r include/* "$OUT/usr/include/proxy-wasm-cpp-sdk/"
+fi
+""",
 )

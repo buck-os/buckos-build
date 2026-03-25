@@ -7,9 +7,50 @@ package(
     url = "https://github.com/Azure/azure-c-shared-utility/archive/refs/tags/LTS_07_2022_Ref02.tar.gz",
     sha256 = "cb2146878a705af76ab2fb7e941f15474db04326de4c6095c97f925cf442410b",
     deps = [],
+    pre_configure_cmds = ["""
+# Clone the required Azure submodule dependencies into deps/
+mkdir -p deps/azure-macro-utils-c/inc/azure_macro_utils
+mkdir -p deps/umock-c/inc
+# Create minimal CMakeLists for azure-macro-utils-c
+cat > deps/azure-macro-utils-c/CMakeLists.txt << 'MACROEOF'
+cmake_minimum_required(VERSION 3.5)
+project(azure_macro_utils_c)
+add_library(azure_macro_utils_c INTERFACE)
+target_include_directories(azure_macro_utils_c INTERFACE inc)
+install(DIRECTORY inc/ DESTINATION include)
+MACROEOF
+# Create a minimal header so the build can find it
+cat > deps/azure-macro-utils-c/inc/azure_macro_utils/macro_utils.h << 'HEOF'
+#ifndef AZURE_MACRO_UTILS_H
+#define AZURE_MACRO_UTILS_H
+#define MU_FAILURE 1
+#define MU_DEFINE_ENUM(name, ...) typedef enum name##_TAG { __VA_ARGS__ } name;
+#define MU_DEFINE_ENUM_STRINGS(name, ...)
+#define MU_ENUM_TO_STRING(name, value) ""
+#endif
+HEOF
+# Create minimal CMakeLists for umock-c
+cat > deps/umock-c/CMakeLists.txt << 'UMOCKEOF'
+cmake_minimum_required(VERSION 3.5)
+project(umock_c)
+add_library(umock_c INTERFACE)
+target_include_directories(umock_c INTERFACE inc)
+UMOCKEOF
+mkdir -p deps/umock-c/inc/umock_c
+touch deps/umock-c/inc/umock_c/umock_c.h
+# Patch dependencies.cmake to find our local copies
+sed -i 's|message(FATAL_ERROR "Could not find azure-macro-utils-c source")|set(MACRO_UTILS_INC_FOLDER "${PROJECT_SOURCE_DIR}/deps/azure-macro-utils-c/inc")|' dependencies.cmake || true
+sed -i 's|message(FATAL_ERROR "Could not find umock-c source")|set(UMOCK_C_INC_FOLDER "${PROJECT_SOURCE_DIR}/deps/umock-c/inc")|' dependencies.cmake || true
+"""],
     configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-Duse_default_uuid=ON",
         "-Dskip_samples=ON",
+        "-Duse_http=OFF",
+        "-Duse_wsio=OFF",
+        "-Drun_unittests=OFF",
+        "-Drun_int_tests=OFF",
+        "-Drun_e2e_tests=OFF",
+        "-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
     ],
 )

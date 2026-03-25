@@ -14,13 +14,42 @@ package(
     install_script = """
 cd "$SRCS"
 
-make install \
+# Python 3.12+ removed distutils; setuptools provides it.
+# Set PYTHONPATH so the build can find setuptools from our deps.
+IFS=':' read -ra _DEPS <<< "${DEP_BASE_DIRS:-}"
+for _dep in "${_DEPS[@]}"; do
+    for _sp in "$_dep"/usr/lib/python*/site-packages "$_dep"/usr/lib64/python*/site-packages; do
+        if [ -d "$_sp" ]; then
+            export PYTHONPATH="${_sp}${PYTHONPATH:+:$PYTHONPATH}"
+        fi
+    done
+    # Also add LD_LIBRARY_PATH for any dep libraries (Python, etc.)
+    for _libdir in "$_dep/usr/lib64" "$_dep/usr/lib"; do
+        if [ -d "$_libdir" ]; then
+            export LD_LIBRARY_PATH="${_libdir}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+        fi
+    done
+done
+
+export SETUPTOOLS_USE_DISTUTILS=local
+
+# Build first (pure Python, skip C extensions)
+python3 setup.py --pure build
+
+# Install binaries without building docs (docutils not available)
+make install-bin \
     PREFIX=/usr \
     DESTDIR="$OUT" \
     PYTHON=python3 \
-    PURE=--pure
+    PURE=--pure || \
+python3 setup.py install \
+    --root="$OUT" \
+    --prefix=/usr \
+    --optimize=1 \
+    --pure
 """,
     deps = [
         "//packages/linux/lang/python:python",
+        "//packages/linux/dev-libs/python/setuptools:setuptools",
     ],
 )

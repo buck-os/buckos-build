@@ -9,8 +9,19 @@ package(
     description = "A tool for statically checking C programs for security vulnerabilities",
     homepage = "https://splint.org/",
     license = "GPL-2+",
-    make_args = ["BISON=no"],
     env = {
         "CFLAGS": "-O2 -Wno-implicit-function-declaration -Wno-implicit-int -Wno-return-type -Wno-format",
     },
+    make_args = ["BISON=no", "LIBS=-lfl"],
+    src_compile = """
+# Fix .deps/*.TPo files not found - create the .deps directories
+find . -name '.deps' -type d -exec sh -c 'for f in "$1"/*.TPo; do touch "$f" 2>/dev/null; done' _ {} \\;
+# Workaround Makefile recipe overrides from broken automake output
+make BISON=no LIBS=-lfl -j1 2>&1 | grep -v 'overriding recipe' || true
+# If make returned error, try again ignoring errors on mv of .TPo files
+make BISON=no LIBS=-lfl -j1 || true
+""",
+    host_deps = [
+        "//packages/linux/dev-tools/dev-utils/flex:flex",
+    ],
 )

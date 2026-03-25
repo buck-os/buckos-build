@@ -2,7 +2,7 @@ load("//defs:package.bzl", "package")
 
 # boost-asio-serial - Boost.Asio serial port extension
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "boost-asio-serial",
     version = "1.1.0",
     url = "https://mirror.buckos.org/s/serial-port-master.tar.gz",
@@ -10,14 +10,14 @@ package(
     description = "Serial port library using Boost.Asio",
     homepage = "https://github.com/fedetft/serial-port",
     license = "Boost-1.0",
-    use_configure = {
-        "examples": ("-DBUILD_EXAMPLES=ON", "-DBUILD_EXAMPLES=OFF"),
-        "static-libs": ("-DBUILD_SHARED_LIBS=OFF", "-DBUILD_SHARED_LIBS=ON"),
-    },
-    configure_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-    ],
     deps = [
         "//packages/linux/dev-libs/boost:boost",
     ],
+    install_script = """
+# Header-only library - install headers
+mkdir -p "$OUT/usr/include/serial-port"
+find . -name '*.h' -o -name '*.hpp' | while read f; do
+    install -Dm644 "$f" "$OUT/usr/include/serial-port/$(basename "$f")"
+done
+""",
 )

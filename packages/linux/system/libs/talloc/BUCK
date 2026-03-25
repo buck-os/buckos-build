@@ -14,6 +14,25 @@ package(
     install_script = """
 cd "$SRCS"
 
+# Find libtirpc include/lib paths from deps for rpc/rpc.h
+_TIRPC_INC=""
+_TIRPC_LIB=""
+IFS=':' read -ra _DEPS <<< "${DEP_BASE_DIRS:-}"
+for _dep in "${_DEPS[@]}"; do
+    if [ -f "$_dep/usr/include/tirpc/rpc/rpc.h" ]; then
+        _TIRPC_INC="$_dep/usr/include/tirpc"
+    fi
+    for _lib in "$_dep/usr/lib64" "$_dep/usr/lib"; do
+        if [ -f "$_lib/libtirpc.so" ]; then
+            _TIRPC_LIB="$_lib"
+        fi
+    done
+done
+if [ -n "$_TIRPC_INC" ]; then
+    export CFLAGS="$CFLAGS -I$_TIRPC_INC"
+    export LDFLAGS="$LDFLAGS ${_TIRPC_LIB:+-L$_TIRPC_LIB -Wl,-rpath-link,$_TIRPC_LIB}"
+fi
+
 # Create cross-answers file for waf cross-compilation
 cat > cross-answers.txt << 'CROSS_EOF'
 Checking uname sysname type: "Linux"
@@ -44,17 +63,38 @@ vfs_fileid checking for statfs() and target struct statfs.f_fsid: OK
 Checking whether sector aligned: OK
 CROSS_EOF
 
+# Stub out git so waf doesn't fail on version detection
+mkdir -p /tmp/talloc-tools
+cat > /tmp/talloc-tools/git << 'GIT_EOF'
+#!/bin/sh
+echo "unknown"
+GIT_EOF
+chmod +x /tmp/talloc-tools/git
+export PATH="/tmp/talloc-tools:$PATH"
+
 ./configure \
     --prefix=/usr \
     --sysconfdir=/etc \
     --disable-python \
     --cross-compile \
-    --cross-answers=cross-answers.txt
+    --cross-answers=cross-answers.txt \
+    --disable-rpath \
+    --without-gettext
+
+# Create a dummy xsltproc so waf doesn't fail on man page generation
+mkdir -p /tmp/talloc-tools
+cat > /tmp/talloc-tools/xsltproc << 'XSLT_EOF'
+#!/bin/sh
+exit 0
+XSLT_EOF
+chmod +x /tmp/talloc-tools/xsltproc
+export PATH="/tmp/talloc-tools:$PATH"
 
 make -j${MAKEOPTS:-$(nproc)}
 
 make DESTDIR="$OUT" install
 """,
     deps = [
+        "//packages/linux/system/libs/ipc/libtirpc:libtirpc",
     ],
 )

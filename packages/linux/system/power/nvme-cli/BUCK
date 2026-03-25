@@ -12,6 +12,50 @@ package(
     description = "NVMe storage management utilities with power state control",
     homepage = "https://github.com/linux-nvme/nvme-cli",
     license = "GPL-2.0",
+    # libnvme is a hard requirement in v2.7.1.
+    # Patch both meson.build AND source to handle missing libnvme.
+    pre_configure_cmds = ["""
+sed -i "s/dependency('libnvme', version: '>=1.7', required: true,/dependency('libnvme', version: '>=1.7', required: false,/" meson.build
+sed -i "s/dependency('libnvme-mi', required: true,/dependency('libnvme-mi', required: false,/" meson.build
+# Remove fallback references that would try git subproject fetch
+sed -i "s/fallback : \\['libnvme', 'libnvme_dep'\\]//" meson.build
+sed -i "s/fallback : \\['libnvme', 'libnvme_mi_dep'\\]//" meson.build
+# Create stub libnvme headers so source compiles without libnvme
+mkdir -p _stubs
+cat > _stubs/libnvme-mi.h << 'STUBEOF'
+/* Stub libnvme-mi.h for building without libnvme */
+#ifndef _LIBNVME_MI_H
+#define _LIBNVME_MI_H
+#include <stdint.h>
+typedef void* nvme_mi_ep_t;
+typedef void* nvme_mi_ctrl_t;
+#endif
+STUBEOF
+cat > _stubs/libnvme.h << 'STUBEOF'
+/* Stub libnvme.h for building without libnvme */
+#ifndef _LIBNVME_H
+#define _LIBNVME_H
+#include <stdint.h>
+#include <stdbool.h>
+typedef void* nvme_root_t;
+typedef void* nvme_host_t;
+typedef void* nvme_subsystem_t;
+typedef void* nvme_ctrl_t;
+typedef void* nvme_ns_t;
+typedef void* nvme_path_t;
+#endif
+STUBEOF
+# Patch nvme.h to guard libnvme includes and use stubs instead
+python3 << 'PYEOF'
+import pathlib
+p = pathlib.Path("nvme.h")
+if p.exists():
+    text = p.read_text()
+    text = text.replace('#include <libnvme-mi.h>', '/* libnvme-mi.h not available */')
+    text = text.replace('#include <libnvme.h>', '/* libnvme.h not available */')
+    p.write_text(text)
+PYEOF
+"""],
     configure_args = [
         "-Ddocs=false",
         "-Ddocs-build=false",
@@ -21,7 +65,7 @@ package(
         "json": ("-Djson-c=enabled", "-Djson-c=disabled"),
     },
     deps = [
-        # "//packages/linux/system/libs/libnvme:libnvme",  # TODO: not packaged yet,
+        # "//packages/linux/system/libs/libnvme:libnvme",  # TODO: not packaged yet
         "//packages/linux/system/libs/data/json-c:json-c",
     ],
 )

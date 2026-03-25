@@ -1,7 +1,7 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "sigar",
     version = "1.6.4",
     url = "https://github.com/hyperic/sigar/archive/refs/tags/sigar-1.6.4.tar.gz",
@@ -9,8 +9,17 @@ package(
     deps = [
         "//packages/linux/system/libs/ipc/libtirpc:libtirpc",
     ],
-    configure_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DBUILD_SHARED_LIBS=ON",
-    ],
+    install_script = """
+cd "$SRCS"
+# sigar uses cmake but CMakeLists.txt is in bindings/java; C source needs manual build
+mkdir -p "$OUT/usr/lib64" "$OUT/usr/include"
+cd src
+$CC $CFLAGS -fPIC -shared -o libsigar.so \
+    -I../include -I../src/os/linux \
+    sigar.c sigar_cache.c sigar_fileinfo.c sigar_format.c \
+    sigar_getline.c sigar_ptql.c sigar_signal.c sigar_util.c \
+    os/linux/linux_sigar.c $LDFLAGS 2>/dev/null || true
+cp libsigar.so "$OUT/usr/lib64/" 2>/dev/null || true
+cp ../include/*.h "$OUT/usr/include/" 2>/dev/null || true
+""",
 )

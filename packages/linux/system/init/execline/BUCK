@@ -18,12 +18,41 @@ package(
     configure_args = [
         "--prefix=/usr",
         "--libdir=/usr/lib64",
-        "--with-sysdeps=/usr/lib64/skalibs/sysdeps",
-        "--with-include=/usr/include",
-        "--with-lib=/usr/lib64/skalibs",
         "--enable-shared",
         "--disable-static",
     ],
+    pre_configure_cmds = ["""
+# Find skalibs prefix from CFLAGS -I paths and inject configure args
+_skalibs_prefix=""
+for _flag in $CFLAGS $CPPFLAGS; do
+    case "$_flag" in
+        -I*/usr/include)
+            _candidate="${_flag#-I}"
+            _candidate="${_candidate%/usr/include}"
+            if [ -d "$_candidate/usr/lib/skalibs/sysdeps" ]; then
+                _skalibs_prefix="$_candidate"
+                break
+            fi
+            ;;
+    esac
+done
+if [ -z "$_skalibs_prefix" ]; then
+    echo "error: could not find skalibs prefix" >&2
+    exit 1
+fi
+# Wrap configure to inject skalibs paths
+mv configure configure.real
+cat > configure << WRAPPER
+#!/bin/sh
+exec ./configure.real \\
+    --with-sysdeps="$_skalibs_prefix/usr/lib/skalibs/sysdeps" \\
+    --with-include="$_skalibs_prefix/usr/include" \\
+    --with-lib="$_skalibs_prefix/usr/lib/skalibs" \\
+    --with-lib="$_skalibs_prefix/usr/lib" \\
+    "\$@"
+WRAPPER
+chmod +x configure
+"""],
     deps = [
         "//packages/linux/system/init/skalibs:skalibs",
     ],

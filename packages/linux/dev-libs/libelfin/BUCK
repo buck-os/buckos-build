@@ -11,8 +11,18 @@ package(
     install_script = """
 cd "$SRCS"
 
+# Stub out git so version detection doesn't fail
+mkdir -p /tmp/libelfin-tools
+printf '#!/bin/sh\\necho "v0.3"\\n' > /tmp/libelfin-tools/git
+chmod +x /tmp/libelfin-tools/git
+export PATH="/tmp/libelfin-tools:$PATH"
+
+# Fix const-correctness error in data.hh: set_binding assigns to const member
+# Patch the method to cast away const
+find . -name 'data.hh' -exec sed -i 's/void set_binding(stb v) const/void set_binding(stb v)/g' {} \\;
+
 make -j${MAKEOPTS:-$(nproc)} PREFIX=/usr \
-    CXX="$CXX" CXXFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS"
+    CXX="$CXX" CXXFLAGS="$CFLAGS -include cstdint -fpermissive -Wno-error" LDFLAGS="$LDFLAGS"
 
 make PREFIX=/usr DESTDIR="$OUT" install
 """,

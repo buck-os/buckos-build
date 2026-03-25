@@ -13,10 +13,17 @@ package(
     configure_args = [
         "--disable-man",
         "--disable-gtk-doc",
+        "--disable-introspection",
+        "--enable-daemon",
     ],
+    env = {
+        "CFLAGS": "-Wno-error=format-security -Wno-error=implicit-function-declaration -Wno-error=overflow -Wno-error",
+    },
     deps = [
         "//packages/linux/core/util-linux:util-linux",
         "//packages/linux/system/filesystem/management/lvm2:lvm2",
         "//packages/linux/system/init/eudev:eudev",
+        "//packages/linux/core/glib:glib",
+        "//packages/linux/system/security/auth/privilege:polkit",
     ],
 )

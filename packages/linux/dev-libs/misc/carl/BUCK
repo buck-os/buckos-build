@@ -16,10 +16,19 @@ package(
         "//packages/linux/dev-libs/eigen:eigen",
         "//packages/linux/dev-libs/misc/arcana-cpp:arcana-cpp",
     ],
+    pre_configure_cmds = ["""
+# The Dependencies/CMakeLists.txt expects bundled eigen as a git submodule.
+# Patch it to use system Eigen instead.
+cat > Dependencies/CMakeLists.txt << 'DEPSEOF'
+cmake_minimum_required(VERSION 3.13)
+find_package(Eigen3 REQUIRED)
+DEPSEOF
+"""],
     configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_CXX_STANDARD=17",
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_TESTING=OFF",
+        "-DBUILD_EXAMPLES=OFF",
     ],
 )

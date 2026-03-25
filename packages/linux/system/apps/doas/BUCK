@@ -12,7 +12,9 @@ package(
     description = "Simple sudo alternative from OpenBSD",
     homepage = "https://github.com/Duncaen/OpenDoas",
     license = "ISC",
-    deps = [],
+    deps = [
+        "//packages/linux/system/libs/crypto/libxcrypt:libxcrypt",
+    ],
     host_deps = [
         "//packages/linux/dev-tools/dev-utils/bison:bison",
     ],
@@ -21,9 +23,9 @@ package(
 ./configure --prefix=/usr --without-pam --with-timestamp 2>/dev/null || \
     ./configure --prefix=/usr --without-pam 2>/dev/null || true
 
-make CC="$CC" CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" \
+make CC="$CC" CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS -lcrypt" \
     -j${MAKEOPTS:-$(nproc)} || \
-make CC="$CC" -j1
+make CC="$CC" LDFLAGS="$LDFLAGS -lcrypt" -j1
 
 make install DESTDIR="$OUT"
 """,

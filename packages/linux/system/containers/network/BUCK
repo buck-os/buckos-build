@@ -21,24 +21,18 @@ package(
 
 # netavark - Container network stack
 package(
-    build_rule = "binary",
+    build_rule = "cargo",
     name = "netavark",
     version = "1.14.0",
     url = "https://github.com/containers/netavark/archive/refs/tags/v1.14.0.tar.gz",
     sha256 = "d2ded5412e5037e84f79a28c774378c864aa6f6e43023dd88891c70cfaf963ef",
+    vendor_deps = True,
+    bins = ["netavark"],
     description = "Container network stack for Podman",
     homepage = "https://github.com/containers/netavark",
     license = "Apache-2.0",
-    install_script = """
-cd $SRCS
-export PATH="$(echo $DEP_BASE_DIRS | tr ':' '\n' | while read d; do [ -d "$d/usr/bin" ] && echo -n "$d/usr/bin:"; done)$PATH"
-cargo build --release
-mkdir -p "$OUT/usr/libexec/podman"
-install -m 755 target/release/netavark "$OUT/usr/libexec/podman/"
-""",
     deps = [
         "//packages/linux/dev-libs/serialization/protobuf:protobuf",
-        "//packages/linux/lang/rust:rust",
     ],
 )
 
@@ -77,8 +71,7 @@ package(
     pre_configure_cmds = ["autoreconf -fi"],
     deps = [
         "//packages/linux/dev-libs/glib:glib",
-        # TODO: libslirp package needs to be created
-        # "//packages/linux/system/libs/network/libslirp:libslirp",
+        "//packages/linux/dev-libs/libslirp:libslirp",
         "//packages/linux/system/libs/ipc/libseccomp:libseccomp",
         "//packages/linux/system/libs/ipc/libcap:libcap",
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",

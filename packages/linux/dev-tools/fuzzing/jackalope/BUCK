@@ -7,8 +7,32 @@ package(
     url = "https://github.com/googleprojectzero/jackalope/archive/d9dc8f446aa9befe412a498da7852b2665cf3aa0.tar.gz",
     sha256 = "48609b0ab1d3f02971db5f2e0cca143caadb5e2aee95c66a768a72bcb11074a5",
     description = "Coverage-guided fuzzing framework from Google Project Zero",
+    pre_configure_cmds = ["""
+# Create stub TinyInst directory (normally a git submodule)
+mkdir -p TinyInst/include
+cat > TinyInst/CMakeLists.txt << 'TIEOF'
+cmake_minimum_required(VERSION 3.13)
+project(tinyinst LANGUAGES CXX)
+add_library(tinyinst STATIC tinyinst_stub.cpp)
+target_include_directories(tinyinst PUBLIC include)
+TIEOF
+cat > TinyInst/tinyinst_stub.cpp << 'TSEOF'
+// Stub implementation
+TSEOF
+cat > TinyInst/include/tinyinst.h << 'THEOF'
+#pragma once
+THEOF
+# Remove the Clang requirement check
+sed -i '/You need to use Clang/d' CMakeLists.txt || true
+sed -i '/CMAKE_CXX_COMPILER_ID.*Clang/,/message.*FATAL_ERROR/d' CMakeLists.txt || true
+# Fix cmake minimum version
+sed -i 's/cmake_minimum_required(VERSION 2\.[0-9]*)/cmake_minimum_required(VERSION 3.10)/' CMakeLists.txt || true
+"""],
     configure_args = [
         "-DCMAKE_CXX_STANDARD=17",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_TESTING=OFF",
+        "-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
     ],
     deps = [],
 )

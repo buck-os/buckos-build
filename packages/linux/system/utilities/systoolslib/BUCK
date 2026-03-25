@@ -3,18 +3,19 @@ load("//defs:package.bzl", "package")
 package(
     name = "systoolslib",
     build_rule = "make",
-    skip_configure = True,
     version = "1.22",
     url = "https://github.com/JFLarvoire/SysToolsLib/archive/refs/tags/1.22.tar.gz",
     sha256 = "1b3c06731f20412e97100c829e067a4c86a7818be6601515068b59ad639f5911",
     description = "Collection of Unix/Windows system tools and utilities",
     homepage = "https://github.com/jflarvoire/SysToolsLib",
     license = "Apache-2.0",
+    build_subdir = "C/SRC",
     make_args = [
         "prefix=/usr",
+        "-j1",
     ],
     post_install_cmds = ["""
 cd C/SRC
-make prefix=/usr DESTDIR="$DESTDIR" install || true
+make prefix=/usr DESTDIR="$DESTDIR" -j1 install || true
 """],
 )

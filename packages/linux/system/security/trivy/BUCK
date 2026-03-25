@@ -6,7 +6,17 @@ package(
     version = "0.53.0",
     url = "https://github.com/aquasecurity/trivy/archive/refs/tags/v0.53.0.tar.gz",
     sha256 = "958a5f2ea846f102ca14d3c0627b04117f85c5b35b30ac68119184d13faa791e",
+    vendor_deps = True,
+    packages = ["./cmd/trivy"],
+    bins = ["trivy"],
     description = "Security scanner for containers, Kubernetes, and infrastructure",
     homepage = "https://github.com/aquasecurity/trivy",
     license = "Apache-2.0",
+    # Fix source tree to prevent shutil.copytree failures in go_helper.py:
+    # - Remove broken/dangling symlinks
+    # - Ensure all files/dirs are readable
+    pre_configure_cmds = [
+        "find . -type l ! -exec test -e {} \\; -delete 2>/dev/null || true",
+        "chmod -R u+r . 2>/dev/null || true",
+    ],
 )

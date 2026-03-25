@@ -31,6 +31,7 @@ package(
     version = "0.10.0",
     url = "https://github.com/str4d/rage/archive/refs/tags/v0.10.0.tar.gz",
     sha256 = "34c39c28f8032c144a43aea96e58159fe69526f5ff91cb813083530adcaa6ea4",
+    vendor_deps = True,
     description = "Rust implementation of the age encryption tool",
     homepage = "https://github.com/str4d/rage",
     license = "Apache-2.0 OR MIT",
@@ -76,12 +77,42 @@ package(
     description = "OpenBSD tool to sign and verify signatures on files",
     homepage = "https://github.com/aperezdc/signify",
     license = "ISC",
-    make_args = [
-        "PREFIX=/usr",
-        "MANDIR=/usr/share/man",
-    ],
+    src_compile = """
+# Fix libbsd.so linker script absolute paths: rewrite to use actual dep lib paths
+_LIBBSD_DIR=""
+_LIBMD_DIR=""
+IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
+for _dep in "${_DEP_ARRAY[@]}"; do
+    for _lib in "$_dep/usr/lib64" "$_dep/usr/lib"; do
+        if [ -f "$_lib/libbsd.so" ]; then
+            _LIBBSD_DIR="$_lib"
+            # Fix the linker script to use the actual path
+            if grep -q 'GROUP' "$_lib/libbsd.so" 2>/dev/null; then
+                _SO_FILE=$(find "$_lib" -name 'libbsd.so.0*' -not -name '*.py' | head -1)
+                if [ -n "$_SO_FILE" ]; then
+                    cp "$_lib/libbsd.so" "$_lib/libbsd.so.bak" 2>/dev/null || true
+                    echo "GROUP( $_SO_FILE AS_NEEDED(-lmd))" > "$_lib/libbsd.so"
+                fi
+            fi
+        fi
+        if [ -f "$_lib/libmd.so" ]; then
+            _LIBMD_DIR="$_lib"
+        fi
+    done
+done
+# Ensure -lmd can be found by adding its lib path to LDFLAGS
+_EXTRA_LDF=""
+if [ -n "$_LIBMD_DIR" ]; then
+    _EXTRA_LDF="-L$_LIBMD_DIR -Wl,-rpath-link,$_LIBMD_DIR"
+fi
+make PREFIX=/usr MANDIR=/usr/share/man LDFLAGS="$LDFLAGS $_EXTRA_LDF"
+""",
+    src_install = """
+make PREFIX=/usr MANDIR=/usr/share/man DESTDIR="$OUT" install
+""",
     deps = [
         ":libbsd",
+        ":libmd",
     ],
 )
 
@@ -92,7 +123,6 @@ package(
 package(
     name = "libbsd",
     build_rule = "autotools",
-    skip_configure = True,
     url = "https://libbsd.freedesktop.org/releases/libbsd-0.12.2.tar.xz",
 
     sha256 = "b88cc9163d0c652aaf39a99991d974ddba1c3a9711db8f1b5838af2a14731014",
@@ -112,7 +142,6 @@ package(
 package(
     name = "libmd",
     build_rule = "autotools",
-    skip_configure = True,
     url = "https://archive.hadrons.org/software/libmd/libmd-1.1.0.tar.xz",
 
     sha256 = "1bd6aa42275313af3141c7cf2e5b964e8b1fd488025caf2f971f43b00776b332",
@@ -131,7 +160,6 @@ package(
 package(
     name = "ccrypt",
     build_rule = "autotools",
-    skip_configure = True,
     url = "https://ccrypt.sourceforge.net/download/1.11/ccrypt-1.11.tar.gz",
 
     sha256 = "b19c47500a96ee5fbd820f704c912f6efcc42b638c0a6aa7a4e3dc0a6b51a44f",
@@ -144,26 +172,6 @@ package(
         ln -sf ccrypt "$OUT/usr/bin/ccencrypt"
         ln -sf ccrypt "$OUT/usr/bin/ccdecrypt"
         ln -sf ccrypt "$OUT/usr/bin/ccat"
-    """, """
-        mkdir -p "$OUT/etc/pam.d"
-        chmod 4755 "$OUT/sbin/unix_chkpwd" || true
-    """, """
-        mkdir -p "$OUT/usr/lib/pcsc/drivers"
-        mkdir -p "$OUT/var/run/pcscd"
-    """, """
-        mkdir -p "$OUT/etc/opensc"
-    """, """
-        mkdir -p "$OUT/usr/bin"
-        mkdir -p "$OUT/usr/share/john"
-        cp run/john "$OUT/usr/bin/"
-        cp run/*.chr run/*.lst "$OUT/usr/share/john/" || true
-        ln -sf john "$OUT/usr/bin/unshadow"
-        ln -sf john "$OUT/usr/bin/unafs"
-        ln -sf john "$OUT/usr/bin/unique"
-    """, """
-        mkdir -p "$OUT/usr/bin" "$OUT/usr/share/man/man1"
-        cp bcrypt "$OUT/usr/bin/"
-        cp bcrypt.1 "$OUT/usr/share/man/man1/"
     """],
     deps = [
     ],
@@ -267,10 +275,10 @@ package(
 # ECRYPTFS-UTILS - eCryptfs userspace utilities
 # =============================================================================
 
+# ecryptfs-utils: git snapshot, needs autoreconf to generate configure script
 package(
     name = "ecryptfs-utils",
     build_rule = "autotools",
-    skip_configure = True,
     url = "https://github.com/dustinkirkland/ecryptfs-utils/archive/5e877f3747303096f7861863bac937be4328fa72.tar.gz",
 
     sha256 = "b91cd0a707f0b1d912297efb1019beca1cd973d199c4fd9f0bcdc1898bb66ebe",
@@ -278,10 +286,32 @@ package(
     description = "eCryptfs userspace utilities for filesystem encryption",
     homepage = "https://ecryptfs.org/",
     license = "GPL-2.0+",
+    pre_configure_cmds = ["""
+# Stub out AM_GLIB_GNU_GETTEXT and related macros so autoreconf succeeds
+if [ ! -d m4 ]; then mkdir m4; fi
+cat > m4/gettext-stub.m4 << 'MACROEOF'
+AC_DEFUN([AM_GLIB_GNU_GETTEXT], [:])
+AC_DEFUN([AM_GNU_GETTEXT], [:])
+AC_DEFUN([AM_GNU_GETTEXT_VERSION], [:])
+AC_DEFUN([AM_GNU_GETTEXT_REQUIRE_VERSION], [:])
+MACROEOF
+autoreconf -fi
+"""],
+    configure_args = [
+        "--disable-nls",
+        "--disable-pywrap",
+    ],
+    host_deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
+    ],
     deps = [
         ":keyutils",
         "//packages/linux/system/libs/crypto/libgcrypt:libgcrypt",
         "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/dev-libs/misc/gettext:gettext",
     ],
 )
 
@@ -327,6 +357,7 @@ package(
     description = "Simple and flexible tool for managing secrets",
     homepage = "https://github.com/getsops/sops",
     license = "MPL-2.0",
+    packages = ["./cmd/sops"],
     deps = [
         "//packages/linux/lang/go:go",
     ],
@@ -356,6 +387,8 @@ package(
         "//packages/linux/system/filesystem/management/lvm2:lvm2",
         "//packages/linux/system/filesystem/management/cryptsetup:cryptsetup",
         ":fuse3",
+        ":pcsc-lite",
+        "//packages/linux/core/zlib:zlib",
     ],
 )
 
@@ -390,6 +423,7 @@ package(
     version = "0.5.0",
     url = "https://github.com/str4d/age-plugin-yubikey/archive/refs/tags/v0.5.0.tar.gz",
     sha256 = "65807403f0098569a473ffa76302b205da148a7f46b61fd331b8e323959978ba",
+    vendor_deps = True,
     description = "YubiKey plugin for age",
     homepage = "https://github.com/str4d/age-plugin-yubikey",
     license = "Apache-2.0 OR MIT",
@@ -406,7 +440,6 @@ package(
 package(
     name = "pcsc-lite",
     build_rule = "autotools",
-    skip_configure = True,
     url = "https://pcsclite.apdu.fr/files/pcsc-lite-2.0.3.tar.bz2",
 
     sha256 = "f42ee9efa489e9ff5d328baefa26f9c515be65021856e78d99ad1f0ead9ec85d",
@@ -414,8 +447,16 @@ package(
     description = "PC/SC smart card daemon and library",
     homepage = "https://pcsclite.apdu.fr/",
     license = "BSD-3-Clause",
+    configure_args = [
+        "--disable-polkit",
+    ],
+    post_install_cmds = ["""
+        mkdir -p "$OUT/usr/lib/pcsc/drivers"
+        mkdir -p "$OUT/var/run/pcscd"
+    """],
     deps = [
         ":libusb",
+        "//packages/linux/system/init/systemd:systemd",
     ],
 )
 
@@ -426,7 +467,6 @@ package(
 package(
     name = "libusb",
     build_rule = "autotools",
-    skip_configure = True,
     url = "https://github.com/libusb/libusb/releases/download/v1.0.27/libusb-1.0.27.tar.bz2",
 
     sha256 = "ffaa41d741a8a3bee244ac8e54a72ea05bf2879663c098c82fc5757853441575",
@@ -449,6 +489,7 @@ package(
     version = "0.35.0",
     url = "https://gitlab.com/sequoia-pgp/sequoia-sq/-/archive/v0.35.0/sequoia-sq-v0.35.0.tar.gz",
     sha256 = "0b16bb4dcd7b85eb1292dfe4b22dfa3c0df44bae1e84859e91aadfee80b08bec",
+    vendor_deps = True,
     description = "Command-line frontend for Sequoia, a modern OpenPGP implementation",
     homepage = "https://sequoia-pgp.org/",
     license = "GPL-2.0+",
@@ -466,7 +507,6 @@ package(
 package(
     name = "nettle",
     build_rule = "autotools",
-    skip_configure = True,
     url = "https://mirrors.kernel.org/gnu/nettle/nettle-3.9.1.tar.gz",
 
     sha256 = "ccfeff981b0ca71bbd6fbcb054f407c60ffb644389a5be80d6716d5b550c6ce3",
@@ -485,7 +525,6 @@ package(
 package(
     name = "opensc",
     build_rule = "autotools",
-    skip_configure = True,
     url = "https://github.com/OpenSC/OpenSC/releases/download/0.25.1/opensc-0.25.1.tar.gz",
 
     sha256 = "23cbaae8bd7c8eb589b68c0a961dfb0d02007bea3165a3fc5efe2621d549b37b",
@@ -493,6 +532,9 @@ package(
     description = "Smart card tools and middleware",
     homepage = "https://github.com/OpenSC/OpenSC",
     license = "LGPL-2.1+",
+    post_install_cmds = ["""
+        mkdir -p "$OUT/etc/opensc"
+    """],
     deps = [
         ":pcsc-lite",
         "//packages/linux/system/libs/crypto/openssl:openssl",
@@ -530,7 +572,6 @@ package(
 package(
     name = "libressl",
     build_rule = "autotools",
-    skip_configure = True,
     url = "https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-3.9.2.tar.gz",
 
     sha256 = "7b031dac64a59eb6ee3304f7ffb75dad33ab8c9d279c847f92c89fb846068f97",
@@ -546,10 +587,10 @@ package(
 # BOTAN - C++ cryptography library
 # =============================================================================
 
+# Botan uses a Python configure.py script, not autotools
 package(
     name = "botan",
-    build_rule = "autotools",
-    skip_configure = True,
+    build_rule = "binary",
     url = "https://botan.randombit.net/releases/Botan-3.4.0.tar.xz",
 
     sha256 = "71843afcc0a2c585f8f33fa304f0b58ae4b9c5d8306f894667b3746044277557",
@@ -557,9 +598,32 @@ package(
     description = "C++ cryptography library",
     homepage = "https://botan.randombit.net/",
     license = "BSD-2-Clause",
+    install_script = """
+cd "$SRCS"
+# Build extra include/lib flags from DEP_BASE_DIRS so botan finds zlib.h and bzlib.h
+_EXTRA_INC=""
+_EXTRA_LIB=""
+IFS=':' read -ra _DEPS <<< "${DEP_BASE_DIRS:-}"
+for _dep in "${_DEPS[@]}"; do
+    for _inc in "$_dep/usr/include"; do
+        [ -d "$_inc" ] && _EXTRA_INC="$_EXTRA_INC -I$_inc"
+    done
+    for _lib in "$_dep/usr/lib64" "$_dep/usr/lib"; do
+        [ -d "$_lib" ] && _EXTRA_LIB="$_EXTRA_LIB -L$_lib"
+    done
+done
+export CXXFLAGS="$CFLAGS $_EXTRA_INC"
+export LDFLAGS="$LDFLAGS $_EXTRA_LIB"
+python3 configure.py --prefix=/usr --libdir=lib64 --cc=gcc --cpu=x86_64 \
+    --with-zlib --with-bzip2 --without-documentation \
+    --extra-cxxflags="$_EXTRA_INC" --ldflags="$_EXTRA_LIB"
+make -j${MAKEOPTS:-$(nproc)}
+make install DESTDIR="$OUT"
+""",
     deps = [
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/compression/bzip2:bzip2",
+        "//packages/linux/lang/python:python",
     ],
 )
 
@@ -591,10 +655,10 @@ package(
 # JOHN - John the Ripper password cracker
 # =============================================================================
 
+# John's configure script and Makefile are in the src/ subdirectory
 package(
     name = "john",
-    build_rule = "autotools",
-    skip_configure = True,
+    build_rule = "binary",
     url = "https://www.openwall.com/john/k/john-1.9.0.tar.xz",
 
     sha256 = "0b266adcfef8c11eed690187e71494baea539efbd632fe221181063ba09508df",
@@ -602,7 +666,39 @@ package(
     description = "John the Ripper password security auditing tool",
     homepage = "https://www.openwall.com/john/",
     license = "GPL-2.0+",
-    make_args = [],
+    install_script = """
+cd "$SRCS"
+# Find the src directory - john tarball may have different layouts
+if [ -d "src" ] && [ -f "src/configure" ]; then
+    cd src
+elif [ -f "configure" ]; then
+    : # already in the right place
+else
+    # Search for configure script in subdirectories
+    _conf=$(find . -maxdepth 3 -name configure -path '*/src/configure' 2>/dev/null | head -1)
+    if [ -n "$_conf" ]; then
+        cd "$(dirname "$_conf")"
+    else
+        echo "ERROR: Cannot find john's configure script"
+        find . -name configure 2>/dev/null
+        exit 1
+    fi
+fi
+./configure --prefix=/usr
+make -j${MAKEOPTS:-$(nproc)} CC="$CC" LDFLAGS="$LDFLAGS" CFLAGS="$CFLAGS -Wno-error"
+cd "$SRCS"
+mkdir -p "$OUT/usr/bin"
+mkdir -p "$OUT/usr/share/john"
+# Find and install the john binary
+_john_bin=$(find . -name john -type f -executable 2>/dev/null | head -1)
+if [ -n "$_john_bin" ]; then
+    cp "$_john_bin" "$OUT/usr/bin/"
+fi
+cp run/*.chr run/*.lst "$OUT/usr/share/john/" 2>/dev/null || true
+ln -sf john "$OUT/usr/bin/unshadow"
+ln -sf john "$OUT/usr/bin/unafs"
+ln -sf john "$OUT/usr/bin/unique"
+""",
     deps = [
         "//packages/linux/system/libs/crypto/openssl:openssl",
     ],
@@ -623,7 +719,25 @@ package(
     description = "Blowfish file encryption utility",
     homepage = "https://bcrypt.sourceforge.net/",
     license = "BSD-2-Clause",
-    make_args = [],
+    src_compile = """
+# bcrypt Makefile hardcodes CFLAGS; pass dep include/lib paths explicitly
+_ZL=""
+IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
+for _dep in "${_DEP_ARRAY[@]}"; do
+    for _inc in "$_dep/usr/include" "$_dep/include"; do
+        [ -d "$_inc" ] && _ZL="$_ZL -I$_inc"
+    done
+    for _lib in "$_dep/usr/lib64" "$_dep/usr/lib"; do
+        [ -d "$_lib" ] && _ZL="$_ZL -L$_lib"
+    done
+done
+make CC="$CC" CFLAGS="$CFLAGS $_ZL" LDFLAGS="$LDFLAGS $_ZL -lz"
+""",
+    src_install = """
+mkdir -p "$OUT/usr/bin" "$OUT/usr/share/man/man1"
+cp bcrypt "$OUT/usr/bin/"
+cp bcrypt.1 "$OUT/usr/share/man/man1/" || true
+""",
     deps = [
         "//packages/linux/core/zlib:zlib",
     ],
@@ -636,7 +750,6 @@ package(
 package(
     name = "libp11",
     build_rule = "autotools",
-    skip_configure = True,
     url = "https://github.com/OpenSC/libp11/releases/download/libp11-0.4.12/libp11-0.4.12.tar.gz",
 
     sha256 = "1e1a2533b3fcc45fde4da64c9c00261b1047f14c3f911377ebd1b147b3321cfd",
@@ -663,6 +776,11 @@ package(
     description = "Automated decryption framework",
     homepage = "https://github.com/latchset/clevis",
     license = "GPL-3.0+",
+    pre_configure_cmds = ["""
+# Fix missing OLD_CRYPTSETUP config entry in meson test scripts
+# The meson.build checks for OLD_CRYPTSETUP in configuration data but never sets it
+sed -i "s/conf.get('OLD_CRYPTSETUP')/false/" src/luks/tests/meson.build || true
+"""],
     configure_args = [],
     deps = [
         ":jose",
@@ -699,7 +817,6 @@ package(
 package(
     name = "jansson",
     build_rule = "autotools",
-    skip_configure = True,
     url = "https://github.com/akheron/jansson/releases/download/v2.14/jansson-2.14.tar.gz",
 
     sha256 = "5798d010e41cf8d76b66236cfb2f2543c8d082181d16bc3085ab49538d4b9929",

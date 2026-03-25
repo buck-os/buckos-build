@@ -10,7 +10,11 @@ package(
     homepage = "https://github.com/sdispater/tomlkit",
     license = "MIT",
     use_setup_py = True,
+    pre_configure_cmds = [
+        "cat > setup.py << 'PYEOF'\nfrom setuptools import setup, find_packages\nsetup(name='tomlkit', version='0.5.8', packages=find_packages())\nPYEOF",
+    ],
     deps = [
         "//packages/linux/lang/python:python",
+        "//packages/linux/dev-libs/python/setuptools:setuptools",
     ],
 )
