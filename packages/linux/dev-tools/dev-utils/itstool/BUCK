@@ -14,12 +14,18 @@ package(
     install_script = """
 cd "$SRCS"
 
-# itstool is a Python script with autotools
-./configure --prefix=/usr
-make -j${MAKEOPTS:-$(nproc)}
-make DESTDIR="$OUT" install
+# Skip configure (needs python libxml2 at configure time) and install manually
+mkdir -p "$OUT/usr/bin" "$OUT/usr/share/itstool"
+
+# Install the main script
+sed 's|@PYTHON@|/usr/bin/python3|g; s|@prefix@|/usr|g; s|@datadir@|/usr/share|g; s|@pkgdatadir@|/usr/share/itstool|g; s|@PACKAGE_VERSION@|2.0.7|g' itstool.in > "$OUT/usr/bin/itstool"
+chmod +x "$OUT/usr/bin/itstool"
+
+# Install data files
+cp -r its/*.its "$OUT/usr/share/itstool/" 2>/dev/null || true
 """,
     deps = [
         "//packages/linux/lang/python:python",
+        "//packages/linux/system/libs/data/libxml2:libxml2",
     ],
 )

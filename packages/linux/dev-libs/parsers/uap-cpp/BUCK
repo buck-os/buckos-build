@@ -12,10 +12,14 @@ package(
     configure_args = [
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_TESTING=OFF",
+        "-DCMAKE_CXX_STANDARD=17",
     ],
     # Fix missing cstdint include in SnippetIndex.h for GCC 14+
     pre_configure_cmds = [
         "sed -i '1s/^/#include <cstdint>\\n/' internal/SnippetIndex.h || true",
+        "sed -i '/add_executable.*Tests/,/target_link_libraries.*Tests/d' CMakeLists.txt || true",
+        "sed -i '/UaParserTest/d' CMakeLists.txt || true",
+        "sed -i '/GTest/d' CMakeLists.txt || true",
     ],
     deps = [
         "//packages/linux/dev-libs/text/re2:re2",

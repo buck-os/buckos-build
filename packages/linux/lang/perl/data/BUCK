@@ -108,6 +108,10 @@ package(
     description = "A perl module for parsing XML documents",
     homepage = "https://metacpan.org/pod/XML::Parser",
     license = "Artistic-1.0-Perl OR GPL-1.0-or-later",
+    configure_args = [
+        "EXPATLIBPATH=${SYSROOT}/usr/lib64",
+        "EXPATINCPATH=${SYSROOT}/usr/include",
+    ],
     deps = [
         "//packages/linux/lang/perl:perl",
         "//packages/linux/system/libs/data/expat:expat",
