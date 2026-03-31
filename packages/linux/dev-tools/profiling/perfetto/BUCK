@@ -3,7 +3,7 @@ load("//defs:package.bzl", "package")
 # Perfetto - System profiling, app tracing and trace analysis
 
 package(
-    build_rule = "cmake",
+    build_rule = "binary",
     name = "perfetto",
     version = "46.0",
     url = "https://github.com/google/perfetto/archive/refs/tags/v46.0.tar.gz",
@@ -14,16 +14,15 @@ package(
     deps = [
         "//packages/linux/core/zlib:zlib",
     ],
-    source_subdir = "sdk",
-    configure_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DPERFETTO_BUILD_SDK_ONLY=ON",
-    ],
-    pre_configure_cmds = ["""
-# Perfetto SDK has a CMakeLists.txt in sdk/ subdirectory
-# Create a minimal CMakeLists.txt at root if missing
-if [ ! -f CMakeLists.txt ] && [ -f sdk/CMakeLists.txt ]; then
-    cp sdk/CMakeLists.txt CMakeLists.txt
-fi
-"""],
+    install_script = """
+cd "$SRCS"
+
+# Build the perfetto SDK as a shared library
+$CXX $CXXFLAGS -std=c++17 -fPIC -DPERFETTO_SDK_IMPL -I sdk -c sdk/perfetto.cc -o perfetto.o
+$CXX $LDFLAGS -shared -o libperfetto.so perfetto.o -lpthread
+
+mkdir -p "$OUT/usr/lib64" "$OUT/usr/include"
+cp libperfetto.so "$OUT/usr/lib64/"
+cp sdk/perfetto.h "$OUT/usr/include/"
+""",
 )
