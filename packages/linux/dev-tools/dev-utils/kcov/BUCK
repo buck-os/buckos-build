@@ -19,12 +19,12 @@ package(
         "-DCMAKE_CXX_FLAGS=-Wno-error -Wno-deprecated-declarations",
         "-DCMAKE_SHARED_LINKER_FLAGS=-shared",
     ],
-    # Remove -Werror from CMakeLists.txt which overrides -Wno-error
+    # Remove -Werror and disable BFD (headers not available in cross-compilation)
     pre_configure_cmds = [
         "sed -i 's/-Werror//g' CMakeLists.txt src/CMakeLists.txt || true",
+        "sed -i 's/find_package.*Bfd.*/set(LIBBFD_FOUND FALSE)/' src/CMakeLists.txt || true",
     ],
     deps = [
-        "//packages/linux/lang/binutils:binutils",
         "//packages/linux/system/libs/elfutils:elfutils",
         "//packages/linux/system/libs/network/curl:curl",
     ],

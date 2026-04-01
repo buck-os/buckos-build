@@ -97,43 +97,6 @@ package(
     ],
 )
 
-# XML::Parser - A perl module for parsing XML documents
-package(
-    build_rule = "perl",
-    name = "xml-parser",
-    url = "https://cpan.metacpan.org/authors/id/T/TO/TODDR/XML-Parser-2.47.tar.gz",
-
-    sha256 = "ad4aae643ec784f489b956abe952432871a622d4e2b5c619e8855accbfc4d1d8",
-    version = "2.47",
-    description = "A perl module for parsing XML documents",
-    homepage = "https://metacpan.org/pod/XML::Parser",
-    license = "Artistic-1.0-Perl OR GPL-1.0-or-later",
-    configure_args = [
-        "EXPATLIBPATH=${SYSROOT}/usr/lib64",
-        "EXPATINCPATH=${SYSROOT}/usr/include",
-    ],
-    deps = [
-        "//packages/linux/lang/perl:perl",
-        "//packages/linux/system/libs/data/expat:expat",
-    ],
-)
-
-# XML::Twig - A perl module for processing huge XML documents in tree mode
-package(
-    build_rule = "perl",
-    name = "xml-twig",
-    url = "https://cpan.metacpan.org/authors/id/M/MI/MIROD/XML-Twig-3.52.tar.gz",
-
-    sha256 = "fef75826c24f2b877d0a0d2645212fc4fb9756ed4d2711614ac15c497e8680ad",
-    version = "3.52",
-    description = "A perl module for processing huge XML documents",
-    homepage = "https://metacpan.org/pod/XML::Twig",
-    license = "Artistic-1.0-Perl OR GPL-1.0-or-later",
-    deps = [
-        "//packages/linux/lang/perl:perl",
-        ":xml-parser",
-    ],
-)
 
 # Data::Dumper - stringified perl data structures
 package(
