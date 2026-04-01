@@ -1,0 +1,52 @@
+load("//defs:package.bzl", "package")
+
+# =============================================================================
+# net-tools - Traditional network utilities (ifconfig, netstat, route)
+# =============================================================================
+
+package(
+    name = "net-tools",
+    build_rule = "autotools",
+    skip_configure = True,
+    version = "2.10",
+    url = "https://github.com/ecki/net-tools/archive/refs/tags/v2.10.tar.gz",
+    sha256 = "8e186f65f0ff304989b3dc8b0067c3a07d36ae777da60667bdd6ccb2730908d2",
+    use_configure = {
+        "nis": ("--enable-nis", "--disable-nis"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "static": ("--enable-static", "--disable-static"),
+    },
+
+    deps = [],
+
+    # The configure.sh is interactive, so we bypass it with pre-generated config
+    pre_build_cmds = ["""
+cat > config.h << 'CONFEOF'
+#define HAVE_AFUNIX 1
+#define HAVE_AFINET 1
+#define HAVE_AFINET6 1
+#define HAVE_HWETHER 1
+#define HAVE_HWLOOPBACK 1
+#define HAVE_FW_MASQUERADE 1
+#define HAVE_IP_TOOLS 1
+#define HAVE_MII 1
+#define NLS_LANGDIR "/usr/share/locale"
+#define I18N 0
+CONFEOF
+cat > config.make << 'MAKEEOF'
+HAVE_AFUNIX=1
+HAVE_AFINET=1
+HAVE_AFINET6=1
+HAVE_HWETHER=1
+HAVE_HWLOOPBACK=1
+HAVE_FW_MASQUERADE=1
+HAVE_IP_TOOLS=1
+HAVE_MII=1
+I18N=0
+MAKEEOF
+"""],
+
+    description = "Traditional network utilities (ifconfig, netstat, route)",
+    homepage = "https://sourceforge.net/projects/net-tools/",
+    license = "GPL-2.0",
+)

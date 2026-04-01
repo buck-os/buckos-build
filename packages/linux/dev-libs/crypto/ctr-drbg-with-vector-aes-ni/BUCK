@@ -1,0 +1,27 @@
+load("//defs:package.bzl", "package")
+
+package(
+    name = "ctr-drbg-with-vector-aes-ni",
+    build_rule = "make",
+    skip_configure = True,
+    version = "20231015",
+    url = "https://github.com/aws-samples/ctr-drbg-with-vector-aes-ni/archive/dc6e4ebae380a0f3ea708dfc87bc0a27af03e189.tar.gz",
+    sha256 = "46288595b050eec4456350625566037dee78ef481254c78a5dbd5b8ac1b9ec57",
+    description = "CTR DRBG implementation using Vector AES-NI instructions",
+    homepage = "https://github.com/aws-samples/ctr-drbg-with-vector-aes-ni",
+    license = "Apache-2.0",
+    deps = [],
+    src_compile = """
+$CC $CFLAGS -c -m64 -maes -mavx2 -msse2 -std=c99 -fPIC -I. src/aes.c -o aes.o
+$CC $CFLAGS -c -m64 -maes -mavx2 -msse2 -std=c99 -fPIC -I. src/ctr_drbg.c -o ctr_drbg.o
+$CC $CFLAGS -c -m64 -maes -mavx2 -msse2 -std=c99 -fPIC -I. src/vaes256_key_expansion.S -o vaes256_key_expansion.o
+$AR rcs libctr_drbg.a aes.o ctr_drbg.o vaes256_key_expansion.o
+""",
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/include/ctr-drbg
+cp src/aes.h src/ctr_drbg.h src/defs.h $INSTALL_DIR/usr/include/ctr-drbg/
+
+mkdir -p $INSTALL_DIR/usr/lib64
+cp libctr_drbg.a $INSTALL_DIR/usr/lib64/
+""",
+)

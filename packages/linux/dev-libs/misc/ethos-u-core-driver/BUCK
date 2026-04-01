@@ -1,0 +1,51 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cmake",
+    name = "ethos-u-core-driver",
+    version = "23.02",
+    # Note: mlplatform.org moved to GitLab
+    url = "https://gitlab.arm.com/artificial-intelligence/ethos-u/ethos-u-core-driver/-/archive/23.02/ethos-u-core-driver-23.02.tar.gz",
+    sha256 = "baa6a40212eb3bbe5b471c5da0856ca350b8a418296ddcd07c8d136c4029024c",
+    description = "Arm Ethos-U NPU core driver",
+    homepage = "https://gitlab.arm.com/artificial-intelligence/ethos-u/ethos-u-core-driver",
+    license = "Apache-2.0",
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DETHOSU_LOG_SEVERITY=warning",
+        "-DETHOSU_TARGET_NPU_CONFIG=ethos-u55-128",
+        "-DCMSIS_PATH=${CMAKE_CURRENT_SOURCE_DIR}/_cmsis_stubs",
+        "-DCMAKE_C_FLAGS=-Wno-error=implicit-function-declaration -Wno-error=pointer-to-int-cast -Wno-error",
+    ],
+    # Provide stub CMSIS headers since this is ARM-specific and we build for x86_64
+    pre_configure_cmds = ["""
+mkdir -p _cmsis_stubs/CMSIS/Core/Include
+cat > _cmsis_stubs/CMSIS/Core/Include/cmsis_compiler.h << 'STUBEOF'
+/* stub cmsis_compiler.h for non-ARM builds */
+#ifndef CMSIS_COMPILER_H
+#define CMSIS_COMPILER_H
+#define __STATIC_FORCEINLINE static inline __attribute__((always_inline))
+#define __STATIC_INLINE static inline
+#define __WEAK __attribute__((weak))
+#define __PACKED __attribute__((packed))
+#define __PACKED_STRUCT struct __attribute__((packed))
+#define __ALIGNED(x) __attribute__((aligned(x)))
+#define __ASM __asm
+#define __VOLATILE volatile
+/* ARM intrinsic stubs for x86_64 builds */
+#define __SEV() do {} while(0)
+#define __WFE() do {} while(0)
+#define __WFI() do {} while(0)
+#define __NOP() do {} while(0)
+#define __DSB() do {} while(0)
+#define __ISB() do {} while(0)
+#define __DMB() do {} while(0)
+#endif
+STUBEOF
+# Also create it at the top level for direct includes
+cp _cmsis_stubs/CMSIS/Core/Include/cmsis_compiler.h _cmsis_stubs/cmsis_compiler.h
+# Patch CMakeLists to add the stub include directory directly
+sed -i '/target_include_directories/a\\    target_include_directories(ethosu_core_driver PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/_cmsis_stubs/CMSIS/Core/Include ${CMAKE_CURRENT_SOURCE_DIR}/_cmsis_stubs)' CMakeLists.txt || true
+"""],
+    deps = [],
+)

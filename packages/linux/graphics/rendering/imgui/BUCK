@@ -1,0 +1,23 @@
+load("//defs:package.bzl", "package")
+
+# Dear ImGui - Bloat-free Graphical User interface for C++
+
+package(
+    name = "imgui",
+    build_rule = "binary",
+    version = "1.91.0",
+    url = "https://github.com/ocornut/imgui/archive/refs/tags/v1.91.0.tar.gz",
+    sha256 = "6e62c87252e6b3725ba478a1c04dc604aa0aaeec78fedcf4011f1e52548f4cc9",
+    description = "Bloat-free Graphical User interface for C++ with minimal dependencies",
+    homepage = "https://github.com/ocornut/imgui",
+    license = "MIT",
+    deps = [],
+    install_script = """
+mkdir -p $OUT/usr/include/imgui
+cp *.h $OUT/usr/include/imgui/
+cp *.cpp $OUT/usr/include/imgui/
+mkdir -p $OUT/usr/include/imgui/backends
+cp backends/*.h $OUT/usr/include/imgui/backends/
+cp backends/*.cpp $OUT/usr/include/imgui/backends/
+""",
+)

@@ -1,0 +1,36 @@
+load("//defs:package.bzl", "package")
+
+# dcron - Dillon's lightweight cron daemon
+# USE flags: minimal (dcron is inherently minimal, few options)
+
+package(
+    name = "dcron",
+    build_rule = "autotools",
+    skip_configure = True,
+    version = "4.5",
+    url = "https://www.jimpryor.net/linux/releases/dcron-4.5.tar.gz",
+    sha256 = "9e50edb6f5bd8153b16bad05087d985e5153ce45cc01ae77e7f842213fb4a824",
+    description = "Dillon's lightweight cron daemon",
+    homepage = "https://www.jimpryor.net/linux/dcron.html",
+    license = "GPL-2",
+    make_args = [
+        "PREFIX=/usr",
+        "CRONTAB_GROUP=root",
+    ],
+    post_install_cmds = ["""\
+mkdir -p "$DESTDIR/usr/sbin" "$DESTDIR/usr/bin"
+install -m0700 crond "$DESTDIR/usr/sbin/crond"
+install -m0755 crontab "$DESTDIR/usr/bin/crontab"
+mkdir -p "$DESTDIR/usr/lib/systemd/system"
+if [ -f extra/crond.service ]; then
+    install -m0644 extra/crond.service "$DESTDIR/usr/lib/systemd/system/crond.service"
+fi
+if [ -f extra/crontab.service ]; then
+    install -m0644 extra/crontab.service "$DESTDIR/usr/lib/systemd/system/crontab.service"
+fi
+mkdir -p "$DESTDIR/etc/cron.d"
+mkdir -p "$DESTDIR/var/spool/cron/crontabs"
+mkdir -p "$DESTDIR/var/spool/cron/cronstamps"
+"""],
+    deps = [],
+)

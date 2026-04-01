@@ -1,0 +1,23 @@
+load("//defs:package.bzl", "package")
+
+# sol2 - C++ bindings for Lua
+
+package(
+    build_rule = "cmake",
+    name = "sol2",
+    version = "3.3.0",
+    url = "https://github.com/ThePhD/sol2/archive/refs/tags/v3.3.0.tar.gz",
+    sha256 = "b82c5de030e18cb2bcbcefcd5f45afd526920c517a96413f0b59b4332d752a1e",
+    description = "C++ bindings for Lua",
+    homepage = "https://sol2.rtfd.io/",
+    license = "MIT",
+    deps = [
+        "//packages/linux/lang/lua:lua",
+    ],
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DSOL2_BUILD_LUA=OFF",
+        "-DSOL2_TESTS=OFF",
+        "-DSOL2_EXAMPLES=OFF",
+    ],
+)

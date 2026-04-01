@@ -18,31 +18,38 @@ filegroup(
         "//packages/linux/desktop/wayland-utilities/swaylock-effects:swaylock-effects",
         "//packages/linux/desktop/wayland-utilities/swayidle:swayidle",
         "//packages/linux/desktop/wayland-utilities/swaybg:swaybg",
-        "//packages/linux/desktop/wayland-utilities/swaync:swaync",
+        # swaync disabled - needs libhandy-1 (not packaged)
+        # "//packages/linux/desktop/wayland-utilities/swaync:swaync",
         "//packages/linux/desktop/wayland-utilities/kanshi:kanshi",
         "//packages/linux/desktop/wayland-utilities/wdisplays:wdisplays",
         "//packages/linux/desktop/wayland-utilities/grim:grim",
         "//packages/linux/desktop/wayland-utilities/slurp:slurp",
-        "//packages/linux/desktop/wayland-utilities/wf-recorder:wf-recorder",
-        "//packages/linux/desktop/wayland-utilities/wl-mirror:wl-mirror",
-        "//packages/linux/desktop/wayland-utilities/satty:satty",
+        # wf-recorder disabled - needs ffmpeg/libavutil
+        # "//packages/linux/desktop/wayland-utilities/wf-recorder:wf-recorder",
+        # wl-mirror disabled - missing deps
+        # satty disabled - Rust/cargo build issues
+        # "//packages/linux/desktop/wayland-utilities/satty:satty",
         "//packages/linux/desktop/wayland-utilities/swappy:swappy",
-        "//packages/linux/desktop/wayland-utilities/mako:mako",
+        # mako disabled - missing deps
         "//packages/linux/desktop/wayland-utilities/wofi:wofi",
         "//packages/linux/desktop/wayland-utilities/tofi:tofi",
-        "//packages/linux/desktop/wayland-utilities/bemenu:bemenu",
+        # bemenu disabled - missing deps
         "//packages/linux/desktop/wayland-utilities/wtype:wtype",
         "//packages/linux/desktop/wayland-utilities/ydotool:ydotool",
         "//packages/linux/desktop/wayland-utilities/waybar:waybar",
-        "//packages/linux/desktop/wayland-utilities/eww:eww",
+        # eww disabled - Rust/cargo build issues
+        # "//packages/linux/desktop/wayland-utilities/eww:eww",
         "//packages/linux/desktop/wayland-utilities/wlsunset:wlsunset",
-        "//packages/linux/desktop/wayland-utilities/gammastep:gammastep",
+        # gammastep disabled - intltool/XML::Parser not finding perl modules
+        # "//packages/linux/desktop/wayland-utilities/gammastep:gammastep",
         "//packages/linux/desktop/wayland-utilities/waypaper:waypaper",
-        "//packages/linux/desktop/wayland-utilities/hyprpaper:hyprpaper",
-        "//packages/linux/desktop/wayland-utilities/mpvpaper:mpvpaper",
+        # hyprpaper disabled - missing deps
+        # mpvpaper disabled - vdpau can't find X11/Xlib.h
+        # "//packages/linux/desktop/wayland-utilities/mpvpaper:mpvpaper",
         "//packages/linux/desktop/wayland-utilities/wob:wob",
-        "//packages/linux/desktop/wayland-utilities/hyprpicker:hyprpicker",
-        "//packages/linux/desktop/wayland-utilities/wlopm:wlopm",
+        # hyprpicker disabled - missing deps
+        # wlopm disabled - package not restored
+        # "//packages/linux/desktop/wayland-utilities/wlopm:wlopm",
         "//packages/linux/desktop/wayland-utilities/wayland-utils:wayland-utils",
         # wlprop disabled - repository no longer exists
     ],
@@ -68,7 +75,8 @@ filegroup(
         "//packages/linux/desktop/wayland-utilities/swaylock-effects:swaylock-effects",
         "//packages/linux/desktop/wayland-utilities/swayidle:swayidle",
         "//packages/linux/desktop/wayland-utilities/swaybg:swaybg",
-        "//packages/linux/desktop/wayland-utilities/swaync:swaync",
+        # swaync disabled - needs libhandy-1 (not packaged)
+        # "//packages/linux/desktop/wayland-utilities/swaync:swaync",
     ],
     default_target_platform = "//platforms:linux-target",
 )
@@ -89,9 +97,11 @@ filegroup(
     srcs = [
         "//packages/linux/desktop/wayland-utilities/grim:grim",
         "//packages/linux/desktop/wayland-utilities/slurp:slurp",
-        "//packages/linux/desktop/wayland-utilities/wf-recorder:wf-recorder",
-        "//packages/linux/desktop/wayland-utilities/wl-mirror:wl-mirror",
-        "//packages/linux/desktop/wayland-utilities/satty:satty",
+        # wf-recorder disabled - needs ffmpeg/libavutil
+        # "//packages/linux/desktop/wayland-utilities/wf-recorder:wf-recorder",
+        # wl-mirror disabled - missing deps
+        # satty disabled - Rust/cargo build issues
+        # "//packages/linux/desktop/wayland-utilities/satty:satty",
         "//packages/linux/desktop/wayland-utilities/swappy:swappy",
     ],
     default_target_platform = "//platforms:linux-target",
@@ -101,8 +111,9 @@ filegroup(
 filegroup(
     name = "notification",
     srcs = [
-        "//packages/linux/desktop/wayland-utilities/mako:mako",
-        "//packages/linux/desktop/wayland-utilities/swaync:swaync",
+        # mako disabled - missing deps
+        # swaync disabled - needs libhandy-1 (not packaged)
+        # "//packages/linux/desktop/wayland-utilities/swaync:swaync",
     ],
     default_target_platform = "//platforms:linux-target",
 )
@@ -113,7 +124,7 @@ filegroup(
     srcs = [
         "//packages/linux/desktop/wayland-utilities/wofi:wofi",
         "//packages/linux/desktop/wayland-utilities/tofi:tofi",
-        "//packages/linux/desktop/wayland-utilities/bemenu:bemenu",
+        # bemenu disabled - missing deps
     ],
     default_target_platform = "//platforms:linux-target",
 )
@@ -133,7 +144,8 @@ filegroup(
     name = "wayland-bars",
     srcs = [
         "//packages/linux/desktop/wayland-utilities/waybar:waybar",
-        "//packages/linux/desktop/wayland-utilities/eww:eww",
+        # eww disabled - Rust/cargo build issues
+        # "//packages/linux/desktop/wayland-utilities/eww:eww",
     ],
     default_target_platform = "//platforms:linux-target",
 )
@@ -143,8 +155,9 @@ filegroup(
     name = "color",
     srcs = [
         "//packages/linux/desktop/wayland-utilities/wlsunset:wlsunset",
-        "//packages/linux/desktop/wayland-utilities/gammastep:gammastep",
-        "//packages/linux/desktop/wayland-utilities/hyprpicker:hyprpicker",
+        # gammastep disabled - intltool/XML::Parser not finding perl modules
+        # "//packages/linux/desktop/wayland-utilities/gammastep:gammastep",
+        # hyprpicker disabled - missing deps
     ],
     default_target_platform = "//platforms:linux-target",
 )
@@ -155,8 +168,9 @@ filegroup(
     srcs = [
         "//packages/linux/desktop/wayland-utilities/swaybg:swaybg",
         "//packages/linux/desktop/wayland-utilities/waypaper:waypaper",
-        "//packages/linux/desktop/wayland-utilities/hyprpaper:hyprpaper",
-        "//packages/linux/desktop/wayland-utilities/mpvpaper:mpvpaper",
+        # hyprpaper disabled - missing deps
+        # mpvpaper disabled - vdpau can't find X11/Xlib.h
+        # "//packages/linux/desktop/wayland-utilities/mpvpaper:mpvpaper",
     ],
     default_target_platform = "//platforms:linux-target",
 )
@@ -180,7 +194,7 @@ filegroup(
         "//packages/linux/desktop/wayland-utilities/swaybg:swaybg",
         "//packages/linux/desktop/wayland-utilities/grim:grim",
         "//packages/linux/desktop/wayland-utilities/slurp:slurp",
-        "//packages/linux/desktop/wayland-utilities/mako:mako",
+        # mako disabled - missing deps
         "//packages/linux/desktop/wayland-utilities/wofi:wofi",
         "//packages/linux/desktop/wayland-utilities/waybar:waybar",
     ],
@@ -194,12 +208,13 @@ filegroup(
         "//packages/linux/desktop/wayland-utilities/swaylock:swaylock",
         "//packages/linux/desktop/wayland-utilities/swayidle:swayidle",
         "//packages/linux/desktop/wayland-utilities/swaybg:swaybg",
-        "//packages/linux/desktop/wayland-utilities/swaync:swaync",
+        # swaync disabled - needs libhandy-1 (not packaged)
+        # "//packages/linux/desktop/wayland-utilities/swaync:swaync",
         "//packages/linux/desktop/wayland-utilities/waybar:waybar",
         "//packages/linux/desktop/wayland-utilities/wofi:wofi",
         "//packages/linux/desktop/wayland-utilities/grim:grim",
         "//packages/linux/desktop/wayland-utilities/slurp:slurp",
-        "//packages/linux/desktop/wayland-utilities/mako:mako",
+        # mako disabled - missing deps
         "//packages/linux/desktop/wayland-utilities/wl-clipboard:wl-clipboard",
     ],
     default_target_platform = "//platforms:linux-target",
@@ -209,13 +224,13 @@ filegroup(
 filegroup(
     name = "hyprland-companions",
     srcs = [
-        "//packages/linux/desktop/wayland-utilities/hyprpaper:hyprpaper",
-        "//packages/linux/desktop/wayland-utilities/hyprpicker:hyprpicker",
+        # hyprpaper disabled - missing deps
+        # hyprpicker disabled - missing deps
         "//packages/linux/desktop/wayland-utilities/waybar:waybar",
         "//packages/linux/desktop/wayland-utilities/wofi:wofi",
         "//packages/linux/desktop/wayland-utilities/grim:grim",
         "//packages/linux/desktop/wayland-utilities/slurp:slurp",
-        "//packages/linux/desktop/wayland-utilities/mako:mako",
+        # mako disabled - missing deps
         "//packages/linux/desktop/wayland-utilities/wl-clipboard:wl-clipboard",
         "//packages/linux/desktop/wayland-utilities/swaylock:swaylock",
         "//packages/linux/desktop/wayland-utilities/swayidle:swayidle",
@@ -227,7 +242,8 @@ filegroup(
 filegroup(
     name = "system",
     srcs = [
-        "//packages/linux/desktop/wayland-utilities/wlopm:wlopm",
+        # wlopm disabled - package not restored
+        # "//packages/linux/desktop/wayland-utilities/wlopm:wlopm",
         "//packages/linux/desktop/wayland-utilities/wayland-utils:wayland-utils",
         # wlprop disabled - repository no longer exists
     ],

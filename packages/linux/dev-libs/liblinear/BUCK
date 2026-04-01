@@ -1,0 +1,35 @@
+load("//defs:package.bzl", "package")
+
+# liblinear - A Library for Large Linear Classification
+# Uses Makefile, no configure step. Install headers + libraries manually.
+package(
+    name = "liblinear",
+    build_rule = "binary",
+    version = "1.94",
+    url = "https://github.com/cjlin1/liblinear/archive/refs/tags/v194.tar.gz",
+    sha256 = "cce039e66cb82c77e7e816c42f2c1808fcb8df6a1050c94999c419cd20be9f55",
+    description = "A Library for Large Linear Classification",
+    homepage = "https://github.com/cjlin1/liblinear",
+    license = "BSD-3-Clause",
+    install_script = """
+cd "$SRCS"
+
+# Build shared library manually to avoid Makefile AR issues
+$CXX $CXXFLAGS -fPIC -c linear.cpp -o linear.o
+$CXX $CXXFLAGS -fPIC -c tron.cpp -o tron.o
+$CC $CFLAGS -fPIC -c blas/daxpy.c -o daxpy.o
+$CC $CFLAGS -fPIC -c blas/ddot.c -o ddot.o
+$CC $CFLAGS -fPIC -c blas/dnrm2.c -o dnrm2.o
+$CC $CFLAGS -fPIC -c blas/dscal.c -o dscal.o
+$CXX -shared $LDFLAGS -o liblinear.so.5 linear.o tron.o daxpy.o ddot.o dnrm2.o dscal.o
+ln -sf liblinear.so.5 liblinear.so
+
+# Also build static library
+$AR rcs liblinear.a linear.o tron.o daxpy.o ddot.o dnrm2.o dscal.o
+
+mkdir -p "$OUT/usr/lib64" "$OUT/usr/include"
+cp -a linear.h "$OUT/usr/include/"
+cp -a liblinear.so* "$OUT/usr/lib64/" 2>/dev/null || true
+cp -a liblinear.a "$OUT/usr/lib64/" 2>/dev/null || true
+""",
+)

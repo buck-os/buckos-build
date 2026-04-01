@@ -1,0 +1,30 @@
+load("//defs:package.bzl", "package")
+
+# DynamoRIO - Dynamic Binary Instrumentation Framework
+#
+# DynamoRIO is a runtime code manipulation system that supports code
+# transformations on any part of a program while it executes. It provides
+# a powerful API for building dynamic analysis tools, profilers, tracers,
+# optimizers, and other instrumentation frameworks.
+
+package(
+    build_rule = "binary",
+    name = "dynamorio",
+    version = "11.0.0",
+    url = "https://github.com/DynamoRIO/dynamorio/releases/download/release_11.0.0/DynamoRIO-Linux-11.0.0.tar.gz",
+    sha256 = "6bf624390c31483751de61ed858a2769464fc949721688c34bd0cfce0e2ce2df",
+    description = "Dynamic binary instrumentation framework for building analysis and profiling tools",
+    homepage = "https://dynamorio.org/",
+    license = "BSD-3-Clause",
+    deps = [],
+    install_script = """
+# Pre-built binary release - just install the files
+mkdir -p "$OUT/usr/lib64/dynamorio"
+mkdir -p "$OUT/usr/include/dynamorio"
+mkdir -p "$OUT/usr/bin"
+cp -r lib64/* "$OUT/usr/lib64/dynamorio/" 2>/dev/null || cp -r lib/* "$OUT/usr/lib64/dynamorio/" 2>/dev/null || true
+cp -r include/* "$OUT/usr/include/dynamorio/" 2>/dev/null || true
+cp -r bin64/* "$OUT/usr/bin/" 2>/dev/null || cp -r bin/* "$OUT/usr/bin/" 2>/dev/null || true
+cp -r cmake "$OUT/usr/lib64/dynamorio/" 2>/dev/null || true
+""",
+)

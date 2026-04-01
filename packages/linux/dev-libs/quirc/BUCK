@@ -1,0 +1,25 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "binary",
+    name = "quirc",
+    version = "1.0",
+    url = "https://github.com/dlbeer/quirc/archive/v1.0.tar.gz",
+    sha256 = "91bba64ffca5b84aa953b88d5f5ccc9507275345c200fd581dca24fbf66b3706",
+    description = "QR code recognition library",
+    homepage = "https://github.com/dlbeer/quirc",
+    license = "ISC",
+    deps = [],
+    install_script = """
+# Build the library directly
+$CC -c -O2 -fPIC $CFLAGS -Ilib lib/decode.c -o decode.o
+$CC -c -O2 -fPIC $CFLAGS -Ilib lib/identify.c -o identify.o
+$CC -c -O2 -fPIC $CFLAGS -Ilib lib/quirc.c -o quirc.o
+$CC -c -O2 -fPIC $CFLAGS -Ilib lib/version_db.c -o version_db.o
+$AR rcs libquirc.a decode.o identify.o quirc.o version_db.o
+
+mkdir -p "$OUT/usr/lib64" "$OUT/usr/include"
+install -m644 libquirc.a "$OUT/usr/lib64/"
+install -m644 lib/quirc.h "$OUT/usr/include/"
+""",
+)

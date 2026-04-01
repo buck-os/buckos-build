@@ -1,0 +1,23 @@
+load("//defs:package.bzl", "package")
+
+# wuffs - Wrangling Untrusted File Formats Safely
+# Header-only library - just install the release headers.
+package(
+    name = "wuffs",
+    build_rule = "binary",
+    version = "0.3.0",
+    url = "https://github.com/google/wuffs/archive/refs/tags/v0.3.0.tar.gz",
+    sha256 = "9604a542f212ba4320c07df3867247e240aa537a7ea7421791fc380420aa6c83",
+    description = "Wrangling Untrusted File Formats Safely - safe media codec library",
+    homepage = "https://github.com/nicholasbishop/wuffs-mirror",
+    license = "Apache-2.0",
+    deps = [],
+    install_script = """
+mkdir -p "$OUT/usr/include/wuffs"
+cd "$SRCS"
+cp release/c/*.h "$OUT/usr/include/wuffs/" 2>/dev/null || \
+cp release/c/*.c "$OUT/usr/include/wuffs/" 2>/dev/null || \
+cp *.c "$OUT/usr/include/wuffs/" 2>/dev/null || \
+cp src/*.c "$OUT/usr/include/wuffs/" 2>/dev/null || true
+""",
+)

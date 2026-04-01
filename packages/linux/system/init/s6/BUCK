@@ -1,0 +1,25 @@
+load("//defs:package.bzl", "package")
+
+# -----------------------------------------------------------------------------
+# s6 - Small and secure supervision software suite
+# -----------------------------------------------------------------------------
+
+package(
+    build_rule = "autotools",
+    name = "s6",
+    url = "https://skarnet.org/software/s6/s6-2.12.0.3.tar.gz",
+
+    sha256 = "800d31226f6c25cdd3ec0b65240f80b56ce5ec137341d0a8d154e77638e58103",
+    use_configure = {
+        "execline": ("--enable-execline", "--disable-execline"),
+    },
+    version = "2.12.0.3",
+    description = "Small and secure supervision software suite",
+    homepage = "https://skarnet.org/software/s6/",
+    license = "ISC",
+    # skarnet.org uses non-standard configure - custom src_configure phase
+    deps = [
+        "//packages/linux/system/init/skalibs:skalibs",
+        "//packages/linux/system/init/execline:execline",
+    ],
+)

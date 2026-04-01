@@ -1,0 +1,349 @@
+load("//defs:package.bzl", "package")
+
+# Directory services and enterprise authentication packages
+# Kerberos, LDAP, SASL, SSSD, and related libraries
+
+# MIT Kerberos
+package(
+    build_rule = "autotools",
+    name = "krb5",
+    build_subdir = "src",
+    url = "https://kerberos.org/dist/krb5/1.21/krb5-1.21.2.tar.gz",
+
+    sha256 = "9560941a9d843c0243a71b17a7ac6fe31c7cebb5bce3983db79e52ae7e850491",
+    version = "1.21.2",
+    description = "MIT Kerberos network authentication system",
+    homepage = "https://kerberos.org/",
+    license = "MIT",
+    configure_args = [
+        "--prefix=/usr",
+        "--sbindir=/usr/sbin",
+        "--sysconfdir=/etc",
+        "--localstatedir=/var",
+        "--libdir=/usr/lib",
+        "--enable-shared",
+        "--disable-static",
+        "--with-system-et",
+        "--with-system-ss",
+        "--with-netlib=-lresolv",
+        "--without-tcl",
+        "--enable-dns-for-realm",
+        "--with-ldap",
+        "--without-readline",
+        "--without-libedit",
+    ],
+    post_install_cmds = ["""
+        mkdir -p "$OUT/etc/krb5.conf.d"
+        mkdir -p "$OUT/var/lib/krb5kdc"
+    """, """
+        mkdir -p "$OUT/etc/openldap/schema"
+        mkdir -p "$OUT/var/lib/openldap"
+        mkdir -p "$OUT/var/run/openldap"
+    """, """
+        mkdir -p "$OUT/var/run/saslauthd"
+        mkdir -p "$OUT/etc/sasl2"
+    """, """
+        mkdir -p "$OUT/etc/sssd"
+        mkdir -p "$OUT/var/lib/sss/db"
+        mkdir -p "$OUT/var/lib/sss/mc"
+        mkdir -p "$OUT/var/lib/sss/pipes"
+        mkdir -p "$OUT/var/lib/sss/pubconf"
+        mkdir -p "$OUT/var/log/sssd"
+    """, """
+        mkdir -p "$OUT/run/nslcd"
+        mkdir -p "$OUT/etc/nslcd"
+    """],
+    deps = [
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        ":openldap",
+        ":e2fsprogs-libs",
+        "//packages/linux/core/util-linux:util-linux",
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+        "//packages/linux/dev-libs/misc/gettext:gettext",
+    ],
+)
+
+# e2fsprogs-libs (for libcom_err, needed by Kerberos)
+# Note: e2fsprogs-libs separate tarball no longer exists; use main e2fsprogs package
+package(
+    build_rule = "autotools",
+    name = "e2fsprogs-libs",
+    source = "//packages/linux/system/filesystem/native/e2fsprogs:e2fsprogs-src",
+    version = "1.47.0",
+    description = "E2fsprogs libraries (libcom_err, libss)",
+    homepage = "https://e2fsprogs.sourceforge.net/",
+    license = "GPL-2.0 AND LGPL-2.0 AND BSD-3-Clause AND MIT",
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--enable-elf-shlibs",
+        "--disable-fsck",
+        "--disable-uuidd",
+        "--disable-libblkid",
+    ],
+    deps = [
+        "//packages/linux/core/util-linux:util-linux",
+    ],
+)
+
+# OpenLDAP
+package(
+    build_rule = "autotools",
+    name = "openldap",
+    url = "https://www.openldap.org/software/download/OpenLDAP/openldap-release/openldap-2.6.7.tgz",
+
+    sha256 = "cd775f625c944ed78a3da18a03b03b08eea73c8aabc97b41bb336e9a10954930",
+    version = "2.6.7",
+    description = "Open source LDAP implementation",
+    homepage = "https://www.openldap.org/",
+    license = "OLDAP-2.8",
+    configure_args = [
+        "--prefix=/usr",
+        "--sbindir=/usr/sbin",
+        "--sysconfdir=/etc",
+        "--localstatedir=/var",
+        "--libdir=/usr/lib",
+        "--enable-slapd",
+        "--enable-crypt",
+        "--enable-modules",
+        "--enable-dynamic",
+        "--enable-backends=mod",
+        "--enable-overlays=mod",
+        "--enable-spasswd",
+        "--with-cyrus-sasl",
+        "--with-tls=openssl",
+    ],
+    deps = [
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        ":cyrus-sasl",
+    ],
+)
+
+# Cyrus SASL - Simple Authentication and Security Layer
+package(
+    build_rule = "autotools",
+    name = "cyrus-sasl",
+    url = "https://github.com/cyrusimap/cyrus-sasl/releases/download/cyrus-sasl-2.1.28/cyrus-sasl-2.1.28.tar.gz",
+
+    sha256 = "7ccfc6abd01ed67c1a0924b353e526f1b766b21f42d4562ee635a8ebfc5bb38c",
+    version = "2.1.28",
+    description = "Simple Authentication and Security Layer library",
+    homepage = "https://www.cyrusimap.org/sasl/",
+    license = "BSD-4-Clause-UC",
+    configure_args = [
+        "--prefix=/usr",
+        "--sbindir=/usr/sbin",
+        "--sysconfdir=/etc",
+        "--localstatedir=/var",
+        "--enable-shared",
+        "--disable-static",
+        "--enable-auth-sasldb",
+        "--enable-login",
+        "--enable-ntlm",
+        "--enable-plain",
+        "--enable-digest",
+        "--enable-cram",
+        "--enable-scram",
+        "--enable-gssapi",
+        "--enable-otp",
+        "--with-pam",
+        "--with-saslauthd=/var/run/saslauthd",
+        "--with-dblib=lmdb",
+        "--with-openssl",
+    ],
+    deps = [
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/system/security/linux-pam:linux-pam",
+        "//packages/linux/system/libs/database/lmdb:lmdb",
+    ],
+)
+
+# SSSD - System Security Services Daemon
+package(
+    build_rule = "autotools",
+    name = "sssd",
+    url = "https://github.com/SSSD/sssd/releases/download/2.9.4/sssd-2.9.4.tar.gz",
+
+    sha256 = "82b5ef80be47c96d518de26cfb440000f1bc6b9e3441a8393a007d21af316b18",
+    version = "2.9.4",
+    description = "System Security Services Daemon for identity and authentication",
+    homepage = "https://sssd.io/",
+    license = "GPL-3.0+",
+    configure_args = [
+        "--prefix=/usr",
+        "--sbindir=/usr/sbin",
+        "--sysconfdir=/etc",
+        "--localstatedir=/var",
+        "--libdir=/usr/lib",
+        "--datadir=/usr/share",
+        "--enable-pammoddir=/lib/security",
+        "--with-pid-path=/run",
+        "--with-ldb-lib-dir=/usr/lib/ldb",
+        "--with-krb5-plugin-path=/usr/lib/krb5/plugins/libkrb5",
+        "--enable-pac-responder",
+        "--with-syslog=journald",
+        "--without-selinux",
+        "--without-python2-bindings",
+        "--with-python3-bindings",
+    ],
+    deps = [
+        "//packages/linux/system/libs/ipc/dbus:dbus",
+        "//packages/linux/system/security/linux-pam:linux-pam",
+        ":krb5",
+        ":openldap",
+        ":cyrus-sasl",
+        ":libunistring",
+        "//packages/linux/system/libs/talloc:talloc",
+        ":tdb",
+        ":tevent",
+        "//packages/linux/system/libs/ldb:ldb",
+        ":ding-libs",
+    ],
+)
+
+# Samba libraries (tdb, tevent) needed by SSSD
+# talloc, ldb, lmdb now in system/libs/
+
+package(
+    build_rule = "autotools",
+    name = "tdb",
+    url = "https://www.samba.org/ftp/tdb/tdb-1.4.10.tar.gz",
+
+    sha256 = "02338e33c16c21c9e29571cef523e76b2b708636254f6f30c6cf195d48c62daf",
+    version = "1.4.10",
+    description = "Trivial Database library",
+    homepage = "https://tdb.samba.org/",
+    license = "LGPL-3.0+",
+    configure_args = [],
+    src_configure = """
+mkdir -p /tmp/bin
+printf '#!/bin/sh\\ncommand -v "$1"\\n' > /tmp/bin/which
+chmod +x /tmp/bin/which
+export PATH="/tmp/bin:$PATH"
+# Find libtirpc include path for rpc/rpc.h
+_TIRPC_INC=""
+_TIRPC_LIB=""
+IFS=':' read -ra _DEPS <<< "${DEP_BASE_DIRS:-}"
+for _dep in "${_DEPS[@]}"; do
+    if [ -f "$_dep/usr/include/tirpc/rpc/rpc.h" ]; then
+        _TIRPC_INC="$_dep/usr/include/tirpc"
+    fi
+    for _lib in "$_dep/usr/lib64" "$_dep/usr/lib"; do
+        if [ -f "$_lib/libtirpc.so" ]; then
+            _TIRPC_LIB="$_lib"
+        fi
+    done
+done
+if [ -n "$_TIRPC_INC" ]; then
+    export CFLAGS="$CFLAGS -I$_TIRPC_INC"
+    export LDFLAGS="$LDFLAGS ${_TIRPC_LIB:+-L$_TIRPC_LIB -Wl,-rpath-link,$_TIRPC_LIB}"
+fi
+./configure --prefix=/usr
+""",
+    src_compile = """
+mkdir -p /tmp/bin
+printf '#!/bin/sh\\ncommand -v "$1"\\n' > /tmp/bin/which
+chmod +x /tmp/bin/which
+export PATH="/tmp/bin:$PATH"
+# Find libtirpc include path for rpc/rpc.h
+IFS=':' read -ra _DEPS <<< "${DEP_BASE_DIRS:-}"
+for _dep in "${_DEPS[@]}"; do
+    if [ -f "$_dep/usr/include/tirpc/rpc/rpc.h" ]; then
+        export CFLAGS="$CFLAGS -I$_dep/usr/include/tirpc"
+        break
+    fi
+done
+make -j${MAKEOPTS:-$(nproc)}
+""",
+    deps = [
+        "//packages/linux/system/libs/ipc/libtirpc:libtirpc",
+    ],
+)
+
+package(
+    build_rule = "autotools",
+    name = "tevent",
+    url = "https://www.samba.org/ftp/tevent/tevent-0.16.1.tar.gz",
+
+    sha256 = "362971e0f32dc1905f6fe4736319c4b8348c22dc85aa6c3f690a28efe548029e",
+    version = "0.16.1",
+    description = "Event system based on talloc",
+    homepage = "https://tevent.samba.org/",
+    license = "LGPL-3.0+",
+    configure_args = [],
+    deps = [
+        "//packages/linux/system/libs/talloc:talloc",
+    ],
+)
+
+# ding-libs - SSSD helper libraries
+package(
+    build_rule = "autotools",
+    name = "ding-libs",
+    url = "https://github.com/SSSD/ding-libs/releases/download/0.6.2/ding-libs-0.6.2.tar.gz",
+
+    sha256 = "e5f07f34f5921bcb5ccccfe3751c28497879a6451cd7b395e99e24d9b5728e8d",
+    version = "0.6.2",
+    description = "SSSD helper libraries",
+    homepage = "https://github.com/SSSD/ding-libs",
+    license = "LGPL-3.0+ AND GPL-3.0+",
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--enable-shared",
+        "--disable-static",
+    ],
+    deps = [
+    ],
+)
+
+# libunistring - Unicode string library
+package(
+    build_rule = "autotools",
+    name = "libunistring",
+    url = "https://mirrors.kernel.org/gnu/libunistring/libunistring-1.2.tar.xz",
+
+    sha256 = "632bd65ed74a881ca8a0309a1001c428bd1cbd5cd7ddbf8cedcd2e65f4dcdc44",
+    version = "1.2",
+    description = "Unicode string library",
+    homepage = "https://www.gnu.org/software/libunistring/",
+    license = "GPL-2.0+ OR LGPL-3.0+",
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--enable-shared",
+        "--disable-static",
+    ],
+    deps = [
+    ],
+)
+
+# nss-pam-ldapd - LDAP client for NSS/PAM
+package(
+    build_rule = "autotools",
+    name = "nss-pam-ldapd",
+    url = "https://arthurdejong.org/nss-pam-ldapd/nss-pam-ldapd-0.9.12.tar.gz",
+
+    sha256 = "c6d661e74693cbf531a790631ca93b73f291fb23cc39465b09deb8da2bfb0e14",
+    version = "0.9.12",
+    description = "NSS and PAM module for LDAP",
+    homepage = "https://arthurdejong.org/nss-pam-ldapd/",
+    license = "LGPL-2.1+",
+    configure_args = [
+        "--prefix=/usr",
+        "--sbindir=/usr/sbin",
+        "--sysconfdir=/etc",
+        "--localstatedir=/var",
+        "--libdir=/usr/lib",
+        "--with-pam-seclib-dir=/lib/security",
+        "--with-ldap-lib=openldap",
+        "--with-nslcd-pidfile=/run/nslcd/nslcd.pid",
+        "--with-nslcd-socket=/run/nslcd/socket",
+    ],
+    deps = [
+        ":openldap",
+        "//packages/linux/system/security/linux-pam:linux-pam",
+    ],
+)

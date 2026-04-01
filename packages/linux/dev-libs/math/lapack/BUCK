@@ -1,0 +1,28 @@
+load("//defs:package.bzl", "package")
+
+# LAPACK - Linear Algebra PACKage
+
+package(
+    build_rule = "cmake",
+    name = "lapack",
+    version = "3.12.0",
+    url = "https://github.com/Reference-LAPACK/lapack/archive/refs/tags/v3.12.0.tar.gz",
+    sha256 = "eac9570f8e0ad6f30ce4b963f4f033f0f643e7c3912fc9ee6cd99120675ad48b",
+    description = "Linear Algebra PACKage - routines for solving systems of linear equations",
+    homepage = "https://www.netlib.org/lapack/",
+    license = "BSD-3-Clause",
+    deps = [],
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DBUILD_TESTING=OFF",
+    ],
+    use_configure = {
+        "cblas": ("-DCBLAS=ON", "-DCBLAS=OFF"),
+        "deprecated": ("-DENABLE_DEPRECATED=ON", "-DENABLE_DEPRECATED=OFF"),
+        "eselect-ldso": ("-DENABLE_ESELECT_LDSO=ON", "-DENABLE_ESELECT_LDSO=OFF"),
+        "flexiblas": ("-DENABLE_FLEXIBLAS=ON", "-DENABLE_FLEXIBLAS=OFF"),
+        "index64": ("-DENABLE_INDEX64=ON", "-DENABLE_INDEX64=OFF"),
+        "lapacke": ("-DLAPACKE=ON", "-DLAPACKE=OFF"),
+    },
+)

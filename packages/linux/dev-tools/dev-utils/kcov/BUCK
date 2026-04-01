@@ -1,0 +1,31 @@
+load("//defs:package.bzl", "package")
+
+# kcov - Code coverage tool
+
+package(
+    build_rule = "cmake",
+    name = "kcov",
+    version = "42",
+    url = "https://github.com/SimonKagstrom/kcov/archive/refs/tags/v42.tar.gz",
+    sha256 = "2c47d75397af248bc387f60cdd79180763e1f88f3dd71c94bb52478f8e74a1f8",
+    description = "Code coverage tool for compiled programs",
+    homepage = "https://github.com/SimonKagstrom/kcov",
+    license = "GPL-2",
+    configure_args = [
+        "-DCMAKE_INSTALL_PREFIX=/usr",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DKCOV_ENABLE_BFD=OFF",
+        "-DCMAKE_C_FLAGS=-Wno-error -Wno-deprecated-declarations",
+        "-DCMAKE_CXX_FLAGS=-Wno-error -Wno-deprecated-declarations",
+        "-DCMAKE_SHARED_LINKER_FLAGS=-shared",
+    ],
+    # Remove -Werror and disable BFD (headers not available in cross-compilation)
+    pre_configure_cmds = [
+        "sed -i 's/-Werror//g' CMakeLists.txt src/CMakeLists.txt || true",
+        "sed -i 's/find_package.*Bfd.*/set(LIBBFD_FOUND FALSE)/' src/CMakeLists.txt || true",
+    ],
+    deps = [
+        "//packages/linux/system/libs/elfutils:elfutils",
+        "//packages/linux/system/libs/network/curl:curl",
+    ],
+)

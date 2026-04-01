@@ -1,0 +1,61 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "zbar",
+    version = "0.23.93",
+    use_configure = {
+        "X": ("--with-x", "--without-x"),
+        "dbus": ("--enable-dbus", "--disable-dbus"),
+        "graphicsmagick": ("--enable-graphicsmagick", "--disable-graphicsmagick"),
+        "gtk": ("--enable-gtk", "--disable-gtk"),
+        "imagemagick": ("--enable-imagemagick", "--disable-imagemagick"),
+        "introspection": ("--enable-introspection", "--disable-introspection"),
+        "java": ("--enable-java", "--disable-java"),
+        "jpeg": ("--with-jpeg", "--without-jpeg"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "python": ("--enable-python", "--disable-python"),
+        "threads": ("--enable-threads", "--disable-threads"),
+        "v4l": ("--enable-v4l2", "--disable-v4l2"),
+        "xv": ("--enable-xv", "--disable-xv"),
+    },
+    url = "https://github.com/mchehab/zbar/archive/a549566ea11eb03622bd4458a1728ffe3f589163.tar.gz",
+    sha256 = "86817215aac09dafa7eda6495f8db1a9b8ce026f0a7a9d8af8b650db1dca999c",
+    pre_configure_cmds = ["""
+# Skip autopoint (gettext infrastructure) - NLS is disabled
+# Create minimal po/Makefile.in.in stub to satisfy automake
+mkdir -p po config
+touch po/Makefile.in.in config/mkinstalldirs 2>/dev/null || true
+# Remove AM_GNU_GETTEXT and AM_ICONV from configure.ac to avoid
+# needing gettext/iconv m4 macros during autoreconf
+sed -i 's/AM_GNU_GETTEXT/dnl AM_GNU_GETTEXT/' configure.ac
+sed -i 's/AM_ICONV/dnl AM_ICONV/' configure.ac
+autoreconf -fi
+"""],
+    configure_args = [
+        "--enable-pthread",
+        "--enable-codes=ean,code128,code39,code93,i25,codabar,databar,pdf417,qrcode,sqcode",
+        "--disable-video",
+        "--disable-nls",
+        "--without-jpeg",
+        "--without-imagemagick",
+        "--without-gtk",
+        "--without-qt",
+        "--without-qt5",
+        "--without-x",
+        "--without-dbus",
+        "--without-java",
+        "--without-npapi",
+        "--without-python",
+        "--disable-doc",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/iconv:iconv",
+        "//packages/linux/dev-libs/misc/gettext:gettext",
+    ],
+    host_deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+    ],
+)

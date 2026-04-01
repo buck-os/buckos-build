@@ -1,0 +1,24 @@
+load("//defs:package.bzl", "package")
+
+# Lutris - Open Gaming Platform
+# Unified game launcher supporting multiple gaming platforms and emulators
+
+# USE flags: See use_flags.bzl for available flags
+
+package(
+    build_rule = "python",
+    name = "lutris",
+    url = "https://github.com/lutris/lutris/archive/refs/tags/v0.5.17.tar.gz",
+
+    sha256 = "e913d0c70bcb8c29839fcc2368f0b672bc1e70d1bc2bc18e6fd50ac785261aa8",
+    version = "0.5.17",
+    description = "Open Gaming Platform for Linux",
+    homepage = "https://lutris.net/",
+    license = "GPL-3.0",
+    use_setup_py = True,
+    deps = [
+        "//packages/linux/lang/python:python",
+        "//packages/linux/dev-libs/python/setuptools:setuptools",
+        "//packages/linux/gaming/compatibility/wine:wine",
+    ],
+)

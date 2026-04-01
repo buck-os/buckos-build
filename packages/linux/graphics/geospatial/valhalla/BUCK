@@ -1,0 +1,30 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cmake",
+    name = "valhalla",
+    version = "3.5.0",
+    url = "https://github.com/valhalla/valhalla/archive/refs/tags/3.5.0.tar.gz",
+    sha256 = "b4e982667be851f34dd96b89f286eba3d646b0cf0b5eea899995c7bdd619e9c4",
+    configure_args = [
+        "-DENABLE_TOOLS=ON",
+        "-DENABLE_DATA_TOOLS=ON",
+        "-DENABLE_SERVICES=OFF",
+        "-DENABLE_HTTP=ON",
+        "-DENABLE_PYTHON_BINDINGS=OFF",
+        "-DENABLE_TESTS=OFF",
+        "-DENABLE_BENCHMARKS=OFF",
+        "-DENABLE_CCACHE=OFF",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/boost:boost",
+        "//packages/linux/dev-libs/serialization/protobuf:protobuf",
+        "//packages/linux/system/libs/network/curl:curl",
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/lang/lua:lua",
+        "//packages/linux/system/libs/database/sqlite:sqlite",
+        "//packages/linux/dev-libs/json/rapidjson:rapidjson",
+        "//packages/linux/dev-libs/serialization/protozero:protozero",
+        "//packages/linux/dev-libs/misc/date:date",
+    ],
+)

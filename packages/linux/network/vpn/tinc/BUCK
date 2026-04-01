@@ -1,0 +1,42 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "tinc",
+    version = "1.0.36",
+    url = "https://github.com/gsliepen/tinc/archive/refs/tags/release-1.0.36.tar.gz",
+    sha256 = "04d87f81335ca32f00a5be1fc94d13fae9d8ae3a65452b76df259cb44a1afa78",
+
+    deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/compression/lzo:lzo",
+    ],
+
+    pre_configure_cmds = [
+        "autoreconf -fiv",
+    ],
+
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--localstatedir=/var",
+        "--with-openssl",
+        "--with-zlib",
+        "--with-lzo",
+        "--disable-uml",
+        "--disable-upnp",
+        "--disable-vde",
+    ],
+
+    post_install_cmds = ["""
+mkdir -p "$DESTDIR/etc/tinc"
+mkdir -p "$DESTDIR/var/run/tinc"
+"""],
+
+    description = "Virtual Private Network daemon for mesh networks",
+    homepage = "https://www.tinc-vpn.org/",
+    license = "GPL-2.0",
+)

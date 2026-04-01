@@ -1,0 +1,22 @@
+load("//defs:package.bzl", "package")
+
+# ImPlot3D - 3D plotting extension for Dear ImGui
+
+package(
+    name = "implot3d",
+    build_rule = "binary",
+    version = "0.1",
+    url = "https://github.com/brenocq/implot3d/archive/refs/heads/main.tar.gz",
+    sha256 = "949671a5ecfbfa755e2aef2c9b2cde0f0570afb20ceaf7961a9dc755ec625326",
+    description = "3D plotting extension for Dear ImGui",
+    homepage = "https://github.com/brenocq/implot3d",
+    license = "MIT",
+    deps = [
+        "//packages/linux/graphics/rendering/imgui:imgui",
+    ],
+    install_script = """
+mkdir -p $OUT/usr/include/implot3d
+cp *.h $OUT/usr/include/implot3d/ 2>/dev/null || true
+cp *.cpp $OUT/usr/include/implot3d/ 2>/dev/null || true
+""",
+)

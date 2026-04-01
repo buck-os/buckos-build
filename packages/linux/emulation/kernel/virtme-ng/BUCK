@@ -1,0 +1,20 @@
+load("//defs:package.bzl", "package")
+
+# virtme-ng - Run kernels quickly inside VMs
+
+package(
+    build_rule = "python",
+    name = "virtme-ng",
+    url = "https://github.com/arighi/virtme-ng/archive/refs/tags/v1.31.tar.gz",
+    sha256 = "53e39a37781ae1495d3cca57c6a219a7602c442b7f58b207b449057fd8e13e9f",
+    version = "1.31",
+    description = "Quickly run kernels inside a virtualized snapshot of your live system",
+    homepage = "https://github.com/arighi/virtme-ng",
+    license = "GPL-2.0",
+    deps = [
+        "//packages/linux/lang/python:python",
+        "//packages/linux/dev-libs/python/setuptools:setuptools",
+        "//packages/linux/dev-libs/python/argcomplete:argcomplete",
+        "//packages/linux/emulation/hypervisors/qemu:qemu",
+    ],
+)

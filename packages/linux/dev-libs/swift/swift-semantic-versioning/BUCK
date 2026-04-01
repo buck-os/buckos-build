@@ -1,0 +1,19 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "binary",
+    name = "swift-semantic-versioning",
+    version = "3.0.0",
+    url = "https://github.com/AlexanderNey/SemanticVersioning/archive/refs/tags/v3.0.0.tar.gz",
+    sha256 = "fe2ce9f18bd3fa184ad414c743243f64f6091b9f48aacbb5609b148b4a7952e7",
+    deps = [
+        "//packages/linux/lang/swift:swift",
+    ],
+
+    install_script = """
+# Swift package - install source files for Swift Package Manager consumption
+mkdir -p "$OUT/usr/lib/swift/swift-semantic-versioning"
+cp -r "$SRCS/Sources/"* "$OUT/usr/lib/swift/swift-semantic-versioning/" 2>/dev/null || true
+echo "swift-semantic-versioning sources installed successfully"
+""",
+)

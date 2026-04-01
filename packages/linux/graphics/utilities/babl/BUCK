@@ -1,0 +1,20 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "meson",
+    name = "babl",
+    url = "https://download.gimp.org/babl/0.1/babl-0.1.108.tar.xz",
+    sha256 = "26defe9deaab7ac4d0e076cab49c2a0d6ebd0df0c31fd209925a5f07edee1475",
+    version = "0.1.108",
+    description = "Dynamic pixel format translation library",
+    homepage = "https://gegl.org/babl/",
+    license = "LGPL-3.0-or-later",
+    configure_args = [
+        "-Denable-gir=false",
+        "-Denable-vapi=false",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/glib:glib",
+        "//packages/linux/system/libs/graphics/lcms2:lcms2",
+    ],
+)

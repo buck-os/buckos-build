@@ -1,0 +1,103 @@
+load("//defs:package.bzl", "package")
+
+# AdaptiveCpp - SYCL and C++ standard parallelism implementation
+# Formerly known as hipSYCL / Open SYCL
+#
+# AdaptiveCpp is a modern platform for C++-based heterogeneous programming
+# targeting CPUs and GPUs from all major vendors (NVIDIA, AMD, Intel).
+#
+# Key features:
+# - SYCL implementation supporting many compilation flows
+# - Experimental C++ standard parallelism (parallel STL offloading)
+# - Support for CPU (x86, ARM, etc.) and GPU (NVIDIA, AMD, Intel)
+# - Single binary can offload to all supported devices
+# - Powerful LLVM JIT compiler (default compilation flow)
+# - Interoperability with vendor programming models (CUDA, HIP)
+#
+# Build requirements from CMakeLists.txt:
+# - CMake >= 3.10
+# - C++17 compiler
+# - Boost (context, fiber libraries) - REQUIRED
+# - LLVM (for clang plugin) - REQUIRED for most features
+# - OpenCL (optional, for OpenCL backend)
+# - CUDA (optional, for NVIDIA GPU support)
+# - ROCm/HIP (optional, for AMD GPU support)
+#
+# The package version is 24.10.0 based on CMakeLists.txt lines 13-15:
+# set(ACPP_VERSION_MAJOR 24)
+# set(ACPP_VERSION_MINOR 10)
+# set(ACPP_VERSION_PATCH 0)
+
+package(
+    build_rule = "cmake",
+    name = "AdaptiveCpp",
+    version = "24.10.0",
+    url = "https://github.com/AdaptiveCpp/AdaptiveCpp/archive/refs/tags/v24.10.0.tar.gz",
+    sha256 = "3bcd94eee41adea3ccc58390498ec9fd30e1548af5330a319be8ce3e034a6a0b",
+    description = "SYCL and C++ standard parallelism implementation for CPUs and GPUs",
+    homepage = "https://github.com/AdaptiveCpp/AdaptiveCpp",
+    license = "BSD-2-Clause",
+
+    # Core dependencies based on CMakeLists.txt analysis:
+    # - Boost (context, fiber) - line 101: find_package(Boost COMPONENTS context fiber)
+    # - LLVM - line 281: find_package(LLVM CONFIG) when BUILD_CLANG_PLUGIN=true
+    deps = [
+        "//packages/linux/dev-libs/boost:boost",
+        "//packages/linux/core/llvm:llvm",
+    ],
+
+    # CMake configuration arguments based on CMakeLists.txt:
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_STANDARD=17",
+
+        # Compiler feature profile (lines 116-121)
+        # Options: full, minimal, none
+        # - full: enables SSCP, stdpar, accelerated CPU
+        # - minimal: disables advanced features
+        # - none: library-only mode
+        "-DACPP_COMPILER_FEATURE_PROFILE=full",
+
+        # Build with CPU backend (always enabled - line 230)
+        "-DWITH_CPU_BACKEND=ON",
+
+        # OpenCL backend (optional - disable by default, requires OpenCL)
+        "-DWITH_OPENCL_BACKEND=OFF",
+
+        # CUDA backend (optional - disable by default, requires CUDA toolkit)
+        "-DWITH_CUDA_BACKEND=OFF",
+
+        # ROCm backend (optional - disable by default, requires ROCm)
+        "-DWITH_ROCM_BACKEND=OFF",
+
+        # Level Zero backend (optional)
+        "-DWITH_LEVEL_ZERO_BACKEND=OFF",
+
+        # Build clang plugin for advanced features (needed for most functionality)
+        # Set BUILD_CLANG_PLUGIN=true when any backend needs it (lines 279-277)
+        # Required for: CUDA, ROCm, OpenCL, accelerated CPU, SSCP, stdpar
+
+        # Debug level (lines 86-95)
+        # 0: no debug, 1: errors, 2: warnings, 3: general info
+        "-DHIPSYCL_DEBUG_LEVEL=2",
+
+        # Config file installation (lines 371-378)
+        # false: install to etc/AdaptiveCpp (relative to prefix)
+        # true: install to /etc/AdaptiveCpp (global)
+        "-DACPP_CONFIG_FILE_GLOBAL_INSTALLATION=OFF",
+
+        # Default compilation targets (lines 516-554)
+        # Options: omp, generic, cuda:sm_XX, hip:gfxXXX
+        # Default to OpenMP for CPU-only builds
+        "-DDEFAULT_TARGETS=omp",
+
+        # Boost configuration
+        # CMakeLists.txt uses find_package(Boost COMPONENTS context fiber)
+        # Buck2 boost package should provide these, but we may need to help CMake find them
+
+        # LLVM configuration will be auto-detected from the LLVM dependency
+        # The build will look for clang++ and LLVM cmake config
+    ],
+
+    labels = ["buckos:hw:opencl"],
+)

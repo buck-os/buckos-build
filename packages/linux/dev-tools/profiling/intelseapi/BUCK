@@ -1,0 +1,30 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cmake",
+    name = "intelseapi",
+    version = "61c271d",
+    url = "https://github.com/intel/IntelSEAPI/archive/61c271d36516e57f50a5e4600af8d6d1d34ce667.tar.gz",
+    sha256 = "05853791bd904ca5c6d16f8db094402828bb4c8610d1c1cd852170afcbf61122",
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DJDK=OFF",
+        "-DCO_PILOT=OFF",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DCMAKE_EXE_LINKER_FLAGS=-lpthread",
+        "-DSEAPI_BUILD_EXAMPLES=OFF",
+        "-DCMAKE_C_FLAGS=-Wno-error -fPIC",
+        "-DCMAKE_CXX_FLAGS=-Wno-error -fPIC",
+        "-DCMAKE_SHARED_LINKER_FLAGS=-shared",
+        "-DCMAKE_POSITION_INDEPENDENT_CODE=ON",
+    ],
+    # Patch to not build the standalone executable that requires main(),
+    # and ensure the library builds correctly as shared
+    pre_configure_cmds = ["""
+# Remove executable targets that fail linking (no main function)
+# Keep only the shared library target
+sed -i '/add_executable/d' sea_itt_lib/CMakeLists.txt || true
+# Ensure no -no-pie conflicts with shared library building
+sed -i 's/-no-pie//g' CMakeLists.txt sea_itt_lib/CMakeLists.txt || true
+"""],
+)

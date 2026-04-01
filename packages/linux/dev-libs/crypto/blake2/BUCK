@@ -1,0 +1,22 @@
+load("//defs:package.bzl", "package")
+
+# libb2 - BLAKE2 cryptographic hash function library
+package(
+    build_rule = "autotools",
+    name = "libb2",
+    version = "0.98.1",
+    url = "https://github.com/BLAKE2/libb2/releases/download/v0.98.1/libb2-0.98.1.tar.gz",
+    sha256 = "53626fddce753c454a3fea581cbbc7fe9bbcf0bc70416d48fdbbf5d87ef6c72e",
+    description = "BLAKE2 cryptographic hash function library",
+    homepage = "https://github.com/BLAKE2/libb2",
+    license = "CC0-1.0 OR Apache-2.0",
+    configure_args = [
+        "--prefix=/usr",
+        "--libdir=/usr/lib64",
+        "--enable-shared",
+        "--disable-static",
+        # Use native implementations where available
+        "--enable-native",
+    ],
+    visibility = ["PUBLIC"],
+)

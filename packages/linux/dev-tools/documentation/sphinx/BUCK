@@ -1,0 +1,28 @@
+load("//defs:package.bzl", "package")
+
+# Sphinx - Python documentation generator
+
+package(
+    build_rule = "python",
+    name = "sphinx",
+    version = "7.2.6",
+    use_configure = {
+        "debug": ("--enable-debug", "--disable-debug"),
+        "id64": ("--enable-id64", "--disable-id64"),
+        "mariadb": ("--enable-mariadb", "--disable-mariadb"),
+        "mysql": ("--enable-mysql", "--disable-mysql"),
+        "odbc": ("--enable-odbc", "--disable-odbc"),
+        "postgres": ("--enable-postgres", "--disable-postgres"),
+        "stemmer": ("--enable-stemmer", "--disable-stemmer"),
+        "syslog": ("--enable-syslog", "--disable-syslog"),
+        "xml": ("--enable-xml", "--disable-xml"),
+    },
+    url = "https://github.com/sphinx-doc/sphinx/archive/refs/tags/v7.2.6.tar.gz",
+    sha256 = "b41c04543148937b887097f396d7b2b54ae49d0597b68625f06ffdf702d4d917",
+    description = "Python documentation generator",
+    homepage = "https://www.sphinx-doc.org/",
+    license = "BSD-2-Clause",
+    deps = [
+        "//packages/linux/lang/python:python",
+    ],
+)

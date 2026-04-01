@@ -1,0 +1,43 @@
+load("//defs:package.bzl", "package")
+
+# MKVToolNix - Set of tools to create, alter and inspect Matroska files
+
+package(
+    build_rule = "autotools",
+    name = "mkvtoolnix",
+    version = "86.0",
+    url = "https://mkvtoolnix.download/sources/mkvtoolnix-86.0.tar.xz",
+    sha256 = "29a9155fbba99f9074de2abcfbdc4e966ea38c16d9f6f547cf2d8d9a48152c97",
+    description = "Set of tools to create, alter and inspect Matroska files",
+    homepage = "https://mkvtoolnix.download/",
+    license = "GPL-2.0-only",
+    use_configure = {
+        "dbus": ("--enable-dbus", "--disable-dbus"),
+        "debug": (["--disable-optimization", "--enable-debug"], ["--enable-optimization", "--disable-debug"]),
+        "dvd": ("--enable-dvd", "--disable-dvd"),
+        "gui": (["--enable-gui", "--with-qt6"], "--disable-gui"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "pch": ("--enable-pch", "--disable-pch"),
+    },
+    use_deps = {
+        "gui": "//packages/linux/desktop/qt:qt5",
+    },
+    configure_args = [
+        "--prefix=/usr",
+        "--with-boost=/usr",
+    ],
+    make_args = [],
+    post_install_cmds = ["""
+DESTDIR=$OUT rake install
+"""],
+    deps = [
+        "//packages/linux/media/video/ffmpeg:ffmpeg",
+                "//packages/linux/dev-libs/boost:boost",
+                "//packages/linux/core/zlib:zlib",
+                "//packages/linux/dev-libs/pugixml:pugixml",
+                "//packages/linux/system/libs/audio/flac:flac",
+                "//packages/linux/system/libs/audio/libvorbis:libvorbis",
+                "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
+                "//packages/linux/lang/ruby:ruby"
+    ],
+)

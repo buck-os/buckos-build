@@ -1,0 +1,46 @@
+load("//defs:package.bzl", "package")
+
+# =============================================================================
+# ufw - Uncomplicated Firewall
+# =============================================================================
+
+package(
+    build_rule = "binary",
+    name = "ufw",
+    version = "0.36.2",
+    url = "https://github.com/jbq/ufw/archive/237a7bb4e262ab65266b6c1d996eb71ec6d84954.tar.gz",
+    sha256 = "7cb6917f76d2c1d5be41409ccaeae6477750bbce45fe92b8a83ccefbb21c4bda",
+
+    install_script = """
+# Install using setup.py
+cd "$SRCS"
+python3 setup.py install --root="$OUT" --prefix=/usr 2>/dev/null || true
+
+# Install manually if setup.py fails
+mkdir -p "$OUT/usr/sbin"
+mkdir -p "$OUT/usr/lib/python3/dist-packages"
+mkdir -p "$OUT/etc/ufw/applications.d"
+mkdir -p "$OUT/var/lib/ufw"
+mkdir -p "$OUT/var/log/ufw"
+
+# Copy ufw script
+install -m 755 "$SRCS/src/ufw" "$OUT/usr/sbin/ufw" 2>/dev/null || true
+
+# Create default ufw configuration
+cat > "$OUT/etc/ufw/ufw.conf" << 'UFWCONF'
+# /etc/ufw/ufw.conf
+ENABLED=no
+LOGLEVEL=low
+UFWCONF
+chmod 644 "$OUT/etc/ufw/ufw.conf"
+""",
+
+    deps = [
+        "//packages/linux/network/firewall/iptables:iptables",
+        "//packages/linux/lang/python:python",
+    ],
+
+    description = "Uncomplicated Firewall - easy-to-use iptables frontend",
+    homepage = "https://launchpad.net/ufw",
+    license = "GPL-3.0",
+)

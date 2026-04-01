@@ -1,0 +1,28 @@
+load("//defs:package.bzl", "package")
+
+# light - Backlight controller
+# A program to control backlight controllers
+
+# NOTE: 'light' has been replaced by acpilight - a Python-based backlight controller
+# The original 'light' project is archived. Use acpilight instead.
+# USE flags: See use_flags.bzl for available flags
+
+package(
+    name = "light",
+    build_rule = "binary",
+    url = "https://gitlab.com/wavexx/acpilight/-/archive/v1.2/acpilight-v1.2.tar.bz2",
+    sha256 = "0b80cbe7edaf48307fc26dbb34c260ec9ed0c19c56743291e5a7cc23044ff9ae",
+    version = "1.2",
+    description = "Replacement for xbacklight that uses the ACPI interface (acpilight)",
+    homepage = "https://gitlab.com/wavexx/acpilight/",
+    license = "GPL-3.0",
+    install_script = """#!/bin/bash
+set -e
+install -Dm755 "$SRCS/xbacklight" "$OUT/usr/bin/xbacklight"
+install -Dm644 "$SRCS/xbacklight.1" "$OUT/usr/share/man/man1/xbacklight.1"
+if [ -f "$SRCS/90-backlight.rules" ]; then
+    install -Dm644 "$SRCS/90-backlight.rules" "$OUT/usr/lib/udev/rules.d/90-backlight.rules"
+fi
+""",
+    deps = [],
+)

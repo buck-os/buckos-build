@@ -1,0 +1,81 @@
+load("//defs:package.bzl", "package")
+
+# libmysqlclient - MySQL C client library
+#
+# The MySQL C API provides low-level access to the MySQL client/server protocol.
+# It's used by many applications and language bindings (Python, Perl, PHP, etc.)
+# to communicate with MySQL and MariaDB servers.
+#
+# Note: This builds only the client library from MySQL source.
+# For the full MySQL server, see databases//mysql:mysql
+#
+# USE flags:
+#   ssl       - Enable SSL/TLS support with OpenSSL
+#   zlib      - Enable compression support
+#   zstd      - Enable zstd compression
+#   static    - Build static library
+
+package(
+    build_rule = "cmake",
+    name = "libmysqlclient",
+    version = "8.3.0",
+    source = "//packages/linux/databases/mysql:mysql-src",
+    description = "MySQL C client library",
+    homepage = "https://dev.mysql.com/doc/c-api/8.3/en/",
+    license = "GPL-2.0",
+
+    # USE flags this package supports
+
+    # Default enabled flags
+
+    # Conditional dependencies based on USE flags
+    use_deps = {
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "zlib": "//packages/linux/core/zlib:zlib",
+        "zstd": "//packages/linux/system/libs/compression/zstd:zstd",
+    },
+
+    # Base CMake arguments (always applied)
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        # Only build the client library, not the server
+        "-DWITHOUT_SERVER=ON",
+        "-DWITH_UNIT_TESTS=OFF",
+        "-DDOWNLOAD_BOOST=OFF",
+        "-DWITH_BOOST=bundled",
+        # Use system libraries where possible
+        "-DWITH_SSL=system",
+        "-DWITH_ZLIB=system",
+        "-DWITH_EDITLINE=bundled",
+        # Disable unnecessary components
+        "-DWITH_ROUTER=OFF",
+        "-DWITH_MYSQLX=OFF",
+        "-DWITH_GROUP_REPLICATION=OFF",
+        "-DWITH_NDB=OFF",
+        "-DWITH_NDBCLUSTER=OFF",
+        # GCC 14 warnings treated as errors
+        "-DCMAKE_C_FLAGS=-Wno-error",
+        "-DCMAKE_CXX_FLAGS=-Wno-error",
+    ],
+    # MySQL's CMake adds -Werror internally
+    pre_configure_cmds = [
+        "find . -name CMakeLists.txt -exec sed -i 's/-Werror//g' {} + || true",
+    ],
+
+    # CMake options based on USE flags
+    use_configure = {
+        "ssl": ("-DWITH_SSL=system", "-DWITH_SSL=OFF"),
+        "static": ("-DBUILD_SHARED_LIBS=OFF", "-DBUILD_SHARED_LIBS=ON"),
+        "zlib": ("-DWITH_ZLIB=system", "-DWITH_ZLIB=bundled"),
+        "zstd": ("-DWITH_ZSTD=system", "-DWITH_ZSTD=bundled"),
+    },
+
+    # Base dependencies (always required)
+    deps = [
+        "//packages/linux/system/libs/ipc/libtirpc:libtirpc",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/core/zlib:zlib",
+    ],
+
+)

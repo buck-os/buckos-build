@@ -1,0 +1,34 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "meson",
+    name = "swaylock-effects",
+    url = "https://github.com/mortie/swaylock-effects/archive/refs/tags/v1.6-4.tar.gz",
+    sha256 = "4f82c9d875ce20f1d58227ef65db60aacccb3fb29ce67c0f744849da68e82b20",
+    use_configure = {
+        "pam": ("-Dpam=enabled", "-Dpam=disabled"),
+    },
+    version = "1.6-4",
+    description = "Swaylock with effects (screenshots, blur, etc.)",
+    homepage = "https://github.com/mortie/swaylock-effects",
+    license = "MIT",
+    configure_args = [
+        "-Dwerror=false",
+    ],
+    pre_configure_cmds = [
+        "sed -i \"s/dependency('openmp'/dependency('openmp', required: false/\" meson.build",
+        "sed -i \"/-fopenmp/d\" meson.build",
+        "sed -i \"s/#include <omp.h>/\\/\\/#include <omp.h>/\" effects.c fade.c 2>/dev/null || true",
+        "sed -i 's/omp_get_max_threads()/1/' effects.c fade.c 2>/dev/null || true",
+        "sed -i 's/#pragma omp/\\/\\/#pragma omp/g' effects.c fade.c 2>/dev/null || true",
+    ],
+    deps = [
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/graphics/rendering/wayland:wayland",
+        "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
+        "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
+        "//packages/linux/system/libs/graphics/cairo:cairo",
+        "//packages/linux/system/libs/crypto/libxcrypt:libxcrypt",
+        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
+    ],
+)

@@ -1,0 +1,29 @@
+load("//defs:package.bzl", "package")
+
+# BLAKE3 - Fast cryptographic hash function
+# BLAKE3 is a cryptographic hash function much faster than MD5, SHA-1, SHA-2, SHA-3, and BLAKE2.
+# It is secure, highly parallelizable, capable of verified streaming and incremental updates.
+
+package(
+    build_rule = "cmake",
+    name = "blake3",
+    version = "1.8.2",
+    url = "https://github.com/BLAKE3-team/BLAKE3/archive/1.8.2.tar.gz",
+    sha256 = "6b51aefe515969785da02e87befafc7fdc7a065cd3458cf1141f29267749e81f",
+    description = "BLAKE3 cryptographic hash function - fast, secure, highly parallelizable",
+    homepage = "https://github.com/BLAKE3-team/BLAKE3",
+    license = "CC0-1.0 OR Apache-2.0 OR Apache-2.0 WITH LLVM-exception",
+    deps = [],
+    source_subdir = "c",
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+    ],
+    use_configure = {
+        "static-libs": ("-DBUILD_SHARED_LIBS=OFF", "-DBUILD_SHARED_LIBS=ON"),
+        "tbb": ("-DBLAKE3_USE_TBB=ON", "-DBLAKE3_USE_TBB=OFF"),
+    },
+    use_deps = {
+        "tbb": "//packages/linux/dev-libs/misc/tbb:tbb",
+    },
+)

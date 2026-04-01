@@ -1,0 +1,21 @@
+load("//defs:package.bzl", "package")
+
+# continuable - C++14 asynchronous allocation aware futures
+
+package(
+    build_rule = "binary",
+    name = "continuable",
+    version = "4.2.2",
+    url = "https://github.com/Naios/continuable/archive/refs/tags/4.2.2.tar.gz",
+    sha256 = "49bf82a349b26c01194631e4fe5d1dbad080b3b4a347eebc5cf95326ea130fba",
+    description = "C++14 asynchronous allocation aware futures",
+    homepage = "https://naios.github.io/continuable/",
+    license = "MIT",
+    deps = [
+        "//packages/linux/dev-libs/misc/function2:function2",
+    ],
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/include
+cp -r include/continuable $INSTALL_DIR/usr/include/
+""",
+)

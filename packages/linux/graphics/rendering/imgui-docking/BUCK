@@ -1,0 +1,23 @@
+load("//defs:package.bzl", "package")
+
+# Dear ImGui (Docking branch)
+
+package(
+    name = "imgui-docking",
+    build_rule = "binary",
+    version = "1.91.4",
+    url = "https://github.com/ocornut/imgui/archive/refs/tags/v1.91.4-docking.tar.gz",
+    sha256 = "7405bdaf304b77d6d03e6d17d1f31ca3586fa0c65a466fa1dd71b6ca6a222023",
+    description = "Dear ImGui with docking branch - Bloat-free Graphical User interface for C++ with minimal dependencies",
+    homepage = "https://github.com/ocornut/imgui",
+    license = "MIT",
+    deps = [],
+    install_script = """
+mkdir -p $OUT/usr/include/imgui-docking
+cp *.h $OUT/usr/include/imgui-docking/
+cp *.cpp $OUT/usr/include/imgui-docking/
+mkdir -p $OUT/usr/include/imgui-docking/backends
+cp backends/*.h $OUT/usr/include/imgui-docking/backends/ 2>/dev/null || true
+cp backends/*.cpp $OUT/usr/include/imgui-docking/backends/ 2>/dev/null || true
+""",
+)

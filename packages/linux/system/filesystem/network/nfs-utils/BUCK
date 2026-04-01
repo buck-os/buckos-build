@@ -1,0 +1,44 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "nfs-utils",
+    url = "https://mirrors.edge.kernel.org/pub/linux/utils/nfs-utils/2.6.4/nfs-utils-2.6.4.tar.xz",
+
+    sha256 = "01b3b0fb9c7d0bbabf5114c736542030748c788ec2fd9734744201e9b0a1119d",
+    use_configure = {
+        "caps": ("--enable-libcap", "--disable-libcap"),
+        "junction": ("--enable-junction", "--disable-junction"),
+        "kerberos": ("--enable-kerberos", "--disable-kerberos"),
+        "ldap": ("--enable-ldap", "--disable-ldap"),
+        "libmount": ("--enable-libmount", "--disable-libmount"),
+        "nfsv3": ("--enable-nfsv3", "--disable-nfsv3"),
+        "nfsv4": ("--enable-nfsv4", "--disable-nfsv4"),
+        "sasl": ("--enable-sasl", "--disable-sasl"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "tcpd": ("--enable-tcpd", "--disable-tcpd"),
+        "uuid": ("--enable-uuid", "--disable-uuid"),
+    },
+    version = "2.6.4",
+    description = "NFS client and server utilities (mount.nfs, nfsd, exportfs, etc.)",
+    homepage = "http://nfs.sourceforge.net/",
+    license = "GPL-2.0",
+    configure_args = [
+        "--disable-nfsv4",
+        "--disable-gss",
+        "--without-tcp-wrappers",
+        "--disable-nfsdcld",
+        "--disable-nfsdcltrack",
+        "--without-systemd",
+        "--with-rpcgen=internal",
+    ],
+    env = {
+        "ac_cv_lib_sqlite3_sqlite3_errstr": "yes",
+    },
+    deps = [
+        "//packages/linux/core/util-linux:util-linux",
+        "//packages/linux/system/libs/ipc/libtirpc:libtirpc",
+        "//packages/linux/system/libs/utility/libevent:libevent",
+        "//packages/linux/system/libs/database/sqlite:sqlite",
+    ],
+)

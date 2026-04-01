@@ -1,0 +1,44 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cmake",
+    name = "encfs",
+    url = "https://github.com/vgough/encfs/releases/download/v1.9.5/encfs-1.9.5.tar.gz",
+
+    sha256 = "4709f05395ccbad6c0a5b40a4619d60aafe3473b1a79bafb3aa700b1f756fd63",
+    use_configure = {
+        "nls": ("-DENABLE_NLS=ON", "-DENABLE_NLS=OFF"),
+    },
+    version = "1.9.5",
+    description = "FUSE-based encrypted filesystem",
+    homepage = "https://vgough.github.io/encfs/",
+    license = "GPL-3.0",
+    pre_configure_cmds = ["""
+# Rewrite the FindFUSE.cmake to find fuse3 from dep paths
+cat > cmake/FindFUSE.cmake << 'FUSEEOF'
+# Find FUSE3 library
+find_path(FUSE_INCLUDE_DIR
+    NAMES fuse.h
+    PATH_SUFFIXES fuse3 fuse
+)
+find_library(FUSE_LIBRARIES
+    NAMES fuse3 fuse
+)
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(FUSE DEFAULT_MSG FUSE_INCLUDE_DIR FUSE_LIBRARIES)
+if(FUSE_FOUND)
+    # Set FUSE_DEFINITIONS for fuse3 API
+    set(FUSE_DEFINITIONS -DFUSE_USE_VERSION=30)
+endif()
+mark_as_advanced(FUSE_INCLUDE_DIR FUSE_LIBRARIES)
+FUSEEOF
+"""],
+    configure_args = [
+        "-DCMAKE_DISABLE_FIND_PACKAGE_Intl=ON",
+        "-DBUILD_TESTING=OFF",
+    ],
+    deps = [
+        "//packages/linux/system/security/encryption:fuse3",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+    ],
+)

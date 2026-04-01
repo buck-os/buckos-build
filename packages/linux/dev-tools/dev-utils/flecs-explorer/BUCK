@@ -1,0 +1,23 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "binary",
+    name = "flecs-explorer",
+    version = "0.0.0_git20250112",
+    url = "https://github.com/flecs-hub/explorer/archive/b97d6adf8ecf464a2ce3323ba0959a0c99eda838.tar.gz",
+    sha256 = "48aca391d88d71fc29e6d1ab3e9fc6566fd408fd5e0b6d80b94cc5054e070927",
+    description = "Web-based UI dashboard for monitoring flecs ECS applications",
+    homepage = "https://github.com/flecs-hub/explorer",
+    license = "MIT",
+    deps = [],
+    install_script = """
+# flecs-explorer is a web-based dashboard with no CMakeLists.txt at root
+# Install the web assets and any compiled files
+mkdir -p "$OUT/usr/share/flecs-explorer"
+cp -r etc/* "$OUT/usr/share/flecs-explorer/" 2>/dev/null || true
+cp -r *.html *.js *.css "$OUT/usr/share/flecs-explorer/" 2>/dev/null || true
+cp -r deps "$OUT/usr/share/flecs-explorer/" 2>/dev/null || true
+cp -r js "$OUT/usr/share/flecs-explorer/" 2>/dev/null || true
+cp -r css "$OUT/usr/share/flecs-explorer/" 2>/dev/null || true
+""",
+)

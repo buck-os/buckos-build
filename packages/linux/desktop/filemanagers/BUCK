@@ -1,0 +1,172 @@
+load("//defs:package.bzl", "package")
+
+# =============================================================================
+# File Managers for Various Desktop Environments
+# =============================================================================
+
+# Nautilus - GNOME Files
+package(
+    build_rule = "meson",
+    name = "nautilus",
+    version = "46.0",
+    use_configure = {
+        "cloudproviders": ("-Dcloudproviders=enabled", "-Dcloudproviders=disabled"),
+        "gnome": ("-Dgnome-desktop=true", "-Dgnome-desktop=false"),
+        "gstreamer": ("-Dgstreamer=enabled", "-Dgstreamer=disabled"),
+        "introspection": ("-Dintrospection=enabled", "-Dintrospection=disabled"),
+        "previewer": ("-Dpreviewer=enabled", "-Dpreviewer=disabled"),
+        "selinux": ("-Dselinux=enabled", "-Dselinux=disabled"),
+    },
+    url = "https://download.gnome.org/sources/nautilus/46/nautilus-46.0.tar.xz",
+    sha256 = "e6d75ed9f7aa68a00a2a559a0bf7010c6077e158d2d900fa365a8973f6ef11ce",
+    description = "GNOME Files - file manager for GNOME",
+    homepage = "https://wiki.gnome.org/Apps/Files",
+    license = "GPL-3.0-or-later",
+    configure_args = [
+        "-Ddocs=false",
+        "-Dtests=none",
+        "-Dextensions=true",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/glib:glib",
+        "//packages/linux/system/filesystem/gvfs:gvfs",
+        "//packages/linux/desktop/gtk+-3:gtk+-3.0",
+    ],
+)
+
+# Thunar - XFCE File Manager
+package(
+    name = "thunar",
+    build_rule = "autotools",
+    skip_configure = True,
+    url = "https://archive.xfce.org/src/xfce/thunar/4.18/thunar-4.18.10.tar.bz2",
+
+    sha256 = "e8308a1f139602d8c125f594bfcebb063b7dac1fbb6e14293bab4cdb3ecf1d08",
+    version = "4.18.10",
+    description = "Modern file manager for XFCE",
+    homepage = "https://docs.xfce.org/xfce/thunar/start",
+    license = "GPL-2.0-or-later",
+    deps = [
+        "//packages/linux/dev-libs/glib:glib",
+        "//packages/linux/system/filesystem/gvfs:gvfs",
+        "//packages/linux/desktop/xfce:libxfce4ui",
+    ],
+)
+
+# PCManFM - Lightweight file manager
+# DISABLED: Requires libfm which requires menu-cache (not packaged yet)
+# package(
+#     name = "pcmanfm",
+#     build_rule = "autotools",
+#     skip_configure = True,
+#     url = "https://downloads.sourceforge.net/pcmanfm/pcmanfm-1.3.2.tar.xz",
+#     sha256 = "14cb7b247493c4cce65fbb5902611e3ad00a7a870fbc1e50adc50428c5140cf7",
+#     version = "1.3.2",
+#     description = "Extremely fast and lightweight file manager",
+#     homepage = "https://github.com/lxde/pcmanfm",
+#     license = "GPL-2.0-or-later",
+#     deps = [
+#         ":libfm",
+#     ],
+# )
+
+# libfm - File management support library
+# DISABLED: Requires menu-cache (not packaged yet) and autotools bootstrap
+# from GitHub archive. Also needs gtk+-2.0 (only gtk3/gtk4 available).
+# package(
+#     name = "libfm",
+#     build_rule = "autotools",
+#     skip_configure = True,
+#     url = "https://github.com/lxde/libfm/archive/1.3.2.tar.gz",
+#     sha256 = "e65aa86650879fcd6c06983164b95409b92724482191f06472c567cbd8cf5ddd",
+#     version = "1.3.2",
+#     description = "Library for file management",
+#     homepage = "https://github.com/lxde/libfm",
+#     license = "GPL-2.0-or-later",
+#     deps = [
+#         "//packages/linux/dev-libs/glib:glib",
+#     ],
+# )
+
+# Nemo - Cinnamon File Manager (fork of Nautilus)
+package(
+    build_rule = "meson",
+    name = "nemo",
+    version = "6.0.2",
+    url = "https://github.com/linuxmint/nemo/archive/refs/tags/6.0.2.tar.gz",
+    sha256 = "0bbdafebefd2be7faf2263a176bbfb0deb3157da1210ddcf21986147c09775b1",
+    description = "File manager for Cinnamon",
+    homepage = "https://github.com/linuxmint/nemo",
+    license = "GPL-2.0-or-later",
+    configure_args = [
+        "-Dgtk_doc=false",
+        "-Dselinux=false",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/glib:glib",
+        "//packages/linux/system/filesystem/gvfs:gvfs",
+    ],
+)
+
+# Caja - MATE File Manager
+package(
+    name = "caja",
+    build_rule = "autotools",
+    skip_configure = True,
+    url = "https://pub.mate-desktop.org/releases/1.28/caja-1.28.0.tar.xz",
+
+    sha256 = "1e3014ce1455817ec2ef74d09efdfb6835d8a372ed9a16efb5919ef7b821957a",
+    version = "1.28.0",
+    description = "MATE desktop file manager",
+    homepage = "https://mate-desktop.org/",
+    license = "GPL-2.0-or-later",
+    deps = [
+        "//packages/linux/dev-libs/glib:glib",
+        "//packages/linux/system/filesystem/gvfs:gvfs",
+    ],
+)
+
+# Ranger - Console file manager with VI key bindings
+package(
+    name = "ranger",
+    build_rule = "python",
+    use_setup_py = True,
+    url = "https://github.com/ranger/ranger/archive/refs/tags/v1.9.3.tar.gz",
+    sha256 = "ce088a04c91c25263a9675dc5c43514b7ec1b38c8ea43d9a9d00923ff6cdd251",
+    version = "1.9.3",
+    description = "Console file manager with VI key bindings",
+    homepage = "https://github.com/ranger/ranger",
+    license = "GPL-3.0-or-later",
+    deps = [
+        "//packages/linux/lang/python:python",
+    ],
+)
+
+# lf - Terminal file manager
+package(
+    build_rule = "go",
+    name = "lf",
+    version = "r31",
+    url = "https://github.com/gokcehan/lf/archive/refs/tags/r31.tar.gz",
+    sha256 = "ed47fc22c58cf4f4e4116a58c500bdb9f9ccc0b89f87be09f321e8d1431226ab",
+    description = "Terminal file manager written in Go",
+    homepage = "https://github.com/gokcehan/lf",
+    license = "MIT",
+    ldflags = "-s -w",
+    deps = [],
+)
+
+# Filegroup for all file managers
+filegroup(
+    name = "filemanagers",
+    srcs = [
+        ":nautilus",
+        ":thunar",
+        # ":pcmanfm",  # DISABLED: needs libfm/menu-cache
+        ":nemo",
+        ":caja",
+        ":ranger",
+        ":lf",
+    ],
+    default_target_platform = "//platforms:linux-target",
+)

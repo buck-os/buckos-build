@@ -151,12 +151,11 @@ filegroup(
 )
 
 # Cloud Hypervisor full stack (CH + virtiofsd + firmware)
+# Note: firmware packages (edk2-cloudhv, rust-hypervisor-firmware) disabled pending valid sha256
 filegroup(
     name = "cloud-hypervisor-full",
     srcs = [
         "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
-        "//packages/linux/boot/rust-hypervisor-firmware:rust-hypervisor-firmware",
-        "//packages/linux/boot/edk2-cloudhv:edk2-cloudhv",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],

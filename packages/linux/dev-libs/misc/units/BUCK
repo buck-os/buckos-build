@@ -1,0 +1,38 @@
+load("//defs:package.bzl", "package")
+
+# mp-units - A Physical Quantities and Units library for C++
+
+package(
+    build_rule = "cmake",
+    name = "units",
+    version = "2.1.0",
+    use_configure = {
+        "units-cur": ("-DENABLE_UNITS_CUR=ON", "-DENABLE_UNITS_CUR=OFF"),
+    },
+    url = "https://github.com/mpusz/mp-units/archive/refs/tags/v2.1.0.tar.gz",
+    sha256 = "a42057492f5a8e80442cf13602b97bb48b9c3a408bc91bdb60d86aadc84c95cc",
+    description = "A Physical Quantities and Units library for C++",
+    homepage = "https://mpusz.github.io/mp-units/",
+    license = "MIT",
+    deps = [
+        "//packages/linux/dev-libs/misc/fmt:fmt",
+        "//packages/linux/dev-libs/cpp/gsl-lite:gsl-lite",
+    ],
+    pre_configure_cmds = ["""
+# Fix CMake minimum version in all cmake files
+find . -name 'CMakeLists.txt' -o -name '*.cmake' | while read f; do
+    sed -i 's/cmake_minimum_required(VERSION 2\.[0-9]*)/cmake_minimum_required(VERSION 3.10)/' "$f" 2>/dev/null || true
+    sed -i 's/cmake_minimum_required(VERSION 3\.[0-9])/cmake_minimum_required(VERSION 3.10)/' "$f" 2>/dev/null || true
+done
+"""],
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DMP_UNITS_BUILD_LA=OFF",
+        "-DCMAKE_CXX_STANDARD=20",
+        "-DMP_UNITS_AS_SYSTEM_HEADERS=ON",
+        "-DMP_UNITS_DEV_IWYU=OFF",
+        "-DMP_UNITS_DEV_BUILD_LA=OFF",
+        "-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
+        "-DCMAKE_CXX_FLAGS=-Wno-error",
+    ],
+)

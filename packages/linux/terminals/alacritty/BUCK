@@ -1,0 +1,22 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cargo",
+    name = "alacritty",
+    version = "0.13.1",
+    use_configure = {
+        "X": ("--with-x", "--without-x"),
+        "wayland": ("--enable-wayland", "--disable-wayland"),
+    },
+    url = "https://github.com/alacritty/alacritty/archive/refs/tags/v0.13.1.tar.gz",
+    sha256 = "38a42e23e1e6faaa9e300347df3f7b58b6182908a701517aac6e296fbdf37451",
+    vendor_deps = True,
+    description = "A cross-platform, GPU-accelerated terminal emulator",
+    homepage = "https://alacritty.org/",
+    license = "Apache-2.0",
+    deps = [
+        "//packages/linux/system/libs/font/freetype:freetype",
+        "//packages/linux/system/libs/font/fontconfig:fontconfig",
+        "//packages/linux/system/libs/data/expat:expat",
+    ],
+)

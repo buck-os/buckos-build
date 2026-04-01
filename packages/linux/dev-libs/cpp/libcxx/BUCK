@@ -1,0 +1,18 @@
+load("//defs:package.bzl", "package")
+
+LIBCXX_VERSION = "18.1.8"
+
+package(
+    build_rule = "cmake",
+    name = "libcxx",
+    version = LIBCXX_VERSION,
+    url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-{}/llvm-project-{}.src.tar.xz".format(LIBCXX_VERSION, LIBCXX_VERSION),
+    sha256 = "0b58557a6d32ceee97c8d533a59b9212d87e0fc4d2833924eb6c611247db2f2a",
+    description = "LLVM libc++ C++ Standard Library",
+    homepage = "https://libcxx.llvm.org/",
+    license = "Apache-2.0 WITH LLVM-exception",
+    configure_args = [],
+    deps = [
+        "//packages/linux/core/llvm:llvm",
+    ],
+)

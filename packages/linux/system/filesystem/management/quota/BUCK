@@ -1,0 +1,34 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "quota",
+    url = "https://github.com/sailfishos-mirror/quota/archive/refs/tags/v4.09.tar.gz",
+
+    sha256 = "68d92d545731799b207a663c15253ba8237c02f67096f8680ae70cdcd1bd449b",
+    use_configure = {
+        "ldap": ("--enable-ldap", "--disable-ldap"),
+        "netlink": ("--enable-netlink", "--disable-netlink"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "rpc": ("--enable-rpc", "--disable-rpc"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "tcpd": ("--enable-tcpd", "--disable-tcpd"),
+    },
+    version = "4.09",
+    description = "Disk quota management tools",
+    homepage = "https://github.com/sailfishos-mirror/quota",
+    license = "GPL-2.0",
+    pre_configure_cmds = ["""
+autoreconf -fi
+"""],
+    configure_args = [
+        "--disable-ldapmail",
+    ],
+    deps = [
+        "//packages/linux/core/util-linux:util-linux",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-libs/misc/gettext:gettext"
+    ],
+)

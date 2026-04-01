@@ -1,0 +1,81 @@
+load("//defs:package.bzl", "package")
+
+# =============================================================================
+# initramfs-tools - Debian initramfs generator
+# =============================================================================
+# The standard Debian/Ubuntu initramfs generator.
+# Uses hook-based architecture with scripts in /etc/initramfs-tools.
+
+package(
+    build_rule = "binary",
+    name = "initramfs-tools",
+    url = "https://mirror.buckos.org/i/initramfs-tools-v0.142.tar.gz",
+    sha256 = "27a78cc25acc3ca3d9c78deca165bf001b09b260ce25a3f3756e47a0e7bc0554",
+    version = "0.142",
+    description = "Generic initramfs generation tool (Debian/Ubuntu default)",
+    homepage = "https://salsa.debian.org/kernel-team/initramfs-tools",
+    license = "GPL-2.0",
+    install_script = """
+# Install scripts and hooks
+mkdir -p $OUT/usr/sbin
+mkdir -p $OUT/usr/share/initramfs-tools/hooks
+mkdir -p $OUT/usr/share/initramfs-tools/scripts
+mkdir -p $OUT/etc/initramfs-tools/conf.d
+mkdir -p $OUT/etc/initramfs-tools/hooks
+mkdir -p $OUT/etc/initramfs-tools/scripts/init-top
+mkdir -p $OUT/etc/initramfs-tools/scripts/init-premount
+mkdir -p $OUT/etc/initramfs-tools/scripts/local-top
+mkdir -p $OUT/etc/initramfs-tools/scripts/local-premount
+mkdir -p $OUT/etc/initramfs-tools/scripts/local-bottom
+mkdir -p $OUT/etc/initramfs-tools/scripts/init-bottom
+
+# Copy scripts
+for f in mkinitramfs update-initramfs lsinitramfs unmkinitramfs; do
+    if [ -f "$f" ]; then
+        install -Dm755 "$f" "$OUT/usr/sbin/$f"
+    fi
+done
+
+# Copy hook and script directories
+cp -a hooks/* $OUT/usr/share/initramfs-tools/hooks/ 2>/dev/null || true
+cp -a scripts/* $OUT/usr/share/initramfs-tools/scripts/ 2>/dev/null || true
+
+# Copy init script
+if [ -f init ]; then
+    install -Dm755 init "$OUT/usr/share/initramfs-tools/init"
+fi
+
+# Copy hook-functions
+if [ -f hook-functions ]; then
+    install -Dm644 hook-functions "$OUT/usr/share/initramfs-tools/hook-functions"
+fi
+
+# Create default configuration
+cat > $OUT/etc/initramfs-tools/initramfs.conf << 'EOFCONF'
+MODULES=most
+BUSYBOX=auto
+KEYMAP=n
+COMPRESS=zstd
+RUNSIZE=10%
+EOFCONF
+
+# Create modules list file
+cat > $OUT/etc/initramfs-tools/modules << 'EOFMOD'
+# List of modules to include in initramfs
+# One module per line, optionally followed by parameters
+EOFMOD
+""",
+    deps = [
+        "//packages/linux/system/libs/kmod:kmod",
+        "//packages/linux/core/bash:bash",
+        "//packages/linux/system/apps/coreutils:coreutils",
+        "//packages/linux/core/util-linux:util-linux",
+    ],
+)
+
+# update-initramfs - Wrapper script (part of initramfs-tools)
+# This is typically bundled with initramfs-tools but listed here for clarity
+alias(
+    name = "update-initramfs",
+    actual = ":initramfs-tools",
+)

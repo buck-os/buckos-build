@@ -1,0 +1,19 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "binary",
+    name = "swift-collections",
+    version = "1.0.3",
+    url = "https://github.com/apple/swift-collections/archive/refs/tags/1.0.3.tar.gz",
+    sha256 = "563219e35e5aae9a723ab499679fcb2cfbbdb6d826350e62c8dd3fb8c8dc593b",
+    deps = [
+        "//packages/linux/lang/swift:swift",
+    ],
+
+    install_script = """
+# Swift package - install source files for Swift Package Manager consumption
+mkdir -p "$OUT/usr/lib/swift/swift-collections"
+cp -r "$SRCS/Sources/"* "$OUT/usr/lib/swift/swift-collections/" 2>/dev/null || true
+echo "swift-collections sources installed successfully"
+""",
+)

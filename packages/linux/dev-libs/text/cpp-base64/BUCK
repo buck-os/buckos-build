@@ -1,0 +1,26 @@
+load("//defs:package.bzl", "package")
+
+# cpp-base64 - Base64 encoding and decoding with C++
+
+package(
+    name = "cpp-base64",
+    build_rule = "make",
+    skip_configure = True,
+    version = "2.rc.09",
+    url = "https://github.com/ReneNyffenegger/cpp-base64/archive/82147d6d89636217b870f54ec07ddd3e544d5f69.tar.gz",
+    sha256 = "6cc4d8b2c4fc2ced4103265f1dcb20dab5868f3082752717fa1463bf97bf2ba4",
+    description = "Base64 encoding and decoding with C++",
+    homepage = "https://github.com/ReneNyffenegger/cpp-base64",
+    license = "ZLIB",
+    deps = [],
+    src_compile = """
+$CXX $CXXFLAGS -fPIC -c base64.cpp -o base64.o
+$AR rcs libbase64.a base64.o
+$CXX -shared -o libbase64.so base64.o $LDFLAGS
+""",
+    src_install = """
+install -Dm644 base64.h "$INSTALL_DIR/usr/include/base64.h"
+install -Dm644 libbase64.a "$INSTALL_DIR/usr/lib64/libbase64.a"
+install -Dm755 libbase64.so "$INSTALL_DIR/usr/lib64/libbase64.so"
+""",
+)

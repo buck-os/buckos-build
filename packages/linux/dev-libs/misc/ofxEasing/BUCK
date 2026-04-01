@@ -1,0 +1,30 @@
+load("//defs:package.bzl", "package")
+
+package(
+    name = "ofxEasing",
+    build_rule = "binary",
+    version = "1.0.0",
+    url = "https://github.com/arturoc/ofxEasing/archive/refs/heads/master.tar.gz",
+    sha256 = "a6034e3f5a1351959bf434201cb1201c2073f57b486d8c5d123bd4f7ab9aab07",
+    description = "Header-only C++ easing functions library",
+    homepage = "https://github.com/arturoc/ofxEasing",
+    license = "MIT",
+    deps = [],
+    install_script = """
+mkdir -p "$OUT/usr/include/ofxEasing"
+# ofxEasing repo has headers in src/ directory
+if [ -d src ]; then
+    cp src/*.h "$OUT/usr/include/ofxEasing/" 2>/dev/null || true
+    cp src/*.hpp "$OUT/usr/include/ofxEasing/" 2>/dev/null || true
+fi
+# Also check for include/ directory
+if [ -d include ]; then
+    cp include/*.h "$OUT/usr/include/ofxEasing/" 2>/dev/null || true
+    cp include/*.hpp "$OUT/usr/include/ofxEasing/" 2>/dev/null || true
+fi
+# Fallback: find all headers
+find . -maxdepth 3 -name '*.h' -o -name '*.hpp' | head -20 | while read f; do
+    cp "$f" "$OUT/usr/include/ofxEasing/" 2>/dev/null || true
+done
+""",
+)

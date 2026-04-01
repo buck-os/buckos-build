@@ -66,6 +66,10 @@ def _go_build(ctx, source):
     if ctx.attrs.vendor_deps:
         cmd.add("--vendor-dir", ctx.attrs.vendor_deps[DefaultInfo].default_outputs[0])
 
+    # Library-only mode: build to verify compilation but don't require binaries
+    if ctx.attrs.lib_only:
+        cmd.add("--lib-only")
+
     ctx.actions.run(cmd, category = "go_build", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
@@ -117,6 +121,7 @@ go_package = rule(
         "bins": attrs.list(attrs.string(), default = []),
         "packages": attrs.list(attrs.string(), default = []),
         "vendor_deps": attrs.option(attrs.dep(), default = None),
+        "lib_only": attrs.bool(default = False),
         "_go_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:go_helper"),
         ),

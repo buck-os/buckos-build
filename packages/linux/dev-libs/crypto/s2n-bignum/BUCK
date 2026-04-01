@@ -1,0 +1,51 @@
+load("//defs:package.bzl", "package")
+
+# s2n-bignum - Assembly integer arithmetic routines for cryptographic applications
+#
+# All routines are written in pure machine code with separate versions for x86_64 and aarch64.
+# Each function is accompanied by machine-checked formal proofs.
+
+package(
+    name = "s2n-bignum",
+    build_rule = "make",
+    skip_configure = True,
+    version = "0.0.1",
+    url = "https://mirror.buckos.org/s/s2n-bignum-main.tar.gz",
+    sha256 = "a00cf1d6ed65c895d29a57f40d32f9c8a98cb4480092e785d7d0528518fb2f97",
+    description = "Assembly integer arithmetic routines for cryptographic applications",
+    homepage = "https://github.com/awslabs/s2n-bignum",
+    license = "Apache-2.0",
+    deps = [],
+    src_compile = """
+ARCH=$(uname -m)
+if [ "$ARCH" = "x86_64" ]; then
+    ARCHDIR=x86
+elif [ "$ARCH" = "aarch64" ]; then
+    ARCHDIR=arm
+else
+    echo "Unsupported architecture: $ARCH" >&2
+    exit 1
+fi
+cd "$ARCHDIR"
+make -j${MAKEOPTS:-$(nproc)}
+""",
+    src_install = """
+ARCH=$(uname -m)
+if [ "$ARCH" = "x86_64" ]; then
+    ARCHDIR=x86
+elif [ "$ARCH" = "aarch64" ]; then
+    ARCHDIR=arm
+else
+    echo "Unsupported architecture: $ARCH" >&2
+    exit 1
+fi
+
+install -d "$INSTALL_DIR/usr/lib64"
+install -m 644 "${ARCHDIR}/libs2nbignum.a" "$INSTALL_DIR/usr/lib64/"
+
+install -d "$INSTALL_DIR/usr/include"
+install -m 644 include/s2n-bignum.h "$INSTALL_DIR/usr/include/"
+install -m 644 include/s2n-bignum-c89.h "$INSTALL_DIR/usr/include/"
+install -m 644 include/_internal_s2n_bignum.h "$INSTALL_DIR/usr/include/"
+""",
+)

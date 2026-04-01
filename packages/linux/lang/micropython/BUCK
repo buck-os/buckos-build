@@ -1,0 +1,32 @@
+load("//defs:package.bzl", "package")
+
+package(
+    name = "micropython",
+    build_rule = "autotools",
+    skip_configure = True,
+    version = "1.18",
+    url = "https://github.com/micropython/micropython/releases/download/v1.18/micropython-1.18.tar.xz",
+    sha256 = "96fc71b42ed331c64e1adc5a830ec4f29f2975c23e8751109c03f32b80fa3eb4",
+    description = "MicroPython - Python for microcontrollers and constrained environments",
+    homepage = "https://micropython.org/",
+    license = "MIT",
+
+    # Conditional dependencies
+    use_deps = {
+        "ffi": "//packages/linux/system/libs/utility/libffi:libffi",
+    },
+
+    src_compile = """
+# Build mpy-cross first, then the unix port
+# micropython's Makefile adds -Werror, so we must override with CFLAGS_EXTRA
+export CFLAGS="$CFLAGS -Wno-error=dangling-pointer -Wno-error"
+make -C mpy-cross -j$(nproc) CFLAGS_EXTRA="-Wno-error=dangling-pointer -Wno-error"
+make -j${MAKEOPTS:-$(nproc)} -C ports/unix CFLAGS_EXTRA="-Wno-error=dangling-pointer -Wno-error"
+""",
+
+    src_install = """
+mkdir -p "$OUT/usr/bin"
+cp ports/unix/build-standard/micropython "$OUT/usr/bin/micropython"
+cp mpy-cross/build/mpy-cross "$OUT/usr/bin/mpy-cross"
+""",
+)

@@ -1,0 +1,22 @@
+load("//defs:package.bzl", "package")
+
+# GLAD - Multi-Language GL/GLES/EGL/GLX/WGL Loader-Generator
+
+package(
+    name = "glad",
+    build_rule = "binary",
+    version = "2.0.5",
+    url = "https://github.com/Dav1dde/glad/archive/refs/tags/v2.0.5.tar.gz",
+    sha256 = "850351f1960f3fed775f0b696d7f17615f306beb56be38a20423284627626df1",
+    description = "Multi-Language GL/GLES/EGL/GLX/WGL Loader-Generator",
+    homepage = "https://glad.dav1d.de/",
+    license = "MIT",
+    deps = [],
+    install_script = """
+mkdir -p $OUT/usr/share/glad
+cp -r cmake $OUT/usr/share/glad/
+cp -r glad $OUT/usr/share/glad/ 2>/dev/null || true
+mkdir -p $OUT/usr/include
+cp -r include/* $OUT/usr/include/ 2>/dev/null || true
+""",
+)

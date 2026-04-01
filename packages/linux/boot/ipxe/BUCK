@@ -1,0 +1,34 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    skip_configure = True,
+    name = "ipxe",
+    version = "1.21.1",
+    url = "https://github.com/ipxe/ipxe/archive/refs/tags/v1.21.1.tar.gz",
+    sha256 = "16e8d51c48d8a120332cf0dc32b473acc5d179e3975ced208eb21caf3b6528dc",
+    description = "Open source network boot firmware (PXE)",
+    homepage = "https://ipxe.org/",
+    license = "GPL-2.0",
+    make_args = ["-C", "src"],
+    src_compile = """
+# Build only specific commonly-used iPXE targets (not the full matrix)
+make -j${MAKEOPTS:-$(nproc)} -C src \
+    CFLAGS="$CFLAGS -Wno-error=array-bounds" \
+    bin-x86_64-efi/ipxe.efi \
+    bin/ipxe.iso \
+    bin/ipxe.usb \
+    bin/undionly.kpxe
+""",
+    src_install = """
+mkdir -p "$OUT/usr/share/ipxe"
+cp -v src/bin-x86_64-efi/ipxe.efi "$OUT/usr/share/ipxe/" 2>/dev/null || true
+cp -v src/bin/ipxe.iso "$OUT/usr/share/ipxe/" 2>/dev/null || true
+cp -v src/bin/ipxe.usb "$OUT/usr/share/ipxe/" 2>/dev/null || true
+cp -v src/bin/undionly.kpxe "$OUT/usr/share/ipxe/" 2>/dev/null || true
+mkdir -p "$OUT/usr/share/doc/ipxe"
+cp -v README COPYING* "$OUT/usr/share/doc/ipxe/" 2>/dev/null || true
+""",
+    labels = ["buckos:firmware"],
+    deps = [],
+)

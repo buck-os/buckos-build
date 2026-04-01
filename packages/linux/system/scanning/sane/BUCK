@@ -1,0 +1,86 @@
+load("//defs:package.bzl", "package")
+
+# =============================================================================
+# SANE - Scanner Access Now Easy
+# =============================================================================
+
+package(
+    build_rule = "autotools",
+    name = "sane-backends",
+    url = "https://gitlab.com/sane-project/backends/-/archive/1.3.0/backends-1.3.0.tar.gz",
+
+    sha256 = "0bd3114d0ed8eca9f054e2c6727ab95afa6da0e8e602cc648955e1a788bc2070",
+    use_configure = {
+        "gphoto2": ("--enable-gphoto2", "--disable-gphoto2"),
+        "snmp": ("--enable-snmp", "--disable-snmp"),
+        "systemd": ("--enable-systemd", "--disable-systemd"),
+        "threads": ("--enable-threads", "--disable-threads"),
+        "usb": ("--enable-usb", "--disable-usb"),
+        "v4l": ("--enable-v4l2", "--disable-v4l2"),
+        "xinetd": ("--enable-xinetd", "--disable-xinetd"),
+        "zeroconf": ("--enable-zeroconf", "--disable-zeroconf"),
+    },
+    version = "1.3.0",
+    description = "Scanner Access Now Easy - backends",
+    homepage = "http://www.sane-project.org/",
+    license = "GPL-2.0-or-later",
+    pre_configure_cmds = ["""
+touch ChangeLog NEWS AUTHORS
+# Disable autopoint by removing AM_GNU_GETTEXT from configure.ac
+# to avoid needing full gettext infrastructure
+if grep -q 'AM_GNU_GETTEXT' configure.ac; then
+    sed -i 's/AM_GNU_GETTEXT_VERSION/dnl AM_GNU_GETTEXT_VERSION/' configure.ac
+    sed -i 's/AM_GNU_GETTEXT\\b/dnl AM_GNU_GETTEXT/' configure.ac
+fi
+# Create po/Makefile.in.in stub if needed
+mkdir -p po
+touch po/Makefile.in.in po/POTFILES.in
+autoreconf -fi 2>&1 | tail -5 || true
+"""],
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--localstatedir=/var",
+        "--with-docdir=/usr/share/doc/sane-backends",
+        "--enable-pthread",
+        "--enable-libusb_1_0",
+        "--disable-avahi",
+        "--disable-locking",
+        "--disable-nls",
+    ],
+    post_install_cmds = ["""
+        mkdir -p "$OUT/etc/sane.d"
+        mkdir -p "$OUT/var/lock/sane"
+    """],
+    deps = [
+        "//packages/linux/system/libs/libusb:libusb",
+        "//packages/linux/system/libs/image/libtiff:libtiff",
+        "//packages/linux/system/libs/image/libjpeg-turbo:libjpeg-turbo",
+    ],
+    host_deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
+    ],
+)
+
+# Simple Scan - GTK scanning application
+package(
+    build_rule = "autotools",
+    name = "simple-scan",
+    url = "https://github.com/GNOME/simple-scan/archive/refs/tags/46.0.tar.gz",
+
+    sha256 = "edeb254834fea2c0faacc49f924c626071c3519b71eaa65e41059f5250612da9",
+    version = "46.0",
+    description = "Simple Scan - easy to use scanning application",
+    homepage = "https://github.com/GNOME/simple-scan",
+    license = "GPL-3.0-or-later",
+    configure_args = [],
+    make_args = ["-C", "build"],
+    deps = [
+        ":sane-backends",
+        "//packages/linux/desktop/gtk:gtk4",
+        "//packages/linux/dev-libs/glib:glib",
+    ],
+)

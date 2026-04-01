@@ -1,0 +1,109 @@
+load("//defs:package.bzl", "package")
+
+# =============================================================================
+# LIBESTR - String handling library for rsyslog
+# =============================================================================
+
+package(
+    build_rule = "autotools",
+    name = "libestr",
+    version = "0.1.11",
+    url = "https://libestr.adiscon.com/files/download/libestr-0.1.11.tar.gz",
+    sha256 = "46b53b80f875fd82981d927a45f0c9df9d17ee9d0e29931a6e83608a6aa1d7b4",
+    description = "String handling essentials library",
+    homepage = "https://libestr.adiscon.com/",
+    license = "LGPL-2.1+",
+    deps = [],
+)
+
+# =============================================================================
+# LIBFASTJSON - Fast JSON library for rsyslog
+# =============================================================================
+
+package(
+    build_rule = "autotools",
+    name = "libfastjson",
+    version = "1.2304.0",
+    url = "https://download.rsyslog.com/libfastjson/libfastjson-1.2304.0.tar.gz",
+    sha256 = "ef89e6957fd7249cf15099298a42ea3bfa1e26843e69e2b1d618a2e42a53d8ea",
+    description = "Fast JSON library for C (rsyslog fork of json-c)",
+    homepage = "https://github.com/rsyslog/libfastjson",
+    license = "MIT",
+    deps = [],
+)
+
+# =============================================================================
+# rsyslog - Reliable and extended syslog daemon
+# USE flags: gnutls, ssl, gcrypt, mysql, postgres, dbi, systemd, uuid
+# =============================================================================
+
+package(
+    build_rule = "autotools",
+    name = "rsyslog",
+    # Official release tarball includes pre-generated configure script
+    version = "8.2312.0",
+    url = "https://www.rsyslog.com/files/download/rsyslog/rsyslog-8.2312.0.tar.gz",
+    sha256 = "774032006128a896437f5913e132aa27dbfb937cd8847e449522d5a12d63d03e",
+    description = "Reliable and extended syslog daemon",
+    homepage = "https://www.rsyslog.com",
+    license = "GPL-3+ LGPL-3+ Apache-2.0",
+    use_deps = {
+        "gnutls": "//packages/linux/system/libs/crypto/gnutls:gnutls",
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "gcrypt": "//packages/linux/system/libs/crypto/libgcrypt:libgcrypt",
+        "mysql": "//packages/linux/databases/mysql:mysql",
+        "systemd": "//packages/linux/system/init/systemd:systemd",
+    },
+    use_configure = {
+        "clickhouse": ("--enable-clickhouse", "--disable-clickhouse"),
+        "curl": ("--with-curl", "--without-curl"),
+        "dbi": ("--enable-dbi", "--disable-dbi"),
+        "debug": ("--enable-debug", "--disable-debug"),
+        "elasticsearch": ("--enable-elasticsearch", "--disable-elasticsearch"),
+        "gcrypt": ("--enable-libgcrypt", "--disable-libgcrypt"),
+        "gnutls": ("--enable-gnutls", "--disable-gnutls"),
+        "imdocker": ("--enable-imdocker", "--disable-imdocker"),
+        "imfile": ("--enable-imfile", "--disable-imfile"),
+        "imhttp": ("--enable-imhttp", "--disable-imhttp"),
+        "impcap": ("--enable-impcap", "--disable-impcap"),
+        "imptcp": ("--enable-imptcp", "--disable-imptcp"),
+        "jemalloc": ("--enable-jemalloc", "--disable-jemalloc"),
+        "kafka": ("--enable-kafka", "--disable-kafka"),
+        "kerberos": ("--enable-kerberos", "--disable-kerberos"),
+        "kubernetes": ("--enable-kubernetes", "--disable-kubernetes"),
+        "mdblookup": ("--enable-mdblookup", "--disable-mdblookup"),
+        "mongodb": ("--enable-mongodb", "--disable-mongodb"),
+        "mysql": ("--enable-mysql", "--disable-mysql"),
+        "normalize": ("--enable-normalize", "--disable-normalize"),
+        "omhttp": ("--enable-omhttp", "--disable-omhttp"),
+        "omhttpfs": ("--enable-omhttpfs", "--disable-omhttpfs"),
+        "omudpspoof": ("--enable-omudpspoof", "--disable-omudpspoof"),
+        "postgres": ("--enable-pgsql", "--disable-pgsql"),
+        "rabbitmq": ("--enable-rabbitmq", "--disable-rabbitmq"),
+        "redis": ("--enable-redis", "--disable-redis"),
+        "relp": ("--enable-relp", "--disable-relp"),
+        "rfc3195": ("--enable-rfc3195", "--disable-rfc3195"),
+        "rfc5424hmac": ("--enable-rfc5424hmac", "--disable-rfc5424hmac"),
+        "snmp": ("--enable-snmp", "--disable-snmp"),
+        "ssl": ("--enable-openssl", "--disable-openssl"),
+        "systemd": ("--enable-systemd", "--disable-systemd"),
+        "usertools": ("--enable-usertools", "--disable-usertools"),
+        "uuid": ("--enable-uuid", "--disable-uuid"),
+        "xxhash": ("--enable-xxhash", "--disable-xxhash"),
+        "zeromq": ("--enable-zeromq", "--disable-zeromq"),
+    },
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--disable-liblogging-stdlog",
+        "--enable-compile-warnings=yes",
+    ],
+    env = {
+        "CFLAGS": "-O2 -Wno-error",
+    },
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+        ":libestr",
+        ":libfastjson",
+    ],
+)

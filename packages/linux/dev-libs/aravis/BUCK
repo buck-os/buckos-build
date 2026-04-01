@@ -1,0 +1,32 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "meson",
+    name = "aravis",
+    version = "0.8.30",
+    use_configure = {
+        "fast-heartbeat": ("-Dfast-heartbeat=true", "-Dfast-heartbeat=false"),
+        "gstreamer": ("-Dgst-plugin=enabled", "-Dgst-plugin=disabled"),
+        "introspection": ("-Dintrospection=enabled", "-Dintrospection=disabled"),
+        "packet-socket": ("-Dpacket-socket=enabled", "-Dpacket-socket=disabled"),
+        "usb": ("-Dusb=enabled", "-Dusb=disabled"),
+        "viewer": ("-Dviewer=enabled", "-Dviewer=disabled"),
+    },
+    url = "https://github.com/AravisProject/aravis/releases/download/0.8.30/aravis-0.8.30.tar.xz",
+    sha256 = "40380f06fa04524a7875bd456e5a5ea78b2c058fa84b5598bc6e0642fcef00b0",
+    deps = [
+        "//packages/linux/dev-libs/glib:glib",
+        "//packages/linux/system/libs/libusb:libusb",
+        "//packages/linux/system/libs/data/libxml2:libxml2",
+        "//packages/linux/core/zlib:zlib",
+    ],
+    extra_cflags = ["-Wno-incompatible-pointer-types"],
+    configure_args = [
+        "-Dviewer=disabled",
+        "-Dgst-plugin=disabled",
+        "-Ddocumentation=disabled",
+        "-Dintrospection=disabled",
+        "-Dusb=enabled",
+        "-Dpacket-socket=enabled",
+    ],
+)

@@ -1,0 +1,23 @@
+load("//defs:package.bzl", "package")
+
+# -----------------------------------------------------------------------------
+# s6-rc - Service manager for s6-based systems
+# -----------------------------------------------------------------------------
+
+package(
+    build_rule = "autotools",
+    name = "s6-rc",
+    url = "https://skarnet.org/software/s6-rc/s6-rc-0.5.4.2.tar.gz",
+
+    sha256 = "00bdfa596fa7161512e972ec9282a2abd8fd0e31f09177bad7a2bc3d8f283982",
+    version = "0.5.4.2",
+    description = "Service manager for s6-based systems",
+    homepage = "https://skarnet.org/software/s6-rc/",
+    license = "ISC",
+    # skarnet.org uses non-standard configure - custom src_configure phase
+    deps = [
+        "//packages/linux/system/init/skalibs:skalibs",
+        "//packages/linux/system/init/s6:s6",
+        "//packages/linux/system/init/execline:execline",
+    ],
+)

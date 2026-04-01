@@ -1,0 +1,30 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "binary",
+    name = "nccl-tests",
+    version = "2.17.8",
+    url = "https://github.com/NVIDIA/nccl-tests/archive/refs/tags/v2.17.8.tar.gz",
+    sha256 = "89e44e7f93d136f22f40d44fdd315f5d1dcc487c921d9fc2fce8e4dd7b17f869",
+    install_script = """
+cd "$SRCS"
+
+# NCCL tests require nvcc (CUDA compiler) which is not available at build time.
+# Install the source and build scripts so tests can be built later with CUDA.
+mkdir -p "$OUT/usr/share/nccl-tests"
+cp -r . "$OUT/usr/share/nccl-tests/"
+
+# Install a helper script
+mkdir -p "$OUT/usr/bin"
+cat > "$OUT/usr/bin/nccl-tests-build" << 'SCRIPTEOF'
+#!/bin/sh
+echo "NCCL tests require CUDA toolkit. Build from source at /usr/share/nccl-tests/"
+echo "Usage: cd /usr/share/nccl-tests && make CUDA_HOME=/usr/local/cuda NCCL_HOME=/usr"
+SCRIPTEOF
+chmod +x "$OUT/usr/bin/nccl-tests-build"
+""",
+    deps = [
+        "//packages/linux/system/gpu/libraries/nccl:nccl",
+    ],
+    labels = ["buckos:hw:cuda"],
+)

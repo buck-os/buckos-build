@@ -1,0 +1,18 @@
+diff --git a/protocol/meson.build b/protocol/meson.build
+index aaaaaaa..bbbbbbb 100644
+--- a/protocol/meson.build
++++ b/protocol/meson.build
+@@ -5,10 +5,9 @@ wayland_protos = dependency('wayland-protocols',
+ )
+ wl_protocol_dir = wayland_protos.get_variable('pkgdatadir')
+ 
+-wayland_scanner_dep = dependency('wayland-scanner', native: true)
+-wayland_scanner = find_program(
+-	wayland_scanner_dep.get_variable('wayland_scanner'),
+-	native: true,
++# Patched: use find_program directly since wayland-scanner is in PATH
++wayland_scanner = find_program('wayland-scanner',
++	native: true
+ )
+ 
+ protocols = {

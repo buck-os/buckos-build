@@ -1,0 +1,34 @@
+load("//defs:package.bzl", "package")
+
+# efivar - Tools and library for manipulating EFI variables
+package(
+    build_rule = "binary",
+    name = "efivar",
+    url = "https://github.com/rhboot/efivar/archive/refs/tags/39.tar.gz",
+    sha256 = "c9edd15f2eeeea63232f3e669a48e992c7be9aff57ee22672ac31f5eca1609a6",
+    version = "39",
+    description = "Tools and library for manipulating EFI variables",
+    homepage = "https://github.com/rhboot/efivar",
+    license = "LGPL-2.1",
+    deps = [
+        "//packages/linux/dev-libs/popt:popt",
+    ],
+    install_script = """
+# Strip -march=native from all makefiles to avoid cross-compilation failure
+find "$SRCS" -name 'Makefile*' -o -name '*.mk' -o -name 'Make.defaults' | \
+    xargs sed -i 's/-march=native/-march=x86-64-v3/g' 2>/dev/null || true
+
+# Override OPTIMIZE_FOR to avoid -march=native (fails in cross-compilation)
+make CC="$CC" CFLAGS="$CFLAGS -march=x86-64-v3" LDFLAGS="$LDFLAGS" \
+    OPTIMIZE_FOR="-Os -march=x86-64-v3" \
+    libdir=/usr/lib64 bindir=/usr/bin \
+    -j${MAKEOPTS:-$(nproc)} || \
+make CC="$CC" CFLAGS="$CFLAGS -march=x86-64-v3" LDFLAGS="$LDFLAGS" \
+    OPTIMIZE_FOR="-Os -march=x86-64-v3" \
+    libdir=/usr/lib64 bindir=/usr/bin -j1
+
+make install DESTDIR="$OUT" \
+    libdir=/usr/lib64 bindir=/usr/bin \
+    PREFIX=/usr
+""",
+)

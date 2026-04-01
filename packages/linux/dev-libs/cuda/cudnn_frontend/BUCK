@@ -1,0 +1,23 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "binary",
+    name = "cudnn_frontend",
+    version = "1.12.1",
+    url = "https://github.com/NVIDIA/cudnn-frontend/archive/refs/tags/v1.12.1.tar.gz",
+    sha256 = "93025436f48a69e91a6be8442457e574ac23d4fa2995b3b689adcdd758a2b195",
+    description = "NVIDIA cuDNN Frontend C++ API",
+    homepage = "https://github.com/NVIDIA/cudnn-frontend",
+    license = "MIT",
+
+    deps = [],
+
+    install_script = """
+# Header-only cuDNN frontend API - install include directory
+mkdir -p "$OUT/usr/include"
+cp -r "$SRCS/include/"* "$OUT/usr/include/" 2>/dev/null || true
+echo "cudnn_frontend headers installed successfully"
+""",
+
+    labels = ["buckos:hw:cuda"],
+)

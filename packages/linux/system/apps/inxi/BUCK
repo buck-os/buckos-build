@@ -1,0 +1,26 @@
+load("//defs:package.bzl", "package")
+
+# inxi - Full featured CLI system information tool
+# Just a Perl script, no compilation needed
+package(
+    build_rule = "binary",
+    name = "inxi",
+    version = "3.3.31",
+    url = "https://github.com/smxi/inxi/archive/refs/tags/3.3.31-1.tar.gz",
+    sha256 = "5e2cce705a1dc865e8d90e63d4668f7a946b1349bf8bad141ddb69718fd46b60",
+    description = "Full featured CLI system information tool",
+    homepage = "https://github.com/smxi/inxi",
+    license = "GPL-3.0-or-later",
+    install_script = """
+cd "$SRCS"
+mkdir -p "$OUT/usr/bin" "$OUT/usr/share/man/man1"
+install -m 755 inxi "$OUT/usr/bin/inxi"
+# Install man page if available
+if [ -f inxi.1 ]; then
+    install -m 644 inxi.1 "$OUT/usr/share/man/man1/inxi.1"
+fi
+""",
+    deps = [
+        "//packages/linux/core/bash:bash",
+    ],
+)

@@ -1,0 +1,21 @@
+load("//defs:package.bzl", "package")
+
+# =============================================================================
+# Tcl - Tool Command Language
+# =============================================================================
+
+package(
+    build_rule = "autotools",
+    name = "tcl",
+    version = "8.6.13",
+    url = "https://prdownloads.sourceforge.net/tcl/tcl8.6.13-src.tar.gz",
+    sha256 = "43a1fae7412f61ff11de2cfd05d28cfc3a73762f354a417c62370a54e2caf066",
+    description = "Tool Command Language - scripting language",
+    homepage = "https://www.tcl.tk/",
+    license = "BSD",
+    # Tcl's configure is in the unix subdirectory
+    configure_script = "unix/configure",
+    post_install_cmds = ["""\
+ln -sf tclsh8.6 "$DESTDIR/usr/bin/tclsh"
+"""],
+)

@@ -182,6 +182,7 @@ int main(void)
 		}
 	}
 
+	fflush(stdout);
 	sync();
 	reboot(RB_POWER_OFF);
 	return 0;

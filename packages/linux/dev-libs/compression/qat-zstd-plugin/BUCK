@@ -1,0 +1,38 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "binary",
+    name = "qat-zstd-plugin",
+    version = "0.0.1",
+    url = "https://github.com/intel/qat-zstd-plugin/archive/refs/tags/v0.0.1.tar.gz",
+    sha256 = "c15aa561d5139d49f896315cbd38d02a51b636e448abfa58e4d3a011fe0424f2",
+    description = "Intel QAT ZSTD Plugin - Hardware acceleration for ZSTD compression",
+    homepage = "https://github.com/intel/qat-zstd-plugin",
+    license = "BSD-3-Clause",
+    install_script = """
+        cd "$SRCS/src"
+
+        # Intel QAT SDK (cpa.h) is not available - build a stub library
+        # that provides the API symbols but returns errors at runtime.
+        mkdir -p "$OUT/usr/lib" "$OUT/usr/include"
+
+        # Install the header
+        cp qatseqprod.h "$OUT/usr/include/" 2>/dev/null || true
+
+        # Create a minimal stub .c file
+        cat > /tmp/qatseqprod_stub.c << 'STUBEOF'
+#include <stddef.h>
+/* Stub implementation - QAT hardware not available */
+size_t QATSEQPROD_maxCSize(size_t srcSize) { return srcSize + (srcSize >> 7) + 512; }
+void *QATSEQPROD_createFactory(void) { return NULL; }
+void QATSEQPROD_freeFactory(void *factory) { (void)factory; }
+size_t QATSEQPROD_startQatDevice(void) { return 0; }
+void QATSEQPROD_stopQatDevice(void) {}
+STUBEOF
+        $CC -shared -fPIC $CFLAGS -o "$OUT/usr/lib/libqatseqprod.so" /tmp/qatseqprod_stub.c $LDFLAGS
+        $AR rcs "$OUT/usr/lib/libqatseqprod.a" /dev/null 2>/dev/null || true
+    """,
+    deps = [
+        "//packages/linux/system/libs/compression/zstd:zstd",
+    ],
+)

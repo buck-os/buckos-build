@@ -1,0 +1,19 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "meson",
+    name = "sshfs",
+    url = "https://github.com/libfuse/sshfs/releases/download/sshfs-3.7.3/sshfs-3.7.3.tar.xz",
+
+    sha256 = "5218ce7bdd2ce0a34137a0d7798e0f6d09f0e6d21b1e98ee730a18b0699c2e99",
+    version = "3.7.3",
+    description = "FUSE-based filesystem client for mounting remote directories over SSH",
+    homepage = "https://github.com/libfuse/sshfs",
+    license = "GPL-2.0",
+    configure_args = [],
+    deps = [
+        "//packages/linux/system/security/encryption:fuse3",
+        "//packages/linux/network/openssh:openssh",
+        "//packages/linux/dev-libs/glib:glib",
+    ],
+)

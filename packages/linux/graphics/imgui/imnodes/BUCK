@@ -1,0 +1,22 @@
+load("//defs:package.bzl", "package")
+
+# imnodes - A small, dependency-free node editor for dear imgui
+
+package(
+    name = "imnodes",
+    build_rule = "binary",
+    version = "0.5",
+    url = "https://github.com/Nelarius/imnodes/archive/refs/tags/v0.5.tar.gz",
+    sha256 = "c19a1d8e3fabf71def02b98c43a3f4551f0a5bd3740a93474a356e8957ec2ab2",
+    description = "A small, dependency-free node editor extension for dear imgui",
+    homepage = "https://github.com/Nelarius/imnodes",
+    license = "MIT",
+    deps = [
+        "//packages/linux/graphics/rendering/imgui:imgui",
+    ],
+    install_script = """
+mkdir -p $OUT/usr/include/imnodes
+cp *.h $OUT/usr/include/imnodes/
+cp *.cpp $OUT/usr/include/imnodes/
+""",
+)

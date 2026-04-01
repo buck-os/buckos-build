@@ -1,0 +1,26 @@
+load("//defs:package.bzl", "package")
+
+# blst - BLS12-381 signature library
+#
+# blst (pronounced 'blast') is a BLS12-381 signature library focused on
+# performance and security. It is written in C and assembly.
+#
+# This library uses a custom build.sh script rather than autotools/cmake.
+
+package(
+    name = "blst",
+    build_rule = "binary",
+    version = "0.3.7",
+    url = "https://github.com/supranational/blst/archive/refs/tags/v0.3.7.tar.gz",
+    sha256 = "b70876c7f97dee3a6933e56fb0cfa52bb77f6e92c0961a429b73784ab2254b8d",
+    description = "BLS12-381 signature library focused on performance and security",
+    homepage = "https://github.com/supranational/blst",
+    license = "Apache-2.0",
+    deps = [],
+    install_script = """
+CC="$CC" ./build.sh
+mkdir -p "$OUT/usr/lib64" "$OUT/usr/include"
+install -m644 libblst.a "$OUT/usr/lib64/"
+install -m644 bindings/blst.h bindings/blst_aux.h "$OUT/usr/include/"
+""",
+)

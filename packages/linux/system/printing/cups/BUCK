@@ -1,0 +1,120 @@
+load("//defs:package.bzl", "package")
+
+# =============================================================================
+# CUPS - Common UNIX Printing System
+# =============================================================================
+
+package(
+    build_rule = "autotools",
+    name = "cups",
+    url = "https://github.com/OpenPrinting/cups/releases/download/v2.4.7/cups-2.4.7-source.tar.gz",
+
+    sha256 = "dd54228dd903526428ce7e37961afaed230ad310788141da75cebaa08362cf6c",
+    use_configure = {
+        "X": ("--with-x", "--without-x"),
+        "acl": ("--enable-acl", "--disable-acl"),
+        "dbus": ("--enable-dbus", "--disable-dbus"),
+        "debug": ("--enable-debug", "--disable-debug"),
+        "kerberos": ("--enable-kerberos", "--disable-kerberos"),
+        "openssl": ("--with-openssl", "--without-openssl"),
+        "pam": ("--enable-pam", "--disable-pam"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "static-libs": ("--enable-static", "--disable-static"),
+        "systemd": ("--enable-systemd", "--disable-systemd"),
+        "usb": ("--enable-usb", "--disable-usb"),
+        "xinetd": ("--enable-xinetd", "--disable-xinetd"),
+        "zeroconf": ("--enable-zeroconf", "--disable-zeroconf"),
+    },
+    version = "2.4.7",
+    description = "Common UNIX Printing System",
+    homepage = "https://openprinting.github.io/cups/",
+    license = "Apache-2.0",
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--localstatedir=/var",
+        "--with-rundir=/run/cups",
+        "--with-docdir=/usr/share/doc/cups",
+        "--with-logdir=/var/log/cups",
+        "--with-cups-user=lp",
+        "--with-cups-group=lp",
+        "--with-system-groups=lpadmin",
+        "--enable-libpaper",
+        "--enable-ssl",
+        "--disable-gnutls",
+        "--enable-openssl",
+        "--enable-dbus",
+        "--disable-avahi",
+        "--disable-systemd",
+    ],
+    make_args = [
+        "LIBS=-lz",
+    ],
+    post_install_cmds = ["""
+        mkdir -p "$OUT/etc/cups"
+        mkdir -p "$OUT/var/log/cups"
+        mkdir -p "$OUT/var/spool/cups"
+        mkdir -p "$OUT/var/cache/cups"
+    """],
+    extra_cflags = [
+        "-Wno-error",
+    ],
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/ipc/dbus:dbus",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        ":libpaper",
+    ],
+    host_deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+    ],
+)
+
+# CUPS Filters - OpenPrinting CUPS filters
+package(
+    build_rule = "autotools",
+    name = "cups-filters",
+    url = "https://github.com/OpenPrinting/cups-filters/releases/download/2.0.0/cups-filters-2.0.0.tar.xz",
+
+    sha256 = "b5152e3dd148ed73835827ac2f219df7cf5808dbf9dbaec2aa0127b44de800d8",
+    version = "2.0.0",
+    description = "OpenPrinting CUPS filters and backends",
+    homepage = "https://openprinting.github.io/cups-filters/",
+    license = "GPL-2.0-or-later",
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--with-cups-config=/usr/bin/cups-config",
+        "--disable-avahi",
+        "--disable-ldap",
+        "--disable-braille",
+        "--enable-dbus",
+    ],
+    deps = [
+        ":cups",
+        "//packages/linux/dev-libs/glib:glib",
+        "//packages/linux/editors/ghostscript:ghostscript",
+    ],
+)
+
+# libpaper - Paper size handling library
+# Use the release tarball (not the GitHub archive) which includes pre-generated
+# configure and gnulib files.
+package(
+    build_rule = "autotools",
+    name = "libpaper",
+    url = "https://github.com/rrthomas/libpaper/releases/download/v2.1.3/libpaper-2.1.3.tar.gz",
+    sha256 = "b798be7c52036e684a90a68f0be954f173fea87886f8a1d25c6514a279216f4a",
+    version = "2.1.3",
+    description = "Library for handling paper characteristics",
+    homepage = "https://github.com/rrthomas/libpaper",
+    license = "GPL-2.0-or-later",
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--disable-static",
+    ],
+    deps = [],
+)

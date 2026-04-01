@@ -18,4 +18,17 @@ package(
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_TESTING=OFF",
     ],
+    post_install_cmds = [
+        """mkdir -p "$DESTDIR/usr/lib/pkgconfig" && cat > "$DESTDIR/usr/lib/pkgconfig/yaml-0.1.pc" << 'PCEOF'
+prefix=/usr
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+Name: LibYAML
+Description: YAML 1.1 parser and emitter
+Version: 0.2.5
+Libs: -L${libdir} -lyaml
+Cflags: -I${includedir}
+PCEOF""",
+    ],
 )

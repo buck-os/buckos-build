@@ -1,0 +1,33 @@
+load("//defs:package.bzl", "package")
+
+# rapl-read-ryzen - AMD RAPL Power Reading Tool
+# Read power consumption from AMD Ryzen processors via RAPL
+
+package(
+    build_rule = "binary",
+    name = "rapl-read-ryzen",
+    url = "https://github.com/djselbeck/rapl-read-ryzen/archive/refs/heads/master.tar.gz",
+    sha256 = "f2611e6c2290ff72714722beb6f8beb7a60f0954ca93101ba55e5b9d50ad1ce1",
+    version = "0.2",
+    description = "Read power consumption from AMD Ryzen CPUs via RAPL",
+    homepage = "https://github.com/djselbeck/rapl-read-ryzen",
+    license = "GPL-2.0",
+    # Single C file project - compile directly
+    install_script = """
+cd "$SRCS"
+# Find the source file (may be named differently)
+SRC_FILE=$(find . -maxdepth 1 -name "*.c" | head -1)
+if [ -z "$SRC_FILE" ]; then
+    SRC_FILE=$(find . -name "rapl*.c" | head -1)
+fi
+if [ -z "$SRC_FILE" ]; then
+    echo "ERROR: No source file found"
+    ls -la
+    exit 1
+fi
+$CC $CFLAGS $LDFLAGS -o rapl-read-ryzen "$SRC_FILE" -lm
+mkdir -p "$OUT/usr/bin"
+install -m 755 rapl-read-ryzen "$OUT/usr/bin/"
+""",
+    deps = [],
+)

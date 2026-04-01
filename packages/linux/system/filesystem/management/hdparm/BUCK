@@ -1,0 +1,27 @@
+load("//defs:package.bzl", "package")
+
+package(
+    name = "hdparm",
+    build_rule = "autotools",
+    skip_configure = True,
+    url = "https://sourceforge.net/projects/hdparm/files/hdparm/hdparm-9.65.tar.gz",
+
+    sha256 = "d14929f910d060932e717e9382425d47c2e7144235a53713d55a94f7de535a4b",
+    use_configure = {
+        "static": ("--enable-static", "--disable-static"),
+    },
+    version = "9.65",
+    description = "Get/set hard disk parameters",
+    homepage = "https://sourceforge.net/projects/hdparm/",
+    license = "BSD-2-Clause",
+    make_args = [
+        "CC=$CC",
+        "CFLAGS=$CFLAGS",
+        "LDFLAGS=$LDFLAGS",
+    ],
+    install_args = [
+        "binprefix=/usr",
+        "manprefix=/usr/share",
+    ],
+    deps = [],
+)

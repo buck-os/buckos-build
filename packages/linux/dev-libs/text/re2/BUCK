@@ -1,0 +1,24 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cmake",
+    name = "re2",
+    version = "2024.04.01",
+    use_configure = {
+        "icu": ("-DENABLE_ICU=ON", "-DENABLE_ICU=OFF"),
+    },
+    url = "https://github.com/google/re2/releases/download/2024-04-01/re2-2024-04-01.tar.gz",
+    sha256 = "3f6690c3393a613c3a0b566309cf04dc381d61470079b653afc47c67fb898198",
+    description = "Fast, safe, thread-friendly regular expression library",
+    homepage = "https://github.com/google/re2",
+    license = "BSD-3-Clause",
+    configure_args = [
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DRE2_BUILD_TESTING=OFF",
+        # Dynamic CMAKE_PREFIX_PATH from DEP_BASE_DIRS - uses shell command substitution
+        "-DCMAKE_PREFIX_PATH=$(echo $DEP_BASE_DIRS | tr ':' ';' | sed 's|;|/usr;|g' | sed 's|$|/usr|')",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/google/abseil-cpp:abseil-cpp",
+    ],
+)

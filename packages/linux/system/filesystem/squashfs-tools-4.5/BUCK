@@ -1,0 +1,56 @@
+load("//defs:package.bzl", "package")
+
+# squashfs-tools 4.5.1: use binary rule to fix xattr redefinition errors and
+# missing COMP_DEFAULT/DATE macros that cause compile failures with GCC 14+
+package(
+    name = "squashfs-tools-4.5.1",
+    build_rule = "binary",
+    url = "https://github.com/plougher/squashfs-tools/archive/refs/tags/4.5.1.tar.gz",
+
+    sha256 = "277b6e7f75a4a57f72191295ae62766a10d627a4f5e5f19eadfbc861378deea7",
+    version = "4.5.1",
+    description = "Tools for creating and extracting SquashFS filesystems",
+    homepage = "https://github.com/plougher/squashfs-tools",
+    license = "GPL-2.0",
+    install_script = """
+cd "$SRCS/squashfs-tools"
+
+# Fix: remove xattr source files entirely to avoid redefinition conflicts
+# with the inline stubs in xattr.h when XATTR_SUPPORT=0
+rm -f xattr.c read_xattrs.c unsquashfs_xattr.c tar_xattr.c
+
+# Fix: add missing COMP_DEFAULT and DATE defines that 4.5.1 lacks
+# Fix: add _GNU_SOURCE so strdupa() is declared
+_EXTRA="-D_GNU_SOURCE -DDATE=\\\"2022-03-17\\\" -DCOMP_DEFAULT=ZLIB"
+_EXTRA="$_EXTRA -Wno-error=implicit-function-declaration -Wno-error"
+
+make CC="$CC" \
+    CFLAGS="$CFLAGS $_EXTRA -DVERSION=\\\"4.5.1\\\"" \
+    LDFLAGS="$LDFLAGS" \
+    GZIP_SUPPORT=1 \
+    XZ_SUPPORT=1 \
+    LZ4_SUPPORT=1 \
+    ZSTD_SUPPORT=1 \
+    XATTR_SUPPORT=0 \
+    -j${MAKEOPTS:-$(nproc)} || \
+make CC="$CC" \
+    CFLAGS="$CFLAGS $_EXTRA -DVERSION=\\\"4.5.1\\\"" \
+    LDFLAGS="$LDFLAGS" \
+    GZIP_SUPPORT=1 \
+    XZ_SUPPORT=1 \
+    LZ4_SUPPORT=1 \
+    ZSTD_SUPPORT=1 \
+    XATTR_SUPPORT=0 \
+    -j1
+
+mkdir -p "$OUT/usr/bin"
+install -m755 mksquashfs "$OUT/usr/bin/"
+install -m755 unsquashfs "$OUT/usr/bin/"
+""",
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/compression/xz:xz",
+        "//packages/linux/system/libs/compression/lz4:lz4",
+        "//packages/linux/system/libs/compression/zstd:zstd",
+    ],
+)

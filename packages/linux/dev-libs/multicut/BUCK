@@ -1,0 +1,32 @@
+load("//defs:package.bzl", "package")
+
+# multicut - C++ graph algorithms library (multicut and graph components)
+# Header-only library, install via binary rule
+
+package(
+    name = "multicut",
+    build_rule = "binary",
+    version = "1.11",
+    url = "https://github.com/bjoern-andres/graph/archive/refs/tags/v1.11.tar.gz",
+    sha256 = "00432f3007b4cb2a8d6f2e021fd5625a79e307d6532971719ca6ab81dd0ae752",
+    description = "C++ template library for directed/undirected graphs with constant-time random access",
+    homepage = "https://github.com/bjoern-andres/graph",
+    license = "BSD-3-Clause",
+    deps = [],
+    install_script = """
+mkdir -p "$OUT/usr/include"
+# Copy header files preserving directory structure
+if [ -d include ]; then
+    cp -r include/* "$OUT/usr/include/"
+elif [ -d src ]; then
+    cp -r src/* "$OUT/usr/include/"
+else
+    # Copy all header files from the root
+    find . -name '*.hxx' -o -name '*.hpp' -o -name '*.h' | while read f; do
+        dir=$(dirname "$f")
+        mkdir -p "$OUT/usr/include/$dir"
+        cp "$f" "$OUT/usr/include/$dir/"
+    done
+fi
+""",
+)

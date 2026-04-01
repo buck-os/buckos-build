@@ -1,0 +1,27 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "binary",
+    name = "gpujpeg",
+    version = "0.26.0",
+    url = "https://github.com/CESNET/GPUJPEG/archive/refs/tags/v0.26.0.tar.gz",
+    sha256 = "e673e0890e82793485728ef576b9f00fe7a878fff8b0b1d1f00c1eb1725ecc63",
+    deps = [],
+
+    install_script = """
+# GPUJPEG requires CUDA nvcc compiler to build - install headers and source
+# so downstream CUDA-enabled builds can compile it
+mkdir -p "$OUT/usr/include/gpujpeg"
+cp "$SRCS/libgpujpeg/"*.h "$OUT/usr/include/gpujpeg/" 2>/dev/null || true
+cp "$SRCS/libgpujpeg/"*.cuh "$OUT/usr/include/gpujpeg/" 2>/dev/null || true
+
+# Install top-level header if present
+if [ -f "$SRCS/gpujpeg.h" ]; then
+    cp "$SRCS/gpujpeg.h" "$OUT/usr/include/"
+fi
+
+echo "gpujpeg headers installed successfully"
+""",
+
+    labels = ["buckos:hw:cuda"],
+)

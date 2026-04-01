@@ -1,0 +1,46 @@
+load("//defs:package.bzl", "package")
+
+# systemd-utils - Standalone systemd utilities
+# USE flags: (meson build system with many options)
+
+package(
+    build_rule = "meson",
+    name = "systemd-utils",
+    version = "255",
+    url = "https://github.com/systemd/systemd/archive/refs/tags/v255.tar.gz",
+    sha256 = "28854ffb2cb5f9e07fcbdbaf1e03a80b3462a12edeef84893ca2f37b22e4491e",
+    description = "Standalone systemd utilities (udevd, tmpfiles, etc.)",
+    homepage = "https://systemd.io",
+    license = "LGPL-2.1+",
+
+    # Exclude files with escaped characters that Buck2 can't handle
+    exclude_patterns = ["*/units/system-systemd*", "*/test/fuzz/fuzz-unit-file/*"],
+
+    # Note: Don't include -Dprefix as it's set automatically by meson_package
+    configure_args = [
+        "-Dsysconfdir=/etc",
+        "-Dlocalstatedir=/var",
+        "-Dmode=release",
+        "-Dstatic-libsystemd=false",
+        "-Dstandalone-binaries=true",
+        "-Dsplit-bin=true",
+        "-Dsysvrcnd-path=/etc",
+        "-Dlink-udev-shared=false",
+        "-Dlink-systemctl-shared=false",
+    ],
+    use_configure = {
+        "acl": ("-Dacl=enabled", "-Dacl=disabled"),
+        "boot": ("-Dbootloader=enabled", "-Dbootloader=disabled"),
+        "kernel-install": ("-Dkernel-install=true", "-Dkernel-install=false"),
+        "kmod": ("-Dkmod=enabled", "-Dkmod=disabled"),
+        "selinux": ("-Dselinux=enabled", "-Dselinux=disabled"),
+        "sysusers": ("-Dsysusers=true", "-Dsysusers=false"),
+        "tmpfiles": ("-Dtmpfiles=true", "-Dtmpfiles=false"),
+        "ukify": ("-Dukify=enabled", "-Dukify=disabled"),
+    },
+    deps = [
+        "//packages/linux/system/libs/ipc/libcap:libcap",
+        "//packages/linux/system/libs/ipc/libseccomp:libseccomp",
+        "//packages/linux/system/libs/crypto/libxcrypt:libxcrypt",
+    ],
+)
