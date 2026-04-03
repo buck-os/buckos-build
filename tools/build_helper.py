@@ -417,10 +417,12 @@ def main():
         return obj
 
     # Locate mesonbuild from hermetic path or path-prepend dirs
+    # Search both site-packages and dist-packages (meson installs to dist-packages).
     _meson_added_paths = []
     for _bp in list(args.hermetic_path) + list(args.path_prepend):
         _parent = os.path.dirname(os.path.abspath(_bp))
-        for _pattern in ("lib/python*/site-packages", "lib64/python*/site-packages"):
+        for _pattern in ("lib/python*/site-packages", "lib64/python*/site-packages",
+                          "lib/python*/dist-packages", "lib64/python*/dist-packages"):
             for _sp in _glob.glob(os.path.join(_parent, _pattern)):
                 if os.path.isdir(os.path.join(_sp, "mesonbuild")):
                     if _sp not in sys.path:

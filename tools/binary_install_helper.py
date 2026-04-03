@@ -16,7 +16,7 @@ import stat
 import subprocess
 import sys
 
-from _env import clean_env, file_prefix_map_flags, find_buckos_shell, portabilize_shebangs, register_cleanup, rewrite_shebangs, sanitize_filenames, write_stub_script
+from _env import clean_env, derive_lib_paths, file_prefix_map_flags, find_buckos_shell, find_dep_python3, portabilize_shebangs, preferred_linker_flag, register_cleanup, rewrite_shebangs, sanitize_filenames, setup_ccache_symlinks, write_pkg_config_wrapper, write_stub_script
 
 
 def _resolve_flag_paths(value, project_root):
@@ -75,7 +75,8 @@ def main():
                 "_HERMETIC_EMPTY", "_PATH_PREPEND",
                 "CFLAGS", "LDFLAGS",
                 "CPPFLAGS", "PKG_CONFIG_PATH", "_DEP_BIN_PATHS", "DEP_BASE_DIRS",
-                "_DEP_LD_LIBRARY_PATH", "_HOST_LIB_DIRS_FILE", "MAKE_JOBS"):
+                "_DEP_LD_LIBRARY_PATH", "_HOST_LIB_DIRS_FILE", "MAKE_JOBS",
+                "TARGET_TRIPLE"):
         val = os.environ.get(key)
         if val is not None:
             starlark_vars[key] = val
@@ -138,10 +139,20 @@ def main():
                 "_DEP_LD_LIBRARY_PATH", "_HERMETIC_PATH", "_PATH_PREPEND"):
         if key in starlark_vars:
             env[key] = _resolve_colon_paths(starlark_vars[key], project_root)
-    # Pass through boolean-ish flags that don't need path resolution
-    for key in ("_ALLOW_HOST_PATH", "_HERMETIC_EMPTY"):
+    # Pass through flags that don't need path resolution
+    for key in ("_ALLOW_HOST_PATH", "_HERMETIC_EMPTY", "TARGET_TRIPLE"):
         if key in starlark_vars:
             env[key] = starlark_vars[key]
+
+    # Propagate -I flags from CFLAGS to CXXFLAGS/CPPFLAGS so C++ builds
+    # find dep headers (autotools/cmake do this via build_helper.py).
+    _cflags_val = env.get("CFLAGS", "")
+    if _cflags_val:
+        _include_flags = " ".join(f for f in _cflags_val.split() if f.startswith("-I"))
+        if _include_flags:
+            for var in ("CPPFLAGS", "CXXFLAGS"):
+                existing = env.get(var, "")
+                env[var] = (_include_flags + " " + existing).strip() if existing else _include_flags
 
     # Scrub absolute build paths from debug info and __FILE__ expansions.
     pfm = " ".join(file_prefix_map_flags())
@@ -149,9 +160,30 @@ def main():
         existing = env.get(var, "")
         env[var] = (pfm + " " + existing).strip() if existing else pfm
 
+    # Set CHOST = TARGET_TRIPLE (matches autotools behavior)
+    _target_triple = starlark_vars.get("TARGET_TRIPLE")
+    if _target_triple:
+        env.setdefault("CHOST", _target_triple)
+        env.setdefault("CBUILD", _target_triple)
+
     # Re-inject user env attrs
     for key, val in user_env.items():
         env[key] = val
+
+    # Auto-set RUSTFLAGS so cargo build scripts link against sysroot glibc
+    # (matching the sysroot ld-linux), avoiding host glibc version mismatches.
+    # Only set if CC is present and RUSTFLAGS is not already set by the user.
+    if "RUSTFLAGS" not in env and env.get("CC"):
+        _cc = env["CC"]
+        _cc_parts = _cc.split()
+        # Skip ccache prefix
+        if _cc_parts and os.path.basename(_cc_parts[0]) == "ccache":
+            _cc_parts = _cc_parts[1:]
+        if _cc_parts:
+            _cc_bin = _cc_parts[0]
+            _link_args = " ".join(f"-C link-arg={flag}" for flag in _cc_parts[1:])
+            env["RUSTFLAGS"] = f"-C linker={_cc_bin} {_link_args}".strip()
+            env["CARGO_HOST_LINKER"] = _cc_bin
 
     # Hermetic PATH handling
     hermetic_path = env.pop("_HERMETIC_PATH", None)
@@ -294,6 +326,34 @@ def main():
                         if not os.path.exists(_link):
                             os.symlink(_cxx_bin, _link)
             env["PATH"] = _symlink_dir + ":" + env.get("PATH", "")
+
+    # ccache masquerade symlinks (matches build_helper.py behavior)
+    _scratch = env.get("BUCK_SCRATCH_PATH", env.get("TMPDIR", "/tmp"))
+    setup_ccache_symlinks(env, _scratch)
+
+    # Derive GCONV_PATH, GETTEXTDATADIRS, and additional LD_LIBRARY_PATH
+    # from hermetic and path-prepend dirs (matches build_helper.py).
+    hermetic_dirs = env.get("PATH", "").split(":")
+    derive_lib_paths(hermetic_dirs, env)
+
+    # Auto-detect PYTHON/PYTHON3 from hermetic PATH
+    _dep_python3 = find_dep_python3(env)
+    if _dep_python3:
+        env.setdefault("PYTHON", _dep_python3)
+        env.setdefault("PYTHON3", _dep_python3)
+
+    # Create pkg-config wrapper with --define-prefix (matches build_helper.py)
+    _wrapper_dir = write_pkg_config_wrapper(
+        os.path.join(workdir, ".pkgconf-wrapper"),
+        python=_dep_python3,
+    )
+    env["PATH"] = _wrapper_dir + ":" + env.get("PATH", "")
+
+    # Inject preferred linker flag into LDFLAGS (mold if available)
+    _ld_flag = preferred_linker_flag(env)
+    if _ld_flag:
+        existing = env.get("LDFLAGS", "")
+        env["LDFLAGS"] = (existing + " " + _ld_flag).strip()
 
     # Copy source to writable directory
     if os.path.isdir(source_dir):

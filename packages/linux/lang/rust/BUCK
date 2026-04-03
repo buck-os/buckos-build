@@ -116,16 +116,64 @@ echo "Using CC=$CC"
 # Stage0's ld.lld defaults to elf32-i386 when invoked as "ld.lld",
 # which breaks x86_64 linking.  Force GCC's bfd linker instead.
 _RUST_LDFLAGS=$(echo "$LDFLAGS" | sed 's/-fuse-ld=[^ ]*//g')
+
+# Build LIBRARY_PATH from dep dirs so GCC linker finds dep libs (e.g. zlib)
+# even when Rust's build system doesn't forward all -L flags.
+_LIBRARY_PATH=""
+IFS=':' read -ra _DEP_DIRS <<< "$DEP_BASE_DIRS"
+for _dep in "${_DEP_DIRS[@]}"; do
+    for _libdir in "$_dep/usr/lib64" "$_dep/usr/lib" "$_dep/tools/lib64" "$_dep/tools/lib"; do
+        if [ -d "$_libdir" ]; then
+            _LIBRARY_PATH="${_LIBRARY_PATH:+$_LIBRARY_PATH:}$_libdir"
+        fi
+    done
+done
+export LIBRARY_PATH="$_LIBRARY_PATH"
+
+# Build C_INCLUDE_PATH from dep dirs for header discovery
+_INCLUDE_PATH=""
+for _dep in "${_DEP_DIRS[@]}"; do
+    for _incdir in "$_dep/usr/include" "$_dep/tools/include"; do
+        if [ -d "$_incdir" ]; then
+            _INCLUDE_PATH="${_INCLUDE_PATH:+$_INCLUDE_PATH:}$_incdir"
+        fi
+    done
+done
+export C_INCLUDE_PATH="$_INCLUDE_PATH"
+export CPLUS_INCLUDE_PATH="$_INCLUDE_PATH"
+
 mkdir -p "$WORKDIR/cc-wrappers"
+
+# Build -L flags for dep lib dirs for RUSTFLAGS link-arg passthrough
+_DEP_LIB_LINK_ARGS=""
+for _dep in "${_DEP_DIRS[@]}"; do
+    for _libdir in "$_dep/usr/lib64" "$_dep/usr/lib" "$_dep/tools/lib64" "$_dep/tools/lib"; do
+        if [ -d "$_libdir" ]; then
+            _DEP_LIB_LINK_ARGS="$_DEP_LIB_LINK_ARGS -C link-arg=-L$_libdir"
+        fi
+    done
+done
+
 cat > "$WORKDIR/cc-wrappers/buckos-cc" << CCEOF
 #!/bin/sh
+export LIBRARY_PATH="$_LIBRARY_PATH"
+export C_INCLUDE_PATH="$_INCLUDE_PATH"
+export CPLUS_INCLUDE_PATH="$_INCLUDE_PATH"
 exec $CC $CFLAGS "\$@" $_RUST_LDFLAGS -fuse-ld=bfd
 CCEOF
 cat > "$WORKDIR/cc-wrappers/buckos-cxx" << CXXEOF
 #!/bin/sh
+export LIBRARY_PATH="$_LIBRARY_PATH"
+export C_INCLUDE_PATH="$_INCLUDE_PATH"
+export CPLUS_INCLUDE_PATH="$_INCLUDE_PATH"
 exec $CXX $CFLAGS "\$@" $_RUST_LDFLAGS -fuse-ld=bfd
 CXXEOF
 chmod +x "$WORKDIR/cc-wrappers/buckos-cc" "$WORKDIR/cc-wrappers/buckos-cxx"
+
+# Set RUSTFLAGS so rustc passes dep -L flags directly to the linker.
+# The CC wrapper passes LDFLAGS, but Rust's internal linker invocation
+# may not go through the wrapper for all link steps.
+export RUSTFLAGS="-C linker=$WORKDIR/cc-wrappers/buckos-cc $_DEP_LIB_LINK_ARGS"
 
 # Derive Rust target triple from TARGET_TRIPLE
 RUST_ARCH="${TARGET_TRIPLE%%-*}"

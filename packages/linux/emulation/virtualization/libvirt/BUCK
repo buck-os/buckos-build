@@ -1,48 +1,11 @@
 load("//defs:package.bzl", "package")
 
 # libvirt - Virtualization API
-# Use GitHub mirror since libvirt.org/download.libvirt.org often times out
-# USE flags: See use_flags.bzl for available flags
+# libvirt 10.x uses meson build system
 
 package(
-    build_rule = "autotools",
-    skip_configure = True,
+    build_rule = "meson",
     name = "libvirt",
-    use_configure = {
-        "apparmor": ("--enable-apparmor", "--disable-apparmor"),
-        "audit": ("--enable-audit", "--disable-audit"),
-        "bash-completion": ("--enable-bash-completion", "--disable-bash-completion"),
-        "caps": ("--enable-libcap", "--disable-libcap"),
-        "dtrace": ("--enable-dtrace", "--disable-dtrace"),
-        "firewalld": ("--enable-firewalld", "--disable-firewalld"),
-        "fuse": ("--enable-fuse", "--disable-fuse"),
-        "glusterfs": ("--enable-glusterfs", "--disable-glusterfs"),
-        "iscsi": ("--enable-iscsi", "--disable-iscsi"),
-        "iscsi-direct": ("--enable-iscsi-direct", "--disable-iscsi-direct"),
-        "libssh": ("--enable-libssh", "--disable-libssh"),
-        "libssh2": ("--enable-libssh2", "--disable-libssh2"),
-        "libvirtd": ("--enable-libvirtd", "--disable-libvirtd"),
-        "lvm": ("--enable-lvm", "--disable-lvm"),
-        "lxc": ("--enable-lxc", "--disable-lxc"),
-        "nbd": ("--enable-nbd", "--disable-nbd"),
-        "nfs": ("--enable-nfs", "--disable-nfs"),
-        "nls": ("--enable-nls", "--disable-nls"),
-        "numa": ("--enable-numa", "--disable-numa"),
-        "parted": ("--enable-parted", "--disable-parted"),
-        "pcap": ("--enable-pcap", "--disable-pcap"),
-        "policykit": ("--enable-policykit", "--disable-policykit"),
-        "qemu": ("--enable-qemu", "--disable-qemu"),
-        "rbd": ("--enable-rbd", "--disable-rbd"),
-        "sasl": ("--enable-sasl", "--disable-sasl"),
-        "selinux": ("--enable-selinux", "--disable-selinux"),
-        "udev": ("--enable-udev", "--disable-udev"),
-        "virt-network": ("--enable-virt-network", "--disable-virt-network"),
-        "virtiofsd": ("--enable-virtiofsd", "--disable-virtiofsd"),
-        "virtualbox": ("--enable-virtualbox", "--disable-virtualbox"),
-        "wireshark-plugins": ("--enable-wireshark-plugins", "--disable-wireshark-plugins"),
-        "xen": ("--enable-xen", "--disable-xen"),
-        "zfs": ("--enable-zfs", "--disable-zfs"),
-    },
     version = "10.7.0",
     url = "https://download.libvirt.org/libvirt-10.7.0.tar.xz",
     sha256 = "ca757322eed998013b21f474c6c0c15dc08320ba6c8bae54aa16a93a1c3b7054",
@@ -51,41 +14,38 @@ package(
     license = "LGPL-2.1",
     configure_args = [
         "--prefix=/usr",
-        "--sysconfdir=/etc",
-        "--localstatedir=/var",
-        "--libexecdir=/usr/lib/libvirt",
-        "--with-runstatedir=/run",
-        "--with-qemu",
-        "--with-qemu-user=qemu",
-        "--with-qemu-group=qemu",
-        "--with-lxc",
-        "--with-libxl",
-        "--with-vbox",
-        "--with-libssh2",
-        "--with-sasl",
-        "--with-polkit",
-        "--with-udev",
-        "--with-storage-fs",
-        "--with-storage-lvm",
-        "--with-storage-iscsi",
-        "--with-storage-disk",
-        "--with-storage-rbd",
-        "--with-storage-zfs",
-        "--with-numactl",
-        "--with-numad",
-        "--with-firewalld",
-        "--with-network",
-        "--with-nwfilter",
-        "--with-interface",
-        "--with-macvtap",
-        "--with-virtualport",
-        "--with-secdriver-apparmor=no",
-        "--with-secdriver-selinux=no",
-        "--with-audit",
-        "--with-dtrace",
-        "--with-systemd-daemon",
-        "--with-init-script=systemd",
+        "-Dsysconfdir=/etc",
+        "-Dlocalstatedir=/var",
+        "-Drunstatedir=/run",
+        "-Dtests=disabled",
+        "-Ddocs=disabled",
     ],
+    use_configure = {
+        "apparmor": ("-Dapparmor=enabled", "-Dapparmor=disabled"),
+        "audit": ("-Daudit=enabled", "-Daudit=disabled"),
+        "caps": ("-Dlibcap=enabled", "-Dlibcap=disabled"),
+        "dtrace": ("-Ddtrace=enabled", "-Ddtrace=disabled"),
+        "firewalld": ("-Dfirewalld=enabled", "-Dfirewalld=disabled"),
+        "fuse": ("-Dfuse=enabled", "-Dfuse=disabled"),
+        "glusterfs": ("-Dglusterfs=enabled", "-Dglusterfs=disabled"),
+        "iscsi": ("-Dstorage_iscsi=enabled", "-Dstorage_iscsi=disabled"),
+        "libssh": ("-Dlibssh=enabled", "-Dlibssh=disabled"),
+        "libssh2": ("-Dlibssh2=enabled", "-Dlibssh2=disabled"),
+        "libvirtd": ("-Ddriver_libvirtd=enabled", "-Ddriver_libvirtd=disabled"),
+        "lvm": ("-Dstorage_lvm=enabled", "-Dstorage_lvm=disabled"),
+        "lxc": ("-Ddriver_lxc=enabled", "-Ddriver_lxc=disabled"),
+        "nbd": ("-Dnbd=enabled", "-Dnbd=disabled"),
+        "nls": ("-Dnls=enabled", "-Dnls=disabled"),
+        "numa": ("-Dnumactl=enabled", "-Dnumactl=disabled"),
+        "pcap": ("-Dlibpcap=enabled", "-Dlibpcap=disabled"),
+        "policykit": ("-Dpolkit=enabled", "-Dpolkit=disabled"),
+        "qemu": ("-Ddriver_qemu=enabled", "-Ddriver_qemu=disabled"),
+        "sasl": ("-Dsasl=enabled", "-Dsasl=disabled"),
+        "selinux": ("-Dselinux=enabled", "-Dselinux=disabled"),
+        "udev": ("-Dudev=enabled", "-Dudev=disabled"),
+        "wireshark-plugins": ("-Dwireshark_dissector=enabled", "-Dwireshark_dissector=disabled"),
+        "zfs": ("-Dstorage_zfs=enabled", "-Dstorage_zfs=disabled"),
+    },
     deps = [
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/system/libs/data/libxml2:libxml2",
@@ -102,11 +62,9 @@ package(
 )
 
 # libvirt client libraries only
-# USE flags: See use_flags.bzl for available flags
 
 package(
-    build_rule = "autotools",
-    skip_configure = True,
+    build_rule = "meson",
     name = "libvirt-client",
     version = "10.7.0",
     source = ":libvirt-src",
@@ -115,9 +73,10 @@ package(
     license = "LGPL-2.1",
     configure_args = [
         "--prefix=/usr",
-        "--sysconfdir=/etc",
-        "--without-libvirtd",
-        "--with-driver-modules=no",
+        "-Dsysconfdir=/etc",
+        "-Ddriver_libvirtd=disabled",
+        "-Dtests=disabled",
+        "-Ddocs=disabled",
     ],
     deps = [
         "//packages/linux/dev-libs/glib:glib",
@@ -127,11 +86,9 @@ package(
 )
 
 # libvirt Python bindings
-# USE flags: See use_flags.bzl for available flags
 
 package(
-    build_rule = "autotools",
-    skip_configure = True,
+    build_rule = "meson",
     name = "libvirt-python",
     version = "10.7.0",
     source = ":libvirt-src",
@@ -140,6 +97,7 @@ package(
     license = "LGPL-2.1",
     configure_args = [
         "--prefix=/usr",
+        "-Dtests=disabled",
     ],
     deps = [
         ":libvirt",
