@@ -307,6 +307,19 @@ def sysroot_lib_paths(ld_linux_path, env):
     disable_posix_spawn(env)
 
 
+def _is_sysroot_lib_dir(d):
+    """Return True if directory contains sysroot-only libraries.
+
+    These dirs must NOT be added to LD_LIBRARY_PATH because host
+    binaries (perl, python, etc.) would load sysroot libs built
+    against a different glibc, causing ABI mismatch crashes.
+    """
+    for marker in ("libc.so.6", "libcrypt.so", "libgcc_s.so.1"):
+        if os.path.exists(os.path.join(d, marker)):
+            return True
+    return False
+
+
 def derive_lib_paths(bin_dirs, env):
     """Derive LD_LIBRARY_PATH and tool data dirs from bin dirs.
 
@@ -315,18 +328,20 @@ def derive_lib_paths(bin_dirs, env):
     shared libraries, and sets BISON_PKGDATADIR so relocated bison
     finds its m4sugar data files.
 
-    Directories containing libc.so.6 are EXCLUDED from LD_LIBRARY_PATH
-    to avoid poisoning host processes with buckos glibc.  Buckos binaries
-    find glibc via $ORIGIN RPATH set at build time by GCC specs.
-    Including glibc in LD_LIBRARY_PATH would poison the cross-compiler
-    (a host binary) causing segfaults on hosts with older glibc.
+    Directories containing sysroot-only libraries are EXCLUDED from
+    LD_LIBRARY_PATH to avoid poisoning host processes.  Buckos binaries
+    find these libs via $ORIGIN RPATH set at build time by GCC specs.
+    Including them in LD_LIBRARY_PATH would poison host binaries
+    (e.g. host perl loading sysroot libcrypt.so → glibc ABI mismatch).
+
+    Excluded markers: libc.so.6, libcrypt.so (libxcrypt), libgcc_s.so.1.
     """
     lib_parts = []
     for bin_dir in bin_dirs:
         parent = os.path.dirname(os.path.abspath(bin_dir))
         for ld in ("lib", "lib64"):
             d = os.path.join(parent, ld)
-            if os.path.isdir(d) and not os.path.exists(os.path.join(d, "libc.so.6")):
+            if os.path.isdir(d) and not _is_sysroot_lib_dir(d):
                 lib_parts.append(d)
         # Bison looks for data at compiled-in /usr/share/bison; set
         # BISON_PKGDATADIR so it finds data in the relocated prefix.
@@ -460,7 +475,16 @@ def find_buckos_shell(env):
 
 
 def preferred_linker_flag(env):
-    """Return -fuse-ld=mold if ld.mold is on PATH, else empty string."""
+    """Return -fuse-ld=mold if ld.mold is on PATH, else empty string.
+
+    Respects existing -fuse-ld= in LDFLAGS or CFLAGS — packages like GRUB
+    that need -fuse-ld=bfd (freestanding modules incompatible with mold)
+    can set extra_ldflags/extra_cflags and won't be overridden.
+    """
+    # Don't override if a linker is already explicitly selected.
+    for var in ("LDFLAGS", "CFLAGS"):
+        if "-fuse-ld=" in env.get(var, ""):
+            return ""
     for d in env.get("PATH", "").split(":"):
         if d and os.path.isfile(os.path.join(d, "ld.mold")):
             return "-fuse-ld=mold"
