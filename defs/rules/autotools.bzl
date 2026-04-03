@@ -23,6 +23,7 @@ load("//defs/rules:_common.bzl",
      "COMMON_PACKAGE_ATTRS",
      "add_flag_file", "build_package_tsets", "collect_dep_tsets",
      "collect_host_path_children",
+     "package_linker_cflags", "package_linker_ldflags",
      "write_bin_dirs", "write_compile_flags", "write_lib_dirs_with_hosts",
      "write_link_flags", "write_pkg_config_paths",
 )
@@ -144,10 +145,10 @@ def _src_configure(ctx, source, cflags_file = None, ldflags_file = None,
         for flag in toolchain_extra_ldflags(ctx):
             cmd.add(cmd_args("--ldflags=", flag, delimiter = ""))
 
-        # Extra CFLAGS / LDFLAGS from this package's attrs
-        for flag in ctx.attrs.extra_cflags:
+        # Extra CFLAGS / LDFLAGS from this package's attrs + linker/freestanding
+        for flag in list(ctx.attrs.extra_cflags) + package_linker_cflags(ctx):
             cmd.add(cmd_args("--cflags=", flag, delimiter = ""))
-        for flag in ctx.attrs.extra_ldflags:
+        for flag in list(ctx.attrs.extra_ldflags) + package_linker_ldflags(ctx):
             cmd.add(cmd_args("--ldflags=", flag, delimiter = ""))
 
         # --with-NAME=<prefix>/usr and --with-NAME-lib=<prefix>/usr/lib64
@@ -205,8 +206,8 @@ def _src_compile(ctx, configured, cflags_file = None, ldflags_file = None,
         cmd.add(arg)
 
     # Toolchain-injected CFLAGS / LDFLAGS for build phase
-    _tc_cflags = list(toolchain_extra_cflags(ctx)) + list(ctx.attrs.extra_cflags)
-    _tc_ldflags = list(toolchain_extra_ldflags(ctx)) + list(ctx.attrs.extra_ldflags)
+    _tc_cflags = list(toolchain_extra_cflags(ctx)) + list(ctx.attrs.extra_cflags) + package_linker_cflags(ctx)
+    _tc_ldflags = list(toolchain_extra_ldflags(ctx)) + list(ctx.attrs.extra_ldflags) + package_linker_ldflags(ctx)
     if _tc_cflags:
         cmd.add("--env", cmd_args("CFLAGS=", cmd_args(_tc_cflags, delimiter = " "), delimiter = ""))
     if _tc_ldflags:
@@ -277,8 +278,8 @@ def _src_install(ctx, built, cflags_file = None, ldflags_file = None,
         cmd.add(arg)
 
     # Toolchain-injected CFLAGS / LDFLAGS for install phase
-    _tc_cflags = list(toolchain_extra_cflags(ctx)) + list(ctx.attrs.extra_cflags)
-    _tc_ldflags = list(toolchain_extra_ldflags(ctx)) + list(ctx.attrs.extra_ldflags)
+    _tc_cflags = list(toolchain_extra_cflags(ctx)) + list(ctx.attrs.extra_cflags) + package_linker_cflags(ctx)
+    _tc_ldflags = list(toolchain_extra_ldflags(ctx)) + list(ctx.attrs.extra_ldflags) + package_linker_ldflags(ctx)
     if _tc_cflags:
         cmd.add("--env", cmd_args("CFLAGS=", cmd_args(_tc_cflags, delimiter = " "), delimiter = ""))
     if _tc_ldflags:

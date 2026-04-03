@@ -11,7 +11,9 @@ Four discrete cacheable actions:
 load("//defs:providers.bzl", "BuildToolchainInfo", "PackageInfo")
 load("//defs/rules:_common.bzl",
      "COMMON_PACKAGE_ATTRS", "build_package_tsets",
-     "collect_host_path_children", "inject_use_env", "write_host_lib_dirs",
+     "collect_host_path_children", "inject_use_env",
+     "package_linker_cflags", "package_linker_ldflags",
+     "write_host_lib_dirs",
 )
 load("//defs:toolchain_helpers.bzl",
      "toolchain_extra_cflags", "toolchain_extra_ldflags",
@@ -64,8 +66,8 @@ def _dep_env_args(ctx):
     pkg_config_paths = []
     lib_dirs = []
     dep_base_dirs = []
-    cflags = list(toolchain_extra_cflags(ctx)) + list(ctx.attrs.extra_cflags)
-    ldflags = list(toolchain_extra_ldflags(ctx)) + list(ctx.attrs.extra_ldflags)
+    cflags = list(toolchain_extra_cflags(ctx)) + list(ctx.attrs.extra_cflags) + package_linker_cflags(ctx)
+    ldflags = list(toolchain_extra_ldflags(ctx)) + list(ctx.attrs.extra_ldflags) + package_linker_ldflags(ctx)
 
     for dep in ctx.attrs.deps:
         if PackageInfo in dep:

@@ -32,6 +32,13 @@ COMMON_PACKAGE_ATTRS = {
     "patches": attrs.list(attrs.source(), default = []),
     "extra_cflags": attrs.list(attrs.string(), default = []),
     "extra_ldflags": attrs.list(attrs.string(), default = []),
+    # Linker options for this package.  Accepts a list of tokens:
+    #   "bfd"    — force ld.bfd via -fuse-ld=bfd (bypasses mold auto-detection)
+    #   "mold"   — force mold via -fuse-ld=mold
+    #   "no-pie" — disable PIE (-fno-pie in CFLAGS, -no-pie in LDFLAGS)
+    # Example: linker = ["bfd", "no-pie"] for freestanding/relocatable builds
+    # like GRUB modules or binutils.
+    "linker": attrs.list(attrs.string(), default = []),
     "libraries": attrs.list(attrs.string(), default = []),
 
     # Labels (metadata-only, for BXL queries)
@@ -55,6 +62,28 @@ COMMON_PACKAGE_ATTRS = {
     # blocklist check prevents self-cycles.
     "_base_host_tools": attrs.default_only(attrs.list(attrs.exec_dep(), default = [])),
 } | TOOLCHAIN_ATTRS
+
+# ── Linker / freestanding helpers ─────────────────────────────────────
+
+def package_linker_cflags(ctx):
+    """Extra CFLAGS implied by linker= options."""
+    flags = []
+    for opt in getattr(ctx.attrs, "linker", []):
+        if opt in ("bfd", "mold", "gold", "lld"):
+            flags.append("-fuse-ld=" + opt)
+        elif opt == "no-pie":
+            flags.append("-fno-pie")
+    return flags
+
+def package_linker_ldflags(ctx):
+    """Extra LDFLAGS implied by linker= options."""
+    flags = []
+    for opt in getattr(ctx.attrs, "linker", []):
+        if opt in ("bfd", "mold", "gold", "lld"):
+            flags.append("-fuse-ld=" + opt)
+        elif opt == "no-pie":
+            flags.append("-no-pie")
+    return flags
 
 # ── Tset construction ────────────────────────────────────────────────
 

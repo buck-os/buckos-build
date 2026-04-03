@@ -49,8 +49,13 @@ esac
 
 # glibc's configure is sensitive to CFLAGS/LDFLAGS — override with
 # minimal flags.  Specs handle the padded interp + RPATH via CC.
+# Clear CPPFLAGS too: binary_install_helper.py propagates dep -I flags
+# into CPPFLAGS, but glibc uses -nostdinc and manages its own include
+# paths via --with-headers and -isystem.  Stale -I flags in CPPFLAGS
+# leak into every compiler invocation via make's built-in rules.
 export CFLAGS="-O2 $MARCH_FLAG"
 export CXXFLAGS="-O2 $MARCH_FLAG"
+export CPPFLAGS=""
 export LDFLAGS=""
 
 # Patch .eh_frame section attributes — the cross-compiler generates

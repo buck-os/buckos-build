@@ -13,14 +13,25 @@ package(
     homepage = "https://www.gnu.org/software/grub/",
     license = "GPL-3.0",
     # Create extra_deps.lst to avoid build error (missing from source tarball)
+    # GRUB modules are freestanding relocatable objects — PIE and mold are
+    # incompatible.  GRUB's configure auto-detects TARGET_CC=gcc (bare) and
+    # uses separate TARGET_CFLAGS/TARGET_LDFLAGS that don't inherit from
+    # CFLAGS/LDFLAGS, so we also inject flags via pre_configure_cmds.
+    linker = ["bfd", "no-pie"],
     pre_configure_cmds = [
         "echo 'depends bli part_gpt' > grub-core/extra_deps.lst",
+        "export TARGET_CFLAGS=\"${TARGET_CFLAGS:-} -fno-pie\"",
+        "export TARGET_LDFLAGS=\"${TARGET_LDFLAGS:-} -no-pie -fuse-ld=bfd\"",
     ],
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc",
         "--libdir=/usr/lib64",
-        "--target=x86_64",
+    ] + select({
+        "//platforms:is_aarch64": ["--target=aarch64"],
+        "//platforms:is_x86_64": ["--target=x86_64"],
+        "DEFAULT": ["--target=x86_64"],
+    }) + [
         "--with-platform=efi",
         "--disable-werror",
         "--disable-rpath",
@@ -35,6 +46,9 @@ package(
         "//packages/linux/system/libs/compression/xz:xz",
         "//packages/linux/system/init/eudev:eudev",
     ],
+    host_deps = [
+        "//packages/linux/lang/perl:perl",
+    ],
     post_install_cmds = [
         # BuckOS GRUB theme
         "mkdir -p usr/share/grub/themes/buckos",
@@ -45,7 +59,7 @@ package(
     ],
 )
 
-# GRUB for BIOS systems
+# GRUB for BIOS systems (x86 only — BIOS boot is not applicable to aarch64)
 # USE flags: See use_flags.bzl for available flags
 
 package(
@@ -56,8 +70,11 @@ package(
     description = "GNU GRUB for BIOS systems",
     homepage = "https://www.gnu.org/software/grub/",
     license = "GPL-3.0",
+    linker = ["bfd", "no-pie"],
     pre_configure_cmds = [
         "echo 'depends bli part_gpt' > grub-core/extra_deps.lst",
+        "export TARGET_CFLAGS=\"${TARGET_CFLAGS:-} -fno-pie\"",
+        "export TARGET_LDFLAGS=\"${TARGET_LDFLAGS:-} -no-pie -fuse-ld=bfd\"",
     ],
     configure_args = [
         "--prefix=/usr",
@@ -76,6 +93,9 @@ package(
     deps = [
         "//packages/linux/system/libs/compression/xz:xz",
         "//packages/linux/system/init/eudev:eudev",
+    ],
+    host_deps = [
+        "//packages/linux/lang/perl:perl",
     ],
     post_install_cmds = [
         "mkdir -p usr/share/grub/themes/buckos",

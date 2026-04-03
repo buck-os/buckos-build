@@ -16,7 +16,9 @@ load("//defs:providers.bzl", "PackageInfo")
 load("//defs/rules:_common.bzl",
      "COMMON_PACKAGE_ATTRS",
      "add_flag_file", "build_package_tsets", "collect_dep_tsets",
-     "collect_host_path_children", "src_prepare",
+     "collect_host_path_children",
+     "package_linker_cflags", "package_linker_ldflags",
+     "src_prepare",
      "write_bin_dirs", "write_compile_flags", "write_lib_dirs_with_hosts",
      "write_link_flags", "write_pkg_config_paths",
 )
@@ -83,8 +85,8 @@ def _meson_setup(ctx, source, cflags_file = None, ldflags_file = None,
     # Note: dep libraries (-l flags) are NOT passed — meson discovers
     # them via pkg-config.  Putting -l flags in LDFLAGS breaks meson's
     # C compiler sanity check (test binaries can't find .so files at runtime).
-    cflags = list(toolchain_extra_cflags(ctx)) + list(ctx.attrs.extra_cflags)
-    ldflags = list(toolchain_extra_ldflags(ctx)) + list(ctx.attrs.extra_ldflags)
+    cflags = list(toolchain_extra_cflags(ctx)) + list(ctx.attrs.extra_cflags) + package_linker_cflags(ctx)
+    ldflags = list(toolchain_extra_ldflags(ctx)) + list(ctx.attrs.extra_ldflags) + package_linker_ldflags(ctx)
     if cflags:
         cmd.add("--env", cmd_args("CFLAGS=", cmd_args(cflags, delimiter = " "), delimiter = ""))
     if ldflags:

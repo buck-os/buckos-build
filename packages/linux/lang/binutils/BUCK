@@ -44,7 +44,7 @@ package(
         "xxhash": ("--enable-xxhash", "--disable-xxhash"),
         "zstd": ("--with-zstd", "--without-zstd"),
     },
-    extra_ldflags = ["-no-pie", "-fuse-ld=bfd"],
+    linker = ["bfd", "no-pie"],
     pre_configure_cmds = [
         # Remove any stale config.cache files that cause CPPFLAGS conflicts
         "find . -name 'config.cache' -delete",
