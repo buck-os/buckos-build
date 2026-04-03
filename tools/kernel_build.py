@@ -75,6 +75,8 @@ def main():
                         help="Buckos ld-linux path (disables posix_spawn)")
     parser.add_argument("--path-prepend", action="append", dest="path_prepend", default=[],
                         help="Directory to prepend to PATH (repeatable, resolved to absolute)")
+    parser.add_argument("--lib-prepend", action="append", dest="lib_prepend", default=[],
+                        help="Directory to prepend to LD_LIBRARY_PATH (repeatable)")
     args = parser.parse_args()
 
     source_dir = os.path.abspath(args.source_dir)
@@ -125,6 +127,14 @@ def main():
         derive_lib_paths(args.hermetic_path, os.environ)
     if args.path_prepend:
         derive_lib_paths(args.path_prepend, os.environ)
+
+    # Add explicit lib dirs to LD_LIBRARY_PATH (for transitive deps
+    # like libbz2/liblzma that objtool needs at runtime).
+    if args.lib_prepend:
+        lib_dirs = [os.path.abspath(d) for d in args.lib_prepend if os.path.isdir(d)]
+        if lib_dirs:
+            existing = os.environ.get("LD_LIBRARY_PATH", "")
+            os.environ["LD_LIBRARY_PATH"] = ":".join(lib_dirs) + (":" + existing if existing else "")
 
     if args.ld_linux:
         sysroot_lib_paths(args.ld_linux, os.environ)

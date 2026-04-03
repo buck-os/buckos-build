@@ -146,6 +146,8 @@ def main():
 
     # Propagate -I flags from CFLAGS to CXXFLAGS/CPPFLAGS so C++ builds
     # find dep headers (autotools/cmake do this via build_helper.py).
+    # Packages that use -nostdinc (e.g. glibc) must explicitly clear
+    # CPPFLAGS in their install script to avoid include path conflicts.
     _cflags_val = env.get("CFLAGS", "")
     if _cflags_val:
         _include_flags = " ".join(f for f in _cflags_val.split() if f.startswith("-I"))

@@ -111,6 +111,23 @@ def _iso_image_impl(ctx: AnalysisContext) -> list[Provider]:
         if _dep and PackageInfo in _dep:
             cmd.add("--path-prepend", _dep[PackageInfo].prefix.project("usr/lib"))
 
+    # GRUB EFI for grub-mkimage (creates EFI boot image)
+    grub_dep = ctx.attrs._grub
+    if grub_dep and PackageInfo in grub_dep:
+        cmd.add("--path-prepend", grub_dep[PackageInfo].prefix.project("usr/bin"))
+        # grub-mkimage needs the module directory (lib64/grub/x86_64-efi)
+        cmd.add("--path-prepend", grub_dep[PackageInfo].prefix.project("usr/lib64/grub"))
+
+    # dosfstools for mkfs.vfat (creates FAT EFI system partition)
+    dosfstools_dep = ctx.attrs._dosfstools
+    if dosfstools_dep and PackageInfo in dosfstools_dep:
+        cmd.add("--path-prepend", dosfstools_dep[PackageInfo].prefix.project("usr/sbin"))
+
+    # mtools for mmd/mcopy (populates FAT EFI image)
+    mtools_dep = ctx.attrs._mtools
+    if mtools_dep and PackageInfo in mtools_dep:
+        cmd.add("--path-prepend", mtools_dep[PackageInfo].prefix.project("usr/bin"))
+
     ctx.actions.run(cmd, category = "iso", identifier = ctx.attrs.name, allow_cache_upload = True)
 
     return [
@@ -152,6 +169,18 @@ _iso_image_rule = rule(
         ),
         "_libburn": attrs.default_only(
             attrs.exec_dep(default = "//packages/linux/dev-libs/iso/libburn:libburn"),
+        ),
+        # GRUB EFI for grub-mkimage (creates UEFI boot image)
+        "_grub": attrs.default_only(
+            attrs.exec_dep(default = "//packages/linux/boot/grub:grub"),
+        ),
+        # dosfstools for mkfs.vfat (creates FAT EFI system partition image)
+        "_dosfstools": attrs.default_only(
+            attrs.exec_dep(default = "//packages/linux/system/filesystem/native/dosfstools:dosfstools"),
+        ),
+        # mtools for mmd/mcopy (populates FAT image with EFI bootloader)
+        "_mtools": attrs.default_only(
+            attrs.exec_dep(default = "//packages/linux/system/apps/mtools:mtools"),
         ),
     } | TOOLCHAIN_ATTRS,
 )

@@ -16,7 +16,7 @@ import subprocess
 import sys
 import tempfile
 
-from _env import sanitize_global_env, sysroot_lib_paths
+from _env import _is_sysroot_lib_dir, sanitize_global_env, sysroot_lib_paths
 
 
 def _resolve_path(path):
@@ -325,6 +325,16 @@ def _create_squashfs(rootfs_dir, modules_dir, work):
                         capture_output=True,
                     )
 
+        # Regenerate ld.so.cache so the dynamic linker can find libraries
+        # in non-default paths (e.g. /usr/lib64/systemd for libsystemd-core).
+        # Must run after all overlays and modules are in place.
+        _ldconfig = shutil.which("ldconfig")
+        ld_so_conf = os.path.join(rootfs_work, "etc", "ld.so.conf")
+        if _ldconfig and os.path.isfile(ld_so_conf):
+            print("Regenerating ld.so.cache...")
+            subprocess.run([_ldconfig, "-r", rootfs_work],
+                           capture_output=True)
+
         squashfs_out = os.path.join(live_dir, "filesystem.squashfs")
         print("Creating squashfs...")
         _run([mksquashfs, rootfs_work, squashfs_out,
@@ -490,7 +500,7 @@ def main():
             _parent = os.path.dirname(_bp)
             for _ld in ("lib", "lib64"):
                 _d = os.path.join(_parent, _ld)
-                if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")):
+                if os.path.isdir(_d) and not _is_sysroot_lib_dir(_d):
                     _lib_dirs.append(_d)
                     _glibc_d = os.path.join(_d, "glibc")
                     if os.path.isdir(_glibc_d):
@@ -531,7 +541,7 @@ def main():
             _parent = os.path.dirname(os.path.abspath(_bp))
             for _ld in ("lib", "lib64"):
                 _d = os.path.join(_parent, _ld)
-                if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")):
+                if os.path.isdir(_d) and not _is_sysroot_lib_dir(_d):
                     _dep_lib_dirs.append(_d)
                     _glibc_d = os.path.join(_d, "glibc")
                     if os.path.isdir(_glibc_d):

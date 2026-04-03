@@ -18,7 +18,7 @@ cd "$BUILD"
 SRCROOT=$(pwd)
 cd app/consapp
 export OPTS="-DTRACE -DENAGLO -DENAQZS -DENAGAL -DENACMP -DENAIRN -DNFREQ=2"
-export CFLAGS="-Wall -O3 -ansi -pedantic -Wno-unused-but-set-variable -I$SRCROOT/src $OPTS"
+export CFLAGS="$CFLAGS -Wall -ansi -pedantic -Wno-unused-but-set-variable -I$SRCROOT/src $OPTS"
 export LDLIBS="-lm -lrt"
 
 for dir in pos2kml str2str rnx2rtkp convbin rtkrcv; do

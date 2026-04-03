@@ -16,7 +16,7 @@ import stat
 import subprocess
 import sys
 
-from _env import apply_cache_config, clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, find_buckos_shell, find_dep_python3, portabilize_shebangs, preferred_linker_flag, register_cleanup, sanitize_filenames, setup_ccache_symlinks, sysroot_lib_paths, write_pkg_config_wrapper
+from _env import _is_sysroot_lib_dir, apply_cache_config, clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, find_buckos_shell, find_dep_python3, portabilize_shebangs, preferred_linker_flag, register_cleanup, sanitize_filenames, setup_ccache_symlinks, sysroot_lib_paths, write_pkg_config_wrapper
 
 
 def _rewrite_file(fpath, old, new):
@@ -436,7 +436,7 @@ def main():
                 _parent = os.path.dirname(os.path.abspath(_bp))
                 for _ld in ("lib", "lib64"):
                     _d = os.path.join(_parent, _ld)
-                    if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")):
+                    if os.path.isdir(_d) and not _is_sysroot_lib_dir(_d):
                         _lib_dirs.append(_d)
                         _glibc_d = os.path.join(_d, "glibc")
                         if os.path.isdir(_glibc_d):
@@ -467,14 +467,14 @@ def main():
 
     # Dep lib dirs in LD_LIBRARY_PATH so dep shared libs are found at
     # install time (e.g. Python test-imports extension modules during
-    # make install).  Exclude dirs with libc.so.6 to avoid poisoning
-    # host tools with sysroot glibc.
+    # make install).  Exclude sysroot lib dirs to avoid poisoning
+    # host tools with sysroot glibc/libcrypt.
     # Skip in --allow-host-path mode: host tools crash loading buckos
     # libs linked against a newer glibc.  Buckos tools use RPATH.
     if file_lib_dirs and not args.allow_host_path:
         resolved = [
             os.path.abspath(d) for d in file_lib_dirs
-            if os.path.isdir(d) and not os.path.exists(os.path.join(os.path.abspath(d), "libc.so.6"))
+            if os.path.isdir(d) and not _is_sysroot_lib_dir(os.path.abspath(d))
         ]
         if resolved:
             existing = env.get("LD_LIBRARY_PATH", "")

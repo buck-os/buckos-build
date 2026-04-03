@@ -16,7 +16,9 @@ load("//defs:providers.bzl", "PackageInfo")
 load("//defs/rules:_common.bzl",
      "COMMON_PACKAGE_ATTRS",
      "add_flag_file", "build_package_tsets", "collect_dep_tsets",
-     "collect_host_path_children", "src_prepare",
+     "collect_host_path_children",
+     "package_linker_cflags", "package_linker_ldflags",
+     "src_prepare",
      "write_bin_dirs", "write_cmake_prefix_paths", "write_compile_flags",
      "write_lib_dirs_with_hosts", "write_link_flags", "write_pkg_config_paths",
 )
@@ -77,8 +79,8 @@ def _cmake_configure(ctx, source, cflags_file = None, ldflags_file = None,
 
     # Toolchain and per-package CFLAGS / LDFLAGS as cmake defines.
     # These are merged with dep tset flags by the cmake_helper.
-    cflags = list(toolchain_extra_cflags(ctx)) + list(ctx.attrs.extra_cflags)
-    ldflags = list(toolchain_extra_ldflags(ctx)) + list(ctx.attrs.extra_ldflags)
+    cflags = list(toolchain_extra_cflags(ctx)) + list(ctx.attrs.extra_cflags) + package_linker_cflags(ctx)
+    ldflags = list(toolchain_extra_ldflags(ctx)) + list(ctx.attrs.extra_ldflags) + package_linker_ldflags(ctx)
     if cflags:
         _cf = cmd_args(cflags, delimiter = " ")
         cmd.add(cmd_args("--cmake-define=", "CMAKE_C_FLAGS=", _cf, delimiter = ""))
