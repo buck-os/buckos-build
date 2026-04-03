@@ -95,7 +95,7 @@ define_packages() {
             PACKAGES=(
                 sys-devel/gcc sys-devel/binutils dev-build/cmake dev-build/meson
                 dev-build/ninja dev-lang/python dev-lang/perl sys-devel/m4
-                sys-devel/autoconf sys-devel/automake dev-build/libtool
+                dev-build/autoconf dev-build/automake dev-build/libtool
                 virtual/pkgconfig net-misc/curl app-arch/tar app-arch/xz-utils
                 app-arch/bzip2 app-arch/gzip app-arch/lzip app-arch/zstd
                 sys-apps/file sys-devel/patch app-arch/unzip sys-apps/gawk
@@ -103,7 +103,7 @@ define_packages() {
                 sys-apps/coreutils app-shells/bash sys-devel/gettext
                 sys-apps/texinfo sys-devel/bison sys-devel/flex dev-util/gperf
                 sys-apps/help2man sys-libs/zlib sys-kernel/linux-headers
-                dev-vcs/git app-crypt/gnupg virtual/rust
+                dev-vcs/git app-crypt/gnupg dev-lang/rust
                 sys-apps/fd sys-apps/ripgrep
                 app-crypt/ima-evm-utils
             )
