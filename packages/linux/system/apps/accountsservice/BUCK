@@ -13,7 +13,9 @@ package(
     description = "D-Bus interface for user account management",
     homepage = "https://www.freedesktop.org/wiki/Software/AccountsService/",
     license = "GPL-3.0-or-later",
-    # use_deps: systemd -> system//init/systemd
+    use_deps = {
+        "systemd": "//packages/linux/system/init/systemd:systemd",
+    },
     configure_args = [
         "-Dsystemdsystemunitdir=/usr/lib/systemd/system",
         "-Dadmin_group=wheel",

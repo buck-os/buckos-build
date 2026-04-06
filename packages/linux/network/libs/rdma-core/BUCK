@@ -4,6 +4,9 @@ package(
     build_rule = "cmake",
     name = "rdma-core",
     version = "60.0",
+    use_deps = {
+        "systemd": "//packages/linux/system/init/systemd:systemd",
+    },
     use_configure = {
         "lttng": ("-DENABLE_LTTNG=ON", "-DENABLE_LTTNG=OFF"),
         "neigh": ("-DENABLE_NEIGH=ON", "-DENABLE_NEIGH=OFF"),

@@ -10,6 +10,9 @@ package(
     url = "https://gitlab.com/sane-project/backends/-/archive/1.3.0/backends-1.3.0.tar.gz",
 
     sha256 = "0bd3114d0ed8eca9f054e2c6727ab95afa6da0e8e602cc648955e1a788bc2070",
+    use_deps = {
+        "systemd": "//packages/linux/system/init/systemd:systemd",
+    },
     use_configure = {
         "gphoto2": ("--enable-gphoto2", "--disable-gphoto2"),
         "snmp": ("--enable-snmp", "--disable-snmp"),

@@ -202,6 +202,16 @@ def _kernel_build_impl(ctx: AnalysisContext) -> list[Provider]:
         if dep and PackageInfo in dep:
             cmd.add("--path-prepend", dep[PackageInfo].prefix.project("usr/bin"))
 
+    # Transitive lib deps of elfutils (bzip2, xz, zlib) — objtool links
+    # against elfutils' libelf which DT_NEEDS libbz2, liblzma, libz.
+    # Their lib dirs must be in LD_LIBRARY_PATH so objtool can load them
+    # at runtime.  Use --lib-prepend since these are library-only deps
+    # that may not have usr/bin.
+    for dep_attr, libdir in (("_bzip2", "usr/lib"), ("_xz", "usr/lib"), ("_zlib", "usr/lib64")):
+        dep = getattr(ctx.attrs, dep_attr, None)
+        if dep and PackageInfo in dep:
+            cmd.add("--lib-prepend", dep[PackageInfo].prefix.project(libdir))
+
     # Pass elfutils + zlib + openssl include/lib dirs to HOSTCC for
     # objtool/resolve_btfids.  elfutils' libelf has DT_NEEDED entries
     # for libz, libbz2, and liblzma — the linker needs -Wl,-rpath-link

@@ -11,6 +11,9 @@ package(
     url = "https://kernel.org/pub/linux/network/wireless/iwd-2.13.tar.xz",
 
     sha256 = "5c58d0cc7c2c81540a515a7487330468c61615d23031af47be15f694fbfbc8b3",
+    use_deps = {
+        "systemd": "//packages/linux/system/init/systemd:systemd",
+    },
     use_configure = {
         "client": ("--enable-client", "--disable-client"),
         "cpu_flags_x86_aes": ("--enable-cpu_flags_x86_aes", "--disable-cpu_flags_x86_aes"),

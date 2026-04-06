@@ -10,6 +10,9 @@ package(
     url = "https://github.com/OpenPrinting/cups/releases/download/v2.4.7/cups-2.4.7-source.tar.gz",
 
     sha256 = "dd54228dd903526428ce7e37961afaed230ad310788141da75cebaa08362cf6c",
+    use_deps = {
+        "systemd": "//packages/linux/system/init/systemd:systemd",
+    },
     use_configure = {
         "X": ("--with-x", "--without-x"),
         "acl": ("--enable-acl", "--disable-acl"),
@@ -45,7 +48,6 @@ package(
         "--enable-openssl",
         "--enable-dbus",
         "--disable-avahi",
-        "--disable-systemd",
     ],
     make_args = [
         "LIBS=-lz",

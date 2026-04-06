@@ -15,6 +15,10 @@ package(
 
     # Default USE flags
 
+    use_deps = {
+        "systemd": "//packages/linux/system/init/systemd:systemd",
+    },
+
     # Conditional configure arguments
     use_configure = {
         "X": ("--with-x", ["--without-x", "--without-ns"]),
@@ -72,7 +76,6 @@ package(
 
     configure_args = [
         "--without-selinux",
-        "--without-libsystemd",
         "--disable-build-details",
         "--with-gnutls=ifavailable",
     ],

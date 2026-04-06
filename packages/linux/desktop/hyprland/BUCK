@@ -10,6 +10,9 @@ package(
     url = "https://github.com/hyprwm/Hyprland/releases/download/v0.36.0/source-v0.36.0.tar.gz",
 
     sha256 = "8e44c379794663accf928458b5e363ed248d56fc5f267e6b3759146fdf1229bb",
+    use_deps = {
+        "systemd": "//packages/linux/system/init/systemd:systemd",
+    },
     use_configure = {
         "X": ("--with-x", "--without-x"),
         "qtutils": ("--enable-qtutils", "--disable-qtutils"),

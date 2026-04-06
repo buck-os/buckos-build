@@ -18,6 +18,7 @@ package(
     # Conditional dependencies
     use_deps = {
         "ncurses": "//packages/linux/system/terminal/ncurses:ncurses",
+        "systemd": "//packages/linux/system/init/systemd:systemd",
     },
 
     # Conditional configure arguments
@@ -32,6 +33,13 @@ package(
     # Base configure arguments
     configure_args = [
         "--disable-kill",
+    ],
+
+    # Upstream bug: w.c directly calls sd_session_get_tty() etc. but LDADD
+    # only links libproc2.la, not $(SYSTEMD_LIBS).  Patch Makefile.in to
+    # add @SYSTEMD_LIBS@ to LDADD so all binaries can resolve systemd symbols.
+    pre_configure_cmds = [
+        "sed -i 's|^LDADD = \\./library/libproc2.la|LDADD = ./library/libproc2.la @SYSTEMD_LIBS@|' Makefile.in",
     ],
 
 )

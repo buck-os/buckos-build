@@ -4,6 +4,9 @@ package(
     build_rule = "meson",
     name = "weston",
     version = "14.0.1",
+    use_deps = {
+        "systemd": "//packages/linux/system/init/systemd:systemd",
+    },
     use_configure = {
         "X": ("-Dbackend-x11=true", "-Dbackend-x11=false"),
         "desktop": ("-Ddesktop-shell=true", "-Ddesktop-shell=false"),

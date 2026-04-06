@@ -1221,6 +1221,37 @@ USERSERVICEEOF
 # Set graphical.target as default
 ln -sf /usr/lib/systemd/system/graphical.target $OUT/etc/systemd/system/default.target
 
+# DBus systemd unit files (dbus may be built without --enable-systemd,
+# so provide the unit files here to ensure dbus starts under systemd)
+mkdir -p $OUT/usr/lib/systemd/system
+cat > $OUT/usr/lib/systemd/system/dbus.socket << 'DBUSSOCKETEOF'
+[Unit]
+Description=D-Bus System Message Bus Socket
+
+[Socket]
+ListenStream=/run/dbus/system_bus_socket
+ExecStartPost=-/bin/chmod 0755 /run/dbus
+
+[Install]
+WantedBy=sockets.target
+DBUSSOCKETEOF
+
+cat > $OUT/usr/lib/systemd/system/dbus.service << 'DBUSSERVICEEOF'
+[Unit]
+Description=D-Bus System Message Bus
+Documentation=man:dbus-daemon(1)
+Requires=dbus.socket
+After=dbus.socket
+
+[Service]
+ExecStart=/usr/bin/dbus-daemon --system --address=systemd: --nofork --nopidfile --systemd-activation --syslog-only
+ExecReload=/usr/bin/dbus-send --print-reply --system --type=method_call --dest=org.freedesktop.DBus / org.freedesktop.DBus.ReloadConfig
+OOMScoreAdjust=-900
+
+[Install]
+WantedBy=multi-user.target
+DBUSSERVICEEOF
+
 # Enable DBus (required for systemd-logind and KDE)
 ln -sf /usr/lib/systemd/system/dbus.service $OUT/etc/systemd/system/multi-user.target.wants/dbus.service
 ln -sf /usr/lib/systemd/system/dbus.socket $OUT/etc/systemd/system/sockets.target.wants/dbus.socket
@@ -2022,10 +2053,121 @@ cp -a "$(location :buck2-prebuilt)"/. "$OUT/"
     visibility = ["PUBLIC"],
 )
 
-# Live rootfs with KDE Plasma desktop (systemd-only, no eudev)
+# Live rootfs with KDE Plasma desktop (systemd init)
 rootfs(
     name = "buckos-live-kde-rootfs",
     version = "0.0.3",
+    # top_packages: real packages with PackageInfo providers.
+    # Transitive runtime deps are resolved automatically via RuntimeDepTSet.
+    top_packages = [
+        # C runtime (required for all dynamically-linked binaries)
+        "//packages/linux/core/glibc:glibc",
+        "//packages/linux/system/libs/crypto/libxcrypt:libxcrypt",
+
+        # Core utilities
+        "//packages/linux/lang/binutils:binutils",
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/terminal/ncurses:ncurses",
+        "//packages/linux/system/terminal/readline:readline",
+        "//packages/linux/core/less:less",
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/system/libs/compression/lz4:lz4",
+        "//packages/linux/core/procps-ng:procps-ng",
+        "//packages/linux/dev-tools/debuggers/strace:strace",
+        "//packages/linux/system/apps/shadow:shadow",
+        "//packages/linux/system/apps/sudo:sudo",
+
+        # Authentication
+        "//packages/linux/system/security/auth/pam:pam",
+        "//packages/linux/system/security/auth/privilege:polkit",
+
+        # Networking
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/system/libs/network/curl:curl",
+        "//packages/linux/network/ca-certificates:ca-certificates",
+        "//packages/linux/network/openssh:openssh",
+        "//packages/linux/network/iproute2:iproute2",
+        "//packages/linux/network/dhcpcd:dhcpcd",
+        "//packages/linux/network/iputils:iputils",
+        "//packages/linux/network/wget:wget",
+
+        # Wireless networking
+        "//packages/linux/network/wireless/wpa-supplicant:wpa-supplicant",
+        "//packages/linux/network/wireless/iw:iw",
+        "//packages/linux/network/wireless/wireless-tools:wireless-tools",
+        "//packages/linux/network/wireless/wireless-regdb:wireless-regdb",
+        "//packages/linux/network/networkmanager:networkmanager",
+        "//packages/linux/network/networkmanager:nm-applet",
+
+        # Init system and device management
+        "//packages/linux/system/init/systemd:systemd",
+        "//packages/linux/system/libs/kmod:kmod",
+        "//packages/linux/system/libs/libseat:libseat",
+        "//packages/linux/system/libs/ipc/dbus:dbus",
+
+        # Firmware
+        "//packages/linux/system/firmware/linux-firmware:linux-firmware",
+
+        # Graphics stack
+        "//packages/linux/desktop/mesa:mesa",
+        "//packages/linux/dev-libs/elfutils:elfutils",
+        "//packages/linux/system/libs/data/libxml2:libxml2",
+        "//packages/linux/graphics/rendering/wayland:wayland",
+        "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
+        "//packages/linux/system/libs/input/libinput:libinput",
+        "//packages/linux/desktop/libdrm:libdrm",
+        "//packages/linux/system/security/auth/biometric:pixman",
+        "//packages/linux/system/libs/image/libpng:libpng",
+        "//packages/linux/system/libs/graphics/cairo:cairo",
+        "//packages/linux/system/libs/data/expat:expat",
+        "//packages/linux/system/libs/data/json-c:json-c",
+        "//packages/linux/system/libs/utility/pcre2:pcre2",
+        "//packages/linux/dev-libs/glib:glib",
+
+        # Input handling
+        "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
+        "//packages/linux/system/libs/input/libevdev:libevdev",
+        "//packages/linux/graphics/xorg/xkeyboard-config:xkeyboard-config",
+
+        # Font rendering and fonts
+        "//packages/linux/system/libs/font/freetype:freetype",
+        "//packages/linux/system/libs/font/fontconfig:fontconfig",
+        "//packages/linux/system/libs/font/harfbuzz:harfbuzz",
+        "//packages/linux/system/libs/font/fribidi:fribidi",
+        "//packages/linux/fonts/libraries/pango:pango",
+        "//packages/linux/fonts/collections/dejavu-fonts:dejavu-fonts",
+        "//packages/linux/fonts/collections/liberation-fonts:liberation-fonts",
+
+        # Development tools
+        "//packages/linux/dev-tools/vcs/git:git",
+        "//packages/linux/editors/vim:vim",
+
+        # BuckOS tools
+        "//packages/linux/apps/buckos-tools/installer:buckos-installer",
+        "//packages/linux/apps/buckos-tools/cli:buckos-cli",
+
+        # Installer dependencies - filesystem tools
+        "//packages/linux/system/filesystem/native/e2fsprogs:e2fsprogs",
+        "//packages/linux/system/filesystem/management/parted:parted",
+        "//packages/linux/system/filesystem/native/btrfs-progs:btrfs-progs",
+        "//packages/linux/system/filesystem/native/dosfstools:dosfstools",
+        "//packages/linux/system/filesystem/management/cryptsetup:cryptsetup",
+        "//packages/linux/system/filesystem/management/lvm2:lvm2",
+
+        # Installer dependencies - file operations
+        "//packages/linux/system/apps/rsync:rsync",
+        "//packages/linux/system/apps/psmisc:psmisc",
+        "//packages/linux/system/apps/lsof:lsof",
+
+        # Installer dependencies - hardware detection
+        "//packages/linux/system/hardware/pciutils:pciutils",
+        "//packages/linux/system/hardware/usbutils:usbutils",
+
+        # Installer dependencies - bootloader
+        "//packages/linux/boot/grub:grub",
+    ] + KDE_PLASMA,
+    # packages: genrule configs, acct groups, kernel, and host-tools that
+    # don't provide PackageInfo with runtime_deps (no transitive resolution).
     packages = [
         ":live-init-scripts-gen",
         ":baselayout-gen",
@@ -2039,9 +2181,12 @@ rootfs(
         ":live-ssh-config-gen",
         ":live-plasmalogin-config-gen",
         ":live-systemd-config-gen",
-        # Kernel modules (needed for hardware support at runtime)
+        ":fontconfig-symlinks-gen",
+        # Kernel (provides KernelInfo, not PackageInfo)
         "//packages/linux/kernel/buckos-kernel:buckos-kernel-live",
-        # System groups (automatically merged into /etc/group)
+        # Host tools (aggregator, no PackageInfo)
+        "//tc/bootstrap/host-tools:host-tools",
+        # System groups (PackageInfo with runtime_deps=None)
         "//packages/acct-group/tty:tty",
         "//packages/acct-group/disk:disk",
         "//packages/acct-group/lp:lp",
@@ -2060,132 +2205,7 @@ rootfs(
         "//packages/acct-group/systemd-journal:systemd-journal",
         "//packages/acct-group/sgx:sgx",
         "//packages/acct-group/tape:tape",
-        # Host tools from the seed — glibc, bash, coreutils, rust,
-        # go, gcc-native, cmake, make, kmod, grub, filesystem tools, etc.
-        "//tc/bootstrap/host-tools:host-tools",
-
-        # GCC runtime (libstdc++, libgcc_s) provided by gcc-native
-        # in host-tools above.
-
-        # Core utilities not in host-tools
-        "//packages/linux/lang/binutils:binutils",  # Provides strings, nm, objdump, etc.
-        "//packages/linux/core/zlib:zlib",
-        "//packages/linux/system/terminal/ncurses:ncurses",
-        "//packages/linux/system/terminal/readline:readline",
-        "//packages/linux/core/less:less",
-        "//packages/linux/system/libs/utility/libffi:libffi",
-        "//packages/linux/system/libs/compression/lz4:lz4",
-        "//packages/linux/core/procps-ng:procps-ng",
-        "//packages/linux/dev-tools/debuggers/strace:strace",
-        "//packages/linux/system/apps/shadow:shadow",
-        "//packages/linux/system/apps/sudo:sudo",  # Required for installer and admin tasks
-        # PAM runtime dependencies (required for login/authentication)
-        "//packages/linux/system/libs/ipc/libtirpc:libtirpc",
-        "//packages/linux/system/libs/network/libnsl:libnsl",
-        "//packages/linux/system/libs/crypto/openssl:openssl",
-        "//packages/linux/system/libs/network/curl:curl",
-        "//packages/linux/network/ca-certificates:ca-certificates",
-        "//packages/linux/network/openssh:openssh",
-        "//packages/linux/network/iproute2:iproute2",
-        "//packages/linux/network/dhcpcd:dhcpcd",
-        # Wireless networking tools (WiFi support)
-        "//packages/linux/core/libnl:libnl",  # Required by wpa-supplicant and iw
-        "//packages/linux/network/wireless/wpa-supplicant:wpa-supplicant",  # WiFi authentication
-        "//packages/linux/network/wireless/iw:iw",  # WiFi configuration
-        "//packages/linux/network/wireless/wireless-tools:wireless-tools",  # Legacy WiFi tools (iwconfig, etc.)
-        "//packages/linux/network/wireless/wireless-regdb:wireless-regdb",  # WiFi regulatory database
-        # NetworkManager for easier network management (GUI and CLI)
-        "//packages/linux/network/networkmanager:networkmanager",
-        "//packages/linux/network/networkmanager:nm-applet",  # System tray applet
-        # Common network utilities
-        "//packages/linux/network/iputils:iputils",  # ping, tracepath, etc.
-        "//packages/linux/network/wget:wget",  # wget for downloads
-
-        # Security and capabilities (required by systemd)
-        "//packages/linux/system/libs/ipc/libseccomp:libseccomp",
-        "//packages/linux/system/libs/ipc/libcap:libcap",
-        "//packages/linux/system/libs/ipc/attr:attr",
-        "//packages/linux/system/libs/crypto/argon2:argon2",
-        "//packages/linux/system/security/auth/privilege:polkit",  # Required for systemd-logind session creation
-
-        # Init system (systemd includes udevd, so no separate eudev needed)
-        "//packages/linux/system/init/systemd:systemd",
-
-        # Device management and session
-        # Note: eudev removed - systemd provides systemd-udevd
-        "//packages/linux/system/libs/libseat:libseat",
-        "//packages/linux/system/libs/ipc/dbus:dbus",
-
-        # Firmware (required for GPU, WiFi, etc. on real hardware)
-        "//packages/linux/system/firmware/linux-firmware:linux-firmware",
-
-        # Graphics stack
-        "//packages/linux/desktop/mesa:mesa",
-        # Mesa's radeonsi driver depends on LLVM at runtime —
-        # llvm-native (from host-tools) provides libLLVM.so
-        "//packages/linux/dev-libs/elfutils:elfutils",
-        "//packages/linux/system/libs/data/libxml2:libxml2",
-        "//packages/linux/graphics/rendering/wayland:wayland",
-        "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
-        "//packages/linux/system/libs/input/libinput:libinput",
-        "//packages/linux/desktop/libdrm:libdrm",
-        "//packages/linux/system/security/auth/biometric:pixman",
-        "//packages/linux/system/libs/image/libpng:libpng",
-        "//packages/linux/system/libs/graphics/cairo:cairo",
-        "//packages/linux/system/libs/data/expat:expat",
-        "//packages/linux/system/libs/data/json-c:json-c",
-        "//packages/linux/system/libs/utility/pcre2:pcre2",
-        "//packages/linux/dev-libs/glib:glib",
-
-        # Input handling
-        "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
-        "//packages/linux/system/libs/input/libevdev:libevdev",
-        "//packages/linux/graphics/xorg/xkeyboard-config:xkeyboard-config",  # XKB data for keyboard layouts
-
-        # Font rendering and fonts
-        "//packages/linux/system/libs/font/freetype:freetype",
-        "//packages/linux/system/libs/font/fontconfig:fontconfig",
-        "//packages/linux/system/libs/font/harfbuzz:harfbuzz",
-        # TEMPORARILY DISABLED for aarch64 cross-compilation (Fix #23 - x86 SSE2 flags)
-        # "//packages/linux/system/libs/font/graphite2:graphite2",
-        "//packages/linux/system/libs/font/fribidi:fribidi",
-        "//packages/linux/fonts/libraries/pango:pango",
-        "//packages/linux/fonts/collections/dejavu-fonts:dejavu-fonts",
-        "//packages/linux/fonts/collections/liberation-fonts:liberation-fonts",
-        ":fontconfig-symlinks-gen",  # Enable font configurations
-
-        # KDE Plasma Desktop (expanded from meta.bzl KDE_PLASMA list)
-    ] + KDE_PLASMA + [
-        # Note: Using getty autologin + startplasma-wayland instead of plasma-login-manager
-        # (plasma-login-manager 6.5.91 requires PlasmaQuick 6.5.90, but we have 6.2.4)
-
-        # Development tools not in host-tools
-        "//packages/linux/dev-tools/vcs/git:git",
-        "//packages/linux/editors/vim:vim",
-        # GCC compiler provided by host-tools (gcc-native)
-
-        # BuckOS tools (uses cargo_workspace_package with vendor tarball)
-        "//packages/linux/apps/buckos-tools/installer:buckos-installer",
-        "//packages/linux/apps/buckos-tools/cli:buckos-cli",
-
-        # Installer dependencies - filesystem tools (e2fsprogs, btrfs-progs,
-        # dosfstools, grub provided by host-tools above)
-        "//packages/linux/system/filesystem/management/parted:parted",  # parted
-        # xfsprogs requires libinih - TODO: add libinih package
-        "//packages/linux/system/filesystem/management/cryptsetup:cryptsetup",  # LUKS encryption
-        "//packages/linux/system/filesystem/management/lvm2:lvm2",  # LVM2 utilities
-
-        # Installer dependencies - file operations
-        "//packages/linux/system/apps/rsync:rsync",  # rsync (file sync during install)
-        "//packages/linux/system/apps/psmisc:psmisc",  # fuser, killall, pstree
-        "//packages/linux/system/apps/lsof:lsof",  # lsof (list open files)
-
-        # Installer dependencies - hardware detection
-        "//packages/linux/system/hardware/pciutils:pciutils",  # lspci (GPU detection)
-        "//packages/linux/system/hardware/usbutils:usbutils",  # lsusb (USB/Bluetooth detection)
-
-        # grub provided by host-tools
-
+        "//packages/acct-group/polkitd:polkitd",
         # IMPORTANT: This must be LAST to override PAM's /etc/environment file
         ":live-environment-gen",
     ],
@@ -2728,7 +2748,7 @@ rootfs(
         # systemd for initrd
         "//packages/linux/system/init/systemd:systemd",
         # udev for device detection
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         # Compression utilities
         "//packages/linux/system/libs/compression/gzip:gzip",
         "//packages/linux/system/libs/compression/xz:xz",

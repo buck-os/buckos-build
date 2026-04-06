@@ -332,7 +332,7 @@ package(
     deps = [
         "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
-        "//packages/linux/system/init/eudev:eudev",  # For libudev.h
+        "//packages/virtual/libudev:libudev",  # For libudev.h
         # Qt6 runtime dependencies needed for Qt6 tools (qtpaths, moc, etc.)
         "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
         # Mesa provides EGL/GLESv2 for Qt6Gui
@@ -796,7 +796,7 @@ package(
         "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
         "//packages/linux/desktop/mesa:mesa",
         # Transitive link dependencies
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/libs/ipc/dbus:dbus",
         "//packages/linux/system/init/systemd:systemd",  # dbus depends on libsystemd
         "//packages/linux/system/libs/ipc/libcap:libcap",  # libsystemd depends on libcap
@@ -864,7 +864,7 @@ package(
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/utility/libffi:libffi",
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/libs/crypto/openssl:openssl",
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 )
@@ -1015,7 +1015,7 @@ sed -i '/add_subdirectory.*examples/d' CMakeLists.txt || true
         "//packages/linux/system/libs/utility/libffi:libffi",
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/desktop/libdrm:libdrm",
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 )
@@ -1050,7 +1050,7 @@ package(
         # Mesa provides EGL/GLESv2 for Qt6Gui
         "//packages/linux/desktop/mesa:mesa",
         # Transitive link dependencies
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/libs/ipc/dbus:dbus",
         "//packages/linux/system/init/systemd:systemd",  # dbus depends on libsystemd
         "//packages/linux/system/libs/ipc/libcap:libcap",  # libsystemd depends on libcap
@@ -1289,7 +1289,7 @@ package(
         "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
         "//packages/linux/desktop/mesa:mesa",
         # Transitive link dependencies
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/libs/ipc/dbus:dbus",
         "//packages/linux/system/init/systemd:systemd",  # dbus depends on libsystemd
         "//packages/linux/system/libs/ipc/libcap:libcap",  # libsystemd depends on libcap
@@ -1325,7 +1325,7 @@ package(
     deps = [
         "//packages/linux/desktop/qt:qt6-native",
         "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/system/libs/utility/pcre2:pcre2",
         "//packages/linux/core/zlib:zlib",
@@ -1377,7 +1377,7 @@ package(
         "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
         "//packages/linux/desktop/mesa:mesa",
         # Transitive link dependencies
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/libs/ipc/dbus:dbus",
         "//packages/linux/system/init/systemd:systemd",  # dbus depends on libsystemd
         "//packages/linux/system/libs/ipc/libcap:libcap",  # libsystemd depends on libcap
@@ -1526,7 +1526,7 @@ cd "$S"
         # libmount for kmountpoint.cpp
         "//packages/linux/core/util-linux:util-linux",
         # Transitive link dependencies
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/libs/image/libpng:libpng",
         "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
         "//packages/linux/graphics/rendering/wayland:wayland",
@@ -1692,7 +1692,7 @@ package(
         "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
         "//packages/linux/desktop/mesa:mesa",
         # Transitive link dependencies
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/libs/ipc/dbus:dbus",
         "//packages/linux/system/init/systemd:systemd",  # dbus depends on libsystemd
         "//packages/linux/system/libs/ipc/libcap:libcap",  # libsystemd depends on libcap
@@ -1803,7 +1803,7 @@ package(
         "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
         "//packages/linux/desktop/mesa:mesa",
         # Transitive link dependencies
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/libs/ipc/dbus:dbus",
         "//packages/linux/system/init/systemd:systemd",  # dbus depends on libsystemd
         "//packages/linux/system/libs/ipc/libcap:libcap",  # libsystemd depends on libcap
@@ -1960,7 +1960,7 @@ sed -i '/chkAutoReloadOnExternalChanges/d' src/dialogs/katedialogs.cpp
         "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
         "//packages/linux/desktop/mesa:mesa",
         # Transitive link dependencies
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/libs/ipc/dbus:dbus",
         "//packages/linux/system/init/systemd:systemd",  # dbus depends on libsystemd
         "//packages/linux/system/libs/ipc/libcap:libcap",  # libsystemd depends on libcap
@@ -2057,7 +2057,7 @@ package(
         "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
         "//packages/linux/desktop/mesa:mesa",
         # Transitive link dependencies
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/libs/image/libpng:libpng",
         "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
         "//packages/linux/graphics/rendering/wayland:wayland",
@@ -2102,7 +2102,7 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
         "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
         "//packages/linux/desktop/mesa:mesa",
         # Transitive link dependencies
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/libs/ipc/dbus:dbus",
         "//packages/linux/system/init/systemd:systemd",  # dbus depends on libsystemd
         "//packages/linux/system/libs/ipc/libcap:libcap",  # libsystemd depends on libcap
@@ -2150,7 +2150,7 @@ package(
         "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
         "//packages/linux/desktop/mesa:mesa",
         # Transitive link dependencies
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/libs/ipc/dbus:dbus",
         "//packages/linux/system/init/systemd:systemd",  # dbus depends on libsystemd
         "//packages/linux/system/libs/ipc/libcap:libcap",  # libsystemd depends on libcap
@@ -2201,7 +2201,7 @@ package(
         "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
         "//packages/linux/desktop/mesa:mesa",
         # Transitive link dependencies
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/libs/ipc/dbus:dbus",
         "//packages/linux/system/init/systemd:systemd",  # dbus depends on libsystemd
         "//packages/linux/system/libs/ipc/libcap:libcap",  # libsystemd depends on libcap
@@ -2247,7 +2247,7 @@ package(
         "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
         "//packages/linux/desktop/mesa:mesa",
         # Transitive link dependencies
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/libs/ipc/dbus:dbus",
         "//packages/linux/system/init/systemd:systemd",  # dbus depends on libsystemd
         "//packages/linux/system/libs/ipc/libcap:libcap",  # libsystemd depends on libcap
@@ -2346,7 +2346,7 @@ package(
         "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
         "//packages/linux/desktop/mesa:mesa",
         # Transitive link dependencies
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/libs/ipc/dbus:dbus",
         "//packages/linux/system/init/systemd:systemd",  # dbus depends on libsystemd
         "//packages/linux/system/libs/ipc/libcap:libcap",  # libsystemd depends on libcap
@@ -2413,7 +2413,7 @@ package(
         "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
         "//packages/linux/desktop/mesa:mesa",
         # Transitive link dependencies
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/libs/ipc/dbus:dbus",
         "//packages/linux/system/init/systemd:systemd",  # dbus depends on libsystemd
         "//packages/linux/system/libs/ipc/libcap:libcap",  # libsystemd depends on libcap
@@ -2549,7 +2549,7 @@ package(
         "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
         "//packages/linux/desktop/mesa:mesa",
         # Transitive link dependencies
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/libs/ipc/dbus:dbus",
         "//packages/linux/system/init/systemd:systemd",  # dbus depends on libsystemd
         "//packages/linux/system/libs/ipc/libcap:libcap",  # libsystemd depends on libcap
@@ -2635,7 +2635,7 @@ sed -i '/devicenotifications/d' src/dataengines/CMakeLists.txt || true
         "//packages/linux/desktop/mesa:mesa",
         "//packages/linux/desktop/libdrm:libdrm",
         # Transitive link dependencies
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/libs/ipc/dbus:dbus",
         "//packages/linux/system/init/systemd:systemd",  # dbus depends on libsystemd
         "//packages/linux/system/libs/ipc/libcap:libcap",  # libsystemd depends on libcap
@@ -2799,7 +2799,7 @@ done
         # ICU (required by plasma-desktop)
         "//packages/linux/system/libs/utility/icu:icu-native",
         # Transitive link dependencies
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/libs/ipc/dbus:dbus",
         "//packages/linux/system/init/systemd:systemd",  # dbus depends on libsystemd
         "//packages/linux/system/libs/ipc/libcap:libcap",  # libsystemd depends on libcap
@@ -2890,7 +2890,7 @@ package(
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
         "//packages/linux/desktop/mesa:mesa",
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/libs/image/libpng:libpng",
         "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
         "//packages/linux/graphics/rendering/wayland:wayland",
@@ -3077,7 +3077,7 @@ sed -i '/qCDebug(KSCREENLOCKER) << "Event received"/a\\    (void)event;' ksldapp
         "//packages/linux/desktop/mesa:mesa",
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/libs/ipc/dbus:dbus",
         "//packages/linux/system/init/systemd:systemd",  # dbus depends on libsystemd
         "//packages/linux/system/libs/ipc/libcap:libcap",  # libsystemd depends on libcap
@@ -3207,7 +3207,7 @@ sed -i 's/connect(KX11Extras::self/\\/\\/connect(KX11Extras::self/' src/service/
         "//packages/linux/graphics/rendering/wayland:wayland",
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/data/expat:expat",
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/libs/utility/libffi:libffi",
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 )
@@ -3505,7 +3505,7 @@ SENSOR_CPP
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
         # Transitive link dependencies
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/libs/ipc/dbus:dbus",
         "//packages/linux/system/init/systemd:systemd",  # dbus depends on libsystemd
         "//packages/linux/system/libs/ipc/libcap:libcap",  # libsystemd depends on libcap
@@ -3571,7 +3571,7 @@ package(
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
         "//packages/linux/graphics/rendering/wayland:wayland",
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
@@ -3619,7 +3619,7 @@ package(
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
         "//packages/linux/graphics/rendering/wayland:wayland",
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
@@ -3719,7 +3719,7 @@ package(
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
         "//packages/linux/graphics/rendering/wayland:wayland",
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
@@ -3939,7 +3939,7 @@ package(
         "//packages/linux/system/init/systemd:systemd",  # dbus depends on libsystemd
         "//packages/linux/system/libs/ipc/libcap:libcap",  # libsystemd depends on libcap
         "//packages/linux/system/libs/data/expat:expat",
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
@@ -4006,7 +4006,7 @@ sed -i '/add_subdirectory.*backendlauncher/d' src/CMakeLists.txt || true
         "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
     # Native wayland-scanner needed for generating protocol headers during cross-compilation
@@ -4069,7 +4069,7 @@ package(
         "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
         "//packages/linux/graphics/rendering/wayland:wayland",
         "//packages/linux/system/libs/crypto/openssl:openssl",
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 
@@ -4233,7 +4233,7 @@ STUB
         "//packages/linux/system/libs/utility/pcre2:pcre2",
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/libs/ipc/dbus:dbus",
         "//packages/linux/system/init/systemd:systemd",  # dbus depends on libsystemd
         "//packages/linux/system/libs/ipc/libcap:libcap",  # libsystemd depends on libcap
@@ -4590,7 +4590,7 @@ sed -i 's/#include <xcb/#\\/\\/#include <xcb/g' qt6/src/platformtheme/*.cpp 2>/d
         "//packages/linux/system/libs/ipc/dbus:dbus",
         "//packages/linux/system/init/systemd:systemd",
         "//packages/linux/system/libs/ipc/libcap:libcap",
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/libs/compression/zstd:zstd",
     ] + QT6_FONT_DEPS + QT6_RUNTIME_DEPS + MESA_LLVM_DEPS,
 )

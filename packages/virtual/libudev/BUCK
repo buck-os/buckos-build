@@ -1,0 +1,15 @@
+# Virtual libudev provider — selects between systemd and eudev
+# based on the systemd USE flag.
+#
+# When systemd-on: packages get libudev from systemd
+# When systemd-off (default): packages get libudev from eudev
+#
+# This mirrors Gentoo's virtual/libudev package.
+alias(
+    name = "libudev",
+    actual = select({
+        "//use/constraints:is-systemd-on": "//packages/linux/system/init/systemd:systemd",
+        "DEFAULT": "//packages/linux/system/init/eudev:eudev",
+    }),
+    visibility = ["PUBLIC"],
+)

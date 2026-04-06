@@ -169,7 +169,7 @@ def main():
             _parent = os.path.dirname(os.path.abspath(_bp))
             for _ld in ("lib", "lib64"):
                 _d = os.path.join(_parent, _ld)
-                if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")):
+                if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")) and not os.path.exists(os.path.join(_d, "libgcc_s.so.1")):
                     _lib_dirs.append(_d)
                     _glibc_d = os.path.join(_d, "glibc")
                     if os.path.isdir(_glibc_d):
@@ -204,7 +204,7 @@ def main():
             _parent = os.path.dirname(os.path.abspath(_bp))
             for _ld in ("lib", "lib64"):
                 _d = os.path.join(_parent, _ld)
-                if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")):
+                if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")) and not os.path.exists(os.path.join(_d, "libgcc_s.so.1")):
                     _dep_lib_dirs.append(_d)
                     _glibc_d = os.path.join(_d, "glibc")
                     if os.path.isdir(_glibc_d):

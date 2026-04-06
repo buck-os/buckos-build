@@ -504,9 +504,11 @@ def main():
 
     # Locate mesonbuild from hermetic PATH so pickle.load can
     # deserialise the meson-internal dataclasses.
+    # Search both site-packages and dist-packages, and python3 (not just python3.X).
     for _bp in list(args.hermetic_path) + list(args.path_prepend):
         _parent = os.path.dirname(os.path.abspath(_bp))
-        for _pat in ("lib/python*/site-packages", "lib64/python*/site-packages"):
+        for _pat in ("lib/python*/site-packages", "lib64/python*/site-packages",
+                      "lib/python*/dist-packages", "lib64/python*/dist-packages"):
             for _sp in _glob.glob(os.path.join(_parent, _pat)):
                 if os.path.isdir(os.path.join(_sp, "mesonbuild")):
                     if _sp not in sys.path:

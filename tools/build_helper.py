@@ -15,7 +15,7 @@ import shutil
 import subprocess
 import sys
 
-from _env import apply_cache_config, clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, find_buckos_shell, find_dep_python3, preferred_linker_flag, register_cleanup, rewrite_shebangs, sanitize_filenames, setup_ccache_symlinks, sysroot_lib_paths, write_pkg_config_wrapper
+from _env import _is_sysroot_lib_dir, apply_cache_config, clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, find_buckos_shell, find_dep_python3, preferred_linker_flag, register_cleanup, rewrite_shebangs, sanitize_filenames, setup_ccache_symlinks, sysroot_lib_paths, write_pkg_config_wrapper
 
 
 def _can_unshare_net():
@@ -417,10 +417,12 @@ def main():
         return obj
 
     # Locate mesonbuild from hermetic path or path-prepend dirs
+    # Search both site-packages and dist-packages (meson installs to dist-packages).
     _meson_added_paths = []
     for _bp in list(args.hermetic_path) + list(args.path_prepend):
         _parent = os.path.dirname(os.path.abspath(_bp))
-        for _pattern in ("lib/python*/site-packages", "lib64/python*/site-packages"):
+        for _pattern in ("lib/python*/site-packages", "lib64/python*/site-packages",
+                          "lib/python*/dist-packages", "lib64/python*/dist-packages"):
             for _sp in _glob.glob(os.path.join(_parent, _pattern)):
                 if os.path.isdir(os.path.join(_sp, "mesonbuild")):
                     if _sp not in sys.path:
@@ -666,7 +668,7 @@ def main():
                 _parent = os.path.dirname(os.path.abspath(_bp))
                 for _ld in ("lib", "lib64"):
                     _d = os.path.join(_parent, _ld)
-                    if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")):
+                    if os.path.isdir(_d) and not _is_sysroot_lib_dir(_d):
                         _lib_dirs.append(_d)
                         _glibc_d = os.path.join(_d, "glibc")
                         if os.path.isdir(_glibc_d):
@@ -735,14 +737,14 @@ def main():
     # Merge tset-provided lib dirs into LD_LIBRARY_PATH.  Extension
     # modules (e.g. Python's _sqlite3.so) are test-imported during make;
     # they lack RPATH for dep prefixes, so LD_LIBRARY_PATH is needed
-    # even with sysroot ld-linux.  Exclude dirs with libc.so.6 to avoid
-    # poisoning host tools with sysroot glibc.
+    # even with sysroot ld-linux.  Exclude sysroot lib dirs to avoid
+    # poisoning host tools with sysroot glibc/libcrypt.
     # Skip in --allow-host-path mode: host tools crash loading buckos
     # libs linked against a newer glibc.  Buckos tools use RPATH.
     if file_lib_dirs and not args.allow_host_path:
         resolved = [
             os.path.abspath(d) for d in file_lib_dirs
-            if os.path.isdir(d) and not os.path.exists(os.path.join(os.path.abspath(d), "libc.so.6"))
+            if os.path.isdir(d) and not _is_sysroot_lib_dir(os.path.abspath(d))
         ]
         if resolved:
             existing = env.get("LD_LIBRARY_PATH", "")
