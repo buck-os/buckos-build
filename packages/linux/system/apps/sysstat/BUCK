@@ -15,6 +15,9 @@ autoreconf -fi
     description = "System performance monitoring tools",
     homepage = "https://github.com/sysstat/sysstat",
     license = "GPL-2.0-or-later",
+    use_deps = {
+        "systemd": "//packages/linux/system/init/systemd:systemd",
+    },
     use_configure = {
         "dcron": ("--enable-dcron", "--disable-dcron"),
         "debug": ("--enable-debug", "--disable-debug"),

@@ -19,6 +19,9 @@ package(
     # examples - Build example programs
     # hpack-tools - Build HPACK tools
 
+    use_deps = {
+        "systemd": "//packages/linux/system/init/systemd:systemd",
+    },
     use_configure = {
         "debug": ("--enable-debug", "--disable-debug"),
         "examples": ("--enable-examples", "--disable-examples"),

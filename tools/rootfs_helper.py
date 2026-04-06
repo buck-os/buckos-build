@@ -56,6 +56,12 @@ def _merge_package(src, rootfs, env):
 def _move_preserving_symlinks(src, dst):
     """Move src to dst, preserving symlinks instead of following them."""
     if os.path.islink(src):
+        # Never overwrite a real file with a symlink — the real file
+        # takes priority (e.g. glibc's ldconfig vs a /sbin convenience
+        # symlink that would clobber the binary during usr-merge).
+        if os.path.isfile(dst) and not os.path.islink(dst):
+            os.remove(src)
+            return
         target = os.readlink(src)
         if os.path.islink(dst) or os.path.exists(dst):
             os.remove(dst)

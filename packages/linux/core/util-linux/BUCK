@@ -17,8 +17,9 @@ package(
     # Conditional dependencies
     use_deps = {
         "ncurses": "//packages/linux/system/terminal/ncurses:ncurses",
-        "systemd": "//packages/linux/system/init:systemd",
-        "udev": "//packages/linux/system/init/eudev:eudev",
+        # NOTE: systemd dep removed — circular: systemd depends on util-linux.
+        # util-linux builds --without-systemd (journal integration is optional).
+        "udev": "//packages/linux/system/init/eudev:eudev",  # Use eudev directly to break cycle (systemd → util-linux)
     },
 
     # Conditional configure arguments
@@ -44,7 +45,7 @@ package(
         "static-libs": ("--enable-static", "--disable-static"),
         "su": ("--enable-su", "--disable-su"),
         "suid": ("--enable-suid", "--disable-suid"),
-        "systemd": ("--with-systemd", "--without-systemd"),
+        # "systemd" removed — always --without-systemd (cycle: systemd → util-linux)
         "tty-helpers": ("--enable-tty-helpers", "--disable-tty-helpers"),
         "udev": ("--with-udev", "--without-udev"),
         "unicode": ("--enable-unicode", "--disable-unicode"),
@@ -62,7 +63,8 @@ package(
 
         # Without dependencies we don't have (or controlled by USE flags)
         "--without-python",
-        "--without-systemdsystemunitdir",  # systemd itself is USE flag controlled
+        "--without-systemd",  # Cycle: systemd depends on util-linux
+        "--without-systemdsystemunitdir",
         "--without-readline",
         "--without-slang",
         "--without-libmagic",

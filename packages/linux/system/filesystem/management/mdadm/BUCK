@@ -6,6 +6,9 @@ package(
     url = "https://mirrors.edge.kernel.org/pub/linux/utils/raid/mdadm/mdadm-4.3.tar.xz",
 
     sha256 = "416727ae1f1080ea6e3090cea36dd076826fc369151e36ab736557ba92196f9f",
+    use_deps = {
+        "systemd": "//packages/linux/system/init/systemd:systemd",
+    },
     use_configure = {
         "corosync": ("--enable-corosync", "--disable-corosync"),
         "static": ("--enable-static", "--disable-static"),
@@ -36,6 +39,6 @@ package(
     ],
     install_targets = ["install-bin", "install-man"],
     deps = [
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
     ],
 )

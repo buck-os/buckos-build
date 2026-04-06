@@ -128,6 +128,7 @@ platform(
         ":linux",
         ":bootstrap-toolchain",  # Default to bootstrap toolchain for reproducibility
         "prelude//cpu/constraints:x86_64",  # Default to x86_64
+        "//use/constraints:systemd-on",  # Use systemd for init and libudev
     ],
     visibility = ["PUBLIC"],
 )
@@ -139,6 +140,7 @@ platform(
         ":linux",
         ":host-toolchain",
         "prelude//cpu/constraints:x86_64",  # Default to x86_64
+        "//use/constraints:systemd-on",  # Use systemd for init and libudev
     ],
     visibility = ["PUBLIC"],
 )
@@ -150,6 +152,7 @@ platform(
         ":linux",
         ":bootstrap-toolchain",
         "prelude//cpu/constraints:arm64",
+        "//use/constraints:systemd-on",  # Use systemd for init and libudev
     ],
     visibility = ["PUBLIC"],
 )
@@ -161,6 +164,7 @@ platform(
         ":linux",
         ":host-toolchain",
         "prelude//cpu/constraints:arm64",
+        "//use/constraints:systemd-on",  # Use systemd for init and libudev
     ],
     visibility = ["PUBLIC"],
 )

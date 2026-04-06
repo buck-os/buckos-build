@@ -6,6 +6,9 @@ package(
     url = "https://github.com/swaywm/swayidle/releases/download/1.8.0/swayidle-1.8.0.tar.gz",
 
     sha256 = "16b3e76a117f2f0ff2ee5fbebf38849595cdd705db1cd5f6aceaed00d71b3aa1",
+    use_deps = {
+        "systemd": "//packages/linux/system/init/systemd:systemd",
+    },
     use_configure = {
         "elogind": ("-Dlogind=enabled", "-Dlogind=disabled"),
         "systemd": ("-Dlogind=enabled", "-Dlogind=disabled"),

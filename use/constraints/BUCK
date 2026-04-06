@@ -33,6 +33,19 @@ use_flag("static")
 use_flag("static-libs")
 use_flag("strip")
 use_flag("systemd")
+
+# config_settings for select() — used by virtual/libudev and others
+config_setting(
+    name = "is-systemd-on",
+    constraint_values = [":systemd-on"],
+    visibility = ["PUBLIC"],
+)
+
+config_setting(
+    name = "is-systemd-off",
+    constraint_values = [":systemd-off"],
+    visibility = ["PUBLIC"],
+)
 use_flag("test")
 use_flag("threads")
 use_flag("trace")

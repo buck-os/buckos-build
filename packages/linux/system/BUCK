@@ -2053,7 +2053,7 @@ cp -a "$(location :buck2-prebuilt)"/. "$OUT/"
     visibility = ["PUBLIC"],
 )
 
-# Live rootfs with KDE Plasma desktop (systemd-only, no eudev)
+# Live rootfs with KDE Plasma desktop (systemd init)
 rootfs(
     name = "buckos-live-kde-rootfs",
     version = "0.0.3",
@@ -2748,7 +2748,7 @@ rootfs(
         # systemd for initrd
         "//packages/linux/system/init/systemd:systemd",
         # udev for device detection
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         # Compression utilities
         "//packages/linux/system/libs/compression/gzip:gzip",
         "//packages/linux/system/libs/compression/xz:xz",

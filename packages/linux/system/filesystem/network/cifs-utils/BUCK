@@ -6,6 +6,9 @@ package(
     url = "https://download.samba.org/pub/linux-cifs/cifs-utils/cifs-utils-7.0.tar.bz2",
 
     sha256 = "0defaab85bd3ea46ffc45ab41fb0d0ad54d05ae2cfaa7e503de86d4f12bc8161",
+    use_deps = {
+        "systemd": "//packages/linux/system/init/systemd:systemd",
+    },
     use_configure = {
         "acl": ("--enable-acl", "--disable-acl"),
         "ads": ("--enable-ads", "--disable-ads"),
@@ -21,7 +24,6 @@ package(
     license = "GPL-3.0",
     configure_args = [
         "--disable-pam",
-        "--disable-systemd",
         "--without-libcap-ng",
         "--disable-man",
     ],

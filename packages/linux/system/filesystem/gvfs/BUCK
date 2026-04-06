@@ -8,6 +8,9 @@ package(
     build_rule = "meson",
     name = "gvfs",
     version = "1.54.0",
+    use_deps = {
+        "systemd": "//packages/linux/system/init/systemd:systemd",
+    },
     use_configure = {
         "afp": ("-Dafp=true", "-Dafp=false"),
         "archive": ("-Darchive=true", "-Darchive=false"),

@@ -10,6 +10,9 @@ package(
     description = "Pluggable Authentication Modules",
     homepage = "https://github.com/linux-pam/linux-pam",
     license = "BSD-3-Clause",
+    use_deps = {
+        "systemd": "//packages/linux/system/init/systemd:systemd",
+    },
     use_configure = {
         "audit": ("--enable-audit", "--disable-audit"),
         "berkdb": ("--enable-berkdb", "--disable-berkdb"),

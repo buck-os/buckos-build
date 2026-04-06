@@ -32,7 +32,7 @@ filegroup(
     name = "dracut-stack",
     srcs = [
         "//packages/linux/system/libs/kmod:kmod",
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],
@@ -44,7 +44,7 @@ filegroup(
     srcs = [
         "//packages/linux/system/initramfs/initramfs-tools:initramfs-tools",
         "//packages/linux/system/libs/kmod:kmod",
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],
@@ -55,7 +55,7 @@ filegroup(
     name = "initramfs-base-deps",
     srcs = [
         "//packages/linux/system/libs/kmod:kmod",
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/libs/cpio:cpio",
         "//packages/linux/core/util-linux:util-linux",
         "//packages/linux/system/apps/coreutils:coreutils",
@@ -72,7 +72,7 @@ filegroup(
         # Kernel module management
         "//packages/linux/system/libs/kmod:kmod",
         # Device management
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         # Filesystem tools
         "//packages/linux/system/filesystem/management/lvm2:lvm2",
         "//packages/linux/system/filesystem/management/cryptsetup:cryptsetup",
@@ -88,7 +88,7 @@ filegroup(
     name = "minimal-boot-stack",
     srcs = [
         "//packages/linux/system/libs/kmod:kmod",
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/boot/grub:grub",
     ],
     default_target_platform = "//platforms:linux-target",
