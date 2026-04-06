@@ -19,6 +19,180 @@ import tempfile
 from _env import add_path_args, clean_env, setup_path
 
 
+# ── System database merge ────────────────────────────────────────────
+#
+# /etc/{passwd,group,shadow,gshadow} are written by multiple packages
+# (genrules with full databases AND acct packages with single entries).
+# Tar-based rootfs merge overwrites files, so later packages clobber
+# earlier ones.  These helpers accumulate entries across packages.
+
+_MERGE_FILES = frozenset({
+    "etc/passwd", "etc/group", "etc/shadow", "etc/gshadow",
+})
+
+
+def _parse_colon_file(text):
+    """Parse colon-delimited file into {name: line}, last occurrence wins."""
+    entries = {}
+    for line in text.splitlines():
+        line = line.strip()
+        if line and not line.startswith("#"):
+            entries[line.split(":")[0]] = line
+    return entries
+
+
+def _merge_group_files(existing_text, incoming_text):
+    """Merge two group(5)/gshadow(5) files.
+
+    Deduplicate by group name, union member lists, sort by GID.
+    """
+    existing = _parse_colon_file(existing_text)
+    incoming = _parse_colon_file(incoming_text)
+
+    merged = dict(existing)
+    for name, line in incoming.items():
+        if name not in merged:
+            merged[name] = line
+            continue
+        old = merged[name].split(":")
+        new = line.split(":")
+        if len(old) >= 4 and len(new) >= 4:
+            old_members = set(m for m in old[3].split(",") if m)
+            new_members = set(m for m in new[3].split(",") if m)
+            old[3] = ",".join(sorted(old_members | new_members))
+            merged[name] = ":".join(old)
+
+    def _gid(line):
+        try:
+            return int(line.split(":")[2])
+        except (IndexError, ValueError):
+            return 99999
+
+    return "\n".join(sorted(merged.values(), key=_gid)) + "\n"
+
+
+def _merge_passwd_files(existing_text, incoming_text):
+    """Merge two passwd(5) files.
+
+    Deduplicate by username, prefer entries with a real login shell
+    over locked accounts, sort by UID.
+    """
+    _NOLOGIN = frozenset({"/bin/false", "/usr/sbin/nologin", "/sbin/nologin"})
+
+    existing = _parse_colon_file(existing_text)
+    incoming = _parse_colon_file(incoming_text)
+
+    merged = dict(existing)
+    for name, line in incoming.items():
+        if name not in merged:
+            merged[name] = line
+            continue
+        old_shell = merged[name].rsplit(":", 1)[-1]
+        new_shell = line.rsplit(":", 1)[-1]
+        if old_shell in _NOLOGIN and new_shell not in _NOLOGIN:
+            merged[name] = line
+
+    def _uid(line):
+        try:
+            return int(line.split(":")[2])
+        except (IndexError, ValueError):
+            return 99999
+
+    return "\n".join(sorted(merged.values(), key=_uid)) + "\n"
+
+
+def _merge_shadow_files(existing_text, incoming_text):
+    """Merge two shadow(5) files.
+
+    Deduplicate by username, prefer entries with a real password hash
+    over locked (!) or empty entries, sort by username to match passwd.
+    """
+    _LOCKED = frozenset({"!", "!!", "", "*"})
+
+    existing = _parse_colon_file(existing_text)
+    incoming = _parse_colon_file(incoming_text)
+
+    merged = dict(existing)
+    for name, line in incoming.items():
+        if name not in merged:
+            merged[name] = line
+            continue
+        old_hash = merged[name].split(":")[1] if ":" in merged[name] else ""
+        new_hash = line.split(":")[1] if ":" in line else ""
+        if old_hash in _LOCKED and new_hash not in _LOCKED:
+            merged[name] = line
+
+    return "\n".join(merged.values()) + "\n"
+
+
+_MERGE_FUNCS = {
+    "etc/group": _merge_group_files,
+    "etc/gshadow": _merge_group_files,
+    "etc/passwd": _merge_passwd_files,
+    "etc/shadow": _merge_shadow_files,
+}
+
+
+def _save_merge_files(src):
+    """Read merge-mode files from a directory before tar overwrites them."""
+    saved = {}
+    for relpath in _MERGE_FILES:
+        fpath = os.path.join(src, relpath)
+        if os.path.isfile(fpath):
+            with open(fpath) as f:
+                saved[relpath] = f.read()
+    return saved
+
+
+def _restore_merge_files(rootfs, saved):
+    """Re-merge saved entries into the rootfs after tar has overwritten them."""
+    for relpath, saved_content in saved.items():
+        dst = os.path.join(rootfs, relpath)
+        current = ""
+        if os.path.isfile(dst):
+            with open(dst) as f:
+                current = f.read()
+        merge_fn = _MERGE_FUNCS.get(relpath, _merge_passwd_files)
+        result = merge_fn(saved_content, current)
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        with open(dst, "w") as f:
+            f.write(result)
+        if "shadow" in relpath:
+            os.chmod(dst, 0o640)
+
+
+# Accumulated setuid/setgid files across all merged packages.
+# tar can't preserve setuid when run as non-root, so we record them
+# from the source packages and restore after all merging is done.
+_SETUID_FILES = {}  # relpath -> mode
+
+
+def _scan_setuid(src):
+    """Find files with setuid/setgid bits in a package directory."""
+    for dirpath, _, filenames in os.walk(src):
+        for fname in filenames:
+            fpath = os.path.join(dirpath, fname)
+            if os.path.islink(fpath):
+                continue
+            try:
+                st = os.stat(fpath)
+            except OSError:
+                continue
+            if st.st_mode & (stat.S_ISUID | stat.S_ISGID):
+                relpath = os.path.relpath(fpath, src)
+                _SETUID_FILES[relpath] = st.st_mode
+
+
+def _restore_setuid(rootfs):
+    """Restore setuid/setgid bits that were lost during tar merge."""
+    for relpath, mode in _SETUID_FILES.items():
+        fpath = os.path.join(rootfs, relpath)
+        if os.path.isfile(fpath) and not os.path.islink(fpath):
+            os.chmod(fpath, mode)
+    if _SETUID_FILES:
+        print(f"Restored setuid/setgid on {len(_SETUID_FILES)} files")
+
+
 def _merge_package(src, rootfs, env):
     """Recursively merge a package directory into the rootfs."""
     # Follow symlinks to the real directory
@@ -33,6 +207,13 @@ def _merge_package(src, rootfs, env):
         for d in ("usr", "bin", "lib", "etc", "sbin")
     )
     if has_top_level:
+        # Record setuid/setgid files before tar loses them
+        _scan_setuid(src)
+
+        # Save existing append-mode files before tar overwrites them
+        existing_saved = _save_merge_files(rootfs)
+        incoming_saved = _save_merge_files(src)
+
         # Use tar to merge, preserving directory symlinks
         tar_c = subprocess.Popen(
             ["tar", "-C", src, "-c", "."],
@@ -45,6 +226,12 @@ def _merge_package(src, rootfs, env):
         tar_c.stdout.close()
         tar_x.communicate()
         tar_c.wait()
+
+        # Restore: merge the pre-existing entries back in
+        if existing_saved:
+            _restore_merge_files(rootfs, existing_saved)
+        if incoming_saved:
+            _restore_merge_files(rootfs, incoming_saved)
     else:
         # Meta-package directory — recurse into subdirs
         for entry in sorted(os.listdir(src)):
@@ -142,115 +329,6 @@ def _merge_sbin_into_bin(rootfs):
         os.symlink("usr/bin", sbin)
 
 
-def _merge_acct_entries(rootfs):
-    """Merge acct-group and acct-user entries into /etc databases."""
-    acct_group_dir = os.path.join(rootfs, "usr", "share", "acct-group")
-    acct_user_dir = os.path.join(rootfs, "usr", "share", "acct-user")
-
-    if not os.path.isdir(acct_group_dir) and not os.path.isdir(acct_user_dir):
-        return
-
-    print("Merging system users and groups from acct packages...")
-
-    etc = os.path.join(rootfs, "etc")
-    group_file = os.path.join(etc, "group")
-    passwd_file = os.path.join(etc, "passwd")
-    shadow_file = os.path.join(etc, "shadow")
-
-    def _read_names(path):
-        """Read existing entry names from a colon-delimited file."""
-        names = set()
-        if os.path.isfile(path):
-            with open(path) as f:
-                for line in f:
-                    line = line.strip()
-                    if line and not line.startswith("#"):
-                        names.add(line.split(":")[0])
-        return names
-
-    # Merge groups
-    if os.path.isdir(acct_group_dir):
-        existing_groups = _read_names(group_file)
-        for gf in sorted(os.listdir(acct_group_dir)):
-            if not gf.endswith(".group"):
-                continue
-            path = os.path.join(acct_group_dir, gf)
-            with open(path) as f:
-                content = f.read().strip()
-            name = content.split(":")[0]
-            if name not in existing_groups:
-                with open(group_file, "a") as f:
-                    f.write(content + "\n")
-                existing_groups.add(name)
-                print(f"  Added group: {name}")
-
-    # Merge users
-    if os.path.isdir(acct_user_dir):
-        existing_users = _read_names(passwd_file)
-        for pf in sorted(os.listdir(acct_user_dir)):
-            if not pf.endswith(".passwd"):
-                continue
-            path = os.path.join(acct_user_dir, pf)
-            with open(path) as f:
-                content = f.read().strip()
-            name = content.split(":")[0]
-            if name not in existing_users:
-                with open(passwd_file, "a") as f:
-                    f.write(content + "\n")
-                existing_users.add(name)
-                print(f"  Added user: {name}")
-
-        # Merge shadow entries
-        if os.path.isfile(shadow_file):
-            existing_shadow = _read_names(shadow_file)
-            for sf in sorted(os.listdir(acct_user_dir)):
-                if not sf.endswith(".shadow"):
-                    continue
-                path = os.path.join(acct_user_dir, sf)
-                with open(path) as f:
-                    content = f.read().strip()
-                name = content.split(":")[0]
-                if name not in existing_shadow:
-                    with open(shadow_file, "a") as f:
-                        f.write(content + "\n")
-                    existing_shadow.add(name)
-
-        # Add users to supplementary groups
-        for gf in sorted(os.listdir(acct_user_dir)):
-            if not gf.endswith(".groups"):
-                continue
-            user_name = gf[:-len(".groups")]
-            path = os.path.join(acct_user_dir, gf)
-            with open(path) as f:
-                supp_groups = f.read().strip()
-            if not supp_groups:
-                continue
-
-            for group_name in supp_groups.split(","):
-                group_name = group_name.strip()
-                if not group_name:
-                    continue
-                # Read current group file
-                if not os.path.isfile(group_file):
-                    continue
-                lines = []
-                modified = False
-                with open(group_file) as f:
-                    for line in f:
-                        stripped = line.rstrip("\n")
-                        parts = stripped.split(":")
-                        if len(parts) >= 4 and parts[0] == group_name:
-                            members = parts[3].split(",") if parts[3] else []
-                            if user_name not in members:
-                                members.append(user_name)
-                                parts[3] = ",".join(members)
-                                line = ":".join(parts) + "\n"
-                                modified = True
-                                print(f"  Added {user_name} to group: {group_name}")
-                        lines.append(line)
-                if modified:
-                    with open(group_file, "w") as f:
-                        f.writelines(lines)
 
 
 def _fix_elf_interpreters(rootfs):
@@ -584,6 +662,9 @@ def main():
         if os.path.isdir(pkg_abs) or os.path.islink(pkg_abs):
             _merge_package(pkg_abs, rootfs, env)
 
+    # Restore setuid/setgid bits lost during tar merge
+    _restore_setuid(rootfs)
+
     # Fix merged-usr layout
     _fix_merged_usr(rootfs, "bin")
     _fix_merged_usr(rootfs, "sbin")
@@ -621,9 +702,6 @@ def main():
     root_dir = os.path.join(rootfs, "root")
     if os.path.isdir(root_dir):
         os.chmod(root_dir, 0o755)
-
-    # Merge acct entries
-    _merge_acct_entries(rootfs)
 
     # Fix ELF interpreter paths (build-host -> /lib64/ld-linux-x86-64.so.2)
     _fix_elf_interpreters(rootfs)

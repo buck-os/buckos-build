@@ -527,48 +527,12 @@ ExecStart=-/sbin/agetty --autologin live --noclear %I $TERM
 Type=idle
 GETTYEOF
 
-# Create .bash_profile for live user to start Plasma Wayland on tty1
+# Create .bash_profile for live user (no Plasma auto-start — handled by
+# plasma-wayland-live.service to avoid a race condition with the systemd
+# service path)
 mkdir -p "$OUT/home/live"
 cat > "$OUT/home/live/.bash_profile" << 'PROFILEEOF'
-# BuckOS Live - Auto-start Plasma Wayland on tty1
-
-# Only start on tty1 and if not already in a graphical session
-if [ "`tty`" = "/dev/tty1" ] && [ -z "$WAYLAND_DISPLAY" ] && [ -z "$DISPLAY" ]; then
-    # Set up XDG runtime directory
-    export XDG_RUNTIME_DIR="/run/user/1000"
-
-    # Ensure runtime directory exists
-    if [ ! -d "$XDG_RUNTIME_DIR" ]; then
-        sudo mkdir -p "$XDG_RUNTIME_DIR"
-        sudo chown 1000:1000 "$XDG_RUNTIME_DIR"
-        sudo chmod 700 "$XDG_RUNTIME_DIR"
-    fi
-
-    # Set XDG base directories
-    export XDG_CONFIG_HOME="$HOME/.config"
-    export XDG_DATA_HOME="$HOME/.local/share"
-    export XDG_CACHE_HOME="$HOME/.cache"
-    export XDG_STATE_HOME="$HOME/.local/state"
-
-    # Create directories if needed
-    mkdir -p "$XDG_CONFIG_HOME" "$XDG_DATA_HOME" "$XDG_CACHE_HOME" "$XDG_STATE_HOME"
-
-    # Qt and KDE paths
-    export QT_PLUGIN_PATH="/usr/lib64/plugins:/usr/lib64/qt6/plugins"
-    export QML_IMPORT_PATH="/usr/lib64/qml"
-    export QML2_IMPORT_PATH="/usr/lib64/qml"
-    export XDG_DATA_DIRS="/usr/share:/usr/local/share"
-
-    # Build KDE service cache (sycoca) for application menu discovery
-    # This must run before Plasma starts so the menu is populated
-    echo "Building KDE service cache (kbuildsycoca6)..."
-    kbuildsycoca6 --noincremental 2>/dev/null || true
-
-    # Start Plasma Wayland session
-    export PLASMA_SKIP_SPLASH=1  # Skip splash screen to avoid KSplash wait timeout
-    echo "Starting Plasma Wayland session..."
-    exec dbus-run-session startplasma-wayland
-fi
+# BuckOS Live
 
 # Source .bashrc for interactive shells
 if [ -f ~/.bashrc ]; then
@@ -611,6 +575,32 @@ mkdir -p $OUT/var/empty
 mkdir -p $OUT/root
 
 echo "buckos-live" > $OUT/etc/hostname
+
+# Dynamic linker configuration — include standard and package-private lib dirs
+# so ldconfig can build ld.so.cache and the runtime linker finds all .so files.
+cat > $OUT/etc/ld.so.conf << 'LDCONF'
+/usr/lib64
+/usr/lib
+/usr/lib64/systemd
+/usr/lib/sudo
+include /etc/ld.so.conf.d/*.conf
+LDCONF
+mkdir -p $OUT/etc/ld.so.conf.d
+
+# NSS configuration — tells glibc to resolve users/groups from local files.
+# Without this, getpwnam()/getgrnam() fail and systemd can't resolve
+# User=/Group= directives in service files.
+cat > $OUT/etc/nsswitch.conf << 'NSSEOF'
+passwd:     files
+group:      files
+shadow:     files
+hosts:      files dns
+networks:   files
+protocols:  files
+services:   files
+ethers:     files
+rpc:        files
+NSSEOF
 
 # Complete passwd with all system users
 cat > $OUT/etc/passwd << 'PASSWDEOF'
@@ -986,12 +976,17 @@ genrule(
     cmd = """
 mkdir -p $OUT/home/live/Desktop
 
-# Create sudoers rule for buckos-installer (allows live user to run without password)
+# Base sudoers configuration
 mkdir -p $OUT/etc/sudoers.d
+cat > $OUT/etc/sudoers << 'BASESUDOERS'
+root ALL=(ALL:ALL) ALL
+%wheel ALL=(ALL:ALL) NOPASSWD: ALL
+#includedir /etc/sudoers.d
+BASESUDOERS
+chmod 440 $OUT/etc/sudoers
+
 cat > $OUT/etc/sudoers.d/buckos-installer << 'SUDOERSEOF'
-# Allow live user to run buckos-installer without password
 live ALL=(root) NOPASSWD: /usr/bin/buckos-installer
-# Also allow wheel group as fallback
 %wheel ALL=(root) NOPASSWD: /usr/bin/buckos-installer
 SUDOERSEOF
 chmod 440 $OUT/etc/sudoers.d/buckos-installer
@@ -1221,6 +1216,19 @@ USERSERVICEEOF
 # Set graphical.target as default
 ln -sf /usr/lib/systemd/system/graphical.target $OUT/etc/systemd/system/default.target
 
+# Mask initrd services that systemd carries across switch-root.
+ln -sf /dev/null $OUT/etc/systemd/system/initrd-cleanup.service
+ln -sf /dev/null $OUT/etc/systemd/system/initrd-parse-etc.service
+
+# Keep /usr writable on live systems — the overlayfs provides a tmpfs
+# upper layer so writes go there, but systemd's default is to remount
+# /usr read-only.  This breaks live desktop caches (MIME, gschemas).
+mkdir -p $OUT/etc/systemd/system/systemd-remount-fs.service.d
+cat > $OUT/etc/systemd/system/systemd-remount-fs.service.d/live.conf << 'REMOUNTCONF'
+[Service]
+ExecStartPost=/bin/mount -o remount,rw /usr
+REMOUNTCONF
+
 # DBus systemd unit files (dbus may be built without --enable-systemd,
 # so provide the unit files here to ensure dbus starts under systemd)
 mkdir -p $OUT/usr/lib/systemd/system
@@ -1325,7 +1333,8 @@ Environment=XDG_SESSION_TYPE=wayland
 Environment=XDG_RUNTIME_DIR=/run/user/1000
 Environment=XDG_DATA_DIRS=/usr/share:/usr/local/share
 Environment=XDG_CONFIG_DIRS=/etc/xdg
-Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
+# Let dbus-run-session set this — presetting it causes socket conflicts
+# Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
 # Qt/KDE environment
 Environment=QT_QPA_PLATFORM=wayland
 Environment=QML_IMPORT_PATH=/usr/lib64/qml:/usr/qml
@@ -1360,6 +1369,9 @@ ExecStartPre=+/bin/chmod 700 /run/user/1000
 ExecStartPre=-/usr/bin/kbuildsycoca6 --noincremental
 # Build font cache (optional, continues on failure)
 ExecStartPre=-/usr/bin/fc-cache -f
+# Build MIME and schema caches (run as root — /usr may be read-only for user)
+ExecStartPre=-+/usr/bin/update-mime-database /usr/share/mime
+ExecStartPre=-+/usr/bin/glib-compile-schemas /usr/share/glib-2.0/schemas
 # Start kwin_wayland as compositor with plasmashell as the session
 # Skip startplasma-wayland/plasma_session since they weren't auto-starting plasmashell
 ExecStart=/usr/bin/dbus-run-session /usr/bin/kwin_wayland --no-lockscreen --exit-with-session /usr/bin/plasmashell
@@ -1373,8 +1385,20 @@ PLASMASERVICEEOF
 # Enable plasma-wayland-live service
 ln -sf /usr/lib/systemd/system/plasma-wayland-live.service $OUT/etc/systemd/system/graphical.target.wants/plasma-wayland-live.service
 
-# Disable getty on tty1 (plasma-wayland-live will use it)
-ln -sf /dev/null $OUT/etc/systemd/system/getty@tty1.service
+# Enable getty on tty1 as fallback console (autologin as live user)
+# plasma-wayland-live.service handles graphical session separately
+mkdir -p "$OUT/etc/systemd/system/getty.target.wants"
+ln -sf /lib/systemd/system/getty@.service "$OUT/etc/systemd/system/getty.target.wants/getty@tty1.service"
+
+# Enable serial console getty for QEMU debugging
+mkdir -p "$OUT/etc/systemd/system/serial-getty@ttyS0.service.d"
+cat > "$OUT/etc/systemd/system/serial-getty@ttyS0.service.d/autologin.conf" << 'SERIALEOF'
+[Service]
+ExecStart=
+ExecStart=-/sbin/agetty --autologin live --noclear %I 115200 $TERM
+Type=idle
+SERIALEOF
+ln -sf /lib/systemd/system/serial-getty@.service "$OUT/etc/systemd/system/getty.target.wants/serial-getty@ttyS0.service"
 
 # Disable screen locker for live session
 mkdir -p $OUT/home/live/.config
@@ -2123,6 +2147,7 @@ rootfs(
         "//packages/linux/system/libs/data/json-c:json-c",
         "//packages/linux/system/libs/utility/pcre2:pcre2",
         "//packages/linux/dev-libs/glib:glib",
+        "//packages/linux/desktop/shared-mime-info:shared-mime-info",
 
         # Input handling
         "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
@@ -2165,6 +2190,9 @@ rootfs(
 
         # Installer dependencies - bootloader
         "//packages/linux/boot/grub:grub",
+
+        # Boot splash
+        "//packages/linux/boot/plymouth:plymouth",
     ] + KDE_PLASMA,
     # packages: genrule configs, acct groups, kernel, and host-tools that
     # don't provide PackageInfo with runtime_deps (no transitive resolution).
@@ -2747,6 +2775,16 @@ rootfs(
         "//packages/linux/core/util-linux:util-linux",
         # systemd for initrd
         "//packages/linux/system/init/systemd:systemd",
+        # systemd runtime deps (mirrors systemd BUCK deps list)
+        "//packages/linux/system/libs/crypto/libxcrypt:libxcrypt",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/system/libs/crypto/argon2:argon2",
+        "//packages/linux/system/libs/ipc/libseccomp:libseccomp",
+        "//packages/linux/system/libs/ipc/libcap:libcap",
+        "//packages/linux/system/libs/ipc/attr:attr",
+        "//packages/linux/system/libs/data/json-c:json-c",
+        "//packages/linux/system/libs/compression/lz4:lz4",
+        "//packages/linux/core/zlib:zlib",
         # udev for device detection
         "//packages/virtual/libudev:libudev",
         # Compression utilities
@@ -2793,12 +2831,12 @@ dracut_initramfs(
 iso_image(
     name = "buckos-live-installer-kde",
     kernel = "//packages/linux/kernel/buckos-kernel:buckos-kernel-live",
-    initramfs = ":buckos-live-initramfs-systemd",
+    initramfs = ":buckos-live-initramfs",
     rootfs = ":buckos-live-kde-rootfs",
     boot_mode = "hybrid",
     volume_label = "BUCKOS_LIVE",
-    # Systemd initrd boot parameters (no serial console)
-    kernel_args = "console=tty0 loglevel=7 rd.systemd.show_status=true",
+    # Dracut initrd boot parameters with serial console
+    kernel_args = "console=tty0 console=ttyS0,115200 rdinit=/init loglevel=7 rd.systemd.show_status=true",
     host_deps = ["//packages/linux/system/filesystem/native/squashfs-tools:squashfs-tools"],
     visibility = ["PUBLIC"],
 )
