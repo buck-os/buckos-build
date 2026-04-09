@@ -70,8 +70,10 @@ jobs:
           done
           [ "$failed" -eq 0 ]
       - name: Build seed toolchain
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         run: buck2 build //tc/bootstrap:seed-export --out seed-toolchain.tar.zst
       - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         with:
           name: seed-toolchain
           path: seed-toolchain.tar.zst
@@ -154,6 +156,7 @@ jobs:
 
   test-seed:
     name: test with seed
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     needs: [build]
     runs-on: [self-hosted, mini]
     steps:
@@ -195,7 +198,6 @@ jobs:
             "${{ needs.build.result }}"
             "${{ needs.test.result }}"
             "${{ needs.test-aarch64.result }}"
-            "${{ needs.test-seed.result }}"
           )
           for r in "${results[@]}"; do
             if [[ "$r" != "success" ]]; then
@@ -203,6 +205,11 @@ jobs:
               exit 1
             fi
           done
+          # test-seed is skipped on PRs
+          if [[ "${{ needs.test-seed.result }}" != "success" && "${{ needs.test-seed.result }}" != "skipped" ]]; then
+            echo "::error::test-seed failed or was cancelled"
+            exit 1
+          fi
 
   release:
     needs: [required-checks]
