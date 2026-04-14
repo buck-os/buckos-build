@@ -144,11 +144,20 @@ menuentry "BuckOS Linux (serial console only)" {{
     else:
         content = f"""\
 # GRUB configuration for BuckOS ISO
+serial --unit=0 --speed=115200
+terminal_input serial console
+terminal_output serial console
+
 set timeout=5
 set default=0
 
 menuentry "BuckOS Linux" {{
     linux /boot/vmlinuz {kernel_args}
+    initrd /boot/initramfs.img
+}}
+
+menuentry "BuckOS Linux (Serial Console)" {{
+    linux /boot/vmlinuz {kernel_args} console=ttyS0,115200
     initrd /boot/initramfs.img
 }}
 
