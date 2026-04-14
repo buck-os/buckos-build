@@ -1,0 +1,28 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "nftables",
+    version = "1.1.1",
+    url = "https://www.netfilter.org/projects/nftables/files/nftables-1.1.1.tar.xz",
+    sha256 = "6358830f3a64f31e39b0ad421d7dadcd240b72343ded48d8ef13b8faf204865a",
+    description = "Netfilter nftables packet filtering framework",
+    homepage = "https://netfilter.org/projects/nftables/",
+    license = "GPL-2.0-or-later",
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--sbindir=/usr/sbin",
+        "--with-json",
+        "--with-cli=readline",
+        "--disable-man-doc",
+        "--disable-debug",
+    ],
+    deps = [
+        "//packages/linux/system/libs/network/libnftnl:libnftnl",
+        "//packages/linux/system/libs/network/libmnl:libmnl",
+        "//packages/linux/system/terminal/readline:readline",
+        "//packages/linux/system/libs/data/jansson:jansson",
+        "//packages/linux/system/libs/utility/gmp:gmp",
+    ],
+)

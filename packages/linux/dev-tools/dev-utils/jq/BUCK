@@ -1,0 +1,26 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "jq",
+    version = "1.7.1",
+    url = "https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-1.7.1.tar.gz",
+    sha256 = "478c9ca129fd2e3443fe27314b455e211e0d8c60bc8ff7df703873deeee580c2",
+    description = "Lightweight and flexible command-line JSON processor",
+    homepage = "https://jqlang.github.io/jq/",
+    license = "MIT",
+    configure_args = [
+        "--prefix=/usr",
+        "--with-oniguruma",
+        "--disable-docs",
+        "--disable-valgrind",
+        "--disable-maintainer-mode",
+    ],
+    pre_build_cmds = [
+        # Generate config_opts.inc manually (Makefile has conflicting recipes for this target)
+        "mkdir -p src && if test -x ./config.status; then ./config.status --config; else echo '(unknown)'; fi | sed -e 's/\\\\/\\\\\\\\/g' -e 's/\"/\\\\\"/g' -e 's/^/\"/' -e 's/$/\"/' -e 's/^/#define JQ_CONFIG /' > src/config_opts.inc",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/text/oniguruma:oniguruma",
+    ],
+)

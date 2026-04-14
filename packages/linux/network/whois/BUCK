@@ -1,0 +1,19 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "whois",
+    version = "5.5.23",
+    url = "https://github.com/rfc1036/whois/archive/refs/tags/v5.5.23.tar.gz",
+    sha256 = "dcfc08f3362c74ec8ae30691941909ebccf0cb3d27da04236f7e2790dbc7757c",
+    description = "Intelligent WHOIS client",
+    homepage = "https://github.com/rfc1036/whois",
+    license = "GPL-2.0-or-later",
+    skip_configure = True,
+    make_args = [
+        "prefix=/usr",
+    ],
+    deps = [
+        "//packages/linux/system/libs/crypto/libxcrypt:libxcrypt",
+    ],
+)
