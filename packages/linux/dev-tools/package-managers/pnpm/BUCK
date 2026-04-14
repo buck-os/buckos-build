@@ -1,0 +1,22 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "binary",
+    name = "pnpm",
+    version = "9.15.4",
+    url = "https://github.com/pnpm/pnpm/releases/download/v9.15.4/pnpm-linux-x64",
+    sha256 = "2089504c90939a21d9add2a9c96fd3112d8fcc9e71306b4333f89a14ca678fd2",
+    description = "Fast, disk space efficient package manager for Node.js",
+    homepage = "https://pnpm.io/",
+    license = "MIT",
+    filename = "pnpm-linux-x64",
+    source = ":pnpm-archive",
+    install_script = """
+mkdir -p "$OUT/usr/bin"
+cp "$SRCS" "$OUT/usr/bin/pnpm"
+chmod +x "$OUT/usr/bin/pnpm"
+""",
+    deps = [
+        "//packages/linux/lang/nodejs:nodejs",
+    ],
+)
