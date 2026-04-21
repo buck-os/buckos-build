@@ -23,6 +23,12 @@ package(
     description = "System and service manager",
     homepage = "https://systemd.io/",
     license = "GPL-2.0-or-later LGPL-2.1-or-later",
+    use_configure = {
+        "pam": ("-Dpam=enabled", "-Dpam=disabled"),
+    },
+    use_deps = {
+        "pam": ["//packages/linux/system/security/linux-pam:linux-pam"],
+    },
     configure_args = [
         "-Dsysconfdir=/etc",
         "-Dmode=release",
@@ -80,8 +86,7 @@ package(
         "-Dportabled=false",
         "-Dsysext=false",
         "-Duserdb=false",
-        # USE-derived off defaults (all USE flags default to off)
-        "-Dpam=auto",
+        # USE-derived defaults (pam enabled by default for logind sessions)
         "-Dacl=auto",
         "-Dapparmor=disabled",
         "-Daudit=disabled",

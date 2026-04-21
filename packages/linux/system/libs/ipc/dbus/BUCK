@@ -29,6 +29,9 @@ package(
         # Override systemd unit paths to prevent absolute paths from pkg-config
         "--with-systemdsystemunitdir=/usr/lib/systemd/system",
         "--with-systemduserunitdir=/usr/lib/systemd/user",
+        # Prevent build-time TMPDIR from being baked into session.conf
+        # (causes "Socket name too long" at runtime)
+        "--with-session-socket-dir=/tmp",
     ],
     deps = [
         "//packages/linux/system/libs/data/expat:expat",
