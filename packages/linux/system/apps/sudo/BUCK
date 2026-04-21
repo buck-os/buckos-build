@@ -43,7 +43,11 @@ package(
         "MKDIR_P=mkdir -p",
     ],
     install_targets = ["install-binaries", "install-includes", "install-plugin"],
-    # Serialize install — parallel sub-makes race on mkdir in shared DESTDIR
     install_args = ["-j1"],
+    post_install_cmds = [
+        # install-plugin doesn't install libsudo_util.so; libtool leaves it
+        # in the build tree .libs/ dir. Copy from the build tree via $BUILD_DIR.
+        "cp -a $BUILD_DIR/lib/util/.libs/libsudo_util.so* usr/lib/sudo/ 2>/dev/null || cp -a $BUILD_DIR/lib/util/libsudo_util.so* usr/lib/sudo/ || true",
+    ],
     deps = [],
 )

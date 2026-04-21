@@ -26,9 +26,13 @@ package(
     },
     # Override src_configure to do nothing (we configured in pre_configure)
     configure_args = ["--help || true"],  # No-op to satisfy autotools eclass
-    make_args = [],
+    make_args = ["dracut-install", "src/skipcpio/skipcpio", "dracut-util", "dracut.pc"],
+    # Skip default 'make install' (needs asciidoc for man pages); post_install_cmds handles it
+    install_targets = ["dracut-install"],
     post_install_cmds = ["""
 # Manual installation since 'make install' requires asciidoc for man pages
+# NOTE: post_install_cmds run with cwd=$DESTDIR, source files are in $BUILD_DIR
+BD="$BUILD_DIR"
 
 # Create directories
 mkdir -p "$DESTDIR/usr/bin"
@@ -38,63 +42,62 @@ mkdir -p "$DESTDIR/usr/share/bash-completion/completions"
 mkdir -p "$DESTDIR/usr/share/pkgconfig"
 
 # Install main scripts
-cp dracut.sh "$DESTDIR/usr/bin/dracut"
+cp "$BD/dracut.sh" "$DESTDIR/usr/bin/dracut"
 chmod +x "$DESTDIR/usr/bin/dracut"
 
-cp lsinitrd.sh "$DESTDIR/usr/bin/lsinitrd"
+cp "$BD/lsinitrd.sh" "$DESTDIR/usr/bin/lsinitrd"
 chmod +x "$DESTDIR/usr/bin/lsinitrd"
 
 # Install C utilities
-if [ -f src/install/dracut-install ]; then
-    cp src/install/dracut-install "$DESTDIR/usr/lib/dracut/"
+if [ -f "$BD/src/install/dracut-install" ]; then
+    cp "$BD/src/install/dracut-install" "$DESTDIR/usr/lib/dracut/"
     chmod +x "$DESTDIR/usr/lib/dracut/dracut-install"
     ln -sf ../lib/dracut/dracut-install "$DESTDIR/usr/bin/dracut-install"
 fi
 
-if [ -f src/skipcpio/skipcpio ]; then
-    cp src/skipcpio/skipcpio "$DESTDIR/usr/lib/dracut/"
+if [ -f "$BD/src/skipcpio/skipcpio" ]; then
+    cp "$BD/src/skipcpio/skipcpio" "$DESTDIR/usr/lib/dracut/"
     chmod +x "$DESTDIR/usr/lib/dracut/skipcpio"
 fi
 
-if [ -f dracut-util ]; then
-    cp dracut-util "$DESTDIR/usr/lib/dracut/"
+if [ -f "$BD/src/util/util" ]; then
+    cp "$BD/src/util/util" "$DESTDIR/usr/lib/dracut/dracut-util"
     chmod +x "$DESTDIR/usr/lib/dracut/dracut-util"
 fi
 
 # Install dracut-cpio to /usr/lib/dracut/dracut-cpio (where dracut expects it for --enhanced-cpio)
-# dracut-cpio is a specialized optimized cpio implementation used when --enhanced-cpio flag is passed
-if [ -f src/dracut-cpio/target/release/dracut-cpio ]; then
-    cp src/dracut-cpio/target/release/dracut-cpio "$DESTDIR/usr/lib/dracut/dracut-cpio"
+if [ -f "$BD/src/dracut-cpio/target/release/dracut-cpio" ]; then
+    cp "$BD/src/dracut-cpio/target/release/dracut-cpio" "$DESTDIR/usr/lib/dracut/dracut-cpio"
     chmod +x "$DESTDIR/usr/lib/dracut/dracut-cpio"
     echo "Installed dracut-cpio to /usr/lib/dracut/dracut-cpio"
 fi
 
 # Install support scripts to /usr/lib/dracut
 for script in dracut-functions.sh dracut-init.sh dracut-logger.sh dracut-initramfs-restore.sh; do
-    if [ -f "$script" ]; then
-        cp "$script" "$DESTDIR/usr/lib/dracut/"
+    if [ -f "$BD/$script" ]; then
+        cp "$BD/$script" "$DESTDIR/usr/lib/dracut/"
     fi
 done
 
 # Install modules (critical!)
-if [ -d modules.d ]; then
-    cp -a modules.d "$DESTDIR/usr/lib/dracut/"
+if [ -d "$BD/modules.d" ]; then
+    cp -a "$BD/modules.d" "$DESTDIR/usr/lib/dracut/"
 fi
 
 # Install default configuration
-cp dracut.conf "$DESTDIR/etc/dracut.conf"
-if [ -d dracut.conf.d ]; then
-    cp -a dracut.conf.d/* "$DESTDIR/etc/dracut.conf.d/" 2>/dev/null || true
+cp "$BD/dracut.conf" "$DESTDIR/etc/dracut.conf"
+if [ -d "$BD/dracut.conf.d" ]; then
+    cp -a "$BD/dracut.conf.d"/* "$DESTDIR/etc/dracut.conf.d/" 2>/dev/null || true
 fi
 
 # Install pkgconfig file
-if [ -f dracut.pc ]; then
-    cp dracut.pc "$DESTDIR/usr/share/pkgconfig/"
+if [ -f "$BD/dracut.pc" ]; then
+    cp "$BD/dracut.pc" "$DESTDIR/usr/share/pkgconfig/"
 fi
 
 # Install bash completion
-if [ -d shell-completion/bash ]; then
-    cp shell-completion/bash/* "$DESTDIR/usr/share/bash-completion/completions/" 2>/dev/null || true
+if [ -d "$BD/shell-completion/bash" ]; then
+    cp "$BD/shell-completion/bash"/* "$DESTDIR/usr/share/bash-completion/completions/" 2>/dev/null || true
 fi
 
 # Create BuckOS-specific configuration based on USE flags

@@ -1,0 +1,37 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "meson",
+    name = "plymouth",
+    version = "24.004.60",
+    url = "https://www.freedesktop.org/software/plymouth/releases/plymouth-24.004.60.tar.xz",
+    sha256 = "f3f7841358c98f5e7b06a9eedbdd5e6882fd9f38bbd14a767fb083e3b55b1c34",
+    description = "Graphical boot animation (splash) and logger",
+    homepage = "https://gitlab.freedesktop.org/plymouth/plymouth",
+    license = "GPL-2+",
+    pre_configure_cmds = [
+        # generate-version.sh expects dir named plymouth-{ver}; patch it
+        "sed -i 's/exit 1/echo 24.004.60; exit 0/' scripts/generate-version.sh",
+    ],
+    configure_args = [
+        "--localstatedir=/var",
+        "-Dgtk=disabled",
+        "-Dfreetype=enabled",
+        "-Dpango=disabled",
+        "-Dudev=enabled",
+        "-Ddrm=true",
+        "-Dsystemd-integration=true",
+        "-Ddocs=false",
+        "-Dtracing=false",
+    ],
+    deps = [
+        "//packages/linux/system/libs/input/libevdev:libevdev",
+        "//packages/linux/system/libs/image/libpng:libpng",
+        "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
+        "//packages/linux/graphics/xorg/xkeyboard-config:xkeyboard-config",
+        "//packages/linux/desktop/libdrm:libdrm",
+        "//packages/linux/system/libs/font/freetype:freetype",
+        "//packages/linux/system/init/systemd:systemd",
+        "//packages/virtual/libudev:libudev",
+    ],
+)

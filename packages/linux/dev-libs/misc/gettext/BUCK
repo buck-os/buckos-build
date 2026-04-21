@@ -41,6 +41,9 @@ package(
         # (host=x86_64-buckos-linux-gnu != build machine x86_64-pc-linux-gnu).
         "am_cv_func_iconv=yes",
         "am_cv_func_iconv_works=yes",
+        # Prevent deeply nested confdir3/ test directories that exceed
+        # Buck2's output traversal limits (gnulib opendir test).
+        "gl_cv_func_opendir_works=yes",
     ],
     deps = [
         "//packages/linux/system/terminal/ncurses:ncurses",

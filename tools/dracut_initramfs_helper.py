@@ -2,7 +2,8 @@
 """Env-sanitized wrapper for dracut create_script.
 
 Replaces the direct create_script invocation in initramfs.bzl with an
-env-sanitized subprocess call.
+env-sanitized subprocess call.  Forwards --hermetic-path and --ld-linux
+to the create script so it can locate sysroot binaries.
 """
 
 import os
@@ -16,8 +17,9 @@ def main():
     # Arguments are passed through positionally, matching the original
     # cmd_args layout in _dracut_initramfs_impl:
     #   create_script kernel_image dracut_dir rootfs_dir output kver compress [modules_dir]
+    #   [--hermetic-path PATH] [--ld-linux PATH]
     if len(sys.argv) < 7:
-        print("usage: dracut_initramfs_helper create_script kernel dracut rootfs output kver compress [modules]",
+        print("usage: dracut_initramfs_helper create_script kernel dracut rootfs output kver compress [modules] [--hermetic-path PATH] [--ld-linux PATH]",
               file=sys.stderr)
         sys.exit(1)
 

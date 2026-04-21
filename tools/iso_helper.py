@@ -144,11 +144,20 @@ menuentry "BuckOS Linux (serial console only)" {{
     else:
         content = f"""\
 # GRUB configuration for BuckOS ISO
+serial --unit=0 --speed=115200
+terminal_input serial console
+terminal_output serial console
+
 set timeout=5
 set default=0
 
 menuentry "BuckOS Linux" {{
     linux /boot/vmlinuz {kernel_args}
+    initrd /boot/initramfs.img
+}}
+
+menuentry "BuckOS Linux (Serial Console)" {{
+    linux /boot/vmlinuz {kernel_args} console=ttyS0,115200
     initrd /boot/initramfs.img
 }}
 
@@ -284,6 +293,44 @@ def _apply_ima_xattrs(rootfs_work):
     return applied
 
 
+def _copy_kernel_modules(modules_dir, mod_dest, strip_modules=True):
+    """Copy kernel modules excluding build/source trees, optionally stripping debug symbols."""
+    strip = _find_tool("strip") if strip_modules else None
+
+    for kver in os.listdir(modules_dir):
+        kver_src = os.path.join(modules_dir, kver)
+        if not os.path.isdir(kver_src):
+            continue
+        kver_dst = os.path.join(mod_dest, kver)
+        os.makedirs(kver_dst, exist_ok=True)
+
+        for entry in os.listdir(kver_src):
+            # Skip build/ and source/ (kernel build tree, 28GB+)
+            if entry in ("build", "source"):
+                print(f"  Skipping {entry}/ (kernel build tree)")
+                continue
+            src = os.path.join(kver_src, entry)
+            dst = os.path.join(kver_dst, entry)
+            if os.path.isdir(src):
+                shutil.copytree(src, dst, symlinks=True, dirs_exist_ok=True)
+            else:
+                shutil.copy2(src, dst)
+
+        # Strip debug symbols from .ko files to reduce size (~8GB -> ~500MB)
+        if strip:
+            ko_count = 0
+            for dirpath, _, filenames in os.walk(kver_dst):
+                for fname in filenames:
+                    if fname.endswith(".ko"):
+                        fpath = os.path.join(dirpath, fname)
+                        subprocess.run(
+                            [strip, "--strip-debug", fpath],
+                            capture_output=True,
+                        )
+                        ko_count += 1
+            print(f"  Stripped debug symbols from {ko_count} kernel modules")
+
+
 def _create_squashfs(rootfs_dir, modules_dir, work):
     """Create squashfs from rootfs, optionally adding kernel modules."""
     mksquashfs = _find_tool("mksquashfs")
@@ -305,18 +352,19 @@ def _create_squashfs(rootfs_dir, modules_dir, work):
         # Apply IMA signatures before squashfs creation
         _apply_ima_xattrs(rootfs_work)
 
-        # Copy kernel modules if provided
+        # Copy kernel modules if provided — exclude build/source trees
+        # and strip debug symbols to reduce from ~36GB to ~500MB
         if modules_dir and os.path.isdir(modules_dir):
             print(f"Copying kernel modules from {modules_dir}...")
             mod_dest = os.path.join(rootfs_work, "lib", "modules")
             os.makedirs(mod_dest, exist_ok=True)
-            shutil.copytree(modules_dir, mod_dest, symlinks=True,
-                            dirs_exist_ok=True)
+            _copy_kernel_modules(modules_dir, mod_dest)
 
-            # Run depmod
+            # Run depmod to regenerate module indexes after stripping
             depmod = _find_tool("depmod")
             if depmod:
-                kvers = os.listdir(modules_dir)
+                kvers = [d for d in os.listdir(modules_dir)
+                         if os.path.isdir(os.path.join(modules_dir, d))]
                 if kvers:
                     kver = kvers[0]
                     print(f"Running depmod for kernel {kver}...")
@@ -325,10 +373,66 @@ def _create_squashfs(rootfs_dir, modules_dir, work):
                         capture_output=True,
                     )
 
+        # Strip debug symbols from ELF binaries in the rootfs
+        strip = _find_tool("strip")
+        if strip:
+            stripped = 0
+            for dirpath, _, filenames in os.walk(rootfs_work):
+                # Skip kernel modules (already stripped above) and firmware
+                rel = os.path.relpath(dirpath, rootfs_work)
+                if rel.startswith("lib/modules") or rel.startswith("lib/firmware"):
+                    continue
+                for fname in filenames:
+                    fpath = os.path.join(dirpath, fname)
+                    if os.path.islink(fpath) or not os.path.isfile(fpath):
+                        continue
+                    try:
+                        with open(fpath, "rb") as f:
+                            magic = f.read(4)
+                        if magic != b"\x7fELF":
+                            continue
+                        result = subprocess.run(
+                            [strip, "--strip-unneeded", fpath],
+                            capture_output=True,
+                        )
+                        if result.returncode == 0:
+                            stripped += 1
+                    except (PermissionError, OSError):
+                        pass
+            if stripped:
+                print(f"Stripped {stripped} ELF binaries in rootfs")
+
+        # Remove development files not needed at runtime
+        for exclude_dir in ("usr/include", "usr/share/doc", "usr/share/gtk-doc",
+                            "usr/share/man", "usr/share/info"):
+            exclude_path = os.path.join(rootfs_work, exclude_dir)
+            if os.path.isdir(exclude_path):
+                size_before = sum(
+                    os.path.getsize(os.path.join(dp, f))
+                    for dp, _, fns in os.walk(exclude_path)
+                    for f in fns
+                    if os.path.isfile(os.path.join(dp, f))
+                ) // (1024 * 1024)
+                shutil.rmtree(exclude_path, ignore_errors=True)
+                print(f"Removed {exclude_dir}/ ({size_before} MiB)")
+
+        # Remove static libraries (.a files) — not needed at runtime
+        static_removed = 0
+        for dirpath, _, filenames in os.walk(rootfs_work):
+            for fname in filenames:
+                if fname.endswith(".a") and not fname.startswith("lib"):
+                    continue  # Skip non-library .a files
+                if fname.endswith(".a"):
+                    fpath = os.path.join(dirpath, fname)
+                    if not os.path.islink(fpath):
+                        os.remove(fpath)
+                        static_removed += 1
+        if static_removed:
+            print(f"Removed {static_removed} static libraries (.a files)")
+
         # Regenerate ld.so.cache so the dynamic linker can find libraries
         # in non-default paths (e.g. /usr/lib64/systemd for libsystemd-core).
         # Must run after all overlays and modules are in place.
-        # Use hermetic PATH (same as all other tool lookups).
         _ldconfig = _find_tool("ldconfig")
         ld_so_conf = os.path.join(rootfs_work, "etc", "ld.so.conf")
         if _ldconfig and os.path.isfile(ld_so_conf):
@@ -339,7 +443,8 @@ def _create_squashfs(rootfs_dir, modules_dir, work):
         squashfs_out = os.path.join(live_dir, "filesystem.squashfs")
         print("Creating squashfs...")
         _run([mksquashfs, rootfs_work, squashfs_out,
-              "-comp", "zstd", "-no-progress", "-all-root"])
+              "-comp", "zstd", "-Xcompression-level", "19",
+              "-no-progress", "-all-root"])
     finally:
         shutil.rmtree(rootfs_work, ignore_errors=True)
 
