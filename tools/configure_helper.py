@@ -382,6 +382,23 @@ def main():
                     env[_tv] = " ".join(_tparts)
         if "CPP" in env:
             env["CPP"] = env.get("CC", "cc") + " -E"
+        # Recreate cc/gcc/cpp symlinks with portabilized compiler
+        if os.path.isdir(_symlink_dir):
+            shutil.rmtree(_symlink_dir)
+        for _tv2, _names2 in [("CC", ("cc", "gcc")), ("CXX", ("c++", "g++"))]:
+            _val2 = env.get(_tv2, "")
+            if _val2:
+                _bin2 = os.path.abspath(_val2.split()[0])
+                if os.path.isfile(_bin2):
+                    os.makedirs(_symlink_dir, exist_ok=True)
+                    for _n2 in _names2:
+                        _l2 = os.path.join(_symlink_dir, _n2)
+                        if not os.path.lexists(_l2):
+                            os.symlink(_bin2, _l2)
+                    if _tv2 == "CC":
+                        _cpp2 = os.path.join(_symlink_dir, "cpp")
+                        if not os.path.lexists(_cpp2):
+                            os.symlink(_bin2, _cpp2)
 
     # Append dep bin dirs AFTER hermetic PATH for *-config discovery scripts
     # (gpg-error-config, curl-config, xml2-config, etc.).  Appended so seed

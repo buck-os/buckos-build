@@ -192,7 +192,15 @@ def main():
     hermetic_empty = env.pop("_HERMETIC_EMPTY", None)
     allow_host_path = env.pop("_ALLOW_HOST_PATH", None)
     path_prepend = env.pop("_PATH_PREPEND", None)
+    _ld_linux = env.pop("_LD_LINUX", None)
     if hermetic_path:
+        _hp_dirs = hermetic_path.split(":")
+        if _ld_linux:
+            from portabilize import portabilize_toolchain
+            _patchelf = shutil.which("patchelf", path=hermetic_path)
+            _hp_dirs = portabilize_toolchain(_hp_dirs, _ld_linux,
+                                            patchelf_path=_patchelf)
+            hermetic_path = ":".join(_hp_dirs)
         env["PATH"] = hermetic_path
         # Derive LD_LIBRARY_PATH from hermetic bin dirs
         ld_lib_parts = []
@@ -232,6 +240,33 @@ def main():
         print("error: build requires _HERMETIC_PATH, _HERMETIC_EMPTY, or _ALLOW_HOST_PATH env",
               file=sys.stderr)
         sys.exit(1)
+
+    # Portabilize CC/CXX/AR
+    if _ld_linux:
+        from portabilize import portabilize_toolchain
+        _cc_dirs = set()
+        for _tv in ("CC", "CXX", "AR"):
+            _tval = env.get(_tv, "")
+            if _tval:
+                _tbin = os.path.abspath(_tval.split()[0])
+                if os.path.isfile(_tbin):
+                    _cc_dirs.add(os.path.dirname(_tbin))
+        if _cc_dirs:
+            _patchelf = shutil.which("patchelf", path=env.get("PATH", ""))
+            _port_cc = portabilize_toolchain(
+                list(_cc_dirs), _ld_linux, patchelf_path=_patchelf)
+            _port_map = dict(zip(_cc_dirs, _port_cc))
+            for _tv in ("CC", "CXX", "AR"):
+                _tval = env.get(_tv, "")
+                if not _tval:
+                    continue
+                _tparts = _tval.split()
+                _tbin = os.path.abspath(_tparts[0])
+                _tdir = os.path.dirname(_tbin)
+                if _tdir in _port_map:
+                    _tparts[0] = os.path.join(_port_map[_tdir],
+                                              os.path.basename(_tbin))
+                    env[_tv] = " ".join(_tparts)
 
     # Prepend host tool deps to PATH
     if path_prepend:
