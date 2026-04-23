@@ -244,12 +244,23 @@ def setup_path(args, env, host_path=""):
 
     Requires args parsed by add_path_args().  host_path is the original
     host PATH captured before sanitization (used with --allow-host-path).
-    If --ld-linux was provided, disables posix_spawn in child Python
-    processes to avoid ENOEXEC with padded ELF interpreters.
+    If --ld-linux was provided, portabilizes hermetic-path and
+    path-prepend ELF binaries so they use the sysroot ld-linux + glibc.
     """
+    ld_linux = getattr(args, 'ld_linux', None)
+    scratch = os.environ.get("BUCK_SCRATCH_PATH",
+                             os.environ.get("TMPDIR", "/tmp"))
+
     if args.hermetic_path:
-        env["PATH"] = ":".join(os.path.abspath(p) for p in args.hermetic_path)
-        derive_lib_paths(args.hermetic_path, env)
+        dirs = [os.path.abspath(p) for p in args.hermetic_path]
+        if ld_linux:
+            from portabilize import portabilize_toolchain
+            patchelf = shutil.which("patchelf",
+                                    path=":".join(dirs))
+            dirs = portabilize_toolchain(
+                dirs, ld_linux, scratch, patchelf_path=patchelf)
+        env["PATH"] = ":".join(dirs)
+        derive_lib_paths(dirs, env)
     elif args.hermetic_empty:
         env["PATH"] = ""
     elif args.allow_host_path:
@@ -259,11 +270,39 @@ def setup_path(args, env, host_path=""):
               file=sys.stderr)
         sys.exit(1)
     if hasattr(args, 'path_prepend') and args.path_prepend:
-        prepend = ":".join(os.path.abspath(p) for p in args.path_prepend)
+        pp_dirs = [os.path.abspath(p) for p in args.path_prepend]
+        if ld_linux:
+            from portabilize import portabilize_toolchain
+            patchelf = shutil.which("patchelf",
+                                    path=env.get("PATH", ""))
+            pp_dirs = portabilize_toolchain(
+                pp_dirs, ld_linux, scratch, patchelf_path=patchelf)
+        prepend = ":".join(pp_dirs)
         env["PATH"] = prepend + (":" + env["PATH"] if env.get("PATH") else "")
-        derive_lib_paths(args.path_prepend, env)
-    if getattr(args, 'ld_linux', None):
+        derive_lib_paths(pp_dirs, env)
+    if ld_linux:
+        _rewrite_toolchain_env(env)
         disable_posix_spawn(env)
+
+
+def _rewrite_toolchain_env(env):
+    """Rewrite CC/CXX/AR env values to use portabilized copies from PATH.
+
+    After portabilize_toolchain copies and patches ELF binaries to
+    scratch, the original CC/CXX/AR paths still point to the unpatched
+    originals.  This resolves them to the portabilized copies on PATH.
+    """
+    for var in ("CC", "CXX", "AR"):
+        val = env.get(var, "")
+        if not val:
+            continue
+        parts = val.split()
+        bin_path = parts[0]
+        bin_name = os.path.basename(bin_path)
+        resolved = shutil.which(bin_name, path=env.get("PATH", ""))
+        if resolved and resolved != os.path.abspath(bin_path):
+            parts[0] = resolved
+            env[var] = " ".join(parts)
 
 
 def disable_posix_spawn(env, scratch_dir=None):

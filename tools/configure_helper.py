@@ -298,11 +298,17 @@ def main():
                             os.chmod(_cpp_link, 0o755)
                 _need_symlink_path = True
     if args.hermetic_path:
-        env["PATH"] = ":".join(os.path.abspath(p) for p in args.hermetic_path)
+        _hp_dirs = [os.path.abspath(p) for p in args.hermetic_path]
+        if args.ld_linux:
+            from portabilize import portabilize_toolchain
+            _patchelf = shutil.which("patchelf", path=":".join(_hp_dirs))
+            _hp_dirs = portabilize_toolchain(
+                _hp_dirs, args.ld_linux, _scratch_base, patchelf_path=_patchelf)
+        env["PATH"] = ":".join(_hp_dirs)
         # Derive LD_LIBRARY_PATH from hermetic bin dirs so dynamically
         # linked tools (e.g. cross-ar needing libzstd) find their libs.
         _lib_dirs = []
-        for _bp in args.hermetic_path:
+        for _bp in _hp_dirs:
             _parent = os.path.dirname(os.path.abspath(_bp))
             for _ld in ("lib", "lib64"):
                 _d = os.path.join(_parent, _ld)
@@ -344,6 +350,38 @@ def main():
 
     # ccache masquerade symlinks — prepended before gcc symlinks.
     setup_ccache_symlinks(env, output_dir)
+
+    # Portabilize CC/CXX/AR binaries so they can run on this host.
+    if args.ld_linux:
+        from portabilize import portabilize_toolchain
+        _cc_dirs = set()
+        for _tv in ("CC", "CXX", "AR"):
+            _tval = env.get(_tv, "")
+            if _tval:
+                _tbin = os.path.abspath(_tval.split()[0])
+                if os.path.isfile(_tbin):
+                    _cc_dirs.add(os.path.dirname(_tbin))
+        if _cc_dirs:
+            _patchelf = shutil.which("patchelf", path=env.get("PATH", ""))
+            _port_cc = portabilize_toolchain(
+                list(_cc_dirs), args.ld_linux, _scratch_base,
+                patchelf_path=_patchelf)
+            _port_map = {}
+            for _orig, _port in zip(_cc_dirs, _port_cc):
+                _port_map[_orig] = _port
+            for _tv in ("CC", "CXX", "AR"):
+                _tval = env.get(_tv, "")
+                if not _tval:
+                    continue
+                _tparts = _tval.split()
+                _tbin = os.path.abspath(_tparts[0])
+                _tdir = os.path.dirname(_tbin)
+                if _tdir in _port_map:
+                    _tparts[0] = os.path.join(_port_map[_tdir],
+                                              os.path.basename(_tbin))
+                    env[_tv] = " ".join(_tparts)
+        if "CPP" in env:
+            env["CPP"] = env.get("CC", "cc") + " -E"
 
     # Append dep bin dirs AFTER hermetic PATH for *-config discovery scripts
     # (gpg-error-config, curl-config, xml2-config, etc.).  Appended so seed

@@ -3,6 +3,14 @@ python_library(
     srcs = ["_env.py"],
     base_module = "",
     visibility = ["PUBLIC"],
+    deps = [":portabilize"],
+)
+
+python_library(
+    name = "portabilize",
+    srcs = ["portabilize.py"],
+    base_module = "",
+    visibility = ["PUBLIC"],
 )
 
 python_binary(
