@@ -258,7 +258,7 @@ def setup_path(args, env, host_path=""):
             patchelf = shutil.which("patchelf",
                                     path=":".join(dirs))
             dirs = portabilize_toolchain(
-                dirs, ld_linux, scratch, patchelf_path=patchelf)
+                dirs, ld_linux, patchelf_path=patchelf)
         env["PATH"] = ":".join(dirs)
         derive_lib_paths(dirs, env)
     elif args.hermetic_empty:
@@ -276,7 +276,7 @@ def setup_path(args, env, host_path=""):
             patchelf = shutil.which("patchelf",
                                     path=env.get("PATH", ""))
             pp_dirs = portabilize_toolchain(
-                pp_dirs, ld_linux, scratch, patchelf_path=patchelf)
+                pp_dirs, ld_linux, patchelf_path=patchelf)
         prepend = ":".join(pp_dirs)
         env["PATH"] = prepend + (":" + env["PATH"] if env.get("PATH") else "")
         derive_lib_paths(pp_dirs, env)
@@ -514,19 +514,13 @@ def find_buckos_shell(env):
 
 
 def preferred_linker_flag(env):
-    """Return -fuse-ld=mold if ld.mold is on PATH, else empty string.
+    """Return preferred linker flag, or empty string.
 
-    Respects existing -fuse-ld= in LDFLAGS or CFLAGS — packages like GRUB
-    that need -fuse-ld=bfd (freestanding modules incompatible with mold)
-    can set extra_ldflags/extra_cflags and won't be overridden.
+    Disabled for now — mold requires portabilization of both the
+    linker binary and its interaction with gcc's collect2.  Use the
+    default ld.bfd from the toolchain until mold portabilization
+    is implemented.
     """
-    # Don't override if a linker is already explicitly selected.
-    for var in ("LDFLAGS", "CFLAGS"):
-        if "-fuse-ld=" in env.get(var, ""):
-            return ""
-    for d in env.get("PATH", "").split(":"):
-        if d and os.path.isfile(os.path.join(d, "ld.mold")):
-            return "-fuse-ld=mold"
     return ""
 
 

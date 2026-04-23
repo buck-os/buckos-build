@@ -303,7 +303,7 @@ def main():
             from portabilize import portabilize_toolchain
             _patchelf = shutil.which("patchelf", path=":".join(_hp_dirs))
             _hp_dirs = portabilize_toolchain(
-                _hp_dirs, args.ld_linux, _scratch_base, patchelf_path=_patchelf)
+                _hp_dirs, args.ld_linux, patchelf_path=_patchelf)
         env["PATH"] = ":".join(_hp_dirs)
         # Derive LD_LIBRARY_PATH from hermetic bin dirs so dynamically
         # linked tools (e.g. cross-ar needing libzstd) find their libs.
@@ -364,7 +364,7 @@ def main():
         if _cc_dirs:
             _patchelf = shutil.which("patchelf", path=env.get("PATH", ""))
             _port_cc = portabilize_toolchain(
-                list(_cc_dirs), args.ld_linux, _scratch_base,
+                list(_cc_dirs), args.ld_linux,
                 patchelf_path=_patchelf)
             _port_map = {}
             for _orig, _port in zip(_cc_dirs, _port_cc):

@@ -22,7 +22,20 @@ import subprocess
 import sys
 
 
-def portabilize_toolchain(bin_dirs, ld_linux_path, scratch_dir,
+def _stable_scratch():
+    """Return a stable scratch directory that persists across build phases.
+
+    Each build phase (configure/compile/install) gets a different
+    BUCK_SCRATCH_PATH, so portabilized copies wouldn't be reusable.
+    This uses a fixed location under buck-out that survives across
+    phases but is cleaned on `buck2 clean`.
+    """
+    d = os.path.join(os.getcwd(), "buck-out", "v2", "tmp", "portabilize")
+    os.makedirs(d, exist_ok=True)
+    return d
+
+
+def portabilize_toolchain(bin_dirs, ld_linux_path, scratch_dir=None,
                           patchelf_path=None):
     """Make ELF binaries in bin_dirs runnable on any host.
 
@@ -43,6 +56,8 @@ def portabilize_toolchain(bin_dirs, ld_linux_path, scratch_dir,
         List of directory paths to use in PATH.  Read-only input
         dirs are replaced with writable scratch copies.
     """
+    if scratch_dir is None:
+        scratch_dir = _stable_scratch()
     ld_linux = os.path.abspath(ld_linux_path)
     if not os.path.isfile(ld_linux):
         print(f"portabilize: ld-linux not found: {ld_linux}", file=sys.stderr)
@@ -142,13 +157,18 @@ def _copy_tree(tree_dir, scratch_dir):
     Always copies — never modifies the original, which may be a
     Buck2 cached artifact or a shared seed archive.
 
+    Uses a content-addressed path so the copy is reused across
+    build phases (configure/compile/install) which each get
+    different BUCK_SCRATCH_PATH values.
+
     Returns the path to the copy.
     """
     tree_abs = os.path.abspath(tree_dir)
-    # Derive a unique name from the path
-    parts = tree_abs.rstrip("/").split("/")
-    key_parts = parts[-3:] if len(parts) >= 3 else parts
-    copy_name = "-".join(p for p in key_parts if p)
+    # Use a hash of the absolute path for stable, unique naming.
+    # This ensures the same input dir always maps to the same
+    # scratch copy, reusable across phases.
+    path_hash = hashlib.sha1(tree_abs.encode()).hexdigest()[:12]
+    copy_name = os.path.basename(tree_abs) + "-" + path_hash
     copy = os.path.join(scratch_dir, ".port-" + copy_name)
 
     if os.path.exists(copy):
