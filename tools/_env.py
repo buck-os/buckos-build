@@ -359,7 +359,7 @@ def _is_sysroot_lib_dir(d):
     return False
 
 
-def derive_lib_paths(bin_dirs, env):
+def derive_lib_paths(bin_dirs, env, skip_ld_library_path=False):
     """Derive LD_LIBRARY_PATH and tool data dirs from bin dirs.
 
     Given {prefix}/bin, adds {prefix}/lib and {prefix}/lib64 to
@@ -403,7 +403,7 @@ def derive_lib_paths(bin_dirs, env):
             if os.path.isdir(gconv) and "GCONV_PATH" not in env:
                 env["GCONV_PATH"] = gconv
                 break
-    if lib_parts:
+    if lib_parts and not skip_ld_library_path:
         existing = env.get("LD_LIBRARY_PATH", "")
         merged = ":".join(lib_parts)
         env["LD_LIBRARY_PATH"] = (merged + ":" + existing).rstrip(":") if existing else merged

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Autotools configure wrapper.
+"""Autotools configure wrapper (v3: portabilize + LD_LIBRARY_PATH fix).
 
 Copies source to output dir (for out-of-tree build support), sets
 environment variables, and runs ./configure with explicit args.
@@ -423,11 +423,18 @@ def main():
             all_ldflags.append(f"-Wl,-rpath,{d}")
             all_ldflags.append(f"-Wl,-rpath-link,{d}")
 
-    # Derive LD_LIBRARY_PATH, GCONV_PATH, BISON_PKGDATADIR from hermetic
-    # and path-prepend dirs so host tools find shared libraries and data.
-    if args.hermetic_path:
+    # Derive GCONV_PATH, BISON_PKGDATADIR from hermetic and path-prepend
+    # dirs.  Skip LD_LIBRARY_PATH when portabilized — portabilized
+    # binaries use RPATH, and adding their libs to LD_LIBRARY_PATH
+    # poisons host tools (e.g., host cc1plus loading buckos libgmp).
+    if args.hermetic_path and not args.ld_linux:
         derive_lib_paths(args.hermetic_path, env)
-    derive_lib_paths(all_path_prepend, env)
+    elif args.hermetic_path:
+        derive_lib_paths(args.hermetic_path, env, skip_ld_library_path=True)
+    if not args.ld_linux:
+        derive_lib_paths(all_path_prepend, env)
+    else:
+        derive_lib_paths(all_path_prepend, env, skip_ld_library_path=True)
 
     # Pin PYTHON/PYTHON3 to buckos python so autotools build scripts
     # (e.g. AC_PATH_PROG([PYTHON3]), Makefile rules invoking $(PYTHON))

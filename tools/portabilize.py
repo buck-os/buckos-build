@@ -78,9 +78,8 @@ def portabilize_toolchain(bin_dirs, ld_linux_path, scratch_dir=None,
         # Portabilize the parent tree so gcc subprograms (cc1 in
         # libexec/, as in <triple>/bin/) are also patched.
         parent = os.path.dirname(bin_abs)
-        work = _copy_tree(parent, scratch_dir)
-        _create_sysroot_lib_symlinks(work, sysroot, gcc_runtime)
-        _patch_elfs(work, interp, sysroot, gcc_runtime, patchelf)
+        work = _copy_and_patch(parent, scratch_dir, interp,
+                               sysroot, gcc_runtime, patchelf)
         result.append(os.path.join(work, os.path.basename(bin_abs)))
 
     return result
@@ -151,30 +150,36 @@ def _sysroot_lib_dirs(sysroot):
 
 # ── Writable copy ────────────────────────────────────────────────────
 
-def _copy_tree(tree_dir, scratch_dir):
-    """Create a writable copy of tree_dir in scratch.
+def _copy_and_patch(tree_dir, scratch_dir, interp, sysroot,
+                    gcc_runtime, patchelf):
+    """Copy tree to scratch, create sysroot symlinks, and patch ELFs.
 
-    Always copies — never modifies the original, which may be a
-    Buck2 cached artifact or a shared seed archive.
-
-    Uses a content-addressed path so the copy is reused across
-    build phases (configure/compile/install) which each get
-    different BUCK_SCRATCH_PATH values.
-
-    Returns the path to the copy.
+    Atomic: uses a lock file so concurrent actions serialize.
+    Idempotent: skips if .done marker exists.
     """
     tree_abs = os.path.abspath(tree_dir)
-    # Use a hash of the absolute path for stable, unique naming.
-    # This ensures the same input dir always maps to the same
-    # scratch copy, reusable across phases.
     path_hash = hashlib.sha1(tree_abs.encode()).hexdigest()[:12]
     copy_name = os.path.basename(tree_abs) + "-" + path_hash
     copy = os.path.join(scratch_dir, ".port-" + copy_name)
+    done_marker = copy + ".done"
 
-    if os.path.exists(copy):
+    if os.path.exists(done_marker):
         return copy
 
-    shutil.copytree(tree_abs, copy, symlinks=True)
+    import fcntl
+    lock_path = copy + ".lock"
+    os.makedirs(scratch_dir, exist_ok=True)
+    with open(lock_path, "w") as lock_fd:
+        fcntl.flock(lock_fd, fcntl.LOCK_EX)
+        if os.path.exists(done_marker):
+            return copy
+        if os.path.exists(copy):
+            shutil.rmtree(copy)
+        shutil.copytree(tree_abs, copy, symlinks=True)
+        _create_sysroot_lib_symlinks(copy, sysroot, gcc_runtime)
+        _patch_elfs(copy, interp, sysroot, gcc_runtime, patchelf)
+        with open(done_marker, "w") as f:
+            f.write("ok\n")
     return copy
 
 
@@ -301,14 +306,20 @@ def _patch_elfs(container, interp, sysroot, gcc_runtime, patchelf):
             rpath = _compute_rpath(fpath, container, gcc_runtime)
 
             try:
-                subprocess.run(
-                    [patchelf, "--set-interpreter", interp, fpath],
-                    capture_output=True, timeout=30,
-                )
-                subprocess.run(
+                # Set RPATH first, then interpreter — this order
+                # avoids corruption on large binaries like cc1plus.
+                r1 = subprocess.run(
                     [patchelf, "--set-rpath", rpath, fpath],
-                    capture_output=True, timeout=30,
+                    capture_output=True, timeout=120,
                 )
+                r2 = subprocess.run(
+                    [patchelf, "--set-interpreter", interp, fpath],
+                    capture_output=True, timeout=120,
+                )
+                if r1.returncode != 0 or r2.returncode != 0:
+                    print(f"portabilize: patchelf error on {fname}: "
+                          f"rpath={r1.returncode} interp={r2.returncode}",
+                          file=sys.stderr)
                 patched += 1
             except (subprocess.TimeoutExpired, OSError) as e:
                 print(f"portabilize: patchelf failed on {fpath}: {e}",

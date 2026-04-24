@@ -515,9 +515,10 @@ def main():
     # Derive LD_LIBRARY_PATH, GETTEXTDATADIRS, BISON_PKGDATADIR from
     # hermetic and path-prepend dirs.  Host_dep tools need non-sysroot
     # package libs via LD_LIBRARY_PATH.
+    _skip_ldlp = bool(args.ld_linux)
     if args.hermetic_path:
-        derive_lib_paths(args.hermetic_path, env)
-    derive_lib_paths(all_path_prepend, env)
+        derive_lib_paths(args.hermetic_path, env, skip_ld_library_path=_skip_ldlp)
+    derive_lib_paths(all_path_prepend, env, skip_ld_library_path=_skip_ldlp)
 
     # Auto-detect Python site-packages from dep prefixes so build-time
     # Python modules (e.g. packaging for gdbus-codegen) are found.
