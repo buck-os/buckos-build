@@ -22,6 +22,48 @@ import subprocess
 import sys
 
 
+def portabilize_env(env, ld_linux_path, hermetic_dirs=None,
+                    patchelf_path=None):
+    """Portabilize PATH and CC/CXX/AR in an env dict.
+
+    Convenience wrapper that portabilizes hermetic PATH dirs and
+    CC/CXX/AR binaries in one call.  Modifies env in place.
+    Returns list of portabilized PATH dirs.
+    """
+    result_dirs = []
+    if hermetic_dirs:
+        result_dirs = portabilize_toolchain(
+            hermetic_dirs, ld_linux_path, patchelf_path=patchelf_path)
+
+    # Portabilize CC/CXX/AR
+    cc_dirs = set()
+    for var in ("CC", "CXX", "AR"):
+        val = env.get(var, "")
+        if val:
+            bin_path = os.path.abspath(val.split()[0])
+            if os.path.isfile(bin_path):
+                cc_dirs.add(os.path.dirname(bin_path))
+    if cc_dirs:
+        port_cc = portabilize_toolchain(
+            list(cc_dirs), ld_linux_path, patchelf_path=patchelf_path)
+        port_map = dict(zip(cc_dirs, port_cc))
+        for var in ("CC", "CXX", "AR"):
+            val = env.get(var, "")
+            if not val:
+                continue
+            parts = val.split()
+            bin_path = os.path.abspath(parts[0])
+            bin_dir = os.path.dirname(bin_path)
+            if bin_dir in port_map:
+                parts[0] = os.path.join(port_map[bin_dir],
+                                        os.path.basename(bin_path))
+                env[var] = " ".join(parts)
+        if "CPP" in env:
+            env["CPP"] = env.get("CC", "cc") + " -E"
+
+    return result_dirs
+
+
 def _stable_scratch():
     """Return a stable scratch directory that persists across build phases.
 

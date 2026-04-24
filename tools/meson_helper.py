@@ -146,7 +146,38 @@ def main():
     env = clean_env()
 
     if args.hermetic_path:
-        env["PATH"] = ":".join(os.path.abspath(p) for p in args.hermetic_path)
+        _hp_dirs = [os.path.abspath(p) for p in args.hermetic_path]
+        if args.ld_linux:
+            from portabilize import portabilize_toolchain
+            _scratch = os.environ.get("BUCK_SCRATCH_PATH",
+                                      os.environ.get("TMPDIR", "/tmp"))
+            _patchelf = _shutil.which("patchelf", path=":".join(_hp_dirs))
+            _hp_dirs = portabilize_toolchain(
+                _hp_dirs, args.ld_linux, patchelf_path=_patchelf)
+            # Portabilize CC/CXX/AR
+            _cc_dirs = set()
+            for _tv in ("CC", "CXX", "AR"):
+                _tval = env.get(_tv, "")
+                if _tval:
+                    _tbin = os.path.abspath(_tval.split()[0])
+                    if os.path.isfile(_tbin):
+                        _cc_dirs.add(os.path.dirname(_tbin))
+            if _cc_dirs:
+                _port_cc = portabilize_toolchain(
+                    list(_cc_dirs), args.ld_linux, patchelf_path=_patchelf)
+                _port_map = dict(zip(_cc_dirs, _port_cc))
+                for _tv in ("CC", "CXX", "AR"):
+                    _tval = env.get(_tv, "")
+                    if not _tval:
+                        continue
+                    _tparts = _tval.split()
+                    _tbin = os.path.abspath(_tparts[0])
+                    _tdir = os.path.dirname(_tbin)
+                    if _tdir in _port_map:
+                        _tparts[0] = os.path.join(_port_map[_tdir],
+                                                  os.path.basename(_tbin))
+                        env[_tv] = " ".join(_tparts)
+        env["PATH"] = ":".join(_hp_dirs)
         # Derive LD_LIBRARY_PATH from hermetic bin dirs so dynamically
         # linked tools (e.g. cross-ar needing libzstd) find their libs.
         # With sysroot ld-linux and per-package RPATH, buckos binaries
@@ -275,7 +306,10 @@ def main():
     if args.cxx:
         env["CXX"] = _resolve_env_paths(args.cxx)
 
+    # Portabilize CC/CXX/AR now that they're set
     if args.ld_linux:
+        from portabilize import portabilize_env
+        portabilize_env(env, args.ld_linux)
         sysroot_lib_paths(args.ld_linux, env)
         _ld_flag = preferred_linker_flag(env)
         if _ld_flag:
