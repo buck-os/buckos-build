@@ -283,6 +283,28 @@ def setup_path(args, env, host_path=""):
     if ld_linux:
         _rewrite_toolchain_env(env)
         disable_posix_spawn(env)
+    _ensure_which_shim(env)
+
+
+def _ensure_which_shim(env):
+    """Create a 'which' shim if not already on PATH.
+
+    Many build systems call 'which' for tool detection but it's not
+    available in hermetic environments.  This creates a simple shell
+    script that uses 'command -v' (POSIX builtin) as a drop-in.
+    """
+    if shutil.which("which", path=env.get("PATH", "")):
+        return
+    scratch = os.environ.get("BUCK_SCRATCH_PATH",
+                             os.environ.get("TMPDIR", "/tmp"))
+    shim_dir = os.path.join(scratch, "buckos-shims")
+    shim = os.path.join(shim_dir, "which")
+    if not os.path.exists(shim):
+        os.makedirs(shim_dir, exist_ok=True)
+        with open(shim, "w") as f:
+            f.write("#!/bin/sh\nfor arg; do command -v \"$arg\" || exit 1; done\n")
+        os.chmod(shim, 0o755)
+    env["PATH"] = shim_dir + ":" + env.get("PATH", "")
 
 
 def _rewrite_toolchain_env(env):

@@ -15,7 +15,7 @@ import shutil
 import subprocess
 import sys
 
-from _env import _is_sysroot_lib_dir, apply_cache_config, clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, find_buckos_shell, find_dep_python3, preferred_linker_flag, register_cleanup, rewrite_shebangs, sanitize_filenames, setup_ccache_symlinks, sysroot_lib_paths, write_pkg_config_wrapper
+from _env import _ensure_which_shim, _is_sysroot_lib_dir, apply_cache_config, clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, find_buckos_shell, find_dep_python3, preferred_linker_flag, register_cleanup, rewrite_shebangs, sanitize_filenames, setup_ccache_symlinks, sysroot_lib_paths, write_pkg_config_wrapper
 
 
 def _can_unshare_net():
@@ -927,6 +927,8 @@ def main():
         if _ld_flag:
             existing = env.get("LDFLAGS", "")
             env["LDFLAGS"] = (existing + " " + _ld_flag).strip()
+
+    _ensure_which_shim(env)
 
     # Find buckos shell for pre-cmds and make SHELL override.
     _buckos_bash = find_buckos_shell(env)

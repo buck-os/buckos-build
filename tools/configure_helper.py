@@ -16,17 +16,10 @@ import shutil
 import subprocess
 import sys
 
-from _env import _is_sysroot_lib_dir, apply_cache_config, clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, find_buckos_shell, find_dep_python3, preferred_linker_flag, register_cleanup, rewrite_shebangs, sanitize_filenames, setup_ccache_symlinks, sysroot_lib_paths, write_pkg_config_wrapper
+from _env import _ensure_which_shim, _is_sysroot_lib_dir, apply_cache_config, clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, find_buckos_shell, find_dep_python3, preferred_linker_flag, register_cleanup, rewrite_shebangs, sanitize_filenames, setup_ccache_symlinks, sysroot_lib_paths, write_pkg_config_wrapper
 
 
 def _remove_recursive_dirs(root, max_depth=8):
-    """Remove directories with 3+ levels of same-name nesting (e.g. confdir3/confdir3/confdir3).
-
-    Some configure scripts (notably gettext) create deeply nested
-    self-referencing test directories that exceed Buck2's traversal limits.
-    Requires 3 levels to avoid false positives on legitimate structures
-    like glib/glib/.
-    """
     if not root or not os.path.isdir(root):
         return
     queue = [(root, 0)]
@@ -489,6 +482,8 @@ def main():
 
     # Prepend pkg-config wrapper to PATH
     env["PATH"] = wrapper_dir + ":" + env.get("PATH", os.environ.get("PATH", ""))
+
+    _ensure_which_shim(env)
 
     # Set up sysroot lib paths and disable posix_spawn to avoid
     # ENOEXEC with padded ELF interpreters on buckos-native dep binaries.

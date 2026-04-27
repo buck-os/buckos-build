@@ -236,7 +236,7 @@ def package(
 
             _url = "{}/{}/{}{}".format(
                 _MIRROR_PREFIX,
-                name[0],
+                name[0].lower(),
                 _dl_filename,
                 _MIRROR_PARAMS,
             )
@@ -279,8 +279,10 @@ def package(
                 labels = _dl_labels,
             )
 
-    # Create -src (extraction) and wire it up, unless source is
-    # already provided (e.g. for raw files that can't be extracted).
+    # Always create the -src extract target so external genrules (e.g.
+    # bootstrap patchelf-host) can reference it.  For autotools/cmake/meson
+    # the build rule uses the raw archive directly — extraction happens
+    # inside the single build action.
     if not _has_source:
         extract_source(
             name = name + "-src",
@@ -510,6 +512,12 @@ def package(
     # -- 2. Resolve USE-conditional deps -------------------------------------
     raw_deps = build_kwargs.pop("deps", [])
     all_deps = raw_deps if type(raw_deps) == "Select" else list(raw_deps)
+
+    # Auto-add setuptools for python packages (needed for pip install / pyproject.toml)
+    if build_rule == "python" and name not in ("setuptools", "python", "python-host"):
+        _setup_dep = "//packages/linux/dev-libs/python/setuptools:setuptools"
+        if type(all_deps) != "Select" and _setup_dep not in all_deps:
+            all_deps.append(_setup_dep)
     for flag, dep in use_deps.items():
         if type(dep) == "tuple":
             # (on_dep, off_dep) — select between them

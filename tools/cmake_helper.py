@@ -11,7 +11,7 @@ import shutil
 import subprocess
 import sys
 
-from _env import apply_cache_config, clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, find_dep_python3, preferred_linker_flag, register_cleanup, sanitize_filenames, sysroot_lib_paths, write_pkg_config_wrapper
+from _env import _ensure_which_shim, apply_cache_config, clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, find_dep_python3, preferred_linker_flag, register_cleanup, sanitize_filenames, sysroot_lib_paths, write_pkg_config_wrapper
 
 
 def _resolve_env_paths(value):
@@ -350,6 +350,8 @@ def main():
         if _ld_flag:
             existing = env.get("LDFLAGS", "")
             env["LDFLAGS"] = (existing + " " + _ld_flag).strip()
+
+    _ensure_which_shim(env)
 
     # Auto-detect Perl5 lib dirs from dep prefixes so build-time perl
     # modules (e.g. URI::Escape for kdoctools) are found by cmake's

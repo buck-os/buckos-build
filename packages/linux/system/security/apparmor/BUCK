@@ -1,9 +1,9 @@
 load("//defs:package.bzl", "package")
 
-# AppArmor: The tarball has no configure.ac at the top level.
-# libraries/libapparmor has its own autotools setup but the build_subdir
-# approach fails because autoreconf runs at the wrong level.
-# Use binary build rule to build libapparmor directly with make.
+# AppArmor: Build libapparmor directly by compiling .c sources without
+# libtool. The autotools/libtool path fails because autoreconf can't
+# find libtool m4 macros in the hermetic build env, so configure
+# never generates the libtool script that make references.
 package(
     build_rule = "binary",
     name = "apparmor",
@@ -15,20 +15,79 @@ package(
     license = "GPL-2.0",
     install_script = """
 cd "$SRCS/libraries/libapparmor"
-# Generate configure from autotools
-autoreconf -fi 2>&1 | grep -v 'warning:' || true
-export CFLAGS="${CFLAGS:-} -Wno-error"
-./configure --prefix=/usr --disable-static --without-python \
-    --host=${CHOST:-x86_64-buckos-linux-gnu}
-make -j${MAKEOPTS:-$(nproc)}
-make install DESTDIR="$OUT"
+
+# Build libapparmor directly without libtool (autoreconf/configure
+# fail to generate a libtool script in the hermetic build env because
+# the libtool m4 macros are not in a standard search path).
+export CFLAGS="${CFLAGS:-} -Wno-error -Wno-implicit-function-declaration -fPIC -D_GNU_SOURCE"
+SRCDIR="$PWD/src"
+INCDIR="$PWD/include"
+
+# Create config.h with detected features
+cat > "$PWD/config.h" << 'CONFEOF'
+#define HAVE_UNISTD_H 1
+#define HAVE_STDINT_H 1
+#define HAVE_SYSLOG_H 1
+#define HAVE_ASPRINTF 1
+#define HAVE_SECURE_GETENV 1
+#define HAVE_REALLOCARRAY 1
+#define PACKAGE_VERSION "3.1.6"
+#define PACKAGE_STRING "libapparmor 3.1.6"
+CONFEOF
+
+cd "$SRCDIR"
+
+# Generate af_protos.h (BUILT_SOURCES in Makefile.am)
+# Extract IPPROTO_* defines and create entries like:
+#   AA_GEN_PROTO_ENT(IPPROTO_TCP, "tcp")
+echo '#include <netinet/in.h>' | $CC $CFLAGS -E -dM - | LC_ALL=C awk '/^#define IPPROTO_[A-Z0-9_]+/ && !/IPPROTO_MAX/ { n=$2; l=tolower(substr(n,9)); printf "AA_GEN_PROTO_ENT(%s, \\"%s\\")\\n", n, l }' > af_protos.h || touch af_protos.h
+
+# Compile all source files (scanner.c includes grammar.h, grammar.c
+# includes scanner.h — both pre-generated files exist in the source)
+SRC_FILES="features.c kernel.c kernel_interface.c libaalogparse.c PMurHash.c policy_cache.c private.c grammar.c scanner.c"
+OBJS=""
+for src in $SRC_FILES; do
+    [ -f "$src" ] || continue
+    obj="${src%.c}.o"
+    $CC $CFLAGS -DHAVE_CONFIG_H -I"$PWD/.." -I"$PWD" -I"$INCDIR" -I"$INCDIR/sys" -c "$src" -o "$obj"
+    OBJS="$OBJS $obj"
+done
+
+# Link shared library with version script for symbol versioning
+$CC -shared -Wl,-soname,libapparmor.so.1 -Wl,--version-script="$SRCDIR/libapparmor.map" $LDFLAGS -o libapparmor.so.1.6.2 $OBJS
+ln -sf libapparmor.so.1.6.2 libapparmor.so.1
+ln -sf libapparmor.so.1 libapparmor.so
+
+# Create static library
+${AR:-ar} rcs libapparmor.a $OBJS
+
+# Install
+mkdir -p "$OUT/usr/lib64" "$OUT/usr/include/sys"
+install -m755 libapparmor.so.1.6.2 "$OUT/usr/lib64/"
+ln -sf libapparmor.so.1.6.2 "$OUT/usr/lib64/libapparmor.so.1"
+ln -sf libapparmor.so.1 "$OUT/usr/lib64/libapparmor.so"
+install -m644 libapparmor.a "$OUT/usr/lib64/"
+install -m644 "$INCDIR/aalogparse.h" "$OUT/usr/include/"
+install -m644 "$INCDIR/sys/apparmor.h" "$OUT/usr/include/sys/"
+install -m644 "$INCDIR/sys/apparmor_private.h" "$OUT/usr/include/sys/"
+
+# Create pkg-config file
+mkdir -p "$OUT/usr/lib64/pkgconfig"
+cat > "$OUT/usr/lib64/pkgconfig/libapparmor.pc" << 'PCEOF'
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib64
+includedir=${prefix}/include
+
+Name: libapparmor
+Description: AppArmor library
+Version: 3.1.6
+Libs: -L${libdir} -lapparmor
+Cflags: -I${includedir}
+PCEOF
+
 mkdir -p "$OUT/etc/apparmor.d"
 mkdir -p "$OUT/var/lib/apparmor"
 """,
-    deps = [
-        "//packages/linux/lang/python:python",
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-        "//packages/linux/dev-tools/build-systems/libtool:libtool",
-    ],
+    deps = [],
 )

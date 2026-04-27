@@ -220,20 +220,36 @@ def main():
     # Buck2 artifact and go build needs to write to the module cache/vendor).
     work_src = os.path.join(os.path.dirname(os.path.abspath(args.output_dir)), ".go-src")
 
-    def _ignore_bad_symlinks(directory, entries):
-        """Skip symlink loops and broken symlinks that cause copytree to fail."""
-        ignored = []
-        for entry in entries:
-            full = os.path.join(directory, entry)
-            if os.path.islink(full):
-                try:
-                    os.stat(full)  # resolves symlink — fails on broken/loop
-                except OSError:
-                    ignored.append(entry)
-        return set(ignored)
+    def _safe_copytree(src, dst):
+        """copytree that handles symlink conflicts and loops gracefully."""
+        os.makedirs(dst, exist_ok=True)
+        with os.scandir(src) as entries:
+            for entry in entries:
+                s = entry.path
+                d = os.path.join(dst, entry.name)
+                if entry.is_symlink():
+                    try:
+                        os.stat(s)  # check for broken/loop symlinks
+                    except OSError:
+                        continue  # skip broken symlinks
+                    linkto = os.readlink(s)
+                    if os.path.lexists(d):
+                        os.unlink(d)
+                    try:
+                        os.symlink(linkto, d)
+                    except OSError:
+                        pass
+                elif entry.is_dir(follow_symlinks=False):
+                    _safe_copytree(s, d)
+                else:
+                    try:
+                        if os.path.lexists(d):
+                            os.unlink(d)
+                        shutil.copy2(s, d)
+                    except OSError:
+                        pass
 
-    shutil.copytree(args.source_dir, work_src, dirs_exist_ok=True,
-                    symlinks=True, ignore=_ignore_bad_symlinks)
+    _safe_copytree(args.source_dir, work_src)
 
     # When no vendor deps are provided, fetch Go modules before network
     # isolation.  Skip download when -mod=vendor is set (source already
@@ -254,7 +270,8 @@ def main():
     # Fix stale vendor/modules.txt: when -mod=vendor is set and vendor/
     # exists but modules.txt is inconsistent, regenerate it with
     # `go mod vendor` before network isolation.
-    if "-mod=vendor" in _goflags and os.path.isdir(os.path.join(work_src, "vendor")):
+    # Skip this when vendor_deps was explicitly provided — the archive is authoritative.
+    if not args.vendor_dir and "-mod=vendor" in _goflags and os.path.isdir(os.path.join(work_src, "vendor")):
         if os.path.isfile(os.path.join(work_src, "go.mod")):
             _fix_env = dict(env)
             # Temporarily remove -mod=vendor so `go mod vendor` can run
@@ -278,6 +295,92 @@ def main():
             if vend_result.returncode != 0:
                 print(f"warning: go mod vendor failed (non-fatal): {vend_result.stderr}",
                       file=sys.stderr)
+
+    # Fix go.mod / vendor consistency when vendor_deps archive is provided.
+    # The source go.mod may have an old `go` directive that doesn't match
+    # the language features used by vendored dependencies.  Since go mod
+    # tidy requires network access, we patch go.mod and vendor/modules.txt
+    # directly.
+    if args.vendor_dir and os.path.isfile(os.path.join(work_src, "go.mod")):
+        _go_ver_result = subprocess.run(
+            ["go", "version"], env=env, capture_output=True, text=True,
+        )
+        _sdk_ver = None
+        if _go_ver_result.returncode == 0:
+            import re
+            _m = re.search(r"go(\d+\.\d+)", _go_ver_result.stdout)
+            if _m:
+                _sdk_ver = _m.group(1)
+
+        if _sdk_ver:
+            _gomod = os.path.join(work_src, "go.mod")
+            with open(_gomod) as f:
+                _gomod_content = f.read()
+
+            # Check current go directive
+            _cur_go = re.search(r"^go\s+(\d+\.\d+)", _gomod_content, re.MULTILINE)
+            _cur_ver = _cur_go.group(1) if _cur_go else "0.0"
+            _cur_parts = tuple(int(x) for x in _cur_ver.split("."))
+
+            # Only patch if the current version is old enough to cause issues
+            # (before go1.17 which added unsafe.Slice)
+            if _cur_parts < (1, 17):
+                # Bump go directive to 1.17 (minimum for unsafe.Slice)
+                _new_ver = "1.17"
+                _gomod_content = re.sub(
+                    r"^go\s+\d+\.\d+",
+                    f"go {_new_ver}",
+                    _gomod_content,
+                    count=1,
+                    flags=re.MULTILINE,
+                )
+
+                # Add missing indirect deps that Go 1.17+ requires
+                _modules_txt = os.path.join(work_src, "vendor", "modules.txt")
+                if os.path.isfile(_modules_txt):
+                    with open(_modules_txt) as f:
+                        _mt_content = f.read()
+                    # Find all modules listed in modules.txt
+                    _vendored = re.findall(r"^# (\S+) (\S+)", _mt_content, re.MULTILINE)
+                    # Find modules already required in go.mod
+                    _required = set(re.findall(r"^\s+(\S+)\s+\S+", _gomod_content, re.MULTILINE))
+                    # Add missing indirect deps before the closing paren
+                    _missing = [(m, v) for m, v in _vendored if m not in _required]
+                    if _missing:
+                        _indirect_lines = "\n".join(
+                            f"\t{m} {v} // indirect" for m, v in _missing
+                        )
+                        _gomod_content = _gomod_content.replace(
+                            "\n)\n",
+                            f"\n{_indirect_lines}\n)\n",
+                            1,
+                        )
+
+                    # Also mark newly-required modules as explicit in
+                    # vendor/modules.txt so go build -mod=vendor accepts them
+                    for m, v in _missing:
+                        _marker = f"# {m} {v}\n"
+                        if _marker in _mt_content and f"# {m} {v}\n## explicit" not in _mt_content:
+                            _mt_content = _mt_content.replace(
+                                _marker,
+                                f"{_marker}## explicit\n",
+                            )
+
+                    # Update all `## explicit` entries without `; go X.Y` to
+                    # include the target go version so the compiler uses the
+                    # correct language level for each vendored package.
+                    _mt_content = re.sub(
+                        r"^## explicit$",
+                        f"## explicit; go {_new_ver}",
+                        _mt_content,
+                        flags=re.MULTILINE,
+                    )
+
+                    with open(_modules_txt, "w") as f:
+                        f.write(_mt_content)
+
+                with open(_gomod, "w") as f:
+                    f.write(_gomod_content)
 
     # Wrap with unshare --net for network isolation (reproducibility)
     if _NETWORK_ISOLATED:

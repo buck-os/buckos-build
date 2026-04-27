@@ -16,7 +16,7 @@ import stat
 import subprocess
 import sys
 
-from _env import clean_env, derive_lib_paths, file_prefix_map_flags, find_buckos_shell, find_dep_python3, portabilize_shebangs, preferred_linker_flag, register_cleanup, rewrite_shebangs, sanitize_filenames, setup_ccache_symlinks, write_pkg_config_wrapper, write_stub_script
+from _env import _ensure_which_shim, clean_env, derive_lib_paths, file_prefix_map_flags, find_buckos_shell, find_dep_python3, portabilize_shebangs, preferred_linker_flag, register_cleanup, rewrite_shebangs, sanitize_filenames, setup_ccache_symlinks, write_pkg_config_wrapper, write_stub_script
 
 
 def _resolve_flag_paths(value, project_root):
@@ -340,6 +340,8 @@ def main():
         stub_dir = os.path.join(workdir, ".stub-bin")
         write_stub_script(os.path.join(stub_dir, "makeinfo"))
         env["PATH"] = stub_dir + ":" + env.get("PATH", "")
+
+    _ensure_which_shim(env)
 
     # Create gcc/cc/g++/c++ symlinks so install scripts that invoke bare
     # `gcc` (e.g. libcap _makenames, busybox gcc-version.sh) find the

@@ -1,8 +1,7 @@
 load("//defs:package.bzl", "package")
 
 package(
-    build_rule = "autotools",
-    skip_configure = True,
+    build_rule = "binary",
     name = "tippecanoe",
     version = "2.22.0",
     url = "https://github.com/felt/tippecanoe/archive/refs/tags/2.22.0.tar.gz",
@@ -14,16 +13,16 @@ package(
         "//packages/linux/system/libs/database/sqlite:sqlite",
         "//packages/linux/core/zlib:zlib",
     ],
-    make_args = [
-        "CC=$CC",
-        "CXX=$CXX",
-        "CFLAGS=$CFLAGS",
-        "CXXFLAGS=$CXXFLAGS -include cstdint",
-        "LDFLAGS=$LDFLAGS",
-        "PREFIX=/usr",
-    ],
-    install_args = [
-        "DESTDIR=$DESTDIR",
-        "PREFIX=/usr",
-    ],
+    install_script = """
+cd "$SRCS"
+make CC="$CC" CXX="$CXX" \
+    CFLAGS="$CFLAGS" "CXXFLAGS=$CFLAGS -include cstdint" \
+    LDFLAGS="$LDFLAGS" \
+    PREFIX=/usr \
+    -j${MAKEOPTS:-$(nproc)} || \
+make CC="$CC" CXX="$CXX" PREFIX=/usr -j1
+
+# tippecanoe Makefile doesn't support DESTDIR, use PREFIX directly
+make PREFIX="$OUT/usr" install
+""",
 )
