@@ -51,12 +51,17 @@ def main():
         sys.exit("error: empty command after '--'")
 
     if args.bin_dir:
+        orig_dirs = [os.path.abspath(d) for d in args.bin_dir]
         port_dirs = portabilize_toolchain(
-            [os.path.abspath(d) for d in args.bin_dir],
+            orig_dirs,
             args.ld_linux,
             scratch_dir=args.scratch_dir,
             patchelf_path=args.patchelf,
         )
+        # Map original bin dir → portabilized bin dir, used to rewrite cmd[0]
+        # if the caller passed an absolute path that landed inside one of the
+        # original prefixes (e.g. tests doing subprocess.Popen([qemu_bin, ...])).
+        port_map = dict(zip(orig_dirs, port_dirs))
         lib_dirs = []
         for bd in port_dirs:
             parent = os.path.dirname(bd)
@@ -75,6 +80,13 @@ def main():
             os.environ["LD_LIBRARY_PATH"] = ":".join(lib_dirs) + (
                 ":" + existing_ll if existing_ll else ""
             )
+
+        # If cmd[0] is an absolute path inside one of the original portabilized
+        # bin dirs, rewrite it to the portabilized copy so the patched ELF runs.
+        cmd0_abs = os.path.abspath(cmd[0])
+        cmd0_dir = os.path.dirname(cmd0_abs)
+        if cmd0_dir in port_map:
+            cmd[0] = os.path.join(port_map[cmd0_dir], os.path.basename(cmd0_abs))
 
     os.execvp(cmd[0], cmd)
 
