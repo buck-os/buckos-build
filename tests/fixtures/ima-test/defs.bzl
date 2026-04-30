@@ -25,9 +25,10 @@ def _portabilized_genrule_impl(ctx):
     for dep in ctx.attrs.portabilize_deps:
         if PackageInfo not in dep:
             fail("portabilize_deps entries must provide PackageInfo: {}".format(dep.label))
-        prefix = dep[PackageInfo].prefix
-        for sub in ctx.attrs.bin_subdirs:
-            cmd.add("--bin-dir", prefix.project(sub))
+        # Pass the install prefix; the helper walks it for bin/sbin
+        # subdirs at runtime (avoids buck2 materialization errors when
+        # a dep doesn't ship every standard subdir).
+        cmd.add("--prefix", dep[PackageInfo].prefix)
     cmd.add("--")
     cmd.add("bash", "-c", "set -e; " + ctx.attrs.cmd)
 
@@ -55,7 +56,6 @@ _portabilized_genrule_rule = rule(
         "out": attrs.string(),
         "cmd": attrs.string(),
         "portabilize_deps": attrs.list(attrs.dep(), default = []),
-        "bin_subdirs": attrs.list(attrs.string(), default = ["usr/bin", "usr/sbin"]),
         # Map env-var name → PackageInfo dep (exposes its prefix dir to cmd)
         "dep_env": attrs.dict(attrs.string(), attrs.dep(), default = {}),
         # Map env-var name → source file dep (exposes default output to cmd)

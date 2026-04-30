@@ -32,8 +32,17 @@ def main():
                         help="Defaults to portabilize._stable_scratch().")
     parser.add_argument("--patchelf", default=None)
     parser.add_argument("--bin-dir", action="append", default=[])
+    parser.add_argument("--prefix", action="append", default=[],
+                        help="Dep install prefix; bin/sbin/usr/bin/usr/sbin "
+                             "subdirs that exist will be portabilized.")
     parser.add_argument("cmd", nargs=argparse.REMAINDER)
     args = parser.parse_args()
+
+    for prefix in args.prefix:
+        for sub in ("bin", "sbin", "usr/bin", "usr/sbin"):
+            d = os.path.join(prefix, sub)
+            if os.path.isdir(d):
+                args.bin_dir.append(d)
 
     if not args.cmd or args.cmd[0] != "--":
         sys.exit("error: missing '--' before command")
