@@ -13,6 +13,12 @@ load(
     "toolchain_ld_linux_args",
 )
 
+# Buckos-built patchelf has an absolute PT_INTERP pointing at the seed
+# sysroot ld-linux (a deterministic buck-out path), so it runs anywhere
+# Buck2 has materialized that input — including CI hosts without a
+# system patchelf installed.
+_BUCKOS_PATCHELF = "//packages/linux/dev-tools/dev-utils/patchelf:patchelf"
+
 def _portabilized_genrule_impl(ctx):
     out = ctx.actions.declare_output(ctx.attrs.out)
 
@@ -22,6 +28,11 @@ def _portabilized_genrule_impl(ctx):
     cmd = cmd_args(ctx.attrs._portabilize_run[RunInfo])
     for arg in toolchain_ld_linux_args(ctx):
         cmd.add(arg)
+    if PackageInfo in ctx.attrs._patchelf:
+        cmd.add(
+            "--patchelf",
+            ctx.attrs._patchelf[PackageInfo].prefix.project("usr/bin/patchelf"),
+        )
     for dep in ctx.attrs.portabilize_deps:
         if PackageInfo not in dep:
             fail("portabilize_deps entries must provide PackageInfo: {}".format(dep.label))
@@ -63,6 +74,9 @@ _portabilized_genrule_rule = rule(
         "labels": attrs.list(attrs.string(), default = []),
         "_portabilize_run": attrs.default_only(
             attrs.exec_dep(default = "//tools:portabilize_run"),
+        ),
+        "_patchelf": attrs.default_only(
+            attrs.exec_dep(default = _BUCKOS_PATCHELF),
         ),
     } | TOOLCHAIN_ATTRS,
 )
