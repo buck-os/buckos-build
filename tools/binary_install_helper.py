@@ -281,6 +281,12 @@ def main():
 
     # Prepend host tool deps to PATH
     if path_prepend:
+        if _ld_linux:
+            from portabilize import portabilize_toolchain
+            _patchelf = shutil.which("patchelf", path=env.get("PATH", ""))
+            _pp_dirs = portabilize_toolchain(
+                path_prepend.split(":"), _ld_linux, patchelf_path=_patchelf)
+            path_prepend = ":".join(_pp_dirs)
         env["PATH"] = path_prepend + (":" + env["PATH"] if env.get("PATH") else "")
         # Derive LD_LIBRARY_PATH from prepend dirs
         _pp_lib_dirs = []
@@ -333,6 +339,13 @@ def main():
     # Prepend dep bin paths to PATH and derive tool data dirs
     dep_bin = env.get("_DEP_BIN_PATHS")
     if dep_bin:
+        if _ld_linux:
+            from portabilize import portabilize_toolchain
+            _patchelf = shutil.which("patchelf", path=env.get("PATH", ""))
+            _db_dirs = portabilize_toolchain(
+                dep_bin.split(":"), _ld_linux, patchelf_path=_patchelf)
+            dep_bin = ":".join(_db_dirs)
+            env["_DEP_BIN_PATHS"] = dep_bin
         env["PATH"] = dep_bin + ":" + env.get("PATH", "")
         # Derive BISON_PKGDATADIR so relocated bison finds its data files.
         for _bp in dep_bin.split(":"):
