@@ -236,6 +236,13 @@ python_binary(
 )
 
 python_binary(
+    name = "portabilize_run",
+    main = "portabilize_run.py",
+    deps = [":portabilize"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
     name = "dracut_initramfs_helper",
     main = "dracut_initramfs_helper.py",
     deps = [":_env"],

@@ -1,5 +1,6 @@
 load("//defs/rules:kernel.bzl", "kernel_build")
 load("//tests/fixtures:test_package.bzl", "test_c_binary")
+load(":defs.bzl", "portabilized_genrule")
 
 # ── Static test binary: prints "IMA-TEST-PASS" and exits 0 ──────────
 
@@ -43,24 +44,25 @@ kernel_build(
 
 # ── ext4 disk image with IMA-signed binary + signed data file ────────
 
-genrule(
+portabilized_genrule(
     name = "ima-disk-signed",
     out = "disk-signed.img",
+    portabilize_deps = [
+        "//packages/linux/system/security/ima-evm-utils:ima-evm-utils",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/system/security/keyutils:keyutils",
+        "//packages/linux/system/filesystem/native/e2fsprogs:e2fsprogs",
+    ],
+    dep_env = {
+        "BINARY_DIR": ":ima-test-binary",
+    },
+    src_env = {
+        "KEY": "//defs/keys:ima-test-key",
+    },
     cmd = """
-        set -e
-        IMA_UTILS=$(location //packages/linux/system/security/ima-evm-utils:ima-evm-utils)
-        OPENSSL=$(location //packages/linux/system/libs/crypto/openssl:openssl)
-        KEYUTILS=$(location //packages/linux/system/security/keyutils:keyutils)
-        E2FS=$(location //packages/linux/system/filesystem/native/e2fsprogs:e2fsprogs)
-        export PATH="$IMA_UTILS/usr/bin:$IMA_UTILS/usr/sbin:$E2FS/usr/sbin:$E2FS/usr/bin:$PATH"
-        export LD_LIBRARY_PATH="$IMA_UTILS/usr/lib64:$IMA_UTILS/usr/lib:$OPENSSL/usr/lib64:$OPENSSL/usr/lib:$KEYUTILS/usr/lib64:$KEYUTILS/usr/lib:$E2FS/lib:$E2FS/lib64"
-
-        BINARY=$(location :ima-test-binary)/usr/bin/ima-test
-        KEY=$(location //defs/keys:ima-test-key)
+        BINARY=$BINARY_DIR/usr/bin/ima-test
         WORK=$BUCK_SCRATCH_PATH/work
         mkdir -p "$WORK/empty"
-
-        # $OUT is relative — ensure parent dir exists
         mkdir -p `dirname $OUT`
 
         mke2fs -t ext4 -d "$WORK/empty" "$OUT" 8M
@@ -86,16 +88,17 @@ genrule(
 
 # ── ext4 disk image with unsigned binary + unsigned data file ─────────
 
-genrule(
+portabilized_genrule(
     name = "ima-disk-unsigned",
     out = "disk-unsigned.img",
+    portabilize_deps = [
+        "//packages/linux/system/filesystem/native/e2fsprogs:e2fsprogs",
+    ],
+    dep_env = {
+        "BINARY_DIR": ":ima-test-binary",
+    },
     cmd = """
-        set -e
-        E2FS=$(location //packages/linux/system/filesystem/native/e2fsprogs:e2fsprogs)
-        export PATH="$E2FS/usr/sbin:$E2FS/usr/bin:$PATH"
-        export LD_LIBRARY_PATH="$E2FS/lib:$E2FS/lib64"
-
-        BINARY=$(location :ima-test-binary)/usr/bin/ima-test
+        BINARY=$BINARY_DIR/usr/bin/ima-test
         WORK=$BUCK_SCRATCH_PATH/work
         mkdir -p "$WORK/empty"
         mkdir -p `dirname $OUT`
@@ -115,20 +118,23 @@ genrule(
 
 # ── ext4 disk image with signed binary + unsigned data file ──────────
 
-genrule(
+portabilized_genrule(
     name = "ima-disk-file-unsigned",
     out = "disk-file-unsigned.img",
+    portabilize_deps = [
+        "//packages/linux/system/security/ima-evm-utils:ima-evm-utils",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/system/security/keyutils:keyutils",
+        "//packages/linux/system/filesystem/native/e2fsprogs:e2fsprogs",
+    ],
+    dep_env = {
+        "BINARY_DIR": ":ima-test-binary",
+    },
+    src_env = {
+        "KEY": "//defs/keys:ima-test-key",
+    },
     cmd = """
-        set -e
-        IMA_UTILS=$(location //packages/linux/system/security/ima-evm-utils:ima-evm-utils)
-        OPENSSL=$(location //packages/linux/system/libs/crypto/openssl:openssl)
-        KEYUTILS=$(location //packages/linux/system/security/keyutils:keyutils)
-        E2FS=$(location //packages/linux/system/filesystem/native/e2fsprogs:e2fsprogs)
-        export PATH="$IMA_UTILS/usr/bin:$IMA_UTILS/usr/sbin:$E2FS/usr/sbin:$E2FS/usr/bin:$PATH"
-        export LD_LIBRARY_PATH="$IMA_UTILS/usr/lib64:$IMA_UTILS/usr/lib:$OPENSSL/usr/lib64:$OPENSSL/usr/lib:$KEYUTILS/usr/lib64:$KEYUTILS/usr/lib:$E2FS/lib:$E2FS/lib64"
-
-        BINARY=$(location :ima-test-binary)/usr/bin/ima-test
-        KEY=$(location //defs/keys:ima-test-key)
+        BINARY=$BINARY_DIR/usr/bin/ima-test
         WORK=$BUCK_SCRATCH_PATH/work
         mkdir -p "$WORK/empty"
         mkdir -p `dirname $OUT`
@@ -152,23 +158,28 @@ genrule(
 
 # ── Initramfs with custom init + IMA cert ────────────────────────────
 
-genrule(
+portabilized_genrule(
     name = "ima-initramfs",
     out = "initramfs.cpio.gz",
+    portabilize_deps = [
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/system/libs/cpio:cpio",
+        "//packages/linux/system/libs/compression/gzip:gzip",
+        "//packages/linux/system/apps/findutils:findutils",
+        "//packages/linux/system/apps/coreutils:coreutils",
+    ],
+    dep_env = {
+        "INIT_DIR": ":ima-init",
+    },
+    src_env = {
+        "CERT": "//defs/keys:ima-test-cert",
+    },
     cmd = """
-        set -e
-        OPENSSL=$(location //packages/linux/system/libs/crypto/openssl:openssl)
-        CPIO=$(location //packages/linux/system/libs/cpio:cpio)
-        GZIP=$(location //packages/linux/system/libs/compression/gzip:gzip)
-        FINDUTILS=$(location //packages/linux/system/apps/findutils:findutils)
-        COREUTILS=$(location //packages/linux/system/apps/coreutils:coreutils)
-        export PATH="$OPENSSL/usr/bin:$CPIO/usr/bin:$GZIP/usr/bin:$FINDUTILS/usr/bin:$COREUTILS/usr/bin:$PATH"
         # Prevent buckos-built openssl from loading host openssl.cnf
         # (Fedora adds rh-allow-sha1-signatures which upstream doesn't know)
         export OPENSSL_CONF=/dev/null
 
-        INIT=$(location :ima-init)/usr/bin/init
-        CERT=$(location //defs/keys:ima-test-cert)
+        INIT=$INIT_DIR/usr/bin/init
         WORK=$BUCK_SCRATCH_PATH/rootfs
         mkdir -p "$WORK"/{dev,etc/keys,mnt,proc,sys}
         mkdir -p `dirname $OUT`
