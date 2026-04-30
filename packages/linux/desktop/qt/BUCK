@@ -133,6 +133,12 @@ fi
         # Disable features we don't need
         "-DQT_FEATURE_journald=OFF",
         "-DQT_FEATURE_syslog=OFF",
+        # Qt6.8 SBOM generation crashes cmake on aarch64 with a json_error
+        # ('member 0 not found'); we don't ship SBOMs so disable the whole
+        # init path. Also disables JSON-SBOM and the spdx-tools verify step.
+        "-DQT_GENERATE_SBOM=OFF",
+        "-DQT_SBOM_GENERATE_JSON=OFF",
+        "-DQT_SBOM_VERIFY=OFF",
         "-DBUILD_TESTING=OFF",
         "-DQT_BUILD_EXAMPLES=OFF",
         "-DQT_BUILD_TESTS=OFF",
