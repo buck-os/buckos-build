@@ -61,7 +61,13 @@ def main():
 
     # Apply PATH from toolchain flags
     if args.hermetic_path:
-        os.environ["PATH"] = ":".join(os.path.abspath(p) for p in args.hermetic_path)
+        _hp_dirs = [os.path.abspath(p) for p in args.hermetic_path]
+        if args.ld_linux:
+            from portabilize import portabilize_toolchain
+            _patchelf = shutil.which("patchelf", path=":".join(_hp_dirs))
+            _hp_dirs = portabilize_toolchain(
+                _hp_dirs, args.ld_linux, patchelf_path=_patchelf)
+        os.environ["PATH"] = ":".join(_hp_dirs)
     elif args.hermetic_empty:
         os.environ["PATH"] = ""
     elif args.allow_host_path:
@@ -77,6 +83,21 @@ def main():
 
     if args.ld_linux:
         sysroot_lib_paths(args.ld_linux, os.environ)
+
+    # Portabilize CC so HOSTCC uses the patched binary
+    if args.ld_linux and _cc_val:
+        from portabilize import portabilize_toolchain
+        _cc_bin = os.path.abspath(_cc_val.split()[0])
+        if os.path.isfile(_cc_bin):
+            _cc_dir = os.path.dirname(_cc_bin)
+            _patchelf = shutil.which("patchelf", path=os.environ.get("PATH", ""))
+            _port_dirs = portabilize_toolchain(
+                [_cc_dir], args.ld_linux, patchelf_path=_patchelf)
+            if _port_dirs:
+                _parts = _cc_val.split()
+                _parts[0] = os.path.join(_port_dirs[0], os.path.basename(_cc_bin))
+                _cc_val = " ".join(_parts)
+                os.environ["CC"] = _cc_val
 
     source_dir = os.path.abspath(args.source_dir)
     config_file = os.path.abspath(args.config) if args.config else None

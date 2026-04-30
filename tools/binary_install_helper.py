@@ -267,6 +267,17 @@ def main():
                     _tparts[0] = os.path.join(_port_map[_tdir],
                                               os.path.basename(_tbin))
                     env[_tv] = " ".join(_tparts)
+            # Update RUSTFLAGS/CARGO_HOST_LINKER with portabilized CC
+            if env.get("CC"):
+                _cc = env["CC"]
+                _cc_parts = _cc.split()
+                if _cc_parts and os.path.basename(_cc_parts[0]) == "ccache":
+                    _cc_parts = _cc_parts[1:]
+                if _cc_parts:
+                    _cc_bin = _cc_parts[0]
+                    _link_args = " ".join(f"-C link-arg={flag}" for flag in _cc_parts[1:])
+                    env["RUSTFLAGS"] = f"-C linker={_cc_bin} {_link_args}".strip()
+                    env["CARGO_HOST_LINKER"] = _cc_bin
 
     # Prepend host tool deps to PATH
     if path_prepend:
