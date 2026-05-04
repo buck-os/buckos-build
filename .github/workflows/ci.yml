@@ -128,6 +128,12 @@ jobs:
           clean: false
       - name: Apply local config
         run: cp /opt/gha/.buckconfig.local .buckconfig.local
+      - name: Install patchelf
+        # Self-hosted ARM64 runner skips ci-setup, so install patchelf
+        # directly. portabilize_run prefers system patchelf to avoid the
+        # buckos-patchelf bootstrap that SIGBUSes when seed sysroot ABI
+        # doesn't match what buckos patchelf was originally linked against.
+        run: command -v patchelf >/dev/null || sudo apt-get install -y --no-install-recommends patchelf
       - name: Install buck2
         run: |
           mkdir -p "$HOME/.local/bin"
