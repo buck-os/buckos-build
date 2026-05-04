@@ -19,6 +19,8 @@ prepended to LD_LIBRARY_PATH.  Then COMMAND is execvp'd in-place.
 
 import argparse
 import os
+import shutil
+import subprocess
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -39,6 +41,67 @@ def _abs(path):
     if os.path.isabs(path):
         return path
     return os.path.normpath(os.path.join(_BUCK_ROOT, path))
+
+
+def _bootstrap_patchelf(patchelf, ld_linux):
+    """Make buckos-built patchelf runnable on the current host.
+
+    The buckos patchelf binary has PT_INTERP baked in as an absolute
+    buck-out path that points at the seed sysroot ld-linux from the
+    machine that *built* it.  On a fresh CI host the seed is materialised
+    at a different absolute path, so the kernel can't find patchelf's
+    interpreter and execve returns ENOENT.
+
+    Use the explicit ld-linux loader to invoke patchelf on a writable
+    copy of itself, patching that copy's PT_INTERP and RPATH to point
+    at the *current* sysroot.  After that, the patched copy executes
+    normally and we return it for use as the real patchelf.
+    """
+    # Try direct invocation first — if patchelf is on the host already
+    # or PT_INTERP happens to resolve, no bootstrap needed.
+    try:
+        result = subprocess.run(
+            [patchelf, "--version"],
+            capture_output=True,
+        )
+        if result.returncode == 0:
+            return patchelf
+    except (FileNotFoundError, OSError):
+        pass
+
+    # Compute sysroot lib paths from the ld-linux location:
+    # <sysroot>/lib/ld-linux-aarch64.so.1 → sysroot = <sysroot>
+    sysroot = os.path.dirname(os.path.dirname(ld_linux))
+    sysroot_libs = []
+    for sub in ("lib64", "lib", "usr/lib64", "usr/lib"):
+        d = os.path.join(sysroot, sub)
+        if os.path.isdir(d):
+            sysroot_libs.append(d)
+    lib_path = ":".join(sysroot_libs)
+
+    scratch = os.environ.get("BUCK_SCRATCH_PATH") or "/tmp"
+    scratch = _abs(scratch)
+    bootstrap_dir = os.path.join(scratch, "patchelf-bootstrap")
+    os.makedirs(bootstrap_dir, exist_ok=True)
+    patched = os.path.join(bootstrap_dir, "patchelf")
+    shutil.copy2(patchelf, patched)
+    os.chmod(patched, 0o755)
+
+    # ld-linux can launch any ELF directly, ignoring its PT_INTERP.
+    # Use that to invoke our copy and rewrite its own PT_INTERP+RPATH
+    # so subsequent direct invocations work.
+    subprocess.run(
+        [
+            ld_linux,
+            "--library-path", lib_path,
+            patched,
+            "--set-interpreter", ld_linux,
+            "--set-rpath", lib_path,
+            patched,
+        ],
+        check=True,
+    )
+    return patched
 
 
 def main():
@@ -63,6 +126,11 @@ def main():
         args.scratch_dir = _abs(args.scratch_dir)
     args.bin_dir = [_abs(d) for d in args.bin_dir]
     args.prefix = [_abs(p) for p in args.prefix]
+
+    # Make sure patchelf itself can run on this host before handing it to
+    # portabilize_toolchain (which will subprocess.run it many times).
+    if args.patchelf:
+        args.patchelf = _bootstrap_patchelf(args.patchelf, args.ld_linux)
 
     for prefix in args.prefix:
         for sub in ("bin", "sbin", "usr/bin", "usr/sbin"):
