@@ -24,6 +24,22 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from portabilize import portabilize_toolchain
 
+# Buck2 invokes us via `env --chdir=<buck root>` so PWD in the inherited env
+# is the buck root.  PEX/PAR bootstrap may chdir to its extraction dir before
+# main() runs, which makes os.path.abspath() resolve against the wrong base.
+# Capture the shell-set PWD up front so we can re-anchor relative buck-out
+# paths against the buck project root.
+_BUCK_ROOT = os.environ.get("PWD") or os.getcwd()
+
+
+def _abs(path):
+    """Resolve to an absolute path against the original buck root."""
+    if not path:
+        return path
+    if os.path.isabs(path):
+        return path
+    return os.path.normpath(os.path.join(_BUCK_ROOT, path))
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -38,6 +54,16 @@ def main():
     parser.add_argument("cmd", nargs=argparse.REMAINDER)
     args = parser.parse_args()
 
+    # Absolutize input paths up front so subprocess calls work even after
+    # PEX bootstrap or portabilize_toolchain may have changed CWD.
+    args.ld_linux = _abs(args.ld_linux)
+    if args.patchelf:
+        args.patchelf = _abs(args.patchelf)
+    if args.scratch_dir:
+        args.scratch_dir = _abs(args.scratch_dir)
+    args.bin_dir = [_abs(d) for d in args.bin_dir]
+    args.prefix = [_abs(p) for p in args.prefix]
+
     for prefix in args.prefix:
         for sub in ("bin", "sbin", "usr/bin", "usr/sbin"):
             d = os.path.join(prefix, sub)
@@ -51,7 +77,8 @@ def main():
         sys.exit("error: empty command after '--'")
 
     if args.bin_dir:
-        orig_dirs = [os.path.abspath(d) for d in args.bin_dir]
+        # args.bin_dir is already absolutized via _abs() above.
+        orig_dirs = list(args.bin_dir)
         port_dirs = portabilize_toolchain(
             orig_dirs,
             args.ld_linux,
@@ -81,9 +108,10 @@ def main():
                 ":" + existing_ll if existing_ll else ""
             )
 
-        # If cmd[0] is an absolute path inside one of the original portabilized
-        # bin dirs, rewrite it to the portabilized copy so the patched ELF runs.
-        cmd0_abs = os.path.abspath(cmd[0])
+        # If cmd[0] is a path (absolute or relative-to-buck-root) inside one
+        # of the original portabilized bin dirs, rewrite it to the
+        # portabilized copy so the patched ELF runs.
+        cmd0_abs = _abs(cmd[0])
         cmd0_dir = os.path.dirname(cmd0_abs)
         if cmd0_dir in port_map:
             cmd[0] = os.path.join(port_map[cmd0_dir], os.path.basename(cmd0_abs))
