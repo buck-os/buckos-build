@@ -57,8 +57,22 @@ def _bootstrap_patchelf(patchelf, ld_linux):
     at the *current* sysroot.  After that, the patched copy executes
     normally and we return it for use as the real patchelf.
     """
-    # Try direct invocation first — if patchelf is on the host already
-    # or PT_INTERP happens to resolve, no bootstrap needed.
+    # 1. Prefer a system-installed patchelf if one exists at a standard
+    # location.  Buck2 actions inherit a clean PATH so shutil.which won't
+    # find it without help — check the usual install paths directly.
+    # CI (setup.sh) installs patchelf this way.
+    for sys_pe in ("/usr/bin/patchelf", "/usr/local/bin/patchelf",
+                   "/bin/patchelf"):
+        if os.path.isfile(sys_pe) and os.access(sys_pe, os.X_OK):
+            try:
+                r = subprocess.run([sys_pe, "--version"], capture_output=True)
+                if r.returncode == 0:
+                    return sys_pe
+            except (FileNotFoundError, OSError):
+                pass
+
+    # 2. Try the buckos patchelf directly — works on local dev where the
+    # buck-out PT_INTERP path resolves.
     try:
         result = subprocess.run(
             [patchelf, "--version"],

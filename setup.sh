@@ -54,7 +54,7 @@ define_packages() {
                 libtool pkg-config curl tar xz bzip2 gzip lzip zstd file patch
                 unzip gawk sed grep diffutils findutils coreutils bash gettext
                 texinfo bison flex gperf help2man linux-api-headers git gnupg
-                fd ripgrep
+                fd ripgrep patchelf
             )
             # zlib-ng-compat (e.g. CachyOS) is a drop-in replacement for zlib
             if pacman -Qi zlib-ng-compat &>/dev/null; then
@@ -76,7 +76,7 @@ define_packages() {
                 bzip2 gzip lzip zstd file patch unzip util-linux gawk sed grep
                 diffutils findutils coreutils bash gettext texinfo bison flex
                 gperf help2man zlib1g-dev linux-libc-dev git gnupg
-                cargo fd-find ripgrep
+                cargo fd-find ripgrep patchelf
                 ima-evm-utils
             )
             ;;
@@ -87,7 +87,7 @@ define_packages() {
                 lzip zstd file patch unzip util-linux-core gawk sed grep
                 diffutils findutils coreutils bash gettext texinfo bison flex
                 gperf help2man zlib-devel kernel-headers glibc-static git gnupg2
-                cargo fd-find ripgrep
+                cargo fd-find ripgrep patchelf
                 ima-evm-utils
             )
             ;;
@@ -104,7 +104,7 @@ define_packages() {
                 sys-apps/texinfo sys-devel/bison sys-devel/flex dev-util/gperf
                 sys-apps/help2man sys-libs/zlib sys-kernel/linux-headers
                 dev-vcs/git app-crypt/gnupg dev-lang/rust
-                sys-apps/fd sys-apps/ripgrep
+                sys-apps/fd sys-apps/ripgrep dev-util/patchelf
                 app-crypt/ima-evm-utils
             )
             ;;
