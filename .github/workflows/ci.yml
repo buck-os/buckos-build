@@ -48,6 +48,10 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           clean: false
+      - name: Install patchelf
+        # Self-hosted runner skips ci-setup; portabilize_run prefers system
+        # patchelf and falls back to a SIGBUS-prone bootstrap if missing.
+        run: command -v patchelf >/dev/null || sudo apt-get install -y --no-install-recommends patchelf
       - name: Install buck2
         run: |
           mkdir -p "$HOME/.local/bin"
@@ -85,6 +89,10 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           clean: false
+      - name: Install patchelf
+        # Self-hosted runner skips ci-setup; portabilize_run prefers system
+        # patchelf and falls back to a SIGBUS-prone bootstrap if missing.
+        run: command -v patchelf >/dev/null || sudo apt-get install -y --no-install-recommends patchelf
       - name: Install buck2
         run: |
           mkdir -p "$HOME/.local/bin"
@@ -170,6 +178,10 @@ jobs:
         with:
           name: seed-toolchain
           path: .
+      - name: Install patchelf
+        # Self-hosted runner skips ci-setup; portabilize_run prefers system
+        # patchelf and falls back to a SIGBUS-prone bootstrap if missing.
+        run: command -v patchelf >/dev/null || sudo apt-get install -y --no-install-recommends patchelf
       - name: Install buck2
         run: |
           mkdir -p "$HOME/.local/bin"
