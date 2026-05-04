@@ -24,7 +24,7 @@ import subprocess
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from portabilize import portabilize_toolchain
+from portabilize import portabilize_toolchain, _derive_gcc_runtime
 
 # Buck2 invokes us via `env --chdir=<buck root>` so PWD in the inherited env
 # is the buck root.  PEX/PAR bootstrap may chdir to its extraction dir before
@@ -69,15 +69,19 @@ def _bootstrap_patchelf(patchelf, ld_linux):
     except (FileNotFoundError, OSError):
         pass
 
-    # Compute sysroot lib paths from the ld-linux location:
-    # <sysroot>/lib/ld-linux-aarch64.so.1 → sysroot = <sysroot>
+    # Compute lib paths needed to satisfy patchelf's NEEDED libs:
+    #   - sysroot/lib*, sysroot/usr/lib* — libc, libm, etc.
+    #   - <triple>/lib* (gcc runtime) — libstdc++, libgcc_s (patchelf is C++)
     sysroot = os.path.dirname(os.path.dirname(ld_linux))
-    sysroot_libs = []
+    libs = []
     for sub in ("lib64", "lib", "usr/lib64", "usr/lib"):
         d = os.path.join(sysroot, sub)
         if os.path.isdir(d):
-            sysroot_libs.append(d)
-    lib_path = ":".join(sysroot_libs)
+            libs.append(d)
+    gcc_rt = _derive_gcc_runtime(ld_linux)
+    if gcc_rt and gcc_rt not in libs:
+        libs.append(gcc_rt)
+    lib_path = ":".join(libs)
 
     scratch = os.environ.get("BUCK_SCRATCH_PATH") or "/tmp"
     scratch = _abs(scratch)
@@ -90,17 +94,24 @@ def _bootstrap_patchelf(patchelf, ld_linux):
     # ld-linux can launch any ELF directly, ignoring its PT_INTERP.
     # Use that to invoke our copy and rewrite its own PT_INTERP+RPATH
     # so subsequent direct invocations work.
-    subprocess.run(
-        [
-            ld_linux,
-            "--library-path", lib_path,
-            patched,
-            "--set-interpreter", ld_linux,
-            "--set-rpath", lib_path,
-            patched,
-        ],
-        check=True,
-    )
+    cmd = [
+        ld_linux,
+        "--library-path", lib_path,
+        patched,
+        "--set-interpreter", ld_linux,
+        "--set-rpath", lib_path,
+        patched,
+    ]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        sys.stderr.write(
+            "portabilize_run: patchelf bootstrap failed\n"
+            f"  cmd: {cmd!r}\n"
+            f"  exit: {result.returncode}\n"
+            f"  stdout: {result.stdout}\n"
+            f"  stderr: {result.stderr}\n"
+        )
+        sys.exit(1)
     return patched
 
 
