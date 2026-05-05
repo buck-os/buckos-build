@@ -97,6 +97,27 @@ KernelBtfInfo = provider(fields = [
     "version",          # str: kernel version string
 ])
 
+KernelPlanInfo = provider(fields = [
+    # Capture-and-replay (buckify-kernel) provider.
+    # The plan rule runs make once under libkbuild_trace.so and emits a
+    # build_plan.json that the replay rule consumes via dynamic_output.
+    "plan",             # artifact: build_plan.json (one entry per captured exec, enriched with kbuild .cmd metadata)
+    "build_tree",       # artifact (dir): post-capture build tree (source + .config + generated headers + .cmd files)
+    "version",          # str: kernel version string
+    "arch",             # str: x86 | arm64
+    # Phase 3.5 first-class artifacts captured straight out of the build
+    # tree.  These are byte-identical to what the legacy kernel_build
+    # path produces and let the replay rule wire them as real Buck
+    # outputs without falling back to cp-from-build-tree.
+    "vmlinux",          # artifact: uncompressed kernel ELF
+    "bzimage",          # artifact: compressed bootable image
+    "symvers",          # artifact: Module.symvers
+    "config",           # artifact: resolved .config
+    "headers",          # artifact (dir): make headers_install output
+    "modules",          # artifact (dir): make modules_install + depmod output
+    "vmlinux_h",        # artifact: vmlinux.h from bpftool btf dump
+])
+
 # ── Image providers ────────────────────────────────────────────────
 
 IsoImageInfo = provider(fields = [
