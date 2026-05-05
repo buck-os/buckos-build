@@ -52,7 +52,13 @@ def main():
 
     # Apply PATH from toolchain flags
     if args.hermetic_path:
-        os.environ["PATH"] = ":".join(os.path.abspath(p) for p in args.hermetic_path)
+        _hp_dirs = [os.path.abspath(p) for p in args.hermetic_path]
+        if args.ld_linux:
+            from portabilize import portabilize_toolchain
+            _patchelf = shutil.which("patchelf", path=":".join(_hp_dirs))
+            _hp_dirs = portabilize_toolchain(
+                _hp_dirs, args.ld_linux, patchelf_path=_patchelf)
+        os.environ["PATH"] = ":".join(_hp_dirs)
     elif args.hermetic_empty:
         os.environ["PATH"] = ""
     elif args.allow_host_path:
@@ -116,6 +122,33 @@ def main():
     # changes directory, breaking relative artifact references).
     cc = _resolve_cc_path(args.cc)
     hostcc = _resolve_cc_path(args.hostcc)
+
+    # Portabilize CC/HOSTCC binaries so they run on this host
+    if args.ld_linux and (cc or hostcc):
+        from portabilize import portabilize_toolchain
+        _cc_dirs = set()
+        for _val in (cc, hostcc):
+            if _val:
+                _bin = os.path.abspath(_val.split()[0])
+                if os.path.isfile(_bin):
+                    _cc_dirs.add(os.path.dirname(_bin))
+        if _cc_dirs:
+            _patchelf = shutil.which("patchelf", path=os.environ.get("PATH", ""))
+            _port_dirs = portabilize_toolchain(
+                list(_cc_dirs), args.ld_linux, patchelf_path=_patchelf)
+            _port_map = dict(zip(_cc_dirs, _port_dirs))
+            for _orig, _val in [("cc", cc), ("hostcc", hostcc)]:
+                if not _val:
+                    continue
+                _parts = _val.split()
+                _bin = os.path.abspath(_parts[0])
+                _bdir = os.path.dirname(_bin)
+                if _bdir in _port_map:
+                    _parts[0] = os.path.join(_port_map[_bdir], os.path.basename(_bin))
+                    if _orig == "cc":
+                        cc = " ".join(_parts)
+                    else:
+                        hostcc = " ".join(_parts)
 
     # Build make command base
     make_base = ["make", "-C", source_dir, f"O={build_dir}", f"ARCH={args.arch}"]

@@ -173,9 +173,29 @@ def main():
     # and timeout to handle slow/unreliable connections during crate fetches.
     env.setdefault("CARGO_NET_RETRY", "10")
     env.setdefault("CARGO_HTTP_TIMEOUT", "120")
+    # Use the system git CLI for fetching git deps. cargo's bundled libgit2
+    # uses libcurl which doesn't work behind some HTTP-CONNECT proxies
+    # (notably Meta's fwdproxy returns 403 for direct git clones), but
+    # /usr/bin/git honors http_proxy/https_proxy and tunnels correctly.
+    # Inherits the proxy env vars (http_proxy/https_proxy/no_proxy) from
+    # the parent process — clean_env passes those through.
+    env.setdefault("CARGO_NET_GIT_FETCH_WITH_CLI", "true")
+    # Find git on the host before clean_env wipes PATH; we'll append its
+    # dir to the hermetic PATH below so cargo can shell out to it.
+    _git_dir = None
+    _host_git = shutil.which("git", path="/usr/bin:/bin:/usr/local/bin:/opt/homebrew/bin")
+    if _host_git:
+        _git_dir = os.path.dirname(_host_git)
 
     if args.hermetic_path:
-        env["PATH"] = ":".join(os.path.abspath(p) for p in args.hermetic_path)
+        _hp_dirs = [os.path.abspath(p) for p in args.hermetic_path]
+        if args.ld_linux:
+            from portabilize import portabilize_toolchain, portabilize_env
+            _patchelf = shutil.which("patchelf", path=":".join(_hp_dirs))
+            _hp_dirs = portabilize_toolchain(
+                _hp_dirs, args.ld_linux, patchelf_path=_patchelf)
+            portabilize_env(env, args.ld_linux, patchelf_path=_patchelf)
+        env["PATH"] = ":".join(_hp_dirs)
         # Derive LD_LIBRARY_PATH from hermetic bin dirs so dynamically
         # linked tools (e.g. cross-ar needing libzstd) find their libs.
         _lib_dirs = []
@@ -210,6 +230,13 @@ def main():
         print("error: build requires --hermetic-path, --hermetic-empty, or --allow-host-path",
               file=sys.stderr)
         sys.exit(1)
+    # Append (not prepend) host git dir so cargo's git fetch finds /usr/bin/git
+    # without overriding any hermetic git that might be in the path. Doing
+    # this after both the hermetic and path_prepend blocks below keeps
+    # buckos tools winning for everything except 'git'.
+    if _git_dir:
+        _cur_path = env.get("PATH", "")
+        env["PATH"] = (_cur_path + ":" + _git_dir).lstrip(":") if _cur_path else _git_dir
     if args.path_prepend:
         prepend = ":".join(os.path.abspath(p) for p in args.path_prepend)
         env["PATH"] = prepend + (":" + env["PATH"] if env.get("PATH") else "")

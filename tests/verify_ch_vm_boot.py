@@ -97,6 +97,13 @@ def main():
         "--console", "off",
     ]
 
+    # Prepend the runtime environment wrapper so cloud-hypervisor finds its
+    # libs and gets PT_INTERP patched for hosts without buckos sysroot.
+    run_env = os.environ.get("RUN_ENV")
+    if run_env:
+        os.chmod(run_env, 0o755)
+        cmd = [run_env] + cmd
+
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
                             preexec_fn=_pdeathsig, start_new_session=True)
 

@@ -15,6 +15,16 @@ sys.path.insert(0, str(_REPO / "tools"))
 
 from _env import add_path_args, setup_path
 
+
+def _shim_prefix():
+    """Mirror _env._ensure_which_shim's PATH prefix: '<scratch>/buckos-shims:'.
+
+    setup_path always prepends this if 'which' isn't already on PATH, which
+    is the case in these tests (we use synthetic paths like /a, /b)."""
+    scratch = os.environ.get("BUCK_SCRATCH_PATH",
+                             os.environ.get("TMPDIR", "/tmp"))
+    return os.path.join(scratch, "buckos-shims") + ":"
+
 passed = 0
 failed = 0
 _output_lines = []
@@ -81,11 +91,15 @@ def main():
     else:
         fail(f"expected True, got {args3.hermetic_empty}")
 
+    # setup_path always prepends a "which" shim dir if 'which' isn't already
+    # on PATH (the case in these tests). Bake that into expectations.
+    SHIM = _shim_prefix()
+
     # -- setup_path: hermetic_path --
     print("=== setup_path: hermetic_path ===")
     env = {}
     setup_path(_make_args(hermetic_path=["/a", "/b"]), env)
-    expected = os.path.abspath("/a") + ":" + os.path.abspath("/b")
+    expected = SHIM + os.path.abspath("/a") + ":" + os.path.abspath("/b")
     if env.get("PATH") == expected:
         ok(f"hermetic_path sets PATH={expected}")
     else:
@@ -95,19 +109,23 @@ def main():
     print("=== setup_path: hermetic_empty ===")
     env = {}
     setup_path(_make_args(hermetic_empty=True), env)
-    if env.get("PATH") == "":
-        ok("hermetic_empty sets PATH=''")
+    if env.get("PATH") == SHIM:
+        ok(f"hermetic_empty sets PATH to shim only ({SHIM!r})")
     else:
-        fail(f"expected PATH='', got {env.get('PATH')!r}")
+        fail(f"expected PATH={SHIM!r}, got {env.get('PATH')!r}")
 
     # -- setup_path: allow_host_path --
     print("=== setup_path: allow_host_path ===")
     env = {}
     setup_path(_make_args(allow_host_path=True), env, host_path="/usr/bin:/bin")
-    if env.get("PATH") == "/usr/bin:/bin":
-        ok("allow_host_path sets PATH to host_path")
+    # host_path includes /usr/bin where 'which' typically lives, so the shim
+    # is NOT prepended. If the test host lacks /usr/bin/which, the shim gets
+    # added — accept either form.
+    path = env.get("PATH")
+    if path == "/usr/bin:/bin" or path == SHIM + "/usr/bin:/bin":
+        ok(f"allow_host_path sets PATH to host_path (got {path!r})")
     else:
-        fail(f"expected PATH='/usr/bin:/bin', got {env.get('PATH')!r}")
+        fail(f"expected '/usr/bin:/bin' (with optional shim prefix), got {path!r}")
 
     # -- setup_path: path_prepend with hermetic_path --
     print("=== setup_path: path_prepend + hermetic_path ===")
@@ -116,7 +134,7 @@ def main():
     path = env.get("PATH", "")
     c_abs = os.path.abspath("/c")
     a_abs = os.path.abspath("/a")
-    expected = c_abs + ":" + a_abs
+    expected = SHIM + c_abs + ":" + a_abs
     if path == expected:
         ok(f"path_prepend prepended: {path}")
     else:
@@ -128,10 +146,11 @@ def main():
     setup_path(_make_args(hermetic_empty=True, path_prepend=["/c"]), env)
     path = env.get("PATH", "")
     c_abs = os.path.abspath("/c")
-    if path == c_abs:
+    expected = SHIM + c_abs
+    if path == expected:
         ok(f"path_prepend with empty base: {path}")
     else:
-        fail(f"expected {c_abs}, got {path}")
+        fail(f"expected {expected}, got {path}")
 
     # -- setup_path: no flags → sys.exit(1) --
     print("=== setup_path: no flags exits ===")

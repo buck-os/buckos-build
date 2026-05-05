@@ -11,7 +11,7 @@ import shutil
 import subprocess
 import sys
 
-from _env import apply_cache_config, clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, find_dep_python3, preferred_linker_flag, register_cleanup, sanitize_filenames, sysroot_lib_paths, write_pkg_config_wrapper
+from _env import _ensure_which_shim, apply_cache_config, clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, find_dep_python3, preferred_linker_flag, register_cleanup, sanitize_filenames, sysroot_lib_paths, write_pkg_config_wrapper
 
 
 def _resolve_env_paths(value):
@@ -161,7 +161,35 @@ def main():
     env.pop("_BUCKOS_CCACHE_NO_CC_PREFIX", None)
 
     if args.hermetic_path:
-        env["PATH"] = ":".join(os.path.abspath(p) for p in args.hermetic_path)
+        _hp_dirs = [os.path.abspath(p) for p in args.hermetic_path]
+        if args.ld_linux:
+            from portabilize import portabilize_toolchain
+            _patchelf = shutil.which("patchelf", path=":".join(_hp_dirs))
+            _hp_dirs = portabilize_toolchain(
+                _hp_dirs, args.ld_linux, patchelf_path=_patchelf)
+            _cc_dirs = set()
+            for _tv in ("CC", "CXX", "AR"):
+                _tval = env.get(_tv, "")
+                if _tval:
+                    _tbin = os.path.abspath(_tval.split()[0])
+                    if os.path.isfile(_tbin):
+                        _cc_dirs.add(os.path.dirname(_tbin))
+            if _cc_dirs:
+                _port_cc = portabilize_toolchain(
+                    list(_cc_dirs), args.ld_linux, patchelf_path=_patchelf)
+                _port_map = dict(zip(_cc_dirs, _port_cc))
+                for _tv in ("CC", "CXX", "AR"):
+                    _tval = env.get(_tv, "")
+                    if not _tval:
+                        continue
+                    _tparts = _tval.split()
+                    _tbin = os.path.abspath(_tparts[0])
+                    _tdir = os.path.dirname(_tbin)
+                    if _tdir in _port_map:
+                        _tparts[0] = os.path.join(_port_map[_tdir],
+                                                  os.path.basename(_tbin))
+                        env[_tv] = " ".join(_tparts)
+        env["PATH"] = ":".join(_hp_dirs)
         # Derive LD_LIBRARY_PATH from hermetic bin dirs so dynamically
         # linked tools (e.g. cross-ar needing libzstd) find their libs.
         # With sysroot ld-linux and per-package RPATH, buckos binaries
@@ -322,6 +350,8 @@ def main():
         if _ld_flag:
             existing = env.get("LDFLAGS", "")
             env["LDFLAGS"] = (existing + " " + _ld_flag).strip()
+
+    _ensure_which_shim(env)
 
     # Auto-detect Perl5 lib dirs from dep prefixes so build-time perl
     # modules (e.g. URI::Escape for kdoctools) are found by cmake's

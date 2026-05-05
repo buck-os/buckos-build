@@ -16,7 +16,7 @@ import stat
 import subprocess
 import sys
 
-from _env import clean_env, derive_lib_paths, file_prefix_map_flags, find_buckos_shell, find_dep_python3, portabilize_shebangs, preferred_linker_flag, register_cleanup, rewrite_shebangs, sanitize_filenames, setup_ccache_symlinks, write_pkg_config_wrapper, write_stub_script
+from _env import _ensure_which_shim, clean_env, derive_lib_paths, file_prefix_map_flags, find_buckos_shell, find_dep_python3, portabilize_shebangs, preferred_linker_flag, register_cleanup, rewrite_shebangs, sanitize_filenames, setup_ccache_symlinks, write_pkg_config_wrapper, write_stub_script
 
 
 def _resolve_flag_paths(value, project_root):
@@ -192,7 +192,22 @@ def main():
     hermetic_empty = env.pop("_HERMETIC_EMPTY", None)
     allow_host_path = env.pop("_ALLOW_HOST_PATH", None)
     path_prepend = env.pop("_PATH_PREPEND", None)
+    _ld_linux = env.pop("_LD_LINUX", None)
+
+    def _portabilize_path_str(path_str):
+        """Run portabilize_toolchain on a colon-separated path list.
+        No-op if _ld_linux is unset.  Returns the new colon-separated string."""
+        if not _ld_linux or not path_str:
+            return path_str
+        from portabilize import portabilize_toolchain
+        _pe = shutil.which("patchelf", path=env.get("PATH", "") or path_str)
+        return ":".join(portabilize_toolchain(
+            path_str.split(":"), _ld_linux, patchelf_path=_pe))
+
     if hermetic_path:
+        if _ld_linux:
+            hermetic_path = _portabilize_path_str(hermetic_path)
+        _hp_dirs = hermetic_path.split(":")
         env["PATH"] = hermetic_path
         # Derive LD_LIBRARY_PATH from hermetic bin dirs
         ld_lib_parts = []
@@ -233,8 +248,54 @@ def main():
               file=sys.stderr)
         sys.exit(1)
 
+    # Portabilize CC/CXX/AR
+    if _ld_linux:
+        from portabilize import portabilize_toolchain
+        _cc_dirs = set()
+        for _tv in ("CC", "CXX", "AR"):
+            _tval = env.get(_tv, "")
+            if _tval:
+                _tbin = os.path.abspath(_tval.split()[0])
+                if os.path.isfile(_tbin):
+                    _cc_dirs.add(os.path.dirname(_tbin))
+        if _cc_dirs:
+            _patchelf = shutil.which("patchelf", path=env.get("PATH", ""))
+            _port_cc = portabilize_toolchain(
+                list(_cc_dirs), _ld_linux, patchelf_path=_patchelf)
+            _port_map = dict(zip(_cc_dirs, _port_cc))
+            for _tv in ("CC", "CXX", "AR"):
+                _tval = env.get(_tv, "")
+                if not _tval:
+                    continue
+                _tparts = _tval.split()
+                _tbin = os.path.abspath(_tparts[0])
+                _tdir = os.path.dirname(_tbin)
+                if _tdir in _port_map:
+                    _tparts[0] = os.path.join(_port_map[_tdir],
+                                              os.path.basename(_tbin))
+                    env[_tv] = " ".join(_tparts)
+            # Update RUSTFLAGS/CARGO_HOST_LINKER with portabilized CC.
+            # Append (rather than overwrite) RUSTFLAGS so any RUSTFLAGS
+            # set by the caller (env attr) survives.
+            if env.get("CC"):
+                _cc = env["CC"]
+                _cc_parts = _cc.split()
+                if _cc_parts and os.path.basename(_cc_parts[0]) == "ccache":
+                    _cc_parts = _cc_parts[1:]
+                if _cc_parts:
+                    _cc_bin = _cc_parts[0]
+                    _link_args = " ".join(f"-C link-arg={flag}" for flag in _cc_parts[1:])
+                    _new_rustflags = f"-C linker={_cc_bin} {_link_args}".strip()
+                    _existing_rustflags = env.get("RUSTFLAGS", "").strip()
+                    if _existing_rustflags:
+                        env["RUSTFLAGS"] = f"{_existing_rustflags} {_new_rustflags}"
+                    else:
+                        env["RUSTFLAGS"] = _new_rustflags
+                    env["CARGO_HOST_LINKER"] = _cc_bin
+
     # Prepend host tool deps to PATH
     if path_prepend:
+        path_prepend = _portabilize_path_str(path_prepend)
         env["PATH"] = path_prepend + (":" + env["PATH"] if env.get("PATH") else "")
         # Derive LD_LIBRARY_PATH from prepend dirs
         _pp_lib_dirs = []
@@ -287,6 +348,8 @@ def main():
     # Prepend dep bin paths to PATH and derive tool data dirs
     dep_bin = env.get("_DEP_BIN_PATHS")
     if dep_bin:
+        dep_bin = _portabilize_path_str(dep_bin)
+        env["_DEP_BIN_PATHS"] = dep_bin
         env["PATH"] = dep_bin + ":" + env.get("PATH", "")
         # Derive BISON_PKGDATADIR so relocated bison finds its data files.
         for _bp in dep_bin.split(":"):
@@ -305,6 +368,8 @@ def main():
         stub_dir = os.path.join(workdir, ".stub-bin")
         write_stub_script(os.path.join(stub_dir, "makeinfo"))
         env["PATH"] = stub_dir + ":" + env.get("PATH", "")
+
+    _ensure_which_shim(env)
 
     # Create gcc/cc/g++/c++ symlinks so install scripts that invoke bare
     # `gcc` (e.g. libcap _makenames, busybox gcc-version.sh) find the

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Autotools configure wrapper.
+"""Autotools configure wrapper (v3: portabilize + LD_LIBRARY_PATH fix).
 
 Copies source to output dir (for out-of-tree build support), sets
 environment variables, and runs ./configure with explicit args.
@@ -16,17 +16,10 @@ import shutil
 import subprocess
 import sys
 
-from _env import _is_sysroot_lib_dir, apply_cache_config, clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, find_buckos_shell, find_dep_python3, preferred_linker_flag, register_cleanup, rewrite_shebangs, sanitize_filenames, setup_ccache_symlinks, sysroot_lib_paths, write_pkg_config_wrapper
+from _env import _ensure_which_shim, _is_sysroot_lib_dir, apply_cache_config, clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, find_buckos_shell, find_dep_python3, preferred_linker_flag, register_cleanup, rewrite_shebangs, sanitize_filenames, setup_ccache_symlinks, sysroot_lib_paths, write_pkg_config_wrapper
 
 
 def _remove_recursive_dirs(root, max_depth=8):
-    """Remove directories with 3+ levels of same-name nesting (e.g. confdir3/confdir3/confdir3).
-
-    Some configure scripts (notably gettext) create deeply nested
-    self-referencing test directories that exceed Buck2's traversal limits.
-    Requires 3 levels to avoid false positives on legitimate structures
-    like glib/glib/.
-    """
     if not root or not os.path.isdir(root):
         return
     queue = [(root, 0)]
@@ -298,11 +291,17 @@ def main():
                             os.chmod(_cpp_link, 0o755)
                 _need_symlink_path = True
     if args.hermetic_path:
-        env["PATH"] = ":".join(os.path.abspath(p) for p in args.hermetic_path)
+        _hp_dirs = [os.path.abspath(p) for p in args.hermetic_path]
+        if args.ld_linux:
+            from portabilize import portabilize_toolchain
+            _patchelf = shutil.which("patchelf", path=":".join(_hp_dirs))
+            _hp_dirs = portabilize_toolchain(
+                _hp_dirs, args.ld_linux, patchelf_path=_patchelf)
+        env["PATH"] = ":".join(_hp_dirs)
         # Derive LD_LIBRARY_PATH from hermetic bin dirs so dynamically
         # linked tools (e.g. cross-ar needing libzstd) find their libs.
         _lib_dirs = []
-        for _bp in args.hermetic_path:
+        for _bp in _hp_dirs:
             _parent = os.path.dirname(os.path.abspath(_bp))
             for _ld in ("lib", "lib64"):
                 _d = os.path.join(_parent, _ld)
@@ -345,6 +344,55 @@ def main():
     # ccache masquerade symlinks — prepended before gcc symlinks.
     setup_ccache_symlinks(env, output_dir)
 
+    # Portabilize CC/CXX/AR binaries so they can run on this host.
+    if args.ld_linux:
+        from portabilize import portabilize_toolchain
+        _cc_dirs = set()
+        for _tv in ("CC", "CXX", "AR"):
+            _tval = env.get(_tv, "")
+            if _tval:
+                _tbin = os.path.abspath(_tval.split()[0])
+                if os.path.isfile(_tbin):
+                    _cc_dirs.add(os.path.dirname(_tbin))
+        if _cc_dirs:
+            _patchelf = shutil.which("patchelf", path=env.get("PATH", ""))
+            _port_cc = portabilize_toolchain(
+                list(_cc_dirs), args.ld_linux,
+                patchelf_path=_patchelf)
+            _port_map = {}
+            for _orig, _port in zip(_cc_dirs, _port_cc):
+                _port_map[_orig] = _port
+            for _tv in ("CC", "CXX", "AR"):
+                _tval = env.get(_tv, "")
+                if not _tval:
+                    continue
+                _tparts = _tval.split()
+                _tbin = os.path.abspath(_tparts[0])
+                _tdir = os.path.dirname(_tbin)
+                if _tdir in _port_map:
+                    _tparts[0] = os.path.join(_port_map[_tdir],
+                                              os.path.basename(_tbin))
+                    env[_tv] = " ".join(_tparts)
+        if "CPP" in env:
+            env["CPP"] = env.get("CC", "cc") + " -E"
+        # Recreate cc/gcc/cpp symlinks with portabilized compiler
+        if os.path.isdir(_symlink_dir):
+            shutil.rmtree(_symlink_dir)
+        for _tv2, _names2 in [("CC", ("cc", "gcc")), ("CXX", ("c++", "g++"))]:
+            _val2 = env.get(_tv2, "")
+            if _val2:
+                _bin2 = os.path.abspath(_val2.split()[0])
+                if os.path.isfile(_bin2):
+                    os.makedirs(_symlink_dir, exist_ok=True)
+                    for _n2 in _names2:
+                        _l2 = os.path.join(_symlink_dir, _n2)
+                        if not os.path.lexists(_l2):
+                            os.symlink(_bin2, _l2)
+                    if _tv2 == "CC":
+                        _cpp2 = os.path.join(_symlink_dir, "cpp")
+                        if not os.path.lexists(_cpp2):
+                            os.symlink(_bin2, _cpp2)
+
     # Append dep bin dirs AFTER hermetic PATH for *-config discovery scripts
     # (gpg-error-config, curl-config, xml2-config, etc.).  Appended so seed
     # host-tools always take priority — prevents ENOEXEC from dep binaries
@@ -368,11 +416,18 @@ def main():
             all_ldflags.append(f"-Wl,-rpath,{d}")
             all_ldflags.append(f"-Wl,-rpath-link,{d}")
 
-    # Derive LD_LIBRARY_PATH, GCONV_PATH, BISON_PKGDATADIR from hermetic
-    # and path-prepend dirs so host tools find shared libraries and data.
-    if args.hermetic_path:
+    # Derive GCONV_PATH, BISON_PKGDATADIR from hermetic and path-prepend
+    # dirs.  Skip LD_LIBRARY_PATH when portabilized — portabilized
+    # binaries use RPATH, and adding their libs to LD_LIBRARY_PATH
+    # poisons host tools (e.g., host cc1plus loading buckos libgmp).
+    if args.hermetic_path and not args.ld_linux:
         derive_lib_paths(args.hermetic_path, env)
-    derive_lib_paths(all_path_prepend, env)
+    elif args.hermetic_path:
+        derive_lib_paths(args.hermetic_path, env, skip_ld_library_path=True)
+    if not args.ld_linux:
+        derive_lib_paths(all_path_prepend, env)
+    else:
+        derive_lib_paths(all_path_prepend, env, skip_ld_library_path=True)
 
     # Pin PYTHON/PYTHON3 to buckos python so autotools build scripts
     # (e.g. AC_PATH_PROG([PYTHON3]), Makefile rules invoking $(PYTHON))
@@ -427,6 +482,8 @@ def main():
 
     # Prepend pkg-config wrapper to PATH
     env["PATH"] = wrapper_dir + ":" + env.get("PATH", os.environ.get("PATH", ""))
+
+    _ensure_which_shim(env)
 
     # Set up sysroot lib paths and disable posix_spawn to avoid
     # ENOEXEC with padded ELF interpreters on buckos-native dep binaries.
