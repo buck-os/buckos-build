@@ -49,9 +49,31 @@ jobs:
         with:
           clean: false
       - name: Install patchelf
-        # Self-hosted runner skips ci-setup; portabilize_run prefers system
-        # patchelf and falls back to a SIGBUS-prone bootstrap if missing.
-        run: command -v patchelf >/dev/null || sudo apt-get install -y --no-install-recommends patchelf
+        # Self-hosted runner skips ci-setup and blocks sudo via no_new_privs,
+        # so install patchelf as a user binary in $HOME/.local/bin.
+        # portabilize_run prefers system patchelf and falls back to a
+        # SIGBUS-prone bootstrap if missing.
+        run: |
+          if command -v patchelf >/dev/null && [ -x "$HOME/.local/bin/patchelf" ]; then
+            echo "patchelf already installed"
+          else
+            mkdir -p "$HOME/.local/bin"
+            case "$(uname -m)" in
+              x86_64)  ARCH=x86_64 ;;
+              aarch64) ARCH=aarch64 ;;
+              *) echo "::error::Unsupported arch $(uname -m)"; exit 1 ;;
+            esac
+            curl -sL "https://github.com/NixOS/patchelf/releases/download/0.18.0/patchelf-0.18.0-${ARCH}.tar.gz" \
+              | tar -xzf - -C "$HOME/.local" ./bin/patchelf
+            chmod +x "$HOME/.local/bin/patchelf"
+            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          fi
+          # portabilize_run looks at /usr/bin and /usr/local/bin; symlink so
+          # it finds patchelf without needing PATH lookup (Buck2 actions get
+          # an empty PATH).
+          if [ ! -e /usr/local/bin/patchelf ] && [ -w /usr/local/bin ]; then
+            ln -sf "$HOME/.local/bin/patchelf" /usr/local/bin/patchelf 2>/dev/null || true
+          fi
       - name: Install buck2
         run: |
           mkdir -p "$HOME/.local/bin"
@@ -90,9 +112,31 @@ jobs:
         with:
           clean: false
       - name: Install patchelf
-        # Self-hosted runner skips ci-setup; portabilize_run prefers system
-        # patchelf and falls back to a SIGBUS-prone bootstrap if missing.
-        run: command -v patchelf >/dev/null || sudo apt-get install -y --no-install-recommends patchelf
+        # Self-hosted runner skips ci-setup and blocks sudo via no_new_privs,
+        # so install patchelf as a user binary in $HOME/.local/bin.
+        # portabilize_run prefers system patchelf and falls back to a
+        # SIGBUS-prone bootstrap if missing.
+        run: |
+          if command -v patchelf >/dev/null && [ -x "$HOME/.local/bin/patchelf" ]; then
+            echo "patchelf already installed"
+          else
+            mkdir -p "$HOME/.local/bin"
+            case "$(uname -m)" in
+              x86_64)  ARCH=x86_64 ;;
+              aarch64) ARCH=aarch64 ;;
+              *) echo "::error::Unsupported arch $(uname -m)"; exit 1 ;;
+            esac
+            curl -sL "https://github.com/NixOS/patchelf/releases/download/0.18.0/patchelf-0.18.0-${ARCH}.tar.gz" \
+              | tar -xzf - -C "$HOME/.local" ./bin/patchelf
+            chmod +x "$HOME/.local/bin/patchelf"
+            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          fi
+          # portabilize_run looks at /usr/bin and /usr/local/bin; symlink so
+          # it finds patchelf without needing PATH lookup (Buck2 actions get
+          # an empty PATH).
+          if [ ! -e /usr/local/bin/patchelf ] && [ -w /usr/local/bin ]; then
+            ln -sf "$HOME/.local/bin/patchelf" /usr/local/bin/patchelf 2>/dev/null || true
+          fi
       - name: Install buck2
         run: |
           mkdir -p "$HOME/.local/bin"
@@ -179,9 +223,31 @@ jobs:
           name: seed-toolchain
           path: .
       - name: Install patchelf
-        # Self-hosted runner skips ci-setup; portabilize_run prefers system
-        # patchelf and falls back to a SIGBUS-prone bootstrap if missing.
-        run: command -v patchelf >/dev/null || sudo apt-get install -y --no-install-recommends patchelf
+        # Self-hosted runner skips ci-setup and blocks sudo via no_new_privs,
+        # so install patchelf as a user binary in $HOME/.local/bin.
+        # portabilize_run prefers system patchelf and falls back to a
+        # SIGBUS-prone bootstrap if missing.
+        run: |
+          if command -v patchelf >/dev/null && [ -x "$HOME/.local/bin/patchelf" ]; then
+            echo "patchelf already installed"
+          else
+            mkdir -p "$HOME/.local/bin"
+            case "$(uname -m)" in
+              x86_64)  ARCH=x86_64 ;;
+              aarch64) ARCH=aarch64 ;;
+              *) echo "::error::Unsupported arch $(uname -m)"; exit 1 ;;
+            esac
+            curl -sL "https://github.com/NixOS/patchelf/releases/download/0.18.0/patchelf-0.18.0-${ARCH}.tar.gz" \
+              | tar -xzf - -C "$HOME/.local" ./bin/patchelf
+            chmod +x "$HOME/.local/bin/patchelf"
+            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          fi
+          # portabilize_run looks at /usr/bin and /usr/local/bin; symlink so
+          # it finds patchelf without needing PATH lookup (Buck2 actions get
+          # an empty PATH).
+          if [ ! -e /usr/local/bin/patchelf ] && [ -w /usr/local/bin ]; then
+            ln -sf "$HOME/.local/bin/patchelf" /usr/local/bin/patchelf 2>/dev/null || true
+          fi
       - name: Install buck2
         run: |
           mkdir -p "$HOME/.local/bin"

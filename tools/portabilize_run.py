@@ -60,9 +60,19 @@ def _bootstrap_patchelf(patchelf, ld_linux):
     # 1. Prefer a system-installed patchelf if one exists at a standard
     # location.  Buck2 actions inherit a clean PATH so shutil.which won't
     # find it without help — check the usual install paths directly.
-    # CI (setup.sh) installs patchelf this way.
-    for sys_pe in ("/usr/bin/patchelf", "/usr/local/bin/patchelf",
-                   "/bin/patchelf"):
+    # ~/.local/bin covers the case where CI installs patchelf as a user
+    # binary because the runner blocks sudo via no_new_privs.
+    candidates = [
+        "/usr/bin/patchelf",
+        "/usr/local/bin/patchelf",
+        "/bin/patchelf",
+        os.path.expanduser("~/.local/bin/patchelf"),
+    ]
+    if os.environ.get("HOME"):
+        # Some Buck2 actions strip HOME; expanduser would then return "~/...".
+        # Already covered by expanduser above when HOME is set.
+        pass
+    for sys_pe in candidates:
         if os.path.isfile(sys_pe) and os.access(sys_pe, os.X_OK):
             try:
                 r = subprocess.run([sys_pe, "--version"], capture_output=True)
