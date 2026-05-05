@@ -173,6 +173,13 @@ def main():
     # and timeout to handle slow/unreliable connections during crate fetches.
     env.setdefault("CARGO_NET_RETRY", "10")
     env.setdefault("CARGO_HTTP_TIMEOUT", "120")
+    # Use the system git CLI for fetching git deps. cargo's bundled libgit2
+    # uses libcurl which doesn't work behind some HTTP-CONNECT proxies
+    # (notably Meta's fwdproxy returns 403 for direct git clones), but
+    # /usr/bin/git honors http_proxy/https_proxy and tunnels correctly.
+    # Inherits the proxy env vars (http_proxy/https_proxy/no_proxy) from
+    # the parent process — clean_env passes those through.
+    env.setdefault("CARGO_NET_GIT_FETCH_WITH_CLI", "true")
 
     if args.hermetic_path:
         _hp_dirs = [os.path.abspath(p) for p in args.hermetic_path]
