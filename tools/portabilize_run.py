@@ -220,6 +220,16 @@ def main():
         if cmd0_dir in port_map:
             cmd[0] = os.path.join(port_map[cmd0_dir], os.path.basename(cmd0_abs))
 
+    # Promote _RUN_ENV_LD_LIBRARY_PATH (set by the runtime_env wrapper to
+    # avoid poisoning host python at our own startup) into LD_LIBRARY_PATH
+    # so the target binary sees it.
+    _run_env_ll = os.environ.pop("_RUN_ENV_LD_LIBRARY_PATH", "")
+    if _run_env_ll:
+        existing_ll = os.environ.get("LD_LIBRARY_PATH", "")
+        os.environ["LD_LIBRARY_PATH"] = _run_env_ll + (
+            ":" + existing_ll if existing_ll else ""
+        )
+
     os.execvp(cmd[0], cmd)
 
 

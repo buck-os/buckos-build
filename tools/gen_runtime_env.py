@@ -31,7 +31,13 @@ def main():
     if ld_linux and patchelf and portabilize_run and prefix:
         # Hand off to portabilize_run, which patches the package's bin
         # dirs and rewrites sys.argv[1] to the portabilized binary path
-        # before exec.
+        # before exec. Stash the desired LD_LIBRARY_PATH in a side env
+        # var (NOT LD_LIBRARY_PATH itself) so the host python launched
+        # for portabilize_run.pex doesn't pick up buckos libpython etc.
+        # — that would break the PAR/PEX bootstrap (No module named
+        # '__par__'). portabilize_run promotes _RUN_ENV_LD_LIBRARY_PATH
+        # back to LD_LIBRARY_PATH right before its own execvp of the
+        # target binary.
         exec_block = (
             f'_ld_linux = {ld_linux!r}\n'
             f'_patchelf = {patchelf!r}\n'
@@ -39,16 +45,18 @@ def main():
             f'_prefix = {prefix!r}\n'
             'def _abspath(p):\n'
             '    return p if os.path.isabs(p) else os.path.join(os.getcwd(), p)\n'
+            'os.environ["_RUN_ENV_LD_LIBRARY_PATH"] = ":".join(_abs)\n'
             '_argv = [_abspath(_portabilize_run),\n'
             '         "--ld-linux", _abspath(_ld_linux),\n'
             '         "--patchelf", _abspath(_patchelf),\n'
             '         "--prefix", _abspath(_prefix), "--"] + sys.argv[1:]\n'
             'os.execvp(_argv[0], _argv)\n'
         )
+        env_setup = ""  # LD_LIBRARY_PATH stashed in side var, not set
     else:
-        # Bootstrap or non-portable target: just exec sys.argv[1:] with
-        # LD_LIBRARY_PATH set.
+        # Bootstrap / non-portable: set LD_LIBRARY_PATH directly and exec.
         exec_block = 'os.execvp(sys.argv[1], sys.argv[1:])\n'
+        env_setup = 'os.environ["LD_LIBRARY_PATH"] = ":".join(_abs)\n'
 
     with open(output, "w") as f:
         f.write(
@@ -59,7 +67,7 @@ def main():
             'for d in _rel.split(":"):\n'
             '    if not d: continue\n'
             '    _abs.append(d if os.path.isabs(d) else os.path.join(os.getcwd(), d))\n'
-            'os.environ["LD_LIBRARY_PATH"] = ":".join(_abs)\n'
+            + env_setup
             + exec_block
         )
 
