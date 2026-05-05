@@ -52,6 +52,19 @@ make CC="$CC" CXX="$CXX" CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" \
 make CC="$CC" CXX="$CXX" CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" \
     LIBDIR=/usr/lib64 -j1
 
-make install DESTDIR="$OUT" LIBDIR=/usr/lib64 PREFIX=/usr
+mkdir -p "$OUT/usr/sbin" "$OUT/usr/lib64" "$OUT/usr/include"
+make install DESTDIR="$OUT" LIBDIR=/usr/lib64 PREFIX=/usr || {
+    # If make install fails, manually install what we built
+    mkdir -p "$OUT/usr/sbin" "$OUT/usr/lib64"
+    find . -name hwinfo -type f -executable 2>/dev/null | head -1 | while read bin; do
+        install -m755 "$bin" "$OUT/usr/sbin/hwinfo"
+    done
+    find . -name 'libhd.so*' -type f 2>/dev/null | while read lib; do
+        install -m755 "$lib" "$OUT/usr/lib64/"
+    done
+    find . -name 'libhd.a' -type f 2>/dev/null | while read lib; do
+        install -m644 "$lib" "$OUT/usr/lib64/"
+    done
+}
 """,
 )

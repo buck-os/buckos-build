@@ -108,7 +108,14 @@ def main():
 
     # Apply PATH from toolchain flags
     if args.hermetic_path:
-        os.environ["PATH"] = ":".join(os.path.abspath(p) for p in args.hermetic_path)
+        _hp_dirs = [os.path.abspath(p) for p in args.hermetic_path]
+        if args.ld_linux:
+            from portabilize import portabilize_toolchain, portabilize_env
+            _patchelf = shutil.which("patchelf", path=":".join(_hp_dirs))
+            _hp_dirs = portabilize_toolchain(
+                _hp_dirs, args.ld_linux, patchelf_path=_patchelf)
+            portabilize_env(os.environ, args.ld_linux, patchelf_path=_patchelf)
+        os.environ["PATH"] = ":".join(_hp_dirs)
     elif args.hermetic_empty:
         os.environ["PATH"] = ""
     elif args.allow_host_path:
@@ -244,17 +251,35 @@ def main():
     # in tc/bootstrap/host-tools/packages.bzl.
     if cc_override:
         make_cmd.extend(cc_override)
+    # Build portabilize map for make-flag compiler binaries
+    _port_map = {}
+    if args.ld_linux:
+        _mf_cc_dirs = set()
+        for flag in args.make_flags:
+            if "=" in flag:
+                key, _, val = flag.partition("=")
+                if key in ("CC", "CXX", "AR", "HOSTCC", "HOSTCXX"):
+                    _bin = val.split()[0]
+                    if not os.path.isabs(_bin) and (_bin.startswith("buck-out") or os.path.exists(_bin)):
+                        _bin = os.path.abspath(_bin)
+                    if os.path.isfile(_bin):
+                        _mf_cc_dirs.add(os.path.dirname(_bin))
+        if _mf_cc_dirs:
+            from portabilize import portabilize_toolchain
+            _patchelf = shutil.which("patchelf", path=os.environ.get("PATH", ""))
+            _mf_cc_list = list(_mf_cc_dirs)
+            _mf_port = portabilize_toolchain(
+                _mf_cc_list, args.ld_linux, patchelf_path=_patchelf)
+            _port_map = dict(zip(_mf_cc_list, _mf_port))
+
     _hostcflags = []
     _hostldflags = []
     for flag in args.make_flags:
-        # Resolve relative buck-out paths in KEY=VALUE flags so they
-        # work when make runs in the build tree directory.
         if "=" in flag:
             key, _, val = flag.partition("=")
             tokens = val.split()
             resolved = []
             for t in tokens:
-                # Handle --sysroot=path and bare path tokens
                 for prefix in ("--sysroot=", "-specs=", "-I", "-L", "-Wl,-rpath-link,"):
                     if t.startswith(prefix):
                         path = t[len(prefix):]
@@ -265,10 +290,13 @@ def main():
                     if not os.path.isabs(t) and (t.startswith("buck-out") or os.path.exists(t)):
                         t = os.path.abspath(t)
                 resolved.append(t)
+            # Portabilize compiler binaries in make-flags
+            if key in ("CC", "CXX", "AR", "HOSTCC", "HOSTCXX") and resolved and _port_map:
+                _bin = resolved[0]
+                _bdir = os.path.dirname(_bin)
+                if _bdir in _port_map:
+                    resolved[0] = os.path.join(_port_map[_bdir], os.path.basename(_bin))
             if key in ("CC", "CXX", "HOSTCC", "HOSTCXX") and len(resolved) > 1:
-                # Kernel/make quotes "$CC"/"$HOSTCC" so multi-word values
-                # fail.  Split into binary + flags.  Extra flags go into
-                # HOSTCFLAGS/HOSTLDFLAGS for HOSTCC.
                 make_cmd.append(f"{key}={resolved[0]}")
                 if key.startswith("HOST"):
                     _extra_flags = " ".join(resolved[1:])

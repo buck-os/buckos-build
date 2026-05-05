@@ -15,8 +15,7 @@ package(
     configure_args = [
         "-DBUILD_SHARED_LIBS=ON",
         "-DRE2_BUILD_TESTING=OFF",
-        # Dynamic CMAKE_PREFIX_PATH from DEP_BASE_DIRS - uses shell command substitution
-        "-DCMAKE_PREFIX_PATH=$(echo $DEP_BASE_DIRS | tr ':' ';' | sed 's|;|/usr;|g' | sed 's|$|/usr|')",
+        "-DCMAKE_CXX_STANDARD=17",
     ],
     deps = [
         "//packages/linux/dev-libs/google/abseil-cpp:abseil-cpp",

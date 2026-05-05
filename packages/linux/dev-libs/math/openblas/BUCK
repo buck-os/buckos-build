@@ -12,16 +12,16 @@ package(
     homepage = "https://www.openblas.net/",
     license = "BSD-3-Clause",
     deps = [],
+    env = {
+        "HOSTCC": "/usr/bin/gcc",
+    },
     pre_configure_cmds = ["""
 # OpenBLAS CMake needs to compile and run getarch on the host.
-# In cross-compilation, we need a host C compiler.
-# Create a wrapper that uses the host gcc for getarch compilation.
 mkdir -p _host_tools
-cat > _host_tools/hostcc << 'HEOF'
-#!/bin/sh
-exec /usr/bin/gcc "$@"
-HEOF
-chmod +x _host_tools/hostcc
+ln -sf /usr/bin/gcc _host_tools/hostcc
+# Replace -march=native with -march=x86-64 in cmake files (cross-compiler doesn't support native)
+find . -name '*.cmake' -o -name 'CMakeLists.txt' | xargs sed -i 's/-march=native/-march=x86-64/g' 2>/dev/null || true
+find . -name 'Makefile*' -o -name 'getarch*' | xargs sed -i 's/-march=native/-march=x86-64/g' 2>/dev/null || true
 """],
     configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",

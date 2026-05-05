@@ -19,6 +19,12 @@ package(
         "SYSCONFDIR=/etc",
     ],
 
+    install_args = [
+        "PREFIX=$(DESTDIR)/usr",
+        "SYSCONFDIR=$(DESTDIR)/etc",
+        "DOCDIR=$(DESTDIR)/usr/share/doc/ferm",
+    ],
+
     deps = [
         "//packages/linux/network/firewall/iptables:iptables",
         "//packages/linux/lang/perl:perl",

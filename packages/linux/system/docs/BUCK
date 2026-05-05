@@ -90,27 +90,16 @@ package(
         "MAKEFLAGS": "",
         "MAKEOVERRIDES": "",
     },
-    src_compile = """
-# Stub out BuildFoundries Perl script to avoid broken interpreter path in cross-build
+    pre_configure_cmds = [
+        # Stub out BuildFoundries Perl script to avoid broken interpreter path in cross-build
+        """
 for f in $(find . -name BuildFoundries -o -name BuildFoundries.in 2>/dev/null); do
-    cat > "$f" <<'STUBEOF'
-#!/bin/sh
-exit 0
-STUBEOF
+    printf '#!/bin/sh\\nexit 0\\n' > "$f"
     chmod +x "$f"
 done
-# Groff's generated Makefile may have duplicated recipe targets causing warnings.
-# Ensure we are in the correct build directory and have a Makefile.
-if [ ! -f Makefile ]; then
-    echo "ERROR: No Makefile found in $(pwd), listing directory:"
-    ls -la
-    exit 1
-fi
-make MAKEOVERRIDES= -j1
 """,
-    src_install = """
-make MAKEOVERRIDES= install DESTDIR="$OUT"
-""",
+    ],
+    make_args = ["MAKEOVERRIDES=", "-j1"],
     deps = [
     ],
 )
@@ -165,15 +154,15 @@ package(
     ],
 )
 
-# Filegroup for all documentation packages
-filegroup(
+# Alias to man-db (primary target).
+# Reference each package individually:
+#   //packages/linux/system/docs:man-db
+#   //packages/linux/system/docs:man-pages
+#   //packages/linux/system/docs:groff
+#   //packages/linux/system/docs:gdbm
+#   //packages/linux/system/docs:texinfo
+alias(
     name = "docs",
-    srcs = [
-        ":man-db",
-        ":man-pages",
-        ":groff",
-        ":gdbm",
-        ":texinfo",
-    ],
+    actual = ":man-db",
     default_target_platform = "//platforms:linux-target",
 )

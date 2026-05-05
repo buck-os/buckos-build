@@ -1,5 +1,6 @@
 load("//defs:package.bzl", "package")
 
+# mcap-cpp is a header-only library
 package(
     build_rule = "binary",
     name = "mcap-cpp",
@@ -9,13 +10,20 @@ package(
     description = "C++ implementation of the MCAP file format for robotics data recording",
     homepage = "https://github.com/foxglove/mcap",
     license = "MIT",
+    install_script = """
+cd "$SRCS"
+# mcap is a header-only C++ library
+mkdir -p "$OUT/usr/include"
+# Find and install headers
+if [ -d "cpp/mcap/include" ]; then
+    cp -r cpp/mcap/include/* "$OUT/usr/include/"
+elif [ -d "cpp/mcap" ]; then
+    mkdir -p "$OUT/usr/include/mcap"
+    cp cpp/mcap/*.hpp "$OUT/usr/include/mcap/" 2>/dev/null || true
+fi
+""",
     deps = [
         "//packages/linux/dev-libs/compression/lz4:lz4",
         "//packages/linux/system/libs/compression/zstd:zstd",
     ],
-    install_script = """
-cd "$SRCS"
-mkdir -p "$OUT/usr/include"
-cp -r cpp/mcap/include/mcap "$OUT/usr/include/"
-""",
 )

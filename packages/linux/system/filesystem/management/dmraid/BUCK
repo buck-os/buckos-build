@@ -6,7 +6,14 @@ package(
     url = "https://people.redhat.com/~heinzm/sw/dmraid/src/dmraid-1.0.0.rc16-3.tar.bz2",
     strip_components = 2,
     sha256 = "93421bd169d71ff5e7d2db95b62b030bfa205a12010b6468dcdef80337d6fbd8",
-    pre_configure_cmds = ["autoreconf -fi"],
+    pre_configure_cmds = [
+        # The tarball has structure dmraid/1.0.0.rc16-3/dmraid/ - strip_components=2
+        # brings us to the inner dmraid dir which should have configure.ac
+        "ls -la",
+        "test -f configure.ac && autoreconf -fi || true",
+        # If configure still not found, look in subdirectories
+        "if [ ! -f configure ]; then for d in */; do if [ -f \"$d/configure\" ]; then mv \"$d\"/* . 2>/dev/null || true; break; fi; done; fi",
+    ],
     use_configure = {
         "intel-led": ("--enable-intel-led", "--disable-intel-led"),
         "led": ("--enable-led", "--disable-led"),

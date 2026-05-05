@@ -12,26 +12,17 @@ package(
     install_script = """
 cd "$SRCS"
 
-# 7zip 24.09 source layout: CPP/7zip/Bundles/Alone2/makefile.gcc
-# The makefile.gcc in Alone2 uses relative paths like ../../../../C/7zBuf2.c
-# which only work when run from the Alone2 directory with the correct tree structure.
-# Use the Console Alone makefile (simpler, no relative C paths) as fallback.
-
-# Try Alone2 console first (most reliable)
-if [ -f "CPP/7zip/Bundles/Alone2/makefile.gcc" ]; then
-    cd "CPP/7zip/Bundles/Alone2"
-    make -f makefile.gcc -j${MAKEOPTS:-$(nproc)} \
-        CC="$CC" CXX="$CXX" MY_ARCH="" CFLAGS_WARN="" || \
-    make -f makefile.gcc -j1 \
-        CC="$CC" CXX="$CXX" MY_ARCH="" CFLAGS_WARN=""
-elif [ -f "CPP/7zip/Bundles/Alone/makefile.gcc" ]; then
-    cd "CPP/7zip/Bundles/Alone"
-    make -f makefile.gcc -j${MAKEOPTS:-$(nproc)} \
-        CC="$CC" CXX="$CXX" MY_ARCH="" CFLAGS_WARN="" || \
-    make -f makefile.gcc -j1 \
-        CC="$CC" CXX="$CXX" MY_ARCH="" CFLAGS_WARN=""
-elif [ -f "C/Util/7z/makefile.gcc" ]; then
-    cd "C/Util/7z"
+_builddir=""
+for dir in "CPP/7zip/Bundles/Alone2" "CPP/7zip/Bundles/Alone" \
+           "7zip/Bundles/Alone2" "7zip/Bundles/Alone" \
+           "C/Util/7z" "Util/7z"; do
+    if [ -f "$dir/makefile.gcc" ]; then
+        _builddir="$dir"
+        break
+    fi
+done
+if [ -n "$_builddir" ]; then
+    cd "$_builddir"
     make -f makefile.gcc -j${MAKEOPTS:-$(nproc)} \
         CC="$CC" CXX="$CXX" MY_ARCH="" CFLAGS_WARN="" || \
     make -f makefile.gcc -j1 \

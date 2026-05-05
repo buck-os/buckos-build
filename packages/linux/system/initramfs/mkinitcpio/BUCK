@@ -7,29 +7,60 @@ load("//defs:package.bzl", "package")
 # Known for simplicity, speed, and excellent documentation.
 
 package(
-    build_rule = "autotools",
+    build_rule = "binary",
     name = "mkinitcpio",
-    skip_configure = True,
     url = "https://github.com/archlinux/mkinitcpio/archive/refs/tags/v38.tar.gz",
     sha256 = "a5a6b6877fda57aaf26b7ebc738ef1dc510d54efb16ede58519b55a1a08028b4",
     version = "38",
     description = "Modular initramfs image creation utility (Arch Linux default)",
     homepage = "https://gitlab.archlinux.org/archlinux/mkinitcpio/mkinitcpio",
     license = "GPL-2.0",
-    make_args = [
-        "PREFIX=/usr",
-    ],
-    post_install_cmds = ["""
+    install_script = """
+cd "$SRCS"
+
+# Create a stub git so the Makefile doesn't fail on git commands
+mkdir -p "$BUCK_SCRATCH_PATH/mkinitcpio-stubs"
+cat > "$BUCK_SCRATCH_PATH/mkinitcpio-stubs/git" << 'GITEOF'
+#!/bin/sh
+# Stub git: return version for describe, empty for everything else
+case "$*" in
+    *describe*) echo "v38" ;;
+    *rev-parse*) echo "0000000" ;;
+    *) echo "" ;;
+esac
+exit 0
+GITEOF
+chmod +x "$BUCK_SCRATCH_PATH/mkinitcpio-stubs/git"
+# Stub a2x (asciidoc) since we don't need to build man pages
+cat > "$BUCK_SCRATCH_PATH/mkinitcpio-stubs/a2x" << 'A2XEOF'
+#!/bin/sh
+# Create an empty man page stub for each output file
+for arg; do
+    case "$arg" in
+        *.adoc)
+            out="${arg%.adoc}"
+            touch "$out" 2>/dev/null || true
+            ;;
+    esac
+done
+exit 0
+A2XEOF
+chmod +x "$BUCK_SCRATCH_PATH/mkinitcpio-stubs/a2x"
+export PATH="$BUCK_SCRATCH_PATH/mkinitcpio-stubs:$PATH"
+
+# Create VERSION file for Makefile
+echo 38 > VERSION
+
 # Install using make
-make DESTDIR=$OUT PREFIX=/usr install
+make DESTDIR="$OUT" PREFIX=/usr V=38 install
 
 # Create configuration directories
-mkdir -p $OUT/etc/mkinitcpio.d
-mkdir -p $OUT/usr/lib/initcpio/hooks
-mkdir -p $OUT/usr/lib/initcpio/install
+mkdir -p "$OUT/etc/mkinitcpio.d"
+mkdir -p "$OUT/usr/lib/initcpio/hooks"
+mkdir -p "$OUT/usr/lib/initcpio/install"
 
 # Create default configuration
-cat > $OUT/etc/mkinitcpio.conf << 'EOF'
+cat > "$OUT/etc/mkinitcpio.conf" << 'EOF'
 # mkinitcpio configuration file
 MODULES=()
 BINARIES=()
@@ -37,10 +68,7 @@ FILES=()
 HOOKS=(base udev autodetect modconf kms keyboard keymap consolefont block filesystems fsck)
 COMPRESSION="zstd"
 EOF
-
-# Create preset directory
-mkdir -p $OUT/etc/mkinitcpio.d
-"""],
+""",
     deps = [
         "//packages/linux/system/libs/kmod:kmod",
         "//packages/linux/core/bash:bash",

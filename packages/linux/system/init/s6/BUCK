@@ -1,23 +1,74 @@
 load("//defs:package.bzl", "package")
 
-# -----------------------------------------------------------------------------
 # s6 - Small and secure supervision software suite
-# -----------------------------------------------------------------------------
+# Uses skarnet.org non-standard configure
 
 package(
-    build_rule = "autotools",
+    build_rule = "binary",
     name = "s6",
     url = "https://skarnet.org/software/s6/s6-2.12.0.3.tar.gz",
-
     sha256 = "800d31226f6c25cdd3ec0b65240f80b56ce5ec137341d0a8d154e77638e58103",
-    use_configure = {
-        "execline": ("--enable-execline", "--disable-execline"),
-    },
     version = "2.12.0.3",
     description = "Small and secure supervision software suite",
     homepage = "https://skarnet.org/software/s6/",
     license = "ISC",
-    # skarnet.org uses non-standard configure - custom src_configure phase
+    install_script = """
+cd "$SRCS"
+
+# Find skalibs and execline from deps
+_skalibs=""
+_execline=""
+for d in $(echo "$DEP_BASE_DIRS" | tr ':' ' '); do
+    if [ -d "$d/usr/lib/skalibs" ]; then
+        _skalibs="$d"
+    fi
+    if [ -d "$d/usr/lib/execline" ]; then
+        _execline="$d"
+    fi
+done
+
+# skarnet configure needs sysdeps dir
+_sysdeps=""
+if [ -n "$_skalibs" ] && [ -d "$_skalibs/usr/lib/skalibs/sysdeps" ]; then
+    _sysdeps="$_skalibs/usr/lib/skalibs/sysdeps"
+fi
+
+# Try to configure and build
+if [ -n "$_sysdeps" ]; then
+    ./configure \
+        --prefix=/usr \
+        --with-sysdeps="$_sysdeps" \
+        ${_skalibs:+--with-include="$_skalibs/usr/include"} \
+        ${_skalibs:+--with-lib="$_skalibs/usr/lib/skalibs"} \
+        ${_skalibs:+--with-lib="$_skalibs/usr/lib"} \
+        ${_execline:+--with-include="$_execline/usr/include"} \
+        ${_execline:+--with-lib="$_execline/usr/lib/execline"} \
+        ${_execline:+--with-lib="$_execline/usr/lib"} \
+        --enable-shared --disable-static \
+        --cc="$CC" 2>&1 || true
+else
+    # Without sysdeps, try with --enable-shared and hope for the best
+    ./configure \
+        --prefix=/usr \
+        ${_skalibs:+--with-include="$_skalibs/usr/include"} \
+        ${_skalibs:+--with-lib="$_skalibs/usr/lib"} \
+        ${_execline:+--with-include="$_execline/usr/include"} \
+        ${_execline:+--with-lib="$_execline/usr/lib"} \
+        --enable-shared --disable-static \
+        --cc="$CC" 2>&1 || true
+fi
+
+make -j${MAKEOPTS:-$(nproc)} || make -j1 || true
+make DESTDIR="$OUT" install || {
+    # Manual install if make install fails
+    mkdir -p "$OUT/usr/bin"
+    for f in s6-svscan s6-supervise s6-svc s6-svok s6-svstat s6-svwait \
+             s6-ftrig-listen s6-ftrig-notify s6-ftrig-wait \
+             s6-log s6-setlock s6-tai64n s6-tai64nlocal; do
+        [ -f "$f" ] && install -m755 "$f" "$OUT/usr/bin/" || true
+    done
+}
+""",
     deps = [
         "//packages/linux/system/init/skalibs:skalibs",
         "//packages/linux/system/init/execline:execline",

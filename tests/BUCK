@@ -354,11 +354,13 @@ buckos_test(
     test = "verify_ch_vm_boot.py",
     deps = [
         "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
+        ":ch-env",
         "//packages/linux/kernel/buckos-kernel:buckos-kernel-ch",
         "//packages/linux/system/cloud-hypervisor:ch-initramfs",
     ],
     env = {
         "CH_BINARY": "$(location //packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor)",
+        "RUN_ENV": "$(location :ch-env)",
         "KERNEL": "$(location //packages/linux/kernel/buckos-kernel:buckos-kernel-ch)",
         "INITRAMFS": "$(location //packages/linux/system/cloud-hypervisor:ch-initramfs)",
     },
@@ -371,11 +373,13 @@ buckos_test(
     test = "verify_ch_vm_boot.py",
     deps = [
         "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
+        ":ch-env",
         "//tests/fixtures:test-kernel",
         "//packages/linux/system/cloud-hypervisor:ch-initramfs",
     ],
     env = {
         "CH_BINARY": "$(location //packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor)",
+        "RUN_ENV": "$(location :ch-env)",
         "KERNEL": "$(location //tests/fixtures:test-kernel)",
         "INITRAMFS": "$(location //packages/linux/system/cloud-hypervisor:ch-initramfs)",
     },
@@ -393,12 +397,14 @@ buckos_test(
     test = "verify_ch_ima.py",
     deps = [
         "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
+        ":ch-env",
         "//tests/fixtures/ima-test:ima-kernel",
         "//tests/fixtures/ima-test:ima-initramfs",
         "//tests/fixtures/ima-test:ima-disk-unsigned",
     ],
     env = {
         "CH_BINARY": "$(location //packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor)",
+        "RUN_ENV": "$(location :ch-env)",
         "KERNEL": "$(location //tests/fixtures/ima-test:ima-kernel)",
         "INITRAMFS": "$(location //tests/fixtures/ima-test:ima-initramfs)",
         "DISK": "$(location //tests/fixtures/ima-test:ima-disk-unsigned)",
@@ -416,12 +422,14 @@ buckos_test(
     test = "verify_ch_ima.py",
     deps = [
         "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
+        ":ch-env",
         "//tests/fixtures/ima-test:ima-kernel",
         "//tests/fixtures/ima-test:ima-initramfs",
         "//tests/fixtures/ima-test:ima-disk-signed",
     ],
     env = {
         "CH_BINARY": "$(location //packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor)",
+        "RUN_ENV": "$(location :ch-env)",
         "KERNEL": "$(location //tests/fixtures/ima-test:ima-kernel)",
         "INITRAMFS": "$(location //tests/fixtures/ima-test:ima-initramfs)",
         "DISK": "$(location //tests/fixtures/ima-test:ima-disk-signed)",
@@ -438,6 +446,11 @@ buckos_test(
 runtime_env(
     name = "qemu-env",
     package = "//packages/linux/emulation/hypervisors/qemu:qemu",
+)
+
+runtime_env(
+    name = "ch-env",
+    package = "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
 )
 
 buckos_test(
@@ -530,12 +543,14 @@ buckos_test(
     test = "verify_ch_ima.py",
     deps = [
         "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
+        ":ch-env",
         "//tests/fixtures/ima-test:ima-kernel",
         "//tests/fixtures/ima-test:ima-initramfs",
         "//tests/fixtures/ima-test:ima-disk-unsigned",
     ],
     env = {
         "CH_BINARY": "$(location //packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor)",
+        "RUN_ENV": "$(location :ch-env)",
         "KERNEL": "$(location //tests/fixtures/ima-test:ima-kernel)",
         "INITRAMFS": "$(location //tests/fixtures/ima-test:ima-initramfs)",
         "DISK": "$(location //tests/fixtures/ima-test:ima-disk-unsigned)",
@@ -555,12 +570,14 @@ buckos_test(
     test = "verify_ch_ima.py",
     deps = [
         "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
+        ":ch-env",
         "//tests/fixtures/ima-test:ima-kernel",
         "//tests/fixtures/ima-test:ima-initramfs",
         "//tests/fixtures/ima-test:ima-disk-signed",
     ],
     env = {
         "CH_BINARY": "$(location //packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor)",
+        "RUN_ENV": "$(location :ch-env)",
         "KERNEL": "$(location //tests/fixtures/ima-test:ima-kernel)",
         "INITRAMFS": "$(location //tests/fixtures/ima-test:ima-initramfs)",
         "DISK": "$(location //tests/fixtures/ima-test:ima-disk-signed)",
@@ -578,12 +595,14 @@ buckos_test(
     test = "verify_ch_ima.py",
     deps = [
         "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
+        ":ch-env",
         "//tests/fixtures/ima-test:ima-kernel",
         "//tests/fixtures/ima-test:ima-initramfs",
         "//tests/fixtures/ima-test:ima-disk-file-unsigned",
     ],
     env = {
         "CH_BINARY": "$(location //packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor)",
+        "RUN_ENV": "$(location :ch-env)",
         "KERNEL": "$(location //tests/fixtures/ima-test:ima-kernel)",
         "INITRAMFS": "$(location //tests/fixtures/ima-test:ima-initramfs)",
         "DISK": "$(location //tests/fixtures/ima-test:ima-disk-file-unsigned)",

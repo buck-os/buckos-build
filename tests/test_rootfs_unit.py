@@ -2,7 +2,7 @@
 """Unit tests for rootfs assembly logic.
 
 Tests _fix_merged_usr, _fix_var_symlinks, _merge_sbin_into_bin,
-and _merge_acct_entries from tools/rootfs_helper.py.
+and the colon-file merge helpers from tools/rootfs_helper.py.
 Stdlib only -- no pytest.
 """
 
@@ -19,8 +19,10 @@ sys.path.insert(0, str(_REPO / "tools"))
 from rootfs_helper import (
     _fix_merged_usr,
     _fix_var_symlinks,
-    _merge_acct_entries,
+    _merge_group_files,
+    _merge_passwd_files,
     _merge_sbin_into_bin,
+    _merge_shadow_files,
 )
 
 passed = 0
@@ -332,190 +334,66 @@ def main():
             fail("/usr/sbin created unexpectedly")
 
     # ===================================================================
-    # _merge_acct_entries
+    # _merge_group_files / _merge_passwd_files / _merge_shadow_files
+    #
+    # Per-package acct entries no longer come from usr/share/acct-* dirs;
+    # they ship as /etc/{group,passwd,shadow,gshadow} fragments and are
+    # combined across packages by these pure-text merge helpers. The
+    # orchestrator (_save_merge_files / _restore_merge_files) is exercised
+    # at integration level, not here.
     # ===================================================================
 
-    # 21. Group entries merged from acct-group dir into /etc/group
-    print("=== _merge_acct_entries: groups merged into /etc/group ===")
-    with tempfile.TemporaryDirectory() as rootfs:
-        _write(os.path.join(rootfs, "etc", "group"), "root:x:0:\n")
-        acct = os.path.join(rootfs, "usr", "share", "acct-group")
-        _write(os.path.join(acct, "audio.group"), "audio:x:63:")
-        _write(os.path.join(acct, "video.group"), "video:x:39:")
-        _merge_acct_entries(rootfs)
-        content = _read(os.path.join(rootfs, "etc", "group"))
-        if "audio:x:63:" in content and "video:x:39:" in content and "root:x:0:" in content:
-            ok("groups merged into /etc/group")
-        else:
-            fail(f"group merge failed: {content!r}")
+    print("=== _merge_group_files: new groups appended ===")
+    existing = "root:x:0:\n"
+    incoming = "audio:x:18:\nvideo:x:39:\n"
+    merged = _merge_group_files(existing, incoming)
+    if "root:x:0:" in merged and "audio:x:18:" in merged and "video:x:39:" in merged:
+        ok("new groups merged in")
+    else:
+        fail(f"merge result missing entries: {merged!r}")
 
-    # 22. User entries merged into /etc/passwd + /etc/shadow
-    print("=== _merge_acct_entries: users merged into passwd + shadow ===")
-    with tempfile.TemporaryDirectory() as rootfs:
-        _write(os.path.join(rootfs, "etc", "passwd"), "root:x:0:0:root:/root:/bin/bash\n")
-        _write(os.path.join(rootfs, "etc", "shadow"), "root:!:19000::::::\n")
-        _write(os.path.join(rootfs, "etc", "group"), "root:x:0:\n")
-        acct = os.path.join(rootfs, "usr", "share", "acct-user")
-        _write(os.path.join(acct, "nobody.passwd"), "nobody:x:65534:65534:Nobody:/:/sbin/nologin")
-        _write(os.path.join(acct, "nobody.shadow"), "nobody:!:19000::::::")
-        _merge_acct_entries(rootfs)
-        passwd = _read(os.path.join(rootfs, "etc", "passwd"))
-        shadow = _read(os.path.join(rootfs, "etc", "shadow"))
-        if ("nobody:x:65534:65534" in passwd
-                and "nobody:!:19000" in shadow
-                and "root:x:0:0" in passwd):
-            ok("user merged into passwd + shadow")
-        else:
-            fail(f"user merge failed: passwd={passwd!r}, shadow={shadow!r}")
+    print("=== _merge_group_files: duplicate group keeps existing ===")
+    merged = _merge_group_files("audio:x:18:alice\n", "audio:x:18:bob\n")
+    audio = [l for l in merged.splitlines() if l.startswith("audio:")]
+    if len(audio) == 1 and "alice" in audio[0] and "bob" in audio[0]:
+        ok("duplicate group: members unioned")
+    else:
+        fail(f"unexpected group dedup: {merged!r}")
 
-    # 23. Duplicate group names not added twice
-    print("=== _merge_acct_entries: duplicate group not added ===")
-    with tempfile.TemporaryDirectory() as rootfs:
-        _write(os.path.join(rootfs, "etc", "group"), "audio:x:63:\n")
-        acct = os.path.join(rootfs, "usr", "share", "acct-group")
-        _write(os.path.join(acct, "audio.group"), "audio:x:63:")
-        _merge_acct_entries(rootfs)
-        content = _read(os.path.join(rootfs, "etc", "group"))
-        count = content.count("audio:")
-        if count == 1:
-            ok("duplicate group not added")
-        else:
-            fail(f"audio appears {count} times")
+    print("=== _merge_group_files: sorted by GID ===")
+    merged = _merge_group_files("", "video:x:39:\naudio:x:18:\nroot:x:0:\n")
+    names = [l.split(":")[0] for l in merged.splitlines() if l]
+    if names == ["root", "audio", "video"]:
+        ok("groups sorted by GID")
+    else:
+        fail(f"order wrong: {names}")
 
-    # 24. Supplementary group membership (.groups files) applied
-    print("=== _merge_acct_entries: supplementary groups applied ===")
-    with tempfile.TemporaryDirectory() as rootfs:
-        _write(os.path.join(rootfs, "etc", "group"),
-               "root:x:0:\naudio:x:63:\nvideo:x:39:\n")
-        _write(os.path.join(rootfs, "etc", "passwd"), "root:x:0:0:root:/root:/bin/bash\n")
-        _write(os.path.join(rootfs, "etc", "shadow"), "root:!:19000::::::\n")
-        acct = os.path.join(rootfs, "usr", "share", "acct-user")
-        _write(os.path.join(acct, "pulse.passwd"),
-               "pulse:x:500:500:PulseAudio:/var/run/pulse:/sbin/nologin")
-        _write(os.path.join(acct, "pulse.shadow"), "pulse:!:19000::::::")
-        _write(os.path.join(acct, "pulse.groups"), "audio,video")
-        _merge_acct_entries(rootfs)
-        content = _read(os.path.join(rootfs, "etc", "group"))
-        # audio line should have pulse as member
-        audio_ok = False
-        video_ok = False
-        for line in content.splitlines():
-            if line.startswith("audio:"):
-                audio_ok = "pulse" in line.split(":")[-1]
-            if line.startswith("video:"):
-                video_ok = "pulse" in line.split(":")[-1]
-        if audio_ok and video_ok:
-            ok("pulse added to audio and video supplementary groups")
-        else:
-            fail(f"supplementary groups not applied: {content!r}")
+    print("=== _merge_passwd_files: new users appended ===")
+    existing = "root:x:0:0:root:/root:/bin/bash\n"
+    incoming = "nobody:x:65534:65534:Nobody:/:/sbin/nologin\n"
+    merged = _merge_passwd_files(existing, incoming)
+    if "root:x:0:0" in merged and "nobody:x:65534" in merged:
+        ok("new users merged in")
+    else:
+        fail(f"merge result missing entries: {merged!r}")
 
-    # 25. No acct dirs = no-op (no crash)
-    print("=== _merge_acct_entries: no acct dirs => no-op ===")
-    with tempfile.TemporaryDirectory() as rootfs:
-        _write(os.path.join(rootfs, "etc", "group"), "root:x:0:\n")
-        _write(os.path.join(rootfs, "etc", "passwd"), "root:x:0:0:root:/root:/bin/bash\n")
-        try:
-            _merge_acct_entries(rootfs)
-            ok("no acct dirs, no crash")
-        except Exception as e:
-            fail(f"raised {e}")
+    print("=== _merge_passwd_files: duplicate user not added twice ===")
+    merged = _merge_passwd_files(
+        "nobody:x:65534:65534:Nobody:/:/sbin/nologin\n",
+        "nobody:x:65534:65534:Nobody:/:/sbin/nologin\n",
+    )
+    if merged.count("nobody:") == 1:
+        ok("duplicate user deduplicated")
+    else:
+        fail(f"nobody appears {merged.count('nobody:')} times")
 
-    # 26. Duplicate user names not added twice
-    print("=== _merge_acct_entries: duplicate user not added ===")
-    with tempfile.TemporaryDirectory() as rootfs:
-        _write(os.path.join(rootfs, "etc", "passwd"),
-               "nobody:x:65534:65534:Nobody:/:/sbin/nologin\n")
-        _write(os.path.join(rootfs, "etc", "shadow"), "nobody:!:19000::::::\n")
-        _write(os.path.join(rootfs, "etc", "group"), "root:x:0:\n")
-        acct = os.path.join(rootfs, "usr", "share", "acct-user")
-        _write(os.path.join(acct, "nobody.passwd"),
-               "nobody:x:65534:65534:Nobody:/:/sbin/nologin")
-        _write(os.path.join(acct, "nobody.shadow"), "nobody:!:19000::::::")
-        _merge_acct_entries(rootfs)
-        passwd = _read(os.path.join(rootfs, "etc", "passwd"))
-        count = passwd.count("nobody:")
-        if count == 1:
-            ok("duplicate user not added")
-        else:
-            fail(f"nobody appears {count} times")
+    print("=== _merge_shadow_files: entries merged ===")
+    merged = _merge_shadow_files("root:!:19000::::::\n", "nobody:!:19000::::::\n")
+    if "root:!:" in merged and "nobody:!:" in merged:
+        ok("shadow entries merged")
+    else:
+        fail(f"shadow merge wrong: {merged!r}")
 
-    # 27. Non-.group files in acct-group dir are ignored
-    print("=== _merge_acct_entries: non-.group files ignored ===")
-    with tempfile.TemporaryDirectory() as rootfs:
-        _write(os.path.join(rootfs, "etc", "group"), "root:x:0:\n")
-        acct = os.path.join(rootfs, "usr", "share", "acct-group")
-        _write(os.path.join(acct, "audio.group"), "audio:x:63:")
-        _write(os.path.join(acct, "README"), "do not parse")
-        _write(os.path.join(acct, "audio.bak"), "bogus:x:999:")
-        _merge_acct_entries(rootfs)
-        content = _read(os.path.join(rootfs, "etc", "group"))
-        if "audio:x:63:" in content and "bogus" not in content and "do not" not in content:
-            ok("non-.group files ignored")
-        else:
-            fail(f"unexpected content: {content!r}")
-
-    # 28. Supplementary group with existing member doesn't duplicate
-    print("=== _merge_acct_entries: supplementary group no duplicate member ===")
-    with tempfile.TemporaryDirectory() as rootfs:
-        _write(os.path.join(rootfs, "etc", "group"),
-               "root:x:0:\naudio:x:63:pulse\n")
-        _write(os.path.join(rootfs, "etc", "passwd"), "root:x:0:0:root:/root:/bin/bash\n")
-        _write(os.path.join(rootfs, "etc", "shadow"), "root:!:19000::::::\n")
-        acct = os.path.join(rootfs, "usr", "share", "acct-user")
-        _write(os.path.join(acct, "pulse.passwd"),
-               "pulse:x:500:500:PulseAudio:/var/run/pulse:/sbin/nologin")
-        _write(os.path.join(acct, "pulse.shadow"), "pulse:!:19000::::::")
-        _write(os.path.join(acct, "pulse.groups"), "audio")
-        _merge_acct_entries(rootfs)
-        content = _read(os.path.join(rootfs, "etc", "group"))
-        for line in content.splitlines():
-            if line.startswith("audio:"):
-                members = line.split(":")[3]
-                count = members.split(",").count("pulse")
-                if count == 1:
-                    ok("pulse not duplicated in audio group")
-                else:
-                    fail(f"pulse appears {count} times in audio members: {line!r}")
-                break
-        else:
-            fail("audio group line not found")
-
-    # 29. Shadow entries not merged when shadow file doesn't exist
-    print("=== _merge_acct_entries: no shadow file => shadow entries skipped ===")
-    with tempfile.TemporaryDirectory() as rootfs:
-        _write(os.path.join(rootfs, "etc", "passwd"), "root:x:0:0:root:/root:/bin/bash\n")
-        _write(os.path.join(rootfs, "etc", "group"), "root:x:0:\n")
-        acct = os.path.join(rootfs, "usr", "share", "acct-user")
-        _write(os.path.join(acct, "daemon.passwd"),
-               "daemon:x:2:2:daemon:/sbin:/sbin/nologin")
-        _write(os.path.join(acct, "daemon.shadow"), "daemon:!:19000::::::")
-        try:
-            _merge_acct_entries(rootfs)
-            passwd = _read(os.path.join(rootfs, "etc", "passwd"))
-            shadow_exists = os.path.isfile(os.path.join(rootfs, "etc", "shadow"))
-            if "daemon:x:2:2" in passwd and not shadow_exists:
-                ok("user added to passwd, shadow skipped (no shadow file)")
-            else:
-                fail(f"unexpected: passwd={passwd!r}, shadow_exists={shadow_exists}")
-        except Exception as e:
-            fail(f"raised {e}")
-
-    # 30. Multiple groups merged in sorted order
-    print("=== _merge_acct_entries: groups merged in sorted order ===")
-    with tempfile.TemporaryDirectory() as rootfs:
-        _write(os.path.join(rootfs, "etc", "group"), "")
-        acct = os.path.join(rootfs, "usr", "share", "acct-group")
-        _write(os.path.join(acct, "video.group"), "video:x:39:")
-        _write(os.path.join(acct, "audio.group"), "audio:x:63:")
-        _write(os.path.join(acct, "cdrom.group"), "cdrom:x:11:")
-        _merge_acct_entries(rootfs)
-        content = _read(os.path.join(rootfs, "etc", "group"))
-        lines = [l for l in content.strip().splitlines() if l]
-        names = [l.split(":")[0] for l in lines]
-        if names == ["audio", "cdrom", "video"]:
-            ok("groups merged in sorted filename order")
-        else:
-            fail(f"order wrong: {names}")
 
     # -- Summary --
     sys.stdout = _real_stdout

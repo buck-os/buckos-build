@@ -244,12 +244,23 @@ def setup_path(args, env, host_path=""):
 
     Requires args parsed by add_path_args().  host_path is the original
     host PATH captured before sanitization (used with --allow-host-path).
-    If --ld-linux was provided, disables posix_spawn in child Python
-    processes to avoid ENOEXEC with padded ELF interpreters.
+    If --ld-linux was provided, portabilizes hermetic-path and
+    path-prepend ELF binaries so they use the sysroot ld-linux + glibc.
     """
+    ld_linux = getattr(args, 'ld_linux', None)
+    scratch = os.environ.get("BUCK_SCRATCH_PATH",
+                             os.environ.get("TMPDIR", "/tmp"))
+
     if args.hermetic_path:
-        env["PATH"] = ":".join(os.path.abspath(p) for p in args.hermetic_path)
-        derive_lib_paths(args.hermetic_path, env)
+        dirs = [os.path.abspath(p) for p in args.hermetic_path]
+        if ld_linux:
+            from portabilize import portabilize_toolchain
+            patchelf = shutil.which("patchelf",
+                                    path=":".join(dirs))
+            dirs = portabilize_toolchain(
+                dirs, ld_linux, patchelf_path=patchelf)
+        env["PATH"] = ":".join(dirs)
+        derive_lib_paths(dirs, env)
     elif args.hermetic_empty:
         env["PATH"] = ""
     elif args.allow_host_path:
@@ -259,11 +270,61 @@ def setup_path(args, env, host_path=""):
               file=sys.stderr)
         sys.exit(1)
     if hasattr(args, 'path_prepend') and args.path_prepend:
-        prepend = ":".join(os.path.abspath(p) for p in args.path_prepend)
+        pp_dirs = [os.path.abspath(p) for p in args.path_prepend]
+        if ld_linux:
+            from portabilize import portabilize_toolchain
+            patchelf = shutil.which("patchelf",
+                                    path=env.get("PATH", ""))
+            pp_dirs = portabilize_toolchain(
+                pp_dirs, ld_linux, patchelf_path=patchelf)
+        prepend = ":".join(pp_dirs)
         env["PATH"] = prepend + (":" + env["PATH"] if env.get("PATH") else "")
-        derive_lib_paths(args.path_prepend, env)
-    if getattr(args, 'ld_linux', None):
+        derive_lib_paths(pp_dirs, env)
+    if ld_linux:
+        _rewrite_toolchain_env(env)
         disable_posix_spawn(env)
+    _ensure_which_shim(env)
+
+
+def _ensure_which_shim(env):
+    """Create a 'which' shim if not already on PATH.
+
+    Many build systems call 'which' for tool detection but it's not
+    available in hermetic environments.  This creates a simple shell
+    script that uses 'command -v' (POSIX builtin) as a drop-in.
+    """
+    if shutil.which("which", path=env.get("PATH", "")):
+        return
+    scratch = os.environ.get("BUCK_SCRATCH_PATH",
+                             os.environ.get("TMPDIR", "/tmp"))
+    shim_dir = os.path.join(scratch, "buckos-shims")
+    shim = os.path.join(shim_dir, "which")
+    if not os.path.exists(shim):
+        os.makedirs(shim_dir, exist_ok=True)
+        with open(shim, "w") as f:
+            f.write("#!/bin/sh\nfor arg; do command -v \"$arg\" || exit 1; done\n")
+        os.chmod(shim, 0o755)
+    env["PATH"] = shim_dir + ":" + env.get("PATH", "")
+
+
+def _rewrite_toolchain_env(env):
+    """Rewrite CC/CXX/AR env values to use portabilized copies from PATH.
+
+    After portabilize_toolchain copies and patches ELF binaries to
+    scratch, the original CC/CXX/AR paths still point to the unpatched
+    originals.  This resolves them to the portabilized copies on PATH.
+    """
+    for var in ("CC", "CXX", "AR"):
+        val = env.get(var, "")
+        if not val:
+            continue
+        parts = val.split()
+        bin_path = parts[0]
+        bin_name = os.path.basename(bin_path)
+        resolved = shutil.which(bin_name, path=env.get("PATH", ""))
+        if resolved and resolved != os.path.abspath(bin_path):
+            parts[0] = resolved
+            env[var] = " ".join(parts)
 
 
 def disable_posix_spawn(env, scratch_dir=None):
@@ -320,7 +381,7 @@ def _is_sysroot_lib_dir(d):
     return False
 
 
-def derive_lib_paths(bin_dirs, env):
+def derive_lib_paths(bin_dirs, env, skip_ld_library_path=False):
     """Derive LD_LIBRARY_PATH and tool data dirs from bin dirs.
 
     Given {prefix}/bin, adds {prefix}/lib and {prefix}/lib64 to
@@ -364,7 +425,7 @@ def derive_lib_paths(bin_dirs, env):
             if os.path.isdir(gconv) and "GCONV_PATH" not in env:
                 env["GCONV_PATH"] = gconv
                 break
-    if lib_parts:
+    if lib_parts and not skip_ld_library_path:
         existing = env.get("LD_LIBRARY_PATH", "")
         merged = ":".join(lib_parts)
         env["LD_LIBRARY_PATH"] = (merged + ":" + existing).rstrip(":") if existing else merged
@@ -475,19 +536,13 @@ def find_buckos_shell(env):
 
 
 def preferred_linker_flag(env):
-    """Return -fuse-ld=mold if ld.mold is on PATH, else empty string.
+    """Return preferred linker flag, or empty string.
 
-    Respects existing -fuse-ld= in LDFLAGS or CFLAGS — packages like GRUB
-    that need -fuse-ld=bfd (freestanding modules incompatible with mold)
-    can set extra_ldflags/extra_cflags and won't be overridden.
+    Disabled for now — mold requires portabilization of both the
+    linker binary and its interaction with gcc's collect2.  Use the
+    default ld.bfd from the toolchain until mold portabilization
+    is implemented.
     """
-    # Don't override if a linker is already explicitly selected.
-    for var in ("LDFLAGS", "CFLAGS"):
-        if "-fuse-ld=" in env.get(var, ""):
-            return ""
-    for d in env.get("PATH", "").split(":"):
-        if d and os.path.isfile(os.path.join(d, "ld.mold")):
-            return "-fuse-ld=mold"
     return ""
 
 

@@ -21,6 +21,9 @@ chmod -R u+w . 2>/dev/null || true
 # Configure libltdl standalone to generate config.h and ltdl.h
 cd libltdl
 
+# Prevent automake version mismatch from triggering regeneration
+touch aclocal.m4 configure config.h.in Makefile.in 2>/dev/null || true
+
 CROSS_ARGS=""
 if [ "${CROSS_COMPILING:-false}" = "true" ] && [ -n "${CHOST:-}" ]; then
     CROSS_ARGS="--host=${CHOST}"
@@ -71,27 +74,27 @@ ln -sf libltdl.so.7 libltdl.so
 
 echo "Built shared library:"
 ls -la libltdl.so*
-file libltdl.so.7.3.2
+file libltdl.so.7.3.2 2>/dev/null || true
 nm -D libltdl.so.7.3.2 2>/dev/null | grep 'lt_dl' | head -10 || true
 
-mkdir -p "$DESTDIR/usr/lib64"
-mkdir -p "$DESTDIR/usr/include"
-mkdir -p "$DESTDIR/usr/include/libltdl"
+mkdir -p "$OUT/usr/lib64"
+mkdir -p "$OUT/usr/include"
+mkdir -p "$OUT/usr/include/libltdl"
 
 # Install shared library (copy the real file first, then symlinks)
-install -m755 libltdl.so.7.3.2 "$DESTDIR/usr/lib64/"
-ln -sf libltdl.so.7.3.2 "$DESTDIR/usr/lib64/libltdl.so.7"
-ln -sf libltdl.so.7 "$DESTDIR/usr/lib64/libltdl.so"
+install -m755 libltdl.so.7.3.2 "$OUT/usr/lib64/"
+ln -sf libltdl.so.7.3.2 "$OUT/usr/lib64/libltdl.so.7"
+ln -sf libltdl.so.7 "$OUT/usr/lib64/libltdl.so"
 
 # Install headers
-cp ltdl.h "$DESTDIR/usr/include/"
-cp libltdl/lt_dlloader.h "$DESTDIR/usr/include/libltdl/"
-cp libltdl/lt_error.h "$DESTDIR/usr/include/libltdl/"
-cp libltdl/lt_system.h "$DESTDIR/usr/include/libltdl/"
+cp ltdl.h "$OUT/usr/include/"
+cp libltdl/lt_dlloader.h "$OUT/usr/include/libltdl/"
+cp libltdl/lt_error.h "$OUT/usr/include/libltdl/"
+cp libltdl/lt_system.h "$OUT/usr/include/libltdl/"
 
 # Create pkg-config file for meson to find
-mkdir -p "$DESTDIR/usr/lib64/pkgconfig"
-cat > "$DESTDIR/usr/lib64/pkgconfig/ltdl.pc" << 'PCEOF'
+mkdir -p "$OUT/usr/lib64/pkgconfig"
+cat > "$OUT/usr/lib64/pkgconfig/ltdl.pc" << 'PCEOF'
 prefix=/usr
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib64
