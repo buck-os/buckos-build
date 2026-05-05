@@ -1,0 +1,136 @@
+#!/bin/sh
+# BuckOS Live CD initramfs init script
+# This runs from the initramfs to find and mount the live filesystem
+
+# Mount essential filesystems
+mount -t devtmpfs devtmpfs /dev 2>/dev/null || mount -t tmpfs tmpfs /dev
+mount -t proc proc /proc
+mount -t sysfs sysfs /sys
+
+# Set up console - try multiple devices for both x86_64 and aarch64
+# ttyAMA0 is for aarch64 QEMU virt machine, ttyS0 for x86_64
+for console in /dev/console /dev/ttyAMA0 /dev/ttyS0 /dev/tty0; do
+    if [ -c "$console" ]; then
+        exec 0<"$console" 1>"$console" 2>"$console"
+        break
+    fi
+done
+
+# Print banner
+echo ""
+echo "==================================="
+echo "  BuckOS Live CD - Early Boot"
+echo "==================================="
+echo ""
+
+# Load essential modules
+# Find kernel version from /lib/modules
+echo "Loading kernel modules..."
+KVER=$(ls /lib/modules/ 2>/dev/null | head -1)
+if [ -n "$KVER" ] && [ -d "/lib/modules/$KVER" ]; then
+    MODDIR="/lib/modules/$KVER/kernel"
+    # Virtio modules (for QEMU)
+    insmod "$MODDIR/drivers/virtio/virtio.ko" 2>/dev/null || true
+    insmod "$MODDIR/drivers/virtio/virtio_ring.ko" 2>/dev/null || true
+    insmod "$MODDIR/drivers/virtio/virtio_pci.ko" 2>/dev/null || true
+    insmod "$MODDIR/drivers/block/virtio_blk.ko" 2>/dev/null || true
+    insmod "$MODDIR/drivers/scsi/virtio_scsi.ko" 2>/dev/null || true
+    # Block and storage modules
+    insmod "$MODDIR/drivers/block/loop.ko" 2>/dev/null || true
+    insmod "$MODDIR/drivers/cdrom/cdrom.ko" 2>/dev/null || true
+    insmod "$MODDIR/drivers/scsi/sr_mod.ko" 2>/dev/null || true
+    insmod "$MODDIR/drivers/usb/storage/usb-storage.ko" 2>/dev/null || true
+    # Filesystem modules
+    insmod "$MODDIR/fs/squashfs/squashfs.ko" 2>/dev/null || true
+    insmod "$MODDIR/fs/overlayfs/overlay.ko" 2>/dev/null || true
+    insmod "$MODDIR/fs/isofs/isofs.ko" 2>/dev/null || true
+    # ATA modules (for x86_64)
+    insmod "$MODDIR/drivers/ata/ata_piix.ko" 2>/dev/null || true
+    insmod "$MODDIR/drivers/ata/ata_generic.ko" 2>/dev/null || true
+fi
+
+# Wait for CD/USB device to appear
+echo "Waiting for boot media..."
+sleep 3
+
+# Show available block devices
+echo "Available block devices:"
+ls /dev/sd* /dev/sr* /dev/vd* /dev/hd* /dev/nvme* 2>/dev/null || echo "  (none found yet)"
+
+# Find the CD-ROM or USB device
+FOUND=""
+for device in /dev/sr0 /dev/sr1 /dev/hda /dev/hdb /dev/hdc /dev/hdd \
+              /dev/sda /dev/sdb /dev/sdc /dev/vda /dev/vdb \
+              /dev/nvme0n1 /dev/nvme0n1p1; do
+    if [ -e "$device" ]; then
+        echo "Trying $device..."
+        mkdir -p /mnt/cdrom
+        if mount -o ro "$device" /mnt/cdrom 2>/dev/null; then
+            if [ -f /mnt/cdrom/live/filesystem.squashfs ]; then
+                echo "Found live filesystem on $device"
+                FOUND="$device"
+                break
+            fi
+            umount /mnt/cdrom
+        fi
+    fi
+done
+
+# Try partition scan
+if [ -z "$FOUND" ]; then
+    for device in /dev/sda1 /dev/sda2 /dev/sdb1 /dev/sdb2 /dev/vda1 /dev/nvme0n1p1; do
+        if [ -e "$device" ]; then
+            echo "Trying $device..."
+            if mount -o ro "$device" /mnt/cdrom 2>/dev/null; then
+                if [ -f /mnt/cdrom/live/filesystem.squashfs ]; then
+                    echo "Found live filesystem on $device"
+                    FOUND="$device"
+                    break
+                fi
+                umount /mnt/cdrom
+            fi
+        fi
+    done
+fi
+
+if [ -z "$FOUND" ]; then
+    echo "ERROR: Could not find live filesystem!"
+    echo "Available devices:"
+    ls -la /dev/sd* /dev/sr* /dev/vd* /dev/hd* /dev/nvme* 2>/dev/null || true
+    echo ""
+    echo "Dropping to emergency shell..."
+    exec /bin/sh
+fi
+
+# Mount the squashfs
+echo "Mounting squashfs..."
+mkdir -p /mnt/squashfs
+if ! mount -t squashfs -o loop,ro /mnt/cdrom/live/filesystem.squashfs /mnt/squashfs; then
+    echo "ERROR: Failed to mount squashfs!"
+    exec /bin/sh
+fi
+
+# Set up overlay for writable layer
+echo "Setting up overlay filesystem..."
+mkdir -p /mnt/overlay-upper /mnt/overlay-work /newroot
+mount -t tmpfs tmpfs /mnt/overlay-upper
+mkdir -p /mnt/overlay-upper/upper /mnt/overlay-upper/work
+
+if ! mount -t overlay overlay -o lowerdir=/mnt/squashfs,upperdir=/mnt/overlay-upper/upper,workdir=/mnt/overlay-upper/work /newroot; then
+    echo "WARNING: Overlay mount failed, using squashfs directly (read-only mode)"
+    mount --bind /mnt/squashfs /newroot
+fi
+
+# Move mount points to new root
+mkdir -p /newroot/mnt/cdrom /newroot/dev /newroot/proc /newroot/sys
+mount --move /dev /newroot/dev
+mount --move /proc /newroot/proc
+mount --move /sys /newroot/sys
+mount --move /mnt/cdrom /newroot/mnt/cdrom
+
+echo "Switching to live filesystem..."
+exec switch_root /newroot /sbin/init
+
+# If switch_root fails
+echo "ERROR: switch_root failed!"
+exec /bin/sh

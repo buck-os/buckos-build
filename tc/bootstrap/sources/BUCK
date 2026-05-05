@@ -1,0 +1,14 @@
+"""Shared source tarballs for bootstrap pipelines.
+
+Used by both the x86_64 stage2 cross-compiler and the aarch64 cross-compiler.
+Centralised here so that stage2 build targets are not pulled into the graph
+when a prebuilt seed is configured.
+"""
+
+alias(name = "binutils-src", actual = "//packages/linux/lang/binutils:binutils-src")
+alias(name = "linux-src", actual = "//packages/linux/kernel/src:linux-6.18-src")
+alias(name = "gcc-src", actual = "//packages/linux/lang/gcc:gcc-native-src")
+alias(name = "glibc-src", actual = "//packages/linux/core/glibc:glibc-src")
+alias(name = "gmp-src", actual = "//packages/linux/system/libs/utility/gmp:gmp-src")
+alias(name = "mpfr-src", actual = "//packages/linux/system/libs/utility/mpfr:mpfr-src")
+alias(name = "mpc-src", actual = "//packages/linux/system/libs/utility/mpc:mpc-src")

@@ -1,0 +1,14 @@
+[Unit]
+Description=Find and Mount Live Boot Media
+DefaultDependencies=no
+After=systemd-udevd.service systemd-udev-settle.service
+Before=initrd-root-fs.target
+Wants=systemd-udevd.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/lib/systemd/scripts/initrd-live-media.sh
+
+[Install]
+RequiredBy=initrd-root-fs.target

@@ -171,7 +171,7 @@ system_set(
     profile = "hardened",
     additions = [
         "//packages/linux/net-vpn:wireguard-tools",
-        "//packages/linux/system/apps:fail2ban",
+        "system//apps:fail2ban",
     ],
     description = "Hardened server with VPN and fail2ban",
 )
@@ -197,7 +197,7 @@ package_set(
     name = "my-tools",
     packages = [
         "//packages/linux/editors:neovim",
-        "//packages/linux/system/apps:tmux",
+        "system//apps:tmux",
         "//packages/linux/shells:zsh",
     ],
     inherits = ["@minimal"],
@@ -560,8 +560,8 @@ system_set(
     name = "secure-server",
     profile = "hardened",
     additions = [
-        "//packages/linux/system/apps:aide",
-        "//packages/linux/system/apps:fail2ban",
+        "system//apps:aide",
+        "system//apps:fail2ban",
         "//packages/linux/net-vpn:wireguard-tools",
     ],
     removals = [
@@ -599,7 +599,7 @@ combined_set(
     ],
     removals = [
         "//packages/linux/editors:emacs",
-        "//packages/linux/system/docs:texinfo",
+        "system//docs:texinfo",
     ],
     description = "CI/CD runner with container support",
 )

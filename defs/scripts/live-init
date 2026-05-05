@@ -1,0 +1,323 @@
+#!/bin/sh
+# BuckOS Live System Init Script
+# This script runs from initramfs to set up the live environment
+# by mounting the squashfs root filesystem and pivoting to it.
+
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+log() {
+    echo -e "${GREEN}[LIVE]${NC} $1"
+}
+
+warn() {
+    echo -e "${YELLOW}[WARN]${NC} $1"
+}
+
+error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# Mount essential filesystems
+mount_essential() {
+    log "Mounting essential filesystems..."
+    mount -t proc proc /proc 2>/dev/null || true
+    mount -t sysfs sysfs /sys 2>/dev/null || true
+    mount -t devtmpfs devtmpfs /dev 2>/dev/null || mount -t tmpfs tmpfs /dev
+
+    # Create essential device nodes if devtmpfs failed
+    if [ ! -c /dev/null ]; then
+        mknod -m 666 /dev/null c 1 3
+        mknod -m 666 /dev/zero c 1 5
+        mknod -m 666 /dev/random c 1 8
+        mknod -m 666 /dev/urandom c 1 9
+        mknod -m 600 /dev/console c 5 1
+        mknod -m 666 /dev/tty c 5 0
+        mknod -m 660 /dev/ttyS0 c 4 64
+    fi
+
+    mkdir -p /dev/pts /run
+    mount -t devpts devpts /dev/pts 2>/dev/null || true
+    mount -t tmpfs tmpfs /run 2>/dev/null || true
+}
+
+# Load kernel modules needed for USB/SCSI boot
+load_modules() {
+    log "Loading kernel modules..."
+
+    # Find kernel version from /lib/modules
+    KVER=$(ls /lib/modules/ 2>/dev/null | head -1)
+    if [ -z "$KVER" ] || [ ! -d "/lib/modules/$KVER" ]; then
+        warn "No kernel modules found in /lib/modules"
+        return 0
+    fi
+
+    MODDIR="/lib/modules/$KVER/kernel"
+
+    # USB host controller drivers (XHCI for USB 3.0, EHCI/OHCI/UHCI for USB 2.0/1.1)
+    # These are usually built-in, but load if available as modules
+    for mod in xhci-hcd xhci-pci ehci-hcd ehci-pci ohci-hcd ohci-pci uhci-hcd; do
+        modprobe "$mod" 2>/dev/null || true
+    done
+
+    # USB storage driver - REQUIRED for USB boot on real hardware
+    modprobe usb-storage 2>/dev/null || true
+    modprobe uas 2>/dev/null || true
+
+    # SCSI disk support (usually built-in)
+    modprobe sd_mod 2>/dev/null || true
+    modprobe sr_mod 2>/dev/null || true
+
+    # Block device drivers
+    modprobe loop 2>/dev/null || true
+
+    # Filesystem modules
+    modprobe squashfs 2>/dev/null || true
+    modprobe overlay 2>/dev/null || true
+    modprobe isofs 2>/dev/null || true
+    modprobe vfat 2>/dev/null || true
+
+    # VirtIO modules (for QEMU)
+    modprobe virtio 2>/dev/null || true
+    modprobe virtio_pci 2>/dev/null || true
+    modprobe virtio_blk 2>/dev/null || true
+    modprobe virtio_scsi 2>/dev/null || true
+
+    # NVMe support
+    modprobe nvme 2>/dev/null || true
+
+    # SATA/AHCI (usually built-in but just in case)
+    modprobe ahci 2>/dev/null || true
+    modprobe ata_piix 2>/dev/null || true
+    modprobe ata_generic 2>/dev/null || true
+
+    # Wait for USB devices to settle after module loading
+    log "Waiting for USB devices to settle..."
+    sleep 3
+
+    # Trigger udev if available to enumerate devices
+    if command -v udevadm >/dev/null 2>&1; then
+        udevadm trigger 2>/dev/null || true
+        udevadm settle --timeout=5 2>/dev/null || true
+    fi
+}
+
+# Find the boot device (CD/USB with the live filesystem)
+find_boot_device() {
+    log "Searching for live boot media..."
+
+    # Try to find the device with our live filesystem
+    # Check common locations: CD-ROM, USB drives, IDE (for QEMU), VirtIO, NVMe
+    for dev in /dev/sr0 /dev/sr1 /dev/cdrom \
+               /dev/hda /dev/hdb /dev/hdc /dev/hdd \
+               /dev/sda /dev/sda1 /dev/sdb /dev/sdb1 \
+               /dev/nvme0n1 /dev/nvme0n1p1 /dev/vda /dev/vda1; do
+        if [ -b "$dev" ]; then
+            log "Checking $dev..."
+            mkdir -p /mnt/cdrom
+            if mount -o ro "$dev" /mnt/cdrom 2>/dev/null; then
+                if [ -f /mnt/cdrom/live/filesystem.squashfs ]; then
+                    log "Found live filesystem on $dev"
+                    BOOT_DEVICE="$dev"
+                    return 0
+                fi
+                umount /mnt/cdrom 2>/dev/null || true
+            fi
+        fi
+    done
+
+    # Also check for findfs command (by label)
+    if command -v findfs >/dev/null 2>&1; then
+        for label in BUCKOS_LIVE BUCKOS; do
+            dev=$(findfs "LABEL=$label" 2>/dev/null) || true
+            if [ -n "$dev" ] && [ -b "$dev" ]; then
+                log "Found device by label $label: $dev"
+                mkdir -p /mnt/cdrom
+                if mount -o ro "$dev" /mnt/cdrom 2>/dev/null; then
+                    if [ -f /mnt/cdrom/live/filesystem.squashfs ]; then
+                        log "Found live filesystem on $dev (label: $label)"
+                        BOOT_DEVICE="$dev"
+                        return 0
+                    fi
+                    umount /mnt/cdrom 2>/dev/null || true
+                fi
+            fi
+        done
+    fi
+
+    return 1
+}
+
+# Mount the live squashfs filesystem
+mount_live_rootfs() {
+    log "Setting up live root filesystem..."
+
+    # Create mount points
+    mkdir -p /mnt/live /mnt/root /mnt/overlay/upper /mnt/overlay/work
+
+    # Mount the squashfs
+    if ! mount -t squashfs -o ro /mnt/cdrom/live/filesystem.squashfs /mnt/live; then
+        error "Failed to mount squashfs filesystem"
+        return 1
+    fi
+    log "Mounted squashfs filesystem"
+
+    # Create an overlay filesystem for writability
+    # Lower = squashfs (read-only), Upper = tmpfs (read-write)
+    mount -t tmpfs tmpfs /mnt/overlay
+
+    mkdir -p /mnt/overlay/upper /mnt/overlay/work
+
+    if mount -t overlay overlay -o \
+        lowerdir=/mnt/live,upperdir=/mnt/overlay/upper,workdir=/mnt/overlay/work \
+        /mnt/root; then
+        log "Created overlay filesystem for live session"
+    else
+        warn "Overlay not supported, falling back to read-only mode"
+        mount --bind /mnt/live /mnt/root
+    fi
+
+    return 0
+}
+
+# Set up the live environment
+setup_live_environment() {
+    log "Configuring live environment..."
+
+    # Mount essential filesystems in the new root
+    mkdir -p /mnt/root/proc /mnt/root/sys /mnt/root/dev /mnt/root/run
+    mount --move /proc /mnt/root/proc 2>/dev/null || mount -t proc proc /mnt/root/proc
+    mount --move /sys /mnt/root/sys 2>/dev/null || mount -t sysfs sysfs /mnt/root/sys
+    mount --move /dev /mnt/root/dev 2>/dev/null || mount -t devtmpfs devtmpfs /mnt/root/dev
+    mount --move /run /mnt/root/run 2>/dev/null || mount -t tmpfs tmpfs /mnt/root/run
+
+    log "Live environment configured"
+}
+
+# Switch to the new root filesystem
+switch_root() {
+    log "Switching to live root filesystem..."
+
+    # Move backing mounts into new root so switch_root can clean up
+    # the initramfs. The overlay FS keeps internal superblock refs,
+    # so moving the underlying mounts is safe.
+    mkdir -p /mnt/root/run/live/medium /mnt/root/run/live/rootfs /mnt/root/run/live/overlay
+
+    # Move ISO/USB media mount
+    if mountpoint -q /mnt/cdrom 2>/dev/null; then
+        mount --move /mnt/cdrom /mnt/root/run/live/medium 2>/dev/null || true
+    fi
+
+    # Move squashfs mount
+    if mountpoint -q /mnt/live 2>/dev/null; then
+        mount --move /mnt/live /mnt/root/run/live/rootfs 2>/dev/null || true
+    fi
+
+    # Move overlay tmpfs (upper/work dirs)
+    if mountpoint -q /mnt/overlay 2>/dev/null; then
+        mount --move /mnt/overlay /mnt/root/run/live/overlay 2>/dev/null || true
+    fi
+
+    # Clean up remaining initramfs mounts
+    umount /dev/pts 2>/dev/null || true
+    cd /mnt/root
+
+    # Find init in new root - prefer systemd if available
+    if [ -x "/mnt/root/usr/lib/systemd/systemd" ]; then
+        INIT="/usr/lib/systemd/systemd"
+    elif [ -x "/mnt/root/lib/systemd/systemd" ]; then
+        INIT="/lib/systemd/systemd"
+    elif [ -x "/mnt/root/sbin/init" ]; then
+        INIT="/sbin/init"
+    elif [ -x "/mnt/root/bin/init" ]; then
+        INIT="/bin/init"
+    else
+        INIT="/sbin/init"
+    fi
+
+    log "Using init: $INIT"
+
+    # Pivot root or switch_root
+    if command -v switch_root >/dev/null 2>&1; then
+        exec switch_root /mnt/root "$INIT"
+    else
+        # Fallback: use pivot_root
+        mkdir -p /mnt/root/mnt/initramfs
+        cd /mnt/root
+        pivot_root . mnt/initramfs
+        exec chroot . "$INIT" <dev/console >dev/console 2>&1
+    fi
+}
+
+# Emergency shell
+emergency_shell() {
+    error "Boot failed! Dropping to emergency shell..."
+    error "You can try to manually mount the live filesystem."
+    echo ""
+    echo "Available block devices:"
+    ls -la /dev/sd* /dev/sr* /dev/nvme* /dev/vd* 2>/dev/null || true
+    echo ""
+    echo "Try: mount /dev/<device> /mnt/cdrom"
+    echo "     mount -t squashfs /mnt/cdrom/live/filesystem.squashfs /mnt/live"
+    echo ""
+    exec /bin/sh
+}
+
+# Main
+main() {
+    echo ""
+    echo -e "${BLUE}╔════════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║                    BuckOS Live System Boot                     ║${NC}"
+    echo -e "${BLUE}╚════════════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+
+    mount_essential
+    parse_cmdline
+    load_modules
+
+    if ! find_boot_device; then
+        error "Could not find live boot media!"
+        emergency_shell
+    fi
+
+    if ! mount_live_rootfs; then
+        error "Could not mount live filesystem!"
+        emergency_shell
+    fi
+
+    setup_live_environment
+
+    switch_root
+
+    # Should not reach here
+    emergency_shell
+}
+
+# Parse kernel command line for options
+parse_cmdline() {
+    [ -f /proc/cmdline ] || return 0
+    for arg in $(cat /proc/cmdline); do
+        case "$arg" in
+            live)
+                # Live boot mode (default)
+                ;;
+            toram)
+                # Copy squashfs to RAM (faster but uses more memory)
+                TORAM=1
+                ;;
+            debug)
+                # Enable debug output
+                set -x
+                ;;
+        esac
+    done
+}
+
+# Run main
+main

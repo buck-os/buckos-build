@@ -40,15 +40,16 @@ def calculate_config_hash(target: str) -> str:
     ).stdout.strip()
     config_parts.append(f"platform:{platform}")
 
-    # Get USE flags from config
+    # Get USE flags from .buckconfig [use] section
     try:
-        with open("config/use_config.bzl", "r") as f:
-            use_config = f.read()
-            import re
-            use_flags = re.findall(r'INSTALL_USE_FLAGS\s*=\s*\[(.*?)\]', use_config, re.DOTALL)
-            if use_flags:
-                config_parts.append(f"use:{use_flags[0]}")
-    except FileNotFoundError:
+        import configparser
+        bc = configparser.ConfigParser()
+        bc.read(".buckconfig")
+        if bc.has_section("use"):
+            flags = [k for k, v in bc.items("use") if v.lower() in ("true", "1", "yes")]
+            if flags:
+                config_parts.append(f"use:{','.join(sorted(flags))}")
+    except Exception:
         pass
 
     # Get compiler version

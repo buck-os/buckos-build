@@ -1,0 +1,101 @@
+"""
+Execution platform definitions and bootstrap mode constraints for BuckOS.
+
+The :platforms target aggregates available execution platforms and is
+registered in .buckconfig:
+
+    [build]
+    execution_platforms = //tc/exec:platforms
+
+When buckos is a subcell in a monorepo, the monorepo root registers
+buckos execution platforms alongside its own:
+
+    [build]
+    execution_platforms = //exec:platforms, buckos//tc/exec:platforms
+"""
+
+load("//tc:defs.bzl", "buckos_execution_platforms")
+
+# ── Toolchain mode constraints ──────────────────────────────────────
+#
+# TOOLCHAIN_ATTRS select() uses these to choose between toolchains:
+#   is-bootstrap-mode → host PATH toolchain (escape hatch)
+#   DEFAULT           → seed toolchain (toolchains//:buckos)
+
+constraint_setting(
+    name = "bootstrap-mode-setting",
+    visibility = ["PUBLIC"],
+)
+
+constraint_value(
+    name = "bootstrap-mode-true",
+    constraint_setting = ":bootstrap-mode-setting",
+    visibility = ["PUBLIC"],
+)
+
+constraint_value(
+    name = "bootstrap-mode-false",
+    constraint_setting = ":bootstrap-mode-setting",
+    visibility = ["PUBLIC"],
+)
+
+config_setting(
+    name = "is-bootstrap-mode",
+    constraint_values = [":bootstrap-mode-true"],
+    visibility = ["PUBLIC"],
+)
+
+constraint_value(
+    name = "host-target-mode",
+    constraint_setting = ":bootstrap-mode-setting",
+    visibility = ["PUBLIC"],
+)
+
+config_setting(
+    name = "is-host-target",
+    constraint_values = [":host-target-mode"],
+    visibility = ["PUBLIC"],
+)
+
+# Host-tools mode: buckos compiler + host PATH fallback, no host_tools
+# dep.  Used by host_tools_aggregator to build base tools without
+# creating a cycle back to the seed toolchain.
+constraint_value(
+    name = "host-tools-mode",
+    constraint_setting = ":bootstrap-mode-setting",
+    visibility = ["PUBLIC"],
+)
+
+config_setting(
+    name = "is-host-tools-mode",
+    constraint_values = [":host-tools-mode"],
+    visibility = ["PUBLIC"],
+)
+
+# ── Transition targets ─────────────────────────────────────────────
+
+load("//tc:transitions.bzl", "bootstrap_transition", "default_transition", "host_tools_transition")
+
+default_transition(
+    name = "default-transition",
+    visibility = ["PUBLIC"],
+)
+
+bootstrap_transition(
+    name = "bootstrap-transition",
+    visibility = ["PUBLIC"],
+)
+
+host_tools_transition(
+    name = "host-tools-transition",
+    visibility = ["PUBLIC"],
+)
+
+# ── Platform registry ────────────────────────────────────────────────
+
+buckos_execution_platforms(
+    name = "platforms",
+    remote_cache_enabled = read_config("buckos", "remote_cache", "") == "true",
+    remote_execution_enabled = read_config("buckos", "remote_execution", "") == "true",
+    visibility = ["PUBLIC"],
+)

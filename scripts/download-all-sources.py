@@ -16,6 +16,7 @@ Usage:
 """
 
 import argparse
+import configparser
 import hashlib
 import json
 import os
@@ -29,6 +30,42 @@ from pathlib import Path
 from threading import Lock, Semaphore
 from typing import Dict, List, Optional, Set, Tuple
 from urllib.parse import urlparse
+
+
+def read_buckconfig_download_settings() -> Dict:
+    """Read download settings from .buckconfig.
+
+    Returns:
+        Dict with 'max_concurrent', 'rate_limit', and 'timeout' settings
+    """
+    defaults = {
+        'max_concurrent': 4,
+        'rate_limit': 5.0,
+        'timeout': 30,
+    }
+
+    # Look for .buckconfig in current directory and parent directories
+    search_paths = [
+        Path.cwd() / '.buckconfig',
+        Path(__file__).parent.parent / '.buckconfig',
+    ]
+
+    for buckconfig_path in search_paths:
+        if buckconfig_path.exists():
+            try:
+                config = configparser.ConfigParser()
+                config.read(buckconfig_path)
+
+                if config.has_section('download'):
+                    return {
+                        'max_concurrent': config.getint('download', 'max_concurrent', fallback=defaults['max_concurrent']),
+                        'rate_limit': config.getfloat('download', 'rate_limit', fallback=defaults['rate_limit']),
+                        'timeout': config.getint('download', 'timeout', fallback=defaults['timeout']),
+                    }
+            except (configparser.Error, ValueError) as e:
+                print(f"Warning: Failed to parse {buckconfig_path}: {e}", file=sys.stderr)
+
+    return defaults
 
 
 class RateLimiter:
@@ -294,6 +331,7 @@ def download_file(
     rate_limiter: Optional[RateLimiter] = None,
     stats: Optional[DownloadStats] = None,
     skip_verification: bool = False,
+    timeout: int = 30,
 ) -> bool:
     """Download a file with checksum verification.
 
@@ -303,6 +341,8 @@ def download_file(
         sha256: Expected SHA256 checksum
         rate_limiter: Rate limiter instance
         stats: Download statistics tracker
+        skip_verification: Skip SHA256 verification
+        timeout: Connection timeout in seconds
 
     Returns:
         True if download successful
@@ -331,7 +371,7 @@ def download_file(
             print(f"Downloading {url} -> {output_path} (attempt {attempt + 1}/{max_retries})")
 
             # Use urllib with timeout
-            with urllib.request.urlopen(url, timeout=30) as response:
+            with urllib.request.urlopen(url, timeout=timeout) as response:
                 total_size = int(response.headers.get("content-length", 0))
 
                 # Download to temporary file
@@ -376,7 +416,7 @@ def download_file(
 
 
 def create_mirror_structure(
-    downloads: List[Tuple[str, str, str]], output_dir: Path, workers: int, rate_limit: float, skip_verification: bool = False
+    downloads: List[Tuple[str, str, str]], output_dir: Path, workers: int, rate_limit: float, skip_verification: bool = False, timeout: int = 30
 ) -> None:
     """Download all files to a mirror directory structure.
 
@@ -385,6 +425,8 @@ def create_mirror_structure(
         output_dir: Output directory
         workers: Number of concurrent workers
         rate_limit: Requests per second limit
+        skip_verification: Skip SHA256 verification
+        timeout: Connection timeout in seconds
     """
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -425,7 +467,7 @@ def create_mirror_structure(
 
             # Submit download task
             future = executor.submit(
-                download_file, url, output_path, sha256, rate_limiter, stats, skip_verification
+                download_file, url, output_path, sha256, rate_limiter, stats, skip_verification, timeout
             )
             futures[future] = (target, url, sha256, output_path)
 
@@ -457,8 +499,12 @@ def create_mirror_structure(
 
 
 def main():
+    # Read config settings from .buckconfig
+    config_settings = read_buckconfig_download_settings()
+
     parser = argparse.ArgumentParser(
-        description="Download all source files from Buck2 targets"
+        description="Download all source files from Buck2 targets",
+        epilog="Settings can also be configured in .buckconfig under [download] section.",
     )
     parser.add_argument(
         "--output-dir",
@@ -471,15 +517,21 @@ def main():
         "--workers",
         "-w",
         type=int,
-        default=4,
-        help="Number of concurrent download workers (default: 4)",
+        default=None,
+        help=f"Number of concurrent download workers (default: {config_settings['max_concurrent']} from .buckconfig)",
     )
     parser.add_argument(
         "--rate-limit",
         "-r",
         type=float,
-        default=5.0,
-        help="Maximum downloads per second (default: 5.0)",
+        default=None,
+        help=f"Maximum downloads per second (default: {config_settings['rate_limit']} from .buckconfig)",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=int,
+        default=None,
+        help=f"Connection timeout in seconds (default: {config_settings['timeout']} from .buckconfig)",
     )
     parser.add_argument(
         "--targets",
@@ -503,11 +555,17 @@ def main():
 
     args = parser.parse_args()
 
+    # Apply config defaults if CLI args not provided
+    workers = args.workers if args.workers is not None else config_settings['max_concurrent']
+    rate_limit = args.rate_limit if args.rate_limit is not None else config_settings['rate_limit']
+    timeout = args.timeout if args.timeout is not None else config_settings['timeout']
+
     print("BuckOS Source Downloader")
     print("=" * 60)
     print(f"Output directory: {args.output_dir}")
-    print(f"Workers: {args.workers}")
-    print(f"Rate limit: {args.rate_limit} req/sec")
+    print(f"Workers: {workers}" + (" (from .buckconfig)" if args.workers is None else " (from CLI)"))
+    print(f"Rate limit: {rate_limit} req/sec" + (" (from .buckconfig)" if args.rate_limit is None else " (from CLI)"))
+    print(f"Timeout: {timeout}s" + (" (from .buckconfig)" if args.timeout is None else " (from CLI)"))
     print(f"Target pattern: {args.targets}")
     print(f"Method: {args.method}")
     print("=" * 60)
@@ -541,7 +599,7 @@ def main():
         return 0
 
     # Download all files
-    create_mirror_structure(downloads, args.output_dir, args.workers, args.rate_limit, args.skip_verification)
+    create_mirror_structure(downloads, args.output_dir, workers, rate_limit, args.skip_verification, timeout)
 
     return 0
 

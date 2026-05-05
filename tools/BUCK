@@ -1,0 +1,309 @@
+python_library(
+    name = "_env",
+    srcs = ["_env.py"],
+    base_module = "",
+    visibility = ["PUBLIC"],
+    deps = [":portabilize"],
+)
+
+python_library(
+    name = "portabilize",
+    srcs = ["portabilize.py"],
+    base_module = "",
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "extract",
+    main = "extract.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "patch_helper",
+    main = "patch_helper.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "configure_helper",
+    main = "configure_helper.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "cmake_helper",
+    main = "cmake_helper.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "meson_helper",
+    main = "meson_helper.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "build_helper",
+    main = "build_helper.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "install_helper",
+    main = "install_helper.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "strip_helper",
+    main = "strip_helper.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "stamp_helper",
+    main = "stamp_helper.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "ima_helper",
+    main = "ima_helper.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "cargo_helper",
+    main = "cargo_helper.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "go_helper",
+    main = "go_helper.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "perl_helper",
+    main = "perl_helper.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "python_helper",
+    main = "python_helper.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "mozbuild_helper",
+    main = "mozbuild_helper.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "bootstrap_gcc_configure",
+    main = "bootstrap_gcc_configure.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "bootstrap_glibc_configure",
+    main = "bootstrap_glibc_configure.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "bootstrap_python_configure",
+    main = "bootstrap_python_configure.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "merge_host_tools",
+    main = "merge_host_tools.py",
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "rewrite_interps",
+    main = "rewrite_interps.py",
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "toolchain_pack",
+    main = "toolchain_pack.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "toolchain_unpack",
+    main = "toolchain_unpack.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "vm_test_runner",
+    main = "vm_test_runner.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "kernel_config",
+    main = "kernel_config.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "kernel_headers",
+    main = "kernel_headers.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "kernel_build",
+    main = "kernel_build.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "kernel_btf_headers",
+    main = "kernel_btf_headers.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "kernel_modules_install",
+    main = "kernel_modules_install.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "iso_helper",
+    main = "iso_helper.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "rootfs_helper",
+    main = "rootfs_helper.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "acct_helper",
+    main = "acct_helper.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "initramfs_builder",
+    main = "initramfs_builder.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "portabilize_run",
+    main = "portabilize_run.py",
+    deps = [":portabilize"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "dracut_initramfs_helper",
+    main = "dracut_initramfs_helper.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "stage2_wrapper_helper",
+    main = "stage2_wrapper_helper.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "disk_image_helper",
+    main = "disk_image_helper.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "stage3_helper",
+    main = "stage3_helper.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "boot_script_helper",
+    main = "boot_script_helper.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "binary_install_helper",
+    main = "binary_install_helper.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "gen_runtime_env",
+    main = "gen_runtime_env.py",
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "gen_test_host_env",
+    main = "gen_test_host_env.py",
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "cache-stats",
+    main = "cache_stats.py",
+    visibility = ["PUBLIC"],
+)
+
+export_file(
+    name = "sbom.bxl",
+    src = "sbom.bxl",
+    visibility = ["PUBLIC"],
+)

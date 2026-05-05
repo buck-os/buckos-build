@@ -51,21 +51,22 @@ This specification defines how to create BuckOS packages for software that uses 
 ## Package Types Covered
 
 This specification covers:
-- **`simple_package()`** - Basic Makefiles without configure
-- **`autotools_package()`** - Full Autotools support with USE flags
-- **`bootstrap_package()`** - Stage 0 bootstrap packages
+- **`package(build_rule = "simple")`** - Basic Makefiles without configure
+- **`package(build_rule = "autotools")`** - Full Autotools support with USE flags
+- **`package(build_rule = "bootstrap")`** - Stage 0 bootstrap packages
 
 ## Quick Start
 
 ### Minimal Simple Package
 
 ```python
-load("//defs:package_defs.bzl", "simple_package")
+load("//defs:package.bzl", "package")
 
-simple_package(
+package(
+    build_rule = "simple",
     name = "hello",
     version = "2.12",
-    src_uri = "https://ftp.gnu.org/gnu/hello/hello-2.12.tar.gz",
+    url = "https://ftp.gnu.org/gnu/hello/hello-2.12.tar.gz",
     sha256 = "cf04af86dc085268c5f4470fbae49b18afbc221b78096aab842d934a76bad0ab",
 )
 ```
@@ -73,20 +74,21 @@ simple_package(
 ### Autotools Package with USE Flags
 
 ```python
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "bash",
     version = "5.2.15",
-    src_uri = "https://ftp.gnu.org/gnu/bash/bash-5.2.15.tar.gz",
+    url = "https://ftp.gnu.org/gnu/bash/bash-5.2.15.tar.gz",
     sha256 = "13720965b5f4fc3a0d4b61dd37e7565c741da9a5be24edc2ae00182fc1b3588c",
     iuse = ["nls", "readline", "examples"],
     deps = [
         "//packages/linux/core:ncurses",
     ],
     use_configure = {
-        "nls": ["--enable-nls", "--disable-nls"],
-        "readline": ["--with-installed-readline", "--without-installed-readline"],
+        "nls": ("--enable-nls", "--disable-nls"),
+        "readline": ("--with-installed-readline", "--without-installed-readline"),
     },
     maintainers = ["shell@buckos.org"],
 )
@@ -100,7 +102,7 @@ All packages **MUST** include:
 |-------|------|-------------|
 | `name` | string | Package name (lowercase, alphanumeric + hyphens) |
 | `version` | string | Package version (SemVer recommended) |
-| `src_uri` | string | Source tarball download URL |
+| `url` | string | Source tarball download URL |
 | `sha256` | string | SHA-256 checksum of source tarball |
 
 ## Optional Fields
@@ -124,7 +126,7 @@ All packages **MUST** include:
 | `build_deps` | list[string] | [] | Build-time only dependencies |
 | `patches` | list[string] | [] | Patch files to apply |
 
-### USE Flag Support (autotools_package only)
+### USE Flag Support (autotools build_rule only)
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -153,7 +155,7 @@ All packages **MUST** include:
 ### 1. Source Download
 
 ```
-http_file(name = "{name}-src", url = src_uri, sha256 = sha256)
+http_file(name = "{name}-src", url = url, sha256 = sha256)
 ```
 
 ### 2. Source Extraction
@@ -203,9 +205,9 @@ iuse = ["ssl", "ipv6", "doc", "examples"]
 
 ```python
 use_configure = {
-    "ssl": ["--with-ssl", "--without-ssl"],
-    "ipv6": ["--enable-ipv6", "--disable-ipv6"],
-    "doc": ["--enable-doc", "--disable-doc"],
+    "ssl": ("--with-ssl", "--without-ssl"),
+    "ipv6": ("--enable-ipv6", "--disable-ipv6"),
+    "doc": ("--enable-doc", "--disable-doc"),
 }
 ```
 
@@ -213,8 +215,8 @@ use_configure = {
 
 ```python
 use_deps = {
-    "ssl": ["//packages/linux/network:openssl"],
-    "doc": ["//packages/linux/dev-util:doxygen"],
+    "ssl": "//packages/linux/network:openssl",
+    "doc": "//packages/linux/dev-util:doxygen",
 }
 ```
 
@@ -274,24 +276,25 @@ packages/linux/
 ### BUCK File Example
 
 ```python
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "vim",
     version = "9.0.1",
-    src_uri = "https://github.com/vim/vim/archive/v9.0.1.tar.gz",
+    url = "https://github.com/vim/vim/archive/v9.0.1.tar.gz",
     sha256 = "abc123...",
     iuse = ["python", "perl", "ruby", "X", "gtk"],
     deps = [
         "//packages/linux/core:ncurses",
     ],
     use_configure = {
-        "python": ["--enable-pythoninterp", "--disable-pythoninterp"],
-        "X": ["--with-x", "--without-x"],
+        "python": ("--enable-pythoninterp", "--disable-pythoninterp"),
+        "X": ("--with-x", "--without-x"),
     },
     use_deps = {
-        "python": ["//packages/linux/dev-lang:python"],
-        "X": ["//packages/linux/x11-libs:libX11"],
+        "python": "//packages/linux/dev-lang:python",
+        "X": "//packages/linux/x11-libs:libX11",
     },
     maintainers = ["editor@buckos.org"],
 )
@@ -302,12 +305,13 @@ autotools_package(
 Special packages for stage 0 bootstrap:
 
 ```python
-load("//defs:package_defs.bzl", "bootstrap_package")
+load("//defs:package.bzl", "package")
 
-bootstrap_package(
+package(
+    build_rule = "bootstrap",
     name = "m4",
     version = "1.4.19",
-    src_uri = "https://ftp.gnu.org/gnu/m4/m4-1.4.19.tar.xz",
+    url = "https://ftp.gnu.org/gnu/m4/m4-1.4.19.tar.xz",
     sha256 = "63aede5c6d33b6d9b13511cd0be2cac046f2e70fd0a07aa9573a04a82783af96",
     # Bootstrap packages have minimal dependencies
     # and are built with host toolchain
@@ -368,7 +372,7 @@ gpg_key = "0x1234567890ABCDEF",
 1. **Name**: Must match directory name
 2. **Version**: Must be valid version string
 3. **SHA-256**: Must be 64 hex characters
-4. **src_uri**: Must be valid URL
+4. **url**: Must be valid URL
 5. **deps**: Must be valid Buck2 targets
 
 ### Recommended Checks
@@ -393,7 +397,8 @@ patches = select({
 ### Multi-Output Packages
 
 ```python
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "ncurses",
     # ... standard fields ...
     outs = {
@@ -406,7 +411,8 @@ autotools_package(
 ### Cross-Compilation
 
 ```python
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "busybox",
     # ... standard fields ...
     configure_args = [
@@ -422,7 +428,7 @@ Converting Gentoo ebuilds:
 
 | Gentoo ebuild | BuckOS equivalent |
 |---------------|-------------------|
-| `SRC_URI` | `src_uri` |
+| `SRC_URI` | `url` |
 | `DEPEND` | `build_deps` |
 | `RDEPEND` | `deps` |
 | `IUSE` | `iuse` |

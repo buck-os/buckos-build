@@ -1,14 +1,15 @@
 """
-Template for simple_package
+Template for package(build_rule = "simple")
 Based on PACKAGE-SPEC-001: Simple and Autotools Packages
 """
 
-load("//defs:package_defs.bzl", "simple_package")
+load("//defs:package.bzl", "package")
 
-simple_package(
+package(
+    build_rule = "simple",
     name = "PACKAGE_NAME",
     version = "VERSION",
-    src_uri = "SOURCE_URL",
+    url = "SOURCE_URL",
     sha256 = "SHA256_CHECKSUM",
 
     # Optional: Build configuration

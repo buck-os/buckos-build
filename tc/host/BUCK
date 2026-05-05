@@ -1,0 +1,26 @@
+"""
+Host PATH toolchain: wraps whatever cc/c++/ar/strip/make is on PATH.
+
+Used as the bootstrap fallback when the bootstrap configuration
+transition is active — host tool targets build with host PATH tools
+to break the circular dependency with the seed toolchain.
+
+Also usable directly during initial bootstrap when no seed exists yet.
+"""
+
+load("//tc:toolchain_rules.bzl", "buckos_toolchain")
+
+buckos_toolchain(
+    name = "host-toolchain",
+    cc = "cc",
+    cxx = "c++",
+    ar = "ar",
+    strip_bin = "strip",
+    make = "make",
+    pkg_config = "pkg-config",
+    target_triple = select({
+        "//platforms:is_aarch64": "aarch64-linux-gnu",
+        "DEFAULT": "x86_64-linux-gnu",
+    }),
+    visibility = ["PUBLIC"],
+)

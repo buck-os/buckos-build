@@ -1,0 +1,27 @@
+load("//defs/rules:transforms.bzl", "stamp_package")
+load("//tests/fixtures:test_package.bzl", "test_c_library")
+
+# Compile testlib.c into a shared library install layout with PackageInfo
+test_c_library(
+    name = "testlib-build",
+    src = "testlib.c",
+    pkg_name = "testlib",
+    lib_name = "libtestlib.so",
+    version = "0.1.0",
+)
+
+# Stamped (provenance on)
+stamp_package(
+    name = "testlib",
+    package = ":testlib-build",
+    enabled = True,
+    visibility = ["PUBLIC"],
+)
+
+# No stamp (provenance off) — passthrough
+stamp_package(
+    name = "testlib-no-stamp",
+    package = ":testlib-build",
+    enabled = False,
+    visibility = ["PUBLIC"],
+)

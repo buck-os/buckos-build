@@ -1,0 +1,425 @@
+"""
+autotools_package rule: ./configure && make && make install.
+
+Six discrete cacheable actions — Buck2 can skip any phase whose
+inputs haven't changed.
+
+1. src_unpack  — obtain source artifact from source dep
+2. src_prepare — apply patches (zero-cost passthrough when no patches)
+3. src_configure — run ./configure via configure_helper.py
+   (skip_configure=True copies source without running ./configure,
+   for Kconfig-based packages like busybox or the kernel)
+   (pre_configure_cmds run in the source dir before ./configure,
+   for autoreconf or other pre-configure setup)
+4. src_compile — run make via build_helper.py
+   (pre_build_cmds run in the build dir before the main make invocation,
+   for Kconfig initialisation or other setup)
+5. src_install — run make install via install_helper.py
+   (post_install_cmds run in the prefix dir after make install)
+"""
+
+load("//defs:providers.bzl", "BuildToolchainInfo", "PackageInfo")
+load("//defs/rules:_common.bzl",
+     "COMMON_PACKAGE_ATTRS",
+     "add_flag_file", "build_package_tsets", "collect_dep_tsets",
+     "collect_host_path_children",
+     "package_linker_cflags", "package_linker_ldflags",
+     "write_bin_dirs", "write_compile_flags", "write_lib_dirs_with_hosts",
+     "write_link_flags", "write_pkg_config_paths",
+)
+load("//defs:toolchain_helpers.bzl", "toolchain_env_args", "toolchain_extra_cflags", "toolchain_extra_ldflags", "toolchain_ld_linux_args", "toolchain_path_args")
+load("//defs:host_tools.bzl", "host_tool_path_args")
+
+# ── Phase helpers ─────────────────────────────────────────────────────
+
+def _src_prepare(ctx, source):
+    """Apply patches.  Separate action so unpatched source stays cached."""
+    if not ctx.attrs.patches:
+        return source  # No patches — zero-cost passthrough
+
+    output = ctx.actions.declare_output("prepared", dir = True)
+    cmd = cmd_args(ctx.attrs._patch_tool[RunInfo])
+    cmd.add("--source-dir", source)
+    cmd.add("--output-dir", output.as_output())
+    for p in ctx.attrs.patches:
+        cmd.add("--patch", p)
+    for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+
+    ctx.actions.run(cmd, category = "autotools_prepare", identifier = ctx.attrs.name, allow_cache_upload = True)
+    return output
+
+def _src_configure(ctx, source, cflags_file = None, ldflags_file = None,
+                   pkg_config_file = None, lib_dirs_file = None,
+                   bin_dirs_file = None):
+    """Run ./configure with toolchain env and dep flags.
+
+    When skip_configure is True, only copies the source tree without
+    running ./configure.  Used for Kconfig-based packages where the
+    configuration is handled by make targets in the build phase.
+
+    Dep flags are propagated via tset projection files (cflags_file etc.)
+    instead of manual dep iteration — the Python helper reads one flag
+    per line and merges them into CFLAGS, LDFLAGS, PKG_CONFIG_PATH, PATH.
+    """
+    output = ctx.actions.declare_output("configured", dir = True)
+    cmd = cmd_args(ctx.attrs._configure_tool[RunInfo])
+    cmd.add("--source-dir", source)
+    cmd.add("--output-dir", output.as_output())
+
+    # Inject toolchain CC/CXX/AR
+    tc = ctx.attrs._toolchain[BuildToolchainInfo]
+    for env_arg in toolchain_env_args(ctx):
+        cmd.add("--env", env_arg)
+
+    # Hand-written configure scripts (GNU ed, lzip) ignore CC from env
+    # and only accept it as a command-line KEY=VALUE arg.  Pass --cc/--cxx
+    # so configure_helper injects them as configure args.
+    if ctx.attrs.cc_as_configure_arg:
+        cmd.add("--cc", cmd_args(tc.cc.args, delimiter = " "))
+        cmd.add("--cxx", cmd_args(tc.cxx.args, delimiter = " "))
+    if ctx.attrs.skip_cc_auto_arg:
+        cmd.add("--skip-cc-arg")
+
+    # Hermetic PATH and ld-linux from seed toolchain
+    for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
+        cmd.add(arg)
+
+    # Inject target triple so post-install scripts can derive arch-specific values
+    cmd.add("--env", "TARGET_TRIPLE=" + tc.target_triple)
+    cmd.add("--env", "CHOST=" + tc.target_triple)
+
+    # Inject USE flag and user-specified environment variables
+    for entry in ctx.attrs.use_env:
+        cmd.add("--env", entry)
+    for key, value in ctx.attrs.env.items():
+        cmd.add("--env", "{}={}".format(key, value))
+
+    if ctx.attrs.configure_script:
+        cmd.add("--configure-script", ctx.attrs.configure_script)
+
+    # Pre-configure commands (run before ./configure in the source tree)
+    for pre_cmd in ctx.attrs.pre_configure_cmds:
+        cmd.add("--pre-cmd", pre_cmd)
+
+    # Add host_deps bin dirs to PATH (build tools like cmake, m4, etc.)
+    for arg in host_tool_path_args(ctx):
+        cmd.add(arg)
+
+    if ctx.attrs.skip_configure:
+        cmd.add("--skip-configure")
+    else:
+        # Default prefix for FHS layout
+        cmd.add("--configure-arg=--prefix=/usr")
+
+        # Auto-inject --host and --build for cross-compilation.  Setting
+        # both to the target triple tells autotools "building ON target
+        # FOR target" — the cross-compiler makes this true.  When host
+        # == build, autotools stays in native mode (no cross-link quirks
+        # like binutils gas failing to find in-tree libbfd) while the
+        # correct system tuple is set for config.h / feature detection.
+        # Packages with hand-written configure that reject --host (e.g.
+        # zlib) set skip_host_arg = True.  Skip when configure_args
+        # already contains --host (e.g. Python sets its own).
+        has_host = False
+        has_build = False
+        for arg in ctx.attrs.configure_args:
+            if arg.startswith("--host"):
+                has_host = True
+            if arg.startswith("--build"):
+                has_build = True
+        if not ctx.attrs.skip_host_arg and not has_host:
+            cmd.add(cmd_args("--configure-arg=--host=", tc.target_triple, delimiter = ""))
+        if not ctx.attrs.skip_host_arg and not has_build:
+            cmd.add(cmd_args("--configure-arg=--build=", tc.target_triple, delimiter = ""))
+
+        # Configure arguments (use = syntax so argparse handles --prefix=... values)
+        for arg in ctx.attrs.configure_args:
+            cmd.add(cmd_args("--configure-arg=", arg, delimiter = ""))
+
+        # Toolchain-injected CFLAGS / LDFLAGS (e.g. -fuse-ld=mold)
+        for flag in toolchain_extra_cflags(ctx):
+            cmd.add(cmd_args("--cflags=", flag, delimiter = ""))
+        for flag in toolchain_extra_ldflags(ctx):
+            cmd.add(cmd_args("--ldflags=", flag, delimiter = ""))
+
+        # Extra CFLAGS / LDFLAGS from this package's attrs + linker/freestanding
+        for flag in list(ctx.attrs.extra_cflags) + package_linker_cflags(ctx):
+            cmd.add(cmd_args("--cflags=", flag, delimiter = ""))
+        for flag in list(ctx.attrs.extra_ldflags) + package_linker_ldflags(ctx):
+            cmd.add(cmd_args("--ldflags=", flag, delimiter = ""))
+
+        # --with-NAME=<prefix>/usr and --with-NAME-lib=<prefix>/usr/lib64
+        # flags from configure_prefix_deps.
+        # GCC needs both: --with-gmp for headers, --with-gmp-lib for the
+        # library directory (defaults to <prefix>/lib which misses lib64).
+        libdir = "lib" if tc.target_triple.startswith("aarch64") else "lib64"
+        for flag_name, dep in ctx.attrs.configure_prefix_deps.items():
+            if PackageInfo in dep:
+                prefix = dep[PackageInfo].prefix
+            else:
+                prefix = dep[DefaultInfo].default_outputs[0]
+            fmt = "--with-" + flag_name + "={}/usr"
+            cmd.add(cmd_args("--configure-arg=", cmd_args(prefix, format = fmt), delimiter = ""))
+            fmt_lib = "--with-" + flag_name + "-lib={}/usr/" + libdir
+            cmd.add(cmd_args("--configure-arg=", cmd_args(prefix, format = fmt_lib), delimiter = ""))
+
+        # Dep flags via tset projection files (replaces manual dep iteration).
+        # The helper reads flags from files and applies to CFLAGS, CPPFLAGS,
+        # CXXFLAGS, LDFLAGS, PKG_CONFIG_PATH, and PATH.
+        add_flag_file(cmd, "--cflags-file", cflags_file)
+        add_flag_file(cmd, "--ldflags-file", ldflags_file)
+        add_flag_file(cmd, "--pkg-config-file", pkg_config_file)
+
+        add_flag_file(cmd, "--lib-dirs-file", lib_dirs_file)
+
+        # Dep bin dirs appended to PATH for *-config discovery scripts
+        # (gpg-error-config, curl-config, etc.).  Appended, not prepended,
+        # so seed host-tools always take priority.
+        add_flag_file(cmd, "--path-append-file", bin_dirs_file)
+
+    ctx.actions.run(cmd, category = "autotools_configure", identifier = ctx.attrs.name, allow_cache_upload = True)
+    return output
+
+def _src_compile(ctx, configured, cflags_file = None, ldflags_file = None,
+                 pkg_config_file = None, lib_dirs_file = None,
+                 bin_dirs_file = None):
+    """Run make (or equivalent) in the configured source tree.
+
+    When pre_build_cmds is non-empty, each command runs in the build
+    directory before the main make invocation (e.g. Kconfig setup).
+    """
+    output = ctx.actions.declare_output("built", dir = True)
+    cmd = cmd_args(ctx.attrs._build_tool[RunInfo])
+    cmd.add("--build-dir", configured)
+    cmd.add("--output-dir", output.as_output())
+    # Inject toolchain CC/CXX/AR
+    for env_arg in toolchain_env_args(ctx):
+        cmd.add("--env", env_arg)
+
+    # Hermetic PATH and ld-linux from seed toolchain
+    for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
+        cmd.add(arg)
+
+    # Toolchain-injected CFLAGS / LDFLAGS for build phase
+    _tc_cflags = list(toolchain_extra_cflags(ctx)) + list(ctx.attrs.extra_cflags) + package_linker_cflags(ctx)
+    _tc_ldflags = list(toolchain_extra_ldflags(ctx)) + list(ctx.attrs.extra_ldflags) + package_linker_ldflags(ctx)
+    if _tc_cflags:
+        cmd.add("--env", cmd_args("CFLAGS=", cmd_args(_tc_cflags, delimiter = " "), delimiter = ""))
+    if _tc_ldflags:
+        cmd.add("--env", cmd_args("LDFLAGS=", cmd_args(_tc_ldflags, delimiter = " "), delimiter = ""))
+
+    # Dep flags via tset projection files
+    add_flag_file(cmd, "--cflags-file", cflags_file)
+    add_flag_file(cmd, "--ldflags-file", ldflags_file)
+    add_flag_file(cmd, "--pkg-config-file", pkg_config_file)
+    add_flag_file(cmd, "--lib-dirs-file", lib_dirs_file)
+    add_flag_file(cmd, "--path-append-file", bin_dirs_file)
+
+    # Add host_deps bin dirs to PATH
+    for arg in host_tool_path_args(ctx):
+        cmd.add(arg)
+
+    # Inject USE flag and user-specified environment variables
+    for entry in ctx.attrs.use_env:
+        cmd.add("--env", entry)
+    for key, value in ctx.attrs.env.items():
+        cmd.add("--env", "{}={}".format(key, value))
+
+    # Suppress autotools regeneration — build_helper.py resets all timestamps
+    # to epoch, so make thinks generated files (configure, Makefile.in) are stale.
+    # Override the autotools tool variables so make uses `true` (no-op) instead
+    # of trying to run aclocal/automake/autoconf which may not be available.
+    for var in ["ACLOCAL=true", "AUTOMAKE=true", "AUTOCONF=true", "AUTOHEADER=true", "MAKEINFO=true"]:
+        cmd.add(cmd_args("--make-arg=", var, delimiter = ""))
+    # When skip_configure is True, there's no ./configure --prefix=/usr.
+    # Pass PREFIX=/usr to make so Makefile-based packages use the standard
+    # buckos install prefix (consistent with the autoconf default on line 92).
+    if ctx.attrs.skip_configure:
+        cmd.add("--make-arg=PREFIX=/usr")
+
+    if ctx.attrs.build_subdir:
+        cmd.add("--build-subdir", ctx.attrs.build_subdir)
+
+    for pre_cmd in ctx.attrs.pre_build_cmds:
+        cmd.add("--pre-cmd", pre_cmd)
+    for arg in ctx.attrs.make_args:
+        cmd.add(cmd_args("--make-arg=", arg, delimiter = ""))
+
+    ctx.actions.run(cmd, category = "autotools_compile", identifier = ctx.attrs.name, allow_cache_upload = True)
+    return output
+
+def _src_install(ctx, built, cflags_file = None, ldflags_file = None,
+                 pkg_config_file = None, lib_dirs_file = None,
+                 bin_dirs_file = None):
+    """Run make install DESTDIR=... into the output prefix.
+
+    install_prefix_var overrides the make variable name for the install
+    prefix (default: DESTDIR).  Busybox uses CONFIG_PREFIX instead.
+    post_install_cmds run in the prefix directory after make install.
+    """
+    output = ctx.actions.declare_output("installed", dir = True)
+    cmd = cmd_args(ctx.attrs._install_tool[RunInfo])
+    cmd.add("--build-dir", built)
+    cmd.add("--prefix", output.as_output())
+
+    # Inject toolchain CC/CXX/AR
+    for env_arg in toolchain_env_args(ctx):
+        cmd.add("--env", env_arg)
+
+    # Hermetic PATH and ld-linux from seed toolchain
+    for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
+        cmd.add(arg)
+
+    # Toolchain-injected CFLAGS / LDFLAGS for install phase
+    _tc_cflags = list(toolchain_extra_cflags(ctx)) + list(ctx.attrs.extra_cflags) + package_linker_cflags(ctx)
+    _tc_ldflags = list(toolchain_extra_ldflags(ctx)) + list(ctx.attrs.extra_ldflags) + package_linker_ldflags(ctx)
+    if _tc_cflags:
+        cmd.add("--env", cmd_args("CFLAGS=", cmd_args(_tc_cflags, delimiter = " "), delimiter = ""))
+    if _tc_ldflags:
+        cmd.add("--env", cmd_args("LDFLAGS=", cmd_args(_tc_ldflags, delimiter = " "), delimiter = ""))
+
+    # Dep flags via tset projection files
+    add_flag_file(cmd, "--cflags-file", cflags_file)
+    add_flag_file(cmd, "--ldflags-file", ldflags_file)
+    add_flag_file(cmd, "--pkg-config-file", pkg_config_file)
+    add_flag_file(cmd, "--lib-dirs-file", lib_dirs_file)
+    add_flag_file(cmd, "--path-append-file", bin_dirs_file)
+
+    # Add host_deps bin dirs to PATH
+    for arg in host_tool_path_args(ctx):
+        cmd.add(arg)
+
+    # Inject target triple so post-install scripts can derive arch-specific values
+    _tc_install = ctx.attrs._toolchain[BuildToolchainInfo]
+    cmd.add("--env", "TARGET_TRIPLE=" + _tc_install.target_triple)
+    cmd.add("--env", "CHOST=" + _tc_install.target_triple)
+
+    # Inject USE flag and user-specified environment variables
+    for entry in ctx.attrs.use_env:
+        cmd.add("--env", entry)
+    for key, value in ctx.attrs.env.items():
+        cmd.add("--env", "{}={}".format(key, value))
+
+    if ctx.attrs.build_subdir:
+        cmd.add("--build-subdir", ctx.attrs.build_subdir)
+    if ctx.attrs.install_prefix_var:
+        cmd.add("--destdir-var", ctx.attrs.install_prefix_var)
+    # Override install targets when explicit ordering is needed (e.g.
+    # e2fsprogs: install-shlibs must finish before install-progs).
+    for target in ctx.attrs.install_targets:
+        cmd.add("--make-target", target)
+    # When skip_configure is True, pass PREFIX=/usr to install (same as compile).
+    if ctx.attrs.skip_configure:
+        cmd.add("--make-arg=PREFIX=/usr")
+
+    # Suppress autotools regeneration during install (same as compile phase)
+    for var in ["ACLOCAL=true", "AUTOMAKE=true", "AUTOCONF=true", "AUTOHEADER=true", "MAKEINFO=true"]:
+        cmd.add(cmd_args("--make-arg=", var, delimiter = ""))
+    for arg in ctx.attrs.make_args:
+        cmd.add(cmd_args("--make-arg=", arg, delimiter = ""))
+    for arg in ctx.attrs.install_args:
+        cmd.add(cmd_args("--make-arg=", arg, delimiter = ""))
+
+    # Post-install commands (run in the prefix dir after make install)
+    for post_cmd in ctx.attrs.post_install_cmds:
+        cmd.add("--post-cmd", post_cmd)
+
+    ctx.actions.run(cmd, category = "autotools_install", identifier = ctx.attrs.name, allow_cache_upload = True)
+    return output
+
+# ── Rule implementation ───────────────────────────────────────────────
+
+def _autotools_package_impl(ctx):
+    # Phase 1: src_unpack — obtain source from dep
+    source = ctx.attrs.source[DefaultInfo].default_outputs[0]
+
+    # Phase 2: src_prepare — apply patches
+    prepared = _src_prepare(ctx, source)
+
+    # Collect dep-only tsets and write flag files for build phases.
+    # These contain transitive dep flags (includes, libs, pkgconfig)
+    # that replace the old manual dep iteration loops.
+    dep_compile, dep_link, dep_path = collect_dep_tsets(ctx)
+    cflags_file = write_compile_flags(ctx, dep_compile)
+    ldflags_file = write_link_flags(ctx, dep_link)
+    pkg_config_file = write_pkg_config_paths(ctx, dep_compile)
+    host_path_children = collect_host_path_children(ctx)
+    lib_dirs_file = write_lib_dirs_with_hosts(ctx, dep_path, host_path_children)
+    bin_dirs_file = write_bin_dirs(ctx, dep_path)
+
+    # Phase 3: src_configure
+    configured = _src_configure(ctx, prepared, cflags_file, ldflags_file,
+                                pkg_config_file, lib_dirs_file, bin_dirs_file)
+
+    # Phase 4: src_compile
+    built = _src_compile(ctx, configured, cflags_file, ldflags_file,
+                         pkg_config_file, lib_dirs_file, bin_dirs_file)
+
+    # Phase 5: src_install
+    installed = _src_install(ctx, built, cflags_file, ldflags_file,
+                             pkg_config_file, lib_dirs_file, bin_dirs_file)
+
+    # Build transitive sets
+    compile_tset, link_tset, path_tset, runtime_tset = build_package_tsets(ctx, installed)
+
+    # Don't use project() for sub-paths — they may not exist in every
+    # package (e.g. zlib has usr/lib64 but not usr/lib).  Store the
+    # prefix only; consumers derive sub-paths from it.
+    pkg_info = PackageInfo(
+        name = ctx.attrs.name,
+        version = ctx.attrs.version,
+        prefix = installed,
+        libraries = ctx.attrs.libraries,
+        cflags = ctx.attrs.extra_cflags,
+        ldflags = ctx.attrs.extra_ldflags,
+        compile_info = compile_tset,
+        link_info = link_tset,
+        path_info = path_tset,
+        runtime_deps = runtime_tset,
+        license = ctx.attrs.license,
+        src_uri = ctx.attrs.src_uri,
+        src_sha256 = ctx.attrs.src_sha256,
+        homepage = ctx.attrs.homepage,
+        supplier = "Organization: BuckOS",
+        description = ctx.attrs.description,
+        cpe = ctx.attrs.cpe,
+    )
+
+    return [DefaultInfo(default_output = installed), pkg_info]
+
+# ── Rule definition ───────────────────────────────────────────────────
+
+autotools_package = rule(
+    impl = _autotools_package_impl,
+    attrs = COMMON_PACKAGE_ATTRS | {
+        # Autotools-specific
+        "configure_prefix_deps": attrs.dict(attrs.string(), attrs.dep(), default = {}),
+        "configure_script": attrs.option(attrs.string(), default = None),
+        "skip_configure": attrs.bool(default = False),
+        "cc_as_configure_arg": attrs.bool(default = False),
+        "skip_cc_auto_arg": attrs.bool(default = False),
+        "skip_host_arg": attrs.bool(default = False),
+        "build_subdir": attrs.option(attrs.string(), default = None),
+        "pre_build_cmds": attrs.list(attrs.string(), default = []),
+        "make_args": attrs.list(attrs.string(), default = []),
+        "install_args": attrs.list(attrs.string(), default = []),
+        "install_targets": attrs.list(attrs.string(), default = []),
+        "install_prefix_var": attrs.option(attrs.string(), default = None),
+        "_configure_tool": attrs.default_only(
+            attrs.exec_dep(default = "//tools:configure_helper"),
+        ),
+        "_build_tool": attrs.default_only(
+            attrs.exec_dep(default = "//tools:build_helper"),
+        ),
+        "_install_tool": attrs.default_only(
+            attrs.exec_dep(default = "//tools:install_helper"),
+        ),
+    },
+)

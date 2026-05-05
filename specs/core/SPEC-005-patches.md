@@ -105,15 +105,10 @@ buckos-build/
 Patches can be applied directly in package definitions:
 
 ```python
-load("//defs:package_defs.bzl", "configure_make_package", "download_source")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "mypackage-src",
-    src_uri = "https://example.com/mypackage-1.0.tar.gz",
-    sha256 = "...",
-)
-
-configure_make_package(
+package(
+    build_rule = "autotools",
     name = "mypackage",
     source = ":mypackage-src",
     version = "1.0",
@@ -128,12 +123,13 @@ configure_make_package(
 
 ### Using the Patch Helpers
 
-The `package_defs.bzl` provides ebuild-style patch helpers:
+The `package.bzl` provides ebuild-style patch helpers:
 
 ```python
-load("//defs:package_defs.bzl", "epatch", "eapply", "eapply_user")
+load("//defs:package.bzl", "epatch", "eapply", "eapply_user")
 
-configure_make_package(
+package(
+    build_rule = "autotools",
     name = "mypackage",
     source = ":mypackage-src",
     version = "1.0",
@@ -160,7 +156,7 @@ load("//defs:use_flags.bzl", "use_package")
 use_package(
     name = "openssl",
     version = "3.2.0",
-    src_uri = "...",
+    url = "...",
     sha256 = "...",
     iuse = ["bindist", "ktls", "static-libs"],
     use_defaults = [],
@@ -268,7 +264,7 @@ cve-2024-xxxx.patch
 Define patch order in Buck:
 
 ```python
-load("//defs:package_defs.bzl", "ebuild_package")
+load("//defs:package.bzl", "package")
 
 PATCH_ORDER = [
     # Core patches first
@@ -295,7 +291,8 @@ def ordered_patches():
             cmds.append('patch -p1 < "$FILESDIR/{}"'.format(patch))
     return "\n".join(cmds)
 
-ebuild_package(
+package(
+    build_rule = "ebuild",
     name = "mypackage",
     version = "1.0",
     source = ":mypackage-src",
@@ -447,7 +444,8 @@ Apply patches based on target platform:
 ```python
 load("//defs:platform_defs.bzl", "PLATFORM_LINUX", "PLATFORM_BSD", "platform_select")
 
-configure_make_package(
+package(
+    build_rule = "autotools",
     name = "mypackage",
     source = ":mypackage-src",
     version = "1.0",
@@ -521,7 +519,7 @@ diff -ruN original/ modified/ > my-fix.patch
 ### Check Patch Validity
 
 ```python
-load("//defs:package_defs.bzl", "ebegin", "eend")
+load("//defs:package.bzl", "ebegin", "eend")
 
 def validate_patches(patches):
     """Validate that patches apply cleanly."""
@@ -564,7 +562,7 @@ multi_version_package(
     versions = {
         "3.2.0": {
             "slot": "3",
-            "src_uri": "...",
+            "url": "...",
             "sha256": "...",
             # Version-specific patches
             "patches": [
@@ -573,7 +571,7 @@ multi_version_package(
         },
         "1.1.1w": {
             "slot": "1.1",
-            "src_uri": "...",
+            "url": "...",
             "sha256": "...",
             # Different patches for older version
             "patches": [
@@ -648,7 +646,8 @@ filegroup(
 )
 
 # In packages/linux/dev-libs/openssl/BUCK
-configure_make_package(
+package(
+    build_rule = "autotools",
     name = "openssl",
     source = ":openssl-src",
     version = "3.2.0",
@@ -687,15 +686,16 @@ MUSL_CONFIG = package_config(
 
 ```python
 # myoverlay/packages/www-servers/nginx/BUCK
-load("//defs:package_defs.bzl", "configure_make_package", "download_source", "epatch")
+load("//defs:package.bzl", "package", "download_source", "epatch")
 
 download_source(
     name = "nginx-src",
-    src_uri = "https://nginx.org/download/nginx-1.25.3.tar.gz",
+    url = "https://nginx.org/download/nginx-1.25.3.tar.gz",
     sha256 = "...",
 )
 
-configure_make_package(
+package(
+    build_rule = "autotools",
     name = "nginx",
     source = ":nginx-src",
     version = "1.25.3",

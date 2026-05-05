@@ -1,0 +1,616 @@
+load("//defs/rules:buckos_test.bzl", "buckos_test")
+load("//defs/rules:runtime_env.bzl", "runtime_env")
+load("//defs/rules:test_host_env.bzl", "test_host_env")
+
+# Test targets — run with: buck2 test //tests:
+
+# Expose seed host-tools (make, file, cc, etc.) to tests via PATH wrapper.
+# With seed: wrapper sets PATH + LD_LIBRARY_PATH from host-tools.
+# Without seed: wrapper is a passthrough.
+test_host_env(
+    name = "host-tools-env",
+)
+
+# ── Provenance stamp unit tests ──────────────────────────────────────
+# Tests defs/scripts/provenance-stamp.sh directly with controlled env.
+# No buck build deps — pure unit test.
+
+buckos_test(
+    name = "test-provenance-stamp",
+    test = "test_provenance_stamp.py",
+    labels = ["unit"],
+)
+
+# ── Python helper unit tests ─────────────────────────────────────────
+# Pure unit tests of tools/*.py logic — no buck build deps.
+# Run with: buck2 test //tests: --labels tools-unit
+
+buckos_test(
+    name = "test-env-unit",
+    test = "test_env_unit.py",
+    labels = ["unit", "tools-unit"],
+)
+
+buckos_test(
+    name = "test-env-path",
+    test = "test_env_path.py",
+    labels = ["unit", "tools-unit"],
+)
+
+buckos_test(
+    name = "test-path-resolution",
+    test = "test_path_resolution.py",
+    labels = ["unit", "tools-unit"],
+)
+
+buckos_test(
+    name = "test-extract-unit",
+    test = "test_extract_unit.py",
+    labels = ["unit", "tools-unit"],
+)
+
+buckos_test(
+    name = "test-rootfs-unit",
+    test = "test_rootfs_unit.py",
+    labels = ["unit", "tools-unit"],
+)
+
+buckos_test(
+    name = "test-small-helpers",
+    test = "test_small_helpers.py",
+    labels = ["unit", "tools-unit"],
+)
+
+buckos_test(
+    name = "test-merge-and-hash",
+    test = "test_merge_and_hash.py",
+    labels = ["unit", "tools-unit"],
+)
+
+buckos_test(
+    name = "test-kernel-helpers",
+    test = "test_kernel_helpers.py",
+    labels = ["unit", "tools-unit"],
+)
+
+buckos_test(
+    name = "test-iso-config",
+    test = "test_iso_config.py",
+    labels = ["unit", "tools-unit"],
+)
+
+buckos_test(
+    name = "test-build-install",
+    test = "test_build_install.py",
+    labels = ["unit", "tools-unit"],
+)
+
+buckos_test(
+    name = "test-stage3-strip",
+    test = "test_stage3_strip.py",
+    labels = ["unit", "tools-unit"],
+)
+
+buckos_test(
+    name = "test-bootstrap-helpers",
+    test = "test_bootstrap_helpers.py",
+    labels = ["unit", "tools-unit"],
+)
+
+buckos_test(
+    name = "test-lang-helpers",
+    test = "test_lang_helpers.py",
+    labels = ["unit", "tools-unit"],
+)
+
+buckos_test(
+    name = "test-patch-acct",
+    test = "test_patch_acct.py",
+    labels = ["unit", "tools-unit"],
+)
+
+buckos_test(
+    name = "test-sysroot-merge",
+    test = "test_sysroot_merge.py",
+    labels = ["unit", "tools-unit"],
+)
+
+buckos_test(
+    name = "test-toolchain-unpack",
+    test = "test_toolchain_unpack.py",
+    labels = ["unit", "tools-unit"],
+)
+
+buckos_test(
+    name = "test-vm-helpers",
+    test = "test_vm_helpers.py",
+    labels = ["unit", "tools-unit"],
+)
+
+# ── Provenance integration: hello executable ─────────────────────────
+
+buckos_test(
+    name = "test-hello-provenance",
+    test = "verify_provenance.py",
+    deps = ["//tests/fixtures/hello:hello"],
+    env = {
+        "OUTPUT_DIR": "$(location //tests/fixtures/hello:hello)",
+        "EXPECT_PROVENANCE": "true",
+        "EXPECT_NAME": "hello",
+        "EXPECT_VERSION": "0.1.0",
+    },
+    labels = ["integration"],
+)
+
+buckos_test(
+    name = "test-hello-no-provenance",
+    test = "verify_provenance.py",
+    deps = ["//tests/fixtures/hello:hello-no-stamp"],
+    env = {
+        "OUTPUT_DIR": "$(location //tests/fixtures/hello:hello-no-stamp)",
+        "EXPECT_PROVENANCE": "false",
+    },
+    labels = ["integration"],
+)
+
+# ── Provenance integration: shared library ───────────────────────────
+
+buckos_test(
+    name = "test-testlib-provenance",
+    test = "verify_provenance.py",
+    deps = ["//tests/fixtures/testlib:testlib"],
+    env = {
+        "OUTPUT_DIR": "$(location //tests/fixtures/testlib:testlib)",
+        "EXPECT_PROVENANCE": "true",
+        "EXPECT_NAME": "testlib",
+        "EXPECT_VERSION": "0.1.0",
+        "EXPECT_LIB": "true",
+    },
+    labels = ["integration"],
+)
+
+# ── IMA signing ──────────────────────────────────────────────────────
+
+buckos_test(
+    name = "test-hello-ima",
+    test = "verify_provenance.py",
+    deps = ["//tests/fixtures/hello:hello-ima"],
+    env = {
+        "OUTPUT_DIR": "$(location //tests/fixtures/hello:hello-ima)",
+        "EXPECT_PROVENANCE": "true",
+        "EXPECT_NAME": "hello",
+        "EXPECT_VERSION": "0.1.0",
+        "EXPECT_IMA": "true",
+    },
+    labels = ["integration"],
+)
+
+# ── IMA QEMU enforcement ────────────────────────────────────────────
+
+buckos_test(
+    name = "test-ima-enforce-signed",
+    test = "verify_ima_qemu.py",
+    deps = [
+        "//tests/fixtures/ima-test:ima-kernel",
+        "//tests/fixtures/ima-test:ima-initramfs",
+        "//tests/fixtures/ima-test:ima-disk-signed",
+        "//packages/linux/emulation/hypervisors/qemu:qemu",
+        ":qemu-env",
+    ],
+    env = {
+        "KERNEL": "$(location //tests/fixtures/ima-test:ima-kernel)",
+        "INITRAMFS": "$(location //tests/fixtures/ima-test:ima-initramfs)",
+        "DISK": "$(location //tests/fixtures/ima-test:ima-disk-signed)",
+        "CMDLINE_EXTRA": "ima_appraise=enforce ima_test_mode=enforce_signed",
+        "EXPECT_MARKER": "IMA-RESULT:PASS",
+        "EXPECT_TEST_OUTPUT": "IMA-FILE-CONTENT",
+        "QEMU_DIR": "$(location //packages/linux/emulation/hypervisors/qemu:qemu)",
+        "RUN_ENV": "$(location :qemu-env)",
+    },
+    run_test_separately = True,
+    labels = ["vm", "slow"],
+)
+
+buckos_test(
+    name = "test-ima-enforce-unsigned",
+    test = "verify_ima_qemu.py",
+    deps = [
+        "//tests/fixtures/ima-test:ima-kernel",
+        "//tests/fixtures/ima-test:ima-initramfs",
+        "//tests/fixtures/ima-test:ima-disk-unsigned",
+        "//packages/linux/emulation/hypervisors/qemu:qemu",
+        ":qemu-env",
+    ],
+    env = {
+        "KERNEL": "$(location //tests/fixtures/ima-test:ima-kernel)",
+        "INITRAMFS": "$(location //tests/fixtures/ima-test:ima-initramfs)",
+        "DISK": "$(location //tests/fixtures/ima-test:ima-disk-unsigned)",
+        "CMDLINE_EXTRA": "ima_appraise=enforce ima_test_mode=enforce_unsigned",
+        "EXPECT_MARKER": "IMA-RESULT:PASS",
+        "EXPECT_NO_TEST_OUTPUT": "IMA-TEST-PASS",
+        "QEMU_DIR": "$(location //packages/linux/emulation/hypervisors/qemu:qemu)",
+        "RUN_ENV": "$(location :qemu-env)",
+    },
+    run_test_separately = True,
+    labels = ["vm", "slow"],
+)
+
+buckos_test(
+    name = "test-ima-noima",
+    test = "verify_ima_qemu.py",
+    deps = [
+        "//tests/fixtures/ima-test:ima-kernel",
+        "//tests/fixtures/ima-test:ima-initramfs",
+        "//tests/fixtures/ima-test:ima-disk-unsigned",
+        "//packages/linux/emulation/hypervisors/qemu:qemu",
+        ":qemu-env",
+    ],
+    env = {
+        "KERNEL": "$(location //tests/fixtures/ima-test:ima-kernel)",
+        "INITRAMFS": "$(location //tests/fixtures/ima-test:ima-initramfs)",
+        "DISK": "$(location //tests/fixtures/ima-test:ima-disk-unsigned)",
+        "CMDLINE_EXTRA": "ima_appraise=off ima_test_mode=noima",
+        "EXPECT_MARKER": "IMA-RESULT:PASS",
+        "EXPECT_TEST_OUTPUT": "IMA-FILE-CONTENT",
+        "QEMU_DIR": "$(location //packages/linux/emulation/hypervisors/qemu:qemu)",
+        "RUN_ENV": "$(location :qemu-env)",
+    },
+    run_test_separately = True,
+    labels = ["vm", "slow"],
+)
+
+# ── IMA QEMU FILE_CHECK enforcement ─────────────────────────────────
+
+# FILE_CHECK: signed binary + signed data file — both pass
+buckos_test(
+    name = "test-ima-file-signed",
+    test = "verify_ima_qemu.py",
+    deps = [
+        "//tests/fixtures/ima-test:ima-kernel",
+        "//tests/fixtures/ima-test:ima-initramfs",
+        "//tests/fixtures/ima-test:ima-disk-signed",
+        "//packages/linux/emulation/hypervisors/qemu:qemu",
+        ":qemu-env",
+    ],
+    env = {
+        "KERNEL": "$(location //tests/fixtures/ima-test:ima-kernel)",
+        "INITRAMFS": "$(location //tests/fixtures/ima-test:ima-initramfs)",
+        "DISK": "$(location //tests/fixtures/ima-test:ima-disk-signed)",
+        "CMDLINE_EXTRA": "ima_appraise=enforce ima_test_mode=file_signed",
+        "EXPECT_MARKER": "IMA-RESULT:PASS",
+        "EXPECT_TEST_OUTPUT": "IMA-FILE-CONTENT",
+        "QEMU_DIR": "$(location //packages/linux/emulation/hypervisors/qemu:qemu)",
+        "RUN_ENV": "$(location :qemu-env)",
+    },
+    run_test_separately = True,
+    labels = ["vm", "slow"],
+)
+
+# FILE_CHECK: signed binary + unsigned data file — file read denied
+buckos_test(
+    name = "test-ima-file-unsigned",
+    test = "verify_ima_qemu.py",
+    deps = [
+        "//tests/fixtures/ima-test:ima-kernel",
+        "//tests/fixtures/ima-test:ima-initramfs",
+        "//tests/fixtures/ima-test:ima-disk-file-unsigned",
+        "//packages/linux/emulation/hypervisors/qemu:qemu",
+        ":qemu-env",
+    ],
+    env = {
+        "KERNEL": "$(location //tests/fixtures/ima-test:ima-kernel)",
+        "INITRAMFS": "$(location //tests/fixtures/ima-test:ima-initramfs)",
+        "DISK": "$(location //tests/fixtures/ima-test:ima-disk-file-unsigned)",
+        "CMDLINE_EXTRA": "ima_appraise=enforce ima_test_mode=file_unsigned",
+        "EXPECT_MARKER": "IMA-RESULT:PASS",
+        "EXPECT_TEST_OUTPUT": "IMA-FILE-DENIED",
+        "EXPECT_NO_TEST_OUTPUT": "IMA-FILE-CONTENT",
+        "QEMU_DIR": "$(location //packages/linux/emulation/hypervisors/qemu:qemu)",
+        "RUN_ENV": "$(location :qemu-env)",
+    },
+    run_test_separately = True,
+    labels = ["vm", "slow"],
+)
+
+# ── Build smoke tests ────────────────────────────────────────────────
+
+buckos_test(
+    name = "build-smoke-zlib",
+    test = "verify_build_smoke.py",
+    deps = ["//packages/linux/core/zlib:zlib"],
+    env = {
+        "OUTPUT_DIR": "$(location //packages/linux/core/zlib:zlib)",
+        "EXPECT_FILES": "usr/lib64/libz.so:usr/include/zlib.h",
+    },
+    labels = ["build"],
+)
+
+buckos_test(
+    name = "build-smoke-ch",
+    test = "verify_build_smoke.py",
+    deps = ["//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor"],
+    env = {
+        "OUTPUT_DIR": "$(location //packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor)",
+    },
+    labels = ["build", "slow"],
+)
+
+# ── Cloud Hypervisor: boot script verification ───────────────────────
+
+buckos_test(
+    name = "test-ch-boot-script",
+    test = "verify_ch_boot_script.py",
+    deps = ["//packages/linux/boot/cloud-hypervisor-boot:ch-boot-direct-minimal"],
+    env = {
+        "SCRIPT_DIR": "$(location //packages/linux/boot/cloud-hypervisor-boot:ch-boot-direct-minimal)",
+    },
+    labels = ["build", "slow"],
+)
+
+# ── Cloud Hypervisor: VM boot integration ────────────────────────────
+
+buckos_test(
+    name = "test-ch-vm-boot",
+    test = "verify_ch_vm_boot.py",
+    deps = [
+        "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
+        ":ch-env",
+        "//packages/linux/kernel/buckos-kernel:buckos-kernel-ch",
+        "//packages/linux/system/cloud-hypervisor:ch-initramfs",
+    ],
+    env = {
+        "CH_BINARY": "$(location //packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor)",
+        "RUN_ENV": "$(location :ch-env)",
+        "KERNEL": "$(location //packages/linux/kernel/buckos-kernel:buckos-kernel-ch)",
+        "INITRAMFS": "$(location //packages/linux/system/cloud-hypervisor:ch-initramfs)",
+    },
+    run_test_separately = True,
+    labels = ["vm", "slow", "integration", "heavy"],
+)
+
+buckos_test(
+    name = "test-ch-vm-boot-light",
+    test = "verify_ch_vm_boot.py",
+    deps = [
+        "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
+        ":ch-env",
+        "//tests/fixtures:test-kernel",
+        "//packages/linux/system/cloud-hypervisor:ch-initramfs",
+    ],
+    env = {
+        "CH_BINARY": "$(location //packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor)",
+        "RUN_ENV": "$(location :ch-env)",
+        "KERNEL": "$(location //tests/fixtures:test-kernel)",
+        "INITRAMFS": "$(location //packages/linux/system/cloud-hypervisor:ch-initramfs)",
+    },
+    run_test_separately = True,
+    labels = ["vm", "slow", "integration"],
+)
+
+# ── Cloud Hypervisor: IMA binary execution ───────────────────────────
+# Reuses the IMA test fixtures (init, cert, disk images) with CH kernel.
+# The CH kernel config includes security.config which has CONFIG_IMA=y.
+
+# Non-IMA: unsigned binary runs when IMA is off
+buckos_test(
+    name = "test-ch-ima-noima",
+    test = "verify_ch_ima.py",
+    deps = [
+        "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
+        ":ch-env",
+        "//tests/fixtures/ima-test:ima-kernel",
+        "//tests/fixtures/ima-test:ima-initramfs",
+        "//tests/fixtures/ima-test:ima-disk-unsigned",
+    ],
+    env = {
+        "CH_BINARY": "$(location //packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor)",
+        "RUN_ENV": "$(location :ch-env)",
+        "KERNEL": "$(location //tests/fixtures/ima-test:ima-kernel)",
+        "INITRAMFS": "$(location //tests/fixtures/ima-test:ima-initramfs)",
+        "DISK": "$(location //tests/fixtures/ima-test:ima-disk-unsigned)",
+        "CMDLINE_EXTRA": "ima_appraise=off ima_test_mode=noima",
+        "EXPECT_MARKER": "IMA-RESULT:PASS",
+        "EXPECT_TEST_OUTPUT": "IMA-FILE-CONTENT",
+    },
+    run_test_separately = True,
+    labels = ["vm", "slow", "integration"],
+)
+
+# IMA enforce: signed binary runs under IMA enforcement
+buckos_test(
+    name = "test-ch-ima-enforce-signed",
+    test = "verify_ch_ima.py",
+    deps = [
+        "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
+        ":ch-env",
+        "//tests/fixtures/ima-test:ima-kernel",
+        "//tests/fixtures/ima-test:ima-initramfs",
+        "//tests/fixtures/ima-test:ima-disk-signed",
+    ],
+    env = {
+        "CH_BINARY": "$(location //packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor)",
+        "RUN_ENV": "$(location :ch-env)",
+        "KERNEL": "$(location //tests/fixtures/ima-test:ima-kernel)",
+        "INITRAMFS": "$(location //tests/fixtures/ima-test:ima-initramfs)",
+        "DISK": "$(location //tests/fixtures/ima-test:ima-disk-signed)",
+        "CMDLINE_EXTRA": "ima_appraise=enforce ima_test_mode=enforce_signed",
+        "EXPECT_MARKER": "IMA-RESULT:PASS",
+        "EXPECT_TEST_OUTPUT": "IMA-FILE-CONTENT",
+    },
+    run_test_separately = True,
+    labels = ["vm", "slow", "integration"],
+)
+
+# ── ISO boot ─────────────────────────────────────────────────────
+
+runtime_env(
+    name = "qemu-env",
+    package = "//packages/linux/emulation/hypervisors/qemu:qemu",
+)
+
+runtime_env(
+    name = "ch-env",
+    package = "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
+)
+
+buckos_test(
+    name = "test-iso-boot",
+    test = "verify_iso_boot.py",
+    deps = [
+        "//packages/linux/kernel/buckos-kernel:buckos-kernel",
+        "//packages/linux/system:buckos-live-initramfs-busybox",
+        "//packages/linux/system:buckos-minimal-iso",
+        "//packages/linux/emulation/hypervisors/qemu:qemu",
+        ":qemu-env",
+    ],
+    env = {
+        "KERNEL": "$(location //packages/linux/kernel/buckos-kernel:buckos-kernel)",
+        "INITRAMFS": "$(location //packages/linux/system:buckos-live-initramfs-busybox)",
+        "ISO": "$(location //packages/linux/system:buckos-minimal-iso)",
+        "QEMU_DIR": "$(location //packages/linux/emulation/hypervisors/qemu:qemu)",
+        "RUN_ENV": "$(location :qemu-env)",
+    },
+    run_test_separately = True,
+    labels = ["vm", "slow", "integration", "heavy"],
+)
+
+buckos_test(
+    name = "test-iso-boot-light",
+    test = "verify_iso_boot.py",
+    deps = [
+        "//tests/fixtures:test-kernel",
+        "//packages/linux/system:buckos-live-initramfs-busybox",
+        "//tests/fixtures:test-minimal-iso",
+        "//packages/linux/emulation/hypervisors/qemu:qemu",
+        ":qemu-env",
+    ],
+    env = {
+        "KERNEL": "$(location //tests/fixtures:test-kernel)",
+        "INITRAMFS": "$(location //packages/linux/system:buckos-live-initramfs-busybox)",
+        "ISO": "$(location //tests/fixtures:test-minimal-iso)",
+        "QEMU_DIR": "$(location //packages/linux/emulation/hypervisors/qemu:qemu)",
+        "RUN_ENV": "$(location :qemu-env)",
+    },
+    run_test_separately = True,
+    labels = ["vm", "slow", "integration"],
+)
+
+buckos_test(
+    name = "test-kde-iso-boot",
+    test = "verify_kde_iso_boot.py",
+    deps = [
+        "//packages/linux/kernel/buckos-kernel:buckos-kernel-live",
+        "//packages/linux/system:buckos-live-initramfs-systemd",
+        "//packages/linux/system:buckos-live-installer-kde",
+        "//packages/linux/emulation/hypervisors/qemu:qemu",
+        ":qemu-env",
+    ],
+    env = {
+        "KERNEL": "$(location //packages/linux/kernel/buckos-kernel:buckos-kernel-live)",
+        "INITRAMFS": "$(location //packages/linux/system:buckos-live-initramfs-systemd)",
+        "ISO": "$(location //packages/linux/system:buckos-live-installer-kde)",
+        "QEMU_DIR": "$(location //packages/linux/emulation/hypervisors/qemu:qemu)",
+        "RUN_ENV": "$(location :qemu-env)",
+    },
+    run_test_separately = True,
+    labels = ["vm", "slow", "integration", "heavy"],
+)
+
+# ── Seed isolation ────────────────────────────────────────────────
+# Verifies the seed archive has no build-path leaks in RPATH/RUNPATH,
+# no cross-contamination between host-tools and sysroot, valid metadata.
+# When a prebuilt seed is configured, verifies it directly (fast).
+# When building from source, requires full bootstrap (slow).
+
+_seed_path = read_config("buckos", "seed_path", "")
+_seed_url = read_config("buckos", "seed_url", "")
+_prebuilt_seed = bool(_seed_path or _seed_url)
+
+buckos_test(
+    name = "test-seed-isolation",
+    test = "verify_seed_isolation.py",
+    deps = ["//tc/seed:seed-archive-ref"] if _prebuilt_seed else ["//tc/bootstrap:seed-export"],
+    env = {
+        "SEED_ARCHIVE": "$(location //tc/seed:seed-archive-ref)" if _prebuilt_seed else "$(location //tc/bootstrap:seed-export)",
+    },
+    run_test_separately = True,
+    labels = [] if _prebuilt_seed else ["slow"],
+)
+
+# IMA enforce: unsigned binary rejected
+buckos_test(
+    name = "test-ch-ima-enforce-unsigned",
+    test = "verify_ch_ima.py",
+    deps = [
+        "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
+        ":ch-env",
+        "//tests/fixtures/ima-test:ima-kernel",
+        "//tests/fixtures/ima-test:ima-initramfs",
+        "//tests/fixtures/ima-test:ima-disk-unsigned",
+    ],
+    env = {
+        "CH_BINARY": "$(location //packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor)",
+        "RUN_ENV": "$(location :ch-env)",
+        "KERNEL": "$(location //tests/fixtures/ima-test:ima-kernel)",
+        "INITRAMFS": "$(location //tests/fixtures/ima-test:ima-initramfs)",
+        "DISK": "$(location //tests/fixtures/ima-test:ima-disk-unsigned)",
+        "CMDLINE_EXTRA": "ima_appraise=enforce ima_test_mode=enforce_unsigned",
+        "EXPECT_MARKER": "IMA-RESULT:PASS",
+        "EXPECT_NO_TEST_OUTPUT": "IMA-TEST-PASS",
+    },
+    run_test_separately = True,
+    labels = ["vm", "slow", "integration"],
+)
+
+# ── Cloud Hypervisor: IMA FILE_CHECK enforcement ────────────────────
+
+# CH FILE_CHECK: signed binary + signed data file — both pass
+buckos_test(
+    name = "test-ch-ima-file-signed",
+    test = "verify_ch_ima.py",
+    deps = [
+        "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
+        ":ch-env",
+        "//tests/fixtures/ima-test:ima-kernel",
+        "//tests/fixtures/ima-test:ima-initramfs",
+        "//tests/fixtures/ima-test:ima-disk-signed",
+    ],
+    env = {
+        "CH_BINARY": "$(location //packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor)",
+        "RUN_ENV": "$(location :ch-env)",
+        "KERNEL": "$(location //tests/fixtures/ima-test:ima-kernel)",
+        "INITRAMFS": "$(location //tests/fixtures/ima-test:ima-initramfs)",
+        "DISK": "$(location //tests/fixtures/ima-test:ima-disk-signed)",
+        "CMDLINE_EXTRA": "ima_appraise=enforce ima_test_mode=file_signed",
+        "EXPECT_MARKER": "IMA-RESULT:PASS",
+        "EXPECT_TEST_OUTPUT": "IMA-FILE-CONTENT",
+    },
+    run_test_separately = True,
+    labels = ["vm", "slow", "integration"],
+)
+
+# CH FILE_CHECK: signed binary + unsigned data file — file read denied
+buckos_test(
+    name = "test-ch-ima-file-unsigned",
+    test = "verify_ch_ima.py",
+    deps = [
+        "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
+        ":ch-env",
+        "//tests/fixtures/ima-test:ima-kernel",
+        "//tests/fixtures/ima-test:ima-initramfs",
+        "//tests/fixtures/ima-test:ima-disk-file-unsigned",
+    ],
+    env = {
+        "CH_BINARY": "$(location //packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor)",
+        "RUN_ENV": "$(location :ch-env)",
+        "KERNEL": "$(location //tests/fixtures/ima-test:ima-kernel)",
+        "INITRAMFS": "$(location //tests/fixtures/ima-test:ima-initramfs)",
+        "DISK": "$(location //tests/fixtures/ima-test:ima-disk-file-unsigned)",
+        "CMDLINE_EXTRA": "ima_appraise=enforce ima_test_mode=file_unsigned",
+        "EXPECT_MARKER": "IMA-RESULT:PASS",
+        "EXPECT_TEST_OUTPUT": "IMA-FILE-DENIED",
+        "EXPECT_NO_TEST_OUTPUT": "IMA-FILE-CONTENT",
+    },
+    run_test_separately = True,
+    labels = ["vm", "slow", "integration"],
+)

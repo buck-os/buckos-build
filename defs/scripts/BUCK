@@ -1,62 +1,144 @@
-# Build system scripts - changes to these will invalidate cached builds
-# These are tracked by Buck2 for proper cache invalidation when scripts change.
+# BuckOS build scripts and init script exports
+#
+# These scripts are used during build and for initramfs creation
 
-export_file(
-    name = "download",
-    src = "download.sh",
-    visibility = ["PUBLIC"],
-)
+# ============================================================================
+# Build system scripts
+# ============================================================================
 
-export_file(
-    name = "pkg-config-wrapper",
-    src = "pkg-config-wrapper.sh",
-    visibility = ["PUBLIC"],
-)
 
-export_file(
-    name = "ebuild",
-    src = "ebuild.sh",
-    visibility = ["PUBLIC"],
-)
-
-export_file(
-    name = "ebuild-bootstrap-stage1",
-    src = "ebuild-bootstrap-stage1.sh",
-    visibility = ["PUBLIC"],
-)
-
-export_file(
-    name = "ebuild-bootstrap-stage2",
-    src = "ebuild-bootstrap-stage2.sh",
-    visibility = ["PUBLIC"],
-)
-
-export_file(
-    name = "ebuild-bootstrap-stage3",
-    src = "ebuild-bootstrap-stage3.sh",
-    visibility = ["PUBLIC"],
-)
-
-export_file(
-    name = "install-binary",
-    src = "install_binary.sh",
-    visibility = ["PUBLIC"],
-)
-
-export_file(
-    name = "install-precompiled",
-    src = "install_precompiled.sh",
-    visibility = ["PUBLIC"],
-)
-
+# Extract source archives
 export_file(
     name = "extract-source",
     src = "extract_source.sh",
     visibility = ["PUBLIC"],
 )
 
+# Main ebuild script for package building
 export_file(
-    name = "download-signature",
-    src = "download_signature.sh",
+    name = "ebuild",
+    src = "ebuild.sh",
+    visibility = ["PUBLIC"],
+)
+
+# Ebuild bootstrap stage 1 script
+export_file(
+    name = "ebuild-bootstrap-stage1",
+    src = "ebuild-bootstrap-stage1.sh",
+    visibility = ["PUBLIC"],
+)
+
+# Ebuild bootstrap stage 2 script
+export_file(
+    name = "ebuild-bootstrap-stage2",
+    src = "ebuild-bootstrap-stage2.sh",
+    visibility = ["PUBLIC"],
+)
+
+# Ebuild bootstrap stage 3 script
+export_file(
+    name = "ebuild-bootstrap-stage3",
+    src = "ebuild-bootstrap-stage3.sh",
+    visibility = ["PUBLIC"],
+)
+
+# Pkg-config wrapper for cross-compilation
+export_file(
+    name = "pkg-config-wrapper",
+    src = "pkg-config-wrapper.sh",
+    visibility = ["PUBLIC"],
+)
+
+# Install binary script
+export_file(
+    name = "install-binary",
+    src = "install_binary.sh",
+    visibility = ["PUBLIC"],
+)
+
+# Install precompiled script
+export_file(
+    name = "install-precompiled",
+    src = "install_precompiled.sh",
+    visibility = ["PUBLIC"],
+)
+
+# Provenance stamping script for ELF binaries
+export_file(
+    name = "provenance-stamp",
+    src = "provenance-stamp.sh",
+    visibility = ["PUBLIC"],
+)
+
+# ============================================================================
+# Live system scripts
+# ============================================================================
+
+# The generate-live-init-scripts.sh is used to generate init scripts for the rootfs
+export_file(
+    name = "generate-live-init-scripts",
+    src = "generate-live-init-scripts.sh",
+    visibility = ["PUBLIC"],
+)
+
+# Live CD initramfs init script - mounts CD/USB, finds squashfs, and switches root
+# This is used as the /init script inside the initramfs for live boot
+export_file(
+    name = "initramfs-init",
+    src = "initramfs-init",
+    visibility = ["PUBLIC"],
+)
+
+# Static busybox live init script - POSIX sh compatible for static busybox initramfs
+# This is used as /init inside the initramfs for live boot with static busybox
+export_file(
+    name = "busybox-live-init",
+    src = "busybox-live-init.sh",
+    visibility = ["PUBLIC"],
+)
+
+# Dracut initramfs creation script - creates initramfs with dmsquash-live module
+export_file(
+    name = "create-dracut-initramfs",
+    src = "create-dracut-initramfs.sh",
+    visibility = ["PUBLIC"],
+)
+
+# Live init script - alternative init script for live boot
+export_file(
+    name = "live-init",
+    src = "live-init",
+    visibility = ["PUBLIC"],
+)
+
+# Sway init script for minimal Sway-based live systems
+export_file(
+    name = "sway-init",
+    src = "sway-init",
+    visibility = ["PUBLIC"],
+)
+
+# ============================================================================
+# Systemd initrd units for live boot
+# ============================================================================
+
+# Service to find and mount live media
+export_file(
+    name = "initrd-live-media-service",
+    src = "initrd-live-media.service",
+    visibility = ["PUBLIC"],
+)
+
+# Script called by initrd-live-media.service
+export_file(
+    name = "initrd-live-media-script",
+    src = "initrd-live-media.sh",
+    visibility = ["PUBLIC"],
+)
+
+# Mount unit for sysroot (live overlay)
+export_file(
+    name = "initrd-live-sysroot-mount",
+    src = "initrd-live-sysroot.mount",
     visibility = ["PUBLIC"],
 )

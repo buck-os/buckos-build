@@ -1,0 +1,107 @@
+"""
+Bootstrap aarch64 cross-toolchain.
+
+Builds a cross-compiler targeting aarch64-buckos-linux-gnu, reusing the
+same source tarballs as the x86_64 stage 1 pipeline.
+
+Build chain:
+  Host GCC + host binutils
+    -> cross-binutils-aarch64
+    -> cross-linux-headers-aarch64  (ARCH=arm64)
+    -> cross-gcc-aarch64-pass1      (C only, --without-headers)
+    -> cross-glibc-aarch64          (full glibc for aarch64)
+    -> cross-gcc-aarch64-pass2      (C + C++, libstdc++)
+    -> cross-toolchain-aarch64      (alias to gcc-pass2)
+"""
+
+load("//defs/rules:bootstrap.bzl",
+    "bootstrap_binutils",
+    "bootstrap_gcc",
+    "bootstrap_glibc",
+    "bootstrap_linux_headers",
+)
+
+AARCH64 = "aarch64-buckos-linux-gnu"
+
+# ── Cross-binutils for aarch64 ──────────────────────────────────────
+
+bootstrap_binutils(
+    name = "cross-binutils-aarch64",
+    source = "//tc/bootstrap/sources:binutils-src",
+    target_triple = AARCH64,
+    visibility = ["PUBLIC"],
+)
+
+# ── ARM64 Linux Headers ─────────────────────────────────────────────
+
+bootstrap_linux_headers(
+    name = "cross-linux-headers-aarch64",
+    source = "//tc/bootstrap/sources:linux-src",
+    kernel_arch = "arm64",
+    visibility = ["PUBLIC"],
+)
+
+# ── ARM64 Cross GCC Pass 1 (C compiler only, no libc) ───────────────
+
+bootstrap_gcc(
+    name = "cross-gcc-aarch64-pass1",
+    source = "//tc/bootstrap/sources:gcc-src",
+    gmp_source = "//tc/bootstrap/sources:gmp-src",
+    mpfr_source = "//tc/bootstrap/sources:mpfr-src",
+    mpc_source = "//tc/bootstrap/sources:mpc-src",
+    binutils = ":cross-binutils-aarch64",
+    libc_headers = ":cross-linux-headers-aarch64",
+    languages = "c",
+    is_cross = True,
+    with_headers = False,
+    target_triple = AARCH64,
+    host_cc = "gcc -std=gnu11 -Wno-error=implicit-function-declaration",
+    host_cxx = "g++ -std=gnu++11",
+    visibility = ["PUBLIC"],
+)
+
+# ── ARM64 Cross glibc ───────────────────────────────────────────────
+
+bootstrap_glibc(
+    name = "cross-glibc-aarch64",
+    source = "//tc/bootstrap/sources:glibc-src",
+    compiler = ":cross-gcc-aarch64-pass1",
+    binutils = ":cross-binutils-aarch64",
+    linux_headers = ":cross-linux-headers-aarch64",
+    target_triple = AARCH64,
+    lib_dir = "lib",
+    dynamic_linker = "ld-linux-aarch64.so.1",
+    visibility = ["PUBLIC"],
+)
+
+# ── ARM64 Cross GCC Pass 2 (full compiler with C++ support) ─────────
+
+bootstrap_gcc(
+    name = "cross-gcc-aarch64-pass2",
+    source = "//tc/bootstrap/sources:gcc-src",
+    gmp_source = "//tc/bootstrap/sources:gmp-src",
+    mpfr_source = "//tc/bootstrap/sources:mpfr-src",
+    mpc_source = "//tc/bootstrap/sources:mpc-src",
+    binutils = ":cross-binutils-aarch64",
+    libc_dep = ":cross-glibc-aarch64",
+    libc_headers = ":cross-linux-headers-aarch64",
+    languages = "c,c++",
+    is_cross = True,
+    with_headers = True,
+    target_triple = AARCH64,
+    lib_dir = "lib",
+    host_cc = "gcc -std=gnu11 -Wno-error=implicit-function-declaration -fcf-protection=none",
+    host_cxx = "g++ -std=gnu++11 -fcf-protection=none",
+    stage_number = 1,
+    visibility = ["PUBLIC"],
+)
+
+# ── Complete ARM64 cross-toolchain ───────────────────────────────────
+# gcc-pass2 output IS the complete cross-toolchain (includes binutils
+# and sysroot via post-install in bootstrap_gcc)
+
+alias(
+    name = "cross-toolchain-aarch64",
+    actual = ":cross-gcc-aarch64-pass2",
+    visibility = ["PUBLIC"],
+)

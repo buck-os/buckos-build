@@ -1,0 +1,47 @@
+# Named USE flag profiles.
+#
+# Usage:
+#   buck2 build //packages/linux/core:curl ?//use/profiles:minimal
+#   buck2 build //packages/linux/core:curl ?//use/profiles:server
+#   buck2 build //packages/linux/core:curl ?//use/profiles:desktop
+#
+# With modifiers (when cfg constructor is enabled):
+#   buck2 build //packages/linux/core:curl -m minimal
+#   buck2 build //packages/linux/core:curl -m server
+#   buck2 build //packages/linux/core:curl -m desktop
+#
+# Individual flags can be overridden on top of a profile:
+#   buck2 build //packages/linux/core:curl ?//use/profiles:minimal ?//use/constraints:http2-on
+
+load(":defs.bzl",
+     "DESKTOP_FLAGS",
+     "DEVELOPER_FLAGS",
+     "HARDENED_FLAGS",
+     "MINIMAL_FLAGS",
+     "SERVER_FLAGS",
+)
+
+platform(
+    name = "minimal",
+    constraint_values = MINIMAL_FLAGS,
+)
+
+platform(
+    name = "server",
+    constraint_values = SERVER_FLAGS,
+)
+
+platform(
+    name = "desktop",
+    constraint_values = DESKTOP_FLAGS,
+)
+
+platform(
+    name = "developer",
+    constraint_values = DEVELOPER_FLAGS,
+)
+
+platform(
+    name = "hardened",
+    constraint_values = HARDENED_FLAGS,
+)

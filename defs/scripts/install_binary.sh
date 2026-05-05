@@ -12,6 +12,38 @@
 
 set -e
 
+# Prevent cd from outputting paths when CDPATH is set
+unset CDPATH
+
+# === GUARD RAILS: Validate required environment variables ===
+_binary_fail() {
+    echo "ERROR: $1" >&2
+    echo "  Package: ${PN:-unknown}" >&2
+    exit 1
+}
+
+if [[ -z "$_BINARY_DESTDIR" ]]; then
+    _binary_fail "DESTDIR not set - wrapper script misconfigured"
+fi
+if [[ -z "$_BINARY_WORKDIR" ]]; then
+    _binary_fail "WORKDIR not set - wrapper script misconfigured"
+fi
+if [[ -z "$_BINARY_SRCDIR" ]]; then
+    _binary_fail "SRCDIR not set - wrapper script misconfigured"
+fi
+if [[ ! -d "$_BINARY_SRCDIR" ]]; then
+    _binary_fail "Source directory does not exist: $_BINARY_SRCDIR
+  This usually means:
+  1. The download_source/srcs target failed
+  2. The source archive has an unexpected structure (wrong strip_components?)
+  3. The source extraction silently failed"
+fi
+if [[ -z "$(ls -A "$_BINARY_SRCDIR" 2>/dev/null)" ]]; then
+    _binary_fail "Source directory is empty: $_BINARY_SRCDIR
+  The archive may have extracted to a different location.
+  Check strip_components setting in download_source."
+fi
+
 # Directory setup from wrapper environment
 # Argument order: DEST, WORK, SRCS (matches existing binary_package convention)
 mkdir -p "$_BINARY_DESTDIR"
@@ -194,11 +226,28 @@ else
     exit 1
 fi
 
+# === Fast tool selection: prefer fd/rg, fall back to find/grep ===
+if command -v fd >/dev/null 2>&1; then
+    _FD=fd
+elif command -v fdfind >/dev/null 2>&1; then
+    _FD=fdfind
+else
+    _FD=""
+fi
+
 # Global cleanup: Remove libtool .la files
-LA_COUNT=$(find "$DESTDIR" -name "*.la" -type f 2>/dev/null | wc -l)
+if [ -n "$_FD" ]; then
+    LA_COUNT=$("$_FD" --type f --no-ignore --hidden -e la '' "$DESTDIR" 2>/dev/null | wc -l)
+else
+    LA_COUNT=$(find "$DESTDIR" -name "*.la" -type f 2>/dev/null | wc -l)
+fi
 if [ "$LA_COUNT" -gt 0 ]; then
     echo "Removing $LA_COUNT libtool .la files (using pkg-config instead)"
-    find "$DESTDIR" -name "*.la" -type f -delete 2>/dev/null || true
+    if [ -n "$_FD" ]; then
+        "$_FD" --type f --no-ignore --hidden -e la '' "$DESTDIR" 2>/dev/null | xargs -r rm -f
+    else
+        find "$DESTDIR" -name "*.la" -type f -delete 2>/dev/null || true
+    fi
 fi
 
 BUILD_END=$(date +%s)
@@ -210,8 +259,13 @@ echo "[TIMING] Total build time: $((BUILD_END - BUILD_START)) seconds"
 echo ""
 echo "📋 Verifying build output..."
 
-FILE_COUNT=$(find "$OUT" -type f 2>/dev/null | wc -l)
-DIR_COUNT=$(find "$OUT" -type d 2>/dev/null | wc -l)
+if [ -n "$_FD" ]; then
+    FILE_COUNT=$("$_FD" --type f --no-ignore --hidden '' "$OUT" 2>/dev/null | wc -l)
+    DIR_COUNT=$("$_FD" --type d --no-ignore --hidden '' "$OUT" 2>/dev/null | wc -l)
+else
+    FILE_COUNT=$(find "$OUT" -type f 2>/dev/null | wc -l)
+    DIR_COUNT=$(find "$OUT" -type d 2>/dev/null | wc -l)
+fi
 
 if [ "$FILE_COUNT" -eq 0 ]; then
     echo "" >&2

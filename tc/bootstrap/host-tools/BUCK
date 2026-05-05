@@ -1,0 +1,25 @@
+"""
+Host tools for the hermetic seed toolchain.
+
+Built via host_tools_transition → bootstrap-toolchain (stage 2
+cross-compiler + host PATH).  The transition breaks any dependency
+on the seed toolchain, so there is no cycle even for packages with
+deep dep chains (gcc-native, perl, python, etc.).
+
+The host_tools_aggregator merges all package bin/lib/share dirs into
+one FHS-like prefix that becomes the seed's hermetic PATH.
+
+Add more tools here as hermeticity testing reveals missing ones:
+  1. buck2 build //packages/linux/core/zlib:zlib
+  2. Fails: "foo: not found" → add the package providing foo below
+  3. Repeat until hermetic
+"""
+
+load(":defs.bzl", "host_tools_aggregator")
+load(":packages.bzl", "HOST_TOOL_PACKAGES")
+
+host_tools_aggregator(
+    name = "host-tools",
+    packages = HOST_TOOL_PACKAGES,
+    visibility = ["PUBLIC"],
+)

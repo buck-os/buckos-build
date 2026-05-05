@@ -77,10 +77,10 @@ def get_target_info(target: str, skip_build: bool = False) -> Dict:
             stdout = stdout[json_start:]
 
         info = json.loads(stdout)
-        # Extract from JSON structure - target may have "root//" prefix
+        # Extract from JSON structure - target may have "buckos//" prefix
         target_key = target
-        if target not in info and f"root//{target.lstrip('//')}" in info:
-            target_key = f"root//{target.lstrip('//')}"
+        if target not in info and f"buckos//{target.lstrip('//')}" in info:
+            target_key = f"buckos//{target.lstrip('//')}"
 
         target_data = info.get(target_key, {})
         return {
@@ -141,16 +141,16 @@ def calculate_config_hash(target: str, skip_build: bool = False) -> str:
     ).stdout.strip()
     config_parts.append(f"platform:{platform}")
 
-    # Get USE flags from config
+    # Get USE flags from .buckconfig [use] section
     try:
-        with open("config/use_config.bzl", "r") as f:
-            use_config = f.read()
-            # Extract USE flags
-            import re
-            use_flags = re.findall(r'INSTALL_USE_FLAGS\s*=\s*\[(.*?)\]', use_config, re.DOTALL)
-            if use_flags:
-                config_parts.append(f"use:{use_flags[0]}")
-    except FileNotFoundError:
+        import configparser
+        bc = configparser.ConfigParser()
+        bc.read(".buckconfig")
+        if bc.has_section("use"):
+            flags = [k for k, v in bc.items("use") if v.lower() in ("true", "1", "yes")]
+            if flags:
+                config_parts.append(f"use:{','.join(sorted(flags))}")
+    except Exception:
         pass
 
     # Get compiler version
@@ -185,8 +185,8 @@ def calculate_config_hash(target: str, skip_build: bool = False) -> str:
 
             # Find the target in the result
             target_key = target
-            if target not in env_data and f"root//{target.lstrip('//')}" in env_data:
-                target_key = f"root//{target.lstrip('//')}"
+            if target not in env_data and f"buckos//{target.lstrip('//')}" in env_data:
+                target_key = f"buckos//{target.lstrip('//')}"
 
             # Get env attribute - include ALL env variables in sorted order
             env_attr = env_data.get(target_key, {}).get("env", {})
@@ -230,31 +230,27 @@ def find_built_package(target: str) -> Optional[Path]:
     """Find already-built package in buck-out without triggering a build.
 
     Args:
-        target: Buck target path (e.g., //packages/linux/core/bash:bash or toolchains//bootstrap:cross-gcc-pass1)
+        target: Buck target path (e.g., //packages/linux/core/bash:bash or //toolchains/bootstrap:cross-gcc-pass1)
 
     Returns:
         Path to built output if found, None otherwise
     """
     # Extract package path from target
     # e.g., //packages/linux/core/bash:bash -> packages/linux/core/bash
-    # e.g., toolchains//bootstrap:cross-gcc-pass1 -> toolchains/bootstrap
+    # e.g., //toolchains/bootstrap:cross-gcc-pass1 -> toolchains/bootstrap
     target_path = target.replace("//", "/").lstrip("/").split(":")[0]
     package_name = target.split(":")[-1]
 
-    # Determine base directory based on target prefix
-    if target.startswith("toolchains//"):
-        buck_out = Path("buck-out/v2/gen/toolchains")
-    else:
-        buck_out = Path("buck-out/v2/gen/root")
+    # All targets live under the buckos cell
+    buck_out = Path("buck-out/v2/gen/buckos")
 
     if not buck_out.exists():
         return None
 
     # For toolchains targets, search in toolchains/bootstrap directly
-    if target.startswith("toolchains//"):
-        # Pattern: buck-out/v2/gen/toolchains/HASH/bootstrap/__PACKAGE__/PACKAGE/
-        # target_path for "toolchains/bootstrap" -> just use "bootstrap"
-        subpath = target_path.replace("toolchains/", "")
+    if target_path.startswith("toolchains/"):
+        # Pattern: buck-out/v2/gen/buckos/HASH/toolchains/bootstrap/__PACKAGE__/PACKAGE/
+        subpath = target_path
 
         for hash_dir in buck_out.iterdir():
             if not hash_dir.is_dir():

@@ -1,28 +1,12 @@
-# Package definitions exports
-
-export_file(
-    name = "package_defs.bzl",
-    visibility = ["PUBLIC"],
-)
-
-# Platform targeting helpers
-export_file(
-    name = "platform_defs.bzl",
-      visibility = ["PUBLIC"],
-)
-
-export_file(
-    name = "versions.bzl",
-    visibility = ["PUBLIC"],
-)
-
-export_file(
-    name = "registry.bzl",
-    visibility = ["PUBLIC"],
-)
-
 # Export system packages as plain text list for CLI consumption
 export_file(
     name = "package_sets.bzl",
+    visibility = ["PUBLIC"],
+)
+
+# BXL script for vendoring source archives
+export_file(
+    name = "vendor_sources",
+    src = "vendor_sources.bxl",
     visibility = ["PUBLIC"],
 )

@@ -1,0 +1,22 @@
+"""
+BXL graph structure test: hermiticity check.
+
+Verifies that host-tools targets have correct configuration constraints
+(no bootstrap-mode-true leak).
+
+Run:
+    buck2 bxl buckos//tests/graph/test_hermiticity.bxl:test_hermiticity
+"""
+
+load("//tests/graph:test_hermiticity_impl.bzl", "run")
+
+def _impl(ctx):
+    passed, failed, details = run(ctx)
+    if failed > 0:
+        fail("{} assertion(s) failed\n{}".format(failed, details))
+
+test_hermiticity = bxl_main(
+    doc = "Verify host-tools targets have correct constraints.",
+    impl = _impl,
+    cli_args = {},
+)

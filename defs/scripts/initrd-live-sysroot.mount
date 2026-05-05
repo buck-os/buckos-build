@@ -1,0 +1,13 @@
+# This is a dummy mount unit - actual mounting is done by initrd-live-media.service
+# systemd needs this to know when /sysroot is ready
+[Unit]
+Description=Live Boot Root Filesystem
+DefaultDependencies=no
+After=initrd-live-media.service
+Requires=initrd-live-media.service
+
+[Mount]
+What=overlay
+Where=/sysroot
+Type=overlay
+Options=lowerdir=/run/live/rootfs,upperdir=/run/live/overlay/upper,workdir=/run/live/overlay/work

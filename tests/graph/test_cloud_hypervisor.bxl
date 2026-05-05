@@ -1,0 +1,18 @@
+"""
+BXL graph structure test: Cloud Hypervisor target validation.
+
+Run:
+    buck2 bxl buckos//tests/graph/test_cloud_hypervisor.bxl:test_cloud_hypervisor
+"""
+
+load("//tests/graph:test_cloud_hypervisor_impl.bzl", "run")
+
+def _impl(ctx):
+    passed, failed, details = run(ctx)
+    if failed > 0:
+        fail("{} assertion(s) failed\n{}".format(failed, details))
+
+test_cloud_hypervisor = bxl_main(
+    impl = _impl,
+    cli_args = {},
+)

@@ -1,0 +1,39 @@
+load("//defs/rules:transforms.bzl", "ima_sign_package", "stamp_package")
+load("//tests/fixtures:test_package.bzl", "test_c_binary")
+
+# Compile hello.c into an install layout with PackageInfo
+test_c_binary(
+    name = "hello-build",
+    src = "hello.c",
+    pkg_name = "hello",
+    binary_name = "hello",
+    version = "0.1.0",
+)
+
+# Stamped (provenance on)
+stamp_package(
+    name = "hello",
+    package = ":hello-build",
+    enabled = True,
+    visibility = ["PUBLIC"],
+)
+
+# No stamp (provenance off) — passthrough
+stamp_package(
+    name = "hello-no-stamp",
+    package = ":hello-build",
+    enabled = False,
+    visibility = ["PUBLIC"],
+)
+
+# Stamped + IMA signed
+ima_sign_package(
+    name = "hello-ima",
+    package = ":hello",
+    enabled = True,
+    signing_key = "//defs/keys:ima-test-key",
+    # Explicit dep — can't be a default attr because ima-evm-utils →
+    # openssl → openssl-signed creates a cycle.
+    evmctl_pkg = "//packages/linux/system/security/ima-evm-utils:ima-evm-utils",
+    visibility = ["PUBLIC"],
+)

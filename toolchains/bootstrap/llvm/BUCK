@@ -1,0 +1,303 @@
+load("@buckos//defs:package.bzl", "package")
+load("@buckos//defs/rules:source.bzl", "extract_source")
+
+# =============================================================================
+# LLVM Bootstrap Toolchain
+# =============================================================================
+# LLVM is required for building Rust from source.
+# We build LLVM 21.1.x from source using the C/C++ bootstrap toolchain.
+#
+# Bootstrap chain:
+#   bootstrap-toolchain (C/C++) -> llvm-bootstrap -> llvm-toolchain
+
+# =============================================================================
+# LLVM Source (21.1.8)
+# =============================================================================
+
+http_file(
+    name = "llvm-src-archive",
+    urls = ["https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.8/llvm-project-21.1.8.src.tar.xz"],
+    sha256 = "4633a23617fa31a3ea51242586ea7fb1da7140e426bd62fc164261fe036aa142",
+    out = "llvm-project-21.1.8.src.tar.xz",
+)
+
+extract_source(
+    name = "llvm-src",
+    source = ":llvm-src-archive",
+)
+
+# =============================================================================
+# LLVM Bootstrap Build
+# =============================================================================
+# Build LLVM from source with minimal configuration for Rust compilation
+
+package(
+    name = "llvm-bootstrap",
+    build_rule = "binary",
+    version = "21.1.8",
+    url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.8/llvm-project-21.1.8.src.tar.xz",
+    sha256 = "4633a23617fa31a3ea51242586ea7fb1da7140e426bd62fc164261fe036aa142",
+    source = ":llvm-src",
+    description = "LLVM compiler infrastructure - bootstrap build for Rust",
+    homepage = "https://llvm.org/",
+    license = "Apache-2.0-with-LLVM-exceptions",
+    deps = [
+        "//bootstrap:bootstrap-toolchain",
+        "@buckos//packages/linux/core/zlib:zlib",
+    ],
+    install_script = """
+export CMAKE_BUILD_TYPE=Release
+export MAKEFLAGS="-j$(nproc)"
+
+# Create build directory (out-of-tree build against read-only $SRCS)
+mkdir -p build
+cd build
+
+# Configure LLVM with CMake
+# Minimal configuration for Rust bootstrap
+cmake -G "Unix Makefiles" \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/usr/lib/llvm/21 \
+    -DLLVM_TARGETS_TO_BUILD="X86" \
+    -DLLVM_ENABLE_PROJECTS="clang;lld" \
+    -DLLVM_BUILD_LLVM_DYLIB=ON \
+    -DLLVM_LINK_LLVM_DYLIB=ON \
+    -DLLVM_ENABLE_ASSERTIONS=OFF \
+    -DLLVM_ENABLE_RTTI=ON \
+    -DLLVM_ENABLE_EH=ON \
+    -DLLVM_INCLUDE_TESTS=OFF \
+    -DLLVM_INCLUDE_EXAMPLES=OFF \
+    -DLLVM_INCLUDE_BENCHMARKS=OFF \
+    -DLLVM_INCLUDE_DOCS=OFF \
+    -DLLVM_ENABLE_BINDINGS=OFF \
+    -DLLVM_ENABLE_ZLIB=ON \
+    -DLLVM_ENABLE_ZSTD=OFF \
+    -DLLVM_ENABLE_LIBXML2=OFF \
+    -DLLVM_ENABLE_TERMINFO=ON \
+    -DLLVM_ENABLE_FFI=OFF \
+    -DCLANG_ENABLE_ARCMT=OFF \
+    -DCLANG_ENABLE_STATIC_ANALYZER=OFF \
+    -DCLANG_PLUGIN_SUPPORT=OFF \
+    "$SRCS/llvm"
+
+echo "LLVM configured for x86_64 target"
+
+cmake --build . -- -j$(nproc)
+
+# Install to $OUT
+DESTDIR="$OUT" cmake --install .
+
+# Create version symlink
+ln -sf llvm/21 "$OUT/usr/lib/llvm-21"
+
+echo "LLVM $PV installed to /usr/lib/llvm/21"
+""",
+    visibility = ["PUBLIC"],
+)
+
+# =============================================================================
+# LLVM Toolchain Aggregate
+# =============================================================================
+# This target provides LLVM for Rust and other package builds.
+
+package(
+    name = "llvm-toolchain",
+    build_rule = "binary",
+    version = "21.1.8",
+    url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.8/llvm-project-21.1.8.src.tar.xz",
+    sha256 = "4633a23617fa31a3ea51242586ea7fb1da7140e426bd62fc164261fe036aa142",
+    source = ":llvm-src",
+    description = "LLVM toolchain for BuckOS package builds",
+    homepage = "https://llvm.org/",
+    license = "Apache-2.0-with-LLVM-exceptions",
+    deps = [":llvm-bootstrap"],
+    install_script = """
+# Copy LLVM from llvm-bootstrap to tools directory structure
+mkdir -p "$OUT/tools"
+
+# Find llvm-bootstrap output via CFLAGS include paths
+DEP_BASE=""
+for flag in $CFLAGS; do
+    case "$flag" in
+        -I*)
+            dir="${flag#-I}"
+            base="${dir%/usr/include}"
+            if [ -d "$base/usr/lib/llvm/21" ]; then
+                DEP_BASE="$base"
+                break
+            fi
+            ;;
+    esac
+done
+
+if [ -n "$DEP_BASE" ]; then
+    echo "Found LLVM at: $DEP_BASE/usr/lib/llvm/21"
+    # Copy the entire LLVM installation
+    cp -a "$DEP_BASE/usr/lib/llvm/21" "$OUT/tools/llvm"
+
+    # Create symlinks in tools/bin for PATH
+    mkdir -p "$OUT/tools/bin"
+    for bin in "$OUT/tools/llvm/bin"/*; do
+        if [ -f "$bin" ]; then
+            name=$(basename "$bin")
+            ln -sf ../llvm/bin/"$name" "$OUT/tools/bin/$name"
+        fi
+    done
+fi
+
+if [ ! -x "$OUT/tools/llvm/bin/llvm-config" ]; then
+    echo "ERROR: Could not find llvm-bootstrap output"
+    exit 1
+fi
+
+# Create marker file
+cat > "$OUT/tools/.llvm-toolchain" << 'EOF'
+BuckOS LLVM Toolchain
+LLVM version: 21.1.8
+Built from source for Rust bootstrap
+EOF
+
+echo "LLVM toolchain assembled in /tools"
+""",
+    visibility = ["PUBLIC"],
+)
+
+# =============================================================================
+# ARM64 LLVM Bootstrap Build
+# =============================================================================
+# Build LLVM from source for aarch64 using the native host compiler.
+# This is a NATIVE build (not cross-compilation) - runs on aarch64 host.
+
+package(
+    name = "llvm-bootstrap-aarch64",
+    build_rule = "binary",
+    version = "21.1.8",
+    url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.8/llvm-project-21.1.8.src.tar.xz",
+    sha256 = "4633a23617fa31a3ea51242586ea7fb1da7140e426bd62fc164261fe036aa142",
+    source = ":llvm-src",
+    description = "LLVM compiler infrastructure for aarch64 - bootstrap build for Rust",
+    homepage = "https://llvm.org/",
+    license = "Apache-2.0-with-LLVM-exceptions",
+    # NOTE: No bootstrap deps - use host's native compiler for native aarch64 builds
+    deps = [],
+    install_script = """
+export CMAKE_BUILD_TYPE=Release
+export MAKEFLAGS="-j$(nproc)"
+
+# Create build directory (out-of-tree build against read-only $SRCS)
+mkdir -p build
+cd build
+
+# Configure LLVM with CMake
+# Native build for aarch64, also enable X86 target for cross-compilation support
+# Note: -DLLVM_COMPILER_CHECKED helps skip some checks that fail in sandbox
+# The -latomic is needed on aarch64 for std::atomic support
+cmake -G "Unix Makefiles" \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/usr/lib/llvm/21 \
+    -DCMAKE_CXX_FLAGS="-latomic" \
+    -DCMAKE_EXE_LINKER_FLAGS="-latomic" \
+    -DCMAKE_SHARED_LINKER_FLAGS="-latomic" \
+    -DLLVM_TARGETS_TO_BUILD="AArch64;X86" \
+    -DLLVM_ENABLE_PROJECTS="clang;lld" \
+    -DLLVM_BUILD_LLVM_DYLIB=ON \
+    -DLLVM_LINK_LLVM_DYLIB=ON \
+    -DLLVM_ENABLE_ASSERTIONS=OFF \
+    -DLLVM_ENABLE_RTTI=ON \
+    -DLLVM_ENABLE_EH=ON \
+    -DLLVM_INCLUDE_TESTS=OFF \
+    -DLLVM_INCLUDE_EXAMPLES=OFF \
+    -DLLVM_INCLUDE_BENCHMARKS=OFF \
+    -DLLVM_INCLUDE_DOCS=OFF \
+    -DLLVM_ENABLE_BINDINGS=OFF \
+    -DLLVM_ENABLE_ZLIB=ON \
+    -DLLVM_ENABLE_ZSTD=OFF \
+    -DLLVM_ENABLE_LIBXML2=OFF \
+    -DLLVM_ENABLE_TERMINFO=ON \
+    -DLLVM_ENABLE_FFI=OFF \
+    -DCLANG_ENABLE_ARCMT=OFF \
+    -DCLANG_ENABLE_STATIC_ANALYZER=OFF \
+    -DCLANG_PLUGIN_SUPPORT=OFF \
+    "$SRCS/llvm"
+
+echo "LLVM configured for aarch64 native build with targets: AArch64;X86"
+
+cmake --build . -- -j$(nproc)
+
+# Install to $OUT
+DESTDIR="$OUT" cmake --install .
+
+# Create version symlink
+ln -sf llvm/21 "$OUT/usr/lib/llvm-21"
+
+echo "LLVM $PV (aarch64) installed to /usr/lib/llvm/21"
+""",
+    visibility = ["PUBLIC"],
+)
+
+# =============================================================================
+# ARM64 LLVM Toolchain Aggregate
+# =============================================================================
+# This target provides LLVM for aarch64 Rust and other package builds.
+
+package(
+    name = "llvm-toolchain-aarch64",
+    build_rule = "binary",
+    version = "21.1.8",
+    url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.8/llvm-project-21.1.8.src.tar.xz",
+    sha256 = "4633a23617fa31a3ea51242586ea7fb1da7140e426bd62fc164261fe036aa142",
+    source = ":llvm-src",
+    description = "LLVM toolchain for BuckOS aarch64 package builds",
+    homepage = "https://llvm.org/",
+    license = "Apache-2.0-with-LLVM-exceptions",
+    deps = [":llvm-bootstrap-aarch64"],
+    install_script = """
+# Copy LLVM from llvm-bootstrap-aarch64 to tools directory structure
+mkdir -p "$OUT/tools"
+
+# Find llvm-bootstrap-aarch64 output via CFLAGS include paths
+DEP_BASE=""
+for flag in $CFLAGS; do
+    case "$flag" in
+        -I*)
+            dir="${flag#-I}"
+            base="${dir%/usr/include}"
+            if [ -d "$base/usr/lib/llvm/21" ]; then
+                DEP_BASE="$base"
+                break
+            fi
+            ;;
+    esac
+done
+
+if [ -n "$DEP_BASE" ]; then
+    echo "Found LLVM at: $DEP_BASE/usr/lib/llvm/21"
+    # Copy the entire LLVM installation
+    cp -a "$DEP_BASE/usr/lib/llvm/21" "$OUT/tools/llvm"
+
+    # Create symlinks in tools/bin for PATH
+    mkdir -p "$OUT/tools/bin"
+    for bin in "$OUT/tools/llvm/bin"/*; do
+        if [ -f "$bin" ]; then
+            name=$(basename "$bin")
+            ln -sf ../llvm/bin/"$name" "$OUT/tools/bin/$name"
+        fi
+    done
+fi
+
+if [ ! -x "$OUT/tools/llvm/bin/llvm-config" ]; then
+    echo "ERROR: Could not find llvm-bootstrap-aarch64 output"
+    exit 1
+fi
+
+# Create marker file
+cat > "$OUT/tools/.llvm-toolchain" << 'EOF'
+BuckOS LLVM Toolchain (aarch64)
+LLVM version: 21.1.8
+Built from source for Rust bootstrap on aarch64
+EOF
+
+echo "LLVM toolchain (aarch64) assembled in /tools"
+""",
+    visibility = ["PUBLIC"],
+)

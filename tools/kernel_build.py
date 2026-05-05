@@ -1,0 +1,542 @@
+#!/usr/bin/env python3
+"""Compile the Linux kernel (vmlinux, bzImage, modules, headers).
+
+Copies source to a writable build directory, places the .config,
+and runs make with the specified targets.  Captures vmlinux, bzImage,
+Module.symvers, modules, headers, and the full build tree as outputs.
+"""
+
+import argparse
+import multiprocessing
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+
+from _env import derive_lib_paths, sanitize_global_env, sysroot_lib_paths
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Build Linux kernel")
+    parser.add_argument("--source-dir", required=True,
+                        help="Kernel source tree (read-only)")
+    parser.add_argument("--config", default="",
+                        help="Finalized .config file")
+    parser.add_argument("--config-base", default="",
+                        help="Make config target (tinyconfig, allnoconfig, etc.)")
+    parser.add_argument("--build-tree-out", required=True,
+                        help="Output directory for the full build tree")
+    parser.add_argument("--vmlinux-out", required=True,
+                        help="Output path for vmlinux")
+    parser.add_argument("--bzimage-out", required=True,
+                        help="Output path for bzImage (or Image for arm64)")
+    parser.add_argument("--modules-dir-out", required=True,
+                        help="Output directory for installed modules")
+    parser.add_argument("--symvers-out", required=True,
+                        help="Output path for Module.symvers")
+    parser.add_argument("--config-out", required=True,
+                        help="Output path for the used .config")
+    parser.add_argument("--headers-out", default="",
+                        help="Output directory for installed headers")
+    parser.add_argument("--arch", default="x86",
+                        help="ARCH= value for make (default: x86)")
+    parser.add_argument("--cross-compile", default="",
+                        help="CROSS_COMPILE= prefix")
+    parser.add_argument("--cross-toolchain-dir", default="",
+                        help="Toolchain directory; bin/ subdirs prepended to PATH")
+    parser.add_argument("--image-path", default="arch/x86/boot/bzImage",
+                        help="Relative path to kernel image within build tree")
+    parser.add_argument("--target", action="append", dest="targets", default=[],
+                        help="Make target (repeatable, default: vmlinux bzImage modules)")
+    parser.add_argument("--jobs", type=int, default=None,
+                        help="Parallel jobs (default: CPU count)")
+    parser.add_argument("--version", default="",
+                        help="Kernel version string")
+    parser.add_argument("--patch", action="append", dest="patches", default=[],
+                        help="Patch file to apply before build (repeatable)")
+    parser.add_argument("--inject-file", action="append", dest="inject_files",
+                        default=[], help="DEST:SRC file injection (repeatable)")
+    parser.add_argument("--kcflags", default="",
+                        help="Extra KCFLAGS to pass to make")
+    parser.add_argument("--make-flag", action="append", dest="make_flags",
+                        default=[], help="Extra make variable (KEY=VALUE, repeatable)")
+    parser.add_argument("--external-module", action="append",
+                        dest="external_modules", default=[],
+                        help="External module source dir to build (repeatable)")
+    parser.add_argument("--allow-host-path", action="store_true",
+                        help="Allow host PATH (bootstrap escape hatch)")
+    parser.add_argument("--hermetic-path", action="append", dest="hermetic_path", default=[],
+                        help="Set PATH to only these dirs (replaces host PATH, repeatable)")
+    parser.add_argument("--hermetic-empty", action="store_true",
+                        help="Start with empty PATH (populated by --path-prepend)")
+    parser.add_argument("--ld-linux", default=None,
+                        help="Buckos ld-linux path (disables posix_spawn)")
+    parser.add_argument("--path-prepend", action="append", dest="path_prepend", default=[],
+                        help="Directory to prepend to PATH (repeatable, resolved to absolute)")
+    parser.add_argument("--lib-prepend", action="append", dest="lib_prepend", default=[],
+                        help="Directory to prepend to LD_LIBRARY_PATH (repeatable)")
+    args = parser.parse_args()
+
+    source_dir = os.path.abspath(args.source_dir)
+    declared_build_tree = os.path.abspath(args.build_tree_out)
+
+    # Work in scratch to avoid mutating the declared output (in buck-out)
+    # during the kernel build.  Only the final result is placed at declared_build_tree.
+    _scratch_base = os.path.abspath(os.environ.get("BUCK_SCRATCH_PATH",
+                                                    os.environ.get("TMPDIR", "/tmp")))
+    build_tree_out = os.path.join(_scratch_base, "kernel-build-work")
+
+    vmlinux_out = os.path.abspath(args.vmlinux_out)
+    bzimage_out = os.path.abspath(args.bzimage_out)
+    modules_dir_out = os.path.abspath(args.modules_dir_out)
+    symvers_out = os.path.abspath(args.symvers_out)
+    config_out = os.path.abspath(args.config_out)
+    headers_out = os.path.abspath(args.headers_out) if args.headers_out else ""
+    # Derive image make target from --image-path: bzImage for x86, Image for arm64
+    image_target = os.path.basename(args.image_path)
+    targets = args.targets or ["vmlinux", image_target, "modules"]
+    jobs = args.jobs or multiprocessing.cpu_count()
+
+    if not os.path.isdir(source_dir):
+        print(f"error: source directory not found: {source_dir}", file=sys.stderr)
+        sys.exit(1)
+
+    _host_path = os.environ.get("PATH", "")
+    sanitize_global_env()
+
+    # Apply PATH from toolchain flags
+    if args.hermetic_path:
+        _hp_dirs = [os.path.abspath(p) for p in args.hermetic_path]
+        if args.ld_linux:
+            from portabilize import portabilize_toolchain, portabilize_env
+            _patchelf = shutil.which("patchelf", path=":".join(_hp_dirs))
+            _hp_dirs = portabilize_toolchain(
+                _hp_dirs, args.ld_linux, patchelf_path=_patchelf)
+            portabilize_env(os.environ, args.ld_linux, patchelf_path=_patchelf)
+        os.environ["PATH"] = ":".join(_hp_dirs)
+    elif args.hermetic_empty:
+        os.environ["PATH"] = ""
+    elif args.allow_host_path:
+        os.environ["PATH"] = _host_path
+    else:
+        print("error: kernel_build requires --hermetic-path, --hermetic-empty, or --allow-host-path",
+              file=sys.stderr)
+        sys.exit(1)
+    if args.path_prepend:
+        prepend = ":".join(os.path.abspath(p) for p in args.path_prepend if os.path.isdir(p))
+        if prepend:
+            os.environ["PATH"] = prepend + ":" + os.environ.get("PATH", "")
+
+    # Derive LD_LIBRARY_PATH and BISON_PKGDATADIR from bin dirs
+    if args.hermetic_path:
+        derive_lib_paths(args.hermetic_path, os.environ)
+    if args.path_prepend:
+        derive_lib_paths(args.path_prepend, os.environ)
+
+    # Add explicit lib dirs to LD_LIBRARY_PATH (for transitive deps
+    # like libbz2/liblzma that objtool needs at runtime).
+    if args.lib_prepend:
+        lib_dirs = [os.path.abspath(d) for d in args.lib_prepend if os.path.isdir(d)]
+        if lib_dirs:
+            existing = os.environ.get("LD_LIBRARY_PATH", "")
+            os.environ["LD_LIBRARY_PATH"] = ":".join(lib_dirs) + (":" + existing if existing else "")
+
+    if args.ld_linux:
+        sysroot_lib_paths(args.ld_linux, os.environ)
+
+    # Derive LIBRARY_PATH and C_INCLUDE_PATH from hermetic bin dirs so
+    # the seed's native gcc (HOSTCC) can find seed-provided libraries
+    # like zlib and libelf when building kernel host tools (resolve_btfids).
+    # CC (the cross-compiler) has its own --sysroot and ignores these.
+    #
+    # Set C_INCLUDE_PATH and LIBRARY_PATH from hermetic PATH dirs so
+    # HOSTCC finds headers and libs from seed host-tools (glibc, zlib,
+    # elfutils, etc.) instead of the host system.
+    _all_bin_dirs = (args.hermetic_path or []) + (args.path_prepend or [])
+    _lib_parts, _inc_parts = [], []
+    for bin_dir in _all_bin_dirs:
+        parent = os.path.dirname(os.path.abspath(bin_dir))
+        # Check both flat layout (<prefix>/bin → <prefix>/usr/include)
+        # and FHS layout (<prefix>/usr/bin → <prefix>/usr/include)
+        search_roots = [parent]
+        grandparent = os.path.dirname(parent)
+        if os.path.basename(parent) in ("usr", "local"):
+            search_roots.append(grandparent)
+        for root in search_roots:
+            for ld in ("usr/lib64", "usr/lib", "lib64", "lib"):
+                d = os.path.join(root, ld)
+                if os.path.isdir(d) and d not in _lib_parts:
+                    _lib_parts.append(d)
+            for inc in ("usr/include", "include"):
+                d = os.path.join(root, inc)
+                if os.path.isdir(d) and d not in _inc_parts:
+                    _inc_parts.append(d)
+    # Note: cross-toolchain sysroot paths are intentionally NOT added
+    # here.  HOSTCC gets all headers from host-tools (glibc, linux-headers,
+    # zlib, elfutils) via C_INCLUDE_PATH above.  The cross-compiler (CC)
+    # has its own --sysroot and ignores these env vars.
+    if _lib_parts:
+        os.environ["LIBRARY_PATH"] = ":".join(_lib_parts)
+    if _inc_parts:
+        os.environ["C_INCLUDE_PATH"] = ":".join(_inc_parts)
+
+    os.environ.setdefault("KBUILD_BUILD_TIMESTAMP", "Thu Jan  1 00:00:00 UTC 1970")
+    os.environ.setdefault("KBUILD_BUILD_USER", "buckos")
+    os.environ.setdefault("KBUILD_BUILD_HOST", "buckos")
+
+    # Set up cross-toolchain PATH
+    if args.cross_toolchain_dir:
+        tc_dir = os.path.abspath(args.cross_toolchain_dir)
+        if os.path.isdir(tc_dir):
+            for root, dirs, _files in os.walk(tc_dir):
+                if os.path.basename(root) == "bin":
+                    os.environ["PATH"] = root + ":" + os.environ.get("PATH", "")
+                for d in list(dirs):
+                    if d == "bin":
+                        bin_path = os.path.join(root, d)
+                        os.environ["PATH"] = bin_path + ":" + os.environ.get("PATH", "")
+            print("Cross-toolchain added to PATH")
+
+    # Copy source to writable build directory
+    print(f"Copying kernel source to build tree: {build_tree_out}")
+    if os.path.exists(build_tree_out):
+        shutil.rmtree(build_tree_out)
+    shutil.copytree(source_dir, build_tree_out, symlinks=True)
+
+    # Inject files into source tree
+    for injection in args.inject_files:
+        if ":" not in injection:
+            print(f"error: --inject-file must be DEST:SRC, got: {injection}",
+                  file=sys.stderr)
+            sys.exit(1)
+        dest, src = injection.split(":", 1)
+        src = os.path.abspath(src)
+        dest_path = os.path.join(build_tree_out, dest)
+        os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+        shutil.copy2(src, dest_path)
+        print(f"  Injected {dest}")
+
+    # Apply patches
+    for patch_file in args.patches:
+        patch_abs = os.path.abspath(patch_file)
+        print(f"Applying patch: {os.path.basename(patch_abs)}")
+        result = subprocess.run(
+            ["patch", "-p1", "-i", patch_abs],
+            cwd=build_tree_out,
+        )
+        if result.returncode != 0:
+            print(f"error: patch failed: {patch_abs}", file=sys.stderr)
+            sys.exit(1)
+
+    # Detect GCC 14+ and set up wrapper
+    cc_override = _gcc14_workaround(build_tree_out)
+
+    # Build base make command
+    make_cmd = [
+        "make", "-C", build_tree_out,
+        f"ARCH={args.arch}",
+        f"-j{jobs}",
+        "WERROR=0",
+    ]
+    if args.kcflags:
+        make_cmd.append(f"KCFLAGS={args.kcflags}")
+    if args.cross_compile:
+        make_cmd.append(f"CROSS_COMPILE={args.cross_compile}")
+    # HOSTCC headers/libs come from C_INCLUDE_PATH and LIBRARY_PATH
+    # (set above from hermetic PATH bin dirs).  The seed's gcc-native
+    # has --disable-fixincludes so there's no include-fixed conflict.
+    # All HOSTCC deps (glibc, linux-headers, zlib, elfutils) must be
+    # in tc/bootstrap/host-tools/packages.bzl.
+    if cc_override:
+        make_cmd.extend(cc_override)
+    # Build portabilize map for make-flag compiler binaries
+    _port_map = {}
+    if args.ld_linux:
+        _mf_cc_dirs = set()
+        for flag in args.make_flags:
+            if "=" in flag:
+                key, _, val = flag.partition("=")
+                if key in ("CC", "CXX", "AR", "HOSTCC", "HOSTCXX"):
+                    _bin = val.split()[0]
+                    if not os.path.isabs(_bin) and (_bin.startswith("buck-out") or os.path.exists(_bin)):
+                        _bin = os.path.abspath(_bin)
+                    if os.path.isfile(_bin):
+                        _mf_cc_dirs.add(os.path.dirname(_bin))
+        if _mf_cc_dirs:
+            from portabilize import portabilize_toolchain
+            _patchelf = shutil.which("patchelf", path=os.environ.get("PATH", ""))
+            _mf_cc_list = list(_mf_cc_dirs)
+            _mf_port = portabilize_toolchain(
+                _mf_cc_list, args.ld_linux, patchelf_path=_patchelf)
+            _port_map = dict(zip(_mf_cc_list, _mf_port))
+
+    _hostcflags = []
+    _hostldflags = []
+    for flag in args.make_flags:
+        if "=" in flag:
+            key, _, val = flag.partition("=")
+            tokens = val.split()
+            resolved = []
+            for t in tokens:
+                for prefix in ("--sysroot=", "-specs=", "-I", "-L", "-Wl,-rpath-link,"):
+                    if t.startswith(prefix):
+                        path = t[len(prefix):]
+                        if not os.path.isabs(path) and (path.startswith("buck-out") or os.path.exists(path)):
+                            t = prefix + os.path.abspath(path)
+                        break
+                else:
+                    if not os.path.isabs(t) and (t.startswith("buck-out") or os.path.exists(t)):
+                        t = os.path.abspath(t)
+                resolved.append(t)
+            # Portabilize compiler binaries in make-flags
+            if key in ("CC", "CXX", "AR", "HOSTCC", "HOSTCXX") and resolved and _port_map:
+                _bin = resolved[0]
+                _bdir = os.path.dirname(_bin)
+                if _bdir in _port_map:
+                    resolved[0] = os.path.join(_port_map[_bdir], os.path.basename(_bin))
+            if key in ("CC", "CXX", "HOSTCC", "HOSTCXX") and len(resolved) > 1:
+                make_cmd.append(f"{key}={resolved[0]}")
+                if key.startswith("HOST"):
+                    _extra_flags = " ".join(resolved[1:])
+                    _hostcflags.append(_extra_flags)
+                    _hostldflags.append(_extra_flags)
+            else:
+                make_cmd.append(f"{key}={' '.join(resolved)}")
+        else:
+            make_cmd.append(flag)
+
+    # Merge HOSTCC-split flags into existing HOSTCFLAGS/HOSTLDFLAGS.
+    # The loop above may have already appended HOSTCFLAGS=... from make_flags;
+    # update those entries to include the HOSTCC-derived flags.
+    if _hostcflags or _hostldflags:
+        _new_make_cmd = []
+        _found_hcf = _found_hlf = False
+        for _mc in make_cmd:
+            if _mc.startswith("HOSTCFLAGS=") and _hostcflags:
+                _mc = _mc + " " + " ".join(_hostcflags)
+                _found_hcf = True
+            elif _mc.startswith("HOSTLDFLAGS=") and _hostldflags:
+                _mc = _mc + " " + " ".join(_hostldflags)
+                _found_hlf = True
+            _new_make_cmd.append(_mc)
+        if not _found_hcf and _hostcflags:
+            _new_make_cmd.append(f"HOSTCFLAGS={' '.join(_hostcflags)}")
+        if not _found_hlf and _hostldflags:
+            _new_make_cmd.append(f"HOSTLDFLAGS={' '.join(_hostldflags)}")
+        make_cmd = _new_make_cmd
+
+    # Configure
+    config_file = os.path.abspath(args.config) if args.config else ""
+    if args.config_base:
+        print(f"Running: make {args.config_base}")
+        _run(make_cmd + [args.config_base])
+        if config_file:
+            # Merge config fragment on top of base
+            merge_script = os.path.join(build_tree_out, "scripts/kconfig/merge_config.sh")
+            if os.path.isfile(merge_script):
+                _run(["bash", merge_script, "-m", ".config", config_file],
+                     cwd=build_tree_out)
+            else:
+                # Fallback: append config fragment
+                with open(os.path.join(build_tree_out, ".config"), "a") as f:
+                    with open(config_file) as cf:
+                        f.write(cf.read())
+        _run(make_cmd + ["olddefconfig"])
+    elif config_file:
+        shutil.copy2(config_file, os.path.join(build_tree_out, ".config"))
+        _run(make_cmd + ["olddefconfig"])
+    else:
+        _run(make_cmd + ["defconfig"])
+
+    # Build
+    print(f"Building targets: {' '.join(targets)}")
+    _run(make_cmd + targets)
+
+    # Get kernel release string
+    krelease = _get_krelease(build_tree_out)
+    print(f"Kernel release: {krelease}")
+
+    # Copy individual outputs
+    _copy_output(build_tree_out, "vmlinux", vmlinux_out)
+    _copy_output(build_tree_out, args.image_path, bzimage_out)
+    _copy_output(build_tree_out, "Module.symvers", symvers_out)
+    shutil.copy2(os.path.join(build_tree_out, ".config"), config_out)
+
+    # Install modules via make modules_install for proper layout
+    _install_modules(make_cmd, build_tree_out, modules_dir_out, krelease,
+                     args.external_modules)
+
+    # Install headers
+    if headers_out:
+        _install_headers(make_cmd, build_tree_out, headers_out)
+
+    # Move completed build tree to declared output.  Rewrite embedded
+    # scratch paths so kernel_modules_install (a separate action that
+    # runs make -C on this tree) sees the correct location.
+    if os.path.exists(declared_build_tree):
+        shutil.rmtree(declared_build_tree)
+    _scratch_path = build_tree_out
+    shutil.move(build_tree_out, declared_build_tree)
+    _BINARY_EXTS = frozenset((
+        ".o", ".a", ".so", ".gch", ".pcm", ".pch", ".d",
+        ".png", ".jpg", ".gif", ".ico", ".gz", ".xz", ".bz2",
+        ".wasm", ".pyc", ".qm", ".ko", ".cmd", ".order",
+    ))
+    for dirpath, dirnames, filenames in os.walk(declared_build_tree):
+        for entries in (dirnames, filenames):
+            for name in entries:
+                p = os.path.join(dirpath, name)
+                if os.path.islink(p):
+                    target = os.readlink(p)
+                    if _scratch_path in target:
+                        os.unlink(p)
+                        os.symlink(target.replace(_scratch_path, declared_build_tree), p)
+    for dirpath, _dn, filenames in os.walk(declared_build_tree):
+        for fname in filenames:
+            if os.path.splitext(fname)[1] in _BINARY_EXTS:
+                continue
+            fpath = os.path.join(dirpath, fname)
+            if os.path.islink(fpath):
+                continue
+            try:
+                st = os.stat(fpath)
+                with open(fpath, "r") as f:
+                    fc = f.read()
+                if _scratch_path not in fc:
+                    continue
+                with open(fpath, "w") as f:
+                    f.write(fc.replace(_scratch_path, declared_build_tree))
+                os.utime(fpath, (st.st_atime, st.st_mtime))
+            except (UnicodeDecodeError, PermissionError, IsADirectoryError,
+                    FileNotFoundError):
+                pass
+
+    print("Kernel build complete")
+
+
+def _get_krelease(build_dir):
+    """Read kernel release string from the build tree."""
+    release_file = os.path.join(build_dir, "include", "config", "kernel.release")
+    if os.path.isfile(release_file):
+        with open(release_file) as f:
+            return f.read().strip()
+    return ""
+
+
+def _install_modules(make_cmd, build_dir, modules_dir_out, krelease,
+                     external_modules):
+    """Install kernel modules with proper layout and depmod metadata."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        _run(make_cmd + [f"INSTALL_MOD_PATH={tmpdir}", "modules_install"])
+
+        # Build and install external modules
+        for mod_src in external_modules:
+            mod_src = os.path.abspath(mod_src)
+            if not os.path.isdir(mod_src):
+                continue
+            mod_name = os.path.basename(mod_src)
+            mod_build = os.path.join(build_dir, ".modules", mod_name)
+            os.makedirs(mod_build, exist_ok=True)
+            shutil.copytree(mod_src, mod_build, dirs_exist_ok=True)
+            _run(make_cmd + [f"M={mod_build}", "modules"])
+            if krelease:
+                extra_dir = os.path.join(tmpdir, "lib", "modules", krelease, "extra")
+                os.makedirs(extra_dir, exist_ok=True)
+                for root, _dirs, files in os.walk(mod_build):
+                    for f in files:
+                        if f.endswith(".ko"):
+                            shutil.copy2(os.path.join(root, f),
+                                         os.path.join(extra_dir, f))
+
+        # Run depmod
+        if krelease and shutil.which("depmod"):
+            subprocess.run(["depmod", "-b", tmpdir, krelease],
+                           capture_output=True)
+
+        # Copy lib/modules/ to output
+        mod_src_dir = os.path.join(tmpdir, "lib", "modules")
+        if os.path.isdir(mod_src_dir):
+            os.makedirs(modules_dir_out, exist_ok=True)
+            shutil.copytree(mod_src_dir, modules_dir_out, dirs_exist_ok=True)
+            print(f"  Installed modules to {modules_dir_out}")
+        else:
+            os.makedirs(modules_dir_out, exist_ok=True)
+            print("  No modules installed")
+
+
+def _install_headers(make_cmd, build_dir, headers_out):
+    """Install kernel headers for userspace."""
+    os.makedirs(headers_out, exist_ok=True)
+    _run(make_cmd + [f"INSTALL_HDR_PATH={headers_out}", "headers_install"])
+    print(f"  Installed headers to {headers_out}")
+
+
+def _gcc14_workaround(build_dir):
+    """Detect GCC 14+ and create a wrapper that appends -std=gnu11."""
+    try:
+        result = subprocess.run(
+            ["gcc", "--version"], capture_output=True, text=True, timeout=5,
+        )
+        version_line = result.stdout.split("\n")[0] if result.stdout else ""
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return []
+
+    if "gcc" not in version_line.lower():
+        return []
+
+    match = re.search(r"(\d+)\.\d+", version_line)
+    if not match:
+        return []
+
+    major = int(match.group(1))
+    if major < 14:
+        return []
+
+    gcc_path = shutil.which("gcc")
+    if not gcc_path:
+        return []
+
+    print(f"GCC {major} detected, creating -std=gnu11 wrapper")
+    wrapper_dir = os.path.join(build_dir, ".cc-wrapper")
+    os.makedirs(wrapper_dir, exist_ok=True)
+    wrapper_path = os.path.join(wrapper_dir, "gcc")
+    with open(wrapper_path, "w") as f:
+        f.write(
+            '#!/usr/bin/env python3\n'
+            'import os, sys\n'
+            f'os.execv("{gcc_path}", ["{gcc_path}"] + sys.argv[1:] + ["-std=gnu11"])\n'
+        )
+    os.chmod(wrapper_path, 0o755)
+
+    return [f"CC={wrapper_path}"]
+
+
+def _copy_output(build_dir, rel_path, output_path):
+    """Copy a build artifact to the output location."""
+    src = os.path.join(build_dir, rel_path)
+    if os.path.isfile(src):
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        shutil.copy2(src, output_path)
+        print(f"  Copied {rel_path} -> {output_path}")
+    else:
+        # Create empty file so Buck2 output tracking doesn't fail
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        with open(output_path, "w") as f:
+            pass
+        print(f"  Warning: {rel_path} not found, created empty placeholder")
+
+
+def _run(cmd, cwd=None):
+    """Run a command, exit on failure."""
+    print(f"  + {' '.join(cmd)}")
+    result = subprocess.run(cmd, cwd=cwd)
+    if result.returncode != 0:
+        print(f"error: command failed with exit code {result.returncode}",
+              file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

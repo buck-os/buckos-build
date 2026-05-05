@@ -1,7 +1,7 @@
 """
-Package Set system for BuckOs Linux Distribution.
+Package sets for BuckOS.
 
-Similar to Gentoo's system profiles and package sets, this provides:
+Provides:
 - Predefined package collections for common use cases
 - System profiles (minimal, server, desktop, developer, embedded)
 - Hierarchical set inheritance
@@ -14,16 +14,16 @@ Example usage:
         name = "my-server",
         profile = "server",
         additions = ["//packages/linux/network/vpn/wireguard-tools:wireguard-tools"],
-        removals = ["//packages/linux/editors:emacs"],
+        removals = ["//packages/linux/editors/emacs:emacs"],
     )
 
     # Create a custom package set
     package_set(
         name = "web-development",
         packages = [
-            "//packages/linux/lang/nodejs",
-            "//packages/linux/lang/python",
-            "//packages/linux/editors:neovim",
+            "//packages/linux/lang/nodejs:nodejs",
+            "//packages/linux/lang/python:python",
+            "//packages/linux/editors/neovim:neovim",
         ],
         inherits = ["@base"],
     )
@@ -35,7 +35,84 @@ Example usage:
     )
 """
 
-load("//defs:use_flags.bzl", "USE_PROFILES")
+# USE flag profiles for system_set's profile-based USE flag resolution.
+USE_PROFILES = {
+    "minimal": {
+        "enabled": ["ipv6", "ssl", "zlib"],
+        "disabled": [
+            "X", "wayland", "gtk", "qt5", "qt6",
+            "debug", "doc", "examples", "test",
+            "pulseaudio", "pipewire", "alsa",
+            "python", "perl", "ruby", "lua",
+        ],
+        "description": "Minimal system with essential features only",
+    },
+    "server": {
+        "enabled": [
+            "ipv6", "ssl", "http2",
+            "zlib", "zstd", "lz4",
+            "acl", "attr", "caps",
+            "hardened", "pie", "ssp",
+            "threads", "pam",
+            "postgres", "mysql", "sqlite",
+        ],
+        "disabled": [
+            "X", "wayland", "gtk", "qt5", "qt6",
+            "opengl", "vulkan",
+            "pulseaudio", "pipewire", "alsa",
+            "debug",
+        ],
+        "description": "Server-optimized profile without GUI",
+    },
+    "desktop": {
+        "enabled": [
+            "X", "wayland",
+            "opengl", "vulkan", "egl",
+            "gtk", "qt5",
+            "pulseaudio", "pipewire",
+            "ipv6", "ssl", "http2",
+            "zlib", "zstd", "brotli",
+            "unicode", "icu", "nls",
+            "dbus", "udev",
+            "ffmpeg", "gstreamer",
+            "cairo", "pango",
+        ],
+        "disabled": ["debug", "static", "minimal"],
+        "description": "Full desktop environment with multimedia",
+    },
+    "developer": {
+        "enabled": [
+            "debug", "doc", "examples", "test",
+            "python", "perl", "ruby",
+            "git", "subversion",
+            "xml", "json", "yaml",
+        ],
+        "disabled": [],
+        "description": "Development-focused with documentation and tests",
+    },
+    "hardened": {
+        "enabled": [
+            "hardened", "pie", "ssp",
+            "caps", "seccomp", "selinux",
+            "acl", "attr",
+            "ssl",
+        ],
+        "disabled": ["debug"],
+        "description": "Security-hardened configuration",
+    },
+    "default": {
+        "enabled": [
+            "ipv6", "ssl", "http2",
+            "zlib", "bzip2",
+            "unicode", "nls",
+            "readline", "ncurses",
+            "threads",
+            "pcre2",
+        ],
+        "disabled": ["debug", "static"],
+        "description": "Balanced default configuration",
+    },
+}
 
 # =============================================================================
 # SET OPERATION HELPERS (Starlark doesn't have native sets)
@@ -118,14 +195,14 @@ BASE_PACKAGES = SYSTEM_PACKAGES + [
     "//packages/linux/core/ncurses:ncurses",
     "//packages/linux/core/less:less",
     "//packages/linux/core/libffi:libffi",
-    "//packages/linux/core/expat:expat",
+    "//packages/linux/system/libs/data/expat:expat",
 
     # Shell and terminal
     "//packages/linux/core/bash:bash",
 
     # Compression
-    "//packages/linux/core/bzip2:bzip2",
-    "//packages/linux/core/xz:xz",
+    "//packages/linux/system/libs/compression/bzip2:bzip2",
+    "//packages/linux/system/libs/compression/xz:xz",
     "//packages/linux/system/libs/compression/gzip:gzip",
     "//packages/linux/system/apps/tar:tar",
 
@@ -137,7 +214,7 @@ BASE_PACKAGES = SYSTEM_PACKAGES + [
     "//packages/linux/system/apps/shadow:shadow",
 
     # Networking basics
-    "//packages/linux/network/openssl:openssl",
+    "//packages/linux/system/libs/crypto/openssl:openssl",
     "//packages/linux/network/curl:curl",
     "//packages/linux/network/iproute2:iproute2",
     "//packages/linux/network/dhcpcd:dhcpcd",
@@ -169,7 +246,7 @@ PROFILE_PACKAGE_SETS = {
             "//packages/linux/network/openssh:openssh",
 
             # Editors
-            "//packages/linux/editors:vim",
+            "//packages/linux/editors/vim:vim",
 
             # System administration
             "//packages/linux/system/apps/sudo:sudo",
@@ -197,8 +274,8 @@ PROFILE_PACKAGE_SETS = {
             "//packages/linux/network/openssh:openssh",
 
             # Editors
-            "//packages/linux/editors:vim",
-            "//packages/linux/editors:neovim",
+            "//packages/linux/editors/vim:vim",
+            "//packages/linux/editors/neovim:neovim",
 
             # System administration
             "//packages/linux/system/apps/sudo:sudo",
@@ -235,9 +312,9 @@ PROFILE_PACKAGE_SETS = {
             "//packages/linux/network/openssh:openssh",
 
             # Editors
-            "//packages/linux/editors:vim",
-            "//packages/linux/editors:neovim",
-            "//packages/linux/editors:emacs",
+            "//packages/linux/editors/vim:vim",
+            "//packages/linux/editors/neovim:neovim",
+            "//packages/linux/editors/emacs:emacs",
 
             # Shells
             "//packages/linux/shells/zsh:zsh",
@@ -268,7 +345,7 @@ PROFILE_PACKAGE_SETS = {
             "//packages/linux/network/openssh:openssh",
 
             # Minimal editor
-            "//packages/linux/editors:vim",
+            "//packages/linux/editors/vim:vim",
 
             # System administration
             "//packages/linux/system/apps/sudo:sudo",
@@ -521,7 +598,7 @@ LANGUAGE_DEVELOPMENT_SETS = {
     "python-dev": {
         "description": "Python development environment with tooling",
         "packages": [
-            "//packages/linux/lang/python:python",
+            "//packages/linux/lang/python:python:python",
         ],
         "inherits": ["developer"],
     },
@@ -530,7 +607,7 @@ LANGUAGE_DEVELOPMENT_SETS = {
     "nodejs-dev": {
         "description": "Node.js development environment with npm",
         "packages": [
-            "//packages/linux/lang/nodejs:nodejs",
+            "//packages/linux/lang/nodejs:nodejs:nodejs",
         ],
         "inherits": ["developer"],
     },
@@ -557,7 +634,7 @@ LANGUAGE_DEVELOPMENT_SETS = {
     "cpp-dev": {
         "description": "C/C++ development with GCC/Clang toolchain",
         "packages": [
-            "//packages/linux/lang/gcc:gcc",
+            "//packages/linux/lang/gcc:gcc-native",
             "//packages/linux/lang/clang:clang",
             "//packages/linux/lang/binutils:binutils",
             "//packages/linux/dev-tools/build-systems/cmake:cmake",
@@ -608,6 +685,151 @@ LANGUAGE_DEVELOPMENT_SETS = {
 }
 
 # =============================================================================
+# STAGE3 PACKAGE SETS
+# =============================================================================
+# Stage3 tarball package sets for bootstrapping new systems.
+# Each stage3 variant builds on the previous one:
+#   minimal -> base -> developer -> complete
+
+STAGE3_PACKAGE_SETS = {
+    # Minimal stage3 - absolute minimum for chroot bootstrap
+    "stage3-minimal": {
+        "description": "Minimal stage3 for chroot bootstrap (no toolchain)",
+        "packages": [
+            # Core C library
+            "//packages/linux/core/glibc:glibc",
+            # Essential utilities
+            "//packages/linux/system/apps/coreutils:coreutils",
+            "//packages/linux/core/util-linux:util-linux",
+            "//packages/linux/core/procps-ng:procps-ng",
+            "//packages/linux/system/apps/shadow:shadow",
+            "//packages/linux/core/file:file",
+            # Shell
+            "//packages/linux/core/bash:bash",
+            # Terminal
+            "//packages/linux/core/readline:readline",
+            "//packages/linux/core/ncurses:ncurses",
+            "//packages/linux/core/less:less",
+            # Compression (required for package management)
+            "//packages/linux/system/libs/compression/bzip2:bzip2",
+            "//packages/linux/system/libs/compression/xz:xz",
+            "//packages/linux/system/libs/compression/gzip:gzip",
+            "//packages/linux/system/apps/tar:tar",
+            # Basic libraries
+            "//packages/linux/core/zlib:zlib",
+        ],
+        "inherits": [],
+        "use_profile": "minimal",
+    },
+
+    # Base stage3 - includes GCC toolchain for building packages
+    "stage3-base": {
+        "description": "Standard stage3 with GCC toolchain for building packages",
+        "packages": [
+            # Additional core libraries
+            "//packages/linux/core/libffi:libffi",
+            "//packages/linux/system/libs/data/expat:expat",
+            # Networking basics
+            "//packages/linux/system/libs/crypto/openssl:openssl",
+            "//packages/linux/network/curl:curl",
+            "//packages/linux/network/iproute2:iproute2",
+            # Toolchain
+            "//packages/linux/lang/gcc:gcc-native",
+            "//packages/linux/lang/binutils:binutils",
+            # Build systems
+            "//packages/linux/dev-tools/build-systems/make:make",
+            "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
+            "//packages/linux/dev-tools/build-systems/m4:m4",
+            "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+            "//packages/linux/dev-tools/build-systems/automake:automake",
+            "//packages/linux/dev-tools/build-systems/libtool:libtool",
+            # Essential for building (patch, sed, awk, grep)
+            "//packages/linux/system/apps/patch:patch",
+            "//packages/linux/system/apps/sed:sed",
+            "//packages/linux/system/apps/gawk:gawk",
+            "//packages/linux/system/apps/grep:grep",
+            "//packages/linux/system/apps/diffutils:diffutils",
+            "//packages/linux/system/apps/findutils:findutils",
+            # Scripting languages (needed for many build systems)
+            "//packages/linux/lang/perl:perl",
+            "//packages/linux/lang/python:python:python",
+        ],
+        "inherits": ["stage3-minimal"],
+        "use_profile": "server",
+    },
+
+    # Developer stage3 - modern build systems and dev tools
+    "stage3-developer": {
+        "description": "Developer stage3 with modern build systems (cmake, meson)",
+        "packages": [
+            # Modern build systems
+            "//packages/linux/dev-tools/build-systems/cmake:cmake",
+            "//packages/linux/dev-tools/build-systems/meson:meson",
+            "//packages/linux/dev-tools/build-systems/ninja:ninja",
+            # VCS
+            "//packages/linux/dev-tools/vcs/git:git",
+            # Editors
+            "//packages/linux/editors/vim:vim",
+            # Debugging
+            "//packages/linux/dev-tools/debugging/gdb:gdb",
+            # SSH for remote development
+            "//packages/linux/network/openssh:openssh",
+            # System administration
+            "//packages/linux/system/apps/sudo:sudo",
+        ],
+        "inherits": ["stage3-base"],
+        "use_profile": "developer",
+    },
+
+    # Complete stage3 - all development tools including Rust/Go/LLVM
+    "stage3-complete": {
+        "description": "Complete stage3 with all development tools (Rust, Go, LLVM)",
+        "packages": [
+            # Additional languages
+            "//packages/linux/lang/rust:rust",
+            "//packages/linux/lang/go:go",
+            # LLVM toolchain
+            "//packages/linux/core/llvm:llvm-native",
+            "//packages/linux/dev-tools/compilers/clang:clang",
+            # Additional editors
+            "//packages/linux/editors/neovim:neovim:neovim",
+        ],
+        "inherits": ["stage3-developer"],
+        "use_profile": "developer",
+    },
+
+    # Musl variants for smaller/static binaries
+    "stage3-minimal-musl": {
+        "description": "Minimal stage3 with musl libc (smaller, static-friendly)",
+        "packages": [
+            # Core C library (musl instead of glibc)
+            "//packages/linux/core/musl:musl",
+            # Essential utilities
+            "//packages/linux/system/apps/coreutils:coreutils",
+            "//packages/linux/core/util-linux:util-linux",
+            "//packages/linux/core/procps-ng:procps-ng",
+            "//packages/linux/system/apps/shadow:shadow",
+            "//packages/linux/core/file:file",
+            # Shell
+            "//packages/linux/core/bash:bash",
+            # Terminal
+            "//packages/linux/core/readline:readline",
+            "//packages/linux/core/ncurses:ncurses",
+            "//packages/linux/core/less:less",
+            # Compression
+            "//packages/linux/system/libs/compression/bzip2:bzip2",
+            "//packages/linux/system/libs/compression/xz:xz",
+            "//packages/linux/system/libs/compression/gzip:gzip",
+            "//packages/linux/system/apps/tar:tar",
+            # Basic libraries
+            "//packages/linux/core/zlib:zlib",
+        ],
+        "inherits": [],
+        "use_profile": "minimal",
+    },
+}
+
+# =============================================================================
 # COMBINED REGISTRY
 # =============================================================================
 
@@ -617,6 +839,7 @@ PACKAGE_SETS.update(TASK_PACKAGE_SETS)
 PACKAGE_SETS.update(INIT_SYSTEM_SETS)
 PACKAGE_SETS.update(DESKTOP_ENVIRONMENT_SETS)
 PACKAGE_SETS.update(LANGUAGE_DEVELOPMENT_SETS)
+PACKAGE_SETS.update(STAGE3_PACKAGE_SETS)
 
 # =============================================================================
 # PACKAGE SET OPERATIONS
@@ -807,7 +1030,7 @@ def package_set(
         package_set(
             name = "my-tools",
             packages = [
-                "//packages/linux/editors:vim",
+                "//packages/linux/editors/vim:vim",
                 "//packages/linux/system/apps/tmux:tmux",
             ],
             inherits = ["@base"],
@@ -864,7 +1087,7 @@ def system_set(
                 "//packages/linux/www/servers/nginx:nginx",
             ],
             removals = [
-                "//packages/linux/editors:emacs",
+                "//packages/linux/editors/emacs:emacs",
             ],
             description = "Custom web server configuration",
         )
@@ -1022,7 +1245,7 @@ def desktop_set(
         desktop_set(
             name = "my-gnome",
             environment = "gnome-desktop",
-            additions = ["//packages/linux/editors:vscode"],
+            additions = ["//packages/linux/editors/vscode"],
             description = "GNOME with VS Code",
         )
     """

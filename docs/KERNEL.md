@@ -95,7 +95,7 @@ CONFIG_DRM_I915=y
 2. Create a BUCK file with `kernel_config`:
 
 ```python
-load("//defs:package_defs.bzl", "kernel_build", "kernel_config")
+load("//defs/rules:kernel.bzl", "kernel_build", "kernel_config")
 
 # Merge fragments into a final config
 kernel_config(
@@ -223,6 +223,128 @@ kernel_config(
 )
 ```
 
+### DPU (Data Processing Unit)
+
+DPU images are typically stripped-down, immutable systems focused on networking,
+storage offload, and infrastructure services. The kernel config should enable
+the DPU's NIC/SmartNIC drivers and RDMA stack while disabling desktop hardware
+(graphics, sound, USB HID).
+
+Create a `dpu.config` fragment with options relevant to your hardware:
+
+```
+# dpu.config — example for Mellanox/NVIDIA BlueField-style DPUs
+
+# Core networking drivers
+CONFIG_MLX5_CORE=y
+CONFIG_MLX5_CORE_EN=y
+CONFIG_MLX5_EN_IPSEC=y
+CONFIG_MLX5_ESWITCH=y
+CONFIG_MLX5_MPFS=y
+CONFIG_MLX5_VDPA_NET=y
+
+# RDMA / RoCE
+CONFIG_INFINIBAND=y
+CONFIG_MLX5_INFINIBAND=y
+CONFIG_INFINIBAND_USER_ACCESS=y
+CONFIG_INFINIBAND_ADDR_TRANS=y
+
+# VirtIO for host-DPU communication
+CONFIG_VIRTIO=y
+CONFIG_VIRTIO_NET=y
+CONFIG_VIRTIO_BLK=y
+CONFIG_VHOST_NET=y
+CONFIG_VHOST_VDPA=y
+
+# NVMe for storage offload
+CONFIG_NVME_CORE=y
+CONFIG_BLK_DEV_NVME=y
+CONFIG_NVME_TARGET=y
+
+# Disable desktop hardware
+# CONFIG_DRM is not set
+# CONFIG_SOUND is not set
+# CONFIG_USB_HID is not set
+# CONFIG_INPUT_JOYSTICK is not set
+```
+
+Compose with base fragments and build:
+
+```python
+load("//defs/rules:kernel.bzl", "kernel_build", "kernel_config")
+
+kernel_config(
+    name = "dpu-config",
+    fragments = [
+        "//packages/linux/kernel/configs:base.config",
+        "//packages/linux/kernel/configs:network.config",
+        "//packages/linux/kernel/configs:security.config",
+        "dpu.config",  # DPU-specific hardware and features
+    ],
+)
+
+# Optional: download external module sources
+download_source(
+    name = "custom-driver-src",
+    src_uri = "https://example.com/custom-driver-1.0.tar.gz",
+    sha256 = "...",
+)
+
+kernel_build(
+    name = "dpu-kernel",
+    source = "//packages/linux/kernel/src:linux-src",
+    version = "6.17.10",
+    config_dep = ":dpu-config",
+    modules = [
+        ":custom-driver-src",  # External modules built against this kernel
+    ],
+    arch = "aarch64",  # Most DPUs are ARM64
+    cross_toolchain = "//tc/bootstrap/aarch64:cross-toolchain-aarch64",
+    visibility = ["PUBLIC"],
+)
+```
+
+The resulting kernel output includes in-tree modules, external modules in
+`lib/modules/$KRELEASE/extra/`, and pre-generated `modules.dep` from depmod.
+
+#### Building a DPU image
+
+DPU images can be assembled using existing BuckOS image rules:
+
+```python
+load("//defs/rules:rootfs.bzl", "rootfs")
+load("//defs/rules:initramfs.bzl", "initramfs")
+load("//defs/rules:image.bzl", "raw_disk_image")
+
+# Minimal rootfs for DPU
+rootfs(
+    name = "dpu-rootfs",
+    packages = [
+        "//packages/linux/core:musl",
+        "//packages/linux/core:busybox",
+        "//packages/linux/core:iproute2",
+        # Add DPU management packages as needed
+    ],
+)
+
+# For PXE / network boot
+initramfs(
+    name = "dpu-initramfs",
+    rootfs = ":dpu-rootfs",
+    compression = "xz",
+)
+
+# For eMMC / flash storage
+raw_disk_image(
+    name = "dpu-disk-image",
+    rootfs = ":dpu-rootfs",
+    size = "2G",
+    filesystem = "ext4",
+    label = "BUCKOS-DPU",
+    partition_table = True,
+)
+```
+
 ## Build Rules Reference
 
 ### `kernel_config`
@@ -242,7 +364,7 @@ kernel_config(
 
 ### `kernel_build`
 
-Builds a Linux kernel with the specified configuration.
+Builds a Linux kernel with the specified configuration, optional patches, and external modules.
 
 ```python
 kernel_build(
@@ -255,9 +377,98 @@ kernel_build(
     config_dep = ":config-target",   # Output from kernel_config
     # Or neither for defconfig
 
+    # Optional: patches to apply before building
+    patches = [
+        "fix-driver-bug.patch",         # Local patch file
+        "//patches:custom-fix.patch",   # Patch from another target
+    ],
+
+    # Optional: external module sources to compile against this kernel
+    modules = [
+        ":my-driver-src",              # download_source target
+        "//packages/linux/kernel/modules/custom:src",
+    ],
+
     visibility = ["PUBLIC"],
 )
 ```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `name` | string | required | Target name |
+| `source` | dep | required | Kernel source (download_source target) |
+| `version` | string | required | Kernel version string |
+| `config` | source | None | Direct path to .config file |
+| `config_dep` | dep | None | Config from kernel_config rule |
+| `arch` | string | "x86_64" | Target architecture (x86_64 or aarch64) |
+| `cross_toolchain` | dep | None | Cross-compilation toolchain |
+| `patches` | list[source] | [] | Patch files applied with `patch -p1` before build |
+| `modules` | list[dep] | [] | External module sources to compile |
+| `visibility` | list | [] | Target visibility |
+
+**Patches** are applied after the kernel source is copied to the build directory
+but before configuration and compilation. They use `patch -p1` and the build fails
+if any patch fails to apply. Patches from the private patch registry
+(`patches/registry.bzl`) are automatically appended.
+
+**Modules** are compiled after the kernel build completes using
+`make -C $KERNEL_BUILD M=$MODULE_SRC modules`. Each module source is a
+`download_source` target whose extracted directory contains a Makefile/Kbuild
+file. Built `.ko` files are installed to `lib/modules/$KRELEASE/extra/` and
+`depmod` runs automatically to generate module dependency metadata.
+
+### External Kernel Modules
+
+There are two ways to build external kernel modules:
+
+#### Method 1: `modules` attribute (recommended)
+
+The simplest approach — declare module sources directly on the `kernel_build` target:
+
+```python
+load("//defs/rules:kernel.bzl", "kernel_build")
+
+download_source(
+    name = "my-driver-src",
+    src_uri = "https://example.com/my-driver-1.0.tar.gz",
+    sha256 = "...",
+)
+
+kernel_build(
+    name = "my-kernel",
+    source = "//packages/linux/kernel/src:linux-src",
+    version = "6.17.10",
+    config_dep = "//packages/linux/kernel/configs:buckos-default",
+    modules = [":my-driver-src"],
+    visibility = ["PUBLIC"],
+)
+```
+
+The kernel build will compile the module against the kernel tree and install the
+`.ko` files alongside in-tree modules.
+
+#### Method 2: Separate `ebuild_package` (for complex modules)
+
+For modules that need custom build steps, non-standard source layouts, or
+additional dependencies, use a separate `ebuild_package` with `bdepend` on the
+kernel. See `packages/linux/laptop/battery/tp_smapi/BUCK` for an example.
+
+### Private Patch Registry
+
+Kernel targets integrate with the private patch registry (`patches/registry.bzl`).
+Add entries keyed by the kernel target name to apply patches without modifying
+the BUCK file:
+
+```python
+# patches/registry.bzl
+PATCH_REGISTRY = {
+    "buckos-kernel": {
+        "patches": ["//patches:my-kernel-fix.patch"],
+    },
+}
+```
+
+See `defs/patch_registry.bzl` for the full registry format.
 
 ## Directory Structure
 
@@ -276,6 +487,9 @@ packages/linux/kernel/
 │   └── security.config
 ├── buckos-kernel/          # Official BuckOS kernels
 │   └── BUCK
+├── modules/                # External kernel module sources
+│   └── <module-name>/
+│       └── BUCK            # download_source + optional ebuild_package
 ├── examples/               # Custom kernel examples
 │   └── BUCK
 ├── linux/                  # Legacy (deprecated)

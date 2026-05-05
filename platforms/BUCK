@@ -1,26 +1,7 @@
-load("@prelude//platforms:defs.bzl", "execution_platform", "host_configuration")
-load(":defs.bzl", "re_execution_platform")
-
 # Target platform detection
 platform(
     name = "detect",
     constraint_values = [],
-)
-
-# Default execution platform (with remote execution enabled)
-re_execution_platform(
-    name = "default",
-    cpu_configuration = host_configuration.cpu,
-    os_configuration = host_configuration.os,
-    use_windows_path_separators = host_configuration.os == "windows",
-)
-
-# Local-only execution platform (for debugging or when RE is unavailable)
-execution_platform(
-    name = "local",
-    cpu_configuration = host_configuration.cpu,
-    os_configuration = host_configuration.os,
-    use_windows_path_separators = host_configuration.os == "windows",
 )
 
 # x86_64 Linux target
@@ -30,6 +11,28 @@ platform(
         "prelude//cpu/constraints:x86_64",
         "prelude//os/constraints:linux",
     ],
+)
+
+# aarch64 (ARM64) Linux target
+platform(
+    name = "linux-aarch64",
+    constraint_values = [
+        "prelude//cpu/constraints:arm64",
+        "prelude//os/constraints:linux",
+    ],
+)
+
+# Architecture detection config settings for select()
+config_setting(
+    name = "is_aarch64",
+    constraint_values = ["prelude//cpu/constraints:arm64"],
+    visibility = ["PUBLIC"],
+)
+
+config_setting(
+    name = "is_x86_64",
+    constraint_values = ["prelude//cpu/constraints:x86_64"],
+    visibility = ["PUBLIC"],
 )
 
 # Configuration for building packages
@@ -118,35 +121,15 @@ constraint_value(
     visibility = ["PUBLIC"],
 )
 
-# Config settings for select() in build rules
-# These match on platform constraints (for --target-platforms flag)
-config_setting(
-    name = "use_bootstrap_toolchain",
-    constraint_values = [":bootstrap-toolchain"],
-    visibility = ["PUBLIC"],
-)
-
-config_setting(
-    name = "use_host_toolchain_platform",
-    constraint_values = [":host-toolchain"],
-    visibility = ["PUBLIC"],
-)
-
-# This matches on config value (for --config buckos.use_host_toolchain=true flag)
-config_setting(
-    name = "use_host_toolchain",
-    values = {
-        "buckos.use_host_toolchain": "true",
-    },
-    visibility = ["PUBLIC"],
-)
-
 # Multi-platform target platforms
 platform(
     name = "linux-target",
     constraint_values = [
         ":linux",
         ":bootstrap-toolchain",  # Default to bootstrap toolchain for reproducibility
+        "prelude//cpu/constraints:x86_64",  # Default to x86_64
+        "//use/constraints:systemd-on",  # Use systemd for init and libudev
+        "//use/constraints:pam-on",  # Required for logind sessions (kwin/seat DRM access)
     ],
     visibility = ["PUBLIC"],
 )
@@ -157,6 +140,35 @@ platform(
     constraint_values = [
         ":linux",
         ":host-toolchain",
+        "prelude//cpu/constraints:x86_64",  # Default to x86_64
+        "//use/constraints:systemd-on",  # Use systemd for init and libudev
+        "//use/constraints:pam-on",  # Required for logind sessions (kwin/seat DRM access)
+    ],
+    visibility = ["PUBLIC"],
+)
+
+# aarch64 Linux target with bootstrap toolchain
+platform(
+    name = "linux-aarch64-target",
+    constraint_values = [
+        ":linux",
+        ":bootstrap-toolchain",
+        "prelude//cpu/constraints:arm64",
+        "//use/constraints:systemd-on",  # Use systemd for init and libudev
+        "//use/constraints:pam-on",  # Required for logind sessions (kwin/seat DRM access)
+    ],
+    visibility = ["PUBLIC"],
+)
+
+# aarch64 Linux target with host toolchain (for cross-compilation development)
+platform(
+    name = "linux-aarch64-target-host",
+    constraint_values = [
+        ":linux",
+        ":host-toolchain",
+        "prelude//cpu/constraints:arm64",
+        "//use/constraints:systemd-on",  # Use systemd for init and libudev
+        "//use/constraints:pam-on",  # Required for logind sessions (kwin/seat DRM access)
     ],
     visibility = ["PUBLIC"],
 )

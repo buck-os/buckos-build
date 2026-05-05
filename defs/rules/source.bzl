@@ -1,0 +1,78 @@
+"""
+extract_source rule: extract source archives.
+
+Extraction-only — downloading is handled by the prelude's http_file rule
+or by export_file for vendored archives.  The package() macro creates both
+targets automatically.
+
+The two-target split (http_file -> extract_source) preserves http_file's
+native benefits: content-addressed CAS lookup by sha256, deferred
+execution, and RE-native download handling.
+
+Uses an anonymous target so extraction deduplicates across configurations
+— the output depends only on (archive, strip_components, format), not
+on the consumer's platform or toolchain.
+"""
+
+load("//tc:transitions.bzl", "strip_toolchain_mode")
+
+def _anon_extract_impl(ctx):
+    archive = ctx.attrs.source[DefaultInfo].default_outputs[0]
+    output = ctx.actions.declare_output("src", dir = True)
+
+    cmd = cmd_args(ctx.attrs._extract_tool[RunInfo])
+    cmd.add("--archive", archive)
+    cmd.add("--output", output.as_output())
+    cmd.add("--strip-components", str(ctx.attrs.strip_components))
+    if ctx.attrs.format:
+        cmd.add("--format", ctx.attrs.format)
+    for pattern in ctx.attrs.exclude_patterns:
+        cmd.add("--exclude", pattern)
+    cmd.add("--allow-host-path")
+
+    ctx.actions.run(cmd, category = "extract", allow_cache_upload = True)
+
+    return [DefaultInfo(default_output = output)]
+
+_anon_extract = anon_rule(
+    impl = _anon_extract_impl,
+    attrs = {
+        "source": attrs.dep(),
+        "strip_components": attrs.int(default = 1),
+        "format": attrs.option(attrs.string(), default = None),
+        "exclude_patterns": attrs.list(attrs.string(), default = []),
+        "_extract_tool": attrs.exec_dep(default = "//tools:extract"),
+    },
+    artifact_promise_mappings = {
+        "src": lambda x: x[DefaultInfo].default_outputs[0],
+    },
+)
+
+def _extract_source_impl(ctx):
+    src = ctx.actions.anon_target(
+        _anon_extract,
+        {
+            "source": ctx.attrs.source,
+            "strip_components": ctx.attrs.strip_components,
+            "format": ctx.attrs.format,
+            "exclude_patterns": ctx.attrs.exclude_patterns,
+            "_extract_tool": ctx.attrs._extract_tool,
+        },
+    ).artifact("src")
+
+    return [DefaultInfo(default_output = src)]
+
+extract_source = rule(
+    impl = _extract_source_impl,
+    attrs = {
+        "source": attrs.dep(),
+        "strip_components": attrs.int(default = 1),
+        "format": attrs.option(attrs.string(), default = None),
+        "exclude_patterns": attrs.list(attrs.string(), default = []),
+        "labels": attrs.list(attrs.string(), default = []),
+        "_extract_tool": attrs.default_only(
+            attrs.exec_dep(default = "//tools:extract"),
+        ),
+    },
+    cfg = strip_toolchain_mode,
+)

@@ -1,0 +1,22 @@
+"""
+BXL graph structure test: download source dedup.
+
+Verifies that no two archive targets with different names share the
+same sha256.  Duplicate names cause mirror path collisions.
+
+Run:
+    buck2 bxl buckos//tests/graph/test_sources.bxl:test_sources
+"""
+
+load("//tests/graph:test_sources_impl.bzl", "run")
+
+def _impl(ctx):
+    passed, failed, details = run(ctx)
+    if failed > 0:
+        fail("{} assertion(s) failed\n{}".format(failed, details))
+
+test_sources = bxl_main(
+    doc = "Verify no duplicate download source names for the same archive.",
+    impl = _impl,
+    cli_args = {},
+)

@@ -1,0 +1,123 @@
+"""
+rootfs rule: assemble a root filesystem from packages.
+"""
+
+load("//defs:providers.bzl", "KernelInfo", "PackageInfo")
+load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_ld_linux_args", "toolchain_path_args")
+load("//defs/rules:_common.bzl", "add_flag_file", "write_runtime_prefixes")
+load("//defs:tsets.bzl", "RuntimeDepTSet")
+
+# ── rootfs rule ──────────────────────────────────────────────────────
+
+def _rootfs_impl(ctx):
+    """Assemble a root filesystem from packages."""
+    if ctx.attrs.tarball:
+        output = ctx.actions.declare_output(ctx.attrs.name + ".tar")
+    else:
+        output = ctx.actions.declare_output(ctx.attrs.name, dir = True)
+
+    # Collect all package outputs (explicit list only, no auto-resolution)
+    pkg_dirs = []
+    for pkg in ctx.attrs.packages:
+        pkg_dirs.append(pkg[DefaultInfo].default_outputs[0])
+
+    # Collect transitive runtime closure from top_packages via tset.
+    # Each top_package's runtime_deps tset includes itself and all
+    # transitive runtime deps — the "prefixes" projection yields their
+    # prefix artifacts for merging into the rootfs.
+    prefix_list_file = None
+    if ctx.attrs.top_packages:
+        from_top = []
+        for tp in ctx.attrs.top_packages:
+            if PackageInfo in tp and tp[PackageInfo].runtime_deps:
+                from_top.append(tp[PackageInfo].runtime_deps)
+        if from_top:
+            merged = ctx.actions.tset(RuntimeDepTSet, children = from_top)
+            prefix_list_file = write_runtime_prefixes(ctx, merged)
+
+    # Build rootfs_helper command
+    cmd = cmd_args(ctx.attrs._rootfs_tool[RunInfo])
+    if ctx.attrs.tarball:
+        cmd.add("--output-tarball", output.as_output())
+    else:
+        cmd.add("--output-dir", output.as_output())
+    for pkg_dir in pkg_dirs:
+        cmd.add("--package-dir", pkg_dir)
+    add_flag_file(cmd, "--prefix-list", prefix_list_file)
+    cmd.add("--version", ctx.attrs.version)
+    for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
+        cmd.add(arg)
+
+    # Write version to a file that contributes to action cache key.
+    # Bumping the version forces a rootfs rebuild.
+    version_key = ctx.actions.write(
+        "version_key.txt",
+        "version={}\n".format(ctx.attrs.version),
+    )
+    cmd.add(cmd_args(hidden = [version_key]))
+
+    # Force deep content tracking of all package directories.
+    # A manifest action computes content hashes so the rootfs cache key
+    # changes when any package content changes.
+    manifest_file = ctx.actions.declare_output("package_manifest.txt")
+    manifest_script = ctx.actions.write(
+        "compute_manifest.sh",
+        """\
+#!/bin/bash
+set -e
+OUT="$1"
+shift
+{
+    echo "# Package content manifest for rootfs cache invalidation"
+    for pkg_dir in "$@"; do
+        if [ -d "$pkg_dir" ]; then
+            HASH=$(find "$pkg_dir" -type f -exec stat -c '%n %s %Y' {} \\; 2>/dev/null | LC_ALL=C sort | sha256sum | cut -d' ' -f1)
+            echo "$pkg_dir: $HASH"
+        fi
+    done
+} > "$OUT"
+""",
+        is_executable = True,
+    )
+
+    manifest_cmd2 = cmd_args(["bash", manifest_script, manifest_file.as_output()])
+    for pkg_dir in pkg_dirs:
+        manifest_cmd2.add(pkg_dir)
+
+    ctx.actions.run(
+        manifest_cmd2,
+        category = "rootfs_manifest",
+        identifier = ctx.attrs.name + "-manifest",
+        allow_cache_upload = True,
+    )
+
+    # Include manifest as hidden input to force cache invalidation
+    cmd.add(cmd_args(hidden = [manifest_file]))
+
+    ctx.actions.run(
+        cmd,
+        category = "rootfs",
+        identifier = ctx.attrs.name,
+        allow_cache_upload = True,
+    )
+
+    return [DefaultInfo(default_output = output)]
+
+_rootfs_rule = rule(
+    impl = _rootfs_impl,
+    attrs = {
+        "packages": attrs.list(attrs.dep(), default = []),
+        "top_packages": attrs.list(attrs.dep(), default = []),
+        "tarball": attrs.bool(default = False),
+        "version": attrs.string(default = "1"),
+        "labels": attrs.list(attrs.string(), default = []),
+        "_rootfs_tool": attrs.default_only(
+            attrs.exec_dep(default = "//tools:rootfs_helper"),
+        ),
+    } | TOOLCHAIN_ATTRS,
+)
+
+def rootfs(labels = [], **kwargs):
+    _rootfs_rule(labels = labels, **kwargs)

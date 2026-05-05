@@ -1,14 +1,15 @@
 """
-Template for go_package with USE flags
+Template for package(build_rule = "go") with USE flags
 Based on PACKAGE-SPEC-004: Go Packages
 """
 
-load("//defs:package_defs.bzl", "go_package")
+load("//defs:package.bzl", "package")
 
-go_package(
+package(
+    build_rule = "go",
     name = "PACKAGE_NAME",
     version = "VERSION",
-    src_uri = "SOURCE_URL",
+    url = "SOURCE_URL",
     sha256 = "SHA256_CHECKSUM",
 
     # Go packages to build (import paths)

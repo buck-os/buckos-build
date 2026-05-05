@@ -476,7 +476,7 @@ Required integration tests:
 ```python
 def test_spec_package_installs_correctly():
     """buckos-specs package should install all specs to /etc/buckos/specs"""
-    build_package("//packages/linux/system/specs:buckos-specs")
+    build_package("system//specs:buckos-specs")
     assert path_exists("/etc/buckos/specs/INDEX.md")
     assert path_exists("/etc/buckos/specs/REGISTRY.json")
     assert path_exists("/etc/buckos/specs/core/SPEC-001-package-manager-integration.md")

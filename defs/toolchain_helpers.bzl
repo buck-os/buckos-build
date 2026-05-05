@@ -1,0 +1,102 @@
+"""Shared toolchain helpers for package rules.
+
+Provides TOOLCHAIN_ATTRS (merge into rule attrs dicts) and
+toolchain_env_args() (inject CC/CXX/AR into Python helper cmd_args).
+
+The _toolchain attr uses select() on the bootstrap mode constraint:
+  DEFAULT        → [buckos].default_toolchain from .buckconfig
+  is-bootstrap-mode → host PATH toolchain (escape hatch)
+"""
+
+load("//defs:providers.bzl", "BuildToolchainInfo")
+
+def _buckos_toolchain_select():
+    """Config-driven toolchain selection via select().
+
+    Four modes:
+      DEFAULT        — read from [buckos].default_toolchain in .buckconfig
+      bootstrap      — host PATH toolchain (escape hatch for stage2 build)
+      host-tools     — bootstrap-toolchain (buckos compiler + host PATH,
+                        no host_tools dep — breaks cycle for base tool builds)
+      host-target    — seed exec toolchain (native gcc + hermetic PATH),
+                        falls back to host PATH when bootstrapping
+    """
+    return select({
+        "//tc/exec:is-bootstrap-mode": "//tc/host:host-toolchain",
+        "//tc/exec:is-host-tools-mode": "//tc/bootstrap:bootstrap-toolchain",
+        "//tc/exec:is-host-target": "//tc/seed:seed-exec-toolchain",
+        "DEFAULT": read_config("buckos", "default_toolchain", "toolchains//:buckos"),
+    })
+
+# Merge into rule attrs dicts via: attrs = { ... } | TOOLCHAIN_ATTRS
+TOOLCHAIN_ATTRS = {
+    "_toolchain": attrs.default_only(
+        attrs.toolchain_dep(
+            default = _buckos_toolchain_select(),
+            providers = [BuildToolchainInfo],
+        ),
+    ),
+}
+
+def toolchain_env_args(ctx):
+    """Return --env flag cmd_args for CC/CXX/AR from BuildToolchainInfo.
+
+    Each returned cmd_args renders as a single argv entry like
+    "CC=gcc --sysroot=/path".  Python helpers resolve relative Buck2
+    artifact paths via _resolve_env_paths().
+    """
+    tc = ctx.attrs._toolchain[BuildToolchainInfo]
+    result = []
+    # delimiter=" " flattens multi-part RunInfo.args (e.g. "gcc --sysroot=/path")
+    # into a single token.  Outer delimiter="" joins "CC=" prefix with the value.
+    result.append(cmd_args("CC=", cmd_args(tc.cc.args, delimiter = " "), delimiter = ""))
+    result.append(cmd_args("CXX=", cmd_args(tc.cxx.args, delimiter = " "), delimiter = ""))
+    result.append(cmd_args("AR=", cmd_args(tc.ar.args, delimiter = " "), delimiter = ""))
+    return result
+
+def toolchain_path_args(ctx):
+    """Return PATH strategy flags for hermetic builds.
+
+    Three outcomes:
+      1. host_bin_dir set     → --hermetic-path (fully hermetic, single dir)
+      2. allows_host_path     → --allow-host-path (bootstrap escape hatch)
+      3. neither              → --hermetic-empty (PATH built from per-rule host tool deps)
+    """
+    tc = ctx.attrs._toolchain[BuildToolchainInfo]
+    if tc.host_bin_dir:
+        return [cmd_args("--hermetic-path", tc.host_bin_dir)]
+    if tc.allows_host_path:
+        return [cmd_args("--allow-host-path")]
+    # Hermetic empty: PATH built entirely from per-rule host tool deps
+    return [cmd_args("--hermetic-empty")]
+
+def _ld_linux_subpath(triple):
+    """Return the sysroot-relative path to the dynamic linker for a given triple."""
+    if triple.startswith("aarch64"):
+        return "lib/ld-linux-aarch64.so.1"
+    return "lib64/ld-linux-x86-64.so.2"
+
+def toolchain_ld_linux_args(ctx):
+    """Return --ld-linux flag pointing to the buckos dynamic linker.
+
+    Build helpers use this to disable posix_spawn in child Python
+    processes, avoiding ENOEXEC with padded ELF interpreters.
+    Only needed for rules whose builds execute buckos-native dep
+    binaries (e.g. mozbuild running rustc/cargo via mach).
+    """
+    tc = ctx.attrs._toolchain[BuildToolchainInfo]
+    if tc.sysroot:
+        return [cmd_args("--ld-linux", tc.sysroot.project(_ld_linux_subpath(tc.target_triple)))]
+    return []
+
+def toolchain_target_triple(ctx):
+    """Return the target triple from BuildToolchainInfo."""
+    return ctx.attrs._toolchain[BuildToolchainInfo].target_triple
+
+def toolchain_extra_cflags(ctx):
+    """Return toolchain-injected CFLAGS (e.g. hardening flags)."""
+    return ctx.attrs._toolchain[BuildToolchainInfo].extra_cflags
+
+def toolchain_extra_ldflags(ctx):
+    """Return toolchain-injected LDFLAGS (e.g. -fuse-ld=mold)."""
+    return ctx.attrs._toolchain[BuildToolchainInfo].extra_ldflags

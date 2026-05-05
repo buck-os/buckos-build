@@ -246,7 +246,7 @@ The config hash ensures binaries are only reused when built with identical confi
 **Included in hash:**
 - Platform/architecture (`uname -m`)
 - Compiler version (`gcc --version`)
-- USE flags (from `config/use_config.bzl`)
+- USE flags (from `.buckconfig` `[use]` section)
 - Dependencies (hash of `buck2 query deps(target)`)
 
 **Example:**

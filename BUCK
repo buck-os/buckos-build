@@ -1,7 +1,10 @@
 # BuckOs Linux Distribution - Root Build File
 # A Buck2-based Linux distribution similar to Gentoo's ebuild system
 
-load("//defs:package_defs.bzl", "rootfs")
+load("//tc/seed:defs.bzl", "maybe_export_seed")
+load("//defs/rules:rootfs.bzl", "rootfs")
+
+maybe_export_seed()
 
 # =============================================================================
 # Main build targets
@@ -172,7 +175,7 @@ filegroup(
 filegroup(
     name = "net-packages",
     srcs = [
-        "//packages/linux/network/openssl:openssl",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
         "//packages/linux/network/curl:curl",
         "//packages/linux/network/openssh:openssh",
         "//packages/linux/network/iproute2:iproute2",
@@ -224,9 +227,9 @@ filegroup(
 filegroup(
     name = "editor-packages",
     srcs = [
-        "//packages/linux/editors:vim",
-        "//packages/linux/editors:neovim",
-        "//packages/linux/editors:emacs",
+        "//packages/linux/editors/vim:vim",
+        "//packages/linux/editors/neovim:neovim",
+        "//packages/linux/editors/emacs:emacs",
     ],
     visibility = ["PUBLIC"],
 )
@@ -354,12 +357,6 @@ filegroup(
     visibility = ["PUBLIC"],
 )
 
-filegroup(
-    name = "init-lightweight",
-    srcs = [
-    ],
-    visibility = ["PUBLIC"],
-)
 
 # =============================================================================
 # Desktop environment aliases
@@ -513,10 +510,10 @@ alias(
     visibility = ["PUBLIC"],
 )
 
-# virt-manager - VM management GUI
+# virt-viewer - Graphical console client for VMs
 alias(
-    name = "virt-manager",
-    actual = "//packages/linux/emulation/virtualization/virt-manager:virt-manager",
+    name = "virt-viewer",
+    actual = "//packages/linux/emulation/virtualization/virt-manager:virt-viewer",
     visibility = ["PUBLIC"],
 )
 
@@ -567,6 +564,63 @@ alias(
 alias(
     name = "virtme-ng",
     actual = "//packages/linux/emulation/kernel/virtme-ng:virtme-ng",
+    visibility = ["PUBLIC"],
+)
+
+# =============================================================================
+# Cloud Hypervisor Integration
+# =============================================================================
+
+# Cloud Hypervisor full stack (CH + virtiofsd + firmware)
+alias(
+    name = "ch-full",
+    actual = "//packages/linux/emulation:cloud-hypervisor-full",
+    visibility = ["PUBLIC"],
+)
+
+# Cloud Hypervisor minimal (CH + virtiofsd)
+alias(
+    name = "ch-minimal",
+    actual = "//packages/linux/emulation:cloud-hypervisor-minimal",
+    visibility = ["PUBLIC"],
+)
+
+# Cloud Hypervisor optimized kernel
+alias(
+    name = "kernel-ch",
+    actual = "//packages/linux/kernel/buckos-kernel:buckos-kernel-ch",
+    visibility = ["PUBLIC"],
+)
+
+# Cloud Hypervisor boot scripts
+alias(
+    name = "ch-boot-direct",
+    actual = "//packages/linux/boot/cloud-hypervisor-boot:ch-boot-direct",
+    visibility = ["PUBLIC"],
+)
+
+alias(
+    name = "ch-boot-virtiofs",
+    actual = "//packages/linux/boot/cloud-hypervisor-boot:ch-boot-virtiofs",
+    visibility = ["PUBLIC"],
+)
+
+alias(
+    name = "ch-boot-network",
+    actual = "//packages/linux/boot/cloud-hypervisor-boot:ch-boot-network",
+    visibility = ["PUBLIC"],
+)
+
+# Cloud Hypervisor disk images
+alias(
+    name = "ch-disk-minimal",
+    actual = "//packages/linux/system/cloud-hypervisor:ch-minimal-disk",
+    visibility = ["PUBLIC"],
+)
+
+alias(
+    name = "ch-disk-full",
+    actual = "//packages/linux/system/cloud-hypervisor:ch-full-disk",
     visibility = ["PUBLIC"],
 )
 
@@ -861,7 +915,7 @@ combined_set(
     name = "ci-runner",
     sets = ["@container-host"],
     additions = [
-        "//packages/linux/editors:vim",
+        "//packages/linux/editors/vim:vim",
     ],
     removals = [
         "//packages/linux/system/docs:texinfo",
@@ -875,10 +929,21 @@ system_set(
     profile = "minimal",
     additions = [
         "//packages/linux/network/openssh:openssh",
-        "//packages/linux/editors:vim",
+        "//packages/linux/editors/vim:vim",
         "//packages/linux/system/apps/sudo:sudo",
     ],
     description = "Lightweight server with SSH access",
+)
+
+# =============================================================================
+# Source Repository for Live ISO
+# =============================================================================
+# This filegroup captures the packages/linux source tree for inclusion in live ISOs
+
+filegroup(
+    name = "packages-linux-src",
+    srcs = glob(["packages/linux/**/*"]),
+    visibility = ["PUBLIC"],
 )
 
 # =============================================================================

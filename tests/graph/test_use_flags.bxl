@@ -1,0 +1,19 @@
+"""
+BXL graph structure test: USE flag select() resolution.
+
+Run:
+    buck2 bxl buckos//tests/graph/test_use_flags.bxl:test_use_flags
+"""
+
+load("//tests/graph:test_use_flags_impl.bzl", "run")
+
+def _impl(ctx):
+    passed, failed, details = run(ctx)
+    if failed > 0:
+        fail("{} assertion(s) failed\n{}".format(failed, details))
+
+test_use_flags = bxl_main(
+    doc = "Verify USE flag select() wiring controls dependency edges.",
+    impl = _impl,
+    cli_args = {},
+)

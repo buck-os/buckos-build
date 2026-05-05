@@ -1,0 +1,18 @@
+load("@prelude//platforms:defs.bzl", "execution_platform", "host_configuration")
+load("//platforms:defs.bzl", "re_execution_platform")
+
+# Default execution platform (with remote execution enabled)
+re_execution_platform(
+    name = "default",
+    cpu_configuration = host_configuration.cpu,
+    os_configuration = host_configuration.os,
+    use_windows_path_separators = host_configuration.os == "windows",
+)
+
+# Local-only execution platform (for debugging or when RE is unavailable)
+execution_platform(
+    name = "local",
+    cpu_configuration = host_configuration.cpu,
+    os_configuration = host_configuration.os,
+    use_windows_path_separators = host_configuration.os == "windows",
+)

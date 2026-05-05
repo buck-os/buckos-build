@@ -43,19 +43,20 @@ This specification defines how to create BuckOS packages for Go projects using G
 
 ## Package Type
 
-**`go_package()`** - Builds Go projects with `go build`
+**`package(build_rule = "go")`** - Builds Go projects with `go build`
 
 ## Quick Start
 
 ### Basic Go Package
 
 ```python
-load("//defs:package_defs.bzl", "go_package")
+load("//defs:package.bzl", "package")
 
-go_package(
+package(
+    build_rule = "go",
     name = "hugo",
     version = "0.121.0",
-    src_uri = "https://github.com/gohugoio/hugo/archive/v0.121.0.tar.gz",
+    url = "https://github.com/gohugoio/hugo/archive/v0.121.0.tar.gz",
     sha256 = "abc123...",
     packages = ["."],
     maintainers = ["go@buckos.org"],
@@ -65,10 +66,11 @@ go_package(
 ### Multi-Binary Package
 
 ```python
-go_package(
+package(
+    build_rule = "go",
     name = "k8s-tools",
     version = "1.28.0",
-    src_uri = "https://github.com/kubernetes/kubernetes/archive/v1.28.0.tar.gz",
+    url = "https://github.com/kubernetes/kubernetes/archive/v1.28.0.tar.gz",
     sha256 = "xyz789...",
     packages = [
         "./cmd/kubectl",
@@ -81,10 +83,11 @@ go_package(
 ### With USE Flags and Build Tags
 
 ```python
-go_package(
+package(
+    build_rule = "go",
     name = "tool",
     version = "1.0.0",
-    src_uri = "...",
+    url = "...",
     sha256 = "...",
     iuse = ["netgo", "sqlite"],
     use_tags = {
@@ -101,7 +104,7 @@ go_package(
 |-------|------|-------------|
 | `name` | string | Package name |
 | `version` | string | Package version |
-| `src_uri` | string | Source tarball URL |
+| `url` | string | Source tarball URL |
 | `sha256` | string | SHA-256 checksum |
 
 ## Go-Specific Fields
@@ -149,8 +152,8 @@ use_tags = {
     "postgres": "postgres",
 }
 use_deps = {
-    "sqlite": ["//packages/linux/dev-db:sqlite"],
-    "postgres": ["//packages/linux/dev-db:postgresql"],
+    "sqlite": "//packages/linux/dev-db:sqlite",
+    "postgres": "//packages/linux/dev-db:postgresql",
 }
 ```
 
@@ -191,7 +194,8 @@ deps = [
 ## Cross-Compilation
 
 ```python
-go_package(
+package(
+    build_rule = "go",
     name = "app",
     env = {
         "GOOS": "linux",

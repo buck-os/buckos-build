@@ -17,13 +17,15 @@ for p in $(type -ap pkg-config); do
 done
 
 if [ -z "$REAL_PKGCONFIG" ]; then
-    # Fallback: try common locations
-    for p in /usr/bin/pkg-config /bin/pkg-config; do
-        if [ -x "$p" ]; then
-            REAL_PKGCONFIG="$p"
-            break
-        fi
-    done
+    # Check TOOLCHAIN_PATH if set (bootstrap toolchain)
+    if [ -n "$TOOLCHAIN_PATH" ]; then
+        for dir in ${TOOLCHAIN_PATH//:/ }; do
+            if [ -x "$dir/pkg-config" ]; then
+                REAL_PKGCONFIG="$dir/pkg-config"
+                break
+            fi
+        done
+    fi
 fi
 
 if [ -z "$REAL_PKGCONFIG" ]; then
@@ -76,6 +78,8 @@ case "$*" in
                         # /usr/share/... -> $DEP_ROOT/usr/share/... (for pkgdatadir etc)
                         # Also handle //usr/... (double slash from pc_sysrootdir="/" + /usr)
                         OUTPUT=$(echo "$OUTPUT" | sed -e "s|-I/usr/include|-I$DEP_ROOT/usr/include|g" \
+                                                      -e "s|-I/usr/lib64|-I$DEP_ROOT/usr/lib64|g" \
+                                                      -e "s|-I/usr/lib|-I$DEP_ROOT/usr/lib|g" \
                                                       -e "s|-L/usr/lib64|-L$DEP_ROOT/usr/lib64|g" \
                                                       -e "s|-L/usr/lib|-L$DEP_ROOT/usr/lib|g" \
                                                       -e "s| /usr/include| $DEP_ROOT/usr/include|g" \
@@ -91,6 +95,35 @@ case "$*" in
                     break
                 fi
             done
+        fi
+
+        # Fix include paths that reference transitive dependency subdirectories
+        # e.g., pango's .pc references -I.../pango/usr/include/harfbuzz but harfbuzz
+        # is in a separate package. Search all deps for missing subdirectories.
+        if [ -n "$DEP_BASE_DIRS" ]; then
+            NEW_OUTPUT=""
+            for token in $OUTPUT; do
+                case "$token" in
+                    -I*)
+                        inc_path="${token#-I}"
+                        if [ ! -d "$inc_path" ]; then
+                            # Extract the subdirectory name (e.g., harfbuzz, freetype2)
+                            subdir=$(basename "$inc_path")
+                            found=false
+                            IFS=':' read -ra ALL_DEPS <<< "$DEP_BASE_DIRS"
+                            for dep in "${ALL_DEPS[@]}"; do
+                                if [ -d "$dep/usr/include/$subdir" ]; then
+                                    token="-I$dep/usr/include/$subdir"
+                                    found=true
+                                    break
+                                fi
+                            done
+                        fi
+                        ;;
+                esac
+                NEW_OUTPUT="$NEW_OUTPUT $token"
+            done
+            OUTPUT="${NEW_OUTPUT# }"
         fi
         ;;
 esac

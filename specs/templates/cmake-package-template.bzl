@@ -1,14 +1,15 @@
 """
-Template for cmake_package with USE flags
+Template for package(build_rule = "cmake") with USE flags
 Based on PACKAGE-SPEC-002: Build System Packages (CMake)
 """
 
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "PACKAGE_NAME",
     version = "VERSION",
-    src_uri = "SOURCE_URL",
+    url = "SOURCE_URL",
     sha256 = "SHA256_CHECKSUM",
 
     # USE flags this package supports
@@ -32,7 +33,7 @@ cmake_package(
     },
 
     # Static CMake arguments (always applied)
-    cmake_args = [
+    configure_args = [
         # Example: "-DBUILD_EXAMPLES=OFF",
         # Note: -DCMAKE_INSTALL_PREFIX=/usr is automatic
         # Note: -DCMAKE_BUILD_TYPE=Release is automatic

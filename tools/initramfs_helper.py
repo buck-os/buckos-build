@@ -1,0 +1,89 @@
+#!/usr/bin/env python3
+"""Build a cpio.gz initramfs from a directory tree.
+
+Takes a root directory and produces a gzip-compressed cpio archive
+suitable for use as a Linux initramfs.
+"""
+
+import argparse
+import gzip
+import os
+import shutil
+import subprocess
+import sys
+
+from _env import sanitize_global_env
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Build cpio.gz initramfs")
+    parser.add_argument("--root-dir", required=True, help="Root directory to pack")
+    parser.add_argument("--output", required=True, help="Output file path (cpio.gz)")
+    args = parser.parse_args()
+
+    sanitize_global_env()
+
+    if not os.path.isdir(args.root_dir):
+        print(f"error: root directory not found: {args.root_dir}", file=sys.stderr)
+        sys.exit(1)
+
+    output_dir = os.path.dirname(os.path.abspath(args.output))
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Copy input to scratch to avoid mutating the previous action's output.
+    _scratch = os.path.abspath(os.environ.get("BUCK_SCRATCH_PATH",
+                                              os.environ.get("TMPDIR", "/tmp")))
+    pack_root = os.path.join(_scratch, "initramfs-root")
+    if os.path.exists(pack_root):
+        shutil.rmtree(pack_root)
+    shutil.copytree(args.root_dir, pack_root, symlinks=True)
+
+    # Normalize file timestamps so cpio embeds deterministic mtimes.
+    epoch = int(os.environ.get("SOURCE_DATE_EPOCH", "315576000"))
+    stamp = (epoch, epoch)
+    for dirpath, _dirnames, filenames in os.walk(pack_root):
+        for fname in filenames:
+            try:
+                os.utime(os.path.join(dirpath, fname), stamp)
+            except (PermissionError, OSError):
+                pass
+        try:
+            os.utime(dirpath, stamp)
+        except (PermissionError, OSError):
+            pass
+
+    # Use find | cpio to build the archive, then gzip it.
+    # cpio -o -H newc is the standard initramfs format.
+    find_proc = subprocess.Popen(
+        ["find", ".", "-print0"],
+        cwd=pack_root,
+        stdout=subprocess.PIPE,
+    )
+    cpio_proc = subprocess.Popen(
+        ["cpio", "--null", "-o", "-H", "newc", "--quiet"],
+        cwd=pack_root,
+        stdin=find_proc.stdout,
+        stdout=subprocess.PIPE,
+    )
+    find_proc.stdout.close()
+
+    cpio_data, _ = cpio_proc.communicate()
+    find_proc.wait()
+
+    if find_proc.returncode != 0:
+        print(f"error: find exited with code {find_proc.returncode}", file=sys.stderr)
+        sys.exit(1)
+    if cpio_proc.returncode != 0:
+        print(f"error: cpio exited with code {cpio_proc.returncode}", file=sys.stderr)
+        sys.exit(1)
+
+    epoch = int(os.environ.get("SOURCE_DATE_EPOCH", "315576000"))
+    with gzip.GzipFile(args.output, "wb", mtime=epoch) as f:
+        f.write(cpio_data)
+
+    size_kb = os.path.getsize(args.output) // 1024
+    print(f"initramfs: {args.output} ({size_kb}K)")
+
+
+if __name__ == "__main__":
+    main()

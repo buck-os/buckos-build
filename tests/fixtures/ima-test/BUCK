@@ -1,0 +1,198 @@
+load("//defs/rules:kernel.bzl", "kernel_build")
+load("//tests/fixtures:test_package.bzl", "test_c_binary")
+load(":defs.bzl", "portabilized_genrule")
+
+# ── Static test binary: prints "IMA-TEST-PASS" and exits 0 ──────────
+
+test_c_binary(
+    name = "ima-test-binary",
+    src = "ima-test.c",
+    pkg_name = "ima-test",
+    binary_name = "ima-test",
+    cflags = ["-static"],
+    visibility = ["PUBLIC"],
+)
+
+# ── Static PID-1 init for QEMU ──────────────────────────────────────
+
+test_c_binary(
+    name = "ima-init",
+    src = "init.c",
+    pkg_name = "ima-init",
+    binary_name = "init",
+    cflags = ["-static"],
+    visibility = ["PUBLIC"],
+)
+
+# ── IMA kernel (tinyconfig + IMA + test cert) ───────────────────────
+
+kernel_build(
+    name = "ima-kernel",
+    source = "//packages/linux/kernel/src:linux-src",
+    version = "6.18",
+    config = "ima-test-kernel.config",
+    config_base = "tinyconfig",
+    arch = select({
+        "//platforms:is_aarch64": "aarch64",
+        "DEFAULT": "x86_64",
+    }),
+    inject_files = {
+        "certs/signing_key.pem": "//defs/keys:ima-test-cert",
+    },
+    visibility = ["PUBLIC"],
+)
+
+# ── ext4 disk image with IMA-signed binary + signed data file ────────
+
+portabilized_genrule(
+    name = "ima-disk-signed",
+    out = "disk-signed.img",
+    portabilize_deps = [
+        "//packages/linux/system/security/ima-evm-utils:ima-evm-utils",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/system/security/keyutils:keyutils",
+        "//packages/linux/system/filesystem/native/e2fsprogs:e2fsprogs",
+    ],
+    dep_env = {
+        "BINARY_DIR": ":ima-test-binary",
+    },
+    src_env = {
+        "KEY": "//defs/keys:ima-test-key",
+    },
+    cmd = """
+        BINARY=$BINARY_DIR/usr/bin/ima-test
+        WORK=$BUCK_SCRATCH_PATH/work
+        mkdir -p "$WORK/empty"
+        mkdir -p `dirname $OUT`
+
+        mke2fs -t ext4 -d "$WORK/empty" "$OUT" 8M
+
+        cp "$BINARY" "$WORK/ima-test"
+        # evmctl --sigfile exits non-zero (xattr set fails on raw files
+        # without CAP_SYS_ADMIN) but still creates the .sig sidecar.
+        evmctl ima_sign --sigfile --key "$KEY" "$WORK/ima-test" || true
+        test -f "$WORK/ima-test.sig"
+
+        echo "IMA-FILE-CONTENT" > "$WORK/test-data.txt"
+        evmctl ima_sign --sigfile --key "$KEY" "$WORK/test-data.txt" || true
+        test -f "$WORK/test-data.txt.sig"
+
+        printf 'write %s /ima-test\\nset_inode_field /ima-test mode 0100755\\nea_set /ima-test security.ima -f %s\\n' \
+            "$WORK/ima-test" "$WORK/ima-test.sig" > "$WORK/debugfs.cmds"
+        printf 'write %s /test-data.txt\\nset_inode_field /test-data.txt mode 0100644\\nea_set /test-data.txt security.ima -f %s\\n' \
+            "$WORK/test-data.txt" "$WORK/test-data.txt.sig" >> "$WORK/debugfs.cmds"
+        debugfs -w -f "$WORK/debugfs.cmds" "$OUT"
+    """,
+    visibility = ["PUBLIC"],
+)
+
+# ── ext4 disk image with unsigned binary + unsigned data file ─────────
+
+portabilized_genrule(
+    name = "ima-disk-unsigned",
+    out = "disk-unsigned.img",
+    portabilize_deps = [
+        "//packages/linux/system/filesystem/native/e2fsprogs:e2fsprogs",
+    ],
+    dep_env = {
+        "BINARY_DIR": ":ima-test-binary",
+    },
+    cmd = """
+        BINARY=$BINARY_DIR/usr/bin/ima-test
+        WORK=$BUCK_SCRATCH_PATH/work
+        mkdir -p "$WORK/empty"
+        mkdir -p `dirname $OUT`
+
+        mke2fs -t ext4 -d "$WORK/empty" "$OUT" 8M
+
+        echo "IMA-FILE-CONTENT" > "$WORK/test-data.txt"
+
+        printf 'write %s /ima-test\\nset_inode_field /ima-test mode 0100755\\n' \
+            "$BINARY" > "$WORK/debugfs.cmds"
+        printf 'write %s /test-data.txt\\nset_inode_field /test-data.txt mode 0100644\\n' \
+            "$WORK/test-data.txt" >> "$WORK/debugfs.cmds"
+        debugfs -w -f "$WORK/debugfs.cmds" "$OUT"
+    """,
+    visibility = ["PUBLIC"],
+)
+
+# ── ext4 disk image with signed binary + unsigned data file ──────────
+
+portabilized_genrule(
+    name = "ima-disk-file-unsigned",
+    out = "disk-file-unsigned.img",
+    portabilize_deps = [
+        "//packages/linux/system/security/ima-evm-utils:ima-evm-utils",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/system/security/keyutils:keyutils",
+        "//packages/linux/system/filesystem/native/e2fsprogs:e2fsprogs",
+    ],
+    dep_env = {
+        "BINARY_DIR": ":ima-test-binary",
+    },
+    src_env = {
+        "KEY": "//defs/keys:ima-test-key",
+    },
+    cmd = """
+        BINARY=$BINARY_DIR/usr/bin/ima-test
+        WORK=$BUCK_SCRATCH_PATH/work
+        mkdir -p "$WORK/empty"
+        mkdir -p `dirname $OUT`
+
+        mke2fs -t ext4 -d "$WORK/empty" "$OUT" 8M
+
+        cp "$BINARY" "$WORK/ima-test"
+        evmctl ima_sign --sigfile --key "$KEY" "$WORK/ima-test" || true
+        test -f "$WORK/ima-test.sig"
+
+        echo "IMA-FILE-CONTENT" > "$WORK/test-data.txt"
+
+        printf 'write %s /ima-test\\nset_inode_field /ima-test mode 0100755\\nea_set /ima-test security.ima -f %s\\n' \
+            "$WORK/ima-test" "$WORK/ima-test.sig" > "$WORK/debugfs.cmds"
+        printf 'write %s /test-data.txt\\nset_inode_field /test-data.txt mode 0100644\\n' \
+            "$WORK/test-data.txt" >> "$WORK/debugfs.cmds"
+        debugfs -w -f "$WORK/debugfs.cmds" "$OUT"
+    """,
+    visibility = ["PUBLIC"],
+)
+
+# ── Initramfs with custom init + IMA cert ────────────────────────────
+
+portabilized_genrule(
+    name = "ima-initramfs",
+    out = "initramfs.cpio.gz",
+    portabilize_deps = [
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/system/libs/cpio:cpio",
+        "//packages/linux/system/libs/compression/gzip:gzip",
+        "//packages/linux/system/apps/findutils:findutils",
+        "//packages/linux/system/apps/coreutils:coreutils",
+    ],
+    dep_env = {
+        "INIT_DIR": ":ima-init",
+    },
+    src_env = {
+        "CERT": "//defs/keys:ima-test-cert",
+    },
+    cmd = """
+        # Prevent buckos-built openssl from loading host openssl.cnf
+        # (Fedora adds rh-allow-sha1-signatures which upstream doesn't know)
+        export OPENSSL_CONF=/dev/null
+
+        INIT=$INIT_DIR/usr/bin/init
+        WORK=$BUCK_SCRATCH_PATH/rootfs
+        mkdir -p "$WORK"/{dev,etc/keys,mnt,proc,sys}
+        mkdir -p `dirname $OUT`
+
+        cp "$INIT" "$WORK/init"
+        chmod 755 "$WORK/init"
+
+        openssl x509 -in "$CERT" -outform DER -out "$WORK/etc/keys/x509_ima.der"
+
+        # Build cpio.gz — use absolute path for output since we cd
+        ABS_OUT=`pwd`/$OUT
+        cd "$WORK"
+        find . -print0 | cpio --null -o -H newc --quiet | gzip > "$ABS_OUT"
+    """,
+    visibility = ["PUBLIC"],
+)

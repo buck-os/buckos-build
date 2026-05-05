@@ -11,6 +11,9 @@
 
 set -e
 
+# Prevent cd from outputting paths when CDPATH is set
+unset CDPATH
+
 # Directory setup from wrapper environment
 mkdir -p "$_PRECOMPILED_DESTDIR"
 export OUT="$(cd "$_PRECOMPILED_DESTDIR" && pwd)"
@@ -28,7 +31,11 @@ if [ -n "$SYMLINKS_SCRIPT" ]; then
 fi
 
 # Verification
-FILE_COUNT=$(find "$OUT" -type f 2>/dev/null | wc -l)
+if command -v fd >/dev/null 2>&1; then
+    FILE_COUNT=$(fd --type f --no-ignore --hidden '' "$OUT" 2>/dev/null | wc -l)
+else
+    FILE_COUNT=$(find "$OUT" -type f 2>/dev/null | wc -l)
+fi
 if [ "$FILE_COUNT" -eq 0 ]; then
     echo "Warning: No files installed to $OUT" >&2
 fi
