@@ -331,6 +331,127 @@ def _merge_sbin_into_bin(rootfs):
 
 
 
+def _merge_acct_entries(rootfs):
+    """Merge acct-group / acct-user entries into /etc/{group,passwd,shadow}.
+
+    Scans:
+      $rootfs/usr/share/acct-group/*.group   → append to /etc/group
+      $rootfs/usr/share/acct-user/*.passwd   → append to /etc/passwd
+      $rootfs/usr/share/acct-user/*.shadow   → append to /etc/shadow
+      $rootfs/usr/share/acct-user/*.groups   → add user to supplementary groups
+    Deduplicates by the first colon-field (name).
+    """
+    etc = os.path.join(rootfs, "etc")
+    group_file = os.path.join(etc, "group")
+    passwd_file = os.path.join(etc, "passwd")
+    shadow_file = os.path.join(etc, "shadow")
+
+    def _read_or(path, default=""):
+        if os.path.isfile(path):
+            with open(path) as f:
+                return f.read()
+        return default
+
+    def _names_in(text):
+        return {l.split(":")[0] for l in text.strip().splitlines() if l.strip()}
+
+    group_text = _read_or(group_file)
+    passwd_text = _read_or(passwd_file)
+    shadow_text = _read_or(shadow_file)
+
+    existing_groups = _names_in(group_text)
+    existing_users = _names_in(passwd_text)
+
+    acct_group_dir = os.path.join(rootfs, "usr", "share", "acct-group")
+    acct_user_dir = os.path.join(rootfs, "usr", "share", "acct-user")
+
+    new_groups = []
+    if os.path.isdir(acct_group_dir):
+        for fname in sorted(os.listdir(acct_group_dir)):
+            if not fname.endswith(".group"):
+                continue
+            entry = _read_or(os.path.join(acct_group_dir, fname)).strip()
+            if not entry:
+                continue
+            name = entry.split(":")[0]
+            if name not in existing_groups:
+                new_groups.append(entry)
+                existing_groups.add(name)
+
+    if new_groups:
+        if group_text and not group_text.endswith("\n"):
+            group_text += "\n"
+        group_text += "\n".join(new_groups) + "\n"
+
+    supplementary = {}
+    new_users = []
+    new_shadows = []
+    if os.path.isdir(acct_user_dir):
+        for fname in sorted(os.listdir(acct_user_dir)):
+            if fname.endswith(".passwd"):
+                entry = _read_or(os.path.join(acct_user_dir, fname)).strip()
+                if not entry:
+                    continue
+                name = entry.split(":")[0]
+                if name not in existing_users:
+                    new_users.append(entry)
+                    existing_users.add(name)
+                    shadow_path = os.path.join(acct_user_dir,
+                                               fname.replace(".passwd", ".shadow"))
+                    if os.path.isfile(shadow_path):
+                        shadow_entry = _read_or(shadow_path).strip()
+                        if shadow_entry:
+                            new_shadows.append(shadow_entry)
+                groups_path = os.path.join(acct_user_dir,
+                                           fname.replace(".passwd", ".groups"))
+                if os.path.isfile(groups_path):
+                    glist = _read_or(groups_path).strip()
+                    if glist:
+                        name = entry.split(":")[0]
+                        for g in glist.split(","):
+                            g = g.strip()
+                            if g:
+                                supplementary.setdefault(g, []).append(name)
+
+    if new_users:
+        if passwd_text and not passwd_text.endswith("\n"):
+            passwd_text += "\n"
+        passwd_text += "\n".join(new_users) + "\n"
+
+    if new_shadows and os.path.isfile(shadow_file):
+        if shadow_text and not shadow_text.endswith("\n"):
+            shadow_text += "\n"
+        shadow_text += "\n".join(new_shadows) + "\n"
+
+    if supplementary:
+        lines = group_text.strip().splitlines()
+        new_lines = []
+        for line in lines:
+            if not line.strip():
+                new_lines.append(line)
+                continue
+            parts = line.split(":")
+            gname = parts[0]
+            if gname in supplementary:
+                existing_members = [m for m in parts[3].split(",") if m] if len(parts) > 3 else []
+                for user in supplementary[gname]:
+                    if user not in existing_members:
+                        existing_members.append(user)
+                parts = parts[:3] + [",".join(existing_members)]
+                line = ":".join(parts)
+            new_lines.append(line)
+        group_text = "\n".join(new_lines) + "\n"
+
+    os.makedirs(etc, exist_ok=True)
+    with open(group_file, "w") as f:
+        f.write(group_text)
+    with open(passwd_file, "w") as f:
+        f.write(passwd_text)
+    if new_shadows and os.path.isfile(shadow_file):
+        with open(shadow_file, "w") as f:
+            f.write(shadow_text)
+
+
 def _fix_elf_interpreters(rootfs):
     """Patch ELF interpreter paths from padded build-host paths to /lib64/ld-linux-x86-64.so.2.
 

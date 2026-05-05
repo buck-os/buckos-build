@@ -194,6 +194,19 @@ python_binary(
 )
 
 python_binary(
+    name = "kernel_capture",
+    main = "kernel_capture.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "kernel_replay_action",
+    main = "kernel_replay_action.py",
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
     name = "kernel_btf_headers",
     main = "kernel_btf_headers.py",
     deps = [":_env"],
