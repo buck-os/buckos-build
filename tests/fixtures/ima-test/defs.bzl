@@ -28,11 +28,14 @@ def _portabilized_genrule_impl(ctx):
     cmd = cmd_args(ctx.attrs._portabilize_run[RunInfo])
     for arg in toolchain_ld_linux_args(ctx):
         cmd.add(arg)
-    if PackageInfo in ctx.attrs._patchelf:
-        cmd.add(
-            "--patchelf",
-            ctx.attrs._patchelf[PackageInfo].prefix.project("usr/bin/patchelf"),
-        )
+    if PackageInfo not in ctx.attrs._patchelf:
+        fail("portabilized_genrule: _patchelf dep must provide PackageInfo (got {})".format(
+            ctx.attrs._patchelf.label,
+        ))
+    cmd.add(
+        "--patchelf",
+        ctx.attrs._patchelf[PackageInfo].prefix.project("usr/bin/patchelf"),
+    )
     for dep in ctx.attrs.portabilize_deps:
         if PackageInfo not in dep:
             fail("portabilize_deps entries must provide PackageInfo: {}".format(dep.label))

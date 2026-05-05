@@ -54,8 +54,10 @@ jobs:
         # portabilize_run prefers system patchelf and falls back to a
         # SIGBUS-prone bootstrap if missing.
         run: |
-          if command -v patchelf >/dev/null && [ -x "$HOME/.local/bin/patchelf" ]; then
-            echo "patchelf already installed"
+          set -euo pipefail
+          PATCHELF="$HOME/.local/bin/patchelf"
+          if [ -x "$PATCHELF" ] && "$PATCHELF" --version >/dev/null 2>&1; then
+            echo "patchelf already installed: $($PATCHELF --version)"
           else
             mkdir -p "$HOME/.local/bin"
             case "$(uname -m)" in
@@ -63,16 +65,23 @@ jobs:
               aarch64) ARCH=aarch64 ;;
               *) echo "::error::Unsupported arch $(uname -m)"; exit 1 ;;
             esac
-            curl -sL "https://github.com/NixOS/patchelf/releases/download/0.18.0/patchelf-0.18.0-${ARCH}.tar.gz" \
+            # The 0.18.0 release tarball has 'bin/patchelf' at top level.
+            curl -fsSL "https://github.com/NixOS/patchelf/releases/download/0.18.0/patchelf-0.18.0-${ARCH}.tar.gz" \
               | tar -xzf - -C "$HOME/.local" ./bin/patchelf
-            chmod +x "$HOME/.local/bin/patchelf"
+            chmod +x "$PATCHELF"
+            # Verify the binary actually runs — catches arch/abi/extract issues.
+            if ! "$PATCHELF" --version; then
+              echo "::error::patchelf at $PATCHELF failed to run after install"
+              exit 1
+            fi
             echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           fi
           # portabilize_run looks at /usr/bin and /usr/local/bin; symlink so
           # it finds patchelf without needing PATH lookup (Buck2 actions get
-          # an empty PATH).
+          # an empty PATH). Soft-fail since /usr/local/bin usually isn't
+          # writable; portabilize_run's ~/.local/bin candidate covers it.
           if [ ! -e /usr/local/bin/patchelf ] && [ -w /usr/local/bin ]; then
-            ln -sf "$HOME/.local/bin/patchelf" /usr/local/bin/patchelf 2>/dev/null || true
+            ln -sf "$PATCHELF" /usr/local/bin/patchelf 2>/dev/null || true
           fi
       - name: Install buck2
         run: |
@@ -117,8 +126,10 @@ jobs:
         # portabilize_run prefers system patchelf and falls back to a
         # SIGBUS-prone bootstrap if missing.
         run: |
-          if command -v patchelf >/dev/null && [ -x "$HOME/.local/bin/patchelf" ]; then
-            echo "patchelf already installed"
+          set -euo pipefail
+          PATCHELF="$HOME/.local/bin/patchelf"
+          if [ -x "$PATCHELF" ] && "$PATCHELF" --version >/dev/null 2>&1; then
+            echo "patchelf already installed: $($PATCHELF --version)"
           else
             mkdir -p "$HOME/.local/bin"
             case "$(uname -m)" in
@@ -126,16 +137,23 @@ jobs:
               aarch64) ARCH=aarch64 ;;
               *) echo "::error::Unsupported arch $(uname -m)"; exit 1 ;;
             esac
-            curl -sL "https://github.com/NixOS/patchelf/releases/download/0.18.0/patchelf-0.18.0-${ARCH}.tar.gz" \
+            # The 0.18.0 release tarball has 'bin/patchelf' at top level.
+            curl -fsSL "https://github.com/NixOS/patchelf/releases/download/0.18.0/patchelf-0.18.0-${ARCH}.tar.gz" \
               | tar -xzf - -C "$HOME/.local" ./bin/patchelf
-            chmod +x "$HOME/.local/bin/patchelf"
+            chmod +x "$PATCHELF"
+            # Verify the binary actually runs — catches arch/abi/extract issues.
+            if ! "$PATCHELF" --version; then
+              echo "::error::patchelf at $PATCHELF failed to run after install"
+              exit 1
+            fi
             echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           fi
           # portabilize_run looks at /usr/bin and /usr/local/bin; symlink so
           # it finds patchelf without needing PATH lookup (Buck2 actions get
-          # an empty PATH).
+          # an empty PATH). Soft-fail since /usr/local/bin usually isn't
+          # writable; portabilize_run's ~/.local/bin candidate covers it.
           if [ ! -e /usr/local/bin/patchelf ] && [ -w /usr/local/bin ]; then
-            ln -sf "$HOME/.local/bin/patchelf" /usr/local/bin/patchelf 2>/dev/null || true
+            ln -sf "$PATCHELF" /usr/local/bin/patchelf 2>/dev/null || true
           fi
       - name: Install buck2
         run: |
@@ -228,8 +246,10 @@ jobs:
         # portabilize_run prefers system patchelf and falls back to a
         # SIGBUS-prone bootstrap if missing.
         run: |
-          if command -v patchelf >/dev/null && [ -x "$HOME/.local/bin/patchelf" ]; then
-            echo "patchelf already installed"
+          set -euo pipefail
+          PATCHELF="$HOME/.local/bin/patchelf"
+          if [ -x "$PATCHELF" ] && "$PATCHELF" --version >/dev/null 2>&1; then
+            echo "patchelf already installed: $($PATCHELF --version)"
           else
             mkdir -p "$HOME/.local/bin"
             case "$(uname -m)" in
@@ -237,16 +257,23 @@ jobs:
               aarch64) ARCH=aarch64 ;;
               *) echo "::error::Unsupported arch $(uname -m)"; exit 1 ;;
             esac
-            curl -sL "https://github.com/NixOS/patchelf/releases/download/0.18.0/patchelf-0.18.0-${ARCH}.tar.gz" \
+            # The 0.18.0 release tarball has 'bin/patchelf' at top level.
+            curl -fsSL "https://github.com/NixOS/patchelf/releases/download/0.18.0/patchelf-0.18.0-${ARCH}.tar.gz" \
               | tar -xzf - -C "$HOME/.local" ./bin/patchelf
-            chmod +x "$HOME/.local/bin/patchelf"
+            chmod +x "$PATCHELF"
+            # Verify the binary actually runs — catches arch/abi/extract issues.
+            if ! "$PATCHELF" --version; then
+              echo "::error::patchelf at $PATCHELF failed to run after install"
+              exit 1
+            fi
             echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           fi
           # portabilize_run looks at /usr/bin and /usr/local/bin; symlink so
           # it finds patchelf without needing PATH lookup (Buck2 actions get
-          # an empty PATH).
+          # an empty PATH). Soft-fail since /usr/local/bin usually isn't
+          # writable; portabilize_run's ~/.local/bin candidate covers it.
           if [ ! -e /usr/local/bin/patchelf ] && [ -w /usr/local/bin ]; then
-            ln -sf "$HOME/.local/bin/patchelf" /usr/local/bin/patchelf 2>/dev/null || true
+            ln -sf "$PATCHELF" /usr/local/bin/patchelf 2>/dev/null || true
           fi
       - name: Install buck2
         run: |

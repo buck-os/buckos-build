@@ -193,14 +193,21 @@ def main():
     allow_host_path = env.pop("_ALLOW_HOST_PATH", None)
     path_prepend = env.pop("_PATH_PREPEND", None)
     _ld_linux = env.pop("_LD_LINUX", None)
+
+    def _portabilize_path_str(path_str):
+        """Run portabilize_toolchain on a colon-separated path list.
+        No-op if _ld_linux is unset.  Returns the new colon-separated string."""
+        if not _ld_linux or not path_str:
+            return path_str
+        from portabilize import portabilize_toolchain
+        _pe = shutil.which("patchelf", path=env.get("PATH", "") or path_str)
+        return ":".join(portabilize_toolchain(
+            path_str.split(":"), _ld_linux, patchelf_path=_pe))
+
     if hermetic_path:
-        _hp_dirs = hermetic_path.split(":")
         if _ld_linux:
-            from portabilize import portabilize_toolchain
-            _patchelf = shutil.which("patchelf", path=hermetic_path)
-            _hp_dirs = portabilize_toolchain(_hp_dirs, _ld_linux,
-                                            patchelf_path=_patchelf)
-            hermetic_path = ":".join(_hp_dirs)
+            hermetic_path = _portabilize_path_str(hermetic_path)
+        _hp_dirs = hermetic_path.split(":")
         env["PATH"] = hermetic_path
         # Derive LD_LIBRARY_PATH from hermetic bin dirs
         ld_lib_parts = []
@@ -267,7 +274,9 @@ def main():
                     _tparts[0] = os.path.join(_port_map[_tdir],
                                               os.path.basename(_tbin))
                     env[_tv] = " ".join(_tparts)
-            # Update RUSTFLAGS/CARGO_HOST_LINKER with portabilized CC
+            # Update RUSTFLAGS/CARGO_HOST_LINKER with portabilized CC.
+            # Append (rather than overwrite) RUSTFLAGS so any RUSTFLAGS
+            # set by the caller (env attr) survives.
             if env.get("CC"):
                 _cc = env["CC"]
                 _cc_parts = _cc.split()
@@ -276,17 +285,17 @@ def main():
                 if _cc_parts:
                     _cc_bin = _cc_parts[0]
                     _link_args = " ".join(f"-C link-arg={flag}" for flag in _cc_parts[1:])
-                    env["RUSTFLAGS"] = f"-C linker={_cc_bin} {_link_args}".strip()
+                    _new_rustflags = f"-C linker={_cc_bin} {_link_args}".strip()
+                    _existing_rustflags = env.get("RUSTFLAGS", "").strip()
+                    if _existing_rustflags:
+                        env["RUSTFLAGS"] = f"{_existing_rustflags} {_new_rustflags}"
+                    else:
+                        env["RUSTFLAGS"] = _new_rustflags
                     env["CARGO_HOST_LINKER"] = _cc_bin
 
     # Prepend host tool deps to PATH
     if path_prepend:
-        if _ld_linux:
-            from portabilize import portabilize_toolchain
-            _patchelf = shutil.which("patchelf", path=env.get("PATH", ""))
-            _pp_dirs = portabilize_toolchain(
-                path_prepend.split(":"), _ld_linux, patchelf_path=_patchelf)
-            path_prepend = ":".join(_pp_dirs)
+        path_prepend = _portabilize_path_str(path_prepend)
         env["PATH"] = path_prepend + (":" + env["PATH"] if env.get("PATH") else "")
         # Derive LD_LIBRARY_PATH from prepend dirs
         _pp_lib_dirs = []
@@ -339,13 +348,8 @@ def main():
     # Prepend dep bin paths to PATH and derive tool data dirs
     dep_bin = env.get("_DEP_BIN_PATHS")
     if dep_bin:
-        if _ld_linux:
-            from portabilize import portabilize_toolchain
-            _patchelf = shutil.which("patchelf", path=env.get("PATH", ""))
-            _db_dirs = portabilize_toolchain(
-                dep_bin.split(":"), _ld_linux, patchelf_path=_patchelf)
-            dep_bin = ":".join(_db_dirs)
-            env["_DEP_BIN_PATHS"] = dep_bin
+        dep_bin = _portabilize_path_str(dep_bin)
+        env["_DEP_BIN_PATHS"] = dep_bin
         env["PATH"] = dep_bin + ":" + env.get("PATH", "")
         # Derive BISON_PKGDATADIR so relocated bison finds its data files.
         for _bp in dep_bin.split(":"):

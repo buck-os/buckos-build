@@ -66,12 +66,13 @@ def _bootstrap_patchelf(patchelf, ld_linux):
         "/usr/bin/patchelf",
         "/usr/local/bin/patchelf",
         "/bin/patchelf",
-        os.path.expanduser("~/.local/bin/patchelf"),
     ]
+    # ~/.local/bin covers the case where CI installs patchelf as a user
+    # binary because the runner blocks sudo via no_new_privs. Skip if HOME
+    # is unset — expanduser('~/...') would return the literal '~/...'
+    # which would always miss.
     if os.environ.get("HOME"):
-        # Some Buck2 actions strip HOME; expanduser would then return "~/...".
-        # Already covered by expanduser above when HOME is set.
-        pass
+        candidates.append(os.path.expanduser("~/.local/bin/patchelf"))
     for sys_pe in candidates:
         if os.path.isfile(sys_pe) and os.access(sys_pe, os.X_OK):
             try:

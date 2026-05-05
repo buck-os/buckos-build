@@ -56,8 +56,14 @@ def _runtime_env_impl(ctx):
     env = {"_LIB_DIRS": lib_paths}
 
     # Plumb portabilization inputs if the toolchain exposes a sysroot.
+    # Bootstrap toolchains have no sysroot; for them we skip portabilize
+    # and the wrapper just sets LD_LIBRARY_PATH.
     ld_linux = _ld_linux_path(ctx)
-    if ld_linux and PackageInfo in ctx.attrs._patchelf:
+    if ld_linux:
+        if PackageInfo not in ctx.attrs._patchelf:
+            fail("runtime_env: _patchelf dep must provide PackageInfo (got {})".format(
+                ctx.attrs._patchelf.label,
+            ))
         patchelf = ctx.attrs._patchelf[PackageInfo].prefix.project("usr/bin/patchelf")
         portabilize_run = ctx.attrs._portabilize_run[DefaultInfo].default_outputs[0]
         env["_LD_LINUX"] = cmd_args(ld_linux)
