@@ -15,6 +15,17 @@ cmake_package(
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_TESTING=OFF",
+        "-DCMAKE_Fortran_COMPILER=NOTFOUND",
+        "-DUSE_OPTIMIZED_BLAS=OFF",
+        "-DUSE_OPTIMIZED_LAPACK=OFF",
+        "-DCBLAS=ON",
+        "-DLAPACKE=ON",
+    ],
+    pre_configure_cmds = [
+        # LAPACK needs a Fortran compiler; build only the C interfaces (CBLAS/LAPACKE)
+        # which don't require Fortran. Disable the core Fortran parts.
+        "sed -i 's/enable_language(Fortran)/# enable_language(Fortran)/' CMakeLists.txt 2>/dev/null || true",
+        "sed -i '/project.*Fortran/s/Fortran//' CMakeLists.txt 2>/dev/null || true",
     ],
     use_configure = {
         "cblas": ("-DCBLAS=ON", "-DCBLAS=OFF"),

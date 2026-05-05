@@ -9,5 +9,5 @@ binary_package(
     homepage = "https://github.com/ufbx/ufbx",
     license = "MIT",
     deps = [],
-    install_script = """mkdir -p ${PREFIX}/include\ncp ufbx.h ${PREFIX}/include/\nmkdir -p ${PREFIX}/lib\n${CC} -c -O2 -fPIC ufbx.c -o ufbx.o\n${AR} rcs ${PREFIX}/lib/libufbx.a ufbx.o""",
+    install_script = """mkdir -p $OUT/usr/include\ncp ufbx.h $OUT/usr/include/\nmkdir -p $OUT/usr/lib\n${CC} -c -O2 -fPIC ufbx.c -o ufbx.o\n${AR} rcs $OUT/usr/lib/libufbx.a ufbx.o""",
 )

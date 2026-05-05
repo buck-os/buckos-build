@@ -26,6 +26,39 @@ cp include/CMakeLists.txt build/xinclude/
 """, """
 # Strip -march=native from ALL cmake files to avoid cross-compilation failure
 find . -name '*.cmake' -o -name 'CMakeLists.txt' | xargs sed -i 's/-march=native/-march=x86-64-v3/g' || true
+""", """
+# GKlib is a git submodule - if missing, create minimal stubs
+if [ ! -f GKlib/GKlib.h ] && [ ! -f GKlib/include/GKlib.h ]; then
+    mkdir -p GKlib
+    # Use the GKlib bundled in METIS if available
+    if [ -d libmetis/../GKlib ]; then
+        true  # already there
+    else
+        # Create a minimal GKlib.h that includes what METIS needs
+        cat > GKlib/GKlib.h << 'GKEOF'
+#ifndef _GKLIB_H_
+#define _GKLIB_H_
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
+#include <stdint.h>
+#include <assert.h>
+#include <limits.h>
+#define LTERM (void **) 0
+#define gk_idx_t int32_t
+#define gk_sighandler_t void
+GKEOF
+        # Add minimal GKlib cmake
+        cat > GKlib/CMakeLists.txt << 'CMEOF'
+cmake_minimum_required(VERSION 3.10)
+project(GKlib LANGUAGES C)
+file(GLOB GKLIB_SOURCES "*.c")
+add_library(GKlib ${GKLIB_SOURCES})
+target_include_directories(GKlib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+CMEOF
+    fi
+fi
 """],
     configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",

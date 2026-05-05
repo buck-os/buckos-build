@@ -62,14 +62,16 @@ vfs_fileid checking for statfs() and target struct statfs.f_fsid: OK
 Checking whether sector aligned: OK
 CROSS_EOF
 
-# Stub out git so waf doesn't fail on version detection
-mkdir -p /tmp/talloc-tools
-cat > /tmp/talloc-tools/git << 'GIT_EOF'
+# Stub out git and xsltproc so waf doesn't fail
+mkdir -p "$BUCK_SCRATCH_PATH/talloc-tools"
+for _cmd in git xsltproc; do
+    cat > "$BUCK_SCRATCH_PATH/talloc-tools/$_cmd" << 'STUB_EOF'
 #!/bin/sh
-echo "unknown"
-GIT_EOF
-chmod +x /tmp/talloc-tools/git
-export PATH="/tmp/talloc-tools:$PATH"
+exit 0
+STUB_EOF
+    chmod +x "$BUCK_SCRATCH_PATH/talloc-tools/$_cmd"
+done
+export PATH="$BUCK_SCRATCH_PATH/talloc-tools:$PATH"
 
 ./configure \
     --prefix=/usr \
@@ -80,14 +82,7 @@ export PATH="/tmp/talloc-tools:$PATH"
     --disable-rpath \
     --without-gettext
 
-# Create a dummy xsltproc so waf doesn't fail on man page generation
-mkdir -p /tmp/talloc-tools
-cat > /tmp/talloc-tools/xsltproc << 'XSLT_EOF'
-#!/bin/sh
-exit 0
-XSLT_EOF
-chmod +x /tmp/talloc-tools/xsltproc
-export PATH="/tmp/talloc-tools:$PATH"
+# xsltproc stub already created above
 
 make -j${MAKEOPTS:-$(nproc)}
 

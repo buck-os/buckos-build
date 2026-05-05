@@ -15,6 +15,7 @@ cmake_package(
         "-DETHOSU_TARGET_NPU_CONFIG=ethos-u55-128",
         "-DCMSIS_PATH=${CMAKE_CURRENT_SOURCE_DIR}/_cmsis_stubs",
         "-DCMAKE_C_FLAGS=-Wno-error=implicit-function-declaration -Wno-error=pointer-to-int-cast -Wno-error",
+        "-DCMAKE_INSTALL_PREFIX=/usr",
     ],
     # Provide stub CMSIS headers since this is ARM-specific and we build for x86_64
     pre_configure_cmds = ["""

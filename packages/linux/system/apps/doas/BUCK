@@ -18,13 +18,36 @@ binary_package(
         "//packages/linux/dev-tools/dev-utils/bison:bison",
     ],
     install_script = """
+cd "$SRCS"
+
 # OpenDoas has a custom configure script
 ./configure --prefix=/usr --without-pam --with-timestamp 2>/dev/null || \
     ./configure --prefix=/usr --without-pam 2>/dev/null || true
 
+# Pre-generate parse.c from parse.y using host bison/yacc
+if [ -f parse.y ]; then
+    if [ -x /usr/bin/bison ]; then
+        /usr/bin/bison -y -d -o parse.c parse.y
+    elif [ -x /usr/bin/yacc ]; then
+        /usr/bin/yacc -d parse.y && mv -f y.tab.c parse.c && mv -f y.tab.h parse.h
+    fi
+fi
+rm -f parse.y 2>/dev/null || true
+touch -t 203001010000 parse.c parse.h 2>/dev/null || true
+sed -i 's/^\.SUFFIXES:.*/.SUFFIXES:/' Makefile 2>/dev/null || true
+sed -i '/\.y\.c:/,/^$/d' Makefile 2>/dev/null || true
+sed -i '/\.y\.h:/,/^$/d' Makefile 2>/dev/null || true
+sed -i 's|$(YACC)|true|g; s|${YACC}|true|g' Makefile 2>/dev/null || true
+if [ -f GNUmakefile ]; then
+    sed -i 's/^\.SUFFIXES:.*/.SUFFIXES:/' GNUmakefile 2>/dev/null || true
+    sed -i '/\.y\.c:/,/^$/d' GNUmakefile 2>/dev/null || true
+    sed -i 's|$(YACC)|true|g; s|${YACC}|true|g' GNUmakefile 2>/dev/null || true
+fi
+
 make CC="$CC" CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS -lcrypt" \
+    YACC="true" BISON="true" \
     -j${MAKEOPTS:-$(nproc)} || \
-make CC="$CC" LDFLAGS="$LDFLAGS -lcrypt" -j1
+make CC="$CC" LDFLAGS="$LDFLAGS -lcrypt" YACC="true" BISON="true" -j1
 
 make install DESTDIR="$OUT"
 """,

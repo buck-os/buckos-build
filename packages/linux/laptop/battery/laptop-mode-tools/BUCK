@@ -1,22 +1,39 @@
-load("//defs/packages:autotools.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # laptop-mode-tools - Laptop power saving tools
-# Reduce power consumption through various kernel and hardware settings
+# Has no build phase, only install. The install.sh uses 'which' so we convert to binary.
 
-# USE flags: See use_flags.bzl for available flags
-
-autotools_package(
+package(
     name = "laptop-mode-tools",
-    skip_configure = True,
+    build_rule = "binary",
     url = "https://github.com/rickysarraf/laptop-mode-tools/archive/refs/tags/1.74.tar.gz",
-
     sha256 = "df269e9449fdfab61ec11d6c009dc9a46a0ccf79b6d97fc886cc789cadac9867",
     version = "1.74",
     description = "Power saving tools for laptops",
     homepage = "https://github.com/rickysarraf/laptop-mode-tools",
     license = "GPL-2.0",
-    # laptop-mode-tools has no build phase, only install
-    # Use custom install to avoid ownership issues in the install script
+    install_script = """
+cd "$SRCS"
+
+# Create 'which' stub since it's not in hermetic PATH
+_STUBS="$BUCK_SCRATCH_PATH/lmt-stubs"
+mkdir -p "$_STUBS"
+cat > "$_STUBS/which" << 'WEOF'
+#!/bin/sh
+command -v "$1" 2>/dev/null
+WEOF
+chmod +x "$_STUBS/which"
+export PATH="$_STUBS:$PATH"
+
+# Install manually - the install.sh tries too many things
+mkdir -p "$OUT/usr/sbin"
+mkdir -p "$OUT/etc/laptop-mode"
+mkdir -p "$OUT/usr/share/laptop-mode-tools"
+
+install -m755 usr/sbin/laptop_mode "$OUT/usr/sbin/" 2>/dev/null || true
+cp -a etc/laptop-mode/* "$OUT/etc/laptop-mode/" 2>/dev/null || true
+cp -a usr/share/laptop-mode-tools/* "$OUT/usr/share/laptop-mode-tools/" 2>/dev/null || true
+""",
     deps = [
         "//packages/linux/core/bash:bash",
     ],

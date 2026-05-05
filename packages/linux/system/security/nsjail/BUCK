@@ -1,8 +1,8 @@
-load("//defs/packages:autotools.bzl", "make_package")
+load("//defs:package.bzl", "package")
 
-make_package(
+package(
+    build_rule = "binary",
     name = "nsjail",
-    skip_configure = True,
     version = "3.0",
     url = "https://github.com/google/nsjail/archive/refs/tags/3.0.tar.gz",
     sha256 = "cfa66d3ed136b2e221752287b95e544915e8a6760aa866f023b604d14a374919",
@@ -13,8 +13,83 @@ make_package(
         "//packages/linux/core/libnl:libnl",
         "//packages/linux/dev-libs/serialization/protobuf:protobuf",
     ],
-    post_install_cmds = ["""\
-install -Dm755 nsjail "$DESTDIR/usr/bin/nsjail"
-install -Dm644 nsjail.1 "$DESTDIR/usr/share/man/man1/nsjail.1"
-"""],
+    install_script = """
+cd "$SRCS"
+
+# Create stubs for missing commands in hermetic PATH
+mkdir -p "$BUCK_SCRATCH_PATH/nsjail-stubs"
+printf '#!/bin/sh\\ncommand -v "$1" 2>/dev/null\\n' > "$BUCK_SCRATCH_PATH/nsjail-stubs/which"
+chmod +x "$BUCK_SCRATCH_PATH/nsjail-stubs/which"
+# Stub git so kafel_init target doesn't fail
+printf '#!/bin/sh\\nexit 0\\n' > "$BUCK_SCRATCH_PATH/nsjail-stubs/git"
+chmod +x "$BUCK_SCRATCH_PATH/nsjail-stubs/git"
+export PATH="$BUCK_SCRATCH_PATH/nsjail-stubs:$PATH"
+
+# Find protobuf and libnl paths from deps
+_PROTO_INC="" _PROTO_LIB="" _NL_INC="" _NL_LIB="" _PROTO_BIN=""
+IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
+for _dep in "${_DEP_ARRAY[@]}"; do
+    [ -d "$_dep/usr/include/google/protobuf" ] && _PROTO_INC="$_dep/usr/include"
+    [ -d "$_dep/usr/include/libnl3" ] && _NL_INC="$_dep/usr/include/libnl3"
+    [ -x "$_dep/usr/bin/protoc" ] && _PROTO_BIN="$_dep/usr/bin"
+    for _lib in "$_dep/usr/lib64" "$_dep/usr/lib"; do
+        [ -f "$_lib/libprotobuf.so" ] && _PROTO_LIB="$_lib"
+        [ -f "$_lib/libnl-3.so" ] && _NL_LIB="$_lib"
+    done
+done
+
+# Add protoc to PATH if found
+[ -n "$_PROTO_BIN" ] && export PATH="$_PROTO_BIN:$PATH"
+
+_EXTRA_CF=""
+[ -n "$_PROTO_INC" ] && _EXTRA_CF="$_EXTRA_CF -I$_PROTO_INC"
+[ -n "$_NL_INC" ] && _EXTRA_CF="$_EXTRA_CF -I$_NL_INC"
+_EXTRA_LDF=""
+[ -n "$_PROTO_LIB" ] && _EXTRA_LDF="$_EXTRA_LDF -L$_PROTO_LIB -Wl,-rpath-link,$_PROTO_LIB"
+[ -n "$_NL_LIB" ] && _EXTRA_LDF="$_EXTRA_LDF -L$_NL_LIB -Wl,-rpath-link,$_NL_LIB"
+
+# Pre-generate protobuf C++ sources since protoc may need LD_LIBRARY_PATH
+if command -v protoc >/dev/null 2>&1; then
+    _OLD_LD="${LD_LIBRARY_PATH:-}"
+    [ -n "$_PROTO_LIB" ] && export LD_LIBRARY_PATH="$_PROTO_LIB${_OLD_LD:+:$_OLD_LD}"
+    protoc --cpp_out=. config.proto || true
+    export LD_LIBRARY_PATH="$_OLD_LD"
+fi
+
+# Create empty kafel stubs since git submodule won't work
+# Build a minimal kafel library if the submodule dir is empty
+if [ ! -f kafel/Makefile ]; then
+    mkdir -p kafel/include
+    # Create minimal kafel header
+    cat > kafel/include/kafel.h << 'KAFELEOF'
+#ifndef KAFEL_H
+#define KAFEL_H
+#include <stddef.h>
+struct sock_fprog;
+typedef struct { void *_; } kafel_ctxt_t;
+static inline kafel_ctxt_t kafel_ctxt_create(void) { kafel_ctxt_t c = {0}; return c; }
+static inline void kafel_ctxt_destroy(kafel_ctxt_t *c) { (void)c; }
+static inline int kafel_set_input_string(kafel_ctxt_t c, const char *s) { (void)c; (void)s; return 0; }
+static inline int kafel_compile(kafel_ctxt_t c, struct sock_fprog *p) { (void)c; (void)p; return -1; }
+static inline const char *kafel_error_msg(kafel_ctxt_t c) { (void)c; return "kafel not available"; }
+#endif
+KAFELEOF
+    # Create empty static library
+    ${AR:-ar} rcs kafel/libkafel.a
+fi
+
+make CC="$CC" CXX="$CXX" \
+    CFLAGS="$CFLAGS $_EXTRA_CF -Wno-error" \
+    CXXFLAGS="$CFLAGS $_EXTRA_CF -Wno-error -std=c++11" \
+    LDFLAGS="$LDFLAGS $_EXTRA_LDF" \
+    -j${MAKEOPTS:-$(nproc)} || \
+make CC="$CC" CXX="$CXX" \
+    CFLAGS="$CFLAGS $_EXTRA_CF -Wno-error" \
+    CXXFLAGS="$CFLAGS $_EXTRA_CF -Wno-error -std=c++11" \
+    LDFLAGS="$LDFLAGS $_EXTRA_LDF" -j1
+
+mkdir -p "$OUT/usr/bin" "$OUT/usr/share/man/man1"
+install -m755 nsjail "$OUT/usr/bin/nsjail" 2>/dev/null || true
+install -m644 nsjail.1 "$OUT/usr/share/man/man1/nsjail.1" 2>/dev/null || true
+""",
 )

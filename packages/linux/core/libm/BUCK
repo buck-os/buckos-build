@@ -1,0 +1,52 @@
+load("//defs:package.bzl", "package")
+
+# Minimal libm provider for meson cross-compilation.
+#
+# meson's cc.find_library('m') picks up /usr/lib64/libm.a on build hosts
+# that have glibc-static installed.  That absolute path gets embedded in
+# build.ninja and fails on RE where the file doesn't exist.
+#
+# This package provides a libm.so linker script that resolves to the
+# system shared libm.  Adding it as a dep gives meson a -L path where
+# libm.so exists, so cc.find_library('m') finds the shared lib first.
+#
+# No headers — avoids ABI contamination from buckos glibc 2.42 headers
+# vs the host compiler's expectations.
+
+package(
+    build_rule = "binary",
+    name = "libm",
+    version = "1.0",
+    source = ":libm-src",
+    description = "Minimal libm.so provider for meson cross-compilation",
+    homepage = "https://www.gnu.org/software/libc/",
+    license = "LGPL-2.1+",
+    deps = [],
+    install_script = """
+        mkdir -p "$OUT/usr/lib64"
+        # Create linker scripts that resolve to system shared libs.
+        # Prevents meson from finding host static libs (.a) that
+        # don't exist on RE.
+        cat > "$OUT/usr/lib64/libm.so" << 'EOF'
+/* GNU ld script */
+OUTPUT_FORMAT(elf64-x86-64)
+GROUP ( libm.so.6  AS_NEEDED ( libmvec.so.1 ) )
+EOF
+        cp "$OUT/usr/lib64/libm.so" "$OUT/usr/lib64/libm.a"
+        # libresolv — needed by iputils ping
+        cat > "$OUT/usr/lib64/libresolv.so" << 'EOF'
+/* GNU ld script */
+OUTPUT_FORMAT(elf64-x86-64)
+GROUP ( libresolv.so.2 )
+EOF
+        cp "$OUT/usr/lib64/libresolv.so" "$OUT/usr/lib64/libresolv.a"
+    """,
+    visibility = ["PUBLIC"],
+)
+
+# Dummy source — binary packages need a source artifact
+native.genrule(
+    name = "libm-src",
+    out = "src",
+    cmd = "mkdir -p $OUT && touch $OUT/.placeholder",
+)

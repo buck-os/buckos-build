@@ -14,10 +14,28 @@ binary_package(
         "//packages/linux/system/libs/compression/bzip2:bzip2",
     ],
     install_script = """
-# Fix conflicting types for memset/memcpy: zip.h defines its own prototypes
-# when ZMEM is set. Remove -DZMEM from the Makefile flags and add -DHAVE_STRING_H
-# to use the system string.h versions instead.
+# Fix conflicting types for memset/memcpy/memcmp: zip.h defines its own prototypes
+# Remove -DZMEM from Makefile so ZMEM code path is not activated
 sed -i 's/-DZMEM//g' unix/Makefile 2>/dev/null || true
+
+# Use python to surgically remove all memset/memcpy/memcmp declarations from zip.h
+# sed approaches fail due to varying line formats; python handles all cases
+python3 -c "
+import re
+with open('zip.h', 'r') as f:
+    content = f.read()
+# Remove any line declaring memset, memcpy, or memcmp (with or without OF macro)
+content = re.sub(r'^[^\n]*(?:char|void|int)\s*\*?\s*mem(?:set|cpy|cmp)\s*(?:OF)?\s*\(.*?\)\s*;[^\n]*\n?', '', content, flags=re.MULTILINE)
+# Also remove the entire #ifdef ZMEM ... #endif block
+content = re.sub(r'#\s*ifdef\s+ZMEM.*?#\s*endif[^\n]*\n?', '', content, flags=re.DOTALL)
+with open('zip.h', 'w') as f:
+    f.write(content)
+" 2>/dev/null || true
+
+# Also remove zmem function definitions from zip.c if present
+sed -i '/^zvoid \*memset/,/^}/d' zip.c 2>/dev/null || true
+sed -i '/^zvoid \*memcpy/,/^}/d' zip.c 2>/dev/null || true
+sed -i '/^int memcmp/,/^}/d' zip.c 2>/dev/null || true
 
 make -f unix/Makefile generic \
     CC="$CC" \
@@ -31,7 +49,12 @@ make -f unix/Makefile generic \
     -j1
 
 mkdir -p "$OUT/usr/bin"
-install -m755 zip "$OUT/usr/bin/" 2>/dev/null || true
+if [ ! -f zip ]; then
+    echo "ERROR: zip binary not found after build"
+    ls -la
+    exit 1
+fi
+install -m755 zip "$OUT/usr/bin/"
 install -m755 zipcloak "$OUT/usr/bin/" 2>/dev/null || true
 install -m755 zipnote "$OUT/usr/bin/" 2>/dev/null || true
 install -m755 zipsplit "$OUT/usr/bin/" 2>/dev/null || true

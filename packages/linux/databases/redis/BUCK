@@ -1,4 +1,4 @@
-load("//defs/packages:autotools.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # Redis - In-memory data structure store
 #
@@ -10,9 +10,9 @@ load("//defs/packages:autotools.bzl", "autotools_package")
 #   systemd   - Enable systemd integration
 #   jemalloc  - Use jemalloc memory allocator (recommended)
 
-autotools_package(
+package(
     name = "redis",
-    skip_configure = True,
+    build_rule = "binary",
     version = "7.4.1",
     url = "https://github.com/redis/redis/archive/refs/tags/7.4.1.tar.gz",
     sha256 = "e85fd212307c8b453ae9361e882b6c1cefcc6a988a6f135faf7ef770a13bb05d",
@@ -20,11 +20,15 @@ autotools_package(
     homepage = "https://redis.io/",
     license = "BSD-3-Clause",
     deps = [],
-    use_deps = {
-        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
-        "jemalloc": "//packages/linux/dev-libs/allocators/jemalloc:jemalloc",
-    },
-    env = {
-        "PREFIX": "/usr",
-    },
+    install_script = """
+cd "$SRCS"
+make CC="$CC" CXX="$CXX" \
+    CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" \
+    PREFIX=/usr USE_JEMALLOC=no USE_SYSTEMD=no \
+    -j${MAKEOPTS:-$(nproc)} || \
+make CC="$CC" PREFIX=/usr USE_JEMALLOC=no -j1
+
+# Redis Makefile doesn't support DESTDIR, use PREFIX directly
+make PREFIX="$OUT/usr" install
+""",
 )
