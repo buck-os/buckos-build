@@ -1,10 +1,11 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "MachineMotion",
-    version = "4.5",
-    src_uri = "https://github.com/ventionco/mm-python-api/archive/refs/tags/release/v4.5.tar.gz",
-    sha256 = "TODO",
+    version = "4.2",
+    url = "https://github.com/ventionco/mm-python-api/archive/refs/tags/v4.2.tar.gz",
+    sha256 = "a60af2a937d0e028aae2fcf889841c51e6c1afbd7f347cdcc004d918243c57a2",
     deps = [
         "//packages/linux/dev-libs/python/paho-mqtt:paho-mqtt",
         "//packages/linux/dev-libs/python/python-socketio:python-socketio",

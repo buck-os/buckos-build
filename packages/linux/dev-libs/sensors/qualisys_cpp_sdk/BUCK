@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "qualisys_cpp_sdk",
     version = "1.27",
-    src_uri = "https://github.com/qualisys/qualisys_cpp_sdk/archive/refs/tags/rt_protocol_1.27_fixup_release.tar.gz",
+    url = "https://github.com/qualisys/qualisys_cpp_sdk/archive/refs/tags/rt_protocol_1.27_fixup_release.tar.gz",
     sha256 = "ff992acd74398c85dbba59feb6c2df450f508cdb5506fa7bf549b48dd6b603cf",
-    cmake_args = [
+    configure_args = [
         "-Dqualisys_cpp_sdk_BUILD_EXAMPLES=OFF",
         "-Dqualisys_cpp_sdk_BUILD_TESTS=OFF",
     ],

@@ -1,14 +1,14 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "groundingdino",
     version = "0.1.0",
-    src_uri = "https://github.com/IDEA-Research/GroundingDINO/archive/refs/tags/v0.1.0.tar.gz",
-    sha256 = "TODO",
+    url = "https://github.com/IDEA-Research/GroundingDINO/archive/refs/tags/v0.1.0-alpha2.tar.gz",
+    sha256 = "4d2ce7d9340e5d88a6c867cdbf4afd9f9b121499b06a5ac28392e9f608634ad1",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
         "//packages/linux/ai/vision/torchvision:torchvision",
-        "//packages/linux/dev-libs/python/numpy:numpy",
         "//packages/linux/dev-libs/python/opencv-python:opencv-python",
         "//packages/linux/ai/nlp/transformers:transformers",
         "//packages/linux/dev-libs/python/timm:timm",
@@ -17,5 +17,4 @@ python_package(
         "//packages/linux/dev-libs/python/supervision:supervision",
         "//packages/linux/dev-libs/python/pycocotools:pycocotools",
     ],
-    maintainers = ["aiacu"],
 )

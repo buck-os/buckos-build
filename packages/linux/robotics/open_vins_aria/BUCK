@@ -1,24 +1,24 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "open_vins_aria",
-    version = "43c2ca43",
-    src_uri = "https://github.com/rpng/open_vins/archive/43c2ca43483e774ce74dae514509bfb59403a0d6.tar.gz",
-    sha256 = "c760bf626e0e467b9344b380d9ba59d95c5214d561326ffa2be79ac5ddcd8983",
+    version = "2.7",
+    url = "https://github.com/rpng/open_vins/archive/refs/tags/v2.7.tar.gz",
+    sha256 = "0135af4acd8dc099c8b50fc51c9faf53fe69462d0e6bad9e986ad4090af02df8",
     description = "OpenVINS is an open source platform for visual-inertial navigation research",
     homepage = "https://github.com/rpng/open_vins",
     license = "LGPL-3.0",
     deps = [
-        "//packages/linux/robotics/eigen3:eigen3",
-        "//packages/linux/robotics/ceres-solver:ceres-solver",
+        "//packages/linux/dev-libs/eigen3:eigen3",
+        "//packages/linux/dev-libs/math/ceres-solver:ceres-solver",
         "//packages/linux/robotics/sophus:sophus",
         "//packages/linux/ai/vision/opencv:opencv",
         "//packages/linux/dev-libs/misc/boost:boost",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DENABLE_ARUCO_TAGS=OFF",
     ],
-    visibility = ["PUBLIC"],
 )

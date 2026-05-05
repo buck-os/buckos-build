@@ -1,37 +1,25 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "lynis-src",
-    src_uri = "https://github.com/CISOfy/lynis/archive/refs/tags/3.0.9.tar.gz",
-    sha256 = "520eb76aee5d350c2a7265414bae302077cd70ed5a0aaf61dec9e43a968b1727",
-    signature_required = False,
-)
-
-autotools_package(
+package(
     name = "lynis",
-    source = ":lynis-src",
+    build_rule = "binary",
+    url = "https://github.com/CISOfy/lynis/archive/refs/tags/3.0.9.tar.gz",
+    sha256 = "520eb76aee5d350c2a7265414bae302077cd70ed5a0aaf61dec9e43a968b1727",
     version = "3.0.9",
     description = "Security auditing tool for Unix/Linux systems",
     homepage = "https://cisofy.com/lynis/",
     license = "GPL-3.0",
-    pre_configure = """
-        # lynis is a shell script, no compilation needed
-        true
-    """,
-    make_args = [],
-    post_install = """
-        mkdir -p $OUT/usr/bin
-        mkdir -p $OUT/usr/share/lynis
-        mkdir -p $OUT/etc/lynis
-        mkdir -p $OUT/var/log/lynis
+    install_script = """
+mkdir -p $OUT/usr/bin
+mkdir -p $OUT/usr/share/lynis
+mkdir -p $OUT/etc/lynis
+mkdir -p $OUT/var/log/lynis
 
-        cp -r db include plugins $OUT/usr/share/lynis/
-        cp lynis $OUT/usr/bin/lynis
-        chmod 755 $OUT/usr/bin/lynis
+cp -r db include plugins $OUT/usr/share/lynis/
+cp lynis $OUT/usr/bin/lynis
+chmod 755 $OUT/usr/bin/lynis
 
-        # Install default profile
-        cp default.prf $OUT/etc/lynis/
-    """,
-    visibility = ["PUBLIC"],
+# Install default profile
+cp default.prf $OUT/etc/lynis/
+""",
 )

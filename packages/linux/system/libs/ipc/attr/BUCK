@@ -1,52 +1,41 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "attr-src",
-    src_uri = "https://github.com/sailfishos-mirror/attr/archive/refs/tags/v2.5.2.tar.gz",
-    sha256 = "b266cf45e2256b4d85a86554b42c0218abce40356f5c3026f88e15dcf73df775",
-    signature_required = False,
-)
-
-ebuild_package(
+package(
     name = "attr",
-    source = ":attr-src",
+    build_rule = "binary",
     version = "2.5.2",
-    category = "system/libs/ipc",
-    slot = "0",
+    url = "https://mirror.csclub.uwaterloo.ca/nongnu/attr/attr-2.5.2.tar.xz",
+    sha256 = "f2e97b0ab7ce293681ab701915766190d607a1dba7fae8a718138150b700a70b",
     description = "Extended attribute support library",
-    homepage = "https://github.com/sailfishos-mirror/attr",
+    homepage = "https://savannah.nongnu.org/projects/attr/",
     license = "LGPL-2.1",
+    use_configure = {
+        "debug": ("--enable-debug", "--disable-debug"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "static-libs": ("--enable-static", "--disable-static"),
+    },
+    install_script = '''
+# For cross-compilation: --build is the build machine, --host is the target
+# Use config.guess to detect build system, and $CHOST or gcc for target
+BUILD_SYSTEM=$(./build-aux/config.guess 2>/dev/null || echo x86_64-pc-linux-gnu)
+HOST_SYSTEM=${CHOST:-$(${CC:-gcc} -dumpmachine)}
 
-    src_prepare = '''
-# GitHub archive doesn't include pre-generated configure script
-# Remove po directory to avoid NLS build issues
-rm -rf po
-sed -i '/^SUBDIRS/s/po//' Makefile.am
-autoreconf -fiv
-''',
-
-    src_configure = '''
-./configure \\
-    --prefix=/usr \\
-    --build=$(gcc -dumpmachine) \\
-    --host=$(gcc -dumpmachine) \\
-    --disable-static \\
+./configure \
+    --prefix=/usr \
+    --libdir=/usr/lib64 \
+    --build=$BUILD_SYSTEM \
+    --host=$HOST_SYSTEM \
+    --disable-static \
     --disable-nls
-''',
 
-    src_compile = '''
-make -j$(nproc)
-''',
+# Suppress autotools regeneration — automake/aclocal not available in
+# the build environment; timestamp skew after configure can trigger
+# spurious Makefile.in rebuilds.
+AUTOTOOLS_NOOP="ACLOCAL=true AUTOMAKE=true AUTOCONF=true AUTOHEADER=true"
 
-    src_install = '''
-make DESTDIR="$DESTDIR" install
-''',
+make -j${MAKEOPTS:-$(nproc)} $AUTOTOOLS_NOOP
 
-    bdepend = [
-        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
-        "//packages/linux/dev-tools/build-systems/automake:automake",
-    ],
-    depend = [],
-    visibility = ["PUBLIC"],
+make DESTDIR="$DESTDIR" install $AUTOTOOLS_NOOP
+''',
+    deps = [],
 )

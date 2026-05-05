@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # Bloaty - Binary size profiler
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "bloaty",
     version = "1.1",
-    src_uri = "https://github.com/google/bloaty/archive/refs/tags/v1.1.tar.gz",
+    url = "https://github.com/google/bloaty/archive/refs/tags/v1.1.tar.gz",
     sha256 = "682640678a748d043eea65df48831f807d39a1e761eacc461c756256f7ec6a26",
     description = "A size profiler for binaries (ELF, Mach-O, PE, WebAssembly)",
     homepage = "https://github.com/google/bloaty",
@@ -16,9 +17,9 @@ cmake_package(
         "//packages/linux/dev-libs/serialization/protobuf:protobuf",
         "//packages/linux/dev-libs/text/re2:re2",
         "//packages/linux/core/zlib:zlib",
-        "//packages/linux/dev-libs/compression/zstd:zstd",
+        "//packages/linux/system/libs/compression/zstd:zstd",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_CXX_STANDARD=20",
         "-DBLOATY_PREFER_SYSTEM_ABSL=YES",
@@ -32,5 +33,4 @@ cmake_package(
         "-DBLOATY_ENABLE_CMAKETARGETS=OFF",
         "-DBUILD_TESTING=OFF",
     ],
-    visibility = ["PUBLIC"],
 )

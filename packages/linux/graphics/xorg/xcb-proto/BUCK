@@ -1,0 +1,22 @@
+load("//defs:package.bzl", "package")
+
+# xcb-proto - X C Binding Protocol Headers
+# XML protocol descriptions used by libxcb for code generation
+package(
+    build_rule = "autotools",
+    name = "xcb-proto",
+    version = "1.17.0",
+    url = "https://xorg.freedesktop.org/archive/individual/proto/xcb-proto-1.17.0.tar.xz",
+    sha256 = "2c1bacd2110f4799f74de6ebb714b94cf6f80fb112316b1219480fd22562148c",
+    description = "X C Binding Protocol Headers",
+    homepage = "https://xcb.freedesktop.org/",
+    license = "MIT",
+    configure_args = [
+        # Cross-compilation: malloc(0) returns non-NULL on Linux/glibc
+        "--enable-malloc0returnsnull=no",
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--datadir=/usr/share",
+    ],
+    deps = [],
+)

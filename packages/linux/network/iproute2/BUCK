@@ -1,28 +1,24 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package", "binary_package", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # iproute2 - Network configuration utilities
 # =============================================================================
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "iproute2",
-    version = "6.6.0",
-    src_uri = "https://mirrors.edge.kernel.org/pub/linux/utils/net/iproute2/iproute2-6.6.0.tar.xz",
-    sha256 = "8738c804afd09f0bf756937f0c3de23117832a98d8cbbf50386cf5005cd613ce",
-    signature_required = False,
+    version = "6.1.0",
+    url = "https://mirrors.edge.kernel.org/pub/linux/utils/net/iproute2/iproute2-6.1.0.tar.xz",
+    sha256 = "5ce12a0fec6b212725ef218735941b2dab76244db7e72646a76021b0537b43ab",
 
-    iuse = ["caps", "elf", "selinux", "atm", "iptables"],
-    use_defaults = ["caps"],
+    # Only enable caps by default - elf has transitive dependency issues with pkg-config
 
     use_deps = {
-        "caps": ["//packages/linux/system/libs/ipc/libcap:libcap"],
-        "elf": ["//packages/linux/dev-tools/dev-utils/elfutils:elfutils"],
+        "caps": "//packages/linux/system/libs/ipc/libcap:libcap",
+        "elf": "//packages/linux/system/libs/elfutils:elfutils",
         # TODO: Add libselinux when available:
-        # "selinux": ["//packages/linux/system/security/selinux/libselinux:libselinux"],
+        # "selinux": ["//packages/linux/system/security/selinux/libselinux:libselinux"]
     },
-
-    use_configure = {},
 
     configure_args = [],
 
@@ -31,9 +27,14 @@ autotools_package(
         "SBINDIR=/sbin",
     ],
 
+    host_deps = [
+        "//packages/linux/dev-tools/dev-utils/flex:flex",
+        "//packages/linux/dev-tools/dev-utils/bison:bison",
+    ],
+
     deps = [],
 
-    src_prepare = """
+    pre_configure_cmds = ["""
 # Fix function conflicts with glibc
 # Modern glibc provides setns, name_to_handle_at, and open_by_handle_at
 # so we need to prevent iproute2 from redefining them
@@ -43,19 +44,38 @@ sed -i '/#ifndef HAVE_HANDLE_AT/,/#endif/d' lib/fs.c || true
 
 # Patch include/namespace.h to remove setns redefinition
 sed -i '/^static inline int setns/,/^}/d' include/namespace.h || true
-""",
 
-    pre_configure = """
-# iproute2 uses a different build system
+# Disable netem utilities - they use host compiler/linker which fails
+# in the network-isolated build environment
+sed -i '/^TARGETS/s/ maketable//' netem/Makefile 2>/dev/null || true
+sed -i '/maketable/d' netem/Makefile 2>/dev/null || true
+sed -i '/paretonormal/d' netem/Makefile 2>/dev/null || true
+
+# Disable SELinux check - we don't have libselinux yet
+sed -i 's/^check_selinux$/echo "no" # check_selinux disabled/' configure
+
+# Disable libbpf - we don't have it yet
+sed -i 's/^check_libbpf$/echo "no" # check_libbpf disabled/' configure
+
+# Disable ELF support - transitive dependency issues with pkg-config
+sed -i 's/^check_elf$/echo "no" # check_elf disabled/' configure
+
+# iproute2 uses a different build system - run its configure first
 ./configure
-""",
 
-    post_install = """
-make install PREFIX=/usr SBINDIR=/sbin DESTDIR="$DESTDIR"
-""",
+# Disable features that require missing libraries by patching config.mk
+sed -i 's/HAVE_SELINUX:=y/HAVE_SELINUX:=n/' config.mk
+sed -i '/-lselinux/d' config.mk
+sed -i '/-DHAVE_SELINUX/d' config.mk
+sed -i 's/HAVE_ELF:=y/HAVE_ELF:=n/' config.mk
+sed -i '/-lelf/d' config.mk
+sed -i '/-DHAVE_ELF/d' config.mk
+sed -i 's/HAVE_LIBBPF:=y/HAVE_LIBBPF:=n/' config.mk
+sed -i '/-lbpf/d' config.mk
+sed -i '/-DHAVE_LIBBPF/d' config.mk
+"""],
 
     description = "Network configuration utilities (ip, ss, bridge, etc.)",
     homepage = "https://wiki.linuxfoundation.org/networking/iproute2",
     license = "GPL-2.0",
-    visibility = ["PUBLIC"],
 )

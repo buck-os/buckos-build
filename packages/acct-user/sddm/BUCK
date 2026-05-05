@@ -1,0 +1,20 @@
+load("//defs/rules:acct.bzl", "acct_user_package")
+
+acct_user_package(
+    name = "sddm",
+    uid = 365,
+    home = "/var/lib/sddm",
+    shell = "/sbin/nologin",
+    primary_group = "sddm",
+    groups = ["video", "audio", "input", "tty", "usb", "utmp"],  # SDDM needs: video (GPU), audio (sound), input (keyboards/mice), tty (TTY control), usb (USB devices), utmp (login records)
+    description = "System user for SDDM display manager",
+    deps = [
+        "//packages/acct-group/sddm:sddm",
+        "//packages/acct-group/video:video",
+        "//packages/acct-group/audio:audio",
+        "//packages/acct-group/input:input",
+        "//packages/acct-group/tty:tty",
+        "//packages/acct-group/usb:usb",
+        "//packages/acct-group/utmp:utmp",
+    ],
+)

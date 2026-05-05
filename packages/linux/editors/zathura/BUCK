@@ -1,23 +1,29 @@
-load("//defs:package_defs.bzl", "meson_package", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
+load("//defs:package.bzl", "package")
 
 # zathura - Document viewer with vim-like interface
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "zathura",
     version = "0.5.4",
-    src_uri = "https://pwmt.org/projects/zathura/download/zathura-0.5.4.tar.xz",
+    use_configure = {
+        "X": ("--with-x", "--without-x"),
+        "landlock": ("--enable-landlock", "--disable-landlock"),
+        "man": ("--enable-man", "--disable-man"),
+        "seccomp": ("--enable-seccomp", "--disable-seccomp"),
+        "synctex": ("--enable-synctex", "--disable-synctex"),
+        "wayland": ("--enable-wayland", "--disable-wayland"),
+    },
+    url = "https://pwmt.org/projects/zathura/download/zathura-0.5.4.tar.xz",
     sha256 = "a3037f7aa94d4096bfd97069f62ffcdca9f06431e8663548c1cd6b945c556f32",
-    signature_required = False,
     description = "Document viewer with vim-like interface",
     homepage = "https://pwmt.org/projects/zathura",
     license = "Zlib",
-    meson_args = [
+    configure_args = [
         "-Dprefix=/usr",
     ],
     deps = [
         "//packages/linux/desktop/gtk:gtk3",
         "//packages/linux/dev-libs/glib:glib",
     ],
-    visibility = ["PUBLIC"],
 )

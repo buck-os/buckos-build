@@ -1,29 +1,25 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+# wireless-regdb contains pre-built regulatory.db files.
+# Uses binary rule since no compilation is needed.
+package(
     name = "wireless-regdb",
+    build_rule = "binary",
     version = "2024.01.23",
-    src_uri = "https://www.kernel.org/pub/software/network/wireless-regdb/wireless-regdb-2024.01.23.tar.xz",
+    url = "https://www.kernel.org/pub/software/network/wireless-regdb/wireless-regdb-2024.01.23.tar.xz",
     sha256 = "c8a61c9acf76fa7eb4239e89f640dee3e87098d9f69b4d3518c9c60fc6d20c55",
-    signature_required = False,
 
-    iuse = [],
-    use_defaults = [],
-
-
-    use_configure = {},
-
-    post_install = """
-install -d "$DESTDIR/usr/lib/crda"
-install -d "$DESTDIR/lib/firmware"
-install -m 644 regulatory.bin "$DESTDIR/lib/firmware/"
-install -m 644 regulatory.db "$DESTDIR/lib/firmware/" 2>/dev/null || true
-install -m 644 regulatory.db.p7s "$DESTDIR/lib/firmware/" 2>/dev/null || true
+    install_script = """
+install -d "$OUT/lib/firmware"
+install -m 644 "$SRCS/regulatory.db" "$OUT/lib/firmware/"
+install -m 644 "$SRCS/regulatory.db.p7s" "$OUT/lib/firmware/"
+install -d "$OUT/usr/lib/firmware"
+install -m 644 "$SRCS/regulatory.db" "$OUT/usr/lib/firmware/"
+install -m 644 "$SRCS/regulatory.db.p7s" "$OUT/usr/lib/firmware/"
 """,
 
+    labels = ["buckos:firmware"],
     description = "Wireless regulatory database for Linux",
     homepage = "https://wireless.wiki.kernel.org/en/developers/regulatory/wireless-regdb",
     license = "ISC",
-    visibility = ["PUBLIC"],
 )

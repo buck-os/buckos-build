@@ -13,7 +13,6 @@ filegroup(
         "//packages/linux/dev-libs/allocators/mimalloc:mimalloc",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -26,7 +25,6 @@ filegroup(
         "//packages/linux/dev-libs/boost:boost",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -39,7 +37,6 @@ filegroup(
         "//packages/linux/dev-libs/glib:glib",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -55,7 +52,6 @@ filegroup(
         "//packages/linux/dev-libs/serialization/capnproto:capnproto",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -66,12 +62,9 @@ filegroup(
     name = "text-libs",
     srcs = [
         "//packages/linux/dev-libs/text/oniguruma:oniguruma",
-        "//packages/linux/dev-libs/text/re2:re2",
-        "//packages/linux/dev-libs/text/libunistring:libunistring",
         "//packages/linux/dev-libs/text/utf8proc:utf8proc",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -86,7 +79,6 @@ filegroup(
         "//packages/linux/dev-libs/misc/cjson:cjson",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -99,7 +91,6 @@ filegroup(
         "//packages/linux/dev-libs/testing/check:check",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -112,7 +103,6 @@ filegroup(
         "//packages/linux/dev-libs/config/libconfig:libconfig",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -127,7 +117,6 @@ filegroup(
         "//packages/linux/dev-libs/google/abseil-cpp:abseil-cpp",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -141,7 +130,6 @@ filegroup(
         "//packages/linux/dev-libs/database/rocksdb:rocksdb",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -156,7 +144,6 @@ filegroup(
         "//packages/linux/system/libs/utility/libuv:libuv",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -167,11 +154,10 @@ filegroup(
     name = "cpp-utility-libs",
     srcs = [
         "//packages/linux/dev-libs/misc/fmt:fmt",
-        "//packages/linux/dev-libs/misc/spdlog:spdlog",
+        "//packages/linux/dev-libs/logging/spdlog:spdlog",
         "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -185,7 +171,6 @@ filegroup(
         "//packages/linux/dev-libs/misc/libatomic_ops:libatomic_ops",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -195,7 +180,6 @@ filegroup(
 filegroup(
     name = "misc-libs",
     srcs = [
-        "//packages/linux/dev-libs/misc/xxhash:xxhash",
         "//packages/linux/dev-libs/misc/libmicrohttpd:libmicrohttpd",
         "//packages/linux/dev-libs/misc/tree-sitter:tree-sitter",
         "//packages/linux/dev-libs/misc/libedit:libedit",
@@ -203,7 +187,6 @@ filegroup(
         "//packages/linux/dev-libs/misc/libgit2:libgit2",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -220,7 +203,6 @@ filegroup(
         "//packages/linux/dev-libs/misc/fmt:fmt",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # C++ Development - Complete C++ development library stack
@@ -230,10 +212,8 @@ filegroup(
         ":boost-libs",
         ":google-libs",
         ":cpp-utility-libs",
-        "//packages/linux/dev-libs/text/re2:re2",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Systems Programming - Libraries for low-level systems work
@@ -243,11 +223,9 @@ filegroup(
         ":allocator-libs",
         ":event-libs",
         ":gc-libs",
-        "//packages/linux/dev-libs/misc/xxhash:xxhash",
         "//packages/linux/dev-libs/misc/libatomic_ops:libatomic_ops",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Data Processing - Serialization, JSON, and database libraries
@@ -259,7 +237,6 @@ filegroup(
         ":database-libs",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -285,5 +262,4 @@ filegroup(
         ":misc-libs",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )

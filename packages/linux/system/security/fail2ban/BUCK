@@ -1,34 +1,18 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "fail2ban-src",
-    src_uri = "https://github.com/fail2ban/fail2ban/archive/refs/tags/1.0.2.tar.gz",
-    sha256 = "ae8b0b41f27a7be12d40488789d6c258029b23a01168e3c0d347ee80b325ac23",
-    signature_required = False,
-)
-
-autotools_package(
+# fail2ban - Daemon to ban hosts that cause multiple authentication errors
+# Uses setup.py for installation.
+package(
+    build_rule = "python",
     name = "fail2ban",
-    source = ":fail2ban-src",
+    url = "https://github.com/fail2ban/fail2ban/archive/refs/tags/1.0.2.tar.gz",
+    sha256 = "ae8b0b41f27a7be12d40488789d6c258029b23a01168e3c0d347ee80b325ac23",
     version = "1.0.2",
     description = "Daemon to ban hosts that cause multiple authentication errors",
     homepage = "https://www.fail2ban.org/",
     license = "GPL-2.0+",
-    pre_configure = """
-        # fail2ban uses setup.py
-        true
-    """,
-    make_args = [],
-    post_install = """
-        python3 setup.py install --root=$OUT --prefix=/usr
-        mkdir -p $OUT/etc/fail2ban
-        mkdir -p $OUT/var/lib/fail2ban
-        mkdir -p $OUT/var/run/fail2ban
-        cp -r config/* $OUT/etc/fail2ban/
-    """,
+    use_setup_py = True,
     deps = [
         "//packages/linux/lang/python:python",
     ],
-    visibility = ["PUBLIC"],
 )

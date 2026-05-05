@@ -1,27 +1,95 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # talloc - Memory allocator from Samba project
-download_source(
-    name = "talloc-src",
-    src_uri = "https://www.samba.org/ftp/talloc/talloc-2.4.3.tar.gz",
-    sha256 = "dc46c40b9f46bb34dd97fe41f548b0e8b247b77a918576733c528e83abd854dd",
-    signature_required = False,
-)
-
-autotools_package(
+# Uses waf build system (Python-based), not autoconf.
+package(
+    build_rule = "binary",
     name = "talloc",
-    source = ":talloc-src",
+    url = "https://www.samba.org/ftp/talloc/talloc-2.4.3.tar.gz",
+    sha256 = "dc46c40b9f46bb34dd97fe41f548b0e8b247b77a918576733c528e83abd854dd",
     version = "2.4.3",
     description = "Hierarchical pool based memory allocator with destructors",
     homepage = "https://talloc.samba.org/",
     license = "LGPL-3.0",
-    configure_args = [
-        "--prefix=/usr",
-        "--sysconfdir=/etc",
-        "--disable-python",
-    ],
+    install_script = """
+cd "$SRCS"
+
+# Find libtirpc include/lib paths from deps for rpc/rpc.h
+_TIRPC_INC=""
+_TIRPC_LIB=""
+IFS=':' read -ra _DEPS <<< "${DEP_BASE_DIRS:-}"
+for _dep in "${_DEPS[@]}"; do
+    if [ -f "$_dep/usr/include/tirpc/rpc/rpc.h" ]; then
+        _TIRPC_INC="$_dep/usr/include/tirpc"
+    fi
+    for _lib in "$_dep/usr/lib64" "$_dep/usr/lib"; do
+        if [ -f "$_lib/libtirpc.so" ]; then
+            _TIRPC_LIB="$_lib"
+        fi
+    done
+done
+if [ -n "$_TIRPC_INC" ]; then
+    export CFLAGS="$CFLAGS -I$_TIRPC_INC"
+    export LDFLAGS="$LDFLAGS ${_TIRPC_LIB:+-L$_TIRPC_LIB -Wl,-rpath-link,$_TIRPC_LIB}"
+fi
+
+# Create cross-answers file for waf cross-compilation
+cat > cross-answers.txt << 'CROSS_EOF'
+Checking uname sysname type: "Linux"
+Checking uname machine type: "x86_64"
+Checking uname release type: "6.6.0"
+Checking uname version type: "#1"
+Checking simple C program: OK
+building in /tmp/tmp.talloc
+Checking for large file support without additional flags: OK
+Checking for -D_FILE_OFFSET_BITS=64: OK
+Checking for WORDS_BIGENDIAN: OK
+Checking for C99 vsnprintf: OK
+Checking for HAVE_SECURE_MKSTEMP: OK
+rpath library support: OK
+-Wl,--version-script support: FAIL
+Checking correct behavior of strtoll: OK
+Checking for working strptime: OK
+Checking for C99 vsnprintf: OK
+Checking for HAVE_SHARED_MMAP: OK
+Checking for HAVE_MREMAP: OK
+Checking getconf LFS_CFLAGS: OK
+Checking for kernel change notify support: OK
+Checking for Linux kernel oplocks: OK
+Checking for kernel share modes: OK
+Checking if can we convert from CP850 to UCS-2LE: OK
+Checking if can we convert from UTF-8 to UCS-2LE: OK
+vfs_fileid checking for statfs() and target struct statfs.f_fsid: OK
+Checking whether sector aligned: OK
+CROSS_EOF
+
+# Stub out git and xsltproc so waf doesn't fail
+mkdir -p "$BUCK_SCRATCH_PATH/talloc-tools"
+for _cmd in git xsltproc; do
+    cat > "$BUCK_SCRATCH_PATH/talloc-tools/$_cmd" << 'STUB_EOF'
+#!/bin/sh
+exit 0
+STUB_EOF
+    chmod +x "$BUCK_SCRATCH_PATH/talloc-tools/$_cmd"
+done
+export PATH="$BUCK_SCRATCH_PATH/talloc-tools:$PATH"
+
+./configure \
+    --prefix=/usr \
+    --sysconfdir=/etc \
+    --disable-python \
+    --cross-compile \
+    --cross-answers=cross-answers.txt \
+    --disable-rpath \
+    --without-gettext
+
+# xsltproc stub already created above
+
+make -j${MAKEOPTS:-$(nproc)}
+
+make DESTDIR="$OUT" install
+""",
     deps = [
+        "//packages/linux/system/libs/ipc/libtirpc:libtirpc",
     ],
-    visibility = ["PUBLIC"],
 )

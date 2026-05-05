@@ -1,16 +1,16 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "isaac-gr00t",
-    version = "0.1.0",
-    src_uri = "https://github.com/NVIDIA/Isaac-GR00T/archive/refs/tags/v0.1.0.tar.gz",
-    sha256 = "TODO",
+    version = "n1.5-release",
+    url = "https://github.com/NVIDIA/Isaac-GR00T/archive/refs/tags/n1.5-release.tar.gz",
+    sha256 = "96515179385f365942efee72b8b56e52766343cbfa398ba66f7973c48e68cafe",
     description = "NVIDIA Isaac GR00T - Generalist Robot 00 Technology for humanoid robots",
     homepage = "https://github.com/NVIDIA/Isaac-GR00T",
     license = "Apache-2.0",
     deps = [
         "//packages/linux/lang/python:python",
-        "//packages/linux/dev-libs/python/numpy:numpy",
     ],
     visibility = ["PUBLIC"],
 )

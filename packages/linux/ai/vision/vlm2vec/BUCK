@@ -1,10 +1,11 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "vlm2vec",
     version = "2.0.1",
-    src_uri = "https://github.com/TIGER-AI-Lab/VLM2Vec/archive/refs/heads/main.tar.gz",
-    sha256 = "b0ea384fd82ada88849eb478edad05b851c9578a82a731e31e7055082a53f34b",
+    url = "https://mirror.buckos.org/v/vlm2vec-main.tar.gz",
+    sha256 = "6aac43158d8f23e22390b938b39222cef03090f5e3c1f75e0056df00fb6b0d03",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
         "//packages/linux/ai/vision/torchvision:torchvision",
@@ -13,17 +14,13 @@ python_package(
         "//packages/linux/dev-libs/python/peft:peft",
         "//packages/linux/dev-libs/python/accelerate:accelerate",
         "//packages/linux/dev-libs/python/datasets:datasets",
-        "//packages/linux/dev-libs/python/scipy:scipy",
         "//packages/linux/dev-libs/python/tqdm:tqdm",
         "//packages/linux/dev-libs/python/wandb:wandb",
         "//packages/linux/dev-libs/python/pillow:pillow",
-        "//packages/linux/dev-libs/python/numpy:numpy",
         "//packages/linux/dev-libs/python/scikit-learn:scikit-learn",
         "//packages/linux/dev-libs/python/scikit-image:scikit-image",
         "//packages/linux/dev-libs/python/timm:timm",
-        "//packages/linux/dev-libs/python/einops:einops",
         "//packages/linux/ai/ml-frameworks/flash-attention:flash-attention",
         "//packages/linux/ai/vector-search/hnswlib:hnswlib",
     ],
-    maintainers = ["cu_models"],
 )

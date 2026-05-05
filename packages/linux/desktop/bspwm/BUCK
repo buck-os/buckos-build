@@ -1,28 +1,27 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # bspwm - Binary space partitioning window manager
 # =============================================================================
 
-download_source(
-    name = "bspwm-src",
-    src_uri = "https://github.com/baskerville/bspwm/archive/refs/tags/0.9.10.tar.gz",
-    sha256 = "0d0f5e465b9c27a5c2143c86189392fa297fad55253b9ed8f6854473d3928f8f",
-    signature_required = False,
-)
-
-autotools_package(
+package(
     name = "bspwm",
-    source = ":bspwm-src",
+    build_rule = "autotools",
+    skip_configure = True,
+    url = "https://github.com/baskerville/bspwm/archive/refs/tags/0.9.10.tar.gz",
+
+    sha256 = "0d0f5e465b9c27a5c2143c86189392fa297fad55253b9ed8f6854473d3928f8f",
     version = "0.9.10",
     description = "bspwm - Tiling window manager based on binary space partitioning",
     homepage = "https://github.com/baskerville/bspwm",
     license = "BSD-2-Clause",
     make_args = ["PREFIX=/usr"],
     deps = [
+        "//packages/linux/graphics/xorg/libxcb:libxcb",
+        "//packages/linux/graphics/xorg/xcb-util:xcb-util",
+        "//packages/linux/graphics/xorg/xcb-util-wm:xcb-util-wm",
+        "//packages/linux/graphics/xorg/xcb-util-keysyms:xcb-util-keysyms",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # bspwm meta-package
@@ -30,9 +29,7 @@ filegroup(
     name = "bspwm-desktop",
     srcs = [
         ":bspwm",
-        "//packages/linux/desktop/lightdm:lightdm",
         "//packages/linux/desktop/mesa:mesa",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )

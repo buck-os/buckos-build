@@ -1,15 +1,12 @@
-# Game launchers and distribution platforms
+load("//defs:package.bzl", "package")
 
-load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+# Game launchers and distribution platforms
 
 filegroup(
     name = "launchers",
     srcs = [
         "//packages/linux/gaming/launchers/steam:steam",
-        "//packages/linux/gaming/launchers/lutris:lutris",
         "//packages/linux/gaming/launchers/heroic:heroic",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )

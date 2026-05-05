@@ -1,25 +1,30 @@
-load("//defs:package_defs.bzl", "binary_package", "download_source")
+load("//defs:package.bzl", "package")
 
 VERSION = "0.0.1"
 COMMIT = "13e0121253c73f2e85e418a3ae960463c0fbf31f"
 
-download_source(
-    name = "sliding-dft-src",
-    src_uri = "https://github.com/bronsonp/SlidingDFT/archive/{}.tar.gz".format(COMMIT),
-    sha256 = "99d0bb8ed569a3b24ba7e914f0b9ef3178fa255d32388b3a4831875f5b678a85",
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "sliding-dft",
     version = VERSION,
-    srcs = [":sliding-dft-src"],
+    url = "https://github.com/bronsonp/SlidingDFT/archive/{}.tar.gz".format(COMMIT),
+    sha256 = "99d0bb8ed569a3b24ba7e914f0b9ef3178fa255d32388b3a4831875f5b678a85",
     install_script = """
         mkdir -p "$OUT/usr/include"
-        find "$WORK" -name "sliding-dft.hpp" -exec install -D -m644 {} "$OUT/usr/include/sliding-dft.hpp" \\;
+        # Search in the source directory which contains the extracted files
+        find "$SRCS" -name "*.hpp" -exec install -D -m644 {} "$OUT/usr/include/" \\;
+        # If no hpp files found, check for the specific file structure
+        if [ ! -f "$OUT/usr/include/sliding-dft.hpp" ]; then
+            # Also try the sliding_dft.hpp naming
+            find "$SRCS" -name "*.hpp" -o -name "*.h" | head -5
+            # Copy any header files we find
+            for hdr in $(find "$SRCS" -name "*.hpp" -o -name "*dft*.h" 2>/dev/null); do
+                install -D -m644 "$hdr" "$OUT/usr/include/$(basename $hdr)"
+            done
+        fi
     """,
     description = "C++ header-only library for efficient sliding DFT computation",
     homepage = "https://github.com/bronsonp/SlidingDFT",
     license = "MIT",
     deps = [],
-    visibility = ["PUBLIC"],
 )

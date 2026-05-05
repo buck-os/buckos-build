@@ -1,64 +1,41 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # lighttpd - Lightweight, fast web server
-#
-# USE flags:
-#   ssl     - Enable SSL/TLS support with OpenSSL
-#   pcre2   - Enable PCRE2 regular expressions
-#   zlib    - Enable zlib compression
-#   bzip2   - Enable bzip2 compression
-#   mysql   - Enable MySQL authentication
-#   ldap    - Enable LDAP authentication
+# lighttpd 1.4.76 dropped autotools - uses meson now
 
-autotools_package(
+package(
+    build_rule = "meson",
     name = "lighttpd",
     version = "1.4.76",
-    src_uri = "https://download.lighttpd.net/lighttpd/releases-1.4.x/lighttpd-1.4.76.tar.xz",
+    url = "https://download.lighttpd.net/lighttpd/releases-1.4.x/lighttpd-1.4.76.tar.xz",
     sha256 = "8cbf4296e373cfd0cedfe9d978760b5b05c58fdc4048b4e2bcaf0a61ac8f5011",
-    signature_sha256 = "df94919524b9c47e7349cc66bb401fbcba4f6a7a5377b5fba93885e717e9e429",
-    signature_required = False,
     description = "Lightweight, fast web server optimized for high-performance environments",
     homepage = "https://www.lighttpd.net/",
     license = "BSD-3-Clause",
-    iuse = ["ssl", "pcre2", "zlib", "bzip2", "mysql", "ldap"],
-    use_defaults = ["ssl", "pcre2", "zlib", "bzip2"],
     deps = [
+        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/utility/pcre2:pcre2",
     ],
-    use_deps = {
-        "ssl": ["//packages/linux/network/openssl:openssl"],
-        "zlib": ["//packages/linux/core/zlib:zlib"],
-        "bzip2": ["//packages/linux/core/bzip2:bzip2"],
-        "pcre2": ["//packages/linux/system/libs/utility/pcre2:pcre2"],
-        "ldap": ["//packages/linux/network/openldap:openldap"],
-    },
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc/lighttpd",
-        "--localstatedir=/var",
+        "-Dwith_zlib=enabled",
+        "-Dwith_openssl=true",
+        "-Dwith_pcre2=true",
+        "-Dwith_ldap=disabled",
+        "-Dwith_mysql=disabled",
+        "-Dbuild_extra_warnings=false",
     ],
-    use_configure = {
-        "ssl": "--with-openssl",
-        "-ssl": "--without-openssl",
-        "pcre2": "--with-pcre2",
-        "-pcre2": "--without-pcre2",
-        "zlib": "--with-zlib",
-        "-zlib": "--without-zlib",
-        "bzip2": "--with-bzip2",
-        "-bzip2": "--without-bzip2",
-        "mysql": "--with-mysql",
-        "-mysql": "--without-mysql",
-        "ldap": "--with-ldap",
-        "-ldap": "--without-ldap",
-    },
-    post_install = """
+    post_install_cmds = ["""
 mkdir -p "$DESTDIR/var/log/lighttpd"
 mkdir -p "$DESTDIR/var/cache/lighttpd"
 mkdir -p "$DESTDIR/var/www/html"
 mkdir -p "$DESTDIR/etc/lighttpd/conf.d"
 
 # Create default configuration
-cat > "$DESTDIR/etc/lighttpd/lighttpd.conf" << 'EOF'
+cat > "$DESTDIR/etc/lighttpd/lighttpd.conf" << 'CONFEOF'
 server.document-root = "/var/www/html"
 server.port = 80
 server.username = "www-data"
@@ -66,7 +43,6 @@ server.groupname = "www-data"
 server.errorlog = "/var/log/lighttpd/error.log"
 accesslog.filename = "/var/log/lighttpd/access.log"
 index-file.names = ( "index.html", "index.htm" )
-EOF
-""",
-    visibility = ["PUBLIC"],
+CONFEOF
+"""],
 )

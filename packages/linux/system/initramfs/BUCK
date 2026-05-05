@@ -12,9 +12,6 @@
 filegroup(
     name = "all-initramfs-tools",
     srcs = [
-        "//packages/linux/system/initramfs/dracut:dracut",
-        "//packages/linux/system/initramfs/mkinitcpio:mkinitcpio",
-        "//packages/linux/system/initramfs/genkernel:genkernel",
         "//packages/linux/system/initramfs/initramfs-tools:initramfs-tools",
     ],
     default_target_platform = "//platforms:linux-target",
@@ -25,8 +22,6 @@ filegroup(
 filegroup(
     name = "modern-initramfs",
     srcs = [
-        "//packages/linux/system/initramfs/dracut:dracut",
-        "//packages/linux/system/initramfs/mkinitcpio:mkinitcpio",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],
@@ -36,33 +31,8 @@ filegroup(
 filegroup(
     name = "dracut-stack",
     srcs = [
-        "//packages/linux/system/initramfs/dracut:dracut",
         "//packages/linux/system/libs/kmod:kmod",
-        "//packages/linux/system/init/eudev:eudev",
-    ],
-    default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
-)
-
-# mkinitcpio (Arch Linux default)
-filegroup(
-    name = "mkinitcpio-stack",
-    srcs = [
-        "//packages/linux/system/initramfs/mkinitcpio:mkinitcpio",
-        "//packages/linux/system/libs/kmod:kmod",
-        "//packages/linux/system/init/eudev:eudev",
-    ],
-    default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
-)
-
-# genkernel (Gentoo default)
-filegroup(
-    name = "genkernel-stack",
-    srcs = [
-        "//packages/linux/system/initramfs/genkernel:genkernel",
-        "//packages/linux/system/libs/kmod:kmod",
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],
@@ -74,7 +44,7 @@ filegroup(
     srcs = [
         "//packages/linux/system/initramfs/initramfs-tools:initramfs-tools",
         "//packages/linux/system/libs/kmod:kmod",
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],
@@ -85,8 +55,8 @@ filegroup(
     name = "initramfs-base-deps",
     srcs = [
         "//packages/linux/system/libs/kmod:kmod",
-        "//packages/linux/system/init/eudev:eudev",
-        "//packages/linux/core/cpio:cpio",
+        "//packages/virtual/libudev:libudev",
+        "//packages/linux/system/libs/cpio:cpio",
         "//packages/linux/core/util-linux:util-linux",
         "//packages/linux/system/apps/coreutils:coreutils",
     ],
@@ -99,14 +69,12 @@ filegroup(
     name = "full-boot-stack",
     srcs = [
         # Initramfs generator (pick one)
-        "//packages/linux/system/initramfs/dracut:dracut",
         # Kernel module management
         "//packages/linux/system/libs/kmod:kmod",
         # Device management
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         # Filesystem tools
         "//packages/linux/system/filesystem/management/lvm2:lvm2",
-        "//packages/linux/system/filesystem/management/mdadm:mdadm",
         "//packages/linux/system/filesystem/management/cryptsetup:cryptsetup",
         # Bootloader
         "//packages/linux/boot/grub:grub",
@@ -119,9 +87,8 @@ filegroup(
 filegroup(
     name = "minimal-boot-stack",
     srcs = [
-        "//packages/linux/system/initramfs/dracut:dracut",
         "//packages/linux/system/libs/kmod:kmod",
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/boot/grub:grub",
     ],
     default_target_platform = "//platforms:linux-target",

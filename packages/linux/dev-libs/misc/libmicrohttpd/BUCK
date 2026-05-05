@@ -1,17 +1,19 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "libmicrohttpd-src",
-    src_uri = "https://mirrors.kernel.org/gnu/libmicrohttpd/libmicrohttpd-1.0.1.tar.gz",
-    sha256 = "a89e09fc9b4de34dde19f4fcb4faaa1ce10299b9908db1132bbfa1de47882b94",
-    signature_sha256 = "f67c9f77ed7cd3b5305623b3b19318e5400369c7a2d8fe685520b8b78d9845a4",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libmicrohttpd",
-    source = ":libmicrohttpd-src",
+    url = "https://mirrors.kernel.org/gnu/libmicrohttpd/libmicrohttpd-1.0.1.tar.gz",
+
+    sha256 = "a89e09fc9b4de34dde19f4fcb4faaa1ce10299b9908db1132bbfa1de47882b94",
+    use_configure = {
+        "debug": ("--enable-debug", "--disable-debug"),
+        "epoll": ("--enable-epoll", "--disable-epoll"),
+        "eventfd": ("--enable-eventfd", "--disable-eventfd"),
+        "ssl": ("--enable-ssl", "--disable-ssl"),
+        "static-libs": ("--enable-static", "--disable-static"),
+        "thread-names": ("--enable-thread-names", "--disable-thread-names"),
+    },
     version = "1.0.1",
     description = "Small C library for embedding HTTP server functionality",
     homepage = "https://www.gnu.org/software/libmicrohttpd/",
@@ -23,5 +25,4 @@ autotools_package(
     deps = [
         "//packages/linux/system/libs/crypto/gnutls:gnutls",
     ],
-    visibility = ["PUBLIC"],
 )

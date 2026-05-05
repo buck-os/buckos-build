@@ -1,44 +1,42 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "tinc",
     version = "1.0.36",
-    src_uri = "https://github.com/gsliepen/tinc/archive/refs/tags/release-1.0.36.tar.gz",
+    url = "https://github.com/gsliepen/tinc/archive/refs/tags/release-1.0.36.tar.gz",
     sha256 = "04d87f81335ca32f00a5be1fc94d13fae9d8ae3a65452b76df259cb44a1afa78",
-    signature_required = False,
 
-    iuse = ["ssl", "zlib", "lzo"],
-    use_defaults = ["ssl", "zlib", "lzo"],
+    deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/compression/lzo:lzo",
+    ],
 
-    use_deps = {
-        "ssl": ["//packages/linux/network/openssl:openssl"],
-        "zlib": ["//packages/linux/core/zlib:zlib"],
-        "lzo": ["//packages/linux/system/libs/compression/lzo:lzo"],
-    },
-
-    use_configure = {
-        "ssl": "--with-openssl",
-        "-ssl": "--without-openssl",
-        "zlib": "--with-zlib",
-        "-zlib": "--without-zlib",
-        "lzo": "--with-lzo",
-        "-lzo": "--without-lzo",
-    },
+    pre_configure_cmds = [
+        "autoreconf -fiv",
+    ],
 
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc",
         "--localstatedir=/var",
+        "--with-openssl",
+        "--with-zlib",
+        "--with-lzo",
+        "--disable-uml",
+        "--disable-upnp",
+        "--disable-vde",
     ],
 
-    post_install = """
+    post_install_cmds = ["""
 mkdir -p "$DESTDIR/etc/tinc"
 mkdir -p "$DESTDIR/var/run/tinc"
-""",
+"""],
 
     description = "Virtual Private Network daemon for mesh networks",
     homepage = "https://www.tinc-vpn.org/",
     license = "GPL-2.0",
-    visibility = ["PUBLIC"],
 )

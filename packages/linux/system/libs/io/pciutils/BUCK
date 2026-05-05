@@ -1,0 +1,22 @@
+load("//defs:package.bzl", "package")
+
+# pciutils - PCI bus configuration space access library and tools
+# Provides: lspci, setpci, update-pciids
+package(
+    build_rule = "autotools",
+    skip_configure = True,
+    name = "pciutils",
+    url = "https://mirrors.kernel.org/pub/software/utils/pciutils/pciutils-3.13.0.tar.xz",
+
+    sha256 = "77f11f78298502634d1af50308f15a5788629f6cf45cba376f5009aea4cb4926",
+    version = "3.13.0",
+    description = "PCI bus configuration space access library and tools",
+    homepage = "https://mj.ucw.cz/sw/pciutils/",
+    license = "GPL-2",
+    # pciutils uses Make directly, skip configure
+    configure_args = [],
+    # Build with shared library support
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+    ],
+)

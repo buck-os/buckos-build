@@ -42,7 +42,6 @@ find $OUT/etc/buckos/specs -type d -exec chmod 755 {} \\;
         "//specs:readme",
         "//specs:template",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # Wrap in filegroup for use in rootfs
@@ -50,5 +49,4 @@ filegroup(
     name = "buckos-specs",
     srcs = [":buckos-specs-gen"],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )

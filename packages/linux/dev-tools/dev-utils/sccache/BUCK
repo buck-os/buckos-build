@@ -1,25 +1,24 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "sccache-src",
-    src_uri = "https://github.com/mozilla/sccache/releases/download/v0.8.1/sccache-v0.8.1-x86_64-unknown-linux-musl.tar.gz",
-    sha256 = "e0ee621fb16b6940666cd770b091c62cadafd3e062dd12e3a49d9caaff3b795f",
-    signature_required = False,
-)
-
-binary_package(
+# sccache — shared compilation cache for C/C++ and Rust.
+# Built with gha (GitHub Actions cache) backend for CI remote
+# caching.  Other remote backends (S3/GCS/Redis) are excluded
+# to minimize deps.
+package(
+    build_rule = "cargo",
     name = "sccache",
-    srcs = [":sccache-src"],
-    version = "0.8.1",
-    description = "Shared compilation cache with cloud storage support",
+    version = "0.14.0",
+    url = "https://github.com/mozilla/sccache/archive/refs/tags/v0.14.0.tar.gz",
+    sha256 = "f2f194874e6b435896201655432f623d749f5583256f773743c376a6d06cede5",
+    description = "Shared compilation cache for C/C++ and Rust",
     homepage = "https://github.com/mozilla/sccache",
     license = "Apache-2.0",
-    install_script = """
-        cd $SRCS
-        mkdir -p "$OUT/usr/bin"
-        cp sccache "$OUT/usr/bin/"
-        chmod +x "$OUT/usr/bin/sccache"
-    """,
-    visibility = ["PUBLIC"],
+    cargo_args = ["--no-default-features", "--features", "gha"],
+    deps = [
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/core/zlib:zlib",
+    ],
+    host_deps = [
+        "//packages/linux/lang/rust:rust",
+    ],
 )

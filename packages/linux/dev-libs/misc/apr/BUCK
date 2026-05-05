@@ -1,0 +1,24 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "apr",
+    url = "https://archive.apache.org/dist/apr/apr-1.7.5.tar.gz",
+
+    sha256 = "3375fa365d67bcf945e52b52cba07abea57ef530f40b281ffbe977a9251361db",
+    use_configure = {
+        "old-kernel": ("--enable-old-kernel", "--disable-old-kernel"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "static-libs": ("--enable-static", "--disable-static"),
+        "urandom": ("--enable-urandom", "--disable-urandom"),
+        "valgrind": ("--enable-valgrind", "--disable-valgrind"),
+    },
+    version = "1.7.5",
+    description = "Apache Portable Runtime library",
+    homepage = "https://apr.apache.org/",
+    license = "Apache-2.0",
+    configure_args = [
+        "--disable-static",
+        "--enable-threads",
+    ],
+)

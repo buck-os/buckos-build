@@ -1,45 +1,66 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "openssl-src",
-    src_uri = "https://www.openssl.org/source/openssl-3.3.2.tar.gz",
-    sha256 = "2e8a40b01979afe8be0bbfb3de5dc1c6709fedb46d6c89c10da114ab5fc3d281",
-    signature_sha256 = "8a9ba21af0d770b3f9ee098269cfeb220a8b296639e6ad5d0593ffb7a15a742b",
-    signature_required = False,
-)
+# =============================================================================
+# OpenSSL - Cryptography and SSL/TLS toolkit
+# =============================================================================
+# Multi-version package supporting both 3.6.x and 3.3.x (LTS) series.
 
-ebuild_package(
-    name = "openssl",
-    source = ":openssl-src",
-    version = "3.3.2",
-    description = "TLS/SSL and crypto library",
-    homepage = "https://www.openssl.org/",
-    license = "Apache-2.0",
+# ── OpenSSL 3.6 ──
 
-    src_configure = """
-# OpenSSL uses ./config not ./configure
-./config \\
-    --prefix=/usr \\
-    --openssldir=/etc/ssl \\
-    --libdir=lib64 \\
-    shared \\
-    zlib-dynamic \\
-    threads
-""",
-
-    src_compile = """
-make -j$(nproc)
-""",
-
-    src_install = """
-make DESTDIR="$DESTDIR" install_sw install_ssldirs
-# Remove static libraries
-find "$DESTDIR" -name '*.a' -delete
-""",
-
-    bdepend = [
-        "//packages/linux/core/zlib:zlib",
+package(
+    name = "openssl-3.6",
+    build_rule = "autotools",
+    configure_script = "Configure",
+    skip_host_arg = True,
+    version = "3.6.1",
+    url = "https://github.com/openssl/openssl/releases/download/openssl-3.6.1/openssl-3.6.1.tar.gz",
+    sha256 = "b1bfedcd5b289ff22aee87c9d600f515767ebf45f77168cb6d64f231f518a82e",
+    libraries = ["ssl", "crypto"],
+    configure_args = [
+        "--prefix=/usr",
+        "--openssldir=/etc/ssl",
+        "--libdir=lib",
     ],
-    visibility = ["PUBLIC"],
+    # OpenSSL regenerates Makefile on first make when configdata.pm
+    # timestamps change.  Run make once to absorb the regeneration
+    # so the real build succeeds.
+    pre_build_cmds = ["make || true"],
+    deps = ["//packages/linux/core/zlib:zlib"],
+    patches = glob(["patches/3.6/*.patch"]),
+    transforms = ["strip", "stamp"],
+    use_transforms = {"ima": "ima"},
+    license = "Apache-2.0",
+    homepage = "https://www.openssl.org/",
+    description = "TLS/SSL and crypto library",
+    cpe = "cpe:2.3:a:openssl:openssl:3.6.1:*:*:*:*:*:*:*",
 )
+
+# ── OpenSSL 3.3 (LTS) ──
+
+package(
+    name = "openssl-3.3",
+    build_rule = "autotools",
+    configure_script = "Configure",
+    skip_host_arg = True,
+    version = "3.3.2",
+    url = "https://www.openssl.org/source/openssl-3.3.2.tar.gz",
+    sha256 = "2e8a40b01979afe8be0bbfb3de5dc1c6709fedb46d6c89c10da114ab5fc3d281",
+    libraries = ["ssl", "crypto"],
+    configure_args = [
+        "--prefix=/usr",
+        "--openssldir=/etc/ssl",
+        "--libdir=lib",
+    ],
+    pre_build_cmds = ["make || true"],
+    deps = ["//packages/linux/core/zlib:zlib"],
+    patches = glob(["patches/3.3/*.patch"]),
+    transforms = ["strip", "stamp"],
+    use_transforms = {"ima": "ima"},
+    license = "Apache-2.0",
+    homepage = "https://www.openssl.org/",
+    description = "TLS/SSL and crypto library (LTS)",
+    cpe = "cpe:2.3:a:openssl:openssl:3.3.2:*:*:*:*:*:*:*",
+)
+
+# ── Default ──
+alias(name = "openssl", actual = ":openssl-3.6")

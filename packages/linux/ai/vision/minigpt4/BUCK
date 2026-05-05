@@ -1,21 +1,22 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "minigpt4",
     version = "1.0.0",
-    src_uri = "https://github.com/Vision-CAIR/MiniGPT-4/archive/refs/heads/main.tar.gz",
-    sha256 = "TODO",
+    url = "https://github.com/Vision-CAIR/MiniGPT-4/archive/refs/heads/main.tar.gz",
+    sha256 = "afcd8d68c936b1b4d0d9c85918953e7ca7d7f1e7435cd6b2eb3200c7aeee90a2",
     deps = [
-        "//packages/linux/ai/ml-frameworks/pytorch",
-        "//packages/linux/ai/vision/opencv",
-        "//packages/linux/dev-libs/python/matplotlib",
-        "//packages/linux/dev-libs/python/omegaconf",
-        "//packages/linux/dev-libs/python/peft",
-        "//packages/linux/dev-libs/python/pyyaml",
-        "//packages/linux/dev-libs/python/regex",
-        "//packages/linux/dev-libs/python/tokenizers",
-        "//packages/linux/dev-libs/python/tqdm",
-        "//packages/linux/dev-libs/python/transformers",
-        "//packages/linux/dev-libs/python/wandb",
+        "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
+        "//packages/linux/ai/vision/opencv:opencv",
+        "//packages/linux/dev-libs/python/matplotlib:matplotlib",
+        "//packages/linux/dev-libs/python/omegaconf:omegaconf",
+        "//packages/linux/dev-libs/python/peft:peft",
+        "//packages/linux/dev-libs/python/pyyaml:pyyaml",
+        "//packages/linux/dev-libs/python/regex:regex",
+        "//packages/linux/dev-libs/python/tokenizers:tokenizers",
+        "//packages/linux/dev-libs/python/tqdm:tqdm",
+        "//packages/linux/dev-libs/python/transformers:transformers",
+        "//packages/linux/dev-libs/python/wandb:wandb",
     ],
 )

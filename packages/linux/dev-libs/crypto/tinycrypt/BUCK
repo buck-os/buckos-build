@@ -1,39 +1,31 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
     name = "tinycrypt",
+    build_rule = "binary",
     version = "0.2.8",
-    src_uri = "https://github.com/intel/tinycrypt/archive/refs/tags/v0.2.8.tar.gz",
+    url = "https://github.com/intel/tinycrypt/archive/refs/tags/v0.2.8.tar.gz",
     sha256 = "971b603b3e7a75a703014558cd3f953381fa73e70a89e3b31c3459d563468a6c",
     description = "TinyCrypt Cryptographic Library",
     homepage = "https://github.com/intel/tinycrypt",
     license = "Apache-2.0",
-    maintainers = ["ares_ar_catalyst_q_a"],
+    install_script = """
+cd "$SRCS"
 
-    pre_configure = """
-# TinyCrypt uses a simple Makefile, not autotools
-# Skip configure step
+# Compile all source files from lib/source with includes from lib/include
+cd lib/source
+for f in *.c; do
+    $CC $CFLAGS -Wall -fPIC -I../include -c "$f"
+done
+$AR rcs libtinycrypt.a *.o
+cd "$SRCS"
+
+# Install
+mkdir -p "$OUT/usr/lib64"
+cp lib/source/libtinycrypt.a "$OUT/usr/lib64/"
+
+mkdir -p "$OUT/usr/include/tinycrypt"
+cp lib/include/tinycrypt/*.h "$OUT/usr/include/tinycrypt/"
 """,
-
-    configure_args = [],
-
-    post_install = """
-cd "$SRCDIR"
-
-# Build the library
-cd lib
-make clean
-make CC=cc CFLAGS="-O2 -Wall -fPIC" libtinycrypt.a
-
-# Install static library
-mkdir -p "$DESTDIR/usr/lib"
-cp -f libtinycrypt.a "$DESTDIR/usr/lib/"
-
-# Install headers
-mkdir -p "$DESTDIR/usr/include/tinycrypt"
-cp -f include/tinycrypt/*.h "$DESTDIR/usr/include/tinycrypt/"
-""",
-
     deps = [],
-    visibility = ["PUBLIC"],
 )

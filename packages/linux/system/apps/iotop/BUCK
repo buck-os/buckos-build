@@ -1,0 +1,19 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "iotop",
+    version = "1.26",
+    url = "https://github.com/Tomas-M/iotop/archive/refs/tags/v1.26.tar.gz",
+    sha256 = "b0a334cba89249bc7cbb87cf92cf4166911bf00dd2ea8841b572fd776018c487",
+    description = "Top-like I/O monitor (C rewrite)",
+    homepage = "https://github.com/Tomas-M/iotop",
+    license = "GPL-2.0-or-later",
+    skip_configure = True,
+    make_args = [
+        "PREFIX=/usr",
+    ],
+    deps = [
+        "//packages/linux/system/terminal/ncurses:ncurses",
+    ],
+)

@@ -1,25 +1,37 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # libXmu - X Miscellaneous Utilities library
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libXmu",
     version = "1.2.1",
-    src_uri = "https://xorg.freedesktop.org/archive/individual/lib/libXmu-1.2.1.tar.xz",
+    url = "https://xorg.freedesktop.org/archive/individual/lib/libXmu-1.2.1.tar.xz",
     sha256 = "fcb27793248a39e5fcc5b9c4aec40cc0734b3ca76aac3d7d1c264e7f7e14e8b2",
     description = "X Miscellaneous Utilities library",
     homepage = "https://xorg.freedesktop.org/",
     license = "MIT",
     configure_args = [
+        # Cross-compilation: malloc(0) returns non-NULL on Linux/glibc
+        "--enable-malloc0returnsnull=no",
         "--prefix=/usr",
         "--sysconfdir=/etc",
         "--libdir=/usr/lib64",
         "--disable-docs",
     ],
+    # Remove .la files that cause libtool path issues
+    post_install_cmds = ["""\
+find \"$DESTDIR\" -name '*.la' -delete
+"""],
     deps = [
         "//packages/linux/graphics/xorg/libX11:libX11",
         "//packages/linux/graphics/xorg/libXext:libXext",
         "//packages/linux/graphics/xorg/libXt:libXt",
         "//packages/linux/graphics/xorg/xorgproto:xorgproto",
+        # Transitive deps for pkg-config
+        "//packages/linux/graphics/xorg/libxcb:libxcb",
+        "//packages/linux/graphics/xorg/libXau:libXau",
+        "//packages/linux/graphics/xorg/libXdmcp:libXdmcp",
+        "//packages/linux/graphics/xorg/libSM:libSM",
+        "//packages/linux/graphics/xorg/libICE:libICE",
     ],
-    visibility = ["PUBLIC"],
 )

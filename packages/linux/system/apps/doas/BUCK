@@ -1,32 +1,55 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # doas - Simple sudo alternative from OpenBSD
-# USE flags: pam, persist, timestamp-timeout
+# OpenDoas has its own configure script, not autotools
 
-autotools_package(
+package(
+    build_rule = "binary",
     name = "doas",
     version = "6.8.2",
-    src_uri = "https://github.com/Duncaen/OpenDoas/archive/v6.8.2.tar.gz",
+    url = "https://github.com/Duncaen/OpenDoas/archive/v6.8.2.tar.gz",
     sha256 = "6da058a0e70b7543bc60624389b0b00b686189ec933828c522bf8b2600495a67",
-    signature_required = False,
     description = "Simple sudo alternative from OpenBSD",
     homepage = "https://github.com/Duncaen/OpenDoas",
     license = "ISC",
-    iuse = ["pam", "persist", "static-libs"],
-    use_defaults = [],
-    use_deps = {
-        "pam": ["//packages/linux/system/security/auth/pam:pam"],
-    },
-    use_configure = {
-        "pam": "--with-pam",
-        "-pam": "--without-pam",
-        "persist": "--with-timestamp",
-        "-persist": "--without-timestamp",
-    },
-    configure_args = [
-        "--prefix=/usr",
+    deps = [
+        "//packages/linux/system/libs/crypto/libxcrypt:libxcrypt",
     ],
-    deps = [],
-    visibility = ["PUBLIC"],
+    host_deps = [
+        "//packages/linux/dev-tools/dev-utils/bison:bison",
+    ],
+    install_script = """
+cd "$SRCS"
+
+# OpenDoas has a custom configure script
+./configure --prefix=/usr --without-pam --with-timestamp 2>/dev/null || \
+    ./configure --prefix=/usr --without-pam 2>/dev/null || true
+
+# Pre-generate parse.c from parse.y using host bison/yacc
+if [ -f parse.y ]; then
+    if [ -x /usr/bin/bison ]; then
+        /usr/bin/bison -y -d -o parse.c parse.y
+    elif [ -x /usr/bin/yacc ]; then
+        /usr/bin/yacc -d parse.y && mv -f y.tab.c parse.c && mv -f y.tab.h parse.h
+    fi
+fi
+rm -f parse.y 2>/dev/null || true
+touch -t 203001010000 parse.c parse.h 2>/dev/null || true
+sed -i 's/^\.SUFFIXES:.*/.SUFFIXES:/' Makefile 2>/dev/null || true
+sed -i '/\.y\.c:/,/^$/d' Makefile 2>/dev/null || true
+sed -i '/\.y\.h:/,/^$/d' Makefile 2>/dev/null || true
+sed -i 's|$(YACC)|true|g; s|${YACC}|true|g' Makefile 2>/dev/null || true
+if [ -f GNUmakefile ]; then
+    sed -i 's/^\.SUFFIXES:.*/.SUFFIXES:/' GNUmakefile 2>/dev/null || true
+    sed -i '/\.y\.c:/,/^$/d' GNUmakefile 2>/dev/null || true
+    sed -i 's|$(YACC)|true|g; s|${YACC}|true|g' GNUmakefile 2>/dev/null || true
+fi
+
+make CC="$CC" CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS -lcrypt" \
+    YACC="true" BISON="true" \
+    -j${MAKEOPTS:-$(nproc)} || \
+make CC="$CC" LDFLAGS="$LDFLAGS -lcrypt" YACC="true" BISON="true" -j1
+
+make install DESTDIR="$OUT"
+""",
 )

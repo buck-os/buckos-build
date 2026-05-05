@@ -1,23 +1,10 @@
-load("//defs:package_defs.bzl", "simple_binary_package")
+load("//defs:package.bzl", "package")
 
-simple_binary_package(
+# nvidia-nsight-graphics - DISABLED
+# NVIDIA download URLs change frequently. Re-enable when URL is verified.
+# Download from: https://developer.nvidia.com/nsight-graphics
+
+filegroup(
     name = "nvidia-nsight-graphics",
-    version = "2025.4.1",
-    src_uri = "https://developer.download.nvidia.com/devtools/nsight-graphics/2025.4.1/NsightGraphics-linux-2025.4.1.tar.gz",
-    sha256 = "TODO",
-    bins = [
-        "host/linux-desktop-nomad-x64/ngfx",
-        "host/linux-desktop-nomad-x64/ngfx-capture",
-        "host/linux-desktop-nomad-x64/ngfx-replay",
-        "host/linux-desktop-nomad-x64/ngfx-ui",
-    ],
-    extract_to = "/opt/nvidia/nsight-graphics",
-    symlinks = {
-        "/usr/bin/ngfx": "/opt/nvidia/nsight-graphics/host/linux-desktop-nomad-x64/ngfx",
-        "/usr/bin/ngfx-capture": "/opt/nvidia/nsight-graphics/host/linux-desktop-nomad-x64/ngfx-capture",
-        "/usr/bin/ngfx-replay": "/opt/nvidia/nsight-graphics/host/linux-desktop-nomad-x64/ngfx-replay",
-        "/usr/bin/ngfx-ui": "/opt/nvidia/nsight-graphics/host/linux-desktop-nomad-x64/ngfx-ui",
-    },
-    maintainers = ["hodgesd"],
-    visibility = ["PUBLIC"],
+    srcs = [],
 )

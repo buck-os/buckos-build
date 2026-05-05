@@ -1,30 +1,25 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
+load("//defs:package.bzl", "package")
 
 # mksh - MirBSD Korn Shell
-# Using GitHub mirror since www.mirbsd.org returns 503
-download_source(
-    name = "mksh-src",
-    src_uri = "https://github.com/MirBSD/mksh/archive/refs/tags/mksh-R59c.tar.gz",
-    sha256 = "e5942607eb930ba6ce3303c4a0db0733371f210c9ce6d5d4b9cc202c76360343",
-    signature_required = False,
-)
-
-autotools_package(
+# Uses Build.sh instead of autotools; skip_configure + pre_build_cmds
+# to invoke the custom build script, then create a no-op Makefile so
+# the autotools rule's make step succeeds.
+package(
     name = "mksh",
-    source = ":mksh-src",
+    build_rule = "autotools",
+    skip_configure = True,
+    url = "https://github.com/MirBSD/mksh/archive/refs/tags/mksh-R59c.tar.gz",
+    sha256 = "e5942607eb930ba6ce3303c4a0db0733371f210c9ce6d5d4b9cc202c76360343",
     version = "R59c",
     description = "MirBSD Korn Shell - an enhanced version of the public domain ksh",
     homepage = "http://www.mirbsd.org/mksh.htm",
     license = "MirOS",
-    pre_configure = """
-# mksh uses its own build script
-sh Build.sh -r
-""",
-    configure_args = [],
-    post_install = """
+    pre_build_cmds = [
+        "sh Build.sh -r",
+        "printf 'all:\\ninstall:\\n' > Makefile",
+    ],
+    post_install_cmds = ["""
 mkdir -p "$DESTDIR/bin"
-cp mksh "$DESTDIR/bin/"
-""",
-    visibility = ["PUBLIC"],
+cp "$BUILD_DIR/mksh" "$DESTDIR/bin/"
+"""],
 )

@@ -1,68 +1,29 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "bpftrace-src",
-    src_uri = "https://github.com/bpftrace/bpftrace/archive/refs/tags/v0.21.2.tar.gz",
-    sha256 = "7c2cb089da6e6074574edc164cf9242e06843e66c493304a9d2739258e6a1459",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "cmake",
     name = "bpftrace",
-    srcs = [":bpftrace-src"],
-    version = "0.21.2",
-    description = "High-level tracing language for Linux eBPF",
+    url = "https://github.com/bpftrace/bpftrace/archive/refs/tags/v0.24.2.tar.gz",
+
+    sha256 = "e0514aa3e1a032b0b2de2cf3c281bfee9b9e80509498e70ed78786bbd64db373",
+    version = "0.24.2",
+    description = "High-level tracing language for Linux using BPF",
     homepage = "https://github.com/bpftrace/bpftrace",
     license = "Apache-2.0",
-    install_script = """
-        cd $SRCS
-
-        # Find dependency paths from DEP_BASE_DIRS
-        BCC_PREFIX=""
-        LIBBPF_PREFIX=""
-        IFS=':' read -ra DEP_ARRAY <<< "$DEP_BASE_DIRS"
-        for dep in "${DEP_ARRAY[@]}"; do
-            if [ -f "$dep/usr/include/bcc/libbpf.h" ] || [ -f "$dep/usr/include/bcc/bcc_version.h" ]; then
-                BCC_PREFIX="$dep/usr"
-                echo "Found BCC at: $BCC_PREFIX"
-            fi
-            if [ -f "$dep/usr/include/bpf/libbpf.h" ]; then
-                LIBBPF_PREFIX="$dep/usr"
-                echo "Found libbpf at: $LIBBPF_PREFIX"
-            fi
-        done
-
-        # Create build directory
-        mkdir -p build && cd build
-
-        # Configure with CMake
-        CMAKE_OPTS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DBUILD_TESTING=OFF"
-        if [ -n "$BCC_PREFIX" ]; then
-            CMAKE_OPTS="$CMAKE_OPTS -DLIBBCC_INCLUDE_DIRS=$BCC_PREFIX/include"
-            CMAKE_OPTS="$CMAKE_OPTS -DLIBBCC_LIBRARIES=$BCC_PREFIX/lib64/libbcc.so"
-        fi
-        if [ -n "$LIBBPF_PREFIX" ]; then
-            CMAKE_OPTS="$CMAKE_OPTS -DLIBBPF_INCLUDE_DIRS=$LIBBPF_PREFIX/include"
-            CMAKE_OPTS="$CMAKE_OPTS -DLIBBPF_LIBRARIES=$LIBBPF_PREFIX/lib64/libbpf.so"
-        fi
-
-        cmake .. $CMAKE_OPTS
-
-        # Build
-        make -j$(nproc)
-
-        # Install
-        mkdir -p $OUT/usr/bin $OUT/usr/share/bpftrace/tools $OUT/usr/share/man/man8
-
-        cp src/bpftrace $OUT/usr/bin/
-        cp -r ../tools/*.bt $OUT/usr/share/bpftrace/tools/ 2>/dev/null || true
-        cp ../man/man8/*.8 $OUT/usr/share/man/man8/ 2>/dev/null || true
-    """,
-    deps = [
-        "//packages/linux/system/apps/bpf/bcc:bcc",
-        "//packages/linux/system/libs/bpf/libbpf:libbpf",
-        "//packages/linux/dev-tools/dev-utils/elfutils:elfutils",
-        "//packages/linux/core/zlib:zlib",
+    use_configure = {
+        "libfuzzer": ("-DENABLE_LIBFUZZER=ON", "-DENABLE_LIBFUZZER=OFF"),
+        "man": ("-DBUILD_MAN=ON", "-DBUILD_MAN=OFF"),
+        "static-libs": ("-DSTATIC_LINKING=ON", "-DSTATIC_LINKING=OFF"),
+        "tests": ("-DBUILD_TESTING=ON", "-DBUILD_TESTING=OFF"),
+    },
+    configure_args = [
+        "-DUSE_SYSTEM_BPF_BCC=ON",
+        "-DBUILD_FUZZ=OFF",
     ],
-    visibility = ["PUBLIC"],
+    deps = [
+        "//packages/linux/system/libs/elfutils:elfutils",
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/core/llvm:llvm-native",
+        "//packages/linux/dev-libs/serialization/cereal:cereal",
+    ],
 )

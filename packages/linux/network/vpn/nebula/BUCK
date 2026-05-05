@@ -1,20 +1,12 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
     name = "nebula",
+    build_rule = "autotools",
+    skip_configure = True,
     version = "1.9.0",
-    src_uri = "https://github.com/slackhq/nebula/archive/refs/tags/v1.9.0.tar.gz",
+    url = "https://github.com/slackhq/nebula/archive/refs/tags/v1.9.0.tar.gz",
     sha256 = "ae55b2ecd440ceaa4d9eb5376affb4315b72d4de3ec237a8cc6e8d597ff0e6d0",
-    signature_required = False,
-
-    iuse = [],
-    use_defaults = [],
-
-
-    use_configure = {},
-
-    pre_configure = "true",
 
     make_args = [
         "all",
@@ -24,21 +16,20 @@ autotools_package(
         "CGO_ENABLED": "0",
     },
 
-    post_install = """
+    post_install_cmds = ["""
 mkdir -p "$DESTDIR/usr/bin"
 mkdir -p "$DESTDIR/etc/nebula"
 cp nebula "$DESTDIR/usr/bin/"
 cp nebula-cert "$DESTDIR/usr/bin/"
 chmod 755 "$DESTDIR/usr/bin/nebula"
 chmod 755 "$DESTDIR/usr/bin/nebula-cert"
-""",
+"""],
 
-    bdepend = [
+    deps = [
         "//packages/linux/lang/go:go",
     ],
 
     description = "Scalable overlay networking tool with mesh support",
     homepage = "https://github.com/slackhq/nebula",
     license = "MIT",
-    visibility = ["PUBLIC"],
 )

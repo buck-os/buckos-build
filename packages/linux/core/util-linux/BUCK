@@ -1,53 +1,55 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "util-linux",
     version = "2.39",
-    src_uri = "https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.39/util-linux-2.39.tar.xz",
+    url = "https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.39/util-linux-2.39.tar.xz",
     sha256 = "32b30a336cda903182ed61feb3e9b908b762a5e66fe14e43efb88d37162075cb",
-    signature_required = False,
     description = "Miscellaneous system utilities for Linux",
     homepage = "https://github.com/util-linux/util-linux",
     license = "GPL-2.0",
 
     # USE flags this package supports
-    iuse = [
-        "systemd",
-        "udev",
-        "ncurses",
-        "pam",
-        "caps",
-        "selinux",
-        "static-libs",
-    ],
 
     # Default USE flags (disable by default for minimal build)
-    use_defaults = [],
 
     # Conditional dependencies
     use_deps = {
-        "ncurses": ["//packages/linux/core/ncurses:ncurses"],
-        "systemd": ["//packages/linux/system/init:systemd"],
-        "udev": ["//packages/linux/system/init/eudev:eudev"],
+        "ncurses": "//packages/linux/system/terminal/ncurses:ncurses",
+        # NOTE: systemd dep removed — circular: systemd depends on util-linux.
+        # util-linux builds --without-systemd (journal integration is optional).
+        "udev": "//packages/linux/system/init/eudev:eudev",  # Use eudev directly to break cycle (systemd → util-linux)
     },
 
     # Conditional configure arguments
     use_configure = {
-        "systemd": "--with-systemd",
-        "-systemd": "--without-systemd",
-        "udev": "--with-udev",
-        "-udev": "--without-udev",
-        "ncurses": "--with-ncursesw --with-tinfo",
-        "-ncurses": "--without-ncursesw --without-ncurses --without-tinfo",
-        "pam": "--with-pam",
-        "-pam": "--without-pam",
-        "caps": "--with-libcap-ng",
-        "-caps": "--without-libcap-ng",
-        "selinux": "--with-selinux",
-        "-selinux": "--without-selinux",
-        "static-libs": "--enable-static",
-        "-static-libs": "--disable-static",
+        "audit": ("--enable-audit", "--disable-audit"),
+        "build": ("--enable-build", "--disable-build"),
+        "caps": ("--with-libcap-ng", "--without-libcap-ng"),
+        "cramfs": ("--enable-cramfs", "--disable-cramfs"),
+        "cryptsetup": ("--enable-cryptsetup", "--disable-cryptsetup"),
+        "fdformat": ("--enable-fdformat", "--disable-fdformat"),
+        "hardlink": ("--enable-hardlink", "--disable-hardlink"),
+        "kill": ("--enable-kill", "--disable-kill"),
+        "logger": ("--enable-logger", "--disable-logger"),
+        "magic": ("--enable-magic", "--disable-magic"),
+        "ncurses": (["--with-ncursesw", "--with-tinfo"], ["--without-ncursesw", "--without-ncurses", "--without-tinfo"]),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "pam": ("--with-pam", "--without-pam"),
+        "python": ("--enable-python", "--disable-python"),
+        "readline": ("--with-readline", "--without-readline"),
+        "rtas": ("--enable-rtas", "--disable-rtas"),
+        "selinux": ("--with-selinux", "--without-selinux"),
+        "slang": ("--enable-slang", "--disable-slang"),
+        "static-libs": ("--enable-static", "--disable-static"),
+        "su": ("--enable-su", "--disable-su"),
+        "suid": ("--enable-suid", "--disable-suid"),
+        # "systemd" removed — always --without-systemd (cycle: systemd → util-linux)
+        "tty-helpers": ("--enable-tty-helpers", "--disable-tty-helpers"),
+        "udev": ("--with-udev", "--without-udev"),
+        "unicode": ("--enable-unicode", "--disable-unicode"),
+        "uuidd": ("--enable-uuidd", "--disable-uuidd"),
     },
 
     # Base configure arguments
@@ -61,7 +63,8 @@ autotools_package(
 
         # Without dependencies we don't have (or controlled by USE flags)
         "--without-python",
-        "--without-systemdsystemunitdir",  # systemd itself is USE flag controlled
+        "--without-systemd",  # Cycle: systemd depends on util-linux
+        "--without-systemdsystemunitdir",
         "--without-readline",
         "--without-slang",
         "--without-libmagic",
@@ -101,8 +104,11 @@ autotools_package(
         "--enable-lsblk",
     ],
 
+    # Force sequential build to avoid parallel race conditions
+    # util-linux has internal dependencies that aren't properly declared in Makefiles
+
     # Post-install script to verify getopt installation
-    post_install = """
+    post_install_cmds = ["""
 # Verify that getopt was installed
 if [ -f "$DESTDIR/usr/bin/getopt" ]; then
     echo "✓ getopt installed successfully at $DESTDIR/usr/bin/getopt"
@@ -111,10 +117,9 @@ else
     echo "  Checking alternate locations..."
     find "$DESTDIR" -name "getopt" -type f 2>/dev/null || echo "  getopt not found anywhere in package"
 fi
-""",
+"""],
 
     deps = [
         "//packages/linux/system/libs/crypto/libxcrypt:libxcrypt",
     ],
-    visibility = ["PUBLIC"],
 )

@@ -1,10 +1,11 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "dinov3",
     version = "0.0.1",
-    src_uri = "https://github.com/facebookresearch/dinov3/archive/refs/tags/v0.0.1.tar.gz",
-    sha256 = "TODO",
+    url = "https://github.com/facebookresearch/dinov3/archive/refs/heads/main.tar.gz",
+    sha256 = "825773ee03b7f61c6b024a948aa90f81812dadf101ee35e00d578a320293fece",
     description = "DINOv3: Self-supervised Vision Transformers with no labels",
     homepage = "https://github.com/facebookresearch/dinov3",
     license = "DINOv3 License",
@@ -13,5 +14,4 @@ python_package(
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
         "//packages/linux/ai/ml-frameworks/torchvision:torchvision",
     ],
-    visibility = ["PUBLIC"],
 )

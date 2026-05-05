@@ -1,32 +1,17 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "binary",
     name = "unique_resource",
     version = "0.0.1",
-    src_uri = "https://github.com/okdshin/unique_resource/archive/cba309e9bfc1ad92d9796d2108e28b82c5d23e46.tar.gz",
-    sha256 = "TODO",
+    url = "https://github.com/okdshin/unique_resource/archive/22f857bf18105a7b99d8a3b28f5afe30d2dbe6fa.tar.gz",
+    sha256 = "fe0315b7c52ef8e645a916f6ebdf29b07d97cc9a940b12d623d2bc179f9b9e23",
     description = "General RAII wrapper for exclusive ownership resource management",
     homepage = "https://github.com/okdshin/unique_resource",
     license = "BSL-1.0",
     deps = [],
-    pre_configure = """
-cat > CMakeLists.txt << 'EOF'
-cmake_minimum_required(VERSION 3.10)
-project(unique_resource VERSION 0.0.1 LANGUAGES CXX)
-
-add_library(unique_resource INTERFACE)
-target_include_directories(unique_resource INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-    $<INSTALL_INTERFACE:include>
-)
-
-install(FILES unique_resource.hpp DESTINATION include)
-install(TARGETS unique_resource EXPORT unique_resourceTargets)
-install(EXPORT unique_resourceTargets DESTINATION lib/cmake/unique_resource)
-EOF
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/include
+cp -r include/* $INSTALL_DIR/usr/include/ 2>/dev/null || cp *.hpp $INSTALL_DIR/usr/include/ 2>/dev/null || true
 """,
-    cmake_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-    ],
-    visibility = ["PUBLIC"],
 )

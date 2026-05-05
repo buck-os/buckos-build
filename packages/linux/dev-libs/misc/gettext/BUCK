@@ -1,30 +1,51 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
+load("//defs:package.bzl", "package")
 
 # gettext - GNU internationalization utilities
-download_source(
-    name = "gettext-src",
-    src_uri = "https://mirrors.kernel.org/gnu/gettext/gettext-0.26.tar.xz",
-    sha256 = "d1fb86e260cfe7da6031f94d2e44c0da55903dbae0a2fa0fae78c91ae1b56f00",
-    signature_sha256 = "a0c4b074f63dcddf49f430ac9dcc94b78bf47d51d9db60167dea047cb9fc4f1d",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "gettext",
-    source = ":gettext-src",
+    url = "https://mirrors.kernel.org/gnu/gettext/gettext-0.26.tar.xz",
+
+    sha256 = "d1fb86e260cfe7da6031f94d2e44c0da55903dbae0a2fa0fae78c91ae1b56f00",
+    use_configure = {
+        "acl": ("--enable-acl", "--disable-acl"),
+        "cxx": ("--enable-cxx", "--disable-cxx"),
+        "emacs": ("--enable-emacs", "--disable-emacs"),
+        "git": ("--enable-git", "--disable-git"),
+        "java": ("--enable-java", "--disable-java"),
+        "ncurses": ("--with-ncurses", "--without-ncurses"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "openmp": ("--enable-openmp", "--disable-openmp"),
+        "static-libs": ("--enable-static", "--disable-static"),
+        "xattr": ("--enable-xattr", "--disable-xattr"),
+    },
     version = "0.26",
     description = "GNU internationalization and localization utilities",
     homepage = "https://www.gnu.org/software/gettext",
     license = "GPL-3+",
+    # GCC 14 rejects implicit function pointer casts in libtextstyle
+    extra_cflags = ["-Wno-error=incompatible-pointer-types"],
     configure_args = [
         "--disable-java",
         "--disable-csharp",
         "--disable-openmp",
         "--without-emacs",
+        "--disable-selinux",
+        # Disable C++ libasprintf - causes stdlib.h not found issue in cross-compilation
+        "--disable-cxx",
+        "--disable-libasprintf",
+        # Prevent libtool from embedding absolute build-time paths in RPATH
+        "--disable-rpath",
+        # Force iconv detection — glibc provides iconv_open but configure
+        # can't run test programs under cross-compilation detection
+        # (host=x86_64-buckos-linux-gnu != build machine x86_64-pc-linux-gnu).
+        "am_cv_func_iconv=yes",
+        "am_cv_func_iconv_works=yes",
+        # Prevent deeply nested confdir3/ test directories that exceed
+        # Buck2's output traversal limits (gnulib opendir test).
+        "gl_cv_func_opendir_works=yes",
     ],
     deps = [
-        "//packages/linux/core/ncurses:ncurses",
+        "//packages/linux/system/terminal/ncurses:ncurses",
     ],
-    visibility = ["PUBLIC"],
 )

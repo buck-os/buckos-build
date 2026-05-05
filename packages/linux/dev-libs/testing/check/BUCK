@@ -1,16 +1,16 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "check-src",
-    src_uri = "https://github.com/libcheck/check/releases/download/0.15.2/check-0.15.2.tar.gz",
-    sha256 = "a8de4e0bacfb4d76dd1c618ded263523b53b85d92a146d8835eb1a52932fa20a",
-    signature_required = False,
-)
-
-autotools_package(
+# check - official release tarball includes pre-generated configure
+package(
+    build_rule = "autotools",
     name = "check",
-    source = ":check-src",
+    # No autoreconf needed - tarball has pre-generated configure
+    url = "https://github.com/libcheck/check/releases/download/0.15.2/check-0.15.2.tar.gz",
+
+    sha256 = "a8de4e0bacfb4d76dd1c618ded263523b53b85d92a146d8835eb1a52932fa20a",
+    use_configure = {
+        "subunit": ("--enable-subunit", "--disable-subunit"),
+    },
     version = "0.15.2",
     description = "Unit testing framework for C",
     homepage = "https://libcheck.github.io/check/",
@@ -18,5 +18,4 @@ autotools_package(
     configure_args = [
         "--disable-static",
     ],
-    visibility = ["PUBLIC"],
 )

@@ -1,54 +1,69 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # QEMU - Full system emulator and virtualizer
-download_source(
-    name = "qemu-src",
-    src_uri = "https://download.qemu.org/qemu-9.1.0.tar.xz",
-    sha256 = "816b7022a8ba7c2ac30e2e0cf973e826f6bcc8505339603212c5ede8e94d7834",
-    signature_sha256 = "ef1c9465e513753b89038275859142898536b6f8e9a622b4fd8e1db85f7a164d",
-    signature_required = False,
-)
-
 # Separate sources for each QEMU variant to avoid parallel build race conditions
-download_source(
-    name = "qemu-guest-agent-src",
-    src_uri = "https://download.qemu.org/qemu-9.1.0.tar.xz",
-    sha256 = "816b7022a8ba7c2ac30e2e0cf973e826f6bcc8505339603212c5ede8e94d7834",
-    signature_sha256 = "ef1c9465e513753b89038275859142898536b6f8e9a622b4fd8e1db85f7a164d",
-    signature_required = False,
-)
-
-download_source(
-    name = "qemu-user-src",
-    src_uri = "https://download.qemu.org/qemu-9.1.0.tar.xz",
-    sha256 = "816b7022a8ba7c2ac30e2e0cf973e826f6bcc8505339603212c5ede8e94d7834",
-    signature_sha256 = "ef1c9465e513753b89038275859142898536b6f8e9a622b4fd8e1db85f7a164d",
-    signature_required = False,
-)
-
-download_source(
-    name = "qemu-img-src",
-    src_uri = "https://download.qemu.org/qemu-9.1.0.tar.xz",
-    sha256 = "816b7022a8ba7c2ac30e2e0cf973e826f6bcc8505339603212c5ede8e94d7834",
-    signature_sha256 = "ef1c9465e513753b89038275859142898536b6f8e9a622b4fd8e1db85f7a164d",
-    signature_required = False,
-)
-
 # USE flags: See use_flags.bzl for available flags
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "qemu",
-    source = ":qemu-src",
+    url = "https://download.qemu.org/qemu-9.1.0.tar.xz",
+    sha256 = "816b7022a8ba7c2ac30e2e0cf973e826f6bcc8505339603212c5ede8e94d7834",
+    # USE-gated optional features only — features unconditionally enabled in
+    # configure_args must NOT appear here (use_configure flags come last and
+    # would override the static --enable-* when the USE flag is off).
+    use_configure = {
+        "bpf": ("--enable-bpf", "--disable-bpf"),
+        "capstone": ("--enable-capstone", "--disable-capstone"),
+        "curl": ("--enable-curl", "--disable-curl"),
+        "fuse": ("--enable-fuse", "--disable-fuse"),
+        "glusterfs": ("--enable-glusterfs", "--disable-glusterfs"),
+        "infiniband": ("--enable-rdma", "--disable-rdma"),
+        "iscsi": ("--enable-libiscsi", "--disable-libiscsi"),
+        "jack": ("--enable-jack", "--disable-jack"),
+        "keyutils": ("--enable-libkeyutils", "--disable-libkeyutils"),
+        "multipath": ("--enable-mpath", "--disable-mpath"),
+        "nls": ("--enable-gettext", "--disable-gettext"),
+        "pam": ("--enable-auth-pam", "--disable-auth-pam"),
+        "pipewire": ("--enable-pipewire", "--disable-pipewire"),
+        "plugins": ("--enable-plugins", "--disable-plugins"),
+        "png": ("--enable-png", "--disable-png"),
+        "pulseaudio": ("--enable-pa", "--disable-pa"),
+        "rbd": ("--enable-rbd", "--disable-rbd"),
+        "sasl": ("--enable-vnc-sasl", "--disable-vnc-sasl"),
+        "sdl-image": ("--enable-sdl-image", "--disable-sdl-image"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "slirp": ("--enable-slirp", "--disable-slirp"),
+        "udev": ("--enable-libudev", "--disable-libudev"),
+        "vte": ("--enable-vte", "--disable-vte"),
+        "xdp": ("--enable-af-xdp", "--disable-af-xdp"),
+        "xen": ("--enable-xen", "--disable-xen"),
+    },
     version = "9.1.0",
     description = "Generic and open source machine emulator and virtualizer",
     homepage = "https://www.qemu.org/",
     license = "GPL-2.0",
+    # QEMU's ./configure creates a build/ subdirectory with the actual
+    # meson/ninja build system; make must run from there, not the source root.
+    build_subdir = "build",
+    pre_configure_cmds = [
+        # Fix struct sched_attr redefinition with glibc >= 2.41 (linux-user targets)
+        "awk '/^struct sched_attr \\{/{print \"#if !(defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 41)))\"; f=1} {print} f && /^};/{print \"#endif\"; f=0}' linux-user/syscall.c > linux-user/syscall.c.tmp && mv linux-user/syscall.c.tmp linux-user/syscall.c",
+    ],
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc",
         "--localstatedir=/var",
         "--libexecdir=/usr/lib/qemu",
+        # QEMU's configure detects the buckos CC triple prefix and enters
+        # cross-compilation mode, telling meson to find a separate build-
+        # machine compiler.  Point --host-cc at the gcc symlink on PATH
+        # so meson uses it as the native compiler.
+        "--host-cc=gcc",
+        # QEMU's ./configure ignores env CFLAGS — pass -std=gnu17 via
+        # --extra-cflags so meson includes it in build.ninja compile
+        # commands.  Prevents GCC 14 C23 header redirects (__isoc23_*).
+        "--extra-cflags=-std=gnu17",
         "--enable-kvm",
         "--enable-linux-aio",
         "--enable-linux-io-uring",
@@ -56,19 +71,13 @@ autotools_package(
         "--enable-vhost-net",
         "--enable-vhost-kernel",
         "--enable-vhost-user",
-        "--enable-spice",
-        "--enable-usb-redir",
         "--enable-curses",
         "--enable-vnc",
         "--enable-vnc-jpeg",
-        "--enable-vnc-png",
-        "--enable-gtk",
         "--enable-sdl",
-        "--enable-opengl",
-        "--enable-virglrenderer",
+        "--enable-alsa",
+        "--enable-oss",
         "--enable-libusb",
-        "--enable-smartcard",
-        "--enable-libnfs",
         "--enable-libssh",
         "--enable-lzo",
         "--enable-snappy",
@@ -77,29 +86,62 @@ autotools_package(
         "--enable-seccomp",
         "--enable-cap-ng",
         "--enable-attr",
-        "--enable-vde",
         "--enable-nettle",
         "--enable-gnutls",
         "--enable-numa",
         "--enable-fdt",
         "--enable-membarrier",
-        "--enable-docs",
+        "--disable-docs",
         "--enable-tools",
         "--enable-guest-agent",
-        "--audio-drv-list=pa,alsa,sdl,oss",
+        "--audio-drv-list=alsa,sdl,oss",
         "--target-list=x86_64-softmmu,x86_64-linux-user,i386-softmmu,i386-linux-user,aarch64-softmmu,aarch64-linux-user,arm-softmmu,arm-linux-user,riscv64-softmmu,riscv64-linux-user,riscv32-softmmu,riscv32-linux-user,ppc64-softmmu,ppc64-linux-user,s390x-softmmu,s390x-linux-user,mips64el-softmmu,mips64el-linux-user",
     ],
+    # snappy is C++ — meson's C link test needs -lstdc++ to resolve symbols
+    extra_ldflags = ["-lstdc++"],
+    # QEMU's Makefile runs `ninja ... | cat` and relies on `bash -o pipefail`
+    # to propagate ninja failures.  build_helper.py overrides SHELL with
+    # buckos bash (no pipefail), so ninja failures are silently swallowed.
+    # Work around by invoking ninja directly in pre_build_cmds and letting
+    # make run as a no-op (everything already built by ninja).
+    pre_build_cmds = [
+        "ninja -C build -j$(nproc)",
+    ],
+    make_args = [],
     deps = [
         "//packages/linux/dev-libs/glib:glib",
-        "//packages/linux/system/libs/graphics/pixman:pixman",
+        "//packages/linux/dev-libs/python/packaging:packaging",
+        "//packages/linux/lang/python/distlib:distlib",  # QEMU 9.x mkvenv
+        "//packages/linux/system/libs/utility/pcre2:pcre2",
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/system/libs/io/libaio:libaio",
+        "//packages/linux/system/libs/liburing:liburing",
+        "//packages/linux/system/libs/ipc/libcap-ng:libcap-ng",
+        "//packages/linux/system/security/auth/biometric:pixman",
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/compression/zstd:zstd",
         "//packages/linux/system/libs/compression/lzo:lzo",
         "//packages/linux/system/libs/compression/snappy:snappy",
-        "//packages/linux/core/bzip2:bzip2",
+        "//packages/linux/system/libs/compression/bzip2:bzip2",
         "//packages/linux/system/libs/crypto/gnutls:gnutls",
-        "//packages/linux/dev-libs/nettle:nettle",
-        "//packages/linux/emulation/utilities/spice:spice-server",
+        "//packages/linux/system/libs/crypto/nettle:nettle",
+        "//packages/linux/system/terminal/ncurses:ncurses",
+        "//packages/linux/system/libs/image/libjpeg-turbo:libjpeg-turbo",
+        "//packages/linux/system/libs/multimedia/sdl2:sdl2",
+        "//packages/linux/system/libs/audio/alsa-lib:alsa-lib",
+        "//packages/linux/system/libs/libusb:libusb",
+        "//packages/linux/network/libs/libssh:libssh",
+        "//packages/linux/system/libs/ipc/libseccomp:libseccomp",
+        "//packages/linux/system/libs/ipc/attr:attr",
+        "//packages/linux/system/libs/numactl:numactl",
+        "//packages/linux/dev-tools/compilers/dtc:dtc",
+        "//packages/linux/dev-libs/elfutils:elfutils",
+        "//packages/linux/system/libs/utility/gmp:gmp",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/system/libs/crypto/libgcrypt:libgcrypt",
+    ],
+    host_deps = [
+        "//packages/linux/dev-tools/build-systems/ninja:ninja",
     ],
     visibility = ["PUBLIC"],
 )
@@ -107,13 +149,15 @@ autotools_package(
 # QEMU guest agent
 # USE flags: See use_flags.bzl for available flags
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "qemu-guest-agent",
-    source = ":qemu-guest-agent-src",
     version = "9.1.0",
+    source = ":qemu-src",
     description = "QEMU Guest Agent for improved host-guest communication",
     homepage = "https://www.qemu.org/",
     license = "GPL-2.0",
+    build_subdir = "build",
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc",
@@ -131,19 +175,24 @@ autotools_package(
 # QEMU user-space emulation only
 # USE flags: See use_flags.bzl for available flags
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "qemu-user",
-    source = ":qemu-user-src",
     version = "9.1.0",
+    source = ":qemu-src",
     description = "QEMU user-space emulation for running foreign binaries",
     homepage = "https://www.qemu.org/",
     license = "GPL-2.0",
+    build_subdir = "build",
+    pre_configure_cmds = [
+        # Fix struct sched_attr redefinition with glibc >= 2.41
+        "awk '/^struct sched_attr \\{/{print \"#if !(defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 41)))\"; f=1} {print} f && /^};/{print \"#endif\"; f=0}' linux-user/syscall.c > linux-user/syscall.c.tmp && mv linux-user/syscall.c.tmp linux-user/syscall.c",
+    ],
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc",
         "--disable-system",
         "--enable-linux-user",
-        "--enable-binfmt",
         "--target-list=x86_64-linux-user,i386-linux-user,aarch64-linux-user,arm-linux-user,riscv64-linux-user,riscv32-linux-user,ppc64-linux-user,s390x-linux-user,mips64el-linux-user",
     ],
     deps = [
@@ -156,13 +205,15 @@ autotools_package(
 # QEMU image utilities
 # USE flags: See use_flags.bzl for available flags
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "qemu-img",
-    source = ":qemu-src",
     version = "9.1.0",
+    source = ":qemu-src",
     description = "QEMU disk image utility (qemu-img, qemu-nbd)",
     homepage = "https://www.qemu.org/",
     license = "GPL-2.0",
+    build_subdir = "build",
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc",

@@ -1,0 +1,23 @@
+load("//defs:package.bzl", "package")
+
+# libsepol - SELinux binary policy manipulation library
+
+package(
+    name = "libsepol",
+    build_rule = "autotools",
+    skip_configure = True,
+    version = "3.10",
+    url = "https://github.com/SELinuxProject/selinux/releases/download/3.10/libsepol-3.10.tar.gz",
+    sha256 = "d555586797fa9f38344496d2a7ec1147b6caaf3fcc44c42d8d5173edd7a79a71",
+    description = "SELinux binary policy manipulation library",
+    homepage = "https://github.com/SELinuxProject/selinux",
+    license = "LGPL-2.1+",
+    make_args = [
+        "LIBDIR=/usr/lib64",
+        "SHLIBDIR=/usr/lib64",
+    ],
+    host_deps = [
+        "//packages/linux/dev-tools/dev-utils/flex:flex",
+    ],
+    deps = [],
+)

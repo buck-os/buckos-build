@@ -1,5 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package", "binary_package", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # Lua - Lightweight scripting language
@@ -7,28 +6,10 @@ load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
 # USE flags: readline, static-libs
 # Default: readline
 
-download_source(
-    name = "lua-src",
-    src_uri = "https://www.lua.org/ftp/lua-5.4.6.tar.gz",
-    sha256 = "7d5ea1b9cb6aa0b59ca3dde1c6adcb57ef83a1ba8e5432c0ecd06bf439b3ad88",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "lua",
-    srcs = [":lua-src"],
     version = "5.4.6",
-    description = "Lua is a powerful, efficient, lightweight, embeddable scripting language",
-    homepage = "https://www.lua.org/",
-    license = "MIT",
-    install_script = """
-        cd $SRCS
-
-        # Build Lua
-        make linux MYCFLAGS="-fPIC" MYLDFLAGS="-Wl,-E"
-
-        # Install
-        make install INSTALL_TOP=$OUT/usr
-    """,
-    visibility = ["PUBLIC"],
+    url = "https://www.lua.org/ftp/lua-5.4.6.tar.gz",
+    sha256 = "7d5ea1b9cb6aa0b59ca3dde1c6adcb57ef83a1ba8e5432c0ecd06bf439b3ad88",
 )

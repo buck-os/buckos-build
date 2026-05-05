@@ -1,16 +1,19 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "libxslt-src",
-    src_uri = "https://download.gnome.org/sources/libxslt/1.1/libxslt-1.1.42.tar.xz",
-    sha256 = "85ca62cac0d41fc77d3f6033da9df6fd73d20ea2fc18b0a3609ffb4110e1baeb",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libxslt",
-    source = ":libxslt-src",
+    url = "https://download.gnome.org/sources/libxslt/1.1/libxslt-1.1.42.tar.xz",
+
+    sha256 = "85ca62cac0d41fc77d3f6033da9df6fd73d20ea2fc18b0a3609ffb4110e1baeb",
+    use_configure = {
+        "crypt": ("--enable-crypt", "--disable-crypt"),
+        "debug": ("--enable-debug", "--disable-debug"),
+        "debugger": ("--enable-debugger", "--disable-debugger"),
+        "examples": ("--enable-examples", "--disable-examples"),
+        "python": ("--enable-python", "--disable-python"),
+        "static-libs": ("--enable-static", "--disable-static"),
+    },
     version = "1.1.42",
     description = "XSLT C library",
     homepage = "https://gitlab.gnome.org/GNOME/libxslt",
@@ -19,8 +22,12 @@ autotools_package(
         "--disable-static",
         "--without-python",
     ],
+    # Custom src_configure to find libxml2 in cross-compilation deps
+    # Override LIBXML_CFLAGS/LIBXML_LIBS to use cross-compiled libxml2 (not host's)
+    # Pass -L flags on make command line to override libtool's host paths
+    # Skip xsltproc binary (not needed, only shared libs needed for KDE)
+    # Install only libs and headers (skip xsltproc which has linking issues)
     deps = [
         "//packages/linux/system/libs/data/libxml2:libxml2",
     ],
-    visibility = ["PUBLIC"],
 )

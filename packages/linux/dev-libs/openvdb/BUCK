@@ -1,24 +1,24 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # openvdb - Sparse volume data structure and tools
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "openvdb",
     version = "11.0.0",
-    src_uri = "https://github.com/AcademySoftwareFoundation/openvdb/archive/v11.0.0.tar.gz",
+    url = "https://github.com/AcademySoftwareFoundation/openvdb/archive/v11.0.0.tar.gz",
     sha256 = "6314ff1db057ea90050763e7b7d7ed86d8224fcd42a82cdbb9c515e001b96c74",
-    signature_required = False,
     description = "Sparse volume data structure and tools",
     homepage = "https://www.openvdb.org/",
     license = "MPL-2.0",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_SHARED_LIBS=ON",
         "-DOPENVDB_BUILD_BINARIES=OFF",
         "-DOPENVDB_BUILD_PYTHON_MODULE=OFF",
         "-DUSE_BLOSC=OFF",
+        "-DUSE_EXPLICIT_INSTANTIATION=OFF",
     ],
     deps = [
         "//packages/linux/dev-libs/boost:boost",
+        "//packages/linux/dev-libs/misc/tbb:tbb",
     ],
-    visibility = ["PUBLIC"],
 )

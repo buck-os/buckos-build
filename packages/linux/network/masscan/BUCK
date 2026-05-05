@@ -1,32 +1,19 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package", "binary_package", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # masscan - Fast TCP port scanner
 # =============================================================================
 
-autotools_package(
+package(
     name = "masscan",
+    build_rule = "autotools",
+    skip_configure = True,
     version = "1.3.2",
-    src_uri = "https://github.com/robertdavidgraham/masscan/archive/refs/tags/1.3.2.tar.gz",
+    url = "https://github.com/robertdavidgraham/masscan/archive/refs/tags/1.3.2.tar.gz",
     sha256 = "0363e82c07e6ceee68a2da48acd0b2807391ead9a396cf9c70b53a2a901e3d5f",
-    signature_required = False,
-
-    iuse = ["pf_ring"],
-    use_defaults = [],
-
-
-    use_configure = {
-        "pf_ring": "--with-pfring",
-        "-pf_ring": "--without-pfring",
-    },
-
-    deps = [
-        "//packages/linux/network/libpcap:libpcap",
-    ],
-
     description = "Fast TCP port scanner transmitting 10 million packets per second",
     homepage = "https://github.com/robertdavidgraham/masscan",
     license = "AGPL-3.0-only",
-    visibility = ["PUBLIC"],
+    deps = [
+    ],
 )

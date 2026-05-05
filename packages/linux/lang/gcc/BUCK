@@ -1,104 +1,67 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package", "binary_package", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
-# GCC - GNU Compiler Collection
+# GCC Native - from-source build for hermetic host tools
 # =============================================================================
-# USE flags: fortran, objc, go, lto, multilib, graphite, nls
-# Default: fortran, lto
+# Full GCC with C and C++ for the seed toolchain.  Must be capable of
+# building any package in the tree (C++ for LLVM, Qt, KDE, etc.).
+#
+# Cross-compiled with the seed cross-compiler → buckos-native binaries.
+# Same CPU architecture (x86_64), so intermediate bootstrap stages run
+# on the build host via the compatible dynamic linker.  Profiled
+# bootstrap + LTO produces a significantly faster compiler at the cost
+# of a longer build (3 full stages + profile collection).
+#
+# libcody (C++ modules server) sub-configure doesn't inherit top-level
+# CXXFLAGS and fails C++11 detection.  Fix by patching the sub-configure.
 
-download_source(
-    name = "gcc-src",
-    src_uri = "https://github.com/gcc-mirror/gcc/archive/refs/tags/releases/gcc-14.2.0.tar.gz",
-    sha256 = "201c92bf612ab0a357fdbb3db312f720eefaa49d6ce02825bbb5468d5ee1d07a",
-    signature_required = False,
-)
-
-binary_package(
-    name = "gcc",
-    srcs = [":gcc-src"],
-    version = "14.2.0",
-    description = "GNU Compiler Collection - C, C++, and Fortran compilers",
+package(
+    build_rule = "autotools",
+    name = "gcc-native",
+    skip_host_arg = True,
+    version = "14.3.0",
+    url = "https://mirror.buckos.org/g/gcc-14.3.0.tar.gz",
+    sha256 = "ace8b8b0dbfe6abfc22f821cb093e195aa5498b7ccf7cd23e4424b9f14afed22",
+    description = "GNU Compiler Collection - C/C++ compilers for bootstrap",
     homepage = "https://gcc.gnu.org/",
     license = "GPL-3.0",
-    install_script = """
-        cd "$SRCS"
-
-        # Find dependency prefixes from DEPS_DIRS
-        GMP_PREFIX=""
-        MPFR_PREFIX=""
-        MPC_PREFIX=""
-        ISL_PREFIX=""
-        for dep in $DEPS_DIRS; do
-            if [ -f "$dep/usr/include/gmp.h" ]; then
-                GMP_PREFIX="$dep/usr"
-                echo "Found GMP at: $GMP_PREFIX"
-            fi
-            if [ -f "$dep/usr/include/mpfr.h" ]; then
-                MPFR_PREFIX="$dep/usr"
-                echo "Found MPFR at: $MPFR_PREFIX"
-            fi
-            if [ -f "$dep/usr/include/mpc.h" ]; then
-                MPC_PREFIX="$dep/usr"
-                echo "Found MPC at: $MPC_PREFIX"
-            fi
-            if [ -f "$dep/usr/include/isl/ctx.h" ]; then
-                ISL_PREFIX="$dep/usr"
-                echo "Found ISL at: $ISL_PREFIX"
-            fi
-        done
-
-        # Create build directory (out-of-tree build recommended for GCC)
-        mkdir -p "$WORK/gcc-build"
-        cd "$WORK/gcc-build"
-
-        # Build configure options
-        EXTRA_OPTS=""
-        [ -n "$GMP_PREFIX" ] && EXTRA_OPTS="$EXTRA_OPTS --with-gmp=$GMP_PREFIX"
-        [ -n "$MPFR_PREFIX" ] && EXTRA_OPTS="$EXTRA_OPTS --with-mpfr=$MPFR_PREFIX"
-        [ -n "$MPC_PREFIX" ] && EXTRA_OPTS="$EXTRA_OPTS --with-mpc=$MPC_PREFIX"
-        [ -n "$ISL_PREFIX" ] && EXTRA_OPTS="$EXTRA_OPTS --with-isl=$ISL_PREFIX"
-
-        # Configure GCC
-        "$SRCS/configure" \\
-            --prefix=/usr \\
-            --libdir=/usr/lib64 \\
-            --libexecdir=/usr/lib \\
-            --enable-languages=c,c++,fortran \\
-            --enable-shared \\
-            --enable-threads=posix \\
-            --enable-__cxa_atexit \\
-            --enable-clocale=gnu \\
-            --enable-gnu-indirect-function \\
-            --enable-linker-build-id \\
-            --enable-lto \\
-            --enable-plugin \\
-            --enable-default-pie \\
-            --enable-default-ssp \\
-            --disable-multilib \\
-            --disable-werror \\
-            --disable-bootstrap \\
-            --disable-libsanitizer \\
-            --with-system-zlib \\
-            --with-linker-hash-style=gnu \\
-            $EXTRA_OPTS
-
-        # Build and install
-        make -j$(nproc)
-        make DESTDIR="$OUT" install
-
-        # Create compatibility symlinks
-        cd "$OUT/usr/bin"
-        ln -sf gcc cc
-        ln -sf g++ c++
-    """,
+    pre_configure_cmds = [
+        # Fix obstack.h conflict with glibc >= 2.41
+        "cp include/obstack.h libiberty/obstack.h",
+        # libcody's sub-configure doesn't inherit CXXFLAGS from the
+        # top-level build, so it fails C++11 feature detection.  Patch
+        # the generated configure script to skip the fatal error — the
+        # top-level GCC build already verified C++11 works.
+        "sed -i 's/as_fn_error.*C++11 is required.*/: # patched — C++11 verified by top-level configure/' libcody/configure",
+    ],
+    configure_args = [
+        "--disable-bootstrap",
+        "--disable-multilib",
+        "--enable-languages=c,c++",
+        "--disable-nls",
+        "--disable-cet",
+        "--disable-fixincludes",
+        "--disable-libsanitizer",
+        "--with-system-zlib",
+    ],
+    env = {
+        "CFLAGS": "-O2 -Wno-error=implicit-function-declaration",
+    },
+    configure_prefix_deps = {
+        "gmp": "//packages/linux/system/libs/utility/gmp:gmp",
+        "mpfr": "//packages/linux/system/libs/utility/mpfr:mpfr",
+        "mpc": "//packages/linux/system/libs/utility/mpc:mpc",
+        "zstd": "//packages/linux/system/libs/compression/zstd:zstd",
+    },
     deps = [
-        "//packages/linux/lang/binutils:binutils",
         "//packages/linux/system/libs/utility/gmp:gmp",
         "//packages/linux/system/libs/utility/mpfr:mpfr",
         "//packages/linux/system/libs/utility/mpc:mpc",
-        "//packages/linux/system/libs/utility/isl:isl",
         "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/compression/zstd:zstd",
     ],
-    visibility = ["PUBLIC"],
+    post_install_cmds = [
+        # Create standard symlinks
+        "cd usr/bin && ln -sf gcc cc && ln -sf g++ c++",
+    ],
 )

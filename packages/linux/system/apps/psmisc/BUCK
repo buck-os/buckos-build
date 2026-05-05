@@ -1,36 +1,39 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # psmisc - Utilities using /proc filesystem (fuser, killall, pstree)
 # USE flags: selinux, nls, ipv6
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "psmisc",
     version = "23.7",
-    src_uri = "https://gitlab.com/psmisc/psmisc/-/archive/v23.7/psmisc-v23.7.tar.gz",
-    sha256 = "8f2526ce7ac6ef4976454cd63095fa10e467ef745cf33dc4f91df0bd7b10b905",
-    signature_required = False,
+    # Use release tarball (pre-generated configure) — git archives need
+    # full autotools regeneration including gettext/autopoint which is fragile.
+    url = "https://sourceforge.net/projects/psmisc/files/psmisc/psmisc-23.7.tar.xz",
+    sha256 = "58c55d9c1402474065adae669511c191de374b0871eec781239ab400b907c327",
     description = "Miscellaneous utilities using /proc (fuser, killall, pstree)",
     homepage = "https://gitlab.com/psmisc/psmisc",
     license = "GPL-2",
-    iuse = ["selinux", "nls", "ipv6"],
-    use_defaults = ["ipv6"],
-    use_deps = {
-        "selinux": ["//packages/linux/system/security/selinux:selinux"],
-    },
+    pre_configure_cmds = [
+        # Release tarball has pre-generated configure but timestamps
+        # can trigger autotools regeneration after copy.
+        "find . -name '*.in' -o -name configure -o -name aclocal.m4 -o -name config.h.in | xargs touch",
+    ],
     use_configure = {
-        "selinux": "--enable-selinux",
-        "-selinux": "--disable-selinux",
-        "nls": "--enable-nls",
-        "-nls": "--disable-nls",
-        "ipv6": "--enable-ipv6",
-        "-ipv6": "--disable-ipv6",
+        "X": ("--with-x", "--without-x"),
+        "apparmor": ("--enable-apparmor", "--disable-apparmor"),
+        "ipv6": ("--enable-ipv6", "--disable-ipv6"),
+        "nls": ("--enable-nls", "--disable-nls"),
     },
-    configure_args = [
-        "--prefix=/usr",
+    # Stub po/Makefile to avoid broken NLS build when --disable-nls
+    pre_build_cmds = [
+        "mkdir -p po && printf 'all:\\ninstall:\\nclean:\\ndistclean:\\n' > po/Makefile",
     ],
     deps = [
-        "//packages/linux/core/ncurses:ncurses",
+        "//packages/linux/system/terminal/ncurses:ncurses",
+        "//packages/linux/dev-libs/misc/gettext:gettext",
     ],
-    visibility = ["PUBLIC"],
+    host_deps = [
+        "//packages/linux/dev-libs/misc/gettext:gettext",
+    ],
 )

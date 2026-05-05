@@ -1,54 +1,52 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "meson",
     name = "cairo",
     version = "1.18.2",
-    src_uri = "https://www.cairographics.org/releases/cairo-1.18.2.tar.xz",
+    url = "https://www.cairographics.org/releases/cairo-1.18.2.tar.xz",
     sha256 = "a62b9bb42425e844cc3d6ddde043ff39dbabedd1542eba57a2eb79f85889d45a",
-    signature_required = False,
     description = "2D graphics library with support for multiple output devices",
     homepage = "https://www.cairographics.org/",
     license = "LGPL-2.1-or-later",
-    iuse = ["static-libs", "X", "xcb", "png", "svg", "pdf", "glib", "opengl"],
-    use_defaults = ["X", "xcb", "png", "svg", "pdf", "glib"],
-    use_configure = {
-        "static-libs": "-Ddefault_library=static",
-        "-static-libs": "-Ddefault_library=shared",
-        "X": "-Dxlib=enabled",
-        "-X": "-Dxlib=disabled",
-        "xcb": "-Dxcb=enabled",
-        "-xcb": "-Dxcb=disabled",
-        "png": "-Dpng=enabled",
-        "-png": "-Dpng=disabled",
-        "svg": "-Dsvg=enabled",
-        "-svg": "-Dsvg=disabled",
-        "pdf": "-Dpdf=enabled",
-        "-pdf": "-Dpdf=disabled",
-        "glib": "-Dglib=enabled",
-        "-glib": "-Dglib=disabled",
-        "opengl": "-Dgl-backend=gl",
-        "-opengl": "-Dgl-backend=disabled",
+    env = {
+        "CFLAGS": "-DHAVE_CTIME_R=1",
     },
-    use_deps = {
-        "png": ["//packages/linux/system/libs/image/libpng:libpng"],
-        "glib": ["//packages/linux/dev-libs/glib:glib"],
-        "opengl": ["//packages/linux/desktop/mesa:mesa"],
-    },
-    pre_configure = """
-mkdir -p build
-cd build
-# USE flags: static-libs, X, xcb, png, svg, pdf, glib, opengl
-meson setup .. --prefix=/usr \
-    -Dfreetype=enabled \
-    -Dfontconfig=enabled \
-    $CONFIGURE_ARGS
-""",
+    configure_args = [
+        "-Dfreetype=enabled",
+        "-Dfontconfig=enabled",
+        "-Dpng=enabled",
+        "-Dzlib=enabled",
+        "-Dgtk2-utils=disabled",
+        "-Dtests=disabled",
+        "-Dspectre=disabled",
+        "--wrap-mode=nofallback",
+        # Enable glib, X11, and xcb support (from silently-ignored use_configure)
+        "-Dglib=enabled",
+        "-Dxlib=enabled",
+        "-Dxcb=enabled",
+    ],
     deps = [
-        "//packages/linux/system/libs/graphics/pixman:pixman",
+        "//packages/linux/system/security/auth/biometric:pixman",
         "//packages/linux/system/libs/font/freetype:freetype",
         "//packages/linux/system/libs/font/fontconfig:fontconfig",
+        "//packages/linux/system/libs/data/expat:expat",
         "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/compression/bzip2:bzip2",
+        "//packages/linux/system/libs/image/libpng:libpng",
+        # glib support (for cairo-gobject)
+        "//packages/linux/dev-libs/glib:glib",
+        "//packages/linux/system/libs/utility/pcre2:pcre2",
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        # X11 support
+        "//packages/linux/graphics/xorg/libX11:libX11",
+        "//packages/linux/graphics/xorg/libXext:libXext",
+        "//packages/linux/graphics/xorg/libXrender:libXrender",
+        "//packages/linux/graphics/xorg/xorgproto:xorgproto",
+        # xcb support
+        "//packages/linux/graphics/xorg/libxcb:libxcb",
+        "//packages/linux/graphics/xorg/xcb-proto:xcb-proto",
+        "//packages/linux/graphics/xorg/libXau:libXau",
+        "//packages/linux/graphics/xorg/libXdmcp:libXdmcp",
     ],
-    visibility = ["PUBLIC"],
 )

@@ -1,40 +1,30 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "osmnx2",
     version = "2.0.5",
-    src_uri = "https://github.com/gboeing/osmnx/archive/v2.0.5.tar.gz",
-    sha256 = "TODO",
+    url = "https://github.com/gboeing/osmnx/archive/v2.0.5.tar.gz",
+    sha256 = "78e0f8c801659b7c4e620d2db2f3d5e72f2994bcc1b79b20322119de6660f4db",
     deps = [
-        "//packages/linux/dev-libs/python/geopandas",
-        "//packages/linux/dev-libs/python/networkx",
-        "//packages/linux/dev-libs/python/numpy",
-        "//packages/linux/dev-libs/python/pandas",
-        "//packages/linux/dev-libs/python/requests",
-        "//packages/linux/dev-libs/python/shapely",
+        "//packages/linux/dev-libs/python/geopandas:geopandas",
+        "//packages/linux/dev-libs/python/networkx:networkx",
+        "//packages/linux/dev-libs/python/pandas:pandas",
+        "//packages/linux/dev-libs/python/requests:requests",
+        "//packages/linux/dev-libs/python/shapely:shapely",
     ],
-    iuse = ["visualization", "entropy", "neighbors", "raster"],
-    use_extras = {
-        "visualization": "visualization",
-        "entropy": "entropy",
-        "neighbors": "neighbors",
-        "raster": "raster",
-    },
     use_deps = {
         "visualization": [
-            "//packages/linux/dev-libs/python/matplotlib",
+            "//packages/linux/dev-libs/python/matplotlib:matplotlib",
         ],
         "entropy": [
-            "//packages/linux/dev-libs/python/scipy",
         ],
         "neighbors": [
-            "//packages/linux/dev-libs/python/scikit-learn",
-            "//packages/linux/dev-libs/python/scipy",
+            "//packages/linux/dev-libs/python/scikit-learn:scikit-learn",
         ],
         "raster": [
-            "//packages/linux/dev-libs/python/rasterio",
+            "//packages/linux/dev-libs/python/rasterio:rasterio",
         ],
     },
-    maintainers = ["map_services"],
     visibility = ["PUBLIC"],
 )

@@ -1,58 +1,38 @@
-load("//defs:package_defs.bzl", "download_source")
+load("//defs:package.bzl", "package")
 
 # Linux Kernel Source Packages
-# Updated: 2025-12-06
 
 # Mainline - Latest development kernel
-download_source(
-    name = "linux-6.18-src",
-    src_uri = "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.18.tar.xz",
+package(
+    name = "linux-6.18",
+    build_rule = "binary",
+    version = "6.18",
+    url = "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.18.tar.xz",
     sha256 = "9106a4605da9e31ff17659d958782b815f9591ab308d03b0ee21aad6c7dced4b",
-    signature_required = False,
-    visibility = ["//packages/linux/kernel/..."],
-)
-
-# Stable - Latest stable kernel
-download_source(
-    name = "linux-6.17-src",
-    src_uri = "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.17.10.tar.xz",
-    sha256 = "fa7f344f3a50dad0af2e0066d51bd3b9183fd24587861042343ded3d1fd5c8cd",
-    signature_required = False,
-    visibility = ["//packages/linux/kernel/..."],
+    format = "tar.xz",
+    description = "Linux kernel source (mainline)",
+    homepage = "https://kernel.org/",
+    license = "GPL-2.0",
+    install_script = "true",
 )
 
 # LTS - Long Term Support (6.12.x series)
 # Supported until December 2026
-download_source(
-    name = "linux-6.12-src",
-    src_uri = "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.60.tar.xz",
+package(
+    name = "linux-6.12",
+    build_rule = "binary",
+    version = "6.12.60",
+    url = "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.60.tar.xz",
     sha256 = "a63096b2147411d683cecbf87622bb2ff4885bac2b3641d3d4f10250c89cdcf8",
-    signature_required = False,
-    visibility = ["//packages/linux/kernel/..."],
+    format = "tar.xz",
+    description = "Linux kernel source (LTS)",
+    homepage = "https://kernel.org/",
+    license = "GPL-2.0",
+    install_script = "true",
 )
 
-# Default alias points to stable (recommended for most users)
-alias(
-    name = "linux-src",
-    actual = ":linux-6.17-src",
-    visibility = ["//packages/linux/kernel/..."],
-)
-
-# Convenience aliases
-alias(
-    name = "linux-mainline-src",
-    actual = ":linux-6.18-src",
-    visibility = ["//packages/linux/kernel/..."],
-)
-
-alias(
-    name = "linux-stable-src",
-    actual = ":linux-6.17-src",
-    visibility = ["//packages/linux/kernel/..."],
-)
-
-alias(
-    name = "linux-lts-src",
-    actual = ":linux-6.12-src",
-    visibility = ["//packages/linux/kernel/..."],
-)
+# Default alias — all kernel builds use this
+alias(name = "linux-src", actual = ":linux-6.18-src")
+alias(name = "linux-mainline-src", actual = ":linux-6.18-src")
+alias(name = "linux-stable-src", actual = ":linux-6.18-src")
+alias(name = "linux-lts-src", actual = ":linux-6.12-src")

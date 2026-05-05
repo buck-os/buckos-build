@@ -1,26 +1,39 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # Chrony - Versatile NTP implementation
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "chrony",
     version = "4.5",
-    src_uri = "https://download.tuxfamily.org/chrony/chrony-4.5.tar.gz",
-    sha256 = "6bf624390c31483751de61ed858a2769464fc949721688c34bd0cfce0e2ce2df",
+    url = "https://mirror.buckos.org/c/chrony-4.5.tar.gz",
+    sha256 = "19fe1d9f4664d445a69a96c71e8fdb60bcd8df24c73d1386e02287f7366ad422",
     description = "Versatile NTP implementation",
     homepage = "https://chrony.tuxfamily.org/",
     license = "GPL-2.0",
-    iuse = ["nts", "cmdmon", "ntp", "refclock", "rtc"],
-    use_defaults = ["nts", "cmdmon", "ntp"],
+    use_configure = {
+        "caps": ("--enable-libcap", "--disable-libcap"),
+        "debug": ("--enable-debug", "--disable-debug"),
+        "html": ("--enable-html", "--disable-html"),
+        "libtomcrypt": ("--enable-libtomcrypt", "--disable-libtomcrypt"),
+        "nettle": ("--enable-nettle", "--disable-nettle"),
+        "nss": ("--enable-nss", "--disable-nss"),
+        "phc": ("--enable-phc", "--disable-phc"),
+        "pps": ("--enable-pps", "--disable-pps"),
+        "readline": ("--with-readline", "--without-readline"),
+        "samba": ("--enable-samba", "--disable-samba"),
+        "seccomp": ("--enable-seccomp", "--disable-seccomp"),
+        "sechash": ("--enable-sechash", "--disable-sechash"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+    },
     deps = [
         "//packages/linux/system/libs/ipc/libcap:libcap",
     ],
     use_deps = {
-        "nts": ["//packages/linux/dev-libs/misc/nettle:nettle"],
+        "nts": "//packages/linux/system/libs/crypto/nettle:nettle",
     },
     configure_args = [
         "--prefix=${PREFIX}",
         "--with-user=chrony",
     ],
-    visibility = ["PUBLIC"],
 )

@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "seed_vc",
     version = "501179d",
-    src_uri = "https://github.com/plachtaa/seed-vc/archive/501179d1bbc8ec20f8eacdcb381770638052bd22.tar.gz",
+    url = "https://github.com/plachtaa/seed-vc/archive/501179d1bbc8ec20f8eacdcb381770638052bd22.tar.gz",
     sha256 = "c9e60128d00133aa585e701a06331167eec7f214dbfabbd17ad1ee93be809ef9",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
@@ -13,10 +14,7 @@ python_package(
         "//packages/linux/audio/utilities/descript-audiotools:descript-audiotools",
         "//packages/linux/dev-libs/python/transformers:transformers",
         "//packages/linux/dev-libs/python/huggingface-hub:huggingface-hub",
-        "//packages/linux/dev-libs/python/einops:einops",
         "//packages/linux/dev-libs/python/librosa:librosa",
-        "//packages/linux/dev-libs/python/scipy:scipy",
-        "//packages/linux/dev-libs/python/numpy:numpy",
         "//packages/linux/dev-libs/python/pyyaml:pyyaml",
         "//packages/linux/dev-libs/python/pydub:pydub",
         "//packages/linux/dev-libs/python/soundfile:soundfile",

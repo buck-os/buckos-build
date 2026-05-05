@@ -1,35 +1,25 @@
+load("//defs:package.bzl", "package")
+
 # lshw - Hardware Lister
 # Provides detailed information about the hardware configuration
 
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
-
-download_source(
-    name = "lshw-src",
-    src_uri = "https://www.ezix.org/software/files/lshw-B.02.20.tar.gz",
-    sha256 = "06d9cf122422220e5dc94e8ea5b01816a69bb6b59368f63d7f21fff31fc6922a",
-    signature_required = False,
-)
-
-autotools_package(
+package(
     name = "lshw",
-    source = ":lshw-src",
+    build_rule = "make",
+    url = "https://www.ezix.org/software/files/lshw-B.02.20.tar.gz",
+
+    sha256 = "06d9cf122422220e5dc94e8ea5b01816a69bb6b59368f63d7f21fff31fc6922a",
     version = "B.02.20",
     description = "Hardware lister - provides detailed hardware information",
     homepage = "https://www.ezix.org/project/wiki/HardwareLiSter",
     license = "GPL-2.0",
-    configure_args = [],
     make_args = [
+        "VERSION=B.02.20",
         "PREFIX=/usr",
         "SBINDIR=/usr/sbin",
         "MANDIR=/usr/share/man",
         "DATADIR=/usr/share",
-        "RPM_OPT_FLAGS=",
     ],
-    post_install = """
-        make DESTDIR=$OUT PREFIX=/usr SBINDIR=/usr/sbin install
-    """,
     deps = [
     ],
-    visibility = ["PUBLIC"],
 )

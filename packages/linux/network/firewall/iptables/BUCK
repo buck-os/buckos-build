@@ -1,33 +1,26 @@
+load("//defs:package.bzl", "package")
+
 # =============================================================================
 # iptables - Legacy Linux packet filtering administration
 # =============================================================================
 
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "iptables",
     version = "1.8.10",
-    src_uri = "https://www.netfilter.org/projects/iptables/files/iptables-1.8.10.tar.xz",
+    url = "https://www.netfilter.org/projects/iptables/files/iptables-1.8.10.tar.xz",
     sha256 = "5cc255c189356e317d070755ce9371eb63a1b783c34498fb8c30264f3cc59c9c",
-    signature_sha256 = "b73295a18ab65070cb5e6c31ec11dcfc13a50b1f67888976cc0b708cd7fc5151",
-    signature_required=False,
-
-    iuse = ["ipv6", "bpf", "nfsynproxy", "connlabel", "static-libs"],
-    use_defaults = ["ipv6", "bpf", "nfsynproxy"],
-
 
     use_configure = {
-        "ipv6": "--enable-ipv6",
-        "-ipv6": "--disable-ipv6",
-        "bpf": "--enable-bpf-compiler",
-        "-bpf": "--disable-bpf-compiler",
-        "nfsynproxy": "--enable-nfsynproxy",
-        "-nfsynproxy": "--disable-nfsynproxy",
-        "connlabel": "--enable-connlabel",
-        "-connlabel": "--disable-connlabel",
-        "static-libs": "--enable-static",
-        "-static-libs": "--disable-static",
+        "bpf": ("--enable-bpf-compiler", "--disable-bpf-compiler"),
+        "connlabel": ("--enable-connlabel", "--disable-connlabel"),
+        "conntrack": ("--enable-conntrack", "--disable-conntrack"),
+        "ipv6": ("--enable-ipv6", "--disable-ipv6"),
+        "netlink": ("--enable-netlink", "--disable-netlink"),
+        "nfsynproxy": ("--enable-nfsynproxy", "--disable-nfsynproxy"),
+        "nftables": ("--enable-nftables", "--disable-nftables"),
+        "pcap": ("--enable-pcap", "--disable-pcap"),
+        "static-libs": ("--enable-static", "--disable-static"),
     },
 
     configure_args = [
@@ -40,7 +33,7 @@ autotools_package(
         "--with-xtlibdir=/lib/xtables",
     ],
 
-    post_install = """
+    post_install_cmds = ["""
 # Create iptables configuration directories
 mkdir -p "$DESTDIR/etc/iptables"
 mkdir -p "$DESTDIR/var/lib/iptables"
@@ -56,18 +49,13 @@ touch "$DESTDIR/etc/iptables/rules.v4"
 touch "$DESTDIR/etc/iptables/rules.v6"
 chmod 600 "$DESTDIR/etc/iptables/rules.v4"
 chmod 600 "$DESTDIR/etc/iptables/rules.v6"
-""",
+"""],
 
     deps = [
         "//packages/linux/core/libnl:libnl",
-        # TODO: Add these libraries when available:
-        # "//packages/linux/system/libs/network/libmnl:libmnl",
-        # "//packages/linux/system/libs/network/libnftnl:libnftnl",
-        # "//packages/linux/network/libpcap:libpcap",
     ],
 
     description = "Linux kernel packet filtering administration tools",
     homepage = "https://netfilter.org/projects/iptables/",
     license = "GPL-2.0",
-    visibility = ["PUBLIC"],
 )

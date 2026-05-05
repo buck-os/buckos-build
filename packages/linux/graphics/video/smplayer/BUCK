@@ -1,40 +1,33 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # SMPlayer - Complete front-end for MPlayer/mpv
 
-download_source(
-    name = "smplayer-src",
-    src_uri = "https://github.com/smplayer-dev/smplayer/releases/download/v23.12.0/smplayer-23.12.0.tar.bz2",
-    sha256 = "f3bea9ff2dd71cb7e71c080624135629f92789971797e9bac385930aa73e093e",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "smplayer",
-    source = ":smplayer-src",
+    url = "https://github.com/smplayer-dev/smplayer/releases/download/v23.12.0/smplayer-23.12.0.tar.bz2",
+
+    sha256 = "f3bea9ff2dd71cb7e71c080624135629f92789971797e9bac385930aa73e093e",
+    use_configure = {
+        "bidi": ("--enable-bidi", "--disable-bidi"),
+        "debug": ("--enable-debug", "--disable-debug"),
+    },
     version = "23.12.0",
     description = "Complete front-end for MPlayer and mpv",
     homepage = "https://www.smplayer.info/",
     license = "GPL-2.0-or-later",
-    pre_configure = """
-sed -i 's|PREFIX=/usr/local|PREFIX=/usr|' Makefile
-""",
     configure_args = [],
     make_args = [
         "PREFIX=/usr",
         "QMAKE=qmake",
         "LRELEASE=lrelease",
     ],
-    post_install = """
+    post_install_cmds = ["""
 DESTDIR=$OUT PREFIX=/usr make install
-""",
+"""],
     deps = [
         "//packages/linux/graphics/video/mpv:mpv",
-        "//packages/linux/desktop/qt:qt5",
+                "//packages/linux/desktop/qt:qt5",
+                "//packages/linux/desktop/qt:qt5"
     ],
-    bdepend = [
-        "//packages/linux/desktop/qt:qt5",
-    ],
-    visibility = ["PUBLIC"],
 )

@@ -1,21 +1,15 @@
+load("//defs:package.bzl", "package")
+
 # =============================================================================
 # CUDA Toolkit - NVIDIA CUDA development toolkit
 # =============================================================================
 
-load("//defs:package_defs.bzl", "download_source", "binary_package")
-
-download_source(
-    name = "cuda-toolkit-src",
-    src_uri = "https://developer.download.nvidia.com/compute/cuda/13.0.2/local_installers/cuda_13.0.2_580.95.05_linux.run",
-    sha256 = "81a5d0d0870ba2022efb0a531dcc60adbdc2bbff7b3ef19d6fd6d8105406c775",
-    signature_required = False,
-    extract = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "cuda-toolkit",
-    srcs = [":cuda-toolkit-src"],
     version = "13.0.2",
+    local_only = True,
+    filename = "cuda_13.0.2_linux.run",
     description = "NVIDIA CUDA Toolkit for GPU computing",
     homepage = "https://developer.nvidia.com/cuda-toolkit",
     license = "NVIDIA CUDA EULA",
@@ -26,10 +20,51 @@ INSTALLER=$(find . -name "*.run" -type f | head -1)
 
 chmod +x "$INSTALLER"
 
-# Extract toolkit (silent mode, toolkit only, skip driver)
-"$INSTALLER" --silent --toolkit --toolkitpath="$PWD/cuda" --no-opengl-libs --no-drm --no-man-page --override 2>/dev/null || true
+# Create temp directory for extraction
+export TMPDIR="$PWD/tmp"
+mkdir -p "$TMPDIR" cuda_extract
 
-[ ! -d cuda ] && { echo "Error: CUDA extraction failed"; exit 1; }
+# CUDA .run files are makeself archives - extract without running installer
+# Method 1: Try --tar extraction (works on some versions)
+echo "Extracting CUDA toolkit (this may take a while)..."
+sh "$INSTALLER" --tar mxf -C cuda_extract 2>/dev/null || \
+sh "$INSTALLER" -x cuda_extract 2>/dev/null || \
+"$INSTALLER" --tar xf -C cuda_extract 2>/dev/null || {
+    # Method 2: Find archive offset and extract directly
+    echo "Trying direct archive extraction..."
+    # CUDA installers have embedded squashfs or tar archives
+    # Find the archive magic bytes
+    OFFSET=$(grep -aobP '\\x68\\x73\\x71\\x73' "$INSTALLER" 2>/dev/null | head -1 | cut -d: -f1)
+    if [ -n "$OFFSET" ]; then
+        echo "Found squashfs at offset $OFFSET"
+        dd if="$INSTALLER" bs=1 skip="$OFFSET" 2>/dev/null | unsquashfs -f -d cuda_extract - 2>/dev/null || true
+    else
+        # Try to find gzip/xz archive
+        OFFSET=$(grep -aobP '\\x1f\\x8b\\x08' "$INSTALLER" 2>/dev/null | head -1 | cut -d: -f1)
+        if [ -n "$OFFSET" ]; then
+            echo "Found gzip at offset $OFFSET"
+            dd if="$INSTALLER" bs=1 skip="$OFFSET" 2>/dev/null | tar -xzf - -C cuda_extract 2>/dev/null || true
+        fi
+    fi
+}
+
+# Find the toolkit directory - search common locations
+TOOLKIT_DIR=""
+for pattern in "cuda_toolkit" "builds/cuda_toolkit" "builds/cuda-toolkit" "pkg/builds" ""; do
+    for d in cuda_extract/$pattern cuda_extract; do
+        if [ -d "$d/bin" ] || [ -d "$d/lib64" ] || [ -d "$d/include" ]; then
+            TOOLKIT_DIR="$d"
+            break 2
+        fi
+    done
+done
+
+# Also check for nested cuda directories
+if [ -z "$TOOLKIT_DIR" ]; then
+    TOOLKIT_DIR=$(find cuda_extract -maxdepth 3 -type d -name "bin" 2>/dev/null | head -1 | xargs dirname 2>/dev/null)
+fi
+
+[ -z "$TOOLKIT_DIR" ] && { echo "Error: CUDA extraction failed - no toolkit directory found"; find cuda_extract -maxdepth 4 -type d 2>/dev/null | head -30; exit 1; }
 
 # Install to standard location
 CUDA_DIR="$OUT/usr/local/cuda-13.0"
@@ -37,7 +72,7 @@ mkdir -p "$CUDA_DIR"
 
 # Copy essential directories
 for dir in bin lib64 include nvvm targets; do
-    [ -d "cuda/$dir" ] && cp -a "cuda/$dir" "$CUDA_DIR/"
+    [ -d "$TOOLKIT_DIR/$dir" ] && cp -a "$TOOLKIT_DIR/$dir" "$CUDA_DIR/"
 done
 
 # Create version symlink
@@ -51,22 +86,23 @@ export PATH=$CUDA_HOME/bin:$PATH
 export LD_LIBRARY_PATH=$CUDA_HOME/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
 EOF
 
-# pkg-config
-mkdir -p "$OUT/usr/lib64/pkgconfig"
-cat > "$OUT/usr/lib64/pkgconfig/cuda.pc" << 'EOF'
+# Generate pkg-config file
+mkdir -p "$OUT/usr/local/cuda/lib64/pkgconfig"
+cat > "$OUT/usr/local/cuda/lib64/pkgconfig/cuda.pc" << EOF
 prefix=/usr/local/cuda
-libdir=${prefix}/lib64
-includedir=${prefix}/include
+exec_prefix=\${prefix}
+libdir=\${prefix}/lib64
+includedir=\${prefix}/include
 
-Name: CUDA
+Name: cuda
 Description: NVIDIA CUDA Toolkit
-Version: 13.0.2
-Libs: -L${libdir} -lcudart
-Cflags: -I${includedir}
+Version: $PV
+Libs: -L\${libdir} -lcudart
+Cflags: -I\${includedir}
 EOF
 """,
     deps = [
         "//packages/linux/system/gpu/drivers/nvidia:nvidia-drivers",
     ],
-    visibility = ["PUBLIC"],
+    labels = ["buckos:hw:cuda"],
 )

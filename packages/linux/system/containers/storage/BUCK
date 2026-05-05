@@ -1,21 +1,32 @@
-load("//defs:package_defs.bzl", "download_source", "meson_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # Container Storage
 # =============================================================================
 
 # fuse-overlayfs - FUSE implementation of overlayfs
-meson_package(
+package(
+    build_rule = "autotools",
     name = "fuse-overlayfs",
     version = "1.13",
-    src_uri = "https://github.com/containers/fuse-overlayfs/archive/refs/tags/v1.13.tar.gz",
+    url = "https://github.com/containers/fuse-overlayfs/archive/refs/tags/v1.13.tar.gz",
     sha256 = "96d10344921d5796bcba7a38580ae14a53c4e60399bb90b238ac5a10b3bb65b2",
-    signature_required = False,
     description = "FUSE implementation of overlayfs for rootless containers",
     homepage = "https://github.com/containers/fuse-overlayfs",
     license = "GPL-3.0",
+    pre_configure_cmds = ["""
+if [ -d "fuse-overlayfs-1.13" ]; then
+    mv fuse-overlayfs-1.13/* . 2>/dev/null || true
+    rmdir fuse-overlayfs-1.13 2>/dev/null || true
+fi
+autoreconf -fiv
+"""],
+    configure_args = [],
     deps = [
-        "//packages/linux/system/filesystem/fuse/fuse3:fuse3",
+        "//packages/linux/system/security/encryption:fuse3",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-tools/build-systems/pkgconf:pkgconf"
     ],
-    visibility = ["PUBLIC"],
 )

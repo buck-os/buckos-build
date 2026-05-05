@@ -1,54 +1,9 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "mergerfs-src",
-    src_uri = "https://github.com/trapexit/mergerfs/archive/refs/tags/2.30.0.tar.gz",
-    sha256 = "54d902e47c3a7812009fa48221f6110f888fc12fc431cdf424f1e1767d018199",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "mergerfs",
-    srcs = [":mergerfs-src"],
     version = "2.30.0",
-    description = "Union filesystem implementation with flexible path and file merging",
-    homepage = "https://github.com/trapexit/mergerfs",
-    license = "ISC",
-    install_script = """
-set -e
-
-export SRCS="$SRCS"
-export OUT="$OUT"
-export DESTDIR="$OUT"
-
-cd "$SRCS"
-
-# Build libfuse included in mergerfs
-make -C libfuse -j$(nproc)
-
-# Build mergerfs with custom flags
-make -j$(nproc) \
-    USE_XATTR=1 \
-    UGID_USE_RWLOCK=0 \
-    CXXFLAGS="-O2 -std=c++0x -Wall -Wno-unused-result -Wno-non-virtual-dtor -MMD -D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=29 -DUSE_XATTR=1 -DUGID_USE_RWLOCK=0" \
-    LDFLAGS="-pthread -lrt"
-
-# Install the binary
-mkdir -p "$OUT/usr/bin"
-install -m 0755 build/mergerfs "$OUT/usr/bin/mergerfs"
-
-# Install man page
-mkdir -p "$OUT/usr/share/man/man1"
-if [ -f man/mergerfs.1 ]; then
-    install -m 0644 man/mergerfs.1 "$OUT/usr/share/man/man1/"
-fi
-
-# Install documentation
-mkdir -p "$OUT/usr/share/doc/mergerfs"
-if [ -f README.md ]; then
-    install -m 0644 README.md "$OUT/usr/share/doc/mergerfs/"
-fi
-""",
-    deps = [],
-    visibility = ["PUBLIC"],
+    url = "https://github.com/trapexit/mergerfs/archive/refs/tags/2.30.0.tar.gz",
+    sha256 = "54d902e47c3a7812009fa48221f6110f888fc12fc431cdf424f1e1767d018199",
 )

@@ -1,53 +1,53 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "bash",
     version = "5.3",
-    src_uri = "https://mirrors.kernel.org/gnu/bash/bash-5.3.tar.gz",
+    url = "https://mirrors.kernel.org/gnu/bash/bash-5.3.tar.gz",
     sha256 = "0d5cd86965f869a26cf64f4b71be7b96f90a3ba8b3d74e27e8e9d9d5550f31ba",
-    signature_required = False,
     description = "The GNU Bourne Again SHell",
     homepage = "https://www.gnu.org/software/bash/",
     license = "GPL-3.0",
 
     # USE flags this package supports
-    iuse = [
-        "readline",
-        "nls",
-        "plugins",
-        "net",
-    ],
 
     # Default USE flags
-    use_defaults = ["readline", "nls", "net"],
 
     # Conditional dependencies
     use_deps = {
-        "readline": ["//packages/linux/core/readline:readline", "//packages/linux/core/ncurses:ncurses"],
+        "readline": ["//packages/linux/system/terminal/readline:readline", "//packages/linux/system/terminal/ncurses:ncurses"],
     },
 
     # Conditional configure arguments
     use_configure = {
-        "readline": "--with-installed-readline",
-        "-readline": "--without-installed-readline",
-        "nls": "--enable-nls",
-        "-nls": "--disable-nls",
-        "plugins": "--enable-plugins",
-        "-plugins": "--disable-plugins",
-        "net": "--enable-net-redirections",
-        "-net": "--disable-net-redirections",
+        "afs": ("--enable-afs", "--disable-afs"),
+        "bashlogger": ("--enable-bashlogger", "--disable-bashlogger"),
+        "examples": ("--enable-examples", "--disable-examples"),
+        "mem-scramble": ("--enable-mem-scramble", "--disable-mem-scramble"),
+        "net": ("--enable-net-redirections", "--disable-net-redirections"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "pgo": ("--enable-pgo", "--disable-pgo"),
+        "plugins": ("--enable-plugins", "--disable-plugins"),
+        "readline": ("--with-installed-readline", "--without-installed-readline"),
     },
 
     # Base configure arguments (always applied)
     configure_args = [
         "--without-bash-malloc",
-    ],
+    ] + select({
+        "//platforms:is_aarch64": [
+            # Force POSIX signal detection — configure test programs may
+            # not execute under cross-sysroot, causing fallback to BSD
+            # sigblock/sigsetmask which fail on aarch64 (sigset_t != int).
+            "ac_cv_func_sigprocmask=yes",
+            "bash_cv_must_reinstall_sighandlers=no",
+        ],
+        "DEFAULT": [],
+    }),
 
-    post_install = """
+    post_install_cmds = ["""
 # Create sh symlink
 ln -sf bash "$DESTDIR/usr/bin/sh"
-""",
-    maintainers = ["core-team"],
-    visibility = ["PUBLIC"],
+"""],
 )

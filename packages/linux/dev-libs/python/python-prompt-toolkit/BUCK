@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "python-prompt-toolkit",
     version = "1.0.14",
-    src_uri = "https://github.com/prompt-toolkit/python-prompt-toolkit/archive/refs/tags/1.0.14.tar.gz",
+    url = "https://github.com/prompt-toolkit/python-prompt-toolkit/archive/refs/tags/1.0.14.tar.gz",
     sha256 = "ac04b23e73a5cf97551d17f4007674262a023e4f574d3c4cfe8c1383ec9764ec",
     deps = [
         "//packages/linux/dev-libs/python/wcwidth:wcwidth",

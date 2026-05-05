@@ -1,0 +1,26 @@
+load("//defs:package.bzl", "package")
+
+# libmd - Message Digest library (BSD)
+# Provides MD2, MD4, MD5, RIPEMD-160, SHA-1, SHA-2 functions
+
+package(
+    build_rule = "autotools",
+    name = "libmd",
+    version = "1.1.0",
+    source = "//packages/linux/core/libmd:libmd-src",
+    description = "Message Digest library providing BSD message digest functions",
+    license = "BSD",
+
+    configure_args = [
+        "--disable-static",
+    ],
+
+    post_install_cmds = ["""
+make DESTDIR="$DESTDIR" install
+# Remove .la files to prevent libtool absolute path issues in cross-compilation
+find "$DESTDIR" -name '*.la' -delete
+"""],
+
+    deps = [],
+
+)

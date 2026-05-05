@@ -1,14 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "vectornav-sdk",
-    version = "0.22.0",
-    src_uri = "https://www.vectornav.com/resources/sdk/VectorNavSDK-0.22.0.tar.gz",
-    sha256 = "TODO",
-    cmake_args = [
+    version = "master",
+    url = "https://github.com/UniStuttgart-INS/vnproglib/archive/refs/heads/master.tar.gz",
+    sha256 = "aacd1fed8f457c9099f475da79dbced596f05ad3222f8c5646343378a0b57106",
+    source_subdir = "cpp",
+    configure_args = [
         "-DCMAKE_CXX_STANDARD=17",
         "-DCMAKE_CXX_STANDARD_REQUIRED=ON",
         "-DCMAKE_CXX_EXTENSIONS=OFF",
     ],
-    visibility = ["PUBLIC"],
 )

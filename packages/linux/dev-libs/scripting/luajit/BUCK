@@ -1,21 +1,22 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+# LuaJIT - Just-In-Time Compiler for Lua
+# Uses Makefile directly, no configure step.
+package(
+    build_rule = "binary",
     name = "luajit",
-    version = "2.1.1720049189",
-    src_uri = "https://github.com/LuaJIT/LuaJIT/archive/refs/tags/v2.1.1720049189.tar.gz",
-    sha256 = "TODO",
-    signature_required = False,
+    version = "2.1.0-beta3",
+    url = "https://github.com/LuaJIT/LuaJIT/archive/refs/tags/v2.1.0-beta3.tar.gz",
+    sha256 = "409f7fe570d3c16558e594421c47bdd130238323c9d6fd6c83dedd2aaeb082a8",
     description = "Just-In-Time Compiler for Lua",
     homepage = "https://luajit.org/",
     license = "MIT",
-    src_configure = "true",
-    src_compile = """
-make -j$(nproc) PREFIX=/usr INSTALL_LIB=/usr/lib amalg
+    install_script = """
+cd "$SRCS"
+
+make -j${MAKEOPTS:-$(nproc)} PREFIX=/usr BUILDMODE=dynamic Q= \
+    CC="$CC" CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS"
+
+make PREFIX=/usr DESTDIR="$OUT" INSTALL_LIB="$OUT/usr/lib64" install
 """,
-    src_install = """
-make install DESTDIR="$DESTDIR" PREFIX=/usr INSTALL_LIB=/usr/lib
-ln -sf luajit-2.1 "$DESTDIR/usr/bin/luajit"
-""",
-    visibility = ["PUBLIC"],
 )

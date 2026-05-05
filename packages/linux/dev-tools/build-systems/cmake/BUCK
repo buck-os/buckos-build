@@ -1,53 +1,31 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # CMake - Cross-platform build system
 # =============================================================================
-# NOTE: cmake uses its own bootstrap script, not autotools.
-# We use custom src_configure/src_compile/src_install phases.
+# CMake uses its own bootstrap script, not autotools configure.
+# skip_configure + pre_build_cmds runs bootstrap in the copied source tree,
+# then the normal make phase builds from the generated Makefile.
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "cmake",
     version = "4.2.0",
-    src_uri = "https://github.com/Kitware/CMake/releases/download/v4.2.0/cmake-4.2.0.tar.gz",
+    url = "https://github.com/Kitware/CMake/releases/download/v4.2.0/cmake-4.2.0.tar.gz",
     sha256 = "4104e94657d247c811cb29985405a360b78130b5d51e7f6daceb2447830bd579",
-    signature_required = False,
     description = "Cross-platform, open-source build system",
     homepage = "https://cmake.org/",
     license = "BSD-3-Clause",
-
-    # CMAKE uses its own bootstrap script, not autotools configure
-    # NOTE: --no-system-cppdap avoids needing to build cppdap separately
-    # NOTE: Disable ccmake (curses GUI) to avoid NCURSES_BOOL/std::function conflict with GCC 15
-    src_configure = """
-echo "=== Configuring cmake with bootstrap ==="
-./bootstrap \\
-    --prefix=/usr \\
-    --system-curl \\
-    --system-zlib \\
-    --system-expat \\
-    --parallel=$(nproc) \\
-    --no-qt-gui \\
-    -- -DCMAKE_USE_OPENSSL=ON \\
-       -DBUILD_CursesDialog=OFF
-""",
-
-    src_compile = """
-echo "=== Building cmake ==="
-make -j$(nproc)
-""",
-
-    src_install = """
-echo "=== Installing cmake ==="
-make install DESTDIR="$DESTDIR"
-""",
-
-    deps = [
-        "//packages/linux/core/zlib:zlib",
-        "//packages/linux/core/expat:expat",
-        "//packages/linux/network/curl:curl",
-        "//packages/linux/network/openssl:openssl",
+    skip_configure = True,
+    pre_build_cmds = [
+        # CMake bootstrap respects CC/CXX from environment.  GCC specs
+        # inject padded interpreter + RPATH unconditionally at link time,
+        # so no CFLAGS/LDFLAGS needed.  Disable ccmake (curses GUI) to
+        # avoid NCURSES_BOOL/std::function conflict with GCC 15.
+        # Patch bundled curl to disable libidn2 (hardcoded ON, -D flag
+        # cannot override the set() call in cmcurl/CMakeLists.txt).
+        "sed -i 's/^set(USE_LIBIDN2 ON)/set(USE_LIBIDN2 OFF)/' Utilities/cmcurl/CMakeLists.txt",
+        "./bootstrap --prefix=/usr --parallel=$(nproc) --no-qt-gui -- -DCMAKE_USE_OPENSSL=OFF -DBUILD_CursesDialog=OFF",
     ],
-    visibility = ["PUBLIC"],
+    deps = [],
 )

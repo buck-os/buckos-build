@@ -1,0 +1,21 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "nano",
+    version = "8.3",
+    url = "https://nano-editor.org/dist/v8/nano-8.3.tar.xz",
+    sha256 = "551b717b2e28f7e90f749323686a1b5bbbd84cfa1390604d854a3ca3778f111e",
+    description = "Small and friendly text editor",
+    homepage = "https://nano-editor.org/",
+    license = "GPL-3.0-or-later",
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--enable-utf8",
+    ],
+    deps = [
+        "//packages/linux/system/terminal/ncurses:ncurses",
+        "//packages/linux/core/file:file",
+    ],
+)

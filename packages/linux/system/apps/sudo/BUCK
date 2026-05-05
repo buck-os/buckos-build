@@ -1,41 +1,33 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # sudo - Execute commands as another user
 # USE flags: pam, selinux, nls, sssd, ldap
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "sudo",
+    # Official release tarball includes pre-generated configure script
+    # GCC 15: -Wincompatible-pointer-types is now an error by default
+    env = {"CFLAGS": "-Wno-error=incompatible-pointer-types"},
     version = "1.9.15p5",
-    src_uri = "https://www.sudo.ws/dist/sudo-1.9.15p5.tar.gz",
+    url = "https://www.sudo.ws/dist/sudo-1.9.15p5.tar.gz",
     sha256 = "558d10b9a1991fb3b9fa7fa7b07ec4405b7aefb5b3cb0b0871dbc81e3a88e558",
-    signature_sha256 = "94ac50200cb00e82df1a76747166f90c4febdb5b45c4a8edbf0251029a559230",
-    signature_required=False,
     description = "Execute commands as another user with security policy",
     homepage = "https://www.sudo.ws",
     license = "ISC",
-    iuse = ["pam", "selinux", "nls", "sssd", "ldap", "static-libs"],
-    use_defaults = [],
     use_deps = {
-        "pam": ["//packages/linux/system/security/auth/pam:pam"],
-        "selinux": ["//packages/linux/system/security/selinux:selinux"],
-        "ldap": ["//packages/linux/system/security/auth/directory/openldap:openldap"],
-        "nls": ["//packages/linux/system/libs/i18n:gettext"],
-        "sssd": ["//packages/linux/system/security/auth/sssd:sssd"],
+        "pam": "//packages/linux/system/security/auth/pam:pam",
     },
     use_configure = {
-        "pam": "--with-pam",
-        "-pam": "--disable-pam",
-        "selinux": "--with-selinux",
-        "-selinux": "--without-selinux",
-        "nls": "--enable-nls",
-        "-nls": "--disable-nls",
-        "sssd": "--with-sssd",
-        "-sssd": "--without-sssd",
-        "ldap": "--with-ldap",
-        "-ldap": "--without-ldap",
-        "static-libs": "--enable-static",
-        "-static-libs": "--disable-static",
+        "gcrypt": ("--enable-gcrypt", "--disable-gcrypt"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "offensive": ("--enable-offensive-insults", "--disable-offensive-insults"),
+        "pam": ("--with-pam", "--without-pam"),
+        "sasl": ("--enable-sasl", "--disable-sasl"),
+        "sendmail": ("--with-sendmail", "--without-sendmail"),
+        "skey": ("--with-skey", "--without-skey"),
+        "ssl": ("--enable-openssl", "--disable-openssl"),
+        "static-libs": ("--enable-static", "--disable-static"),
     },
     configure_args = [
         "--prefix=/usr",
@@ -43,7 +35,19 @@ autotools_package(
         "--libexecdir=/usr/lib",
         "--with-rundir=/run/sudo",
         "--with-vardir=/var/db/sudo",
+        "--docdir=/usr/share/doc/sudo",
+        "--with-man",
+    ],
+    make_args = [
+        "INSTALL_OWNER=",
+        "MKDIR_P=mkdir -p",
+    ],
+    install_targets = ["install-binaries", "install-includes", "install-plugin"],
+    install_args = ["-j1"],
+    post_install_cmds = [
+        # install-plugin doesn't install libsudo_util.so; libtool leaves it
+        # in the build tree .libs/ dir. Copy from the build tree via $BUILD_DIR.
+        "cp -a $BUILD_DIR/lib/util/.libs/libsudo_util.so* usr/lib/sudo/ 2>/dev/null || cp -a $BUILD_DIR/lib/util/libsudo_util.so* usr/lib/sudo/ || true",
     ],
     deps = [],
-    visibility = ["PUBLIC"],
 )

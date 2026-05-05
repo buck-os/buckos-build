@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "rerun_cpp_sdk",
     version = "0.22.1",
-    src_uri = "https://github.com/rerun-io/rerun/releases/download/0.22.1/rerun_cpp_sdk.zip",
+    url = "https://github.com/rerun-io/rerun/releases/download/0.22.1/rerun_cpp_sdk.zip",
     sha256 = "6b3da79204b7c791262ab0ecc6deadb4fdeee4695259304e2472523c211da3e6",
-    cmake_args = [
+    configure_args = [
         "-DRERUN_DOWNLOAD_AND_BUILD_ARROW=OFF",
         "-DRERUN_ARROW_LINK_SHARED=ON",
         "-DRERUN_INSTALL_RERUN_C=ON",

@@ -1,25 +1,29 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "multichase-src",
-    src_uri = "https://github.com/google/multichase/archive/6e10f1c09eeee8a9dcb8807282eadd9eca39b710.tar.gz",
-    sha256 = "e15ad2f6b36dd252496d27e1e86dfa4e240fff062f1dae5be12b35a3a75c3e79",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "multichase",
-    srcs = [":multichase-src"],
     version = "0.0.1",
+    url = "https://github.com/google/multichase/archive/refs/heads/master.tar.gz",
+    sha256 = "e17b112099eed52f4db95b62b4b43863d6052a56e6be98c6237a033d43462c57",
     description = "Memory latency and bandwidth benchmark tools from Google",
     homepage = "https://github.com/google/multichase",
     license = "Apache-2.0",
     install_script = """
-        cd $SRCS
+        cd "$SRCS"
+
+        # GitHub archive extracts to subdirectory
+        if [ -d multichase-* ]; then
+            cd multichase-*
+        fi
+
         ./gen_expand 200 > expand.h
-        make -j$(nproc)
-        mkdir -p $OUT/usr/bin
-        cp multichase multiload fairness pingpong $OUT/usr/bin/
+
+        # Build without -static flag since glibc-static may not be available
+        # Override LDFLAGS to remove -static
+        make -j${MAKEOPTS:-$(nproc)} CC="${CC:-cc}" CFLAGS="${CFLAGS:-}" LDFLAGS="-pthread"
+
+        mkdir -p "$OUT/usr/bin"
+        cp multichase multiload fairness pingpong "$OUT/usr/bin/"
     """,
-    visibility = ["PUBLIC"],
 )

@@ -1,0 +1,19 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "libxslt",
+    version = "1.1.42",
+    url = "https://download.gnome.org/sources/libxslt/1.1/libxslt-1.1.42.tar.xz",
+    sha256 = "85ca62cac0d41fc77d3f6033da9df6fd73d20ea2fc18b0a3609ffb4110e1baeb",
+    description = "XSLT C library and xsltproc utility",
+    homepage = "https://gitlab.gnome.org/GNOME/libxslt",
+    license = "MIT",
+    configure_args = [
+        "--without-python",
+        "--without-crypto",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/xml/libxml2:libxml2",
+    ],
+)

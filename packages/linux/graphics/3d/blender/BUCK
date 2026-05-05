@@ -1,5 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # USE flags for blender (cmake build):
 # - cycles: Cycles render engine (default: enabled)
@@ -11,72 +10,89 @@ load("//defs:use_flags.bzl", "set_use_flags")
 # - sdl: SDL support (default: enabled)
 # - python: Python scripting (default: enabled)
 
-download_source(
-    name = "blender-src",
-    src_uri = "https://download.blender.org/source/blender-4.0.2.tar.xz",
-    sha256 = "aaa0e729da7591cfbf45772af76345977daaa7b11a0af35d98f9313e246077a3",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "blender",
-    source = ":blender-src",
+    url = "https://download.blender.org/source/blender-4.0.2.tar.xz",
+
+    sha256 = "aaa0e729da7591cfbf45772af76345977daaa7b11a0af35d98f9313e246077a3",
+    use_configure = {
+        "X": ("--with-x", "--without-x"),
+        "alembic": ("--enable-alembic", "--disable-alembic"),
+        "bullet": ("--enable-bullet", "--disable-bullet"),
+        "color-management": ("--enable-color-management", "--disable-color-management"),
+        "cuda": ("--enable-cuda", "--disable-cuda"),
+        "cycles": ("--enable-cycles", "--disable-cycles"),
+        "cycles-bin-kernels": ("--enable-cycles-bin-kernels", "--disable-cycles-bin-kernels"),
+        "debug": ("--enable-debug", "--disable-debug"),
+        "embree": ("--enable-embree", "--disable-embree"),
+        "experimental": ("--enable-experimental", "--disable-experimental"),
+        "ffmpeg": ("--enable-ffmpeg", "--disable-ffmpeg"),
+        "fftw": ("--enable-fftw", "--disable-fftw"),
+        "fluid": ("--enable-fluid", "--disable-fluid"),
+        "gmp": ("--enable-gmp", "--disable-gmp"),
+        "gnome": ("--enable-gnome", "--disable-gnome"),
+        "hip": ("--enable-hip", "--disable-hip"),
+        "hiprt": ("--enable-hiprt", "--disable-hiprt"),
+        "jack": ("--enable-jack", "--disable-jack"),
+        "jemalloc": ("--enable-jemalloc", "--disable-jemalloc"),
+        "jpeg2k": ("--enable-jpeg2k", "--disable-jpeg2k"),
+        "man": ("--enable-man", "--disable-man"),
+        "manifold": ("--enable-manifold", "--disable-manifold"),
+        "nanovdb": ("--enable-nanovdb", "--disable-nanovdb"),
+        "ndof": ("--enable-ndof", "--disable-ndof"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "oidn": ("--enable-oidn", "--disable-oidn"),
+        "openal": ("--enable-openal", "--disable-openal"),
+        "openexr": ("--enable-openexr", "--disable-openexr"),
+        "opengl": ("--enable-opengl", "--disable-opengl"),
+        "openpgl": ("--enable-openpgl", "--disable-openpgl"),
+        "opensubdiv": ("--enable-opensubdiv", "--disable-opensubdiv"),
+        "openvdb": ("--enable-openvdb", "--disable-openvdb"),
+        "optix": ("--enable-optix", "--disable-optix"),
+        "osl": ("--enable-osl", "--disable-osl"),
+        "pdf": ("--enable-pdf", "--disable-pdf"),
+        "pipewire": ("--enable-pipewire", "--disable-pipewire"),
+        "potrace": ("--enable-potrace", "--disable-potrace"),
+        "pugixml": ("--enable-pugixml", "--disable-pugixml"),
+        "pulseaudio": ("--enable-pulseaudio", "--disable-pulseaudio"),
+        "renderdoc": ("--enable-renderdoc", "--disable-renderdoc"),
+        "rubberband": ("--enable-rubberband", "--disable-rubberband"),
+        "sdl": ("--enable-sdl", "--disable-sdl"),
+        "sndfile": ("--enable-sndfile", "--disable-sndfile"),
+        "tbb": ("--enable-tbb", "--disable-tbb"),
+        "tiff": ("--with-tiff", "--without-tiff"),
+        "truetype": ("--enable-truetype", "--disable-truetype"),
+        "valgrind": ("--enable-valgrind", "--disable-valgrind"),
+        "vulkan": ("--enable-vulkan", "--disable-vulkan"),
+        "wayland": ("--enable-wayland", "--disable-wayland"),
+        "webp": ("--with-webp", "--without-webp"),
+    },
     version = "4.0.2",
     description = "3D creation suite for modeling, animation, rendering and more",
     homepage = "https://www.blender.org/",
     license = "GPL-3.0-or-later",
-    pre_configure = """
-mkdir -p build
-cd build
-cmake .. \
-    -DCMAKE_INSTALL_PREFIX=/usr \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DWITH_INSTALL_PORTABLE=OFF \
-    -DWITH_PYTHON_INSTALL=OFF \
-    -DWITH_CYCLES=ON \
-    -DWITH_CYCLES_CUDA_BINARIES=OFF \
-    -DWITH_CYCLES_HIP_BINARIES=OFF \
-    -DWITH_CYCLES_ONEAPI_BINARIES=OFF \
-    -DWITH_OPENCOLORIO=ON \
-    -DWITH_OPENIMAGEIO=ON \
-    -DWITH_OPENSUBDIV=ON \
-    -DWITH_OPENVDB=ON \
-    -DWITH_ALEMBIC=ON \
-    -DWITH_CODEC_FFMPEG=ON \
-    -DWITH_CODEC_SNDFILE=ON \
-    -DWITH_FFTW3=ON \
-    -DWITH_SDL=ON \
-    -DWITH_JACK=ON \
-    -DWITH_PULSEAUDIO=ON \
-    -DWITH_MOD_OCEANSIM=ON \
-    -DWITH_LLVM=ON
-""",
     configure_args = [],
     make_args = ["-C", "build"],
-    post_install = """
+    post_install_cmds = ["""
 cd build
 DESTDIR=$OUT make install
 
 # Install desktop file and icons
 mkdir -p $OUT/usr/share/applications
 mkdir -p $OUT/usr/share/icons/hicolor/scalable/apps
-""",
+"""],
     deps = [
         "//packages/linux/lang/python:python",
-        "//packages/linux/dev-libs/boost:boost",
-        "//packages/linux/desktop/mesa:mesa",
-        "//packages/linux/dev-libs/openexr:openexr",
-        "//packages/linux/system/libs/image/openjpeg:openjpeg",
-        "//packages/linux/graphics/video/ffmpeg:ffmpeg",
-        "//packages/linux/dev-libs/fftw:fftw",
-        # "//packages/linux/dev-libs/opencolorio:opencolorio",  # TODO: not packaged yet
-        "//packages/linux/dev-libs/openimageio:openimageio",
-        "//packages/linux/dev-libs/openvdb:openvdb",
-        "//packages/linux/dev-libs/alembic:alembic",
-        "//packages/linux/system/libs/multimedia/sdl2:sdl2",
+                "//packages/linux/dev-libs/boost:boost",
+                "//packages/linux/desktop/mesa:mesa",
+                "//packages/linux/dev-libs/openexr:openexr",
+                "//packages/linux/system/libs/image/openjpeg:openjpeg",
+                "//packages/linux/dev-libs/math/fftw:fftw",
+                # "//packages/linux/dev-libs/opencolorio:opencolorio",
+                # TODO: not packaged yet
+                "//packages/linux/dev-libs/alembic:alembic",
+                "//packages/linux/system/libs/multimedia/sdl2:sdl2",
+                "//packages/linux/core/llvm:llvm-native"
     ],
-    bdepend = [
-        "//packages/linux/core/llvm:llvm",
-    ],
-    visibility = ["PUBLIC"],
 )

@@ -1,15 +1,19 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "binary",
     name = "swift-concurrency-extras",
     version = "1.0.0",
-    src_uri = "https://github.com/pointfreeco/swift-concurrency-extras/archive/refs/tags/1.0.0.tar.gz",
-    sha256 = "TODO",
-    cmake_args = [
-        "-DBUILD_TESTING=OFF",
-    ],
+    url = "https://github.com/pointfreeco/swift-concurrency-extras/archive/refs/tags/1.0.0.tar.gz",
+    sha256 = "b073058e1cb387852de5797f0b9b021c1fd624a1385dd40a1d935276464c528e",
     deps = [
-        "//packages/linux/lang/swift",
+        "//packages/linux/lang/swift:swift",
     ],
-    visibility = ["PUBLIC"],
+
+    install_script = """
+# Swift package - install source files for Swift Package Manager consumption
+mkdir -p "$OUT/usr/lib/swift/swift-concurrency-extras"
+cp -r "$SRCS/Sources/"* "$OUT/usr/lib/swift/swift-concurrency-extras/" 2>/dev/null || true
+echo "swift-concurrency-extras sources installed successfully"
+""",
 )

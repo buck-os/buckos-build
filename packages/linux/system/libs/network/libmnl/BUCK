@@ -1,0 +1,30 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "libmnl",
+    version = "1.0.5",
+    url = "https://www.netfilter.org/projects/libmnl/files/libmnl-1.0.5.tar.bz2",
+    sha256 = "274b9b919ef3152bfb3da3a13c950dd60d6e2bcd54230ffeca298d03b40d0525",
+
+    description = "Minimalistic Netlink communication library",
+    homepage = "https://www.netfilter.org/projects/libmnl/",
+    license = "LGPL-2.1",
+
+    use_configure = {
+        "static-libs": ("--enable-static", "--disable-static"),
+    },
+
+    configure_args = [
+        "--prefix=/usr",
+        "--sysconfdir=/etc",
+        "--enable-shared",
+    ],
+
+    post_install_cmds = ["""
+find "$DESTDIR" -name "*.la" -delete
+"""],
+
+    deps = [],
+
+)

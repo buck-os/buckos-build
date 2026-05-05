@@ -16,13 +16,13 @@ alias(
 
 alias(
     name = "openssl",
-    actual = "//packages/linux/network/openssl:openssl",
+    actual = "//packages/linux/system/libs/crypto/openssl:openssl",
     visibility = ["PUBLIC"],
 )
 
 alias(
     name = "curl",
-    actual = "//packages/linux/network/curl:curl",
+    actual = "//packages/linux/system/libs/network/curl:curl",
     visibility = ["PUBLIC"],
 )
 
@@ -39,9 +39,9 @@ alias(
 filegroup(
     name = "crypto-libs",
     srcs = [
-        "//packages/linux/network/openssl:openssl",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
         "//packages/linux/network/ca-certificates:ca-certificates",
-        "//packages/linux/network/nghttp2:nghttp2",
+        "//packages/linux/system/libs/network/nghttp2:nghttp2",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],
@@ -54,9 +54,8 @@ filegroup(
 filegroup(
     name = "transfer-utils",
     srcs = [
-        "//packages/linux/network/curl:curl",
+        "//packages/linux/system/libs/network/curl:curl",
         "//packages/linux/network/wget:wget",
-        "//packages/linux/network/aria2:aria2",
         "//packages/linux/system/apps/rsync:rsync",
     ],
     default_target_platform = "//platforms:linux-target",
@@ -71,8 +70,6 @@ filegroup(
     name = "browsers",
     srcs = [
         "//packages/linux/www/lynx:lynx",
-        "//packages/linux/www/links:links",
-        "//packages/linux/www/w3m:w3m",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],
@@ -87,7 +84,6 @@ filegroup(
     srcs = [
         "//packages/linux/network/iproute2:iproute2",
         "//packages/linux/network/iputils:iputils",
-        "//packages/linux/network/net-tools:net-tools",
         "//packages/linux/network/dhcpcd:dhcpcd",
         "//packages/linux/network/ethtool:ethtool",
     ],
@@ -154,10 +150,7 @@ filegroup(
 filegroup(
     name = "packet-capture",
     srcs = [
-        "//packages/linux/network/libpcap:libpcap",
-        "//packages/linux/network/tcpdump:tcpdump",
-        "//packages/linux/network/ngrep:ngrep",
-        "//packages/linux/network/tshark:tshark",
+        "//packages/linux/network/libs/libpcap:libpcap",
         "//packages/linux/network/wireshark:wireshark",
     ],
     default_target_platform = "//platforms:linux-target",
@@ -167,10 +160,8 @@ filegroup(
 filegroup(
     name = "bandwidth-monitors",
     srcs = [
-        "//packages/linux/network/iftop:iftop",
         "//packages/linux/network/bmon:bmon",
         "//packages/linux/network/vnstat:vnstat",
-        "//packages/linux/network/darkstat:darkstat",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],
@@ -179,10 +170,9 @@ filegroup(
 filegroup(
     name = "network-diagnostics",
     srcs = [
-        "//packages/linux/network/mtr:mtr",
         "//packages/linux/network/fping:fping",
         "//packages/linux/network/arping:arping",
-        "//packages/linux/network/iperf3:iperf3",
+        "//packages/linux/benchmarks/iperf3:iperf3",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],
@@ -191,10 +181,7 @@ filegroup(
 filegroup(
     name = "security-scanners",
     srcs = [
-        "//packages/linux/network/nmap:nmap",
         "//packages/linux/network/masscan:masscan",
-        "//packages/linux/network/hping3:hping3",
-        "//packages/linux/network/ettercap:ettercap",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],

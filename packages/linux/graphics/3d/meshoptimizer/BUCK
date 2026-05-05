@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "meshoptimizer",
     version = "0.23",
-    src_uri = "https://github.com/zeux/meshoptimizer/archive/refs/tags/v0.23.tar.gz",
+    url = "https://github.com/zeux/meshoptimizer/archive/refs/tags/v0.23.tar.gz",
     sha256 = "ac574107dd7e532ecfbea208fff9cd18fbcd1687f1d540ff8a798624ada453e0",
-    cmake_args = [
+    configure_args = [
         "-DMESHOPT_BUILD_SHARED_LIBS=OFF",
         "-DMESHOPT_BUILD_DEMO=OFF",
         "-DMESHOPT_BUILD_GLTFPACK=OFF",

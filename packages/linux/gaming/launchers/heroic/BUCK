@@ -1,27 +1,26 @@
+load("//defs:package.bzl", "package")
+
 # Heroic Games Launcher
 # Open source GOG and Epic Games Launcher for Linux
 
-load("//defs:package_defs.bzl", "binary_package", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
-
-download_source(
-    name = "heroic-src",
-    src_uri = "https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher/releases/download/v2.15.2/heroic-2.15.2.tar.xz",
-    sha256 = "974c03d22d11f8a761c089629557370b8f3f2258b9ad957443bdad26409ab128",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "heroic",
-    srcs = [":heroic-src"],
     version = "2.15.2",
+    url = "https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher/archive/refs/tags/v2.15.2.tar.gz",
+    sha256 = "f97eb1c642f054e98641cada20e46b6e4f5b3e9bae3569657afd18575904756f",
     description = "GOG and Epic Games Launcher for Linux",
     homepage = "https://heroicgameslauncher.com/",
     license = "GPL-3.0",
     install_script = """
-# Install Heroic to /opt (source is already extracted to $SRCS)
+#!/bin/bash
+set -e
+
+# Install Heroic to /opt
 mkdir -p "$OUT/opt/heroic"
-cp -r "$SRCS/"* "$OUT/opt/heroic/"
+
+# Copy files carefully - avoid any executables being run
+find "$SRCS" -maxdepth 1 -mindepth 1 -print0 | xargs -0 -I{} cp -a {} "$OUT/opt/heroic/" || cp -a "$SRCS"/* "$OUT/opt/heroic/"
 
 # Create symlink
 mkdir -p "$OUT/usr/bin"
@@ -29,25 +28,13 @@ ln -sf /opt/heroic/heroic "$OUT/usr/bin/heroic"
 
 # Install desktop entry
 mkdir -p "$OUT/usr/share/applications"
-cat > "$OUT/usr/share/applications/heroic.desktop" << 'EOF'
-[Desktop Entry]
-Name=Heroic Games Launcher
-Comment=Open Source GOG and Epic Games Launcher
-Exec=/opt/heroic/heroic %U
-Icon=heroic
-Terminal=false
-Type=Application
-Categories=Game;
-MimeType=x-scheme-handler/heroic;
-EOF
+printf '%s\\n' '[Desktop Entry]' 'Name=Heroic Games Launcher' 'Comment=Open Source GOG and Epic Games Launcher' 'Exec=/opt/heroic/heroic %U' 'Icon=heroic' 'Terminal=false' 'Type=Application' 'Categories=Game;' 'MimeType=x-scheme-handler/heroic;' > "$OUT/usr/share/applications/heroic.desktop"
 
-# Install icon
+# Install icon if available
 mkdir -p "$OUT/usr/share/icons/hicolor/512x512/apps"
-cp "$OUT/opt/heroic/resources/app.asar.unpacked/build/icon.png" \
-    "$OUT/usr/share/icons/hicolor/512x512/apps/heroic.png" 2>/dev/null || true
+if [ -f "$OUT/opt/heroic/resources/app.asar.unpacked/build/icon.png" ]; then
+    cp "$OUT/opt/heroic/resources/app.asar.unpacked/build/icon.png" "$OUT/usr/share/icons/hicolor/512x512/apps/heroic.png"
+fi
     """,
-    deps = [
-        "//packages/linux/core/glibc:glibc",
-    ],
-    visibility = ["PUBLIC"],
+    deps = [],
 )

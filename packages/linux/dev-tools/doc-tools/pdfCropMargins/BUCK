@@ -1,15 +1,15 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "pdfCropMargins",
-    version = "1.0.9",
-    src_uri = "https://github.com/abarker/pdfCropMargins/archive/refs/tags/v1.0.9.tar.gz",
-    sha256 = "TODO",
+    version = "2.2.1",
+    url = "https://github.com/abarker/pdfCropMargins/archive/refs/tags/release_2.2.1.tar.gz",
+    sha256 = "53e56228359c484fac45f63b441e669cfee4264524d0414a69c36513e1967a86",
     description = "A command-line program to crop the margins of PDF files",
     homepage = "https://github.com/abarker/pdfCropMargins",
     license = "GPL-3.0",
     deps = [
         "//packages/linux/lang/python:python",
     ],
-    visibility = ["PUBLIC"],
 )

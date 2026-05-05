@@ -1,101 +1,91 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
-load("//defs:eclasses.bzl", "inherit")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-# Automake cannot use autotools_package because it would create a circular dependency
-# (autotools eclass depends on automake). Build it manually instead.
-download_source(
-    name = "automake-src",
-    src_uri = "https://mirrors.kernel.org/gnu/automake/automake-1.16.5.tar.xz",
-    sha256 = "f01d58cd6d9d77fbdca9eb4bbd5ead1988228fdb73d6f7a201f5f8d6b118b469",
-    signature_sha256 = "3a161ab65921eed55e1a94251d97c8451d4ba3431b55ca560e95a951b5f1d73a",
-    signature_required = False,
-)
-
-ebuild_package(
+package(
+    build_rule = "autotools",
     name = "automake",
-    source = ":automake-src",
     version = "1.16.5",
-    category = "dev-tools/build-systems",
-    slot = "0",
+    url = "https://mirror.buckos.org/a/automake-1.16.5.tar.xz",
+    sha256 = "f01d58cd6d9d77fbdca9eb4bbd5ead1988228fdb73d6f7a201f5f8d6b118b469",
     description = "Tool for generating GNU Standards-compliant Makefiles",
     homepage = "https://www.gnu.org/software/automake/",
-    license = "GPL-2+",
+    license = "GPL-2.0+",
+    pre_configure_cmds = [
+        # Prevent make from trying to regenerate aclocal.m4 — the tarball
+        # ships with pre-generated files but the Makefile has a dependency
+        # on aclocal-1.16 which is what we are building.
+        "touch aclocal.m4 configure Makefile.in */Makefile.in */*/Makefile.in 2>/dev/null || true",
+    ],
+    pre_build_cmds = [
+        # Stub the doc/help2man script — it tries to run the versioned
+        # binaries (aclocal-1.16, automake-1.16) that we are building.
+        "printf '#!/bin/sh\\nfor arg; do case \"$arg\" in --output=*) f=\"${arg#--output=}\"; echo \".TH A 1\" > \"$f\"; exit 0;; esac; done\\nexit 0\\n' > doc/help2man && chmod +x doc/help2man",
+        # Touch amhello tarball — its recipe runs aclocal-1.16 which we
+        # are currently building.
+        "touch doc/amhello-1.0.tar.gz",
+    ],
+    make_args = [
+        # Stub out makeinfo — the build host may not have texinfo installed.
+        "MAKEINFO=true",
+    ],
+    post_install_cmds = [
+        # Create wrapper scripts so aclocal/automake find their m4 macros
+        # when run from Buck2 sandboxed paths instead of /usr/share/...
+        """
+        BINDIR="$DESTDIR/usr/bin"
+        VER="1.16"
 
-    pre_configure = '''
-# Create custom autom4te.cfg with correct paths for Buck build environment
-for dep_dir in $(echo $DEP_BASE_DIRS | tr ':' ' '); do
-    if [ -d "$dep_dir/usr/share/autoconf" ] && [ -f "$dep_dir/usr/share/autoconf/autom4te.cfg" ]; then
-        echo "Found autoconf in: $dep_dir"
+        # Wrap aclocal and aclocal-$VER
+        for tool in aclocal "aclocal-$VER"; do
+            if [ -f "$BINDIR/$tool" ]; then
+                mv "$BINDIR/$tool" "$BINDIR/${tool}.real"
+                cat > "$BINDIR/$tool" << WRAPPER_EOF
+#!/bin/sh
+SCRIPT_DIR="\\$(cd "\\$(dirname "\\$0")" && pwd)"
+SHARE="\\${SCRIPT_DIR}/../share"
+export AUTOMAKE_UNINSTALLED=1
+export PERL5LIB="\\$SHARE/automake-$VER:\\${PERL5LIB:+:\\$PERL5LIB}"
+export ACLOCAL_AUTOMAKE_DIR="\\$SHARE/aclocal-$VER"
+exec "\\$SCRIPT_DIR/${tool}.real" --automake-acdir="\\$SHARE/aclocal-$VER" --system-acdir="\\$SHARE/aclocal" "\\$@"
+WRAPPER_EOF
+                chmod +x "$BINDIR/$tool"
+            fi
+        done
 
-        # Create custom autom4te.cfg with Buck-specific paths
-        mkdir -p "$T/autoconf-config"
-        sed "s|--prepend-include '/usr/share/autoconf'|--prepend-include '$dep_dir/usr/share/autoconf'|g" \
-            "$dep_dir/usr/share/autoconf/autom4te.cfg" > "$T/autoconf-config/autom4te.cfg"
+        # Rewrite shebangs in .real scripts from absolute buck-out perl
+        # paths to portable #!/usr/bin/env perl — absolute paths become
+        # stale when actions are cached on one machine and restored on another.
+        for real in "\\$BINDIR"/*.real; do
+            [ -f "\\$real" ] || continue
+            head -1 "\\$real" | grep -q '/perl' || continue
+            sed -i '1 s|.*|#!/usr/bin/env perl|' "\\$real"
+        done
 
-        # Export environment variables for autoconf tools
-        export AUTOM4TE="$dep_dir/usr/bin/autom4te"
-        export AUTOM4TE_CFG="$T/autoconf-config/autom4te.cfg"
-        export PERL5LIB="$dep_dir/usr/share/autoconf:${PERL5LIB:-}"
-        export AC_MACRODIR="$dep_dir/usr/share/autoconf"
-        export M4PATH="$dep_dir/usr/share/autoconf"
-        export PATH="$dep_dir/usr/bin:$PATH"
-
-        echo "Created custom autom4te.cfg at: $T/autoconf-config/autom4te.cfg"
-        echo "Testing autoconf:"
-        which autoconf
-        autoconf --version 2>&1 | head -1 || echo "autoconf test failed"
-        echo "AUTOM4TE_CFG=$AUTOM4TE_CFG"
-        break
-    fi
-done
-''',
-
-    src_configure = '''
-# Re-export environment variables (they don't persist from pre_configure)
-for dep_dir in $(echo $DEP_BASE_DIRS | tr ':' ' '); do
-    if [ -f "$T/autoconf-config/autom4te.cfg" ]; then
-        export AUTOM4TE_CFG="$T/autoconf-config/autom4te.cfg"
-        export PERL5LIB="$dep_dir/usr/share/autoconf:${PERL5LIB:-}"
-        export AC_MACRODIR="$dep_dir/usr/share/autoconf"
-        export M4PATH="$dep_dir/usr/share/autoconf"
-        export autom4te_perllibdir="$dep_dir/usr/share/autoconf"
-        export trailer_m4="$dep_dir/usr/share/autoconf/autoconf/trailer.m4"
-        echo "src_configure: Re-exported environment variables"
-        break
-    fi
-done
-echo "src_configure: AUTOM4TE_CFG=$AUTOM4TE_CFG"
-echo "src_configure: trailer_m4=$trailer_m4"
-echo "src_configure: PATH=$PATH"
-which autoconf
-autoconf --version 2>&1 | head -1 || echo "autoconf not working"
-
-# Bypass autoconf working test by pre-caching the result
-./configure \\
-    ac_cv_prog_AUTOCONF_works=yes \\
-    --prefix=/usr \\
-    --build=$(gcc -dumpmachine) \\
-    --host=$(gcc -dumpmachine) \\
-    --mandir=/usr/share/man \\
-    --infodir=/usr/share/info \\
-    --datadir=/usr/share \\
-    --sysconfdir=/etc \\
-    --localstatedir=/var \\
-    --libdir=/usr/lib64 \\
-    --disable-doc
-''',
-
-    src_compile = '''
-make -j$(nproc)
-''',
-
-    src_install = '''
-make DESTDIR="$DESTDIR" install
-''',
-
-    bdepend = [
+        # Wrap automake and automake-$VER
+        for tool in automake "automake-$VER"; do
+            if [ -f "$BINDIR/$tool" ]; then
+                mv "$BINDIR/$tool" "$BINDIR/${tool}.real"
+                cat > "$BINDIR/$tool" << WRAPPER_EOF
+#!/bin/sh
+SCRIPT_DIR="\\$(cd "\\$(dirname "\\$0")" && pwd)"
+SHARE="\\${SCRIPT_DIR}/../share"
+export AUTOMAKE_UNINSTALLED=1
+export PERL5LIB="\\$SHARE/automake-$VER:\\${PERL5LIB:+:\\$PERL5LIB}"
+export AUTOMAKE_LIBDIR="\\$SHARE/automake-$VER"
+# automake traces macros via \$AUTOCONF (defaults to 'true' = no-op)
+AUTOCONF_BIN="\\$(command -v autoconf 2>/dev/null)"
+[ -n "\\$AUTOCONF_BIN" ] && export AUTOCONF="\\$AUTOCONF_BIN"
+exec "\\$SCRIPT_DIR/${tool}.real" "\\$@"
+WRAPPER_EOF
+                chmod +x "$BINDIR/$tool"
+            fi
+        done
+        """,
+    ],
+    deps = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+    ],
+    host_deps = [
+        "//packages/linux/lang/perl:perl",
     ],
     visibility = ["PUBLIC"],
 )

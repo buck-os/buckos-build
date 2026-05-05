@@ -1,0 +1,33 @@
+diff --git a/meson.build b/meson.build
+index 1c8667a..c82f1fb 100644
+--- a/meson.build
++++ b/meson.build
+@@ -1983,23 +1983,25 @@ if with_osmesa
+   if host_machine.system() == 'windows'
+     osmesa_lib_name = 'osmesa'
+   else
+     osmesa_lib_name = 'OSMesa'
+   endif
+ endif
+ 
+ # TODO: symbol mangling
+ 
+ if with_platform_wayland
+-  dep_wl_scanner = dependency('wayland-scanner', native: true)
+-  prog_wl_scanner = find_program(dep_wl_scanner.get_variable(pkgconfig : 'wayland_scanner'))
+-  if dep_wl_scanner.version().version_compare('>= 1.15')
++  # Patched: use find_program instead of dependency for wayland-scanner
++  prog_wl_scanner = find_program('wayland-scanner', native: true)
++  # (program found above via find_program)
++  # Patched: wayland-scanner 1.23.1 >= 1.15, always use private-code
++  if true
+     wl_scanner_arg = 'private-code'
+   else
+     wl_scanner_arg = 'code'
+   endif
+   dep_wl_protocols = dependency('wayland-protocols', version : '>= 1.30')
+   dep_wayland_client = dependency('wayland-client', version : '>=1.18')
+   dep_wayland_server = dependency('wayland-server', version : '>=1.18')
+   if with_egl
+     dep_wayland_egl = dependency('wayland-egl-backend', version : '>= 3')
+     dep_wayland_egl_headers = dep_wayland_egl.partial_dependency(compile_args : true)

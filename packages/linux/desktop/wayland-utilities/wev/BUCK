@@ -1,23 +1,26 @@
-load("//defs:package_defs.bzl", "download_source", "meson_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "wev-src",
-    src_uri = "https://git.sr.ht/~sircmpwn/wev/archive/1.0.0.tar.gz",
-    sha256 = "613a1df1a4879d50ce72023de14aaf05be2e6f51346e84a69f50fc6d8502bbf4",
-    signature_required = False,
-)
-
-meson_package(
+package(
+    build_rule = "autotools",
     name = "wev",
-    source = ":wev-src",
     version = "1.0.0",
+    url = "https://git.sr.ht/~sircmpwn/wev/archive/1.0.0.tar.gz",
+    sha256 = "613a1df1a4879d50ce72023de14aaf05be2e6f51346e84a69f50fc6d8502bbf4",
+    skip_configure = True,
     description = "Wayland event viewer",
     homepage = "https://git.sr.ht/~sircmpwn/wev",
     license = "MIT",
-    meson_args = [],
-    deps = [
-        "//packages/linux/desktop/wayland:wayland",
-        "//packages/linux/desktop/wayland:wayland-protocols",
+    make_args = ["wev"],
+    pre_configure_cmds = [
+        "sed -i 's|$(LIBS) -lrt|$(LIBS) -lrt $(LDFLAGS)|' Makefile",
+        "echo 'no-scdoc' > wev.1",
     ],
-    visibility = ["PUBLIC"],
+    install_args = ["PREFIX=/usr"],
+    deps = [
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/graphics/rendering/wayland:wayland",
+        "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
+        "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
+        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
+    ],
 )

@@ -13,7 +13,6 @@ filegroup(
         "//packages/linux/system/libs/image/libjpeg-turbo:libjpeg-turbo",
         "//packages/linux/system/libs/image/libwebp:libwebp",
         "//packages/linux/system/libs/image/libtiff:libtiff",
-        "//packages/linux/system/libs/image/giflib:giflib",
         "//packages/linux/system/libs/image/openjpeg:openjpeg",
     ],
     default_target_platform = "//platforms:linux-target",
@@ -38,7 +37,7 @@ filegroup(
 filegroup(
     name = "graphics-libs",
     srcs = [
-        "//packages/linux/system/libs/graphics/pixman:pixman",
+        "//packages/linux/system/security/auth/biometric:pixman",
         "//packages/linux/system/libs/graphics/cairo:cairo",
     ],
     default_target_platform = "//platforms:linux-target",
@@ -79,7 +78,6 @@ filegroup(
     name = "video-libs",
     srcs = [
         "//packages/linux/system/libs/video/theora:theora",
-        "//packages/linux/system/libs/video/libass:libass",
         "//packages/linux/system/libs/video/libdvdcss:libdvdcss",
         "//packages/linux/system/libs/video/libdvdread:libdvdread",
         "//packages/linux/system/libs/video/libdvdnav:libdvdnav",
@@ -288,12 +286,11 @@ filegroup(
     name = "utility-libs",
     srcs = [
         "//packages/linux/system/libs/utility/pcre2:pcre2",
-        "//packages/linux/system/libs/utility/icu:icu",
+        "//packages/linux/system/libs/utility/icu:icu-native",
         "//packages/linux/system/libs/utility/gmp:gmp",
         "//packages/linux/system/libs/utility/libffi:libffi",
         "//packages/linux/system/libs/utility/libevent:libevent",
         "//packages/linux/system/libs/utility/libuv:libuv",
-        "//packages/linux/system/libs/compression/libarchive:libarchive",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],

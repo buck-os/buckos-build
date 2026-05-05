@@ -1,24 +1,36 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "softfloat-src",
-    src_uri = "http://www.jhauser.us/arithmetic/SoftFloat-3e.zip",
-    sha256 = "21130ce885d35c1fe73fc1e1bf2244178167e05c6747cad5f450cc991714c746",
-)
-
-ebuild_package(
+package(
     name = "softfloat",
+    build_rule = "binary",
     version = "3e",
-    source = ":softfloat-src",
-    src_configure = ":",
-    src_compile = """
-        cd build/Linux-x86_64-GCC
-        make SOURCE_DIR=../../source COMPILE_C="$CC -c -fPIC -Werror-implicit-function-declaration -DSOFTFLOAT_FAST_INT64 -DSOFTFLOAT_ROUND_ODD -DINLINE_LEVEL=5 -DSOFTFLOAT_FAST_DIV32TO16 -DSOFTFLOAT_FAST_DIV64TO32 -I. -I../../source/8086-SSE -I../../source/include $CFLAGS -o"
-    """,
-    src_install = """
-        mkdir -p $D/usr/lib $D/usr/include/softfloat
-        cp build/Linux-x86_64-GCC/softfloat.a $D/usr/lib/libsoftfloat.a
-        cp source/include/*.h $D/usr/include/softfloat/
-    """,
+    url = "https://www.jhauser.us/arithmetic/SoftFloat-3e.zip",
+    sha256 = "21130ce885d35c1fe73fc1e1bf2244178167e05c6747cad5f450cc991714c746",
+    description = "Berkeley SoftFloat IEEE floating-point arithmetic library",
+    license = "BSD-3-Clause",
+    install_script = """
+mkdir -p "$OUT"
+BUILD=$(mktemp -d)
+cp -a "$SRCS"/. "$BUILD/"
+cd "$BUILD"
+
+# Source may extract with or without a SoftFloat-3e/ subdirectory
+if [ -d SoftFloat-3e/build/Linux-x86_64-GCC ]; then
+    SFDIR=SoftFloat-3e
+elif [ -d build/Linux-x86_64-GCC ]; then
+    SFDIR=.
+else
+    echo "Error: build/Linux-x86_64-GCC directory not found"
+    find . -type d | head -20
+    exit 1
+fi
+cd "$SFDIR/build/Linux-x86_64-GCC"
+# Override COMPILE_C since Makefile defaults to just 'c' not '$(CC)'
+make SOURCE_DIR=../../source CC="${CC:-gcc}" COMPILE_C='$(CC) -c -fPIC -Werror-implicit-function-declaration -DSOFTFLOAT_FAST_INT64 -DSOFTFLOAT_ROUND_ODD -DINLINE_LEVEL=5 -DSOFTFLOAT_FAST_DIV32TO16 -DSOFTFLOAT_FAST_DIV64TO32 -I. -I../../source/8086-SSE -I../../source/include'
+
+mkdir -p "$OUT/usr/lib" "$OUT/usr/include/softfloat"
+cp softfloat.a "$OUT/usr/lib/libsoftfloat.a"
+cp ../../source/include/*.h "$OUT/usr/include/softfloat/"
+""",
     visibility = ["PUBLIC"],
 )

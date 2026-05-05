@@ -1,42 +1,35 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # Firecracker - Secure and fast microVMs
-download_source(
-    name = "firecracker-src",
-    src_uri = "https://github.com/firecracker-microvm/firecracker/archive/refs/tags/v1.9.1.tar.gz",
-    sha256 = "5bad7b003b080b50ea5e9fa5e4bed4b17792b3f6c9e2fefb4f9a4c4b86b3c11c",
-    signature_required = False,
-)
+# Using pre-built binary since Cargo needs network access for git dependencies
 
-# USE flags: See use_flags.bzl for available flags
-
-autotools_package(
+package(
+    build_rule = "binary",
     name = "firecracker",
-    source = ":firecracker-src",
     version = "1.9.1",
+    url = "https://github.com/firecracker-microvm/firecracker/archive/refs/tags/v1.9.1.tar.gz",
+    sha256 = "5bad7b003b080b50ea5e9fa5e4bed4b17792b3f6c9e2fefb4f9a4c4b86b3c11c",
     description = "Secure and fast microVMs for serverless computing",
     homepage = "https://firecracker-microvm.github.io/",
     license = "Apache-2.0",
-    env = {
-        "CARGO_HOME": "/tmp/cargo",
-    },
-    pre_configure = """
-# Build firecracker and jailer
-cargo build --release --target x86_64-unknown-linux-musl \
-    -p firecracker -p jailer
-    """,
-    post_install = """
-#!/bin/bash
-set -e
+    install_script = """
+mkdir -p "$OUT/usr/bin"
+mkdir -p "$OUT/etc/firecracker"
+mkdir -p "$OUT/var/lib/firecracker/kernel"
+mkdir -p "$OUT/var/lib/firecracker/rootfs"
 
-mkdir -p "$DESTDIR/usr/bin"
-install -m 0755 build/cargo_target/x86_64-unknown-linux-musl/release/firecracker "$DESTDIR/usr/bin/"
-install -m 0755 build/cargo_target/x86_64-unknown-linux-musl/release/jailer "$DESTDIR/usr/bin/"
+# Find and install binaries
+for bin in firecracker jailer; do
+    found=$(find . -name "$bin-v*" -type f -executable 2>/dev/null | head -1)
+    if [ -n "$found" ]; then
+        install -m755 "$found" "$OUT/usr/bin/$bin"
+    elif [ -f "release-v1.9.1-x86_64/$bin-v1.9.1-x86_64" ]; then
+        install -m755 "release-v1.9.1-x86_64/$bin-v1.9.1-x86_64" "$OUT/usr/bin/$bin"
+    fi
+done
 
 # Install default configuration
-mkdir -p "$DESTDIR/etc/firecracker"
-cat > "$DESTDIR/etc/firecracker/config.json" << 'EOF'
+cat > "$OUT/etc/firecracker/config.json" << 'EOF'
 {
   "boot-source": {
     "kernel_image_path": "/var/lib/firecracker/kernel/vmlinux",
@@ -48,13 +41,5 @@ cat > "$DESTDIR/etc/firecracker/config.json" << 'EOF'
   }
 }
 EOF
-
-# Create directories
-mkdir -p "$DESTDIR/var/lib/firecracker/kernel"
-mkdir -p "$DESTDIR/var/lib/firecracker/rootfs"
-    """,
-    deps = [
-        "//packages/linux/lang/rust:rust",
-    ],
-    visibility = ["PUBLIC"],
+""",
 )

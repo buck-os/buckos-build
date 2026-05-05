@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "uco3d",
     version = "1.0",
-    src_uri = "https://github.com/facebookresearch/uco3d/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/facebookresearch/uco3d/archive/refs/heads/main.tar.gz",
     sha256 = "71e699c47f225640e869fd60e8e31b003cfc2f7dacda3a57858870df18c8838d",
     description = "Unified Common Objects in 3D dataset and loader",
     homepage = "https://github.com/facebookresearch/uco3d",
@@ -11,8 +12,6 @@ python_package(
     deps = [
         "//packages/linux/lang/python:python",
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
-        "//packages/linux/dev-libs/python/numpy:numpy",
-        "//packages/linux/dev-libs/python/scipy:scipy",
         "//packages/linux/dev-libs/python/pandas:pandas",
         "//packages/linux/dev-libs/python/matplotlib:matplotlib",
         "//packages/linux/dev-libs/python/h5py:h5py",

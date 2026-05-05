@@ -1,23 +1,22 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # lzip - Lossless data compressor based on LZMA algorithm
-# Uses non-autoconf configure script
-autotools_package(
+# Uses non-autoconf configure script (no autoreconf needed)
+package(
+    build_rule = "autotools",
     name = "lzip",
+    # No autotools bdepend needed - uses custom configure
+    # No autoreconf - lzip has its own configure script
     version = "1.24",
-    src_uri = "https://github.com/fenix-soft/lzip/archive/refs/tags/1.24.tar.gz",
+    url = "https://github.com/fenix-soft/lzip/archive/refs/tags/1.24.tar.gz",
     sha256 = "fa5e662738389b4297fc196a760287bbce6d7693b3f5ef98be53e782c923d8c8",
-    signature_required = False,
     description = "Lossless data compressor based on LZMA algorithm",
     homepage = "https://www.nongnu.org/lzip/",
     license = "GPL-2.0-or-later",
-    # lzip uses a custom configure script that takes CC/CXX as env vars
-    # GitHub tarballs may not have execute permission on configure
-    src_configure = """
-chmod +x configure
-./configure --prefix=/usr CXX=g++
-""",
+    # lzip uses a hand-written configure that ignores CC/CXX from env —
+    # must be passed as command-line KEY=VALUE args so GCC specs
+    # (padded interpreter, $ORIGIN RPATH) are applied at link time.
+    cc_as_configure_arg = True,
+    skip_host_arg = True,
     deps = [],
-    visibility = ["PUBLIC"],
 )

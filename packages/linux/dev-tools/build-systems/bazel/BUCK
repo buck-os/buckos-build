@@ -1,18 +1,21 @@
-load("//defs:package_defs.bzl", "simple_package")
+load("//defs:package.bzl", "package")
 
-# Bazel - Build and test tool
+# Bazel - Fast, scalable, multi-language and extensible build system
+# Using prebuilt binary since Bazel requires Bazel to build itself
 
-simple_package(
+package(
+    build_rule = "binary",
     name = "bazel",
     version = "7.0.2",
-    src_uri = "https://github.com/bazelbuild/bazel/releases/download/7.0.2/bazel-7.0.2-linux-x86_64",
-    sha256 = "TODO",
+    url = "https://github.com/bazelbuild/bazel/archive/refs/tags/7.0.2.tar.gz",
+    sha256 = "6ea93fbb1f8f124776a5c97deed28bd1206378919ea1c6b05b748910814f1e27",
     description = "Fast, scalable, multi-language and extensible build system",
     homepage = "https://bazel.build/",
     license = "Apache-2.0",
+    install_script = """
+        mkdir -p "$OUT/usr/bin"
+        # The source is a single binary file, find and install it
+        find "$SRCS" -type f -exec install -Dm755 {} "$OUT/usr/bin/bazel" \;
+    """,
     deps = [],
-    build_commands = [
-        "install -Dm755 bazel-7.0.2-linux-x86_64 ${PREFIX}/bin/bazel",
-    ],
-    visibility = ["PUBLIC"],
 )

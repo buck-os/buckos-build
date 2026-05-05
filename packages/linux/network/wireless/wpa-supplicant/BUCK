@@ -1,56 +1,18 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+# wpa_supplicant doesn't use autotools - it uses a Makefile with a .config file
+package(
     name = "wpa-supplicant",
+    build_rule = "autotools",
+    skip_configure = True,
     version = "2.10",
-    src_uri = "https://w1.fi/releases/wpa_supplicant-2.10.tar.gz",
+    url = "https://w1.fi/releases/wpa_supplicant-2.10.tar.gz",
     sha256 = "20df7ae5154b3830355f8ab4269123a87affdea59fe74fe9292a91d0d7e17b2f",
-    signature_sha256 = "5512ef486877b231fe4eef3240c2aec9bfb671c1fe2ceb4e5d9ac1f17caddfac",
-    signature_required = False,
 
-    iuse = ["ssl", "readline", "dbus", "wps", "mesh", "sae", "owe", "dpp", "fils"],
-    use_defaults = ["ssl", "readline", "wps", "mesh", "sae", "owe", "dpp", "fils"],
-
-    use_deps = {
-        "ssl": ["//packages/linux/network/openssl:openssl"],
-        "readline": ["//packages/linux/core/readline:readline"],
-    },
-
-    use_configure = {},
-
-    pre_configure = """
-cd wpa_supplicant
-cat > .config << 'EOF'
-CONFIG_BACKEND=file
-CONFIG_CTRL_IFACE=y
-CONFIG_DEBUG_FILE=y
-CONFIG_DEBUG_SYSLOG=y
-CONFIG_DRIVER_NL80211=y
-CONFIG_DRIVER_WEXT=y
-CONFIG_DRIVER_WIRED=y
-CONFIG_EAP_GTC=y
-CONFIG_EAP_LEAP=y
-CONFIG_EAP_MD5=y
-CONFIG_EAP_MSCHAPV2=y
-CONFIG_EAP_OTP=y
-CONFIG_EAP_PEAP=y
-CONFIG_EAP_TLS=y
-CONFIG_EAP_TTLS=y
-CONFIG_IEEE8021X_EAPOL=y
-CONFIG_PEERKEY=y
-CONFIG_PKCS12=y
-CONFIG_READLINE=y
-CONFIG_SMARTCARD=y
-CONFIG_WPS=y
-CONFIG_LIBNL32=y
-CONFIG_MESH=y
-CONFIG_SAE=y
-CONFIG_OWE=y
-CONFIG_DPP=y
-CONFIG_FILS=y
-EOF
-""",
+    # Create the .config file in the build dir before make
+    pre_build_cmds = [
+        "printf 'CONFIG_BACKEND=file\\nCONFIG_CTRL_IFACE=y\\nCONFIG_DEBUG_FILE=y\\nCONFIG_DEBUG_SYSLOG=y\\nCONFIG_DRIVER_NL80211=y\\nCONFIG_DRIVER_WEXT=y\\nCONFIG_DRIVER_WIRED=y\\nCONFIG_EAP_GTC=y\\nCONFIG_EAP_LEAP=y\\nCONFIG_EAP_MD5=y\\nCONFIG_EAP_MSCHAPV2=y\\nCONFIG_EAP_OTP=y\\nCONFIG_EAP_PEAP=y\\nCONFIG_EAP_TLS=y\\nCONFIG_EAP_TTLS=y\\nCONFIG_IEEE8021X_EAPOL=y\\nCONFIG_PKCS12=y\\nCONFIG_READLINE=y\\nCONFIG_SMARTCARD=y\\nCONFIG_WPS=y\\nCONFIG_LIBNL32=y\\nCONFIG_MESH=y\\nCONFIG_SAE=y\\nCONFIG_OWE=y\\nCONFIG_DPP=y\\nCONFIG_FILS=y\\nCONFIG_TLS=openssl\\n' > wpa_supplicant/.config",
+    ],
 
     make_args = [
         "-C", "wpa_supplicant",
@@ -58,28 +20,18 @@ EOF
         "LIBDIR=/lib",
     ],
 
-    post_install = """
-cd wpa_supplicant
-install -d "$DESTDIR/sbin"
-install -d "$DESTDIR/usr/share/man/man5"
-install -d "$DESTDIR/usr/share/man/man8"
-install -d "$DESTDIR/usr/share/dbus-1/system-services"
-install -d "$DESTDIR/etc/dbus-1/system.d"
-install -m 755 wpa_supplicant "$DESTDIR/sbin/"
-install -m 755 wpa_cli "$DESTDIR/sbin/"
-install -m 755 wpa_passphrase "$DESTDIR/sbin/"
-install -m 644 doc/docbook/*.5 "$DESTDIR/usr/share/man/man5/" 2>/dev/null || true
-install -m 644 doc/docbook/*.8 "$DESTDIR/usr/share/man/man8/" 2>/dev/null || true
-install -m 644 dbus/fi.w1.wpa_supplicant1.service "$DESTDIR/usr/share/dbus-1/system-services/" 2>/dev/null || true
-install -m 644 dbus/dbus-wpa_supplicant.conf "$DESTDIR/etc/dbus-1/system.d/" 2>/dev/null || true
-""",
+    post_install_cmds = [
+        "mkdir -p usr/lib/systemd/system && printf '[Unit]\\nDescription=WPA supplicant\\nBefore=network.target\\nAfter=dbus.service\\nWants=dbus.service\\n\\n[Service]\\nType=dbus\\nBusName=fi.w1.wpa_supplicant1\\nExecStart=/sbin/wpa_supplicant -u -s\\n\\n[Install]\\nWantedBy=multi-user.target\\nAlias=dbus-fi.w1.wpa_supplicant1.service\\n' > usr/lib/systemd/system/wpa_supplicant.service",
+    ],
 
     deps = [
-        "//packages/linux/core/ncurses:ncurses",
+        "//packages/linux/system/terminal/ncurses:ncurses",
+        "//packages/linux/system/terminal/readline:readline",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/core/libnl:libnl",
     ],
 
     description = "WPA/WPA2/WPA3 supplicant for wireless network authentication",
     homepage = "https://w1.fi/wpa_supplicant/",
     license = "BSD-3-Clause",
-    visibility = ["PUBLIC"],
 )

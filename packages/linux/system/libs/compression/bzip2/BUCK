@@ -1,40 +1,51 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+# bzip2 doesn't have a configure script and its Makefile doesn't support
+# DESTDIR.  Two make invocations are needed: one for the shared library
+# (with -fPIC) and one for the static library and binaries.
+package(
     name = "bzip2",
+    build_rule = "binary",
     version = "1.0.8",
-    src_uri = "https://mirrors.kernel.org/sourceware/bzip2/bzip2-1.0.8.tar.gz",
+    url = "https://mirrors.kernel.org/sourceware/bzip2/bzip2-1.0.8.tar.gz",
     sha256 = "ab5a03176ee106d3f0fa90e381da478ddae405918153cca248e682cd0c4a2269",
-    signature_sha256 = "c667e2db9a3cd17bde492584263cb7c30d8050538678ece3078ae58230e6e5e1",
-    signature_required = False,
     description = "High-quality block-sorting file compressor",
     homepage = "https://sourceware.org/bzip2/",
     license = "bzip2-1.0.6",
-    iuse = ["static-libs"],
-    use_defaults = [],
-    use_configure = {},
-    use_deps = {},
-    configure_args = [],
-    make_args = [
-        "-f",
-        "Makefile-libbz2_so",
-    ],
-    post_install = """
-# Install shared library
-install -Dm755 libbz2.so.1.0.8 "$DESTDIR/usr/lib/libbz2.so.1.0.8"
-ln -sf libbz2.so.1.0.8 "$DESTDIR/usr/lib/libbz2.so.1.0"
-ln -sf libbz2.so.1.0.8 "$DESTDIR/usr/lib/libbz2.so.1"
-ln -sf libbz2.so.1.0.8 "$DESTDIR/usr/lib/libbz2.so"
+    libraries = ["bz2"],
+    install_script = """
+mkdir -p "$OUT"
 
-# Install static library and headers if requested
-if [ "${USE_static_libs}" = "1" ]; then
-    make PREFIX="$DESTDIR/usr" install
-else
-    # Install only headers and binaries, not static lib
-    make PREFIX="$DESTDIR/usr" install
-    rm -f "$DESTDIR/usr/lib/libbz2.a"
-fi
+BUILD=$(mktemp -d)
+cp -a "$SRCS"/. "$BUILD/"
+cd "$BUILD"
+
+CC="${CC:-gcc}"
+
+# Build shared library (needs -fPIC)
+make -j$(nproc) CC="$CC" CFLAGS="-fPIC -O2 -g -D_FILE_OFFSET_BITS=64" PREFIX=/usr -f Makefile-libbz2_so
+
+# Save shared library object files
+mkdir -p sharedobj
+mv *.o sharedobj/ 2>/dev/null || true
+
+# Build static library and binaries
+make -j$(nproc) CC="$CC" CFLAGS="-O2 -g -D_FILE_OFFSET_BITS=64" PREFIX=/usr libbz2.a bzip2 bzip2recover
+
+# Restore shared object files
+mv sharedobj/*.o . 2>/dev/null || true
+rmdir sharedobj 2>/dev/null || true
+
+# Install
+make PREFIX="$OUT/usr" install
+
+# Install shared library.  Use copies instead of symlinks so the
+# library survives round-trips through Buck2 RE cache which may
+# not preserve internal directory symlinks.
+install -Dm755 libbz2.so.1.0.8 "$OUT/usr/lib/libbz2.so.1.0.8"
+cp -f "$OUT/usr/lib/libbz2.so.1.0.8" "$OUT/usr/lib/libbz2.so.1.0"
+cp -f "$OUT/usr/lib/libbz2.so.1.0.8" "$OUT/usr/lib/libbz2.so.1"
+cp -f "$OUT/usr/lib/libbz2.so.1.0.8" "$OUT/usr/lib/libbz2.so"
 """,
     deps = [],
     visibility = ["PUBLIC"],

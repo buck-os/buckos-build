@@ -1,0 +1,13 @@
+load("//defs/rules:acct.bzl", "acct_user_package")
+
+acct_user_package(
+    name = "polkitd",
+    uid = 87,
+    home = "/var/empty",
+    shell = "/sbin/nologin",
+    primary_group = "polkitd",
+    description = "System user for PolicyKit daemon",
+    deps = [
+        "//packages/acct-group/polkitd:polkitd",
+    ],
+)

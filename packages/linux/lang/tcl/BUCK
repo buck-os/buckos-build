@@ -1,32 +1,21 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package", "binary_package", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # Tcl - Tool Command Language
 # =============================================================================
 
-# Use official release tarball which includes generated configure script
-download_source(
-    name = "tcl-src",
-    src_uri = "https://prdownloads.sourceforge.net/tcl/tcl8.6.13-src.tar.gz",
-    sha256 = "43a1fae7412f61ff11de2cfd05d28cfc3a73762f354a417c62370a54e2caf066",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "tcl",
-    source = ":tcl-src",
     version = "8.6.13",
-    description = "Tcl is a very powerful but easy to learn dynamic programming language",
+    url = "https://prdownloads.sourceforge.net/tcl/tcl8.6.13-src.tar.gz",
+    sha256 = "43a1fae7412f61ff11de2cfd05d28cfc3a73762f354a417c62370a54e2caf066",
+    description = "Tool Command Language - scripting language",
     homepage = "https://www.tcl.tk/",
-    license = "TCL",
-    pre_configure = """
-        cd unix
-    """,
-    configure_args = [
-        "--prefix=/usr",
-        "--enable-threads",
-        "--enable-64bit",
-    ],
-    visibility = ["PUBLIC"],
+    license = "BSD",
+    # Tcl's configure is in the unix subdirectory
+    configure_script = "unix/configure",
+    post_install_cmds = ["""\
+ln -sf tclsh8.6 "$DESTDIR/usr/bin/tclsh"
+"""],
 )

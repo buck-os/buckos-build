@@ -1,71 +1,54 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # shadow - User and group management utilities
 # USE flags: pam, selinux, audit, acl, attr, nls, tcb, nscd
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "shadow",
     version = "4.14.8",
-    src_uri = "https://github.com/shadow-maint/shadow/releases/download/4.14.8/shadow-4.14.8.tar.xz",
+    url = "https://github.com/shadow-maint/shadow/releases/download/4.14.8/shadow-4.14.8.tar.xz",
     sha256 = "f09eabcc6972f8689813c4fc6b471dc25de435e50528ea2708a6431ebbed9209",
-    signature_sha256 = "d55c43949deac43a30d99b77f7813ff720ab22a995a642addf6ef8bc5049469f",
-    signature_required = False,
     description = "User and group management utilities (passwd, useradd, etc.)",
     homepage = "https://github.com/shadow-maint/shadow",
     license = "BSD",
-    iuse = ["pam", "selinux", "audit", "acl", "attr", "nls", "tcb", "nscd", "doc"],
-    use_defaults = ["pam"],
     use_deps = {
-        "pam": ["//packages/linux/system/security/auth/pam:pam"],
-        "selinux": ["//packages/linux/system/security/selinux:selinux"],
-        "audit": ["//packages/linux/system/security/audit:audit"],
-        "acl": ["//packages/linux/system/libs/ipc/acl:acl"],
-        "attr": ["//packages/linux/system/libs/ipc/attr:attr"],
+        "pam": "//packages/linux/system/security/auth/pam:pam",
+        "audit": "//packages/linux/system/security/audit:audit",
+        "acl": "//packages/linux/system/libs/ipc/acl:acl",
+        "attr": "//packages/linux/system/libs/ipc/attr:attr",
+        "systemd": "//packages/linux/system/init/systemd:systemd",
     },
     use_configure = {
-        "pam": "--with-libpam",
-        "-pam": "--without-libpam",
-        "selinux": "--with-selinux",
-        "-selinux": "--without-selinux",
-        "audit": "--with-audit",
-        "-audit": "--without-audit",
-        "acl": "--with-acl",
-        "-acl": "--without-acl",
-        "attr": "--with-attr",
-        "-attr": "--without-attr",
-        "nls": "--enable-nls",
-        "-nls": "--disable-nls",
-        "tcb": "--with-tcb",
-        "-tcb": "--without-tcb",
-        "nscd": "--with-nscd",
-        "-nscd": "--without-nscd",
-        "doc": "--enable-man",
-        "-doc": "--disable-man",
+        "acl": ("--with-acl", "--without-acl"),
+        "attr": ("--with-attr", "--without-attr"),
+        "audit": ("--with-audit", "--without-audit"),
+        "doc": ("--enable-man", "--disable-man"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "nscd": ("--with-nscd", "--without-nscd"),
+        "pam": ("--with-libpam", "--without-libpam"),
+        "skey": ("--enable-skey", "--disable-skey"),
+        "su": ("--enable-su", "--disable-su"),
+        "systemd": ("--enable-systemd", "--disable-systemd"),
+        "tcb": ("--with-tcb", "--without-tcb"),
+        "xattr": ("--enable-xattr", "--disable-xattr"),
     },
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc",
+        # Pre-set: readpassphrase() is in libbsd.  AC_SEARCH_LIBS fails
+        # because libbsd.so is a GNU ld linker script (GROUP(...)) and
+        # the cross-compiler's ld can't resolve it during configure tests
+        # when the libraries are in Buck2 dep prefixes.
+        "ac_cv_search_readpassphrase=-lbsd",
     ],
-    pre_configure = """
-# Remove ALL libtool .la files from sysroot to prevent host path contamination
-# .la files are legacy and cause issues when they reference host system paths
-# Modern systems use pkg-config instead
-echo "Removing all .la files from sysroot..."
-LA_COUNT=$(find "$SYSROOT/usr/lib" "$SYSROOT/usr/lib64" -name "*.la" -type f 2>/dev/null | wc -l)
-if [ "$LA_COUNT" -gt 0 ]; then
-    echo "Found $LA_COUNT .la files to remove"
-    find "$SYSROOT/usr/lib" "$SYSROOT/usr/lib64" -name "*.la" -type f -delete 2>/dev/null || true
-    echo "Done removing .la files"
-fi
-""",
     deps = [
-        "//packages/linux/system/libs/crypto/libxcrypt:libxcrypt",  # Provides libcrypt.so.2 for password hashing
-        "//packages/linux/system/libs/bsd:libbsd",  # BSD utility functions
-        "//packages/linux/core/libmd:libmd",  # Required by libbsd (fixes libtool .la file issue)
+        "//packages/linux/system/libs/crypto/libxcrypt:libxcrypt",
+        "//packages/linux/system/libs/bsd:libbsd",
+        "//packages/linux/core/libmd:libmd",
     ],
 
-    post_install = """
+    post_install_cmds = ["""
 # Ensure utilities are in expected locations
 mkdir -p "$DESTDIR/usr/bin" "$DESTDIR/usr/sbin"
 
@@ -84,11 +67,43 @@ if [ ! -f "$DESTDIR/usr/sbin/useradd" ]; then
     exit 1
 fi
 
+# Fix PAM configs if PAM is enabled (pam.d directory exists)
+if [ -d "$DESTDIR/etc/pam.d" ]; then
+    # Fix login PAM config - remove pam_console.so and pam_selinux.so which don't exist
+    cat > "$DESTDIR/etc/pam.d/login" << 'LOGINPAM'
+#%PAM-1.0
+# Login PAM configuration (fixed for BuckOS)
+
+auth      optional  pam_securetty.so
+auth      include   system-auth
+
+account   optional  pam_nologin.so
+account   include   system-auth
+
+password  include   system-auth
+
+session   include   system-auth
+session   optional  pam_loginuid.so
+LOGINPAM
+
+    # Also fix su PAM config
+    cat > "$DESTDIR/etc/pam.d/su" << 'SUPAM'
+#%PAM-1.0
+auth      sufficient pam_rootok.so
+auth      include   system-auth
+
+account   include   system-auth
+
+password  include   system-auth
+
+session   include   system-auth
+SUPAM
+fi
+
 echo "✓ Shadow package installed successfully"
 echo "  - chpasswd: $DESTDIR/usr/sbin/chpasswd"
 echo "  - useradd: $DESTDIR/usr/sbin/useradd"
 echo "  - passwd: $DESTDIR/usr/bin/passwd"
-""",
+"""],
 
-    visibility = ["PUBLIC"],
 )

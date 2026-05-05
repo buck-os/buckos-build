@@ -1,39 +1,43 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # libheif - HEIF and AVIF file format decoder and encoder
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "libheif",
     version = "1.19.1",
-    src_uri = "https://github.com/strukturag/libheif/releases/download/v1.19.1/libheif-1.19.1.tar.gz",
+    url = "https://github.com/strukturag/libheif/releases/download/v1.19.1/libheif-1.19.1.tar.gz",
     sha256 = "994913eb2a29c00c146d6f3d61e07d9ff0d8e9eccb0624d87e4be8b108c74e4b",
     description = "HEIF and AVIF (AV1 Image File Format) file format decoder and encoder",
     homepage = "https://github.com/strukturag/libheif",
     license = "LGPL-2.0+",
-    iuse = ["shared", "static", "aom", "dav1d", "x265", "libde265", "jpeg", "png", "examples", "tests"],
-    use_defaults = ["shared", "aom", "dav1d", "x265", "libde265"],
+    use_configure = {
+        "de265": ("-DENABLE_DE265=ON", "-DENABLE_DE265=OFF"),
+        "ffmpeg": ("-DENABLE_FFMPEG=ON", "-DENABLE_FFMPEG=OFF"),
+        "gdk-pixbuf": ("-DENABLE_GDK_PIXBUF=ON", "-DENABLE_GDK_PIXBUF=OFF"),
+        "gui": ("-DENABLE_GUI=ON", "-DENABLE_GUI=OFF"),
+        "jpeg2k": ("-DENABLE_JPEG2K=ON", "-DENABLE_JPEG2K=OFF"),
+        "kvazaar": ("-DENABLE_KVAZAAR=ON", "-DENABLE_KVAZAAR=OFF"),
+        "openh264": ("-DENABLE_OPENH264=ON", "-DENABLE_OPENH264=OFF"),
+        "rav1e": ("-DENABLE_RAV1E=ON", "-DENABLE_RAV1E=OFF"),
+        "svt-av1": ("-DENABLE_SVT_AV1=ON", "-DENABLE_SVT_AV1=OFF"),
+        "test-full": ("-DENABLE_TEST_FULL=ON", "-DENABLE_TEST_FULL=OFF"),
+        "threads": ("-DENABLE_THREADS=ON", "-DENABLE_THREADS=OFF"),
+        "tools": ("-DENABLE_TOOLS=ON", "-DENABLE_TOOLS=OFF"),
+        "vvdec": ("-DENABLE_VVDEC=ON", "-DENABLE_VVDEC=OFF"),
+        "vvenc": ("-DENABLE_VVENC=ON", "-DENABLE_VVENC=OFF"),
+        "webp": ("-DENABLE_WEBP=ON", "-DENABLE_WEBP=OFF"),
+    },
     deps = [],
     use_deps = {
-        "aom": ["//packages/linux/media/video/libaom:libaom"],
-        "dav1d": ["//packages/linux/media/video/dav1d:dav1d"],
-        "x265": ["//packages/linux/media/video/x265:x265"],
-        "libde265": ["//packages/linux/media/video/libde265:libde265"],
-        "jpeg": ["//packages/linux/media/image/libjpeg-turbo:libjpeg-turbo"],
-        "png": ["//packages/linux/media/image/libpng:libpng"],
+        "aom": "//packages/linux/media/video/libaom:libaom",
+        "dav1d": "//packages/linux/media/video/dav1d:dav1d",
+        "x265": "//packages/linux/media/video/x265:x265",
+        "libde265": "//packages/linux/media/video/libde265:libde265",
+        "jpeg": "//packages/linux/system/libs/image/libjpeg-turbo:libjpeg-turbo",
+        "png": "//packages/linux/system/libs/image/libpng:libpng",
     },
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=${PREFIX}",
     ],
-    use_options = {
-        "shared": "BUILD_SHARED_LIBS",
-        "aom": "WITH_AOM_ENCODER",
-        "dav1d": "WITH_DAV1D",
-        "x265": "WITH_X265",
-        "libde265": "WITH_LIBDE265",
-        "jpeg": "WITH_JPEG_ENCODER",
-        "png": "WITH_PNG_ENCODER",
-        "examples": "WITH_EXAMPLES",
-        "tests": "BUILD_TESTING",
-    },
-    visibility = ["PUBLIC"],
 )

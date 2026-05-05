@@ -1,16 +1,17 @@
-load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "btrfs-progs-src",
-    src_uri = "https://mirrors.edge.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/btrfs-progs-v6.7.tar.xz",
-    sha256 = "c27f755185b9f2dab31f42e8a303d36bed2a3f3341cc6d75ee68a0a650a24767",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "btrfs-progs",
-    source = ":btrfs-progs-src",
+    url = "https://mirrors.edge.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/btrfs-progs-v6.7.tar.xz",
+
+    sha256 = "c27f755185b9f2dab31f42e8a303d36bed2a3f3341cc6d75ee68a0a650a24767",
+    use_configure = {
+        "convert": ("--enable-convert", "--disable-convert"),
+        "experimental": ("--enable-experimental", "--disable-experimental"),
+        "static": ("--enable-static", "--disable-static"),
+        "static-libs": ("--enable-static", "--disable-static"),
+    },
     version = "6.7",
     description = "Btrfs filesystem utilities (mkfs.btrfs, btrfs-check, etc.)",
     homepage = "https://btrfs.wiki.kernel.org/",
@@ -18,6 +19,8 @@ autotools_package(
     configure_args = [
         "--disable-documentation",
         "--disable-python",
+        "--disable-convert",
+        "--disable-libudev",
     ],
     deps = [
         "//packages/linux/core/util-linux:util-linux",
@@ -25,5 +28,4 @@ autotools_package(
         "//packages/linux/system/libs/compression/lzo:lzo",
         "//packages/linux/system/libs/compression/zstd:zstd",
     ],
-    visibility = ["PUBLIC"],
 )

@@ -1,29 +1,28 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # NOTE: Using intel/minigbm GitHub mirror as chromium.googlesource blocks CI/CD
-download_source(
-    name = "minigbm-src",
-    src_uri = "https://github.com/intel/minigbm/archive/refs/heads/master.tar.gz",
-    sha256 = "8244c0eea5c9fb39a8f8bf8c8e7522b171a83cb6bf2c402719d86ab5bb0dc87a",
-    signature_required = False,
-)
-
-autotools_package(
+package(
     name = "minigbm",
-    source = ":minigbm-src",
+    build_rule = "binary",
+    url = "https://github.com/intel/minigbm/archive/refs/heads/master.tar.gz",
+    sha256 = "8244c0eea5c9fb39a8f8bf8c8e7522b171a83cb6bf2c402719d86ab5bb0dc87a",
     version = "main",
     description = "Mini GBM implementation for ChromeOS",
     homepage = "https://chromium.googlesource.com/chromiumos/platform/minigbm",
     license = "BSD-3-Clause",
-    configure_args = [],
-    make_args = [
-        "DESTDIR=$DESTDIR",
-        "PREFIX=/usr",
-        "LIBDIR=/usr/lib",
-    ],
+    install_script = """
+cd "$SRCS"
+
+export CFLAGS="$CFLAGS -Wno-error -Wno-implicit-function-declaration -Wno-maybe-uninitialized"
+
+make -j${MAKEOPTS:-$(nproc)} CC="$CC" AR="$AR" \
+    PREFIX=/usr LIBDIR=/usr/lib \
+    CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS"
+
+make DESTDIR="$OUT" PREFIX=/usr LIBDIR=/usr/lib install
+""",
     deps = [
         "//packages/linux/desktop/libdrm:libdrm",
+        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
     ],
-    visibility = ["PUBLIC"],
 )

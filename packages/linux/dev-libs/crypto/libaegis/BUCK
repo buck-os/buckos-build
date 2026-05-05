@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "libaegis",
     version = "0.1.16",
-    src_uri = "https://github.com/jedisct1/libaegis/archive/refs/tags/0.1.16.tar.gz",
+    url = "https://github.com/jedisct1/libaegis/archive/refs/tags/0.1.16.tar.gz",
     sha256 = "1a24fe2ac51013e2e815c9fdeb788191d1eaacb112869b123a4bc2d7c16fa6b0",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],
 )

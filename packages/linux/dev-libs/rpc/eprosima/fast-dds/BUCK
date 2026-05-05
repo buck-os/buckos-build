@@ -1,22 +1,23 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "fast-dds",
     version = "3.2.1",
-    src_uri = "https://github.com/eProsima/Fast-DDS/archive/refs/tags/v3.2.1.tar.gz",
-    sha256 = "TODO",
+    url = "https://github.com/eProsima/Fast-DDS/archive/refs/tags/v3.2.1.tar.gz",
+    sha256 = "8c088fb967d39785f1f83454d75308ae6c55fc74fc31de173713bc293635b2fd",
     description = "eProsima Fast DDS - C++ DDS implementation",
     homepage = "https://github.com/eProsima/Fast-DDS",
     license = "Apache-2.0",
     deps = [
-        "//packages/linux/dev-libs/rpc/eprosima/fast-cdr",
-        "//packages/linux/dev-libs/misc/asio",
-        "//packages/linux/dev-libs/crypto/openssl",
-        "//packages/linux/dev-libs/allocators/foonathan_memory",
-        "//packages/linux/dev-libs/json/nlohmann-json",
-        "//packages/linux/dev-libs/json/tinyxml2",
+        "//packages/linux/dev-libs/rpc/eprosima/fast-cdr:fast-cdr",
+        "//packages/linux/dev-libs/misc/asio:asio",
+        "//packages/linux/dev-libs/crypto/openssl:openssl",
+        "//packages/linux/dev-libs/allocators/foonathan_memory:foonathan_memory",
+        "//packages/linux/dev-libs/json/nlohmann-json:nlohmann-json",
+        "//packages/linux/dev-libs/json/tinyxml2:tinyxml2",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_TESTING=OFF",
@@ -25,5 +26,4 @@ cmake_package(
         "-DTHIRDPARTY_fastcdr=OFF",
         "-DTHIRDPARTY_Boost=OFF",
     ],
-    visibility = ["PUBLIC"],
 )

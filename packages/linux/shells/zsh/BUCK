@@ -1,42 +1,36 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "zsh",
     version = "5.9",
-    src_uri = "https://github.com/zsh-users/zsh/archive/refs/tags/zsh-5.9.tar.gz",
-    sha256 = "11ea641122396836441375f41f6cb2954890546857936b734ccad353ab62bf88",
-    signature_required = False,
+    # Use official release tarball instead of GitHub archive - it includes pre-generated configure
+    url = "https://www.zsh.org/pub/zsh-5.9.tar.xz",
+    sha256 = "9b8d1ecedd5b5e81fbf1918e876752a7dd948e05c1a0dba10ab863842d45acd5",
     description = "A very advanced and programmable command interpreter (shell)",
     homepage = "https://www.zsh.org/",
     license = "MIT",
 
     # USE flags this package supports
-    iuse = [
-        "pcre",
-        "gdbm",
-        "doc",
-        "static",
-    ],
 
     # Default USE flags
-    use_defaults = ["pcre"],
 
     # Conditional configure arguments
     use_configure = {
-        "pcre": "--enable-pcre",
-        "-pcre": "--disable-pcre",
-        "gdbm": "--enable-gdbm",
-        "-gdbm": "--disable-gdbm",
-        "doc": "--enable-doc",
-        "-doc": "--disable-doc",
-        "static": "--disable-dynamic",
-        "-static": "--enable-dynamic",
+        "caps": ("--enable-libcap", "--disable-libcap"),
+        "debug": ("--enable-debug", "--disable-debug"),
+        "doc": ("--enable-doc", "--disable-doc"),
+        "examples": ("--enable-examples", "--disable-examples"),
+        "gdbm": ("--enable-gdbm", "--disable-gdbm"),
+        "maildir": ("--enable-maildir", "--disable-maildir"),
+        "pcre": ("--enable-pcre", "--disable-pcre"),
+        "static": ("--disable-dynamic", "--enable-dynamic"),
+        "valgrind": ("--enable-valgrind", "--disable-valgrind"),
     },
 
     # Conditional dependencies
     use_deps = {
-        "pcre": ["//packages/linux/system/libs/utility/pcre2:pcre2"],
+        "pcre": "//packages/linux/system/libs/utility/pcre2:pcre2",
     },
 
     # Base configure arguments (always applied)
@@ -49,22 +43,19 @@ autotools_package(
         "--enable-zshrc=/etc/zsh/zshrc",
         "--disable-zsh-debug",
         "--enable-function-subdirs",
+        "--enable-multibyte",
+        "--with-tcsetpgrp",
+        "--with-term-lib=ncursesw",
     ],
 
+    # GCC 14+ treats conflicting type qualifiers as errors; zsh's termcap
+    # module redeclares ncurses symbols without const.
+    extra_cflags = ["-Wno-error=incompatible-pointer-types"],
     # ncurses is required for terminal handling
     deps = [
-        "//packages/linux/core/ncurses:ncurses",
+        "//packages/linux/system/terminal/ncurses:ncurses",
     ],
 
-    # Remove termcap module to avoid conflicts with modern ncurses headers
-    # The termcap module tries to declare boolcodes as non-const while ncurses declares it const
-    src_prepare = """
-# Remove the problematic termcap module that conflicts with ncurses
-rm -f Src/Modules/termcap.c
-rm -f Src/Modules/termcap.mdd
-# GitHub tarball doesn't include configure, need to generate it
-./Util/preconfig
-""",
+    # No src_prepare needed - official tarball has pre-generated configure
 
-    visibility = ["PUBLIC"],
 )

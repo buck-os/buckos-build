@@ -1,19 +1,23 @@
-load("//defs:package_defs.bzl", "simple_package")
+load("//defs:package.bzl", "package")
 
-simple_package(
+package(
     name = "libnpy",
+    build_rule = "binary",
     version = "1.0.1",
-    src_uri = "https://github.com/llohse/libnpy/archive/refs/tags/v1.0.1.tar.gz",
+    url = "https://github.com/llohse/libnpy/archive/refs/tags/v1.0.1.tar.gz",
     sha256 = "43452a4db1e8c1df606c64376ea1e32789124051d7640e7e4e8518ab4f0fba44",
     description = "C++ library for reading and writing numpy .npy files",
     homepage = "https://github.com/llohse/libnpy",
     license = "MIT",
     deps = [],
-    src_configure = ":",
-    src_compile = ":",
     src_install = """
-mkdir -p ${D}${PREFIX}/include/libnpy
-cp npy.hpp ${D}${PREFIX}/include/libnpy/
+mkdir -p $INSTALL_DIR/usr/include/libnpy
+if [ -f include/npy.hpp ]; then
+    cp include/npy.hpp $INSTALL_DIR/usr/include/libnpy/
+elif [ -f npy.hpp ]; then
+    cp npy.hpp $INSTALL_DIR/usr/include/libnpy/
+else
+    find . -name "npy.hpp" -exec cp {} $INSTALL_DIR/usr/include/libnpy/ \;
+fi
 """,
-    visibility = ["PUBLIC"],
 )

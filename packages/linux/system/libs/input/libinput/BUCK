@@ -1,32 +1,27 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "libinput-src",
-    src_uri = "https://gitlab.freedesktop.org/libinput/libinput/-/archive/1.26.2/libinput-1.26.2.tar.gz",
-    sha256 = "5c1c4150f217fea1db2d1fd88e2607b2f1928cfde65c34da65a9f24dcfd69464",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "meson",
     name = "libinput",
-    source = ":libinput-src",
+    url = "https://gitlab.freedesktop.org/libinput/libinput/-/archive/1.26.2/libinput-1.26.2.tar.gz",
+
+    sha256 = "5c1c4150f217fea1db2d1fd88e2607b2f1928cfde65c34da65a9f24dcfd69464",
+    use_configure = {
+        "input_devices_wacom": ("-Dlibwacom=true", "-Dlibwacom=false"),
+    },
     version = "1.26.2",
     description = "Input device management and event handling library",
     homepage = "https://www.freedesktop.org/wiki/Software/libinput/",
     license = "MIT",
-    pre_configure = """
-mkdir -p build
-cd build
-meson setup .. --prefix=/usr \
-    -Ddefault_library=shared \
-    -Dtests=false \
-    -Ddocumentation=false \
-    -Ddebug-gui=false
-""",
+    configure_args = [
+        "-Ddefault_library=shared",
+        "-Dtests=false",
+        "-Ddocumentation=false",
+        "-Ddebug-gui=false",
+    ],
     deps = [
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/libs/input/libevdev:libevdev",
         "//packages/linux/system/libs/input/mtdev:mtdev",
     ],
-    visibility = ["PUBLIC"],
 )

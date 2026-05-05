@@ -1,18 +1,28 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
-# wayland-protocols - Package from third-party
+# wayland-protocols - Wayland protocol extension files
+# These are XML protocol definitions that get compiled by wayland-scanner
+# into C header files and source code.
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "wayland-protocols",
-    version = "1.41",
-    src_uri = "# TODO: Add source URI for wayland-protocols v1.41",
-    sha256 = "52733c1f5262fca35f64e7d5060c6fcd81a880ba8e1e65c9621cf0727afb5d11",
-    description = "wayland-protocols package",
+    version = "1.43",
+    url = "https://gitlab.freedesktop.org/wayland/wayland-protocols/-/releases/1.43/downloads/wayland-protocols-1.43.tar.xz",
+    sha256 = "ba3c3425dd27c57b5291e93dba97be12479601e00bcab24d26471948cb643653",
+    description = "Wayland protocol extension definitions",
     homepage = "https://gitlab.freedesktop.org/wayland/wayland-protocols",
     license = "MIT",
-    deps = [],
-    meson_args = [
-        "-Dbuildtype=release",
+    deps = [
+        "//packages/linux/graphics/rendering/wayland:wayland",
+                "//packages/linux/system/libs/utility/libffi:libffi",
     ],
-    visibility = ["PUBLIC"],
+    host_deps = [
+        "//packages/linux/graphics/rendering/wayland:wayland-scanner",
+    ],
+    # wayland-scanner runs on the build machine during meson configure
+    configure_args = [
+        "-Dtests=false",
+    ],
+    # Set up environment to find native wayland-scanner
 )

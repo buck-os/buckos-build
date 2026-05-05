@@ -1,36 +1,39 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+# wireless-tools' Makefile doesn't support DESTDIR — install paths must
+# be specified explicitly as absolute paths.
+package(
     name = "wireless-tools",
+    build_rule = "binary",
     version = "29",
-    src_uri = "https://hewlettpackard.github.io/wireless-tools/wireless_tools.29.tar.gz",
+    url = "https://hewlettpackard.github.io/wireless-tools/wireless_tools.29.tar.gz",
     sha256 = "6fb80935fe208538131ce2c4178221bab1078a1656306bce8909c19887e2e5a1",
-    signature_required = False,
 
-    iuse = [],
-    use_defaults = [],
+    install_script = """
+mkdir -p "$OUT"
 
+# Copy source to writable location (Buck2 sources are read-only)
+BUILD=$(mktemp -d)
+cp -a "$SRCS"/. "$BUILD/"
+cd "$BUILD"
 
-    use_configure = {},
+# No-op ldconfig — make install tries to run it but we're not root
+mkdir -p "$BUILD/.bin"
+printf '#!/bin/sh\\n' > "$BUILD/.bin/ldconfig"
+chmod +x "$BUILD/.bin/ldconfig"
+export PATH="$BUILD/.bin:$PATH"
 
-    make_args = [
-        "PREFIX=/usr",
-        "INSTALL_DIR=/usr/sbin",
-        "INSTALL_LIB=/usr/lib",
-        "INSTALL_INC=/usr/include",
-        "INSTALL_MAN=/usr/share/man",
-    ],
+make -j$(nproc) CC="${CC:-gcc}" PREFIX=/usr
 
-    post_install = """
-make install PREFIX=/usr INSTALL_DIR="$DESTDIR/usr/sbin" INSTALL_LIB="$DESTDIR/usr/lib" INSTALL_INC="$DESTDIR/usr/include" INSTALL_MAN="$DESTDIR/usr/share/man"
+# Install manually
+mkdir -p "$OUT/usr/sbin" "$OUT/usr/lib" "$OUT/usr/include"
+install -m 755 iwconfig iwlist iwpriv iwspy iwgetid iwevent ifrename "$OUT/usr/sbin/"
+install -m 755 libiw.so.29 "$OUT/usr/lib/"
+install -m 644 iwlib.h wireless.h "$OUT/usr/include/"
+ln -s libiw.so.29 "$OUT/usr/lib/libiw.so"
 """,
-
-    deps = [
-    ],
 
     description = "Tools for manipulating Linux Wireless Extensions (iwconfig, iwlist, etc.)",
     homepage = "https://hewlettpackard.github.io/wireless-tools/",
     license = "GPL-2.0",
-    visibility = ["PUBLIC"],
 )

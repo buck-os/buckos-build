@@ -1,40 +1,52 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "gnutls",
     version = "3.8.7",
-    src_uri = "https://www.gnupg.org/ftp/gcrypt/gnutls/v3.8/gnutls-3.8.7.tar.xz",
+    url = "https://www.gnupg.org/ftp/gcrypt/gnutls/v3.8/gnutls-3.8.7.tar.xz",
     sha256 = "fe302f2b6ad5a564bcb3678eb61616413ed5277aaf8e7bf7cdb9a95a18d9f477",
-    signature_sha256 = "7764bca39749a0716d19f49c948e53ceb7e9e0f0928872ee08ad7db14a60220c",
-    signature_required = False,
     description = "Secure communications library implementing SSL, TLS and DTLS",
     homepage = "https://www.gnutls.org/",
     license = "LGPL-2.1",
-    iuse = ["p11", "guile", "doc", "static-libs"],
-    use_defaults = [],
     use_configure = {
-        "p11": "--with-p11-kit",
-        "-p11": "--without-p11-kit",
-        "guile": "--enable-guile",
-        "-guile": "--disable-guile",
-        "doc": "--enable-doc",
-        "-doc": "--disable-doc",
-        "static-libs": "--enable-static",
-        "-static-libs": "--disable-static",
+        "brotli": ("--with-brotli", "--without-brotli"),
+        "cxx": ("--enable-cxx", "--disable-cxx"),
+        "dane": ("--enable-dane", "--disable-dane"),
+        "doc": ("--enable-doc", "--disable-doc"),
+        "examples": ("--enable-examples", "--disable-examples"),
+        "idn": ("--enable-idn", "--disable-idn"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "openssl": ("--with-openssl", "--without-openssl"),
+        "pkcs11": ("--enable-pkcs11", "--disable-pkcs11"),
+        "sslv2": ("--enable-sslv2", "--disable-sslv2"),
+        "sslv3": ("--enable-sslv3", "--disable-sslv3"),
+        "static-libs": ("--enable-static", "--disable-static"),
+        "test-full": ("--enable-test-full", "--disable-test-full"),
+        "tls-heartbeat": ("--enable-tls-heartbeat", "--disable-tls-heartbeat"),
+        "tools": ("--enable-tools", "--disable-tools"),
+        "zlib": ("--with-zlib", "--without-zlib"),
+        "zstd": ("--with-zstd", "--without-zstd"),
     },
     use_deps = {
-        "p11": ["//packages/linux/dev-libs/p11-kit:p11-kit"],
-        "guile": ["//packages/linux/lang/guile:guile"],
+        "zlib": "//packages/linux/core/zlib:zlib",
+        "zstd": "//packages/linux/system/libs/compression/zstd:zstd",
     },
     configure_args = [
         "--with-included-libtasn1",
         "--with-included-unistring",
+        "--without-brotli",
+        "--without-p11-kit",
+    ],
+    # brotli dlwrap files unconditionally reference brotli types even when
+    # --without-brotli is set; stub them out so they compile to nothing
+    pre_configure_cmds = [
+        "for f in lib/dlwrap/brotlienc.c lib/dlwrap/brotlidec.c lib/dlwrap/brotlienc.h lib/dlwrap/brotlidec.h; do echo '/* brotli disabled */' > \"$f\"; done",
     ],
     deps = [
         "//packages/linux/system/libs/crypto/nettle:nettle",
         "//packages/linux/system/libs/crypto/libgcrypt:libgcrypt",
         "//packages/linux/system/libs/utility/gmp:gmp",
+        "//packages/linux/system/libs/compression/zstd:zstd",
     ],
-    visibility = ["PUBLIC"],
 )

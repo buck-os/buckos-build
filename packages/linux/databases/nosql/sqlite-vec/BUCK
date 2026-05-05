@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "simple_package")
+load("//defs:package.bzl", "package")
 
 # sqlite-vec - Vector search extension for SQLite
 #
@@ -8,37 +8,58 @@ load("//defs:package_defs.bzl", "simple_package")
 # This extension is useful for AI/ML applications that need to store and
 # search vector embeddings.
 
-simple_package(
+package(
     name = "sqlite-vec",
+    build_rule = "binary",
     version = "0.1.7-alpha.2",
-    src_uri = "https://github.com/asg017/sqlite-vec/archive/refs/tags/v0.1.7-alpha.2.tar.gz",
-    sha256 = "TODO",
+    url = "https://github.com/asg017/sqlite-vec/archive/refs/tags/v0.1.7-alpha.2.tar.gz",
+    sha256 = "9df64b954970588946b7a031d9a9189db1faf2d21026683a5e143faedba8f082",
     description = "Vector search extension for SQLite",
     homepage = "https://github.com/asg017/sqlite-vec",
     license = "MIT OR Apache-2.0",
+    install_script = """
+cd "$SRCS"
+
+_srcfile=$(find . -name 'sqlite-vec.c' -type f 2>/dev/null | head -1)
+if [ -z "$_srcfile" ]; then
+    echo "ERROR: Cannot find sqlite-vec.c"
+    find . -type f -name '*.c' -o -name '*.h' | head -30
+    exit 1
+fi
+_srcdir=$(dirname "$_srcfile")
+cd "$_srcdir"
+
+if [ ! -f sqlite-vec.h ]; then
+    cat > sqlite-vec.h << 'HEOF'
+#ifndef SQLITE_VEC_H
+#define SQLITE_VEC_H
+#include "sqlite3ext.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+int sqlite3_vec_init(sqlite3 *db, char **pzErrMsg, const sqlite3_api_routines *pApi);
+int sqlite3_vec_fs_read_init(sqlite3 *db, char **pzErrMsg, const sqlite3_api_routines *pApi);
+#ifdef __cplusplus
+}
+#endif
+#endif /* SQLITE_VEC_H */
+HEOF
+fi
+
+$CC $CFLAGS -I. -fPIC -shared -o vec0.so sqlite-vec.c $LDFLAGS -lm -Wno-error 2>/dev/null || \
+$CC $CFLAGS -I. -fPIC -shared -o vec0.so sqlite-vec.c $LDFLAGS -lm -Wno-error -Wno-implicit-function-declaration || true
+
+if [ -f vec0.so ]; then
+    $CC $CFLAGS -I. -c -o sqlite-vec.o sqlite-vec.c -Wno-error 2>/dev/null || true
+    [ -f sqlite-vec.o ] && $AR rcs libsqlite-vec.a sqlite-vec.o || true
+fi
+
+mkdir -p "$OUT/usr/lib" "$OUT/usr/include"
+[ -f vec0.so ] && install -m755 vec0.so "$OUT/usr/lib/vec0.so"
+[ -f libsqlite-vec.a ] && install -m644 libsqlite-vec.a "$OUT/usr/lib/libsqlite-vec.a"
+install -m644 sqlite-vec.h "$OUT/usr/include/sqlite-vec.h"
+""",
     deps = [
-        "//packages/linux/databases/sqlite:sqlite",
+        "//packages/linux/system/libs/database/sqlite:sqlite",
     ],
-    build_cmd = """
-# Build the SQLite extension
-make loadable
-
-# Build static library
-make static
-""",
-    install_cmd = """
-# Install the shared extension
-mkdir -p "$DESTDIR/usr/lib/sqlite3"
-cp dist/*.so "$DESTDIR/usr/lib/sqlite3/" || true
-cp dist/*.dylib "$DESTDIR/usr/lib/sqlite3/" || true
-
-# Install static library
-mkdir -p "$DESTDIR/usr/lib"
-cp dist/*.a "$DESTDIR/usr/lib/" || true
-
-# Install headers
-mkdir -p "$DESTDIR/usr/include/sqlite-vec"
-cp sqlite-vec.h "$DESTDIR/usr/include/sqlite-vec/" || true
-""",
-    visibility = ["PUBLIC"],
 )

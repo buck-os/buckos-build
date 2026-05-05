@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "metricx",
     version = "0.1.0",
-    src_uri = "https://github.com/google-research/metricx/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/google-research/metricx/archive/refs/heads/main.tar.gz",
     sha256 = "03c2a334e38a5facee0ae4027fdd42fa26ffeeb6688b2aca5e2ac200e99e3ff4",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",

@@ -1,5 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # USE flags for gimp (meson build):
 # - gtk: GTK+ interface (default: enabled)
@@ -7,46 +6,50 @@ load("//defs:use_flags.bzl", "set_use_flags")
 # - lua: Lua scripting (default: disabled)
 # - javascript: JavaScript scripting (default: disabled)
 
-download_source(
-    name = "gimp-src",
-    src_uri = "https://download.gimp.org/gimp/v2.10/gimp-2.10.36.tar.bz2",
-    sha256 = "3d3bc3c69a4bdb3aea9ba2d5385ed98ea03953f3857aafd1d6976011ed7cdbb2",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "gimp",
-    source = ":gimp-src",
+    url = "https://download.gimp.org/gimp/v2.10/gimp-2.10.36.tar.bz2",
+
+    sha256 = "3d3bc3c69a4bdb3aea9ba2d5385ed98ea03953f3857aafd1d6976011ed7cdbb2",
+    use_configure = {
+        "X": ("--with-x", "--without-x"),
+        "aalib": ("--enable-aalib", "--disable-aalib"),
+        "alsa": ("--enable-alsa", "--disable-alsa"),
+        "fits": ("--enable-fits", "--disable-fits"),
+        "gnome": ("--enable-gnome", "--disable-gnome"),
+        "heif": ("--enable-heif", "--disable-heif"),
+        "javascript": ("--enable-javascript", "--disable-javascript"),
+        "jpeg2k": ("--enable-jpeg2k", "--disable-jpeg2k"),
+        "jpegxl": ("--enable-jpegxl", "--disable-jpegxl"),
+        "lua": ("--enable-lua", "--disable-lua"),
+        "mng": ("--enable-mng", "--disable-mng"),
+        "openexr": ("--enable-openexr", "--disable-openexr"),
+        "openmp": ("--enable-openmp", "--disable-openmp"),
+        "postscript": ("--enable-postscript", "--disable-postscript"),
+        "udev": ("--enable-udev", "--disable-udev"),
+        "unwind": ("--enable-unwind", "--disable-unwind"),
+        "vala": ("--enable-vala", "--disable-vala"),
+        "vector-icons": ("--enable-vector-icons", "--disable-vector-icons"),
+        "wayland": ("--enable-wayland", "--disable-wayland"),
+        "webp": ("--with-webp", "--without-webp"),
+        "wmf": ("--enable-wmf", "--disable-wmf"),
+        "xpm": ("--enable-xpm", "--disable-xpm"),
+    },
     version = "2.10.36",
     description = "GNU Image Manipulation Program - A powerful image editing application",
     homepage = "https://www.gimp.org/",
     license = "GPL-3.0-or-later",
-    pre_configure = """
-mkdir -p build
-cd build
-meson setup .. \
-    --prefix=/usr \
-    --libdir=/usr/lib \
-    --sysconfdir=/etc \
-    -Dbuildtype=release \
-    -Djavascript=disabled \
-    -Dlua=disabled \
-    -Dvala=disabled
-""",
     configure_args = [],
     make_args = ["-C", "build"],
-    post_install = """
+    post_install_cmds = ["""
 cd build
 DESTDIR=$OUT meson install
-""",
+"""],
     deps = [
         "//packages/linux/desktop/gtk:gtk3",
-        "//packages/linux/dev-libs/glib:glib",
-        "//packages/linux/graphics/utilities/gegl:gegl",
-        "//packages/linux/graphics/utilities/babl:babl",
+                "//packages/linux/dev-libs/glib:glib",
+                "//packages/linux/graphics/utilities/gegl:gegl",
+                "//packages/linux/lang/python:python"
     ],
-    bdepend = [
-        "//packages/linux/lang/python:python",
-    ],
-    visibility = ["PUBLIC"],
 )

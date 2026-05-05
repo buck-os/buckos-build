@@ -1,3 +1,5 @@
+load("//defs:package.bzl", "package")
+
 # =============================================================================
 # cuda-api-wrappers - Thin C++-flavored wrappers for the CUDA APIs
 # =============================================================================
@@ -7,21 +9,12 @@
 # - NVRTC (dynamic CUDA code compilation)
 # - NVTX (NVIDIA profiler API)
 
-load("//defs:package_defs.bzl", "download_source", "binary_package")
-
-download_source(
-    name = "cuda-api-wrappers-src",
-    src_uri = "https://github.com/eyalroz/cuda-api-wrappers/archive/refs/tags/v0.5.6.tar.gz",
-    # TODO: Verify SHA256 hash by running:
-    # curl -sL "https://github.com/eyalroz/cuda-api-wrappers/archive/refs/tags/v0.5.6.tar.gz" | sha256sum
-    sha256 = "6119c11108955d71be8f19b40ec97ee244ef6f8b0f1d6f1a24cc3b1463df5f3a",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "cuda-api-wrappers",
-    srcs = [":cuda-api-wrappers-src"],
     version = "0.5.6",
+    url = "https://github.com/eyalroz/cuda-api-wrappers/archive/refs/tags/v0.5.6.tar.gz",
+    sha256 = "6119c11108955d71be8f19b40ec97ee244ef6f8b0f1d6f1a24cc3b1463df5f3a",
     description = "Thin C++-flavored wrappers for the CUDA Runtime, Driver, NVRTC and NVTX APIs",
     homepage = "https://github.com/eyalroz/cuda-api-wrappers",
     license = "BSD-3-Clause",
@@ -109,23 +102,24 @@ else()
 endif()
 EOF
 
-# Install pkg-config file
+echo "cuda-api-wrappers headers installed successfully"
+
+# Generate pkg-config file
 mkdir -p "$OUT/usr/lib/pkgconfig"
-cat > "$OUT/usr/lib/pkgconfig/cuda-api-wrappers.pc" << 'EOF'
+cat > "$OUT/usr/lib/pkgconfig/cuda-api-wrappers.pc" << EOF
 prefix=/usr
+exec_prefix=${prefix}
 includedir=${prefix}/include
 
 Name: cuda-api-wrappers
 Description: Thin C++-flavored wrappers for the CUDA APIs
-Version: 0.5.6
+Version: $PV
 Requires: cuda
 Cflags: -I${includedir}
 EOF
-
-echo "cuda-api-wrappers headers installed successfully"
 """,
     deps = [
         "//packages/linux/system/gpu/libraries/cuda-toolkit:cuda-toolkit",
     ],
-    visibility = ["PUBLIC"],
+    labels = ["buckos:hw:cuda"],
 )

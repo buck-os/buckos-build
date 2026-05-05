@@ -1,22 +1,22 @@
-load("//defs:package_defs.bzl", "simple_package")
+load("//defs:package.bzl", "package")
 
-simple_package(
+package(
     name = "cborg",
-    version = "3.0.3",
-    src_uri = "https://github.com/truepic/cborg/archive/refs/tags/v3.0.3.tar.gz",
-    sha256 = "TODO",
+    build_rule = "binary",
+    version = "1.0.3",
+    url = "https://github.com/TRUEPIC/cborg/archive/refs/tags/v1.0.3.tar.gz",
+    sha256 = "9ee5cdd690f99bd002acf949a1eb21af9a1e1560ef3a2faa5913b49aaf92a67f",
     description = "A simple CBOR encoder/decoder with a fluent API",
     homepage = "https://github.com/truepic/cborg",
     license = "Apache-2.0",
     deps = [],
-    build_commands = [
-        "mkdir -p ${PREFIX}/include/cborg",
-        "mkdir -p ${PREFIX}/lib",
-        "cp cborg/*.h ${PREFIX}/include/cborg/",
-        "g++ -c -O2 -fPIC -fstack-protector-strong -Icborg source/CborBase.cpp -o CborBase.o",
-        "g++ -c -O2 -fPIC -fstack-protector-strong -Icborg source/Cbore.cpp -o Cbore.o",
-        "g++ -c -O2 -fPIC -fstack-protector-strong -Icborg source/Cborg.cpp -o Cborg.o",
-        "ar rcs ${PREFIX}/lib/libcborg.a CborBase.o Cbore.o Cborg.o",
-    ],
-    visibility = ["PUBLIC"],
+    install_script = """
+mkdir -p "$OUT/usr/include/cborg"
+mkdir -p "$OUT/usr/lib64"
+cp cborg/*.h "$OUT/usr/include/cborg/"
+$CXX -c -O2 -fPIC -fstack-protector-strong -I. source/CborBase.cpp -o CborBase.o
+$CXX -c -O2 -fPIC -fstack-protector-strong -I. source/Cbore.cpp -o Cbore.o
+$CXX -c -O2 -fPIC -fstack-protector-strong -I. source/Cborg.cpp -o Cborg.o
+$AR rcs "$OUT/usr/lib64/libcborg.a" CborBase.o Cbore.o Cborg.o
+""",
 )

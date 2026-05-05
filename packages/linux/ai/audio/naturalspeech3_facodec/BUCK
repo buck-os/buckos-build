@@ -1,16 +1,17 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "naturalspeech3_facodec",
     version = "0.2.2",
-    src_uri = "https://github.com/lifeiteng/naturalspeech3_facodec/archive/refs/heads/main.tar.gz",
-    sha256 = "TODO",
+    # Pinned to commit aac16b7 (2024-04-02) - no tagged releases available
+    url = "https://github.com/lifeiteng/naturalspeech3_facodec/archive/aac16b7268b1b96e70b9e3526b13e216984e80d0.tar.gz",
+    sha256 = "c7559d3253c1bb3a4402bf486ec3de8c0e7f09739945e8680f7c061c731c8d68",
     deps = [
-        "//packages/linux/ai/audio/pyworld",
-        "//packages/linux/media/audio/soundfile",
-        "//packages/linux/ai/audio/librosa",
-        "//packages/linux/dev-libs/python/einops",
-        "//packages/linux/ai/ml-frameworks/pytorch",
-        "//packages/linux/ai/audio/torchaudio",
+        "//packages/linux/ai/audio/pyworld:pyworld",
+        "//packages/linux/media/audio/soundfile:soundfile",
+        "//packages/linux/ai/audio/librosa:librosa",
+        "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
+        "//packages/linux/ai/audio/torchaudio:torchaudio",
     ],
 )

@@ -1,22 +1,20 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
+load("//defs:package.bzl", "package")
 
-# xxhash uses a Makefile build system (cmake is unofficial)
-autotools_package(
+package(
+    build_rule = "cmake",
     name = "xxhash",
-    version = "0.8.2",
-    src_uri = "https://github.com/Cyan4973/xxHash/archive/refs/tags/v0.8.2.tar.gz",
-    sha256 = "baee0c6afd4f03165de7a4e67988d16f0f2b257b51d0e3cb91909302a26a79c4",
-    signature_required = False,
+    version = "0.8.3",
+    url = "https://github.com/Cyan4973/xxHash/archive/refs/tags/v0.8.3.tar.gz",
+    sha256 = "aae608dfe8213dfd05d909a57718ef82f30722c392344583d3f39050c7f29a80",
     description = "Extremely fast non-cryptographic hash algorithm",
-    homepage = "https://cyan4973.github.io/xxHash/",
+    homepage = "https://xxhash.com/",
     license = "BSD-2-Clause",
-    src_configure = "true",
-    src_compile = """
-make -j$(nproc) PREFIX=/usr LIBDIR=/usr/lib lib
-""",
-    src_install = """
-make install DESTDIR="$DESTDIR" PREFIX=/usr LIBDIR=/usr/lib
-""",
-    visibility = ["PUBLIC"],
+    configure_args = [
+        "-DBUILD_SHARED_LIBS=OFF",
+    ],
+    source_subdir = "cmake_unofficial",
+    host_deps = [
+        "//packages/linux/dev-tools/build-systems/cmake:cmake",
+        "//packages/linux/dev-tools/build-systems/ninja:ninja",
+    ],
 )

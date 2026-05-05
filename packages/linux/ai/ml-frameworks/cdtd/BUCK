@@ -1,21 +1,19 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "cdtd",
     version = "0.1.0",
-    src_uri = "https://github.com/muellermarkus/cdtd/archive/refs/heads/main.tar.gz",
-    sha256 = "TODO",
+    url = "https://github.com/muellermarkus/cdtd/archive/refs/heads/main.tar.gz",
+    sha256 = "89689554476560ff0d0219a2ac2c350c90ebabc53e9604c3390450a9c5dbcd7b",
     deps = [
-        "//packages/linux/ai/ml-frameworks/pytorch",
-        "//packages/linux/dev-libs/python/numpy",
-        "//packages/linux/dev-libs/python/scipy",
-        "//packages/linux/dev-libs/python/pandas",
-        "//packages/linux/dev-libs/python/matplotlib",
-        "//packages/linux/dev-libs/python/scikit-learn",
-        "//packages/linux/dev-libs/python/tqdm",
-        "//packages/linux/dev-libs/python/numba",
-        "//packages/linux/dev-libs/python/einops",
-        "//packages/linux/dev-libs/python/omegaconf",
-        "//packages/linux/dev-libs/python/optuna",
+        "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
+        "//packages/linux/dev-libs/python/pandas:pandas",
+        "//packages/linux/dev-libs/python/matplotlib:matplotlib",
+        "//packages/linux/dev-libs/python/scikit-learn:scikit-learn",
+        "//packages/linux/dev-libs/python/tqdm:tqdm",
+        "//packages/linux/dev-libs/python/numba:numba",
+        "//packages/linux/dev-libs/python/omegaconf:omegaconf",
+        "//packages/linux/dev-libs/python/optuna:optuna",
     ],
 )

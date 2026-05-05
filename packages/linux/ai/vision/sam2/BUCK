@@ -1,17 +1,16 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "sam2",
     version = "1.0",
-    src_uri = "https://github.com/facebookresearch/segment-anything-2/archive/refs/tags/v1.0.tar.gz",
-    sha256 = "c760bf626e0e467b9344b380d9ba59d95c5214d561326ffa2be79ac5ddcd8983",
+    url = "https://github.com/facebookresearch/sam2/archive/2b90b9f5ceec907a1c18123530e92e794ad901a4.tar.gz",
+    sha256 = "1f2fbfad3ffa38110368abac76c6ef9df9c282a66d5c2807bc94abf4d2fb30f8",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
         "//packages/linux/ai/vision/torchvision:torchvision",
-        "//packages/linux/dev-libs/python/numpy:numpy",
         "//packages/linux/dev-libs/python/tqdm:tqdm",
         "//packages/linux/dev-libs/python/hydra-core:hydra-core",
         "//packages/linux/dev-libs/python/pillow:pillow",
     ],
-    maintainers = ["sg_scene_ai"],
 )

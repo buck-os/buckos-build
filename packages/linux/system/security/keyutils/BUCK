@@ -1,29 +1,33 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # keyutils - Linux key management utilities
 
-download_source(
-    name = "keyutils-src",
-    src_uri = "https://git.kernel.org/pub/scm/linux/kernel/git/dhowells/keyutils.git/snapshot/keyutils-1.6.3.tar.gz",
-    sha256 = "a61d5706136ae4c05bd48f86186bcfdbd88dd8bd5107e3e195c924cfc1b39bb4",
-    signature_required = False,
-)
-
-autotools_package(
+package(
     name = "keyutils",
-    source = ":keyutils-src",
+    build_rule = "autotools",
+    skip_configure = True,
+    url = "https://git.kernel.org/pub/scm/linux/kernel/git/dhowells/keyutils.git/snapshot/keyutils-1.6.3.tar.gz",
+
+    sha256 = "a61d5706136ae4c05bd48f86186bcfdbd88dd8bd5107e3e195c924cfc1b39bb4",
+    use_configure = {
+        "static": ("--enable-static", "--disable-static"),
+        "static-libs": ("--enable-static", "--disable-static"),
+    },
     version = "1.6.3",
     description = "Linux key management utilities",
     homepage = "https://git.kernel.org/pub/scm/linux/kernel/git/dhowells/keyutils.git",
     license = "GPL-2.0-or-later AND LGPL-2.1-or-later",
-    configure_args = [],
     make_args = [
         "NO_ARLIB=1",
         "LIBDIR=/usr/lib",
         "USRLIBDIR=/usr/lib",
     ],
-    deps = [
+    post_install_cmds = [
+        # keyutils Makefile creates absolute symlinks; fix to relative
+        "cd usr/lib && ln -sf libkeyutils.so.1.10 libkeyutils.so.1 && ln -sf libkeyutils.so.1 libkeyutils.so",
     ],
-    visibility = ["PUBLIC"],
+    libraries = ["keyutils"],
+    deps = [
+        "//packages/linux/dev-tools/build-systems/binutils:binutils",
+    ],
 )

@@ -1,83 +1,14 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "gnupg-src",
-    src_uri = "https://gnupg.org/ftp/gcrypt/gnupg/gnupg-2.4.3.tar.bz2",
-    sha256 = "a271ae6d732f6f4d80c258ad9ee88dd9c94c8fdc33c3e45328c4d7c126bd219d",
-    signature_required = False,
-)
-
-download_source(
-    name = "libgpg-error-src",
-    src_uri = "https://gnupg.org/ftp/gcrypt/libgpg-error/libgpg-error-1.47.tar.bz2",
-    sha256 = "9e3c670966b96ecc746c28c2c419541e3bcb787d1a73930f5e5f5e1bcbbb9bdb",
-    signature_required = False,
-)
-
-download_source(
-    name = "libgcrypt-src",
-    src_uri = "https://gnupg.org/ftp/gcrypt/libgcrypt/libgcrypt-1.10.3.tar.bz2",
-    sha256 = "8b0870897ac5ac67ded568dcfadf45969cfa8a6beb0fd60af2a9eadc2a3272aa",
-    signature_required = False,
-)
-
-download_source(
-    name = "libksba-src",
-    src_uri = "https://gnupg.org/ftp/gcrypt/libksba/libksba-1.6.5.tar.bz2",
-    sha256 = "a564628c574c99287998753f98d750babd91a4e9db451f46ad140466ef2a6d16",
-    signature_required = False,
-)
-
-download_source(
-    name = "libassuan-src",
-    src_uri = "https://gnupg.org/ftp/gcrypt/libassuan/libassuan-2.5.6.tar.bz2",
-    sha256 = "e9fd27218d5394904e4e39788f9b1742711c3e6b41689a31aa3380bd5aa4f426",
-    signature_required = False,
-)
-
-download_source(
-    name = "npth-src",
-    src_uri = "https://gnupg.org/ftp/gcrypt/npth/npth-1.6.tar.bz2",
-    sha256 = "1393abd9adcf0762d34798dc34fdcf4d0d22a8410721e76f1e3afcd1daa4e2d1",
-    signature_sha256 = "4bdee04570eec44aba0386936502aadee922e2faaef89d7669a0f124b5dd9fd3",
-    signature_required=False,
-)
-
-autotools_package(
-    name = "libgpg-error",
-    source = ":libgpg-error-src",
-    version = "1.47",
-    description = "GnuPG error library",
-    homepage = "https://gnupg.org/",
-    license = "LGPL-2.1+",
-    configure_args = [
-        "--prefix=/usr",
-        "--enable-shared",
-        "--disable-static",
-    ],
-    visibility = ["PUBLIC"],
-)
-
-autotools_package(
-    name = "libgcrypt",
-    source = ":libgcrypt-src",
-    version = "1.10.3",
-    description = "General purpose cryptographic library",
-    homepage = "https://gnupg.org/",
-    license = "LGPL-2.1+",
-    configure_args = [
-        "--prefix=/usr",
-        "--enable-shared",
-        "--disable-static",
-    ],
-    deps = [":libgpg-error"],
-    visibility = ["PUBLIC"],
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libksba",
-    source = ":libksba-src",
+    pre_configure_cmds = ["""
+autoreconf -fi
+"""],
+    url = "https://gnupg.org/ftp/gcrypt/libksba/libksba-1.6.5.tar.bz2",
+
+    sha256 = "a564628c574c99287998753f98d750babd91a4e9db451f46ad140466ef2a6d16",
     version = "1.6.5",
     description = "X.509 and CMS library",
     homepage = "https://gnupg.org/",
@@ -87,13 +18,22 @@ autotools_package(
         "--enable-shared",
         "--disable-static",
     ],
-    deps = [":libgpg-error"],
-    visibility = ["PUBLIC"],
+    deps = [
+        "//packages/linux/system/libs/crypto/libgpg-error:libgpg-error",
+    ],
+    host_deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+    ],
 )
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libassuan",
-    source = ":libassuan-src",
+    url = "https://gnupg.org/ftp/gcrypt/libassuan/libassuan-2.5.6.tar.bz2",
+
+    sha256 = "e9fd27218d5394904e4e39788f9b1742711c3e6b41689a31aa3380bd5aa4f426",
     version = "2.5.6",
     description = "IPC library for GnuPG",
     homepage = "https://gnupg.org/",
@@ -103,13 +43,15 @@ autotools_package(
         "--enable-shared",
         "--disable-static",
     ],
-    deps = [":libgpg-error"],
-    visibility = ["PUBLIC"],
+    deps = ["//packages/linux/system/libs/crypto/libgpg-error:libgpg-error"],
 )
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "npth",
-    source = ":npth-src",
+    url = "https://gnupg.org/ftp/gcrypt/npth/npth-1.6.tar.bz2",
+
+    sha256 = "1393abd9adcf0762d34798dc34fdcf4d0d22a8410721e76f1e3afcd1daa4e2d1",
     version = "1.6",
     description = "New portable threads library",
     homepage = "https://gnupg.org/",
@@ -119,12 +61,14 @@ autotools_package(
         "--enable-shared",
         "--disable-static",
     ],
-    visibility = ["PUBLIC"],
 )
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "gnupg",
-    source = ":gnupg-src",
+    url = "https://gnupg.org/ftp/gcrypt/gnupg/gnupg-2.4.3.tar.bz2",
+
+    sha256 = "a271ae6d732f6f4d80c258ad9ee88dd9c94c8fdc33c3e45328c4d7c126bd219d",
     version = "2.4.3",
     description = "GNU Privacy Guard - encryption and signing tools",
     homepage = "https://gnupg.org/",
@@ -137,12 +81,14 @@ autotools_package(
         "--enable-maintainer-mode",
     ],
     deps = [
-        ":libgpg-error",
-        ":libgcrypt",
+        "//packages/linux/system/libs/crypto/libgpg-error:libgpg-error",
+        "//packages/linux/system/libs/crypto/libgcrypt:libgcrypt",
         ":libksba",
         ":libassuan",
         ":npth",
         "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/database/sqlite:sqlite",
+        "//packages/linux/system/libs/compression/bzip2:bzip2",
+        "//packages/linux/system/terminal/ncurses:ncurses",
     ],
-    visibility = ["PUBLIC"],
 )

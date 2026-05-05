@@ -1,24 +1,16 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "binary",
     name = "electric-fence",
-    version = "2.2.6",
-    src_uri = "https://github.com/cheggeng/electric-fence/archive/refs/heads/master.tar.gz",
-    sha256 = "TODO",
+    version = "3.0",
+    url = "https://github.com/kallisti5/ElectricFence/archive/refs/tags/v3.0.tar.gz",
+    sha256 = "a16cd964d2991ca0a384119241d7f310021bdb4d21869e3592c9224d038ff0a5",
     description = "Memory debugger for detecting buffer overruns and use-after-free",
-    homepage = "https://github.com/cheggeng/electric-fence",
+    homepage = "https://github.com/kallisti5/ElectricFence",
     license = "GPL-2.0",
-    pre_configure = """
-# electric-fence doesn't have a configure script
-# Skip configure step entirely
-""",
-    configure_args = [],
-    make_args = [],
-    post_install = """
-cd "$SRCDIR"
-
-# Clean any stale object files
-rm -f *.o *.a libefence.so*
+    install_script = """
+cd "$SRCS/src"
 
 # Build object files with PIC for shared library
 cc -c -fPIC -O2 -g -o efence.o efence.c
@@ -32,19 +24,18 @@ ar crv libefence.a efence.o page.o print.o
 cc -shared -o libefence.so.0.0 efence.o page.o print.o -lpthread
 
 # Install libraries
-mkdir -p "$DESTDIR/usr/lib"
-cp -f libefence.a "$DESTDIR/usr/lib/"
-cp -f libefence.so.0.0 "$DESTDIR/usr/lib/"
-ln -sf libefence.so.0.0 "$DESTDIR/usr/lib/libefence.so.0"
-ln -sf libefence.so.0.0 "$DESTDIR/usr/lib/libefence.so"
+mkdir -p "$OUT/usr/lib"
+cp -f libefence.a "$OUT/usr/lib/"
+cp -f libefence.so.0.0 "$OUT/usr/lib/"
+ln -sf libefence.so.0.0 "$OUT/usr/lib/libefence.so.0"
+ln -sf libefence.so.0.0 "$OUT/usr/lib/libefence.so"
 
 # Install headers
-mkdir -p "$DESTDIR/usr/include"
-cp -f efence.h "$DESTDIR/usr/include/"
+mkdir -p "$OUT/usr/include"
+cp -f efence.h "$OUT/usr/include/"
 
 # Install man pages
-mkdir -p "$DESTDIR/usr/share/man/man3"
-cp -f libefence.3 "$DESTDIR/usr/share/man/man3/"
+mkdir -p "$OUT/usr/share/man/man3"
+cp -f "$SRCS/doc/libefence.3" "$OUT/usr/share/man/man3/" 2>/dev/null || true
 """,
-    visibility = ["PUBLIC"],
 )

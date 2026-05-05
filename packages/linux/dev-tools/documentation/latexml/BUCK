@@ -1,22 +1,15 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "latexml-src",
-    src_uri = "https://github.com/brucemiller/LaTeXML/archive/refs/tags/v0.8.8.tar.gz",
-    sha256 = "8a26ee4b5cc37db0c5733131187e2821283004e77e9edb27f4f37b76c6077b52",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "latexml",
-    source = ":latexml-src",
+    url = "https://github.com/brucemiller/LaTeXML/archive/refs/tags/v0.8.8.tar.gz",
+
+    sha256 = "8a26ee4b5cc37db0c5733131187e2821283004e77e9edb27f4f37b76c6077b52",
     version = "0.8.8",
     description = "LaTeX to XML/HTML/MathML Converter",
     homepage = "https://dlmf.nist.gov/LaTeXML/",
     license = "CC0-1.0",
-    pre_configure = """
-        perl Makefile.PL PREFIX=$OUT/usr INSTALLDIRS=vendor NOMKTEXLSR=1
-    """,
     configure_args = [],
     deps = [
         "//packages/linux/lang/perl:perl",
@@ -31,5 +24,4 @@ autotools_package(
         "//packages/linux/lang/perl/parsers:parse-recdescent",
         "//packages/linux/lang/perl/network:uri",
     ],
-    visibility = ["PUBLIC"],
 )

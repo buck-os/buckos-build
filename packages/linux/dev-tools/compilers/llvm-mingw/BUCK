@@ -1,36 +1,21 @@
-load("//defs:package_defs.bzl", "simple_binary_package")
+load("//defs:package.bzl", "package")
 
-simple_binary_package(
+package(
+    build_rule = "binary",
     name = "llvm-mingw",
     version = "20231017",
-    src_uri = "https://github.com/mstorsjo/llvm-mingw/releases/download/20231017/llvm-mingw-20231017-msvcrt-ubuntu-20.04-x86_64.tar.xz",
-    sha256 = "256de631a9d0048a69a5b1768f0f409ba19db46ecdde9829559956f908241667",
-    bins = [
-        "clang",
-        "clang++",
-        "clang-cl",
-        "lld",
-        "lld-link",
-        "llvm-ar",
-        "llvm-ranlib",
-        "llvm-objcopy",
-        "llvm-objdump",
-        "llvm-nm",
-        "llvm-strip",
-        "llvm-dlltool",
-        "llvm-rc",
-        "x86_64-w64-mingw32-gcc",
-        "x86_64-w64-mingw32-g++",
-        "x86_64-w64-mingw32-clang",
-        "x86_64-w64-mingw32-clang++",
-        "i686-w64-mingw32-gcc",
-        "i686-w64-mingw32-g++",
-        "i686-w64-mingw32-clang",
-        "i686-w64-mingw32-clang++",
-        "aarch64-w64-mingw32-gcc",
-        "aarch64-w64-mingw32-g++",
-        "aarch64-w64-mingw32-clang",
-        "aarch64-w64-mingw32-clang++",
-    ],
-    visibility = ["PUBLIC"],
+    url = "https://github.com/mstorsjo/llvm-mingw/archive/refs/tags/20231017.tar.gz",
+    sha256 = "e387c704c866a36423c20e3d71d8774d19f8c27da4d35baa5e906122feec2488",
+    install_script = """
+        mkdir -p "$OUT/opt/llvm-mingw"
+        cp -r "$SRCS"/* "$OUT/opt/llvm-mingw/"
+
+        # Create symlinks in /usr/bin for common tools
+        mkdir -p "$OUT/usr/bin"
+        for bin in clang clang++ lld llvm-ar llvm-nm llvm-objcopy llvm-objdump llvm-ranlib llvm-strip; do
+            if [ -f "$OUT/opt/llvm-mingw/bin/$bin" ]; then
+                ln -sf "/opt/llvm-mingw/bin/$bin" "$OUT/usr/bin/mingw-$bin"
+            fi
+        done
+    """,
 )

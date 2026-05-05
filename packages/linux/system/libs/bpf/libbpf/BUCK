@@ -1,34 +1,25 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
-load("//defs:use_flags.bzl", "use_dep")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "libbpf-src",
-    src_uri = "https://github.com/libbpf/libbpf/archive/refs/tags/v1.4.6.tar.gz",
-    sha256 = "d4cf3ee697d9bd959ad3c0f5c6757370a2559e54448761271e15a23c31c1082e",
-    signature_required = False,
-)
-
-binary_package(
+package(
     name = "libbpf",
-    srcs = [":libbpf-src"],
-    version = "1.4.6",
-    description = "Library for loading and interacting with BPF programs from userspace",
+    build_rule = "autotools",
+    skip_configure = True,
+    url = "https://github.com/libbpf/libbpf/archive/refs/tags/v1.6.2.tar.gz",
+
+    sha256 = "16f31349c70764cba8e0fad3725cc9f52f6cf952554326aa0229daaa21ef4fbd",
+    version = "1.6.2",
+    description = "BPF library for loading BPF programs",
     homepage = "https://github.com/libbpf/libbpf",
-    license = "LGPL-2.1 BSD-2",
-    install_script = """
-        cd $SRCS/src
-
-        # Build libbpf
-        make BUILD_STATIC_ONLY=1 PREFIX=/usr LIBDIR=/usr/lib
-
-        # Install
-        mkdir -p $OUT/usr/lib $OUT/usr/include/bpf $OUT/usr/lib/pkgconfig
-
-        make BUILD_STATIC_ONLY=1 PREFIX=/usr LIBDIR=/usr/lib DESTDIR=$OUT install
-    """,
-    deps = [
-        "//packages/linux/core/zlib:zlib",
-        "//packages/linux/dev-tools/dev-utils/elfutils:elfutils",
+    license = "LGPL-2.1 BSD-2-Clause",
+    build_subdir = "src",
+    make_args = [
+        "LIBDIR=/usr/lib64",
     ],
-    visibility = ["PUBLIC"],
+    install_args = [
+        "LIBDIR=/usr/lib64",
+    ],
+    deps = [
+        "//packages/linux/system/libs/elfutils:elfutils",
+        "//packages/linux/core/zlib:zlib",
+    ],
 )

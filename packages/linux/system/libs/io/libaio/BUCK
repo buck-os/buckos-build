@@ -1,25 +1,23 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-# Use GitHub mirror since pagure.io blocks Buck2's user-agent with bot detection
-download_source(
-    name = "libaio-src",
-    src_uri = "https://github.com/yugabyte/libaio/archive/refs/tags/libaio-0.3.113.tar.gz",
-    sha256 = "25f2835de4fe3db1472252a3e3ff572cfdbad291430f4ad14dc475fc4f28ab10",
-    signature_required = False,
-)
-
-autotools_package(
+# libaio uses a plain Makefile without configure.  The install target
+# takes prefix/libdir/includedir directly (no DESTDIR support).
+package(
+    build_rule = "binary",
     name = "libaio",
-    source = ":libaio-src",
     version = "0.3.113",
+    url = "https://github.com/yugabyte/libaio/archive/refs/tags/libaio-0.3.113.tar.gz",
+    sha256 = "25f2835de4fe3db1472252a3e3ff572cfdbad291430f4ad14dc475fc4f28ab10",
     description = "Linux kernel AIO access library",
     homepage = "https://pagure.io/libaio",
     license = "LGPL-2.1",
-    src_configure = "true",  # libaio uses Make directly, skip configure entirely
-    configure_args = [],
-    make_args = [
-        "prefix=/usr",
-    ],
-    visibility = ["PUBLIC"],
+    libraries = ["aio"],
+    install_script = """
+mkdir -p "$OUT"
+BUILD=$(mktemp -d)
+cp -a "$SRCS"/. "$BUILD/"
+cd "$BUILD"
+make -C src CC="${CC:-cc}" AR="${AR:-ar}" RANLIB="${RANLIB:-ranlib}" CFLAGS="-I. -fPIC -O2" -j$(nproc)
+make -C src install prefix="$OUT/usr" libdir="$OUT/usr/lib" includedir="$OUT/usr/include"
+""",
 )

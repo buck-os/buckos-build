@@ -1,0 +1,84 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "meson",
+    name = "gtkmm",
+    url = "https://download.gnome.org/sources/gtkmm/3.24/gtkmm-3.24.10.tar.xz",
+    sha256 = "7ab7e2266808716e26c39924ace1fb46da86c17ef39d989624c42314b32b5a76",
+    version = "3.24.10",
+    description = "C++ bindings for GTK+ 3",
+    homepage = "https://gtkmm.gnome.org/",
+    license = "LGPL-2.1+",
+    configure_args = [
+        "-Dbuild-documentation=false",
+        "-Dbuild-demos=false",
+        "-Dbuild-tests=false",
+        "-Dmaintainer-mode=false",
+    ],
+    # at-spi2-core 2.52+ provides a newer libatk-1.0.so that supersedes
+    # standalone atk 2.38. The extra_defs_gen tools link against the full
+    # GTK/ATK chain and fail due to ABI mismatch. These tools are developer-
+    # only (install: false) and not needed for building the library.
+    pre_configure_cmds = [
+        # Remove generate_defs_gdk/gtk dev tools that fail to link due to
+        # atk/at-spi2-core 2.52 vs standalone atk 2.38 ABI mismatch.
+        # Keep only the m4 install section (sets install_m4dir output var).
+        "sed -n '/^# Install m4/,$p' tools/extra_defs_gen/meson.build > tools/extra_defs_gen/meson.build.tmp && mv tools/extra_defs_gen/meson.build.tmp tools/extra_defs_gen/meson.build",
+    ],
+    deps = [
+        "//packages/linux/desktop/atkmm:atkmm",
+        "//packages/linux/desktop/pangomm:pangomm",
+        "//packages/linux/desktop/cairomm:cairomm",
+        "//packages/linux/desktop/glibmm:glibmm",
+        "//packages/linux/desktop/libsigcpp:libsigcpp",
+        "//packages/linux/desktop/gtk:gtk3",
+        # at-spi2-core 2.52+ provides libatk-1.0.so (supersedes standalone atk)
+        # MUST be listed before any package that also provides libatk to avoid
+        # the linker finding the older standalone atk's symbols first.
+        "//packages/linux/desktop/at-spi2-core:at-spi2-core",
+        "//packages/linux/desktop/gdk-pixbuf:gdk-pixbuf",
+        "//packages/linux/fonts/libraries/pango:pango",
+        "//packages/linux/system/libs/graphics/cairo:cairo",
+        "//packages/linux/dev-libs/glib:glib",
+        "//packages/linux/system/libs/utility/pcre2:pcre2",
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/graphics/libepoxy:libepoxy",
+        "//packages/linux/system/security/auth/biometric:pixman",
+        "//packages/linux/system/libs/font/freetype:freetype",
+        "//packages/linux/system/libs/font/fontconfig:fontconfig",
+        "//packages/linux/system/libs/font/harfbuzz:harfbuzz",
+        "//packages/linux/system/libs/font/fribidi:fribidi",
+        "//packages/linux/system/libs/data/expat:expat",
+        "//packages/linux/system/libs/image/libpng:libpng",
+        "//packages/linux/system/libs/compression/brotli:brotli",
+        "//packages/linux/system/libs/compression/bzip2:bzip2",
+        "//packages/linux/system/libs/data/libxml2:libxml2",
+        "//packages/linux/system/libs/image/libjpeg-turbo:libjpeg-turbo",
+        "//packages/linux/system/libs/image/libtiff:libtiff",
+        "//packages/linux/desktop/shared-mime-info:shared-mime-info",
+        "//packages/linux/system/libs/ipc/dbus:dbus",
+        "//packages/linux/system/init/systemd:systemd",
+        "//packages/linux/system/security/capabilities:libcap",
+        "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
+        "//packages/linux/graphics/rendering/wayland:wayland",
+        "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
+        "//packages/linux/desktop/mesa:mesa",
+        "//packages/linux/graphics/xorg/libX11:libX11",
+        "//packages/linux/graphics/xorg/libXext:libXext",
+        "//packages/linux/graphics/xorg/libXrender:libXrender",
+        "//packages/linux/graphics/xorg/libXrandr:libXrandr",
+        "//packages/linux/graphics/xorg/libXi:libXi",
+        "//packages/linux/graphics/xorg/libXfixes:libXfixes",
+        "//packages/linux/graphics/xorg/libXcursor:libXcursor",
+        "//packages/linux/graphics/xorg/libXdamage:libXdamage",
+        "//packages/linux/graphics/xorg/libXcomposite:libXcomposite",
+        "//packages/linux/graphics/xorg/libXinerama:libXinerama",
+        "//packages/linux/graphics/xorg/xorgproto:xorgproto",
+        "//packages/linux/graphics/xorg/libxcb:libxcb",
+        "//packages/linux/graphics/xorg/xcb-proto:xcb-proto",
+        "//packages/linux/graphics/xorg/libXau:libXau",
+        "//packages/linux/graphics/xorg/libXdmcp:libXdmcp",
+        "//packages/linux/graphics/xorg/libXtst:libXtst",
+    ],
+)

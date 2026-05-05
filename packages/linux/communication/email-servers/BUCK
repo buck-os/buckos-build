@@ -5,10 +5,9 @@
 filegroup(
     name = "all-email-servers",
     srcs = [
-        "//packages/linux/communication/email-servers/dovecot:dovecot",
+        "//packages/linux/network/mail/dovecot:dovecot",
         "//packages/linux/communication/email-servers/exim:exim",
         "//packages/linux/communication/email-servers/maddy:maddy",
-        "//packages/linux/communication/email-servers/opensmtpd:opensmtpd",
         "//packages/linux/communication/email-servers/postfix:postfix",
     ],
     default_target_platform = "//platforms:linux-target",
@@ -30,7 +29,6 @@ filegroup(
     name = "mta",
     srcs = [
         "//packages/linux/communication/email-servers/exim:exim",
-        "//packages/linux/communication/email-servers/opensmtpd:opensmtpd",
         "//packages/linux/communication/email-servers/postfix:postfix",
     ],
     default_target_platform = "//platforms:linux-target",
@@ -41,7 +39,7 @@ filegroup(
 filegroup(
     name = "imap-servers",
     srcs = [
-        "//packages/linux/communication/email-servers/dovecot:dovecot",
+        "//packages/linux/network/mail/dovecot:dovecot",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],
@@ -51,7 +49,7 @@ filegroup(
 filegroup(
     name = "traditional-stack",
     srcs = [
-        "//packages/linux/communication/email-servers/dovecot:dovecot",
+        "//packages/linux/network/mail/dovecot:dovecot",
         "//packages/linux/communication/email-servers/postfix:postfix",
     ],
     default_target_platform = "//platforms:linux-target",
@@ -63,7 +61,6 @@ filegroup(
     name = "lightweight",
     srcs = [
         "//packages/linux/communication/email-servers/maddy:maddy",
-        "//packages/linux/communication/email-servers/opensmtpd:opensmtpd",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],
@@ -83,7 +80,7 @@ filegroup(
 filegroup(
     name = "enterprise",
     srcs = [
-        "//packages/linux/communication/email-servers/dovecot:dovecot",
+        "//packages/linux/network/mail/dovecot:dovecot",
         "//packages/linux/communication/email-servers/exim:exim",
         "//packages/linux/communication/email-servers/postfix:postfix",
     ],

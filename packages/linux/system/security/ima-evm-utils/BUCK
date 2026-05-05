@@ -1,0 +1,33 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "ima-evm-utils",
+    version = "1.6.2",
+    url = "https://github.com/linux-integrity/ima-evm-utils/releases/download/v1.6.2/ima-evm-utils-1.6.2.tar.gz",
+    sha256 = "9346a5ccd5ca77caf6a9d2ac0d83873c04d0372414a632126df4e7a88bedff4a",
+    description = "IMA/EVM signing utilities",
+    homepage = "https://github.com/linux-integrity/ima-evm-utils",
+    license = "GPL-2.0-only",
+
+    pre_configure_cmds = [
+        "autoreconf -fi",
+    ],
+
+    configure_args = [
+        "--disable-tpm2",
+    ],
+
+    host_deps = [
+        "//packages/linux/dev-tools/dev-utils/asciidoc:asciidoc",
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+    ],
+
+    deps = [
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/system/security/keyutils:keyutils",
+    ],
+
+)

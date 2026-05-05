@@ -1,96 +1,69 @@
-load("//defs:package_defs.bzl", "download_source", "meson_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # PulseAudio - A sound server for POSIX and Win32 systems
 # USE flags: alsa, bluetooth, dbus, gstreamer, jack, X, gtk, ssl, systemd, doc
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "pulseaudio",
     version = "17.0",
-    src_uri = "https://freedesktop.org/software/pulseaudio/releases/pulseaudio-17.0.tar.xz",
+    url = "https://freedesktop.org/software/pulseaudio/releases/pulseaudio-17.0.tar.xz",
     sha256 = "053794d6671a3e397d849e478a80b82a63cb9d8ca296bd35b73317bb5ceb87b5",
-    signature_required = False,
     description = "A sound server for POSIX and Win32 systems",
     homepage = "https://www.freedesktop.org/wiki/Software/PulseAudio/",
     license = "LGPL-2.1",
 
     # USE flags this package supports
-    iuse = [
-        "alsa",
-        "bluetooth",
-        "dbus",
-        "gstreamer",
-        "jack",
-        "X",
-        "gtk",
-        "ssl",
-        "systemd",
-        "doc",
-        "webrtc-aec",
-        "fftw",
-        "orc",
-        "soxr",
-        "speex",
-    ],
 
     # Default enabled flags
-    use_defaults = ["alsa", "dbus"],
 
     # Conditional dependencies based on USE flags
     use_deps = {
-        "alsa": ["//packages/linux/audio/daemons/alsa-lib:alsa-lib"],
-        "bluetooth": ["//packages/linux/system/bluetooth/bluez:bluez"],
-        "dbus": ["//packages/linux/system/libs/ipc/dbus:dbus"],
-        "gstreamer": ["//packages/linux/graphics/video/gstreamer:gstreamer"],
-        "jack": ["//packages/linux/audio/daemons/jack:jack"],
-        "X": ["//packages/linux/desktop/xorg:xorg-libs"],
-        "gtk": ["//packages/linux/desktop/gtk:gtk3"],
-        "ssl": ["//packages/linux/network/openssl:openssl"],
-        "systemd": ["//packages/linux/system/init/systemd:systemd"],
+        "alsa": "//packages/linux/system/libs/audio/alsa-lib:alsa-lib",
+        "dbus": "//packages/linux/system/libs/ipc/dbus:dbus",
+        "gtk": "//packages/linux/desktop/gtk:gtk3",
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "systemd": "//packages/linux/system/init/systemd:systemd",
     },
 
     # Meson options based on USE flags
     # Format: {"flag": "meson_option"} - will generate -Dmeson_option=enabled/disabled
-    use_options = {
-        "alsa": "alsa",
-        "bluetooth": "bluez5",
-        "dbus": "dbus",
-        "gstreamer": "gstreamer",
-        "jack": "jack",
-        "X": "x11",
-        "gtk": "gtk",
-        "ssl": "openssl",
-        "systemd": "systemd",
-        "webrtc-aec": "webrtc-aec",
-        "fftw": "fftw",
-        "orc": "orc",
-        "soxr": "soxr",
-        "speex": "speex",
-        "doc": "man",
-    },
+
+    # Patch meson.build to make intl optional (can't find it during cross-compilation)
+    pre_configure_cmds = ["""
+sed -i "s/intl_dep = cc.find_library('intl'/intl_dep = dependency('', required: false) #/" meson.build
+"""],
 
     # Base Meson arguments (always applied)
-    meson_args = [
-        "-Ddaemon=enabled",
-        "-Dclient=enabled",
-        "-Ddoxygen=disabled",
-        "-Dgcov=disabled",
-        "-Dtests=disabled",
+    configure_args = [
+        "-Ddaemon=true",
+        "-Dclient=true",
+        "-Ddoxygen=false",
+        "-Dman=false",  # "doc" USE flag would need boolean, disabled by default
+        "-Dgcov=false",
+        "-Dtests=false",
         "-Ddatabase=simple",
-        "-Dudev=enabled",
-        "-Dgsettings=disabled",
-        "-Dhal-compat=disabled",
-        "-Dasyncns=disabled",
-        "-Davahi=disabled",
-        "-Dbluez5-gstreamer=disabled",
-        "-Dbluez5-native-headset=disabled",
-        "-Dbluez5-ofono-headset=disabled",
-        "-Dlirc=disabled",
+        "-Dudev=auto",
+        "-Dhal-compat=false",
+        "-Dasyncns=auto",
+        "-Davahi=auto",
+        "-Dbluez5-gstreamer=auto",
+        "-Dbluez5-native-headset=false",
+        "-Dbluez5-ofono-headset=false",
+        "-Dlirc=auto",
     ],
 
     # Base dependencies (always required)
+    # Audio codec libraries must be listed directly so meson can find their .pc files
+    # (libsndfile references them via Requires.private in its .pc file)
     deps = [
+        "//packages/linux/dev-libs/glib:glib",
+        "//packages/linux/system/libs/audio/libsndfile:libsndfile",
+        "//packages/linux/system/libs/audio/flac:flac",
+        "//packages/linux/system/libs/audio/libogg:libogg",
+        "//packages/linux/system/libs/audio/libvorbis:libvorbis",
+        "//packages/linux/system/libs/audio/opus:opus",
+        "//packages/linux/system/libs/libltdl:libltdl",
     ],
 
-    visibility = ["PUBLIC"],
 )

@@ -1,46 +1,46 @@
+load("//defs:package.bzl", "package")
+
 # Biometric authentication packages
 # Fingerprint readers and related libraries
 
-load("//defs:package_defs.bzl", "download_source", "autotools_package", "meson_package", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
-
 # libfprint - Fingerprint reader library
-meson_package(
+package(
+    build_rule = "meson",
     name = "libfprint",
     version = "1.94.7",
-    src_uri = "https://gitlab.freedesktop.org/libfprint/libfprint/-/archive/v1.94.7/libfprint-v1.94.7.tar.gz",
+    url = "https://gitlab.freedesktop.org/libfprint/libfprint/-/archive/v1.94.7/libfprint-v1.94.7.tar.gz",
     sha256 = "6d2cc09c72f86865b49a911690b43e363aed7595b66e6599232a572ccce95342",
-    signature_required = False,
     description = "Library for fingerprint reader support",
     homepage = "https://fprint.freedesktop.org/",
     license = "LGPL-2.1+",
-    meson_args = [
+    configure_args = [
         "-Dudev_rules_dir=/lib/udev/rules.d",
         "-Ddoc=false",
-        "-Dgtk-examples=false",
-        "-Dintrospection=false",
     ],
+    use_configure = {
+        "examples": ("-Dgtk-examples=true", "-Dgtk-examples=false"),
+        "gtk-doc": ("-Ddoc=true", "-Ddoc=false"),
+        "introspection": ("-Dintrospection=true", "-Dintrospection=false"),
+    },
     deps = [
         "//packages/linux/dev-libs/glib:glib",
-        "//packages/linux/system/init/eudev:eudev",
-        "//packages/linux/system/security/encryption:libusb",
+        "//packages/virtual/libudev:libudev",
         ":nss",
         ":pixman",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # fprintd - Fingerprint authentication daemon
-meson_package(
+package(
+    build_rule = "meson",
     name = "fprintd",
     version = "1.94.3",
-    src_uri = "https://gitlab.freedesktop.org/libfprint/fprintd/-/archive/v1.94.3/fprintd-v1.94.3.tar.gz",
+    url = "https://gitlab.freedesktop.org/libfprint/fprintd/-/archive/v1.94.3/fprintd-v1.94.3.tar.gz",
     sha256 = "2413ec9c0be24f6852afde31baa275a2d7fe3a9ee03973af9362ddb97231aedd",
-    signature_required = False,
     description = "Fingerprint authentication daemon",
     homepage = "https://fprint.freedesktop.org/",
     license = "GPL-2.0+",
-    meson_args = [
+    configure_args = [
         "-Dpam_modules_dir=/lib/security",
         "-Dsystemd_system_unit_dir=/usr/lib/systemd/system",
         "-Dgtk_doc=false",
@@ -49,95 +49,63 @@ meson_package(
     ],
     deps = [
         "//packages/linux/system/libs/ipc/dbus:dbus",
-        "//packages/linux/system/security/encryption:linux-pam",
         ":libfprint",
         "//packages/linux/system/security/auth/privilege:polkit",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # NSS - Network Security Services
-download_source(
-    name = "nss-src",
-    src_uri = "https://ftp.mozilla.org/pub/security/nss/releases/NSS_3_98_RTM/src/nss-3.98.tar.gz",
-    sha256 = "f549cc33d35c0601674bfacf7c6ad683c187595eb4125b423238d3e9aa4209ce",
-    signature_required = False,
-)
-
-autotools_package(
+package(
     name = "nss",
-    source = ":nss-src",
+    build_rule = "autotools",
+    skip_configure = True,
+    url = "https://ftp.mozilla.org/pub/security/nss/releases/NSS_3_98_RTM/src/nss-3.98.tar.gz",
+
+    sha256 = "f549cc33d35c0601674bfacf7c6ad683c187595eb4125b423238d3e9aa4209ce",
     version = "3.98",
     description = "Network Security Services",
     homepage = "https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS",
     license = "MPL-2.0",
-    pre_configure = """
-        cd nss
-    """,
-    configure_args = [],
     make_args = [
         "BUILD_OPT=1",
         "NSS_USE_SYSTEM_SQLITE=1",
         "USE_64=1",
         "NSS_ENABLE_WERROR=0",
     ],
-    post_install = """
+    post_install_cmds = ["""
         mkdir -p "$OUT/usr/lib" "$OUT/usr/include/nss" "$OUT/usr/bin"
         cd ../dist/Linux*/
         cp -L lib/*.so "$OUT/usr/lib/"
         cp -L lib/*.chk "$OUT/usr/lib/" || true
         cp -rL include/nss/* "$OUT/usr/include/nss/"
         cp -L bin/* "$OUT/usr/bin/" || true
-    """,
+    """],
     deps = [
         "//packages/linux/system/libs/database/sqlite:sqlite",
-        ":nspr",
     ],
-    visibility = ["PUBLIC"],
-)
-
-# NSPR - Netscape Portable Runtime
-download_source(
-    name = "nspr-src",
-    src_uri = "https://ftp.mozilla.org/pub/nspr/releases/v4.35/src/nspr-4.35.tar.gz",
-    sha256 = "7ea3297ea5969b5d25a5dd8d47f2443cda88e9ee746301f6e1e1426f8a6abc8f",
-    signature_required = False,
-)
-
-autotools_package(
-    name = "nspr",
-    source = ":nspr-src",
-    version = "4.35",
-    description = "Netscape Portable Runtime",
-    homepage = "https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSPR",
-    license = "MPL-2.0",
-    pre_configure = """
-        cd nspr
-    """,
-    configure_args = [
-        "--prefix=/usr",
-        "--enable-64bit",
-        "--enable-optimize",
-        "--disable-debug",
-    ],
-    deps = [
-    ],
-    visibility = ["PUBLIC"],
 )
 
 # pixman - Pixel manipulation library
-meson_package(
+package(
+    build_rule = "meson",
     name = "pixman",
     version = "0.43.4",
-    src_uri = "https://www.cairographics.org/releases/pixman-0.43.4.tar.gz",
+    url = "https://www.cairographics.org/releases/pixman-0.43.4.tar.gz",
     sha256 = "a0624db90180c7ddb79fc7a9151093dc37c646d8c38d3f232f767cf64b85a226",
-    signature_required = False,
     description = "Pixel manipulation library",
     homepage = "https://www.cairographics.org/",
     license = "MIT",
-    meson_args = [
+    configure_args = [
         "-Dgtk=disabled",
         "-Dlibpng=disabled",
+        # Disable x86 SIMD for cross-compilation to non-x86 architectures
+        # Meson should auto-detect but being explicit helps
+        "-Dmmx=disabled",
+        "-Dsse2=disabled",
+        "-Dssse3=disabled",
+        # Enable ARM NEON when targeting aarch64
+        "-Da64-neon=auto",
+        "-Darm-simd=auto",
+        "-Dneon=auto",
     ],
-    visibility = ["PUBLIC"],
 )

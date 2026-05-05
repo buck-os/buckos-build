@@ -1,18 +1,17 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
     name = "colordiff",
+    build_rule = "binary",
     version = "1.0.21",
-    src_uri = "https://www.colordiff.org/colordiff-1.0.21.tar.gz",
+    url = "https://www.colordiff.org/colordiff-1.0.21.tar.gz",
     sha256 = "9b30f4257ef0f0806dea5a27c9ad8edc3f7999f05ddaff6f0627064dc927e615",
-    signature_required = False,
     description = "Colorizes diff output",
     homepage = "https://www.colordiff.org/",
     license = "GPL-2+",
-
-    iuse = [],
-    use_defaults = [],
-
-    visibility = ["PUBLIC"],
+    install_script = """
+install -Dm755 colordiff.pl "$OUT/usr/bin/colordiff"
+install -Dm644 colordiffrc "$OUT/etc/colordiffrc"
+install -Dm644 colordiff.1 "$OUT/usr/share/man/man1/colordiff.1"
+""",
 )

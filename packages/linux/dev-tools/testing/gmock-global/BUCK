@@ -1,20 +1,18 @@
-load("//defs:package_defs.bzl", "simple_package")
+load("//defs:package.bzl", "package")
 
 # gmock-global - GMock extension for mocking global functions
 
-simple_package(
+package(
     name = "gmock-global",
+    build_rule = "binary",
     version = "1.0.0",
-    src_uri = "https://github.com/apriorit/gmock-global/archive/refs/heads/master.tar.gz",
-    sha256 = "TODO",
+    url = "https://github.com/apriorit/gmock-global/archive/refs/heads/master.tar.gz",
+    sha256 = "b11adcb9adeae0688218cdf94dd73f727af8d8a59ba72b621e4bfb8a8a31f6d9",
     description = "An extension for Google Mock to mock global functions",
     homepage = "https://github.com/apriorit/gmock-global",
     license = "MIT",
     deps = [
         "//packages/linux/dev-tools/testing:googletest",
     ],
-    build_commands = [
-        "install -Dm644 gmock-global.h ${PREFIX}/include/gmock-global.h",
-    ],
-    visibility = ["PUBLIC"],
+    install_script = "install -Dm644 gmock-global.h ${PREFIX}/include/gmock-global.h",
 )

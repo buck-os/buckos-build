@@ -1,42 +1,36 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # screen - Terminal multiplexer with detach capability
 # USE flags: pam, multiuser, selinux
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "screen",
-    version = "4.9.1",
-    src_uri = "https://mirrors.kernel.org/gnu/screen/screen-4.9.1.tar.gz",
-    sha256 = "26cef3e3c42571c0d484ad6faf110c5c15091fbf872b06fa7aa4766c7405ac69",
-    signature_sha256 = "4c13f278b975b27877d096a3bd2d6bceb3ac0dc4ad89b0f65161040773a0611a",
-    signature_required = False,
+    version = "5.0.1",
+    url = "https://mirrors.kernel.org/gnu/screen/screen-5.0.1.tar.gz",
+    sha256 = "2dae36f4db379ffcd14b691596ba6ec18ac3a9e22bc47ac239789ab58409869d",
     description = "GNU screen terminal multiplexer",
     homepage = "https://www.gnu.org/software/screen",
     license = "GPL-3+",
-    iuse = ["pam", "multiuser", "selinux", "debug"],
-    use_defaults = [],
     use_deps = {
-        "pam": ["//packages/linux/system/security/auth/pam:pam"],
-        "selinux": ["//packages/linux/system/security/selinux:selinux"],
+        "pam": "//packages/linux/system/security/auth/pam:pam",
+        "selinux": "//packages/linux/system/security/selinux:selinux",
     },
     use_configure = {
-        "pam": "--enable-pam",
-        "-pam": "--disable-pam",
-        "multiuser": "--enable-socket-dir",
-        "-multiuser": "--disable-socket-dir",
-        "selinux": "--enable-selinux",
-        "-selinux": "--disable-selinux",
-        "debug": "--enable-debug",
-        "-debug": "--disable-debug",
+        "debug": ("--enable-debug", "--disable-debug"),
+        "multiuser": ("--enable-socket-dir", "--disable-socket-dir"),
+        "nethack": ("--enable-nethack", "--disable-nethack"),
+        "pam": ("--enable-pam", "--disable-pam"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "utempter": ("--enable-utempter", "--disable-utempter"),
     },
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc",
     ],
-    env = {"CFLAGS": "-std=gnu17 -O2"},
     deps = [
-        "//packages/linux/core/ncurses:ncurses",
+        "//packages/linux/system/terminal/ncurses:ncurses",
+        "//packages/linux/system/libs/crypto/libxcrypt:libxcrypt",
     ],
     visibility = ["PUBLIC"],
 )

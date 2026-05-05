@@ -1,81 +1,14 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
-
-# virt-manager - Desktop user interface for managing VMs
-download_source(
-    name = "virt-manager-src",
-    src_uri = "https://releases.pagure.org/virt-manager/virt-manager-4.1.0.tar.gz",
-    sha256 = "950681d7b32dc61669278ad94ef31da33109bf6fcf0426ed82dfd7379aa590a2",
-    signature_sha256 = "1100c0a61b979203ebcc3a561586a7652a54b28f415e9f9d5ea01800433f3be3",
-    signature_required = False,
-)
-
-# USE flags: See use_flags.bzl for available flags
-
-autotools_package(
-    name = "virt-manager",
-    source = ":virt-manager-src",
-    version = "4.1.0",
-    description = "Desktop user interface for managing virtual machines",
-    homepage = "https://virt-manager.org/",
-    license = "GPL-2.0",
-    configure_args = [
-        "--prefix=/usr",
-    ],
-    post_install = """
-#!/bin/bash
-set -e
-
-# Update icon cache
-gtk-update-icon-cache -f "$DESTDIR/usr/share/icons/hicolor" 2>/dev/null || true
-
-# Update desktop database
-update-desktop-database "$DESTDIR/usr/share/applications" 2>/dev/null || true
-    """,
-    deps = [
-        "//packages/linux/lang/python:python",
-        "//packages/linux/desktop/gtk:gtk3",
-        # gtksourceview4 - optional dependency for syntax highlighting
-        # "//packages/linux/desktop/gtk:libvte",  # TODO: add libvte package
-        "//packages/linux/emulation/virtualization/libvirt:libvirt-python",
-    ],
-    visibility = ["PUBLIC"],
-)
-
-# virt-install - Command line tool for creating VMs
-# USE flags: See use_flags.bzl for available flags
-
-autotools_package(
-    name = "virt-install",
-    source = ":virt-manager-src",
-    version = "4.1.0",
-    description = "Command line tool for creating new KVM/Xen/LXC guests",
-    homepage = "https://virt-manager.org/",
-    license = "GPL-2.0",
-    configure_args = [
-        "--prefix=/usr",
-    ],
-    deps = [
-        "//packages/linux/lang/python:python",
-        "//packages/linux/emulation/virtualization/libvirt:libvirt-python",
-    ],
-    visibility = ["PUBLIC"],
-)
+load("//defs:package.bzl", "package")
 
 # virt-viewer - Graphical console client
-download_source(
-    name = "virt-viewer-src",
-    src_uri = "https://releases.pagure.org/virt-viewer/virt-viewer-11.0.tar.xz",
-    sha256 = "a43fa2325c4c1c77a5c8c98065ac30ef0511a21ac98e590f22340869bad9abd0",
-    signature_sha256 = "7698778452261966139bf2189ffab152b88b5b6d663feb9fe3197a0b028bdeaf",
-    signature_required = False,
-)
-
 # USE flags: See use_flags.bzl for available flags
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "virt-viewer",
-    source = ":virt-viewer-src",
+    url = "https://releases.pagure.org/virt-viewer/virt-viewer-11.0.tar.xz",
+
+    sha256 = "a43fa2325c4c1c77a5c8c98065ac30ef0511a21ac98e590f22340869bad9abd0",
     version = "11.0",
     description = "Graphical console client for connecting to virtual machines",
     homepage = "https://virt-manager.org/",
@@ -93,5 +26,4 @@ autotools_package(
         "//packages/linux/emulation/utilities/spice:spice-gtk",
         "//packages/linux/emulation/virtualization/libvirt:libvirt",
     ],
-    visibility = ["PUBLIC"],
 )

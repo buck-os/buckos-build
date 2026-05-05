@@ -1,0 +1,111 @@
+load("//defs:package.bzl", "package")
+
+# =============================================================================
+# libltdl - Portable dlopen wrapper library
+# =============================================================================
+# libltdl is the runtime library component of GNU Libtool, providing a
+# portable interface to dlopen/dlsym across different platforms.
+
+package(
+    name = "libltdl",
+    build_rule = "binary",
+    version = "2.4.7",
+    source = "//packages/linux/dev-tools/build-systems/libtool:libtool-src",
+    description = "Portable dlopen wrapper library from GNU Libtool",  # rebuild-v7
+    homepage = "https://www.gnu.org/software/libtool/",
+    license = "LGPL-2+",
+    install_script = """
+# Make all files writable
+chmod -R u+w . 2>/dev/null || true
+
+# Configure libltdl standalone to generate config.h and ltdl.h
+cd libltdl
+
+# Prevent automake version mismatch from triggering regeneration
+touch aclocal.m4 configure config.h.in Makefile.in 2>/dev/null || true
+
+CROSS_ARGS=""
+if [ "${CROSS_COMPILING:-false}" = "true" ] && [ -n "${CHOST:-}" ]; then
+    CROSS_ARGS="--host=${CHOST}"
+fi
+
+./configure \
+    --prefix=/usr \
+    --libdir=/usr/lib64 \
+    $CROSS_ARGS
+
+# Let make compile - it uses the full CC path from configure
+make -j${MAKEOPTS:-$(nproc)}
+
+# Now manually link a shared library from the PIC objects.
+# Libtool's standalone configure only builds a convenience library (libltdlc),
+# so we must create the shared lib ourselves.
+CC_FULL=$(sed -n 's/^CC = //p' Makefile)
+echo "Using CC: $CC_FULL"
+
+# Find individual PIC object files from the convenience library.
+# Note: The convenience library is named libltdlc (with 'c'), so objects are libltdlc_la-*
+# Use maxdepth 1 in .libs/ to avoid duplicating objects from loaders/.libs/
+echo "Object files in .libs/:"
+find . -path '*/.libs/*.o' | sort
+
+CORE_OBJS=$(find ./.libs -maxdepth 1 -name 'libltdlc_la-*.o' | sort | tr '\\n' ' ')
+LOADER_OBJS="./loaders/.libs/dlopen.o ./loaders/.libs/libltdlc_la-preopen.o"
+echo "Core objects: $CORE_OBJS"
+echo "Loader objects: $LOADER_OBJS"
+
+# Provide default empty preloaded symbols table required by preopen.c
+# Normally the application defines this, but for a shared library it must be built-in
+cat > lt_preloaded_symbols.c << 'SYMEOF'
+typedef struct { const char *name; void *address; } lt_dlsymlist;
+/* Both names needed: libltdlc (convenience lib name) and libltdl (public name) */
+const lt_dlsymlist lt_libltdlc_LTX_preloaded_symbols[] = { {0, (void *)0} };
+const lt_dlsymlist lt_libltdl_LTX_preloaded_symbols[] = { {0, (void *)0} };
+const lt_dlsymlist lt_preloaded_symbols[] = { {0, (void *)0} };
+SYMEOF
+$CC_FULL -fPIC -c lt_preloaded_symbols.c -o lt_preloaded_symbols.o
+
+$CC_FULL -shared -Wl,-soname,libltdl.so.7 \
+    $CORE_OBJS $LOADER_OBJS lt_preloaded_symbols.o \
+    -ldl -o libltdl.so.7.3.2
+
+ln -sf libltdl.so.7.3.2 libltdl.so.7
+ln -sf libltdl.so.7 libltdl.so
+
+echo "Built shared library:"
+ls -la libltdl.so*
+file libltdl.so.7.3.2 2>/dev/null || true
+nm -D libltdl.so.7.3.2 2>/dev/null | grep 'lt_dl' | head -10 || true
+
+mkdir -p "$OUT/usr/lib64"
+mkdir -p "$OUT/usr/include"
+mkdir -p "$OUT/usr/include/libltdl"
+
+# Install shared library (copy the real file first, then symlinks)
+install -m755 libltdl.so.7.3.2 "$OUT/usr/lib64/"
+ln -sf libltdl.so.7.3.2 "$OUT/usr/lib64/libltdl.so.7"
+ln -sf libltdl.so.7 "$OUT/usr/lib64/libltdl.so"
+
+# Install headers
+cp ltdl.h "$OUT/usr/include/"
+cp libltdl/lt_dlloader.h "$OUT/usr/include/libltdl/"
+cp libltdl/lt_error.h "$OUT/usr/include/libltdl/"
+cp libltdl/lt_system.h "$OUT/usr/include/libltdl/"
+
+# Create pkg-config file for meson to find
+mkdir -p "$OUT/usr/lib64/pkgconfig"
+cat > "$OUT/usr/lib64/pkgconfig/ltdl.pc" << 'PCEOF'
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib64
+includedir=${prefix}/include
+
+Name: ltdl
+Description: A portable dlopen wrapper library
+Version: 2.4.7
+Libs: -L${libdir} -lltdl
+Cflags: -I${includedir}
+PCEOF
+""",
+    deps = [],
+)

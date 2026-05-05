@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "simple_package")
+load("//defs:package.bzl", "package")
 
 # Redis - In-memory data structure store
 #
@@ -10,43 +10,25 @@ load("//defs:package_defs.bzl", "simple_package")
 #   systemd   - Enable systemd integration
 #   jemalloc  - Use jemalloc memory allocator (recommended)
 
-simple_package(
+package(
     name = "redis",
+    build_rule = "binary",
     version = "7.4.1",
-    src_uri = "https://github.com/redis/redis/archive/refs/tags/7.4.1.tar.gz",
-    sha256 = "29f7c7a1c0e546bc6dc17cd4a8ec06abba877da9bd5c2e8e2ed8da14bbad1c29",
+    url = "https://github.com/redis/redis/archive/refs/tags/7.4.1.tar.gz",
+    sha256 = "e85fd212307c8b453ae9361e882b6c1cefcc6a988a6f135faf7ef770a13bb05d",
     description = "In-memory data structure store, used as database, cache, and message broker",
     homepage = "https://redis.io/",
     license = "BSD-3-Clause",
-    iuse = ["ssl", "systemd", "jemalloc"],
-    use_defaults = ["jemalloc"],
     deps = [],
-    use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "jemalloc": ["//packages/linux/dev-libs/allocators/jemalloc:jemalloc"],
-    },
-    build_env = {
-        "PREFIX": "/usr",
-    },
-    build_cmd = """
-# Redis uses make directly
-make -j$(nproc) PREFIX=/usr
+    install_script = """
+cd "$SRCS"
+make CC="$CC" CXX="$CXX" \
+    CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" \
+    PREFIX=/usr USE_JEMALLOC=no USE_SYSTEMD=no \
+    -j${MAKEOPTS:-$(nproc)} || \
+make CC="$CC" PREFIX=/usr USE_JEMALLOC=no -j1
+
+# Redis Makefile doesn't support DESTDIR, use PREFIX directly
+make PREFIX="$OUT/usr" install
 """,
-    install_cmd = """
-make PREFIX=/usr DESTDIR="$DESTDIR" install
-
-# Create directories
-mkdir -p "$DESTDIR/etc/redis"
-mkdir -p "$DESTDIR/var/lib/redis"
-mkdir -p "$DESTDIR/var/log/redis"
-
-# Install default config
-cp redis.conf "$DESTDIR/etc/redis/redis.conf"
-
-# Update config for production use
-sed -i 's/^daemonize no/daemonize yes/' "$DESTDIR/etc/redis/redis.conf"
-sed -i 's|^dir \./|dir /var/lib/redis|' "$DESTDIR/etc/redis/redis.conf"
-sed -i 's|^logfile ""|logfile /var/log/redis/redis.log|' "$DESTDIR/etc/redis/redis.conf"
-""",
-    visibility = ["PUBLIC"],
 )

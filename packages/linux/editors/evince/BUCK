@@ -1,25 +1,38 @@
-load("//defs:package_defs.bzl", "meson_package", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
+load("//defs:package.bzl", "package")
 
 # evince - GNOME document viewer
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "evince",
     version = "45.0",
-    src_uri = "https://download.gnome.org/sources/evince/45/evince-45.0.tar.xz",
+    use_configure = {
+        "X": ("--with-x", "--without-x"),
+        "cups": ("--enable-cups", "--disable-cups"),
+        "djvu": ("--enable-djvu", "--disable-djvu"),
+        "dvi": ("--enable-dvi", "--disable-dvi"),
+        "gnome": ("--enable-gnome", "--disable-gnome"),
+        "gstreamer": ("--enable-gstreamer", "--disable-gstreamer"),
+        "gtk-doc": ("--enable-gtk-doc", "--disable-gtk-doc"),
+        "introspection": ("--enable-introspection", "--disable-introspection"),
+        "keyring": ("--enable-keyring", "--disable-keyring"),
+        "postscript": ("--enable-postscript", "--disable-postscript"),
+        "spell": ("--enable-spell", "--disable-spell"),
+        "tiff": ("--with-tiff", "--without-tiff"),
+        "wayland": ("--enable-wayland", "--disable-wayland"),
+        "xps": ("--enable-xps", "--disable-xps"),
+    },
+    url = "https://download.gnome.org/sources/evince/45/evince-45.0.tar.xz",
     sha256 = "d18647d4275cbddf0d32817b1d04e307342a85be914ec4dad2d8082aaf8aa4a8",
-    signature_required = False,
     description = "GNOME document viewer for PDF, PostScript, and more",
     homepage = "https://wiki.gnome.org/Apps/Evince",
     license = "GPL-2+",
-    meson_args = [
+    configure_args = [
         "-Dprefix=/usr",
         "-Dnautilus=false",
         "-Dgtk_doc=false",
     ],
     deps = [
         "//packages/linux/desktop/gtk:gtk3",
-        "//packages/linux/editors/poppler:poppler",
     ],
-    visibility = ["PUBLIC"],
 )

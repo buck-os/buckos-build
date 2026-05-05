@@ -1,18 +1,13 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # LiVES - Video editing system and VJ tool
 
-download_source(
-    name = "lives-src",
-    src_uri = "http://lives-video.com/releases/LiVES-3.2.0.tar.bz2",
-    sha256 = "5aa438b5af7e97f77bbbeadf032cfd8d64aca0a880780180600d5aada05c229a",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "lives",
-    source = ":lives-src",
+    url = "http://lives-video.com/releases/LiVES-3.2.0.tar.bz2",
+
+    sha256 = "5aa438b5af7e97f77bbbeadf032cfd8d64aca0a880780180600d5aada05c229a",
     version = "3.2.0",
     description = "Video editing system and VJ tool",
     homepage = "http://lives-video.com/",
@@ -23,17 +18,16 @@ autotools_package(
         "--disable-static",
     ],
     make_args = [],
-    post_install = """
+    post_install_cmds = ["""
 DESTDIR=$OUT make install
-""",
+"""],
     deps = [
-        "//packages/linux/graphics/video/ffmpeg:ffmpeg",
-        "//packages/linux/desktop/gtk:gtk3",
-        # "//packages/linux/core/frei0r:frei0r",  # TODO: not packaged yet,
-        "//packages/linux/audio/daemons/pulseaudio:pulseaudio",
+                "//packages/linux/desktop/gtk:gtk3",
+                # "//packages/linux/core/frei0r:frei0r",
+                # TODO: not packaged yet,
+                "//packages/linux/audio/daemons/pulseaudio:pulseaudio",
     ],
-    bdepend = [
+    host_deps = [
         "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
     ],
-    visibility = ["PUBLIC"],
 )

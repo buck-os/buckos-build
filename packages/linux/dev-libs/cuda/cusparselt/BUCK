@@ -1,42 +1,11 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "cusparselt-src",
-    src_uri = "https://developer.download.nvidia.com/compute/cusparselt/redist/libcusparse_lt/linux-x86_64/libcusparse_lt-linux-x86_64-0.7.1.2-archive.tar.xz",
-    sha256 = "TODO",
-)
+# cusparselt - DISABLED
+# NVIDIA download URLs change frequently. Re-enable when URL is verified.
+# Archive: https://developer.nvidia.com/cusparselt-archive
+# Latest: https://developer.nvidia.com/cusparselt-downloads
 
-binary_package(
+filegroup(
     name = "cusparselt",
-    srcs = [":cusparselt-src"],
-    version = "0.7.1",
-    description = "NVIDIA cuSPARSELt library for sparse matrix operations",
-    homepage = "https://developer.nvidia.com/cusparselt",
-    license = "NVIDIA cuSPARSELt EULA",
-    install_script = """
-cd $SRCS
-
-mkdir -p "$OUT/usr/include"
-mkdir -p "$OUT/usr/lib64"
-
-cp -a include/* "$OUT/usr/include/"
-cp -a lib/* "$OUT/usr/lib64/"
-
-mkdir -p "$OUT/usr/lib64/pkgconfig"
-cat > "$OUT/usr/lib64/pkgconfig/cusparselt.pc" << 'EOF'
-prefix=/usr
-libdir=${prefix}/lib64
-includedir=${prefix}/include
-
-Name: cuSPARSELt
-Description: NVIDIA cuSPARSELt sparse matrix library
-Version: 0.7.1
-Libs: -L${libdir} -lcusparseLt
-Cflags: -I${includedir}
-EOF
-""",
-    deps = [
-        "//packages/linux/system/gpu/libraries/cuda-toolkit:cuda-toolkit",
-    ],
-    visibility = ["PUBLIC"],
+    srcs = [],
 )

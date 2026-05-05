@@ -1,27 +1,12 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "ripgrep-src",
-    src_uri = "https://github.com/BurntSushi/ripgrep/releases/download/14.1.0/ripgrep-14.1.0-x86_64-unknown-linux-musl.tar.gz",
-    sha256 = "f84757b07f425fe5cf11d87df6644691c644a5cd2348a2c670894272999d3ba7",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "cargo",
     name = "ripgrep",
-    srcs = [":ripgrep-src"],
     version = "14.1.0",
-    description = "Recursively searches directories for a regex pattern",
-    homepage = "https://github.com/BurntSushi/ripgrep",
-    license = "MIT",
-    install_script = """
-        cd $SRCS
-        mkdir -p "$OUT/usr/bin" "$OUT/usr/share/man/man1" "$OUT/usr/share/bash-completion/completions"
-        cp rg "$OUT/usr/bin/"
-        cp doc/rg.1 "$OUT/usr/share/man/man1/" || true
-        cp complete/rg.bash "$OUT/usr/share/bash-completion/completions/rg" || true
-        chmod +x "$OUT/usr/bin/rg"
-    """,
-    visibility = ["PUBLIC"],
+    url = "https://github.com/BurntSushi/ripgrep/archive/refs/tags/14.1.0.tar.gz",
+    sha256 = "33c6169596a6bbfdc81415910008f26e0809422fda2d849562637996553b2ab6",
+    host_deps = [
+        "//packages/linux/lang/rust:rust",
+    ],
 )

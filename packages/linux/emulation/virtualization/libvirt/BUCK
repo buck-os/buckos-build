@@ -1,61 +1,51 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # libvirt - Virtualization API
-# Use GitHub mirror since libvirt.org/download.libvirt.org often times out
-download_source(
-    name = "libvirt-src",
-    src_uri = "https://github.com/libvirt/libvirt/archive/refs/tags/v10.7.0.tar.gz",
-    sha256 = "6a89c296c23ee204e35cc4a9dbc8da64033a5c8c8126d7c92184f65e00f4ef65",
-    signature_required = False,
-)
+# libvirt 10.x uses meson build system
 
-# USE flags: See use_flags.bzl for available flags
-
-autotools_package(
+package(
+    build_rule = "meson",
     name = "libvirt",
-    source = ":libvirt-src",
     version = "10.7.0",
+    url = "https://download.libvirt.org/libvirt-10.7.0.tar.xz",
+    sha256 = "ca757322eed998013b21f474c6c0c15dc08320ba6c8bae54aa16a93a1c3b7054",
     description = "Library and daemon providing a stable API for managing virtualization",
     homepage = "https://libvirt.org/",
     license = "LGPL-2.1",
     configure_args = [
         "--prefix=/usr",
-        "--sysconfdir=/etc",
-        "--localstatedir=/var",
-        "--libexecdir=/usr/lib/libvirt",
-        "--with-runstatedir=/run",
-        "--with-qemu",
-        "--with-qemu-user=qemu",
-        "--with-qemu-group=qemu",
-        "--with-lxc",
-        "--with-libxl",
-        "--with-vbox",
-        "--with-libssh2",
-        "--with-sasl",
-        "--with-polkit",
-        "--with-udev",
-        "--with-storage-fs",
-        "--with-storage-lvm",
-        "--with-storage-iscsi",
-        "--with-storage-disk",
-        "--with-storage-rbd",
-        "--with-storage-zfs",
-        "--with-numactl",
-        "--with-numad",
-        "--with-firewalld",
-        "--with-network",
-        "--with-nwfilter",
-        "--with-interface",
-        "--with-macvtap",
-        "--with-virtualport",
-        "--with-secdriver-apparmor=no",
-        "--with-secdriver-selinux=no",
-        "--with-audit",
-        "--with-dtrace",
-        "--with-systemd-daemon",
-        "--with-init-script=systemd",
+        "-Dsysconfdir=/etc",
+        "-Dlocalstatedir=/var",
+        "-Drunstatedir=/run",
+        "-Dtests=disabled",
+        "-Ddocs=disabled",
     ],
+    use_configure = {
+        "apparmor": ("-Dapparmor=enabled", "-Dapparmor=disabled"),
+        "audit": ("-Daudit=enabled", "-Daudit=disabled"),
+        "caps": ("-Dlibcap=enabled", "-Dlibcap=disabled"),
+        "dtrace": ("-Ddtrace=enabled", "-Ddtrace=disabled"),
+        "firewalld": ("-Dfirewalld=enabled", "-Dfirewalld=disabled"),
+        "fuse": ("-Dfuse=enabled", "-Dfuse=disabled"),
+        "glusterfs": ("-Dglusterfs=enabled", "-Dglusterfs=disabled"),
+        "iscsi": ("-Dstorage_iscsi=enabled", "-Dstorage_iscsi=disabled"),
+        "libssh": ("-Dlibssh=enabled", "-Dlibssh=disabled"),
+        "libssh2": ("-Dlibssh2=enabled", "-Dlibssh2=disabled"),
+        "libvirtd": ("-Ddriver_libvirtd=enabled", "-Ddriver_libvirtd=disabled"),
+        "lvm": ("-Dstorage_lvm=enabled", "-Dstorage_lvm=disabled"),
+        "lxc": ("-Ddriver_lxc=enabled", "-Ddriver_lxc=disabled"),
+        "nbd": ("-Dnbd=enabled", "-Dnbd=disabled"),
+        "nls": ("-Dnls=enabled", "-Dnls=disabled"),
+        "numa": ("-Dnumactl=enabled", "-Dnumactl=disabled"),
+        "pcap": ("-Dlibpcap=enabled", "-Dlibpcap=disabled"),
+        "policykit": ("-Dpolkit=enabled", "-Dpolkit=disabled"),
+        "qemu": ("-Ddriver_qemu=enabled", "-Ddriver_qemu=disabled"),
+        "sasl": ("-Dsasl=enabled", "-Dsasl=disabled"),
+        "selinux": ("-Dselinux=enabled", "-Dselinux=disabled"),
+        "udev": ("-Dudev=enabled", "-Dudev=disabled"),
+        "wireshark-plugins": ("-Dwireshark_dissector=enabled", "-Dwireshark_dissector=disabled"),
+        "zfs": ("-Dstorage_zfs=enabled", "-Dstorage_zfs=disabled"),
+    },
     deps = [
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/system/libs/data/libxml2:libxml2",
@@ -63,55 +53,54 @@ autotools_package(
         "//packages/linux/system/libs/data/yajl:yajl",
         "//packages/linux/system/libs/ipc/libtirpc:libtirpc",
         "//packages/linux/system/libs/crypto/gnutls:gnutls",
-        "//packages/linux/network/curl:curl",
-        "//packages/linux/system/init/eudev:eudev",
+        "//packages/linux/system/libs/network/curl:curl",
+        "//packages/virtual/libudev:libudev",
         "//packages/linux/system/security/auth/privilege:polkit",
         "//packages/linux/system/security/audit:audit",
         "//packages/linux/emulation/hypervisors/qemu:qemu",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # libvirt client libraries only
-# USE flags: See use_flags.bzl for available flags
 
-autotools_package(
+package(
+    build_rule = "meson",
     name = "libvirt-client",
-    source = ":libvirt-src",
     version = "10.7.0",
+    source = ":libvirt-src",
     description = "libvirt client libraries and virsh command-line tool",
     homepage = "https://libvirt.org/",
     license = "LGPL-2.1",
     configure_args = [
         "--prefix=/usr",
-        "--sysconfdir=/etc",
-        "--without-libvirtd",
-        "--with-driver-modules=no",
+        "-Dsysconfdir=/etc",
+        "-Ddriver_libvirtd=disabled",
+        "-Dtests=disabled",
+        "-Ddocs=disabled",
     ],
     deps = [
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/system/libs/data/libxml2:libxml2",
         "//packages/linux/system/libs/crypto/gnutls:gnutls",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # libvirt Python bindings
-# USE flags: See use_flags.bzl for available flags
 
-autotools_package(
+package(
+    build_rule = "meson",
     name = "libvirt-python",
-    source = ":libvirt-src",
     version = "10.7.0",
+    source = ":libvirt-src",
     description = "Python bindings for libvirt",
     homepage = "https://libvirt.org/",
     license = "LGPL-2.1",
     configure_args = [
         "--prefix=/usr",
+        "-Dtests=disabled",
     ],
     deps = [
         ":libvirt",
         "//packages/linux/lang/python:python",
     ],
-    visibility = ["PUBLIC"],
 )

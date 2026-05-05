@@ -1,16 +1,11 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "signal-desktop-src",
-    src_uri = "https://updates.signal.org/desktop/apt/pool/s/signal-desktop/signal-desktop_7.36.0_amd64.deb",
-    sha256 = "7b14d1c7d47e9bea92a5cc3d536d1ab805cb4d22e2acf6896b5ae8be84b04047",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "signal-desktop",
-    srcs = [":signal-desktop-src"],
     version = "7.36.0",
+    url = "https://github.com/signalapp/Signal-Desktop/archive/refs/tags/v7.36.0.tar.gz",
+    sha256 = "82c9bafc5938de8269528abcf1e58d0e110c57593ea9d2cf7de81035057817d5",
     description = "Private messenger for desktop - encrypted messaging, voice, and video calls",
     homepage = "https://signal.org/",
     license = "AGPL-3.0",
@@ -65,8 +60,6 @@ DESKTOP
     deps = [
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/system/security/auth/biometric:nss",
-        "//packages/linux/system/security/auth/biometric:nspr",
         "//packages/linux/audio/daemons/pulseaudio:pulseaudio",
     ],
-    visibility = ["PUBLIC"],
 )

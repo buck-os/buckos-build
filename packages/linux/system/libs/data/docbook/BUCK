@@ -1,0 +1,46 @@
+load("//defs:package.bzl", "package")
+
+# =============================================================================
+# DocBook XML DTD 4.5
+# =============================================================================
+# Data-only package: installs DTD files into share/xml/docbook/schema/dtd/4.5/
+# Required by kdoctools (FindDocBookXML4.cmake looks for docbookx.dtd)
+
+package(
+    name = "docbook-xml",
+    build_rule = "binary",
+    version = "4.5",
+    url = "https://www.oasis-open.org/docbook/xml/4.5/docbook-xml-4.5.zip",
+    sha256 = "4e4e037a2b83c98c6c94818390d4bdd3f6e10f6ec62dd79188594e26190dc7b4",
+    strip_components = 0,
+    description = "DocBook XML DTD 4.5",
+    homepage = "https://docbook.org/xml/",
+    license = "MIT",
+    install_script = """
+mkdir -p "$OUT/usr/share/xml/docbook/schema/dtd/4.5"
+cp -a "$SRCS"/* "$OUT/usr/share/xml/docbook/schema/dtd/4.5/"
+""",
+    visibility = ["PUBLIC"],
+)
+
+# =============================================================================
+# DocBook XSL Stylesheets
+# =============================================================================
+# Data-only package: installs XSL stylesheets into share/xml/docbook/stylesheet/docbook-xsl/
+# Required by kdoctools (FindDocBookXSL.cmake looks for lib/lib.xsl)
+
+package(
+    name = "docbook-xsl",
+    build_rule = "binary",
+    version = "1.79.2",
+    url = "https://github.com/docbook/xslt10-stylesheets/releases/download/release%2F1.79.2/docbook-xsl-nons-1.79.2.tar.bz2",
+    sha256 = "ee8b9eca0b7a8f89075832a2da7534bce8c5478fc8fc2676f512d5d87d832102",
+    description = "DocBook XSL Stylesheets (non-namespaced)",
+    homepage = "https://github.com/docbook/xslt10-stylesheets",
+    license = "MIT",
+    install_script = """
+mkdir -p "$OUT/usr/share/xml/docbook/stylesheet/docbook-xsl"
+cp -a "$SRCS"/* "$OUT/usr/share/xml/docbook/stylesheet/docbook-xsl/"
+""",
+    visibility = ["PUBLIC"],
+)

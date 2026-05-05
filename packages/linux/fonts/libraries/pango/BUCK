@@ -1,49 +1,49 @@
-load("//defs:package_defs.bzl", "meson_package", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "meson",
     name = "pango",
     version = "1.52.2",
-    src_uri = "https://download.gnome.org/sources/pango/1.52/pango-1.52.2.tar.xz",
+    url = "https://download.gnome.org/sources/pango/1.52/pango-1.52.2.tar.xz",
     sha256 = "d0076afe01082814b853deec99f9349ece5f2ce83908b8e58ff736b41f78a96b",
-    signature_required = False,
     description = "Library for layout and rendering of text",
     homepage = "https://pango.gnome.org/",
     license = "LGPL-2.0-or-later",
-    iuse = ["static-libs", "introspection", "cairo", "X", "doc", "test", "examples"],
-    use_defaults = ["cairo"],
-    use_configure = {
-        "static-libs": "-Ddefault_library=static",
-        "-static-libs": "-Ddefault_library=shared",
-        "introspection": "-Dintrospection=enabled",
-        "-introspection": "-Dintrospection=disabled",
-        "cairo": "-Dcairo=enabled",
-        "-cairo": "-Dcairo=disabled",
-        "X": "-Dxft=enabled",
-        "-X": "-Dxft=disabled",
-        "doc": "-Dgtk_doc=true",
-        "-doc": "-Dgtk_doc=false",
-        "test": "-Dbuild-testsuite=true",
-        "-test": "-Dbuild-testsuite=false",
-        "examples": "-Dbuild-examples=true",
-        "-examples": "-Dbuild-examples=false",
-    },
-    use_deps = {
-        "cairo": ["//packages/linux/desktop/cairo:cairo"],
-    },
-    pre_configure = """
-mkdir -p build
-cd build
-# USE flags: static-libs, introspection, cairo, X, doc, test, examples
-meson setup .. --prefix=/usr \
-    $CONFIGURE_ARGS
-""",
+    configure_args = [
+        "--wrap-mode=nofallback",
+        "-Dintrospection=disabled",
+        "-Dxft=disabled",
+        "-Dgtk_doc=false",
+        "-Dinstall-tests=false",
+        "-Dlibthai=disabled",
+        "-Dsysprof=disabled",
+        # Enable cairo for pangocairo (required by GTK)
+        "-Dcairo=enabled",
+    ],
     deps = [
         "//packages/linux/dev-libs/glib:glib",
+        "//packages/linux/system/libs/utility/pcre2:pcre2",
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/core/zlib:zlib",
+        # cairo for pangocairo
+        "//packages/linux/system/libs/graphics/cairo:cairo",
+        # harfbuzz/fontconfig/cairo transitive deps needed for pkg-config
+        "//packages/linux/system/libs/data/expat:expat",
+        "//packages/linux/system/libs/image/libpng:libpng",
+        "//packages/linux/system/libs/compression/brotli:brotli",
+        "//packages/linux/system/libs/compression/bzip2:bzip2",
+        "//packages/linux/system/security/auth/biometric:pixman",
         "//packages/linux/system/libs/font/fribidi:fribidi",
-        "//packages/linux/fonts/libraries/freetype:freetype",
-        "//packages/linux/fonts/libraries/fontconfig:fontconfig",
-        "//packages/linux/fonts/libraries/harfbuzz:harfbuzz",
+        "//packages/linux/system/libs/font/freetype:freetype",
+        "//packages/linux/system/libs/font/fontconfig:fontconfig",
+        "//packages/linux/system/libs/font/harfbuzz:harfbuzz",
+        # X11/xcb transitive deps needed by cairo.pc Requires.private
+        "//packages/linux/graphics/xorg/libX11:libX11",
+        "//packages/linux/graphics/xorg/libXext:libXext",
+        "//packages/linux/graphics/xorg/libXrender:libXrender",
+        "//packages/linux/graphics/xorg/xorgproto:xorgproto",
+        "//packages/linux/graphics/xorg/libxcb:libxcb",
+        "//packages/linux/graphics/xorg/libXau:libXau",
+        "//packages/linux/graphics/xorg/libXdmcp:libXdmcp",
     ],
-    visibility = ["PUBLIC"],
 )

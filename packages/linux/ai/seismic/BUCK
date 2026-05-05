@@ -1,14 +1,20 @@
-load("//defs:package_defs.bzl", "cargo_package")
+load("//defs:package.bzl", "package")
 
-cargo_package(
-    name = "seismic",
-    version = "0.3.5",
-    src_uri = "https://github.com/TusKANNy/seismic/archive/refs/tags/v0.3.5.tar.gz",
-    sha256 = "TODO",
-    signature_required = False,
-    description = "High-performance KNN retrieval over learned sparse embeddings",
-    homepage = "https://github.com/TusKANNy/seismic",
-    license = "MIT",
-    bins = ["perf_inverted_index"],
-    visibility = ["PUBLIC"],
-)
+# DISABLED: seismic requires toolkit crate API that no longer exists
+# (BitFieldBoxed and BitFieldVec were removed from toolkit)
+# Uncomment and update when upstream fixes compatibility
+#
+# #
+# package(
+#     build_rule = "cargo",
+#     name = "seismic",
+#     version = "45c737b",
+#     url = "https://github.com/TusKANNy/seismic/archive/45c737b8c76874abfc80b938da957e373bcb82bd.tar.gz",
+#     sha256 = "55bd73cbf28479062a6ba171dc27dc80a36625758a756aeb14f8ebd958840bbf",
+#
+#     description = "High-performance KNN retrieval over learned sparse embeddings",
+#     homepage = "https://github.com/TusKANNy/seismic",
+#     license = "MIT",
+#     bins = ["perf_inverted_index"],
+#     visibility = ["PUBLIC"],
+# )

@@ -1,46 +1,5 @@
 # Core system libraries and utilities
-filegroup(
-    name = "all-core",
-    srcs = [
-        "//packages/linux/core/zlib:zlib",
-        "//packages/linux/core/cpio:cpio",
-        "//packages/linux/core/util-linux:util-linux",
-        "//packages/linux/core/e2fsprogs:e2fsprogs",
-        "//packages/linux/core/ncurses:ncurses",
-        "//packages/linux/core/readline:readline",
-        "//packages/linux/core/bash:bash",
-        "//packages/linux/core/bzip2:bzip2",
-        "//packages/linux/core/xz:xz",
-        "//packages/linux/core/procps-ng:procps-ng",
-        "//packages/linux/core/libffi:libffi",
-        "//packages/linux/core/expat:expat",
-        "//packages/linux/core/libnl:libnl",
-        "//packages/linux/core/file:file",
-        "//packages/linux/core/less:less",
-    ],
-    default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
-)
-
-# Compression libraries
-filegroup(
-    name = "compression",
-    srcs = [
-        "//packages/linux/core/zlib:zlib",
-        "//packages/linux/core/bzip2:bzip2",
-        "//packages/linux/core/xz:xz",
-    ],
-    default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
-)
-
-# Terminal libraries
-filegroup(
-    name = "terminal-libs",
-    srcs = [
-        "//packages/linux/core/ncurses:ncurses",
-        "//packages/linux/core/readline:readline",
-    ],
-    default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
-)
+#
+# Filegroup aggregation doesn't work with package directory outputs
+# (all named "installed") — Buck2 rejects duplicate short_paths.
+# Use direct deps instead of these convenience groups.

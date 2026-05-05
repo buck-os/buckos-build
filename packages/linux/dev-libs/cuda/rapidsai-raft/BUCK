@@ -1,19 +1,14 @@
+load("//defs:package.bzl", "package")
+
 # RAPIDS RAFT - Reusable Accelerated Functions and Tools for GPU computing
 # High-performance primitives for machine learning and data mining
 
-load("//defs:package_defs.bzl", "download_source", "binary_package")
-
-download_source(
-    name = "rapidsai-raft-src",
-    src_uri = "https://github.com/rapidsai/raft/archive/refs/tags/v25.06.00.tar.gz",
-    sha256 = "5bef9bf52c56f7efb0f120130bd1d6d493ee144f1f7328e02f0f70d5d5f2a33b",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "rapidsai-raft",
-    srcs = [":rapidsai-raft-src"],
     version = "25.06.00",
+    url = "https://github.com/rapidsai/raft/archive/refs/tags/v25.06.00.tar.gz",
+    sha256 = "5bef9bf52c56f7efb0f120130bd1d6d493ee144f1f7328e02f0f70d5d5f2a33b",
     description = "RAPIDS RAFT - Reusable Accelerated Functions and Tools for vector search and clustering on GPUs",
     homepage = "https://github.com/rapidsai/raft",
     license = "Apache-2.0",
@@ -85,24 +80,25 @@ else()
 endif()
 EOF
 
-# Install pkg-config file
+echo "RAPIDS RAFT v$PV installed successfully"
+
+# Generate pkg-config file
 mkdir -p "$OUT/usr/lib/pkgconfig"
-cat > "$OUT/usr/lib/pkgconfig/raft.pc" << 'EOF'
+cat > "$OUT/usr/lib/pkgconfig/raft.pc" << EOF
 prefix=/usr
+exec_prefix=${prefix}
 includedir=${prefix}/include
 
-Name: RAFT
+Name: raft
 Description: RAPIDS RAFT - Reusable Accelerated Functions and Tools for GPU computing
-Version: 25.06.00
+Version: $PV
 Requires: cuda
 Cflags: -I${includedir}
 EOF
-
-echo "RAPIDS RAFT v25.06.00 installed successfully"
 """,
     deps = [
         "//packages/linux/system/gpu/libraries/cuda-toolkit:cuda-toolkit",
         "//packages/linux/dev-libs/cuda/cutlass4:cutlass4",
     ],
-    visibility = ["PUBLIC"],
+    labels = ["buckos:hw:cuda"],
 )

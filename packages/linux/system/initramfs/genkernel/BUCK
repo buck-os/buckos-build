@@ -1,5 +1,4 @@
-load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # genkernel - Gentoo's automatic kernel/initramfs builder
@@ -7,115 +6,79 @@ load("//defs:use_flags.bzl", "set_use_flags")
 # All-in-one tool for building kernels and initramfs images.
 # Supports LVM, LUKS, software RAID, multipath, and more.
 
-download_source(
-    name = "genkernel-src",
-    src_uri = "https://github.com/gentoo/genkernel/archive/refs/tags/v4.3.5.tar.gz",
-    sha256 = "b3f2b8791ff031ec6d7adea21b873bcd57978565f216b5a224c8ef82db109236",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "binary",
     name = "genkernel",
-    source = ":genkernel-src",
+    url = "https://github.com/gentoo/genkernel/archive/refs/tags/v4.3.5.tar.gz",
+    sha256 = "b3f2b8791ff031ec6d7adea21b873bcd57978565f216b5a224c8ef82db109236",
     version = "4.3.5",
     description = "Gentoo automatic kernel/initramfs builder",
     homepage = "https://wiki.gentoo.org/wiki/Genkernel",
     license = "GPL-2.0",
-    pre_configure = "true",  # No configure script
-    configure_args = [],
-    make_args = [
-        "PREFIX=/usr",
-    ],
-    post_install = """
-# Install using make
-make DESTDIR=$OUT PREFIX=/usr install
-
-# Create configuration directories
-mkdir -p $OUT/etc/genkernel.d
+    install_script = """
+# Install genkernel scripts and data
+mkdir -p $OUT/usr/bin
 mkdir -p $OUT/usr/share/genkernel
+mkdir -p $OUT/etc/genkernel.d
+
+# Copy genkernel binary
+if [ -f genkernel ]; then
+    install -Dm755 genkernel "$OUT/usr/bin/genkernel"
+fi
+
+# Copy support files
+for dir in defaults gen_cmdline.sh gen_compile.sh gen_configkernel.sh gen_determineargs.sh gen_funcs.sh gen_initramfs.sh gen_moddeps.sh gen_worker.sh; do
+    if [ -f "$dir" ]; then
+        install -Dm755 "$dir" "$OUT/usr/share/genkernel/$dir"
+    fi
+done
+
+# Copy defaults directory
+if [ -d defaults ]; then
+    cp -a defaults $OUT/usr/share/genkernel/
+fi
 
 # Create default configuration
-cat > $OUT/etc/genkernel.conf << 'EOF'
+cat > $OUT/etc/genkernel.conf << 'EOFCONF'
 # Genkernel configuration file
-
-# Architecture
 ARCH="x86_64"
-
-# Build options
 MAKEOPTS="-j$(nproc)"
 INSTALL="yes"
 OLDCONFIG="yes"
 MENUCONFIG="no"
 CLEAN="yes"
 MRPROPER="no"
-
-# Initramfs options
-INITRAMFS_BUILD="yes"
-BUSYBOX="yes"
-LVM="no"
-LUKS="no"
-GPG="no"
-MDADM="no"
-MULTIPATH="no"
-DMRAID="no"
-ISCSI="no"
-BTRFS="no"
-ZFS="no"
-
-# Compression
 COMPRESS_INITRD="yes"
 COMPRESS_INITRD_TYPE="xz"
-
-# Boot loader
-BOOTLOADER=""
-
-# Kernel location
 KERNEL_DIR="/usr/src/linux"
-
-# Output
 LOGFILE="/var/log/genkernel.log"
 LOGLEVEL=1
-EOF
-
-# Create modules directory
-mkdir -p $OUT/usr/share/genkernel/defaults
+EOFCONF
 """,
     deps = [
         "//packages/linux/system/libs/kmod:kmod",
         "//packages/linux/core/bash:bash",
         "//packages/linux/system/apps/coreutils:coreutils",
         "//packages/linux/core/util-linux:util-linux",
-        "//packages/linux/core/xz:xz",
+        "//packages/linux/system/libs/compression/xz:xz",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # genkernel-next - Modernized fork with additional features
-download_source(
-    name = "genkernel-next-src",
-    src_uri = "https://github.com/Sabayon/genkernel-next/archive/refs/tags/v70.tar.gz",
-    sha256 = "62f97f0fee1d2c54e90d1f5b3d805527ce2582d93757a2ce34060b9340d67c43",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "genkernel-next",
-    source = ":genkernel-next-src",
+    skip_configure = True,
+    url = "https://github.com/Sabayon/genkernel-next/archive/refs/tags/v70.tar.gz",
+    sha256 = "62f97f0fee1d2c54e90d1f5b3d805527ce2582d93757a2ce34060b9340d67c43",
     version = "70",
     description = "Fork of genkernel with additional features and improvements",
     homepage = "https://github.com/Sabayon/genkernel-next",
     license = "GPL-2.0",
-    pre_configure = "true",
-    configure_args = [],
     make_args = ["PREFIX=/usr"],
-    post_install = """
-make DESTDIR=$OUT PREFIX=/usr install
-mkdir -p $OUT/etc/genkernel.d
-""",
     deps = [
         "//packages/linux/system/libs/kmod:kmod",
         "//packages/linux/core/bash:bash",
         "//packages/linux/system/apps/coreutils:coreutils",
     ],
-    visibility = ["PUBLIC"],
 )

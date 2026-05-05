@@ -1,27 +1,25 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # Use official SourceForge release which has pre-generated configure
-download_source(
-    name = "libmad-src",
-    src_uri = "https://downloads.sourceforge.net/mad/libmad-0.15.1b.tar.gz",
-    sha256 = "bbfac3ed6bfbc2823d3775ebb931087371e142bb0e9bb1bee51a76a6e0078690",
-    signature_sha256 = "1059d6d131643a6b6c4a6e1141eb49c8e61f9759835973541140ba0963bd292c",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libmad",
-    source = ":libmad-src",
+    url = "https://downloads.sourceforge.net/mad/libmad-0.15.1b.tar.gz",
+
+    sha256 = "bbfac3ed6bfbc2823d3775ebb931087371e142bb0e9bb1bee51a76a6e0078690",
+    use_configure = {
+        "debug": ("--enable-debug", "--disable-debug"),
+        "static-libs": ("--enable-static", "--disable-static"),
+    },
     version = "0.15.1b",
     description = "High-quality MPEG audio decoder library",
     homepage = "https://www.underbit.com/products/mad/",
     license = "GPL-2.0-or-later",
     # Touch configure to prevent autoreconf (Perl module path issues)
     # The official tarball includes pre-generated configure
-    src_prepare = """
+    pre_configure_cmds = ["""
 touch configure
-""",
+"""],
     configure_args = [
         "--disable-static",
         "--enable-shared",
@@ -29,5 +27,4 @@ touch configure
         "--enable-accuracy",
     ],
     deps = [],
-    visibility = ["PUBLIC"],
 )

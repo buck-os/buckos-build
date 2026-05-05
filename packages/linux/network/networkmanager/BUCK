@@ -1,64 +1,164 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
 # NetworkManager - Network connection manager
-meson_package(
+package(
+    build_rule = "meson",
     name = "networkmanager",
     version = "1.46.0",
-    src_uri = "https://download.gnome.org/sources/NetworkManager/1.46/NetworkManager-1.46.0.tar.xz",
+    # Default USE flags for a minimal but functional build
+    url = "https://download.gnome.org/sources/NetworkManager/1.46/NetworkManager-1.46.0.tar.xz",
     sha256 = "722649e25362693b334371473802a729b0ec9ee283375096905f868808e74068",
-    signature_required = False,
     description = "Network connection manager and user applications",
     homepage = "https://networkmanager.dev/",
     license = "GPL-2.0-or-later",
-    meson_args = [
+    configure_args = [
         "-Dsession_tracking_consolekit=false",
+        "-Dsession_tracking=no",
         "-Dsystemdsystemunitdir=/usr/lib/systemd/system",
-        "-Dsystemd_journal=false",
-        "-Dselinux=false",
-        "-Dlibaudit=no",
-        "-Dpolkit=true",
-        "-Dnmtui=true",
-        "-Dmodem_manager=false",
-        "-Dovs=false",
-        "-Dppp=false",
-        "-Ddocs=false",
-        "-Dtests=false",
-        "-Dintrospection=false",
-        "-Dvapi=false",
+        "-Dtests=no",
         "-Dqt=false",
+        "-Dnmcli=true",
+        "-Dconfig_plugins_default=",
+        "-Dnm_cloud_setup=false",
+        # Explicit dbus path - prevent meson from using pkg-config's buck-out paths
+        "-Ddbus_conf_dir=/usr/share/dbus-1/system.d",
+        # Crypto backend (default is nss which we don't build)
+        "-Dcrypto=gnutls",
+        # Enable wifi and nmtui for live installer
+        "-Dwifi=true",
+        "-Dnmtui=true",
+        # Disable optional features we don't build deps for
+        "-Dlibaudit=no",
+        "-Dbluez5_dun=false",
+        "-Dconcheck=false",
+        "-Ddhclient=no",
+        "-Ddhcpcd=no",
+        "-Ddocs=false",
+        "-Dintrospection=false",
+        "-Diptables=no",
+        "-Diwd=false",
+        "-Dmodem_manager=false",
+        "-Dfirewalld_zone=false",
+        "-Dovs=false",
+        "-Dpolkit=false",
+        "-Dppp=false",
+        "-Dlibpsl=false",
+        "-Dselinux=false",
+        "-Dsystemd_journal=false",
+        "-Dteamdctl=false",
+        "-Dvapi=false",
     ],
+    # Base dependencies always needed
     deps = [
         "//packages/linux/system/libs/ipc/dbus:dbus",
         "//packages/linux/dev-libs/glib:glib",
-        "//packages/linux/system/security/auth/privilege:polkit",
-        "//packages/linux/core/readline:readline",
-        "//packages/linux/core/ncurses:ncurses",
+        "//packages/linux/system/terminal/readline:readline",
+        "//packages/linux/system/terminal/ncurses:ncurses",
         "//packages/linux/core/util-linux:util-linux",
-        "//packages/linux/network:curl",
+        "//packages/linux/system/libs/network/curl:curl",
+        "//packages/virtual/libudev:libudev",
+        "//packages/linux/core/libnl:libnl",  # Network link library
+        "//packages/linux/network/libs/libndp:libndp",  # Neighbor Discovery Protocol
+        # Transitive deps needed for pkg-config (glib's deps)
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/utility/pcre2:pcre2",
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        # gnutls and its deps for crypto support
+        "//packages/linux/system/libs/crypto/gnutls:gnutls",
+        "//packages/linux/system/libs/crypto/nettle:nettle",
+        "//packages/linux/system/libs/crypto/libgcrypt:libgcrypt",
+        "//packages/linux/system/libs/utility/gmp:gmp",
+        # gnutls's compression deps (from Requires.private: libzstd)
+        "//packages/linux/system/libs/compression/zstd:zstd",
+        # nmtui dependencies (newt and its deps)
+        "//packages/linux/system/terminal/newt:newt",
+        "//packages/linux/system/terminal/slang:slang",
     ],
-    visibility = ["PUBLIC"],
+    host_deps = [
+        # xsltproc needed for DBus interface XML processing
+        "//packages/linux/system/libs/data/libxslt:libxslt",
+    ],
 )
 
 # NetworkManager applet for GTK
-meson_package(
+package(
+    build_rule = "meson",
     name = "nm-applet",
     version = "1.36.0",
-    src_uri = "https://download.gnome.org/sources/network-manager-applet/1.36/network-manager-applet-1.36.0.tar.xz",
+    url = "https://download.gnome.org/sources/network-manager-applet/1.36/network-manager-applet-1.36.0.tar.xz",
     sha256 = "a84704487ea3afe1485c47fb2ab598b8f779f540ae0dcbf0a1c5f85e64a7e253",
-    signature_required = False,
     description = "NetworkManager GUI client for GNOME and other desktops",
     homepage = "https://networkmanager.dev/",
     license = "GPL-2.0-or-later",
-    meson_args = [
+    configure_args = [
         "-Dappindicator=no",
         "-Dselinux=false",
         "-Dteam=false",
         "-Dwwan=false",
-        "-Dmodem_manager=false",
     ],
     deps = [
         ":networkmanager",
         "//packages/linux/desktop/gtk:gtk3",
+        # glib and its transitive deps for gio-2.0
+        "//packages/linux/dev-libs/glib:glib",
+        "//packages/linux/system/libs/utility/pcre2:pcre2",
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/core/zlib:zlib",
+        # NetworkManager UI library
+        "//packages/linux/network/libs/libnma:libnma",
+        # For secrets handling
+        "//packages/linux/system/libs/secrets/libsecret:libsecret",
+        "//packages/linux/system/libs/crypto/libgcrypt:libgcrypt",
+        "//packages/linux/system/libs/crypto/libgpg-error:libgpg-error",
+        # GTK3 full transitive deps for pkg-config
+        "//packages/linux/system/libs/graphics/cairo:cairo",
+        "//packages/linux/system/security/auth/biometric:pixman",
+        "//packages/linux/system/libs/font/fontconfig:fontconfig",
+        "//packages/linux/system/libs/data/expat:expat",
+        "//packages/linux/system/libs/image/libpng:libpng",
+        "//packages/linux/graphics/xorg/libX11:libX11",
+        "//packages/linux/graphics/xorg/libXext:libXext",
+        "//packages/linux/graphics/xorg/libXrender:libXrender",
+        "//packages/linux/graphics/xorg/libXrandr:libXrandr",
+        "//packages/linux/graphics/xorg/libXi:libXi",
+        "//packages/linux/graphics/xorg/libXfixes:libXfixes",
+        "//packages/linux/graphics/xorg/libXcursor:libXcursor",
+        "//packages/linux/graphics/xorg/libXdamage:libXdamage",
+        "//packages/linux/graphics/xorg/libXcomposite:libXcomposite",
+        "//packages/linux/graphics/xorg/libXinerama:libXinerama",
+        "//packages/linux/graphics/xorg/xorgproto:xorgproto",
+        "//packages/linux/graphics/xorg/libxcb:libxcb",
+        "//packages/linux/graphics/xorg/xcb-proto:xcb-proto",
+        "//packages/linux/graphics/xorg/libXau:libXau",
+        "//packages/linux/graphics/xorg/libXdmcp:libXdmcp",
+        "//packages/linux/system/libs/compression/brotli:brotli",
+        "//packages/linux/system/libs/compression/bzip2:bzip2",
+        "//packages/linux/system/libs/font/fribidi:fribidi",
+        "//packages/linux/system/libs/font/harfbuzz:harfbuzz",
+        "//packages/linux/desktop/shared-mime-info:shared-mime-info",
+        "//packages/linux/system/libs/data/libxml2:libxml2",
+        "//packages/linux/system/libs/image/libjpeg-turbo:libjpeg-turbo",
+        "//packages/linux/system/libs/image/libtiff:libtiff",
+        "//packages/linux/graphics/libepoxy:libepoxy",
+        "//packages/linux/desktop/mesa:mesa",
+        "//packages/linux/desktop/at-spi2-core:at-spi2-core",
+        "//packages/linux/graphics/xorg/libXtst:libXtst",
+        "//packages/linux/system/libs/ipc/dbus:dbus",
+        "//packages/linux/system/init/systemd:systemd",
+        "//packages/linux/system/security/capabilities:libcap",
+        "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
+        "//packages/linux/graphics/rendering/wayland:wayland",
+        "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
+        "//packages/linux/system/libs/font/freetype:freetype",
+        "//packages/linux/fonts/libraries/pango:pango",
+        "//packages/linux/desktop/gdk-pixbuf:gdk-pixbuf",
+        # NetworkManager crypto deps
+        "//packages/linux/system/libs/crypto/gnutls:gnutls",
+        "//packages/linux/system/libs/crypto/nettle:nettle",
+        "//packages/linux/system/libs/utility/gmp:gmp",
+        "//packages/linux/system/libs/compression/zstd:zstd",
     ],
-    visibility = ["PUBLIC"],
+    host_deps = [
+        "//packages/linux/dev-libs/misc/gettext:gettext",
+    ],
 )

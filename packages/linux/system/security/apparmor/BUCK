@@ -1,58 +1,93 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "apparmor-src",
-    src_uri = "https://gitlab.com/apparmor/apparmor/-/archive/v3.1.6/apparmor-v3.1.6.tar.gz",
-    sha256 = "a7899f1529ad7f1e33fb07109075be3827edf43997040ecdec601590748f1039",
-    signature_required = False,
-)
-
-autotools_package(
+# AppArmor: Build libapparmor directly by compiling .c sources without
+# libtool. The autotools/libtool path fails because autoreconf can't
+# find libtool m4 macros in the hermetic build env, so configure
+# never generates the libtool script that make references.
+package(
+    build_rule = "binary",
     name = "apparmor",
-    source = ":apparmor-src",
+    url = "https://gitlab.com/apparmor/apparmor/-/archive/v3.1.6/apparmor-v3.1.6.tar.gz",
+    sha256 = "a7899f1529ad7f1e33fb07109075be3827edf43997040ecdec601590748f1039",
     version = "3.1.6",
     description = "AppArmor userspace utilities and profiles",
     homepage = "https://apparmor.net/",
     license = "GPL-2.0",
-    pre_configure = """
-        # AppArmor builds in subdirectories
-        cd libraries/libapparmor
-        sh ./autogen.sh
-    """,
-    configure_args = [
-        "--prefix=/usr",
-        "--sysconfdir=/etc",
-        "--with-perl",
-        "--with-python",
-    ],
-    make_args = ["-C", "libraries/libapparmor"],
-    post_install = """
-        # Install libapparmor
-        cd libraries/libapparmor
-        make DESTDIR=$OUT install
-        cd ../..
+    install_script = """
+cd "$SRCS/libraries/libapparmor"
 
-        # Install parser
-        cd parser
-        make DESTDIR=$OUT install
-        cd ..
+# Build libapparmor directly without libtool (autoreconf/configure
+# fail to generate a libtool script in the hermetic build env because
+# the libtool m4 macros are not in a standard search path).
+export CFLAGS="${CFLAGS:-} -Wno-error -Wno-implicit-function-declaration -fPIC -D_GNU_SOURCE"
+SRCDIR="$PWD/src"
+INCDIR="$PWD/include"
 
-        # Install utilities
-        cd utils
-        make DESTDIR=$OUT install
-        cd ..
+# Create config.h with detected features
+cat > "$PWD/config.h" << 'CONFEOF'
+#define HAVE_UNISTD_H 1
+#define HAVE_STDINT_H 1
+#define HAVE_SYSLOG_H 1
+#define HAVE_ASPRINTF 1
+#define HAVE_SECURE_GETENV 1
+#define HAVE_REALLOCARRAY 1
+#define PACKAGE_VERSION "3.1.6"
+#define PACKAGE_STRING "libapparmor 3.1.6"
+CONFEOF
 
-        # Install profiles
-        cd profiles
-        make DESTDIR=$OUT install
-        cd ..
+cd "$SRCDIR"
 
-        mkdir -p $OUT/etc/apparmor.d
-        mkdir -p $OUT/var/lib/apparmor
-    """,
-    deps = [
-        "//packages/linux/lang/python:python",
-    ],
-    visibility = ["PUBLIC"],
+# Generate af_protos.h (BUILT_SOURCES in Makefile.am)
+# Extract IPPROTO_* defines and create entries like:
+#   AA_GEN_PROTO_ENT(IPPROTO_TCP, "tcp")
+echo '#include <netinet/in.h>' | $CC $CFLAGS -E -dM - | LC_ALL=C awk '/^#define IPPROTO_[A-Z0-9_]+/ && !/IPPROTO_MAX/ { n=$2; l=tolower(substr(n,9)); printf "AA_GEN_PROTO_ENT(%s, \\"%s\\")\\n", n, l }' > af_protos.h || touch af_protos.h
+
+# Compile all source files (scanner.c includes grammar.h, grammar.c
+# includes scanner.h — both pre-generated files exist in the source)
+SRC_FILES="features.c kernel.c kernel_interface.c libaalogparse.c PMurHash.c policy_cache.c private.c grammar.c scanner.c"
+OBJS=""
+for src in $SRC_FILES; do
+    [ -f "$src" ] || continue
+    obj="${src%.c}.o"
+    $CC $CFLAGS -DHAVE_CONFIG_H -I"$PWD/.." -I"$PWD" -I"$INCDIR" -I"$INCDIR/sys" -c "$src" -o "$obj"
+    OBJS="$OBJS $obj"
+done
+
+# Link shared library with version script for symbol versioning
+$CC -shared -Wl,-soname,libapparmor.so.1 -Wl,--version-script="$SRCDIR/libapparmor.map" $LDFLAGS -o libapparmor.so.1.6.2 $OBJS
+ln -sf libapparmor.so.1.6.2 libapparmor.so.1
+ln -sf libapparmor.so.1 libapparmor.so
+
+# Create static library
+${AR:-ar} rcs libapparmor.a $OBJS
+
+# Install
+mkdir -p "$OUT/usr/lib64" "$OUT/usr/include/sys"
+install -m755 libapparmor.so.1.6.2 "$OUT/usr/lib64/"
+ln -sf libapparmor.so.1.6.2 "$OUT/usr/lib64/libapparmor.so.1"
+ln -sf libapparmor.so.1 "$OUT/usr/lib64/libapparmor.so"
+install -m644 libapparmor.a "$OUT/usr/lib64/"
+install -m644 "$INCDIR/aalogparse.h" "$OUT/usr/include/"
+install -m644 "$INCDIR/sys/apparmor.h" "$OUT/usr/include/sys/"
+install -m644 "$INCDIR/sys/apparmor_private.h" "$OUT/usr/include/sys/"
+
+# Create pkg-config file
+mkdir -p "$OUT/usr/lib64/pkgconfig"
+cat > "$OUT/usr/lib64/pkgconfig/libapparmor.pc" << 'PCEOF'
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib64
+includedir=${prefix}/include
+
+Name: libapparmor
+Description: AppArmor library
+Version: 3.1.6
+Libs: -L${libdir} -lapparmor
+Cflags: -I${includedir}
+PCEOF
+
+mkdir -p "$OUT/etc/apparmor.d"
+mkdir -p "$OUT/var/lib/apparmor"
+""",
+    deps = [],
 )

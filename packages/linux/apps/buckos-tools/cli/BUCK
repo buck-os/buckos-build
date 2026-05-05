@@ -1,0 +1,46 @@
+load("//defs:package.bzl", "package")
+
+# BuckOS CLI - Command-line interface for BuckOS management
+package(
+    name = "buckos-cli",
+    build_rule = "binary",
+    version = "0.0.3",
+    source = "//packages/linux/apps/buckos-tools:buckos-tools-src",
+    description = "BuckOS command-line interface for system management",
+    homepage = "https://github.com/hodgesds/buckos",
+    license = "Apache-2.0 OR MIT",
+    install_script = """
+set -e
+cd "$SRCS"
+
+# Point openssl-sys crate to the buckos-built OpenSSL from deps
+IFS=':' read -ra _DEPS <<< "${DEP_BASE_DIRS:-}"
+for _dep in "${_DEPS[@]}"; do
+    if [ -f "$_dep/usr/lib/libcrypto.so" ] || [ -f "$_dep/usr/lib64/libcrypto.so" ]; then
+        export OPENSSL_DIR="$_dep/usr"
+        break
+    fi
+done
+
+# Pass dep library paths to the Rust linker via RUSTFLAGS
+for _ldflag in $LDFLAGS; do
+    case "$_ldflag" in
+        -L*) export RUSTFLAGS="${RUSTFLAGS:-} -C link-arg=$_ldflag" ;;
+    esac
+done
+
+cargo build --release -p buckos
+
+mkdir -p "$OUT/usr/bin"
+install -m 0755 target/release/buckos-cli "$OUT/usr/bin/buckos-cli"
+
+# Create symlink so users can run 'buckos' instead of 'buckos-cli'
+ln -sf buckos-cli "$OUT/usr/bin/buckos"
+""",
+    deps = [
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+    ],
+    host_deps = [
+        "//packages/linux/lang/rust:rust",
+    ],
+)

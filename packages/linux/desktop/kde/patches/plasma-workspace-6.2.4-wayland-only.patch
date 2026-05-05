@@ -1,0 +1,537 @@
+diff -ruN '--exclude=*.orig' '--exclude=_x11_stubs' -x krdb_export.h -x 'wallpapers/image/plugin/autotests/*' plasma-workspace-6.2.4.orig/CMakeLists.txt plasma-workspace-6.2.4/CMakeLists.txt
+--- plasma-workspace-6.2.4.orig/CMakeLists.txt	2024-11-26 05:09:07.000000000 -0500
++++ plasma-workspace-6.2.4/CMakeLists.txt	2026-02-02 16:06:16.201203799 -0500
+@@ -1,4 +1,5 @@
+ cmake_minimum_required(VERSION 3.16)
++include_directories(SYSTEM ${CMAKE_SOURCE_DIR}/_x11_stubs)
+ 
+ project(plasma-workspace)
+ set(PROJECT_VERSION "6.2.4")
+@@ -101,7 +102,7 @@
+                       )
+ 
+ find_package(PkgConfig REQUIRED)
+-pkg_check_modules(QALCULATE libqalculate>2.0 REQUIRED IMPORTED_TARGET)
++pkg_check_modules(QALCULATE libqalculate>2.0 IMPORTED_TARGET)
+ pkg_check_modules(DBus dbus-1 REQUIRED IMPORTED_TARGET)
+ 
+ find_package(KWinDBusInterface CONFIG REQUIRED)
+@@ -118,10 +119,6 @@
+ # Used in kcm_autostart
+ pkg_check_modules(SYSTEMD "systemd")
+ 
+-find_package(Phonon4Qt6 4.6.60 REQUIRED NO_MODULE)
+-set_package_properties(Phonon4Qt6 PROPERTIES
+-   DESCRIPTION "Qt-based audio library"
+-   TYPE REQUIRED)
+ 
+ find_package(Canberra)
+ set_package_properties(Canberra PROPERTIES
+@@ -203,7 +200,7 @@
+ 
+ # FreeBSD systems might have libxcrypt but their shadow equivalent doesn't use it
+ if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+-    pkg_check_modules(libxcrypt libxcrypt>=4)
++    pkg_check_modules(libxcrypt libxcrypt>=4 QUIET)
+     if(libxcrypt_FOUND)
+         set(HAVE_CRYPT_GENSALT true)
+     endif()
+@@ -404,7 +401,6 @@
+ endif()
+ add_subdirectory(libkworkspace)
+ add_subdirectory(libdbusmenuqt)
+-add_subdirectory(appmenu)
+ 
+ add_subdirectory(libtaskmanager)
+ add_subdirectory(libkmpris)
+@@ -415,7 +411,6 @@
+ add_subdirectory(plasma-windowed)
+ add_subdirectory(shell)
+ add_subdirectory(freespacenotifier)
+-add_subdirectory(klipper)
+ add_subdirectory(krunner)
+ add_subdirectory(ksmserver)
+ add_subdirectory(logout-greeter)
+@@ -435,10 +430,8 @@
+ add_subdirectory(kioworkers)
+ add_subdirectory(ktimezoned)
+ add_subdirectory(menu)
+-add_subdirectory(phonon)
+ add_subdirectory(donationmessage)
+ 
+-add_subdirectory(interactiveconsole)
+ 
+ # This ensures pressing the eject button on a CD drive ejects the disc
+ # It listens to the Solid::OpticalDrive::ejectPressed signal that is only
+@@ -447,11 +440,8 @@
+ add_subdirectory(solidautoeject)
+ endif()
+ 
+-ecm_optional_add_subdirectory(xembed-sni-proxy)
+ 
+-ecm_optional_add_subdirectory(gmenu-dbusmenu-proxy)
+ 
+-add_subdirectory(soliduiserver)
+ 
+ if(KF6Holidays_FOUND)
+     add_subdirectory(plasmacalendarintegration)
+diff -ruN '--exclude=*.orig' '--exclude=_x11_stubs' -x krdb_export.h -x 'wallpapers/image/plugin/autotests/*' plasma-workspace-6.2.4.orig/kcms/CMakeLists.txt plasma-workspace-6.2.4/kcms/CMakeLists.txt
+--- plasma-workspace-6.2.4.orig/kcms/CMakeLists.txt	2024-11-26 05:09:07.000000000 -0500
++++ plasma-workspace-6.2.4/kcms/CMakeLists.txt	2026-02-02 15:55:22.602251544 -0500
+@@ -1,5 +1,5 @@
+-add_subdirectory(krdb)
+ 
++add_subdirectory(krdb)
+ add_subdirectory(desktoptheme)
+ add_subdirectory(icons)
+ 
+@@ -7,9 +7,7 @@
+     add_subdirectory(feedback)
+ endif()
+ 
+-add_subdirectory(style)
+ add_subdirectory(lookandfeel)
+-add_subdirectory(colors)
+ if(X11_Xcursor_FOUND)
+     add_subdirectory(cursortheme)
+ endif()
+@@ -23,6 +21,5 @@
+ add_subdirectory(region_language)
+ add_subdirectory(notifications)
+ add_subdirectory(nightlight)
+-add_subdirectory(users)
+ add_subdirectory(soundtheme)
+ add_subdirectory(wallpaper)
+diff -ruN '--exclude=*.orig' '--exclude=_x11_stubs' -x krdb_export.h -x 'wallpapers/image/plugin/autotests/*' plasma-workspace-6.2.4.orig/kcms/colors/CMakeLists.txt plasma-workspace-6.2.4/kcms/colors/CMakeLists.txt
+--- plasma-workspace-6.2.4.orig/kcms/colors/CMakeLists.txt	2024-11-26 05:09:07.000000000 -0500
++++ plasma-workspace-6.2.4/kcms/colors/CMakeLists.txt	2026-02-02 15:11:13.711718293 -0500
+@@ -26,7 +26,6 @@
+ )
+ 
+ if(HAVE_X11)
+-    target_link_libraries(kcm_colors PRIVATE X11::X11 Qt::GuiPrivate)
+ endif()
+ 
+ target_sources(kcm_colors PRIVATE
+@@ -70,7 +69,6 @@
+     KF6::WindowSystem
+     KF6::DBusAddons
+     PW::KWorkspace
+-    X11::X11
+     krdb
+ )
+ 
+@@ -95,7 +93,6 @@
+     KF6::ConfigCore
+     KF6::DBusAddons
+     PW::KWorkspace
+-    X11::X11
+     krdb
+ )
+ 
+diff -ruN '--exclude=*.orig' '--exclude=_x11_stubs' -x krdb_export.h -x 'wallpapers/image/plugin/autotests/*' plasma-workspace-6.2.4.orig/kcms/krdb/CMakeLists.txt plasma-workspace-6.2.4/kcms/krdb/CMakeLists.txt
+--- plasma-workspace-6.2.4.orig/kcms/krdb/CMakeLists.txt	2024-11-26 05:09:07.000000000 -0500
++++ plasma-workspace-6.2.4/kcms/krdb/CMakeLists.txt	2026-02-02 15:55:22.967277669 -0500
+@@ -1,16 +1,4 @@
+-add_definitions(-DTRANSLATION_DOMAIN=\"krdb\")
+-
+-add_library(krdb krdb.cpp)
+-
+-generate_export_header(krdb)
+-
+-target_include_directories(krdb PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>" "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>" "$<INSTALL_INTERFACE:${KDE_INSTALL_INCLUDEDIR}/krdb>")
+-
+-target_link_libraries(krdb PRIVATE Qt::Widgets Qt::DBus KF6::CoreAddons KF6::DBusAddons KF6::GuiAddons KF6::I18n KF6::WindowSystem KF6::ConfigWidgets X11::X11 Qt::GuiPrivate)
+-
+-install(TARGETS krdb ${KDE_INSTALL_TARGETS_DEFAULT_ARGS} LIBRARY NAMELINK_SKIP)
+-
+-install(FILES krdb.h
+-    ${CMAKE_CURRENT_BINARY_DIR}/krdb_export.h
+-    DESTINATION ${KDE_INSTALL_INCLUDEDIR}/krdb COMPONENT Devel
+-)
++# Wayland-only stub: krdb.h has inline no-op implementations
++add_library(krdb INTERFACE)
++file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/krdb_export.h" "#pragma once\n#define KRDB_EXPORT\n")
++target_include_directories(krdb INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}")
+diff -ruN '--exclude=*.orig' '--exclude=_x11_stubs' -x krdb_export.h -x 'wallpapers/image/plugin/autotests/*' plasma-workspace-6.2.4.orig/kcms/krdb/krdb.h plasma-workspace-6.2.4/kcms/krdb/krdb.h
+--- plasma-workspace-6.2.4.orig/kcms/krdb/krdb.h	2024-11-26 05:09:07.000000000 -0500
++++ plasma-workspace-6.2.4/kcms/krdb/krdb.h	2026-02-02 15:11:27.134156819 -0500
+@@ -1,21 +1,15 @@
+-/*
+-    SPDX-FileCopyrightText: 2001 Waldo Bastian <bastian@kde.org>
+-
+-    SPDX-License-Identifier: GPL-2.0-only
+-*/
+-
+ #pragma once
+ 
+ #include "krdb_export.h"
+ 
+ enum KRdbAction {
+-    KRdbExportColors = 0x0001, // Export colors to non-(KDE/Qt) apps
+-    KRdbExportQtColors = 0x0002, // Export KDE's colors to qtrc
+-    KRdbExportQtSettings = 0x0004, // Export all possible qtrc settings, excluding colors
+-    KRdbExportXftSettings = 0x0008, // Export KDE's Xft (anti-alias) settings
+-    KRdbExportGtkTheme = 0x0010, // Export KDE's widget style to Gtk if possible
++    KRdbExportColors = 0x0001,
++    KRdbExportQtColors = 0x0002,
++    KRdbExportQtSettings = 0x0004,
++    KRdbExportXftSettings = 0x0008,
++    KRdbExportGtkTheme = 0x0010,
+ };
+ 
+-void KRDB_EXPORT runRdb(unsigned int flags);
+-
+-int KRDB_EXPORT xftDpi();
++// Stub implementations for Wayland-only build (no X11 resource database)
++inline void runRdb(unsigned int) {}
++inline int xftDpi() { return 96; }
+diff -ruN '--exclude=*.orig' '--exclude=_x11_stubs' -x krdb_export.h -x 'wallpapers/image/plugin/autotests/*' plasma-workspace-6.2.4.orig/kcms/lookandfeel/CMakeLists.txt plasma-workspace-6.2.4/kcms/lookandfeel/CMakeLists.txt
+--- plasma-workspace-6.2.4.orig/kcms/lookandfeel/CMakeLists.txt	2024-11-26 05:09:07.000000000 -0500
++++ plasma-workspace-6.2.4/kcms/lookandfeel/CMakeLists.txt	2026-02-02 15:58:44.681337349 -0500
+@@ -55,36 +55,5 @@
+    target_link_libraries(lookandfeelmanager X11::Xcursor X11::Xfixes Qt::GuiPrivate)
+ endif()
+ 
+-add_library(kcm_lookandfeel_objects OBJECT kcm.cpp)
+-target_link_libraries(kcm_lookandfeel_objects
+-    lookandfeelmanager
+-    KF6::IconThemes
+-    KF6::JobWidgets
+-    KF6::KIOGui
+-    KF6::KCMUtilsQuick
+-    PW::KWorkspace
+-)
+-
+-set_property(TARGET kcm_lookandfeel_objects PROPERTY POSITION_INDEPENDENT_CODE ON)
+-
+-kcmutils_add_qml_kcm(kcm_lookandfeel SOURCES kcmmain.cpp)
+-target_link_libraries(kcm_lookandfeel PRIVATE kcm_lookandfeel_objects)
+-
+ install(FILES lookandfeelsettings.kcfg DESTINATION ${KDE_INSTALL_KCFGDIR})
+ install(FILES lookandfeel.knsrc DESTINATION ${KDE_INSTALL_KNSRCDIR})
+-
+-if(BUILD_TESTING)
+-   find_package(Qt6Test ${QT_MIN_VERSION} CONFIG REQUIRED)
+-   add_subdirectory(autotests)
+-endif()
+-
+-###### Command line tool
+-
+-add_executable(plasma-apply-lookandfeel lnftool.cpp)
+-
+-target_link_libraries(plasma-apply-lookandfeel kcm_lookandfeel_objects)
+-
+-ADD_CUSTOM_TARGET(plasma-apply-lookandfeel_link ALL
+-                  COMMAND ${CMAKE_COMMAND} -E create_symlink ${KDE_INSTALL_FULL_BINDIR}/plasma-apply-lookandfeel ${CMAKE_CURRENT_BINARY_DIR}/lookandfeeltool)
+-install( FILES ${CMAKE_CURRENT_BINARY_DIR}/lookandfeeltool DESTINATION ${KDE_INSTALL_FULL_BINDIR}/ )
+-install( TARGETS plasma-apply-lookandfeel ${KDE_INSTALL_TARGETS_DEFAULT_ARGS} )
+diff -ruN '--exclude=*.orig' '--exclude=_x11_stubs' -x krdb_export.h -x 'wallpapers/image/plugin/autotests/*' plasma-workspace-6.2.4.orig/ksmserver/CMakeLists.txt plasma-workspace-6.2.4/ksmserver/CMakeLists.txt
+--- plasma-workspace-6.2.4.orig/ksmserver/CMakeLists.txt	2024-11-26 05:09:07.000000000 -0500
++++ plasma-workspace-6.2.4/ksmserver/CMakeLists.txt	2026-02-02 16:06:25.764915678 -0500
+@@ -1,33 +1,5 @@
+-add_definitions(-DTRANSLATION_DOMAIN=\"ksmserver\")
+-
+-check_library_exists("${X11_ICE_LIB}" _IceTransNoListen "" HAVE__ICETRANSNOLISTEN)
+-configure_file(config-ksmserver.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config-ksmserver.h)
+-
+-include_directories(${CMAKE_CURRENT_BINARY_DIR})
+-
+-########### next target ###############
+-
+-set(ksmserver_SRCS
+-    main.cpp
+-    server.cpp
+-    legacy.cpp
+-    logout.cpp
+-    client.cpp
+-)
+-ecm_qt_declare_logging_category(ksmserver_SRCS HEADER ksmserver_debug.h IDENTIFIER KSMSERVER CATEGORY_NAME org.kde.kf6.ksmserver
+-    DESCRIPTION "ksm server"
+-    EXPORT PLASMAWORKSPACE
+-)
+-
+-qt_add_dbus_adaptor( ksmserver_SRCS org.kde.KSMServerInterface.xml server.h KSMServer )
+-qt_add_dbus_interface( ksmserver_SRCS ${KSCREENLOCKER_DBUS_INTERFACES_DIR}/org.kde.screensaver.xml kscreenlocker_interface )
+-qt_add_dbus_interface( ksmserver_SRCS org.kde.LogoutPrompt.xml logoutprompt_interface)
+-qt_add_dbus_interface( ksmserver_SRCS org.kde.KWin.Session.xml kwinsession_interface)
+-
+-qt_add_dbus_interface( ksmserver_SRCS ../startkde/plasma-session/org.kde.Startup.xml startup_interface )
+-qt_add_dbus_interface( ksmserver_SRCS ../startkde/plasma-shutdown/org.kde.Shutdown.xml shutdown_interface )
+-
+-add_executable(ksmserver ${ksmserver_SRCS})
++# Wayland-only: skip building ksmserver binary (requires X11 ICE)
++# Only install the DBus interface config needed by plasma-desktop
+ 
+ set(CMAKECONFIG_INSTALL_DIR "${KDE_INSTALL_CMAKEPACKAGEDIR}/KSMServerDBusInterface")
+ 
+@@ -36,34 +8,7 @@
+     PATH_VARS KDE_INSTALL_DBUSINTERFACEDIR
+     INSTALL_DESTINATION ${CMAKECONFIG_INSTALL_DIR})
+ 
+-target_link_libraries(ksmserver
+-    PW::KScreenLocker
+-    PW::KWorkspace
+-    KF6::XmlGui
+-    KF6::I18n
+-    KF6::KIOCore
+-    KF6::KIOGui
+-    KF6::Solid
+-    KF6::DBusAddons
+-    KF6::Notifications
+-    KF6::Package
+-    KF6::WindowSystem
+-    KF6::Crash
+-    Qt::Concurrent
+-    X11::X11
+-    X11::SM
+-    X11::ICE
+-)
+-
+-install(TARGETS ksmserver ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
+-
+ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/KSMServerDBusInterfaceConfig.cmake
+     DESTINATION ${CMAKECONFIG_INSTALL_DIR})
+ 
+-
+-########### install files ###############
+-
+ install( FILES org.kde.KSMServerInterface.xml DESTINATION ${KDE_INSTALL_DBUSINTERFACEDIR})
+-
+-ecm_install_configured_files(INPUT plasma-ksmserver.service.in DESTINATION ${KDE_INSTALL_SYSTEMDUSERUNITDIR})
+-ecm_install_configured_files(INPUT plasma-restoresession.service.in DESTINATION ${KDE_INSTALL_SYSTEMDUSERUNITDIR})
+diff -ruN '--exclude=*.orig' '--exclude=_x11_stubs' -x krdb_export.h -x 'wallpapers/image/plugin/autotests/*' plasma-workspace-6.2.4.orig/libkworkspace/outputorderwatcher.cpp plasma-workspace-6.2.4/libkworkspace/outputorderwatcher.cpp
+--- plasma-workspace-6.2.4.orig/libkworkspace/outputorderwatcher.cpp	2024-11-26 05:09:07.000000000 -0500
++++ plasma-workspace-6.2.4/libkworkspace/outputorderwatcher.cpp	2026-02-02 15:19:10.870762831 -0500
+@@ -131,6 +131,7 @@
+     return m_outputOrder;
+ }
+ 
++#if HAVE_X11
+ X11OutputOrderWatcher::X11OutputOrderWatcher(QObject *parent)
+     : OutputOrderWatcher(parent)
+     , m_x11Interface(qGuiApp->nativeInterface<QNativeInterface::QX11Application>())
+@@ -311,6 +312,7 @@
+     }
+ }
+ 
++#endif // HAVE_X11
+ WaylandOutputOrderWatcher::WaylandOutputOrderWatcher(QObject *parent)
+     : OutputOrderWatcher(parent)
+ {
+diff -ruN '--exclude=*.orig' '--exclude=_x11_stubs' -x krdb_export.h -x 'wallpapers/image/plugin/autotests/*' plasma-workspace-6.2.4.orig/libnotificationmanager/server.cpp plasma-workspace-6.2.4/libnotificationmanager/server.cpp
+--- plasma-workspace-6.2.4.orig/libnotificationmanager/server.cpp	2024-11-26 05:09:07.000000000 -0500
++++ plasma-workspace-6.2.4/libnotificationmanager/server.cpp	2026-02-02 15:11:40.448246577 -0500
+@@ -13,7 +13,6 @@
+ 
+ #include "debug.h"
+ 
+-#include <KStartupInfo>
+ #include <KWaylandExtras>
+ #include <KWindowSystem>
+ #include <QDebug>
+@@ -95,10 +94,10 @@
+                         });
+         KWaylandExtras::requestXdgActivationToken(window, launchedSerial, xdgActivationAppId);
+     } else {
+-        KStartupInfoId startupId;
+-        startupId.initId();
++        
++        
+ 
+-        Q_EMIT d->ActivationToken(notificationId, QString::fromUtf8(startupId.id()));
++        Q_EMIT d->ActivationToken(notificationId, QString());
+ 
+         Q_EMIT d->ActionInvoked(notificationId, actionName);
+         if (behavior & Notifications::Close) {
+diff -ruN '--exclude=*.orig' '--exclude=_x11_stubs' -x krdb_export.h -x 'wallpapers/image/plugin/autotests/*' plasma-workspace-6.2.4.orig/libtaskmanager/virtualdesktopinfo.cpp plasma-workspace-6.2.4/libtaskmanager/virtualdesktopinfo.cpp
+--- plasma-workspace-6.2.4.orig/libtaskmanager/virtualdesktopinfo.cpp	2024-11-26 05:09:07.000000000 -0500
++++ plasma-workspace-6.2.4/libtaskmanager/virtualdesktopinfo.cpp	2026-02-02 15:27:43.436648854 -0500
+@@ -26,6 +26,7 @@
+ #include <netwm.h>
+ #endif // HAVE_X11
+ 
++#if HAVE_X11
+ namespace X11Info
+ {
+ [[nodiscard]] inline auto connection()
+@@ -33,6 +34,7 @@
+     return qGuiApp->nativeInterface<QNativeInterface::QX11Application>()->connection();
+ }
+ }
++#endif
+ 
+ namespace TaskManager
+ {
+diff -ruN '--exclude=*.orig' '--exclude=_x11_stubs' -x krdb_export.h -x 'wallpapers/image/plugin/autotests/*' plasma-workspace-6.2.4.orig/logout-greeter/CMakeLists.txt plasma-workspace-6.2.4/logout-greeter/CMakeLists.txt
+--- plasma-workspace-6.2.4.orig/logout-greeter/CMakeLists.txt	2024-11-26 05:09:07.000000000 -0500
++++ plasma-workspace-6.2.4/logout-greeter/CMakeLists.txt	2026-02-02 15:11:13.709283898 -0500
+@@ -20,7 +20,6 @@
+     KF6::Package
+     KF6::WindowSystem
+     KF6::ConfigCore
+-    X11::X11
+     LayerShellQt::Interface
+ )
+ 
+diff -ruN '--exclude=*.orig' '--exclude=_x11_stubs' -x krdb_export.h -x 'wallpapers/image/plugin/autotests/*' plasma-workspace-6.2.4.orig/logout-greeter/shutdowndlg.cpp plasma-workspace-6.2.4/logout-greeter/shutdowndlg.cpp
+--- plasma-workspace-6.2.4.orig/logout-greeter/shutdowndlg.cpp	2024-11-26 05:09:07.000000000 -0500
++++ plasma-workspace-6.2.4/logout-greeter/shutdowndlg.cpp	2026-02-02 15:19:43.217120115 -0500
+@@ -19,8 +19,6 @@
+ #include <QQuickItem>
+ #include <QQuickView>
+ #include <QTimer>
+-#include <private/qtx11extras_p.h>
+-
+ #ifdef PACKAGEKIT_OFFLINE_UPDATES
+ #include <PackageKit/Daemon>
+ #include <PackageKit/Offline>
+@@ -30,15 +28,9 @@
+ #include <KUser>
+ #include <KWindowEffects>
+ #include <KWindowSystem>
+-#include <KX11Extras>
+ #include <LayerShellQt/Window>
+ 
+ #include <cstdio>
+-#include <netwm.h>
+-
+-#include <X11/Xatom.h>
+-#include <X11/Xutil.h>
+-#include <fixx11h.h>
+ 
+ #include <debug.h>
+ 
+@@ -86,28 +78,6 @@
+ 
+     setResizeMode(PlasmaQuick::QuickViewSharedEngine::SizeRootObjectToView);
+ 
+-    // Qt doesn't set this on unmanaged windows
+-    // FIXME: or does it?
+-    if (KWindowSystem::isPlatformX11()) {
+-        constexpr auto role = std::string_view("logoutdialog");
+-        constexpr std::size_t roleLength = role.length();
+-
+-        XChangeProperty(QX11Info::display(),
+-                        winId(),
+-                        XInternAtom(QX11Info::display(), "WM_WINDOW_ROLE", False),
+-                        XA_STRING,
+-                        8,
+-                        PropModeReplace,
+-                        reinterpret_cast<const unsigned char *>(role.data()),
+-                        roleLength);
+-
+-        XClassHint classHint;
+-        classHint.res_name = const_cast<char *>("ksmserver-logout-greeter");
+-        classHint.res_class = const_cast<char *>("ksmserver-logout-greeter");
+-        XSetClassHint(QX11Info::display(), winId(), &classHint);
+-        KX11Extras::setState(winId(), NET::SkipTaskbar | NET::SkipPager | NET::SkipSwitcher);
+-    }
+-
+     // QQuickView *windowContainer = QQuickView::createWindowContainer(m_view, this);
+     // windowContainer->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+     QQmlContext *context = rootContext();
+@@ -224,12 +194,9 @@
+ {
+     QuickViewSharedEngine::resizeEvent(e);
+ 
+-    if (KX11Extras::compositingActive()) {
+-        // TODO: reenable window mask when we are without composite?
+-        //        clearMask();
+-    } else {
+-        //        setMask(m_view->mask());
+-    }
++    // Compositing is always active on Wayland
++    // TODO: reenable window mask when we are without composite?
++    //        clearMask();
+ }
+ 
+ void KSMShutdownDlg::slotLogout()
+diff -ruN '--exclude=*.orig' '--exclude=_x11_stubs' -x krdb_export.h -x 'wallpapers/image/plugin/autotests/*' plasma-workspace-6.2.4.orig/runners/CMakeLists.txt plasma-workspace-6.2.4/runners/CMakeLists.txt
+--- plasma-workspace-6.2.4.orig/runners/CMakeLists.txt	2024-11-26 05:09:07.000000000 -0500
++++ plasma-workspace-6.2.4/runners/CMakeLists.txt	2026-02-02 15:11:13.704546463 -0500
+@@ -5,7 +5,6 @@
+ endif()
+ add_subdirectory(bookmarks)
+ if (QALCULATE_FOUND)
+-    add_subdirectory(calculator)
+ endif()
+ add_subdirectory(helprunner)
+ add_subdirectory(locations)
+diff -ruN '--exclude=*.orig' '--exclude=_x11_stubs' -x krdb_export.h -x 'wallpapers/image/plugin/autotests/*' plasma-workspace-6.2.4.orig/shell/desktopview.cpp plasma-workspace-6.2.4/shell/desktopview.cpp
+--- plasma-workspace-6.2.4.orig/shell/desktopview.cpp	2024-11-26 05:09:08.000000000 -0500
++++ plasma-workspace-6.2.4/shell/desktopview.cpp	2026-02-02 15:19:56.581094034 -0500
+@@ -451,10 +451,6 @@
+             m_configView->deleteLater();
+         } else {
+             m_configView->show();
+-            auto window = qobject_cast<QWindow *>(m_configView);
+-            if (window && qGuiApp->nativeInterface<QNativeInterface::QX11Application>()) {
+-                KStartupInfo::setNewStartupId(window, qgetenv("DESKTOP_STARTUP_ID"));
+-            }
+             m_configView->requestActivate();
+             return;
+         }
+@@ -494,10 +490,6 @@
+         m_configView->deleteLater();
+     });
+ 
+-    auto window = qobject_cast<QWindow *>(m_configView);
+-    if (window && qGuiApp->nativeInterface<QNativeInterface::QX11Application>()) {
+-        KStartupInfo::setNewStartupId(window, qgetenv("DESKTOP_STARTUP_ID"));
+-    }
+     m_configView->requestActivate();
+ }
+ 
+diff -ruN '--exclude=*.orig' '--exclude=_x11_stubs' -x krdb_export.h -x 'wallpapers/image/plugin/autotests/*' plasma-workspace-6.2.4.orig/shell/panelconfigview.cpp plasma-workspace-6.2.4/shell/panelconfigview.cpp
+--- plasma-workspace-6.2.4.orig/shell/panelconfigview.cpp	2024-11-26 05:09:08.000000000 -0500
++++ plasma-workspace-6.2.4/shell/panelconfigview.cpp	2026-02-02 15:49:24.839880805 -0500
+@@ -24,9 +24,7 @@
+ #include <KWindowSystem>
+ #include <plasmaquick/popupplasmawindow.h>
+ #include <qnamespace.h>
+-#if HAVE_X11
+ #include <KX11Extras>
+-#endif
+ #include <klocalizedstring.h>
+ #include <kwindoweffects.h>
+ 
+diff -ruN '--exclude=*.orig' '--exclude=_x11_stubs' -x krdb_export.h -x 'wallpapers/image/plugin/autotests/*' plasma-workspace-6.2.4.orig/shell/shellcorona.cpp plasma-workspace-6.2.4/shell/shellcorona.cpp
+--- plasma-workspace-6.2.4.orig/shell/shellcorona.cpp	2024-11-26 05:09:08.000000000 -0500
++++ plasma-workspace-6.2.4/shell/shellcorona.cpp	2026-02-02 15:20:06.002780651 -0500
+@@ -1326,7 +1326,9 @@
+ 
+ void ShellCorona::clearPreviousWindow()
+ {
++#if HAVE_X11
+     m_previousWId = 0;
++#endif
+     m_previousPlasmaWindow = nullptr;
+ }
+ 
+diff -ruN '--exclude=*.orig' '--exclude=_x11_stubs' -x krdb_export.h -x 'wallpapers/image/plugin/autotests/*' plasma-workspace-6.2.4.orig/startkde/CMakeLists.txt plasma-workspace-6.2.4/startkde/CMakeLists.txt
+--- plasma-workspace-6.2.4.orig/startkde/CMakeLists.txt	2024-11-26 05:09:08.000000000 -0500
++++ plasma-workspace-6.2.4/startkde/CMakeLists.txt	2026-02-02 15:11:13.719365168 -0500
+@@ -26,13 +26,8 @@
+     lookandfeelmanager
+ )
+ 
+-add_executable(startplasma-x11 ${START_PLASMA_COMMON_SRCS} startplasma-x11.cpp kcheckrunning/kcheckrunning.cpp)
+ add_executable(startplasma-wayland ${START_PLASMA_COMMON_SRCS} startplasma-wayland.cpp)
+ 
+-target_link_libraries(startplasma-x11 PRIVATE
+-    startplasma
+-    X11::X11 # for kcheckrunning
+-)
+ 
+ target_link_libraries(startplasma-wayland PRIVATE
+     startplasma
+@@ -51,7 +46,6 @@
+ 
+ configure_file(config-startplasma.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config-startplasma.h)
+ 
+-install(TARGETS startplasma-x11 ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
+ install(TARGETS startplasma-wayland ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
+ install(PROGRAMS plasma-sourceenv.sh DESTINATION ${KDE_INSTALL_LIBEXECDIR})
+ install(PROGRAMS plasma-dbus-run-session-if-needed DESTINATION ${KDE_INSTALL_LIBEXECDIR})
+diff: plasma-workspace-6.2.4.orig/wallpapers/image/plugin/autotests/testdata/default/symlinktoitself/itself: recursive directory loop

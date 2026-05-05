@@ -1,25 +1,21 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # baselayout - Filesystem baselayout and target system init scripts
 # USE flags: (minimal package)
 
-autotools_package(
+package(
     name = "baselayout",
+    build_rule = "autotools",
+    skip_configure = True,
     version = "2.9",
-    src_uri = "https://gitweb.gentoo.org/proj/baselayout.git/snapshot/baselayout-2.9.tar.gz",
+    url = "https://gitweb.gentoo.org/proj/baselayout.git/snapshot/baselayout-2.9.tar.gz",
     sha256 = "a4391267c964fdfc7c0ccfcdc599308de0d288e59d7c2cd517853d29d7cab5b7",
-    signature_required = False,
     description = "Filesystem baselayout and target system init scripts",
     homepage = "https://wiki.gentoo.org/wiki/Project:Baselayout",
     license = "GPL-2",
-    iuse = [],
-    use_defaults = [],
-    configure_args = [
-        "--prefix=/usr",
-        "--sysconfdir=/etc",
-    ],
+    use_configure = {
+        "build": ("--enable-build", "--disable-build"),
+    },
     deps = [
     ],
-    visibility = ["PUBLIC"],
 )

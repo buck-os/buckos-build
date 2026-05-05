@@ -1,5 +1,4 @@
-load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # kmod - Linux kernel module handling
@@ -7,75 +6,71 @@ load("//defs:use_flags.bzl", "set_use_flags")
 # Provides tools for managing Linux kernel modules:
 # - modprobe, insmod, rmmod, lsmod, depmod, modinfo
 
-download_source(
-    name = "kmod-src",
-    src_uri = "https://kernel.org/pub/linux/utils/kernel/kmod/kmod-32.tar.xz",
-    sha256 = "630ed0d92275a88cb9a7bf68f5700e911fdadaf02e051cf2e4680ff8480bd492",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "kmod",
-    source = ":kmod-src",
+# Enable tools by default (modprobe, insmod, etc.)
+    use_configure = {
+        "debug": ("--enable-debug", "--disable-debug"),
+        "lzma": ("--with-lzma", "--without-lzma"),
+        "pkcs7": ("--enable-pkcs7", "--disable-pkcs7"),
+        "tools": ("--enable-tools", "--disable-tools"),
+        "zlib": ("--with-zlib", "--without-zlib"),
+        "zstd": ("--with-zstd", "--without-zstd"),
+    },
     version = "32",
+    url = "https://cdn.kernel.org/pub/linux/utils/kernel/kmod/kmod-32.tar.gz",
+    sha256 = "415ed9997376ea58ccea64bf86b1d63acd31524a6baab09a9c11de6bed667a05",
     description = "Linux kernel module handling tools (modprobe, insmod, rmmod, lsmod, depmod)",
     homepage = "https://git.kernel.org/pub/scm/utils/kernel/kmod/kmod.git",
     license = "LGPL-2.1-or-later",
-    use_bootstrap = True,  # Use cross-compiler to link against buckos glibc
     configure_args = [
         "--with-xz",
         "--with-zlib",
         "--with-zstd",
-        # "--with-openssl",  # Disabled - adds dependency, not critical for basic use
-        # Tools are enabled by default (no --disable-tools)
     ],
-    post_install = """
-# Create compatibility symlinks for traditional module tools
-mkdir -p $DESTDIR/sbin
-for tool in insmod rmmod lsmod modprobe modinfo depmod; do
-    ln -sf ../usr/bin/kmod $DESTDIR/sbin/$tool
-done
-# Also create symlinks in /usr/sbin for compatibility
-mkdir -p $DESTDIR/usr/sbin
-for tool in insmod rmmod lsmod modprobe modinfo depmod; do
-    ln -sf ../bin/kmod $DESTDIR/usr/sbin/$tool
-done
-""",
+    post_install_cmds = [
+        # Merged-usr symlinks: /sbin -> usr/sbin
+        "mkdir -p usr/sbin && for tool in insmod rmmod lsmod modprobe modinfo depmod; do ln -sf ../bin/kmod usr/sbin/$tool; done",
+    ],
     deps = [
         "//packages/linux/core/zlib:zlib",
-        "//packages/linux/core/xz:xz",
+        "//packages/linux/system/libs/compression/xz:xz",
         "//packages/linux/system/libs/compression/zstd:zstd",
+        "//packages/linux/dev-libs/misc/gettext:gettext",
+    ],
+    host_deps = [
+        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
     ],
     visibility = ["PUBLIC"],
 )
 
 # Static version for use in initramfs
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "kmod-static",
-    source = ":kmod-src",
     version = "32",
+    source = ":kmod-src",
     description = "Linux kernel module handling tools (static build for initramfs)",
     homepage = "https://git.kernel.org/pub/scm/utils/kernel/kmod/kmod.git",
     license = "LGPL-2.1-or-later",
     configure_args = [
-        "--disable-shared",
-        "--enable-static",
         "--with-xz",
         "--with-zlib",
         "--with-zstd",
     ],
-    make_args = ["LDFLAGS=-static"],
-    post_install = """
-# Create compatibility symlinks
-mkdir -p $DESTDIR/sbin
-for tool in insmod rmmod lsmod modprobe modinfo depmod; do
-    ln -sf ../usr/bin/kmod $DESTDIR/sbin/$tool
-done
-""",
+    make_args = ["LDFLAGS=-all-static"],
+    post_install_cmds = [
+        "mkdir -p sbin && for tool in insmod rmmod lsmod modprobe modinfo depmod; do ln -sf ../usr/bin/kmod sbin/$tool; done",
+    ],
     deps = [
         "//packages/linux/core/zlib:zlib",
-        "//packages/linux/core/xz:xz",
+        "//packages/linux/system/libs/compression/xz:xz",
         "//packages/linux/system/libs/compression/zstd:zstd",
+        "//packages/linux/dev-libs/misc/gettext:gettext",
+    ],
+    host_deps = [
+        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
     ],
     visibility = ["PUBLIC"],
 )

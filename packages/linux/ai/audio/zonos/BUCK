@@ -1,16 +1,16 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "zonos",
     version = "0.1.0",
-    src_uri = "https://github.com/zyphra/zonos/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/zyphra/zonos/archive/refs/heads/main.tar.gz",
     sha256 = "480f82d645c0ecb25b22d3d90ab4c8a887a1d42859bca3c5066403639fac1a4e",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
         "//packages/linux/ai/ml-frameworks/torchaudio:torchaudio",
         "//packages/linux/ai/nlp/transformers:transformers",
         "//packages/linux/ai/audio/soundfile:soundfile",
-        "//packages/linux/dev-libs/python/numpy:numpy",
         "//packages/linux/dev-libs/python/setuptools:setuptools",
         "//packages/linux/dev-libs/python/packaging:packaging",
         "//packages/linux/dev-libs/python/inflect:inflect",
@@ -18,5 +18,4 @@ python_package(
         "//packages/linux/dev-libs/python/huggingface-hub:huggingface-hub",
         "//packages/linux/dev-libs/python/gradio:gradio",
     ],
-    maintainers = ["video_ml_platform"],
 )

@@ -1,41 +1,38 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
+load("//defs:package.bzl", "package")
 
 # TRE - Lightweight, robust, and efficient POSIX compliant regexp matching library
-download_source(
-    name = "tre-src",
-    src_uri = "https://github.com/laurikari/tre/archive/refs/tags/0.8.0.tar.gz",
-    sha256 = "17506f1ef5c92491183ab28242fa4f658d9625fe4f91ccd1d1358cb6e5f5acb6",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "tre",
-    source = ":tre-src",
+    url = "https://github.com/laurikari/tre/archive/refs/tags/v0.8.0.tar.gz",
+
+    sha256 = "c0d53e6052ef306ff9f02074ab8c28cb10ae4a001bf409d0859494fc32f1c29d",
     version = "0.8.0",
     description = "Lightweight, robust POSIX compliant regexp matching library with approximate matching",
     homepage = "https://github.com/laurikari/tre",
     license = "BSD-2-Clause",
-    iuse = ["static-libs", "nls"],
-    use_defaults = ["nls"],
     configure_args = [
         "--enable-shared",
     ],
     use_configure = {
-        "static-libs": "--enable-static",
-        "-static-libs": "--disable-static",
-        "nls": "--enable-nls",
-        "-nls": "--disable-nls",
+        "agrep": ("--enable-agrep", "--disable-agrep"),
+        "alloca": ("--enable-alloca", "--disable-alloca"),
+        "approx": ("--enable-approx", "--disable-approx"),
+        "debug": ("--enable-debug", "--disable-debug"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "profile": ("--enable-profile", "--disable-profile"),
+        "python": ("--enable-python", "--disable-python"),
+        "static-libs": ("--enable-static", "--disable-static"),
     },
-    bdepend = [
+    deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
         "//packages/linux/dev-tools/build-systems/automake:automake",
         "//packages/linux/dev-tools/build-systems/libtool:libtool",
+        "//packages/linux/dev-libs/misc/gettext:gettext",
     ],
-    src_prepare = """
-        # Generate configure script if not present
-        if [ ! -f configure ]; then
-            autoreconf -fiv
-        fi
-    """,
-    visibility = ["PUBLIC"],
+    pre_configure_cmds = ["""
+touch ChangeLog
+libtoolize --copy --force
+autoreconf -fiv
+"""],
 )

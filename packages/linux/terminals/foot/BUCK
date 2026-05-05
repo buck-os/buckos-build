@@ -1,27 +1,48 @@
-load("//defs:package_defs.bzl", "download_source", "meson_package")
-load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "foot-src",
-    src_uri = "https://codeberg.org/dnkl/foot/archive/1.16.2.tar.gz",
-    sha256 = "0e02af376e5f4a96eeb90470b7ad2e79a1d660db2a7d1aa772be43c7db00e475",
-    signature_required = False,
-)
-
-meson_package(
+package(
+    build_rule = "meson",
     name = "foot",
-    source = ":foot-src",
+    url = "https://codeberg.org/dnkl/foot/archive/1.16.2.tar.gz",
+
+    sha256 = "0e02af376e5f4a96eeb90470b7ad2e79a1d660db2a7d1aa772be43c7db00e475",
     version = "1.16.2",
     description = "Fast, lightweight and minimalistic Wayland terminal emulator",
     homepage = "https://codeberg.org/dnkl/foot",
     license = "MIT",
-    meson_args = [
+    # Patch to use find_program for wayland-scanner
+    patches = [
+        "patches/0001-use-find_program-for-wayland-scanner.patch",
+    ],
+    # wayland-scanner provides native wayland-scanner for host (exec_bdepend builds for host platform)
+    configure_args = [
         "-Ddocs=disabled",
         "-Dterminfo=disabled",
+        "-Dtests=false",
     ],
+    extra_cflags = ["-Wno-error=switch", "-Wno-error=deprecated-declarations"],
+    use_configure = {
+        "grapheme-clustering": ("-Dgrapheme-clustering=enabled", "-Dgrapheme-clustering=disabled"),
+    },
     deps = [
-        "//packages/linux/system/libs/graphics/pixman:pixman",
-        "//packages/linux/desktop/wayland:wayland-protocols",
+        "//packages/linux/system/libs/utility/libffi:libffi",
+                "//packages/linux/core/zlib:zlib",
+                "//packages/linux/system/libs/font/fcft:fcft",
+                "//packages/linux/system/libs/font/fontconfig:fontconfig",
+                "//packages/linux/system/libs/font/freetype:freetype",
+                "//packages/linux/system/libs/font/harfbuzz:harfbuzz",
+                "//packages/linux/system/libs/font/graphite2:graphite2",
+                "//packages/linux/system/security/auth/biometric:pixman",
+                "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
+                "//packages/linux/system/libs/image/libpng:libpng",
+                "//packages/linux/system/libs/compression/bzip2:bzip2",
+                "//packages/linux/system/libs/data/expat:expat",
+                "//packages/linux/system/libs/data/tllist:tllist",
+                "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
+                "//packages/linux/graphics/rendering/wayland:wayland",
+    ],
+    host_deps = [
+        "//packages/linux/graphics/rendering/wayland:wayland-scanner",
     ],
     visibility = ["PUBLIC"],
 )

@@ -1,53 +1,47 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "vim",
-    version = "9.1.0",
-    src_uri = "https://github.com/vim/vim/archive/v9.1.0.tar.gz",
+    url = "https://github.com/vim/vim/archive/v9.1.0.tar.gz",
+
     sha256 = "ddb435f6e386c53799a3025bdc5a3533beac735a0ee596cb27ada97366a1c725",
-    signature_required = False,
+    version = "9.1.0",
     description = "Highly configurable text editor built to make creating and changing any kind of text very efficient",
     homepage = "https://www.vim.org/",
     license = "Vim",
 
     # USE flags this package supports
-    iuse = [
-        "python",
-        "perl",
-        "ruby",
-        "lua",
-        "X",
-        "gtk",
-        "ncurses",
-    ],
 
     # Default USE flags
-    use_defaults = ["ncurses"],
 
     # Conditional dependencies
     use_deps = {
-        "python": ["//packages/linux/lang/python:python"],
-        "perl": ["//packages/linux/lang/perl:perl"],
-        "ruby": ["//packages/linux/lang/ruby:ruby"],
-        "lua": ["//packages/linux/lang/lua:lua"],
-        "ncurses": ["//packages/linux/core/ncurses:ncurses"],
+        "python": "//packages/linux/lang/python:python",
+        "perl": "//packages/linux/lang/perl:perl",
+        "lua": "//packages/linux/lang/lua:lua",
     },
 
     # Conditional configure arguments
     use_configure = {
-        "python": "--enable-python3interp",
-        "-python": "--disable-python3",
-        "perl": "--enable-perlinterp",
-        "-perl": "--disable-perlinterp",
-        "ruby": "--enable-rubyinterp",
-        "-ruby": "--disable-rubyinterp",
-        "lua": "--enable-luainterp",
-        "-lua": "--disable-luainterp",
-        "X": "--with-x",
-        "-X": "--without-x",
-        "gtk": "--enable-gui=gtk3",
-        "-gtk": "--enable-gui=no",
+        "X": ("--with-x", "--without-x"),
+        "acl": ("--enable-acl", "--disable-acl"),
+        "crypt": ("--enable-crypt", "--disable-crypt"),
+        "cscope": ("--enable-cscope", "--disable-cscope"),
+        "debug": ("--enable-debug", "--disable-debug"),
+        "gpm": ("--enable-gpm", "--disable-gpm"),
+        "gtk": ("--enable-gui=gtk3", "--enable-gui=no"),
+        "lua": ("--enable-luainterp", "--disable-luainterp"),
+        "minimal": ("--enable-minimal", "--disable-minimal"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "perl": ("--enable-perlinterp", "--disable-perlinterp"),
+        "python": ("--enable-python3interp", "--disable-python3"),
+        "racket": ("--enable-racket", "--disable-racket"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "sound": ("--enable-sound", "--disable-sound"),
+        "tcl": ("--enable-tcl", "--disable-tcl"),
+        "terminal": ("--enable-terminal", "--disable-terminal"),
+        "vim-pager": ("--enable-vim-pager", "--disable-vim-pager"),
     },
 
     # Base configure arguments (always applied)
@@ -55,14 +49,33 @@ autotools_package(
         "--with-features=huge",
         "--enable-multibyte",
         "--disable-netbeans",
+        "--with-tlib=ncursesw",
+        # Cross-compilation cache variables - vim configure tries to run test
+        # programs which can't work when cross-compiling. These are the correct
+        # values for modern Linux x86_64 with glibc.
+        "vim_cv_toupper_broken=no",
+        "vim_cv_terminfo=yes",
+        "vim_cv_tgetent=zero",
+        "vim_cv_getcwd_broken=no",
+        "vim_cv_stat_ignores_slash=no",
+        "vim_cv_memmove_handles_overlap=yes",
+        "vim_cv_bcopy_handles_overlap=yes",
+        "vim_cv_memcpy_handles_overlap=yes",
     ],
 
-    pre_configure = """
-# Vim source is in src directory, need to run configure from there
-cd src
-""",
-
+    pre_configure_cmds = [
+        "rm -f src/auto/config.cache",
+        # Vim's src/configure calls auto/configure relative to CWD.
+        # Create a top-level wrapper that cd's to src/ first.
+        'printf \'#!/bin/sh\\ncd "$(dirname "$0")/src" && exec ./configure "$@"\\n\' > configure && chmod +x configure',
+        # Empty auto/osdef.h — vim's generated declarations conflict with
+        # ncursesw's const-correct headers on GCC 14+.
+        "> src/auto/osdef.h",
+    ],
+    # GCC 14+ requires optimization for _FORTIFY_SOURCE
+    extra_cflags = ["-O2"],
     deps = [
+        "//packages/linux/system/terminal/ncurses:ncurses",
     ],
     visibility = ["PUBLIC"],
 )

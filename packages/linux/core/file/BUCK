@@ -1,46 +1,39 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "file",
+    # Official release tarball includes pre-generated configure script
+    # Cross-compilation: file needs to run the compiled binary to generate magic.mgc.
+    # Build a native file binary first using a separate build, then use it for cross-compilation.
     version = "5.45",
-    src_uri = "https://astron.com/pub/file/file-5.45.tar.gz",
+    url = "https://astron.com/pub/file/file-5.45.tar.gz",
     sha256 = "fc97f51029bb0e2c9f4e3bffefdaf678f0e039ee872b9de5c002a6d09c784d82",
-    signature_sha256 = "34af47be1584ed99529c21a916444bbce4caf1ca289b241d8e649f7fdd9e3ec6",
-    signature_required=False,
     description = "File type identification utility",
     homepage = "https://www.darwinsys.com/file/",
     license = "BSD-2-Clause",
 
     # USE flags this package supports
-    iuse = [
-        "zlib",
-        "bzip2",
-        "lzma",
-        "static-libs",
-    ],
 
     # Default USE flags
-    use_defaults = ["zlib"],
 
     # Conditional dependencies
     use_deps = {
-        "zlib": ["//packages/linux/core/zlib:zlib"],
-        "bzip2": ["//packages/linux/core/bzip2:bzip2"],
-        "lzma": ["//packages/linux/core/xz:xz"],
+        "zlib": "//packages/linux/core/zlib:zlib",
+        "bzip2": "//packages/linux/system/libs/compression/bzip2:bzip2",
+        "lzma": "//packages/linux/system/libs/compression/xz:xz",
     },
 
     # Conditional configure arguments
     use_configure = {
-        "zlib": "--enable-zlib",
-        "-zlib": "--disable-zlib",
-        "bzip2": "--enable-bzlib",
-        "-bzip2": "--disable-bzlib",
-        "lzma": "--enable-xzlib",
-        "-lzma": "--disable-xzlib",
-        "static-libs": "--enable-static",
-        "-static-libs": "--disable-static",
+        "bzip2": ("--enable-bzlib", "--disable-bzlib"),
+        "lzip": ("--enable-lzip", "--disable-lzip"),
+        "lzma": ("--enable-xzlib", "--disable-xzlib"),
+        "python": ("--enable-python", "--disable-python"),
+        "seccomp": ("--enable-seccomp", "--disable-seccomp"),
+        "static-libs": ("--enable-static", "--disable-static"),
+        "zlib": ("--enable-zlib", "--disable-zlib"),
+        "zstd": ("--with-zstd", "--without-zstd"),
     },
 
-    visibility = ["PUBLIC"],
 )

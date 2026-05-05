@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "scx-backports",
-    version = "1.0.13",
-    src_uri = "https://github.com/sched-ext/scx-backports/archive/refs/tags/v1.0.13.2.tar.gz",
-    sha256 = "TODO",
-    meson_args = [
+    version = "main",
+    url = "https://github.com/sched-ext/scx-backports/archive/refs/heads/main.tar.gz",
+    sha256 = "1e0fb6c8f6d58544b85827e417b29d5768812119a8c92f0781ab38e5f1ed99eb",
+    configure_args = [
         "-Denable_rust=false",
         "-Denable_stress=false",
         "-Dsystemd=disabled",
@@ -14,22 +15,15 @@ meson_package(
         "-Doffline=true",
     ],
     deps = [
-        "//packages/linux/dev-tools/compilers/llvm",
-        "//packages/linux/system/libs/bpf/libbpf",
-        "//packages/linux/system/libs/bpf/bpftool",
-        "//packages/linux/system/libs/elfutils",
-        "//packages/linux/dev-libs/compression/zlib",
-        "//packages/linux/dev-libs/compression/zstd",
-        "//packages/linux/system/security/libseccomp",
-        "//packages/linux/dev-tools/parsers/jq",
+        "//packages/linux/core/llvm:llvm-native",
+        "//packages/linux/system/libs/bpf/bpftool:bpftool",
+        "//packages/linux/system/libs/elfutils:elfutils",
+        "//packages/linux/dev-libs/compression/zlib:zlib",
+        "//packages/linux/system/libs/compression/zstd:zstd",
+        "//packages/linux/system/libs/ipc/libseccomp:libseccomp",
+        "//packages/linux/dev-tools/parsers/jq:jq",
     ],
-    iuse = ["rust", "systemd"],
-    use_defaults = [],
-    use_options = {
-        "rust": "enable_rust",
-        "systemd": "systemd",
-    },
     use_deps = {
-        "systemd": ["//packages/linux/system/init/systemd"],
+        "systemd": "//packages/linux/system/init/systemd:systemd",
     },
 )

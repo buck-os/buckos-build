@@ -1,42 +1,37 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "imv-src",
-    src_uri = "https://git.sr.ht/~exec64/imv/archive/v4.5.0.tar.gz",
-    sha256 = "3b11991a86942d757830015033b1c3a3cc915be2f0c20fee7bc7493be560cbcb",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "imv",
-    source = ":imv-src",
+    url = "https://git.sr.ht/~exec64/imv/archive/v4.5.0.tar.gz",
+    sha256 = "3b11991a86942d757830015033b1c3a3cc915be2f0c20fee7bc7493be560cbcb",
+    use_configure = {
+        "X": ("--with-x", "--without-x"),
+        "bmp": ("--enable-bmp", "--disable-bmp"),
+        "gif": ("--with-gif", "--without-gif"),
+        "heif": ("--enable-heif", "--disable-heif"),
+        "icu": ("--enable-icu", "--disable-icu"),
+        "jpeg": ("--with-jpeg", "--without-jpeg"),
+        "jpegxl": ("--enable-jpegxl", "--disable-jpegxl"),
+        "png": ("--with-png", "--without-png"),
+        "svg": ("--enable-svg", "--disable-svg"),
+        "tiff": ("--with-tiff", "--without-tiff"),
+        "wayland": ("--enable-wayland", "--disable-wayland"),
+        "webp": ("--with-webp", "--without-webp"),
+    },
     version = "4.5.0",
     description = "Image viewer for X11 and Wayland",
     homepage = "https://codeberg.org/exec64/imv",
     license = "MIT",
-    pre_configure = """
-mkdir -p build
-cd build
-meson setup .. \
-    --prefix=/usr \
-    -Dbuildtype=release \
-    -Dwindows=all \
-    -Dfreeimage=enabled \
-    -Dlibjpeg=enabled \
-    -Dlibpng=enabled \
-    -Dlibtiff=enabled \
-    -Dlibheif=enabled \
-    -Dlibnsgif=disabled
-""",
     configure_args = [],
     make_args = ["-C", "build"],
-    post_install = """
+    post_install_cmds = ["""
 cd build
 DESTDIR=$OUT meson install
-""",
+"""],
     deps = [
-        "//packages/linux/desktop/wayland:wayland",
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/graphics/rendering/wayland:wayland",
         # "//packages/linux/core/freeimage:freeimage",  # TODO: not packaged yet,
         "//packages/linux/system/libs/image/libpng:libpng",
         "//packages/linux/system/libs/image/libjpeg-turbo:libjpeg-turbo",
@@ -45,6 +40,4 @@ DESTDIR=$OUT meson install
         "//packages/linux/fonts/libraries/pango:pango",
         # "//packages/linux/core/inih:inih",  # TODO: not packaged yet,
     ],
-    bdepend = [],
-    visibility = ["PUBLIC"],
 )

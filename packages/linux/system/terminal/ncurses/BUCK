@@ -1,18 +1,77 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-# ncurses - Package from third-party
+# ncurses - Console display library
+# Uses traditional autotools (configure/make), not cmake
 
-cmake_package(
+package(
+    build_rule = "autotools",
     name = "ncurses",
-    version = "unknown",
-    src_uri = "# TODO: Add source URI for ncurses vunknown",
-    sha256 = "TODO",
-    description = "ncurses package",
-    license = "unknown",
-    deps = [],
-    cmake_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DBUILD_SHARED_LIBS=ON",
+    version = "6.5",
+    url = "https://mirrors.kernel.org/gnu/ncurses/ncurses-6.5.tar.gz",
+    sha256 = "136d91bc269a9a5785e5f9e980bc76ab57428f604ce3e5a5a90cebc767971cc6",
+    description = "Console display library",
+    homepage = "https://www.gnu.org/software/ncurses/",
+    license = "MIT",
+
+    use_configure = {
+        "ada": ("--with-ada", "--without-ada"),
+        "cxx": (["--with-cxx", "--with-cxx-binding", "--with-cxx-shared"], ["--without-cxx", "--without-cxx-binding"]),
+        "debug": ("--with-debug", "--without-debug"),
+        "gpm": ("--with-gpm", "--without-gpm"),
+        "profile": ("--with-profile", "--without-profile"),
+        "static-libs": ("--with-normal", ["--with-shared", "--without-normal"]),
+        "tinfo": ("--with-termlib", "--without-termlib"),
+        "trace": ("--with-trace", "--without-trace"),
+    },
+
+    configure_args = [
+        "--with-shared",
+        "--libdir=/usr/lib64",
+        "--enable-pc-files",
+        "--with-pkg-config-libdir=/usr/lib64/pkgconfig",
+        "--enable-widec",
+        "--enable-symlinks",
+        "--with-manpage-format=normal",
+        "--enable-const",
+        "--enable-colorfgbg",
+        "--enable-hard-tabs",
+        "--enable-echo",
+        "--enable-termcap",
+        "--disable-stripping",
+        "--without-ada",
+        "--without-tests",
+        # Fallback terminal entries compiled into the library.  In cross-
+        # compilation mode (--host), tic can't run to compile the full
+        # terminfo database, so these fallbacks ensure basic terminal
+        # types work without a terminfo directory.
+        "--with-fallbacks=xterm,linux,vt100,vt220,screen,xterm-256color,tmux,tmux-256color",
     ],
-    visibility = ["PUBLIC"],
+
+    # Fix cross-compiled tic needing glibc 2.42 (host has 2.41)
+    # Replace run_tic.sh with no-op so install.data skips tic invocation.
+    # With --with-fallbacks, essential terminfo entries (linux, xterm, vt100, etc.)
+    # are compiled directly into the library, so external terminfo files aren't required.
+    pre_build_cmds = [
+        "printf '#!/bin/sh\\nexit 0\\n' > misc/run_tic.sh",
+    ],
+    # Skip install.data (tic terminfo compilation) — tic is cross-compiled
+    # and can't run on the build host.  Fallback entries cover basic use.
+    install_targets = ["install.libs", "install.progs", "install.includes", "install.man"],
+
+    post_install_cmds = [
+        # Non-wide compatibility symlinks
+        "cd usr/lib64 && for lib in ncurses form panel menu; do ln -sf lib${lib}w.so lib${lib}.so; done",
+        # tinfo compatibility
+        "cd usr/lib64 && ln -sf libncursesw.so libtinfo.so && ln -sf libncursesw.so libtinfow.so",
+        # pkg-config symlinks
+        "cd usr/lib64/pkgconfig && for pc in ncurses form panel menu; do ln -sf ${pc}w.pc ${pc}.pc; done && ln -sf ncursesw.pc tinfo.pc",
+        # --enable-widec + --enable-symlinks flattens headers into include/;
+        # packages expecting <ncursesw/ncurses.h> need this directory.
+        # A self-referencing symlink (. -> .) breaks Buck2 artifact
+        # materialisation, so use a real directory with header symlinks.
+        "mkdir -p usr/include/ncursesw && for h in usr/include/*.h; do ln -sf \"../$(basename $h)\" \"usr/include/ncursesw/$(basename $h)\"; done",
+    ],
+
+    deps = [],
+
 )

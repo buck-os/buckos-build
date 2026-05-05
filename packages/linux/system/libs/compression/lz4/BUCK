@@ -1,35 +1,14 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
     name = "lz4",
+    build_rule = "autotools",
+    skip_configure = True,
     version = "1.10.0",
-    src_uri = "https://github.com/lz4/lz4/releases/download/v1.10.0/lz4-1.10.0.tar.gz",
+    url = "https://github.com/lz4/lz4/releases/download/v1.10.0/lz4-1.10.0.tar.gz",
     sha256 = "537512904744b35e232912055ccf8ec66d768639ff3abe5788d90d792ec5f48b",
-    signature_required = False,
     description = "Extremely fast compression algorithm",
     homepage = "https://lz4.github.io/lz4/",
     license = "BSD-2-Clause",
-    iuse = ["static-libs"],
-    use_defaults = [],
-    use_configure = {},
-    use_deps = {},
-    configure_args = [],
-    pre_configure = """
-# USE flags: static-libs
-# LZ4 uses a Makefile build system
-# By default it builds both shared and static libraries
-""",
-    make_args = [
-        "PREFIX=/usr",
-        "LIBDIR=/usr/lib",
-    ],
-    post_install = """
-# Remove static library if not requested
-if [ "${USE_static_libs}" != "1" ]; then
-    rm -f "$DESTDIR/usr/lib/liblz4.a"
-fi
-""",
     deps = [],
-    visibility = ["PUBLIC"],
 )

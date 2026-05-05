@@ -1,30 +1,41 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+# SCTK - NIST Scoring Toolkit for speech recognition evaluation
+# Contains tools like sclite, sc_stats, rover, etc.
+
+package(
+    build_rule = "binary",
     name = "sctk",
     version = "2.4.12",
-    src_uri = "https://github.com/usnistgov/SCTK/archive/refs/tags/v2.4.12.tar.gz",
+    url = "https://github.com/usnistgov/SCTK/archive/refs/tags/v2.4.12.tar.gz",
     sha256 = "43bd2bfe60e0ad04a563ddef025e84fca4c073f8f7c02f056b59fb8e2ec4f022",
-    signature_required = False,
+    description = "NIST Scoring Toolkit for speech recognition evaluation",
+    homepage = "https://github.com/usnistgov/SCTK",
+    license = "public-domain",
+    install_script = """
+mkdir -p "$OUT"
+BUILD=$(mktemp -d)
+cp -a "$SRCS"/. "$BUILD/"
+cd "$BUILD"
 
-    deps = [],
+# SCTK builds with just make
+make -j${MAKEOPTS:-$(nproc)} all
 
-    src_configure = """
-# SCTK uses custom make config instead of autotools
-cd $WORKDIR
-make config PREFIX=$DESTDIR/usr
+mkdir -p "$OUT/usr/bin"
+mkdir -p "$OUT/usr/share/doc/sctk"
+
+# Install binaries
+for bin in sclite sc_stats rover asclite; do
+    if [ -f "bin/$bin" ]; then
+        install -m755 "bin/$bin" "$OUT/usr/bin/"
+    elif [ -f "src/$bin/$bin" ]; then
+        install -m755 "src/$bin/$bin" "$OUT/usr/bin/"
+    fi
+done
+
+# Install documentation if present
+if [ -f README.md ]; then
+    install -m644 README.md "$OUT/usr/share/doc/sctk/"
+fi
 """,
-
-    src_compile = """
-cd $WORKDIR
-make all
-""",
-
-    src_install = """
-cd $WORKDIR
-mkdir -p $DESTDIR/usr/bin
-make install PREFIX=$DESTDIR/usr
-""",
-
-    visibility = ["PUBLIC"],
 )

@@ -1,80 +1,19 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package", "binary_package", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # arping - Send ARP requests to identify hosts on a network
 # =============================================================================
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "arping",
     version = "2.24",
-    src_uri = "https://github.com/ThomasHabets/arping/archive/refs/tags/arping-2.24.tar.gz",
+    url = "https://github.com/ThomasHabets/arping/archive/refs/tags/arping-2.24.tar.gz",
     sha256 = "e443f65a44e247b27da8177decac31aa84336d5de87eab44fc02e33e7ba0b251",
-    signature_required = False,
-
-    iuse = ["vlan"],
-    use_defaults = [],
-
-
-    use_configure = {
-        "vlan": "--enable-vlan",
-        "-vlan": "--disable-vlan",
-    },
-
-    deps = [
-        "//packages/linux/network/libpcap:libpcap",
-    ],
-
-    src_prepare = '''
-# Workaround for autoreconf Perl module issues and missing libnet
-# Create a simple configure script that works around all these issues
-cat > configure << 'CONFEOF'
-#!/bin/sh
-# Minimal configure script for arping
-
-prefix=/usr
-exec_prefix=${prefix}
-
-# Parse arguments
-while [ $# -gt 0 ]; do
-    case "$1" in
-        --prefix=*)
-            prefix="${1#*=}"
-            ;;
-        --exec-prefix=*)
-            exec_prefix="${1#*=}"
-            ;;
-        --help)
-            echo "Usage: $0 [OPTIONS]"
-            exit 0
-            ;;
-    esac
-    shift
-done
-
-# Create Makefile
-{
-  echo ".PHONY: all install clean"
-  echo ""
-  echo "all:"
-  printf "\\tmake -C src\n"
-  echo ""
-  echo "install:"
-  printf "\\tmkdir -p \\$(DESTDIR)\\$(prefix)/bin\n"
-  printf "\\tmkdir -p \\$(DESTDIR)\\$(prefix)/share/man/man8\n"
-  printf "\\tmake -C src install DESTDIR=\\$(DESTDIR) prefix=\\$(prefix) || true\n"
-  printf "\\t[ -f doc/arping.8 ] && install -m 644 doc/arping.8 \\$(DESTDIR)\\$(prefix)/share/man/man8/ || true\n"
-  echo ""
-  echo "clean:"
-  printf "\\tmake -C src clean\n"
-} > Makefile
-CONFEOF
-
-chmod +x configure
-''',
-
     description = "Send ARP requests to identify hosts on a network",
     homepage = "https://github.com/ThomasHabets/arping",
     license = "GPL-2.0-or-later",
-    visibility = ["PUBLIC"],
+    deps = [
+        "//packages/linux/network/libnet:libnet",
+    ],
 )

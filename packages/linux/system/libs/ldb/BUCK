@@ -1,17 +1,19 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # ldb - LDAP-like embedded database
-download_source(
-    name = "ldb-src",
-    src_uri = "https://www.samba.org/ftp/ldb/ldb-2.8.0.tar.gz",
-    sha256 = "358dca10fcd27207ac857a0d7f435a46dbc6cd1f7c10dbb840c1931bf1965f08",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "ldb",
-    source = ":ldb-src",
+    # ldb uses waf (Python-based build system), not autoconf
+    # The ./configure script is a waf wrapper
+    url = "https://www.samba.org/ftp/ldb/ldb-2.8.0.tar.gz",
+
+    sha256 = "358dca10fcd27207ac857a0d7f435a46dbc6cd1f7c10dbb840c1931bf1965f08",
+    use_configure = {
+        "ldap": ("--enable-ldap", "--disable-ldap"),
+        "lmdb": ("--enable-lmdb", "--disable-lmdb"),
+        "python": ("--enable-python", "--disable-python"),
+    },
     version = "2.8.0",
     description = "LDAP-like embedded database library",
     homepage = "https://ldb.samba.org",
@@ -24,10 +26,11 @@ autotools_package(
         "--builtin-libraries=replace",
         "--with-modulesdir=/usr/lib/ldb/modules",
     ],
+    # Custom phases for waf build system
+    # Samba's waf configure wrapper script generates a Makefile
     deps = [
         "//packages/linux/system/libs/talloc:talloc",
-        "//packages/linux/system/libs/tdb:tdb",
-        "//packages/linux/system/libs/tevent:tevent",
+        "//packages/linux/system/security/auth/directory:tdb",
+        "//packages/linux/system/security/auth/directory:tevent",
     ],
-    visibility = ["PUBLIC"],
 )

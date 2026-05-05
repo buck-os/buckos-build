@@ -1,31 +1,37 @@
-load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "squashfs-tools-src",
-    src_uri = "https://github.com/plougher/squashfs-tools/archive/refs/tags/4.6.1.tar.gz",
-    sha256 = "9c4974e07c61547dae14af4ed1f358b7d04618ae194e54d6be72ee126f0d2f53",
-    signature_required = False,
-)
-
-autotools_package(
+package(
     name = "squashfs-tools",
-    source = ":squashfs-tools-src",
+    build_rule = "autotools",
+    skip_configure = True,
     version = "4.6.1",
+    url = "https://github.com/plougher/squashfs-tools/archive/refs/tags/4.6.1.tar.gz",
+    sha256 = "9c4974e07c61547dae14af4ed1f358b7d04618ae194e54d6be72ee126f0d2f53",
     description = "Tools for creating and extracting SquashFS filesystems",
     homepage = "https://github.com/plougher/squashfs-tools",
     license = "GPL-2.0",
-    configure_args = [],
-    make_args = [
-        "XZ_SUPPORT=1",
-        "LZO_SUPPORT=1",
-        "ZSTD_SUPPORT=1",
+    # Makefile lives in squashfs-tools/ subdirectory (no top-level Makefile).
+    # squashfs uses INSTALL_PREFIX not DESTDIR; we override it via make_args
+    # so make install puts binaries into $DESTDIR/usr/bin.
+    # install-manpages.sh requires non-builtin echo which bash's builtin
+    # shadows on the hermetic PATH.  Replace it with a no-op; the pre-built
+    # man pages are relocated in post_install_cmds.
+    pre_build_cmds = [
+        "printf '#!/bin/sh\\nexit 0\\n' > generate-manpages/install-manpages.sh",
+    ],
+    make_args = ["-C", "squashfs-tools", "XZ_SUPPORT=1", "LZO_SUPPORT=1", "ZSTD_SUPPORT=1"],
+    install_prefix_var = "INSTALL_PREFIX",
+    post_install_cmds = [
+        # INSTALL_PREFIX is set to the raw prefix dir; relocate into usr/
+        "mkdir -p usr/bin usr/share/man/man1",
+        "mv bin/* usr/bin/ && rmdir bin",
+        "mv man/man1/* usr/share/man/man1/ || true",
+        "rm -rf man || true",
     ],
     deps = [
         "//packages/linux/core/zlib:zlib",
-        "//packages/linux/core/xz:xz",
+        "//packages/linux/system/libs/compression/xz:xz",
         "//packages/linux/system/libs/compression/lzo:lzo",
         "//packages/linux/system/libs/compression/zstd:zstd",
     ],
-    visibility = ["PUBLIC"],
 )

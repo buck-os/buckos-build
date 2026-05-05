@@ -1,0 +1,25 @@
+load("//defs:package.bzl", "package")
+
+# =============================================================================
+# libpciaccess - Library providing generic access to the PCI bus
+# =============================================================================
+
+package(
+    build_rule = "meson",
+    name = "libpciaccess",
+    version = "0.18.1",
+    use_configure = {
+        "zlib": ("-Dzlib=enabled", "-Dzlib=disabled"),
+    },
+    url = "https://xorg.freedesktop.org/releases/individual/lib/libpciaccess-0.18.1.tar.xz",
+    sha256 = "4af43444b38adb5545d0ed1c2ce46d9608cc47b31c2387fc5181656765a6fa76",
+    description = "Library providing generic access to the PCI bus and devices",
+    homepage = "https://xorg.freedesktop.org/",
+    license = "MIT",
+    configure_args = [
+        "-Dpci-ids=/usr/share/hwdata",
+    ],
+    deps = [
+        "//packages/linux/system/hardware/hwdata:hwdata",
+    ],
+)

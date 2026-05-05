@@ -1,33 +1,33 @@
-load("//defs:package_defs.bzl", "download_source", "meson_package")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # libdrm - Direct Rendering Manager library
 # =============================================================================
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "libdrm",
-    version = "2.4.120",
-    src_uri = "https://dri.freedesktop.org/libdrm/libdrm-2.4.120.tar.xz",
-    sha256 = "3bf55363f76c7250946441ab51d3a6cc0ae518055c0ff017324ab76cdefb327a",
-    signature_sha256 = "67a6b2740e2b7fc358b196c721c26a8fabe45fabb0fb737b44933016b7d46ed1",
-    signature_required = False,
+    version = "2.4.131",
+    use_configure = {
+        "video_cards_amdgpu": ("-Damdgpu=enabled", "-Damdgpu=disabled"),
+        "video_cards_etnaviv": ("-Detnaviv=enabled", "-Detnaviv=disabled"),
+        "video_cards_exynos": ("-Dexynos=enabled", "-Dexynos=disabled"),
+        "video_cards_freedreno": ("-Dfreedreno=enabled", "-Dfreedreno=disabled"),
+        "video_cards_intel": ("-Dintel=enabled", "-Dintel=disabled"),
+        "video_cards_nouveau": ("-Dnouveau=enabled", "-Dnouveau=disabled"),
+        "video_cards_omap": ("-Domap=enabled", "-Domap=disabled"),
+        "video_cards_radeon": ("-Dradeon=enabled", "-Dradeon=disabled"),
+        "video_cards_tegra": ("-Dtegra=enabled", "-Dtegra=disabled"),
+        "video_cards_vc4": ("-Dvc4=enabled", "-Dvc4=disabled"),
+        "video_cards_vmware": ("-Dvmwgfx=enabled", "-Dvmwgfx=disabled"),
+    },
+    url = "https://dri.freedesktop.org/libdrm/libdrm-2.4.131.tar.xz",
+    sha256 = "45ba9983b51c896406a3d654de81d313b953b76e6391e2797073d543c5f617d5",
     description = "Direct Rendering Manager library",
     homepage = "https://dri.freedesktop.org/",
     license = "MIT",
-    meson_args = [
-        "-Dudev=true",
-        "-Dvalgrind=disabled",
-        "-Dintel=disabled",
-        "-Dradeon=enabled",
-        "-Damdgpu=enabled",
-        "-Dnouveau=enabled",
-        "-Dvmwgfx=enabled",
-        "-Domap=disabled",
-        "-Dexynos=disabled",
-        "-Dfreed" + "reno=disabled",
-        "-Dtegra=disabled",
-        "-Dvc4=disabled",
-        "-Detnaviv=disabled",
+    configure_args = [],
+    deps = [
+        "//packages/linux/graphics/xorg/libpciaccess:libpciaccess",
     ],
-    visibility = ["PUBLIC"],
 )

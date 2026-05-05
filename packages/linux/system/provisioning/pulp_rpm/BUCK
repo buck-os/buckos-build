@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "pulp_rpm",
     version = "3.33.0",
-    src_uri = "https://github.com/pulp/pulp_rpm/archive/refs/tags/3.33.0.tar.gz",
+    url = "https://github.com/pulp/pulp_rpm/archive/refs/tags/3.33.0.tar.gz",
     sha256 = "0e78eb4a0b4fd4a8dd15d7889f6d4bfaf876c5d9deab047ad6cfed3512453da7",
     deps = [
         "//packages/linux/lang/python:python",

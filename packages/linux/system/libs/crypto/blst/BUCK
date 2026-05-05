@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # blst - BLS12-381 signature library
 #
@@ -6,58 +6,21 @@ load("//defs:package_defs.bzl", "autotools_package")
 # performance and security. It is written in C and assembly.
 #
 # This library uses a custom build.sh script rather than autotools/cmake.
-# The build process compiles assembly and C sources into static and shared libraries.
-#
-# USE flags:
-#   static-libs - Build and install static libraries
-#   portable    - Build portable version (no CPU-specific optimizations)
 
-autotools_package(
+package(
     name = "blst",
+    build_rule = "binary",
     version = "0.3.7",
-    src_uri = "https://github.com/supranational/blst/archive/refs/tags/v0.3.7.tar.gz",
+    url = "https://github.com/supranational/blst/archive/refs/tags/v0.3.7.tar.gz",
     sha256 = "b70876c7f97dee3a6933e56fb0cfa52bb77f6e92c0961a429b73784ab2254b8d",
     description = "BLS12-381 signature library focused on performance and security",
     homepage = "https://github.com/supranational/blst",
     license = "Apache-2.0",
-    iuse = ["static-libs", "portable"],
-    use_defaults = ["static-libs"],
     deps = [],
-    use_deps = {},
-
-    # blst uses build.sh, not autotools configure
-    pre_configure = "true",
-
-    # Custom compilation using build.sh
-    src_compile = """
-# Build blst library using build.sh
-# The -shared flag builds both static and shared libraries
-export CFLAGS="${CFLAGS} -O2 -fPIC"
-if use portable; then
-    export CFLAGS="${CFLAGS} -D__BLST_PORTABLE__"
-fi
-
-# Build shared and static libraries
-./build.sh -shared
+    install_script = """
+CC="$CC" ./build.sh
+mkdir -p "$OUT/usr/lib64" "$OUT/usr/include"
+install -m644 libblst.a "$OUT/usr/lib64/"
+install -m644 bindings/blst.h bindings/blst_aux.h "$OUT/usr/include/"
 """,
-
-    # Custom installation
-    src_install = """
-# Install libraries
-install -d "${DESTDIR}/usr/lib"
-install -m 644 libblst.a "${DESTDIR}/usr/lib/"
-install -m 755 libblst.so "${DESTDIR}/usr/lib/"
-
-# Install headers
-install -d "${DESTDIR}/usr/include/blst"
-install -m 644 bindings/blst.h "${DESTDIR}/usr/include/blst/"
-install -m 644 bindings/blst_aux.h "${DESTDIR}/usr/include/blst/"
-
-# Remove static library if not requested
-if ! use static-libs; then
-    rm -f "${DESTDIR}/usr/lib/libblst.a"
-fi
-""",
-
-    visibility = ["PUBLIC"],
 )

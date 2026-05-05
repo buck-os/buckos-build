@@ -1,36 +1,43 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # zabbix - Enterprise monitoring solution
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "zabbix",
+    # Zabbix release tarball includes pre-generated configure script
     version = "7.0.0",
-    src_uri = "https://cdn.zabbix.com/zabbix/sources/stable/7.0/zabbix-7.0.0.tar.gz",
+    url = "https://cdn.zabbix.com/zabbix/sources/stable/7.0/zabbix-7.0.0.tar.gz",
     sha256 = "520641483223f680ef6e685284b556ba34a496d886a38dc3bca085cde21031b1",
-    signature_required = False,
-
-    use_defaults = ["ssl", "sqlite", "agent", "server", "curl", "ipv6"],
 
     use_deps = {
-        "ssl": ["//packages/linux/network/openssl:openssl"],
-        "sqlite": ["//packages/linux/system/libs/database/sqlite:sqlite"],
-        "curl": ["//packages/linux/network/curl:curl"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "sqlite": "//packages/linux/system/libs/database/sqlite:sqlite",
+        "curl": "//packages/linux/system/libs/network/curl:curl",
     },
 
     use_configure = {
-        "agent": "--enable-agent",
-        "-agent": "--disable-agent",
-        "server": "--enable-server",
-        "-server": "--disable-server",
-        "proxy": "--enable-proxy",
-        "-proxy": "--disable-proxy",
-        "sqlite": "--with-sqlite3",
-        "-sqlite": "--without-sqlite3",
-        "mysql": "--with-mysql",
-        "-mysql": "--without-mysql",
-        "ipv6": "--enable-ipv6",
-        "-ipv6": "--disable-ipv6",
+        "agent": ("--enable-agent", "--disable-agent"),
+        "agent2": ("--enable-agent2", "--disable-agent2"),
+        "curl": ("--with-curl", "--without-curl"),
+        "frontend": ("--enable-frontend", "--disable-frontend"),
+        "gnutls": ("--with-gnutls", "--without-gnutls"),
+        "ipv6": ("--enable-ipv6", "--disable-ipv6"),
+        "java": ("--enable-java", "--disable-java"),
+        "ldap": ("--enable-ldap", "--disable-ldap"),
+        "libxml2": ("--enable-libxml2", "--disable-libxml2"),
+        "mysql": ("--with-mysql", "--without-mysql"),
+        "odbc": ("--enable-odbc", "--disable-odbc"),
+        "openipmi": ("--enable-openipmi", "--disable-openipmi"),
+        "openssl": ("--with-openssl", "--without-openssl"),
+        "postgres": ("--enable-postgres", "--disable-postgres"),
+        "proxy": ("--enable-proxy", "--disable-proxy"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "server": ("--enable-server", "--disable-server"),
+        "snmp": ("--enable-snmp", "--disable-snmp"),
+        "sqlite": ("--with-sqlite3", "--without-sqlite3"),
+        "ssh": ("--enable-ssh", "--disable-ssh"),
+        "static": ("--enable-static", "--disable-static"),
     },
 
     configure_args = [
@@ -44,5 +51,4 @@ autotools_package(
     description = "Enterprise-class monitoring solution",
     homepage = "https://www.zabbix.com",
     license = "GPL-2+",
-    visibility = ["PUBLIC"],
 )

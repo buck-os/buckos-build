@@ -1,0 +1,16 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "python",
+    name = "pipx",
+    version = "1.7.1",
+    url = "https://github.com/pypa/pipx/archive/refs/tags/1.7.1.tar.gz",
+    sha256 = "28354a7085e0e0e4e2ef0930f8fb77eeb2e0851d00f089bb382d63e0be77c97f",
+    description = "Install and run Python applications in isolated environments",
+    homepage = "https://pipx.pypa.io/",
+    license = "MIT",
+    env = {"SETUPTOOLS_SCM_PRETEND_VERSION": "1.7.1"},
+    deps = [
+        "//packages/linux/lang/python:python",
+    ],
+)

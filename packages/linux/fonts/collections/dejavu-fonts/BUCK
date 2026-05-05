@@ -1,44 +1,30 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "dejavu-fonts-src",
-    src_uri = "https://github.com/dejavu-fonts/dejavu-fonts/releases/download/version_2_37/dejavu-fonts-ttf-2.37.tar.bz2",
-    sha256 = "fa9ca4d13871dd122f61258a80d01751d603b4d3ee14095d65453b4e846e17d7",
-    signature_required = False,
-)
-
-ebuild_package(
+package(
     name = "dejavu-fonts",
-    source = ":dejavu-fonts-src",
+    build_rule = "binary",
     version = "2.37",
+    url = "https://github.com/dejavu-fonts/dejavu-fonts/releases/download/version_2_37/dejavu-fonts-ttf-2.37.tar.bz2",
+    sha256 = "fa9ca4d13871dd122f61258a80d01751d603b4d3ee14095d65453b4e846e17d7",
     description = "DejaVu fonts - derivative of Bitstream Vera with extended Unicode coverage",
     homepage = "https://dejavu-fonts.github.io/",
     license = "BitstreamVera",
-    src_install = """
-# Create font directory
-dodir /usr/share/fonts/dejavu
-
-# Install all TTF fonts
+    install_script = """
+mkdir -p "$DESTDIR/usr/share/fonts/dejavu"
 cd ttf || true
 for font in *.ttf; do
     if [ -f "$font" ]; then
-        insinto /usr/share/fonts/dejavu
-        doins "$font"
+        install -m 0644 "$font" "$DESTDIR/usr/share/fonts/dejavu/"
     fi
 done
 cd ..
 
-# Install fontconfig configuration
 if [ -d fontconfig ]; then
-    insinto /etc/fonts/conf.avail
-    doins fontconfig/*.conf
+    mkdir -p "$DESTDIR/etc/fonts/conf.avail"
+    install -m 0644 fontconfig/*.conf "$DESTDIR/etc/fonts/conf.avail/" 2>/dev/null || true
 fi
-
-# Install documentation
-dodoc AUTHORS LICENSE NEWS README.md 2>/dev/null || true
 """,
-    rdepend = [
-        "//packages/linux/fonts/libraries/fontconfig:fontconfig",
+    deps = [
+        "//packages/linux/system/libs/font/fontconfig:fontconfig",
     ],
-    visibility = ["PUBLIC"],
 )

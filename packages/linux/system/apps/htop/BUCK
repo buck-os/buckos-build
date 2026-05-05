@@ -1,44 +1,41 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # htop - Interactive process viewer
 # USE flags: unicode, hwloc, sensors, caps
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "htop",
     version = "3.4.1",
-    src_uri = "https://github.com/htop-dev/htop/releases/download/3.4.1/htop-3.4.1.tar.xz",
+    url = "https://github.com/htop-dev/htop/releases/download/3.4.1/htop-3.4.1.tar.xz",
     sha256 = "904f7d4580fc11cffc7e0f06895a4789e0c1c054435752c151e812fead9f6220",
-    signature_required = False,
     description = "Interactive process viewer for Unix systems",
     homepage = "https://htop.dev",
     license = "GPL-2",
     # Fix NCURSES_BOOL conflicts with C23 bool type
     env = {"CFLAGS": "-std=gnu17 -O2"},
-    iuse = ["unicode", "hwloc", "sensors", "caps", "debug"],
-    use_defaults = ["unicode"],
     use_deps = {
-        "hwloc": ["//packages/linux/system/hardware/hwloc:hwloc"],
-        "caps": ["//packages/linux/system/libs/ipc/libcap:libcap"],
+        "hwloc": "//packages/linux/system/libs/hwloc:hwloc",
+        "caps": "//packages/linux/system/libs/ipc/libcap:libcap",
     },
     use_configure = {
-        "unicode": "--enable-unicode",
-        "-unicode": "--disable-unicode",
-        "hwloc": "--enable-hwloc",
-        "-hwloc": "--disable-hwloc",
-        "sensors": "--enable-sensors",
-        "-sensors": "--disable-sensors",
-        "caps": "--enable-capabilities",
-        "-caps": "--disable-capabilities",
-        "debug": "--enable-debug",
-        "-debug": "--disable-debug",
+        "caps": ("--enable-capabilities", "--disable-capabilities"),
+        "debug": ("--enable-debug", "--disable-debug"),
+        "delayacct": ("--enable-delayacct", "--disable-delayacct"),
+        "hwloc": ("--enable-hwloc", "--disable-hwloc"),
+        "llvm-libunwind": ("--enable-llvm-libunwind", "--disable-llvm-libunwind"),
+        "lm-sensors": ("--enable-lm-sensors", "--disable-lm-sensors"),
+        "openvz": ("--enable-openvz", "--disable-openvz"),
+        "sensors": ("--enable-sensors", "--disable-sensors"),
+        "unicode": ("--enable-unicode", "--disable-unicode"),
+        "unwind": ("--enable-unwind", "--disable-unwind"),
+        "vserver": ("--enable-vserver", "--disable-vserver"),
     },
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc",
     ],
     deps = [
-        "//packages/linux/core/ncurses:ncurses",
+        "//packages/linux/system/terminal/ncurses:ncurses",
     ],
-    visibility = ["PUBLIC"],
 )

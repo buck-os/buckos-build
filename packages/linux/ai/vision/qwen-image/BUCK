@@ -1,17 +1,17 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "qwen-image",
     version = "0.35.0.dev0",
-    src_uri = "https://github.com/huggingface/diffusers/archive/ba2ba9019f76fd96c532240ed07d3f98343e4041.tar.gz",
-    sha256 = "TODO",
+    url = "https://github.com/huggingface/diffusers/archive/ba2ba9019f76fd96c532240ed07d3f98343e4041.tar.gz",
+    sha256 = "0f817320d09941786f4fbb76b80b9574dbf70d662c41ce11851dd431a4d393e7",
     deps = [
-        "//packages/linux/dev-libs/python/filelock",
-        "//packages/linux/dev-libs/python/huggingface-hub",
-        "//packages/linux/dev-libs/python/numpy",
-        "//packages/linux/dev-libs/python/pillow",
-        "//packages/linux/dev-libs/python/regex",
-        "//packages/linux/dev-libs/python/requests",
-        "//packages/linux/dev-libs/python/safetensors",
+        "//packages/linux/dev-libs/python/filelock:filelock",
+        "//packages/linux/dev-libs/python/huggingface-hub:huggingface-hub",
+        "//packages/linux/dev-libs/python/pillow:pillow",
+        "//packages/linux/dev-libs/python/regex:regex",
+        "//packages/linux/dev-libs/python/requests:requests",
+        "//packages/linux/dev-libs/python/safetensors:safetensors",
     ],
 )

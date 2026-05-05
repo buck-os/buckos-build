@@ -1,25 +1,24 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "robomimic",
     version = "0.4.0",
-    src_uri = "https://github.com/ARISE-Initiative/robomimic/archive/refs/tags/v0.4.0.tar.gz",
-    sha256 = "TODO",
+    url = "https://github.com/ARISE-Initiative/robomimic/archive/refs/tags/v0.4.0.tar.gz",
+    sha256 = "1a7497f6bda84aea378858e23bb19ad9e91748fdda6596373223789bc3b9a984",
     deps = [
-        "//packages/linux/dev-libs/python/numpy",
-        "//packages/linux/dev-libs/python/h5py",
-        "//packages/linux/dev-libs/python/psutil",
-        "//packages/linux/dev-libs/python/tqdm",
-        "//packages/linux/dev-libs/python/termcolor",
-        "//packages/linux/dev-libs/python/tensorboard",
-        "//packages/linux/dev-libs/python/tensorboardX",
-        "//packages/linux/dev-libs/python/imageio",
-        "//packages/linux/dev-libs/python/imageio-ffmpeg",
-        "//packages/linux/dev-libs/python/matplotlib",
-        "//packages/linux/dev-libs/python/egl_probe",
-        "//packages/linux/ai/ml-frameworks/pytorch",
-        "//packages/linux/ai/ml-frameworks/torchvision",
-        "//packages/linux/dev-libs/python/huggingface-hub",
+        "//packages/linux/dev-libs/python/h5py:h5py",
+        "//packages/linux/dev-libs/python/psutil:psutil",
+        "//packages/linux/dev-libs/python/tqdm:tqdm",
+        "//packages/linux/dev-libs/python/termcolor:termcolor",
+        "//packages/linux/dev-libs/python/tensorboard:tensorboard",
+        "//packages/linux/dev-libs/python/tensorboardX:tensorboardX",
+        "//packages/linux/dev-libs/python/imageio:imageio",
+        "//packages/linux/dev-libs/python/imageio-ffmpeg:imageio-ffmpeg",
+        "//packages/linux/dev-libs/python/matplotlib:matplotlib",
+        "//packages/linux/dev-libs/python/egl_probe:egl_probe",
+        "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
+        "//packages/linux/ai/ml-frameworks/torchvision:torchvision",
+        "//packages/linux/dev-libs/python/huggingface-hub:huggingface-hub",
     ],
-    maintainers = ["rl_robotics_ml_oncall"],
 )

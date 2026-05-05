@@ -1,51 +1,45 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "nettle",
     version = "3.10",
-    src_uri = "https://github.com/gnutls/nettle/archive/refs/tags/nettle_3.10_release_20240616.tar.gz",
+    url = "https://github.com/gnutls/nettle/archive/refs/tags/nettle_3.10_release_20240616.tar.gz",
     sha256 = "d34b632e709fb673120422bf7ef790edf8ffcc6f554b2158233b5c4f6968d1f5",
-    signature_required = False,
     description = "Low-level cryptographic library",
     homepage = "https://www.lysator.liu.se/~nisse/nettle/",
     license = "LGPL-3.0",
 
     # USE flags: static-libs, openssl, doc, asm, gmp
-    iuse = ["static-libs", "openssl", "doc", "asm", "gmp"],
-    use_defaults = ["asm", "gmp"],
 
     use_configure = {
-        "static-libs": "--enable-static",
-        "-static-libs": "--disable-static",
-        "openssl": "--enable-openssl",
-        "-openssl": "--disable-openssl",
-        "doc": "--enable-documentation",
-        "-doc": "--disable-documentation",
-        "asm": "--enable-assembler",
-        "-asm": "--disable-assembler",
-        "gmp": "--enable-public-key",
-        "-gmp": "--disable-public-key",
+        "asm": ("--enable-assembler", "--disable-assembler"),
+        "doc": ("--enable-documentation", "--disable-documentation"),
+        "openssl": ("--enable-openssl", "--disable-openssl"),
+        "static-libs": ("--enable-static", "--disable-static"),
     },
 
     use_deps = {
-        "openssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "gmp": ["//packages/linux/dev-libs/gmp:gmp"],
+        "openssl": "//packages/linux/system/libs/crypto/openssl:openssl",
     },
 
     configure_args = [
         "--enable-shared",
+        # hogweed (public key crypto) requires gmp — gnutls needs it
+        "--enable-public-key",
     ],
 
-    pre_configure = """
-# Available USE flags:
-# - static-libs: Build static libraries
-# - openssl: Enable OpenSSL interoperability
-# - doc: Build documentation
-# - asm: Enable assembly optimizations
-# - gmp: Enable public-key crypto (requires GMP)
-""",
+    pre_configure_cmds = [
+        # GitHub archive doesn't include pre-generated configure script.
+        "autoreconf -fi",
+    ],
 
-    deps = [],
-    visibility = ["PUBLIC"],
+    deps = [
+        "//packages/linux/system/libs/utility/gmp:gmp",
+    ],
+    host_deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+    ],
 )

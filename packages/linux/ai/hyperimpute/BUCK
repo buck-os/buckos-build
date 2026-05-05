@@ -1,21 +1,21 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "hyperimpute",
     version = "0.1.17",
-    src_uri = "https://github.com/vanderschaarlab/hyperimpute/archive/v0.1.17.tar.gz",
-    sha256 = "TODO",
+    url = "https://github.com/vanderschaarlab/hyperimpute/archive/v0.1.17.tar.gz",
+    sha256 = "04a42eb86d9ac63d714cbf2169bb66de6d7c3a3cdfc2dd7444d685e9452125ee",
     deps = [
-        "//packages/linux/ai/ml-frameworks/pytorch",
-        "//packages/linux/dev-libs/python/numpy",
-        "//packages/linux/dev-libs/python/pandas",
-        "//packages/linux/dev-libs/python/scikit-learn",
-        "//packages/linux/dev-libs/python/optuna",
-        "//packages/linux/dev-libs/python/loguru",
-        "//packages/linux/dev-libs/python/xgboost",
-        "//packages/linux/dev-libs/python/lightgbm",
-        "//packages/linux/dev-libs/python/redis",
-        "//packages/linux/dev-libs/python/cloudpickle",
-        "//packages/linux/dev-libs/python/pydantic",
+        "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
+        "//packages/linux/dev-libs/python/pandas:pandas",
+        "//packages/linux/dev-libs/python/scikit-learn:scikit-learn",
+        "//packages/linux/dev-libs/python/optuna:optuna",
+        "//packages/linux/dev-libs/python/loguru:loguru",
+        "//packages/linux/dev-libs/python/xgboost:xgboost",
+        "//packages/linux/dev-libs/python/lightgbm:lightgbm",
+        "//packages/linux/dev-libs/python/redis:redis",
+        "//packages/linux/dev-libs/python/cloudpickle:cloudpickle",
+        "//packages/linux/dev-libs/python/pydantic:pydantic",
     ],
 )

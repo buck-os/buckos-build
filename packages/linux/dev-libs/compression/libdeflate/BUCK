@@ -1,11 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "libdeflate",
-    version = "1.17",
-    src_uri = "https://github.com/ebiggers/libdeflate/releases/download/v1.17/libdeflate-1.17.tar.gz",
-    sha256 = "TODO",
-    cmake_args = [
+    version = "1.25",
+    use_configure = {
+        "utils": ("-DENABLE_UTILS=ON", "-DENABLE_UTILS=OFF"),
+    },
+    url = "https://github.com/ebiggers/libdeflate/releases/download/v1.25/libdeflate-1.25.tar.gz",
+    sha256 = "fed5cd22f00f30cc4c2e5329f94e2b8a901df9fa45ee255cb70e2b0b42344477",
+    configure_args = [
         "-DLIBDEFLATE_BUILD_STATIC_LIB=ON",
         "-DLIBDEFLATE_BUILD_SHARED_LIB=ON",
         "-DLIBDEFLATE_BUILD_GZIP=OFF",

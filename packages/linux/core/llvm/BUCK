@@ -1,96 +1,52 @@
-load("//defs:package_defs.bzl", "cmake_package")
-load("//defs:use_flags.bzl", "set_use_flags", "use_dep", "use_configure_args", "GLOBAL_USE_FLAGS")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
-# LLVM - Low Level Virtual Machine
+# LLVM Native - host tools build of LLVM, Clang, and LLD
 # =============================================================================
+# Full LLVM+clang+lld for the seed toolchain.  Must be capable of
+# building any package in the tree (Rust uses clang as linker, mesa
+# needs AMDGPU backend, BPF tools need BPF backend, etc.).
 #
-# USE flags this package supports:
-# - zlib: Enable zlib compression support
-# - zstd: Enable zstd compression support
-# - ffi: Enable libffi support
-# - doc: Build documentation
-# - examples: Build examples
-# - test: Build test suite
-# - benchmarks: Build benchmarks
-# - debug: Debug build type
-#
-# Default USE flags: zlib, ffi
+# Built via bootstrap transition (host PATH).
 
-# USE flag configuration
-LLVM_IUSE = ["zlib", "zstd", "ffi", "doc", "examples", "test", "benchmarks", "debug"]
-LLVM_USE_DEFAULTS = ["zlib", "ffi"]
-
-# Resolve USE-based dependencies
-LLVM_USE_DEPS = {
-    "zlib": ["//packages/linux/core/zlib:zlib"],
-    "ffi": ["//packages/linux/core/libffi:libffi"],
-}
-
-# Get current global USE flags (can be overridden per-build)
-_global_use = set_use_flags(LLVM_USE_DEFAULTS)
-_effective_use = LLVM_USE_DEFAULTS
-
-# Common CMake arguments for all LLVM versions
-LLVM_CMAKE_ARGS = [
-    # Build type - USE flag: debug
-    "-DCMAKE_BUILD_TYPE=Release",
-    "-DLLVM_ENABLE_PROJECTS=",
-    "-DLLVM_ENABLE_RUNTIMES=",
-    "-DLLVM_BUILD_LLVM_DYLIB=ON",
-    "-DLLVM_LINK_LLVM_DYLIB=ON",
-    "-DLLVM_ENABLE_RTTI=ON",
-    # USE flag: ffi
-    "-DLLVM_ENABLE_FFI=ON",
-    # USE flag: zlib
-    "-DLLVM_ENABLE_ZLIB=ON",
-    # USE flag: zstd
-    "-DLLVM_ENABLE_ZSTD=OFF",
-    # USE flag: benchmarks
-    "-DLLVM_INCLUDE_BENCHMARKS=OFF",
-    # USE flag: examples
-    "-DLLVM_INCLUDE_EXAMPLES=OFF",
-    # USE flag: test
-    "-DLLVM_INCLUDE_TESTS=OFF",
-    # USE flag: doc
-    "-DLLVM_INCLUDE_DOCS=OFF",
-    "-DLLVM_TARGETS_TO_BUILD=X86;AArch64;ARM;WebAssembly",
-    "-DLLVM_INSTALL_UTILS=ON",
-]
-
-# Custom configure that handles llvm/ subdirectory
-LLVM_SRC_CONFIGURE = """
-# LLVM has CMakeLists.txt in llvm/ subdirectory
-mkdir -p "$S/build"
-cmake \\
-    -S "$S/llvm" \\
-    -B "$S/build" \\
-    -DCMAKE_INSTALL_PREFIX="${EPREFIX:-/usr}" \\
-    -DCMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE:-Release}" \\
-    -DCMAKE_INSTALL_LIBDIR="${LIBDIR:-lib64}" \\
-    -DCMAKE_C_FLAGS="${CFLAGS:-}" \\
-    -DCMAKE_CXX_FLAGS="${CXXFLAGS:-}" \\
-    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \\
-    ${CMAKE_EXTRA_ARGS:-}
-"""
-
-# =============================================================================
-# LLVM 21.1.6 (Latest - Default)
-# =============================================================================
-cmake_package(
-    name = "llvm",
+package(
+    build_rule = "cmake",
+    name = "llvm-native",
     version = "21.1.6",
-    src_uri = "https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.6/llvm-project-21.1.6.src.tar.xz",
+    url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.6/llvm-project-21.1.6.src.tar.xz",
     sha256 = "ae67086eb04bed7ca11ab880349b5f1ab6f50e1b88cda376eaf8a845b935762b",
-    signature_required = False,
-    description = "Low Level Virtual Machine - compiler infrastructure",
+    description = "LLVM, Clang, and LLD - native host compilers and linker",
     homepage = "https://llvm.org/",
     license = "Apache-2.0 WITH LLVM-exception",
-    src_configure = LLVM_SRC_CONFIGURE,
-    cmake_args = LLVM_CMAKE_ARGS,
-    deps = use_dep(LLVM_USE_DEPS, _effective_use) + [
-        "//packages/linux/core/ncurses:ncurses",
+    source_subdir = "llvm",
+    configure_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_POSITION_INDEPENDENT_CODE=ON",
+        "-DLLVM_ENABLE_PROJECTS=clang;lld",
+        "-DLLVM_ENABLE_RUNTIMES=",
+        "-DLLVM_BUILD_LLVM_DYLIB=ON",
+        "-DLLVM_LINK_LLVM_DYLIB=ON",
+        "-DLLVM_ENABLE_RTTI=ON",
+        "-DLLVM_ENABLE_FFI=ON",
+        "-DLLVM_ENABLE_ZLIB=ON",
+        "-DLLVM_ENABLE_ZSTD=OFF",
+        "-DLLVM_INCLUDE_BENCHMARKS=OFF",
+        "-DLLVM_INCLUDE_EXAMPLES=OFF",
+        "-DLLVM_INCLUDE_TESTS=OFF",
+        "-DLLVM_INCLUDE_DOCS=OFF",
+        "-DLLVM_TARGETS_TO_BUILD=AMDGPU;X86;AArch64;ARM;WebAssembly;BPF",
+        "-DLLVM_INSTALL_UTILS=ON",
     ],
-    visibility = ["PUBLIC"],
+    # Strip static libraries post-install — everything links against
+    # libLLVM.so (LINK_LLVM_DYLIB=ON), so the .a files are dead weight
+    # and bloat the seed by ~2GB.
+    post_install_cmds = [
+        "find $OUT -name '*.a' -path '*/lib/*' -delete",
+    ],
+    deps = [
+        "//packages/linux/system/terminal/ncurses:ncurses",
+        "//packages/linux/system/libs/data/libxml2:libxml2",
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/utility/libffi:libffi",
+    ],
 )
-

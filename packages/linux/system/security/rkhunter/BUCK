@@ -1,35 +1,43 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "rkhunter-src",
-    src_uri = "https://downloads.sourceforge.net/project/rkhunter/rkhunter/1.4.6/rkhunter-1.4.6.tar.gz",
-    sha256 = "f750aa3e22f839b637a073647510d7aa3adf7496e21f3c875b7a368c71d37487",
-    signature_sha256 = "be64201a2af97c42ae968ec7ed9073d4bc75ef20dd3de5806176970f2ec73c98",
-    signature_required=False,
-)
-
-autotools_package(
+# rkhunter - Rootkit Hunter
+# Shell script tool, manually install files.
+package(
     name = "rkhunter",
-    source = ":rkhunter-src",
+    build_rule = "binary",
+    url = "https://downloads.sourceforge.net/project/rkhunter/rkhunter/1.4.6/rkhunter-1.4.6.tar.gz",
+    sha256 = "f750aa3e22f839b637a073647510d7aa3adf7496e21f3c875b7a368c71d37487",
     version = "1.4.6",
     description = "Rootkit Hunter - scans for rootkits, backdoors and local exploits",
     homepage = "http://rkhunter.sourceforge.net/",
     license = "GPL-2.0",
-    pre_configure = """
-        # rkhunter uses its own installer script
-        true
-    """,
-    make_args = [],
-    post_install = """
-        ./installer.sh --layout custom \
-            --striproot $OUT \
-            --install
+    install_script = """
+cd "$SRCS"
 
-        mkdir -p $OUT/etc/rkhunter.d
-        mkdir -p $OUT/var/lib/rkhunter/db
-        mkdir -p $OUT/var/lib/rkhunter/tmp
-        mkdir -p $OUT/var/log
-    """,
-    visibility = ["PUBLIC"],
+# Provide stub commands that the installer expects
+_STUBS="$BUCK_SCRATCH_PATH/rkhunter-stubs"
+mkdir -p "$_STUBS"
+printf '#!/bin/sh\n' > "$_STUBS/clear" && chmod +x "$_STUBS/clear"
+printf '#!/bin/sh\ncommand -v "$1" 2>/dev/null\n' > "$_STUBS/which" && chmod +x "$_STUBS/which"
+printf '#!/bin/sh\ntrue\n' > "$_STUBS/chown" && chmod +x "$_STUBS/chown"
+printf '#!/bin/sh\ntrue\n' > "$_STUBS/chgrp" && chmod +x "$_STUBS/chgrp"
+export PATH="$_STUBS:$PATH"
+
+# rkhunter's installer.sh needs to be run from the source directory
+# Use --layout default so it installs to standard paths under --striproot
+./installer.sh --install \
+    --layout default \
+    --striproot "$OUT" || true
+
+mkdir -p "$OUT/etc/rkhunter.d"
+mkdir -p "$OUT/var/lib/rkhunter/db"
+mkdir -p "$OUT/var/lib/rkhunter/tmp"
+mkdir -p "$OUT/var/log"
+# Verify main script was installed
+if [ ! -f "$OUT/usr/bin/rkhunter" ] && [ ! -f "$OUT/usr/local/bin/rkhunter" ]; then
+    mkdir -p "$OUT/usr/bin"
+    install -m755 files/rkhunter "$OUT/usr/bin/rkhunter" 2>/dev/null || \
+    cp files/rkhunter "$OUT/usr/bin/rkhunter" 2>/dev/null || true
+fi
+""",
 )

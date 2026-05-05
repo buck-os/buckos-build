@@ -1,22 +1,15 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package", "binary_package", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # Swift - Apple's systems programming language
 # =============================================================================
 
-download_source(
-    name = "swift-src",
-    src_uri = "https://download.swift.org/swift-5.9.2-release/ubuntu2204/swift-5.9.2-RELEASE/swift-5.9.2-RELEASE-ubuntu22.04.tar.gz",
-    sha256 = "6407e39eed7eaefcf7837d192d71765fb0f7cf8bf282c35b021171e8b15617c1",
-    signature_sha256 = "325657c10c0a917cb0126aaf2ce0fe1c72bb9bf14657a89f82330839003959ed",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "swift",
-    srcs = [":swift-src"],
     version = "5.9.2",
+    url = "https://github.com/swiftlang/swift/archive/refs/tags/swift-5.9.2-RELEASE.tar.gz",
+    sha256 = "5b93c737c24ba7d861e0777800740eaa9ccddfa2a6a4326bd47dbc5aa9ae8379",
     description = "Swift is a powerful and intuitive programming language for all Apple platforms and beyond",
     homepage = "https://www.swift.org/",
     license = "Apache-2.0",
@@ -28,5 +21,4 @@ binary_package(
         ln -s /usr/local/swift/usr/bin/swift $OUT/usr/bin/swift
         ln -s /usr/local/swift/usr/bin/swiftc $OUT/usr/bin/swiftc
     """,
-    visibility = ["PUBLIC"],
 )

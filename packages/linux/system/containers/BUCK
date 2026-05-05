@@ -1,5 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package", "binary_package", "ebuild_package", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # Container Packages Category
 # This directory contains packages for container runtimes, tools, and orchestration
@@ -13,8 +12,6 @@ filegroup(
     name = "container-runtime",
     srcs = [
         "//packages/linux/system/containers/runtime:crun",
-        "//packages/linux/system/containers/runtime:runc",
-        "//packages/linux/system/containers/runtime:conmon",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],
@@ -24,10 +21,6 @@ filegroup(
 filegroup(
     name = "container-networking",
     srcs = [
-        "//packages/linux/system/containers/network:cni-plugins",
-        "//packages/linux/system/containers/network:netavark",
-        "//packages/linux/system/containers/network:aardvark-dns",
-        "//packages/linux/system/containers/network:slirp4netns",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],
@@ -37,7 +30,6 @@ filegroup(
 filegroup(
     name = "container-storage",
     srcs = [
-        "//packages/linux/system/containers/storage:fuse-overlayfs",
         "//packages/linux/system/containers/podman:containers-common",
     ],
     default_target_platform = "//platforms:linux-target",

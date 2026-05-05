@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "omplapp",
     version = "1.5.2",
-    src_uri = "https://github.com/ompl/omplapp/archive/refs/tags/1.5.2.tar.gz",
+    url = "https://github.com/ompl/omplapp/archive/refs/tags/1.5.2.tar.gz",
     sha256 = "d2f0e139ff0b620c43959aca8405f7e13f33e5c44a7953a2ff92c953ac3e9dc8",
-    cmake_args = [
+    configure_args = [
         "-DOMPL_REGISTRATION=OFF",
         "-DOMPL_BUILD_DEMOS=OFF",
         "-DOMPL_BUILD_TESTS=OFF",

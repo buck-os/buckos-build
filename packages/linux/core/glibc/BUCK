@@ -1,58 +1,242 @@
-load("//defs:package_defs.bzl", "ebuild_package")
+load("//defs:package.bzl", "package")
 
-# System glibc package
-# This repackages the cross-glibc from the bootstrap toolchain for the final system.
-# The cross-glibc is now built with --prefix=/usr so it can be copied directly.
+# =============================================================================
+# glibc - GNU C Library (built from source)
+# =============================================================================
+#
+# Rebuilt from source at the package level using the stage 2 toolchain.
+# The cross-compiler CC (with specs) injects padded interp + RPATH
+# placeholder into all glibc utilities (ldconfig, ldd, getent, etc.),
+# eliminating the need for pack-time ELF patching.
+#
+# glibc's configure is sensitive to CFLAGS — the install_script
+# overrides them to avoid interference from dep include paths.
+# Depends only on linux-headers (no shared libs → no LD_LIBRARY_PATH
+# poisoning of the cross-compiler).
 
-ebuild_package(
-    source = "toolchains//bootstrap:glibc-src",
+package(
     name = "glibc",
+    build_rule = "binary",
     version = "2.42",
-    category = "core",
-    slot = "0",
+    url = "https://mirrors.kernel.org/gnu/glibc/glibc-2.42.tar.xz",
+    sha256 = "d1775e32e4628e64ef930f435b67bb63af7599acb6be2b335b9f19f16509f17f",
     description = "GNU C Library (glibc) - the standard C library for GNU/Linux systems",
     homepage = "https://www.gnu.org/software/libc/",
     license = "LGPL-2.1+ GPL-2+",
+    install_script = """
+cd "$SRCS"
 
-    # Don't use bootstrap toolchain for this - it just copies files
-    use_bootstrap = False,
+# Derive arch-specific values from TARGET_TRIPLE
+ARCH="${TARGET_TRIPLE%%-*}"
+case "$ARCH" in
+    aarch64)
+        MARCH_FLAG=""
+        SLIBDIR="/usr/lib"
+        LIBDIR_SUFFIX=""
+        CET_FLAG=""
+        PDE_ADDR=""
+        LD_LINUX_SUFFIX="lib/ld-linux-aarch64.so.1"
+        ;;
+    *)
+        MARCH_FLAG="-march=x86-64-v3"
+        SLIBDIR="/usr/lib64"
+        LIBDIR_SUFFIX="64"
+        CET_FLAG="--enable-cet=no"
+        PDE_ADDR="libc_cv_pde_load_address=0x0000000000400000"
+        LD_LINUX_SUFFIX="lib64/ld-linux-x86-64.so.2"
+        ;;
+esac
 
-    src_configure = "true",
-    src_compile = "true",
+# glibc's configure is sensitive to CFLAGS/LDFLAGS — override with
+# minimal flags.  Specs handle the padded interp + RPATH via CC.
+# Clear CPPFLAGS too: binary_install_helper.py propagates dep -I flags
+# into CPPFLAGS, but glibc uses -nostdinc and manages its own include
+# paths via --with-headers and -isystem.  Stale -I flags in CPPFLAGS
+# leak into every compiler invocation via make's built-in rules.
+export CFLAGS="-O2 $MARCH_FLAG"
+export CXXFLAGS="-O2 $MARCH_FLAG"
+export CPPFLAGS=""
+export LDFLAGS=""
 
-    src_install = """
-# Copy glibc from cross-glibc build output
-# The cross-glibc is built with --prefix=/usr so paths are already correct
+# Patch .eh_frame section attributes — the cross-compiler generates
+# .eh_frame,"aw" (writable) but glibc's hand-written assembly in
+# libc_sigaction.c uses .eh_frame,"a" (read-only).
+find . -name 'libc_sigaction.c' \
+    -exec sed -i 's/eh_frame,\\"a\\"/eh_frame,\\"aw\\"/g' {} +
 
-# TOOLCHAIN_ROOT is set by the build system from bdepend directories
-CROSS_GLIBC="${TOOLCHAIN_ROOT%%:*}"  # Get first path from colon-separated list
+# Find kernel headers from DEP_BASE_DIRS or sysroot
+KERNEL_HEADERS=""
+IFS=':' read -ra DEPS <<< "${DEP_BASE_DIRS:-}"
+for dep in "${DEPS[@]}"; do
+    for subdir in "usr/include" "include"; do
+        if [ -d "$dep/$subdir/linux" ]; then
+            KERNEL_HEADERS="$dep/$subdir"
+            break 2
+        fi
+    done
+done
 
-# Convert relative path to absolute
-if [[ "$CROSS_GLIBC" != /* ]]; then
-    PROJECT_ROOT="${S%/buck-out/*}"
-    CROSS_GLIBC="$PROJECT_ROOT/$CROSS_GLIBC"
+# Fallback: extract sysroot from CC specs if still not found
+if [ -z "$KERNEL_HEADERS" ]; then
+    SYSROOT=""
+    for word in $CC; do
+        case "$word" in
+            --sysroot=*) SYSROOT="${word#--sysroot=}" ;;
+        esac
+    done
+    if [ -n "$SYSROOT" ] && [ -d "$SYSROOT/usr/include/linux" ]; then
+        KERNEL_HEADERS="$SYSROOT/usr/include"
+    fi
 fi
 
-if [ -z "$CROSS_GLIBC" ] || [ ! -d "$CROSS_GLIBC" ]; then
-    echo "ERROR: Could not find cross-glibc." >&2
-    echo "  TOOLCHAIN_ROOT=$TOOLCHAIN_ROOT" >&2
-    echo "  CROSS_GLIBC=$CROSS_GLIBC" >&2
-    echo "  S=$S" >&2
+if [ -z "$KERNEL_HEADERS" ]; then
+    echo "ERROR: Could not find kernel headers" >&2
+    echo "  SYSROOT=$SYSROOT" >&2
+    echo "  DEP_BASE_DIRS=$DEP_BASE_DIRS" >&2
     exit 1
 fi
+echo "Using kernel headers: $KERNEL_HEADERS"
 
-echo "Copying glibc from: $CROSS_GLIBC"
+# Out-of-tree build
+chmod +x scripts/config.guess 2>/dev/null || true
+BUILD_TRIPLE=$(scripts/config.guess 2>/dev/null || echo "x86_64-pc-linux-gnu")
+echo "Build triple: $BUILD_TRIPLE"
 
-# Copy the entire structure - glibc is now built with --prefix=/usr
-# so usr/, lib64/, and etc/ directories exist with correct paths
-cp -a "$CROSS_GLIBC"/* "$DESTDIR/" 2>/dev/null || true
+mkdir -p build && cd build
+echo "rootsbindir=/usr/sbin" > configparms
 
-echo "glibc installation complete"
-ls -la "$DESTDIR/usr/lib64/"*.so* 2>/dev/null | head -10 || ls -la "$DESTDIR/lib64/"*.so* 2>/dev/null | head -10 || true
+../configure \
+    --prefix=/usr \
+    --host="$TARGET_TRIPLE" \
+    --build="$BUILD_TRIPLE" \
+    --enable-kernel=4.19 \
+    --with-headers="$KERNEL_HEADERS" \
+    --disable-nscd \
+    --disable-werror \
+    ${CET_FLAG:+"$CET_FLAG"} \
+    libc_cv_slibdir="$SLIBDIR" \
+    libc_cv_forced_unwind=yes \
+    libc_cv_c_cleanup=yes \
+    libc_cv_pde=yes \
+    libc_cv_cxx_link_ok=no \
+    ${PDE_ADDR:+"$PDE_ADDR"}
+
+make -j${MAKEOPTS:-$(nproc)}
+make DESTDIR="$OUT" install
+
+# Fix glibc linker scripts to use relative paths
+for script in $OUT/usr/lib*/libc.so $OUT/usr/lib*/libpthread.so $OUT/usr/lib*/libm.so; do
+    if [ -f "$script" ] && file "$script" | grep -q ASCII; then
+        sed -i -e 's|/usr/lib64/||g' -e 's|/usr/lib/||g' -e 's|/lib64/||g' -e 's|/lib/||g' "$script"
+    fi
+done
+
+# Do NOT create /lib64/ld-linux-x86-64.so.2 symlink here.
+# The rootfs baselayout provides /lib64 -> usr/lib64 (merged-usr),
+# so /lib64/ld-linux-x86-64.so.2 resolves to usr/lib64/ automatically.
+# Creating a symlink here would clobber the real ELF file when tar
+# extracts through the directory symlink with --keep-directory-symlink.
+
+# Generate C.UTF-8 locale
+echo "Generating C.UTF-8 locale..."
+mkdir -p "$OUT/usr/lib/locale"
+if [ -x "$OUT/usr/bin/localedef" ]; then
+    LD_LIBRARY_PATH="$OUT/usr/lib${LIBDIR_SUFFIX}" "$OUT/usr/bin/localedef" \
+        --prefix="$OUT" -i C -f UTF-8 C.UTF-8 2>/dev/null || \
+        echo "Warning: localedef failed, C.UTF-8 may not be available"
+else
+    echo "Warning: localedef not found, locales not generated"
+fi
+
+# Patch interp in glibc utilities.  glibc's build system explicitly sets
+# --dynamic-linker=/usr/lib64/ld-linux-x86-64.so.2, overriding our GCC
+# specs.  Pad the interp so the unpack step can rewrite it to the actual
+# bundled ld-linux path.
+# Skip when building for the host target (exec_dep) — host binaries must
+# keep their standard interp to be directly executable.
+if [ "${BUCKOS_HOST_BUILD:-}" = "1" ]; then
+    echo "Host target build — skipping interp patching"
+else
+python3 - "$OUT" "$LD_LINUX_SUFFIX" << 'PYEOF'
+import struct, os, sys
+out = sys.argv[1]
+ld_linux_suffix = sys.argv[2].encode()
+# Match GCC specs padding: leading slashes + suffix + NUL = 255 bytes.
+# p_filesz includes the NUL terminator.
+n_slashes = 255 - len(ld_linux_suffix) - 1
+new_interp = b"/" * n_slashes + ld_linux_suffix + b"\x00"
+# Standard interpreters that glibc's build system may set
+STANDARD = [
+    b"/lib64/ld-linux-x86-64.so.2", b"/usr/lib64/ld-linux-x86-64.so.2",
+    b"/lib/ld-linux-aarch64.so.1", b"/usr/lib/ld-linux-aarch64.so.1",
+]
+patched = 0
+for root, _, files in os.walk(out):
+    for name in files:
+        path = os.path.join(root, name)
+        if os.path.islink(path) or not os.path.isfile(path):
+            continue
+        try:
+            with open(path, "rb") as f:
+                data = bytearray(f.read())
+        except (PermissionError, OSError):
+            continue
+        if data[:4] != b"\x7fELF" or data[4] != 2 or data[5] != 1:
+            continue
+        e_phoff = struct.unpack_from("<Q", data, 32)[0]
+        e_phentsize = struct.unpack_from("<H", data, 54)[0]
+        e_phnum = struct.unpack_from("<H", data, 56)[0]
+        for i in range(e_phnum):
+            off = e_phoff + i * e_phentsize
+            if struct.unpack_from("<I", data, off)[0] != 3:
+                continue
+            p_offset = struct.unpack_from("<Q", data, off + 8)[0]
+            p_filesz = struct.unpack_from("<Q", data, off + 32)[0]
+            end = data.find(0, p_offset)
+            if end < 0:
+                break
+            old_interp = data[p_offset:end]
+            if old_interp not in STANDARD:
+                break
+            if len(new_interp) <= p_filesz:
+                data[p_offset:p_offset + len(new_interp)] = new_interp
+                for j in range(len(new_interp), p_filesz):
+                    data[p_offset + j] = 0
+            else:
+                new_off = len(data)
+                data.extend(new_interp)
+                struct.pack_into("<Q", data, off + 8, new_off)
+                struct.pack_into("<Q", data, off + 32, len(new_interp))
+                struct.pack_into("<Q", data, off + 40, len(new_interp))
+            os.chmod(path, 0o755)
+            with open(path, "wb") as f:
+                f.write(data)
+            patched += 1
+            break
+print(f"Patched interp in {patched} glibc binaries")
+PYEOF
+fi
+
+echo "glibc 2.42 built from source"
+ls -la "$OUT/usr/lib${LIBDIR_SUFFIX}/"*.so* 2>/dev/null | head -5 || true
 """,
 
-    # Depend on cross-glibc from bootstrap to get the pre-built glibc
-    bdepend = ["toolchains//bootstrap:cross-glibc"],
-    depend = [],
-    visibility = ["PUBLIC"],
+    # Only depend on linux-headers for kernel headers.
+    # NOT cross-glibc — its shared libs would cause LD_LIBRARY_PATH
+    # poisoning of the cross-compiler (host binary + buckos glibc = crash).
+    # Use the packaged linux-headers, not the bootstrap stage2 target —
+    # stage2:linux-headers uses --allow-host-path (needs host make) and
+    # pulls the entire bootstrap chain into the graph.
+    deps = select({
+        "//platforms:is_aarch64": ["//tc/bootstrap/aarch64:cross-linux-headers-aarch64"],
+        "DEFAULT": ["//packages/linux/kernel:linux-headers"],
+    }),
+    # gperf: locale charmap-kw.h generation
+    # bison: parser generation
+    # python-host: build scripts
+    host_deps = [
+        "//packages/linux/dev-tools/dev-utils/gperf:gperf",
+        "//packages/linux/lang/python:python-host",
+        "//packages/linux/dev-tools/dev-utils/bison:bison",
+    ],
 )

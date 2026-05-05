@@ -1,45 +1,51 @@
+load("//defs:package.bzl", "package")
+
 # =============================================================================
 # NVIDIA Fabric Manager - NVSwitch fabric management library
 # =============================================================================
 
-load("//defs:package_defs.bzl", "download_source", "binary_package")
-
-download_source(
-    name = "nvidia-fabric-manager-src",
-    src_uri = "https://developer.download.nvidia.com/compute/cuda/repos/rhel9/x86_64/nvidia-fabric-manager-550.90.07-1.x86_64.rpm",
-    sha256 = "e580c8b412de7a9f352c2eacce877b4cbccd494bfdee7a0e6c94010a06c91c92",
-    signature_required = False,
-    extract = True,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "nvidia-fabric-manager",
-    srcs = [":nvidia-fabric-manager-src"],
     version = "550.90.07",
+    local_only = True,
+    filename = "nvidia-fabricmanager-550.90.07-1.x86_64.rpm",
     description = "NVIDIA Fabric Manager for NVSwitch GPU interconnect management",
     homepage = "https://developer.nvidia.com/",
     license = "NVIDIA Proprietary",
     install_script = """
-cd $SRCS
+# Extract RPM using rpm2cpio
+RPM_FILE=$(find $SRCS -name "*.rpm" | head -1)
+if [ -z "$RPM_FILE" ]; then
+    echo "Error: No RPM file found in $SRCS"
+    exit 1
+fi
+
+mkdir -p "$WORK/extracted"
+cd "$WORK/extracted"
+rpm2cpio "$RPM_FILE" | cpio -idmv 2>/dev/null || {
+    echo "Error: Failed to extract RPM"
+    exit 1
+}
 
 # Install library
 mkdir -p "$OUT/usr/lib64"
-find . -name "libnvfm.so*" -exec cp -a {} "$OUT/usr/lib64/" \;
+find . -name "libnvfm.so*" -exec cp -a {} "$OUT/usr/lib64/" \; 2>/dev/null || true
 
 # Install headers
 mkdir -p "$OUT/usr/include/nvidia-fabric-manager"
-find . -name "nv_fm*.h" -exec cp {} "$OUT/usr/include/nvidia-fabric-manager/" \;
+find . -name "nv_fm*.h" -exec cp {} "$OUT/usr/include/nvidia-fabric-manager/" \; 2>/dev/null || true
 
 # Install binaries if present
 mkdir -p "$OUT/usr/bin"
-find . -name "nv-fabricmanager" -exec install -m 755 {} "$OUT/usr/bin/" \;
+find . -name "nv-fabricmanager" -exec install -m 755 {} "$OUT/usr/bin/" \; 2>/dev/null || true
 
 # Create symlinks for library
 cd "$OUT/usr/lib64"
-[ -f libnvfm.so.1 ] && ln -sf libnvfm.so.1 libnvfm.so
+[ -f libnvfm.so.1 ] && ln -sf libnvfm.so.1 libnvfm.so || true
 """,
     deps = [
         "//packages/linux/system/gpu/drivers/nvidia:nvidia-drivers",
     ],
-    visibility = ["PUBLIC"],
+    labels = ["buckos:hw:cuda"],
 )

@@ -1,43 +1,32 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "maim-src",
-    src_uri = "https://github.com/naelstrof/maim/archive/refs/tags/v5.7.4.tar.gz",
-    sha256 = "075090fd4c3b87663a26d0c2de63b5c822fd96aaeef6ac4fe6ded3abd506be9e",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "maim",
-    source = ":maim-src",
+    url = "https://github.com/naelstrof/maim/archive/refs/tags/v5.7.4.tar.gz",
+
+    sha256 = "075090fd4c3b87663a26d0c2de63b5c822fd96aaeef6ac4fe6ded3abd506be9e",
+    use_configure = {
+        "icu": ("--enable-icu", "--disable-icu"),
+    },
     version = "5.7.4",
     description = "Screenshot utility that supports selecting regions",
     homepage = "https://github.com/naelstrof/maim",
     license = "GPL-3.0-or-later",
-    pre_configure = """
-mkdir -p build
-cd build
-cmake .. \
-    -DCMAKE_INSTALL_PREFIX=/usr \
-    -DCMAKE_BUILD_TYPE=Release
-""",
     configure_args = [],
     make_args = ["-C", "build"],
-    post_install = """
+    post_install_cmds = ["""
 cd build
 DESTDIR=$OUT make install
-""",
+"""],
     deps = [
         "//packages/linux/system/libs/image/libpng:libpng",
         "//packages/linux/system/libs/image/libjpeg-turbo:libjpeg-turbo",
         "//packages/linux/system/libs/image/libwebp:libwebp",
-        "//packages/linux/system/libs/utility/icu:icu",
+        "//packages/linux/system/libs/utility/icu:icu-native",
         # "//packages/linux/system/libs/x11/libxcomposite:libxcomposite",  # TODO: not packaged yet
         # "//packages/linux/system/libs/glm:glm",  # TODO: not packaged yet,
         "//packages/linux/desktop/mesa:mesa",
         "//packages/linux/graphics/utilities/slop:slop",
     ],
-    bdepend = [],
-    visibility = ["PUBLIC"],
 )

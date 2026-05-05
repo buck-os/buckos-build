@@ -1,26 +1,27 @@
+load("//defs:package.bzl", "package")
+
 # lm-sensors - Linux hardware monitoring
 # Provides tools and drivers for hardware monitoring
 
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
-
-download_source(
-    name = "lm-sensors-src",
-    src_uri = "https://github.com/lm-sensors/lm-sensors/archive/refs/tags/V3-6-0.tar.gz",
-    sha256 = "0591f9fa0339f0d15e75326d0365871c2d4e2ed8aa1ff759b3a55d3734b7d197",
-    signature_required = False,
-)
-
 # USE flags: See use_flags.bzl for available flags
 
-autotools_package(
+package(
     name = "lm-sensors",
-    source = ":lm-sensors-src",
+    build_rule = "autotools",
+    skip_configure = True,
+    url = "https://github.com/lm-sensors/lm-sensors/archive/refs/tags/V3-6-0.tar.gz",
+
+    sha256 = "0591f9fa0339f0d15e75326d0365871c2d4e2ed8aa1ff759b3a55d3734b7d197",
+    use_configure = {
+        "contrib": ("--enable-contrib", "--disable-contrib"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "sensord": ("--enable-sensord", "--disable-sensord"),
+        "static-libs": ("--enable-static", "--disable-static"),
+    },
     version = "3.6.0",
     description = "Hardware monitoring tools for Linux",
     homepage = "https://hwmon.wiki.kernel.org/lm_sensors",
     license = "LGPL-2.1",
-    configure_args = [],
     make_args = [
         "PREFIX=/usr",
         "SBINDIR=/usr/sbin",
@@ -29,5 +30,4 @@ autotools_package(
     ],
     deps = [
     ],
-    visibility = ["PUBLIC"],
 )

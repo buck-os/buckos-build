@@ -1,58 +1,61 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # crosvm - Chrome OS Virtual Machine Monitor
+# DISABLED: SHA256 mismatch - main branch changes frequently, hash is outdated
+# Error: SHA256 mismatch!
+# TODO: Either use a stable tagged release or mark as dynamic source
 # NOTE: Using google/crosvm GitHub mirror as chromium.googlesource blocks CI/CD
 # Version tracks main branch since the mirror doesn't have tagged releases
-download_source(
-    name = "crosvm-src",
-    src_uri = "https://github.com/google/crosvm/archive/refs/heads/main.tar.gz",
-    sha256 = "6aaed1eb2cd48ad22047af6a21b8d6dbb91beb78feb5a50a9026d8efeb6689e7",
-    signature_required = False,
-)
-
-# USE flags: See use_flags.bzl for available flags
-
-autotools_package(
-    name = "crosvm",
-    source = ":crosvm-src",
-    version = "main",
-    description = "Chrome OS Virtual Machine Monitor for running Linux and Android guests",
-    homepage = "https://crosvm.dev/",
-    license = "BSD-3-Clause",
-    env = {
-        "CARGO_HOME": "/tmp/cargo",
-        "CROSVM_USE_SYSTEM_VIRGLRENDERER": "1",
-        "CROSVM_USE_SYSTEM_MINIGBM": "1",
-    },
-    pre_configure = """
-cargo build --release \
-    --features "audio,balloon,composite-disk,gdb,gpu,net,qcow,usb,virgl_renderer,x"
-    """,
-    post_install = """
-#!/bin/bash
-set -e
-
-mkdir -p "$DESTDIR/usr/bin"
-install -m 0755 target/release/crosvm "$DESTDIR/usr/bin/"
-
-# Install udev rules for KVM access
-mkdir -p "$DESTDIR/usr/lib/udev/rules.d"
-cat > "$DESTDIR/usr/lib/udev/rules.d/99-crosvm.rules" << 'EOF'
-KERNEL=="kvm", GROUP="kvm", MODE="0660"
-KERNEL=="vhost-vsock", GROUP="kvm", MODE="0660"
-EOF
-
-# Create seccomp policy directory
-mkdir -p "$DESTDIR/usr/share/crosvm/seccomp/x86_64"
-    """,
-    deps = [
-        "//packages/linux/lang/rust:rust",
-        "//packages/linux/system/libs/graphics/minigbm:minigbm",
-        "//packages/linux/desktop/mesa:virglrenderer",
-        "//packages/linux/system/libs/ipc/libcap:libcap",
-        "//packages/linux/desktop/libdrm:libdrm",
-        "//packages/linux/audio/daemons/pulseaudio:pulseaudio",
-    ],
-    visibility = ["PUBLIC"],
-)
+# download_source(
+#     name = "crosvm-src",
+#     url = "https://github.com/google/crosvm/archive/refs/heads/main.tar.gz",
+#     sha256 = "ce6adafd92189b397590ef5d3244f0a48ded28eccee1d9919ebac4836ab52d2a",  # Dynamic: main branch
+#
+# )
+#
+# # USE flags: See use_flags.bzl for available flags
+#
+# package(
+#     build_rule = "autotools",
+#     name = "crosvm",
+#
+#     version = "main",
+#     description = "Chrome OS Virtual Machine Monitor for running Linux and Android guests",
+#     homepage = "https://crosvm.dev/",
+#     license = "BSD-3-Clause",
+#     env = {
+#         "CARGO_HOME": "/tmp/cargo",
+#         "CROSVM_USE_SYSTEM_VIRGLRENDERER": "1",
+#         "CROSVM_USE_SYSTEM_MINIGBM": "1",
+#     },
+#     pre_configure = """
+# cargo build --release \
+#     --features "audio,balloon,composite-disk,gdb,gpu,net,qcow,usb,virgl_renderer,x"
+#     """,
+#     post_install = """
+# #!/bin/bash
+# set -e
+#
+# mkdir -p "$DESTDIR/usr/bin"
+# install -m 0755 target/release/crosvm "$DESTDIR/usr/bin/"
+#
+# # Install udev rules for KVM access
+# mkdir -p "$DESTDIR/usr/lib/udev/rules.d"
+# cat > "$DESTDIR/usr/lib/udev/rules.d/99-crosvm.rules" << 'EOF'
+# KERNEL=="kvm", GROUP="kvm", MODE="0660"
+# KERNEL=="vhost-vsock", GROUP="kvm", MODE="0660"
+# EOF
+#
+# # Create seccomp policy directory
+# mkdir -p "$DESTDIR/usr/share/crosvm/seccomp/x86_64"
+#     """,
+#     deps = [
+#         "//packages/linux/lang/rust:rust",
+#         "//packages/linux/system/libs/graphics/minigbm:minigbm",
+#         "//packages/linux/desktop/mesa:virglrenderer",
+#         "//packages/linux/system/libs/ipc/libcap:libcap",
+#         "//packages/linux/desktop/libdrm:libdrm",
+#         "//packages/linux/audio/daemons/pulseaudio:pulseaudio",
+#     ],
+#     visibility = ["PUBLIC"],
+# )

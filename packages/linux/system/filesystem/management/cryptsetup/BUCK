@@ -1,29 +1,43 @@
-load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "cryptsetup-src",
-    src_uri = "https://www.kernel.org/pub/linux/utils/cryptsetup/v2.7/cryptsetup-2.7.0.tar.xz",
-    sha256 = "94003a00cd5a81944f45e8dc529e0cfd2a6ff629bd2cd21cf5e574e465daf795",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "cryptsetup",
-    source = ":cryptsetup-src",
+    url = "https://www.kernel.org/pub/linux/utils/cryptsetup/v2.7/cryptsetup-2.7.0.tar.xz",
+
+    sha256 = "94003a00cd5a81944f45e8dc529e0cfd2a6ff629bd2cd21cf5e574e465daf795",
+    use_configure = {
+        "argon2": ("--enable-argon2", "--disable-argon2"),
+        "fips": ("--enable-fips", "--disable-fips"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "passwdqc": ("--enable-passwdqc", "--disable-passwdqc"),
+        "pwquality": ("--enable-pwquality", "--disable-pwquality"),
+        "ssh": ("--enable-ssh", "--disable-ssh"),
+        "static": ("--enable-static", "--disable-static"),
+        "static-libs": ("--enable-static", "--disable-static"),
+        "udev": ("--enable-udev", "--disable-udev"),
+        "urandom": ("--enable-urandom", "--disable-urandom"),
+    },
     version = "2.7.0",
     description = "Utility for setting up encrypted disks using dm-crypt/LUKS",
     homepage = "https://gitlab.com/cryptsetup/cryptsetup",
     license = "GPL-2.0",
     configure_args = [
         "--with-crypto_backend=openssl",
-        "--enable-libargon2",
+        "--disable-libargon2",  # Disable external argon2, use OpenSSL's argon2
+        "--with-luks2-pbkdf=pbkdf2",  # Fallback PBKDF for LUKS2
         "--disable-ssh-token",
+        "--disable-asciidoc",  # Don't build man pages (requires asciidoctor)
+        "--disable-external-tokens",  # Disable external token handlers
     ],
+    use_deps = {
+        "systemd": ("//packages/linux/system/init/systemd:systemd", "//packages/virtual/libudev:libudev"),
+    },
     deps = [
         "//packages/linux/core/util-linux:util-linux",
-        "//packages/linux/network/openssl:openssl",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
         "//packages/linux/system/filesystem/management/lvm2:lvm2",
+        "//packages/linux/dev-libs/popt:popt",
+        "//packages/linux/dev-libs/json-c:json-c",
     ],
-    visibility = ["PUBLIC"],
 )

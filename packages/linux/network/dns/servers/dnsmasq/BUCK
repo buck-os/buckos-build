@@ -1,60 +1,31 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "binary",
     name = "dnsmasq",
     version = "2.90",
-    src_uri = "https://thekelleys.org.uk/dnsmasq/dnsmasq-2.90.tar.xz",
+    url = "https://thekelleys.org.uk/dnsmasq/dnsmasq-2.90.tar.xz",
     sha256 = "8e50309bd837bfec9649a812e066c09b6988b73d749b7d293c06c57d46a109e4",
-    signature_sha256 = "2e3f407edb90caafecb64096d6f4cdba6a995dbbd014af5ad153ac83cace5da8",
-    signature_required=False,
-
-    iuse = ["dnssec", "dbus", "idn", "ipv6"],
-    use_defaults = ["dnssec", "idn", "ipv6"],
-
-    use_deps = {
-        "idn": ["//packages/linux/network/dns/libraries/libidn2:libidn2"],
-        "dbus": ["//packages/linux/system/libs/ipc/dbus:dbus"],
-        "dnssec": ["//packages/linux/system/libs/crypto/nettle:nettle"],
-    },
-
-    use_configure = {
-        # dnsmasq uses COPTS for feature configuration
-        "dnssec": "COPTS+=-DHAVE_DNSSEC",
-        "-dnssec": "",
-        "dbus": "COPTS+=-DHAVE_DBUS",
-        "-dbus": "",
-        "idn": "COPTS+=-DHAVE_LIBIDN2",
-        "-idn": "COPTS+=-DNO_ICONV",
-        "ipv6": "COPTS+=-DHAVE_IPV6",
-        "-ipv6": "COPTS+=-DNO_IPV6",
-    },
-
-    pre_configure = """
-# dnsmasq doesn't use autoconf
-true
-""",
-
-    make_args = [
-        "PREFIX=/usr",
-        "SYSCONFDIR=/etc",
-        "LOCALSTATEDIR=/var",
-    ],
-
-    env = {
-        "DESTDIR": "$DESTDIR",
-    },
-
-    post_install = """
-install -Dm644 dnsmasq.conf.example "$DESTDIR/etc/dnsmasq.conf"
-install -Dm644 trust-anchors.conf "$DESTDIR/usr/share/dnsmasq/trust-anchors.conf"
-""",
-
-    deps = [
-    ],
-
     description = "Lightweight DNS forwarder and DHCP server",
     homepage = "https://thekelleys.org.uk/dnsmasq/doc.html",
     license = "GPL-2.0-or-later",
-    visibility = ["PUBLIC"],
+    install_script = """
+cd "$SRCS"
+
+COPTS="-DHAVE_LIBIDN2 -DHAVE_IPV6 $CFLAGS"
+
+make -j${MAKEOPTS:-$(nproc)} PREFIX=/usr SYSCONFDIR=/etc LOCALSTATEDIR=/var COPTS="$COPTS" LDFLAGS="$LDFLAGS"
+
+make install PREFIX="$OUT/usr" SYSCONFDIR="$OUT/etc" LOCALSTATEDIR="$OUT/var" DESTDIR=""
+
+mkdir -p "$OUT/etc"
+mkdir -p "$OUT/usr/share/dnsmasq"
+install -Dm644 dnsmasq.conf.example "$OUT/etc/dnsmasq.conf"
+if [ -f trust-anchors.conf ]; then
+    install -Dm644 trust-anchors.conf "$OUT/usr/share/dnsmasq/trust-anchors.conf"
+fi
+""",
+    deps = [
+        "//packages/linux/network/dns/libraries/libidn2:libidn2",
+    ],
 )

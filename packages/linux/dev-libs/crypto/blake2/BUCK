@@ -1,82 +1,22 @@
-load("//defs:package_defs.bzl", "ebuild_package")
+load("//defs:package.bzl", "package")
 
-# BLAKE2 - Fast cryptographic hash function
-# BLAKE2 is a cryptographic hash function faster than MD5, SHA-1, SHA-2, and SHA-3,
-# yet is at least as secure as SHA-3.
-# This is the reference implementation with SSE optimizations.
-
-# Use local source files (copied from fbsource/third-party/blake2)
-# Commit: ed1974ea83433eba7b2d95c5dcd9ac33cb847913
-genrule(
-    name = "blake2-src",
-    srcs = glob(["src/sse/*"]),
-    out = "blake2-source",
-    cmd = """
-        mkdir -p $OUT/sse
-        cp $SRCS $OUT/sse/
-    """,
-)
-
-ebuild_package(
-    name = "blake2",
-    source = ":blake2-src",
-    version = "git-ed1974ea",
-    description = "BLAKE2 cryptographic hash and MAC - fast, secure, simple",
-    homepage = "https://www.blake2.net/",
-    license = "CC0-1.0 OR Apache-2.0 OR OpenSSL",
-
-    src_compile = """
-        # BLAKE2 doesn't have a configure step - just compile the library
-        # We'll use the SSE-optimized version for best performance
-        cd sse
-
-        # Compile all BLAKE2 variants as position-independent code for shared library
-        ${CC:-gcc} ${CFLAGS:--O3} -fPIC -c blake2b.c -o blake2b.o
-        ${CC:-gcc} ${CFLAGS:--O3} -fPIC -c blake2s.c -o blake2s.o
-        ${CC:-gcc} ${CFLAGS:--O3} -fPIC -c blake2bp.c -o blake2bp.o
-        ${CC:-gcc} ${CFLAGS:--O3} -fPIC -c blake2sp.c -o blake2sp.o
-        ${CC:-gcc} ${CFLAGS:--O3} -fPIC -c blake2xb.c -o blake2xb.o
-        ${CC:-gcc} ${CFLAGS:--O3} -fPIC -c blake2xs.c -o blake2xs.o
-
-        # Create static library
-        ar rcs libblake2.a blake2b.o blake2s.o blake2bp.o blake2sp.o blake2xb.o blake2xs.o
-
-        # Create shared library
-        ${CC:-gcc} -shared -o libblake2.so.0.0.0 blake2b.o blake2s.o blake2bp.o blake2sp.o blake2xb.o blake2xs.o
-        ln -sf libblake2.so.0.0.0 libblake2.so.0
-        ln -sf libblake2.so.0 libblake2.so
-    """,
-
-    src_install = """
-        cd sse
-
-        # Install libraries
-        mkdir -p "$DESTDIR/usr/lib64"
-        cp libblake2.a "$DESTDIR/usr/lib64/"
-        cp libblake2.so.0.0.0 "$DESTDIR/usr/lib64/"
-        ln -sf libblake2.so.0.0.0 "$DESTDIR/usr/lib64/libblake2.so.0"
-        ln -sf libblake2.so.0 "$DESTDIR/usr/lib64/libblake2.so"
-
-        # Install headers
-        mkdir -p "$DESTDIR/usr/include/blake2"
-        cp blake2.h "$DESTDIR/usr/include/blake2/"
-        cp blake2-impl.h "$DESTDIR/usr/include/blake2/"
-
-        # Create pkg-config file
-        mkdir -p "$DESTDIR/usr/lib64/pkgconfig"
-        cat > "$DESTDIR/usr/lib64/pkgconfig/blake2.pc" << 'EOF'
-prefix=/usr
-exec_prefix=${prefix}
-libdir=${exec_prefix}/lib64
-includedir=${prefix}/include/blake2
-
-Name: blake2
-Description: BLAKE2 cryptographic hash and MAC
-Version: git-ed1974ea
-Cflags: -I${includedir}
-Libs: -L${libdir} -lblake2
-EOF
-    """,
-
+# libb2 - BLAKE2 cryptographic hash function library
+package(
+    build_rule = "autotools",
+    name = "libb2",
+    version = "0.98.1",
+    url = "https://github.com/BLAKE2/libb2/releases/download/v0.98.1/libb2-0.98.1.tar.gz",
+    sha256 = "53626fddce753c454a3fea581cbbc7fe9bbcf0bc70416d48fdbbf5d87ef6c72e",
+    description = "BLAKE2 cryptographic hash function library",
+    homepage = "https://github.com/BLAKE2/libb2",
+    license = "CC0-1.0 OR Apache-2.0",
+    configure_args = [
+        "--prefix=/usr",
+        "--libdir=/usr/lib64",
+        "--enable-shared",
+        "--disable-static",
+        # Use native implementations where available
+        "--enable-native",
+    ],
     visibility = ["PUBLIC"],
 )

@@ -7,55 +7,50 @@
 #
 # =============================================================================
 
-load("//defs:package_defs.bzl", "download_source", "cmake_package", "ebuild_package", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # nvtop - GPU process monitoring
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "nvtop",
     version = "3.1.0",
-    src_uri = "https://github.com/Syllo/nvtop/archive/refs/tags/3.1.0.tar.gz",
+    url = "https://github.com/Syllo/nvtop/archive/refs/tags/3.1.0.tar.gz",
     sha256 = "9481c45c136163574f1f16d87789859430bc90a1dc62f181b269b5edd92f01f3",
-    signature_required = False,
     description = "GPU process monitoring tool (htop-like for GPUs)",
     homepage = "https://github.com/Syllo/nvtop",
     license = "GPL-3.0",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
-        "-DNVIDIA_SUPPORT=ON",
-        "-DAMDGPU_SUPPORT=ON",
-        "-DINTEL_SUPPORT=ON",
+        "-DNVIDIA_SUPPORT=OFF",
+        "-DAMDGPU_SUPPORT=OFF",
+        "-DINTEL_SUPPORT=OFF",
+        "-DCMAKE_C_FLAGS=-Wno-error",
+        "-DCMAKE_CXX_FLAGS=-Wno-error",
     ],
-    env = {
-        "CFLAGS": "-O2 -march=x86-64 -pipe",
-        "LDFLAGS": "-Wl,-O1,--as-needed",
-    },
-    visibility = ["PUBLIC"],
+    deps = [
+        "//packages/linux/system/terminal/ncurses:ncurses",
+        "//packages/linux/desktop/libdrm:libdrm",
+        "//packages/linux/system/init/systemd:systemd",
+    ],
+    labels = ["buckos:hw:gpu"],
 )
 
 # gpu-burn - GPU stress testing (requires CUDA toolkit - disabled until CUDA is packaged)
-# download_source(
-#     name = "gpu-burn-src",
-#     src_uri = "https://github.com/wilicc/gpu-burn/archive/refs/heads/master.tar.gz",
-#     sha256 = "3d2e53753c8917c99f09bf40ab1141667775d5a1cc073ccad9039c3bbeb2a445",
-#     signature_required = False,
-# )
-#
-# ebuild_package(
+# package(
+#     build_rule = "binary",
 #     name = "gpu-burn",
-#     source = ":gpu-burn-src",
 #     version = "master",
+#     url = "https://github.com/wilicc/gpu-burn/archive/refs/heads/master.tar.gz",
+#     sha256 = "3d2e53753c8917c99f09bf40ab1141667775d5a1cc073ccad9039c3bbeb2a445",
 #     description = "GPU stress testing and burn-in tool",
 #     homepage = "https://github.com/wilicc/gpu-burn",
 #     license = "BSD-2-Clause",
-#     bdepend = ["//packages/linux/system/gpu/cuda:cuda-toolkit"],  # TODO: add CUDA package
-#     src_compile = """
+#     install_script = """
 # make
+# make install DESTDIR="$OUT"
 # """,
-#     src_install = """
-# make install DESTDIR="$DESTDIR"
-# """,
+#     deps = ["//packages/linux/system/gpu/cuda:cuda-toolkit"],  # TODO: add CUDA package
 #     env = {
 #         "CFLAGS": "-O2 -march=x86-64 -pipe",
 #         "CUDA_PATH": "/usr/local/cuda",
@@ -71,5 +66,4 @@ filegroup(
         # ":gpu-burn",  # Disabled - requires CUDA toolkit
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )

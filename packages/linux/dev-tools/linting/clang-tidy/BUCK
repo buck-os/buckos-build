@@ -1,12 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # clang-tidy - Clang-based C++ linter tool
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "clang-tidy",
     version = "19.1.0",
-    src_uri = "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.0/llvm-project-19.1.0.src.tar.xz",
-    sha256 = "TODO",
+    source = "//packages/linux/dev-tools/compilers/clang:clang-src",
     description = "Clang-based C++ linter tool",
     homepage = "https://clang.llvm.org/extra/clang-tidy/",
     license = "Apache-2.0",
@@ -14,7 +14,7 @@ cmake_package(
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/libxml2:libxml2",
     ],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DLLVM_ENABLE_PROJECTS=clang;clang-tools-extra",
         "-DLLVM_TARGETS_TO_BUILD=X86",
@@ -22,6 +22,5 @@ cmake_package(
         "-DLLVM_INCLUDE_TESTS=OFF",
         "-DLLVM_INCLUDE_BENCHMARKS=OFF",
     ],
-    cmake_source_dir = "llvm",
-    visibility = ["PUBLIC"],
+    source_subdir = "llvm",
 )

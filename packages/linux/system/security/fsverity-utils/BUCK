@@ -1,25 +1,23 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "fsverity-utils",
     version = "1.5",
-    src_uri = "https://git.kernel.org/pub/scm/linux/kernel/git/ebiggers/fsverity-utils.git/snapshot/fsverity-utils-1.5.tar.gz",
-    sha256 = "TODO",
+    url = "https://git.kernel.org/pub/scm/fs/fsverity/fsverity-utils.git/snapshot/fsverity-utils-v1.5.tar.gz",
+    sha256 = "704cf6df745cb23210301b66d51bd173e0459c6e93e7069227304d706fe7ed14",
     description = "Userspace utilities for fs-verity file integrity verification",
     homepage = "https://git.kernel.org/pub/scm/linux/kernel/git/ebiggers/fsverity-utils.git",
     license = "MIT",
     deps = [
         "//packages/linux/dev-libs/crypto/openssl:openssl",
     ],
-    pre_configure = """
-# fsverity-utils uses a plain Makefile, skip configure
-""",
     configure_args = [],
     make_args = [
         "PREFIX=/usr",
         "LIBDIR=/usr/lib",
     ],
-    post_install = """
+    post_install_cmds = ["""
 cd "$SRCDIR"
 
 # Build the library and binary
@@ -27,6 +25,5 @@ make PREFIX=/usr LIBDIR=/usr/lib DESTDIR="$DESTDIR" all
 
 # Install
 make PREFIX=/usr LIBDIR=/usr/lib DESTDIR="$DESTDIR" install
-""",
-    visibility = ["PUBLIC"],
+"""],
 )

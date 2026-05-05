@@ -1,5 +1,4 @@
-load("//defs:package_defs.bzl", "meson_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # libpq - PostgreSQL C client library
 #
@@ -7,63 +6,50 @@ load("//defs:use_flags.bzl", "set_use_flags")
 # It's extracted from the PostgreSQL source and can be used standalone
 # for applications that need to connect to PostgreSQL databases.
 #
-# USE flags:
-#   ssl       - Enable SSL/TLS support with OpenSSL
-#   gssapi    - Enable GSSAPI authentication support
-#   ldap      - Enable LDAP authentication support
-#   pam       - Enable PAM authentication support
-#   readline  - Enable readline support for command-line editing
-#   zlib      - Enable compression support
+# NOTE: PostgreSQL 16.x does not have meson build support (added in PG 17).
+# Use autotools and build only the libpq client library.
 
-meson_package(
+package(
+    build_rule = "autotools",
     name = "libpq",
     version = "16.4",
-    src_uri = "https://ftp.postgresql.org/pub/source/v16.4/postgresql-16.4.tar.bz2",
-    sha256 = "971766d645aa73e93b9ef4e3be44201b4f45b5477095b049125403f9f3386d6f",
-    signature_required = False,
+    source = "//packages/linux/databases/postgresql:postgresql-src",
     description = "PostgreSQL C client library",
     homepage = "https://www.postgresql.org/",
     license = "PostgreSQL",
 
-    # USE flags this package supports
-    iuse = [
-        "ssl",
-        "gssapi",
-        "ldap",
-        "pam",
-        "readline",
-        "zlib",
-        "doc",
+    configure_args = [
+        "--prefix=/usr",
+        "--with-system-tzdata=/usr/share/zoneinfo",
+        "--with-ssl=openssl",
+        "--with-zlib",
+        "--without-readline",
+        "--without-icu",
+        "--without-ldap",
+        "--without-pam",
     ],
 
-    # Default enabled flags
-    use_defaults = ["ssl", "zlib"],
+    # Only build the libpq client library (not the full server)
+    src_compile = """
+make -j${MAKEOPTS:-$(nproc)} -C src/common
+make -j${MAKEOPTS:-$(nproc)} -C src/port
+make -j${MAKEOPTS:-$(nproc)} -C src/interfaces/libpq
+make -j${MAKEOPTS:-$(nproc)} -C src/bin/pg_config
+make -j${MAKEOPTS:-$(nproc)} -C src/include
+""",
 
-    # Conditional dependencies based on USE flags
-    use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "readline": ["//packages/linux/core/readline:readline"],
-        "zlib": ["//packages/linux/core/zlib:zlib"],
-    },
+    src_install = """
+make -C src/common install DESTDIR="$OUT"
+make -C src/port install DESTDIR="$OUT"
+make -C src/interfaces/libpq install DESTDIR="$OUT"
+make -C src/bin/pg_config install DESTDIR="$OUT"
+make -C src/include install DESTDIR="$OUT"
+""",
 
-    # Meson options based on USE flags
-    use_options = {
-        "ssl": "ssl",
-        "gssapi": "gssapi",
-        "ldap": "ldap",
-        "pam": "pam",
-        "readline": "readline",
-        "zlib": "zlib",
-    },
-
-    # Base Meson arguments (always applied)
-    meson_args = [
-        "-Dsystem_tzdata=/usr/share/zoneinfo",
-        "-Dprefix=/usr",
+    # Dependencies
+    deps = [
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/core/zlib:zlib",
     ],
 
-    # Base dependencies (always required)
-    deps = [],
-
-    visibility = ["PUBLIC"],
 )

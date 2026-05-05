@@ -1,28 +1,19 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # tree - List directory contents in tree format
-# USE flags: (minimal package)
 
-autotools_package(
+package(
     name = "tree",
+    build_rule = "autotools",
+    skip_configure = True,
     version = "2.1.1",
-    src_uri = "https://gitlab.com/OldManProgrammer/unix-tree/-/archive/2.1.1/unix-tree-2.1.1.tar.gz",
+    url = "https://gitlab.com/OldManProgrammer/unix-tree/-/archive/2.1.1/unix-tree-2.1.1.tar.gz",
     sha256 = "bcd2a0327ad40592a9c43e09a4d2ef834e6f17aa9a59012a5fb1007950b5eced",
-    signature_required = False,
     description = "List directory contents in tree format",
     homepage = "https://gitlab.com/OldManProgrammer/unix-tree",
     license = "GPL-2+",
-    iuse = [],
-    use_defaults = [],
-    pre_configure = "true",
     make_args = [
         "PREFIX=/usr",
     ],
-    # Makefile doesn't properly respect DESTDIR for manpages
-    src_install = """
-make DESTDIR="$DESTDIR" PREFIX=/usr MANDIR=/usr/share/man install
-""",
     deps = [],
-    visibility = ["PUBLIC"],
 )

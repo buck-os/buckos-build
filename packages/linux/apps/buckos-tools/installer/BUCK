@@ -1,0 +1,28 @@
+load("//defs:package.bzl", "package")
+
+# BuckOS Installer - Graphical installer for live environment
+package(
+    name = "buckos-installer",
+    build_rule = "binary",
+    version = "0.0.1",
+    source = "//packages/linux/apps/buckos-tools:buckos-tools-src",
+    description = "Graphical installer for BuckOS",
+    homepage = "https://github.com/buck-os/buckos",
+    license = "GPL-2",
+    install_script = """
+set -e
+cd "$SRCS"
+
+cargo build --release -p buckos-installer
+
+mkdir -p "$OUT/usr/bin"
+install -m 0755 target/release/buckos-installer "$OUT/usr/bin/buckos-installer"
+""",
+    host_deps = [
+        "//packages/linux/lang/rust:rust",
+    ],
+    deps = [
+        "//packages/linux/desktop/qt:qt6-native",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+    ],
+)

@@ -1,21 +1,20 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "comfyui",
     version = "0.3.44",
-    src_uri = "https://github.com/comfyanonymous/ComfyUI/archive/v0.3.44.tar.gz",
-    sha256 = "TODO",
+    url = "https://github.com/comfyanonymous/ComfyUI/archive/v0.3.44.tar.gz",
+    sha256 = "d69fab2195531da312b08f9ed920d088b3964839aa6392509fd7c1f2e4c95ff9",
     deps = [
-        "//packages/linux/dev-libs/python/torch",
-        "//packages/linux/dev-libs/python/numpy",
-        "//packages/linux/dev-libs/python/pillow",
-        "//packages/linux/dev-libs/python/transformers",
-        "//packages/linux/dev-libs/python/safetensors",
-        "//packages/linux/dev-libs/python/aiohttp",
-        "//packages/linux/dev-libs/python/pyyaml",
-        "//packages/linux/dev-libs/python/scipy",
-        "//packages/linux/dev-libs/python/tqdm",
-        "//packages/linux/dev-libs/python/psutil",
-        "//packages/linux/dev-libs/python/pydantic",
+        "//packages/linux/dev-libs/python/torch:torch",
+        "//packages/linux/dev-libs/python/pillow:pillow",
+        "//packages/linux/dev-libs/python/transformers:transformers",
+        "//packages/linux/dev-libs/python/safetensors:safetensors",
+        "//packages/linux/dev-libs/python/aiohttp:aiohttp",
+        "//packages/linux/dev-libs/python/pyyaml:pyyaml",
+        "//packages/linux/dev-libs/python/tqdm:tqdm",
+        "//packages/linux/dev-libs/python/psutil:psutil",
+        "//packages/linux/dev-libs/python/pydantic:pydantic",
     ],
 )

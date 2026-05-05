@@ -5,7 +5,6 @@
 filegroup(
     name = "intel-x86-tools",
     srcs = [
-        "//packages/linux/system/power/x86_energy_perf_policy:x86_energy_perf_policy",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],
@@ -26,7 +25,6 @@ filegroup(
     name = "cpu-frequency",
     srcs = [
         "//packages/linux/system/power/cpufrequtils:cpufrequtils",
-        "//packages/linux/laptop/power/cpupower:cpupower",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],
@@ -36,9 +34,7 @@ filegroup(
 filegroup(
     name = "tuning",
     srcs = [
-        "//packages/linux/system/power/tuned:tuned",
         "//packages/linux/system/power/irqbalance:irqbalance",
-        "//packages/linux/system/power/power-profiles-daemon:power-profiles-daemon",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],
@@ -50,7 +46,6 @@ filegroup(
     srcs = [
         "//packages/linux/system/power/hdparm:hdparm",
         "//packages/linux/system/power/sdparm:sdparm",
-        "//packages/linux/system/power/nvme-cli:nvme-cli",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],
@@ -61,7 +56,6 @@ filegroup(
     name = "power-limits",
     srcs = [
         "//packages/linux/system/power/powercap:powercap",
-        "//packages/linux/system/power/intel-undervolt:intel-undervolt",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],
@@ -72,7 +66,7 @@ filegroup(
     name = "acpi-tools",
     srcs = [
         "//packages/linux/system/power/acpica-tools:acpica-tools",
-        "//packages/linux/laptop/power/acpid:acpid",
+        "//packages/linux/system/apps/acpid:acpid",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],
@@ -97,7 +91,6 @@ filegroup(
         ":essential",
         ":tuning",
         ":storage-power",
-        "//packages/linux/laptop/monitoring/powertop:powertop",
         "//packages/linux/laptop/monitoring/lm-sensors:lm-sensors",
     ],
     default_target_platform = "//platforms:linux-target",
@@ -113,7 +106,6 @@ filegroup(
         ":power-limits",
         ":storage-power",
         ":tuning",
-        "//packages/linux/system/power/intel-undervolt:intel-undervolt",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],

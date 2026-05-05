@@ -1,59 +1,24 @@
+load("//defs:package.bzl", "package")
+
 # Lutris - Open Gaming Platform
 # Unified game launcher supporting multiple gaming platforms and emulators
 
-load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
-
-download_source(
-    name = "lutris-src",
-    src_uri = "https://github.com/lutris/lutris/archive/refs/tags/v0.5.17.tar.gz",
-    sha256 = "e913d0c70bcb8c29839fcc2368f0b672bc1e70d1bc2bc18e6fd50ac785261aa8",
-    signature_required = False,
-)
-
 # USE flags: See use_flags.bzl for available flags
 
-autotools_package(
+package(
+    build_rule = "python",
     name = "lutris",
-    source = ":lutris-src",
+    url = "https://github.com/lutris/lutris/archive/refs/tags/v0.5.17.tar.gz",
+
+    sha256 = "e913d0c70bcb8c29839fcc2368f0b672bc1e70d1bc2bc18e6fd50ac785261aa8",
     version = "0.5.17",
     description = "Open Gaming Platform for Linux",
     homepage = "https://lutris.net/",
     license = "GPL-3.0",
-    pre_configure = """
-# Lutris uses Python/Meson, skip autoconf
-mkdir -p build
-    """,
-    configure_args = [],
-    env = {
-        "PYTHON": "/usr/bin/python3",
-    },
-    post_install = """
-#!/bin/bash
-set -e
-
-# Install Python package
-cd "$SRC_DIR"
-python3 setup.py install --root="$DESTDIR" --prefix=/usr --optimize=1
-
-# Install desktop file
-mkdir -p "$DESTDIR/usr/share/applications"
-install -Dm644 share/applications/net.lutris.Lutris.desktop \
-    "$DESTDIR/usr/share/applications/lutris.desktop"
-
-# Install icons
-mkdir -p "$DESTDIR/usr/share/icons/hicolor/scalable/apps"
-install -Dm644 share/icons/hicolor/scalable/apps/lutris.svg \
-    "$DESTDIR/usr/share/icons/hicolor/scalable/apps/lutris.svg"
-
-# Install man page
-mkdir -p "$DESTDIR/usr/share/man/man1"
-install -Dm644 share/man/man1/lutris.1 \
-    "$DESTDIR/usr/share/man/man1/lutris.1"
-    """,
+    use_setup_py = True,
     deps = [
         "//packages/linux/lang/python:python",
+        "//packages/linux/dev-libs/python/setuptools:setuptools",
         "//packages/linux/gaming/compatibility/wine:wine",
     ],
-    visibility = ["PUBLIC"],
 )

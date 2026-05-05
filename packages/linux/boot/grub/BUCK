@@ -1,185 +1,81 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
-
-download_source(
-    name = "grub-src",
-    src_uri = "https://mirrors.kernel.org/gnu/grub/grub-2.12.tar.xz",
-    sha256 = "f3c97391f7c4eaa677a78e090c7e97e6dc47b16f655f04683ebd37bef7fe0faa",
-    signature_sha256 = "062b2e02b82326be39c3883f242d75b63d5a4b5dbe98e5d6657db4e22d479af3",
-    signature_required=False,
-)
-
-download_source(
-    name = "grub-bios-src",
-    src_uri = "https://mirrors.kernel.org/gnu/grub/grub-2.12.tar.xz",
-    sha256 = "f3c97391f7c4eaa677a78e090c7e97e6dc47b16f655f04683ebd37bef7fe0faa",
-    signature_sha256 = "062b2e02b82326be39c3883f242d75b63d5a4b5dbe98e5d6657db4e22d479af3",
-    signature_required=False,
-)
+load("//defs:package.bzl", "package")
 
 # USE flags: See use_flags.bzl for available flags
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "grub",
-    source = ":grub-src",
+    url = "https://mirrors.kernel.org/gnu/grub/grub-2.12.tar.xz",
+
+    sha256 = "f3c97391f7c4eaa677a78e090c7e97e6dc47b16f655f04683ebd37bef7fe0faa",
     version = "2.12",
     description = "GNU GRUB is a Multiboot boot loader",
     homepage = "https://www.gnu.org/software/grub/",
     license = "GPL-3.0",
-    iuse = ["splash"],
-    use_defaults = [],
-    use_deps = {
-        "splash": ["//packages/linux/graphics/utilities/imagemagick:imagemagick"],
-    },
-    pre_configure = """
-# Create extra_deps.lst to avoid build error (from Gentoo ebuild)
-# See: https://bugs.gentoo.org/ - extra_deps.lst missing from source tarball
-echo "depends bli part_gpt" > grub-core/extra_deps.lst
-""",
+    # Create extra_deps.lst to avoid build error (missing from source tarball)
+    # GRUB modules are freestanding relocatable objects — PIE and mold are
+    # incompatible.  GRUB's configure auto-detects TARGET_CC=gcc (bare) and
+    # uses separate TARGET_CFLAGS/TARGET_LDFLAGS that don't inherit from
+    # CFLAGS/LDFLAGS, so we also inject flags via pre_configure_cmds.
+    linker = ["bfd", "no-pie"],
+    pre_configure_cmds = [
+        "echo 'depends bli part_gpt' > grub-core/extra_deps.lst",
+        "export TARGET_CFLAGS=\"${TARGET_CFLAGS:-} -fno-pie\"",
+        "export TARGET_LDFLAGS=\"${TARGET_LDFLAGS:-} -no-pie -fuse-ld=bfd\"",
+    ],
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc",
         "--libdir=/usr/lib64",
-        "--target=x86_64",
+    ] + select({
+        "//platforms:is_aarch64": ["--target=aarch64"],
+        "//platforms:is_x86_64": ["--target=x86_64"],
+        "DEFAULT": ["--target=x86_64"],
+    }) + [
         "--with-platform=efi",
         "--disable-werror",
         "--disable-rpath",
+        "--disable-shim-lock",
+        "--disable-device-mapper",
+        "--disable-efiemu",
+        "--disable-libzfs",
+        "--disable-nls",
+        "--disable-sdl",
     ],
     deps = [
-        "//packages/linux/core/xz:xz",
-        "//packages/linux/system/filesystem/management/lvm2:lvm2",
-        "//packages/linux/system/init/eudev:eudev",
-        # Note: bash and sed are runtime deps for grub-mkconfig, not build deps
+        "//packages/linux/system/libs/compression/xz:xz",
+        "//packages/virtual/libudev:libudev",
     ],
-    post_install = """
-# Verify GRUB modules were installed by make install
-module_count=$(find $DESTDIR/usr/lib64/grub/x86_64-efi -name "*.module" 2>/dev/null | wc -l)
-if [ "$module_count" -gt 0 ]; then
-    echo "✓ GRUB modules installed successfully ($module_count modules)"
-else
-    echo "✗ Warning: No GRUB modules found after installation"
-    echo "  This may cause grub-install to fail"
-fi
-
-# Create BuckOS GRUB theme
-mkdir -p "$DESTDIR/usr/share/grub/themes/buckos"
-
-# Generate splash screen if ImageMagick is available
-if command -v convert >/dev/null 2>&1; then
-    echo "Generating BuckOS splash screen..."
-    convert -size 1024x768 xc:black \
-        -gravity center \
-        -fill '#00ff00' -pointsize 120 -font DejaVu-Sans-Bold \
-        -annotate +0-50 'BuckOS' \
-        -fill '#00aa00' -pointsize 32 -font DejaVu-Sans \
-        -annotate +0+50 'Powered by Buck Build System' \
-        "$DESTDIR/usr/share/grub/themes/buckos/background.png" 2>/dev/null || \
-        echo "Warning: Failed to generate splash screen"
-fi
-
-# Create theme.txt with BuckOS branding
-cat > "$DESTDIR/usr/share/grub/themes/buckos/theme.txt" << 'EOF'
-# BuckOS GRUB Theme
-
-# Background
-desktop-image: "background.png"
-desktop-color: "#000000"
-
-# Boot menu
-+ boot_menu {
-  left = 20%
-  top = 40%
-  width = 60%
-  height = 40%
-  item_color = "#cccccc"
-  item_font = "DejaVu Sans Regular 16"
-  item_height = 32
-  item_padding = 8
-  item_spacing = 4
-  selected_item_color = "#ffffff"
-  selected_item_pixmap_style = "select_*.png"
-}
-
-# Help text
-+ label {
-  top = 85%
-  left = 0
-  width = 100%
-  height = 20
-  align = "center"
-  text = "Use ↑ and ↓ to select, Enter to boot"
-  color = "#00ff00"
-  font = "DejaVu Sans Regular 14"
-}
-
-# General settings
-title-color: "#00ff00"
-title-font: "DejaVu Sans Bold 24"
-message-color: "#ffffff"
-terminal-box: "terminal_box_*.png"
-EOF
-
-# Create /etc/default/grub with BuckOS branding
-mkdir -p "$DESTDIR/etc/default"
-cat > "$DESTDIR/etc/default/grub" << 'EOF'
-# GRUB boot loader configuration for BuckOS
-
-GRUB_DISTRIBUTOR="BuckOS"
-GRUB_DEFAULT=0
-GRUB_TIMEOUT=5
-GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"
-GRUB_CMDLINE_LINUX=""
-
-# BuckOS Branding
-GRUB_THEME="/usr/share/grub/themes/buckos/theme.txt"
-GRUB_COLOR_NORMAL="light-gray/black"
-GRUB_COLOR_HIGHLIGHT="white/green"
-
-# Enable graphical terminal
-GRUB_TERMINAL_OUTPUT=gfxterm
-GRUB_GFXMODE=1024x768
-
-# Disable OS prober (only boot BuckOS)
-GRUB_DISABLE_OS_PROBER=true
-
-# Custom boot message
-GRUB_EARLY_INITRD_LINUX_CUSTOM="echo 'Starting BuckOS...'"
-EOF
-
-# Create custom GRUB header script for additional branding
-mkdir -p "$DESTDIR/etc/grub.d"
-cat > "$DESTDIR/etc/grub.d/01_buckos_header" << 'EOF'
-#!/bin/sh
-cat << HEADER
-# BuckOS Boot Configuration
-# Generated by GRUB for BuckOS
-HEADER
-EOF
-chmod +x "$DESTDIR/etc/grub.d/01_buckos_header"
-""",
-    visibility = ["PUBLIC"],
+    host_deps = [
+        "//packages/linux/lang/perl:perl",
+    ],
+    post_install_cmds = [
+        # BuckOS GRUB theme
+        "mkdir -p usr/share/grub/themes/buckos",
+        "printf '# BuckOS GRUB Theme\\ndesktop-color: \"#000000\"\\ntitle-color: \"#00ff00\"\\ntitle-font: \"DejaVu Sans Bold 24\"\\nmessage-color: \"#ffffff\"\\n' > usr/share/grub/themes/buckos/theme.txt",
+        # Default GRUB config
+        "mkdir -p etc/default",
+        "printf 'GRUB_DISTRIBUTOR=\"BuckOS\"\\nGRUB_DEFAULT=0\\nGRUB_TIMEOUT=5\\nGRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash\"\\nGRUB_THEME=\"/usr/share/grub/themes/buckos/theme.txt\"\\nGRUB_TERMINAL_OUTPUT=gfxterm\\nGRUB_GFXMODE=1024x768\\nGRUB_DISABLE_OS_PROBER=true\\n' > etc/default/grub",
+    ],
 )
 
-# GRUB for BIOS systems
+# GRUB for BIOS systems (x86 only — BIOS boot is not applicable to aarch64)
 # USE flags: See use_flags.bzl for available flags
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "grub-bios",
-    source = ":grub-bios-src",
     version = "2.12",
+    source = ":grub-src",
     description = "GNU GRUB for BIOS systems",
     homepage = "https://www.gnu.org/software/grub/",
     license = "GPL-3.0",
-    iuse = ["splash"],
-    use_defaults = [],
-    use_deps = {
-        "splash": ["//packages/linux/graphics/utilities/imagemagick:imagemagick"],
-    },
-    pre_configure = """
-# Create extra_deps.lst to avoid build error (from Gentoo ebuild)
-# See: https://bugs.gentoo.org/ - extra_deps.lst missing from source tarball
-echo "depends bli part_gpt" > grub-core/extra_deps.lst
-""",
+    linker = ["bfd", "no-pie"],
+    pre_configure_cmds = [
+        "echo 'depends bli part_gpt' > grub-core/extra_deps.lst",
+        "export TARGET_CFLAGS=\"${TARGET_CFLAGS:-} -fno-pie\"",
+        "export TARGET_LDFLAGS=\"${TARGET_LDFLAGS:-} -no-pie -fuse-ld=bfd\"",
+    ],
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc",
@@ -188,118 +84,23 @@ echo "depends bli part_gpt" > grub-core/extra_deps.lst
         "--with-platform=pc",
         "--disable-werror",
         "--disable-rpath",
+        "--disable-device-mapper",
+        "--disable-efiemu",
+        "--disable-libzfs",
+        "--disable-nls",
+        "--disable-sdl",
     ],
     deps = [
-        "//packages/linux/core/xz:xz",
-        "//packages/linux/system/filesystem/management/lvm2:lvm2",
-        "//packages/linux/system/init/eudev:eudev",
-        # Note: bash and sed are runtime deps for grub-mkconfig, not build deps
+        "//packages/linux/system/libs/compression/xz:xz",
+        "//packages/virtual/libudev:libudev",
     ],
-    post_install = """
-# Verify GRUB modules were installed by make install
-module_count=$(find $DESTDIR/usr/lib64/grub/i386-pc -name "*.module" 2>/dev/null | wc -l)
-if [ "$module_count" -gt 0 ]; then
-    echo "✓ GRUB modules installed successfully ($module_count modules)"
-else
-    echo "✗ Warning: No GRUB modules found after installation"
-    echo "  This may cause grub-install to fail"
-fi
-
-# Create BuckOS GRUB theme
-mkdir -p "$DESTDIR/usr/share/grub/themes/buckos"
-
-# Generate splash screen if ImageMagick is available
-if command -v convert >/dev/null 2>&1; then
-    echo "Generating BuckOS splash screen..."
-    convert -size 1024x768 xc:black \
-        -gravity center \
-        -fill '#00ff00' -pointsize 120 -font DejaVu-Sans-Bold \
-        -annotate +0-50 'BuckOS' \
-        -fill '#00aa00' -pointsize 32 -font DejaVu-Sans \
-        -annotate +0+50 'Powered by Buck Build System' \
-        "$DESTDIR/usr/share/grub/themes/buckos/background.png" 2>/dev/null || \
-        echo "Warning: Failed to generate splash screen"
-fi
-
-# Create theme.txt with BuckOS branding
-cat > "$DESTDIR/usr/share/grub/themes/buckos/theme.txt" << 'EOF'
-# BuckOS GRUB Theme
-
-# Background
-desktop-image: "background.png"
-desktop-color: "#000000"
-
-# Boot menu
-+ boot_menu {
-  left = 20%
-  top = 40%
-  width = 60%
-  height = 40%
-  item_color = "#cccccc"
-  item_font = "DejaVu Sans Regular 16"
-  item_height = 32
-  item_padding = 8
-  item_spacing = 4
-  selected_item_color = "#ffffff"
-  selected_item_pixmap_style = "select_*.png"
-}
-
-# Help text
-+ label {
-  top = 85%
-  left = 0
-  width = 100%
-  height = 20
-  align = "center"
-  text = "Use ↑ and ↓ to select, Enter to boot"
-  color = "#00ff00"
-  font = "DejaVu Sans Regular 14"
-}
-
-# General settings
-title-color: "#00ff00"
-title-font: "DejaVu Sans Bold 24"
-message-color: "#ffffff"
-terminal-box: "terminal_box_*.png"
-EOF
-
-# Create /etc/default/grub with BuckOS branding
-mkdir -p "$DESTDIR/etc/default"
-cat > "$DESTDIR/etc/default/grub" << 'EOF'
-# GRUB boot loader configuration for BuckOS
-
-GRUB_DISTRIBUTOR="BuckOS"
-GRUB_DEFAULT=0
-GRUB_TIMEOUT=5
-GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"
-GRUB_CMDLINE_LINUX=""
-
-# BuckOS Branding
-GRUB_THEME="/usr/share/grub/themes/buckos/theme.txt"
-GRUB_COLOR_NORMAL="light-gray/black"
-GRUB_COLOR_HIGHLIGHT="white/green"
-
-# Enable graphical terminal
-GRUB_TERMINAL_OUTPUT=gfxterm
-GRUB_GFXMODE=1024x768
-
-# Disable OS prober (only boot BuckOS)
-GRUB_DISABLE_OS_PROBER=true
-
-# Custom boot message
-GRUB_EARLY_INITRD_LINUX_CUSTOM="echo 'Starting BuckOS...'"
-EOF
-
-# Create custom GRUB header script for additional branding
-mkdir -p "$DESTDIR/etc/grub.d"
-cat > "$DESTDIR/etc/grub.d/01_buckos_header" << 'EOF'
-#!/bin/sh
-cat << HEADER
-# BuckOS Boot Configuration
-# Generated by GRUB for BuckOS
-HEADER
-EOF
-chmod +x "$DESTDIR/etc/grub.d/01_buckos_header"
-""",
-    visibility = ["PUBLIC"],
+    host_deps = [
+        "//packages/linux/lang/perl:perl",
+    ],
+    post_install_cmds = [
+        "mkdir -p usr/share/grub/themes/buckos",
+        "printf '# BuckOS GRUB Theme\\ndesktop-color: \"#000000\"\\ntitle-color: \"#00ff00\"\\ntitle-font: \"DejaVu Sans Bold 24\"\\nmessage-color: \"#ffffff\"\\n' > usr/share/grub/themes/buckos/theme.txt",
+        "mkdir -p etc/default",
+        "printf 'GRUB_DISTRIBUTOR=\"BuckOS\"\\nGRUB_DEFAULT=0\\nGRUB_TIMEOUT=5\\nGRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash\"\\nGRUB_THEME=\"/usr/share/grub/themes/buckos/theme.txt\"\\nGRUB_TERMINAL_OUTPUT=gfxterm\\nGRUB_GFXMODE=1024x768\\nGRUB_DISABLE_OS_PROBER=true\\n' > etc/default/grub",
+    ],
 )

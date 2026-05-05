@@ -20,13 +20,10 @@
 filegroup(
     name = "core-auth",
     srcs = [
-        "//packages/linux/system/security/encryption:linux-pam",
-        "//packages/linux/system/security/auth/core:shadow",
+        "//packages/linux/system/apps/shadow:shadow",
         "//packages/linux/system/apps/sudo:sudo",
-        "//packages/linux/system/apps/doas:doas",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Privilege escalation
@@ -34,63 +31,42 @@ filegroup(
     name = "privilege-escalation",
     srcs = [
         "//packages/linux/system/apps/sudo:sudo",
-        "//packages/linux/system/apps/doas:doas",
         "//packages/linux/system/security/auth/privilege:polkit",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Directory services
 filegroup(
     name = "directory-services",
     srcs = [
-        "//packages/linux/system/security/auth/directory:krb5",
-        "//packages/linux/system/security/auth/directory:openldap",
-        "//packages/linux/system/security/auth/directory:cyrus-sasl",
-        "//packages/linux/system/security/auth/directory:sssd",
-        "//packages/linux/system/security/auth/directory:nss-pam-ldapd",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Two-factor authentication
 filegroup(
     name = "two-factor-auth",
     srcs = [
-        "//packages/linux/system/security/auth/mfa:oath-toolkit",
-        "//packages/linux/system/security/auth/mfa:google-authenticator",
-        "//packages/linux/system/security/auth/mfa:libfido2",
-        "//packages/linux/system/security/auth/mfa:pam-u2f",
-        "//packages/linux/system/security/auth/mfa:yubico-pam",
-        "//packages/linux/system/security/auth/mfa:yubikey-manager",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Network authentication
 filegroup(
     name = "network-auth",
     srcs = [
-        "//packages/linux/system/security/auth/network:pam-radius",
-        "//packages/linux/system/security/auth/network:pam-tacplus",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Password quality
 filegroup(
     name = "password-quality",
     srcs = [
-        "//packages/linux/system/security/auth/password:libpwquality",
-        "//packages/linux/system/security/auth/password:cracklib",
-        "//packages/linux/system/security/auth/password:passwdqc",
+        "//packages/linux/system/security/cracklib:cracklib",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Biometric authentication
@@ -101,44 +77,22 @@ filegroup(
         "//packages/linux/system/security/auth/biometric:fprintd",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # PAM modules collection
 filegroup(
     name = "pam-modules",
     srcs = [
-        "//packages/linux/system/security/auth/mfa:oath-toolkit",
-        "//packages/linux/system/security/auth/mfa:google-authenticator",
-        "//packages/linux/system/security/auth/mfa:pam-u2f",
-        "//packages/linux/system/security/auth/mfa:yubico-pam",
-        "//packages/linux/system/security/auth/network:pam-radius",
-        "//packages/linux/system/security/auth/network:pam-tacplus",
-        "//packages/linux/system/security/auth/password:libpwquality",
-        "//packages/linux/system/security/auth/pam-modules:pam-mount",
-        "//packages/linux/system/security/auth/pam-modules:pam-script",
-        "//packages/linux/system/security/auth/pam-modules:pam-ssh-agent-auth",
-        "//packages/linux/system/security/auth/pam-modules:pam-pkcs11",
-        "//packages/linux/system/security/auth/pam-modules:pam-abl",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # YubiKey packages
 filegroup(
     name = "yubikey",
     srcs = [
-        "//packages/linux/system/security/auth/mfa:yubico-pam",
-        "//packages/linux/system/security/auth/mfa:yubikey-manager",
-        "//packages/linux/system/security/auth/mfa:ykpers",
-        "//packages/linux/system/security/auth/mfa:ykclient",
-        "//packages/linux/system/security/auth/mfa:libyubikey",
-        "//packages/linux/system/security/auth/mfa:libfido2",
-        "//packages/linux/system/security/auth/mfa:pam-u2f",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # All authentication packages
@@ -155,19 +109,15 @@ filegroup(
         ":pam-modules",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Essential auth packages for basic systems
 filegroup(
     name = "essential",
     srcs = [
-        "//packages/linux/system/security/encryption:linux-pam",
-        "//packages/linux/system/security/auth/core:shadow",
+        "//packages/linux/system/apps/shadow:shadow",
         "//packages/linux/system/apps/sudo:sudo",
-        "//packages/linux/system/security/auth/password:libpwquality",
-        "//packages/linux/system/security/auth/password:cracklib",
+        "//packages/linux/system/security/cracklib:cracklib",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )

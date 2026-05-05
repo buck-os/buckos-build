@@ -1,20 +1,19 @@
-load("//defs:package_defs.bzl", "simple_package")
+load("//defs:package.bzl", "package")
 
 # dtl - Diff Template Library (header-only diff library in C++)
 
-simple_package(
+package(
     name = "dtl",
+    build_rule = "binary",
     version = "1.21",
-    src_uri = "https://github.com/cubicdaiya/dtl/archive/refs/tags/v1.21.tar.gz",
-    sha256 = "TODO",
+    url = "https://github.com/cubicdaiya/dtl/archive/refs/tags/v1.21.tar.gz",
+    sha256 = "90ed2dbf4e6d687737fe25f118bbcb6aed778cecc3f2115d191a032bf8643dbd",
     description = "Diff Template Library - A header-only diff library written in C++",
     homepage = "https://github.com/cubicdaiya/dtl",
     license = "BSD",
     deps = [],
-    build_commands = [
-        # dtl is header-only - just install the headers
-        "mkdir -p ${PREFIX}/include/dtl",
-        "cp -r dtl/*.hpp ${PREFIX}/include/dtl/",
-    ],
-    visibility = ["PUBLIC"],
+    install_script = """
+        mkdir -p $OUT/usr/include/dtl
+        cp -r dtl/*.hpp $OUT/usr/include/dtl/
+    """,
 )

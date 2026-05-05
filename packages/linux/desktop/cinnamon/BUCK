@@ -1,58 +1,45 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # Cinnamon - Traditional desktop with modern features
 # =============================================================================
 
-download_source(
-    name = "cinnamon-src",
-    src_uri = "https://github.com/linuxmint/cinnamon/archive/refs/tags/6.0.4.tar.gz",
-    sha256 = "6df5a3a5e1d11772f7c06af54f80840226396a47abbfb158f07a97174e489139",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "cinnamon",
-    source = ":cinnamon-src",
+    url = "https://github.com/linuxmint/cinnamon/archive/refs/tags/6.0.4.tar.gz",
+
+    sha256 = "6df5a3a5e1d11772f7c06af54f80840226396a47abbfb158f07a97174e489139",
+    use_configure = {
+        "eds": ("--enable-eds", "--disable-eds"),
+        "gstreamer": ("--enable-gstreamer", "--disable-gstreamer"),
+        "gtk-doc": ("--enable-gtk-doc", "--disable-gtk-doc"),
+        "networkmanager": ("--enable-networkmanager", "--disable-networkmanager"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "wayland": ("--enable-wayland", "--disable-wayland"),
+    },
     version = "6.0.4",
     description = "Cinnamon Desktop Environment",
     homepage = "https://github.com/linuxmint/cinnamon",
     license = "GPL-2.0",
-    pre_configure = """
-mkdir -p build
-cd build
-meson setup .. --prefix=/usr
-""",
     deps = [
         "//packages/linux/desktop/mesa:mesa",
     ],
-    visibility = ["PUBLIC"],
 )
 
-download_source(
-    name = "muffin-src",
-    src_uri = "https://github.com/linuxmint/muffin/archive/refs/tags/6.0.1.tar.gz",
-    sha256 = "3f305c345db72e8bf14f19e56a88e466029997ff41cbc091148d16dbf20b087e",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "muffin",
-    source = ":muffin-src",
+    url = "https://github.com/linuxmint/muffin/archive/refs/tags/6.0.1.tar.gz",
+
+    sha256 = "3f305c345db72e8bf14f19e56a88e466029997ff41cbc091148d16dbf20b087e",
     version = "6.0.1",
     description = "Muffin - Cinnamon window manager",
     homepage = "https://github.com/linuxmint/muffin",
     license = "GPL-2.0",
-    pre_configure = """
-mkdir -p build
-cd build
-meson setup .. --prefix=/usr
-""",
     deps = [
         "//packages/linux/desktop/mesa:mesa",
     ],
-    visibility = ["PUBLIC"],
 )
 
 # Cinnamon meta-package
@@ -61,9 +48,7 @@ filegroup(
     srcs = [
         ":cinnamon",
         ":muffin",
-        "//packages/linux/desktop/lightdm:lightdm",
         "//packages/linux/desktop/mesa:mesa",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )

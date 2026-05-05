@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "socket.io-client-cpp",
     version = "3.1.0",
-    src_uri = "https://github.com/socketio/socket.io-client-cpp/archive/refs/tags/3.1.0.tar.gz",
+    url = "https://github.com/socketio/socket.io-client-cpp/archive/refs/tags/3.1.0.tar.gz",
     sha256 = "f54dd36b8e5618d028c7c42f0c1a83a0d3a58f9239cf4b770f6b02b925909597",
-    cmake_args = [
+    configure_args = [
         "-DUSE_SUBMODULES=OFF",
         "-DBUILD_SHARED_LIBS=ON",
     ],

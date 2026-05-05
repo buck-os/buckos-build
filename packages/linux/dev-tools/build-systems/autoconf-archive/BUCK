@@ -1,0 +1,23 @@
+load("//defs:package.bzl", "package")
+
+# =============================================================================
+# autoconf-archive - GNU Autoconf Macro Archive
+# =============================================================================
+# Collection of freely reusable Autoconf macros including AX_PTHREAD,
+# AX_CHECK_COMPILE_FLAG, AX_CXX_COMPILE_STDCXX, and many others.
+
+package(
+    build_rule = "autotools",
+    name = "autoconf-archive",
+    version = "2024.10.16",
+    url = "https://ftp.gnu.org/gnu/autoconf-archive/autoconf-archive-2024.10.16.tar.xz",
+    sha256 = "7bcd5d001916f3a50ed7436f4f700e3d2b1bade3ed803219c592d62502a57363",
+    description = "GNU Autoconf Macro Archive",
+    homepage = "https://www.gnu.org/software/autoconf-archive/",
+    license = "GPL-3",
+    configure_args = [
+        "--prefix=/usr",
+        "--datadir=/usr/share",
+    ],
+    deps = [],
+)

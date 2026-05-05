@@ -1,17 +1,12 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
 # salt - Infrastructure automation and configuration management
-download_source(
-    name = "salt-src",
-    src_uri = "https://github.com/saltstack/salt/releases/download/v3007.0/salt-3007.0.tar.gz",
-    sha256 = "41bf84e71fc655bf8a4b52eb440d0621ae961096a086d20e132e1512e2eddff8",
-    signature_sha256 = "305bf3019e3f1362534747c80c45d9526189f90ddf46cb8e7d8f6499bc4df1da",
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "salt",
-    srcs = [":salt-src"],
     version = "3007.0",
+    url = "https://github.com/saltstack/salt/archive/refs/tags/v3007.0.tar.gz",
+    sha256 = "22f738426d9e37f0e8b4570d6cf87a1499473f0772b2c3567c848cb80c1cf71e",
     description = "Infrastructure automation and configuration management",
     homepage = "https://saltproject.io",
     license = "Apache-2.0",
@@ -20,7 +15,8 @@ binary_package(
 
         # Find Python with pip from dependency
         PYTHON_CMD=""
-        for dep in $DEPS; do
+        IFS=':' read -ra _dep_array <<< "${DEP_BASE_DIRS:-}"
+        for dep in "${_dep_array[@]}"; do
             if [ -x "$dep/usr/bin/python3" ]; then
                 # Check if this Python has pip
                 if "$dep/usr/bin/python3" -m pip --version >/dev/null 2>&1; then
@@ -45,5 +41,4 @@ binary_package(
     deps = [
         "//packages/linux/lang/python:python",
     ],
-    visibility = ["PUBLIC"],
 )

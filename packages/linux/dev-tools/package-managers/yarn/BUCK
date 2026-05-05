@@ -1,0 +1,25 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "binary",
+    name = "yarn",
+    version = "1.22.22",
+    url = "https://github.com/yarnpkg/yarn/releases/download/v1.22.22/yarn-v1.22.22.tar.gz",
+    sha256 = "88268464199d1611fcf73ce9c0a6c4d44c7d5363682720d8506f6508addf36a0",
+    description = "Fast, reliable, and secure dependency management for Node.js",
+    homepage = "https://classic.yarnpkg.com/",
+    license = "BSD-2-Clause",
+    strip_components = 1,
+    install_script = """
+mkdir -p "$OUT/usr/lib/yarn" "$OUT/usr/bin"
+cp -a lib package.json "$OUT/usr/lib/yarn/"
+cp -a bin/* "$OUT/usr/bin/"
+# Fix shebang to use system node
+sed -i '1s|.*|#!/usr/bin/env node|' "$OUT/usr/bin/yarn.js" 2>/dev/null || true
+ln -sf ../lib/yarn/bin/yarn.js "$OUT/usr/bin/yarn"
+ln -sf ../lib/yarn/bin/yarn.js "$OUT/usr/bin/yarnpkg"
+""",
+    deps = [
+        "//packages/linux/lang/nodejs:nodejs",
+    ],
+)

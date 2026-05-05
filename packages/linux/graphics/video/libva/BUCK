@@ -1,18 +1,22 @@
-load("//defs:package_defs.bzl", "meson_package", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # libva - Video Acceleration API
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "libva",
     version = "2.21.0",
-    src_uri = "https://github.com/intel/libva/archive/refs/tags/2.21.0.tar.gz",
+    use_configure = {
+        "X": ("-Dwith_x11=yes", "-Dwith_x11=no"),
+        "glx": ("-Dwith_glx=yes", "-Dwith_glx=no"),
+        "wayland": ("-Dwith_wayland=yes", "-Dwith_wayland=no"),
+    },
+    url = "https://github.com/intel/libva/archive/refs/tags/2.21.0.tar.gz",
     sha256 = "f7c3fffef3f04eb146e036dad2587d852bfb70e4926d014bf437244915ef7425",
-    signature_required = False,
     description = "Video Acceleration API for Linux",
     homepage = "https://github.com/intel/libva",
     license = "MIT",
-    meson_args = [
+    configure_args = [
         "-Dwith_x11=no",
         "-Dwith_wayland=no",
         "-Dwith_glx=no",
@@ -21,45 +25,69 @@ meson_package(
     deps = [
         "//packages/linux/desktop/libdrm:libdrm",
     ],
-    maintainers = [],
-    visibility = ["PUBLIC"],
 )
 
 # libva-utils - VA-API utilities
-meson_package(
+package(
+    build_rule = "meson",
     name = "libva-utils",
     version = "2.21.0",
-    src_uri = "https://github.com/intel/libva-utils/archive/refs/tags/2.21.0.tar.gz",
+    url = "https://github.com/intel/libva-utils/archive/refs/tags/2.21.0.tar.gz",
     sha256 = "15ca12bd11c7001c04af5079512754fea6ba8d79151b9f07908c99b27622714e",
-    signature_required = False,
     description = "VA-API utilities and examples",
     homepage = "https://github.com/intel/libva-utils",
     license = "MIT",
-    meson_args = [
+    configure_args = [
         "-Dtests=false",
     ],
     deps = [
         ":libva",
     ],
-    maintainers = [],
-    visibility = ["PUBLIC"],
 )
 
 # Intel Media Driver for VAAPI
-meson_package(
+package(
+    build_rule = "cmake",
     name = "intel-media-driver",
     version = "24.2.5",
-    src_uri = "https://github.com/intel/media-driver/archive/refs/tags/intel-media-24.2.5.tar.gz",
+    url = "https://github.com/intel/media-driver/archive/refs/tags/intel-media-24.2.5.tar.gz",
     sha256 = "dec2210c1f824a721e4ea6f66f5899e300801b3e7fae232d3f8a94db38c2edd1",
-    signature_required = False,
     description = "Intel Media Driver for VAAPI (Gen8+ graphics)",
     homepage = "https://github.com/intel/media-driver",
     license = "MIT BSD-3-Clause",
-    meson_args = [],
+    pre_configure_cmds = ["""
+# GitHub archive extracts to media-driver-intel-media-24.2.5/
+if [ -d "media-driver-intel-media-24.2.5" ]; then
+    mv media-driver-intel-media-24.2.5/* . 2>/dev/null || true
+    rmdir media-driver-intel-media-24.2.5 2>/dev/null || true
+fi
+# Create a stub igdgmm.pc for pkg-config since gmmlib is not available
+mkdir -p _pkgconfig
+cat > _pkgconfig/igdgmm.pc << 'PCEOF'
+prefix=/usr
+libdir=${prefix}/lib64
+includedir=${prefix}/include/igdgmm
+
+Name: igdgmm
+Description: Intel Graphics Memory Management Library (stub)
+Version: 12.0.0
+Cflags: -I${includedir}
+Libs: -L${libdir}
+PCEOF
+export PKG_CONFIG_PATH="$(pwd)/_pkgconfig:${PKG_CONFIG_PATH:-}"
+# Create minimal gmmlib headers so compilation can proceed
+mkdir -p _pkgconfig/include/igdgmm/GmmLib/inc
+touch _pkgconfig/include/igdgmm/GmmLib/inc/GmmLib.h
+"""],
+    configure_args = [
+        "-DCMAKE_DISABLE_FIND_PACKAGE_igdgmm=ON",
+        "-DMEDIA_BUILD_FATAL_WARNINGS=OFF",
+        "-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
+        "-DBYPASS_MEDIA_ULT=ON",
+        "-DENABLE_NONFREE_KERNELS=OFF",
+    ],
     deps = [
         ":libva",
         "//packages/linux/desktop/libdrm:libdrm",
     ],
-    maintainers = [],
-    visibility = ["PUBLIC"],
 )

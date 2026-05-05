@@ -1,0 +1,20 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "bc",
+    version = "1.07.1",
+    url = "https://mirrors.kernel.org/gnu/bc/bc-1.07.1.tar.gz",
+    sha256 = "62adfca89b0a1c0164c2cdca59ca210c1d44c3ffc46daf9931cf4942664cb02a",
+    description = "GNU arbitrary precision calculator language",
+    homepage = "https://www.gnu.org/software/bc",
+    license = "GPL-3+",
+    configure_args = [
+        "--prefix=/usr",
+        "--without-readline",
+    ],
+    host_deps = [
+        "//packages/linux/editors/ed:ed",
+    ],
+    visibility = ["PUBLIC"],
+)

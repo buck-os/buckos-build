@@ -1,20 +1,20 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "dgp",
     version = "2.0.0",
-    src_uri = "https://github.com/TRI-ML/dgp/archive/refs/tags/v2.0.0.tar.gz",
-    sha256 = "TODO",
+    url = "https://github.com/TRI-ML/dgp/archive/refs/tags/v2.0.0.tar.gz",
+    sha256 = "dd8133922d1e94cfce02187ecd08a73c29f24504df0ca01b8a6a5c59685bde5d",
     deps = [
-        "//packages/linux/dev-python/boto3",
-        "//packages/linux/dev-python/click",
-        "//packages/linux/dev-python/matplotlib",
-        "//packages/linux/dev-python/numpy",
-        "//packages/linux/dev-python/opencv-python",
-        "//packages/linux/dev-python/pillow",
-        "//packages/linux/dev-python/protobuf",
-        "//packages/linux/dev-python/torch",
-        "//packages/linux/dev-python/torchvision",
-        "//packages/linux/dev-python/tqdm",
+        "//packages/linux/dev-libs/python/boto3:boto3",
+        "//packages/linux/dev-libs/python/click:click",
+        "//packages/linux/dev-libs/python/matplotlib:matplotlib",
+        "//packages/linux/dev-libs/python/opencv-python:opencv-python",
+        "//packages/linux/dev-libs/python/pillow:pillow",
+        "//packages/linux/dev-libs/python/protobuf:protobuf",
+        "//packages/linux/dev-libs/python/torch:torch",
+        "//packages/linux/dev-libs/python/torchvision:torchvision",
+        "//packages/linux/dev-libs/python/tqdm:tqdm",
     ],
 )

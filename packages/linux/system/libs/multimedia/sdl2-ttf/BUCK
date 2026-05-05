@@ -1,32 +1,23 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "sdl2-ttf-src",
-    src_uri = "https://github.com/libsdl-org/SDL_ttf/releases/download/release-2.22.0/SDL2_ttf-2.22.0.tar.gz",
-    sha256 = "d48cbd1ce475b9e178206bf3b72d56b66d84d44f64ac05803328396234d67723",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "sdl2-ttf",
-    source = ":sdl2-ttf-src",
+    url = "https://github.com/libsdl-org/SDL_ttf/releases/download/release-2.22.0/SDL2_ttf-2.22.0.tar.gz",
+
+    sha256 = "d48cbd1ce475b9e178206bf3b72d56b66d84d44f64ac05803328396234d67723",
+    use_configure = {
+        "X": ("--with-x", "--without-x"),
+        "harfbuzz": ("--enable-harfbuzz", "--disable-harfbuzz"),
+        "static-libs": ("--enable-static", "--disable-static"),
+    },
     version = "2.22.0",
     description = "SDL2 TrueType font rendering library",
     homepage = "https://www.libsdl.org/projects/SDL_ttf/",
     license = "Zlib",
-    pre_configure = """
-mkdir -p build
-cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=/usr \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DBUILD_SHARED_LIBS=ON \
-    -DSDL2TTF_HARFBUZZ=ON
-""",
     deps = [
         "//packages/linux/system/libs/multimedia/sdl2:sdl2",
         "//packages/linux/system/libs/font/freetype:freetype",
         "//packages/linux/system/libs/font/harfbuzz:harfbuzz",
     ],
-    visibility = ["PUBLIC"],
 )

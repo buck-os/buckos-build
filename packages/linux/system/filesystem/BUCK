@@ -164,8 +164,6 @@ filegroup(
         "//packages/linux/system/filesystem/native/btrfs-progs:btrfs-progs",
         "//packages/linux/system/filesystem/native/xfsprogs:xfsprogs",
         "//packages/linux/system/filesystem/native/dosfstools:dosfstools",
-        "//packages/linux/system/filesystem/fuse/fuse3:fuse3",
-        "//packages/linux/system/filesystem/fuse/ntfs-3g:ntfs-3g",
         "//packages/linux/system/filesystem/management/parted:parted",
         "//packages/linux/system/filesystem/management/gptfdisk:gptfdisk",
         "//packages/linux/system/filesystem/management/lvm2:lvm2",
@@ -194,8 +192,6 @@ filegroup(
         ":common",
         "//packages/linux/system/filesystem/native/exfatprogs:exfatprogs",
         "//packages/linux/system/filesystem/network/cifs-utils:cifs-utils",
-        "//packages/linux/system/filesystem/network/sshfs:sshfs",
-        "//packages/linux/system/filesystem/management/udisks2:udisks2",
         "//packages/linux/system/filesystem/management/smartmontools:smartmontools",
     ],
     default_target_platform = "//platforms:linux-target",
@@ -208,11 +204,6 @@ filegroup(
     srcs = [
         ":common",
         "//packages/linux/system/filesystem/native/squashfs-tools:squashfs-tools",
-        "//packages/linux/system/filesystem/network/nfs-utils:nfs-utils",
-        "//packages/linux/system/filesystem/management/mdadm:mdadm",
-        "//packages/linux/system/filesystem/management/multipath-tools:multipath-tools",
-        "//packages/linux/system/filesystem/management/quota:quota",
-        "//packages/linux/system/filesystem/management/nvme-cli:nvme-cli",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],
@@ -222,8 +213,6 @@ filegroup(
 filegroup(
     name = "nvme-storage",
     srcs = [
-        "//packages/linux/system/filesystem/native/f2fs-tools:f2fs-tools",
-        "//packages/linux/system/filesystem/management/nvme-cli:nvme-cli",
         "//packages/linux/system/filesystem/management/smartmontools:smartmontools",
     ],
     default_target_platform = "//platforms:linux-target",
@@ -235,8 +224,6 @@ filegroup(
     name = "all-encryption",
     srcs = [
         "//packages/linux/system/filesystem/management/cryptsetup:cryptsetup",
-        "//packages/linux/system/filesystem/fuse/encfs:encfs",
-        "//packages/linux/system/filesystem/fuse/gocryptfs:gocryptfs",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],

@@ -1,23 +1,40 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "expat-src",
-    src_uri = "https://github.com/libexpat/libexpat/releases/download/R_2_6_3/expat-2.6.3.tar.xz",
-    sha256 = "274db254a6979bde5aad404763a704956940e465843f2a9bd9ed7af22e2c0efc",
-    signature_sha256 = "96bc5f146eb81a4d1a12b841788a88456b6a287c1143eb29ac7cf5c8f0c6a5b5",
-    signature_required = False,
+# expat-host - Native expat for host builds (used by wayland-scanner, etc.)
+package(
+    build_rule = "autotools",
+    name = "expat-host",
+    version = "2.7.3",
+    source = ":expat-src",
+    description = "Stream-oriented XML parser library (host build)",
+    homepage = "https://libexpat.github.io/",
+    license = "MIT",
+    # Build for host, not cross-compile
+    configure_args = [
+        "--disable-static",
+        "--without-examples",
+    ],
 )
 
-autotools_package(
+# expat - official release tarball includes pre-generated configure
+package(
+    build_rule = "autotools",
     name = "expat",
-    source = ":expat-src",
-    version = "2.6.3",
+    # No autoreconf needed - tarball has pre-generated configure
+    url = "https://github.com/libexpat/libexpat/releases/download/R_2_7_3/expat-2.7.3.tar.xz",
+    sha256 = "71df8f40706a7bb0a80a5367079ea75d91da4f8c65c58ec59bcdfbf7decdab9f",
+    use_configure = {
+        "examples": ("--enable-examples", "--disable-examples"),
+        "static-libs": ("--enable-static", "--disable-static"),
+        "unicode": ("--enable-unicode", "--disable-unicode"),
+    },
+    version = "2.7.3",
     description = "Stream-oriented XML parser library",
     homepage = "https://libexpat.github.io/",
     license = "MIT",
     configure_args = [
-        "--disable-static",
+        # Enable static library - needed for host tools like wayland-scanner
+        # that must link statically to avoid glibc version mismatch issues
+        "--enable-static",
     ],
-    visibility = ["PUBLIC"],
 )

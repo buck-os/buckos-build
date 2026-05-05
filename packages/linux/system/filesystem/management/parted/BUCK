@@ -1,27 +1,35 @@
-load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "parted-src",
-    src_uri = "https://mirrors.kernel.org/gnu/parted/parted-3.6.tar.xz",
-    sha256 = "3b43dbe33cca0f9a18601ebab56b7852b128ec1a3df3a9b30ccde5e73359e612",
-    signature_sha256 = "cdc0e7fcf5056e7f3f45d43bb980bd6d835b09a5c762ecd2b65c47742a0e583e",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "parted",
-    source = ":parted-src",
+    url = "https://mirrors.kernel.org/gnu/parted/parted-3.6.tar.xz",
+
+    sha256 = "3b43dbe33cca0f9a18601ebab56b7852b128ec1a3df3a9b30ccde5e73359e612",
     version = "3.6",
+    # GCC 15 makes -Wincompatible-pointer-types an error
+    env = {"CFLAGS": "-Wno-error=incompatible-pointer-types"},
     description = "Partition manipulation program (parted, partprobe)",
     homepage = "https://www.gnu.org/software/parted/",
     license = "GPL-3.0",
-    configure_args = [
-        "--disable-device-mapper",
-        "--without-readline",
-    ],
+    use_configure = {
+        "debug": ("--enable-debug", "--disable-debug"),
+        "device-mapper": ("--enable-device-mapper", "--disable-device-mapper"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "readline": ("--with-readline", "--without-readline"),
+    },
+    use_deps = {
+        "device-mapper": [
+            "//packages/linux/system/filesystem/management/lvm2:lvm2",
+            "//packages/linux/system/init/systemd:systemd",  # provides libudev for libdevmapper
+        ],
+        "readline": [
+            "//packages/linux/system/terminal/readline:readline",
+        ],
+    },
+    # lvm2 installs to /usr/lib not /usr/lib64
     deps = [
         "//packages/linux/core/util-linux:util-linux",
+        "//packages/linux/system/terminal/ncurses:ncurses",  # termcap for readline
     ],
-    visibility = ["PUBLIC"],
 )

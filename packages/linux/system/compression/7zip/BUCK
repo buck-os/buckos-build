@@ -1,28 +1,57 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "7zip-src",
-    src_uri = "https://github.com/ip7z/7zip/archive/refs/tags/24.09.tar.gz",
-    sha256 = "e4757b307925227724a2044651193664ba3d04e9ac13b8e631f1667896014bbf",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "7zip",
-    srcs = [":7zip-src"],
     version = "24.09",
+    url = "https://7-zip.org/a/7z2409-src.tar.xz",
+    sha256 = "49c05169f49572c1128453579af1632a952409ced028259381dac30726b6133a",
     description = "7-Zip file archiver with high compression ratio",
     homepage = "https://www.7-zip.org/",
     license = "LGPL-2.1",
     install_script = """
-        cd "$SRCS/CPP/7zip/Bundles/Alone2"
-        make -f ../../cmpl_gcc.mak -j$(nproc)
-        
-        # Install
-        mkdir -p "$OUT/usr/bin"
-        cp _o/7zz "$OUT/usr/bin/" || cp b/g/7zz "$OUT/usr/bin/"
-        ln -sf 7zz "$OUT/usr/bin/7z"
-    """,
+cd "$SRCS"
+
+_builddir=""
+for dir in "CPP/7zip/Bundles/Alone2" "CPP/7zip/Bundles/Alone" \
+           "7zip/Bundles/Alone2" "7zip/Bundles/Alone" \
+           "C/Util/7z" "Util/7z"; do
+    if [ -f "$dir/makefile.gcc" ]; then
+        _builddir="$dir"
+        break
+    fi
+done
+if [ -n "$_builddir" ]; then
+    cd "$_builddir"
+    make -f makefile.gcc -j${MAKEOPTS:-$(nproc)} \
+        CC="$CC" CXX="$CXX" MY_ARCH="" CFLAGS_WARN="" || \
+    make -f makefile.gcc -j1 \
+        CC="$CC" CXX="$CXX" MY_ARCH="" CFLAGS_WARN=""
+else
+    echo "ERROR: Cannot find 7zip build files"
+    find . -name 'makefile.gcc' 2>/dev/null
+    exit 1
+fi
+
+# Install - 7zip output location varies by platform and build config
+mkdir -p "$OUT/usr/bin"
+cd "$SRCS"
+_found=$(find . -name '7zz' -type f 2>/dev/null | head -1)
+if [ -n "$_found" ]; then
+    cp "$_found" "$OUT/usr/bin/7zz"
+else
+    # Try 7z binary name
+    _found=$(find . -name '7z' -type f -executable 2>/dev/null | head -1)
+    if [ -n "$_found" ]; then
+        cp "$_found" "$OUT/usr/bin/7zz"
+    else
+        echo "ERROR: Could not find 7zz binary"
+        find . -type f -name '7z*' 2>/dev/null
+        exit 1
+    fi
+fi
+chmod +x "$OUT/usr/bin/7zz"
+ln -sf 7zz "$OUT/usr/bin/7z"
+""",
     deps = [],
-    visibility = ["PUBLIC"],
 )

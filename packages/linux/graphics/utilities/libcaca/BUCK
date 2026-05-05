@@ -1,16 +1,21 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "libcaca-src",
-    src_uri = "https://github.com/cacalabs/libcaca/releases/download/v0.99.beta19/libcaca-0.99.beta19.tar.gz",
-    sha256 = "TODO",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libcaca",
-    source = ":libcaca-src",
-    version = "0.99.beta19",
+    url = "https://github.com/cacalabs/libcaca/releases/download/v0.99.beta20/libcaca-0.99.beta20.tar.gz",
+
+    sha256 = "8ad74babc63bf665b0b2378d95b4da65b7493c11bd9f3ac600517085b0c4acf2",
+    use_configure = {
+        "X": ("--with-x", "--without-x"),
+        "imlib": ("--enable-imlib", "--disable-imlib"),
+        "ncurses": ("--with-ncurses", "--without-ncurses"),
+        "opengl": ("--enable-opengl", "--disable-opengl"),
+        "slang": ("--enable-slang", "--disable-slang"),
+        "static-libs": ("--enable-static", "--disable-static"),
+        "truetype": ("--enable-truetype", "--disable-truetype"),
+    },
+    version = "0.99.beta20",
     description = "Color ASCII Art library",
     homepage = "http://caca.zoy.org/wiki/libcaca",
     license = "WTFPL",
@@ -22,8 +27,17 @@ autotools_package(
         "--disable-python",
         "--disable-ruby",
     ],
+    make_args = [
+        "-C",
+        "caca",
+    ],
+    post_install_cmds = ["""
+cd caca
+make DESTDIR=$OUT install
+cd ..
+make -C kernel DESTDIR=$OUT install || true
+"""],
     deps = [
         "//packages/linux/core/zlib:zlib",
     ],
-    visibility = ["PUBLIC"],
 )

@@ -1,16 +1,30 @@
-load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "ntfs-3g-src",
-    src_uri = "https://github.com/tuxera/ntfs-3g/archive/refs/tags/2022.10.3.tar.gz",
-    sha256 = "8bd7749ea9d8534c9f0664d48b576e90b96d45ec8803c9427f6ffaa2f0dde299",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "ntfs-3g",
-    source = ":ntfs-3g-src",
+    pre_configure_cmds = ["""
+# Stub out AM_PATH_LIBGCRYPT macro to avoid undefined macro error during autoreconf
+# (crypto is disabled via --disable-crypto so libgcrypt is not actually needed)
+if [ ! -d m4 ]; then mkdir m4; fi
+cat > m4/libgcrypt.m4 << 'MACROEOF'
+AC_DEFUN([AM_PATH_LIBGCRYPT], [
+  AC_MSG_CHECKING([for libgcrypt])
+  AC_MSG_RESULT([disabled (stub)])
+])
+MACROEOF
+# Copy pkg.m4 into local m4 dir so autoreconf can find PKG_CHECK_MODULES
+for _d in $(echo "$ACLOCAL_PATH" | tr ':' ' '); do
+    if [ -f "$_d/pkg.m4" ]; then
+        cp "$_d/pkg.m4" m4/
+        break
+    fi
+done
+autoreconf -fi
+"""],
+    url = "https://github.com/tuxera/ntfs-3g/archive/refs/tags/2022.10.3.tar.gz",
+
+    sha256 = "8bd7749ea9d8534c9f0664d48b576e90b96d45ec8803c9427f6ffaa2f0dde299",
     version = "2022.10.3",
     description = "NTFS filesystem driver with read/write support",
     homepage = "https://www.tuxera.com/community/open-source-ntfs-3g/",
@@ -18,10 +32,15 @@ autotools_package(
     configure_args = [
         "--exec-prefix=/usr",
         "--disable-ldconfig",
-        "--with-fuse=external",
+        "--with-fuse=internal",
+        "--disable-crypto",
     ],
     deps = [
-        "//packages/linux/system/filesystem/fuse/fuse3:fuse3",
     ],
-    visibility = ["PUBLIC"],
+    host_deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
+    ],
 )

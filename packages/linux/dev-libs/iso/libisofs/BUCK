@@ -1,0 +1,19 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "autotools",
+    name = "libisofs",
+    version = "1.5.6",
+    url = "https://files.libburnia-project.org/releases/libisofs-1.5.6.tar.gz",
+    sha256 = "0152d66a9d340b659fe9c880eb9190f3570fb477ac07cf52e8bcd134a1d30d70",
+    description = "Library for creating ISO 9660 filesystem images",
+    homepage = "https://dev.lovelyhq.com/libburnia",
+    license = "GPL-2.0-or-later",
+    configure_args = [
+        "--prefix=/usr",
+        "--disable-static",
+    ],
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+    ],
+)

@@ -1,54 +1,40 @@
-load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # -----------------------------------------------------------------------------
 # s6-linux-init - Set of tools to create a s6-based init system
 # -----------------------------------------------------------------------------
 
-download_source(
-    name = "s6-linux-init-src",
-    src_uri = "https://skarnet.org/software/s6-linux-init/s6-linux-init-1.1.2.0.tar.gz",
-    sha256 = "11ae08d0a66210b5e56b6baee0f6b9b1b69fbedb05fda1285b115a31ca46c77f",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "binary",
     name = "s6-linux-init",
-    source = ":s6-linux-init-src",
+    url = "https://skarnet.org/software/s6-linux-init/s6-linux-init-1.1.2.0.tar.gz",
+    sha256 = "11ae08d0a66210b5e56b6baee0f6b9b1b69fbedb05fda1285b115a31ca46c77f",
     version = "1.1.2.0",
     description = "Set of tools to create a s6-based init system",
     homepage = "https://skarnet.org/software/s6-linux-init/",
     license = "ISC",
-    # skarnet.org uses non-standard configure - custom src_configure phase
-    src_configure = """
-# Find skalibs in dependency directories
-SKALIBS_DIR=""
-for dir in ${DEP_BASE_DIRS//:/ }; do
-    if [ -d "$dir/usr/lib/skalibs/sysdeps" ]; then
-        SKALIBS_DIR="$dir"
-        break
+    install_script = """
+cd "$SRCS"
+# Find skalibs sysdeps from deps
+_sysdeps=""
+IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
+for _dep in "${_DEP_ARRAY[@]}"; do
+    if [ -d "$_dep/usr/lib/skalibs/sysdeps" ]; then
+        _sysdeps="$_dep/usr/lib/skalibs/sysdeps"
     fi
 done
-if [ -z "$SKALIBS_DIR" ]; then
-    echo "ERROR: Could not find skalibs sysdeps directory"
-    exit 1
-fi
-echo "Found skalibs at: $SKALIBS_DIR"
-
-./configure \\
-    --prefix=/usr \\
-    --libexecdir=/usr/lib/s6-linux-init \\
-    --skeldir=/etc/s6-linux-init/skel \\
-    --enable-shared \\
-    --disable-static \\
-    --with-sysdeps="$SKALIBS_DIR/usr/lib/skalibs/sysdeps" \\
-    --with-include="$SKALIBS_DIR/usr/include" \\
-    --with-lib="$SKALIBS_DIR/usr/lib"
+_CONF_ARGS="--prefix=/usr --libdir=/usr/lib"
+[ -n "$_sysdeps" ] && _CONF_ARGS="$_CONF_ARGS --with-sysdeps=$_sysdeps"
+./configure $_CONF_ARGS || ./configure --prefix=/usr
+make -j${MAKEOPTS:-$(nproc)} || make -j1
+make DESTDIR="$OUT" install || {
+    mkdir -p "$OUT/usr/bin"
+    find . -type f -executable -name 's6-*' -exec install -m755 {} "$OUT/usr/bin/" \; 2>/dev/null || true
+}
 """,
     deps = [
         "//packages/linux/system/init/skalibs:skalibs",
         "//packages/linux/system/init/s6:s6",
+        "//packages/linux/system/init/execline:execline",
     ],
-    bdepend = [],
-    visibility = ["PUBLIC"],
 )

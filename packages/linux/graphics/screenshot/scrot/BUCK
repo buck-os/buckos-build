@@ -1,16 +1,12 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "scrot-src",
-    src_uri = "https://github.com/resurrecting-open-source-projects/scrot/releases/download/1.10/scrot-1.10.tar.gz",
-    sha256 = "d3fb2fb962c1921030a442448afb1994d77d40192868da1b4cdeade0066bf36f",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "scrot",
-    source = ":scrot-src",
+    # GitHub release tarball includes pre-generated configure script
+    url = "https://github.com/resurrecting-open-source-projects/scrot/releases/download/1.10/scrot-1.10.tar.gz",
+
+    sha256 = "d3fb2fb962c1921030a442448afb1994d77d40192868da1b4cdeade0066bf36f",
     version = "1.10",
     description = "Simple command-line screenshot utility for X",
     homepage = "https://github.com/resurrecting-open-source-projects/scrot",
@@ -19,16 +15,11 @@ autotools_package(
         "--prefix=/usr",
     ],
     make_args = [],
-    post_install = """
+    post_install_cmds = ["""
 make DESTDIR=$OUT install
-""",
+"""],
     deps = [
-        # "//packages/linux/system/libs/graphics/imlib2:imlib2",  # TODO: not packaged yet
-        # "//packages/linux/system/libs/x11/libxfixes:libxfixes",  # TODO: X11 libs not packaged
-        # "//packages/linux/system/libs/x11/libxcomposite:libxcomposite",  # TODO: X11 libs not packaged
-        # "//packages/linux/system/libs/x11/libxinerama:libxinerama",  # TODO: X11 libs not packaged
-        # "//packages/linux/system/libs/giblib:giblib",  # TODO: not packaged yet
+        "//packages/linux/graphics/xorg:x11-extended",
+        "//packages/linux/graphics/xorg/libXinerama:libXinerama",
     ],
-    bdepend = [],
-    visibility = ["PUBLIC"],
 )

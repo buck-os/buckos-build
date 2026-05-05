@@ -1,10 +1,23 @@
-load("//defs:package_defs.bzl", "simple_binary_package")
+load("//defs:package.bzl", "package")
 
-simple_binary_package(
+# AWS Lambda RIE is a single binary file, not an archive
+package(
+    build_rule = "binary",
     name = "aws-lambda-rie",
     version = "1.27",
-    src_uri = "https://github.com/aws/aws-lambda-runtime-interface-emulator/releases/download/v1.27/aws-lambda-rie-x86_64",
-    sha256 = "b8c5c8a6aef19029b37aa9e61ecf509a5ff8c25f03b6cd0c5b96e60d9a2ef728",
-    bins = ["aws-lambda-rie-x86_64"],
-    symlinks = {"bin/aws-lambda-rie": "aws-lambda-rie-x86_64"},
+    url = "https://github.com/aws/aws-lambda-runtime-interface-emulator/archive/refs/tags/v1.27.tar.gz",
+    sha256 = "a139c70774dc4f0da356fc4078f1683face77c4a2a30ae34a257511dc88d018b",
+    description = "AWS Lambda Runtime Interface Emulator",
+    homepage = "https://github.com/aws/aws-lambda-runtime-interface-emulator",
+    license = "Apache-2.0",
+    install_script = """
+        mkdir -p "$OUT/usr/bin"
+        # Find the downloaded binary (might be in various locations)
+        BINARY=$(find "$SRCS" -type f | head -1)
+        if [ -z "$BINARY" ]; then
+            echo "Error: Could not find binary in $SRCS"
+            exit 1
+        fi
+        install -m 755 "$BINARY" "$OUT/usr/bin/aws-lambda-rie"
+    """,
 )

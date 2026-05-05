@@ -1,20 +1,20 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "dreamo",
     version = "0.0.0",
-    src_uri = "https://github.com/bytedance/DreamO/archive/1ec6e680975655bfcdf833f17b28affc3fde921d.tar.gz",
-    sha256 = "TODO",
+    url = "https://github.com/bytedance/DreamO/archive/1ec6e680975655bfcdf833f17b28affc3fde921d.tar.gz",
+    sha256 = "6bfcba06ecfe577aa30498c812b7c760d4c337cc3210b111efdea16fa7ebc034",
     deps = [
-        "//packages/linux/ai/ml-frameworks/pytorch",
-        "//packages/linux/ai/ml-frameworks/torchvision",
-        "//packages/linux/dev-libs/python/diffusers",
-        "//packages/linux/dev-libs/python/transformers",
-        "//packages/linux/dev-libs/python/sentencepiece",
-        "//packages/linux/dev-libs/python/einops",
-        "//packages/linux/dev-libs/python/timm",
-        "//packages/linux/dev-libs/python/accelerate",
-        "//packages/linux/dev-libs/python/peft",
-        "//packages/linux/dev-libs/python/huggingface-hub",
+        "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
+        "//packages/linux/ai/ml-frameworks/torchvision:torchvision",
+        "//packages/linux/dev-libs/python/diffusers:diffusers",
+        "//packages/linux/dev-libs/python/transformers:transformers",
+        "//packages/linux/dev-libs/python/sentencepiece:sentencepiece",
+        "//packages/linux/dev-libs/python/timm:timm",
+        "//packages/linux/dev-libs/python/accelerate:accelerate",
+        "//packages/linux/dev-libs/python/peft:peft",
+        "//packages/linux/dev-libs/python/huggingface-hub:huggingface-hub",
     ],
 )

@@ -1,17 +1,20 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "gmp-src",
-    src_uri = "https://mirrors.kernel.org/gnu/gmp/gmp-6.3.0.tar.xz",
-    sha256 = "a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898",
-    signature_sha256 = "94def8c1a731854de684689126046ec93589147abd4cd0025f12d741d323aa82",
-    signature_required = False,
-)
-
-autotools_package(
+# GMP - official tarball includes pre-generated configure
+package(
+    build_rule = "autotools",
     name = "gmp",
-    source = ":gmp-src",
+    # No autoreconf needed - tarball has pre-generated configure
+    url = "https://mirror.buckos.org/g/gmp-6.3.0.tar.xz",
+
+    sha256 = "a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898",
+    use_configure = {
+        "asm": ("--enable-asm", "--disable-asm"),
+        "cpudetection": ("--enable-cpudetection", "--disable-cpudetection"),
+        "cxx": ("--enable-cxx", "--disable-cxx"),
+        "pic": ("--enable-pic", "--disable-pic"),
+        "static-libs": ("--enable-static", "--disable-static"),
+    },
     version = "6.3.0",
     description = "GNU Multiple Precision Arithmetic Library",
     homepage = "https://gmplib.org/",
@@ -26,8 +29,7 @@ autotools_package(
         "CXXFLAGS": "-O2",
     },
     # Remove .la files - they contain hardcoded paths that break cross-package builds
-    post_install = '''
+    post_install_cmds = ['''
 find "$DESTDIR" -name "*.la" -delete
-''',
-    visibility = ["PUBLIC"],
+'''],
 )

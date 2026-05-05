@@ -114,7 +114,6 @@ filegroup(
     srcs = [
         "//packages/linux/emulation/hypervisors/qemu:qemu",
         "//packages/linux/emulation/kernel:all-kernel-tools",
-        "//packages/linux/emulation/utilities/virtiofsd:virtiofsd",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],
@@ -146,6 +145,27 @@ filegroup(
     name = "podman",
     srcs = [
         "//packages/linux/emulation/containers:podman-full",
+    ],
+    default_target_platform = "//platforms:linux-target",
+    visibility = ["PUBLIC"],
+)
+
+# Cloud Hypervisor full stack (CH + virtiofsd + firmware)
+# Note: firmware packages (edk2-cloudhv, rust-hypervisor-firmware) disabled pending valid sha256
+filegroup(
+    name = "cloud-hypervisor-full",
+    srcs = [
+        "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
+    ],
+    default_target_platform = "//platforms:linux-target",
+    visibility = ["PUBLIC"],
+)
+
+# Cloud Hypervisor minimal (CH + virtiofsd only)
+filegroup(
+    name = "cloud-hypervisor-minimal",
+    srcs = [
+        "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],

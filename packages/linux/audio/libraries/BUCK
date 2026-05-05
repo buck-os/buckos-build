@@ -1,16 +1,51 @@
+load("//defs:package.bzl", "package")
+
 # Audio libraries and codecs
+
+# libcanberra - XDG Sound Theme and Name Spec implementation
+# Minimal build with just null backend for KDE notification sounds
+package(
+    build_rule = "autotools",
+    name = "libcanberra",
+    version = "0.30",
+    url = "https://0pointer.de/lennart/projects/libcanberra/libcanberra-0.30.tar.xz",
+    sha256 = "c2b671e67e0c288a69fc33dc1b6f1b534d07882c2aceed37004bf48c601afa72",
+    description = "XDG Sound Theme and Name Spec implementation",
+    homepage = "https://0pointer.de/lennart/projects/libcanberra/",
+    license = "LGPL-2.1+",
+    configure_args = [
+        "--prefix=/usr",
+        "--libdir=/usr/lib64",
+        "--disable-alsa",
+        "--disable-oss",
+        "--disable-pulse",
+        "--disable-udev",
+        "--disable-gstreamer",
+        "--disable-gtk",
+        "--disable-gtk3",
+        "--disable-tdb",
+        "--disable-lynx",
+        "--enable-null",
+    ],
+    # libvorbis uses vector math symbols requiring libmvec
+    make_args = ["LIBS=-lmvec"],
+    deps = [
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+        "//packages/linux/system/libs/audio/libogg:libogg",
+        "//packages/linux/system/libs/audio/libvorbis:libvorbis",
+    ],
+)
 
 filegroup(
     name = "codec-libraries",
     srcs = [
-        "//packages/linux/audio/libraries/libogg:libogg",
-        "//packages/linux/audio/libraries/libvorbis:libvorbis",
-        "//packages/linux/audio/libraries/flac:flac",
-        "//packages/linux/audio/libraries/opus:opus",
-        "//packages/linux/audio/libraries/lame:lame",
+        "//packages/linux/system/libs/audio/libogg:libogg",
+        "//packages/linux/system/libs/audio/libvorbis:libvorbis",
+        "//packages/linux/system/libs/audio/flac:flac",
+        "//packages/linux/system/libs/audio/opus:opus",
+        "//packages/linux/system/libs/audio/lame:lame",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 filegroup(
@@ -18,7 +53,6 @@ filegroup(
     srcs = [
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 filegroup(
@@ -28,5 +62,4 @@ filegroup(
         ":audio-io-libraries",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )

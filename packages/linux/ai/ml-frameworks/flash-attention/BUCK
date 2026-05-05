@@ -1,16 +1,15 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "flash-attention",
     version = "2.7.3",
-    src_uri = "https://github.com/Dao-AILab/flash-attention/archive/refs/tags/v2.7.3.tar.gz",
-    sha256 = "TODO",
+    url = "https://github.com/Dao-AILab/flash-attention/archive/refs/tags/v2.7.3.tar.gz",
+    sha256 = "21a7b82f787d2a33905c45ba10c3275d504c408b744520f7691d9501b7b4c009",
     deps = [
-        "//packages/linux/ai/ml-frameworks/pytorch",
-        "//packages/linux/dev-libs/cuda/cutlass",
-        "//packages/linux/dev-python/einops",
-        "//packages/linux/dev-python/packaging",
-        "//packages/linux/dev-python/ninja",
-        "//packages/linux/dev-python/psutil",
+        "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
+        "//packages/linux/dev-libs/python/packaging:packaging",
+        "//packages/linux/dev-libs/python/ninja:ninja",
+        "//packages/linux/dev-libs/python/psutil:psutil",
     ],
 )

@@ -1,0 +1,20 @@
+# Sway-init: Simple init script for Sway-based live systems
+# Alternative to systemd for minimal Sway desktop environments
+
+genrule(
+    name = "sway-init",
+    srcs = ["sway-init.sh"],
+    out = "sway-init",
+    cmd = """
+        mkdir -p "$OUT/sbin"
+        cp $(location :sway-init.sh) "$OUT/sbin/sway-init"
+        chmod +x "$OUT/sbin/sway-init"
+        # Create /sbin/init symlink to sway-init
+        ln -sf sway-init "$OUT/sbin/init"
+    """,
+)
+
+export_file(
+    name = "sway-init.sh",
+    src = "sway-init.sh",
+)

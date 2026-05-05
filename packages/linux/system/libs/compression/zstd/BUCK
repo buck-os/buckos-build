@@ -1,84 +1,43 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+# Zstandard - Fast real-time compression algorithm
+# Following Gentoo's approach: uses meson build (in build/meson subdirectory)
+package(
+    build_rule = "meson",
     name = "zstd",
-    version = "1.5.6",
-    src_uri = "https://github.com/facebook/zstd/releases/download/v1.5.6/zstd-1.5.6.tar.gz",
-    sha256 = "8c29e06cf42aacc1eafc4077ae2ec6c6fcb96a626157e0593d5e82a34fd403c1",
-    signature_sha256 = "9c2287421e09619e243d07bf0fbdb0aa56d4e38ee24cb8d0ca6dc58f4d381d99",
-    signature_required = False,
-    description = "Fast lossless compression algorithm",
+    version = "1.5.7",
+    url = "https://github.com/facebook/zstd/releases/download/v1.5.7/zstd-1.5.7.tar.gz",
+    sha256 = "eb33e51f49a15e023950cd7825ca74a4a2b43db8354825ac24fc1b7ee09e6fa3",
+    description = "Zstandard - fast real-time compression algorithm",
     homepage = "https://facebook.github.io/zstd/",
-    license = "BSD-3-Clause",
-    iuse = ["static-libs", "lz4", "zlib", "lzma", "threads"],
-    use_defaults = ["threads"],
-    use_configure = {},
-    use_deps = {
-        "lz4": ["//packages/linux/system/libs/compression/lz4:lz4"],
-        "zlib": ["//packages/linux/core/zlib:zlib"],
-        "lzma": ["//packages/linux/system/libs/compression/xz:xz"],
+    license = "BSD-3-Clause OR GPL-2",
+
+    source_subdir = "build/meson",
+
+    configure_args = [
+        "-Dbin_programs=true",
+        # Contrib programs (gen_html, pzstd) are C++ and fail to link
+        # against libgcc_s in the cross-compiler sysroot due to
+        # meson's --as-needed.  They're optional utilities — skip them.
+        "-Dbin_contrib=false",
+        "-Db_lundef=false",
+    ],
+
+    # USE flag to meson option mapping
+    use_configure = {
+        "lz4": ("-Dlz4=enabled", "-Dlz4=disabled"),
+        "lzma": ("-Dlzma=enabled", "-Dlzma=disabled"),
+        "static-libs": ("-Ddefault_library=both", "-Ddefault_library=shared"),
+        "test": ("-Dbin_tests=true", "-Dbin_tests=false"),
+        "zlib": ("-Dzlib=enabled", "-Dzlib=disabled"),
     },
-    configure_args = [],
-    # zstd doesn't use autotools - skip configure phase
-    src_configure = """
-# zstd uses plain Makefile, no configure needed
-# Setup environment for build
-export PREFIX=/usr
 
-# Build flags for optional features
-if [ "${USE_lz4}" = "1" ]; then
-    export HAVE_LZ4=1
-fi
-if [ "${USE_zlib}" = "1" ]; then
-    export HAVE_ZLIB=1
-fi
-if [ "${USE_lzma}" = "1" ]; then
-    export HAVE_LZMA=1
-fi
-if [ "${USE_threads}" = "1" ]; then
-    export ZSTD_LEGACY_SUPPORT=0
-    export HAVE_PTHREAD=1
-fi
+    # Conditional dependencies based on USE flags
+    use_deps = {
+        "lz4": "//packages/linux/system/libs/compression/lz4:lz4",
+        "zlib": "//packages/linux/core/zlib:zlib",
+        "lzma": "//packages/linux/system/libs/compression/xz:xz",
+    },
 
-echo "zstd: Skipping configure (Makefile-only package)"
-""",
-    # Build zstd programs and libraries
-    src_compile = """
-# Build everything (programs + libraries)
-make -j${MAKEOPTS:-$(nproc)} PREFIX=/usr
-""",
-    # Install both programs and libraries
-    src_install = """
-# Install everything - this includes the shared libraries
-# Override LIBDIR to ensure proper installation path
-make install PREFIX=/usr LIBDIR=/usr/lib64 DESTDIR="$DESTDIR"
-
-# Verify libraries were installed
-if [ ! -f "$DESTDIR/usr/lib/libzstd.so" ] && [ ! -f "$DESTDIR/usr/lib64/libzstd.so" ]; then
-    echo "ERROR: libzstd.so not found after install!"
-    echo "Checking $DESTDIR directory:"
-    find "$DESTDIR" -name "libzstd*"
-    exit 1
-fi
-
-echo "zstd installed successfully with libraries:"
-find "$DESTDIR" -name "libzstd*" -type f -o -name "libzstd*" -type l
-""",
-    post_install = """
-# Remove static library if USE flag is disabled
-if [ "${USE_static_libs}" != "1" ]; then
-    rm -f "$DESTDIR/usr/lib/libzstd.a" "$DESTDIR/usr/lib64/libzstd.a"
-    echo "Removed static libraries (USE_static_libs not enabled)"
-fi
-
-# Fix pkg-config file - zstd's Makefile generates incorrect relative libdir
-# This causes libtool to fail when trying to resolve -Llib64 as an absolute path
-if [ -f "$DESTDIR/usr/lib64/pkgconfig/libzstd.pc" ]; then
-    sed -i 's|^libdir=lib64$|libdir=${prefix}/lib64|' "$DESTDIR/usr/lib64/pkgconfig/libzstd.pc"
-    echo "Fixed libzstd.pc to use absolute libdir path"
-fi
-""",
     deps = [],
-    visibility = ["PUBLIC"],
 )

@@ -1,0 +1,21 @@
+load("//defs:package.bzl", "package")
+
+# libclc is part of the LLVM monorepo; CMakeLists.txt lives in libclc/.
+
+package(
+    build_rule = "cmake",
+    name = "libclc",
+    version = "21.1.6",
+    source = "//packages/linux/core/llvm:llvm-native-src",
+    description = "OpenCL C library - part of LLVM",
+    homepage = "https://libclc.llvm.org/",
+    license = "Apache-2.0 WITH LLVM-exception",
+    source_subdir = "libclc",
+    configure_args = [
+        "-DLIBCLC_TARGETS_TO_BUILD=amdgcn-mesa-mesa3d;amdgcn--amdhsa;clspv--;clspv64--",
+    ],
+    deps = [
+        "//packages/linux/core/llvm:llvm-native",
+    ],
+    labels = ["buckos:hw:opencl"],
+)

@@ -1,53 +1,153 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # pam - Pluggable Authentication Modules
-download_source(
-    name = "pam-src",
-    src_uri = "https://github.com/linux-pam/linux-pam/releases/download/v1.6.1/Linux-PAM-1.6.1.tar.xz",
-    sha256 = "f8923c740159052d719dbfc2a2f81942d68dd34fcaf61c706a02c9b80feeef8e",
-    signature_sha256 = "ef0e0597974d988c9f25f5a155e001b9dcb972618a4a166b8acefac1f5357303",
-    signature_required=False,
-)
-
-ebuild_package(
+package(
     name = "pam",
-    source = ":pam-src",
+    build_rule = "binary",
     version = "1.6.1",
-    category = "system/security/auth",
-    slot = "0",
+    url = "https://github.com/linux-pam/linux-pam/releases/download/v1.6.1/Linux-PAM-1.6.1.tar.xz",
+    sha256 = "f8923c740159052d719dbfc2a2f81942d68dd34fcaf61c706a02c9b80feeef8e",
     description = "Pluggable Authentication Modules",
     homepage = "https://github.com/linux-pam/linux-pam",
     license = "BSD-3-Clause",
+    use_deps = {
+        "systemd": "//packages/linux/system/init/systemd:systemd",
+    },
+    use_configure = {
+        "audit": ("--enable-audit", "--disable-audit"),
+        "berkdb": ("--enable-berkdb", "--disable-berkdb"),
+        "debug": ("--enable-debug", "--disable-debug"),
+        "elogind": ("--enable-elogind", "--disable-elogind"),
+        "examples": ("--enable-examples", "--disable-examples"),
+        "nis": ("--enable-nis", "--disable-nis"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "systemd": ("--enable-systemd", "--disable-systemd"),
+    },
+    install_script = '''
+# Prevent autotools regeneration (tarball has pre-generated files)
+find . -name '*.in' -o -name configure -o -name aclocal.m4 -o -name config.h.in | xargs touch
 
-    src_configure = '''
-./configure \\
-    --prefix=/usr \\
-    --sysconfdir=/etc \\
-    --libdir=/usr/lib \\
-    --sbindir=/usr/sbin \\
-    --enable-securedir=/lib64/security \\
-    --disable-nls \\
-    --disable-db
-''',
+# For cross-compilation: --build is the build machine, --host is the target
+BUILD_SYSTEM=$(./build-aux/config.guess 2>/dev/null || echo x86_64-pc-linux-gnu)
+HOST_SYSTEM=${CHOST:-$(${CC:-gcc} -dumpmachine)}
 
-    src_compile = '''
-make -j$(nproc)
-''',
+./configure \
+    --prefix=/usr \
+    --sysconfdir=/etc \
+    --libdir=/usr/lib \
+    --sbindir=/usr/sbin \
+    --enable-securedir=/lib/security \
+    --enable-pie \
+    --disable-nls \
+    --disable-db \
+    --build=$BUILD_SYSTEM \
+    --host=$HOST_SYSTEM
 
-    src_install = '''
-make DESTDIR="$DESTDIR" install
+# PAM upstream bug: bigcrypt helper is missing @EXE_CFLAGS@ (PIE flags)
+# while unix_chkpwd and unix_update include it.  Without -fpie the
+# cross-linker (which defaults to -pie via --enable-default-pie specs)
+# rejects the non-PIC relocations.
+sed -i 's/^bigcrypt_CFLAGS = .*/& $(EXE_CFLAGS)/' modules/pam_unix/Makefile
+
+make -j${MAKEOPTS:-$(nproc)} \
+    ACLOCAL=true AUTOMAKE=true AUTOCONF=true AUTOHEADER=true MAKEINFO=true
+
+make DESTDIR="$DESTDIR" install \
+    ACLOCAL=true AUTOMAKE=true AUTOCONF=true AUTOHEADER=true MAKEINFO=true
 
 # Remove libtool .la files to prevent host path contamination
 # The .la files reference /usr/lib/libpam.la which breaks cross-builds
 echo "Removing PAM .la files..."
 find "$DESTDIR" -name "*.la" -type f -delete 2>/dev/null || true
-''',
 
-    depend = [
+# Create system-auth PAM config (required by login, su, and other services)
+mkdir -p "$DESTDIR/etc/pam.d"
+cat > "$DESTDIR/etc/pam.d/system-auth" << 'SYSTEMAUTH'
+#%PAM-1.0
+# System authentication configuration
+
+auth      required  pam_env.so
+auth      sufficient pam_unix.so try_first_pass nullok
+auth      required  pam_deny.so
+
+account   required  pam_unix.so
+
+password  sufficient pam_unix.so try_first_pass nullok sha512 shadow
+password  required  pam_deny.so
+
+session   required  pam_limits.so
+session   required  pam_unix.so
+-session  optional  pam_systemd.so
+SYSTEMAUTH
+
+# Fix login PAM config to use system-auth (which includes pam_systemd.so for logind sessions)
+cat > "$DESTDIR/etc/pam.d/login" << 'LOGINPAM'
+#%PAM-1.0
+# Login PAM configuration
+
+auth      optional  pam_securetty.so
+auth      include   system-auth
+
+account   optional  pam_nologin.so
+account   include   system-auth
+
+password  include   system-auth
+
+session   include   system-auth
+session   optional  pam_loginuid.so
+LOGINPAM
+
+# Create "other" fallback PAM config
+cat > "$DESTDIR/etc/pam.d/other" << 'OTHERPAM'
+#%PAM-1.0
+# Default fallback for unlisted services
+
+auth      required  pam_unix.so nullok
+account   required  pam_unix.so
+password  required  pam_unix.so nullok sha512 shadow
+session   required  pam_unix.so
+OTHERPAM
+
+# Create system-login PAM config (used by display managers like SDDM)
+cat > "$DESTDIR/etc/pam.d/system-login" << 'SYSTEMLOGIN'
+#%PAM-1.0
+# System login configuration for display managers
+
+auth       required   pam_env.so
+-auth      optional   pam_faildelay.so delay=2000000
+auth       sufficient pam_unix.so try_first_pass nullok
+auth       required   pam_deny.so
+
+account    required   pam_unix.so
+-account   optional   pam_nologin.so
+
+password   sufficient pam_unix.so try_first_pass nullok sha512 shadow
+password   required   pam_deny.so
+
+-session   optional   pam_loginuid.so
+-session   optional   pam_keyinit.so force revoke
+-session   optional   pam_limits.so
+session    required   pam_unix.so
+-session   optional   pam_systemd.so
+SYSTEMLOGIN
+
+# Create systemd-user PAM config (for user sessions)
+cat > "$DESTDIR/etc/pam.d/systemd-user" << 'SYSTEMDUSER'
+#%PAM-1.0
+# PAM configuration for systemd user sessions
+
+account  required pam_unix.so
+session  required pam_unix.so
+session  required pam_loginuid.so
+SYSTEMDUSER
+''',
+    deps = [
         "//packages/linux/system/libs/ipc/libtirpc:libtirpc",
         "//packages/linux/system/libs/network/libnsl:libnsl",
         "//packages/linux/system/libs/crypto/libxcrypt:libxcrypt",  # libcrypt.so.2 for password hashing
     ],
-    visibility = ["PUBLIC"],
+    host_deps = [
+        "//packages/linux/dev-tools/dev-utils/bison:bison",
+    ],
 )

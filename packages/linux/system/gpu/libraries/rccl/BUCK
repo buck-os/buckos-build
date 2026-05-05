@@ -1,11 +1,15 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "rccl",
     version = "6.2.0",
-    src_uri = "https://github.com/ROCm/rccl/archive/refs/tags/rocm-6.2.0.tar.gz",
-    sha256 = "TODO",
-    cmake_args = [
+    use_configure = {
+        "roctracer": ("-DENABLE_ROCTRACER=ON", "-DENABLE_ROCTRACER=OFF"),
+    },
+    url = "https://github.com/ROCm/rccl/archive/refs/tags/rocm-6.2.0.tar.gz",
+    sha256 = "a29c94ea3b9c1a0121d7b1450cb01a697f9f9132169632312b9b0bf744d3c0e3",
+    configure_args = [
         "-DBUILD_TESTS=OFF",
         "-DBUILD_SHARED_LIBS=ON",
         "-DENABLE_MSCCLPP=OFF",
@@ -16,7 +20,7 @@ cmake_package(
         "-DTRACE=OFF",
     ],
     deps = [
-        "//packages/linux/system/gpu/libraries/rocm",
+        "//packages/linux/system/gpu/libraries/rocm:rocm",
     ],
-    visibility = ["PUBLIC"],
+    labels = ["buckos:hw:rocm"],
 )

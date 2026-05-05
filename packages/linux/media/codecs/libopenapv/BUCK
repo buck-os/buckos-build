@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "libopenapv",
     version = "0.1.12",
-    src_uri = "https://github.com/AcademySoftwareFoundation/openapv/archive/refs/tags/v0.1.12.tar.gz",
+    url = "https://github.com/AcademySoftwareFoundation/openapv/archive/refs/tags/v0.1.12.tar.gz",
     sha256 = "eee4d8abcedd145a6f31d902d860d62d4e17e15a6ba8f4bf39348b8aca84cc1a",
-    cmake_args = [
+    configure_args = [
         "-DOAPV_APP_STATIC_BUILD=ON",
         "-DENABLE_TESTS=OFF",
     ],

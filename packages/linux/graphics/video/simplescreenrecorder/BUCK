@@ -1,18 +1,30 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # SimpleScreenRecorder - A feature-rich screen recorder
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "simplescreenrecorder",
     version = "0.4.4",
-    src_uri = "https://github.com/MaartenBaert/ssr/archive/refs/tags/0.4.4.tar.gz",
+    use_configure = {
+        "asm": ("-DENABLE_ASM=ON", "-DENABLE_ASM=OFF"),
+        "jack": ("-DENABLE_JACK=ON", "-DENABLE_JACK=OFF"),
+        "mp3": ("-DENABLE_MP3=ON", "-DENABLE_MP3=OFF"),
+        "opengl": ("-DENABLE_OPENGL=ON", "-DENABLE_OPENGL=OFF"),
+        "pulseaudio": ("-DENABLE_PULSEAUDIO=ON", "-DENABLE_PULSEAUDIO=OFF"),
+        "screencast": ("-DENABLE_SCREENCAST=ON", "-DENABLE_SCREENCAST=OFF"),
+        "theora": ("-DENABLE_THEORA=ON", "-DENABLE_THEORA=OFF"),
+        "v4l": ("-DENABLE_V4L=ON", "-DENABLE_V4L=OFF"),
+        "vorbis": ("-DENABLE_VORBIS=ON", "-DENABLE_VORBIS=OFF"),
+        "vpx": ("-DENABLE_VPX=ON", "-DENABLE_VPX=OFF"),
+        "x264": ("-DENABLE_X264=ON", "-DENABLE_X264=OFF"),
+    },
+    url = "https://github.com/MaartenBaert/ssr/archive/refs/tags/0.4.4.tar.gz",
     sha256 = "69fccf8df6e7285d4df5033eed8748f4eae13b407488906dcf4810a277d557b8",
-    signature_required = False,
     description = "A feature-rich screen recorder for X11 and OpenGL",
     homepage = "https://www.maartenbaert.be/simplescreenrecorder/",
     license = "GPL-3.0-or-later",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DWITH_PULSEAUDIO=ON",
@@ -24,13 +36,10 @@ cmake_package(
         "-DENABLE_FFMPEG_VERSIONS=ON",
     ],
     deps = [
-        "//packages/linux/graphics/video/ffmpeg:ffmpeg",
         "//packages/linux/desktop/qt:qt5",
-        "//packages/linux/audio/daemons/alsa-lib:alsa-lib",
+        "//packages/linux/system/libs/audio/alsa-lib:alsa-lib",
         "//packages/linux/audio/daemons/pulseaudio:pulseaudio",
         "//packages/linux/graphics/video/v4l-utils:v4l-utils",
         "//packages/linux/desktop/libdrm:libdrm",
     ],
-    maintainers = [],
-    visibility = ["PUBLIC"],
 )

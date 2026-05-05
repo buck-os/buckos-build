@@ -1,32 +1,32 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "micropython-src",
-    src_uri = "https://github.com/micropython/micropython/releases/download/v1.18/micropython-1.18.tar.xz",
-    sha256 = "96fc71b42ed331c64e1adc5a830ec4f29f2975c23e8751109c03f32b80fa3eb4",
-    signature_required = False,
-)
-
-binary_package(
+package(
     name = "micropython",
-    srcs = [":micropython-src"],
+    build_rule = "autotools",
+    skip_configure = True,
     version = "1.18",
+    url = "https://github.com/micropython/micropython/releases/download/v1.18/micropython-1.18.tar.xz",
+    sha256 = "96fc71b42ed331c64e1adc5a830ec4f29f2975c23e8751109c03f32b80fa3eb4",
     description = "MicroPython - Python for microcontrollers and constrained environments",
     homepage = "https://micropython.org/",
     license = "MIT",
-    install_script = """
-        cd $SRCS
 
-        # Build mpy-cross first (needed for frozen modules)
-        make -C mpy-cross
+    # Conditional dependencies
+    use_deps = {
+        "ffi": "//packages/linux/system/libs/utility/libffi:libffi",
+    },
 
-        # Build unix port
-        make -C ports/unix
+    src_compile = """
+# Build mpy-cross first, then the unix port
+# micropython's Makefile adds -Werror, so we must override with CFLAGS_EXTRA
+export CFLAGS="$CFLAGS -Wno-error=dangling-pointer -Wno-error"
+make -C mpy-cross -j$(nproc) CFLAGS_EXTRA="-Wno-error=dangling-pointer -Wno-error"
+make -j${MAKEOPTS:-$(nproc)} -C ports/unix CFLAGS_EXTRA="-Wno-error=dangling-pointer -Wno-error"
+""",
 
-        # Install binaries
-        mkdir -p $OUT/usr/bin
-        cp ports/unix/build-standard/micropython $OUT/usr/bin/micropython
-        cp mpy-cross/build/mpy-cross $OUT/usr/bin/mpy-cross
-    """,
-    visibility = ["PUBLIC"],
+    src_install = """
+mkdir -p "$OUT/usr/bin"
+cp ports/unix/build-standard/micropython "$OUT/usr/bin/micropython"
+cp mpy-cross/build/mpy-cross "$OUT/usr/bin/mpy-cross"
+""",
 )

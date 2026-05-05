@@ -1,23 +1,18 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libidn",
+    # GNU release tarball includes pre-generated configure script
     version = "1.42",
-    src_uri = "https://mirrors.kernel.org/gnu/libidn/libidn-1.42.tar.gz",
+    url = "https://mirrors.kernel.org/gnu/libidn/libidn-1.42.tar.gz",
     sha256 = "d6c199dcd806e4fe279360cb4b08349a0d39560ed548ffd1ccadda8cdecb4723",
-    signature_sha256 = "3b35abfc6d40b6c42a96c16aa6015e13effc21233e45e41faa30b56f11d353ba",
-    signature_required = False,
-
-    iuse = ["static-libs", "doc"],
-    use_defaults = [],
-
 
     use_configure = {
-        "static-libs": "--enable-static",
-        "-static-libs": "--disable-static",
-        "doc": "--enable-doc",
-        "-doc": "--disable-doc",
+        "doc": ("--enable-doc", "--disable-doc"),
+        "emacs": ("--enable-emacs", "--disable-emacs"),
+        "nls": ("--enable-nls", "--disable-nls"),
+        "static-libs": ("--enable-static", "--disable-static"),
     },
 
     configure_args = [
@@ -33,5 +28,4 @@ autotools_package(
     description = "Implementation of Internationalized Domain Names (IDN)",
     homepage = "https://www.gnu.org/software/libidn/",
     license = "LGPL-2.1-or-later",
-    visibility = ["PUBLIC"],
 )

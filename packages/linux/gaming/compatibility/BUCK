@@ -1,26 +1,19 @@
-# Compatibility layers - Wine and DirectX translation
+load("//defs:package.bzl", "package")
 
-load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+# Compatibility layers - Wine and DirectX translation
 
 filegroup(
     name = "compatibility",
     srcs = [
-        "//packages/linux/gaming/compatibility/wine:wine",
-        "//packages/linux/gaming/compatibility/dxvk:dxvk",
-        "//packages/linux/gaming/compatibility/vkd3d-proton:vkd3d-proton",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],
 )
 
-# Proton-like stack (Wine + DXVK + VKD3D)
+# Proton-like stack (DXVK + VKD3D)
 filegroup(
     name = "proton-stack",
     srcs = [
-        "//packages/linux/gaming/compatibility/wine:wine",
-        "//packages/linux/gaming/compatibility/dxvk:dxvk",
-        "//packages/linux/gaming/compatibility/vkd3d-proton:vkd3d-proton",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],

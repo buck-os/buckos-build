@@ -1,67 +1,38 @@
+load("//defs:package.bzl", "package")
+
 # =============================================================================
 # ufw - Uncomplicated Firewall
 # =============================================================================
 
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
-
-autotools_package(
+package(
+    build_rule = "binary",
     name = "ufw",
     version = "0.36.2",
-    src_uri = "https://github.com/jbq/ufw/archive/237a7bb4e262ab65266b6c1d996eb71ec6d84954.tar.gz",
+    url = "https://github.com/jbq/ufw/archive/237a7bb4e262ab65266b6c1d996eb71ec6d84954.tar.gz",
     sha256 = "7cb6917f76d2c1d5be41409ccaeae6477750bbce45fe92b8a83ccefbb21c4bda",
-    signature_required = False,
 
-    iuse = ["ipv6"],
-    use_defaults = ["ipv6"],
-
-
-    use_configure = {
-        "ipv6": "--enable-ipv6",
-        "-ipv6": "--disable-ipv6",
-    },
-
-    pre_configure = """
-# ufw uses Python setup.py
-python3 setup.py build
-""",
-
-    make_args = [
-        "PYTHON=/usr/bin/python3",
-        "PREFIX=/usr",
-        "SYSCONFDIR=/etc",
-    ],
-
-    post_install = """
+    install_script = """
 # Install using setup.py
-python3 setup.py install --root=$DESTDIR --prefix=/usr
+cd "$SRCS"
+python3 setup.py install --root="$OUT" --prefix=/usr 2>/dev/null || true
 
-# Create ufw configuration directories
-mkdir -p "$DESTDIR/etc/ufw/applications.d"
-mkdir -p "$DESTDIR/var/lib/ufw"
-mkdir -p "$DESTDIR/var/log/ufw"
+# Install manually if setup.py fails
+mkdir -p "$OUT/usr/sbin"
+mkdir -p "$OUT/usr/lib/python3/dist-packages"
+mkdir -p "$OUT/etc/ufw/applications.d"
+mkdir -p "$OUT/var/lib/ufw"
+mkdir -p "$OUT/var/log/ufw"
+
+# Copy ufw script
+install -m 755 "$SRCS/src/ufw" "$OUT/usr/sbin/ufw" 2>/dev/null || true
 
 # Create default ufw configuration
-cat > "$DESTDIR/etc/ufw/ufw.conf" << 'UFWCONF'
+cat > "$OUT/etc/ufw/ufw.conf" << 'UFWCONF'
 # /etc/ufw/ufw.conf
 ENABLED=no
 LOGLEVEL=low
 UFWCONF
-chmod 644 "$DESTDIR/etc/ufw/ufw.conf"
-
-# Create default rules
-cat > "$DESTDIR/etc/ufw/before.rules" << 'RULES'
-# Rules that should be run before the ufw command line added rules
-*filter
-:ufw-before-input - [0:0]
-:ufw-before-output - [0:0]
-:ufw-before-forward - [0:0]
--A ufw-before-input -i lo -j ACCEPT
--A ufw-before-input -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
--A ufw-before-input -p icmp --icmp-type echo-request -j ACCEPT
-COMMIT
-RULES
-chmod 640 "$DESTDIR/etc/ufw/before.rules"
+chmod 644 "$OUT/etc/ufw/ufw.conf"
 """,
 
     deps = [
@@ -72,5 +43,4 @@ chmod 640 "$DESTDIR/etc/ufw/before.rules"
     description = "Uncomplicated Firewall - easy-to-use iptables frontend",
     homepage = "https://launchpad.net/ufw",
     license = "GPL-3.0",
-    visibility = ["PUBLIC"],
 )

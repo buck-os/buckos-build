@@ -1,28 +1,23 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # boost-asio-serial - Boost.Asio serial port extension
-cmake_package(
+package(
+    build_rule = "binary",
     name = "boost-asio-serial",
     version = "1.1.0",
-    src_uri = "https://github.com/fedetft/serial-port/archive/refs/tags/v1.1.0.tar.gz",
-    sha256 = "8f3f8f3f8f3f8f3f8f3f8f3f8f3f8f3f8f3f8f3f8f3f8f3f8f3f8f3f8f3f8f3f",
-    signature_required = False,
+    url = "https://mirror.buckos.org/s/serial-port-master.tar.gz",
+    sha256 = "122faff471af5867b3582fe8b3bb02838c63e4a520e9bbee46699347c3d23a7b",
     description = "Serial port library using Boost.Asio",
     homepage = "https://github.com/fedetft/serial-port",
     license = "Boost-1.0",
-    iuse = ["examples", "static-libs"],
-    use_defaults = [],
-    use_cmake = {
-        "examples": "-DBUILD_EXAMPLES=ON",
-        "-examples": "-DBUILD_EXAMPLES=OFF",
-        "static-libs": "-DBUILD_SHARED_LIBS=OFF",
-        "-static-libs": "-DBUILD_SHARED_LIBS=ON",
-    },
-    cmake_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-    ],
     deps = [
         "//packages/linux/dev-libs/boost:boost",
     ],
-    visibility = ["PUBLIC"],
+    install_script = """
+# Header-only library - install headers
+mkdir -p "$OUT/usr/include/serial-port"
+find . -name '*.h' -o -name '*.hpp' | while read f; do
+    install -Dm644 "$f" "$OUT/usr/include/serial-port/$(basename "$f")"
+done
+""",
 )

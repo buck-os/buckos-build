@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "apache-orc",
     version = "1.7.10",
-    src_uri = "https://archive.apache.org/dist/orc/orc-1.7.10/orc-1.7.10.tar.gz",
-    sha256 = "TODO",
-    cmake_args = [
+    url = "https://archive.apache.org/dist/orc/orc-1.7.10/orc-1.7.10.tar.gz",
+    sha256 = "85aef9368dc9bcdffaaf10010b66dfe053ce22f30b64854f63852248164686a3",
+    configure_args = [
         "-DBUILD_JAVA=OFF",
         "-DBUILD_LIBHDFSPP=OFF",
         "-DBUILD_CPP_TESTS=OFF",
@@ -15,10 +16,10 @@ cmake_package(
         "-DINSTALL_VENDORED_LIBS=OFF",
     ],
     deps = [
-        "//packages/linux/system/compression/lz4",
-        "//packages/linux/dev-libs/serialization/protobuf",
-        "//packages/linux/system/compression/zlib",
-        "//packages/linux/system/compression/zstd",
-        "//packages/linux/system/compression/snappy",
+        "//packages/linux/system/compression/lz4:lz4",
+        "//packages/linux/dev-libs/serialization/protobuf:protobuf",
+        "//packages/linux/system/compression/zlib:zlib",
+        "//packages/linux/system/compression/zstd:zstd",
+        "//packages/linux/system/compression/snappy:snappy",
     ],
 )

@@ -1,46 +1,17 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "smol-v",
     version = "2024.01",
-    src_uri = "https://github.com/aras-p/smol-v/archive/refs/heads/master.tar.gz",
+    url = "https://github.com/aras-p/smol-v/archive/refs/heads/master.tar.gz",
     sha256 = "356b607211ebb8e2ff2ce0f0a295eabd1e40d8ab3717408b889ebe3aed39286a",
     description = "SPIR-V compression library for smaller Vulkan shaders",
     homepage = "https://github.com/aras-p/smol-v",
     license = "MIT",
     deps = [],
-    pre_configure = """
-        cat > CMakeLists.txt << 'EOF'
-cmake_minimum_required(VERSION 3.10)
-project(smol-v VERSION 1.0.0 LANGUAGES CXX)
-
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-add_library(smol-v STATIC source/smolv.cpp)
-
-target_include_directories(smol-v PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/source>
-    $<INSTALL_INTERFACE:include>
-)
-
-set_target_properties(smol-v PROPERTIES
-    OUTPUT_NAME smolv
-)
-
-install(TARGETS smol-v
-    EXPORT smol-vTargets
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-    RUNTIME DESTINATION bin
-    INCLUDES DESTINATION include
-)
-
-install(FILES source/smolv.h DESTINATION include)
-EOF
-    """,
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
     ],
-    visibility = ["PUBLIC"],
+    labels = ["buckos:hw:vulkan"],
 )

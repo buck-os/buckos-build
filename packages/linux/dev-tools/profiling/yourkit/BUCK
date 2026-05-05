@@ -1,10 +1,9 @@
-load("//defs:package_defs.bzl", "simple_binary_package")
+load("//defs:package.bzl", "package")
 
-simple_binary_package(
+package(
+    build_rule = "binary",
     name = "yourkit",
-    version = "2023.9-b106",
-    src_uri = "https://download.yourkit.com/yjp/2023.9/YourKit-JavaProfiler-2023.9-b106-x64.zip",
-    sha256 = "6119c11108955d71be8f19b40ec97ee244ef6f8b0f1d6f1a24cc3b1463df5f3a",
-    libs = ["libyjpagent.so"],
-    extract_to = "/opt/yourkit",
+    version = "2025.9-b175",
+    url = "https://download.yourkit.com/yjp/2025.9/YourKit-JavaProfiler-2025.9-b175-x64.zip",
+    sha256 = "3c1e7600e76067cfc446666101db515a9a247d69333b7cba5dfb05cf40e5e1d9",
 )

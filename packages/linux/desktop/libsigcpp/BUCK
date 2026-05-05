@@ -1,0 +1,20 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "meson",
+    name = "libsigcpp",
+    url = "https://download.gnome.org/sources/libsigc++/2.12/libsigc++-2.12.1.tar.xz",
+    sha256 = "a9dbee323351d109b7aee074a9cb89ca3e7bcf8ad8edef1851f4cf359bd50843",
+    version = "2.12.1",
+    description = "Typesafe callback framework for C++",
+    homepage = "https://libsigcplusplus.github.io/libsigcplusplus/",
+    license = "LGPL-2.1+",
+    configure_args = [
+        "-Dbuild-documentation=false",
+        "-Dbuild-examples=false",
+        "-Dbuild-tests=false",
+        "-Dbenchmark=false",
+        "-Dvalidation=false",
+        "-Dmaintainer-mode=false",
+    ],
+)

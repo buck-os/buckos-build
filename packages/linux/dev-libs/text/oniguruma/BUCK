@@ -1,16 +1,17 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "oniguruma-src",
-    src_uri = "https://github.com/kkos/oniguruma/releases/download/v6.9.9/onig-6.9.9.tar.gz",
-    sha256 = "60162bd3b9fc6f4886d4c7a07925ffd374167732f55dce8c491bfd9cd818a6cf",
-    signature_required = False,
-)
-
-autotools_package(
+# oniguruma - official release tarball includes pre-generated configure
+package(
+    build_rule = "autotools",
     name = "oniguruma",
-    source = ":oniguruma-src",
+    # No autoreconf needed - tarball has pre-generated configure
+    url = "https://github.com/kkos/oniguruma/releases/download/v6.9.9/onig-6.9.9.tar.gz",
+
+    sha256 = "60162bd3b9fc6f4886d4c7a07925ffd374167732f55dce8c491bfd9cd818a6cf",
+    use_configure = {
+        "crnl-as-line-terminator": ("--enable-crnl-as-line-terminator", "--disable-crnl-as-line-terminator"),
+        "static-libs": ("--enable-static", "--disable-static"),
+    },
     version = "6.9.9",
     description = "Regular expressions library with a variety of character encodings",
     homepage = "https://github.com/kkos/oniguruma",
@@ -22,5 +23,4 @@ autotools_package(
     env = {
         "CFLAGS": "-std=gnu17 -O2",
     },
-    visibility = ["PUBLIC"],
 )

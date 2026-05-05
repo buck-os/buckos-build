@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "stopwatch",
     version = "0.1.0",
-    src_uri = "https://github.com/mp3guy/Stopwatch/archive/1e12267deaf492127287f5319122044c53fa9ca5.tar.gz",
+    url = "https://github.com/mp3guy/Stopwatch/archive/1e12267deaf492127287f5319122044c53fa9ca5.tar.gz",
     sha256 = "99eaeda1838dfef71d5cf5cad958124fa4393dce685c5ce756e34c83d00dc2f3",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_CXX_STANDARD=17",
     ],
     deps = [

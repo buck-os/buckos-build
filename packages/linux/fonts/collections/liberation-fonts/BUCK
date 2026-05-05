@@ -1,36 +1,23 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "liberation-fonts-src",
-    src_uri = "https://github.com/liberationfonts/liberation-fonts/files/7261482/liberation-fonts-ttf-2.1.5.tar.gz",
-    sha256 = "7191c669bf38899f73a2094ed00f7b800553364f90e2637010a69c0e268f25d0",
-    signature_required = False,
-)
-
-ebuild_package(
+package(
     name = "liberation-fonts",
-    source = ":liberation-fonts-src",
+    build_rule = "binary",
     version = "2.1.5",
+    url = "https://github.com/liberationfonts/liberation-fonts/files/7261482/liberation-fonts-ttf-2.1.5.tar.gz",
+    sha256 = "7191c669bf38899f73a2094ed00f7b800553364f90e2637010a69c0e268f25d0",
     description = "Liberation fonts - metrically compatible with Arial, Times New Roman, Courier New",
     homepage = "https://github.com/liberationfonts/liberation-fonts",
     license = "OFL-1.1",
-    src_install = """
-# Create font directory
-dodir /usr/share/fonts/liberation
-
-# Install all TTF fonts
+    install_script = """
+mkdir -p "$DESTDIR/usr/share/fonts/liberation"
 for font in *.ttf; do
     if [ -f "$font" ]; then
-        insinto /usr/share/fonts/liberation
-        doins "$font"
+        install -m 0644 "$font" "$DESTDIR/usr/share/fonts/liberation/"
     fi
 done
-
-# Install documentation
-dodoc AUTHORS ChangeLog LICENSE README.md 2>/dev/null || true
 """,
-    rdepend = [
-        "//packages/linux/fonts/libraries/fontconfig:fontconfig",
+    deps = [
+        "//packages/linux/system/libs/font/fontconfig:fontconfig",
     ],
-    visibility = ["PUBLIC"],
 )

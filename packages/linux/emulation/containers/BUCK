@@ -3,71 +3,56 @@
 filegroup(
     name = "runtimes",
     srcs = [
-        "//packages/linux/emulation/containers/runc:runc",
-        "//packages/linux/emulation/containers/crun:crun",
+        "//packages/linux/system/containers/runc:runc",
+        "//packages/linux/system/containers/runtime:crun",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 filegroup(
     name = "docker-full",
     srcs = [
-        "//packages/linux/emulation/containers/containerd:containerd",
-        "//packages/linux/emulation/containers/docker:docker-cli",
-        "//packages/linux/emulation/containers/docker:docker-engine",
-        "//packages/linux/emulation/containers/docker:docker-compose",
-        "//packages/linux/emulation/containers/docker:docker-buildx",
-        "//packages/linux/emulation/containers/runc:runc",
+        "//packages/linux/system/containers/runc:runc",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 filegroup(
     name = "docker-minimal",
     srcs = [
-        "//packages/linux/emulation/containers/containerd:containerd",
-        "//packages/linux/emulation/containers/docker:docker-cli",
-        "//packages/linux/emulation/containers/docker:docker-engine",
-        "//packages/linux/emulation/containers/runc:runc",
+        "//packages/linux/system/containers/runc:runc",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 filegroup(
     name = "podman-full",
     srcs = [
-        "//packages/linux/emulation/containers/podman:podman",
-        "//packages/linux/emulation/containers/podman:buildah",
-        "//packages/linux/emulation/containers/podman:skopeo",
-        "//packages/linux/emulation/containers/podman:conmon",
-        "//packages/linux/emulation/containers/crun:crun",
+        "//packages/linux/system/containers/podman:podman",
+        "//packages/linux/system/containers/podman:buildah",
+        "//packages/linux/system/containers/podman:skopeo",
+        "//packages/linux/system/containers/podman:conmon",
+        "//packages/linux/system/containers/runtime:crun",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 filegroup(
     name = "podman-minimal",
     srcs = [
-        "//packages/linux/emulation/containers/podman:podman",
-        "//packages/linux/emulation/containers/podman:conmon",
-        "//packages/linux/emulation/containers/crun:crun",
+        "//packages/linux/system/containers/podman:podman",
+        "//packages/linux/system/containers/podman:conmon",
+        "//packages/linux/system/containers/runtime:crun",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 filegroup(
     name = "containerd-full",
     srcs = [
-        "//packages/linux/emulation/containers/containerd:containerd",
-        "//packages/linux/emulation/containers/runc:runc",
+        "//packages/linux/system/containers/runc:runc",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 filegroup(
@@ -77,5 +62,4 @@ filegroup(
         ":podman-full",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )

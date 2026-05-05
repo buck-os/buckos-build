@@ -1,15 +1,11 @@
-load("//defs:package_defs.bzl", "binary_package", "download_source")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "emdawnwebgpu-src",
-    src_uri = "https://github.com/google/dawn/releases/download/v20251030.221451/emdawnwebgpu_pkg-v20251030.221451.zip",
-    sha256 = "982b087dbff01e67e8faf946a7c85e10fb302f44813522bb4070755ae248169d",
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "emdawnwebgpu",
-    srcs = [":emdawnwebgpu-src"],
     version = "20251030.221451",
+    url = "https://github.com/google/dawn/releases/download/v20251030.221451/emdawnwebgpu_pkg-v20251030.221451.zip",
+    sha256 = "982b087dbff01e67e8faf946a7c85e10fb302f44813522bb4070755ae248169d",
     description = "Emscripten Dawn WebGPU - header-only WebGPU bindings from Google Dawn",
     homepage = "https://dawn.googlesource.com/dawn/",
     license = "BSD-3-Clause",
@@ -17,19 +13,27 @@ binary_package(
         mkdir -p "$OUT/usr/include/webgpu"
         mkdir -p "$OUT/usr/include/dawn"
 
-        # Copy webgpu headers
-        if [ -d "$SRC/webgpu/include/webgpu" ]; then
-            cp -r "$SRC/webgpu/include/webgpu"/* "$OUT/usr/include/webgpu/"
+        # Debug: show what's in the source directory
+        echo "Contents of SRCS: $SRCS"
+        ls -la "$SRCS" || true
+
+        # Copy webgpu headers using SRCS (binary_package uses SRCS, not SRC)
+        if [ -d "$SRCS/webgpu/include/webgpu" ]; then
+            cp -r "$SRCS/webgpu/include/webgpu"/* "$OUT/usr/include/webgpu/"
         fi
 
         # Copy webgpu_cpp headers
-        if [ -d "$SRC/webgpu_cpp/include/webgpu" ]; then
-            cp -r "$SRC/webgpu_cpp/include/webgpu"/* "$OUT/usr/include/webgpu/"
+        if [ -d "$SRCS/webgpu_cpp/include/webgpu" ]; then
+            cp -r "$SRCS/webgpu_cpp/include/webgpu"/* "$OUT/usr/include/webgpu/"
         fi
-        if [ -d "$SRC/webgpu_cpp/include/dawn" ]; then
-            cp -r "$SRC/webgpu_cpp/include/dawn"/* "$OUT/usr/include/dawn/"
+        if [ -d "$SRCS/webgpu_cpp/include/dawn" ]; then
+            cp -r "$SRCS/webgpu_cpp/include/dawn"/* "$OUT/usr/include/dawn/"
+        fi
+
+        # Fallback: find and copy any webgpu headers
+        if [ ! "$(ls -A $OUT/usr/include/webgpu 2>/dev/null)" ]; then
+            find "$SRCS" -name "*.h" -path "*webgpu*" -exec cp {} "$OUT/usr/include/webgpu/" \;
         fi
     """,
     deps = [],
-    visibility = ["PUBLIC"],
 )

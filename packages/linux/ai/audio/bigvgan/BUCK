@@ -1,14 +1,13 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "bigvgan",
     version = "1.0.0",
-    src_uri = "https://github.com/NVIDIA/BigVGAN/archive/refs/heads/main.tar.gz",
+    url = "https://github.com/NVIDIA/BigVGAN/archive/refs/heads/main.tar.gz",
     sha256 = "cd03350c41b4238472f9d0380922f5446fdd6877d01138c5e39ba82c5c5c175d",
     deps = [
         "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
-        "//packages/linux/dev-libs/python/numpy:numpy",
-        "//packages/linux/dev-libs/python/scipy:scipy",
         "//packages/linux/dev-libs/python/tqdm:tqdm",
         "//packages/linux/dev-libs/python/huggingface-hub:huggingface-hub",
         "//packages/linux/ai/audio/librosa:librosa",
@@ -18,7 +17,8 @@ python_package(
         "//packages/linux/ai/audio/pesq:pesq",
         "//packages/linux/ai/audio/auraloss:auraloss",
         "//packages/linux/ai/audio/nnaudio:nnaudio",
+    ],
+    host_deps = [
         "//packages/linux/dev-tools/build-systems/ninja:ninja",
     ],
-    maintainers = ["auto_dubbing_fair_oncall"],
 )

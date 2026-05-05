@@ -1,28 +1,32 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package", "binary_package", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # OCaml - Functional programming language
 # =============================================================================
 
-download_source(
-    name = "ocaml-src",
-    src_uri = "https://github.com/ocaml/ocaml/archive/refs/tags/5.1.1.tar.gz",
-    sha256 = "57f7b382b3d71198413ede405d95ef3506f1cdc480cda1dca1e26b37cb090e17",
-    signature_required = False,
-)
-
-autotools_package(
+# OCaml uses its own custom configure script (not autotools)
+# Do NOT run autoreconf or it will break the build
+package(
+    build_rule = "autotools",
     name = "ocaml",
-    source = ":ocaml-src",
     version = "5.1.1",
+    url = "https://github.com/ocaml/ocaml/archive/refs/tags/5.1.1.tar.gz",
+    sha256 = "57f7b382b3d71198413ede405d95ef3506f1cdc480cda1dca1e26b37cb090e17",
     description = "OCaml is an industrial-strength functional programming language",
     homepage = "https://ocaml.org/",
     license = "LGPL-2.1-or-later WITH OCaml-LGPL-linking-exception",
+    use_configure = {
+        "emacs": ("--enable-emacs", "--disable-emacs"),
+        "flambda": ("--enable-flambda", "--disable-flambda"),
+        "latex": ("--enable-latex", "--disable-latex"),
+        "ocamlopt": ("--enable-ocamlopt", "--disable-ocamlopt"),
+        "xemacs": ("--enable-xemacs", "--disable-xemacs"),
+    },
+    skip_host_arg = True,
     configure_args = [
         "--prefix=/usr",
         "--enable-ocamltest",
         "--enable-native-compiler",
     ],
-    visibility = ["PUBLIC"],
+    # Skip autoreconf - OCaml has custom configure
 )

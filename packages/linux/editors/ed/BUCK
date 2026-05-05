@@ -1,30 +1,24 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
+load("//defs:package.bzl", "package")
 
-# ed - GNU ed line editor
-# Using kernel.org mirror which has .tar.xz format
-download_source(
-    name = "ed-src",
-    src_uri = "https://mirrors.kernel.org/gnu/ed/ed-1.19.tar.xz",
-    sha256 = "NEEDS_UPDATE_FROM_BUILD_LOG",
-    signature_required = False,
-)
-
-autotools_package(
+# GNU ed uses a hand-written configure that ignores CFLAGS from the
+# environment.  Pass -std=gnu11 via configure_args (which GNU ed does
+# accept as KEY=VALUE pairs) to fix GCC 14+ C23 keyword conflicts.
+package(
+    build_rule = "autotools",
     name = "ed",
-    source = ":ed-src",
-    version = "1.19",
-    description = "GNU ed - The standard Unix line editor",
-    homepage = "https://www.gnu.org/software/ed/",
-    license = "GPL-3.0",
+    version = "1.20.2",
+    url = "https://mirrors.kernel.org/gnu/ed/ed-1.20.2.tar.lz",
+    sha256 = "65fec7318f48c2ca17f334ac0f4703defe62037bb13cc23920de077b5fa24523",
+    description = "GNU line editor",
+    homepage = "https://www.gnu.org/software/ed",
+    license = "GPL-3+",
     configure_args = [
         "--prefix=/usr",
+        "CFLAGS=-std=gnu11 -Wall -W -O2",
     ],
-    # GNU ed uses a lzip-style non-standard configure, force CFLAGS in make
-    src_compile = """
-make CFLAGS="-std=gnu17 -O2" -j$(nproc)
-""",
-    deps = [
-    ],
+    # GNU ed's hand-written configure ignores CC from env — must be
+    # passed as a command-line arg (CC=<compiler>).
+    cc_as_configure_arg = True,
+    skip_host_arg = True,
     visibility = ["PUBLIC"],
 )

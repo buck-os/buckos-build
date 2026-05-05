@@ -1,31 +1,34 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "libarchive-src",
-    src_uri = "https://www.libarchive.org/downloads/libarchive-3.7.6.tar.xz",
-    sha256 = "0a2efdcb185da2eb1e7cd8421434cb9a6119f72417a13335cca378d476fd3ba0",
-    signature_sha256 = "ac8b8b4abc81216ffee2ec15fd30eeec55a15b57f3fc6dcba4ccca85d5af9927",
-)
-
-autotools_package(
+package(
+    build_rule = "cmake",
     name = "libarchive",
-    source = ":libarchive-src",
-    version = "3.7.6",
+    version = "3.7.7",
+    url = "https://github.com/libarchive/libarchive/releases/download/v3.7.7/libarchive-3.7.7.tar.xz",
+    sha256 = "879acd83c3399c7caaee73fe5f7418e06087ab2aaf40af3e99b9e29beb29faee",
     description = "Multi-format archive and compression library",
-    homepage = "https://www.libarchive.org/",
+    homepage = "https://libarchive.org/",
     license = "BSD-2-Clause",
     configure_args = [
-        "--disable-static",
-        "--without-xml2",
+        "-DENABLE_TEST=OFF",
+        "-DENABLE_TAR=ON",
+        "-DENABLE_CPIO=OFF",
+        "-DENABLE_CAT=OFF",
+        "-DENABLE_UNZIP=ON",
+        "-DENABLE_OPENSSL=OFF",
+        "-DENABLE_LZ4=OFF",
+        "-DENABLE_LIBB2=OFF",
     ],
     deps = [
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/compression/bzip2:bzip2",
         "//packages/linux/system/libs/compression/xz:xz",
         "//packages/linux/system/libs/compression/zstd:zstd",
-        "//packages/linux/system/libs/compression/lz4:lz4",
-        "//packages/linux/system/libs/crypto/openssl:openssl",
-        "//packages/linux/system/libs/data/expat:expat",
     ],
-    visibility = ["PUBLIC"],
+    # Create 'unzip' symlink to bsdunzip for compatibility
+    post_install_cmds = ["""
+        if [ -f "$DESTDIR/usr/bin/bsdunzip" ] && [ ! -e "$DESTDIR/usr/bin/unzip" ]; then
+            ln -sf bsdunzip "$DESTDIR/usr/bin/unzip"
+        fi
+    """],
 )

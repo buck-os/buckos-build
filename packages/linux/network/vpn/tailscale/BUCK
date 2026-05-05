@@ -1,10 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # FIXME: pkgs.tailscale.com returns 403 - needs working URL
 genrule(
     name = "tailscale",
     out = "tailscale-disabled.txt",
     cmd = "echo 'Package disabled: upstream URL returns 403' > $OUT",
-    visibility = ["PUBLIC"],
 )

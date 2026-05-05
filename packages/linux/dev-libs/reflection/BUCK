@@ -1,22 +1,36 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "reflect-src",
-    src_uri = "https://github.com/qlibs/reflect/archive/refs/tags/v1.2.4.tar.gz",
-    sha256 = "8844faf7e282d9b9841fdee89b3ccfa80a800d7c35b6575c5f64cfa5946e0854",
-)
-
-ebuild_package(
+package(
     name = "reflect",
-    source = ":reflect-src",
+    build_rule = "binary",
     version = "1.2.4",
+    url = "https://github.com/qlibs/reflect/archive/refs/tags/v1.2.4.tar.gz",
+    sha256 = "8844faf7e282d9b9841fdee89b3ccfa80a800d7c35b6575c5f64cfa5946e0854",
     description = "C++20 Static Reflection library",
     homepage = "https://github.com/qlibs/reflect",
     license = "MIT",
-    src_install = '''
-mkdir -p "$DESTDIR/usr/include/qlibs"
-install -m 0644 reflect "$DESTDIR/usr/include/qlibs/"
-install -m 0644 reflect_mixin "$DESTDIR/usr/include/qlibs/"
-''',
-    visibility = ["PUBLIC"],
+    install_script = """
+mkdir -p "$OUT/usr/include/qlibs"
+
+cd "$SRCS"
+
+# Install main header file (may be named 'reflect' or 'reflect.hpp')
+if [ -f reflect ]; then
+    install -m 0644 reflect "$OUT/usr/include/qlibs/"
+elif [ -f reflect.hpp ]; then
+    install -m 0644 reflect.hpp "$OUT/usr/include/qlibs/"
+else
+    echo "Error: Could not find reflect header file"
+    ls -la
+    exit 1
+fi
+# Install reflect_mixin if it exists (optional)
+if [ -f reflect_mixin ]; then
+    install -m 0644 reflect_mixin "$OUT/usr/include/qlibs/"
+fi
+# Install any .hpp files in include/ subdirectory if present
+if [ -d include ]; then
+    cp -r include/* "$OUT/usr/include/qlibs/" 2>/dev/null || true
+fi
+""",
 )

@@ -1,0 +1,21 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cargo",
+    name = "lancedb",
+    version = "0.27.2",
+    url = "https://github.com/lancedb/lancedb/archive/refs/tags/v0.27.2.tar.gz",
+    sha256 = "a3154221b354851ab6697a60c6cce425eb161aa62d61a5cc1be5cb18c565ed6d",
+    description = "Serverless vector database for AI applications",
+    homepage = "https://lancedb.com/",
+    license = "Apache-2.0",
+    cargo_args = [
+        "--package", "lancedb",
+    ],
+    host_deps = [
+        "//packages/linux/dev-libs/serialization/protobuf:protobuf",
+    ],
+    deps = [
+        "//packages/linux/dev-libs/serialization/protobuf:protobuf",
+    ],
+)

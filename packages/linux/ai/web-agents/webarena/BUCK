@@ -1,21 +1,22 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "webarena",
     version = "0.1.0",
-    src_uri = "https://github.com/web-arena-x/webarena/archive/de524be99e5369e234d91f1e52c0d46dec360e00.tar.gz",
-    sha256 = "TODO",
+    url = "https://github.com/web-arena-x/webarena/archive/de524be99e5369e234d91f1e52c0d46dec360e00.tar.gz",
+    sha256 = "4f0aa855c62d5a223eb0fe027b37eb2611af49dc6b9f433976301a45bd466ec5",
     deps = [
-        "//packages/linux/dev-python/gymnasium",
-        "//packages/linux/dev-python/playwright",
-        "//packages/linux/dev-python/pillow",
-        "//packages/linux/dev-python/evaluate",
-        "//packages/linux/dev-python/openai",
-        "//packages/linux/dev-python/tiktoken",
-        "//packages/linux/dev-python/aiolimiter",
-        "//packages/linux/dev-python/beartype",
-        "//packages/linux/dev-python/flask",
-        "//packages/linux/dev-python/nltk",
-        "//packages/linux/dev-python/transformers",
+        "//packages/linux/dev-libs/python/gymnasium:gymnasium",
+        "//packages/linux/dev-libs/python/playwright:playwright",
+        "//packages/linux/dev-libs/python/pillow:pillow",
+        "//packages/linux/dev-libs/python/evaluate:evaluate",
+        "//packages/linux/dev-libs/python/openai:openai",
+        "//packages/linux/dev-libs/python/tiktoken:tiktoken",
+        "//packages/linux/dev-libs/python/aiolimiter:aiolimiter",
+        "//packages/linux/dev-libs/python/beartype:beartype",
+        "//packages/linux/dev-libs/python/flask:flask",
+        "//packages/linux/dev-libs/python/nltk:nltk",
+        "//packages/linux/dev-libs/python/transformers:transformers",
     ],
 )

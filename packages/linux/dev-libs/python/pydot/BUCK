@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "pydot",
     version = "1.4.1",
-    src_uri = "https://github.com/pydot/pydot/archive/v1.4.1.tar.gz",
+    url = "https://github.com/pydot/pydot/archive/v1.4.1.tar.gz",
     sha256 = "3e70236381ed2b5778a4e173d46435396b2484ab0f4f31fd1219ec12d88e3e40",
     deps = [
         "//packages/linux/dev-libs/python/pyparsing:pyparsing",

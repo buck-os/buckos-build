@@ -1,20 +1,25 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # XFCE - Lightweight, traditional desktop
 # =============================================================================
 
-download_source(
-    name = "libxfce4ui-src",
-    src_uri = "https://archive.xfce.org/src/xfce/libxfce4ui/4.18/libxfce4ui-4.18.6.tar.bz2",
-    sha256 = "77dd99206cc8c6c7f69c269c83c7ee6a037bca9d4a89b1a6d9765e5a09ce30cd",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libxfce4ui",
-    source = ":libxfce4ui-src",
+    url = "https://archive.xfce.org/src/xfce/libxfce4ui/4.18/libxfce4ui-4.18.6.tar.bz2",
+
+    sha256 = "77dd99206cc8c6c7f69c269c83c7ee6a037bca9d4a89b1a6d9765e5a09ce30cd",
+    use_configure = {
+        "X": ("--with-x", "--without-x"),
+        "glade": ("--enable-glade", "--disable-glade"),
+        "gtk-doc": ("--enable-gtk-doc", "--disable-gtk-doc"),
+        "introspection": ("--enable-introspection", "--disable-introspection"),
+        "startup-notification": ("--enable-startup-notification", "--disable-startup-notification"),
+        "system-info": ("--enable-system-info", "--disable-system-info"),
+        "vala": ("--enable-vala", "--disable-vala"),
+        "wayland": ("--enable-wayland", "--disable-wayland"),
+    },
     version = "4.18.6",
     description = "XFCE UI library providing widgets and utilities",
     homepage = "https://xfce.org/",
@@ -22,19 +27,14 @@ autotools_package(
     deps = [
         "//packages/linux/desktop/gtk:gtk3",
     ],
-    visibility = ["PUBLIC"],
 )
 
-download_source(
-    name = "xfce4-panel-src",
-    src_uri = "https://archive.xfce.org/src/xfce/xfce4-panel/4.18/xfce4-panel-4.18.6.tar.bz2",
-    sha256 = "21337161f58bb9b6e42760cb6883bc79beea27882aa6272b61f0e09d750d7c62",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "xfce4-panel",
-    source = ":xfce4-panel-src",
+    url = "https://archive.xfce.org/src/xfce/xfce4-panel/4.18/xfce4-panel-4.18.6.tar.bz2",
+
+    sha256 = "21337161f58bb9b6e42760cb6883bc79beea27882aa6272b61f0e09d750d7c62",
     version = "4.18.6",
     description = "XFCE Panel",
     homepage = "https://xfce.org/",
@@ -42,43 +42,36 @@ autotools_package(
     deps = [
         ":libxfce4ui",
     ],
-    visibility = ["PUBLIC"],
 )
 
-download_source(
-    name = "xfwm4-src",
-    src_uri = "https://archive.xfce.org/src/xfce/xfwm4/4.18/xfwm4-4.18.0.tar.bz2",
-    sha256 = "92cd1b889bb25cb4bc06c1c6736c238d96e79c1e706b9f77fad0a89d6e5fc13f",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "xfwm4",
-    source = ":xfwm4-src",
+    url = "https://archive.xfce.org/src/xfce/xfwm4/4.18/xfwm4-4.18.0.tar.bz2",
+
+    sha256 = "92cd1b889bb25cb4bc06c1c6736c238d96e79c1e706b9f77fad0a89d6e5fc13f",
     version = "4.18.0",
     description = "XFCE Window Manager",
     homepage = "https://xfce.org/",
     license = "GPL-2.0",
     deps = [
+        ":libxfce4ui",
     ],
-    visibility = ["PUBLIC"],
 )
 
-download_source(
-    name = "xfdesktop-src",
-    src_uri = "https://archive.xfce.org/src/xfce/xfdesktop/4.18/xfdesktop-4.18.1.tar.bz2",
-    sha256 = "ef9268190c25877e22a9ff5aa31cc8ede120239cb0dfca080c174e7eed4ff756",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "xfdesktop",
-    source = ":xfdesktop-src",
+    url = "https://archive.xfce.org/src/xfce/xfdesktop/4.18/xfdesktop-4.18.1.tar.bz2",
+
+    sha256 = "ef9268190c25877e22a9ff5aa31cc8ede120239cb0dfca080c174e7eed4ff756",
     version = "4.18.1",
     description = "XFCE Desktop Manager",
     homepage = "https://xfce.org/",
     license = "GPL-2.0",
-    visibility = ["PUBLIC"],
+    deps = [
+        ":libxfce4ui",
+    ],
 )
 
 # XFCE meta-package
@@ -88,9 +81,7 @@ filegroup(
         ":xfce4-panel",
         ":xfwm4",
         ":xfdesktop",
-        "//packages/linux/desktop/lightdm:lightdm",
         "//packages/linux/desktop/mesa:mesa",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )

@@ -1,49 +1,41 @@
-load("//defs:package_defs.bzl", "meson_package")
-load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
+load("//defs:package.bzl", "package")
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "glib",
     version = "2.80.0",
-    src_uri = "https://download.gnome.org/sources/glib/2.80/glib-2.80.0.tar.xz",
+    # use_meson for meson option mapping (not use_configure which is for autotools)
+    use_configure = {
+        "debug": ("-Dglib_debug=enabled", "-Dglib_debug=disabled"),
+        "elf": ("-Dlibelf=enabled", "-Dlibelf=disabled"),
+        "introspection": ("-Dintrospection=enabled", "-Dintrospection=disabled"),
+        "selinux": ("-Dselinux=enabled", "-Dselinux=disabled"),
+        "static-libs": ("-Ddefault_library=both", "-Ddefault_library=shared"),
+        "sysprof": ("-Dsysprof=enabled", "-Dsysprof=disabled"),
+        "systemtap": ("-Dsystemtap=true", "-Dsystemtap=false"),
+        "xattr": ("-Dxattr=true", "-Dxattr=false"),
+    },
+    url = "https://download.gnome.org/sources/glib/2.80/glib-2.80.0.tar.xz",
     sha256 = "8228a92f92a412160b139ae68b6345bd28f24434a7b5af150ebe21ff587a561d",
-    signature_required = False,
     description = "Low-level core library for GNOME projects",
     homepage = "https://wiki.gnome.org/Projects/GLib",
     license = "LGPL-2.1+",
-    meson_args = [
-        "-Ddefault_library=shared",
+    configure_args = [
+        "--wrap-mode=nofallback",
         "-Dgtk_doc=false",
-        "-Dman-pages=disabled",
-        "-Dintrospection=disabled",
-        "-Dsystemtap=false",
-        "-Ddtrace=false",
         "-Dtests=false",
-        "-Dselinux=disabled",
-        "-Dxattr=true",
+        "-Ddtrace=false",
         "-Dlibmount=disabled",  # Requires util-linux libmount
     ],
     # Custom install that makes .pc files relocatable using ${pcfiledir}
     # This allows packages that depend on glib to find tools like glib-mkenums
-    src_install = """
-        # Run standard meson install
-        DESTDIR="$DESTDIR" meson install -C "${BUILD_DIR:-build}"
-
-        # Fix .pc files to use relocatable paths with ${pcfiledir}
-        # ${pcfiledir} is a pkg-config variable that expands to the directory containing the .pc file
-        for pc_file in "$DESTDIR"/usr/lib64/pkgconfig/*.pc; do
-            if [ -f "$pc_file" ]; then
-                # Replace prefix=/usr with prefix using pcfiledir (../../ from lib64/pkgconfig to usr)
-                sed -i \
-                    -e 's|^prefix=/usr$|prefix=${pcfiledir}/../..|' \
-                    -e 's|^bindir=.*|bindir=${prefix}/bin|' \
-                    "$pc_file"
-            fi
-        done
-    """,
     deps = [
-        "//packages/linux/core/libffi:libffi",
+        "//packages/linux/system/libs/utility/libffi:libffi",
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/utility/pcre2:pcre2",
+        # packaging is needed by gdbus-codegen (glib's code generator).
+        # Regular dep so it propagates via tset to downstream packages
+        # that invoke gdbus-codegen (libsecret, etc.).
+        "//packages/linux/dev-libs/python/packaging:packaging",
     ],
-    visibility = ["PUBLIC"],
 )

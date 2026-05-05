@@ -1,51 +1,29 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libnl",
     version = "3.9.0",
-    src_uri = "https://github.com/thom311/libnl/releases/download/libnl3_9_0/libnl-3.9.0.tar.gz",
+    url = "https://github.com/thom311/libnl/releases/download/libnl3_9_0/libnl-3.9.0.tar.gz",
     sha256 = "aed507004d728a5cf11eab48ca4bf9e6e1874444e33939b9d3dfed25018ee9bb",
-    signature_sha256 = "673a014ae2405ee7c1877c407c669b35fe36ae56ab0497a2b3443b3e8aa73a59",
-    signature_required=False,
     description = "Library for applications dealing with netlink sockets",
     homepage = "https://www.infradead.org/~tgr/libnl/",
     license = "LGPL-2.1",
-
-    # USE flags this package supports
-    iuse = [
-        "cli",
-        "threads",
-        "debug",
-        "static-libs",
+    pre_configure_cmds = [
+        # GCC 14+ errors on implicit function declarations.  Several
+        # sources use time/strftime without including time.h.
+        "for f in lib/socket.c lib/xfrm/*.c; do grep -qE 'strftime|\\btime\\(' \"$f\" && sed -i '1i #include <time.h>' \"$f\" || true; done",
     ],
-
-    # Default USE flags
-    use_defaults = [],
-
-    # Pre-configure to fix missing time.h include
-    pre_configure = """
-# Patch source files to include time.h where needed
-sed -i '/#include "nl-aux-core\/nl-core.h"/a #include <time.h>' lib/socket.c
-# Patch all xfrm files that use strftime
-for f in lib/xfrm/*.c; do
-    if grep -q 'strftime' "$f"; then
-        sed -i '/#include "nl-aux-xfrm\/nl-xfrm.h"/a #include <time.h>' "$f"
-    fi
-done
-""",
-
-    # Conditional configure arguments
+    host_deps = [
+        "//packages/linux/dev-tools/dev-utils/flex:flex",
+        "//packages/linux/dev-tools/dev-utils/bison:bison",
+    ],
     use_configure = {
-        "cli": "--enable-cli",
-        "-cli": "--disable-cli",
-        "threads": "--enable-pthreads",
-        "-threads": "--disable-pthreads",
-        "debug": "--enable-debug",
-        "-debug": "--disable-debug",
-        "static-libs": "--enable-static",
-        "-static-libs": "--disable-static",
+        "cli": ("--enable-cli", "--disable-cli"),
+        "debug": ("--enable-debug", "--disable-debug"),
+        "python": ("--enable-python", "--disable-python"),
+        "static-libs": ("--enable-static", "--disable-static"),
+        "threads": ("--enable-pthreads", "--disable-pthreads"),
+        "utils": ("--enable-utils", "--disable-utils"),
     },
-
-    visibility = ["PUBLIC"],
 )

@@ -1,20 +1,14 @@
+load("//defs:package.bzl", "package")
+
 # auto-cpufreq - Automatic CPU frequency optimizer
 # Automatic CPU speed and power optimizer for Linux
 
-load("//defs:package_defs.bzl", "download_source", "binary_package", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
-
-download_source(
-    name = "auto-cpufreq-src",
-    src_uri = "https://github.com/AdnanHodzic/auto-cpufreq/archive/refs/tags/v2.2.0.tar.gz",
-    sha256 = "d84d45a1638f5bff72b5ce7c1653886143cdbb4c6b198e63e054b6a18f7ade68",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "auto-cpufreq",
-    srcs = [":auto-cpufreq-src"],
     version = "2.2.0",
+    url = "https://github.com/AdnanHodzic/auto-cpufreq/archive/refs/tags/v2.2.0.tar.gz",
+    sha256 = "d84d45a1638f5bff72b5ce7c1653886143cdbb4c6b198e63e054b6a18f7ade68",
     description = "Automatic CPU speed and power optimizer for Linux",
     homepage = "https://github.com/AdnanHodzic/auto-cpufreq",
     license = "LGPL-3.0",
@@ -25,5 +19,4 @@ binary_package(
     deps = [
         "//packages/linux/lang/python:python",
     ],
-    visibility = ["PUBLIC"],
 )

@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "fuzzbench",
     version = "0.0.1",
-    src_uri = "https://github.com/google/fuzzbench/archive/9f6352d899c7e832775c8e1e01bff1186e8af9da.tar.gz",
+    url = "https://github.com/google/fuzzbench/archive/9f6352d899c7e832775c8e1e01bff1186e8af9da.tar.gz",
     sha256 = "d9a92fc6d9193730373c41cac097a761d8137ccfd9de79d0642164c24d441240",
     deps = [
         "//packages/linux/dev-libs/compression/zlib:zlib",

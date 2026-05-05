@@ -1,20 +1,46 @@
-load("//defs:package_defs.bzl", "meson_package", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # GVFS - GNOME Virtual File System
 # =============================================================================
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "gvfs",
     version = "1.54.0",
-    src_uri = "https://download.gnome.org/sources/gvfs/1.54/gvfs-1.54.0.tar.xz",
+    use_deps = {
+        "systemd": "//packages/linux/system/init/systemd:systemd",
+    },
+    use_configure = {
+        "afp": ("-Dafp=true", "-Dafp=false"),
+        "archive": ("-Darchive=true", "-Darchive=false"),
+        "bluray": ("-Dbluray=true", "-Dbluray=false"),
+        "cdda": ("-Dcdda=true", "-Dcdda=false"),
+        "cdr": ("-Dcdr=true", "-Dcdr=false"),
+        "elogind": ("-Dlogind=true", "-Dlogind=false"),
+        "fuse": ("-Dfuse=true", "-Dfuse=false"),
+        "gnome-online-accounts": ("-Dgoa=true", "-Dgoa=false"),
+        "google": ("-Dgoogle=true", "-Dgoogle=false"),
+        "gphoto2": ("-Dgphoto2=true", "-Dgphoto2=false"),
+        "http": ("-Dhttp=true", "-Dhttp=false"),
+        "ios": ("-Dafc=true", "-Dafc=false"),
+        "keyring": ("-Dkeyring=true", "-Dkeyring=false"),
+        "mtp": ("-Dmtp=true", "-Dmtp=false"),
+        "nfs": ("-Dnfs=true", "-Dnfs=false"),
+        "onedrive": ("-Donedrive=true", "-Donedrive=false"),
+        "policykit": ("-Dadmin=true", "-Dadmin=false"),
+        "samba": ("-Dsmb=true", "-Dsmb=false"),
+        "systemd": ("-Dsystemd=true", "-Dsystemd=false"),
+        "udev": ("-Dgudev=true", "-Dgudev=false"),
+        "udisks": ("-Dudisks2=true", "-Dudisks2=false"),
+        "zeroconf": ("-Ddnssd=true", "-Ddnssd=false"),
+    },
+    url = "https://download.gnome.org/sources/gvfs/1.54/gvfs-1.54.0.tar.xz",
     sha256 = "f53d81df86c2e86cdd25182c2d8a669a22371e83623ded1b9d5416dcfc6de366",
-    signature_required = False,
     description = "GNOME Virtual File System for userspace programs",
     homepage = "https://wiki.gnome.org/Projects/gvfs",
     license = "LGPL-2.0-or-later",
-    meson_args = [
+    configure_args = [
         "-Dsystemduserunitdir=/usr/lib/systemd/user",
         "-Dtmpfilesdir=/usr/lib/tmpfiles.d",
         "-Dadmin=false",
@@ -46,10 +72,9 @@ meson_package(
     deps = [
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/system/libs/ipc/dbus:dbus",
-        "//packages/linux/system/filesystem/fuse/fuse3:fuse3",
+        "//packages/linux/system/security/encryption:fuse3",
         "//packages/linux/system/filesystem/management/udisks2:udisks2",
-        "//packages/linux/network/openssl:openssl",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
         "//packages/linux/dev-libs/libsecret:libsecret",
     ],
-    visibility = ["PUBLIC"],
 )

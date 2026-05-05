@@ -1,54 +1,30 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "gpgme",
     version = "1.23.2",
-    src_uri = "https://www.gnupg.org/ftp/gcrypt/gpgme/gpgme-1.23.2.tar.bz2",
+    url = "https://www.gnupg.org/ftp/gcrypt/gpgme/gpgme-1.23.2.tar.bz2",
     sha256 = "9499e8b1f33cccb6815527a1bc16049d35a6198a6c5fae0185f2bd561bce5224",
-    signature_required = False,
     description = "GnuPG Made Easy - library for accessing GnuPG",
     homepage = "https://www.gnupg.org/related_software/gpgme/",
     license = "LGPL-2.1",
 
-    # USE flags: static-libs, cxx, qt5, python, test
-    iuse = ["static-libs", "cxx", "qt5", "python", "test"],
-    use_defaults = ["cxx"],
-
     use_configure = {
-        "static-libs": "--enable-static",
-        "-static-libs": "--disable-static",
-        "cxx": "--enable-languages=cpp",
-        "-cxx": "--disable-languages=cpp",
-        "qt5": "--enable-languages=qt",
-        "-qt5": "--disable-languages=qt",
-        "python": "--enable-languages=python",
-        "-python": "--disable-languages=python",
-    },
-
-    use_deps = {
-        "qt5": ["//packages/linux/dev-libs/qt5:qt5"],
-        "python": ["//packages/linux/lang/python:python"],
+        "common-lisp": ("--enable-common-lisp", "--disable-common-lisp"),
+        "static-libs": ("--enable-static", "--disable-static"),
     },
 
     configure_args = [
         "--prefix=/usr",
         "--enable-shared",
-    ] + ([
+        # gpgme uses --enable-languages=<list>; disable all bindings by default
+        "--enable-languages=",
         "--disable-gpg-test",
         "--disable-gpgsm-test",
         "--disable-gpgconf-test",
         "--disable-g13-test",
-    ]),
-
-    pre_configure = """
-# Available USE flags:
-# - static-libs: Build static libraries
-# - cxx: Build C++ language bindings
-# - qt5: Build Qt5 language bindings
-# - python: Build Python language bindings
-# - test: Enable GPG component tests
-""",
+    ],
 
     deps = [
         "//packages/linux/system/security/gnupg:gnupg",

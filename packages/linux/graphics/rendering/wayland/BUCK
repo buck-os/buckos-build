@@ -1,18 +1,99 @@
-load("//defs:package_defs.bzl", "meson_package")
+load("//defs:package.bzl", "package")
 
-# wayland - Package from third-party
+# wayland - Wayland display protocol libraries and scanner tool
+# Following Gentoo's approach: disable dtd_validation to avoid libxml2 runtime dependency
 
-meson_package(
-    name = "wayland",
+# wayland-scanner — built with buckos compiler for hermeticity.
+# Uses buckos expat (both linked against buckos glibc, no ABI mismatch).
+# The scanner binary gets sysroot ld-linux via GCC specs, runs on host
+# through the sysroot dynamic linker.
+#
+# pre_configure_cmds patches out the bootstrap circularity where
+# meson's dependency('wayland-scanner') requires a pre-existing
+# scanner to build the scanner itself.
+package(
+    name = "wayland-scanner",
+    build_rule = "meson",
     version = "1.23.1",
-    src_uri = "# TODO: Add source URI for wayland v1.23.1",
-    sha256 = "5094d1f0fcc1828cb1696d0d39d9e866ae32520c54d01f618f1a3c1e30c2085c",
-    description = "wayland package",
+    url = "https://gitlab.freedesktop.org/wayland/wayland/-/releases/1.23.1/downloads/wayland-1.23.1.tar.xz",
+    sha256 = "864fb2a8399e2d0ec39d56e9d9b753c093775beadc6022ce81f441929a81e5ed",
+    description = "Native wayland-scanner for cross-compilation",
     homepage = "https://gitlab.freedesktop.org/wayland/wayland",
     license = "MIT",
-    deps = [],
-    meson_args = [
-        "-Dbuildtype=release",
+    pre_configure_cmds = [
+        # wayland's meson.build does dependency('wayland-scanner') to find
+        # a pre-existing scanner for code generation.  When building the
+        # scanner itself there is no pre-existing one — make it optional.
+        # The scanner binary is self-contained (scanner.c + expat) and
+        # doesn't need protocol code generation.
+        # The cross-build path (line 83) tries to find a pre-existing
+        # wayland-scanner binary, which doesn't exist when building
+        # the scanner itself.  Force the else branch (use the scanner
+        # we're building) by making the condition always false.
+        "sed -i 's/meson.is_cross_build() or not /false and not /' src/meson.build",
     ],
-    visibility = ["PUBLIC"],
+    meson_args = [
+        "-Ddocumentation=false",
+        "-Dtests=false",
+        "-Ddtd_validation=false",
+        "-Dlibraries=false",
+        "-Dscanner=true",
+    ],
+    deps = [
+        "//packages/linux/system/libs/data/expat:expat",
+    ],
+    post_install_cmds = [
+        # CMake config for find_package(WaylandScanner)
+        "mkdir -p \"$DESTDIR/usr/lib64/cmake/WaylandScanner\"",
+        """cat > "$DESTDIR/usr/lib64/cmake/WaylandScanner/WaylandScannerConfig.cmake" << 'CMEOF'
+get_filename_component(_WaylandScanner_PREFIX "${CMAKE_CURRENT_LIST_DIR}/../../.." ABSOLUTE)
+set(WaylandScanner_FOUND TRUE)
+set(WaylandScanner_VERSION "1.23.1")
+set(WaylandScanner_EXECUTABLE "${_WaylandScanner_PREFIX}/bin/wayland-scanner" CACHE FILEPATH "wayland-scanner")
+set(WAYLAND_SCANNER_EXECUTABLE "${WaylandScanner_EXECUTABLE}" CACHE FILEPATH "wayland-scanner")
+mark_as_advanced(WaylandScanner_EXECUTABLE WAYLAND_SCANNER_EXECUTABLE)
+unset(_WaylandScanner_PREFIX)
+CMEOF""",
+        """cat > "$DESTDIR/usr/lib64/cmake/WaylandScanner/WaylandScannerConfigVersion.cmake" << 'CMEOF'
+set(PACKAGE_VERSION "1.23.1")
+if(PACKAGE_VERSION VERSION_LESS PACKAGE_FIND_VERSION)
+  set(PACKAGE_VERSION_COMPATIBLE FALSE)
+else()
+  set(PACKAGE_VERSION_COMPATIBLE TRUE)
+  if(PACKAGE_FIND_VERSION STREQUAL PACKAGE_VERSION)
+    set(PACKAGE_VERSION_EXACT TRUE)
+  endif()
+endif()
+CMEOF""",
+    ],
+)
+
+package(
+    name = "wayland",
+    build_rule = "meson",
+    version = "1.23.1",
+    source = ":wayland-scanner-src",
+    description = "Wayland display protocol libraries and scanner",
+    homepage = "https://gitlab.freedesktop.org/wayland/wayland",
+    license = "MIT",
+    deps = [
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/system/libs/data/expat:expat",
+        ":wayland-scanner",
+    ],
+    pre_configure_cmds = [
+        # Fix wayland-util.h for C++ consumers: __STDC_VERSION__ is undefined in C++
+        # mode, triggering -Werror=undef in KDE builds (ECM enables -Wundef globally).
+        "sed -i 's/#if __STDC_VERSION__ >= 202311L/#if defined(__STDC_VERSION__) \\&\\& __STDC_VERSION__ >= 202311L/g' src/wayland-util.h",
+    ],
+    meson_args = [
+        "-Ddocumentation=false",
+        "-Dtests=false",
+        # Disable DTD validation - this removes the libxml2 dependency from wayland-scanner
+        "-Ddtd_validation=false",
+        # Build scanner to install wayland-scanner.pc and protocol files
+        # The actual scanner binary will be from native wayland-scanner via meson native file
+        "-Dscanner=true",
+        "-Dlibraries=true",
+    ],
 )

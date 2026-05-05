@@ -1,17 +1,17 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "colbert",
-    version = "0.2.0",
-    src_uri = "https://github.com/stanford-futuredata/ColBERT/archive/v0.2.0.tar.gz",
-    sha256 = "TODO",
+    version = "0.2.22",
+    url = "https://github.com/stanford-futuredata/ColBERT/archive/refs/tags/v0.2.22.tar.gz",
+    sha256 = "c38a09d2392dc4a79363e941cec37d4bb4bfc0d868ffa1d75280134701ffc777",
     deps = [
-        "//packages/linux/dev-libs/python/bitarray",
-        "//packages/linux/dev-libs/python/flask",
-        "//packages/linux/dev-libs/python/scipy",
-        "//packages/linux/dev-libs/python/tqdm",
-        "//packages/linux/dev-libs/python/transformers",
-        "//packages/linux/dev-libs/python/ujson",
-        "//packages/linux/ai/ml-frameworks/pytorch",
+        "//packages/linux/dev-libs/python/bitarray:bitarray",
+        "//packages/linux/dev-libs/python/flask:flask",
+        "//packages/linux/dev-libs/python/tqdm:tqdm",
+        "//packages/linux/dev-libs/python/transformers:transformers",
+        "//packages/linux/dev-libs/python/ujson:ujson",
+        "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
     ],
 )

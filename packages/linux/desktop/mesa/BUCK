@@ -1,145 +1,102 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # Mesa - OpenGL and Vulkan implementation
 # =============================================================================
 
-autotools_package(
+package(
+    build_rule = "meson",
     name = "mesa",
-    version = "24.0.1",
-    src_uri = "https://archive.mesa3d.org/mesa-24.0.1.tar.xz",
-    sha256 = "f387192b08c471c545590dd12230a2a343244804b5fe866fec6aea02eab57613",
-    signature_sha256 = "e2bfe7507058ab0737293a335d29f9e9478cc2b5715c741b2b6a57e511a6cf4f",
-    signature_required = False,
+    version = "26.0.0",
+    url = "https://archive.mesa3d.org/mesa-26.0.0.tar.xz",
+    sha256 = "2a44e98e64d5c36cec64633de2d0ec7eff64703ee25b35364ba8fcaa84f33f72",
     description = "Mesa 3D Graphics Library - OpenGL and Vulkan",
     homepage = "https://www.mesa3d.org/",
     license = "MIT",
-    iuse = ["X", "wayland", "vulkan", "vulkan-amd", "vulkan-intel", "gallium-radeonsi", "gallium-nouveau", "gallium-iris", "gallium-swrast", "gles1", "gles2", "osmesa", "xa", "vdpau", "vaapi", "opencl"],
-    use_defaults = ["X", "wayland", "vulkan", "vulkan-amd", "vulkan-intel", "gallium-radeonsi", "gallium-nouveau", "gallium-iris", "gallium-swrast", "gles2"],
     use_configure = {
-        "X": "",
-        "-X": "",
-        "wayland": "",
-        "-wayland": "",
-        "vulkan": "",
-        "-vulkan": "",
-        "gles1": "-Dgles1=enabled",
-        "-gles1": "-Dgles1=disabled",
-        "gles2": "-Dgles2=enabled",
-        "-gles2": "-Dgles2=disabled",
-        "osmesa": "-Dosmesa=true",
-        "-osmesa": "-Dosmesa=false",
-        "xa": "-Dxa=enabled",
-        "-xa": "-Dxa=disabled",
-        "vdpau": "-Dgallium-vdpau=enabled",
-        "-vdpau": "-Dgallium-vdpau=disabled",
-        "vaapi": "-Dgallium-va=enabled",
-        "-vaapi": "-Dgallium-va=disabled",
-        "opencl": "-Dgallium-opencl=icd",
-        "-opencl": "-Dgallium-opencl=disabled",
+        "X": ("-Dplatforms=x11,wayland", "-Dplatforms=wayland"),
+        "llvm": (["-Dllvm=enabled", "-Damd-use-llvm=true", "-Dgallium-drivers=radeonsi,llvmpipe,virgl"], ["-Dllvm=disabled", "-Dgallium-drivers=softpipe,virgl"]),
+        "vulkan": ("-Dvulkan-drivers=intel,intel_hasvk,amd", "-Dvulkan-drivers="),
     },
     use_deps = {
-        "wayland": ["//packages/linux/desktop/wayland:wayland"],
+        "X": [
+            "//packages/linux/graphics/xorg/libX11:libX11",
+            "//packages/linux/graphics/xorg/libxcb:libxcb",
+            "//packages/linux/graphics/xorg/libXext:libXext",
+            "//packages/linux/graphics/xorg/libXfixes:libXfixes",
+            "//packages/linux/graphics/xorg/libXrandr:libXrandr",
+            "//packages/linux/graphics/xorg/libXxf86vm:libXxf86vm",
+            "//packages/linux/graphics/xorg/xorgproto:xorgproto",
+        ],
+        "llvm": [
+            "//packages/linux/core/llvm:llvm-native",
+            "//packages/linux/core/libclc:libclc",
+        ],
     },
-    pre_configure = """
-mkdir -p build
-cd build
-
-# Build platform list
-PLATFORMS=""
-if [ "${USE_X}" = "1" ]; then
-    PLATFORMS="${PLATFORMS:+$PLATFORMS,}x11"
-fi
-if [ "${USE_wayland}" = "1" ]; then
-    PLATFORMS="${PLATFORMS:+$PLATFORMS,}wayland"
-fi
-
-# Build gallium drivers list
-GALLIUM_DRIVERS=""
-if [ "${USE_gallium_radeonsi}" = "1" ]; then
-    GALLIUM_DRIVERS="${GALLIUM_DRIVERS:+$GALLIUM_DRIVERS,}radeonsi"
-fi
-if [ "${USE_gallium_nouveau}" = "1" ]; then
-    GALLIUM_DRIVERS="${GALLIUM_DRIVERS:+$GALLIUM_DRIVERS,}nouveau"
-fi
-if [ "${USE_gallium_iris}" = "1" ]; then
-    GALLIUM_DRIVERS="${GALLIUM_DRIVERS:+$GALLIUM_DRIVERS,}iris"
-fi
-if [ "${USE_gallium_swrast}" = "1" ]; then
-    GALLIUM_DRIVERS="${GALLIUM_DRIVERS:+$GALLIUM_DRIVERS,}swrast"
-fi
-
-# Build vulkan drivers list
-VULKAN_DRIVERS=""
-if [ "${USE_vulkan}" = "1" ]; then
-    if [ "${USE_vulkan_amd}" = "1" ]; then
-        VULKAN_DRIVERS="${VULKAN_DRIVERS:+$VULKAN_DRIVERS,}amd"
-    fi
-    if [ "${USE_vulkan_intel}" = "1" ]; then
-        VULKAN_DRIVERS="${VULKAN_DRIVERS:+$VULKAN_DRIVERS,}intel"
-    fi
-fi
-
-# USE flags: X, wayland, vulkan, vulkan-amd, vulkan-intel, gallium-*, gles1, gles2, osmesa, xa, vdpau, vaapi, opencl
-meson setup .. --prefix=/usr \\
-    -Dplatforms=${PLATFORMS:-x11} \\
-    -Dgallium-drivers=${GALLIUM_DRIVERS:-swrast} \\
-    -Dvulkan-drivers=${VULKAN_DRIVERS:-} \\
-    -Dglx=dri \\
-    -Degl=enabled \\
-    -Dgbm=enabled \\
-    $CONFIGURE_ARGS
-""",
-    deps = [
-        "//packages/linux/desktop/libinput:libinput",
+    pre_configure_cmds = [
+        # Mesa 26 ships all subproject .wrap files as empty placeholders (0 bytes).
+        # Meson rejects empty wrap files with "Missing sections". Remove them all;
+        # dependencies are provided via pkg-config from deps, not subproject downloads.
+        "rm -f subprojects/*.wrap",
     ],
-    visibility = ["PUBLIC"],
+    configure_args = [
+        "--wrap-mode=nofallback",
+        # Core features for mesa 26.0.0
+        "-Degl=enabled",
+        "-Dgbm=enabled",
+        "-Dglx=disabled",
+        "-Dgles1=disabled",
+        "-Dgles2=enabled",
+        # Disable OpenCL/Rusticl to avoid SPIRV-LLVM-Translator requirement
+        # We want LLVM for radeonsi rendering, not OpenCL compute
+        "-Dgallium-rusticl=false",
+    ],
+    deps = [
+        "//packages/linux/graphics/libglvnd:libglvnd",
+        "//packages/virtual/libudev:libudev",
+        "//packages/linux/system/libs/input/libinput:libinput",
+        "//packages/linux/desktop/libdrm:libdrm",
+        "//packages/linux/graphics/rendering/wayland:wayland",
+        "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/system/libs/data/expat:expat",
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/compression/zstd:zstd",
+        "//packages/linux/dev-libs/elfutils:elfutils",
+        "//packages/linux/dev-libs/spirv:spirv-tools",
+    ],
+    host_deps = [
+        # Python modules needed for mesa code generation (mako templates + glsl compiler)
+        "//packages/linux/dev-libs/python/mako:mako",
+        "//packages/linux/dev-libs/python/markupsafe:markupsafe",
+        "//packages/linux/dev-libs/python/packaging:packaging",
+        "//packages/linux/dev-libs/python/pyyaml:pyyaml",
+        # GLSL parser needs bison/flex
+        "//packages/linux/dev-tools/dev-utils/bison:bison",
+        "//packages/linux/dev-tools/dev-utils/flex:flex",
+    ],
 )
 
 # =============================================================================
 # virglrenderer - Virtual 3D GPU for QEMU
 # =============================================================================
 
-autotools_package(
+package(
+    build_rule = "meson",
     name = "virglrenderer",
     version = "1.2.0",
-    src_uri = "https://gitlab.freedesktop.org/virgl/virglrenderer/-/archive/virglrenderer-1.2.0/virglrenderer-virglrenderer-1.2.0.tar.bz2",
+    url = "https://gitlab.freedesktop.org/virgl/virglrenderer/-/archive/virglrenderer-1.2.0/virglrenderer-virglrenderer-1.2.0.tar.bz2",
     sha256 = "47a64189492a754685a430c713ac6700f4b1c3e7b871e87889ddb96e4d65e8ab",
-    signature_required = False,
     description = "Library to implement a virtual 3D GPU used by qemu",
     homepage = "https://virgil3d.github.io/",
     license = "MIT",
-    iuse = ["egl", "glx", "vulkan", "test"],
-    use_defaults = ["egl", "glx"],
-    use_configure = {
-        "vulkan": "-Dvulkan=true",
-        "-vulkan": "-Dvulkan=false",
-        "test": "-Dtests=true",
-        "-test": "-Dtests=false",
-    },
-    use_deps = {},
-    pre_configure = """
-mkdir -p build
-cd build
-
-# Build platforms list
-PLATFORMS=""
-if [ "${USE_egl}" = "1" ]; then
-    PLATFORMS="${PLATFORMS:+$PLATFORMS,}egl"
-fi
-if [ "${USE_glx}" = "1" ]; then
-    PLATFORMS="${PLATFORMS:+$PLATFORMS,}glx"
-fi
-
-# USE flags: egl, glx, vulkan, test
-meson setup .. --prefix=/usr \\
-    -Dplatforms=${PLATFORMS:-egl} \\
-    $CONFIGURE_ARGS
-""",
+    configure_args = [
+        "-Dplatforms=egl",
+        "-Dvulkan=false",
+        "-Dtests=false",
+    ],
     deps = [
         "//packages/linux/desktop/libdrm:libdrm",
         ":mesa",
     ],
-    visibility = ["PUBLIC"],
 )

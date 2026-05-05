@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "teaser-plusplus",
-    version = "1.0.0",
-    src_uri = "https://github.com/MIT-SPARK/TEASER-plusplus/archive/refs/tags/v1.0.0.tar.gz",
-    sha256 = "TODO",
-    cmake_args = [
+    version = "1.0",
+    url = "https://github.com/MIT-SPARK/TEASER-plusplus/archive/refs/tags/v1.0.tar.gz",
+    sha256 = "959e8ff8ecbdc45de9cde588a105dd4bb2b7455b0a30c47c40491ea2b0d58deb",
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_TESTS=OFF",
         "-DBUILD_PYTHON_BINDINGS=OFF",
@@ -15,10 +16,10 @@ cmake_package(
         "-DENABLE_DIAGNOSTIC_PRINT=OFF",
     ],
     deps = [
-        "//packages/linux/dev-libs/math/eigen",
-        "//packages/linux/dev-libs/math/pmc",
-        "//packages/linux/dev-libs/parallel/openmp",
-        "//packages/linux/ai/vision/flann",
-        "//packages/linux/dev-libs/boost",
+        "//packages/linux/dev-libs/math/eigen:eigen",
+        "//packages/linux/dev-libs/math/pmc:pmc",
+        "//packages/linux/dev-libs/parallel/openmp:openmp",
+        "//packages/linux/ai/vision/flann:flann",
+        "//packages/linux/dev-libs/boost:boost",
     ],
 )

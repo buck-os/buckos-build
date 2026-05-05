@@ -1,9 +1,8 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
 # FIXME: pyropus.ca has redirect loop - needs working URL
 genrule(
     name = "memtester",
     out = "memtester-disabled.txt",
     cmd = "echo 'Package disabled: upstream URL has redirect loop' > $OUT",
-    visibility = ["PUBLIC"],
 )

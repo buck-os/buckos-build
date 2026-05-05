@@ -1,18 +1,34 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "libyaml",
     version = "0.2.5",
-    src_uri = "https://github.com/yaml/libyaml/archive/refs/tags/0.2.5.tar.gz",
+    use_configure = {
+        "static-libs": ("-DBUILD_STATIC_LIBS=ON", "-DBUILD_STATIC_LIBS=OFF"),
+    },
+    url = "https://github.com/yaml/libyaml/archive/refs/tags/0.2.5.tar.gz",
     sha256 = "fa240dbf262be053f3898006d502d514936c818e422afdcf33921c63bed9bf2e",
     description = "LibYAML is a YAML 1.1 parser and emitter written in C",
     homepage = "https://github.com/yaml/libyaml",
     license = "MIT",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_TESTING=OFF",
     ],
-    visibility = ["PUBLIC"],
+    post_install_cmds = [
+        """mkdir -p "$DESTDIR/usr/lib/pkgconfig" && cat > "$DESTDIR/usr/lib/pkgconfig/yaml-0.1.pc" << 'PCEOF'
+prefix=/usr
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+Name: LibYAML
+Description: YAML 1.1 parser and emitter
+Version: 0.2.5
+Libs: -L${libdir} -lyaml
+Cflags: -I${includedir}
+PCEOF""",
+    ],
 )

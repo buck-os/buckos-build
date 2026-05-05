@@ -1,0 +1,23 @@
+load("//defs:package.bzl", "package")
+
+# libbsd - BSD compatibility library for Linux
+# Provides functions like strlcpy, strlcat, arc4random, etc.
+
+package(
+    build_rule = "autotools",
+    name = "libbsd",
+    version = "0.12.2",
+    source = "//packages/linux/system/libs/bsd:libbsd-src",
+    description = "BSD compatibility library for Linux",
+    license = "BSD",
+
+    configure_args = [
+        "--disable-static",
+    ],
+
+    deps = [
+        # libmd provides message digest functions used by libbsd
+        "//packages/linux/system/libs/compat/libmd:libmd",
+    ],
+
+)

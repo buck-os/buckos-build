@@ -13,7 +13,6 @@ filegroup(
         "//packages/linux/graphics/editors/mypaint:mypaint",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # 3D Modeling - 3D creation and CAD applications
@@ -23,7 +22,6 @@ filegroup(
         "//packages/linux/graphics/3d/blender:blender",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Image Viewers - Lightweight image viewing applications
@@ -35,7 +33,6 @@ filegroup(
         "//packages/linux/graphics/viewers/geeqie:geeqie",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Screenshot Tools - Screen capture utilities
@@ -44,11 +41,10 @@ filegroup(
     srcs = [
         "//packages/linux/graphics/screenshot/flameshot:flameshot",
         "//packages/linux/graphics/screenshot/scrot:scrot",
-        "//packages/linux/graphics/screenshot/grim:grim",
+        "//packages/linux/desktop/wayland-utilities/grim:grim",
         "//packages/linux/graphics/screenshot/maim:maim",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Video Editing - Video production and streaming tools
@@ -58,7 +54,6 @@ filegroup(
         "//packages/linux/graphics/video:all",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Video Libraries - Core video encoding/decoding libraries
@@ -68,7 +63,6 @@ filegroup(
         "//packages/linux/graphics/video:libraries",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Video Players - Media playback applications
@@ -78,7 +72,6 @@ filegroup(
         "//packages/linux/graphics/video:players",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Video Editors - Video editing applications
@@ -88,7 +81,6 @@ filegroup(
         "//packages/linux/graphics/video:editors",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Video Utilities - Video conversion and analysis tools
@@ -98,7 +90,6 @@ filegroup(
         "//packages/linux/graphics/video:utilities",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Screen Recording - Screen capture tools
@@ -108,7 +99,6 @@ filegroup(
         "//packages/linux/graphics/video:recording",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Video Streaming - Live streaming tools
@@ -118,7 +108,6 @@ filegroup(
         "//packages/linux/graphics/video:streaming",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Animation - 2D animation software
@@ -128,24 +117,21 @@ filegroup(
         "//packages/linux/graphics/animation/synfig:synfig",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Utilities - Graphics libraries and command-line tools
 filegroup(
     name = "utilities",
     srcs = [
-        "//packages/linux/graphics/utilities/imagemagick:imagemagick",
+        "//packages/linux/media/image/imagemagick:imagemagick",
         "//packages/linux/graphics/utilities/graphicsmagick:graphicsmagick",
         "//packages/linux/graphics/utilities/gpick:gpick",
         "//packages/linux/graphics/utilities/dia:dia",
-        "//packages/linux/graphics/utilities/babl:babl",
         "//packages/linux/graphics/utilities/gegl:gegl",
         "//packages/linux/graphics/utilities/libmypaint:libmypaint",
         "//packages/linux/graphics/utilities/slop:slop",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Professional Graphics Suite - Essential tools for professional graphics work
@@ -159,7 +145,6 @@ filegroup(
         "//packages/linux/graphics/video/kdenlive:kdenlive",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Photography Suite - Tools for photographers
@@ -170,10 +155,9 @@ filegroup(
         "//packages/linux/graphics/editors/darktable:darktable",
         "//packages/linux/graphics/editors/rawtherapee:rawtherapee",
         "//packages/linux/graphics/viewers/geeqie:geeqie",
-        "//packages/linux/graphics/utilities/imagemagick:imagemagick",
+        "//packages/linux/media/image/imagemagick:imagemagick",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Minimal Graphics - Lightweight tools for basic graphics needs
@@ -182,10 +166,9 @@ filegroup(
     srcs = [
         "//packages/linux/graphics/viewers/feh:feh",
         "//packages/linux/graphics/screenshot/scrot:scrot",
-        "//packages/linux/graphics/utilities/imagemagick:imagemagick",
+        "//packages/linux/media/image/imagemagick:imagemagick",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Wayland Graphics - Wayland-compatible graphics tools
@@ -193,11 +176,10 @@ filegroup(
     name = "wayland",
     srcs = [
         "//packages/linux/graphics/viewers/imv:imv",
-        "//packages/linux/graphics/screenshot/grim:grim",
+        "//packages/linux/desktop/wayland-utilities/grim:grim",
         "//packages/linux/graphics/screenshot/flameshot:flameshot",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # All Graphics - Complete graphics package collection
@@ -213,5 +195,4 @@ filegroup(
         ":utilities",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )

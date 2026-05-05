@@ -1,0 +1,64 @@
+load("//defs:package.bzl", "package")
+
+# =============================================================================
+# SystemTap - Dynamic Tracing Framework
+# =============================================================================
+# Provides the sys/sdt.h header needed for SDT (Static Defined Tracing) probes
+# in GCC's libstdc++ and other software.
+
+# Full SystemTap package (for when full functionality is needed)
+package(
+    build_rule = "autotools",
+    name = "systemtap",
+    url = "https://sourceware.org/ftp/systemtap/releases/systemtap-5.1.tar.gz",
+
+    sha256 = "c98da9d76ce2a7a8492e56a4e6c71b885cfb5d4f93fbab1be5da9e9da3dce8d3",
+    version = "5.1",
+    description = "SystemTap - Dynamic Tracing Framework for Linux",
+    homepage = "https://sourceware.org/systemtap/",
+    license = "GPL-2.0+",
+    configure_args = [
+        "--prefix=/usr",
+        "--disable-docs",
+        "--disable-publican",
+        "--disable-refdocs",
+        "--without-python3",
+        "--without-python2-probes",
+        "--without-python3-probes",
+        "--disable-grapher",
+        # Minimal build - we mainly need the headers
+        "--enable-translator=no",
+        "--disable-server",
+        "--disable-virt",
+    ],
+    deps = [
+        "//packages/linux/core/elfutils:elfutils",
+    ],
+)
+
+# SDT headers only - minimal package for build-time SDT support
+# This provides sys/sdt.h without building the full systemtap
+genrule(
+    name = "sdt-headers-gen",
+    out = "sdt-headers",
+    cmd = """
+        set -e
+        mkdir -p $OUT/usr/include/sys
+
+        # Extract just the sdt.h header from the source
+        tar -xf $(location :systemtap-src) --strip-components=1 -C $TMPDIR
+
+        # Install the SDT header
+        cp $TMPDIR/includes/sys/sdt.h $OUT/usr/include/sys/
+
+        # Also install dtrace compatibility header if present
+        if [ -f $TMPDIR/includes/sys/dtrace.h ]; then
+            cp $TMPDIR/includes/sys/dtrace.h $OUT/usr/include/sys/
+        fi
+    """,
+)
+
+filegroup(
+    name = "sdt-headers",
+    default_target_platform = "//platforms:linux-target",
+)

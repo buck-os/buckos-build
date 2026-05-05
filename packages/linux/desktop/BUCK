@@ -13,26 +13,22 @@
 filegroup(
     name = "desktop-foundation",
     srcs = [
-        "//packages/linux/desktop/wayland:wayland",
-        "//packages/linux/desktop/wayland:wayland-protocols",
+        "//packages/linux/graphics/rendering/wayland:wayland",
+        "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
         "//packages/linux/desktop/mesa:mesa",
         "//packages/linux/desktop/libdrm:libdrm",
-        "//packages/linux/desktop/libinput:libinput",
+        "//packages/linux/system/libs/input/libinput:libinput",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # All display managers
 filegroup(
     name = "display-managers",
     srcs = [
-        "//packages/linux/desktop/gdm:gdm",
         "//packages/linux/desktop/sddm:sddm",
-        "//packages/linux/desktop/lightdm:lightdm",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # All full desktop environments
@@ -47,7 +43,6 @@ filegroup(
         "//packages/linux/desktop/budgie:budgie",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # All Wayland compositors
@@ -59,7 +54,6 @@ filegroup(
         "//packages/linux/desktop/wayfire:wayfire-desktop",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # All X11 window managers
@@ -71,7 +65,6 @@ filegroup(
         "//packages/linux/desktop/awesome:awesome-desktop",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Lightweight desktops (good for older hardware)
@@ -83,7 +76,6 @@ filegroup(
         "//packages/linux/desktop/i3:i3-desktop",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Modern Wayland desktops
@@ -95,7 +87,6 @@ filegroup(
         "//packages/linux/desktop/hyprland:hyprland-desktop",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Tiling window managers (keyboard-driven)
@@ -109,7 +100,6 @@ filegroup(
         "//packages/linux/desktop/awesome:awesome-desktop",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
@@ -123,7 +113,6 @@ filegroup(
         "//packages/linux/desktop/wayland-utilities:all",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Essential Wayland utilities
@@ -133,10 +122,7 @@ filegroup(
         "//packages/linux/desktop/wayland-utilities:essential",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
-
-
 
 # i3 complete desktop
 filegroup(
@@ -145,7 +131,6 @@ filegroup(
         "//packages/linux/desktop/i3:i3-desktop",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Sway complete desktop with utilities
@@ -156,7 +141,6 @@ filegroup(
         "//packages/linux/desktop/wayland-utilities:sway-companions",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )
 
 # Hyprland complete desktop with utilities
@@ -167,5 +151,4 @@ filegroup(
         "//packages/linux/desktop/wayland-utilities:hyprland-companions",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )

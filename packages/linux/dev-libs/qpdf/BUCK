@@ -1,13 +1,18 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "qpdf",
     version = "10.6.2",
-    src_uri = "https://github.com/qpdf/qpdf/releases/download/v10.6.2/qpdf-10.6.2.tar.gz",
-    sha256 = "TODO",
+    use_configure = {
+        "examples": ("--enable-examples", "--disable-examples"),
+        "gnutls": ("--with-gnutls", "--without-gnutls"),
+        "zopfli": ("--enable-zopfli", "--disable-zopfli"),
+    },
+    url = "https://github.com/qpdf/qpdf/archive/refs/tags/release-qpdf-10.6.2.tar.gz",
+    sha256 = "e8f8f7f09fe3b9d1f98907e4a0cb7fddb4f0f9b8084e7e3201a571334e686c8c",
     deps = [
         "//packages/linux/core/zlib:zlib",
-        "//packages/linux/media/image/libjpeg-turbo:libjpeg-turbo",
+        "//packages/linux/system/libs/image/libjpeg-turbo:libjpeg-turbo",
     ],
-    visibility = ["PUBLIC"],
 )

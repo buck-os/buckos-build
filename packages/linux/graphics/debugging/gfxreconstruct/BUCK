@@ -1,30 +1,30 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # GFXReconstruct - Graphics API capture and replay tools for Vulkan and D3D12
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "gfxreconstruct",
     version = "1.0.4",
-    src_uri = "https://github.com/LunarG/gfxreconstruct/archive/refs/tags/v1.0.4.tar.gz",
+    url = "https://github.com/LunarG/gfxreconstruct/archive/refs/tags/v1.0.4.tar.gz",
     sha256 = "ac4e59a7b7416599d91c742d45accd64c4a3378871c9f2234dd576ed6281e749",
     description = "Tools for capture and replay of Vulkan and D3D12 graphics API calls",
     homepage = "https://github.com/LunarG/gfxreconstruct",
     license = "MIT",
-    maintainers = ["ar_engine_graphics"],
-    iuse = ["wayland", "xcb", "xlib", "lz4", "zstd", "d3d12", "openxr"],
-    use_defaults = ["wayland", "xcb", "xlib", "lz4", "zstd"],
+    use_configure = {
+        "X": ("-DENABLE_X=ON", "-DENABLE_X=OFF"),
+    },
     deps = [
         "//packages/linux/dev-libs/json/nlohmann-json:nlohmann-json",
         "//packages/linux/system/libs/compression/zlib:zlib",
     ],
     use_deps = {
-        "lz4": ["//packages/linux/dev-libs/compression/lz4:lz4"],
-        "zstd": ["//packages/linux/dev-libs/compression/zstd:zstd"],
-        "xcb": ["//packages/linux/graphics/xorg/libxcb:libxcb"],
-        "wayland": ["//packages/linux/graphics/rendering/wayland:wayland"],
-        "xlib": ["//packages/linux/graphics/xorg/lib/libx11:libx11"],
+        "zstd": "//packages/linux/system/libs/compression/zstd:zstd",
+        "xcb": "//packages/linux/graphics/xorg/libxcb:libxcb",
+        "wayland": "//packages/linux/graphics/rendering/wayland:wayland",
+        "xlib": "//packages/linux/graphics/xorg/lib/libx11:libx11",
     },
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DBUILD_WERROR=OFF",
@@ -35,31 +35,5 @@ cmake_package(
         "-DBUILD_LAUNCHER_AND_INTERCEPTOR=OFF",  # Windows only
         "-DGFXRECON_AGS_SUPPORT=OFF",  # Windows AMD-specific
     ],
-    use_options = {
-        "lz4": {
-            "enabled": ["-DLZ4_OPTIONAL=OFF"],
-            "disabled": ["-DLZ4_OPTIONAL=ON"],
-        },
-        "wayland": {
-            "enabled": ["-DBUILD_WSI_WAYLAND_SUPPORT=ON"],
-            "disabled": ["-DBUILD_WSI_WAYLAND_SUPPORT=OFF"],
-        },
-        "xcb": {
-            "enabled": ["-DBUILD_WSI_XCB_SUPPORT=ON"],
-            "disabled": ["-DBUILD_WSI_XCB_SUPPORT=OFF"],
-        },
-        "xlib": {
-            "enabled": ["-DBUILD_WSI_XLIB_SUPPORT=ON"],
-            "disabled": ["-DBUILD_WSI_XLIB_SUPPORT=OFF"],
-        },
-        "d3d12": {
-            "enabled": ["-DD3D12_SUPPORT=ON"],
-            "disabled": ["-DD3D12_SUPPORT=OFF"],
-        },
-        "openxr": {
-            "enabled": ["-DGFXRECON_ENABLE_OPENXR=ON"],
-            "disabled": ["-DGFXRECON_ENABLE_OPENXR=OFF"],
-        },
-    },
-    visibility = ["PUBLIC"],
+    labels = ["buckos:hw:vulkan"],
 )

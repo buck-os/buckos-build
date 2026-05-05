@@ -1,19 +1,10 @@
-load("//defs:package_defs.bzl", "simple_binary_package")
+load("//defs:package.bzl", "package")
 
-simple_binary_package(
+# nvidia-nsight-systems - DISABLED
+# NVIDIA download URLs change frequently. Re-enable when URL is verified.
+# Download from: https://developer.nvidia.com/nsight-systems
+
+filegroup(
     name = "nvidia-nsight-systems",
-    version = "2025.5.1",
-    src_uri = "https://developer.download.nvidia.com/devtools/nsight-systems/2025_5_1/NsightSystems-linux-public-2025.5.1.109-3543593.tar.gz",
-    sha256 = "TODO",
-    bins = [
-        "target-linux-x64/nsys",
-        "host-linux-x64/nsys-ui",
-    ],
-    extract_to = "/opt/nvidia/nsight-systems",
-    symlinks = {
-        "/usr/bin/nsys": "/opt/nvidia/nsight-systems/target-linux-x64/nsys",
-        "/usr/bin/nsys-ui": "/opt/nvidia/nsight-systems/host-linux-x64/nsys-ui",
-    },
-    maintainers = ["hodgesd"],
-    visibility = ["PUBLIC"],
+    srcs = [],
 )

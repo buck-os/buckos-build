@@ -1,5 +1,4 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # stress-ng - Stress test tool for Linux systems
 #
@@ -7,34 +6,28 @@ load("//defs:use_flags.bzl", "set_use_flags")
 #   static   - Build static binary
 #   zlib     - Enable zlib compression tests
 
-autotools_package(
+package(
     name = "stress-ng",
+    build_rule = "autotools",
+    skip_configure = True,
     version = "0.17.08",
-    src_uri = "https://github.com/ColinIanKing/stress-ng/archive/refs/tags/V0.17.08.tar.gz",
+    url = "https://github.com/ColinIanKing/stress-ng/archive/refs/tags/V0.17.08.tar.gz",
     sha256 = "e4982d2a1c57139dad1741d6248b00a30935f746c1f665ec5b9d53c010c8dc08",
-    signature_required = False,
     description = "Stress test tool for Linux systems - CPU, memory, I/O, and more",
     homepage = "https://github.com/ColinIanKing/stress-ng",
     license = "GPL-2.0",
-    iuse = ["static", "zlib"],
-    use_defaults = ["static"],
+    use_configure = {
+        "apparmor": ("--enable-apparmor", "--disable-apparmor"),
+        "jpeg": ("--with-jpeg", "--without-jpeg"),
+        "keyutils": ("--enable-keyutils", "--disable-keyutils"),
+        "sctp": ("--enable-sctp", "--disable-sctp"),
+    },
+# Don't build static by default (requires glibc-static)
     deps = [],
     use_deps = {
-        "zlib": ["//packages/linux/core/zlib:zlib"],
+        "zlib": "//packages/linux/core/zlib:zlib",
     },
-    pre_configure = """
-# stress-ng uses make directly without configure
-true
-""",
-    configure_args = [],
-    make_args = [],
-    use_configure = {
-        "static": "STATIC=1",
-        "-static": "",
-    },
-    post_install = """
-mkdir -p "$DESTDIR/usr/bin"
-cp stress-ng "$DESTDIR/usr/bin/" 2>/dev/null || true
-""",
-    visibility = ["PUBLIC"],
+    make_args = [
+        "DESTDIR=$DESTDIR",
+    ],
 )

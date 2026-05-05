@@ -1,10 +1,15 @@
-load("//defs:package_defs.bzl", "cargo_package")
+load("//defs:package.bzl", "package")
 
-cargo_package(
+# rust-analyzer - A Rust compiler front-end for IDEs
+# NOTE: Version 2024-09-16 is compatible with rustc 1.90.0
+# (Later versions like 2025-12-08 require rustc 1.91+)
+package(
+    build_rule = "cargo",
     name = "rust-analyzer",
-    version = "2025-11-11",
-    src_uri = "https://github.com/rust-lang/rust-analyzer/archive/refs/tags/2025-11-11.tar.gz",
-    sha256 = "283267780bcb0563eae1e8a09b09a516f6fa28dec1c96cab7ecdc9c79c2ecf07",
-    bins = ["rust-analyzer"],
-    cargo_args = ["--release", "-p", "rust-analyzer"],
+    version = "2024-09-16",
+    url = "https://github.com/rust-lang/rust-analyzer/archive/refs/tags/2024-09-16.tar.gz",
+    sha256 = "91d6f7dadeaac920b633f778a5d39975c48f46b5adb248025aa1b7fa3275d27e",
+    env = {
+        "CARGO_BUILD_JOBS": "4",
+    },
 )

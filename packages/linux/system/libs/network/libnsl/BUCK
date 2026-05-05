@@ -1,58 +1,23 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
+load("//defs:package.bzl", "package")
 
-# libnsl - Public client interface for NIS(YP) in a IPv6 ready version
-download_source(
-    name = "libnsl-src",
-    src_uri = "https://github.com/thkukuk/libnsl/releases/download/v2.0.1/libnsl-2.0.1.tar.xz",
-    sha256 = "5c9e470b232a7acd3433491ac5221b4832f0c71318618dc6aa04dd05ffcd8fd9",
-    signature_required = False,
-)
-
-ebuild_package(
+package(
+    build_rule = "autotools",
     name = "libnsl",
-    source = ":libnsl-src",
+    url = "https://github.com/thkukuk/libnsl/releases/download/v2.0.1/libnsl-2.0.1.tar.xz",
+    sha256 = "5c9e470b232a7acd3433491ac5221b4832f0c71318618dc6aa04dd05ffcd8fd9",
     version = "2.0.1",
-    category = "system/libs/network",
-    slot = "0/3",
     description = "Public client interface for NIS(YP) in a IPv6 ready version",
     homepage = "https://github.com/thkukuk/libnsl",
     license = "LGPL-2.1+",
-
-    src_configure = '''
-# The framework sets PKG_CONFIG_LIBDIR to point to dependency pkgconfig directories
-# libtirpc provides a .pc file, so pkg-config will find it automatically
-echo "PKG_CONFIG_LIBDIR=$PKG_CONFIG_LIBDIR"
-
-# Verify libtirpc is available via pkg-config (from the buck dependency)
-if ! pkg-config --exists libtirpc; then
-    echo "ERROR: libtirpc not found via pkg-config"
-    echo "This means the libtirpc dependency may not have installed its .pc file"
-    pkg-config --debug --exists libtirpc 2>&1 | head -20 || true
-    exit 1
-fi
-
-echo "Found libtirpc via pkg-config:"
-echo "  CFLAGS: $(pkg-config --cflags libtirpc)"
-echo "  LIBS: $(pkg-config --libs libtirpc)"
-
-./configure \
-    --prefix=/usr \
-    --libdir=/usr/lib64 \
-    --enable-shared \
-    --disable-static
-''',
-
-    src_compile = '''
-make -j$(nproc)
-''',
-
-    src_install = '''
-make DESTDIR="$DESTDIR" install
-find "$DESTDIR" -name '*.la' -delete
-''',
-
-    bdepend = [
+    configure_args = [
+        "--libdir=/usr/lib64",
+        "--enable-shared",
+        "--disable-static",
+    ],
+    post_install_cmds = [
+        "find . -name '*.la' -delete",
+    ],
+    deps = [
         "//packages/linux/system/libs/ipc/libtirpc:libtirpc",
     ],
-    visibility = ["PUBLIC"],
 )

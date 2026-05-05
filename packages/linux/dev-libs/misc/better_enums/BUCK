@@ -1,63 +1,19 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # Better Enums - Reflective compile-time enum library with clean syntax
 
-cmake_package(
+package(
+    build_rule = "binary",
     name = "better_enums",
     version = "0.11.3",
-    src_uri = "https://github.com/aantron/better-enums/archive/refs/tags/0.11.3.tar.gz",
+    url = "https://github.com/aantron/better-enums/archive/refs/tags/0.11.3.tar.gz",
     sha256 = "1b1597f0aa5452b971a94ab13d8de3b59cce17d9c43c8081aa62f42b3376df96",
     description = "Reflective compile-time enum library with clean syntax, in a single header file",
     homepage = "https://github.com/aantron/better-enums",
     license = "BSD",
     deps = [],
-    pre_configure = """
-        # Create a minimal CMakeLists.txt for header-only installation
-        cat > CMakeLists.txt << 'EOF'
-cmake_minimum_required(VERSION 3.10)
-project(better_enums VERSION 0.11.3 LANGUAGES CXX)
-
-# Header-only library - just install the header
-install(FILES enum.h DESTINATION include/better_enums)
-
-# Install CMake package config files for find_package support
-include(CMakePackageConfigHelpers)
-
-configure_package_config_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/better_enumsConfig.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/better_enumsConfig.cmake
-    INSTALL_DESTINATION lib/cmake/better_enums
-    NO_CHECK_REQUIRED_COMPONENTS_MACRO
-)
-
-write_basic_package_version_file(
-    ${CMAKE_CURRENT_BINARY_DIR}/better_enumsConfigVersion.cmake
-    VERSION 0.11.3
-    COMPATIBILITY SameMajorVersion
-)
-
-install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/better_enumsConfig.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/better_enumsConfigVersion.cmake
-    DESTINATION lib/cmake/better_enums
-)
-EOF
-
-        # Create CMake config file
-        mkdir -p cmake
-        cat > cmake/better_enumsConfig.cmake.in << 'EOF'
-@PACKAGE_INIT@
-
-if(NOT TARGET better_enums::better_enums)
-    add_library(better_enums::better_enums INTERFACE IMPORTED)
-    set_target_properties(better_enums::better_enums PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "@PACKAGE_CMAKE_INSTALL_PREFIX@/include"
-    )
-endif()
-EOF
-    """,
-    cmake_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-    ],
-    visibility = ["PUBLIC"],
+    src_install = """
+mkdir -p $INSTALL_DIR/usr/include
+cp enum.h $INSTALL_DIR/usr/include/enum.h
+""",
 )

@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "stopes",
     version = "2.2.0",
-    src_uri = "https://github.com/facebookresearch/stopes/archive/refs/tags/v2.2.0.tar.gz",
+    url = "https://github.com/facebookresearch/stopes/archive/refs/tags/v2.2.0.tar.gz",
     sha256 = "2bbc6645d50c238cc3a4ec945d8b3abb3b2f4c8e64f001dfa01f7b2b5903ddb7",
     deps = [
         "//packages/linux/dev-tools/build-systems/python/hydra-core:hydra-core",

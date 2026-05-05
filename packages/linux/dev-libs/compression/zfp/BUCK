@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "zfp",
     version = "0.5.5",
-    src_uri = "https://github.com/LLNL/zfp/archive/refs/tags/0.5.5.tar.gz",
+    url = "https://github.com/LLNL/zfp/archive/refs/tags/0.5.5.tar.gz",
     sha256 = "6a7f4934489087d9c117a4af327fd6495ea757924f4df467b9c537abf8bd86c4",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_SHARED_LIBS=OFF",
         "-DBUILD_TESTING=OFF",
         "-DBUILD_UTILITIES=OFF",

@@ -1,34 +1,22 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
+load("//defs:package.bzl", "package")
 
-# alacritty - GPU-accelerated terminal (Rust/Cargo build)
-# USE flags: wayland, X
-# Default: wayland, X
-
-download_source(
-    name = "alacritty-src",
-    src_uri = "https://github.com/alacritty/alacritty/archive/refs/tags/v0.13.1.tar.gz",
-    sha256 = "38a42e23e1e6faaa9e300347df3f7b58b6182908a701517aac6e296fbdf37451",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "cargo",
     name = "alacritty",
-    source = ":alacritty-src",
     version = "0.13.1",
+    use_configure = {
+        "X": ("--with-x", "--without-x"),
+        "wayland": ("--enable-wayland", "--disable-wayland"),
+    },
+    url = "https://github.com/alacritty/alacritty/archive/refs/tags/v0.13.1.tar.gz",
+    sha256 = "38a42e23e1e6faaa9e300347df3f7b58b6182908a701517aac6e296fbdf37451",
+    vendor_deps = True,
     description = "A cross-platform, GPU-accelerated terminal emulator",
     homepage = "https://alacritty.org/",
     license = "Apache-2.0",
-    pre_configure = """
-# Alacritty uses Cargo/Rust
-if command -v cargo >/dev/null 2>&1; then
-    cargo build --release
-fi
-""",
-    configure_args = [],
-    post_install = """
-mkdir -p "$DESTDIR/usr/bin"
-cp target/release/alacritty "$DESTDIR/usr/bin/" 2>/dev/null || true
-""",
-    visibility = ["PUBLIC"],
+    deps = [
+        "//packages/linux/system/libs/font/freetype:freetype",
+        "//packages/linux/system/libs/font/fontconfig:fontconfig",
+        "//packages/linux/system/libs/data/expat:expat",
+    ],
 )

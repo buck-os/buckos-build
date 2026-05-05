@@ -1,30 +1,22 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "libsndfile-src",
-    src_uri = "https://github.com/libsndfile/libsndfile/releases/download/1.2.2/libsndfile-1.2.2.tar.xz",
-    sha256 = "3799ca9924d3125038880367bf1468e53a1b7e3686a934f098b7e1d286cdb80e",
-    signature_sha256 = "84ee7165e52f266e18b76a37d7cc8a4522fa6c5a0571776e936b9ddafeff98fa",
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libsndfile",
-    source = ":libsndfile-src",
+    url = "https://github.com/libsndfile/libsndfile/releases/download/1.2.2/libsndfile-1.2.2.tar.xz",
+
+    sha256 = "3799ca9924d3125038880367bf1468e53a1b7e3686a934f098b7e1d286cdb80e",
+    use_configure = {
+        "alsa": ("--enable-alsa", "--disable-alsa"),
+        "minimal": ("--enable-minimal", "--disable-minimal"),
+        "sqlite": ("--enable-sqlite", "--disable-sqlite"),
+    },
     version = "1.2.2",
     description = "C library for reading and writing files containing sampled sound",
     homepage = "https://libsndfile.github.io/libsndfile/",
     license = "LGPL-2.1",
     # Fix C23 bool conflict in ALAC encoder code
     env = {"CFLAGS": "-std=gnu17 -O2"},
-    # Remove problematic .la files that have hardcoded paths
-    src_prepare = """
-# Remove .la files from dependencies that have broken absolute paths
-find "$SYSROOT" -name '*.la' -delete 2>/dev/null || true
-for dir in ${DEP_BASE_DIRS//:/ }; do
-    find "$dir" -name '*.la' -delete 2>/dev/null || true
-done
-""",
     configure_args = [
         "--disable-static",
     ],
@@ -34,5 +26,4 @@ done
         "//packages/linux/system/libs/audio/libvorbis:libvorbis",
         "//packages/linux/system/libs/audio/opus:opus",
     ],
-    visibility = ["PUBLIC"],
 )

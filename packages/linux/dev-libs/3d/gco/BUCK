@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "gco",
     version = "3.0",
-    src_uri = "https://github.com/nsubtil/gco-v3.0/archive/871475a781441534836042b8d17f8f05ff94b7b4.tar.gz",
+    url = "https://github.com/nsubtil/gco-v3.0/archive/871475a781441534836042b8d17f8f05ff94b7b4.tar.gz",
     sha256 = "dec40533eb19fd8cb4ed8fc6eec7cbfa05929c5c84293030eb68975ea5855cfa",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_CXX_FLAGS=-Wno-shadow -Wno-unused-variable -fexceptions",
     ],
 )

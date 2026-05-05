@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "tau2-bench",
     version = "0.1.2",
-    src_uri = "https://github.com/sierra-research/tau2-bench/archive/v0.1.2.tar.gz",
+    url = "https://github.com/sierra-research/tau2-bench/archive/v0.1.2.tar.gz",
     sha256 = "4f31645fe94b3881c5c1410534b21be75807309627c31e9271ff559edd3d8751",
     deps = [
         "//packages/linux/dev-tools/dev-utils:python3",

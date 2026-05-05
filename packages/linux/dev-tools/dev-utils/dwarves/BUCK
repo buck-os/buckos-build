@@ -1,0 +1,20 @@
+load("//defs:package.bzl", "package")
+
+package(
+    build_rule = "cmake",
+    name = "dwarves",
+    version = "1.28",
+    url = "https://fedorapeople.org/~acme/dwarves/dwarves-1.28.tar.xz",
+    sha256 = "a4c1a3c16c7d41f27eba8323e05b59fe33581832d5c50ef8390fa102d75a16e3",
+    description = "DWARF utilities including pahole for BTF generation",
+    homepage = "https://git.kernel.org/pub/scm/devel/pahole/pahole.git",
+    license = "GPL-2.0-only",
+    configure_args = [
+        "-DCMAKE_INSTALL_PREFIX=/usr",
+        "-D__LIB=lib",
+    ],
+    deps = [
+        "//packages/linux/system/libs/elfutils:elfutils",
+        "//packages/linux/core/zlib:zlib",
+    ],
+)

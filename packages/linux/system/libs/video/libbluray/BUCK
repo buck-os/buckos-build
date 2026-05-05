@@ -1,16 +1,20 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "libbluray-src",
-    src_uri = "https://download.videolan.org/pub/videolan/libbluray/1.3.4/libbluray-1.3.4.tar.bz2",
-    sha256 = "478ffd68a0f5dde8ef6ca989b7f035b5a0a22c599142e5cd3ff7b03bbebe5f2b",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libbluray",
-    source = ":libbluray-src",
+    url = "https://download.videolan.org/pub/videolan/libbluray/1.3.4/libbluray-1.3.4.tar.bz2",
+
+    sha256 = "478ffd68a0f5dde8ef6ca989b7f035b5a0a22c599142e5cd3ff7b03bbebe5f2b",
+    use_configure = {
+        "aacs": ("--enable-aacs", "--disable-aacs"),
+        "bdplus": ("--enable-bdplus", "--disable-bdplus"),
+        "fontconfig": ("--enable-fontconfig", "--disable-fontconfig"),
+        "java": ("--enable-java", "--disable-java"),
+        "truetype": ("--enable-truetype", "--disable-truetype"),
+        "utils": ("--enable-utils", "--disable-utils"),
+        "xml": ("--enable-xml", "--disable-xml"),
+    },
     version = "1.3.4",
     description = "Library for Blu-ray Disc playback",
     homepage = "https://www.videolan.org/developers/libbluray.html",
@@ -26,5 +30,4 @@ autotools_package(
         "//packages/linux/system/libs/font/freetype:freetype",
         "//packages/linux/system/libs/font/fontconfig:fontconfig",
     ],
-    visibility = ["PUBLIC"],
 )

@@ -1,16 +1,11 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "korte-jvm-src",
-    src_uri = "https://repo1.maven.org/maven2/com/soywiz/korge/korte-jvm/2.7.0/korte-jvm-2.7.0.jar",
-    sha256 = "TODO",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "korte-jvm",
-    srcs = [":korte-jvm-src"],
-    version = "2.7.0",
+    version = "4.0.10",
+    url = "https://github.com/korlibs/korge/archive/refs/tags/v4.0.10.tar.gz",
+    sha256 = "ffa815e1586434a93e21b35cc4de6b194f0c96ed371c37ac220600c0f90c6a25",
     description = "Korte - Kotlin Template Engine for JVM",
     homepage = "https://korlibs.soywiz.com/",
     license = "MIT",
@@ -20,5 +15,4 @@ binary_package(
         cp $SRCS/korte-jvm-*.jar $OUT/usr/share/java/korte-jvm.jar 2>/dev/null || \
         find $SRCS -name "*.jar" -exec cp {} $OUT/usr/share/java/korte-jvm.jar \;
     """,
-    visibility = ["PUBLIC"],
 )

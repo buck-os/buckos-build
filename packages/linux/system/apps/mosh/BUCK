@@ -1,39 +1,42 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # mosh - Mobile shell with roaming and intelligent local echo
 # USE flags: hardening, ufw, utempter
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "mosh",
     version = "1.4.0",
-    src_uri = "https://github.com/mobile-shell/mosh/releases/download/mosh-1.4.0/mosh-1.4.0.tar.gz",
+    url = "https://github.com/mobile-shell/mosh/releases/download/mosh-1.4.0/mosh-1.4.0.tar.gz",
     sha256 = "872e4b134e5df29c8933dff12350785054d2fd2839b5ae6b5587b14db1465ddd",
-    signature_required = False,
     description = "Mobile shell with roaming and intelligent local echo",
     homepage = "https://mosh.org",
     license = "GPL-3+",
-    iuse = ["hardening", "ufw", "utempter", "debug"],
-    use_defaults = [],
     use_configure = {
-        "hardening": "--enable-hardening",
-        "-hardening": "--disable-hardening",
-        "ufw": "--enable-ufw",
-        "-ufw": "--disable-ufw",
-        "utempter": "--enable-utempter",
-        "-utempter": "--disable-utempter",
-        "debug": "--enable-debug",
-        "-debug": "--disable-debug",
+        "client": ("--enable-client", "--disable-client"),
+        "debug": ("--enable-debug", "--disable-debug"),
+        "examples": ("--enable-examples", "--disable-examples"),
+        "hardened": ("--enable-hardening", "--disable-hardening"),
+        "hardening": ("--enable-hardening", "--disable-hardening"),
+        "nettle": ("--enable-nettle", "--disable-nettle"),
+        "server": ("--enable-server", "--disable-server"),
+        "syslog": ("--enable-syslog", "--disable-syslog"),
+        "ufw": ("--enable-ufw", "--disable-ufw"),
+        "utempter": ("--enable-utempter", "--disable-utempter"),
     },
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc",
+        "--with-protobuf",
+    ],
+    host_deps = [
+        "//packages/linux/dev-libs/serialization/protobuf:protobuf",
+        "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
     ],
     deps = [
-        "//packages/linux/core/ncurses:ncurses",
+        "//packages/linux/system/terminal/ncurses:ncurses",
         "//packages/linux/system/libs/crypto/openssl:openssl",
         "//packages/linux/dev-libs/serialization/protobuf:protobuf",
         "//packages/linux/core/zlib:zlib",
     ],
-    visibility = ["PUBLIC"],
 )

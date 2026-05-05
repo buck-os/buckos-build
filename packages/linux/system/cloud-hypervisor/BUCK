@@ -1,0 +1,412 @@
+load("//defs/rules:rootfs.bzl", "rootfs")
+load("//defs/rules:initramfs.bzl", "initramfs")
+load("//defs/rules:image.bzl", "raw_disk_image")
+
+# =============================================================================
+# Cloud Hypervisor System Images
+# =============================================================================
+#
+# This file defines rootfs, initramfs, and disk image targets optimized for
+# running BuckOS inside Cloud Hypervisor VMs.
+#
+# Available targets:
+# - ch-minimal-rootfs: Minimal VM rootfs (busybox + basic utilities)
+# - ch-base-rootfs: Base VM rootfs with networking
+# - ch-full-rootfs: Full VM rootfs with development tools
+# - ch-minimal-disk: 1GB raw disk image from minimal rootfs
+# - ch-base-disk: 2GB raw disk image from base rootfs
+# - ch-full-disk: 4GB raw disk image from full rootfs
+# - ch-initramfs: Initramfs for direct kernel boot
+# - ch-initramfs-virtiofs: Initramfs for VirtioFS boot
+
+# =============================================================================
+# Init scripts for Cloud Hypervisor VMs
+# =============================================================================
+
+genrule(
+    name = "ch-init-scripts-gen",
+    out = "ch-init-scripts",
+    cmd = """
+mkdir -p $OUT/etc/init.d
+mkdir -p $OUT/etc/rc.d
+
+# Create inittab for busybox init
+cat > $OUT/etc/inittab << 'INITTAB'
+# /etc/inittab - Cloud Hypervisor VM init configuration
+# System initialization
+::sysinit:/etc/init.d/rcS
+
+# Start a shell on the serial console
+ttyS0::respawn:/bin/sh
+
+# Virtual console (if available)
+::respawn:/bin/sh
+
+# What to do when restarting the init process
+::restart:/sbin/init
+
+# What to do before rebooting
+::ctrlaltdel:/sbin/reboot
+::shutdown:/bin/umount -a -r
+::shutdown:/sbin/swapoff -a
+INITTAB
+
+# Create rcS startup script optimized for CH VMs
+cat > $OUT/etc/init.d/rcS << 'RCS'
+#!/bin/sh
+# Cloud Hypervisor VM initialization script
+echo "BuckOS Cloud Hypervisor VM - Booting..."
+
+# Mount essential filesystems
+mount -t proc proc /proc
+mount -t sysfs sysfs /sys
+
+# Mount devtmpfs
+mount -t devtmpfs devtmpfs /dev || mount -t tmpfs tmpfs /dev
+
+# Create essential device nodes if needed
+if [ ! -c /dev/null ]; then
+    mknod -m 666 /dev/null c 1 3
+    mknod -m 666 /dev/zero c 1 5
+    mknod -m 666 /dev/random c 1 8
+    mknod -m 666 /dev/urandom c 1 9
+    mknod -m 600 /dev/console c 5 1
+    mknod -m 666 /dev/tty c 5 0
+    mknod -m 660 /dev/ttyS0 c 4 64
+fi
+
+# Mount /dev/pts for pseudo-terminals
+mkdir -p /dev/pts
+mount -t devpts devpts /dev/pts
+
+# Mount /run
+mount -t tmpfs tmpfs /run
+
+# Mount VirtIO hardware RNG if available
+if [ -c /dev/hwrng ]; then
+    echo "VirtIO RNG available"
+fi
+
+# Mount VirtioFS if specified in kernel cmdline
+if grep -q "rootfstype=virtiofs" /proc/cmdline; then
+    VIRTIOFS_TAG=$$(cat /proc/cmdline | sed -n 's/.*root=\\([^ ]*\\).*/\\1/p')
+    if [ -n "$$VIRTIOFS_TAG" ]; then
+        echo "Mounting VirtioFS: $$VIRTIOFS_TAG"
+        mkdir -p /mnt/virtiofs
+        mount -t virtiofs "$$VIRTIOFS_TAG" /mnt/virtiofs
+    fi
+fi
+
+# Set hostname
+echo buckos-ch > /etc/hostname
+command -v hostname >/dev/null 2>&1 && hostname buckos-ch
+
+# Configure loopback
+ip link set lo up 2>/dev/null || true
+
+# Configure virtio-net if available
+for iface in /sys/class/net/eth*; do
+    if [ -d "$$iface" ]; then
+        IFNAME=$$(basename "$$iface")
+        ip link set "$$IFNAME" up 2>/dev/null || true
+        # Try DHCP if available
+        if command -v dhcpcd >/dev/null 2>&1; then
+            dhcpcd -q "$$IFNAME" &
+        fi
+    fi
+done
+
+# VirtIO balloon driver info
+if [ -d /sys/devices/pci0000:00/*/virtio*/balloon ]; then
+    echo "VirtIO balloon available"
+fi
+
+echo "Cloud Hypervisor VM initialization complete."
+echo ""
+RCS
+chmod +x $OUT/etc/init.d/rcS
+
+# Create fstab for CH VM
+cat > $OUT/etc/fstab << 'FSTAB'
+# /etc/fstab - Cloud Hypervisor VM file system table
+# <file system>  <mount point>  <type>      <options>         <dump>  <pass>
+proc             /proc          proc        defaults          0       0
+sysfs            /sys           sysfs       defaults          0       0
+devtmpfs         /dev           devtmpfs    defaults          0       0
+tmpfs            /tmp           tmpfs       defaults,nodev    0       0
+tmpfs            /run           tmpfs       defaults,nodev    0       0
+# VirtioFS mounts (uncomment as needed)
+# virtiofs_tag   /mnt/share     virtiofs    defaults          0       0
+FSTAB
+
+# Create passwd
+cat > $OUT/etc/passwd << 'PASSWD'
+root:x:0:0:root:/root:/bin/sh
+nobody:x:65534:65534:Nobody:/:/bin/false
+PASSWD
+
+# Create group
+cat > $OUT/etc/group << 'GROUP'
+root:x:0:
+wheel:x:10:root
+nobody:x:65534:
+GROUP
+
+# Create shadow (empty password for root in VM)
+cat > $OUT/etc/shadow << 'SHADOW'
+root::0:0:99999:7:::
+nobody:!:0:0:99999:7:::
+SHADOW
+chmod 640 $OUT/etc/shadow
+
+# Create shells
+cat > $OUT/etc/shells << 'SHELLS'
+/bin/sh
+/bin/ash
+/bin/bash
+/usr/bin/bash
+SHELLS
+
+# Create hostname
+echo "buckos-ch" > $OUT/etc/hostname
+
+# Create hosts
+cat > $OUT/etc/hosts << 'HOSTS'
+127.0.0.1   localhost buckos-ch
+::1         localhost ip6-localhost ip6-loopback
+HOSTS
+
+# OS release info
+cat > $OUT/etc/os-release << 'OSRELEASE'
+NAME="BuckOS"
+VERSION="Cloud Hypervisor"
+ID=buckos
+ID_LIKE=gentoo
+PRETTY_NAME="BuckOS Linux (Cloud Hypervisor VM)"
+VERSION_ID="ch"
+HOME_URL="https://buckos.org"
+BUG_REPORT_URL="https://github.com/buck-os/buckos/issues"
+OSRELEASE
+""",
+    default_target_platform = "//platforms:linux-target",
+)
+
+filegroup(
+    name = "ch-init-scripts",
+    srcs = [":ch-init-scripts-gen"],
+    default_target_platform = "//platforms:linux-target",
+)
+
+# =============================================================================
+# Minimal Cloud Hypervisor Rootfs
+# =============================================================================
+# Includes: busybox, basic utilities, init scripts
+# Size: ~10-20MB
+# Use case: Quick testing, embedded VM workloads
+
+rootfs(
+    name = "ch-minimal-rootfs",
+    packages = [
+        # Core utilities
+        "//packages/linux/core/busybox:busybox",
+        "//packages/linux/core/musl:musl",
+
+        # CH-specific init scripts
+        ":ch-init-scripts",
+    ],
+    labels = ["buckos:image"],
+)
+
+# =============================================================================
+# Base Cloud Hypervisor Rootfs
+# =============================================================================
+# Includes: minimal + networking, util-linux, coreutils
+# Size: ~50-100MB
+# Use case: Network-enabled VMs, basic services
+
+rootfs(
+    name = "ch-base-rootfs",
+    packages = [
+        # Core utilities
+        "//packages/linux/core/busybox:busybox",
+        "//packages/linux/core/musl:musl",
+        "//packages/linux/core/util-linux:util-linux",
+        "//packages/linux/core/zlib:zlib",
+
+        # Networking
+        "//packages/linux/network/iproute2:iproute2",
+        "//packages/linux/network/dhcpcd:dhcpcd",
+
+        # CH-specific init scripts
+        ":ch-init-scripts",
+    ],
+    labels = ["buckos:image"],
+)
+
+# =============================================================================
+# Full Cloud Hypervisor Rootfs
+# =============================================================================
+# Includes: base + shell, editors, development tools
+# Size: ~200-500MB
+# Use case: Development VMs, full-featured systems
+
+rootfs(
+    name = "ch-full-rootfs",
+    packages = [
+        # Core system
+        "//packages/linux/core/busybox:busybox",
+        "//packages/linux/core/glibc:glibc",
+        "//packages/linux/core/util-linux:util-linux",
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/compression/bzip2:bzip2",
+        "//packages/linux/system/libs/compression/xz:xz",
+        "//packages/linux/system/terminal/ncurses:ncurses",
+        "//packages/linux/system/terminal/readline:readline",
+        "//packages/linux/core/bash:bash",
+
+        # Networking
+        "//packages/linux/network/iproute2:iproute2",
+        "//packages/linux/network/dhcpcd:dhcpcd",
+        "//packages/linux/network/openssh:openssh",
+        "//packages/linux/system/libs/network/curl:curl",
+
+        # Utilities
+        "//packages/linux/system/apps/coreutils:coreutils",
+        "//packages/linux/system/apps/findutils:findutils",
+        "//packages/linux/core/file:file",
+        "//packages/linux/core/procps-ng:procps-ng",
+
+        # Editor
+        "//packages/linux/editors/vim:vim",
+
+        # CH-specific init scripts
+        ":ch-init-scripts",
+    ],
+    labels = ["buckos:image"],
+)
+
+# =============================================================================
+# Initramfs Images
+# =============================================================================
+
+# Minimal initramfs for direct kernel boot
+initramfs(
+    name = "ch-initramfs",
+    rootfs = ":ch-minimal-rootfs",
+    compression = "gz",
+    init = "/sbin/init",
+    labels = ["buckos:image"],
+)
+
+# Initramfs with VirtioFS support for rootfs over virtiofs
+initramfs(
+    name = "ch-initramfs-virtiofs",
+    rootfs = ":ch-base-rootfs",
+    compression = "gz",
+    init = "/sbin/init",
+    labels = ["buckos:image"],
+)
+
+# XZ compressed initramfs (smaller, slower decompression)
+initramfs(
+    name = "ch-initramfs-xz",
+    rootfs = ":ch-minimal-rootfs",
+    compression = "xz",
+    init = "/sbin/init",
+    labels = ["buckos:image"],
+)
+
+# =============================================================================
+# Raw Disk Images
+# =============================================================================
+# Cloud Hypervisor only supports raw disk images (no qcow2)
+
+# Minimal disk (1GB)
+raw_disk_image(
+    name = "ch-minimal-disk",
+    rootfs = ":ch-minimal-rootfs",
+    size = "1G",
+    filesystem = "ext4",
+    label = "buckos-ch",
+    partition_table = False,
+    labels = ["buckos:image"],
+)
+
+# Base disk (2GB)
+raw_disk_image(
+    name = "ch-base-disk",
+    rootfs = ":ch-base-rootfs",
+    size = "2G",
+    filesystem = "ext4",
+    label = "buckos-ch",
+    partition_table = False,
+    labels = ["buckos:image"],
+)
+
+# Full disk (4GB)
+raw_disk_image(
+    name = "ch-full-disk",
+    rootfs = ":ch-full-rootfs",
+    size = "4G",
+    filesystem = "ext4",
+    label = "buckos-ch",
+    partition_table = False,
+    labels = ["buckos:image"],
+)
+
+# Full disk with GPT partition table (for UEFI boot)
+raw_disk_image(
+    name = "ch-full-disk-gpt",
+    rootfs = ":ch-full-rootfs",
+    size = "4G",
+    filesystem = "ext4",
+    label = "buckos-ch",
+    partition_table = True,
+    labels = ["buckos:image"],
+)
+
+# =============================================================================
+# Filegroups for convenience
+# =============================================================================
+
+filegroup(
+    name = "ch-rootfs-all",
+    srcs = [
+        ":ch-minimal-rootfs",
+        ":ch-base-rootfs",
+        ":ch-full-rootfs",
+    ],
+    default_target_platform = "//platforms:linux-target",
+)
+
+filegroup(
+    name = "ch-initramfs-all",
+    srcs = [
+        ":ch-initramfs",
+        ":ch-initramfs-virtiofs",
+        ":ch-initramfs-xz",
+    ],
+    default_target_platform = "//platforms:linux-target",
+)
+
+filegroup(
+    name = "ch-disk-images",
+    srcs = [
+        ":ch-minimal-disk",
+        ":ch-base-disk",
+        ":ch-full-disk",
+        ":ch-full-disk-gpt",
+    ],
+    default_target_platform = "//platforms:linux-target",
+)
+
+# All Cloud Hypervisor system images
+filegroup(
+    name = "all",
+    srcs = [
+        ":ch-rootfs-all",
+        ":ch-initramfs-all",
+        ":ch-disk-images",
+    ],
+    default_target_platform = "//platforms:linux-target",
+)

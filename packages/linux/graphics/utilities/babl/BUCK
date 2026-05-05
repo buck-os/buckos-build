@@ -1,41 +1,20 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "babl-src",
-    src_uri = "https://download.gimp.org/babl/0.1/babl-0.1.108.tar.xz",
-    sha256 = "26defe9deaab7ac4d0e076cab49c2a0d6ebd0df0c31fd209925a5f07edee1475",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "meson",
     name = "babl",
-    source = ":babl-src",
+    url = "https://download.gimp.org/babl/0.1/babl-0.1.108.tar.xz",
+    sha256 = "26defe9deaab7ac4d0e076cab49c2a0d6ebd0df0c31fd209925a5f07edee1475",
     version = "0.1.108",
     description = "Dynamic pixel format translation library",
     homepage = "https://gegl.org/babl/",
     license = "LGPL-3.0-or-later",
-    pre_configure = """
-mkdir -p build
-cd build
-meson setup .. \
-    --prefix=/usr \
-    -Dbuildtype=release \
-    -Dwith-docs=false \
-    -Denable-gir=true
-""",
-    configure_args = [],
-    make_args = ["-C", "build"],
-    post_install = """
-cd build
-DESTDIR=$OUT meson install
-""",
+    configure_args = [
+        "-Denable-gir=false",
+        "-Denable-vapi=false",
+    ],
     deps = [
         "//packages/linux/dev-libs/glib:glib",
         "//packages/linux/system/libs/graphics/lcms2:lcms2",
     ],
-    bdepend = [
-        "//packages/linux/lang/vala:vala",
-    ],
-    visibility = ["PUBLIC"],
 )

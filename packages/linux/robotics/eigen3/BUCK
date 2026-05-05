@@ -1,18 +1,14 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-# eigen3 - Package from third-party
-
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "eigen3",
-    version = "unknown",
-    src_uri = "# TODO: Add source URI for eigen3 vunknown",
-    sha256 = "f0e32cb10654fea91ad56bde89170d78cfbf4363ee0b01d8f097de2ba49f6ce9",
-    description = "eigen3 package",
-    license = "unknown",
+    version = "3.4.0",
+    source = "//packages/linux/dev-libs/eigen:eigen-src",
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
-        "-DBUILD_SHARED_LIBS=ON",
+        "-DEIGEN_BUILD_DOC=OFF",
+        "-DEIGEN_BUILD_TESTING=OFF",
     ],
-    visibility = ["PUBLIC"],
 )

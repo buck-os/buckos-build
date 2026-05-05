@@ -1,29 +1,23 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # p7zip - 7-Zip file archiver port for Unix systems
 
-download_source(
-    name = "p7zip-src",
-    src_uri = "https://github.com/p7zip-project/p7zip/archive/refs/tags/v17.05.tar.gz",
-    sha256 = "d2788f892571058c08d27095c22154579dfefb807ebe357d145ab2ddddefb1a6",
-    signature_required = False,
-)
-
 # p7zip uses a Makefile, not autotools
-autotools_package(
+package(
+    build_rule = "autotools",
+    skip_configure = True,
     name = "p7zip",
-    source = ":p7zip-src",
+    url = "https://github.com/p7zip-project/p7zip/archive/refs/tags/v17.05.tar.gz",
+
+    sha256 = "d2788f892571058c08d27095c22154579dfefb807ebe357d145ab2ddddefb1a6",
+    use_configure = {
+        "abi_x86_x32": ("--enable-abi_x86_x32", "--disable-abi_x86_x32"),
+        "natspec": ("--enable-natspec", "--disable-natspec"),
+        "pch": ("--enable-pch", "--disable-pch"),
+        "rar": ("--enable-rar", "--disable-rar"),
+    },
     version = "17.05",
     description = "7-Zip file archiver port for Unix systems",
     homepage = "https://github.com/p7zip-project/p7zip",
     license = "LGPL-2.1-or-later",
-    src_configure = "true",
-    src_compile = """
-make -j$(nproc) all3
-""",
-    src_install = """
-make install DEST_DIR="$DESTDIR" DEST_HOME=/usr DEST_SHARE_DOC=/usr/share/doc/p7zip
-""",
-    visibility = ["PUBLIC"],
 )

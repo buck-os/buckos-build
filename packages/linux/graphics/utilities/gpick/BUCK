@@ -1,41 +1,27 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "gpick-src",
-    src_uri = "https://github.com/thezbyg/gpick/archive/refs/tags/v0.3.tar.gz",
-    sha256 = "29347e13dee19c4c81c9e125da6782b476c19ac8311fc7b9e53aebe23a5a34f8",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "gpick",
-    source = ":gpick-src",
+    url = "https://github.com/thezbyg/gpick/archive/refs/tags/v0.3.tar.gz",
+
+    sha256 = "29347e13dee19c4c81c9e125da6782b476c19ac8311fc7b9e53aebe23a5a34f8",
     version = "0.3",
     description = "Advanced color picker and palette editing tool",
     homepage = "https://www.gpick.org/",
     license = "BSD-3-Clause",
-    pre_configure = """
-mkdir -p build
-cd build
-cmake .. \
-    -DCMAKE_INSTALL_PREFIX=/usr \
-    -DCMAKE_BUILD_TYPE=Release
-""",
     configure_args = [],
     make_args = ["-C", "build"],
-    post_install = """
+    post_install_cmds = ["""
 cd build
 DESTDIR=$OUT make install
-""",
+"""],
     deps = [
         "//packages/linux/desktop/gtk:gtk3",
-        "//packages/linux/lang/lua:lua",
-        "//packages/linux/core/expat:expat",
-        "//packages/linux/dev-libs/boost:boost",
+                "//packages/linux/lang/lua:lua",
+                "//packages/linux/system/libs/data/expat:expat",
+                "//packages/linux/dev-libs/boost:boost",
+                # "//packages/linux/core/ragel:ragel",
+                # TODO: not packaged yet
     ],
-    bdepend = [
-        # "//packages/linux/core/ragel:ragel",  # TODO: not packaged yet
-    ],
-    visibility = ["PUBLIC"],
 )

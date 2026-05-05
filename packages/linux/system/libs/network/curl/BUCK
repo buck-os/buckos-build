@@ -1,58 +1,43 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
+load("//defs:use_helpers.bzl", "use_dep", "use_configure_arg")
 
-# curl - Command line tool and library for transferring data with URLs
-# USE flags: ssl, zstd, http2, ssh, ipv6, c-ares, brotli, ldap, idn
-
-autotools_package(
+package(
     name = "curl",
+    build_rule = "autotools",
     version = "8.10.1",
-    src_uri = "https://curl.se/download/curl-8.10.1.tar.xz",
+    url = "https://curl.se/download/curl-8.10.1.tar.xz",
     sha256 = "73a4b0e99596a09fa5924a4fb7e4b995a85fda0d18a2c02ab9cf134bebce04ee",
-    signature_sha256 = "44d87a6355d2363ce66891bb4b9ca943d3f96d2f00cbe7f70bcca79606e641ce",
-    signature_required=False,
-    description = "Command line tool and library for transferring data with URLs",
-    homepage = "https://curl.se/",
-    license = "curl",
-    iuse = ["ssl", "zstd", "http2", "ssh", "ipv6", "c-ares", "brotli", "ldap", "idn", "static-libs"],
-    use_defaults = ["ssl", "zstd", "http2", "ipv6"],
-    use_deps = {
-        "ssl": ["//packages/linux/system/libs/crypto/openssl:openssl"],
-        "zstd": ["//packages/linux/system/libs/compression/zstd:zstd"],
-        "http2": ["//packages/linux/system/libs/network/nghttp2:nghttp2"],
-        "ssh": ["//packages/linux/system/libs/network/libssh2:libssh2"],
-        "c-ares": ["//packages/linux/system/libs/network/c-ares:c-ares"],
-        "brotli": ["//packages/linux/system/libs/compression/brotli:brotli"],
-    },
-    use_configure = {
-        "ssl": "--with-openssl",
-        "-ssl": "--without-ssl",
-        "zstd": "--with-zstd",
-        "-zstd": "--without-zstd",
-        "http2": "--with-nghttp2",
-        "-http2": "--without-nghttp2",
-        "ssh": "--with-libssh2",
-        "-ssh": "--without-libssh2",
-        "ipv6": "--enable-ipv6",
-        "-ipv6": "--disable-ipv6",
-        "c-ares": "--enable-ares",
-        "-c-ares": "--disable-ares",
-        "brotli": "--with-brotli",
-        "-brotli": "--without-brotli",
-        "ldap": "--enable-ldap",
-        "-ldap": "--disable-ldap",
-        "idn": "--with-libidn2",
-        "-idn": "--without-libidn2",
-        "static-libs": "--enable-static",
-        "-static-libs": "--disable-static",
-    },
+    libraries = ["curl"],
     configure_args = [
+        "--prefix=/usr",
         "--enable-threaded-resolver",
         "--with-ca-bundle=/etc/ssl/certs/ca-certificates.crt",
     ],
+    use_configure = {
+        "ssl": ("--with-openssl", "--without-ssl"),
+        "http2": ("--with-nghttp2", "--without-nghttp2"),
+        "zstd": ("--with-zstd", "--without-zstd"),
+        "brotli": ("--with-brotli", "--without-brotli"),
+        "ssh": ("--with-libssh2", "--without-libssh2"),
+        "ipv6": ("--enable-ipv6", "--disable-ipv6"),
+    },
     deps = [
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/network/libpsl:libpsl",
     ],
-    visibility = ["PUBLIC"],
+    use_deps = {
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "http2": "//packages/linux/system/libs/network/nghttp2:nghttp2",
+        "zstd": "//packages/linux/system/libs/compression/zstd:zstd",
+        "brotli": "//packages/linux/system/libs/compression/brotli:brotli",
+        "ssh": "//packages/linux/system/libs/network/libssh2:libssh2",
+    },
+    patches = glob(["patches/*.patch"]),
+    transforms = ["strip", "stamp"],
+    use_transforms = {"ima": "ima"},
+    # SBOM
+    license = "curl",
+    homepage = "https://curl.se/",
+    description = "Command line tool and library for transferring data with URLs",
+    cpe = "cpe:2.3:a:haxx:curl:8.10.1:*:*:*:*:*:*:*",
 )

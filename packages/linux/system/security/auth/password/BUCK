@@ -1,20 +1,25 @@
+load("//defs:package.bzl", "package")
+
 # Password quality and security packages
 # Password strength checking libraries and tools
 
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
-
 # libpwquality - Password quality checking library
-download_source(
-    name = "libpwquality-src",
-    src_uri = "https://github.com/libpwquality/libpwquality/releases/download/libpwquality-1.4.5/libpwquality-1.4.5.tar.bz2",
-    sha256 = "6fcf18b75d305d99d04d2e42982ed5b787a081af2842220ed63287a2d6a10988",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libpwquality",
-    source = ":libpwquality-src",
+    pre_configure_cmds = ["""
+autoreconf -fi
+""", """
+autoreconf -fi
+"""],
+    url = "https://github.com/libpwquality/libpwquality/releases/download/libpwquality-1.4.5/libpwquality-1.4.5.tar.bz2",
+
+    sha256 = "6fcf18b75d305d99d04d2e42982ed5b787a081af2842220ed63287a2d6a10988",
+    use_configure = {
+        "pam": ("--enable-pam", "--disable-pam"),
+        "python": ("--enable-python", "--disable-python"),
+        "static-libs": ("--enable-static", "--disable-static"),
+    },
     version = "1.4.5",
     description = "Password quality checking library",
     homepage = "https://github.com/libpwquality/libpwquality",
@@ -26,78 +31,42 @@ autotools_package(
         "--with-securedir=/lib/security",
         "--disable-python-bindings",
     ],
-    post_install = """
+    post_install_cmds = ["""
         mkdir -p "$OUT/etc/security"
-    """,
+    """],
     deps = [
-        "//packages/linux/system/security/encryption:linux-pam",
-        ":cracklib",
+        "//packages/linux/system/security/linux-pam:linux-pam",
+                "//packages/linux/system/security/cracklib:cracklib",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool",
+                "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+                "//packages/linux/dev-tools/build-systems/automake:automake",
+                "//packages/linux/dev-tools/build-systems/libtool:libtool"
     ],
-    visibility = ["PUBLIC"],
-)
-
-# cracklib - Password strength checking library
-download_source(
-    name = "cracklib-src",
-    src_uri = "https://github.com/cracklib/cracklib/releases/download/v2.9.11/cracklib-2.9.11.tar.xz",
-    sha256 = "2c83a91dd21d035eab98bded764eb4579b73fd837b683e1a447b11ef604ee130",
-    signature_required = False,
-)
-
-autotools_package(
-    name = "cracklib",
-    source = ":cracklib-src",
-    version = "2.9.11",
-    description = "Password strength checking library",
-    homepage = "https://github.com/cracklib/cracklib",
-    license = "LGPL-2.1+",
-    configure_args = [
-        "--prefix=/usr",
-        "--sysconfdir=/etc",
-        "--sbindir=/usr/sbin",
-        "--enable-shared",
-        "--disable-static",
-        "--without-python",
-    ],
-    post_install = """
-        mkdir -p "$OUT/usr/share/cracklib"
-        # Create empty dictionary placeholder
-        touch "$OUT/usr/share/cracklib/pw_dict.pwd"
-    """,
-    deps = [
-    ],
-    visibility = ["PUBLIC"],
 )
 
 # passwdqc - Password quality check tool
-download_source(
-    name = "passwdqc-src",
-    src_uri = "https://www.openwall.com/passwdqc/passwdqc-2.0.3.tar.gz",
-    sha256 = "53b0f4bc49369f06195e9e13abb6cff352d5acb79e861004ec95973896488cf4",
-    signature_sha256 = "1a5aa224c63b15c312f8809accc2e193dbe588db3c992c48d3b240c04c3f42f7",
-    signature_required=False,
-)
-
-autotools_package(
+package(
+    build_rule = "make",
     name = "passwdqc",
-    source = ":passwdqc-src",
+    url = "https://www.openwall.com/passwdqc/passwdqc-2.0.3.tar.gz",
+
+    sha256 = "53b0f4bc49369f06195e9e13abb6cff352d5acb79e861004ec95973896488cf4",
     version = "2.0.3",
     description = "Password strength checking and policy enforcement toolset",
     homepage = "https://www.openwall.com/passwdqc/",
     license = "BSD-3-Clause",
-    pre_configure = """
-        # passwdqc uses a simple Makefile
-        true
-    """,
-    configure_args = [],
     make_args = [
+        "CC=$CC",
+        "CFLAGS=$CFLAGS",
+        "LDFLAGS=$LDFLAGS",
         "PREFIX=/usr",
         "SECUREDIR=/lib/security",
         "SHARED_LIBDIR=/usr/lib",
         "DEVEL_LIBDIR=/usr/lib",
     ],
     deps = [
-        "//packages/linux/system/security/encryption:linux-pam",
+        "//packages/linux/system/security/linux-pam:linux-pam",
     ],
-    visibility = ["PUBLIC"],
 )

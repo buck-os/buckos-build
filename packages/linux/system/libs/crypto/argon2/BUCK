@@ -1,22 +1,21 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
     name = "argon2",
+    build_rule = "autotools",
+    skip_configure = True,
     version = "20190702",
-    src_uri = "https://github.com/P-H-C/phc-winner-argon2/archive/refs/tags/20190702.tar.gz",
+    use_configure = {
+        "static-libs": ("--enable-static", "--disable-static"),
+    },
+    url = "https://github.com/P-H-C/phc-winner-argon2/archive/refs/tags/20190702.tar.gz",
     sha256 = "daf972a89577f8772602bf2eb38b6a3dd3d922bf5724d45e7f9589b5e830442c",
-    signature_required = False,
     description = "Password hashing library (winner of PHC)",
     homepage = "https://github.com/P-H-C/phc-winner-argon2",
     license = "Apache-2.0 CC0-1.0",
     # argon2 uses plain Makefile, not autotools - skip configure
-    pre_configure = "true",
     make_args = [
         "OPTFLAGS=-O2",
         "LIBRARY_REL=lib",
     ],
-    src_install = """
-make install PREFIX=/usr LIBRARY_REL=lib DESTDIR="$DESTDIR"
-""",
-    visibility = ["PUBLIC"],
 )

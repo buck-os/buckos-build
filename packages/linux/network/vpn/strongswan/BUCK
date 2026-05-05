@@ -1,35 +1,39 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "strongswan",
     version = "5.9.13",
-    src_uri = "https://download.strongswan.org/strongswan-5.9.13.tar.bz2",
+    url = "https://download.strongswan.org/strongswan-5.9.13.tar.bz2",
     sha256 = "56e30effb578fd9426d8457e3b76c8c3728cd8a5589594b55649b2719308ba55",
-    signature_sha256 = "f97bc52347c74abe336001e4ef49d6cdd89ca307c3e86166895681e8ec82423e",
-    signature_required = False,
-
-    iuse = ["ssl", "curl", "eap", "dhcp", "systemd", "vici", "swanctl"],
-    use_defaults = ["ssl", "curl", "eap", "dhcp", "systemd", "vici", "swanctl"],
 
     use_deps = {
-        "ssl": ["//packages/linux/network/openssl:openssl"],
-        "curl": ["//packages/linux/network/curl:curl"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "curl": "//packages/linux/system/libs/network/curl:curl",
+        "systemd": "//packages/linux/system/init/systemd:systemd",
     },
 
     use_configure = {
-        "ssl": "--enable-openssl",
-        "-ssl": "--disable-openssl",
-        "curl": "--enable-curl",
-        "-curl": "--disable-curl",
-        "dhcp": "--enable-dhcp",
-        "-dhcp": "--disable-dhcp",
-        "systemd": "--enable-systemd",
-        "-systemd": "--disable-systemd",
-        "vici": "--enable-vici",
-        "-vici": "--disable-vici",
-        "swanctl": "--enable-swanctl",
-        "-swanctl": "--disable-swanctl",
+        "caps": ("--enable-libcap", "--disable-libcap"),
+        "constraints": ("--enable-constraints", "--disable-constraints"),
+        "curl": ("--enable-curl", "--disable-curl"),
+        "debug": ("--enable-debug", "--disable-debug"),
+        "dhcp": ("--enable-dhcp", "--disable-dhcp"),
+        "farp": ("--enable-farp", "--disable-farp"),
+        "gcrypt": ("--with-gcrypt", "--without-gcrypt"),
+        "gmp": ("--enable-gmp", "--disable-gmp"),
+        "ldap": ("--enable-ldap", "--disable-ldap"),
+        "mysql": ("--enable-mysql", "--disable-mysql"),
+        "networkmanager": ("--enable-networkmanager", "--disable-networkmanager"),
+        "non-root": ("--enable-non-root", "--disable-non-root"),
+        "pam": ("--enable-pam", "--disable-pam"),
+        "pkcs11": ("--enable-pkcs11", "--disable-pkcs11"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "sqlite": ("--enable-sqlite", "--disable-sqlite"),
+        "ssl": ("--enable-openssl", "--disable-openssl"),
+        "swanctl": ("--enable-swanctl", "--disable-swanctl"),
+        "systemd": ("--enable-systemd", "--disable-systemd"),
+        "vici": ("--enable-vici", "--disable-vici"),
     },
 
     configure_args = [
@@ -55,15 +59,14 @@ autotools_package(
         "--disable-gmp",
     ],
 
-    post_install = """
+    post_install_cmds = ["""
 # Create strongSwan directories
 mkdir -p "$DESTDIR/etc/strongswan.d"
 mkdir -p "$DESTDIR/etc/swanctl/conf.d"
 mkdir -p "$DESTDIR/var/lib/strongswan"
-""",
+"""],
 
     description = "strongSwan IPsec VPN solution supporting IKEv1/IKEv2",
     homepage = "https://www.strongswan.org/",
     license = "GPL-2.0",
-    visibility = ["PUBLIC"],
 )

@@ -1,52 +1,319 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-# Qt5 - Cross-platform application framework
-download_source(
-    name = "qt5-src",
-    src_uri = "https://download.qt.io/archive/qt/5.15/5.15.12/single/qt-everywhere-opensource-src-5.15.12.tar.xz",
-    sha256 = "93f2c0889ee2e9cdf30c170d353c3f829de5f29ba21c119167dee5995e48ccce",
-    signature_required = False,
-)
+# =============================================================================
+# Qt6 - Cross-platform application framework (required for KDE Plasma 6)
+# =============================================================================
+#
+# USE flags:
+#   X         - Enable X11/XCB support
+#   wayland   - Enable Wayland support
+#   opengl    - Enable OpenGL support
+#   eglfs     - Enable EGL fullscreen platform
+#   dbus      - Enable D-Bus support
+#   widgets   - Enable Qt Widgets
+#   cups      - Enable printing support
+#   ssl       - Enable OpenSSL support
+#   sqlite    - Enable SQLite support
+#   vulkan    - Enable Vulkan support
 
-binary_package(
-    name = "qt5",
-    srcs = [":qt5-src"],
-    version = "5.15.12",
-    description = "Cross-platform application framework",
+package(
+    build_rule = "cmake",
+    name = "qt6-native",
+    url = "https://download.qt.io/official_releases/qt/6.8/6.8.3/single/qt-everywhere-src-6.8.3.tar.xz",
+    sha256 = "cdd3a69967208276bb01af7ace7dba0ba53e679f886a4cbe624225c60fb73f2c",
+    version = "6.8.3",
+    description = "Qt6 - Cross-platform application framework",
     homepage = "https://www.qt.io/",
     license = "LGPL-3.0-or-later OR GPL-3.0-or-later",
-    install_script = """
-        # Find the Qt source directory (name varies between releases)
-        QT_DIR=$(ls -d qt-everywhere-* 2>/dev/null | head -1)
-        if [ -z "$QT_DIR" ]; then
-            echo "ERROR: Cannot find Qt source directory"
-            ls -la
-            exit 1
-        fi
-        echo "Using Qt source directory: $QT_DIR"
-        cd "$QT_DIR"
-        ./configure \
-            -prefix $PREFIX \
-            -opensource \
-            -confirm-license \
-            -release \
-            -shared \
-            -nomake examples \
-            -nomake tests \
-            -no-separate-debug-info \
-            -no-pch \
-            -no-use-gold-linker
-        make -j$(nproc)
-        make install
-    """,
-    deps = [
-        "//packages/linux/desktop/libdrm:libdrm",
-        "//packages/linux/fonts/libraries/fontconfig:fontconfig",
-        "//packages/linux/fonts/libraries/freetype:freetype",
-        "//packages/linux/system/libs/font/harfbuzz:harfbuzz",
-        "//packages/linux/dev-libs/glib:glib",
-        "//packages/linux/dev-libs/double-conversion:double-conversion",
+
+    pre_configure_cmds = ['''
+# Disable qdoc - it requires LLVM/libclang which may have incompatible
+# C++ library (libc++ vs libstdc++) on the host system.
+# Linguist is kept: lrelease doesn't need clang (clang-based lupdate is
+# disabled via QT_FEATURE_clang=OFF), and KDE packages need LinguistTools.
+if [ -f "$S/qttools/src/CMakeLists.txt" ]; then
+    echo "Patching qttools to disable qdoc..."
+    sed -i 's|add_subdirectory(qdoc)|# add_subdirectory(qdoc) # Disabled - requires libclang|g' "$S/qttools/src/CMakeLists.txt"
+    echo "qdoc disabled in qttools"
+fi
+''', """
+# Find mesa library path from CMAKE_PREFIX_PATH and inject EGL/GLESv2
+# targets so Qt can find them during configuration.
+MESA_PATH=$(echo "$CMAKE_PREFIX_PATH" | tr ';' '\\n' | grep mesa || true)
+if [ -n "$MESA_PATH" ]; then
+    EGL_LIB="$MESA_PATH/lib64/libEGL.so"
+    GLESV2_LIB="$MESA_PATH/lib64/libGLESv2.so"
+    EGL_INCLUDE="$MESA_PATH/include"
+
+    cat > /tmp/egl_targets.cmake << EOF
+if(NOT TARGET EGL::EGL)
+    add_library(EGL::EGL UNKNOWN IMPORTED GLOBAL)
+    set_target_properties(EGL::EGL PROPERTIES
+        IMPORTED_LOCATION "$EGL_LIB"
+        INTERFACE_INCLUDE_DIRECTORIES "$EGL_INCLUDE"
+    )
+endif()
+
+if(NOT TARGET GLESv2::GLESv2)
+    add_library(GLESv2::GLESv2 UNKNOWN IMPORTED GLOBAL)
+    set_target_properties(GLESv2::GLESv2 PROPERTIES
+        IMPORTED_LOCATION "$GLESV2_LIB"
+        INTERFACE_INCLUDE_DIRECTORIES "$EGL_INCLUDE"
+    )
+endif()
+
+if(NOT TARGET OpenGL::EGL)
+    add_library(OpenGL::EGL ALIAS EGL::EGL)
+endif()
+
+if(NOT TARGET OpenGL::GLESv2)
+    add_library(OpenGL::GLESv2 ALIAS GLESv2::GLESv2)
+endif()
+
+set(EGL_FOUND TRUE CACHE BOOL "EGL found" FORCE)
+set(EGL_INCLUDE_DIR "$EGL_INCLUDE" CACHE PATH "EGL include dir" FORCE)
+set(EGL_LIBRARY "$EGL_LIB" CACHE FILEPATH "EGL library" FORCE)
+set(EGL_opengl_LIBRARY "$EGL_LIB" CACHE FILEPATH "EGL library" FORCE)
+set(GLESv2_FOUND TRUE CACHE BOOL "GLESv2 found" FORCE)
+set(GLESv2_INCLUDE_DIR "$EGL_INCLUDE" CACHE PATH "GLESv2 include dir" FORCE)
+set(GLESv2_LIBRARY "$GLESV2_LIB" CACHE FILEPATH "GLESv2 library" FORCE)
+set(OpenGL_EGL_FOUND TRUE CACHE BOOL "OpenGL EGL found" FORCE)
+set(OpenGL_GLESv2_FOUND TRUE CACHE BOOL "OpenGL GLES found" FORCE)
+set(OpenGL_GLES2_FOUND TRUE CACHE BOOL "OpenGL GLES2 found" FORCE)
+set(OpenGL_GLES3_FOUND TRUE CACHE BOOL "OpenGL GLES3 found" FORCE)
+set(OPENGL_FOUND TRUE CACHE BOOL "OpenGL found" FORCE)
+set(OPENGL_egl_LIBRARY "$EGL_LIB" CACHE FILEPATH "EGL library" FORCE)
+set(OPENGL_gles2_LIBRARY "$GLESV2_LIB" CACHE FILEPATH "GLES2 library" FORCE)
+EOF
+
+    if [ -f "$S/CMakeLists.txt" ]; then
+        sed -i '/^cmake_minimum_required/a include(/tmp/egl_targets.cmake)' "$S/CMakeLists.txt"
+        echo "Patched CMakeLists.txt to include EGL/GLESv2 targets"
+    fi
+fi
+"""],
+
+    configure_args = [
+        "-DCMAKE_INSTALL_PREFIX=/usr",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DINSTALL_BINDIR=lib64/qt6/bin",
+        "-DINSTALL_INCLUDEDIR=include/qt6",
+        "-DINSTALL_LIBDIR=lib64",
+        "-DINSTALL_ARCHDATADIR=lib64/qt6",
+        "-DINSTALL_DATADIR=share/qt6",
+        "-DINSTALL_DOCDIR=share/doc/qt6",
+        "-DINSTALL_EXAMPLESDIR=share/doc/qt6/examples",
+        "-DINSTALL_MKSPECSDIR=lib64/qt6/mkspecs",
+        "-DINSTALL_PLUGINSDIR=lib64/qt6/plugins",
+        "-DINSTALL_QMLDIR=lib64/qt6/qml",
+        "-DINSTALL_SYSCONFDIR=/etc/xdg",
+        "-DINSTALL_TRANSLATIONSDIR=share/qt6/translations",
+        # Force system libraries
+        "-DQT_FEATURE_relocatable=OFF",
+        "-DQT_FEATURE_gssapi=OFF",
+        # Enable fontconfig so Qt can find system fonts
+        # Qt fontconfig REQUIRES system_freetype to be ON - the feature condition is:
+        # "NOT APPLE AND NOT WIN32 AND QT_FEATURE_system_freetype AND Fontconfig_FOUND"
+        "-DQT_FEATURE_fontconfig=ON",
+        "-DQT_FEATURE_harfbuzz=ON",
+        "-DQT_FEATURE_system_harfbuzz=OFF",  # Use bundled harfbuzz
+        "-DQT_FEATURE_freetype=ON",
+        "-DQT_FEATURE_system_freetype=ON",   # REQUIRED for fontconfig to work
+        # Core modules always built
+        "-DQT_FEATURE_concurrent=ON",
+        "-DQT_FEATURE_gui=ON",
+        "-DQT_FEATURE_network=ON",
+        "-DQT_FEATURE_testlib=ON",
+        "-DQT_FEATURE_xml=ON",
+        # OpenGL configured via USE flags (opengl -> EGL+GLES2)
+        # Force GLES2 mode; libglvnd provides libOpenGL which Qt prefers as Desktop OpenGL,
+        # but Desktop OpenGL requires GL/glx.h which we don't have (libglvnd built without X11)
+        "-DINPUT_opengl=es2",
+        "-DINPUT_glx=no",
+        # Disable features we don't need
+        "-DQT_FEATURE_journald=OFF",
+        "-DQT_FEATURE_syslog=OFF",
+        # Qt6.8 SBOM generation crashes cmake on aarch64 with a json_error
+        # ('member 0 not found'); we don't ship SBOMs so disable the whole
+        # init path. Also disables JSON-SBOM and the spdx-tools verify step.
+        "-DQT_GENERATE_SBOM=OFF",
+        "-DQT_SBOM_GENERATE_JSON=OFF",
+        "-DQT_SBOM_VERIFY=OFF",
+        "-DBUILD_TESTING=OFF",
+        "-DQT_BUILD_EXAMPLES=OFF",
+        "-DQT_BUILD_TESTS=OFF",
+        "-DBUILD_qttools=ON",
+        # Disable clang-based tools (lupdate-pro, qdoc clang integration) to avoid
+        # linking against host LLVM/libclang which may be built with libc++
+        "-DQT_FEATURE_clang=OFF",
+        "-DQT_BUILD_STANDALONE_TESTS=OFF",
+        "-DQT_FORCE_FIND_TOOLS=OFF",
+        "-DCMAKE_DISABLE_FIND_PACKAGE_Clang=ON",
+        "-DCMAKE_DISABLE_FIND_PACKAGE_LLVM=ON",
+        "-DBUILD_qtdoc=OFF",
+        "-DBUILD_qttranslations=OFF",
+        "-DBUILD_qtimageformats=OFF",
+        "-DBUILD_qtwebengine=OFF",
+        "-DBUILD_qtwebview=OFF",
+        "-DBUILD_qtmultimedia=OFF",
+        "-DBUILD_qtspeech=OFF",
+        "-DBUILD_qt3d=OFF",
+        "-DBUILD_qtquick3d=OFF",
+        "-DBUILD_qtquick3dphysics=OFF",
+        "-DBUILD_qtshadertools=ON",  # Needed for Qt6Quick (shader compilation)
+        "-DBUILD_qtlanguageserver=OFF",
+        "-DBUILD_qtquicktimeline=OFF",
+        "-DBUILD_qt5compat=ON",  # Needed by kwin
+        "-DBUILD_qtactiveqt=OFF",
+        "-DBUILD_qtcharts=OFF",
+        "-DBUILD_qtcoap=OFF",
+        "-DBUILD_qtconnectivity=OFF",
+        "-DBUILD_qtdatavis3d=OFF",
+        "-DBUILD_qtgraphs=OFF",
+        "-DBUILD_qtgrpc=OFF",
+        "-DBUILD_qthttpserver=OFF",
+        "-DBUILD_qtlocation=OFF",
+        "-DBUILD_qtlottie=OFF",
+        "-DBUILD_qtmqtt=OFF",
+        "-DBUILD_qtnetworkauth=OFF",
+        "-DBUILD_qtopcua=OFF",
+        "-DBUILD_qtpositioning=OFF",
+        "-DBUILD_qtquickeffectmaker=OFF",
+        "-DBUILD_qtremoteobjects=OFF",
+        "-DBUILD_qtscxml=OFF",
+        "-DBUILD_qtsensors=OFF",
+        "-DBUILD_qtserialbus=OFF",
+        "-DBUILD_qtserialport=OFF",
+        "-DBUILD_qtvirtualkeyboard=OFF",
+        "-DBUILD_qtwebchannel=OFF",
+        "-DBUILD_qtwebsockets=OFF",
     ],
+
+    # Qt6 builds tools (qlalr, moc, rcc) during compilation that link
+    # against deps.  host_deps puts their lib dirs in LD_LIBRARY_PATH
+    # so tools find shared libs at runtime.
+    host_deps = [
+        "//packages/linux/system/libs/utility/icu:icu-native",
+        "//packages/linux/dev-libs/glib:glib",
+        "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
+        "//packages/linux/system/libs/utility/pcre2:pcre2",
+        "//packages/linux/system/libs/data/expat:expat",
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/desktop/mesa:mesa",
+        "//packages/linux/graphics/libglvnd:libglvnd",
+        "//packages/linux/system/libs/font/freetype:freetype",
+        "//packages/linux/system/libs/font/fontconfig:fontconfig",
+        "//packages/linux/desktop/libdrm:libdrm",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/compression/zstd:zstd",
+    ],
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/dev-libs/glib:glib",
+        "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
+        "//packages/linux/system/libs/utility/pcre2:pcre2",
+        "//packages/linux/system/libs/compression/zstd:zstd",
+        "//packages/linux/system/libs/utility/icu:icu-native",
+        "//packages/linux/system/libs/image/libpng:libpng",
+        "//packages/linux/system/libs/image/libjpeg-turbo:libjpeg-turbo",
+        "//packages/linux/desktop/libdrm:libdrm",
+        "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
+        "//packages/linux/system/libs/font/freetype:freetype",
+        "//packages/linux/system/libs/font/fontconfig:fontconfig",
+        "//packages/linux/system/libs/data/expat:expat",
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/system/libs/compression/bzip2:bzip2",
+        # X11
+        "//packages/linux/graphics/xorg/libX11:libX11",
+        "//packages/linux/graphics/xorg/libxcb:libxcb",
+        "//packages/linux/graphics/xorg/xcb-util-cursor:xcb-util-cursor",
+        "//packages/linux/graphics/xorg/xcb-util-image:xcb-util-image",
+        "//packages/linux/graphics/xorg/xcb-util-keysyms:xcb-util-keysyms",
+        "//packages/linux/graphics/xorg/xcb-util-renderutil:xcb-util-renderutil",
+        "//packages/linux/graphics/xorg/xcb-util-wm:xcb-util-wm",
+        "//packages/linux/graphics/xorg/libICE:libICE",
+        "//packages/linux/graphics/xorg/libSM:libSM",
+        # Wayland
+        "//packages/linux/graphics/rendering/wayland:wayland",
+        "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
+        # OpenGL/Mesa
+        "//packages/linux/desktop/mesa:mesa",
+        "//packages/linux/dev-libs/elfutils:elfutils",
+        "//packages/linux/system/libs/data/libxml2:libxml2",
+        # SQLite
+        "//packages/linux/system/libs/database/sqlite:sqlite",
+        # D-Bus
+        "//packages/linux/system/libs/ipc/dbus:dbus",
+        "//packages/linux/system/init/systemd:systemd",
+        "//packages/linux/system/libs/ipc/libcap:libcap",
+    ],
+    # Qt6 installs tools (qtpaths, moc, qsb) that consumers run at
+    # configure time.  These tools link against Qt6's deps (ICU, freetype,
+    # etc.) but their RPATH only has sysroot dirs.  Patch installed tool
+    # RPATHs to include dep lib dirs so consumers don't need host_deps.
+    post_install_cmds = ["""
+for _tool in $OUT/usr/lib64/qt6/bin/* $OUT/usr/lib64/qt6/libexec/*; do
+    [ -f "$_tool" ] && file -b "$_tool" | grep -q ELF || continue
+    _rpath=$(patchelf --print-rpath "$_tool" 2>/dev/null || true)
+    [ -z "$_rpath" ] && continue
+    # Add dep lib dirs from LD_LIBRARY_PATH to RPATH
+    _extra=""
+    IFS=: read -ra _dirs <<< "${LD_LIBRARY_PATH:-}"
+    for _d in "${_dirs[@]}"; do
+        [ -d "$_d" ] && _extra="${_extra:+$_extra:}$_d"
+    done
+    [ -n "$_extra" ] && patchelf --set-rpath "$_rpath:$_extra" "$_tool" 2>/dev/null || true
+done
+
+# Create usr/bin symlinks for key Qt6 tools so host_deps
+# path-prepend (which projects usr/bin) finds them.  Qt6 installs
+# to usr/lib64/qt6/bin by default.
+mkdir -p "$OUT/usr/bin"
+for _tool in qtpaths moc rcc uic qsb lrelease; do
+    _src="$OUT/usr/lib64/qt6/bin/$_tool"
+    [ -f "$_src" ] && ln -sf "../lib64/qt6/bin/$_tool" "$OUT/usr/bin/$_tool" || true
+done
+for _tool in rcc qlalr; do
+    _src="$OUT/usr/lib64/qt6/libexec/$_tool"
+    [ -f "$_src" ] && ln -sf "../lib64/qt6/libexec/$_tool" "$OUT/usr/bin/$_tool" 2>/dev/null || true
+done
+"""],
+
+    visibility = ["PUBLIC"],
+)
+
+# =============================================================================
+# polkit-qt - Qt wrapper around polkit-1 client libraries
+# =============================================================================
+
+package(
+    build_rule = "cmake",
+    name = "polkit-qt",
+    url = "https://download.kde.org/stable/polkit-qt-1/polkit-qt-1-0.200.0.tar.xz",
+
+    sha256 = "5d3b611c062d2b76a93750bb10c907bfd21d1ff08d0a15dc2cf63e278e1677fb",
+    version = "0.200.0",
+    description = "Qt6 wrapper around polkit-1 client libraries",
+    homepage = "https://api.kde.org/polkit-qt-1/html/",
+    license = "LGPL-2",
+
+    cmake_defines = [
+        "QT_MAJOR_VERSION=6",
+        "QT_NO_PACKAGE_VERSION_CHECK=TRUE",
+        "BUILD_EXAMPLES=OFF",
+    ],
+
+    deps = [
+        ":qt6-native",
+        "//packages/linux/dev-libs/glib:glib",
+        "//packages/linux/system/security/auth/privilege:polkit",
+        "//packages/linux/desktop/mesa:mesa",
+        "//packages/linux/system/libs/utility/pcre2:pcre2",
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/core/zlib:zlib",
+    ],
+
     visibility = ["PUBLIC"],
 )

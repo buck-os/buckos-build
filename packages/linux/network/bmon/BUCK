@@ -1,44 +1,46 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package", "binary_package", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # bmon - Bandwidth monitor and rate estimator
 # =============================================================================
 
-autotools_package(
-    name = "bmon",
-    version = "4.0",
-    src_uri = "https://github.com/tgraf/bmon/releases/download/v4.0/bmon-4.0.tar.gz",
-    sha256 = "02fdc312b8ceeb5786b28bf905f54328f414040ff42f45c83007f24b76cc9f7a",
-    signature_required = False,
+# NOTE: bmon requires libconfuse (confuse.h) which does not exist in this build yet
+# To enable bmon, first create packages/linux/dev-libs/libconfuse/BUCK
+# libconfuse source: https://github.com/libconfuse/libconfuse
 
-    iuse = ["ascii"],
-    use_defaults = [],
-
-    configure_args = [
-        "--with-ncurses",
-    ],
-
-    use_configure = {
-        "ascii": "--enable-ascii",
-        "-ascii": "--disable-ascii",
-    },
-
-    deps = [
-        "//packages/linux/core/libnl:libnl",
-        "//packages/linux/core/ncurses:ncurses",
-    ],
-
-    env = {
-        "CURSES_LIB": "-lncursesw -ltinfow",
-        "CONFUSE_CFLAGS": "-I/tmp/confuse-install/include",
-        "CONFUSE_LIBS": "-L/tmp/confuse-install/lib -lconfuse",
-        "PKG_CONFIG_PATH": "/tmp/confuse-install/lib/pkgconfig:$PKG_CONFIG_PATH",
-        "LD_LIBRARY_PATH": "/tmp/confuse-install/lib:$LD_LIBRARY_PATH",
-    },
-
-    description = "Bandwidth monitor and rate estimator",
-    homepage = "https://github.com/tgraf/bmon",
-    license = "BSD-2-Clause",
-    visibility = ["PUBLIC"],
-)
+# Commented out until libconfuse is available
+# package(
+#     build_rule = "autotools",
+#     name = "bmon",
+#     version = "4.0",
+#     url = "https://github.com/tgraf/bmon/releases/download/v4.0/bmon-4.0.tar.gz",
+#     sha256 = "02fdc312b8ceeb5786b28bf905f54328f414040ff42f45c83007f24b76cc9f7a",
+#
+#
+#
+#
+#
+#     configure_args = [
+#         "--with-ncurses",
+#     ],
+#
+#     use_configure = {
+#         "ascii": "--enable-ascii",
+#         "-ascii": "--disable-ascii",
+#     },
+#
+#     deps = [
+#         "//packages/linux/core/libnl:libnl",
+#         "//packages/linux/system/terminal/ncurses:ncurses",
+#         # "//packages/linux/dev-libs/libconfuse:libconfuse",  # TODO: Create this package
+#     ],
+#
+#     env = {
+#         "CURSES_LIB": "-lncursesw -ltinfow",
+#     },
+#
+#     description = "Bandwidth monitor and rate estimator",
+#     homepage = "https://github.com/tgraf/bmon",
+#     license = "BSD-2-Clause",
+#     visibility = ["PUBLIC"],
+# )

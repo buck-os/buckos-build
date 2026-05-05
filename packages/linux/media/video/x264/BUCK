@@ -1,48 +1,39 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # x264 - H.264/MPEG-4 AVC encoder
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "x264",
+    # x264 has its own configure script (not autoconf)
     version = "0.164.3108",
-    src_uri = "https://code.videolan.org/videolan/x264/-/archive/stable/x264-stable.tar.bz2",
+    url = "https://code.videolan.org/videolan/x264/-/archive/stable/x264-stable.tar.bz2",
     sha256 = "740126cb48549ca4e2f09b4ae13beed592d5b54744044e38f28662fd96d0ba56",
     description = "H.264/MPEG-4 AVC encoder",
     homepage = "https://www.videolan.org/developers/x264.html",
     license = "GPL-2",
-    iuse = ["cli", "shared", "static", "asm", "opencl", "avs", "lavf", "ffms", "gpac", "lsmash"],
-    use_defaults = ["cli", "shared", "asm"],
     deps = [],
+    # nasm is needed when asm is enabled (x86/x86_64 optimizations)
     use_deps = {
-        "opencl": ["//packages/linux/dev-libs/opencl:opencl"],
-        "lavf": ["//packages/linux/media/video/ffmpeg:ffmpeg"],
     },
     configure_args = [
         "--prefix=${PREFIX}",
         "--enable-pic",
         "--disable-swscale",
+        "--enable-shared",
     ],
     use_configure = {
-        "cli": "--enable-cli",
-        "-cli": "--disable-cli",
-        "shared": "--enable-shared",
-        "-shared": "--disable-shared",
-        "static": "--enable-static",
-        "-static": "--disable-static",
-        "asm": "--enable-asm",
-        "-asm": "--disable-asm",
-        "opencl": "--enable-opencl",
-        "-opencl": "--disable-opencl",
-        "avs": "--enable-avs",
-        "-avs": "--disable-avs",
-        "lavf": "--enable-lavf",
-        "-lavf": "--disable-lavf",
-        "ffms": "--enable-ffms",
-        "-ffms": "--disable-ffms",
-        "gpac": "--enable-gpac",
-        "-gpac": "--disable-gpac",
-        "lsmash": "--enable-lsmash",
-        "-lsmash": "--disable-lsmash",
+        "asm": ("--enable-asm", "--disable-asm"),
+        "avs": ("--enable-avs", "--disable-avs"),
+        "cli": ("--enable-cli", "--disable-cli"),
+        "cpu_flags_ppc_altivec": ("--enable-cpu_flags_ppc_altivec", "--disable-cpu_flags_ppc_altivec"),
+        "ffms": ("--enable-ffms", "--disable-ffms"),
+        "gpac": ("--enable-gpac", "--disable-gpac"),
+        "interlaced": ("--enable-interlaced", "--disable-interlaced"),
+        "lavf": ("--enable-lavf", "--disable-lavf"),
+        "lsmash": ("--enable-lsmash", "--disable-lsmash"),
+        "shared": ("--enable-shared", "--disable-shared"),
+        "static": ("--enable-static", "--disable-static"),
+        "threads": ("--enable-threads", "--disable-threads"),
     },
-    visibility = ["PUBLIC"],
 )

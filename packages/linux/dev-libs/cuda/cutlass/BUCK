@@ -1,4 +1,4 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # NVIDIA CUTLASS - CUDA Templates for Linear Algebra Subroutines
 # CUTLASS is a collection of CUDA C++ template abstractions for implementing
@@ -6,55 +6,28 @@ load("//defs:package_defs.bzl", "cmake_package")
 # and scales within CUDA. It incorporates strategies for hierarchical decomposition and
 # data movement similar to those used to implement cuBLAS and cuDNN.
 
-cmake_package(
+package(
+    build_rule = "binary",
     name = "cutlass",
     version = "3.9.2",
-    src_uri = "https://github.com/NVIDIA/cutlass/archive/refs/tags/v3.9.2.tar.gz",
+    url = "https://github.com/NVIDIA/cutlass/archive/refs/tags/v3.9.2.tar.gz",
     sha256 = "4b97bd6cece9701664eec3a634a1f2f2061d85bf76d843fa5799e1a692b4db0d",
-    signature_required = False,
     description = "CUDA Templates for Linear Algebra Subroutines",
     homepage = "https://github.com/NVIDIA/cutlass",
     license = "BSD-3-Clause",
 
-    # CUTLASS requires C++17 and CUDA 11.4+
-    # It's primarily a header-only library with optional examples/tests
-    iuse = ["examples", "tests", "tools"],
-    use_defaults = [],
+    deps = [],
 
-    # Dependencies - CUTLASS requires CUDA toolkit
-    # Note: You'll need to add the CUDA toolkit dependency when available
-    deps = [
-        # "//packages/linux/system/gpu/libraries/cuda-toolkit:cuda-toolkit",
-    ],
+    install_script = """
+# Header-only CUDA template library - install include directory
+mkdir -p "$OUT/usr/include"
+cp -r "$SRCS/include/"* "$OUT/usr/include/" 2>/dev/null || true
+# Install tools/util headers used by some downstream consumers
+if [ -d "$SRCS/tools/util/include" ]; then
+    cp -r "$SRCS/tools/util/include/"* "$OUT/usr/include/" 2>/dev/null || true
+fi
+echo "cutlass headers installed successfully"
+""",
 
-    # CMake configuration
-    cmake_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DCMAKE_CXX_STANDARD=17",
-        "-DCMAKE_CUDA_STANDARD=17",
-        "-DCUTLASS_ENABLE_HEADERS_ONLY=ON",  # Header-only by default
-        "-DCUTLASS_ENABLE_EXAMPLES=OFF",
-        "-DCUTLASS_ENABLE_TOOLS=OFF",
-        "-DCUTLASS_ENABLE_LIBRARY=OFF",
-        "-DCUTLASS_ENABLE_TESTS=OFF",
-        "-DCUTLASS_ENABLE_PROFILER=OFF",
-        "-DCUTLASS_NVCC_ARCHS=80;86;89;90",  # Common architectures (Ampere, Ada, Hopper)
-    ],
-
-    # USE flag -> CMake options mapping
-    use_options = {
-        "examples": "CUTLASS_ENABLE_EXAMPLES",
-        "tests": "CUTLASS_ENABLE_TESTS",
-        "tools": "CUTLASS_ENABLE_TOOLS",
-    },
-
-    # Additional dependencies when USE flags are enabled
-    use_deps = {
-        "tests": [
-            # Google Test dependency if tests are enabled
-            # "//packages/linux/dev-libs/testing/googletest:googletest",
-        ],
-    },
-
-    visibility = ["PUBLIC"],
+    labels = ["buckos:hw:cuda"],
 )

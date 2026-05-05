@@ -1,20 +1,14 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
     name = "traceroute",
+    build_rule = "autotools",
+    skip_configure = True,
     version = "2.1.3",
-    src_uri = "https://downloads.sourceforge.net/traceroute/traceroute-2.1.3.tar.gz",
+    url = "https://downloads.sourceforge.net/traceroute/traceroute-2.1.3.tar.gz",
     sha256 = "05ebc7aba28a9100f9bbae54ceecbf75c82ccf46bdfce8b5d64806459a7e0412",
-    signature_required = False,
-
-    iuse = ["ipv6"],
-    use_defaults = ["ipv6"],
-
-
     use_configure = {
-        "ipv6": "CFLAGS=-DENABLE_IPV6",
-        "-ipv6": "",
+        "static": ("--enable-static", "--disable-static"),
     },
 
     make_args = [
@@ -27,5 +21,4 @@ autotools_package(
     description = "Network diagnostic tool for tracing packet routes",
     homepage = "https://traceroute.sourceforge.net/",
     license = "GPL-2.0-or-later",
-    visibility = ["PUBLIC"],
 )

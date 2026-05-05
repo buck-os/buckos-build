@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-# libXtst - X Test extension library (for automation/testing)
-autotools_package(
+# libXtst - X Test extension library (RECORD/XTEST)
+package(
+    build_rule = "autotools",
     name = "libXtst",
-    version = "1.2.4",
-    src_uri = "https://xorg.freedesktop.org/archive/individual/lib/libXtst-1.2.4.tar.xz",
-    sha256 = "84f5f30b9254b4ffee14b5b0940e2622153b0d3aed8286a3c5b7eeb340ca33c8",
+    version = "1.2.5",
+    url = "https://xorg.freedesktop.org/archive/individual/lib/libXtst-1.2.5.tar.xz",
+    sha256 = "b50d4c25b97009a744706c1039c598f4d8e64910c9fde381994e1cae235d9242",
     description = "X Test extension library",
     homepage = "https://xorg.freedesktop.org/",
     license = "MIT",
@@ -15,11 +16,17 @@ autotools_package(
         "--libdir=/usr/lib64",
         "--disable-specs",
     ],
+    post_install_cmds = ["""\
+find \"$DESTDIR\" -name '*.la' -delete
+"""],
     deps = [
         "//packages/linux/graphics/xorg/libX11:libX11",
         "//packages/linux/graphics/xorg/libXext:libXext",
         "//packages/linux/graphics/xorg/libXi:libXi",
+        "//packages/linux/graphics/xorg/libXfixes:libXfixes",
         "//packages/linux/graphics/xorg/xorgproto:xorgproto",
+        "//packages/linux/graphics/xorg/libxcb:libxcb",
+        "//packages/linux/graphics/xorg/libXau:libXau",
+        "//packages/linux/graphics/xorg/libXdmcp:libXdmcp",
     ],
-    visibility = ["PUBLIC"],
 )

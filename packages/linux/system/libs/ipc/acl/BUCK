@@ -1,53 +1,87 @@
-load("//defs:package_defs.bzl", "download_source", "ebuild_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "acl-src",
-    src_uri = "https://github.com/sailfishos-mirror/acl/archive/refs/tags/v2.3.2.tar.gz",
-    sha256 = "0fc318808c1e91925398cbe41399a33b74dcf788a1c0af4feae8f7a322c6e6fd",
-    signature_required = False,
-)
-
-ebuild_package(
+package(
     name = "acl",
-    source = ":acl-src",
+    build_rule = "binary",
     version = "2.3.2",
-    category = "system/libs/ipc",
-    slot = "0",
+    url = "https://mirror.csclub.uwaterloo.ca/nongnu/acl/acl-2.3.2.tar.xz",
+    sha256 = "97203a72cae99ab89a067fe2210c1cbf052bc492b479eca7d226d9830883b0bd",
     description = "Access Control List library",
     homepage = "https://github.com/sailfishos-mirror/acl",
     license = "LGPL-2.1",
+    use_configure = {
+        "nls": ("--enable-nls", "--disable-nls"),
+        "static-libs": ("--enable-static", "--disable-static"),
+    },
+    install_script = '''
+# Set LDFLAGS and LIBS to find attr from dependencies, not host
+_EXTRA_LDFLAGS=""
+_ATTR_LIB=""
+IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
+for _dep in "${_DEP_ARRAY[@]}"; do
+    for _libdir in "$_dep/usr/lib64" "$_dep/usr/lib"; do
+        if [ -d "$_libdir" ]; then
+            _EXTRA_LDFLAGS="$_EXTRA_LDFLAGS -L$_libdir -Wl,-rpath-link,$_libdir"
+            # Find libattr.so explicitly
+            if [ -f "$_libdir/libattr.so" ] && [ -z "$_ATTR_LIB" ]; then
+                _ATTR_LIB="$_libdir/libattr.so"
+            fi
+        fi
+    done
+done
+export LDFLAGS="${LDFLAGS:-} $_EXTRA_LDFLAGS"
 
-    src_prepare = '''
-# GitHub archive doesn't include pre-generated configure script
-# Remove po directory to avoid NLS build issues
-rm -rf po
-sed -i '/^SUBDIRS/s/po//' Makefile.am
-autoreconf -fiv
-''',
+# Explicitly pass attr library path to prevent finding host version
+if [ -n "$_ATTR_LIB" ]; then
+    export LIBS="${LIBS:-} $_ATTR_LIB"
+fi
 
-    src_configure = '''
-./configure \\
-    --prefix=/usr \\
-    --build=$(gcc -dumpmachine) \\
-    --host=$(gcc -dumpmachine) \\
-    --disable-static \\
+./configure \
+    --prefix=/usr \
+    --build=$(./build-aux/config.guess 2>/dev/null || echo x86_64-pc-linux-gnu) \
+    --host=${CHOST:-$(${CC:-gcc} -dumpmachine)} \
+    --disable-static \
     --disable-nls
-''',
 
-    src_compile = '''
-make -j$(nproc)
-''',
+# Patch the Makefile to remove -lattr (which searches host paths) and only use explicit path
+if [ -f Makefile ]; then
+    sed -i 's/^LIBS = -lattr /LIBS = /' Makefile
+    echo "Patched Makefile to remove -lattr and use only explicit libattr path"
+fi
 
-    src_install = '''
+# Build list of all dependency lib directories
+_LIB_DIRS=""
+IFS=':' read -ra _DEP_ARRAY <<< "${DEP_BASE_DIRS:-}"
+for _dep in "${_DEP_ARRAY[@]}"; do
+    for _libdir in "$_dep/usr/lib64" "$_dep/usr/lib"; do
+        if [ -d "$_libdir" ]; then
+            _LIB_DIRS="${_LIB_DIRS:+$_LIB_DIRS:}$_libdir"
+        fi
+    done
+done
+
+# Add toolchain lib directories
+TOOLCHAIN_LIBS="/data/buckos-build/buck-out/v2/gen/toolchains/f71afeb1ef1e9008/bootstrap/__bootstrap-toolchain-aarch64__/bootstrap-toolchain-aarch64/tools/lib64"
+if [ -d "$TOOLCHAIN_LIBS" ]; then
+    _LIB_DIRS="${_LIB_DIRS:+$_LIB_DIRS:}$TOOLCHAIN_LIBS"
+fi
+
+# Use --library-path to completely override library search, excluding /usr/lib64
+if [ -n "$_LIB_DIRS" ]; then
+    export LDFLAGS="${LDFLAGS:-} -Wl,--library-path=$_LIB_DIRS"
+fi
+
+make -j${MAKEOPTS:-$(nproc)}
+
 make DESTDIR="$DESTDIR" install
 ''',
-
-    bdepend = [
+    deps = [
+        "//packages/linux/dev-libs/misc/gettext:gettext",
         "//packages/linux/system/libs/ipc/attr:attr",
     ],
-    rdepend = [
-        "//packages/linux/system/libs/ipc/attr:attr",
+    host_deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
     ],
-    visibility = ["PUBLIC"],
 )

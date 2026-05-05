@@ -1,61 +1,232 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-# Download source - explicitly created with PUBLIC visibility for reuse
-# Using GitHub mirror since busybox.net can be unreliable
-download_source(
-    name = "busybox-src",
-    src_uri = "https://github.com/mirror/busybox/archive/refs/tags/1_36_1.tar.gz",
-    sha256 = "ea5494846c51d946e5e801d1c099b438f683af8147e0be24ca4001073143110f",
-    signature_required = False,
-    visibility = ["PUBLIC"],
-)
-
-autotools_package(
-    name = "busybox",
-    source = ":busybox-src",
+# ── busybox-static ────────────────────────────────────────────────────
+#
+# Full-featured static busybox for initramfs.  Includes ash, coreutils,
+# mount helpers, and init utilities -- everything needed for a minimal
+# live-boot environment.  Uses binary build rule because the Kconfig
+# setup and custom install (applet symlinks) are too specialised for the
+# autotools pipeline.
+package(
+    name = "busybox-static",
+    build_rule = "binary",
     version = "1.36.1",
-    description = "BusyBox combines tiny versions of many common UNIX utilities into a single small executable",
+    source = ":busybox-src",
+    description = "Static busybox for initramfs with all essential applets",
     homepage = "https://busybox.net/",
     license = "GPL-2.0",
-    pre_configure = """
-# Generate minimal busybox configuration with only cpio enabled
-# For end user builds, they can provide their own .config file
+    deps = [],  # No deps - fully static
+    install_script = """
+# Kconfig setup
 export KCONFIG_NOTIMESTAMP=1
 
-# Start with allnoconfig (all options disabled)
-make allnoconfig > /dev/null 2>&1
+# Start with allnoconfig (all disabled) for minimal build
+make HOSTCC="${CC:-gcc}" allnoconfig > /dev/null 2>&1
 
-# Enable only the cpio applet which is needed for dracut
-cat >> .config << 'EOF'
+# Create minimal config with only what we need for initramfs
+cat > .config << 'EOF'
+# Basic settings
+CONFIG_HAVE_DOT_CONFIG=y
+CONFIG_PLATFORM_LINUX=y
+CONFIG_FEATURE_BUFFERS_USE_MALLOC=y
+CONFIG_SHOW_USAGE=y
+CONFIG_FEATURE_VERBOSE_USAGE=y
+CONFIG_LONG_OPTS=y
+
+# Static build - no shared libraries needed
+CONFIG_STATIC=y
+
+# glibc 2.42 libc.a references _Unwind_Resume from libgcc_eh.
+# LDLIBS is appended after -lc in the link line, resolving the
+# circular dependency (LDFLAGS goes before -lc and doesn't help).
+CONFIG_EXTRA_LDLIBS="gcc_eh"
+
+# Disable problematic features
+# CONFIG_PAM is not set
+# CONFIG_SELINUX is not set
+# CONFIG_TC is not set
+# CONFIG_FEATURE_PREFER_APPLETS is not set
+# CONFIG_FEATURE_SH_STANDALONE is not set
+
+# Shell - use ash (lightweight POSIX shell)
+CONFIG_ASH=y
+CONFIG_ASH_BASH_COMPAT=y
+CONFIG_ASH_JOB_CONTROL=y
+CONFIG_ASH_ALIAS=y
+CONFIG_ASH_ECHO=y
+CONFIG_ASH_PRINTF=y
+CONFIG_ASH_TEST=y
+CONFIG_ASH_GETOPTS=y
+CONFIG_ASH_CMDCMD=y
+
+# Core utilities for init
+CONFIG_CAT=y
+CONFIG_CHROOT=y
+CONFIG_CP=y
+CONFIG_DATE=y
+CONFIG_DD=y
+CONFIG_ECHO=y
+CONFIG_FALSE=y
+CONFIG_LN=y
+CONFIG_LS=y
+CONFIG_FEATURE_LS_TIMESTAMPS=y
+CONFIG_FEATURE_LS_SORTFILES=y
+CONFIG_MKDIR=y
+CONFIG_MKNOD=y
+CONFIG_MV=y
+CONFIG_PWD=y
+CONFIG_RM=y
+CONFIG_RMDIR=y
+CONFIG_SLEEP=y
+CONFIG_TEST=y
+CONFIG_TEST1=y
+CONFIG_TEST2=y
+CONFIG_TRUE=y
+CONFIG_UNAME=y
+
+# Mount/filesystem utilities
+CONFIG_MOUNT=y
+CONFIG_FEATURE_MOUNT_LOOP=y
+CONFIG_FEATURE_MOUNT_FLAGS=y
+CONFIG_UMOUNT=y
+CONFIG_LOSETUP=y
+CONFIG_BLKID=y
+CONFIG_FEATURE_BLKID_TYPE=y
+CONFIG_FINDFS=y
+CONFIG_MOUNTPOINT=y
+
+# Init/process utilities
+CONFIG_SWITCH_ROOT=y
+CONFIG_HALT=y
+CONFIG_POWEROFF=y
+CONFIG_REBOOT=y
+CONFIG_KILL=y
+CONFIG_PIDOF=y
+CONFIG_PS=y
+CONFIG_FEATURE_PS_WIDE=y
+
+# TTY/console
+CONFIG_CLEAR=y
+CONFIG_RESET=y
+
+# Misc utilities for debugging
+CONFIG_DMESG=y
+CONFIG_FEATURE_DMESG_PRETTY=y
+
+# Compression (for cpio)
 CONFIG_CPIO=y
 CONFIG_FEATURE_CPIO_O=y
 CONFIG_FEATURE_CPIO_P=y
+CONFIG_GUNZIP=y
+CONFIG_ZCAT=y
 EOF
 
-# Run oldconfig to ensure config is valid and complete
-yes "" | make oldconfig > /dev/null 2>&1
+# Regenerate with our settings
+yes "" | make HOSTCC="${CC:-gcc}" oldconfig > /dev/null 2>&1
 
-echo "Generated minimal busybox config with cpio enabled"
-""",
-    src_configure = """
-# Busybox uses Kconfig, not autotools - skip configure step
-echo "Busybox configuration already done in pre_configure"
-""",
-    make_args = [
-        "CONFIG_PREFIX=$DESTDIR",
-    ],
-    post_install = """
-# Only create cpio symlink - don't conflict with coreutils
-mkdir -p "$DESTDIR/usr/bin"
-# Remove any auto-created symlinks that might conflict
-find "$DESTDIR" -type l -name "*" ! -name "cpio" -delete 2>/dev/null || true
-# Ensure cpio symlink exists
-if [ -f "$DESTDIR/bin/busybox" ]; then
-    ln -sf /bin/busybox "$DESTDIR/usr/bin/cpio"
-elif [ -f "$DESTDIR/usr/bin/busybox" ]; then
-    ln -sf busybox "$DESTDIR/usr/bin/cpio"
+echo "Generated minimal static busybox config for initramfs"
+
+# Build with static flags
+# HOSTCC defaults to CC — on the hermetic PATH, bare "gcc" is not
+# available (only the toolchain cross-compiler via $CC).
+make -j$(nproc) \
+    CROSS_COMPILE="${CROSS_COMPILE:-}" \
+    CC="${CC:-gcc}" \
+    HOSTCC="${HOSTCC:-${CC:-gcc}}" \
+    LDFLAGS="-static"
+
+# Install busybox binary
+mkdir -p "$DESTDIR/bin" "$DESTDIR/sbin"
+cp busybox "$DESTDIR/bin/busybox"
+chmod 755 "$DESTDIR/bin/busybox"
+
+# Create symlinks for the applets we enabled
+# Shell
+ln -sf busybox "$DESTDIR/bin/sh"
+ln -sf busybox "$DESTDIR/bin/ash"
+
+# Core utilities
+for cmd in cat cp date dd echo false ln ls mkdir mknod mv pwd rm rmdir sleep test true uname; do
+    ln -sf busybox "$DESTDIR/bin/$cmd"
+done
+ln -sf busybox "$DESTDIR/bin/["
+
+# Mount/filesystem (in sbin)
+for cmd in mount umount losetup blkid findfs; do
+    ln -sf /bin/busybox "$DESTDIR/sbin/$cmd"
+done
+ln -sf /bin/busybox "$DESTDIR/bin/mountpoint"
+
+# Init utilities (in sbin)
+for cmd in switch_root halt poweroff reboot; do
+    ln -sf /bin/busybox "$DESTDIR/sbin/$cmd"
+done
+
+# Process utilities
+ln -sf busybox "$DESTDIR/bin/kill"
+ln -sf busybox "$DESTDIR/bin/pidof"
+ln -sf busybox "$DESTDIR/bin/ps"
+
+# TTY utilities
+ln -sf busybox "$DESTDIR/bin/clear"
+ln -sf busybox "$DESTDIR/bin/reset"
+
+# Misc
+ln -sf busybox "$DESTDIR/bin/dmesg"
+ln -sf busybox "$DESTDIR/bin/cpio"
+ln -sf busybox "$DESTDIR/bin/gunzip"
+ln -sf busybox "$DESTDIR/bin/zcat"
+ln -sf busybox "$DESTDIR/bin/chroot"
+
+# Verify it's actually static
+echo "Checking if busybox is static..."
+if file "$DESTDIR/bin/busybox" | grep -q "statically linked"; then
+    echo "SUCCESS: busybox is statically linked"
+else
+    echo "Checking with ldd..."
+    ldd "$DESTDIR/bin/busybox" 2>&1 || echo "ldd not available or not a dynamic executable"
 fi
 """,
-    visibility = ["PUBLIC"],
+)
+
+# ── busybox (minimal, cpio-only) ─────────────────────────────────────
+#
+# Minimal busybox with only the cpio applet enabled, used as a build
+# dependency for initramfs generation (dracut).  Uses the new package()
+# macro with skip_configure since busybox uses Kconfig, not autotools.
+# The Kconfig initialisation runs via pre_build_cmds before the main
+# make invocation.
+#
+# The package() macro auto-creates :busybox-archive and :busybox-src
+# targets from the url/sha256 below; busybox-static above reuses
+# :busybox-src to avoid downloading the tarball twice.
+package(
+    name = "busybox",
+    build_rule = "autotools",
+    version = "1.36.1",
+    url = "https://github.com/mirror/busybox/archive/refs/tags/1_36_1.tar.gz",
+    sha256 = "ea5494846c51d946e5e801d1c099b438f683af8147e0be24ca4001073143110f",
+    skip_configure = True,
+    pre_build_cmds = [
+        # Generate minimal config with only cpio enabled.
+        # Kconfig needs a host compiler (cc) to build scripts/conf —
+        # the native gcc-native package in host-tools provides this.
+        "export KCONFIG_NOTIMESTAMP=1 && make allnoconfig > /dev/null 2>&1",
+        "printf 'CONFIG_CPIO=y\\nCONFIG_FEATURE_CPIO_O=y\\nCONFIG_FEATURE_CPIO_P=y\\n' >> .config",
+        'yes "" | make oldconfig > /dev/null 2>&1',
+    ],
+    install_prefix_var = "CONFIG_PREFIX",
+    deps = [],
+    host_deps = [
+        "//packages/linux/dev-tools/dev-utils/flex:flex",
+        "//packages/linux/dev-tools/dev-utils/bison:bison",
+    ],
+    patches = glob(["patches/*.patch"]),
+    transforms = ["strip", "stamp"],
+    use_transforms = {"ima": "ima"},
+    # SBOM
+    license = "GPL-2.0",
+    homepage = "https://busybox.net/",
+    description = "BusyBox combines tiny versions of many common UNIX utilities into a single small executable",
+    cpe = "cpe:2.3:a:busybox:busybox:1.36.1:*:*:*:*:*:*:*",
 )

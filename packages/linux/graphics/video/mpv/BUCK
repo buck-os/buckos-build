@@ -1,5 +1,4 @@
-load("//defs:package_defs.bzl", "meson_package", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # mpv - A free, open source, and cross-platform media player
 
@@ -16,16 +15,60 @@ load("//defs:use_flags.bzl", "set_use_flags")
 # - jack: JACK audio (default: enabled)
 # - lua: Lua scripting (default: enabled)
 
-meson_package(
+package(
+    build_rule = "meson",
     name = "mpv",
     version = "0.38.0",
-    src_uri = "https://github.com/mpv-player/mpv/archive/refs/tags/v0.38.0.tar.gz",
+    use_configure = {
+        "X": ("--with-x", "--without-x"),
+        "alsa": ("--enable-alsa", "--disable-alsa"),
+        "aqua": ("--enable-aqua", "--disable-aqua"),
+        "archive": ("--enable-archive", "--disable-archive"),
+        "bluray": ("--enable-bluray", "--disable-bluray"),
+        "cdda": ("--enable-cdda", "--disable-cdda"),
+        "cli": ("--enable-cli", "--disable-cli"),
+        "coreaudio": ("--enable-coreaudio", "--disable-coreaudio"),
+        "debug": ("--enable-debug", "--disable-debug"),
+        "drm": ("--enable-drm", "--disable-drm"),
+        "dvb": ("--enable-dvb", "--disable-dvb"),
+        "dvd": ("--enable-dvd", "--disable-dvd"),
+        "egl": ("--enable-egl", "--disable-egl"),
+        "gamepad": ("--enable-gamepad", "--disable-gamepad"),
+        "iconv": ("--enable-iconv", "--disable-iconv"),
+        "jack": ("--enable-jack", "--disable-jack"),
+        "javascript": ("--enable-javascript", "--disable-javascript"),
+        "jpeg": ("--with-jpeg", "--without-jpeg"),
+        "lcms": ("--enable-lcms", "--disable-lcms"),
+        "libcaca": ("--enable-libcaca", "--disable-libcaca"),
+        "libmpv": ("--enable-libmpv", "--disable-libmpv"),
+        "lua": ("--enable-lua", "--disable-lua"),
+        "nvenc": ("--enable-nvenc", "--disable-nvenc"),
+        "openal": ("--enable-openal", "--disable-openal"),
+        "pipewire": ("--enable-pipewire", "--disable-pipewire"),
+        "pulseaudio": ("--enable-pulseaudio", "--disable-pulseaudio"),
+        "rubberband": ("--enable-rubberband", "--disable-rubberband"),
+        "sdl": ("--enable-sdl", "--disable-sdl"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "sixel": ("--enable-sixel", "--disable-sixel"),
+        "sndio": ("--enable-sndio", "--disable-sndio"),
+        "soc": ("--enable-soc", "--disable-soc"),
+        "subrandr": ("--enable-subrandr", "--disable-subrandr"),
+        "tools": ("--enable-tools", "--disable-tools"),
+        "uchardet": ("--enable-uchardet", "--disable-uchardet"),
+        "vaapi": ("--enable-vaapi", "--disable-vaapi"),
+        "vdpau": ("--enable-vdpau", "--disable-vdpau"),
+        "vulkan": ("--enable-vulkan", "--disable-vulkan"),
+        "wayland": ("--enable-wayland", "--disable-wayland"),
+        "xv": ("--enable-xv", "--disable-xv"),
+        "zimg": ("--enable-zimg", "--disable-zimg"),
+        "zlib": ("--with-zlib", "--without-zlib"),
+    },
+    url = "https://github.com/mpv-player/mpv/archive/refs/tags/v0.38.0.tar.gz",
     sha256 = "86d9ef40b6058732f67b46d0bbda24a074fae860b3eaae05bab3145041303066",
-    signature_required = False,
     description = "A free, open source, and cross-platform media player",
     homepage = "https://mpv.io/",
     license = "GPL-2.0-or-later LGPL-2.1-or-later",
-    meson_args = [
+    configure_args = [
         "-Dlibmpv=true",
         "-Dcplayer=true",
         "-Dbuild-date=false",
@@ -64,16 +107,12 @@ meson_package(
         "-Dsdl2=enabled",
     ],
     deps = [
-        "//packages/linux/graphics/video/ffmpeg:ffmpeg",
-        "//packages/linux/graphics/video/libva:libva",
         "//packages/linux/graphics/video/vdpau:vdpau",
-        "//packages/linux/audio/daemons/alsa-lib:alsa-lib",
+        "//packages/linux/system/libs/audio/alsa-lib:alsa-lib",
         "//packages/linux/audio/daemons/pulseaudio:pulseaudio",
         "//packages/linux/audio/daemons/pipewire:pipewire",
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/lang/lua:lua",
         "//packages/linux/core/zlib:zlib",
     ],
-    maintainers = [],
-    visibility = ["PUBLIC"],
 )

@@ -1,20 +1,22 @@
-load("//defs:package_defs.bzl", "download_source", "cmake_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "bcc-src",
-    src_uri = "https://github.com/iovisor/bcc/releases/download/v0.35.0/bcc-src-with-submodule.tar.gz",
-    sha256 = "a77c8dda4d0c0d93b5cad7b9c8539a7a180005b49ecfb0fbc3d902b5adb03ca2",
-    signature_required = False,
-)
-
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "bcc",
-    source = ":bcc-src",
-    version = "0.35.0",
+    use_configure = {
+        "debuginfod": ("-DENABLE_DEBUGINFOD=ON", "-DENABLE_DEBUGINFOD=OFF"),
+        "lua": ("-DENABLE_LUA=ON", "-DENABLE_LUA=OFF"),
+        "lzma": ("-DENABLE_LZMA=ON", "-DENABLE_LZMA=OFF"),
+        "python": ("-DENABLE_PYTHON=ON", "-DENABLE_PYTHON=OFF"),
+        "static-libs": ("-DBUILD_STATIC_LIBS=ON", "-DBUILD_STATIC_LIBS=OFF"),
+    },
+    version = "0.36.0",
+    url = "https://github.com/iovisor/bcc/archive/refs/tags/v0.36.0.tar.gz",
+    sha256 = "77a85dd62b48d80d4c95e5c716d46f8465b6cfaaeaa9a2f62939374c2421d3cd",
     description = "BPF Compiler Collection - tools for BPF-based Linux tracing",
     homepage = "https://github.com/iovisor/bcc",
     license = "Apache-2.0",
-    cmake_args = [
+    configure_args = [
         "-DENABLE_LLVM_SHARED=ON",
         "-DENABLE_EXAMPLES=OFF",
         "-DENABLE_TESTS=OFF",
@@ -23,8 +25,9 @@ cmake_package(
     ],
     deps = [
         "//packages/linux/system/libs/bpf/libbpf:libbpf",
-        "//packages/linux/dev-tools/dev-utils/elfutils:elfutils",
+        "//packages/linux/system/libs/elfutils:elfutils",
         "//packages/linux/core/zlib:zlib",
+        "//packages/linux/core/llvm:llvm",
+        "//packages/linux/system/libs/utility/libffi:libffi",
     ],
-    visibility = ["PUBLIC"],
 )

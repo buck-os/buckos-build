@@ -1,26 +1,23 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "cover_vqa",
     version = "0.1",
-    src_uri = "https://github.com/taco-group/cover/archive/3ca4df590060a5ed89ccfbe6353202afa40a7a6e.tar.gz",
-    sha256 = "TODO",
+    url = "https://github.com/taco-group/cover/archive/3ca4df590060a5ed89ccfbe6353202afa40a7a6e.tar.gz",
+    sha256 = "83562cfd059a9a727c773ca6a99342892559158bf48f3aec40965ea11ff97789",
     deps = [
-        "//packages/linux/dev-libs/python/torch",
-        "//packages/linux/dev-libs/python/torchvision",
-        "//packages/linux/dev-libs/python/opencv-python",
-        "//packages/linux/dev-libs/python/decord",
-        "//packages/linux/dev-libs/python/matplotlib",
-        "//packages/linux/dev-libs/python/scipy",
-        "//packages/linux/dev-libs/python/numpy",
-        "//packages/linux/dev-libs/python/tqdm",
-        "//packages/linux/dev-libs/python/timm",
-        "//packages/linux/dev-libs/python/einops",
-        "//packages/linux/dev-libs/python/wandb",
-        "//packages/linux/dev-libs/python/scikit-video",
-        "//packages/linux/dev-libs/python/thop",
-        "//packages/linux/dev-libs/python/onnx",
-        "//packages/linux/dev-libs/python/ptflops",
+        "//packages/linux/dev-libs/python/torch:torch",
+        "//packages/linux/dev-libs/python/torchvision:torchvision",
+        "//packages/linux/dev-libs/python/opencv-python:opencv-python",
+        "//packages/linux/dev-libs/python/decord:decord",
+        "//packages/linux/dev-libs/python/matplotlib:matplotlib",
+        "//packages/linux/dev-libs/python/tqdm:tqdm",
+        "//packages/linux/dev-libs/python/timm:timm",
+        "//packages/linux/dev-libs/python/wandb:wandb",
+        "//packages/linux/dev-libs/python/scikit-video:scikit-video",
+        "//packages/linux/dev-libs/python/thop:thop",
+        "//packages/linux/dev-libs/python/onnx:onnx",
+        "//packages/linux/dev-libs/python/ptflops:ptflops",
     ],
-    maintainers = ["visual_quality"],
 )

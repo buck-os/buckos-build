@@ -1,18 +1,13 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
 # supervisor - Process control system
 
-download_source(
-    name = "supervisor-src",
-    src_uri = "https://github.com/Supervisor/supervisor/archive/refs/tags/4.2.5.tar.gz",
-    sha256 = "d612a48684cf41ea7ce8cdc559eaa4bf9cbaa4687c5aac3f355c6d2df4e4f170",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "supervisor",
-    srcs = [":supervisor-src"],
     version = "4.2.5",
+    url = "https://github.com/Supervisor/supervisor/archive/refs/tags/4.2.5.tar.gz",
+    sha256 = "d612a48684cf41ea7ce8cdc559eaa4bf9cbaa4687c5aac3f355c6d2df4e4f170",
     description = "Process control system for Unix",
     homepage = "http://supervisord.org",
     license = "BSD",
@@ -21,7 +16,8 @@ binary_package(
 
         # Find Python with pip from dependency
         PYTHON_CMD=""
-        for dep in $DEPS; do
+        IFS=':' read -ra _dep_array <<< "${DEP_BASE_DIRS:-}"
+        for dep in "${_dep_array[@]}"; do
             if [ -x "$dep/usr/bin/python3" ]; then
                 # Check if this Python has pip
                 if "$dep/usr/bin/python3" -m pip --version >/dev/null 2>&1; then
@@ -46,5 +42,4 @@ binary_package(
     deps = [
         "//packages/linux/lang/python:python",
     ],
-    visibility = ["PUBLIC"],
 )

@@ -1,0 +1,42 @@
+load("//defs:package.bzl", "package")
+
+# GLib - Core application building blocks library
+# Provides data structures, threading, event loops, and other utilities
+package(
+    build_rule = "meson",
+    name = "glib",
+    version = "2.84.4",
+    url = "https://download.gnome.org/sources/glib/2.84/glib-2.84.4.tar.xz",
+    sha256 = "8a9ea10943c36fc117e253f80c91e477b673525ae45762942858aef57631bb90",
+    description = "Core application building blocks library",
+    homepage = "https://wiki.gnome.org/Projects/GLib",
+    license = "LGPL-2.1+",
+    # Fix meson options conflict - glib 2.84.4 has both files
+    pre_configure_cmds = ["rm -f meson_options.txt"],
+    configure_args = [
+        "-Dtests=false",
+        "-Dinstalled_tests=false",
+        "-Ddocumentation=false",
+        "-Dman-pages=disabled",
+        "-Ddtrace=false",
+        "-Dsystemtap=false",
+        "-Dselinux=disabled",
+        "-Dlibmount=disabled",
+        "-Dglib_debug=disabled",
+        "-Dnls=disabled",
+        "-Doss_fuzz=disabled",
+        "-Dlibelf=disabled",
+        "-Dmultiarch=false",
+        "-Dintrospection=disabled",
+        # Cross-compilation settings
+        "-Dxattr=false",
+    ],
+    use_configure = {
+        "nls": ("-Dnls=enabled", "-Dnls=disabled"),
+    },
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/system/libs/utility/pcre2:pcre2",
+    ],
+)

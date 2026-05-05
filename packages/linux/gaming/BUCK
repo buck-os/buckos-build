@@ -1,8 +1,7 @@
+load("//defs:package.bzl", "package")
+
 # Gaming packages for Linux
 # Includes game launchers, utilities, compatibility layers, emulators, and libraries
-
-load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
 
 # =============================================================================
 # Game Launchers
@@ -13,7 +12,6 @@ filegroup(
     name = "launchers",
     srcs = [
         "//packages/linux/gaming/launchers/steam:steam",
-        "//packages/linux/gaming/launchers/lutris:lutris",
         "//packages/linux/gaming/launchers/heroic:heroic",
     ],
     default_target_platform = "//platforms:linux-target",
@@ -28,9 +26,6 @@ filegroup(
 filegroup(
     name = "utilities",
     srcs = [
-        "//packages/linux/gaming/utilities/mangohud:mangohud",
-        "//packages/linux/gaming/utilities/gamemode:gamemode",
-        "//packages/linux/gaming/utilities/gamescope:gamescope",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],
@@ -44,9 +39,6 @@ filegroup(
 filegroup(
     name = "compatibility",
     srcs = [
-        "//packages/linux/gaming/compatibility/wine:wine",
-        "//packages/linux/gaming/compatibility/dxvk:dxvk",
-        "//packages/linux/gaming/compatibility/vkd3d-proton:vkd3d-proton",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],
@@ -104,10 +96,6 @@ filegroup(
     name = "gaming-minimal",
     srcs = [
         "//packages/linux/gaming/launchers/steam:steam",
-        "//packages/linux/gaming/utilities/mangohud:mangohud",
-        "//packages/linux/gaming/utilities/gamemode:gamemode",
-        "//packages/linux/gaming/compatibility/wine:wine",
-        "//packages/linux/gaming/compatibility/dxvk:dxvk",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],

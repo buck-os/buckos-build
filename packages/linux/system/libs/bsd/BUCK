@@ -1,32 +1,62 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # libbsd - Utility functions from BSD systems
 # Provides commonly-used BSD functions not available in glibc
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libbsd",
     version = "0.12.2",
-    src_uri = "https://deb.debian.org/debian/pool/main/libb/libbsd/libbsd_0.12.2.orig.tar.xz",
+    use_configure = {
+        "static-libs": ("--enable-static", "--disable-static"),
+    },
+    url = "https://deb.debian.org/debian/pool/main/libb/libbsd/libbsd_0.12.2.orig.tar.xz",
     sha256 = "b88cc9163d0c652aaf39a99991d974ddba1c3a9711db8f1b5838af2a14731014",
-    signature_sha256 = "620dc92f158ebe0a650c0e92214a8121b927276895dc9a1dcaa38f627fa0fcb0",
-    gpg_key = "B972BF3EA4AE57A3",  # Guillem Jover
+# Guillem Jover
     description = "Utility functions from BSD systems (strlcpy, arc4random, etc.)",
     homepage = "https://libbsd.freedesktop.org/",
     license = "BSD ISC",
     configure_args = [
         "--disable-static",
     ],
-    # Fix libbsd.la to not reference host's libmd.la
-    post_install = """
-# Remove host path references from libbsd.la
-if [ -f "$DESTDIR/usr/lib64/libbsd.la" ]; then
-    echo "Fixing libbsd.la to remove host path references..."
-    sed -i "s|/usr/lib64/libmd.la|-lmd|g" "$DESTDIR/usr/lib64/libbsd.la"
-    cat "$DESTDIR/usr/lib64/libbsd.la" | grep dependency_libs
+    # Fix libbsd linker script and .la to not reference absolute host paths.
+    # libbsd.so is a GNU ld script: GROUP(/usr/lib64/libbsd.so.0.12.2 AS_NEEDED(-lmd))
+    # The absolute path breaks cross-compilation. Rewrite with relative name.
+    post_install_cmds = ["""
+# Fix libbsd.so linker script: replace absolute host paths with relative names.
+# libbsd installs to lib/ or lib64/ depending on --libdir; check both.
+LIBDIR=""
+for d in "$DESTDIR/usr/lib64" "$DESTDIR/usr/lib"; do
+    if [ -f "$d/libbsd.so" ]; then
+        LIBDIR="$d"
+        break
+    fi
+done
+if [ -n "$LIBDIR" ]; then
+    echo "Fixing libbsd.so linker script in $LIBDIR..."
+    # Detect output format based on target architecture
+    if [ -n "$CHOST" ]; then
+        case "$CHOST" in
+            aarch64*) OUTPUT_FORMAT="elf64-littleaarch64" ;;
+            x86_64*) OUTPUT_FORMAT="elf64-x86-64" ;;
+            *) OUTPUT_FORMAT="elf64-x86-64" ;;  # fallback
+        esac
+    else
+        OUTPUT_FORMAT="elf64-x86-64"
+    fi
+    cat > "$LIBDIR/libbsd.so" << LDSCRIPT
+/* GNU ld script */
+OUTPUT_FORMAT($OUTPUT_FORMAT)
+GROUP(libbsd.so.0 AS_NEEDED(-lmd))
+LDSCRIPT
+    # Remove host path references from libbsd.la
+    if [ -f "$LIBDIR/libbsd.la" ]; then
+        echo "Fixing libbsd.la to remove host path references..."
+        sed -i "s|/usr/lib64/libmd.la|-lmd|g;s|/usr/lib/libmd.la|-lmd|g" "$LIBDIR/libbsd.la"
+    fi
 fi
-""",
+"""],
     deps = [
         "//packages/linux/core/libmd:libmd",  # Required for hash functions
     ],
-    visibility = ["PUBLIC"],
 )

@@ -1,18 +1,51 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # Kodi - Open source home theater/media center
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "kodi",
     version = "21.0",
-    src_uri = "https://github.com/xbmc/xbmc/archive/refs/tags/21.0-Omega.tar.gz",
+    use_configure = {
+        "X": ("-DENABLE_X=ON", "-DENABLE_X=OFF"),
+        "airplay": ("-DENABLE_AIRPLAY=ON", "-DENABLE_AIRPLAY=OFF"),
+        "alsa": ("-DENABLE_ALSA=ON", "-DENABLE_ALSA=OFF"),
+        "bluetooth": ("-DENABLE_BLUETOOTH=ON", "-DENABLE_BLUETOOTH=OFF"),
+        "bluray": ("-DENABLE_BLURAY=ON", "-DENABLE_BLURAY=OFF"),
+        "caps": ("-DENABLE_CAPS=ON", "-DENABLE_CAPS=OFF"),
+        "cec": ("-DENABLE_CEC=ON", "-DENABLE_CEC=OFF"),
+        "css": ("-DENABLE_CSS=ON", "-DENABLE_CSS=OFF"),
+        "dbus": ("-DENABLE_DBUS=ON", "-DENABLE_DBUS=OFF"),
+        "eventclients": ("-DENABLE_EVENTCLIENTS=ON", "-DENABLE_EVENTCLIENTS=OFF"),
+        "gbm": ("-DENABLE_GBM=ON", "-DENABLE_GBM=OFF"),
+        "gles": ("-DENABLE_GLES=ON", "-DENABLE_GLES=OFF"),
+        "lcms": ("-DENABLE_LCMS=ON", "-DENABLE_LCMS=OFF"),
+        "libusb": ("-DENABLE_LIBUSB=ON", "-DENABLE_LIBUSB=OFF"),
+        "lirc": ("-DENABLE_LIRC=ON", "-DENABLE_LIRC=OFF"),
+        "mariadb": ("-DENABLE_MARIADB=ON", "-DENABLE_MARIADB=OFF"),
+        "mysql": ("-DENABLE_MYSQL=ON", "-DENABLE_MYSQL=OFF"),
+        "nfs": ("-DENABLE_NFS=ON", "-DENABLE_NFS=OFF"),
+        "optical": ("-DENABLE_OPTICAL=ON", "-DENABLE_OPTICAL=OFF"),
+        "pipewire": ("-DENABLE_PIPEWIRE=ON", "-DENABLE_PIPEWIRE=OFF"),
+        "pulseaudio": ("-DENABLE_PULSEAUDIO=ON", "-DENABLE_PULSEAUDIO=OFF"),
+        "samba": ("-DENABLE_SAMBA=ON", "-DENABLE_SAMBA=OFF"),
+        "system-ffmpeg": ("-DENABLE_SYSTEM_FFMPEG=ON", "-DENABLE_SYSTEM_FFMPEG=OFF"),
+        "udev": ("-DENABLE_UDEV=ON", "-DENABLE_UDEV=OFF"),
+        "udf": ("-DENABLE_UDF=ON", "-DENABLE_UDF=OFF"),
+        "upnp": ("-DENABLE_UPNP=ON", "-DENABLE_UPNP=OFF"),
+        "vaapi": ("-DENABLE_VAAPI=ON", "-DENABLE_VAAPI=OFF"),
+        "vdpau": ("-DENABLE_VDPAU=ON", "-DENABLE_VDPAU=OFF"),
+        "wayland": ("-DENABLE_WAYLAND=ON", "-DENABLE_WAYLAND=OFF"),
+        "webserver": ("-DENABLE_WEBSERVER=ON", "-DENABLE_WEBSERVER=OFF"),
+        "xslt": ("-DENABLE_XSLT=ON", "-DENABLE_XSLT=OFF"),
+        "zeroconf": ("-DENABLE_ZEROCONF=ON", "-DENABLE_ZEROCONF=OFF"),
+    },
+    url = "https://github.com/xbmc/xbmc/archive/refs/tags/21.0-Omega.tar.gz",
     sha256 = "7f54c1fd8456ac46221fbc85e447362bdc209163c6cb19fca98d106560071b7c",
-    signature_required = False,
     description = "Open source home theater/media center application",
     homepage = "https://kodi.tv/",
     license = "GPL-2.0-only",
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DENABLE_INTERNAL_CROSSGUID=OFF",
@@ -56,17 +89,13 @@ cmake_package(
         "-DENABLE_XSLT=ON",
     ],
     deps = [
-        "//packages/linux/graphics/video/ffmpeg:ffmpeg",
-        "//packages/linux/graphics/video/libva:libva",
         "//packages/linux/graphics/video/vdpau:vdpau",
-        "//packages/linux/audio/daemons/alsa-lib:alsa-lib",
+        "//packages/linux/system/libs/audio/alsa-lib:alsa-lib",
         "//packages/linux/audio/daemons/pulseaudio:pulseaudio",
-        "//packages/linux/network/curl:curl",
-        "//packages/linux/network/openssl:openssl",
+        "//packages/linux/system/libs/network/curl:curl",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
         "//packages/linux/system/libs/database/sqlite:sqlite",
         "//packages/linux/desktop/libdrm:libdrm",
         "//packages/linux/system/libs/ipc/dbus:dbus",
     ],
-    maintainers = [],
-    visibility = ["PUBLIC"],
 )

@@ -1,30 +1,26 @@
+load("//defs:package.bzl", "package")
+
 # acpica-tools - ACPI Component Architecture Tools
 # ACPI table compiler and debugging tools
 
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
-
-download_source(
-    name = "acpica-tools-src",
-    src_uri = "https://github.com/acpica/acpica/archive/refs/tags/R2024_12_12.tar.gz",
-    sha256 = "adde693d2486d77940bef81acb45fec1ca285266ecbc4d10c5cd058bca19dc07",
-    signature_required = False,
-)
-
-autotools_package(
+package(
     name = "acpica-tools",
-    source = ":acpica-tools-src",
+    build_rule = "autotools",
+    skip_configure = True,
+    url = "https://github.com/acpica/acpica/archive/refs/tags/R2024_12_12.tar.gz",
+
+    sha256 = "adde693d2486d77940bef81acb45fec1ca285266ecbc4d10c5cd058bca19dc07",
     version = "20241212",
     description = "ACPI Component Architecture tools for debugging and development",
     homepage = "https://www.intel.com/content/www/us/en/developer/topic-technology/open/acpica/overview.html",
     license = "BSD-3-Clause",
-    configure_args = [],
     make_args = [
         "PREFIX=/usr",
     ],
-    post_install = """
-        make DESTDIR=$OUT PREFIX=/usr install
-    """,
+    install_targets = ["all"],
+    post_install_cmds = ["""
+        make -C "$BUILD_DIR" DESTDIR=$OUT PREFIX=/usr install
+    """],
     deps = [
     ],
     visibility = ["PUBLIC"],

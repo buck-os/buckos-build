@@ -1,59 +1,50 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # HandBrake - Open-source video transcoder
 
-download_source(
-    name = "handbrake-src",
-    src_uri = "https://github.com/HandBrake/HandBrake/releases/download/1.8.0/HandBrake-1.8.0-source.tar.bz2",
-    sha256 = "8b1df7d6aa7aa3c2e12978f3473e301c4b60b4fedc749b75aa6f310b80310cef",
-    signature_sha256 = "56cb8ee4892d4c3dbcc00a28802f0134cc65d052da791e46a3459bcd6bffa09b",
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "handbrake",
-    source = ":handbrake-src",
+    url = "https://github.com/HandBrake/HandBrake/releases/download/1.8.0/HandBrake-1.8.0-source.tar.bz2",
+
+    sha256 = "8b1df7d6aa7aa3c2e12978f3473e301c4b60b4fedc749b75aa6f310b80310cef",
+    use_configure = {
+        "amf": ("--enable-amf", "--disable-amf"),
+        "fdk": ("--enable-fdk", "--disable-fdk"),
+        "gui": ("--enable-gui", "--disable-gui"),
+        "libdovi": ("--enable-libdovi", "--disable-libdovi"),
+        "numa": ("--enable-numa", "--disable-numa"),
+        "nvenc": ("--enable-nvenc", "--disable-nvenc"),
+        "qsv": ("--enable-qsv", "--disable-qsv"),
+        "x265": ("--enable-x265", "--disable-x265"),
+    },
     version = "1.8.0",
     description = "Open-source video transcoder",
     homepage = "https://handbrake.fr/",
     license = "GPL-2.0-only",
-    pre_configure = """
-./configure \
-    --prefix=/usr \
-    --force \
-    --disable-gtk-update-checks \
-    --enable-fdk-aac \
-    --enable-x265 \
-    --enable-numa \
-    --enable-nvenc \
-    --enable-vce \
-    --enable-qsv
-""",
     configure_args = [],
     make_args = [
         "-C", "build",
     ],
-    post_install = """
+    post_install_cmds = ["""
 cd build
 DESTDIR=$OUT make install
-""",
+"""],
     deps = [
-        "//packages/linux/graphics/video/ffmpeg:ffmpeg",
-        "//packages/linux/graphics/video/x264:x264",
-        "//packages/linux/graphics/video/x265:x265",
-        "//packages/linux/graphics/video/libvpx:libvpx",
-        "//packages/linux/graphics/video/dav1d:dav1d",
-        "//packages/linux/audio/libraries/opus:opus",
-        "//packages/linux/audio/libraries/lame:lame",
-        "//packages/linux/desktop/gtk:gtk4",
-        "//packages/linux/dev-libs/glib:glib",
-        "//packages/linux/system/libs/data/jansson:jansson",
-        # "//packages/linux/core/numactl:numactl",  # TODO: not packaged yet
+                "//packages/linux/media/video/x264:x264",
+                "//packages/linux/media/video/x265:x265",
+                "//packages/linux/media/video/dav1d:dav1d",
+                "//packages/linux/system/libs/audio/opus:opus",
+                "//packages/linux/system/libs/audio/lame:lame",
+                "//packages/linux/desktop/gtk:gtk4",
+                "//packages/linux/dev-libs/glib:glib",
+                "//packages/linux/system/libs/data/jansson:jansson",
+                # "//packages/linux/core/numactl:numactl",
+                # TODO: not packaged yet,
+                "//packages/linux/lang/python:python"
     ],
-    bdepend = [
+    host_deps = [
+        "//packages/linux/dev-tools/assemblers/nasm:nasm",
         "//packages/linux/dev-tools/build-systems/pkg-config:pkg-config",
-        # "//packages/linux/lang/nasm:nasm",  # TODO: not packaged yet,
-        "//packages/linux/lang/python:python",
     ],
-    visibility = ["PUBLIC"],
 )

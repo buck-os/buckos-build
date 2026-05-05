@@ -1,33 +1,26 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package", "binary_package", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # Go - Open source programming language (pre-built binary)
 # =============================================================================
 
-download_source(
-    name = "go-src",
-    src_uri = "https://go.dev/dl/go1.22.0.linux-amd64.tar.gz",
-    sha256 = "f6c8a87aa03b92c4b0bf3d558e28ea03006eb29db78917daec5cfb6ec1046265",
-    signature_sha256 = "a57b3fddcf46ab77b2932bc4be6b8a05b7bb50849804492a7bc0a4d86d366cc0",
-    signature_required=False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "go",
-    srcs = [":go-src"],
-    version = "1.22.0",
+    version = "1.26.1",
+    url = "https://go.dev/dl/go1.26.1.src.tar.gz",
+    sha256 = "3172293d04b209dc1144698e7ba13f0477f6ba8c5ffd0be66c20fdbc9785dfbb",
     description = "Go is an open source programming language that makes it easy to build simple, reliable, and efficient software",
     homepage = "https://go.dev/",
     license = "BSD-3-Clause",
     install_script = """
-        # Install pre-built Go
-        mkdir -p $OUT/usr/local/go
-        cp -r $SRCS/* $OUT/usr/local/go/
+        # Install pre-built Go to /usr/lib/go (standard location)
+        mkdir -p $OUT/usr/lib/go
+        cp -r $SRCS/* $OUT/usr/lib/go/
 
+        # Create symlinks in /usr/bin using relative paths
         mkdir -p $OUT/usr/bin
-        ln -s /usr/local/go/bin/go $OUT/usr/bin/go
-        ln -s /usr/local/go/bin/gofmt $OUT/usr/bin/gofmt
+        ln -sf ../lib/go/bin/go $OUT/usr/bin/go
+        ln -sf ../lib/go/bin/gofmt $OUT/usr/bin/gofmt
     """,
-    visibility = ["PUBLIC"],
 )

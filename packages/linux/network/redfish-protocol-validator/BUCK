@@ -1,17 +1,18 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "redfish-protocol-validator",
     version = "1.0.8",
-    src_uri = "https://github.com/DMTF/Redfish-Protocol-Validator/archive/refs/tags/1.0.8.tar.gz",
-    sha256 = "TODO",
+    url = "https://github.com/DMTF/Redfish-Protocol-Validator/archive/refs/tags/1.0.8.tar.gz",
+    sha256 = "8911ccf9555913926a39f8c7294f742db8d098ed42487a3aa4a3e4c780a33990",
     deps = [
-        "//packages/linux/dev-python/aenum",
-        "//packages/linux/dev-python/colorama",
-        "//packages/linux/dev-python/pyasn1",
-        "//packages/linux/dev-python/pyasn1-modules",
-        "//packages/linux/dev-python/requests",
-        "//packages/linux/dev-python/sseclient-py",
-        "//packages/linux/dev-python/urllib3",
+        "//packages/linux/dev-libs/python/aenum:aenum",
+        "//packages/linux/dev-libs/python/colorama:colorama",
+        "//packages/linux/dev-libs/python/pyasn1:pyasn1",
+        "//packages/linux/dev-libs/python/pyasn1-modules:pyasn1-modules",
+        "//packages/linux/dev-libs/python/requests:requests",
+        "//packages/linux/dev-libs/python/sseclient-py:sseclient-py",
+        "//packages/linux/dev-libs/python/urllib3:urllib3",
     ],
 )

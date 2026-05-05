@@ -1,19 +1,20 @@
 # Example packages demonstrating the USE flag system
 #
-# This file shows how to use BuckOs USE flags for package customization,
-# similar to Gentoo's ebuild system.
+# USE flags are configured via .buckconfig:
+#
+#   [use]
+#   ssl = true
+#   http2 = true
+#   ipv6 = true
+#   debug = false
+#   zstd = true
+#
+#   [use.curl-gnutls-example]
+#   ssl = false
+#   gnutls = true
+#   brotli = true
 
-load("//defs:use_flags.bzl",
-     "set_use_flags",
-     "package_use",
-     "USE_PROFILES",
-     "GLOBAL_USE_FLAGS",
-)
-load("//defs:package_defs.bzl",
-     "download_source",
-     "autotools_package",
-     "ebuild_package",
-)
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # EXAMPLE 1: Basic USE Flag Package
@@ -21,119 +22,70 @@ load("//defs:package_defs.bzl",
 #
 # This example shows a package with conditional features.
 # USE flags control which features are built and which dependencies are included.
-
-# Define global USE flags for this build
-GLOBAL_USE = set_use_flags([
-    "ssl",           # Enable SSL/TLS support
-    "http2",         # Enable HTTP/2
-    "ipv6",          # Enable IPv6
-    "-debug",        # Disable debug builds
-    "zstd",          # Enable zstd compression
-])
+# Global flags come from .buckconfig [use] section.
 
 # Example: curl with USE flags
-autotools_package(
+package(
     name = "curl-example",
+    build_rule = "autotools",
     version = "8.5.0",
-    src_uri = "https://curl.se/download/curl-8.5.0.tar.xz",
+    url = "https://curl.se/download/curl-8.5.0.tar.xz",
     sha256 = "42ab8db9e20d8290a3b633e7fbb3cec15db34df65fd1015ef8ac1e4723750eeb",
-    signature_sha256 = "05a026c4551f8976a17c159c99c866e27533d34dceba70218db19d85726681cd",
-
-    # USE flags this package supports
-    iuse = [
-        "ssl",      # OpenSSL support
-        "gnutls",   # GnuTLS support (alternative to ssl)
-        "http2",    # HTTP/2 via nghttp2
-        "ipv6",     # IPv6 support
-        "zstd",     # Zstandard compression
-        "brotli",   # Brotli compression
-        "ldap",     # LDAP support
-        "debug",    # Debug build
-    ],
-
-    # Default USE flags for this package
-    use_defaults = ["ssl", "ipv6"],
 
     # Conditional dependencies based on USE flags
     use_deps = {
-        "ssl": ["//packages/linux/network/openssl:openssl"],
-        "gnutls": ["//packages/linux/system/libs/crypto/gnutls:gnutls"],
-        "http2": ["//packages/linux/network/nghttp2:nghttp2"],
-        "zstd": ["//packages/linux/system/libs/compression/zstd:zstd"],
-        "brotli": ["//packages/linux/system/libs/compression/brotli:brotli"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "gnutls": "//packages/linux/system/libs/crypto/gnutls:gnutls",
+        "http2": "//packages/linux/system/libs/network/nghttp2:nghttp2",
+        "zstd": "//packages/linux/system/libs/compression/zstd:zstd",
+        "brotli": "//packages/linux/system/libs/compression/brotli:brotli",
     },
 
     # Conditional configure arguments
     use_configure = {
-        # Enabled flags
-        "ssl": "--with-ssl=/usr",
-        "gnutls": "--with-gnutls",
-        "http2": "--with-nghttp2",
-        "ipv6": "--enable-ipv6",
-        "zstd": "--with-zstd",
-        "brotli": "--with-brotli",
-        "ldap": "--enable-ldap",
-        "debug": "--enable-debug",
-
-        # Disabled flags (prefix with -)
-        "-ssl": "--without-ssl",
-        "-gnutls": "--without-gnutls",
-        "-http2": "--without-nghttp2",
-        "-ipv6": "--disable-ipv6",
-        "-zstd": "--without-zstd",
-        "-brotli": "--without-brotli",
-        "-ldap": "--disable-ldap",
-        "-debug": "--disable-debug",
+        "ssl": ("--with-ssl=/usr", "--without-ssl"),
+        "gnutls": ("--with-gnutls", "--without-gnutls"),
+        "http2": ("--with-nghttp2", "--without-nghttp2"),
+        "ipv6": ("--enable-ipv6", "--disable-ipv6"),
+        "zstd": ("--with-zstd", "--without-zstd"),
+        "brotli": ("--with-brotli", "--without-brotli"),
+        "ldap": ("--enable-ldap", "--disable-ldap"),
+        "debug": ("--enable-debug", "--disable-debug"),
     },
-
-    # Apply global USE flags
-    global_use = GLOBAL_USE,
 
     # Package metadata
     description = "Command line tool for transferring data with URLs",
     homepage = "https://curl.se/",
     license = "MIT",
-    maintainers = ["@curl-maintainer"],
 )
 
 # =============================================================================
 # EXAMPLE 2: Package with Per-Package USE Override
 # =============================================================================
 #
-# Override global USE flags for a specific package.
-# This is like /etc/portage/package.use in Gentoo.
+# Per-package overrides are set in .buckconfig:
+#   [use.curl-gnutls-example]
+#   ssl = false
+#   gnutls = true
+#   brotli = true
 
-# Override: Use GnuTLS instead of OpenSSL for this package
-CURL_GNUTLS_OVERRIDE = package_use("curl-gnutls", [
-    "-ssl",      # Disable OpenSSL
-    "gnutls",    # Enable GnuTLS
-    "brotli",    # Also enable brotli
-])
-
-autotools_package(
+package(
     name = "curl-gnutls-example",
+    build_rule = "autotools",
     version = "8.5.0",
-    src_uri = "https://curl.se/download/curl-8.5.0.tar.xz",
-    sha256 = "42ab8db9e20d8290a3b633e7fbb3cec15db34df65fd1015ef8ac1e4723750eeb",
-    signature_sha256 = "05a026c4551f8976a17c159c99c866e27533d34dceba70218db19d85726681cd",
-    iuse = ["ssl", "gnutls", "http2", "ipv6", "zstd", "brotli", "ldap", "debug"],
-    use_defaults = ["ssl", "ipv6"],
+    source = ":curl-example-src",
     use_deps = {
-        "ssl": ["//packages/linux/network/openssl:openssl"],
-        "gnutls": ["//packages/linux/system/libs/crypto/gnutls:gnutls"],
-        "http2": ["//packages/linux/network/nghttp2:nghttp2"],
-        "brotli": ["//packages/linux/system/libs/compression/brotli:brotli"],
+        "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
+        "gnutls": "//packages/linux/system/libs/crypto/gnutls:gnutls",
+        "http2": "//packages/linux/system/libs/network/nghttp2:nghttp2",
+        "brotli": "//packages/linux/system/libs/compression/brotli:brotli",
     },
     use_configure = {
-        "ssl": "--with-ssl=/usr",
-        "-ssl": "--without-ssl",
-        "gnutls": "--with-gnutls",
-        "-gnutls": "--without-gnutls",
+        "ssl": ("--with-ssl=/usr", "--without-ssl"),
+        "gnutls": ("--with-gnutls", "--without-gnutls"),
         "http2": "--with-nghttp2",
         "brotli": "--with-brotli",
     },
-    global_use = GLOBAL_USE,
-    package_overrides = CURL_GNUTLS_OVERRIDE,  # Apply override
     description = "curl built with GnuTLS instead of OpenSSL",
 )
 
@@ -144,23 +96,15 @@ autotools_package(
 # Maximum flexibility with custom phase functions.
 # USE flags are available via the use() shell function.
 
-download_source(
-    name = "libxml2-src",
-    src_uri = "https://download.gnome.org/sources/libxml2/2.12/libxml2-2.12.3.tar.xz",
-    sha256 = "8c8f1092340a89ff32bc44ad5c9693aff9bc8a7a3e161bb239666e5d15ac9aaa",
-    signature_required = False,
-)
-
-ebuild_package(
+package(
     name = "libxml2-example",
+    build_rule = "binary",
     version = "2.12.3",
-    source = ":libxml2-src",
+    url = "https://download.gnome.org/sources/libxml2/2.12/libxml2-2.12.3.tar.xz",
+    sha256 = "8c8f1092340a89ff32bc44ad5c9693aff9bc8a7a3e161bb239666e5d15ac9aaa",
 
-    # USE flags
-    use_flags = ["readline"],
-
-    # Custom configure phase using USE flags
-    src_configure = """
+    # Custom configure and build via install_script
+    install_script = """
 # USE flags are available via the use() function
 ./configure --prefix=/usr \
     $(use debug && echo --enable-debug || echo --disable-debug) \
@@ -169,35 +113,41 @@ ebuild_package(
     $(use python && echo --with-python || echo --without-python) \
     $(use readline && echo --with-readline || echo --without-readline) \
     $(use static-libs && echo --enable-static || echo --disable-static)
+
+make -j$(nproc)
+make DESTDIR="$DESTDIR" install
 """,
 
     description = "XML C parser and toolkit",
     homepage = "https://gitlab.gnome.org/GNOME/libxml2",
     license = "MIT",
-    visibility = ["PUBLIC"],
 )
 
 # =============================================================================
 # EXAMPLE 4: Hardened OpenSSH
 # =============================================================================
 
-download_source(
-    name = "openssh-src",
-    src_uri = "https://cdn.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-9.6p1.tar.gz",
-    sha256 = "910211c07255a8c5ad654391b40ee59800710dd8119dd5362de09385aa7a777c",
-    signature_sha256 = "9b1e931cbc811f02e91f7eacd55f8211cc45dade11975462f4b0dcdad29927aa",
-)
-
-autotools_package(
+package(
     name = "openssh-hardened-example",
-    source = ":openssh-src",
-    version = "9.6p1",
+    build_rule = "autotools",
+    version = "9.9p1",
+    source = "//packages/linux/network/openssh:openssh-src",
+    pre_configure_cmds = [
+        # Patch configure to accept newer OpenSSL versions
+        # OpenSSH 9.9p1 doesn't recognize OpenSSL 3.5.x, so we patch the version check
+        "sed -i 's/30[0-4][0-9][0-9][0-9][0-9][0-9]/30[0-9][0-9][0-9][0-9][0-9][0-9]/g' configure",
+    ],
     configure_args = [
         "--prefix=/usr",
         "--sysconfdir=/etc/ssh",
         "--with-ssl-engine",
         "--with-pam",
         "--with-privsep-path=/var/lib/sshd",
+    ],
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/security/linux-pam:linux-pam",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
     ],
     env = {
         "CFLAGS": "-O2 -fstack-protector-strong -D_FORTIFY_SOURCE=2",
@@ -219,5 +169,4 @@ filegroup(
         ":openssh-hardened-example",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )

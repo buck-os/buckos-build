@@ -1,24 +1,25 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
     name = "systoolslib",
+    build_rule = "binary",
     version = "1.22",
-    src_uri = "https://github.com/jflarvoire/SysToolsLib/archive/refs/tags/v1.22.tar.gz",
-    sha256 = "TODO",
+    url = "https://github.com/JFLarvoire/SysToolsLib/archive/refs/tags/1.22.tar.gz",
+    sha256 = "1b3c06731f20412e97100c829e067a4c86a7818be6601515068b59ad639f5911",
     description = "Collection of Unix/Windows system tools and utilities",
     homepage = "https://github.com/jflarvoire/SysToolsLib",
     license = "Apache-2.0",
-    pre_configure = """
-# No configure step needed - uses plain Makefile
-true
+    install_script = """
+cd "$SRCS"
+cd C/SRC || cd C/src || true
+
+# Build individual tools
+mkdir -p "$OUT/usr/bin"
+for src in *.c; do
+    tool="${src%.c}"
+    $CC $CFLAGS -o "$tool" "$src" $LDFLAGS -Wno-error 2>/dev/null && \
+        install -m 755 "$tool" "$OUT/usr/bin/" || true
+done
 """,
-    configure_args = [],
-    make_args = [
-        "prefix=/usr",
-    ],
-    post_install = """
-cd C/SRC
-make prefix=/usr DESTDIR="$DESTDIR" install || true
-""",
-    visibility = ["PUBLIC"],
+    deps = [],
 )

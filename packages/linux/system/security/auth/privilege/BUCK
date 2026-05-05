@@ -1,73 +1,67 @@
-# Privilege escalation packages
-# PolicyKit and related authorization tools
+load("//defs:package.bzl", "package")
 
-load("//defs:package_defs.bzl", "download_source", "ebuild_package", "meson_package", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+# Duktape - Embeddable JavaScript engine (for polkit)
+package(
+    build_rule = "autotools",
+    name = "duktape",
+    version = "2.7.0",
+    url = "https://duktape.org/duktape-2.7.0.tar.xz",
+    sha256 = "90f8d2fa8b5567c6899830ddef2c03f3c27960b11aca222fa17aa7ac613c2890",
+    description = "Embeddable JavaScript engine",
+    homepage = "https://duktape.org/",
+    license = "MIT",
+    skip_configure = True,
+    make_args = [
+        "-f", "Makefile.sharedlibrary",
+        "INSTALL_PREFIX=/usr",
+    ],
+    post_install_cmds = [
+        # Install headers and fix symlinks
+        "mkdir -p usr/include usr/lib usr/lib64/pkgconfig",
+        "cp -f usr/lib/libduktape.so* usr/lib64/ 2>/dev/null || true",
+        "cd usr/lib64 && ln -sf libduktape.so.207.20700 libduktape.so.207 && ln -sf libduktape.so.207 libduktape.so",
+        # Generate pkg-config file
+        "printf 'prefix=/usr\\nlibdir=${prefix}/lib64\\nincludedir=${prefix}/include\\n\\nName: duktape\\nDescription: Embeddable JavaScript engine\\nVersion: 2.7.0\\nLibs: -L${libdir} -lduktape -lm\\nCflags: -I${includedir}\\n' > usr/lib64/pkgconfig/duktape.pc",
+    ],
+)
 
 # PolicyKit - Authorization framework
-meson_package(
+package(
+    build_rule = "meson",
     name = "polkit",
     version = "124",
-    src_uri = "https://github.com/polkit-org/polkit/archive/refs/tags/124/polkit-124.tar.gz",
+    url = "https://github.com/polkit-org/polkit/archive/refs/tags/124/polkit-124.tar.gz",
     sha256 = "72457d96a0538fd03a3ca96a6bf9b7faf82184d4d67c793eb759168e4fd49e20",
-    signature_required = False,
     description = "Application-level authorization toolkit",
     homepage = "https://github.com/polkit-org/polkit",
     license = "LGPL-2.0+",
-    meson_args = [
-        "-Dsystemdsystemunitdir=/usr/lib/systemd/system",
+    pre_configure_cmds = [
+        # Fix meson.build: systemd_dep used outside its scope when systemdsystemunitdir is set
+        "sed -i '222s|.*systemd_sysusers_dir.*|  systemd_sysusers_dir = '\"'\"'/usr/lib/sysusers.d'\"'\"'|' meson.build",
+    ],
+    configure_args = [
         "-Djs_engine=duktape",
         "-Dpam_module_dir=/lib/security",
         "-Dpam_include=system-auth",
         "-Dman=false",
         "-Dtests=false",
+        "-Dsystemdsystemunitdir=/usr/lib/systemd/system",
+        # Defaults for disabled USE flags
+        "-Dsession_tracking=libsystemd-login",
+        "-Dexamples=false",
         "-Dgtk_doc=false",
         "-Dintrospection=false",
     ],
     deps = [
         "//packages/linux/system/libs/ipc/dbus:dbus",
         "//packages/linux/dev-libs/glib:glib",
-        "//packages/linux/system/security/encryption:linux-pam",
+        "//packages/linux/system/security/linux-pam:linux-pam",
         ":duktape",
+        "//packages/linux/system/libs/utility/pcre2:pcre2",
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/data/expat:expat",
+        "//packages/linux/system/libs/ipc/libcap:libcap",
+        "//packages/linux/system/init/systemd:systemd",
     ],
-    visibility = ["PUBLIC"],
-)
-
-# Duktape - Embeddable JavaScript engine (for polkit)
-download_source(
-    name = "duktape-src",
-    src_uri = "https://duktape.org/duktape-2.7.0.tar.xz",
-    sha256 = "90f8d2fa8b5567c6899830ddef2c03f3c27960b11aca222fa17aa7ac613c2890",
-    signature_required = False,
-)
-
-ebuild_package(
-    name = "duktape",
-    source = ":duktape-src",
-    version = "2.7.0",
-    description = "Embeddable JavaScript engine",
-    homepage = "https://duktape.org/",
-    license = "MIT",
-    src_compile = """
-make -f Makefile.sharedlibrary INSTALL_PREFIX=/usr
-""",
-    src_install = """
-mkdir -p "$DESTDIR/usr/lib" "$DESTDIR/usr/include"
-cp libduktape.so* "$DESTDIR/usr/lib/"
-cp src/duktape.h src/duk_config.h "$DESTDIR/usr/include/"
-# Create pkg-config file
-mkdir -p "$DESTDIR/usr/lib/pkgconfig"
-cat > "$DESTDIR/usr/lib/pkgconfig/duktape.pc" << 'EOF'
-prefix=/usr
-libdir=${prefix}/lib
-includedir=${prefix}/include
-
-Name: duktape
-Description: Embeddable JavaScript engine
-Version: 2.7.0
-Libs: -L${libdir} -lduktape
-Cflags: -I${includedir}
-EOF
-""",
-    visibility = ["PUBLIC"],
 )

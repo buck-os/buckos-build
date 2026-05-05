@@ -1,16 +1,17 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "boehm-gc-src",
-    src_uri = "https://github.com/ivmai/bdwgc/releases/download/v8.2.6/gc-8.2.6.tar.gz",
-    sha256 = "b9183fe49d4c44c7327992f626f8eaa1d8b14de140f243edb1c9dcff7719a7fc",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "boehm-gc",
-    source = ":boehm-gc-src",
+    url = "https://github.com/ivmai/bdwgc/releases/download/v8.2.6/gc-8.2.6.tar.gz",
+
+    sha256 = "b9183fe49d4c44c7327992f626f8eaa1d8b14de140f243edb1c9dcff7719a7fc",
+    use_configure = {
+        "cxx": ("--enable-cxx", "--disable-cxx"),
+        "large": ("--enable-large", "--disable-large"),
+        "static-libs": ("--enable-static", "--disable-static"),
+        "threads": ("--enable-threads", "--disable-threads"),
+    },
     version = "8.2.6",
     description = "Conservative garbage collector for C and C++",
     homepage = "https://www.hboehm.info/gc/",
@@ -23,5 +24,4 @@ autotools_package(
     deps = [
         "//packages/linux/dev-libs/misc/libatomic_ops:libatomic_ops",
     ],
-    visibility = ["PUBLIC"],
 )

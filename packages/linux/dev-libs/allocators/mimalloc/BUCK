@@ -1,18 +1,21 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "mimalloc",
     version = "2.1.2",
-    src_uri = "https://github.com/microsoft/mimalloc/archive/refs/tags/v2.1.2.tar.gz",
+    use_configure = {
+        "debug": ("-DCMAKE_BUILD_TYPE=Debug", "-DCMAKE_BUILD_TYPE=Release"),
+        "hardened": ("-DENABLE_HARDENED=ON", "-DENABLE_HARDENED=OFF"),
+        "valgrind": ("-DENABLE_VALGRIND=ON", "-DENABLE_VALGRIND=OFF"),
+    },
+    url = "https://github.com/microsoft/mimalloc/archive/refs/tags/v2.1.2.tar.gz",
     sha256 = "2b1bff6f717f9725c70bf8d79e4786da13de8a270059e4ba0bdd262ae7be46eb",
-    signature_required = False,
     description = "Microsoft's compact general purpose allocator with excellent performance",
     homepage = "https://github.com/microsoft/mimalloc",
     license = "MIT",
-    cmake_args = [
+    configure_args = [
         "-DMI_BUILD_STATIC=OFF",
         "-DMI_BUILD_TESTS=OFF",
     ],
-    visibility = ["PUBLIC"],
 )

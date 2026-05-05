@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "verilogAST",
     version = "5a1e7d9",
-    src_uri = "https://github.com/leonardt/verilogast-cpp/archive/5a1e7d998e93cb8da893ffce1d1f493a00e54f77.tar.gz",
+    url = "https://github.com/leonardt/verilogast-cpp/archive/5a1e7d998e93cb8da893ffce1d1f493a00e54f77.tar.gz",
     sha256 = "d2bc50cf598f1fe2d1a4564520b3c474777f70b41ee18360297cf44c3ff461a6",
-    cmake_args = [
+    configure_args = [
         "-DVERILOGAST_BUILD_TESTS=OFF",
     ],
 )

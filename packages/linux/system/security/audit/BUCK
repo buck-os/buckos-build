@@ -1,35 +1,26 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # Use official release tarball with configure pre-generated
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "audit",
     version = "3.1.5",
-    src_uri = "https://people.redhat.com/sgrubb/audit/audit-3.1.5.tar.gz",
+    url = "https://people.redhat.com/sgrubb/audit/audit-3.1.5.tar.gz",
     sha256 = "660213bac2baebabfc32be4d84a4aeb94effbd3e076b1014b78678b4502cf6ba",
-    signature_required = False,
     description = "Linux Audit Framework userspace utilities",
     homepage = "https://github.com/linux-audit/audit-userspace",
     license = "LGPL-2.1+",
-    iuse = ["caps"],
-    use_defaults = ["caps"],  # Enable by default for capability checking
+# Enable by default for capability checking
     use_configure = {
-        "caps": "--with-libcap-ng=yes",
         "!caps": "--with-libcap-ng=no",
+        "caps": "--with-libcap-ng=yes",
+        "gssapi": ("--enable-gssapi", "--disable-gssapi"),
+        "io-uring": ("--enable-io-uring", "--disable-io-uring"),
+        "ldap": ("--enable-ldap", "--disable-ldap"),
+        "python": ("--enable-python", "--disable-python"),
+        "static-libs": ("--enable-static", "--disable-static"),
     },
     use_deps = {
-        "caps": ["//packages/linux/system/libs/ipc/libcap-ng:libcap-ng"],
+        "caps": "//packages/linux/system/libs/ipc/libcap-ng:libcap-ng",
     },
-    configure_args = [
-        "--prefix=/usr",
-        "--sbindir=/sbin",
-        "--sysconfdir=/etc",
-        "--localstatedir=/var",
-        "--without-python",
-        "--without-python3",
-        "--enable-shared",
-        "--disable-static",
-        "--disable-zos-remote",  # Requires openldap
-    ],
-    visibility = ["PUBLIC"],
 )

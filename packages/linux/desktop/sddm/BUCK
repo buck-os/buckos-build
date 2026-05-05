@@ -1,35 +1,68 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # SDDM - Simple Desktop Display Manager (KDE default)
 # =============================================================================
 
-download_source(
-    name = "sddm-src",
-    src_uri = "https://github.com/sddm/sddm/archive/refs/tags/v0.21.0.tar.gz",
-    sha256 = "f895de2683627e969e4849dbfbbb2b500787481ca5ba0de6d6dfdae5f1549abf",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "cmake",
     name = "sddm",
-    source = ":sddm-src",
+    url = "https://github.com/sddm/sddm/archive/refs/tags/v0.21.0.tar.gz",
+
+    sha256 = "f895de2683627e969e4849dbfbbb2b500787481ca5ba0de6d6dfdae5f1549abf",
     version = "0.21.0",
     description = "Simple Desktop Display Manager - QML-based",
     homepage = "https://github.com/sddm/sddm",
     license = "GPL-2.0",
-    pre_configure = """
-mkdir -p build
-cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=/usr \\
-    -DENABLE_JOURNALD=OFF \\
-    -DBUILD_MAN_PAGES=OFF \\
-    -DUID_MIN=1000 \\
-    -DUID_MAX=60000
-""",
-    deps = [
-        "//packages/linux/desktop/wayland:wayland",
+    configure_args = [
+        "-DCMAKE_INSTALL_PREFIX=/usr",
+        "-DENABLE_JOURNALD=ON",
+        "-DBUILD_MAN_PAGES=OFF",
+        "-DUID_MIN=1000",
+        "-DUID_MAX=60000",
+        "-DNO_SYSTEMD=OFF",
+        "-DUSE_ELOGIND=OFF",
     ],
-    visibility = ["PUBLIC"],
+    # Disable tests - SDDM uses unconditional enable_testing()
+    # Remove LinguistTools from required Qt6 components (we don't need translations)
+    # Remove qt_add_translation calls from theme and translations CMakeLists.txt
+    pre_configure_cmds = ["""
+sed -i 's/^add_subdirectory(test)/#add_subdirectory(test)/' CMakeLists.txt
+sed -i 's/LinguistTools//' CMakeLists.txt
+sed -i '/qt_add_translation/d' data/themes/CMakeLists.txt
+sed -i '/qt_add_translation/d' data/translations/CMakeLists.txt
+"""],
+    # Custom src_configure/src_compile to set LD_LIBRARY_PATH for Qt6 tools
+    deps = [
+        "//packages/acct-group/sddm:sddm",
+        "//packages/acct-user/sddm:sddm",
+        "//packages/linux/desktop/qt:qt6-native",
+        "//packages/linux/dev-libs/misc/double-conversion:double-conversion",
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/system/libs/utility/pcre2:pcre2",
+        "//packages/linux/graphics/rendering/wayland:wayland",
+        "//packages/linux/system/security/linux-pam:linux-pam",
+        "//packages/linux/desktop/kde/ecm:extra-cmake-modules",
+        "//packages/linux/graphics/xorg/libXau:libXau",
+        "//packages/linux/graphics/xorg/libXdmcp:libXdmcp",
+        "//packages/linux/graphics/xorg/libxcb:libxcb",
+        "//packages/linux/graphics/xorg/libX11:libX11",
+        "//packages/linux/graphics/xorg/xorgproto:xorgproto",
+        "//packages/linux/system/init/systemd:systemd",
+        "//packages/linux/desktop/mesa:mesa",
+        # Transitive deps needed for rpath-link (Qt6 deps)
+        "//packages/linux/dev-libs/glib:glib",
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/image/libpng:libpng",
+        "//packages/linux/system/libs/input/libxkbcommon:libxkbcommon",
+        "//packages/linux/system/libs/ipc/dbus:dbus",
+        "//packages/linux/system/libs/font/freetype:freetype",
+        "//packages/linux/system/libs/font/fontconfig:fontconfig",
+        "//packages/linux/system/libs/font/harfbuzz:harfbuzz",
+        "//packages/linux/desktop/libdrm:libdrm",
+        "//packages/linux/system/libs/data/expat:expat",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/system/libs/ipc/libcap:libcap",
+        "//packages/linux/system/libs/compression/zstd:zstd",  # Qt6Core depends on zstd
+    ],
 )

@@ -1,0 +1,57 @@
+diff --git a/meson.build b/meson.build
+index fd74b0a..49235ea 100644
+--- a/meson.build
++++ b/meson.build
+@@ -1,26 +1,22 @@
+ project('wayland-protocols',
+ 	version: '1.41',
+ 	meson_version: '>= 0.58.0',
+ 	license: 'MIT/Expat',
+ )
+ 
+ wayland_protocols_version = meson.project_version()
+ 
+ fs = import('fs')
+ 
+-dep_scanner = dependency('wayland-scanner',
+-    version: get_option('tests') ? '>=1.23.0' : '>=1.20.0',
+-    native: true,
+-    fallback: 'wayland'
+-)
+-prog_scanner = find_program(dep_scanner.get_variable(pkgconfig: 'wayland_scanner', internal: 'wayland_scanner'))
++# Patched: use find_program directly since wayland-scanner is in PATH
++prog_scanner = find_program('wayland-scanner', native: true)
+ 
+ stable_protocols = {
+ 	'presentation-time': [''],
+ 	'viewporter': [''],
+ 	'xdg-shell': [''],
+ 	'linux-dmabuf': ['v1'],
+ 	'tablet': ['v2'],
+ }
+ 
+ unstable_protocols = {
+@@ -115,21 +111,22 @@ foreach protocol_file : protocol_files
+ 		'wayland-protocols',
+ 		protocol_file,
+ 	))
+ 	install_data(
+ 		protocol_file,
+ 		install_dir: protocol_install_dir,
+ 	)
+ endforeach
+ 
+ include_dirs = []
+-if dep_scanner.version().version_compare('>=1.22.90')
++# Patched: wayland-scanner 1.23.1 is >= 1.22.90, so always include headers
++if true
+ 	subdir('include/wayland-protocols')
+ 	include_dirs = ['include']
+ endif
+ 
+ wayland_protocols_srcdir = meson.current_source_dir()
+ 
+ pkgconfig_configuration = configuration_data()
+ pkgconfig_configuration.set('prefix', get_option('prefix'))
+ pkgconfig_configuration.set('datarootdir', '${prefix}/@0@'.format(get_option('datadir')))
+ pkgconfig_configuration.set('abs_top_srcdir', wayland_protocols_srcdir)

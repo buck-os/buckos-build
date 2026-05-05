@@ -1,28 +1,27 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "zlib-src",
-    src_uri = "https://zlib.net/fossils/zlib-1.3.1.tar.gz",
-    sha256 = "9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23",
-    signature_required = False,
-)
-
-# zlib uses a non-standard configure script that doesn't accept autotools args
-binary_package(
+# zlib uses a non-standard configure script that does not accept autotools
+# conventions like --build, --host, or --sysconfdir.  Only --prefix and
+# --libdir are supported.
+package(
     name = "zlib",
-    srcs = [":zlib-src"],
+    build_rule = "autotools",
     version = "1.3.1",
-    description = "A massively spiffy yet delicately unobtrusive compression library",
-    homepage = "https://zlib.net/",
-    license = "zlib",
-    install_script = """
-        # zlib's configure only accepts limited options (no --build, --host)
-        cd "$SRCS"
-        ./configure --prefix=/usr --libdir=/usr/lib64
-        make -j$(nproc)
-        make install DESTDIR="$OUT"
-    """,
+    url = "https://mirror.buckos.org/z/zlib-1.3.1.tar.gz",
+    sha256 = "9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23",
+    libraries = ["z"],
+    skip_host_arg = True,
+    configure_args = [
+        "--prefix=/usr",
+        "--libdir=/usr/lib64",
+    ],
     deps = [],
-    visibility = ["PUBLIC"],
+    patches = glob(["patches/*.patch"]),
+    transforms = ["strip", "stamp"],
+    use_transforms = {"ima": "ima"},
+    # SBOM
+    license = "Zlib",
+    homepage = "https://zlib.net/",
+    description = "A massively spiffy yet delicately unobtrusive compression library",
+    cpe = "cpe:2.3:a:zlib:zlib:1.3.1:*:*:*:*:*:*:*",
 )

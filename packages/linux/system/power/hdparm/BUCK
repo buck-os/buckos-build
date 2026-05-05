@@ -1,32 +1,31 @@
+load("//defs:package.bzl", "package")
+
 # hdparm - Hard Disk Parameters
 # Get/set SATA/IDE device parameters including power management
 
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
-
-download_source(
-    name = "hdparm-src",
-    src_uri = "https://downloads.sourceforge.net/project/hdparm/hdparm/hdparm-9.65.tar.gz",
-    sha256 = "d14929f910d060932e717e9382425d47c2e7144235a53713d55a94f7de535a4b",
-    signature_required = False,
-)
-
-autotools_package(
+package(
     name = "hdparm",
-    source = ":hdparm-src",
+    build_rule = "autotools",
+    skip_configure = True,
+    url = "https://downloads.sourceforge.net/project/hdparm/hdparm/hdparm-9.65.tar.gz",
+
+    sha256 = "d14929f910d060932e717e9382425d47c2e7144235a53713d55a94f7de535a4b",
+    use_configure = {
+        "static": ("--enable-static", "--disable-static"),
+    },
     version = "9.65",
     description = "Get/set SATA/IDE device parameters and power management",
     homepage = "https://sourceforge.net/projects/hdparm/",
     license = "BSD-2-Clause",
-    configure_args = [],
     make_args = [
         "prefix=/usr",
         "sbindir=/usr/sbin",
         "mandir=/usr/share/man",
     ],
-    post_install = """
-        make DESTDIR=$OUT prefix=/usr install
-    """,
+    install_targets = ["all"],
+    post_install_cmds = ["""
+        make -C "$BUILD_DIR" DESTDIR=$OUT prefix=/usr install
+    """],
     deps = [
     ],
     visibility = ["PUBLIC"],

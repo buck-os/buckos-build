@@ -1,28 +1,26 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # libccd - Library for collision detection between convex shapes
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "libccd",
     version = "2.1",
+    url = "https://github.com/danfis/libccd/archive/refs/tags/v2.1.tar.gz",
+    sha256 = "542b6c47f522d581fbf39e51df32c7d1256ac0c626e7c2b41f1040d4b9d50d1e",
     source = "//third-party/libccd:libccd",
-    subdir = "libccd",
     description = "Library for collision detection between two convex shapes",
     homepage = "https://github.com/danfis/libccd",
     license = "BSD-3-Clause",
-    iuse = ["double-precision"],
-    use_defaults = [],
     deps = [],
-    cmake_args = [
+    configure_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DENABLE_DOUBLE_PRECISION=OFF",
         "-DBUILD_TESTING=OFF",
         "-DBUILD_DOCUMENTATION=OFF",
     ],
-    use_cmake = {
-        "double-precision": "-DENABLE_DOUBLE_PRECISION=ON",
-        "-double-precision": "-DENABLE_DOUBLE_PRECISION=OFF",
+    use_configure = {
+        "double-precision": ("-DENABLE_DOUBLE_PRECISION=ON", "-DENABLE_DOUBLE_PRECISION=OFF"),
     },
-    visibility = ["PUBLIC"],
 )

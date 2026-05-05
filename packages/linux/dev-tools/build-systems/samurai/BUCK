@@ -1,0 +1,24 @@
+load("//defs:package.bzl", "package")
+
+# =============================================================================
+# samurai - ninja-compatible build tool written in C
+# =============================================================================
+# A lightweight ninja alternative. Much smaller codebase (~1.2k lines of C)
+# compared to ninja (~20k+ lines of C++).
+
+package(
+    build_rule = "binary",
+    name = "samurai",
+    version = "1.2",
+    url = "https://github.com/michaelforney/samurai/releases/download/1.2/samurai-1.2.tar.gz",
+    sha256 = "3b8cf51548dfc49b7efe035e191ff5e1963ebc4fe8f6064a5eefc5343eaf78a5",
+    description = "ninja-compatible build tool written in C",
+    homepage = "https://github.com/michaelforney/samurai",
+    license = "ISC Apache-2.0 MIT",
+    install_script = """
+        cd $SRCS
+        make CC="${CC:-gcc}" CFLAGS="${CFLAGS:--O2}" -j${MAKEOPTS:-$(nproc)}
+        make DESTDIR="$OUT" PREFIX=/usr install
+    """,
+    deps = [],
+)

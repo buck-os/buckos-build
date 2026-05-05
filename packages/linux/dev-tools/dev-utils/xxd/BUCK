@@ -1,29 +1,21 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
+load("//defs:package.bzl", "package")
 
 # xxd - Hexdump utility from Vim
-# USE flags: none
+# xxd uses a simple Makefile, not autoconf
 
-download_source(
-    name = "xxd-src",
-    src_uri = "https://github.com/vim/vim/archive/refs/tags/v9.1.0.tar.gz",
-    sha256 = "ddb435f6e386c53799a3025bdc5a3533beac735a0ee596cb27ada97366a1c725",
-    signature_required = False,
-)
-
-autotools_package(
+package(
     name = "xxd",
-    source = ":xxd-src",
+    build_rule = "autotools",
+    skip_configure = True,
     version = "9.1.0",
+    source = "//packages/linux/editors/vim:vim-src",
     description = "Hexdump utility from Vim",
     homepage = "https://www.vim.org/",
     license = "GPL-2+",
-    configure_args = [],
-    make_args = [
-        "-C", "src/xxd",
-    ],
-    post_install = """
-        install -Dm755 src/xxd/xxd "$DESTDIR/usr/bin/xxd"
-    """,
-    visibility = ["PUBLIC"],
+    post_install_cmds = ["""\
+cd src/xxd
+        install -Dm755 xxd "$DESTDIR/usr/bin/xxd"
+        # Man page is in runtime/doc/, not src/xxd/
+        install -Dm644 ../../runtime/doc/xxd.1 "$DESTDIR/usr/share/man/man1/xxd.1"
+"""],
 )

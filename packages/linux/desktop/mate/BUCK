@@ -1,42 +1,60 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # MATE - Traditional GNOME 2-style desktop
 # =============================================================================
 
-download_source(
-    name = "mate-panel-src",
-    src_uri = "https://pub.mate-desktop.org/releases/1.28/mate-panel-1.28.1.tar.xz",
-    sha256 = "5133c64f5969ae8eeebe6e8bba450dea792cb0be06d9ae1c36e8569d2f8524ba",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "mate-panel",
-    source = ":mate-panel-src",
+    pre_configure_cmds = ["""
+NOCONFIGURE=1 ./autogen.sh
+""", """
+NOCONFIGURE=1 ./autogen.sh
+"""],
+    configure_args = [
+        "--disable-gtk-doc",
+        "--disable-gtk-doc-html",
+    ],
+    url = "https://pub.mate-desktop.org/releases/1.28/mate-panel-1.28.1.tar.xz",
+
+    sha256 = "5133c64f5969ae8eeebe6e8bba450dea792cb0be06d9ae1c36e8569d2f8524ba",
+    use_configure = {
+        "X": ("--with-x", "--without-x"),
+        "introspection": ("--enable-introspection", "--disable-introspection"),
+        "wayland": ("--enable-wayland", "--disable-wayland"),
+    },
     version = "1.28.1",
     description = "MATE Panel",
     homepage = "https://mate-desktop.org/",
     license = "GPL-2.0",
-    visibility = ["PUBLIC"],
+    deps = [
+        "//packages/linux/desktop/gtk:gtk3",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+    ],
+    host_deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+    ],
 )
 
-download_source(
-    name = "marco-src",
-    src_uri = "https://pub.mate-desktop.org/releases/1.28/marco-1.28.1.tar.xz",
-    sha256 = "2496e5e40ee980cd6849493ac3e0f8fd0dec8b81c674da8d9ba19a577f0ac2e1",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "marco",
-    source = ":marco-src",
+    configure_args = [
+        "--disable-gtk-doc",
+        "--disable-gtk-doc-html",
+    ],
+    url = "https://pub.mate-desktop.org/releases/1.28/marco-1.28.1.tar.xz",
+
+    sha256 = "2496e5e40ee980cd6849493ac3e0f8fd0dec8b81c674da8d9ba19a577f0ac2e1",
     version = "1.28.1",
     description = "Marco - MATE window manager",
     homepage = "https://mate-desktop.org/",
     license = "GPL-2.0",
-    visibility = ["PUBLIC"],
+    deps = [
+        "//packages/linux/desktop/gtk:gtk3",
+    ],
 )
 
 # MATE meta-package
@@ -45,9 +63,7 @@ filegroup(
     srcs = [
         ":mate-panel",
         ":marco",
-        "//packages/linux/desktop/lightdm:lightdm",
         "//packages/linux/desktop/mesa:mesa",
     ],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )

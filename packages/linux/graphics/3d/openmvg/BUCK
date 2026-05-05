@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "openmvg",
     version = "1.6.0",
-    src_uri = "https://github.com/openMVG/openMVG/archive/refs/tags/v1.6.tar.gz",
-    sha256 = "TODO",
-    cmake_args = [
+    url = "https://github.com/openMVG/openMVG/archive/refs/tags/v1.6.tar.gz",
+    sha256 = "11b7f632a773f8c06fe7e30caeebc8ac124049cd5dd947eaadc8c7bf0a294d64",
+    configure_args = [
         "-DOpenMVG_BUILD_TESTS=OFF",
         "-DOpenMVG_BUILD_DOC=OFF",
         "-DOpenMVG_BUILD_EXAMPLES=OFF",
@@ -16,12 +17,12 @@ cmake_package(
         "-DOpenMVG_USE_OPENCV=OFF",
     ],
     deps = [
-        "//packages/linux/dev-libs/serialization/cereal",
-        "//packages/linux/dev-libs/math/ceres-solver",
-        "//packages/linux/dev-libs/math/eigen",
-        "//packages/linux/dev-libs/misc/flann",
-        "//packages/linux/media/libraries/libjpeg-turbo",
-        "//packages/linux/media/libraries/libpng",
-        "//packages/linux/media/libraries/libtiff",
+        "//packages/linux/dev-libs/serialization/cereal:cereal",
+        "//packages/linux/dev-libs/math/ceres-solver:ceres-solver",
+        "//packages/linux/dev-libs/math/eigen:eigen",
+        "//packages/linux/dev-libs/misc/flann:flann",
+        "//packages/linux/media/libraries/libjpeg-turbo:libjpeg-turbo",
+        "//packages/linux/media/libraries/libpng:libpng",
+        "//packages/linux/media/libraries/libtiff:libtiff",
     ],
 )

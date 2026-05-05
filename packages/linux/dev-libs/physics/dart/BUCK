@@ -1,21 +1,22 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "dart",
     version = "6.15.0",
-    src_uri = "https://github.com/dartsim/dart/archive/refs/tags/v6.15.0.tar.gz",
-    sha256 = "TODO",
-    cmake_args = [
+    url = "https://github.com/dartsim/dart/archive/refs/tags/v6.15.0.tar.gz",
+    sha256 = "bbf954e283f464f6d0a8a5ab43ce92fd49ced357ccdd986c7cb4c29152df8692",
+    configure_args = [
         "-DBUILD_SHARED_LIBS=OFF",
         "-DDART_BUILD_GUI_OSG=OFF",
         "-DDART_BUILD_DARTPY=OFF",
         "-DDART_ENABLE_SIMD=OFF",
     ],
     deps = [
-        "//packages/linux/dev-libs/eigen",
-        "//packages/linux/dev-libs/3d/assimp",
-        "//packages/linux/dev-libs/physics/fcl",
-        "//packages/linux/dev-libs/logging/fmt",
-        "//packages/linux/dev-libs/json/tinyxml2",
+        "//packages/linux/dev-libs/eigen:eigen",
+        "//packages/linux/dev-libs/3d/assimp:assimp",
+        "//packages/linux/dev-libs/physics/fcl:fcl",
+        "//packages/linux/dev-libs/misc/fmt:fmt",
+        "//packages/linux/dev-libs/json/tinyxml2:tinyxml2",
     ],
 )

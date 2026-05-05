@@ -1,37 +1,41 @@
-load("//defs:package_defs.bzl", "cmake_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # Botan - C++ cryptography library
 
-cmake_package(
+package(
+    build_rule = "binary",
     name = "botan",
     version = "3.6.1",
-    src_uri = "https://botan.randombit.net/releases/Botan-3.6.1.tar.xz",
+    url = "https://botan.randombit.net/releases/Botan-3.6.1.tar.xz",
     sha256 = "7cb8575d88d232c77174769d7f9e24bb44444160585986eebd66e749cb9a9089",
     description = "C++ cryptography library",
     homepage = "https://botan.randombit.net/",
     license = "BSD-2",
-    iuse = ["static-libs", "doc", "sqlite", "zlib", "bzip2", "lzma"],
-    use_defaults = ["zlib"],
-    use_options = {
-        "static-libs": "BUILD_STATIC_LIBS",
-        "doc": "BUILD_DOCUMENTATION",
-        "sqlite": "WITH_SQLITE3",
-        "zlib": "WITH_ZLIB",
-        "bzip2": "WITH_BZIP2",
-        "lzma": "WITH_LZMA",
-    },
-    use_deps = {
-        "sqlite": ["//packages/linux/databases/sqlite:sqlite"],
-        "zlib": ["//packages/linux/core/zlib:zlib"],
-        "bzip2": ["//packages/linux/system/libs/compression/bzip2:bzip2"],
-        "lzma": ["//packages/linux/system/libs/compression/xz-utils:xz-utils"],
-    },
-    cmake_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DBUILD_SHARED_LIBS=ON",
-        "-DBUILD_TESTING=OFF",
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/compression/bzip2:bzip2",
+        "//packages/linux/lang/python:python",
     ],
-    deps = [],
-    visibility = ["PUBLIC"],
+    install_script = """
+cd "$SRCS"
+# Build extra include/lib flags from DEP_BASE_DIRS so botan finds zlib.h and bzlib.h
+_EXTRA_INC=""
+_EXTRA_LIB=""
+IFS=':' read -ra _DEPS <<< "${DEP_BASE_DIRS:-}"
+for _dep in "${_DEPS[@]}"; do
+    for _inc in "$_dep/usr/include"; do
+        [ -d "$_inc" ] && _EXTRA_INC="$_EXTRA_INC -I$_inc"
+    done
+    for _lib in "$_dep/usr/lib64" "$_dep/usr/lib"; do
+        [ -d "$_lib" ] && _EXTRA_LIB="$_EXTRA_LIB -L$_lib"
+    done
+done
+export CXXFLAGS="$CFLAGS $_EXTRA_INC"
+export LDFLAGS="$LDFLAGS $_EXTRA_LIB"
+python3 configure.py --prefix=/usr --with-zlib --with-bzip2 \
+    --without-documentation --disable-modules=tls --libdir=lib64 \
+    --extra-cxxflags="$_EXTRA_INC" --ldflags="$_EXTRA_LIB"
+make -j${MAKEOPTS:-$(nproc)}
+make install DESTDIR="$OUT"
+""",
 )

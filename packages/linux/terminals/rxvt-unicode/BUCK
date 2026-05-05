@@ -1,16 +1,26 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "rxvt-unicode-src",
-    src_uri = "http://dist.schmorp.de/rxvt-unicode/rxvt-unicode-9.31.tar.bz2",
-    sha256 = "aaa13fcbc149fe0f3f391f933279580f74a96fd312d6ed06b8ff03c2d46672e8",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "rxvt-unicode",
-    source = ":rxvt-unicode-src",
+    url = "https://dist.schmorp.de/rxvt-unicode/rxvt-unicode-9.31.tar.bz2",
+
+    sha256 = "aaa13fcbc149fe0f3f391f933279580f74a96fd312d6ed06b8ff03c2d46672e8",
+    use_configure = {
+        "24-bit-color": ("--enable-24-bit-color", "--disable-24-bit-color"),
+        "256-color": ("--enable-256-color", "--disable-256-color"),
+        "blink": ("--enable-blink", "--disable-blink"),
+        "fading-colors": ("--enable-fading-colors", "--disable-fading-colors"),
+        "font-styles": ("--enable-font-styles", "--disable-font-styles"),
+        "gdk-pixbuf": ("--enable-gdk-pixbuf", "--disable-gdk-pixbuf"),
+        "iso14755": ("--enable-iso14755", "--disable-iso14755"),
+        "mousewheel": ("--enable-mousewheel", "--disable-mousewheel"),
+        "perl": ("--enable-perl", "--disable-perl"),
+        "startup-notification": ("--enable-startup-notification", "--disable-startup-notification"),
+        "unicode3": ("--enable-unicode3", "--disable-unicode3"),
+        "wide-glyphs": ("--enable-wide-glyphs", "--disable-wide-glyphs"),
+        "xft": ("--enable-xft", "--disable-xft"),
+    },
     version = "9.31",
     description = "rxvt-unicode is a clone of the well known terminal emulator rxvt",
     homepage = "http://software.schmorp.de/pkg/rxvt-unicode.html",
@@ -20,5 +30,7 @@ autotools_package(
         "--enable-256-color",
         "--enable-unicode3",
     ],
-    visibility = ["PUBLIC"],
+    deps = [
+        "//packages/linux/system/libs/terminal/libptytty:libptytty",
+    ],
 )

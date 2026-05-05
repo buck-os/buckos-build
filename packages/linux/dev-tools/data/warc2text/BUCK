@@ -1,23 +1,23 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "warc2text",
     version = "1.0.0",
-    src_uri = "https://github.com/facebookexternal/warc2text/archive/refs/heads/flex_scanner.tar.gz",
-    sha256 = "TODO",
-    cmake_args = [
+    url = "https://github.com/bitextor/warc2text/archive/refs/heads/master.tar.gz",
+    sha256 = "f04df11ec339493061abc425701dc20e16d2a51972543834144232d711d299b2",
+    configure_args = [
         "-DCMAKE_CXX_STANDARD=17",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DSKIP_PREPROCESS_BUILD=ON",
         "-DJSON_BuildTests=OFF",
     ],
     deps = [
-        "//packages/linux/dev-libs/boost",
-        "//packages/linux/dev-libs/text/cld2",
-        "//packages/linux/ai/nlp/fasttext",
-        "//packages/linux/dev-tools/parsers/flex",
-        "//packages/linux/dev-libs/xml/libxslt",
-        "//packages/linux/dev-libs/json/nlohmann-json",
-        "//packages/linux/dev-libs/text/re2",
+        "//packages/linux/dev-libs/boost:boost",
+        "//packages/linux/dev-libs/xml/libxslt:libxslt",
+        "//packages/linux/dev-libs/json/nlohmann-json:nlohmann-json",
+    ],
+    host_deps = [
+        "//packages/linux/dev-tools/parsers/flex:flex",
     ],
 )

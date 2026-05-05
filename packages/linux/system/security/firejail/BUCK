@@ -1,17 +1,25 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "firejail-src",
-    src_uri = "https://github.com/netblue30/firejail/releases/download/0.9.72/firejail-0.9.72.tar.xz",
-    sha256 = "82e177c48cfc87f62b088b55efc53ff4612b9740aab5ea35cbf2395e83efe7f4",
-    signature_sha256 = "112f4cbc6b29dce82b8b8532e717bbd004a8c647b84b3d2e5feb40ea20262aaf",
-    signature_required=False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "firejail",
-    source = ":firejail-src",
+    # GitHub release tarball includes pre-generated configure script
+    url = "https://github.com/netblue30/firejail/releases/download/0.9.72/firejail-0.9.72.tar.xz",
+
+    sha256 = "82e177c48cfc87f62b088b55efc53ff4612b9740aab5ea35cbf2395e83efe7f4",
+    use_configure = {
+        "X": ("--with-x", "--without-x"),
+        "apparmor": ("--enable-apparmor", "--disable-apparmor"),
+        "chroot": ("--enable-chroot", "--disable-chroot"),
+        "contrib": ("--enable-contrib", "--disable-contrib"),
+        "dbusproxy": ("--enable-dbusproxy", "--disable-dbusproxy"),
+        "file-transfer": ("--enable-file-transfer", "--disable-file-transfer"),
+        "globalcfg": ("--enable-globalcfg", "--disable-globalcfg"),
+        "network": ("--enable-network", "--disable-network"),
+        "private-home": ("--enable-private-home", "--disable-private-home"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
+        "userns": ("--enable-userns", "--disable-userns"),
+    },
     version = "0.9.72",
     description = "Linux namespaces and seccomp-bpf sandbox",
     homepage = "https://firejail.wordpress.com/",
@@ -25,8 +33,7 @@ autotools_package(
         "--enable-private-home",
         "--enable-x11",
     ],
-    post_install = """
+    post_install_cmds = ["""
         mkdir -p $OUT/etc/firejail
-    """,
-    visibility = ["PUBLIC"],
+    """],
 )

@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "symspellcpppy",
     version = "0.0.1",
-    src_uri = "https://github.com/viig99/SymSpellCppPy/archive/5c29c3954ce06039062dfb2b7085db88e94a3c8a.tar.gz",
+    url = "https://github.com/viig99/SymSpellCppPy/archive/5c29c3954ce06039062dfb2b7085db88e94a3c8a.tar.gz",
     sha256 = "d5f8eefb1e6ac45869f80bdfdcbb49139d2347f7d3fa02ae6c880a491832b3d4",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_FOR_PYTHON=OFF",
         "-DBUILD_FOR_TEST=OFF",
     ],

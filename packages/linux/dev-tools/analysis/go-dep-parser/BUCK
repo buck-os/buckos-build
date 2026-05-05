@@ -1,11 +1,16 @@
-load("//defs:package_defs.bzl", "go_package")
+load("//defs:package.bzl", "package")
 
-go_package(
+# This is a Go library package for dependency parsing.
+# It provides Go modules under ./pkg/..., not a binary executable.
+package(
+    build_rule = "go",
     name = "go-dep-parser",
     version = "0.0.0-12c25a7",
-    src_uri = "https://github.com/aquasecurity/go-dep-parser/archive/12c25a7270ccd76b15e40500b0981c4030ca5a1e.tar.gz",
+    url = "https://github.com/aquasecurity/go-dep-parser/archive/12c25a7270ccd76b15e40500b0981c4030ca5a1e.tar.gz",
     sha256 = "00371ef325779d0082621d4734c29c5d36166e6998da5b76c45e694e64d9a495",
-    packages = ["./pkg/..."],
-    deps = [],
-    maintainers = ["vulnerability_management_core"],
+    description = "Go library for dependency file parsing",
+    homepage = "https://github.com/aquasecurity/go-dep-parser",
+    license = "Apache-2.0",
+    lib_only = True,
+    vendor_deps = True,
 )

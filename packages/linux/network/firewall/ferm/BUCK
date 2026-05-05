@@ -1,73 +1,29 @@
+load("//defs:package.bzl", "package")
+
 # =============================================================================
 # ferm - For Easy Rule Making (firewall rule generator)
 # =============================================================================
 
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
-
-autotools_package(
+package(
     name = "ferm",
+    build_rule = "autotools",
+    skip_configure = True,
     version = "2.7",
-    src_uri = "http://ferm.foo-projects.org/download/2.7/ferm-2.7.tar.xz",
+    url = "http://ferm.foo-projects.org/download/2.7/ferm-2.7.tar.xz",
     sha256 = "c00d910d5394e69675608eb5ee0f504d5cfda41e990a2d9a91baac6df93e3f92",
-    signature_sha256 = "a7135d5545c9864d4c66be9234107f53259cbca36afc9d7a77a69de69f6a18b3",
-    signature_required = False,
 
-    iuse = ["ipv6"],
-    use_defaults = ["ipv6"],
-
-
-    use_configure = {
-        "ipv6": "--enable-ipv6",
-        "-ipv6": "--disable-ipv6",
-    },
-
-    pre_configure = "true",  # ferm uses plain Makefile
+    # ferm uses a plain Makefile, no configure script
 
     make_args = [
         "PREFIX=/usr",
         "SYSCONFDIR=/etc",
     ],
 
-    post_install = """
-# Install ferm using make
-make PREFIX=/usr SYSCONFDIR=/etc DESTDIR=$DESTDIR install
-
-# Create ferm configuration directories
-mkdir -p "$DESTDIR/etc/ferm"
-mkdir -p "$DESTDIR/var/lib/ferm"
-
-# Create default ferm configuration
-cat > "$DESTDIR/etc/ferm/ferm.conf" << 'FERMCONF'
-# ferm configuration file
-# See ferm(1) for syntax
-
-table filter {
-    chain INPUT {
-        policy DROP;
-
-        # Connection tracking
-        mod state state INVALID DROP;
-        mod state state (ESTABLISHED RELATED) ACCEPT;
-
-        # Allow loopback
-        interface lo ACCEPT;
-
-        # Allow ping
-        proto icmp ACCEPT;
-    }
-
-    chain OUTPUT {
-        policy ACCEPT;
-    }
-
-    chain FORWARD {
-        policy DROP;
-    }
-}
-FERMCONF
-chmod 600 "$DESTDIR/etc/ferm/ferm.conf"
-""",
+    install_args = [
+        "PREFIX=$(DESTDIR)/usr",
+        "SYSCONFDIR=$(DESTDIR)/etc",
+        "DOCDIR=$(DESTDIR)/usr/share/doc/ferm",
+    ],
 
     deps = [
         "//packages/linux/network/firewall/iptables:iptables",
@@ -77,5 +33,4 @@ chmod 600 "$DESTDIR/etc/ferm/ferm.conf"
     description = "Tool for maintaining complex firewall rules with ease",
     homepage = "http://ferm.foo-projects.org/",
     license = "GPL-2.0",
-    visibility = ["PUBLIC"],
 )

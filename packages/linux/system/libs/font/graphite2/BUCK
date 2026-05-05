@@ -1,17 +1,25 @@
-load("//defs:package_defs.bzl", "cmake_package", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "graphite2",
     version = "1.3.14",
-    src_uri = "https://github.com/silnrsi/graphite/archive/refs/tags/1.3.14.tar.gz",
+    use_configure = {
+        "perl": ("-DENABLE_PERL=ON", "-DENABLE_PERL=OFF"),
+    },
+    url = "https://github.com/silnrsi/graphite/archive/refs/tags/1.3.14.tar.gz",
     sha256 = "7a3b342c5681921ce2e0c2496509d30b5b078399d5a7bd2358f95166d57d91df",
-    signature_required = False,
     description = "Reimplementation of the SIL Graphite text processing engine",
     homepage = "https://graphite.sil.org/",
     license = "LGPL-2.1",
-    cmake_args = [
+    configure_args = [
         "-DGRAPHITE2_TESTS=OFF",
+        "-DBUILD_TESTING=OFF",
     ],
-    visibility = ["PUBLIC"],
+    deps = [
+        "//packages/linux/system/libs/font/freetype:freetype",
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/image/libpng:libpng",
+        "//packages/linux/system/libs/compression/bzip2:bzip2",
+    ],
 )

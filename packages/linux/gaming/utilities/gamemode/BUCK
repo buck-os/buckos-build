@@ -1,87 +1,27 @@
+load("//defs:package.bzl", "package")
+
 # GameMode - Optimize Linux system performance for gaming
 # Developed by Feral Interactive
 
-load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+# GameMode - Optimize Linux system performance on demand
 
-download_source(
-    name = "gamemode-src",
-    src_uri = "https://github.com/FeralInteractive/gamemode/archive/refs/tags/1.8.2.tar.gz",
-    sha256 = "2b4a20894822caf04767af6a1601130d6b718fc30b8a77895607341b1674740f",
-    signature_required = False,
-)
-
-# USE flags: See use_flags.bzl for available flags
-
-autotools_package(
+package(
+    build_rule = "meson",
     name = "gamemode",
-    source = ":gamemode-src",
+    url = "https://github.com/FeralInteractive/gamemode/archive/refs/tags/1.8.2.tar.gz",
+
+    sha256 = "2b4a20894822caf04767af6a1601130d6b718fc30b8a77895607341b1674740f",
     version = "1.8.2",
     description = "Optimize Linux system performance on demand",
     homepage = "https://github.com/FeralInteractive/gamemode",
     license = "BSD-3-Clause",
-    pre_configure = """
-# GameMode uses Meson build system
-meson setup build \
-    --prefix=/usr \
-    --libdir=/usr/lib \
-    --buildtype=release \
-    -Dwith-sd-bus-provider=no-daemon \
-    -Dwith-pam-group=games
-    """,
-    configure_args = [],
-    post_install = """
-#!/bin/bash
-set -e
-
-cd "$SRC_DIR"
-meson compile -C build
-DESTDIR="$DESTDIR" meson install -C build
-
-# Install systemd user service
-mkdir -p "$DESTDIR/usr/lib/systemd/user"
-cat > "$DESTDIR/usr/lib/systemd/user/gamemoded.service" << 'EOF'
-[Unit]
-Description=GameMode Daemon
-
-[Service]
-Type=dbus
-BusName=com.feralinteractive.GameMode
-ExecStart=/usr/bin/gamemoded
-Restart=on-failure
-
-[Install]
-WantedBy=default.target
-EOF
-
-# Install D-Bus service
-mkdir -p "$DESTDIR/usr/share/dbus-1/services"
-cat > "$DESTDIR/usr/share/dbus-1/services/com.feralinteractive.GameMode.service" << 'EOF'
-[D-BUS Service]
-Name=com.feralinteractive.GameMode
-Exec=/usr/bin/gamemoded
-EOF
-
-# Create default configuration
-mkdir -p "$DESTDIR/etc/gamemode.d"
-cat > "$DESTDIR/etc/gamemode.d/gamemode.ini" << 'EOF'
-[general]
-; GameMode default configuration
-renice = 10
-
-[gpu]
-; GPU optimizations
-apply_gpu_optimisations = accept-responsibility
-gpu_device = 0
-
-[custom]
-; Custom scripts to run
-start=/usr/bin/true
-end=/usr/bin/true
-EOF
-    """,
+    configure_args = [
+        "-Dwith-sd-bus-provider=no-daemon",
+        "-Dwith-pam-renicing=false",
+        "-Dwith-examples=false",
+    ],
     deps = [
-        "//packages/linux/core/glibc:glibc",
+        "//packages/linux/system/libs/ipc/dbus:dbus",
     ],
     visibility = ["PUBLIC"],
 )

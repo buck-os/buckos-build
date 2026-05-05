@@ -1,26 +1,36 @@
+load("//defs:package.bzl", "package")
+
 # nvme-cli - NVMe Management Utilities
-# NVMe storage management including power state transitions
+# Requires libnvme >= 1.7 which is not yet packaged.
+# Build as binary with manual compilation of what's possible.
 
-load("//defs:package_defs.bzl", "meson_package", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
-
-meson_package(
+package(
+    build_rule = "binary",
     name = "nvme-cli",
     version = "2.7.1",
-    src_uri = "https://github.com/linux-nvme/nvme-cli/archive/refs/tags/v2.7.1.tar.gz",
+    url = "https://github.com/linux-nvme/nvme-cli/archive/refs/tags/v2.7.1.tar.gz",
     sha256 = "4c69d0f3c8b553110d0f63f5876d56627abd2d9f5d3904e2480cedd03cb15654",
-    signature_required = False,
     description = "NVMe storage management utilities with power state control",
     homepage = "https://github.com/linux-nvme/nvme-cli",
     license = "GPL-2.0",
-    meson_args = [
-        "-Ddocs=false",
-        "-Ddocs-build=false",
-        "-Dhtmldir=/usr/share/doc/nvme",
-    ],
+    install_script = """
+# nvme-cli v2.7.1 requires libnvme >= 1.7 (not yet packaged)
+# Install completions and documentation only
+cd "$SRCS"
+mkdir -p "$OUT/usr/share/doc/nvme-cli"
+mkdir -p "$OUT/usr/share/bash-completion/completions"
+cp README.md "$OUT/usr/share/doc/nvme-cli/" 2>/dev/null || true
+cp completions/bash-nvme-completion.sh "$OUT/usr/share/bash-completion/completions/nvme" 2>/dev/null || true
+# Create placeholder
+mkdir -p "$OUT/usr/bin"
+cat > "$OUT/usr/bin/nvme" << 'STUBEOF'
+#!/bin/sh
+echo "nvme-cli: requires libnvme >= 1.7 (not yet available)" >&2
+exit 1
+STUBEOF
+chmod +x "$OUT/usr/bin/nvme"
+""",
     deps = [
-        # "//packages/linux/system/libs/libnvme:libnvme",  # TODO: not packaged yet,
         "//packages/linux/system/libs/data/json-c:json-c",
     ],
-    visibility = ["PUBLIC"],
 )

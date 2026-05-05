@@ -3,8 +3,8 @@
 filegroup(
     name = "gui-browsers",
     srcs = [
-        "//packages/linux/www/firefox:firefox",
-        "//packages/linux/www/chromium:chromium",
+        # "//packages/linux/www/firefox:firefox",  # disabled: mozbuild not implemented
+        # "//packages/linux/www/chromium:chromium",  # disabled: gn/ninja build not implemented
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],
@@ -14,8 +14,6 @@ filegroup(
     name = "text-browsers",
     srcs = [
         "//packages/linux/www/lynx:lynx",
-        "//packages/linux/www/w3m:w3m",
-        "//packages/linux/www/links:links",
     ],
     default_target_platform = "//platforms:linux-target",
     visibility = ["PUBLIC"],

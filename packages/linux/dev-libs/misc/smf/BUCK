@@ -1,68 +1,81 @@
-load("//defs:package_defs.bzl", "download_source", "binary_package")
+load("//defs:package.bzl", "package")
 
 # SMF - State Machine Framework from Zephyr RTOS
 # A hierarchical state machine library originally from Zephyr OS
 
-download_source(
-    name = "smf-src",
-    src_uri = "https://github.com/zephyrproject-rtos/zephyr/archive/refs/tags/v3.3.0.tar.gz",
-    sha256 = "4370d2348a4d1092fa6f0be8a8146ea26fc740b7d3e07d587d178061bf566222",
-    signature_required = False,
-)
-
-binary_package(
+package(
+    build_rule = "binary",
     name = "smf",
-    srcs = [":smf-src"],
     version = "3.3.0",
-    description = "State Machine Framework - hierarchical state machine library from Zephyr RTOS",
+    url = "https://github.com/zephyrproject-rtos/zephyr/archive/refs/tags/v3.3.0.tar.gz",
+    sha256 = "4370d2348a4d1092fa6f0be8a8146ea26fc740b7d3e07d587d178061bf566222",
+    description = "State Machine Framework - hierarchical state machine library from Zephyr RTOS (headers only)",
     homepage = "https://docs.zephyrproject.org/latest/services/smf/index.html",
     license = "Apache-2.0",
     install_script = """
         cd "$SRCS"
 
-        # Install header
+        # GitHub archive extracts to zephyr-3.3.0/ subdirectory
+        if [ -d zephyr-3.3.0 ]; then
+            cd zephyr-3.3.0
+        fi
+
+        # Find smf.h - should be at include/zephyr/smf.h
+        SMF_H=$(find . -name "smf.h" -path "*/include/zephyr/*" | head -1)
+        SMF_C=$(find . -name "smf.c" -path "*/lib/smf/*" | head -1)
+
+        if [ -z "$SMF_H" ] || [ -z "$SMF_C" ]; then
+            echo "Warning: Could not find smf.h or smf.c"
+            echo "Searched in: $(pwd)"
+            find . -name "smf.*" 2>/dev/null | head -10
+            exit 1
+        fi
+
+        echo "Found SMF_H: $SMF_H"
+        echo "Found SMF_C: $SMF_C"
+
+        # Install header - this is from Zephyr RTOS, provided as API reference
+        # NOTE: The library cannot be compiled standalone - it requires Zephyr RTOS headers
+        # This package provides the SMF API header and source for reference/embedding
         mkdir -p "$OUT/usr/include/smf"
-        cp lib/smf/smf.h "$OUT/usr/include/smf/"
+        cp "$SMF_H" "$OUT/usr/include/smf/"
 
-        # Build and install both flat (FSM) and hierarchical (HSM) static libraries
-        mkdir -p "$OUT/usr/lib64"
+        # Also provide the source file for embedding into projects
+        mkdir -p "$OUT/usr/share/smf"
+        cp "$SMF_C" "$OUT/usr/share/smf/"
 
-        # Build flat state machine library (smf_fsm)
-        ${CC:-gcc} -c -O2 -fPIC -I lib/smf lib/smf/smf.c -o smf_fsm.o
-        ar rcs "$OUT/usr/lib64/libsmf_fsm.a" smf_fsm.o
+        # Create a README explaining usage
+        cat > "$OUT/usr/share/smf/README.md" << 'EOF'
+# SMF - State Machine Framework
 
-        # Build hierarchical state machine library (smf_hsm) with ancestor support
-        ${CC:-gcc} -c -O2 -fPIC -DCONFIG_SMF_ANCESTOR_SUPPORT -I lib/smf lib/smf/smf.c -o smf_hsm.o
-        ar rcs "$OUT/usr/lib64/libsmf_hsm.a" smf_hsm.o
+This is the State Machine Framework from Zephyr RTOS.
 
-        # Create pkg-config file
-        mkdir -p "$OUT/usr/lib64/pkgconfig"
-        cat > "$OUT/usr/lib64/pkgconfig/smf.pc" << 'EOF'
-prefix=/usr
-exec_prefix=${prefix}
-libdir=${exec_prefix}/lib64
-includedir=${prefix}/include/smf
+## Usage
 
-Name: SMF
-Description: State Machine Framework from Zephyr RTOS
-Version: 3.3.0
-Libs: -L${libdir} -lsmf_fsm
-Cflags: -I${includedir}
+The SMF library from Zephyr cannot be compiled as a standalone library because
+it depends on Zephyr RTOS headers (kernel.h, toolchain.h, etc).
+
+To use SMF in your project:
+
+1. For Zephyr RTOS projects: Use the built-in SMF module
+2. For standalone projects: Copy smf.c and create compatible header stubs
+
+The header file at /usr/include/smf/smf.h provides the API reference.
+The source file at /usr/share/smf/smf.c can be embedded in your project.
 EOF
 
-        cat > "$OUT/usr/lib64/pkgconfig/smf-hsm.pc" << 'EOF'
+        # Generate pkg-config file
+        mkdir -p "$OUT/usr/lib64/pkgconfig"
+        cat > "$OUT/usr/lib64/pkgconfig/smf.pc" << EOF
 prefix=/usr
 exec_prefix=${prefix}
-libdir=${exec_prefix}/lib64
-includedir=${prefix}/include/smf
+includedir=${prefix}/include
 
-Name: SMF-HSM
-Description: State Machine Framework with Hierarchical State Machine support
-Version: 3.3.0
-Libs: -L${libdir} -lsmf_hsm
-Cflags: -I${includedir} -DCONFIG_SMF_ANCESTOR_SUPPORT
+Name: smf
+Description: State Machine Framework from Zephyr RTOS (header-only reference)
+Version: $PV
+Cflags: -I${includedir}
 EOF
     """,
     deps = [],
-    visibility = ["PUBLIC"],
 )

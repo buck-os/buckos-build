@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "vrpn",
     version = "7.35",
-    src_uri = "https://github.com/vrpn/vrpn/archive/refs/tags/v07.35.tar.gz",
+    url = "https://github.com/vrpn/vrpn/archive/refs/tags/v07.35.tar.gz",
     sha256 = "83139846247e6a0530b974e03744bb358d11f88109f231a3031815924374bb9d",
-    cmake_args = [
+    configure_args = [
         "-DVRPN_BUILD_CLIENTS=OFF",
         "-DVRPN_BUILD_SERVERS=OFF",
         "-DVRPN_BUILD_SERVER_LIBRARY=OFF",

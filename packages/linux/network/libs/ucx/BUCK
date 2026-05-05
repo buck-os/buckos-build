@@ -1,10 +1,14 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "ucx",
     version = "1.18.0",
-    src_uri = "https://github.com/openucx/ucx/releases/download/v1.18.0/ucx-1.18.0.tar.gz",
-    sha256 = "TODO",
+    use_configure = {
+        "openmp": ("--enable-openmp", "--disable-openmp"),
+    },
+    url = "https://github.com/openucx/ucx/releases/download/v1.18.0/ucx-1.18.0.tar.gz",
+    sha256 = "fa75070f5fa7442731b4ef5fc9549391e147ed3d859afeb1dad2d4513b39dc33",
     configure_args = [
         "--enable-mt",
         "--with-verbs",
@@ -13,7 +17,8 @@ autotools_package(
         "--with-rocm=no",
     ],
     deps = [
-        "//packages/linux/network/libs/rdma-core",
-        "//packages/linux/system/libs/numactl",
+        "//packages/linux/network/libs/rdma-core:rdma-core",
+        "//packages/linux/system/libs/numactl:numactl",
     ],
+    labels = ["buckos:hw:rdma"],
 )

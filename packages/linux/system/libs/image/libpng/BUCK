@@ -1,42 +1,29 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libpng",
     version = "1.6.44",
-    src_uri = "https://github.com/pnggroup/libpng/archive/refs/tags/v1.6.44.tar.gz",
+    url = "https://github.com/pnggroup/libpng/archive/refs/tags/v1.6.44.tar.gz",
     sha256 = "0ef5b633d0c65f780c4fced27ff832998e71478c13b45dfb6e94f23a82f64f7c",
-    signature_required = False,
     description = "Library for manipulating PNG images",
     homepage = "http://www.libpng.org/pub/png/libpng.html",
     license = "libpng-2.0",
-
-    # USE flags this package supports
-    iuse = [
-        "static-libs",  # Build static libraries
-        "apng",         # Animated PNG support
-    ],
-
-    # Default USE flags
-    use_defaults = [],
-
-    # Conditional configure arguments
     use_configure = {
-        "static-libs": "--enable-static",
-        "-static-libs": "--disable-static",
         "apng": "--enable-arm-neon",
-        "-apng": "",
+        "cpu_flags_x86_sse": ("--enable-cpu_flags_x86_sse", "--disable-cpu_flags_x86_sse"),
+        "static-libs": ("--enable-static", "--disable-static"),
     },
-
-    use_deps = {},
-    configure_args = ["--prefix=/usr"],
+    # GitHub archive needs autoreconf; stale configure detects wrong zlib version
+    pre_configure_cmds = [
+        "autoreconf -fi",
+    ],
     deps = [
         "//packages/linux/core/zlib:zlib",
     ],
-
-    pre_configure = """
-# USE flags: static-libs, apng
-""",
-
-    visibility = ["PUBLIC"],
+    host_deps = [
+        "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+        "//packages/linux/dev-tools/build-systems/automake:automake",
+        "//packages/linux/dev-tools/build-systems/libtool:libtool",
+    ],
 )

@@ -1,0 +1,89 @@
+load("//defs:package.bzl", "package")
+
+# =============================================================================
+# elfutils - Libraries/utilities to handle ELF objects
+# =============================================================================
+#
+# Provides libelf, libdw, and utilities for working with ELF binaries.
+# Required by mesa's radeonsi driver for shader debugging info.
+
+package(
+    build_rule = "binary",
+    name = "elfutils",
+    version = "0.194",
+    url = "https://sourceware.org/elfutils/ftp/0.194/elfutils-0.194.tar.bz2",
+    sha256 = "09e2ff033d39baa8b388a2d7fbc5390bfde99ae3b7c67c7daaf7433fbcf0f01e",
+    description = "Libraries/utilities to handle ELF objects (libelf, libdw)",
+    homepage = "https://sourceware.org/elfutils/",
+    license = "GPL-2+ LGPL-3+",
+    configure_args = [
+        "--disable-debuginfod",
+        "--disable-libdebuginfod",
+        "--disable-nls",
+        "--disable-valgrind",
+        "--disable-valgrind-annotations",
+        "--program-prefix=eu-",
+        "--with-zlib",
+        "--without-bzlib",
+        "--without-lzma",
+        "--with-zstd",
+    ],
+    install_script = """\
+# Fix: Remove C++ includes from CPPFLAGS
+CPPFLAGS_FIXED=""
+for flag in $CPPFLAGS; do
+    case "$flag" in
+        *include/c++*) ;;
+        *) CPPFLAGS_FIXED="$CPPFLAGS_FIXED $flag" ;;
+    esac
+done
+export CPPFLAGS="$CPPFLAGS_FIXED"
+
+./configure \\
+    --prefix="/usr" \\
+    ${CONFIGURE_ARGS:-} \\
+    --disable-debuginfod --disable-libdebuginfod --disable-nls \\
+    --disable-valgrind --disable-valgrind-annotations \\
+    --program-prefix=eu- --with-zlib --without-bzlib --without-lzma --with-zstd
+
+# Build only the required libraries, skip the C++ utils
+make -j${MAKEOPTS:-$(nproc)} -C lib
+make -j${MAKEOPTS:-$(nproc)} -C libelf
+make -j${MAKEOPTS:-$(nproc)} -C libebl
+make -j${MAKEOPTS:-$(nproc)} -C libcpu
+make -j${MAKEOPTS:-$(nproc)} -C backends
+make -j${MAKEOPTS:-$(nproc)} -C libdwelf
+make -j${MAKEOPTS:-$(nproc)} -C libdwfl
+make -j${MAKEOPTS:-$(nproc)} -C libdwfl_stacktrace || true
+make -j${MAKEOPTS:-$(nproc)} -C libdw
+make -j${MAKEOPTS:-$(nproc)} -C libasm
+
+# Manual install
+mkdir -p "$OUT/usr/lib64" "$OUT/usr/include" "$OUT/usr/include/elfutils" "$OUT/usr/lib64/pkgconfig"
+
+cp -P libelf/libelf.so* "$OUT/usr/lib64/"
+cp libelf/libelf.a "$OUT/usr/lib64/"
+cp libelf/libelf.h libelf/gelf.h libelf/nlist.h "$OUT/usr/include/"
+cp libelf/elf-knowledge.h "$OUT/usr/include/elfutils/"
+
+cp -P libdw/libdw.so* "$OUT/usr/lib64/"
+cp libdw/libdw.a "$OUT/usr/lib64/"
+cp libdw/dwarf.h "$OUT/usr/include/"
+cp libdw/libdw.h libdw/known-dwarf.h "$OUT/usr/include/elfutils/"
+cp libdwfl/libdwfl.h "$OUT/usr/include/elfutils/"
+
+cp -P libasm/libasm.so* "$OUT/usr/lib64/"
+cp libasm/libasm.a "$OUT/usr/lib64/"
+cp libasm/libasm.h "$OUT/usr/include/elfutils/"
+
+for pc in config/libelf.pc config/libdw.pc; do
+    if [ -f "$pc" ]; then
+        sed "s|@prefix@|/usr|g; s|@exec_prefix@|/usr|g; s|@libdir@|/usr/lib64|g; s|@includedir@|/usr/include|g; s|@PACKAGE_VERSION@|0.194|g" "$pc" > "$OUT/usr/lib64/pkgconfig/$(basename $pc)"
+    fi
+done
+""",
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/compression/zstd:zstd",
+    ],
+)

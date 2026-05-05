@@ -1,33 +1,29 @@
+load("//defs:package.bzl", "package")
+
 # cpufrequtils - CPU Frequency Utilities
 # Tools for managing CPU frequency scaling
 
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
-
-download_source(
-    name = "cpufrequtils-src",
-    src_uri = "https://kernel.org/pub/linux/utils/kernel/cpufreq/cpufrequtils-008.tar.xz",
-    sha256 = "a2149db551f83112209b1a8e79bd50d386979bbf64edbc69126f4e0b4f0a4cab",
-    signature_required = False,
-)
-
-autotools_package(
+package(
     name = "cpufrequtils",
-    source = ":cpufrequtils-src",
+    build_rule = "autotools",
+    skip_configure = True,
+    url = "https://kernel.org/pub/linux/utils/kernel/cpufreq/cpufrequtils-008.tar.xz",
+
+    sha256 = "a2149db551f83112209b1a8e79bd50d386979bbf64edbc69126f4e0b4f0a4cab",
     version = "008",
     description = "CPU frequency scaling utilities",
     homepage = "https://kernel.org/",
     license = "GPL-2.0",
-    configure_args = [],
     make_args = [
         "prefix=/usr",
         "sbindir=/usr/sbin",
         "mandir=/usr/share/man",
         "libdir=/usr/lib",
     ],
-    post_install = """
-        make DESTDIR=$OUT prefix=/usr install
-    """,
+    install_targets = ["all"],
+    post_install_cmds = ["""
+        make -C "$BUILD_DIR" DESTDIR=$OUT prefix=/usr install
+    """],
     deps = [
     ],
     visibility = ["PUBLIC"],

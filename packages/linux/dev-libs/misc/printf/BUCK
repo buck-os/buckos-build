@@ -1,11 +1,12 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
-cmake_package(
+package(
+    build_rule = "cmake",
     name = "printf",
     version = "6.2.0",
-    src_uri = "https://github.com/eyalroz/printf/archive/refs/tags/v6.2.0.tar.gz",
+    url = "https://github.com/eyalroz/printf/archive/refs/tags/v6.2.0.tar.gz",
     sha256 = "ea55495de1985ef53dbf5c055b032836c25c008df31a36180d25b4a234faa755",
-    cmake_args = [
+    configure_args = [
         "-DBUILD_TESTS=OFF",
         "-DBUILD_SHARED_LIBS=ON",
     ],

@@ -1,36 +1,28 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "mypaint-src",
-    src_uri = "https://github.com/mypaint/mypaint/releases/download/v2.0.1/mypaint-2.0.1.tar.xz",
-    sha256 = "f3e437d7cdd5fd28ef6532e8ab6b4b05d842bcdd644f16a0162dad3d8e57bb16",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "mypaint",
-    source = ":mypaint-src",
+    url = "https://github.com/mypaint/mypaint/releases/download/v2.0.1/mypaint-2.0.1.tar.xz",
+
+    sha256 = "f3e437d7cdd5fd28ef6532e8ab6b4b05d842bcdd644f16a0162dad3d8e57bb16",
+    use_configure = {
+        "openmp": ("--enable-openmp", "--disable-openmp"),
+    },
     version = "2.0.1",
     description = "Simple drawing and painting program for digital artists",
     homepage = "https://mypaint.app/",
     license = "GPL-2.0-or-later",
-    pre_configure = """
-python setup.py build
-""",
     configure_args = [],
     make_args = [],
-    post_install = """
+    post_install_cmds = ["""
 python setup.py install --prefix=/usr --root=$OUT
-""",
+"""],
     deps = [
         "//packages/linux/desktop/gtk:gtk3",
-        "//packages/linux/dev-libs/glib:glib",
-        "//packages/linux/lang/python:python",
-        "//packages/linux/graphics/utilities/libmypaint:libmypaint",
+                "//packages/linux/dev-libs/glib:glib",
+                "//packages/linux/lang/python:python",
+                "//packages/linux/graphics/utilities/libmypaint:libmypaint",
+                "//packages/linux/lang/python:python"
     ],
-    bdepend = [
-        "//packages/linux/lang/python:python",
-    ],
-    visibility = ["PUBLIC"],
 )

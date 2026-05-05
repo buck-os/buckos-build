@@ -1,5 +1,4 @@
-load("//defs:package_defs.bzl", "autotools_package", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # dracut - Modern initramfs infrastructure
@@ -7,53 +6,33 @@ load("//defs:use_flags.bzl", "set_use_flags")
 # Event-driven initramfs generator used by Fedora, RHEL, openSUSE.
 # Supports modular configuration, network boot, encryption, LVM, RAID.
 
-download_source(
-    name = "dracut-src",
-    src_uri = "https://github.com/dracut-ng/dracut-ng/archive/refs/tags/103.tar.gz",
-    sha256 = "9a92b4f0643926a65162171d68b9525fc93e6e82f455a4b3938db385a841bda8",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "dracut",
-    source = ":dracut-src",
+    url = "https://github.com/dracut-ng/dracut-ng/archive/refs/tags/103.tar.gz",
+
+    sha256 = "9a92b4f0643926a65162171d68b9525fc93e6e82f455a4b3938db385a841bda8",
     version = "103",
     description = "Event-driven initramfs infrastructure (Fedora/RHEL default)",
     homepage = "https://github.com/dracut-ng/dracut-ng",
     license = "GPL-2.0-or-later",
-    iuse = ["systemd", "cryptsetup"],
-    use_defaults = ["systemd"],
-    use_deps = {
-        "systemd": ["//packages/linux/system/init/systemd:systemd"],
-        "cryptsetup": ["//packages/linux/system/security/cryptsetup:cryptsetup"],
+    use_configure = {
+        "dracut-cpio": ("--enable-dracut-cpio", "--disable-dracut-cpio"),
+        "selinux": ("--enable-selinux", "--disable-selinux"),
     },
-    pre_configure = """
-# dracut uses a custom configure script (not autotools)
-./configure \
-    --prefix=/usr \
-    --sysconfdir=/etc \
-    --libdir=/usr/lib \
-    --systemdsystemunitdir=/usr/lib/systemd/system \
-    --bashcompletiondir=/usr/share/bash-completion/completions
-
-# Build the C utilities (dracut-install, skipcpio, dracut-util)
-make dracut-install skipcpio dracut-util
-
-# Build dracut-cpio (Rust-based cpio implementation)
-if [ -d src/dracut-cpio ]; then
-    cd src/dracut-cpio
-    cargo build --release
-    cd ../..
-fi
-
-# Skip the autotools configure phase
-touch configure.done
-""",
+    use_deps = {
+        "systemd": "//packages/linux/system/init/systemd:systemd",
+        "cryptsetup": "//packages/linux/system/filesystem/management/cryptsetup:cryptsetup",
+    },
     # Override src_configure to do nothing (we configured in pre_configure)
     configure_args = ["--help || true"],  # No-op to satisfy autotools eclass
-    make_args = [],
-    post_install = """
+    make_args = ["dracut-install", "src/skipcpio/skipcpio", "dracut-util", "dracut.pc"],
+    # Skip default 'make install' (needs asciidoc for man pages); post_install_cmds handles it
+    install_targets = ["dracut-install"],
+    post_install_cmds = ["""
 # Manual installation since 'make install' requires asciidoc for man pages
+# NOTE: post_install_cmds run with cwd=$DESTDIR, source files are in $BUILD_DIR
+BD="$BUILD_DIR"
 
 # Create directories
 mkdir -p "$DESTDIR/usr/bin"
@@ -63,63 +42,62 @@ mkdir -p "$DESTDIR/usr/share/bash-completion/completions"
 mkdir -p "$DESTDIR/usr/share/pkgconfig"
 
 # Install main scripts
-cp dracut.sh "$DESTDIR/usr/bin/dracut"
+cp "$BD/dracut.sh" "$DESTDIR/usr/bin/dracut"
 chmod +x "$DESTDIR/usr/bin/dracut"
 
-cp lsinitrd.sh "$DESTDIR/usr/bin/lsinitrd"
+cp "$BD/lsinitrd.sh" "$DESTDIR/usr/bin/lsinitrd"
 chmod +x "$DESTDIR/usr/bin/lsinitrd"
 
 # Install C utilities
-if [ -f src/install/dracut-install ]; then
-    cp src/install/dracut-install "$DESTDIR/usr/lib/dracut/"
+if [ -f "$BD/src/install/dracut-install" ]; then
+    cp "$BD/src/install/dracut-install" "$DESTDIR/usr/lib/dracut/"
     chmod +x "$DESTDIR/usr/lib/dracut/dracut-install"
     ln -sf ../lib/dracut/dracut-install "$DESTDIR/usr/bin/dracut-install"
 fi
 
-if [ -f src/skipcpio/skipcpio ]; then
-    cp src/skipcpio/skipcpio "$DESTDIR/usr/lib/dracut/"
+if [ -f "$BD/src/skipcpio/skipcpio" ]; then
+    cp "$BD/src/skipcpio/skipcpio" "$DESTDIR/usr/lib/dracut/"
     chmod +x "$DESTDIR/usr/lib/dracut/skipcpio"
 fi
 
-if [ -f dracut-util ]; then
-    cp dracut-util "$DESTDIR/usr/lib/dracut/"
+if [ -f "$BD/src/util/util" ]; then
+    cp "$BD/src/util/util" "$DESTDIR/usr/lib/dracut/dracut-util"
     chmod +x "$DESTDIR/usr/lib/dracut/dracut-util"
 fi
 
 # Install dracut-cpio to /usr/lib/dracut/dracut-cpio (where dracut expects it for --enhanced-cpio)
-# dracut-cpio is a specialized optimized cpio implementation used when --enhanced-cpio flag is passed
-if [ -f src/dracut-cpio/target/release/dracut-cpio ]; then
-    cp src/dracut-cpio/target/release/dracut-cpio "$DESTDIR/usr/lib/dracut/dracut-cpio"
+if [ -f "$BD/src/dracut-cpio/target/release/dracut-cpio" ]; then
+    cp "$BD/src/dracut-cpio/target/release/dracut-cpio" "$DESTDIR/usr/lib/dracut/dracut-cpio"
     chmod +x "$DESTDIR/usr/lib/dracut/dracut-cpio"
     echo "Installed dracut-cpio to /usr/lib/dracut/dracut-cpio"
 fi
 
 # Install support scripts to /usr/lib/dracut
 for script in dracut-functions.sh dracut-init.sh dracut-logger.sh dracut-initramfs-restore.sh; do
-    if [ -f "$script" ]; then
-        cp "$script" "$DESTDIR/usr/lib/dracut/"
+    if [ -f "$BD/$script" ]; then
+        cp "$BD/$script" "$DESTDIR/usr/lib/dracut/"
     fi
 done
 
 # Install modules (critical!)
-if [ -d modules.d ]; then
-    cp -a modules.d "$DESTDIR/usr/lib/dracut/"
+if [ -d "$BD/modules.d" ]; then
+    cp -a "$BD/modules.d" "$DESTDIR/usr/lib/dracut/"
 fi
 
 # Install default configuration
-cp dracut.conf "$DESTDIR/etc/dracut.conf"
-if [ -d dracut.conf.d ]; then
-    cp -a dracut.conf.d/* "$DESTDIR/etc/dracut.conf.d/" 2>/dev/null || true
+cp "$BD/dracut.conf" "$DESTDIR/etc/dracut.conf"
+if [ -d "$BD/dracut.conf.d" ]; then
+    cp -a "$BD/dracut.conf.d"/* "$DESTDIR/etc/dracut.conf.d/" 2>/dev/null || true
 fi
 
 # Install pkgconfig file
-if [ -f dracut.pc ]; then
-    cp dracut.pc "$DESTDIR/usr/share/pkgconfig/"
+if [ -f "$BD/dracut.pc" ]; then
+    cp "$BD/dracut.pc" "$DESTDIR/usr/share/pkgconfig/"
 fi
 
 # Install bash completion
-if [ -d shell-completion/bash ]; then
-    cp shell-completion/bash/* "$DESTDIR/usr/share/bash-completion/completions/" 2>/dev/null || true
+if [ -d "$BD/shell-completion/bash" ]; then
+    cp "$BD/shell-completion/bash"/* "$DESTDIR/usr/share/bash-completion/completions/" 2>/dev/null || true
 fi
 
 # Create BuckOS-specific configuration based on USE flags
@@ -174,31 +152,30 @@ fi
 echo "Dracut installation complete"
 ls -la "$DESTDIR/usr/bin/"
 ls -la "$DESTDIR/usr/lib/dracut/" | head -20
-""",
+"""],
     deps = [
         "//packages/linux/system/libs/kmod:kmod",
         "//packages/linux/core/bash:bash",
         "//packages/linux/system/apps/coreutils:coreutils",
         "//packages/linux/core/util-linux:util-linux",
-        "//packages/linux/core/xz:xz",
+        "//packages/linux/system/libs/compression/xz:xz",
         "//packages/linux/system/apps/findutils:findutils",
         "//packages/linux/editors/sed:sed",
         "//packages/linux/system/libs/compression/gzip:gzip",
         "//packages/linux/editors/grep:grep",
         "//packages/linux/system/libs/compression/zstd:zstd",  # Required for compression
-        "//packages/linux/system/init/eudev:eudev",  # Required for udev support
+        "//packages/virtual/libudev:libudev",  # Required for udev support
         "//packages/linux/core/zlib:zlib",  # Required by dracut-install
-        "//packages/linux/lang/gcc:gcc",  # Required for libgcc_s.so.1
-        "//packages/linux/lang/rust:rust",  # Required for building dracut-cpio
+        "//packages/linux/lang/gcc:gcc-native",  # Required for libgcc_s.so.1
         "//packages/linux/system/libs/cpio:cpio",  # Required for building initramfs archives
     ],
-    visibility = ["PUBLIC"],
+    host_deps = [
+        "//packages/linux/lang/rust:rust",  # Required for building dracut-cpio
+    ],
 )
 
 # Dracut modules for common boot scenarios
 filegroup(
     name = "dracut-modules",
-    srcs = [":dracut"],
     default_target_platform = "//platforms:linux-target",
-    visibility = ["PUBLIC"],
 )

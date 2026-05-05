@@ -1,20 +1,18 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "insightface",
-    version = "0.7.3",
-    src_uri = "https://github.com/deepinsight/insightface/archive/refs/tags/v0.7.3.tar.gz",
-    sha256 = "TODO",
+    version = "0.7",
+    url = "https://github.com/deepinsight/insightface/archive/refs/tags/v0.7.tar.gz",
+    sha256 = "1e7b8904d693eb1b2f838b7a771f73577712ec3026ee98ab7354ffa7bf9cfb96",
     deps = [
-        "//packages/linux/dev-libs/python/numpy",
-        "//packages/linux/dev-libs/python/pillow",
-        "//packages/linux/dev-libs/python/scipy",
-        "//packages/linux/dev-libs/python/matplotlib",
-        "//packages/linux/dev-libs/python/scikit-learn",
-        "//packages/linux/dev-libs/python/scikit-image",
-        "//packages/linux/dev-libs/python/tqdm",
-        "//packages/linux/dev-libs/python/requests",
-        "//packages/linux/dev-libs/python/cython",
-        "//packages/linux/ai/inference/onnxruntime",
+        "//packages/linux/dev-libs/python/pillow:pillow",
+        "//packages/linux/dev-libs/python/matplotlib:matplotlib",
+        "//packages/linux/dev-libs/python/scikit-learn:scikit-learn",
+        "//packages/linux/dev-libs/python/scikit-image:scikit-image",
+        "//packages/linux/dev-libs/python/tqdm:tqdm",
+        "//packages/linux/dev-libs/python/requests:requests",
+        "//packages/linux/ai/inference/onnxruntime:onnxruntime",
     ],
 )

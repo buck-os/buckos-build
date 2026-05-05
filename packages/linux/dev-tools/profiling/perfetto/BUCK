@@ -1,21 +1,37 @@
-load("//defs:package_defs.bzl", "cmake_package")
+load("//defs:package.bzl", "package")
 
 # Perfetto - System profiling, app tracing and trace analysis
+# The Perfetto SDK provides a CMakeLists.txt in sdk/ subdirectory
 
-cmake_package(
+package(
+    build_rule = "binary",
     name = "perfetto",
     version = "46.0",
-    src_uri = "https://github.com/google/perfetto/archive/refs/tags/v46.0.tar.gz",
+    url = "https://github.com/google/perfetto/archive/refs/tags/v46.0.tar.gz",
     sha256 = "dfc9b645c020d7a7469bae73d7432545b8005411c8176f46f04875058df0aa97",
     description = "System profiling, app tracing and trace analysis",
     homepage = "https://perfetto.dev/",
     license = "Apache-2.0",
+    install_script = """
+cd "$SRCS"
+
+# Build Perfetto SDK (single-file amalgamation)
+if [ -f sdk/perfetto.cc ] && [ -f sdk/perfetto.h ]; then
+    $CXX $CFLAGS -std=c++17 -fPIC -DNDEBUG -O2 -c sdk/perfetto.cc -o perfetto.o
+    $AR rcs libperfetto.a perfetto.o
+    $CXX $CFLAGS -std=c++17 -fPIC -shared -o libperfetto.so perfetto.o $LDFLAGS
+
+    mkdir -p "$OUT/usr/lib" "$OUT/usr/include"
+    install -m644 libperfetto.a "$OUT/usr/lib/"
+    install -m755 libperfetto.so "$OUT/usr/lib/"
+    install -m644 sdk/perfetto.h "$OUT/usr/include/"
+else
+    echo "Perfetto SDK files not found, installing headers only"
+    mkdir -p "$OUT/usr/include"
+    find . -name '*.h' -path '*/include/*' -exec cp --parents {} "$OUT/usr/" \\; 2>/dev/null || true
+fi
+""",
     deps = [
         "//packages/linux/core/zlib:zlib",
     ],
-    cmake_args = [
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DPERFETTO_BUILD_SDK_ONLY=ON",
-    ],
-    visibility = ["PUBLIC"],
 )

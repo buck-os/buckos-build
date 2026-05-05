@@ -1,23 +1,20 @@
-load("//defs:package_defs.bzl", "download_source", "meson_package")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "wob-src",
-    src_uri = "https://github.com/francma/wob/archive/0.15.1.tar.gz",
-    sha256 = "094f666e799a7fa0914192d041032f4e9a28a87486d024db80ade010988b218a",
-    signature_required = False,
-)
-
-meson_package(
+package(
+    build_rule = "meson",
     name = "wob",
-    source = ":wob-src",
+    url = "https://github.com/francma/wob/archive/0.15.1.tar.gz",
+
+    sha256 = "094f666e799a7fa0914192d041032f4e9a28a87486d024db80ade010988b218a",
     version = "0.15.1",
     description = "A lightweight overlay volume/backlight/progress/anything bar for Wayland",
     homepage = "https://github.com/francma/wob",
     license = "ISC",
-    meson_args = [],
+    configure_args = [],
     deps = [
-        "//packages/linux/desktop/wayland:wayland",
-        "//packages/linux/desktop/wayland:wayland-protocols",
+        "//packages/linux/system/libs/utility/libffi:libffi",
+        "//packages/linux/graphics/rendering/wayland:wayland",
+        "//packages/linux/graphics/rendering/wayland-protocols:wayland-protocols",
+        "//packages/linux/dev-libs/parsers/inih:inih",
     ],
-    visibility = ["PUBLIC"],
 )

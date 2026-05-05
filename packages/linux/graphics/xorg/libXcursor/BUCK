@@ -1,24 +1,34 @@
-load("//defs:package_defs.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # libXcursor - X Cursor library
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libXcursor",
     version = "1.2.2",
-    src_uri = "https://xorg.freedesktop.org/archive/individual/lib/libXcursor-1.2.2.tar.xz",
+    url = "https://xorg.freedesktop.org/archive/individual/lib/libXcursor-1.2.2.tar.xz",
     sha256 = "53d071bd2cc56e517a30998d5e685c8a74556ddada43c6985d14da9a023a88ee",
     description = "X Cursor library",
     homepage = "https://xorg.freedesktop.org/",
     license = "MIT",
     configure_args = [
+        # Cross-compilation: malloc(0) returns non-NULL on Linux/glibc
+        "--enable-malloc0returnsnull=no",
         "--prefix=/usr",
         "--sysconfdir=/etc",
         "--libdir=/usr/lib64",
     ],
+    # Remove .la files that cause libtool path issues
+    post_install_cmds = ["""\
+find \"$DESTDIR\" -name '*.la' -delete
+"""],
     deps = [
         "//packages/linux/graphics/xorg/libX11:libX11",
         "//packages/linux/graphics/xorg/libXfixes:libXfixes",
         "//packages/linux/graphics/xorg/libXrender:libXrender",
         "//packages/linux/graphics/xorg/xorgproto:xorgproto",
+        # Transitive deps for pkg-config
+        "//packages/linux/graphics/xorg/libxcb:libxcb",
+        "//packages/linux/graphics/xorg/libXau:libXau",
+        "//packages/linux/graphics/xorg/libXdmcp:libXdmcp",
     ],
-    visibility = ["PUBLIC"],
 )

@@ -1,9 +1,10 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "delta_sharing",
     version = "1.3.1",
-    src_uri = "https://github.com/delta-io/delta-sharing/archive/refs/tags/v1.3.1.tar.gz",
+    url = "https://github.com/delta-io/delta-sharing/archive/refs/tags/v1.3.1.tar.gz",
     sha256 = "7a13026a19dc245658cee0faee1dac4bda2ea8d41ecb79f806f4b76ef9418bc8",
     deps = [
         "//packages/linux/dev-libs/python/pandas:pandas",

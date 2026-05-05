@@ -1,12 +1,12 @@
-load("//defs:package_defs.bzl", "python_package")
+load("//defs:package.bzl", "package")
 
-python_package(
+package(
+    build_rule = "python",
     name = "triton_viz",
     version = "2.0",
-    src_uri = "https://github.com/Deep-Learning-Profiling-Tools/triton-viz/archive/refs/heads/main.tar.gz",
-    sha256 = "TODO",
+    url = "https://github.com/Deep-Learning-Profiling-Tools/triton-viz/archive/refs/tags/v2.0.tar.gz",
+    sha256 = "7f8a1dcad690069513b7687ef5b702c6085a175b0dde1cac51ce2f630c8fb34e",
     deps = [
-        "//packages/linux/dev-libs/python/numpy",
-        "//packages/linux/lang/python/jinja2",
+        "//packages/linux/lang/python/jinja2:jinja2",
     ],
 )

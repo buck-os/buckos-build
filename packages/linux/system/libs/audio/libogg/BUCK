@@ -1,16 +1,12 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags")
+load("//defs:package.bzl", "package")
 
-download_source(
-    name = "libogg-src",
-    src_uri = "https://downloads.xiph.org/releases/ogg/libogg-1.3.5.tar.xz",
-    sha256 = "c4d91be36fc8e54deae7575241e03f4211eb102afb3fc0775fbbc1b740016705",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libogg",
-    source = ":libogg-src",
+    source = "//packages/linux/media/audio/ogg:ogg-src",
+    use_configure = {
+        "static-libs": ("--enable-static", "--disable-static"),
+    },
     version = "1.3.5",
     description = "Ogg bitstream and framing library",
     homepage = "https://xiph.org/ogg/",
@@ -18,5 +14,11 @@ autotools_package(
     configure_args = [
         "--disable-static",
     ],
-    visibility = ["PUBLIC"],
+    libraries = ["ogg"],
+    # Skip test programs — they fail to link in the install phase
+    # because the build dir is a read-only Buck2 artifact.
+    make_args = ["noinst_PROGRAMS="],
+    post_install_cmds = [
+        "find . -name '*.la' -delete || true",
+    ],
 )

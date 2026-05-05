@@ -1,18 +1,59 @@
-load("//defs:package_defs.bzl", "cargo_package")
+load("//defs:package.bzl", "package")
 
-cargo_package(
+# Git dependencies that libsignal patches in Cargo.toml
+# boringssl is a submodule in the boring crate
+package(
+    build_rule = "cargo",
     name = "libsignal-0.23.1",
     version = "0.23.1",
-    src_uri = "https://github.com/signalapp/libsignal/archive/refs/tags/v0.23.1.tar.gz",
+    url = "https://github.com/signalapp/libsignal/archive/refs/tags/v0.23.1.tar.gz",
     sha256 = "36eff4a90b13bbc769c4af118dbe9686aa1e38dcf9ad4b09dca8e8274bc6c8ee",
-    signature_required = False,
     description = "Signal Protocol cryptographic library",
     homepage = "https://github.com/signalapp/libsignal",
     license = "AGPL-3.0-only",
-    cargo_args = [
-        "--manifest-path=rust/bridge/ffi/Cargo.toml",
-        "--lib",
-    ],
-    deps = [],
-    visibility = ["PUBLIC"],
+    pre_configure_cmds = ["""
+# Find and copy git dependencies from bdepend sources
+CURVE_SRC=""
+BORING_SRC=""
+BORINGSSL_SRC=""
+
+IFS=':' read -ra DEP_DIRS <<< "$DEP_BASE_DIRS"
+for dep_dir in "${DEP_DIRS[@]}"; do
+    if [[ "$dep_dir" == *"curve25519-dalek"* ]]; then
+        CURVE_SRC="$dep_dir"
+    fi
+    if [[ "$dep_dir" == *"boring-src"* ]] && [[ "$dep_dir" != *"boringssl"* ]]; then
+        BORING_SRC="$dep_dir"
+    fi
+    if [[ "$dep_dir" == *"boringssl"* ]]; then
+        BORINGSSL_SRC="$dep_dir"
+    fi
+done
+
+# Copy git dependencies to local paths
+mkdir -p vendor-git
+if [ -n "$CURVE_SRC" ]; then
+    echo "Copying curve25519-dalek from $CURVE_SRC"
+    cp -r "$CURVE_SRC" vendor-git/curve25519-dalek
+fi
+if [ -n "$BORING_SRC" ]; then
+    echo "Copying boring from $BORING_SRC"
+    cp -r "$BORING_SRC" vendor-git/boring
+
+    # boring expects boringssl in boring-sys/deps/boringssl
+    if [ -n "$BORINGSSL_SRC" ]; then
+        echo "Copying boringssl into boring-sys/deps/"
+        mkdir -p vendor-git/boring/boring-sys/deps
+        cp -r "$BORINGSSL_SRC" vendor-git/boring/boring-sys/deps/boringssl
+    fi
+fi
+
+# Patch Cargo.toml to use local paths instead of git URLs
+sed -i "s|curve25519-dalek = { git = 'https://github.com/signalapp/curve25519-dalek', branch = 'lizard2' }|curve25519-dalek = { path = 'vendor-git/curve25519-dalek' }|" Cargo.toml
+sed -i "s|boring = { git = 'https://github.com/signalapp/boring', branch = 'libsignal'}|boring = { path = 'vendor-git/boring/boring' }|" Cargo.toml
+
+# Also need to patch boring-sys reference if it exists
+sed -i "s|boring-sys = { git = 'https://github.com/signalapp/boring', branch = 'libsignal'}|boring-sys = { path = 'vendor-git/boring/boring-sys' }|" Cargo.toml
+"""],
+    deps = [":curve25519-dalek-src", ":boring-src", ":boringssl-src"],
 )

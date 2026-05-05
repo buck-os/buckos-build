@@ -1,37 +1,48 @@
-load("//defs:package_defs.bzl", "download_source", "autotools_package", "binary_package", "autotools_package")
-load("//defs:use_flags.bzl", "set_use_flags", "use_dep")
+load("//defs:package.bzl", "package")
 
 # =============================================================================
 # Node.js - JavaScript runtime
 # =============================================================================
 
-download_source(
-    name = "nodejs-src",
-    src_uri = "https://nodejs.org/dist/v20.11.0/node-v20.11.0.tar.xz",
-    sha256 = "31807ebeeeb049c53f1765e4a95aed69476a4b696dd100cb539ab668d7950b40",
-    signature_required = False,
-)
-
-autotools_package(
+package(
+    build_rule = "binary",
     name = "nodejs",
-    source = ":nodejs-src",
-    version = "20.11.0",
+    version = "22.22.0",
+    url = "https://nodejs.org/dist/v22.22.0/node-v22.22.0.tar.xz",
+    sha256 = "4c138012bb5352f49822a8f3e6d1db71e00639d0c36d5b6756f91e4c6f30b683",
     description = "Node.js is a JavaScript runtime built on Chrome's V8 JavaScript engine",
     homepage = "https://nodejs.org/",
     license = "MIT",
-    pre_configure = """
-        # Node.js uses a Python configure script
-        chmod +x configure
-    """,
-    configure_args = [
-        "--prefix=/usr",
-        "--shared-zlib",
-        "--shared-openssl",
-        "--with-intl=system-icu",
+    pre_configure_cmds = [
+        # Allow Python 3.14 (not in Node 22's supported list)
+        "sed -i 's/(3, 13),/(3, 14), (3, 13),/' configure.py || true",
+        "sed -i 's/(3, 13),/(3, 14), (3, 13),/' configure || true",
     ],
-    deps = [
-        "//packages/linux/core/zlib:zlib",
-        "//packages/linux/network/openssl:openssl",
+    install_script = """
+cd "$SRCS"
+
+# Node's configure calls bare 'python'; create symlink if python3 exists
+_py3=$(command -v python3 2>/dev/null || true)
+if [ -n "$_py3" ]; then
+    _pydir=$(mktemp -d)
+    ln -s "$_py3" "$_pydir/python"
+    export PATH="$_pydir:$PATH"
+fi
+
+# Node.js uses its own configure script that doesn't accept standard autotools flags
+# Only pass Node.js-compatible options
+./configure \
+    --prefix=/usr \
+    --with-intl=full-icu \
+    --without-npm \
+    --without-corepack
+
+make -j${MAKEOPTS:-$(nproc)}
+
+make DESTDIR="$OUT" install
+""",
+    host_deps = [
+        "//packages/linux/lang/python:python-host",
     ],
-    visibility = ["PUBLIC"],
+    deps = [],
 )
