@@ -13,12 +13,17 @@ BuckOS uses a modular kernel configuration system that allows:
 
 ## Kernel Version
 
-BuckOS uses the **Linux 6.12 LTS** kernel (released November 2024), which is supported until December 2026. This provides:
+BuckOS defaults to the **Linux 6.18** mainline kernel.  The alias
+`//packages/linux/kernel/src:linux-src` points at `:linux-6.18-src`; the
+6.12 LTS series remains available as `:linux-lts-src` (supported until
+December 2026) for builds that want a long-term-support base.
 
-- Long-term stability and security updates
-- Real-time `PREEMPT_RT` support
-- New `sched_ext` scheduler
-- Improved hardware support
+Both kernels provide:
+
+- Modern hardware support
+- Real-time `PREEMPT_RT` (where the config enables it)
+- The `sched_ext` scheduler
+- Standard upstream Linux security updates
 
 ## Available Kernel Packages
 
@@ -100,6 +105,8 @@ load("//defs/rules:kernel.bzl", "kernel_build", "kernel_config")
 # Merge fragments into a final config
 kernel_config(
     name = "my-kernel-config",
+    source = "//packages/linux/kernel/src:linux-src",  # required
+    version = "6.18",                                  # required
     fragments = [
         "//packages/linux/kernel/configs:base.config",
         "//packages/linux/kernel/configs:filesystem.config",
@@ -113,7 +120,7 @@ kernel_config(
 kernel_build(
     name = "my-kernel",
     source = "//packages/linux/kernel/src:linux-src",
-    version = "6.12.6",
+    version = "6.18",
     config_dep = ":my-kernel-config",
     visibility = ["PUBLIC"],
 )
@@ -133,7 +140,7 @@ Use when you have a complete kernel configuration from another source:
 kernel_build(
     name = "my-kernel",
     source = "//packages/linux/kernel/src:linux-src",
-    version = "6.12.6",
+    version = "6.18",
     config = "my-complete.config",  # Your full config file
     visibility = ["PUBLIC"],
 )
@@ -157,7 +164,7 @@ For development or minimal builds:
 kernel_build(
     name = "dev-kernel",
     source = "//packages/linux/kernel/src:linux-src",
-    version = "6.12.6",
+    version = "6.18",
     # No config = uses make defconfig
     visibility = ["PUBLIC"],
 )
@@ -183,6 +190,8 @@ This allows you to:
 ```python
 kernel_config(
     name = "desktop-config",
+    source = "//packages/linux/kernel/src:linux-src",
+    version = "6.18",
     fragments = [
         "//packages/linux/kernel/configs:base.config",
         "//packages/linux/kernel/configs:filesystem.config",
@@ -199,6 +208,8 @@ kernel_config(
 ```python
 kernel_config(
     name = "embedded-config",
+    source = "//packages/linux/kernel/src:linux-src",
+    version = "6.18",
     fragments = [
         "//packages/linux/kernel/configs:base.config",
         "//packages/linux/kernel/configs:filesystem.config",
@@ -212,6 +223,8 @@ kernel_config(
 ```python
 kernel_config(
     name = "cloud-config",
+    source = "//packages/linux/kernel/src:linux-src",
+    version = "6.18",
     fragments = [
         "//packages/linux/kernel/configs:base.config",
         "//packages/linux/kernel/configs:filesystem.config",
@@ -272,9 +285,12 @@ Compose with base fragments and build:
 
 ```python
 load("//defs/rules:kernel.bzl", "kernel_build", "kernel_config")
+load("//defs/packages:binary.bzl", "binary_package")
 
 kernel_config(
     name = "dpu-config",
+    source = "//packages/linux/kernel/src:linux-src",
+    version = "6.18",
     fragments = [
         "//packages/linux/kernel/configs:base.config",
         "//packages/linux/kernel/configs:network.config",
@@ -283,17 +299,23 @@ kernel_config(
     ],
 )
 
-# Optional: download external module sources
-download_source(
-    name = "custom-driver-src",
-    src_uri = "https://example.com/custom-driver-1.0.tar.gz",
+# Optional: download external module sources.  binary_package with
+# install_script = "true" produces a :name-src target whose extracted
+# directory is the source tree — exactly what kernel_build's modules
+# attribute expects.
+binary_package(
+    name = "custom-driver",
+    version = "1.0",
+    url = "https://example.com/custom-driver-1.0.tar.gz",
     sha256 = "...",
+    format = "tar.gz",
+    install_script = "true",
 )
 
 kernel_build(
     name = "dpu-kernel",
     source = "//packages/linux/kernel/src:linux-src",
-    version = "6.17.10",
+    version = "6.18",
     config_dep = ":dpu-config",
     modules = [
         ":custom-driver-src",  # External modules built against this kernel
@@ -320,9 +342,9 @@ load("//defs/rules:image.bzl", "raw_disk_image")
 rootfs(
     name = "dpu-rootfs",
     packages = [
-        "//packages/linux/core:musl",
-        "//packages/linux/core:busybox",
-        "//packages/linux/core:iproute2",
+        "//packages/linux/core/musl:musl",
+        "//packages/linux/core/busybox:busybox",
+        "//packages/linux/network/iproute2:iproute2",
         # Add DPU management packages as needed
     ],
 )
@@ -354,13 +376,22 @@ Merges multiple configuration fragments into a single .config file.
 ```python
 kernel_config(
     name = "config-name",
+    source = "//packages/linux/kernel/src:linux-src",  # required
+    version = "6.18",                                  # required
     fragments = [
         "fragment1.config",
         "fragment2.config",
         # Later fragments override earlier ones
     ],
+    # Optional:
+    # defconfig = "x86_64_defconfig",
+    # arch = "x86_64",
 )
 ```
+
+The kernel `source` is required because Kconfig (`make olddefconfig`) needs
+to read the kernel's Kconfig files to resolve fragment options against the
+target version's actual config schema.
 
 ### `kernel_build`
 
@@ -370,7 +401,7 @@ Builds a Linux kernel with the specified configuration, optional patches, and ex
 kernel_build(
     name = "kernel-name",
     source = "//packages/linux/kernel/src:linux-src",
-    version = "6.12.6",
+    version = "6.18",
 
     # Use ONE of these config options:
     config = "path/to/config.file",  # Direct config file
@@ -385,8 +416,8 @@ kernel_build(
 
     # Optional: external module sources to compile against this kernel
     modules = [
-        ":my-driver-src",              # download_source target
-        "//packages/linux/kernel/modules/custom:src",
+        ":my-driver-src",              # extracted-source (:name-src) target
+        "//packages/linux/kernel/modules/custom:custom-src",
     ],
 
     visibility = ["PUBLIC"],
@@ -396,14 +427,17 @@ kernel_build(
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `name` | string | required | Target name |
-| `source` | dep | required | Kernel source (download_source target) |
+| `source` | dep | required | Kernel source (a `:name-src` extracted-source target) |
 | `version` | string | required | Kernel version string |
 | `config` | source | None | Direct path to .config file |
 | `config_dep` | dep | None | Config from kernel_config rule |
 | `arch` | string | "x86_64" | Target architecture (x86_64 or aarch64) |
-| `cross_toolchain` | dep | None | Cross-compilation toolchain |
+| `cross_toolchain` | dep | None | Cross-compilation toolchain — only applied when `arch == "aarch64"` (see `defs/rules/kernel.bzl:141`) |
 | `patches` | list[source] | [] | Patch files applied with `patch -p1` before build |
 | `modules` | list[dep] | [] | External module sources to compile |
+| `config_base` | string | None | Base config (e.g. `defconfig`, `tinyconfig`) applied before merging fragments |
+| `inject_files` | dict[string, source] | {} | Files to drop into the source tree before configure (dest path → source) |
+| `kcflags` | string | None | Extra `KCFLAGS` passed to `make` for the kernel build |
 | `visibility` | list | [] | Target visibility |
 
 **Patches** are applied after the kernel source is copied to the build directory
@@ -412,10 +446,12 @@ if any patch fails to apply. Patches from the private patch registry
 (`patches/registry.bzl`) are automatically appended.
 
 **Modules** are compiled after the kernel build completes using
-`make -C $KERNEL_BUILD M=$MODULE_SRC modules`. Each module source is a
-`download_source` target whose extracted directory contains a Makefile/Kbuild
-file. Built `.ko` files are installed to `lib/modules/$KRELEASE/extra/` and
-`depmod` runs automatically to generate module dependency metadata.
+`make -C $KERNEL_BUILD M=$MODULE_SRC modules`. Each module source is an
+extracted-source target (typically the auto-generated `:name-src` from a
+`binary_package(..., install_script = "true")` or `autotools_package(...)`
+call) whose extracted directory contains a Makefile/Kbuild file.  Built
+`.ko` files are installed to `lib/modules/$KRELEASE/extra/` and `depmod`
+runs automatically to generate module dependency metadata.
 
 ### External Kernel Modules
 
@@ -427,17 +463,23 @@ The simplest approach — declare module sources directly on the `kernel_build` 
 
 ```python
 load("//defs/rules:kernel.bzl", "kernel_build")
+load("//defs/packages:binary.bzl", "binary_package")
 
-download_source(
-    name = "my-driver-src",
-    src_uri = "https://example.com/my-driver-1.0.tar.gz",
+# Produces :my-driver-src (the extracted source directory) as a side-effect
+# of the package() macro — see defs/package.bzl.
+binary_package(
+    name = "my-driver",
+    version = "1.0",
+    url = "https://example.com/my-driver-1.0.tar.gz",
     sha256 = "...",
+    format = "tar.gz",
+    install_script = "true",
 )
 
 kernel_build(
     name = "my-kernel",
     source = "//packages/linux/kernel/src:linux-src",
-    version = "6.17.10",
+    version = "6.18",
     config_dep = "//packages/linux/kernel/configs:buckos-default",
     modules = [":my-driver-src"],
     visibility = ["PUBLIC"],
@@ -447,11 +489,15 @@ kernel_build(
 The kernel build will compile the module against the kernel tree and install the
 `.ko` files alongside in-tree modules.
 
-#### Method 2: Separate `ebuild_package` (for complex modules)
+#### Method 2: Standalone module package (for complex modules)
 
 For modules that need custom build steps, non-standard source layouts, or
-additional dependencies, use a separate `ebuild_package` with `bdepend` on the
-kernel. See `packages/linux/laptop/battery/tp_smapi/BUCK` for an example.
+additional dependencies, declare a standalone package using the language
+wrapper that matches the module's build system (`autotools_package`,
+`make_package`, `binary_package` with a custom `install_script`, …) and
+list the kernel headers under `host_deps` (build-time tools/headers) or
+`deps` (anything the module needs at runtime).  See
+`packages/linux/laptop/battery/tp_smapi/BUCK` for an example.
 
 ### Private Patch Registry
 
@@ -468,7 +514,10 @@ PATCH_REGISTRY = {
 }
 ```
 
-See `defs/patch_registry.bzl` for the full registry format.
+The fallback (empty) registry lives at `defs/empty_registry.bzl`.  To
+populate real entries, create `patches/registry.bzl` in the buckos cell
+with a `PATCH_REGISTRY = {...}` dict — that file is gitignored and
+overrides the empty default at load time.
 
 ## Directory Structure
 
@@ -489,7 +538,7 @@ packages/linux/kernel/
 │   └── BUCK
 ├── modules/                # External kernel module sources
 │   └── <module-name>/
-│       └── BUCK            # download_source + optional ebuild_package
+│       └── BUCK            # package() macro / autotools_package etc.
 ├── examples/               # Custom kernel examples
 │   └── BUCK
 ├── linux/                  # Legacy (deprecated)
@@ -505,7 +554,9 @@ If you were using the old kernel targets, migrate as follows:
 | `//packages/linux/kernel/linux` | `//packages/linux/kernel/buckos-kernel` |
 | `//packages/linux/kernel/linux-defconfig` | `//packages/linux/kernel/buckos-kernel:buckos-kernel-defconfig` |
 
-The legacy targets still work but now use the 6.12 LTS kernel source.
+The legacy targets still work but now use the default kernel source
+(`linux-src` → `linux-6.18-src`); switch the dep to `:linux-lts-src` if
+you specifically need the 6.12 LTS series.
 
 ## Tips
 
@@ -534,6 +585,7 @@ For specific workloads, consider:
 
 ## See Also
 
-- [USE_FLAGS.md](USE_FLAGS.md) - Package USE flags
-- [PACKAGE_SETS.md](PACKAGE_SETS.md) - System profiles
-- [packages/linux/kernel/examples/](../packages/linux/kernel/examples/) - Example custom kernels
+- [`packages/linux/kernel/examples/`](../packages/linux/kernel/examples/) — example custom kernels
+- [`defs/rules/kernel.bzl`](../defs/rules/kernel.bzl) — `kernel_config` / `kernel_build` rule definitions
+- [`tools/kernel_build.py`](../tools/kernel_build.py) — the Python helper that implements the build action
+- USE flags and package sets are managed through Buck2's native constraint/modifier system; see `use/` and `defs/package_sets.bzl`

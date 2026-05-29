@@ -57,9 +57,17 @@ buck2 test //tests:test-ch-ima-enforce-unsigned  # verified: kernel rejects it
 
 ```sh
 bash setup.sh          # install host deps, buck2, download seed toolchain
-buck2 build //packages/linux/system:buckos-minimal-iso
-buck2 test //tests:
+BUCKD_STARTUP_TIMEOUT=600 buck2 build \
+    //packages/linux/system:buckos-minimal-iso \
+    --target-platforms //platforms:linux-target
+buck2 test //tests/...
 ```
+
+`BUCKD_STARTUP_TIMEOUT=600` is the standard idiom — the Buck2 daemon can take
+~90s+ to become ready after `.bzl` changes, and the default timeout aborts too
+eagerly.  `--target-platforms //platforms:linux-target` selects the BuckOS
+hermetic toolchain; omit it (or use `//platforms:linux-target-host`) to build
+against the host toolchain for faster dev iteration.
 
 ## Layout
 
@@ -77,18 +85,16 @@ patches/         private patch registry
 
 ### USE flag configuration
 
-USE flags use Buck2's native constraint/modifier system. Configure them with
-the `buckos` CLI or edit `config/local_modifiers.bzl` directly:
+USE flags use Buck2's native constraint/modifier system.  Persistent local
+configuration lives in `config/local_modifiers.bzl` (gitignored) — edit that
+file directly to set defaults, profiles, or per-package overrides.
+
+A separate `buckos` CLI exists (installed independently) that edits the same
+file for convenience; everything it does can be done by hand.
+
+For one-off builds, pass modifiers on the command line:
 
 ```sh
-buckos use profile desktop           # apply a profile (desktop, server, minimal, ...)
-buckos use +wayland -gtk             # toggle individual flags
-buckos use package vim +python +lua  # per-package overrides
-```
-
-Or use Buck2 modifiers directly:
-
-```sh
-buck2 build //packages/linux/core:curl -m desktop           # profile alias
+buck2 build //packages/linux/core:curl -m desktop             # profile alias
 buck2 build //packages/linux/core:curl -m ssl_on -m http2_on  # individual flags
 ```
