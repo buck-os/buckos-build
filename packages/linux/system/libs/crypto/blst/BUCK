@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # blst - BLS12-381 signature library
 #
@@ -7,9 +7,8 @@ load("//defs:package.bzl", "package")
 #
 # This library uses a custom build.sh script rather than autotools/cmake.
 
-package(
+binary_package(
     name = "blst",
-    build_rule = "binary",
     version = "0.3.7",
     url = "https://github.com/supranational/blst/archive/refs/tags/v0.3.7.tar.gz",
     sha256 = "b70876c7f97dee3a6933e56fb0cfa52bb77f6e92c0961a429b73784ab2254b8d",

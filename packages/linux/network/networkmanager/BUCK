@@ -1,8 +1,7 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:meson.bzl", "meson_package")
 
 # NetworkManager - Network connection manager
-package(
-    build_rule = "meson",
+meson_package(
     name = "networkmanager",
     version = "1.46.0",
     # Default USE flags for a minimal but functional build
@@ -81,8 +80,7 @@ package(
 )
 
 # NetworkManager applet for GTK
-package(
-    build_rule = "meson",
+meson_package(
     name = "nm-applet",
     version = "1.36.0",
     url = "https://download.gnome.org/sources/network-manager-applet/1.36/network-manager-applet-1.36.0.tar.xz",

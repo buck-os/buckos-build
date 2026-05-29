@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # slang - Multi-platform programmer's library designed for creating multi-platform software
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "slang",
     source = "//packages/linux/system/terminal/slang:slang-src",
     use_configure = {

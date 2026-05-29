@@ -1,8 +1,7 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # AWS Lambda RIE is a single binary file, not an archive
-package(
-    build_rule = "binary",
+binary_package(
     name = "aws-lambda-rie",
     version = "1.27",
     url = "https://github.com/aws/aws-lambda-runtime-interface-emulator/archive/refs/tags/v1.27.tar.gz",

@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # =============================================================================
 # OpenSSL - Cryptography and SSL/TLS toolkit
@@ -7,9 +7,8 @@ load("//defs:package.bzl", "package")
 
 # ── OpenSSL 3.6 ──
 
-package(
+autotools_package(
     name = "openssl-3.6",
-    build_rule = "autotools",
     configure_script = "Configure",
     skip_host_arg = True,
     version = "3.6.1",
@@ -37,9 +36,8 @@ package(
 
 # ── OpenSSL 3.3 (LTS) ──
 
-package(
+autotools_package(
     name = "openssl-3.3",
-    build_rule = "autotools",
     configure_script = "Configure",
     skip_host_arg = True,
     version = "3.3.2",

@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # =============================================================================
 # MATE - Traditional GNOME 2-style desktop
 # =============================================================================
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "mate-panel",
     pre_configure_cmds = ["""
 NOCONFIGURE=1 ./autogen.sh
@@ -38,8 +37,7 @@ NOCONFIGURE=1 ./autogen.sh
     ],
 )
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "marco",
     configure_args = [
         "--disable-gtk-doc",

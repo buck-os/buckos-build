@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # mosh - Mobile shell with roaming and intelligent local echo
 # USE flags: hardening, ufw, utempter
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "mosh",
     version = "1.4.0",
     url = "https://github.com/mobile-shell/mosh/releases/download/mosh-1.4.0/mosh-1.4.0.tar.gz",

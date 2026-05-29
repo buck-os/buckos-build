@@ -1,7 +1,7 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:cmake.bzl", "cmake_package")
+load("//defs/packages:python.bzl", "python_package")
 
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "mlcommons-loadgen",
     version = "5.1.1",
     url = "https://github.com/mlcommons/inference/archive/refs/tags/v5.1.1.tar.gz",
@@ -13,8 +13,7 @@ package(
     ],
 )
 
-package(
-    build_rule = "python",
+python_package(
     name = "mlcommons-logging",
     version = "5.1.0-rc4",
     url = "https://github.com/mlcommons/logging/archive/refs/tags/5.1.0-rc4.tar.gz",

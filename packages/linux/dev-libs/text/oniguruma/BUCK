@@ -1,8 +1,7 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # oniguruma - official release tarball includes pre-generated configure
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "oniguruma",
     # No autoreconf needed - tarball has pre-generated configure
     url = "https://github.com/kkos/oniguruma/releases/download/v6.9.9/onig-6.9.9.tar.gz",

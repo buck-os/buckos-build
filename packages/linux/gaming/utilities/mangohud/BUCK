@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:meson.bzl", "meson_package")
 
 # MangoHud - Vulkan and OpenGL overlay for monitoring performance
 # Displays FPS, CPU/GPU usage, temperatures, and more
@@ -9,8 +9,7 @@ load("//defs:package.bzl", "package")
 # X11 and Wayland are always enabled — MangoHud requires at least one
 # display protocol, and the OpenGL overlay unconditionally compiles GLX code.
 
-package(
-    build_rule = "meson",
+meson_package(
     name = "mangohud",
     url = "https://github.com/flightlessmango/MangoHud/archive/refs/tags/v0.7.2.tar.gz",
 

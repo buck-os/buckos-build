@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # DXVK - DirectX 9/10/11 to Vulkan translation layer
 # Dramatically improves game performance in Wine/Proton
@@ -6,8 +6,7 @@ load("//defs:package.bzl", "package")
 # NOTE: DXVK requires MinGW-w64 cross-compiler to build Windows DLLs.
 # This package downloads pre-built binaries from the official releases.
 
-package(
-    build_rule = "binary",
+binary_package(
     name = "dxvk",
     version = "2.5.3",
     url = "https://github.com/doitsujin/dxvk/releases/download/v2.5.3/dxvk-2.5.3.tar.gz",

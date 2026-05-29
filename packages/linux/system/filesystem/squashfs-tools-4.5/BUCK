@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # squashfs-tools 4.5.1: use binary rule to fix xattr redefinition errors and
 # missing COMP_DEFAULT/DATE macros that cause compile failures with GCC 14+
-package(
+binary_package(
     name = "squashfs-tools-4.5.1",
-    build_rule = "binary",
     url = "https://github.com/plougher/squashfs-tools/archive/refs/tags/4.5.1.tar.gz",
 
     sha256 = "277b6e7f75a4a57f72191295ae62766a10d627a4f5e5f19eadfbc861378deea7",

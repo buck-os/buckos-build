@@ -1,9 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:cmake.bzl", "cmake_package")
+load("//defs/packages:meson.bzl", "meson_package")
 
 # libva - Video Acceleration API
 
-package(
-    build_rule = "meson",
+meson_package(
     name = "libva",
     version = "2.21.0",
     use_configure = {
@@ -28,8 +28,7 @@ package(
 )
 
 # libva-utils - VA-API utilities
-package(
-    build_rule = "meson",
+meson_package(
     name = "libva-utils",
     version = "2.21.0",
     url = "https://github.com/intel/libva-utils/archive/refs/tags/2.21.0.tar.gz",
@@ -46,8 +45,7 @@ package(
 )
 
 # Intel Media Driver for VAAPI
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "intel-media-driver",
     version = "24.2.5",
     url = "https://github.com/intel/media-driver/archive/refs/tags/intel-media-24.2.5.tar.gz",

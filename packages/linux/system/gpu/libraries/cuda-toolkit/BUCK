@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # =============================================================================
 # CUDA Toolkit - NVIDIA CUDA development toolkit
 # =============================================================================
 
-package(
-    build_rule = "binary",
+binary_package(
     name = "cuda-toolkit",
     version = "13.0.2",
     local_only = True,

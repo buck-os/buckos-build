@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # Libtool cannot use autotools_package because it would create a circular dependency
 # (autotools eclass depends on libtool). Build it manually instead.
-package(
-    build_rule = "binary",
+binary_package(
     name = "libtool",
     version = "2.4.7",
     url = "https://mirror.buckos.org/l/libtool-2.4.7.tar.xz",

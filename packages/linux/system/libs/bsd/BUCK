@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # libbsd - Utility functions from BSD systems
 # Provides commonly-used BSD functions not available in glibc
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "libbsd",
     version = "0.12.2",
     use_configure = {

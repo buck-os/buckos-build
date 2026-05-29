@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # Wine - Windows compatibility layer
 # Run Windows applications on Linux
@@ -10,8 +10,7 @@ load("//defs:package.bzl", "package")
 #   opengl   - Enable OpenGL support (default: disabled, requires 32-bit EGL)
 #   unwind   - Enable libunwind for stack traces (default: disabled, ABI issues)
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "wine",
     url = "https://dl.winehq.org/wine/source/9.x/wine-9.21.tar.xz",
 

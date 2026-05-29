@@ -1,12 +1,11 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # Network authentication packages
 # RADIUS and TACACS+ PAM modules
 
 # pam_radius - RADIUS PAM module
 # No install target in Makefile, use manual install
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "pam-radius",
     url = "https://github.com/FreeRADIUS/pam_radius/archive/refs/tags/release_2_0_0.tar.gz",
 
@@ -39,8 +38,7 @@ cp pam_radius_auth.conf "$OUT/etc/raddb/" 2>/dev/null || true
 
 # pam_tacplus - TACACS+ PAM module
 # GitHub tarball needs gnulib bootstrap; stub out the missing gnulib includes
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "pam-tacplus",
     url = "https://github.com/kravietz/pam_tacplus/archive/refs/tags/v1.7.0.tar.gz",
 

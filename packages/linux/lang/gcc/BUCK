@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # =============================================================================
 # GCC Native - from-source build for hermetic host tools
@@ -15,8 +15,7 @@ load("//defs:package.bzl", "package")
 # libcody (C++ modules server) sub-configure doesn't inherit top-level
 # CXXFLAGS and fails C++11 detection.  Fix by patching the sub-configure.
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "gcc-native",
     skip_host_arg = True,
     version = "14.3.0",

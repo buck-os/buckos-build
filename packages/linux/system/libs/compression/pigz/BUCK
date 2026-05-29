@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "make_package")
 
 # pigz - Parallel implementation of gzip for modern multi-processor machines
 # Makefile-only project (no configure script, no install target)
-package(
-    build_rule = "make",
+make_package(
     name = "pigz",
     version = "2.8",
     url = "https://zlib.net/pigz/pigz-2.8.tar.gz",

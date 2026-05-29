@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # DynamoRIO - Dynamic Binary Instrumentation Framework
 #
@@ -7,8 +7,7 @@ load("//defs:package.bzl", "package")
 # a powerful API for building dynamic analysis tools, profilers, tracers,
 # optimizers, and other instrumentation frameworks.
 
-package(
-    build_rule = "binary",
+binary_package(
     name = "dynamorio",
     version = "11.0.0",
     url = "https://github.com/DynamoRIO/dynamorio/releases/download/release_11.0.0/DynamoRIO-Linux-11.0.0.tar.gz",

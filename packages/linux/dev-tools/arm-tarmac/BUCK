@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:cmake.bzl", "cmake_package")
 
 # =============================================================================
 # Arm Tarmac Trace Utilities - Tools for analyzing Tarmac trace files
@@ -13,8 +13,7 @@ load("//defs:package.bzl", "package")
 #   - tarmac-profile: Generate per-function profiling reports
 #   - tarmac-vcd: Convert traces to IEEE 1364 Value Change Dump format
 
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "arm-tarmac",
     version = "0.0.1",
     url = "https://github.com/ARM-software/tarmac-trace-utilities/archive/e9b24783c2be2a47aaf5f85e6bbd54f1fa8e7122.tar.gz",

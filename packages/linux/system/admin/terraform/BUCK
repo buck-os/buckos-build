@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:go.bzl", "go_package")
 
 # Terraform - Infrastructure as Code tool by HashiCorp
 #
@@ -9,8 +9,7 @@ load("//defs:package.bzl", "package")
 # Note: As of v1.6.0, Terraform is licensed under BUSL-1.1 (Business Source
 # License). For production use, consider OpenTofu (MPL-2.0 fork).
 
-package(
-    build_rule = "go",
+go_package(
     name = "terraform",
     version = "1.14.5",
     url = "https://github.com/hashicorp/terraform/archive/refs/tags/v1.14.5.tar.gz",

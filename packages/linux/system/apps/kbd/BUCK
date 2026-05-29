@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # kbd - Keyboard and console utilities
 # USE flags: pam, nls
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "kbd",
     version = "2.6.4",
     url = "https://www.kernel.org/pub/linux/utils/kbd/kbd-2.6.4.tar.xz",

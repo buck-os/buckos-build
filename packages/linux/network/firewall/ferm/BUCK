@@ -1,12 +1,11 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # =============================================================================
 # ferm - For Easy Rule Making (firewall rule generator)
 # =============================================================================
 
-package(
+autotools_package(
     name = "ferm",
-    build_rule = "autotools",
     skip_configure = True,
     version = "2.7",
     url = "http://ferm.foo-projects.org/download/2.7/ferm-2.7.tar.xz",

@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # =============================================================================
 # dracut - Modern initramfs infrastructure
@@ -6,8 +6,7 @@ load("//defs:package.bzl", "package")
 # Event-driven initramfs generator used by Fedora, RHEL, openSUSE.
 # Supports modular configuration, network boot, encryption, LVM, RAID.
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "dracut",
     url = "https://github.com/dracut-ng/dracut-ng/archive/refs/tags/103.tar.gz",
 

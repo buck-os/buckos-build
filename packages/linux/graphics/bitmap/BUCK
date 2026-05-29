@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # bitmap - A platform-independent bitmap image reader/writer library
 # Header-only C++ library for reading/writing 24-bit BMP files
 # Source: https://github.com/ArashPartow/bitmap
 
-package(
-    build_rule = "binary",
+binary_package(
     name = "bitmap",
     version = "1.0",
     url = "https://github.com/ArashPartow/bitmap/archive/refs/heads/master.tar.gz",

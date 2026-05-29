@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # =============================================================================
 # initramfs-tools - Debian initramfs generator
@@ -6,8 +6,7 @@ load("//defs:package.bzl", "package")
 # The standard Debian/Ubuntu initramfs generator.
 # Uses hook-based architecture with scripts in /etc/initramfs-tools.
 
-package(
-    build_rule = "binary",
+binary_package(
     name = "initramfs-tools",
     url = "https://mirror.buckos.org/i/initramfs-tools-v0.142.tar.gz",
     sha256 = "27a78cc25acc3ca3d9c78deca165bf001b09b260ce25a3f3756e47a0e7bc0554",

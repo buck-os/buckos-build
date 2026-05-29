@@ -15,7 +15,11 @@
 # These fixtures use a local dummy source (export_file) so that
 # graph-level analysis and buck2 test work without network access.
 
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
+load("//defs/packages:cargo.bzl", "cargo_package")
+load("//defs/packages:cmake.bzl", "cmake_package")
+load("//defs/packages:go.bzl", "go_package")
+load("//defs/packages:meson.bzl", "meson_package")
 load("//defs/rules:source.bzl", "extract_source")
 
 # Local dummy source archive shared by all fixtures
@@ -32,9 +36,8 @@ extract_source(
 )
 
 # --- autotools: use_configure → configure_args ---
-package(
+autotools_package(
     name = "test-use-flags",
-    build_rule = "autotools",
     version = "1.0.0",
     local_only = True,
     source = ":dummy-src",
@@ -52,9 +55,8 @@ package(
 )
 
 # --- cmake: use_configure → cmake_args ---
-package(
+cmake_package(
     name = "test-cmake-use",
-    build_rule = "cmake",
     version = "1.0.0",
     local_only = True,
     source = ":dummy-src",
@@ -71,9 +73,8 @@ package(
 )
 
 # --- meson: use_configure → meson_args ---
-package(
+meson_package(
     name = "test-meson-use",
-    build_rule = "meson",
     version = "1.0.0",
     local_only = True,
     source = ":dummy-src",
@@ -90,9 +91,8 @@ package(
 )
 
 # --- cargo: use_features ---
-package(
+cargo_package(
     name = "test-cargo-use",
-    build_rule = "cargo",
     version = "1.0.0",
     local_only = True,
     source = ":dummy-src",
@@ -109,9 +109,8 @@ package(
 )
 
 # --- go: use_configure ---
-package(
+go_package(
     name = "test-go-use",
-    build_rule = "go",
     version = "1.0.0",
     local_only = True,
     source = ":dummy-src",

@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # tomcat - Java servlet container
 #
@@ -6,8 +6,7 @@ load("//defs:package.bzl", "package")
 #   This is a pre-built Java application, USE flags control runtime features
 #   java     - Java runtime (always required)
 
-package(
-    build_rule = "binary",
+binary_package(
     name = "tomcat",
     version = "10.1.19",
     url = "https://archive.apache.org/dist/tomcat/tomcat-10/v10.1.19/src/apache-tomcat-10.1.19-src.tar.gz",

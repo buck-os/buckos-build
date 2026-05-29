@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:meson.bzl", "meson_package")
 
 # =============================================================================
 # Mesa - OpenGL and Vulkan implementation
 # =============================================================================
 
-package(
-    build_rule = "meson",
+meson_package(
     name = "mesa",
     version = "26.0.0",
     url = "https://archive.mesa3d.org/mesa-26.0.0.tar.xz",
@@ -81,8 +80,7 @@ package(
 # virglrenderer - Virtual 3D GPU for QEMU
 # =============================================================================
 
-package(
-    build_rule = "meson",
+meson_package(
     name = "virglrenderer",
     version = "1.2.0",
     url = "https://gitlab.freedesktop.org/virgl/virglrenderer/-/archive/virglrenderer-1.2.0/virglrenderer-virglrenderer-1.2.0.tar.bz2",

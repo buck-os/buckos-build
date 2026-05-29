@@ -1,8 +1,7 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "make_package")
 
-package(
+make_package(
     name = "libtomcrypt",
-    build_rule = "make",
     skip_configure = True,
     version = "1.18.2",
     url = "https://github.com/libtom/libtomcrypt/releases/download/v1.18.2/crypt-1.18.2.tar.xz",

@@ -1,12 +1,14 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
+load("//defs/packages:go.bzl", "go_package")
+load("//defs/packages:meson.bzl", "meson_package")
+load("//defs/packages:python.bzl", "python_package")
 
 # =============================================================================
 # File Managers for Various Desktop Environments
 # =============================================================================
 
 # Nautilus - GNOME Files
-package(
-    build_rule = "meson",
+meson_package(
     name = "nautilus",
     version = "46.0",
     use_configure = {
@@ -35,9 +37,8 @@ package(
 )
 
 # Thunar - XFCE File Manager
-package(
+autotools_package(
     name = "thunar",
-    build_rule = "autotools",
     skip_configure = True,
     url = "https://archive.xfce.org/src/xfce/thunar/4.18/thunar-4.18.10.tar.bz2",
 
@@ -89,8 +90,7 @@ package(
 # )
 
 # Nemo - Cinnamon File Manager (fork of Nautilus)
-package(
-    build_rule = "meson",
+meson_package(
     name = "nemo",
     version = "6.0.2",
     url = "https://github.com/linuxmint/nemo/archive/refs/tags/6.0.2.tar.gz",
@@ -109,9 +109,8 @@ package(
 )
 
 # Caja - MATE File Manager
-package(
+autotools_package(
     name = "caja",
-    build_rule = "autotools",
     skip_configure = True,
     url = "https://pub.mate-desktop.org/releases/1.28/caja-1.28.0.tar.xz",
 
@@ -127,9 +126,8 @@ package(
 )
 
 # Ranger - Console file manager with VI key bindings
-package(
+python_package(
     name = "ranger",
-    build_rule = "python",
     use_setup_py = True,
     url = "https://github.com/ranger/ranger/archive/refs/tags/v1.9.3.tar.gz",
     sha256 = "ce088a04c91c25263a9675dc5c43514b7ec1b38c8ea43d9a9d00923ff6cdd251",
@@ -143,8 +141,7 @@ package(
 )
 
 # lf - Terminal file manager
-package(
-    build_rule = "go",
+go_package(
     name = "lf",
     version = "r31",
     url = "https://github.com/gokcehan/lf/archive/refs/tags/r31.tar.gz",

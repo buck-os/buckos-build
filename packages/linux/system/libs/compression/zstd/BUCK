@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:meson.bzl", "meson_package")
 
 # Zstandard - Fast real-time compression algorithm
 # Following Gentoo's approach: uses meson build (in build/meson subdirectory)
-package(
-    build_rule = "meson",
+meson_package(
     name = "zstd",
     version = "1.5.7",
     url = "https://github.com/facebook/zstd/releases/download/v1.5.7/zstd-1.5.7.tar.gz",

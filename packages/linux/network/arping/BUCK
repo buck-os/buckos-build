@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # =============================================================================
 # arping - Send ARP requests to identify hosts on a network
 # =============================================================================
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "arping",
     version = "2.24",
     url = "https://github.com/ThomasHabets/arping/archive/refs/tags/arping-2.24.tar.gz",

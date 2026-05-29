@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # lynx - Text-based web browser
 #
@@ -10,8 +10,7 @@ load("//defs:package.bzl", "package")
 #   unicode  - Enable wide character (Unicode) support
 #   ncurses  - Use ncurses for terminal handling
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "lynx",
     version = "2.9.0",
     url = "https://invisible-mirror.net/archives/lynx/tarballs/lynx2.9.0.tar.bz2",

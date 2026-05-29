@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # xcb-proto - X C Binding Protocol Headers
 # XML protocol descriptions used by libxcb for code generation
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "xcb-proto",
     version = "1.17.0",
     url = "https://xorg.freedesktop.org/archive/individual/proto/xcb-proto-1.17.0.tar.xz",

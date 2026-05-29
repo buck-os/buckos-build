@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # =============================================================================
 # ethtool - Utility for controlling network drivers and hardware
 # =============================================================================
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "ethtool",
     # Kernel.org release tarball includes pre-generated configure script
     version = "6.11",

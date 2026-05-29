@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # htop - Interactive process viewer
 # USE flags: unicode, hwloc, sensors, caps
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "htop",
     version = "3.4.1",
     url = "https://github.com/htop-dev/htop/releases/download/3.4.1/htop-3.4.1.tar.xz",

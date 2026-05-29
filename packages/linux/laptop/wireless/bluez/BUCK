@@ -1,12 +1,11 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # BlueZ - Official Linux Bluetooth protocol stack
 # Bluetooth tools and daemons for Linux
 
 # USE flags: See use_flags.bzl for available flags
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "bluez",
     url = "https://www.kernel.org/pub/linux/bluetooth/bluez-5.72.tar.xz",
 

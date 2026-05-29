@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # -----------------------------------------------------------------------------
 # s6-linux-init - Set of tools to create a s6-based init system
 # -----------------------------------------------------------------------------
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "s6-linux-init",
     url = "https://skarnet.org/software/s6-linux-init/s6-linux-init-1.1.2.0.tar.gz",
 

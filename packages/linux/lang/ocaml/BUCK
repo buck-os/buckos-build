@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # =============================================================================
 # OCaml - Functional programming language
@@ -6,8 +6,7 @@ load("//defs:package.bzl", "package")
 
 # OCaml uses its own custom configure script (not autotools)
 # Do NOT run autoreconf or it will break the build
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "ocaml",
     version = "5.1.1",
     url = "https://github.com/ocaml/ocaml/archive/refs/tags/5.1.1.tar.gz",

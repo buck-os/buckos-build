@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:cmake.bzl", "cmake_package")
 
 # Catch - Modern C++ test framework (v2.x - header-only)
 # Note: This is the original Catch v2.x (single-header).
 # For Catch2 v3.x (multi-file), use dev-tools//testing/catch2
 
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "catch",
     version = "2.13.10",
     url = "https://github.com/catchorg/Catch2/archive/refs/tags/v2.13.10.tar.gz",

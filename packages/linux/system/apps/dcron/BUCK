@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # dcron - Dillon's lightweight cron daemon
 # USE flags: minimal (dcron is inherently minimal, few options)
 
-package(
+autotools_package(
     name = "dcron",
-    build_rule = "autotools",
     skip_configure = True,
     version = "4.5",
     url = "https://www.jimpryor.net/linux/releases/dcron-4.5.tar.gz",

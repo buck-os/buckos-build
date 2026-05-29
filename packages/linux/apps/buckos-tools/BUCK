@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # Shared source for all buckos-tools packages.
 # cli/ and installer/ reference :buckos-tools-src via source =.
-package(
+binary_package(
     name = "buckos-tools",
-    build_rule = "binary",
     version = "0.0.3",
     url = "https://github.com/hodgesds/buckos/archive/refs/tags/0.0.3.tar.gz",
     sha256 = "554533d05a90d8fbb0d81775ed9396edb70364531df596867f4dd139a8abec2b",

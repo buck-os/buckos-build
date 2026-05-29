@@ -1,8 +1,7 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # flex - official release tarball includes pre-generated configure
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "flex",
     # No autoreconf needed - tarball has pre-generated configure
     version = "2.6.4",

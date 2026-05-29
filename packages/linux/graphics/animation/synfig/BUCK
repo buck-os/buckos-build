@@ -1,7 +1,6 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "synfig-core",
     version = "1.5.1",
     url = "https://github.com/synfig/synfig/archive/refs/tags/v1.5.1.tar.gz",
@@ -30,8 +29,7 @@ DESTDIR=$OUT make install
     ],
 )
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "synfig-studio",
     version = "1.5.1",
     source = ":synfig-core-src",

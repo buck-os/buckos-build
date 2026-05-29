@@ -1,8 +1,7 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # Use GitHub releases since download.libsodium.org often times out
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "libsodium",
     # GitHub releases/download tarball includes pre-generated configure script
     version = "1.0.20",

@@ -1,12 +1,14 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
+load("//defs/packages:binary.bzl", "binary_package")
+load("//defs/packages:cargo.bzl", "cargo_package")
+load("//defs/packages:go.bzl", "go_package")
 
 # =============================================================================
 # Container Networking
 # =============================================================================
 
 # cni-plugins - Container Network Interface plugins
-package(
-    build_rule = "go",
+go_package(
     name = "cni-plugins",
     version = "1.4.1",
     url = "https://github.com/containernetworking/plugins/archive/refs/tags/v1.4.1.tar.gz",
@@ -20,8 +22,7 @@ package(
 )
 
 # netavark - Container network stack
-package(
-    build_rule = "cargo",
+cargo_package(
     name = "netavark",
     version = "1.14.0",
     url = "https://github.com/containers/netavark/archive/refs/tags/v1.14.0.tar.gz",
@@ -37,8 +38,7 @@ package(
 )
 
 # aardvark-dns - DNS server for container networks
-package(
-    build_rule = "binary",
+binary_package(
     name = "aardvark-dns",
     version = "1.14.0",
     url = "https://github.com/containers/aardvark-dns/archive/refs/tags/v1.14.0.tar.gz",
@@ -59,8 +59,7 @@ install -m 755 target/release/aardvark-dns "$OUT/usr/libexec/podman/"
 )
 
 # slirp4netns - User-mode networking for unprivileged network namespaces
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "slirp4netns",
     version = "1.2.3",
     url = "https://github.com/rootless-containers/slirp4netns/archive/refs/tags/v1.2.3.tar.gz",

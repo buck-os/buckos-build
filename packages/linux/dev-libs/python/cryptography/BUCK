@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:python.bzl", "python_package")
 
 # Python cryptography library - provides cryptographic primitives and recipes
 # Version 41.0.7 requires Rust for the _rust backend module, but we strip
 # all Rust extension code and install as a pure-Python package (the cffi
 # backend is available as a fallback).
-package(
-    build_rule = "python",
+python_package(
     name = "cryptography",
     version = "41.0.7",
     url = "https://files.pythonhosted.org/packages/source/c/cryptography/cryptography-41.0.7.tar.gz",

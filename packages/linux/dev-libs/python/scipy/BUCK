@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:python.bzl", "python_package")
 
 # SciPy - Fundamental algorithms for scientific computing in Python
 #
@@ -8,8 +8,7 @@ load("//defs:package.bzl", "package")
 # USE flags:
 #   openblas  - Use OpenBLAS for BLAS/LAPACK
 
-package(
-    build_rule = "python",
+python_package(
     name = "scipy",
     version = "1.13.0",
     url = "https://github.com/scipy/scipy/releases/download/v1.13.0/scipy-1.13.0.tar.gz",

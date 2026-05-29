@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:meson.bzl", "meson_package")
 
 # PulseAudio - A sound server for POSIX and Win32 systems
 # USE flags: alsa, bluetooth, dbus, gstreamer, jack, X, gtk, ssl, systemd, doc
 
-package(
-    build_rule = "meson",
+meson_package(
     name = "pulseaudio",
     version = "17.0",
     url = "https://freedesktop.org/software/pulseaudio/releases/pulseaudio-17.0.tar.xz",

@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:meson.bzl", "meson_package")
 
 # libsecret - GObject library for accessing Secret Service API
 # USE flags: introspection, vala, gtk-doc
 # Default: none
 
-package(
-    build_rule = "meson",
+meson_package(
     name = "libsecret",
     version = "0.21.4",
     source = "//packages/linux/system/libs/secrets/libsecret:libsecret-src",

@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # linux-pam - Pluggable Authentication Modules
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "linux-pam",
     version = "1.6.1",
     source = "//packages/linux/system/security/auth/pam:pam-src",

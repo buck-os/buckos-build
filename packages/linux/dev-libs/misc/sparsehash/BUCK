@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # sparsehash - Memory-efficient hash maps and hash sets
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "sparsehash",
     host_deps = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",

@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # Audio libraries and codecs
 
 # libcanberra - XDG Sound Theme and Name Spec implementation
 # Minimal build with just null backend for KDE notification sounds
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "libcanberra",
     version = "0.30",
     url = "https://0pointer.de/lennart/projects/libcanberra/libcanberra-0.30.tar.xz",

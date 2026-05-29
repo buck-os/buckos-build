@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # light - Backlight controller
 # A program to control backlight controllers
@@ -7,9 +7,8 @@ load("//defs:package.bzl", "package")
 # The original 'light' project is archived. Use acpilight instead.
 # USE flags: See use_flags.bzl for available flags
 
-package(
+binary_package(
     name = "light",
-    build_rule = "binary",
     url = "https://gitlab.com/wavexx/acpilight/-/archive/v1.2/acpilight-v1.2.tar.bz2",
     sha256 = "0b80cbe7edaf48307fc26dbb34c260ec9ed0c19c56743291e5a7cc23044ff9ae",
     version = "1.2",

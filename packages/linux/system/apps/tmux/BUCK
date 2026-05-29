@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # tmux - Terminal multiplexer
 # USE flags: utf8proc, systemd, static-libs
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "tmux",
     version = "3.4",
     url = "https://github.com/tmux/tmux/releases/download/3.4/tmux-3.4.tar.gz",

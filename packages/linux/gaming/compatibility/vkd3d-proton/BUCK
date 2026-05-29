@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # VKD3D-Proton - DirectX 12 to Vulkan translation layer
 # Fork of VKD3D optimized for Proton/Wine gaming
@@ -6,8 +6,7 @@ load("//defs:package.bzl", "package")
 # NOTE: VKD3D-Proton requires MinGW-w64 cross-compiler to build Windows DLLs.
 # This package downloads pre-built binaries from the official releases.
 
-package(
-    build_rule = "binary",
+binary_package(
     name = "vkd3d-proton",
     version = "2.14.1",
     url = "https://github.com/HansKristian-Work/vkd3d-proton/releases/download/v2.14.1/vkd3d-proton-2.14.1.tar.zst",

@@ -1,8 +1,7 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # bison - official GNU tarball includes pre-generated configure
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "bison",
     # No autoreconf needed - tarball has pre-generated configure
     version = "3.8.2",

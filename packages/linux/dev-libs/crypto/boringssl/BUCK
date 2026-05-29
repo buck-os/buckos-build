@@ -1,12 +1,11 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:cmake.bzl", "cmake_package")
 
 # BoringSSL - Google's fork of OpenSSL
 #
 # BoringSSL is not intended for general use - it's designed for Google's needs.
 # Consider using OpenSSL for most applications.
 
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "boringssl",
     version = "0.20251124.0",
     url = "https://github.com/google/boringssl/archive/refs/tags/0.20251124.0.tar.gz",

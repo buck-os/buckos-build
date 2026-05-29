@@ -14,7 +14,8 @@
 #   gnutls = true
 #   brotli = true
 
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # =============================================================================
 # EXAMPLE 1: Basic USE Flag Package
@@ -25,9 +26,8 @@ load("//defs:package.bzl", "package")
 # Global flags come from .buckconfig [use] section.
 
 # Example: curl with USE flags
-package(
+autotools_package(
     name = "curl-example",
-    build_rule = "autotools",
     version = "8.5.0",
     url = "https://curl.se/download/curl-8.5.0.tar.xz",
     sha256 = "42ab8db9e20d8290a3b633e7fbb3cec15db34df65fd1015ef8ac1e4723750eeb",
@@ -69,9 +69,8 @@ package(
 #   gnutls = true
 #   brotli = true
 
-package(
+autotools_package(
     name = "curl-gnutls-example",
-    build_rule = "autotools",
     version = "8.5.0",
     source = ":curl-example-src",
     use_deps = {
@@ -96,9 +95,8 @@ package(
 # Maximum flexibility with custom phase functions.
 # USE flags are available via the use() shell function.
 
-package(
+binary_package(
     name = "libxml2-example",
-    build_rule = "binary",
     version = "2.12.3",
     url = "https://download.gnome.org/sources/libxml2/2.12/libxml2-2.12.3.tar.xz",
     sha256 = "8c8f1092340a89ff32bc44ad5c9693aff9bc8a7a3e161bb239666e5d15ac9aaa",
@@ -127,9 +125,8 @@ make DESTDIR="$DESTDIR" install
 # EXAMPLE 4: Hardened OpenSSH
 # =============================================================================
 
-package(
+autotools_package(
     name = "openssh-hardened-example",
-    build_rule = "autotools",
     version = "9.9p1",
     source = "//packages/linux/network/openssh:openssh-src",
     pre_configure_cmds = [

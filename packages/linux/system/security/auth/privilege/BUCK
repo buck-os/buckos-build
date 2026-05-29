@@ -1,8 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
+load("//defs/packages:meson.bzl", "meson_package")
 
 # Duktape - Embeddable JavaScript engine (for polkit)
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "duktape",
     version = "2.7.0",
     url = "https://duktape.org/duktape-2.7.0.tar.xz",
@@ -26,8 +26,7 @@ package(
 )
 
 # PolicyKit - Authorization framework
-package(
-    build_rule = "meson",
+meson_package(
     name = "polkit",
     version = "124",
     url = "https://github.com/polkit-org/polkit/archive/refs/tags/124/polkit-124.tar.gz",

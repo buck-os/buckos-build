@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # x264 - H.264/MPEG-4 AVC encoder
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "x264",
     # x264 has its own configure script (not autoconf)
     version = "0.164.3108",

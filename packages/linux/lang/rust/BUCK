@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 load("//defs/rules:source.bzl", "extract_source")
 
 # =============================================================================
@@ -18,9 +18,8 @@ load("//defs/rules:source.bzl", "extract_source")
 # version (1.91.0) as stage0 is the simplest approach.
 
 # Stage0 bootstrap compiler (not shipped — only used during build)
-package(
+binary_package(
     name = "rust-stage0-x86_64",
-    build_rule = "binary",
     version = "1.91.0",
     url = "https://static.rust-lang.org/dist/rust-1.91.0-x86_64-unknown-linux-gnu.tar.xz",
     sha256 = "5bea12c1911dda5c0a91cee4e9b617a65bcf23a21e2852a17b544936de1f83e3",
@@ -36,9 +35,8 @@ echo "Stage0 rustc: $($OUT/tools/rust-stage0/bin/rustc --version)"
     visibility = [],
 )
 
-package(
+binary_package(
     name = "rust-stage0-aarch64",
-    build_rule = "binary",
     version = "1.91.0",
     url = "https://static.rust-lang.org/dist/rust-1.91.0-aarch64-unknown-linux-gnu.tar.xz",
     sha256 = "62b2b7aeba3a629783263742fc50e7a097349f8dd2d7cdf394ab2723a6b3c7ee",
@@ -65,9 +63,8 @@ alias(
 
 # Rust source archive
 # Build Rust from source with our GCC (specs → padded interp + RPATH)
-package(
+binary_package(
     name = "rust",
-    build_rule = "binary",
     version = "1.91.0",
     url = "https://static.rust-lang.org/dist/rustc-1.91.0-src.tar.xz",
     sha256 = "9b94161dba3aa32192e0e75f7891912d98095ffb86087b07a05af35a0265a938",

@@ -1,12 +1,11 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # =============================================================================
 # Core Container Runtimes
 # =============================================================================
 
 # crun - Fast and lightweight OCI runtime
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "crun",
     version = "1.14.4",
     url = "https://github.com/containers/crun/releases/download/1.14.4/crun-1.14.4.tar.xz",

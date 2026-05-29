@@ -1,7 +1,6 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "libksba",
     pre_configure_cmds = ["""
 autoreconf -fi
@@ -28,8 +27,7 @@ autoreconf -fi
     ],
 )
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "libassuan",
     url = "https://gnupg.org/ftp/gcrypt/libassuan/libassuan-2.5.6.tar.bz2",
 
@@ -46,8 +44,7 @@ package(
     deps = ["//packages/linux/system/libs/crypto/libgpg-error:libgpg-error"],
 )
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "npth",
     url = "https://gnupg.org/ftp/gcrypt/npth/npth-1.6.tar.bz2",
 
@@ -63,8 +60,7 @@ package(
     ],
 )
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "gnupg",
     url = "https://gnupg.org/ftp/gcrypt/gnupg/gnupg-2.4.3.tar.bz2",
 

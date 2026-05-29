@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # lshw - Hardware Lister
 # Provides detailed information about the hardware configuration
 
-package(
+autotools_package(
     name = "lshw",
-    build_rule = "autotools",
     skip_configure = True,
     url = "https://www.ezix.org/software/files/lshw-B.02.20.tar.gz",
 

@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:meson.bzl", "meson_package")
 
 # libvirt - Virtualization API
 # libvirt 10.x uses meson build system
 
-package(
-    build_rule = "meson",
+meson_package(
     name = "libvirt",
     version = "10.7.0",
     url = "https://download.libvirt.org/libvirt-10.7.0.tar.xz",
@@ -63,8 +62,7 @@ package(
 
 # libvirt client libraries only
 
-package(
-    build_rule = "meson",
+meson_package(
     name = "libvirt-client",
     version = "10.7.0",
     source = ":libvirt-src",
@@ -87,8 +85,7 @@ package(
 
 # libvirt Python bindings
 
-package(
-    build_rule = "meson",
+meson_package(
     name = "libvirt-python",
     version = "10.7.0",
     source = ":libvirt-src",

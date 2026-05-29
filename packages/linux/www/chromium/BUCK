@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # chromium - Open-source web browser from Google
 #
@@ -9,8 +9,7 @@ load("//defs:package.bzl", "package")
 #   wayland     - Enable Wayland support
 #   X           - Enable X11 support
 
-package(
-    build_rule = "binary",
+binary_package(
     name = "chromium",
     version = "126.0.6478.126",
     url = "https://commondatastorage.googleapis.com/chromium-browser-official/chromium-126.0.6478.126.tar.xz",

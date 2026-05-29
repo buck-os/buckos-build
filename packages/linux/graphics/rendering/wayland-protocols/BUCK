@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:meson.bzl", "meson_package")
 
 # wayland-protocols - Wayland protocol extension files
 # These are XML protocol definitions that get compiled by wayland-scanner
 # into C header files and source code.
 
-package(
-    build_rule = "meson",
+meson_package(
     name = "wayland-protocols",
     version = "1.43",
     url = "https://gitlab.freedesktop.org/wayland/wayland-protocols/-/releases/1.43/downloads/wayland-protocols-1.43.tar.xz",

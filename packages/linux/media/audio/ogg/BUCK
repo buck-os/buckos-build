@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # =============================================================================
 # Ogg - Container format for multimedia
@@ -27,8 +27,7 @@ load("//defs:package.bzl", "package")
 #
 # =============================================================================
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "ogg",
     # Xiph release tarball includes pre-generated configure script
     version = "1.3.5",

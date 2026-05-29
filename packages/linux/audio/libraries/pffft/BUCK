@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 genrule(
     name = "pffft-src",
@@ -10,8 +10,7 @@ genrule(
     """,
 )
 
-package(
-    build_rule = "binary",
+binary_package(
     name = "pffft",
     version = "1",
     local_only = True,

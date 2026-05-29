@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # BuckOS Installer - Graphical installer for live environment
-package(
+binary_package(
     name = "buckos-installer",
-    build_rule = "binary",
     version = "0.0.1",
     source = "//packages/linux/apps/buckos-tools:buckos-tools-src",
     description = "Graphical installer for BuckOS",

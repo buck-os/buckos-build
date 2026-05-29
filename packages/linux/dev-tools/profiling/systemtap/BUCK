@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # =============================================================================
 # SystemTap - Dynamic Tracing Framework
@@ -7,8 +7,7 @@ load("//defs:package.bzl", "package")
 # in GCC's libstdc++ and other software.
 
 # Full SystemTap package (for when full functionality is needed)
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "systemtap",
     url = "https://sourceware.org/ftp/systemtap/releases/systemtap-5.1.tar.gz",
 

@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # =============================================================================
 # SIGNIFY - OpenBSD cryptographic signing tool
 # =============================================================================
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "signify",
     url = "https://github.com/aperezdc/signify/archive/refs/tags/v31.tar.gz",
 

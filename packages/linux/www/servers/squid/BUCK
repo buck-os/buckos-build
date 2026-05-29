@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # squid - Caching proxy for the Web
 #
@@ -10,8 +10,7 @@ load("//defs:package.bzl", "package")
 #   pam       - Enable PAM authentication
 #   kerberos  - Enable Kerberos authentication
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "squid",
     version = "6.12",
     url = "https://www.squid-cache.org/Versions/v6/squid-6.12.tar.gz",

@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # GNU ed uses a hand-written configure that ignores CFLAGS from the
 # environment.  Pass -std=gnu11 via configure_args (which GNU ed does
 # accept as KEY=VALUE pairs) to fix GCC 14+ C23 keyword conflicts.
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "ed",
     version = "1.20.2",
     url = "https://mirrors.kernel.org/gnu/ed/ed-1.20.2.tar.lz",

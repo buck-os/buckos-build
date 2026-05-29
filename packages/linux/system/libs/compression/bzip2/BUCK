@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # bzip2 doesn't have a configure script and its Makefile doesn't support
 # DESTDIR.  Two make invocations are needed: one for the shared library
 # (with -fPIC) and one for the static library and binaries.
-package(
+binary_package(
     name = "bzip2",
-    build_rule = "binary",
     version = "1.0.8",
     url = "https://mirrors.kernel.org/sourceware/bzip2/bzip2-1.0.8.tar.gz",
     sha256 = "ab5a03176ee106d3f0fa90e381da478ddae405918153cca248e682cd0c4a2269",

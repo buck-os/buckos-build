@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:meson.bzl", "meson_package")
 
 # wayland - Wayland display protocol libraries and scanner tool
 # Following Gentoo's approach: disable dtd_validation to avoid libxml2 runtime dependency
@@ -11,9 +11,8 @@ load("//defs:package.bzl", "package")
 # pre_configure_cmds patches out the bootstrap circularity where
 # meson's dependency('wayland-scanner') requires a pre-existing
 # scanner to build the scanner itself.
-package(
+meson_package(
     name = "wayland-scanner",
-    build_rule = "meson",
     version = "1.23.1",
     url = "https://gitlab.freedesktop.org/wayland/wayland/-/releases/1.23.1/downloads/wayland-1.23.1.tar.xz",
     sha256 = "864fb2a8399e2d0ec39d56e9d9b753c093775beadc6022ce81f441929a81e5ed",
@@ -68,9 +67,8 @@ CMEOF""",
     ],
 )
 
-package(
+meson_package(
     name = "wayland",
-    build_rule = "meson",
     version = "1.23.1",
     source = ":wayland-scanner-src",
     description = "Wayland display protocol libraries and scanner",

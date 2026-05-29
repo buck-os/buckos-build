@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # psmisc - Utilities using /proc filesystem (fuser, killall, pstree)
 # USE flags: selinux, nls, ipv6
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "psmisc",
     version = "23.7",
     # Use release tarball (pre-generated configure) — git archives need

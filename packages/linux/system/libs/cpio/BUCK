@@ -1,12 +1,11 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # =============================================================================
 # cpio - Copy files to and from archives
 # =============================================================================
 # Essential for creating and extracting initramfs images.
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "cpio",
     # GNU release tarball includes pre-generated configure script
     version = "2.15",

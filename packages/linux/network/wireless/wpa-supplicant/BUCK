@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # wpa_supplicant doesn't use autotools - it uses a Makefile with a .config file
-package(
+autotools_package(
     name = "wpa-supplicant",
-    build_rule = "autotools",
     skip_configure = True,
     version = "2.10",
     url = "https://w1.fi/releases/wpa_supplicant-2.10.tar.gz",

@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # findutils - GNU find utilities
 # USE flags: nls, selinux
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "findutils",
     # GNU release tarball includes pre-generated configure script
     version = "4.9.0",

@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # libpq - PostgreSQL C client library
 #
@@ -9,8 +9,7 @@ load("//defs:package.bzl", "package")
 # NOTE: PostgreSQL 16.x does not have meson build support (added in PG 17).
 # Use autotools and build only the libpq client library.
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "libpq",
     version = "16.4",
     source = "//packages/linux/databases/postgresql:postgresql-src",

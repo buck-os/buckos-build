@@ -1,12 +1,11 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # varnish - High-performance HTTP accelerator
 #
 # USE flags:
 #   jemalloc  - Use jemalloc memory allocator (optional)
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "varnish",
     version = "7.5.0",
     url = "https://varnish-cache.org/_downloads/varnish-7.5.0.tgz",

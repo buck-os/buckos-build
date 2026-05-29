@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:cmake.bzl", "cmake_package")
 
 # =============================================================================
 # Linkers - Alternative Linker Implementations
@@ -21,8 +21,7 @@ load("//defs:package.bzl", "package")
 # It is several times faster than the LLVM lld linker.
 # =============================================================================
 
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "mold",
     version = "2.34.1",
     url = "https://github.com/rui314/mold/archive/refs/tags/v2.34.1.tar.gz",

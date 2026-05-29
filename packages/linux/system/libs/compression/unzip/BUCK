@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # unzip - Info-ZIP extraction utility for .zip archives
 
 # unzip uses a Makefile, not autotools
 # Old C code has format string issues that trigger -Werror=format-security
-package(
-    build_rule = "binary",
+binary_package(
     name = "unzip",
     url = "https://downloads.sourceforge.net/infozip/unzip60.tar.gz",
     sha256 = "036d96991646d0449ed0aa952e4fbe21b476ce994abc276e49d30e686708bd37",

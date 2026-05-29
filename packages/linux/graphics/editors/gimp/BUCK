@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # USE flags for gimp (meson build):
 # - gtk: GTK+ interface (default: enabled)
@@ -6,8 +6,7 @@ load("//defs:package.bzl", "package")
 # - lua: Lua scripting (default: disabled)
 # - javascript: JavaScript scripting (default: disabled)
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "gimp",
     url = "https://download.gimp.org/gimp/v2.10/gimp-2.10.36.tar.bz2",
 

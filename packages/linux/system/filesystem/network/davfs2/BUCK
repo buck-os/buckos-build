@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # davfs2 requires libneon (WebDAV library). The release tarball doesn't
 # bundle neon sources; use pkg-config to find the neon dep.
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "davfs2",
     url = "https://download-mirror.savannah.gnu.org/releases/davfs2/davfs2-1.7.2.tar.gz",
 
@@ -25,8 +24,7 @@ package(
 )
 
 # neon - HTTP/WebDAV client library (required by davfs2)
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "neon",
     url = "https://notroj.github.io/neon/neon-0.33.0.tar.gz",
     sha256 = "659a5cc9cea05e6e7864094f1e13a77abbbdbab452f04d751a8c16a9447cf4b8",

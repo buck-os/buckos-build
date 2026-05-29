@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # jetty - Java HTTP server and servlet container
 #
@@ -6,8 +6,7 @@ load("//defs:package.bzl", "package")
 #   This is a pre-built Java application, USE flags control runtime features
 #   java     - Java runtime (always required)
 
-package(
-    build_rule = "binary",
+binary_package(
     name = "jetty",
     version = "12.0.6",
     url = "https://github.com/jetty/jetty.project/archive/refs/tags/jetty-12.0.6.tar.gz",

@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # unrar - RAR archive extractor
 # Use GitHub mirror since www.rarlab.com often times out
 # Upgraded to 7.0.9 as 6.2.12 is not available on GitHub mirrors
-package(
+binary_package(
     name = "unrar",
-    build_rule = "binary",
     version = "7.0.9",
     url = "https://github.com/aawc/unrar/archive/refs/tags/v7.0.9.tar.gz",
     sha256 = "6dd89a09514923cbff0e112f33584dc6de0d21ecd30ad1ed19c213a4f3947695",

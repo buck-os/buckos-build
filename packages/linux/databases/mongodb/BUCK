@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # mongodb - Document-oriented database
 #
@@ -6,8 +6,7 @@ load("//defs:package.bzl", "package")
 # cheetah3, psutil, pymongo, etc.). We set up PYTHONPATH from deps and install
 # the requirements-parser module inline since it's a small pure-Python package.
 
-package(
-    build_rule = "binary",
+binary_package(
     name = "mongodb",
     version = "7.0.5",
     url = "https://github.com/mongodb/mongo/archive/refs/tags/r7.0.5.tar.gz",

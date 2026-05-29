@@ -1,8 +1,7 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # expat-host - Native expat for host builds (used by wayland-scanner, etc.)
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "expat-host",
     version = "2.7.3",
     source = ":expat-src",
@@ -17,8 +16,7 @@ package(
 )
 
 # expat - official release tarball includes pre-generated configure
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "expat",
     # No autoreconf needed - tarball has pre-generated configure
     url = "https://github.com/libexpat/libexpat/releases/download/R_2_7_3/expat-2.7.3.tar.xz",

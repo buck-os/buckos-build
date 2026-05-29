@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:cmake.bzl", "cmake_package")
 
 # CivetWeb - Embedded C/C++ web server
 #
@@ -12,8 +12,7 @@ load("//defs:package.bzl", "package")
 #   websocket - Enable WebSocket support
 #   ipv6      - Enable IPv6 support
 
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "civetweb",
     version = "1.15",
     url = "https://github.com/civetweb/civetweb/archive/refs/tags/v1.15.tar.gz",

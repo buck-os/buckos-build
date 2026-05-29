@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # mtools - Utilities to access MS-DOS disks without mounting
 # Provides mmd, mcopy, mformat, etc. for FAT filesystem manipulation.
 # Required by ISO image creation (EFI boot image assembly).
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "mtools",
     version = "4.0.44",
     url = "https://mirrors.kernel.org/gnu/mtools/mtools-4.0.44.tar.gz",

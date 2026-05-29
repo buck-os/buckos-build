@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # =============================================================================
 # Julia - High-level, high-performance dynamic language (Pre-built binaries)
@@ -6,8 +6,7 @@ load("//defs:package.bzl", "package")
 # Building Julia from source requires specific LLVM/GCC version combinations.
 # Using official pre-built binaries is recommended.
 
-package(
-    build_rule = "binary",
+binary_package(
     name = "julia",
     version = "1.11.2",
     url = "https://github.com/JuliaLang/julia/archive/refs/tags/v1.11.2.tar.gz",

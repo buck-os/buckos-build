@@ -1,13 +1,12 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # laptop-mode-tools - Laptop power saving tools
 # Reduce power consumption through various kernel and hardware settings
 
 # USE flags: See use_flags.bzl for available flags
 
-package(
+autotools_package(
     name = "laptop-mode-tools",
-    build_rule = "autotools",
     skip_configure = True,
     url = "https://github.com/rickysarraf/laptop-mode-tools/archive/refs/tags/1.74.tar.gz",
 

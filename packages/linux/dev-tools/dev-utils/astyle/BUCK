@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # Artistic Style - source code indenter, formatter, and beautifier
 # Makefile-only project (no configure script), build from build/gcc/
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "astyle",
     skip_configure = True,
     version = "3.4.13",

@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # -----------------------------------------------------------------------------
 # skalibs - General-purpose libraries for skarnet.org software
 # -----------------------------------------------------------------------------
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "skalibs",
     # Skarnet release tarball includes pre-generated configure script
     url = "https://skarnet.org/software/skalibs/skalibs-2.14.1.1.tar.gz",

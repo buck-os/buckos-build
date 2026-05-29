@@ -1,4 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
+load("//defs/packages:binary.bzl", "binary_package")
+load("//defs/packages:cargo.bzl", "cargo_package")
+load("//defs/packages:cmake.bzl", "cmake_package")
+load("//defs/packages:go.bzl", "go_package")
+load("//defs/packages:meson.bzl", "meson_package")
 
 # Comprehensive encryption tools package
 # This directory contains various encryption and cryptographic utilities
@@ -7,8 +12,7 @@ load("//defs:package.bzl", "package")
 # AGE - Simple, modern, secure file encryption
 # =============================================================================
 
-package(
-    build_rule = "go",
+go_package(
     name = "age",
     version = "1.2.0",
     url = "https://github.com/FiloSottile/age/archive/refs/tags/v1.2.0.tar.gz",
@@ -25,8 +29,7 @@ package(
 # RAGE - Rust implementation of age
 # =============================================================================
 
-package(
-    build_rule = "cargo",
+cargo_package(
     name = "rage",
     version = "0.10.0",
     url = "https://github.com/str4d/rage/archive/refs/tags/v0.10.0.tar.gz",
@@ -44,8 +47,7 @@ package(
 # MINISIGN - Dead simple signing tool
 # =============================================================================
 
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "minisign",
     version = "0.11",
     url = "https://github.com/jedisct1/minisign/archive/refs/tags/0.11.tar.gz",
@@ -66,9 +68,8 @@ package(
 # SIGNIFY - OpenBSD cryptographic signing tool
 # =============================================================================
 
-package(
+autotools_package(
     name = "signify",
-    build_rule = "autotools",
     skip_configure = True,
     url = "https://github.com/aperezdc/signify/archive/refs/tags/v31.tar.gz",
 
@@ -120,9 +121,8 @@ make PREFIX=/usr MANDIR=/usr/share/man DESTDIR="$OUT" install
 # LIBBSD - BSD compatibility library (dependency for signify)
 # =============================================================================
 
-package(
+autotools_package(
     name = "libbsd",
-    build_rule = "autotools",
     url = "https://libbsd.freedesktop.org/releases/libbsd-0.12.2.tar.xz",
 
     sha256 = "b88cc9163d0c652aaf39a99991d974ddba1c3a9711db8f1b5838af2a14731014",
@@ -139,9 +139,8 @@ package(
 # LIBMD - Message digest library (dependency for libbsd)
 # =============================================================================
 
-package(
+autotools_package(
     name = "libmd",
-    build_rule = "autotools",
     url = "https://archive.hadrons.org/software/libmd/libmd-1.1.0.tar.xz",
 
     sha256 = "1bd6aa42275313af3141c7cf2e5b964e8b1fd488025caf2f971f43b00776b332",
@@ -157,9 +156,8 @@ package(
 # CCRYPT - Secure encryption and decryption of files
 # =============================================================================
 
-package(
+autotools_package(
     name = "ccrypt",
-    build_rule = "autotools",
     url = "https://ccrypt.sourceforge.net/download/1.11/ccrypt-1.11.tar.gz",
 
     sha256 = "b19c47500a96ee5fbd820f704c912f6efcc42b638c0a6aa7a4e3dc0a6b51a44f",
@@ -181,9 +179,8 @@ package(
 # PASS - Password store using GPG
 # =============================================================================
 
-package(
+autotools_package(
     name = "pass",
-    build_rule = "autotools",
     skip_configure = True,
     url = "https://github.com/zx2c4/password-store/archive/refs/tags/1.7.4.tar.gz",
 
@@ -208,9 +205,8 @@ package(
 # TOMB - File encryption and hiding
 # =============================================================================
 
-package(
+autotools_package(
     name = "tomb",
-    build_rule = "autotools",
     skip_configure = True,
     url = "https://github.com/dyne/Tomb/archive/refs/tags/v2.10.tar.gz",
 
@@ -234,8 +230,7 @@ package(
 # GOCRYPTFS - Encrypted overlay filesystem
 # =============================================================================
 
-package(
-    build_rule = "go",
+go_package(
     name = "gocryptfs",
     version = "2.4.0",
     url = "https://github.com/rfjakob/gocryptfs/archive/refs/tags/v2.4.0.tar.gz",
@@ -253,8 +248,7 @@ package(
 # FSCRYPT - Linux native filesystem encryption
 # =============================================================================
 
-package(
-    build_rule = "go",
+go_package(
     name = "fscrypt",
     version = "0.3.5",
     url = "https://github.com/google/fscrypt/archive/refs/tags/v0.3.5.tar.gz",
@@ -276,9 +270,8 @@ package(
 # =============================================================================
 
 # ecryptfs-utils: git snapshot, needs autoreconf to generate configure script
-package(
+autotools_package(
     name = "ecryptfs-utils",
-    build_rule = "autotools",
     url = "https://github.com/dustinkirkland/ecryptfs-utils/archive/5e877f3747303096f7861863bac937be4328fa72.tar.gz",
 
     sha256 = "b91cd0a707f0b1d912297efb1019beca1cd973d199c4fd9f0bcdc1898bb66ebe",
@@ -319,9 +312,8 @@ autoreconf -fi
 # KEYUTILS - Linux key management utilities
 # =============================================================================
 
-package(
+autotools_package(
     name = "keyutils",
-    build_rule = "autotools",
     skip_configure = True,
     url = "https://git.kernel.org/pub/scm/linux/kernel/git/dhowells/keyutils.git/snapshot/keyutils-1.6.3.tar.gz",
 
@@ -348,8 +340,7 @@ package(
 # SOPS - Secrets OPerationS
 # =============================================================================
 
-package(
-    build_rule = "go",
+go_package(
     name = "sops",
     version = "3.8.1",
     url = "https://github.com/getsops/sops/archive/refs/tags/v3.8.1.tar.gz",
@@ -367,9 +358,8 @@ package(
 # VERACRYPT CLI - Volume encryption based on TrueCrypt
 # =============================================================================
 
-package(
+autotools_package(
     name = "veracrypt",
-    build_rule = "autotools",
     skip_configure = True,
     url = "https://launchpad.net/veracrypt/trunk/1.26.7/+download/VeraCrypt_1.26.7_Source.tar.bz2",
 
@@ -396,8 +386,7 @@ package(
 # FUSE3 - Filesystem in Userspace
 # =============================================================================
 
-package(
-    build_rule = "meson",
+meson_package(
     name = "fuse3",
     url = "https://github.com/libfuse/libfuse/releases/download/fuse-3.16.2/fuse-3.16.2.tar.gz",
 
@@ -417,8 +406,7 @@ package(
 # AGE-PLUGIN-YUBIKEY - YubiKey plugin for age
 # =============================================================================
 
-package(
-    build_rule = "cargo",
+cargo_package(
     name = "age-plugin-yubikey",
     version = "0.5.0",
     url = "https://github.com/str4d/age-plugin-yubikey/archive/refs/tags/v0.5.0.tar.gz",
@@ -437,9 +425,8 @@ package(
 # PCSC-LITE - Smart card daemon
 # =============================================================================
 
-package(
+autotools_package(
     name = "pcsc-lite",
-    build_rule = "autotools",
     url = "https://pcsclite.apdu.fr/files/pcsc-lite-2.0.3.tar.bz2",
 
     sha256 = "f42ee9efa489e9ff5d328baefa26f9c515be65021856e78d99ad1f0ead9ec85d",
@@ -464,9 +451,8 @@ package(
 # LIBUSB - USB device access library
 # =============================================================================
 
-package(
+autotools_package(
     name = "libusb",
-    build_rule = "autotools",
     url = "https://github.com/libusb/libusb/releases/download/v1.0.27/libusb-1.0.27.tar.bz2",
 
     sha256 = "ffaa41d741a8a3bee244ac8e54a72ea05bf2879663c098c82fc5757853441575",
@@ -483,8 +469,7 @@ package(
 # SEQUOIA-SQ - Modern PGP implementation
 # =============================================================================
 
-package(
-    build_rule = "cargo",
+cargo_package(
     name = "sequoia-sq",
     version = "0.35.0",
     url = "https://gitlab.com/sequoia-pgp/sequoia-sq/-/archive/v0.35.0/sequoia-sq-v0.35.0.tar.gz",
@@ -504,9 +489,8 @@ package(
 # NETTLE - Low-level cryptographic library
 # =============================================================================
 
-package(
+autotools_package(
     name = "nettle",
-    build_rule = "autotools",
     url = "https://mirrors.kernel.org/gnu/nettle/nettle-3.9.1.tar.gz",
 
     sha256 = "ccfeff981b0ca71bbd6fbcb054f407c60ffb644389a5be80d6716d5b550c6ce3",
@@ -522,9 +506,8 @@ package(
 # OPENSC - Smart card tools and middleware
 # =============================================================================
 
-package(
+autotools_package(
     name = "opensc",
-    build_rule = "autotools",
     url = "https://github.com/OpenSC/OpenSC/releases/download/0.25.1/opensc-0.25.1.tar.gz",
 
     sha256 = "23cbaae8bd7c8eb589b68c0a961dfb0d02007bea3165a3fc5efe2621d549b37b",
@@ -545,9 +528,8 @@ package(
 # ARGON2 - Memory-hard password hashing
 # =============================================================================
 
-package(
+autotools_package(
     name = "argon2",
-    build_rule = "autotools",
     skip_configure = True,
     url = "https://github.com/P-H-C/phc-winner-argon2/archive/refs/tags/20190702.tar.gz",
 
@@ -569,9 +551,8 @@ package(
 # LIBRESSL - OpenBSD's fork of OpenSSL
 # =============================================================================
 
-package(
+autotools_package(
     name = "libressl",
-    build_rule = "autotools",
     url = "https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-3.9.2.tar.gz",
 
     sha256 = "7b031dac64a59eb6ee3304f7ffb75dad33ab8c9d279c847f92c89fb846068f97",
@@ -588,9 +569,8 @@ package(
 # =============================================================================
 
 # Botan uses a Python configure.py script, not autotools
-package(
+binary_package(
     name = "botan",
-    build_rule = "binary",
     url = "https://botan.randombit.net/releases/Botan-3.4.0.tar.xz",
 
     sha256 = "71843afcc0a2c585f8f33fa304f0b58ae4b9c5d8306f894667b3746044277557",
@@ -631,9 +611,8 @@ make install DESTDIR="$OUT"
 # HASHCAT - Advanced password recovery utility
 # =============================================================================
 
-package(
+autotools_package(
     name = "hashcat",
-    build_rule = "autotools",
     skip_configure = True,
     url = "https://hashcat.net/files/hashcat-6.2.6.tar.gz",
 
@@ -656,9 +635,8 @@ package(
 # =============================================================================
 
 # John's configure script and Makefile are in the src/ subdirectory
-package(
+binary_package(
     name = "john",
-    build_rule = "binary",
     url = "https://www.openwall.com/john/k/john-1.9.0.tar.xz",
 
     sha256 = "0b266adcfef8c11eed690187e71494baea539efbd632fe221181063ba09508df",
@@ -708,9 +686,8 @@ ln -sf john "$OUT/usr/bin/unique"
 # BCRYPT - Blowfish file encryption utility
 # =============================================================================
 
-package(
+autotools_package(
     name = "bcrypt",
-    build_rule = "autotools",
     skip_configure = True,
     url = "https://bcrypt.sourceforge.net/bcrypt-1.1.tar.gz",
 
@@ -747,9 +724,8 @@ cp bcrypt.1 "$OUT/usr/share/man/man1/" || true
 # OPENSSL-PKCS11 - PKCS#11 engine for OpenSSL
 # =============================================================================
 
-package(
+autotools_package(
     name = "libp11",
-    build_rule = "autotools",
     url = "https://github.com/OpenSC/libp11/releases/download/libp11-0.4.12/libp11-0.4.12.tar.gz",
 
     sha256 = "1e1a2533b3fcc45fde4da64c9c00261b1047f14c3f911377ebd1b147b3321cfd",
@@ -766,8 +742,7 @@ package(
 # CLEVIS - Automated decryption framework
 # =============================================================================
 
-package(
-    build_rule = "meson",
+meson_package(
     name = "clevis",
     url = "https://github.com/latchset/clevis/archive/refs/tags/v21.tar.gz",
 
@@ -792,8 +767,7 @@ sed -i "s/conf.get('OLD_CRYPTSETUP')/false/" src/luks/tests/meson.build || true
 # JOSE - JavaScript Object Signing and Encryption
 # =============================================================================
 
-package(
-    build_rule = "meson",
+meson_package(
     name = "jose",
     url = "https://github.com/latchset/jose/archive/refs/tags/v14.tar.gz",
 
@@ -814,9 +788,8 @@ package(
 # JANSSON - C library for encoding/decoding JSON
 # =============================================================================
 
-package(
+autotools_package(
     name = "jansson",
-    build_rule = "autotools",
     url = "https://github.com/akheron/jansson/releases/download/v2.14/jansson-2.14.tar.gz",
 
     sha256 = "5798d010e41cf8d76b66236cfb2f2543c8d082181d16bc3085ab49538d4b9929",

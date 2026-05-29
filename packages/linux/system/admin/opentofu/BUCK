@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:go.bzl", "go_package")
 
 # OpenTofu - Open-source Infrastructure as Code tool
 #
@@ -9,8 +9,7 @@ load("//defs:package.bzl", "package")
 # OpenTofu is licensed under MPL-2.0, making it suitable for production
 # use without licensing concerns.
 
-package(
-    build_rule = "go",
+go_package(
     name = "opentofu",
     version = "1.11.5",
     url = "https://github.com/opentofu/opentofu/archive/refs/tags/v1.11.5.tar.gz",

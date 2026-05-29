@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:cmake.bzl", "cmake_package")
 
 # Google Benchmark - A microbenchmark support library
 
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "benchmark",
     version = "1.8.3",
     use_configure = {

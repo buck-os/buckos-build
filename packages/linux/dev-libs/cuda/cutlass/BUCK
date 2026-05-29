@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # NVIDIA CUTLASS - CUDA Templates for Linear Algebra Subroutines
 # CUTLASS is a collection of CUDA C++ template abstractions for implementing
@@ -6,8 +6,7 @@ load("//defs:package.bzl", "package")
 # and scales within CUDA. It incorporates strategies for hierarchical decomposition and
 # data movement similar to those used to implement cuBLAS and cuDNN.
 
-package(
-    build_rule = "binary",
+binary_package(
     name = "cutlass",
     version = "3.9.2",
     url = "https://github.com/NVIDIA/cutlass/archive/refs/tags/v3.9.2.tar.gz",

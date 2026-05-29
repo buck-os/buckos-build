@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # xorgproto - X.Org protocol headers
 # This provides the core X11 protocol definitions and headers
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "xorgproto",
     version = "2024.1",
     url = "https://xorg.freedesktop.org/archive/individual/proto/xorgproto-2024.1.tar.xz",

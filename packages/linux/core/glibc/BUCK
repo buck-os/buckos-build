@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # =============================================================================
 # glibc - GNU C Library (built from source)
@@ -14,9 +14,8 @@ load("//defs:package.bzl", "package")
 # Depends only on linux-headers (no shared libs → no LD_LIBRARY_PATH
 # poisoning of the cross-compiler).
 
-package(
+binary_package(
     name = "glibc",
-    build_rule = "binary",
     version = "2.42",
     url = "https://mirrors.kernel.org/gnu/glibc/glibc-2.42.tar.xz",
     sha256 = "d1775e32e4628e64ef930f435b67bb63af7599acb6be2b335b9f19f16509f17f",

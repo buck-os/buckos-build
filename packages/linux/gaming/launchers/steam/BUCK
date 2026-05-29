@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # Steam - Digital distribution platform by Valve
 # The most popular PC gaming platform
@@ -26,8 +26,7 @@ genrule(
     """,
 )
 
-package(
-    build_rule = "binary",
+binary_package(
     name = "steam",
     version = "1.0.0.81",
     url = "https://cdn.cloudflare.steamstatic.com/client/installer/steam.deb",

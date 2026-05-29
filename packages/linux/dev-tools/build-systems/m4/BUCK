@@ -1,8 +1,7 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # m4 - official GNU tarball includes pre-generated configure
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "m4",
     # No autoreconf needed - tarball has pre-generated configure
     version = "1.4.19",

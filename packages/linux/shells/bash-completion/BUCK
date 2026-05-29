@@ -1,8 +1,7 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # bash-completion - Programmable completion functions for bash
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "bash-completion",
     # GitHub releases/download tarball includes pre-generated configure script
     url = "https://github.com/scop/bash-completion/releases/download/2.14.0/bash-completion-2.14.0.tar.xz",

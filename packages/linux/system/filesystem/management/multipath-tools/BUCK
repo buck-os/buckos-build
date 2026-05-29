@@ -1,7 +1,6 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "make_package")
 
-package(
-    build_rule = "make",
+make_package(
     name = "multipath-tools",
     skip_configure = True,
     url = "https://github.com/opensvc/multipath-tools/archive/refs/tags/0.9.7.tar.gz",

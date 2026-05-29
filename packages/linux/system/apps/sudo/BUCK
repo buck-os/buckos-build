@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # sudo - Execute commands as another user
 # USE flags: pam, selinux, nls, sssd, ldap
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "sudo",
     # Official release tarball includes pre-generated configure script
     # GCC 15: -Wincompatible-pointer-types is now an error by default

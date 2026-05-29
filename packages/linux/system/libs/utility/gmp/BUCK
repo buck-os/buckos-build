@@ -1,8 +1,7 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # GMP - official tarball includes pre-generated configure
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "gmp",
     # No autoreconf needed - tarball has pre-generated configure
     url = "https://mirror.buckos.org/g/gmp-6.3.0.tar.xz",

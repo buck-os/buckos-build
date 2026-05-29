@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # setuptools - Build backend for Python packages
 # Downloaded as a wheel and extracted directly into site-packages.
 # This avoids the circular dependency of needing setuptools to install
 # setuptools (Python 3.12+ removed it from stdlib).
-package(
-    build_rule = "binary",
+binary_package(
     name = "setuptools",
     version = "75.8.2",
     url = "https://files.pythonhosted.org/packages/py3/s/setuptools/setuptools-75.8.2-py3-none-any.whl",

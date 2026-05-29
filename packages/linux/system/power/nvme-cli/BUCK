@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:meson.bzl", "meson_package")
 
 # nvme-cli - NVMe Management Utilities
 # NVMe storage management including power state transitions
 
-package(
-    build_rule = "meson",
+meson_package(
     name = "nvme-cli",
     version = "2.7.1",
     url = "https://github.com/linux-nvme/nvme-cli/archive/refs/tags/v2.7.1.tar.gz",

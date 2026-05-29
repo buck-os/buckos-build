@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # =============================================================================
 # LIBESTR - String handling library for rsyslog
 # =============================================================================
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "libestr",
     version = "0.1.11",
     url = "https://libestr.adiscon.com/files/download/libestr-0.1.11.tar.gz",
@@ -20,8 +19,7 @@ package(
 # LIBFASTJSON - Fast JSON library for rsyslog
 # =============================================================================
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "libfastjson",
     version = "1.2304.0",
     url = "https://download.rsyslog.com/libfastjson/libfastjson-1.2304.0.tar.gz",
@@ -37,8 +35,7 @@ package(
 # USE flags: gnutls, ssl, gcrypt, mysql, postgres, dbi, systemd, uuid
 # =============================================================================
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "rsyslog",
     # Official release tarball includes pre-generated configure script
     version = "8.2312.0",

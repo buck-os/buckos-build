@@ -1,12 +1,11 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # =============================================================================
 # net-tools - Traditional network utilities (ifconfig, netstat, route)
 # =============================================================================
 
-package(
+autotools_package(
     name = "net-tools",
-    build_rule = "autotools",
     skip_configure = True,
     version = "2.10",
     url = "https://github.com/ecki/net-tools/archive/refs/tags/v2.10.tar.gz",

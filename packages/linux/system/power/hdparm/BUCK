@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # hdparm - Hard Disk Parameters
 # Get/set SATA/IDE device parameters including power management
 
-package(
+autotools_package(
     name = "hdparm",
-    build_rule = "autotools",
     skip_configure = True,
     url = "https://downloads.sourceforge.net/project/hdparm/hdparm/hdparm-9.65.tar.gz",
 

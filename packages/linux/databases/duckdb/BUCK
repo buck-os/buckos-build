@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:cmake.bzl", "cmake_package")
 
 # DuckDB - High-performance analytical database system
 #
@@ -19,8 +19,7 @@ load("//defs:package.bzl", "package")
 #   autocomplete - Enable autocomplete extension
 #   threads    - Enable multi-threading support
 
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "duckdb",
     version = "1.3.1",
     url = "https://github.com/duckdb/duckdb/archive/refs/tags/v1.3.1.tar.gz",

@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:cmake.bzl", "cmake_package")
 
 # nanobind - Tiny and efficient C++/Python bindings
 # Header-only library, install cmake config and headers.
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "nanobind",
     version = "2.8.0",
     url = "https://github.com/wjakob/nanobind/archive/refs/tags/v2.8.0.tar.gz",

@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # USE flags for blender (cmake build):
 # - cycles: Cycles render engine (default: enabled)
@@ -10,8 +10,7 @@ load("//defs:package.bzl", "package")
 # - sdl: SDL support (default: enabled)
 # - python: Python scripting (default: enabled)
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "blender",
     url = "https://download.blender.org/source/blender-4.0.2.tar.xz",
 

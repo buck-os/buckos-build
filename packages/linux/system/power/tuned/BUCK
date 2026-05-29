@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # tuned - Adaptive System Tuning Daemon
 # Uses Makefile for installation, not pip/setuptools.
-package(
-    build_rule = "binary",
+binary_package(
     name = "tuned",
     version = "2.22.1",
     url = "https://github.com/redhat-performance/tuned/archive/refs/tags/v2.22.1.tar.gz",

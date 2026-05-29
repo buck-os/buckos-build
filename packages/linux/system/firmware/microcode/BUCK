@@ -1,12 +1,11 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # =============================================================================
 # CPU Microcode Updates
 # =============================================================================
 
 # Intel CPU Microcode
-package(
-    build_rule = "binary",
+binary_package(
     name = "intel-ucode",
     version = "20241112",
     url = "https://github.com/intel/Intel-Linux-Processor-Microcode-Data-Files/archive/refs/tags/microcode-20241112.tar.gz",
@@ -32,8 +31,7 @@ package(
 )
 
 # AMD CPU Microcode
-package(
-    build_rule = "binary",
+binary_package(
     name = "amd-ucode",
     version = "20241017",
     local_only = True,

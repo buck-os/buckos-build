@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:meson.bzl", "meson_package")
 
 # GStreamer - Open source multimedia framework
 
-package(
-    build_rule = "meson",
+meson_package(
     name = "gstreamer",
     version = "1.24.6",
     use_configure = {
@@ -35,8 +34,7 @@ package(
 )
 
 # GStreamer plugins - base set
-package(
-    build_rule = "meson",
+meson_package(
     name = "gst-plugins-base",
     version = "1.24.6",
     url = "https://gstreamer.freedesktop.org/src/gst-plugins-base/gst-plugins-base-1.24.6.tar.xz",
@@ -60,8 +58,7 @@ package(
 
 # GStreamer plugins - good set
 # Note: libvpx dep removed (package not available yet)
-package(
-    build_rule = "meson",
+meson_package(
     name = "gst-plugins-good",
     version = "1.24.6",
     url = "https://gstreamer.freedesktop.org/src/gst-plugins-good/gst-plugins-good-1.24.6.tar.xz",
@@ -83,8 +80,7 @@ package(
 
 # GStreamer plugins - bad set
 # Note: x265 dep removed (package not available yet)
-package(
-    build_rule = "meson",
+meson_package(
     name = "gst-plugins-bad",
     version = "1.24.6",
     url = "https://gstreamer.freedesktop.org/src/gst-plugins-bad/gst-plugins-bad-1.24.6.tar.xz",
@@ -109,8 +105,7 @@ package(
 )
 
 # GStreamer plugins - ugly set (may have licensing issues)
-package(
-    build_rule = "meson",
+meson_package(
     name = "gst-plugins-ugly",
     version = "1.24.6",
     url = "https://gstreamer.freedesktop.org/src/gst-plugins-ugly/gst-plugins-ugly-1.24.6.tar.xz",

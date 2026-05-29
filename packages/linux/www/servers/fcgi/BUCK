@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # FastCGI - Fast Common Gateway Interface library
 #
@@ -7,8 +7,7 @@ load("//defs:package.bzl", "package")
 #
 # This library provides support for writing FastCGI applications in C/C++.
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "fcgi",
     host_deps = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",

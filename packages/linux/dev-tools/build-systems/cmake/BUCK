@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # =============================================================================
 # CMake - Cross-platform build system
@@ -7,8 +7,7 @@ load("//defs:package.bzl", "package")
 # skip_configure + pre_build_cmds runs bootstrap in the copied source tree,
 # then the normal make phase builds from the generated Makefile.
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "cmake",
     version = "4.2.0",
     url = "https://github.com/Kitware/CMake/releases/download/v4.2.0/cmake-4.2.0.tar.gz",
