@@ -1,13 +1,12 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # nginx - High-performance HTTP server and reverse proxy
 #
 # NOTE: nginx uses a custom configure script (not autotools) so we use
 # binary build rule with custom build steps.
 
-package(
+binary_package(
     name = "nginx",
-    build_rule = "binary",
     version = "1.26.2",
     url = "https://nginx.org/download/nginx-1.26.2.tar.gz",
     sha256 = "627fe086209bba80a2853a0add9d958d7ebbdffa1a8467a5784c9a6b4f03d738",

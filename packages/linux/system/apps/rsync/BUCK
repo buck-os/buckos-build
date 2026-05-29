@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # rsync - Fast incremental file transfer
 # USE flags: lz4, xxhash, zstd, ssl, acl, xattr, iconv
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "rsync",
     # Prevent Makefile from trying to regenerate configure.sh (requires autoconf)
     pre_configure_cmds = ["""

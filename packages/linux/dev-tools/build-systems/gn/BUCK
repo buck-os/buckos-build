@@ -1,12 +1,11 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # GN - Generate Ninja build files
 # GN is a meta-build system that generates Ninja build files.
 # It's used primarily by Chromium but also by other projects.
 # Using o-lim/generate-ninja fork which has proper releases.
 
-package(
-    build_rule = "binary",
+binary_package(
     name = "gn",
     version = "0.4.1",
     url = "https://github.com/o-lim/generate-ninja/archive/refs/tags/v0.4.1.tar.gz",

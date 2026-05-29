@@ -1,5 +1,5 @@
 """
-meson_package rule: meson setup build && ninja -C build && ninja -C build install.
+meson_build rule: meson setup build && ninja -C build && ninja -C build install.
 
 Five discrete cacheable actions — Buck2 can skip any phase whose
 inputs haven't changed.
@@ -203,7 +203,7 @@ def _src_install(ctx, built, source, lib_dirs_file = None):
 
 # ── Rule implementation ───────────────────────────────────────────────
 
-def _meson_package_impl(ctx):
+def _meson_build_impl(ctx):
     # Phase 1: src_unpack — obtain source from dep
     source = ctx.attrs.source[DefaultInfo].default_outputs[0]
 
@@ -256,8 +256,8 @@ def _meson_package_impl(ctx):
 
 # ── Rule definition ───────────────────────────────────────────────────
 
-meson_package = rule(
-    impl = _meson_package_impl,
+meson_build = rule(
+    impl = _meson_build_impl,
     attrs = COMMON_PACKAGE_ATTRS | {
         # Meson-specific
         "meson_args": attrs.list(attrs.string(), default = []),

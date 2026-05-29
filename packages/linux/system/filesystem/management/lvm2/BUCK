@@ -1,7 +1,6 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "lvm2",
     # Use pre-generated configure from tarball to avoid AX_PYTHON_MODULE macro issues
     # Add library search paths for cross-compilation via LDFLAGS -L flags

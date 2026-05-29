@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:cmake.bzl", "cmake_package")
 
 # Draco - 3D Data Compression Library from Google
 # Draco is a library for compressing and decompressing 3D geometric meshes and point clouds.
 # It is designed to improve the storage and transmission of 3D graphics.
 
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "draco",
     version = "1.5.7",
     url = "https://github.com/google/draco/archive/refs/tags/1.5.7.tar.gz",

@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:meson.bzl", "meson_package")
 
 # mpv - A free, open source, and cross-platform media player
 
@@ -15,8 +15,7 @@ load("//defs:package.bzl", "package")
 # - jack: JACK audio (default: enabled)
 # - lua: Lua scripting (default: enabled)
 
-package(
-    build_rule = "meson",
+meson_package(
     name = "mpv",
     version = "0.38.0",
     use_configure = {

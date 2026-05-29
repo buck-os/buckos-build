@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # =============================================================================
 # CA Certificates - Root CA certificates bundle
 # =============================================================================
 
-package(
-    build_rule = "binary",
+binary_package(
     name = "ca-certificates",
     version = "2025.02.25",
     url = "https://curl.se/ca/cacert-2025-02-25.pem",

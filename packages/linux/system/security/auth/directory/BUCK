@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # Directory services and enterprise authentication packages
 # Kerberos, LDAP, SASL, SSSD, and related libraries
 
 # MIT Kerberos
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "krb5",
     build_subdir = "src",
     url = "https://kerberos.org/dist/krb5/1.21/krb5-1.21.2.tar.gz",
@@ -67,8 +66,7 @@ package(
 
 # e2fsprogs-libs (for libcom_err, needed by Kerberos)
 # Note: e2fsprogs-libs separate tarball no longer exists; use main e2fsprogs package
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "e2fsprogs-libs",
     source = "//packages/linux/system/filesystem/native/e2fsprogs:e2fsprogs-src",
     version = "1.47.0",
@@ -89,8 +87,7 @@ package(
 )
 
 # OpenLDAP
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "openldap",
     url = "https://www.openldap.org/software/download/OpenLDAP/openldap-release/openldap-2.6.7.tgz",
 
@@ -122,8 +119,7 @@ package(
 )
 
 # Cyrus SASL - Simple Authentication and Security Layer
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "cyrus-sasl",
     url = "https://github.com/cyrusimap/cyrus-sasl/releases/download/cyrus-sasl-2.1.28/cyrus-sasl-2.1.28.tar.gz",
 
@@ -161,8 +157,7 @@ package(
 )
 
 # SSSD - System Security Services Daemon
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "sssd",
     url = "https://github.com/SSSD/sssd/releases/download/2.9.4/sssd-2.9.4.tar.gz",
 
@@ -206,8 +201,7 @@ package(
 # Samba libraries (tdb, tevent) needed by SSSD
 # talloc, ldb, lmdb now in system/libs/
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "tdb",
     url = "https://www.samba.org/ftp/tdb/tdb-1.4.10.tar.gz",
 
@@ -262,8 +256,7 @@ make -j${MAKEOPTS:-$(nproc)}
     ],
 )
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "tevent",
     url = "https://www.samba.org/ftp/tevent/tevent-0.16.1.tar.gz",
 
@@ -279,8 +272,7 @@ package(
 )
 
 # ding-libs - SSSD helper libraries
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "ding-libs",
     url = "https://github.com/SSSD/ding-libs/releases/download/0.6.2/ding-libs-0.6.2.tar.gz",
 
@@ -300,8 +292,7 @@ package(
 )
 
 # libunistring - Unicode string library
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "libunistring",
     url = "https://mirrors.kernel.org/gnu/libunistring/libunistring-1.2.tar.xz",
 
@@ -321,8 +312,7 @@ package(
 )
 
 # nss-pam-ldapd - LDAP client for NSS/PAM
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "nss-pam-ldapd",
     url = "https://arthurdejong.org/nss-pam-ldapd/nss-pam-ldapd-0.9.12.tar.gz",
 

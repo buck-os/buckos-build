@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # which - Shows full path of commands
 # USE flags: (minimal package)
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "which",
     # GNU release tarball includes pre-generated configure script
     version = "2.21",

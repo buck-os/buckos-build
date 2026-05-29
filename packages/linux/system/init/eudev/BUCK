@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # =============================================================================
 # eudev - Gentoo's fork of systemd-udev
@@ -6,8 +6,7 @@ load("//defs:package.bzl", "package")
 # Standalone device manager for /dev, independent of systemd.
 # Handles device nodes, hotplugging, and firmware loading.
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "eudev",
     # Release tarball includes pre-generated configure script
     version = "3.2.14",
@@ -61,8 +60,7 @@ rm -f $OUT/lib/udev/udevd 2>/dev/null || true
 
 # hwdata - Hardware identification databases (replaces hwids)
 # hwdata uses its own Makefile-based build, not autoconf
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "hwids",
     # hwdata has a simple configure script, not autoconf-based
     version = "0.400",

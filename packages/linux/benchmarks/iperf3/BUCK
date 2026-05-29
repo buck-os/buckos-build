@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # iperf3 - Network bandwidth measurement tool
 #
@@ -6,8 +6,7 @@ load("//defs:package.bzl", "package")
 #   ssl      - Enable SSL/TLS support with OpenSSL
 #   sctp     - Enable SCTP support
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "iperf3",
     # GitHub release tarball includes pre-generated configure script
     version = "3.16",

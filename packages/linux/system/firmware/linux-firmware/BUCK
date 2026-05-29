@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # =============================================================================
 # Linux Firmware - Firmware files for Linux kernel drivers
@@ -11,8 +11,7 @@ load("//defs:package.bzl", "package")
 #
 # =============================================================================
 
-package(
-    build_rule = "binary",
+binary_package(
     name = "linux-firmware",
     version = "20251125",
     url = "https://cdn.kernel.org/pub/linux/kernel/firmware/linux-firmware-20251125.tar.xz",

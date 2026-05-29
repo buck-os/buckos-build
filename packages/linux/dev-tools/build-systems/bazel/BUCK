@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # Bazel - Fast, scalable, multi-language and extensible build system
 # Using prebuilt binary since Bazel requires Bazel to build itself
 
-package(
-    build_rule = "binary",
+binary_package(
     name = "bazel",
     version = "7.0.2",
     url = "https://github.com/bazelbuild/bazel/archive/refs/tags/7.0.2.tar.gz",

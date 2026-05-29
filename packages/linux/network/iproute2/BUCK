@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # =============================================================================
 # iproute2 - Network configuration utilities
 # =============================================================================
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "iproute2",
     version = "6.1.0",
     url = "https://mirrors.edge.kernel.org/pub/linux/utils/net/iproute2/iproute2-6.1.0.tar.xz",

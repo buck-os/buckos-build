@@ -1,8 +1,7 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # check - official release tarball includes pre-generated configure
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "check",
     # No autoreconf needed - tarball has pre-generated configure
     url = "https://github.com/libcheck/check/releases/download/0.15.2/check-0.15.2.tar.gz",

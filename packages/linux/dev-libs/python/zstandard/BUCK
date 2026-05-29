@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # zstandard - Python bindings for the Zstandard compression library
 # Prebuilt manylinux wheel (bundles libzstd statically).
 # Used by Firefox's mach build system for compressed artifact handling.
 
-package(
-    build_rule = "binary",
+binary_package(
     name = "zstandard",
     version = "0.23.0",
     url = "https://files.pythonhosted.org/packages/ed/f6/2ac0287b442160a89d726b17a9184a4c615bb5237db763791a7fd16d9df1/zstandard-0.23.0.tar.gz",

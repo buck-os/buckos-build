@@ -1,8 +1,7 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # gzip - GNU compression utility
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "gzip",
     # GNU release tarball includes pre-generated configure script
     url = "https://mirrors.kernel.org/gnu/gzip/gzip-1.14.tar.xz",

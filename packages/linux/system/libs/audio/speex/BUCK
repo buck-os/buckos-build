@@ -1,8 +1,7 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # Speex audio codec
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "speex",
     # Xiph release tarball includes pre-generated configure script
     url = "https://downloads.xiph.org/releases/speex/speex-1.2.1.tar.gz",
@@ -32,8 +31,7 @@ package(
 )
 
 # SpeexDSP - signal processing library
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "speexdsp",
     # Xiph release tarball includes pre-generated configure script
     url = "https://downloads.xiph.org/releases/speex/speexdsp-1.2.1.tar.gz",

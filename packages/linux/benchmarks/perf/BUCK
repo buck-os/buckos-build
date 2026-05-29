@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # perf - Linux performance analysis tool
 #
@@ -7,8 +7,7 @@ load("//defs:package.bzl", "package")
 #   python   - Enable Python scripting
 #   libbpf   - Enable BPF support
 
-package(
-    build_rule = "binary",
+binary_package(
     name = "perf",
     version = "6.6.10",
     url = "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.6.10.tar.xz",

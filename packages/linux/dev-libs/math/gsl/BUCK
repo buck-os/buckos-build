@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # GSL - GNU Scientific Library
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "gsl",
     # GNU release tarball includes pre-generated configure script
     version = "2.8",

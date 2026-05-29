@@ -1,8 +1,7 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # Use official release tarball with configure pre-generated
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "audit",
     version = "3.1.5",
     url = "https://people.redhat.com/sgrubb/audit/audit-3.1.5.tar.gz",

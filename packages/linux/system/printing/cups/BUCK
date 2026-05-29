@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # =============================================================================
 # CUPS - Common UNIX Printing System
 # =============================================================================
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "cups",
     url = "https://github.com/OpenPrinting/cups/releases/download/v2.4.7/cups-2.4.7-source.tar.gz",
 
@@ -75,8 +74,7 @@ package(
 )
 
 # CUPS Filters - OpenPrinting CUPS filters
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "cups-filters",
     url = "https://github.com/OpenPrinting/cups-filters/releases/download/2.0.0/cups-filters-2.0.0.tar.xz",
 
@@ -104,8 +102,7 @@ package(
 # libpaper - Paper size handling library
 # Use the release tarball (not the GitHub archive) which includes pre-generated
 # configure and gnulib files.
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "libpaper",
     url = "https://github.com/rrthomas/libpaper/releases/download/v2.1.3/libpaper-2.1.3.tar.gz",
     sha256 = "b798be7c52036e684a90a68f0be954f173fea87886f8a1d25c6514a279216f4a",

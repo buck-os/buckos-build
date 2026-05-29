@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:cmake.bzl", "cmake_package")
 
 # =============================================================================
 # Qt6 Transitive Font Dependencies
@@ -65,8 +65,7 @@ KDE_DISABLE_PYTHON_ARGS = [
 # =============================================================================
 # Required for kwindowsystem Wayland support
 
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "plasma-wayland-protocols",
     url = "https://download.kde.org/stable/plasma-wayland-protocols/plasma-wayland-protocols-1.20.0.tar.xz",
 
@@ -309,8 +308,7 @@ cmake -S "$S" -B "$S/build" \\
     ${CMAKE_EXTRA_ARGS:-}
 """
 
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kcoreaddons",
     url = "https://download.kde.org/stable/frameworks/6.22/kcoreaddons-6.22.0.tar.xz",
 
@@ -342,8 +340,7 @@ package(
 )
 
 # KConfig - Configuration system
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kconfig",
     url = "https://download.kde.org/stable/frameworks/6.22/kconfig-6.22.0.tar.xz",
 
@@ -384,8 +381,7 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
 )
 
 # KI18n - Internationalization
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "ki18n",
     url = "https://download.kde.org/stable/frameworks/6.22/ki18n-6.22.0.tar.xz",
 
@@ -425,8 +421,7 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
 # Additional KF6 libraries required for plasma-desktop
 
 # KArchive - File compression support
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "karchive",
     url = "https://download.kde.org/stable/frameworks/6.22/karchive-6.22.0.tar.xz",
 
@@ -470,8 +465,7 @@ package(
 )
 
 # KCodecs - Text encoding
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kcodecs",
     url = "https://download.kde.org/stable/frameworks/6.22/kcodecs-6.22.0.tar.xz",
 
@@ -508,8 +502,7 @@ package(
 )
 
 # KGuiAddons - GUI utilities
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kguiaddons",
     url = "https://download.kde.org/stable/frameworks/6.22/kguiaddons-6.22.0.tar.xz",
 
@@ -557,8 +550,7 @@ sed -i '/add_subdirectory.*geo-scheme-handler/d' src/CMakeLists.txt || true
 )
 
 # KWidgetsAddons - Widget utilities
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kwidgetsaddons",
     url = "https://download.kde.org/stable/frameworks/6.22/kwidgetsaddons-6.22.0.tar.xz",
 
@@ -601,8 +593,7 @@ sed -i '/find_package.*Shiboken/d; /find_package.*PySide/d' CMakeLists.txt || tr
 )
 
 # KDBusAddons - D-Bus utilities
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kdbusaddons",
     url = "https://download.kde.org/stable/frameworks/6.22/kdbusaddons-6.22.0.tar.xz",
 
@@ -642,8 +633,7 @@ package(
 )
 
 # KItemViews - Item view utilities
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kitemviews",
     url = "https://download.kde.org/stable/frameworks/6.22/kitemviews-6.22.0.tar.xz",
 
@@ -681,8 +671,7 @@ package(
 )
 
 # KItemModels - Item model utilities
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kitemmodels",
     url = "https://download.kde.org/stable/frameworks/6.22/kitemmodels-6.22.0.tar.xz",
 
@@ -718,8 +707,7 @@ package(
 )
 
 # KColorScheme - Color scheme support
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kcolorscheme",
     url = "https://download.kde.org/stable/frameworks/6.22/kcolorscheme-6.22.0.tar.xz",
 
@@ -762,8 +750,7 @@ package(
 )
 
 # KConfigWidgets - Configuration widgets
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kconfigwidgets",
     url = "https://download.kde.org/stable/frameworks/6.22/kconfigwidgets-6.22.0.tar.xz",
 
@@ -811,8 +798,7 @@ package(
 )
 
 # Breeze - KDE visual style (window decorations, cursors, widgets)
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "breeze",
     url = "https://download.kde.org/stable/plasma/6.2.4/breeze-6.2.4.tar.xz",
 
@@ -870,8 +856,7 @@ package(
 )
 
 # Breeze Icons - KDE icon theme
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "breeze-icons",
     url = "https://download.kde.org/stable/frameworks/6.22/breeze-icons-6.22.0.tar.xz",
 
@@ -918,8 +903,7 @@ sed -i 's/BreezeIcons COMPONENTS icons/BreezeIcons/' CMakeLists.txt || true
 )
 
 # KIconThemes - Icon theme support
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kiconthemes",
     url = "https://download.kde.org/stable/frameworks/6.22/kiconthemes-6.22.0.tar.xz",
 
@@ -968,8 +952,7 @@ package(
 )
 
 # KAuth - Authorization framework
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kauth",
     url = "https://download.kde.org/stable/frameworks/6.22/kauth-6.22.0.tar.xz",
 
@@ -1021,8 +1004,7 @@ sed -i '/add_subdirectory.*examples/d' CMakeLists.txt || true
 )
 
 # KCrash - Crash handling
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kcrash",
     url = "https://download.kde.org/stable/frameworks/6.22/kcrash-6.22.0.tar.xz",
 
@@ -1065,8 +1047,7 @@ package(
 )
 
 # KWindowSystem - Window system access
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kwindowsystem",
     url = "https://download.kde.org/stable/frameworks/6.22/kwindowsystem-6.22.0.tar.xz",
 
@@ -1126,8 +1107,7 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
 )
 
 # KIdleTime - User idle time detection
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kidletime",
     url = "https://download.kde.org/stable/frameworks/6.22/kidletime-6.22.0.tar.xz",
 
@@ -1177,8 +1157,7 @@ sed -i '/add_subdirectory.*examples/d' CMakeLists.txt || true
 )
 
 # KNotifications - Desktop notifications
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "knotifications",
     url = "https://download.kde.org/stable/frameworks/6.22/knotifications-6.22.0.tar.xz",
 
@@ -1222,8 +1201,7 @@ package(
 )
 
 # KCompletion - Text completion
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kcompletion",
     url = "https://download.kde.org/stable/frameworks/6.22/kcompletion-6.22.0.tar.xz",
 
@@ -1257,8 +1235,7 @@ package(
 )
 
 # KJobWidgets - Job progress widgets
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kjobwidgets",
     url = "https://download.kde.org/stable/frameworks/6.22/kjobwidgets-6.22.0.tar.xz",
 
@@ -1305,8 +1282,7 @@ package(
 )
 
 # Solid - Hardware integration
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "solid",
     url = "https://download.kde.org/stable/frameworks/6.22/solid-6.22.0.tar.xz",
 
@@ -1348,8 +1324,7 @@ package(
 )
 
 # KService - Service framework
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kservice",
     url = "https://download.kde.org/stable/frameworks/6.22/kservice-6.22.0.tar.xz",
 
@@ -1392,8 +1367,7 @@ package(
 )
 
 # KBookmarks - Bookmarks framework
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kbookmarks",
     url = "https://download.kde.org/stable/frameworks/6.22/kbookmarks-6.22.0.tar.xz",
 
@@ -1440,8 +1414,7 @@ package(
 )
 
 # KIO - I/O Framework (core file access)
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kio",
     url = "https://download.kde.org/stable/frameworks/6.22/kio-6.22.0.tar.xz",
 
@@ -1547,8 +1520,7 @@ cd "$S"
 )
 
 # Sonnet - Spell checking framework
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "sonnet",
     url = "https://download.kde.org/stable/frameworks/6.22/sonnet-6.22.0.tar.xz",
 
@@ -1604,8 +1576,7 @@ touch src/core/trigrams.qrc || true
 )
 
 # KTextWidgets - Text widget framework
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "ktextwidgets",
     url = "https://download.kde.org/stable/frameworks/6.22/ktextwidgets-6.22.0.tar.xz",
 
@@ -1652,8 +1623,7 @@ package(
 )
 
 # KXmlGui - XML GUI framework
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kxmlgui",
     url = "https://download.kde.org/stable/frameworks/6.22/kxmlgui-6.22.0.tar.xz",
 
@@ -1707,8 +1677,7 @@ package(
 )
 
 # KPty - Pseudo-terminal handling
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kpty",
     url = "https://download.kde.org/stable/frameworks/6.22/kpty-6.22.0.tar.xz",
 
@@ -1749,8 +1718,7 @@ package(
 )
 
 # KParts - Document component framework
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kparts",
     url = "https://download.kde.org/stable/frameworks/6.22/kparts-6.22.0.tar.xz",
 
@@ -1824,8 +1792,7 @@ package(
 )
 
 # Syntax Highlighting - Syntax highlighting engine
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "syntax-highlighting",
     url = "https://download.kde.org/stable/frameworks/6.22/syntax-highlighting-6.22.0.tar.xz",
 
@@ -1880,8 +1847,7 @@ sed -i '/Q_INIT_RESOURCE(theme_data)/d' src/lib/repository.cpp || true
 )
 
 # KTextEditor - Full text editor component
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "ktexteditor",
     url = "https://download.kde.org/stable/frameworks/6.22/ktexteditor-6.22.0.tar.xz",
 
@@ -1981,8 +1947,7 @@ sed -i '/chkAutoReloadOnExternalChanges/d' src/dialogs/katedialogs.cpp
 )
 
 # Attica - Content sharing framework
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "attica",
     url = "https://download.kde.org/stable/frameworks/6.22/attica-6.22.0.tar.xz",
 
@@ -2020,8 +1985,7 @@ package(
 )
 
 # KGlobalAccel - Global keyboard shortcuts
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kglobalaccel",
     url = "https://download.kde.org/stable/frameworks/6.22/kglobalaccel-6.22.0.tar.xz",
 
@@ -2069,8 +2033,7 @@ package(
 )
 
 # KPackage - Package framework
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kpackage",
     url = "https://download.kde.org/stable/frameworks/6.22/kpackage-6.22.0.tar.xz",
 
@@ -2118,8 +2081,7 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
 )
 
 # Kirigami - KDE's lightweight UI framework
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kirigami",
     url = "https://download.kde.org/stable/frameworks/6.22/kirigami-6.22.0.tar.xz",
 
@@ -2165,8 +2127,7 @@ package(
 )
 
 # KSvg - SVG rendering
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "ksvg",
     url = "https://download.kde.org/stable/frameworks/6.22/ksvg-6.22.0.tar.xz",
 
@@ -2216,8 +2177,7 @@ package(
 )
 
 # KRunner - Krunner framework
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "krunner",
     url = "https://download.kde.org/stable/frameworks/6.22/krunner-6.22.0.tar.xz",
 
@@ -2263,8 +2223,7 @@ package(
 )
 
 # Syndication - RSS/Atom feed parser
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "syndication",
     url = "https://download.kde.org/stable/frameworks/6.22/syndication-6.22.0.tar.xz",
 
@@ -2303,8 +2262,7 @@ package(
 )
 
 # KNewStuff - Get Hot New Stuff
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "knewstuff",
     url = "https://download.kde.org/stable/frameworks/6.22/knewstuff-6.22.0.tar.xz",
 
@@ -2363,8 +2321,7 @@ package(
 )
 
 # KNotifyConfig - Notification configuration
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "knotifyconfig",
     url = "https://download.kde.org/stable/frameworks/6.22/knotifyconfig-6.22.0.tar.xz",
 
@@ -2434,8 +2391,7 @@ package(
 )
 
 # KDocTools - Documentation tools
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kdoctools",
     url = "https://download.kde.org/stable/frameworks/6.22/kdoctools-6.22.0.tar.xz",
 
@@ -2499,8 +2455,7 @@ touch src/customization/xsl/all-l10n.xml
 )
 
 # KCMUtils - KCM utilities
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kcmutils",
     url = "https://download.kde.org/stable/frameworks/6.22/kcmutils-6.22.0.tar.xz",
 
@@ -2575,8 +2530,7 @@ package(
 # =============================================================================
 
 # Plasma5Support - Plasma 5 compatibility data engine support
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "plasma5support",
     url = "https://download.kde.org/stable/plasma/6.2.4/plasma5support-6.2.4.tar.xz",
 
@@ -2655,8 +2609,7 @@ sed -i '/devicenotifications/d' src/dataengines/CMakeLists.txt || true
 )
 
 # Plasma Desktop
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "plasma-desktop",
     url = "https://download.kde.org/stable/plasma/6.2.4/plasma-desktop-6.2.4.tar.xz",
 
@@ -2838,8 +2791,7 @@ done
 )
 
 # KGlobalAccelD - Global Accelerator Daemon (Plasma component)
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kglobalacceld",
     url = "https://download.kde.org/stable/plasma/6.2.4/kglobalacceld-6.2.4.tar.xz",
 
@@ -2913,8 +2865,7 @@ package(
 # =============================================================================
 
 # KWayland - Plasma Wayland integration library
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kwayland",
     url = "https://download.kde.org/stable/plasma/6.2.4/kwayland-6.2.4.tar.xz",
 
@@ -2960,8 +2911,7 @@ package(
 )
 
 # KDecoration2 - Window decoration library
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kdecoration2",
     url = "https://download.kde.org/stable/plasma/6.2.4/kdecoration-6.2.4.tar.xz",
 
@@ -3004,8 +2954,7 @@ package(
 )
 
 # KScreenLocker - Screen locker
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kscreenlocker",
     url = "https://download.kde.org/stable/plasma/6.2.4/kscreenlocker-6.2.4.tar.xz",
 
@@ -3101,8 +3050,7 @@ sed -i '/qCDebug(KSCREENLOCKER) << "Event received"/a\\    (void)event;' ksldapp
 )
 
 # Plasma Activities - Activity manager library
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "plasma-activities",
     url = "https://download.kde.org/stable/plasma/6.2.4/plasma-activities-6.2.4.tar.xz",
 
@@ -3145,8 +3093,7 @@ package(
 )
 
 # kactivitymanagerd - Activity manager daemon (required for plasmashell)
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kactivitymanagerd",
     url = "https://download.kde.org/stable/plasma/6.2.4/kactivitymanagerd-6.2.4.tar.xz",
 
@@ -3213,8 +3160,7 @@ sed -i 's/connect(KX11Extras::self/\\/\\/connect(KX11Extras::self/' src/service/
 )
 
 # libplasma - Core Plasma library (provides PlasmaQuick)
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "libplasma",
     url = "https://download.kde.org/stable/plasma/6.2.4/libplasma-6.2.4.tar.xz",
 
@@ -3335,8 +3281,7 @@ sed -i '/isPlatformX11.*{/,/^    }/d' src/plasma/private/theme_p.cpp
 )
 
 # Layer Shell Qt - Qt component for Wayland layer shell
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "layer-shell-qt",
     url = "https://download.kde.org/stable/plasma/6.2.4/layer-shell-qt-6.2.4.tar.xz",
 
@@ -3390,8 +3335,7 @@ sed -i 's/^add_library(LayerShellQtInterface)/add_library(LayerShellQtInterface 
 )
 
 # KWin - Window Manager
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kwin",
     url = "https://download.kde.org/stable/plasma/6.2.4/kwin-6.2.4.tar.xz",
 
@@ -3531,8 +3475,7 @@ SENSOR_CPP
 # =============================================================================
 
 # KDED - KDE Daemon
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kded",
     url = "https://download.kde.org/stable/frameworks/6.22/kded-6.22.0.tar.xz",
 
@@ -3578,8 +3521,7 @@ package(
 )
 
 # KDeclarative - KDE Declarative Framework
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kdeclarative",
     url = "https://download.kde.org/stable/frameworks/6.22/kdeclarative-6.22.0.tar.xz",
 
@@ -3626,8 +3568,7 @@ package(
 )
 
 # KStatusNotifierItem - Status Notifier Item Framework
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kstatusnotifieritem",
     url = "https://download.kde.org/stable/frameworks/6.22/kstatusnotifieritem-6.22.0.tar.xz",
 
@@ -3670,8 +3611,7 @@ package(
 )
 
 # KWallet - Wallet Framework
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kwallet",
     url = "https://download.kde.org/stable/frameworks/6.22/kwallet-6.22.0.tar.xz",
 
@@ -3726,8 +3666,7 @@ package(
 )
 
 # KUnitConversion - Unit Conversion Framework
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kunitconversion",
     url = "https://download.kde.org/stable/frameworks/6.22/kunitconversion-6.22.0.tar.xz",
 
@@ -3762,8 +3701,7 @@ package(
 )
 
 # QRencode - QR Code encoding library (needed by Prison)
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "qrencode",
     url = "https://github.com/fukuchi/libqrencode/archive/refs/tags/v4.1.1.tar.gz",
 
@@ -3788,8 +3726,7 @@ package(
 )
 
 # Prison - Barcode Framework
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "prison",
     url = "https://download.kde.org/stable/frameworks/6.22/prison-6.22.0.tar.xz",
 
@@ -3836,8 +3773,7 @@ package(
 # =============================================================================
 
 # QCoro - C++ Coroutine Library for Qt
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "qcoro",
     url = "https://github.com/danvratil/qcoro/archive/refs/tags/v0.11.0.tar.gz",
 
@@ -3907,8 +3843,7 @@ EOF
 # =============================================================================
 
 # Plasma Activities Stats - Activity Statistics Library
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "plasma-activities-stats",
     url = "https://download.kde.org/stable/plasma/6.2.4/plasma-activities-stats-6.2.4.tar.xz",
 
@@ -3946,8 +3881,7 @@ package(
 )
 
 # libkscreen - KDE Screen Management Library
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "libkscreen",
     url = "https://download.kde.org/stable/plasma/6.2.4/libkscreen-6.2.4.tar.xz",
 
@@ -4013,8 +3947,7 @@ sed -i '/add_subdirectory.*backendlauncher/d' src/CMakeLists.txt || true
 )
 
 # libksysguard - KDE System Monitor Library
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "libksysguard",
     url = "https://download.kde.org/stable/plasma/6.2.4/libksysguard-6.2.4.tar.xz",
 
@@ -4076,8 +4009,7 @@ package(
 )
 
 # Plasma Workspace - KDE Plasma Shell and Workspace
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "plasma-workspace",
     url = "https://download.kde.org/stable/plasma/6.2.4/plasma-workspace-6.2.4.tar.xz",
 
@@ -4259,8 +4191,7 @@ STUB
 )
 
 # plasma-login-manager - KDE Plasma Login Manager (alternative to SDDM)
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "plasma-login-manager",
     url = "https://github.com/KDE/plasma-login-manager/archive/refs/tags/v6.5.91.tar.gz",
 
@@ -4476,8 +4407,7 @@ filegroup(
 # =============================================================================
 
 # KQuickCharts - KDE Quick Charts Framework
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kquickcharts",
     url = "https://download.kde.org/stable/frameworks/6.22/kquickcharts-6.22.0.tar.xz",
 
@@ -4512,8 +4442,7 @@ package(
 )
 
 # Plasma Integration - Qt/Plasma integration library
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "plasma-integration",
     url = "https://download.kde.org/stable/plasma/6.2.4/plasma-integration-6.2.4.tar.xz",
 
@@ -4596,8 +4525,7 @@ sed -i 's/#include <xcb/#\\/\\/#include <xcb/g' qt6/src/platformtheme/*.cpp 2>/d
 )
 
 # KHolidays - Library for holiday and special event handling
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kholidays",
     url = "https://download.kde.org/stable/frameworks/6.22/kholidays-6.22.0.tar.xz",
 
@@ -4634,8 +4562,7 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
 )
 
 # Kirigami Addons - Visual end user components for Kirigami
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "kirigami-addons",
     url = "https://download.kde.org/stable/kirigami-addons/kirigami-addons-1.10.0.tar.xz",
 
@@ -4681,8 +4608,7 @@ sed -i 's/^ecm_install_po_files_as_qm/#ecm_install_po_files_as_qm/' CMakeLists.t
 )
 
 # Milou - Search application built on top of KRunner
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "milou",
     url = "https://download.kde.org/Attic/plasma/6.2.4/milou-6.2.4.tar.xz",
 

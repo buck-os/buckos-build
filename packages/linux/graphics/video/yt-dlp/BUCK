@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:python.bzl", "python_package")
 
 # yt-dlp - A youtube-dl fork with additional features
 # Note: ffmpeg dep removed (package not available yet)
 
-package(
-    build_rule = "python",
+python_package(
     name = "yt-dlp",
     version = "2024.08.06",
     use_configure = {

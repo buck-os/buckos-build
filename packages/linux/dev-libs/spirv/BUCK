@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:cmake.bzl", "cmake_package")
 
 # =============================================================================
 # SPIRV-Headers - Machine-readable files for the SPIR-V Registry
@@ -7,8 +7,7 @@ load("//defs:package.bzl", "package")
 # Required by spirv-tools. Provides SPIR-V headers, grammar files, and
 # instruction/type definitions used for processing SPIR-V shaders.
 
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "spirv-headers",
     version = "1.4.335.0",
     url = "https://github.com/KhronosGroup/SPIRV-Headers/archive/vulkan-sdk-1.4.335.0.tar.gz",
@@ -30,8 +29,7 @@ package(
 # Required by mesa 26.0.0 for SPIR-V shader compilation.
 # Provides spirv-opt, spirv-val, spirv-link and other shader tools.
 
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "spirv-tools",
     version = "1.4.335.0",
     url = "https://github.com/KhronosGroup/SPIRV-Tools/archive/vulkan-sdk-1.4.335.0.tar.gz",

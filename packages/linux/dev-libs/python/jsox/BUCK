@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:python.bzl", "python_package")
 
 # jsox - JSON extension library
 # The source archive has no setup.py, only __init__.py at root.
 # We create a minimal setup.py and reorganize into a package directory.
-package(
-    build_rule = "python",
+python_package(
     name = "jsox",
     version = "0.0.1",
     url = "https://github.com/seidefrank/jsox/archive/refs/heads/master.tar.gz",

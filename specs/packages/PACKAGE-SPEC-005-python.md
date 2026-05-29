@@ -2,16 +2,13 @@
 id: "PACKAGE-SPEC-005"
 title: "Python Packages"
 status: "approved"
-version: "1.0.0"
+version: "2.0.0"
 created: "2025-12-27"
-updated: "2025-12-27"
+updated: "2026-05-29"
 
 authors:
   - name: "BuckOS Team"
     email: "team@buckos.org"
-
-maintainers:
-  - "team@buckos.org"
 
 category: "packages"
 tags:
@@ -22,208 +19,177 @@ tags:
   - "language-packages"
 
 related:
+  - "SPEC-001"
+  - "SPEC-002"
+  - "SPEC-005"
   - "PACKAGE-SPEC-001"
-  - "PACKAGE-SPEC-003"
   - "PACKAGE-SPEC-004"
 
 implementation:
   status: "complete"
-  completeness: 80
+  completeness: 100
 
 compatibility:
   buck2_version: ">=2024.11.01"
-  buckos_version: ">=1.0.0"
+  buckos_version: ">=2026.02"
   breaking_changes: false
+
+changelog:
+  - version: "2.0.0"
+    date: "2026-05-29"
+    changes: "Rewrite against wrapper-based package() API."
+  - version: "1.0.0"
+    date: "2025-12-27"
+    changes: "Initial spec — superseded."
 ---
 
 # Python Package Specification
 
-## Abstract
+## Overview
 
-This specification defines how to create BuckOS packages for Python projects.
+`python_package` installs a Python distribution into the package prefix
+via pip (or `setup.py install` when `use_setup_py = True`). One Buck2
+action drives `python_helper.py`, which assembles `PYTHONPATH` from the
+package's runtime deps and runs the install.
 
-## Package Type
+| Macro | Loaded from | Underlying rule |
+|-------|-------------|-----------------|
+| `python_package` | `//defs/packages:python.bzl` | `defs/rules/python.bzl::python_build` |
 
-**`package(build_rule = "python")`** - Builds Python packages with pip/setuptools
-
-## Quick Start
-
-### Basic Python Package
+## Wrapper Signature
 
 ```python
-load("//defs:package.bzl", "package")
+python_package(name, version, url, sha256, **kwargs)
+```
 
-package(
-    build_rule = "python",
-    name = "requests",
-    version = "2.31.0",
-    url = "https://pypi.io/packages/source/r/requests/requests-2.31.0.tar.gz",
-    sha256 = "942c5a758f98d5505896ef02fb6d8fe39530e8c2fcf1df7f8a5fdcfa42a9b12e",
+## Required Arguments
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `name` | string | Target name (PyPI distribution name) |
+| `version` | string | Distribution version |
+| `url` | string | Source tarball / sdist URL |
+| `sha256` | string | SHA-256 of the archive |
+
+## Common Optional Arguments
+
+All common kwargs from PACKAGE-SPEC-001 apply: `description`, `homepage`,
+`license`, `deps`, `host_deps`, `runtime_deps`, `patches`, `env`,
+`transforms`, `use_transforms`, `use_deps`, `local_only`, `filename`,
+`strip_components`, `pre_configure_cmds`, etc.
+
+`deps` are added to `PYTHONPATH` at install time and propagate via
+tsets to consumers. Python packages typically need
+`//packages/linux/lang/python:python` in `deps`.
+
+## Python-Specific Arguments
+
+Forwarded to `python_build` (see `defs/rules/python.bzl`):
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `use_setup_py` | bool | If True, install via `python setup.py install` instead of pip |
+| `pip_args` | list[string] | Extra args appended to the `pip install` invocation |
+
+There is **no** `python` (interpreter selector) kwarg; the rule always
+uses the buckos `python` toolchain. There is **no** `use_extras` kwarg —
+extras-style optional functionality is expressed via `use_deps` listing
+the implementation packages.
+
+## Examples
+
+### Pure-Python package
+
+See `/home/hodgesd/buckos-build/packages/linux/ai/whisper/BUCK`:
+
+```python
+load("//defs/packages:python.bzl", "python_package")
+
+python_package(
+    name = "whisper",
+    version = "20231117",
+    url = "https://github.com/openai/whisper/archive/refs/tags/v20231117.tar.gz",
+    sha256 = "b0f8b8d3b485fad2c423ba7f8b95eded067aad11ed3165828aad819d168cac06",
     deps = [
-        "//packages/linux/dev-python:urllib3",
-        "//packages/linux/dev-python:certifi",
+        "//packages/linux/dev-libs/python/numba:numba",
+        "//packages/linux/ai/ml-frameworks/pytorch:pytorch",
+        "//packages/linux/dev-libs/python/tqdm:tqdm",
+        "//packages/linux/dev-libs/python/more-itertools:more-itertools",
+        "//packages/linux/dev-libs/python/tiktoken:tiktoken",
     ],
-    maintainers = ["python@buckos.org"],
 )
 ```
 
-### With USE Flags for Extras
+### Legacy `setup.py` install with pre-build patch
+
+See `/home/hodgesd/buckos-build/packages/linux/dev-libs/python/grako/BUCK`
+for `use_setup_py = True` combined with a `pre_configure_cmds` snippet
+that patches the source before install.
+
+## USE Flag Integration
+
+Standard model: dict keys of `use_deps`, `use_configure`, `use_transforms`
+declare flags. Each gets a `buckos:iuse:FLAG` label and a `USE_FLAG=1|0`
+env var. See SPEC-002.
+
+To gate optional functionality (the rough equivalent of pip extras), use
+`use_deps` listing the optional implementation package:
 
 ```python
-package(
-    build_rule = "python",
+python_package(
     name = "requests",
     version = "2.31.0",
-    url = "https://pypi.io/packages/source/r/requests/requests-2.31.0.tar.gz",
+    url  = "https://files.pythonhosted.org/packages/.../requests-2.31.0.tar.gz",
     sha256 = "...",
-    iuse = ["socks", "security"],
-    use_defaults = ["security"],
-    use_extras = {
-        "socks": "socks",
-        "security": "security",
-    },
+    deps = [
+        "//packages/linux/dev-libs/python/urllib3:urllib3",
+        "//packages/linux/dev-libs/python/certifi:certifi",
+    ],
     use_deps = {
-        "socks": "//packages/linux/dev-python:pysocks",
+        "socks":  "//packages/linux/dev-libs/python/pysocks:pysocks",
+        "crypto": "//packages/linux/dev-libs/python/pyopenssl:pyopenssl",
     },
 )
 ```
-
-## Required Fields
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `name` | string | Package name (PyPI name) |
-| `version` | string | Package version |
-| `url` | string | Source tarball URL |
-| `sha256` | string | SHA-256 checksum |
-
-## Python-Specific Fields
-
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `python` | string | "python3" | Python interpreter to use |
-| `use_extras` | dict | {} | Map USE flags to Python extras |
-| `use_deps` | dict | {} | Conditional dependencies based on USE flags |
-| `patches` | list[string] | [] | Patch files to apply |
-
-## Python Extras
-
-Python extras are optional dependencies defined in `setup.py` or `pyproject.toml`. They map to USE flags:
-
-```python
-iuse = ["ssl", "http2"]
-use_extras = {
-    "ssl": "ssl",
-    "http2": "http2",
-}
-use_deps = {
-    "ssl": "//packages/linux/dev-python:pyopenssl",
-    "http2": "//packages/linux/dev-python:h2",
-}
-```
-
-The eclass will install with: `pip install package[ssl,http2]` when USE flags are enabled.
-
-## Build Process
-
-### 1. Install Build Dependencies
-
-```bash
-pip install --prefix=$OUT <python_setup_requires>
-```
-
-### 2. Build Package
-
-```bash
-python setup.py build
-```
-
-or with pyproject.toml:
-
-```bash
-python -m build --wheel
-```
-
-### 3. Install
-
-```bash
-python setup.py install --prefix=/usr --root=$OUT
-```
-
-or:
-
-```bash
-pip install --prefix=/usr --root=$OUT dist/*.whl
-```
-
-## Dependencies
-
-### Runtime Dependencies
-
-Use standard `deps` field for Python package dependencies:
-
-```python
-deps = [
-    "//packages/linux/dev-python:numpy",
-    "//packages/linux/dev-python:scipy",
-]
-```
-
-### Build Dependencies
-
-For packages with C extensions, add system libraries:
-
-```python
-deps = [
-    "//packages/linux/dev-libs:libfoo",
-]
-```
-
-The Python eclass automatically provides Python, pip, and setuptools.
 
 ## C Extensions
 
-Packages with C code need system library dependencies:
+For packages with native C/C++ extensions, list the system libraries in
+`deps`. Their sysroot include / lib paths propagate via tsets, and the
+Python helper sets `CFLAGS` / `LDFLAGS` accordingly:
 
 ```python
-package(
-    build_rule = "python",
+python_package(
     name = "pillow",
     version = "10.1.0",
-    url = "https://pypi.io/packages/source/p/pillow/pillow-10.1.0.tar.gz",
+    url = "...",
     sha256 = "...",
     deps = [
         "//packages/linux/media-libs:libjpeg-turbo",
         "//packages/linux/media-libs:libpng",
-        "//packages/linux/sys-libs:zlib",
+        "//packages/linux/core/zlib:zlib",
     ],
 )
 ```
 
-## Python Interpreter
+## Patches
 
-Specify Python version:
+Same model as PACKAGE-SPEC-001; see SPEC-005 for the patch registry.
 
-```python
-package(
-    build_rule = "python",
-    name = "legacy-pkg",
-    python = "python2.7",  # Default is "python3"
-    # ...
-)
+## Generated Targets
+
 ```
-
-The eclass sets the `PYTHON` environment variable for the build.
-
-## Example Packages
-
-- Pure Python: `//packages/linux/dev-python:requests`
-- C Extension: `//packages/linux/dev-python:numpy`
-- CLI Tool: `//packages/linux/dev-python:black`
+:{name}-archive   # source archive
+:{name}-src       # extracted source
+:{name}-build     # python install action
+:{name}           # alias
+```
 
 ## References
 
+- `defs/packages/python.bzl` — wrapper
+- `defs/rules/python.bzl` — rule
+- `tools/python_helper.py` — build driver
+- PACKAGE-SPEC-001 — common kwargs, USE-flag value forms
+- SPEC-001 (Architecture), SPEC-002 (USE flags), SPEC-005 (Patches)
 - Python Packaging: https://packaging.python.org/
-- PyPI: https://pypi.org/
-- PEP 517/518: Build system interface
-- PACKAGE-SPEC-001: Base package specification

@@ -1,8 +1,7 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # gengetopt - Generate C code to parse command-line arguments
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "gengetopt",
     # GNU release tarball includes pre-generated configure script
     url = "https://mirrors.kernel.org/gnu/gengetopt/gengetopt-2.23.tar.xz",

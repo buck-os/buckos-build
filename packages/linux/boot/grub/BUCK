@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # USE flags: See use_flags.bzl for available flags
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "grub",
     url = "https://mirrors.kernel.org/gnu/grub/grub-2.12.tar.xz",
 
@@ -62,8 +61,7 @@ package(
 # GRUB for BIOS systems (x86 only — BIOS boot is not applicable to aarch64)
 # USE flags: See use_flags.bzl for available flags
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "grub-bios",
     version = "2.12",
     source = ":grub-src",

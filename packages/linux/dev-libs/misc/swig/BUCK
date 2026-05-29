@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # SWIG - Simplified Wrapper and Interface Generator
 # Uses official release tarball with pre-generated configure script
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "swig",
     version = "4.2.0",
     use_configure = {

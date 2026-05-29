@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # git-repo - Google's repo tool for managing multiple git repositories
 # This is a standalone Python script, not a pip-installable package.
-package(
-    build_rule = "binary",
+binary_package(
     name = "git-repo-xml-parser",
     version = "2.59",
     url = "https://mirror.buckos.org/g/git-repo-v2.59.tar.gz",

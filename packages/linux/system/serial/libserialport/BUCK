@@ -1,8 +1,7 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # libserialport - Cross-platform library for accessing serial ports
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "libserialport",
     # Sigrok release tarball includes pre-generated configure script
     version = "0.1.1",

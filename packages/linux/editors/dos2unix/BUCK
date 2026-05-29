@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # dos2unix - Text file format converter between DOS and Unix
 
-package(
+autotools_package(
     name = "dos2unix",
-    build_rule = "autotools",
     skip_configure = True,
     url = "https://waterlan.home.xs4all.nl/dos2unix/dos2unix-7.5.2.tar.gz",
 

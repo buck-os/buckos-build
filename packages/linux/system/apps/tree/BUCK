@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # tree - List directory contents in tree format
 
-package(
+autotools_package(
     name = "tree",
-    build_rule = "autotools",
     skip_configure = True,
     version = "2.1.1",
     url = "https://gitlab.com/OldManProgrammer/unix-tree/-/archive/2.1.1/unix-tree-2.1.1.tar.gz",

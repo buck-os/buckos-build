@@ -1,5 +1,5 @@
 """
-mozbuild_package rule: Firefox/mach build.
+mozbuild_build rule: Firefox/mach build.
 
 Two cacheable actions:
 
@@ -65,7 +65,7 @@ def _build_and_install(ctx, source, dep_prefixes_file = None):
 
 # ── Rule implementation ───────────────────────────────────────────────
 
-def _mozbuild_package_impl(ctx):
+def _mozbuild_build_impl(ctx):
     source = ctx.attrs.source[DefaultInfo].default_outputs[0]
     prepared = src_prepare(ctx, source, "mozbuild_prepare")
 
@@ -102,8 +102,8 @@ def _mozbuild_package_impl(ctx):
 
 # ── Rule definition ───────────────────────────────────────────────────
 
-mozbuild_package = rule(
-    impl = _mozbuild_package_impl,
+mozbuild_build = rule(
+    impl = _mozbuild_build_impl,
     attrs = COMMON_PACKAGE_ATTRS | {
         # Mozbuild-specific
         "mozconfig_options": attrs.list(attrs.string(), default = []),

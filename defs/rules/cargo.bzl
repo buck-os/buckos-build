@@ -1,5 +1,5 @@
 """
-cargo_package rule: cargo build --release for Rust packages.
+cargo_build rule: cargo build --release for Rust packages.
 
 Four discrete cacheable actions:
 
@@ -70,7 +70,7 @@ def _cargo_build(ctx, source, pkg_config_file = None, lib_dirs_file = None):
 
 # ── Rule implementation ───────────────────────────────────────────────
 
-def _cargo_package_impl(ctx):
+def _cargo_build_impl(ctx):
     # Phase 1: src_unpack — obtain source from dep
     source = ctx.attrs.source[DefaultInfo].default_outputs[0]
 
@@ -112,8 +112,8 @@ def _cargo_package_impl(ctx):
 
 # ── Rule definition ───────────────────────────────────────────────────
 
-cargo_package = rule(
-    impl = _cargo_package_impl,
+cargo_build = rule(
+    impl = _cargo_build_impl,
     attrs = COMMON_PACKAGE_ATTRS | {
         # Cargo-specific
         "features": attrs.list(attrs.string(), default = []),

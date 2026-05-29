@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # libX11 - Core X11 client library
 # The main X11 library that applications link against
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "libX11",
     version = "1.8.7",
     url = "https://xorg.freedesktop.org/archive/individual/lib/libX11-1.8.7.tar.xz",

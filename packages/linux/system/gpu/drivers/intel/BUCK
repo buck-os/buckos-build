@@ -7,11 +7,10 @@
 #
 # =============================================================================
 
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # Intel GPU firmware
-package(
-    build_rule = "binary",
+binary_package(
     name = "intel-firmware",
     version = "20241017",
     url = "https://cdn.kernel.org/pub/linux/kernel/firmware/linux-firmware-20241017.tar.gz",

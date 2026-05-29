@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # cpufrequtils - CPU Frequency Utilities
 # Tools for managing CPU frequency scaling
 
-package(
+autotools_package(
     name = "cpufrequtils",
-    build_rule = "autotools",
     skip_configure = True,
     url = "https://kernel.org/pub/linux/utils/kernel/cpufreq/cpufrequtils-008.tar.xz",
 

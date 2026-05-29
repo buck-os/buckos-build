@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # Redis - In-memory data structure store
 #
@@ -10,9 +10,8 @@ load("//defs:package.bzl", "package")
 #   systemd   - Enable systemd integration
 #   jemalloc  - Use jemalloc memory allocator (recommended)
 
-package(
+autotools_package(
     name = "redis",
-    build_rule = "autotools",
     skip_configure = True,
     version = "7.4.1",
     url = "https://github.com/redis/redis/archive/refs/tags/7.4.1.tar.gz",

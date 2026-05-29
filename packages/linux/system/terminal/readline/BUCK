@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # readline - GNU Readline library for command line editing
 # Uses traditional autotools (configure/make), not cmake
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "readline",
     version = "8.3",
     url = "https://mirrors.kernel.org/gnu/readline/readline-8.3.tar.gz",

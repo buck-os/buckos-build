@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # tar - GNU tape archiver
 # USE flags: nls, acl, xattr, selinux
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "tar",
     version = "1.35",
     url = "https://mirrors.kernel.org/gnu/tar/tar-1.35.tar.xz",

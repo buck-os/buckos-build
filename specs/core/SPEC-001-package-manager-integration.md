@@ -4,7 +4,7 @@ title: "Package Manager Integration"
 status: "approved"
 version: "1.0.0"
 created: "2025-11-20"
-updated: "2025-12-27"
+updated: "2026-05-29"
 
 authors:
   - name: "BuckOS Team"
@@ -22,13 +22,12 @@ tags:
 
 related:
   - "SPEC-002"
-  - "SPEC-003"
   - "SPEC-004"
   - "SPEC-005"
 
 implementation:
   status: "complete"
-  completeness: 95
+  completeness: 100
 
 compatibility:
   buck2_version: ">=2024.11.01"
@@ -37,2221 +36,453 @@ compatibility:
 
 changelog:
   - version: "1.0.0"
-    date: "2025-12-27"
-    changes: "Migrated to formal specification system with lifecycle management"
+    date: "2026-05-29"
+    changes: "Rewrite against current package() macro (defs/package.bzl) and per-language wrappers under defs/packages/. Removes eclass/EAPI/license-helper/registry/multi-version/slot/maintainer/tooling sections that no longer exist."
 ---
 
 # Package Manager Integration
 
-**Status**: approved | **Version**: 1.0.0 | **Last Updated**: 2025-12-27
+**Status**: approved | **Version**: 1.0.0 | **Last Updated**: 2026-05-29
 
 ## Abstract
 
-This specification defines how package managers should interact with the BuckOS Buck2 build system. It provides a complete specification for implementing package manager tooling that integrates with BuckOS, covering package definitions, metadata structures, query interfaces, configuration generation, build integration, dependency resolution, and all aspects of package management integration.
+BuckOS packages are defined by calling the `package()` macro in `defs/package.bzl`
+(usually via a thin per-language wrapper under `defs/packages/`). The macro wires
+together source download, USE-flag expansion, private patch merging, host-tool
+injection, transforms (strip/stamp/IMA sign), SBOM labels, and dispatch to a
+language-specific build rule under `defs/rules/`. This spec documents the
+user-facing API and the auto-generated targets that downstream tooling can rely
+on.
 
+## Overview
 
-## Table of Contents
+A package BUCK file does three things:
 
-1. [Architecture Overview](#architecture-overview)
-2. [Package Definition Format](#package-definition-format)
-3. [Metadata Structures](#metadata-structures)
-4. [Query Interfaces](#query-interfaces)
-5. [Configuration Generation](#configuration-generation)
-6. [Build Integration](#build-integration)
-7. [Dependency Resolution](#dependency-resolution)
-8. [Version Management](#version-management)
-9. [USE Flag System](#use-flag-system)
-10. [Package Sets](#package-sets)
-11. [Patch System](#patch-system)
-12. [CLI Requirements](#cli-requirements)
-13. [Export Formats](#export-formats)
-14. [Error Handling](#error-handling)
-15. [Extension Points](#extension-points)
-16. [Security Considerations](#security-considerations)
-17. [Best Practices](#best-practices)
+1. Loads a wrapper from `//defs/packages:<lang>.bzl` (e.g. `autotools_package`).
+2. Calls the wrapper once with `name`, `version`, `url`, `sha256`, and any
+   rule-specific kwargs.
+3. Optionally declares USE-conditional deps/configure args/cargo features/transforms.
 
----
+Everything else — fetching the tarball, extracting it, resolving USE flags,
+merging private patches, injecting build-host tools, attaching SBOM metadata,
+running strip/stamp/IMA transforms — is handled inside `package()`.
 
-## Architecture Overview
+## Motivation
 
-### System Components
+Previous iterations of the build system exposed a separate `ebuild` rule, an
+eclass inheritance system, an EAPI version selector, a central package
+registry, multi-version slots, and per-package maintainer/license helpers.
+Most of these were never used or were thin proxies for what Buck2's native
+`select()` / `alias()` / `glob()` already provide.
+
+The current design collapses to:
+
+- One macro (`package()`) plus nine wrappers.
+- One provider (`PackageInfo`) consumed by every dep.
+- One private-override mechanism (`PATCH_REGISTRY` in `patches/registry.bzl`).
+- One USE-flag bridge (`use/` constraint subcell plus `defs/use_helpers.bzl`).
+
+This spec only documents what is implemented today.
+
+## Specification
+
+### Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Package Manager CLI                       │
-├─────────────────────────────────────────────────────────────┤
-│  Query Layer  │  Config Layer  │  Build Layer  │  UI Layer  │
-└───────┬───────┴───────┬────────┴───────┬───────┴─────┬──────┘
-        │               │                │             │
-        ▼               ▼                ▼             ▼
-┌───────────────────────────────────────────────────────────┐
-│                   Integration Layer                        │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────┐    │
-│  │ tooling.bzl │  │ registry.bzl│  │  package.bzl    │    │
-│  └─────────────┘  └─────────────┘  └─────────────────┘    │
-└───────────────────────────────────────────────────────────┘
-        │               │                │
-        ▼               ▼                ▼
-┌───────────────────────────────────────────────────────────┐
-│                   Buck2 Build System                       │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────┐    │
-│  │   Targets   │  │   Rules     │  │   Providers     │    │
-│  └─────────────┘  └─────────────┘  └─────────────────┘    │
-└───────────────────────────────────────────────────────────┘
+packages/linux/<cat>/<name>/BUCK
+        │
+        │  loads
+        ▼
+defs/packages/<lang>.bzl       (3-line wrapper)
+        │
+        │  calls
+        ▼
+defs/package.bzl::package()    (cross-cutting logic)
+        │
+        ├── http_file / export_file        → :name-archive
+        ├── extract_source                 → :name-src
+        ├── merge PATCH_REGISTRY (private patches/configure_args/cflags)
+        ├── resolve use_deps / use_configure / use_features
+        ├── inject host_deps (bash, coreutils, make, ...) per build_rule
+        ├── attach buckos:* labels (provenance, build system, iuse, sha256)
+        ├── dispatch to defs/rules/<lang>.bzl::<lang>_build → :name-build
+        ├── chain transforms (strip → stamp → ima)
+        └── native.alias(name → last target)
 ```
 
-### Core Integration Files
+### The `package()` Macro
 
-| File | Purpose | Package Manager Usage |
-|------|---------|----------------------|
-| `defs/tooling.bzl` | External tool integration | Primary integration point |
-| `defs/registry.bzl` | Central version registry | Version and package queries |
-| `defs/package.bzl` | Package build rules | Build invocation |
-| `defs/use_flags.bzl` | USE flag definitions | Flag management |
-| `defs/package_sets.bzl` | Package collections | Set operations |
-| `defs/versions.bzl` | Version management | Version/slot/subslot resolution |
-| `defs/maintainers.bzl` | Maintainer registry | Package ownership |
-| `defs/package_customize.bzl` | User customization | Configuration overlay |
-| `defs/eclasses.bzl` | Eclass inheritance | Build pattern reuse |
-| `defs/licenses.bzl` | License management | License validation and groups |
-| `defs/eapi.bzl` | EAPI versioning | API feature management |
+Defined in `defs/package.bzl`. Common signature (lines 130–149):
 
-### Integration Principles
+| Kwarg              | Type                                       | Notes                                                                                |
+| ------------------ | ------------------------------------------ | ------------------------------------------------------------------------------------ |
+| `name`             | str                                        | Buck target name. Final alias gets `name`; underlying build target is `name-build`.  |
+| `build_rule`       | str                                        | Dispatch key. Set by the wrapper — only specify when calling `package()` directly.   |
+| `version`          | str                                        | Upstream version. Auto-forwarded to the build rule's `version` attr and SBOM labels. |
+| `url`              | str                                        | Upstream source URL. Optional only when `local_only = True` or `source = …`.         |
+| `sha256`           | str                                        | Required when `url` is set.                                                          |
+| `local_only`       | bool                                       | Vendor/proprietary package with no public URL. Requires `filename`.                  |
+| `filename`         | str                                        | Override archive filename (defaults to basename of `url`).                           |
+| `strip_components` | int                                        | tar strip components for extraction (default 1).                                     |
+| `format`           | str                                        | Force archive format detection (`tar.gz`, `tar.xz`, `zip`, …).                       |
+| `transforms`       | list[str]                                  | Always-on transforms applied in order. Values: `"strip"`, `"stamp"`, `"ima"`.        |
+| `use_transforms`   | dict[str, str]                             | `{ USE flag: transform }`. Transform target exists unconditionally; no-op when off.  |
+| `use_deps`         | dict[str, dep \| list \| (on, off) tuple]  | USE-conditional dependencies appended via `select()`.                                |
+| `use_configure`    | dict[str, str \| list \| (on, off) tuple]  | USE-conditional `configure_args`.                                                    |
+| `use_features`     | dict[str, str]                             | USE-conditional cargo features.                                                      |
+| `patches`          | list[source]                               | Public patches (typically `glob(["patches/*.patch"])`).                              |
+| `configure_args`   | list[str]                                  | Static configure arguments.                                                          |
+| `extra_cflags`     | list[str]                                  | Extra CFLAGS appended to toolchain defaults.                                         |
+| `exclude_patterns` | list[str]                                  | tar exclude patterns at extraction time.                                             |
+| `**build_kwargs`   | —                                          | Forwarded to the underlying `defs/rules/<lang>.bzl::<lang>_build` rule.              |
 
-1. **Read-Only Access**: Package managers SHOULD NOT modify BUCK files directly
-2. **Buck2 as Source of Truth**: All package metadata comes from Buck2 queries
-3. **Configuration Export**: Use export functions for configuration generation
-4. **Idempotent Operations**: All operations MUST be reproducible
+Valid `build_rule` values (defs/package.bzl:46–57):
 
----
+`autotools`, `binary`, `cargo`, `cmake`, `go`, `make` (alias for autotools with
+`skip_configure = True`), `meson`, `mozbuild`, `perl`, `python`.
 
-## Package Definition Format
+### Per-Language Wrappers
 
-### Standard Package Structure
+Each wrapper under `defs/packages/` is a 3-line shim. They exist purely so BUCK
+files read better — every wrapper accepts every common kwarg above, plus any
+rule-specific kwarg that the underlying `<lang>_build` rule declares.
 
-Package managers MUST understand the following package definition patterns:
+| Wrapper                                                  | Build rule | Rule-specific kwargs                                                                                                                       |
+| -------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `autotools_package` (`defs/packages/autotools.bzl`)      | autotools  | `configure_prefix_deps`, `configure_script`, `skip_configure`, `cc_as_configure_arg`, `skip_cc_auto_arg`, `skip_host_arg`, `build_subdir`, |
+|                                                          |            | `pre_build_cmds`, `make_args`, `install_args`, `install_targets`, `install_prefix_var`                                                     |
+| `make_package` (same module)                             | make       | Same as autotools, `skip_configure` defaults to `True`.                                                                                    |
+| `binary_package` (`defs/packages/binary.bzl`)            | binary     | `install_script`                                                                                                                           |
+| `cargo_package` (`defs/packages/cargo.bzl`)              | cargo      | `features`, `cargo_args`, `bins`, `vendor_deps`                                                                                            |
+| `cmake_package` (`defs/packages/cmake.bzl`)              | cmake      | `source_subdir`, `cmake_args`, `cmake_defines`, `cmake_dep_defines`, `make_args`                                                           |
+| `go_package` (`defs/packages/go.bzl`)                    | go         | `go_args`, `ldflags`, `bins`, `packages`, `vendor_deps`, `lib_only`                                                                        |
+| `meson_package` (`defs/packages/meson.bzl`)              | meson      | `meson_args`, `meson_defines`, `source_subdir`, `make_args`                                                                                |
+| `mozbuild_package` (`defs/packages/mozbuild.bzl`)        | mozbuild   | `mozconfig_options`                                                                                                                        |
+| `perl_package` (`defs/packages/perl.bzl`)                | perl       | `pre_build_cmds`                                                                                                                           |
+| `python_package` (`defs/packages/python.bzl`)            | python     | `use_setup_py`, `pip_args`                                                                                                                 |
 
-#### 1. Basic Package (use_package)
+#### `src_compile` / `src_install` auto-conversion
+
+If a caller passes `src_compile` or `src_install` to any wrapper, `package()`
+auto-converts the call to `build_rule = "binary"` with the two snippets
+concatenated into a single `install_script`. Autotools-specific kwargs
+(`make_args`, `install_targets`, …) are dropped. This is how packages with
+unusual build flows still get the same source download / labels / transforms
+pipeline. (defs/package.bzl:614)
+
+### Auto-Generated Targets
+
+A single call to `package(name = "foo", ...)` produces:
+
+| Target          | Type                                  | Always present?            | Purpose                                              |
+| --------------- | ------------------------------------- | -------------------------- | ---------------------------------------------------- |
+| `:foo-archive`  | `http_file` or `export_file`          | When `url+sha256` provided | Raw tarball / vendored archive (from mirror or URL). |
+| `:foo-src`      | `extract_source`                      | Unless caller sets `source` | Extracted source tree, ready for build.              |
+| `:foo-build`    | `<lang>_build` rule                   | Always                     | Installed package prefix. Returns `PackageInfo`.     |
+| `:foo-stripped` | `strip_package` transform             | If `"strip"` in `transforms` / `use_transforms` | Binaries/libraries stripped of debug info.           |
+| `:foo-stamped`  | `stamp_package` transform             | If `"stamp"`               | Build provenance stamp injected into prefix.         |
+| `:foo-signed`   | `ima_sign_package` transform          | If `"ima"`                 | IMA-signed binaries for measured boot.               |
+| `:foo`          | `native.alias`                        | Always                     | Points at the last node of the chain.                |
+
+Cargo and Go packages with a mirror-hosted vendor tarball also get:
+
+- `:foo-vendor-archive` — fetched vendor tarball.
+- `:foo-vendor-src` — extracted vendor directory, auto-wired into the build
+  rule's `vendor_deps`.
+
+`vendor_deps` semantics (`defs/package.bzl:308–388`):
+
+- `vendor_deps = True` — source tarball already contains a `vendor/` directory.
+  For Go, `GOFLAGS=-mod=vendor` is injected automatically.
+- `vendor_deps = "<64-hex-sha256>"` — mirror-hosted vendor tarball; archive +
+  extraction targets created automatically.
+- Unset, in `mirror.mode = vendor` — auto-wired from the local vendor directory.
+
+### Host-Tool Auto-Injection
+
+For `autotools`, `cmake`, `meson`, `mozbuild`, and `make` packages, `package()`
+auto-appends a curated list of buckos-built host tools to `host_deps` so
+configure/make/ninja never reach into `/usr/bin`. The full list is in
+`defs/package.bzl:418–449` (bash, coreutils, findutils, sed, gawk, grep,
+diffutils, patch, tar, gzip/xz/bzip2, python-host, perl, m4, make, pkg-config,
+plus meson/ninja or cmake/ninja depending on the build system).
+
+A blocklist (`_TOOL_BLOCKLIST`) prevents these tools from depending on
+themselves transitively. Explicit `host_deps` passed by the caller are
+preserved and merged with the auto-injected list.
+
+When a prebuilt seed is configured (`buckos.seed_path` or `buckos.seed_url`),
+auto-injection is skipped: the seed's hermetic PATH already provides the tools.
+
+### USE Flag Integration
+
+USE flags are constraints defined under `//use/constraints:<flag>-on|off`. The
+helpers in `defs/use_helpers.bzl` translate flag names into `select()`
+expressions that resolve at analysis time.
+
+`package()` accepts four USE-keyed dicts:
+
+| Kwarg             | Meaning                                                                                                       |
+| ----------------- | ------------------------------------------------------------------------------------------------------------- |
+| `use_deps`        | `{flag: dep}`, `{flag: [deps]}`, or `{flag: (on_dep, off_dep)}`. Resolved via `use_dep()` / inline `select()`. |
+| `use_configure`   | `{flag: arg}`, `{flag: [args]}`, or `{flag: (on_arg, off_arg)}`. Resolved via `use_configure_arg()`.          |
+| `use_features`    | `{flag: cargo_feature_name}`. Appended to the cargo rule's `features` attr.                                   |
+| `use_transforms`  | `{flag: transform}`. Transform target is created with `enabled = use_bool(flag)`.                              |
+
+USE flags also get exposed to install scripts as environment variables
+(`USE_<FLAG_UPPERCASE>=1|0`) and tagged as labels (`buckos:iuse:<flag>`) for
+BXL queries.
+
+For the full USE-flag system, see SPEC-002.
+
+### Provenance Labels
+
+`package()` attaches the following labels automatically:
+
+| Label                          | Source                                |
+| ------------------------------ | ------------------------------------- |
+| `buckos:compile`               | Every package                         |
+| `buckos:build:<rule>`          | The selected `build_rule`             |
+| `buckos:local_only`            | `local_only = True`                   |
+| `buckos:source:<host>`         | Hostname from `url`                   |
+| `buckos:url:<url>`             | Full source URL                       |
+| `buckos:sha256:<hex>`          | Source archive sha256                 |
+| `buckos:sig:none`              | Placeholder for future GPG signatures |
+| `buckos:iuse:<flag>`           | One per declared USE flag             |
+| `buckos:vendor:<name>`         | `local_only` packages without `url`   |
+
+User-supplied `labels` are appended (not replaced).
+
+### `PackageInfo` Provider
+
+Every package rule returns `PackageInfo` (defined in `defs/providers.bzl:9–36`).
+Fields:
+
+| Field          | Type                          | Purpose                                                                  |
+| -------------- | ----------------------------- | ------------------------------------------------------------------------ |
+| `name`         | str                           | Package name.                                                            |
+| `version`      | str                           | Upstream version.                                                        |
+| `prefix`       | artifact                      | Install prefix directory (top-level output).                             |
+| `libraries`    | list[str]                     | Library names exported for `-l` flags.                                   |
+| `cflags`       | list[str]                     | Extra CFLAGS this package requires consumers to use.                     |
+| `ldflags`      | list[str]                     | Extra LDFLAGS this package requires consumers to use.                    |
+| `compile_info` | `CompileInfoTSet` \| None     | Transitive compile metadata (header paths, pkg-config dirs).             |
+| `link_info`    | `LinkInfoTSet` \| None        | Transitive link metadata (lib dirs, libs).                               |
+| `path_info`    | `PathInfoTSet` \| None        | Transitive PATH/bin/lib dirs (for runtime composition).                  |
+| `runtime_deps` | `RuntimeDepTSet` \| None      | Transitive runtime deps for image composition.                           |
+| `license`      | str                           | SPDX expression. Free-form — no enum check.                              |
+| `src_uri`      | str                           | Upstream source URL.                                                     |
+| `src_sha256`   | str                           | Source archive checksum.                                                 |
+| `homepage`     | str \| None                   | Project homepage.                                                        |
+| `supplier`     | str                           | SBOM supplier; defaults to `Organization: BuckOS`.                       |
+| `description`  | str                           | One-line description.                                                    |
+| `cpe`          | str \| None                   | CPE identifier for vulnerability matching.                               |
+
+The transitive sets are `None` for bootstrap packages that have not yet wired
+up the tset infrastructure.
+
+### Private Patch Registry
+
+`defs/package.bzl` imports `PATCH_REGISTRY` from `defs/empty_registry.bzl` by
+default — an empty dict. Users who maintain private patches create
+`patches/registry.bzl` and replace the load at the top of `package.bzl` with:
 
 ```python
-load("//defs:use_flags.bzl", "use_package")
+load("//patches:registry.bzl", "PATCH_REGISTRY")
+```
 
-use_package(
-    name = "package-name",
-    version = "1.0.0",
-    url = "https://example.com/package-1.0.0.tar.gz",
-    sha256 = "abc123...",
+Registry format:
 
-    # USE flag configuration
-    iuse = ["feature1", "feature2", "debug"],
-    use_defaults = ["feature1"],
+```python
+PATCH_REGISTRY = {
+    "<package_name>": {
+        "patches": ["//patches:fix-foo.patch", ...],
+        "extra_configure_args": ["--disable-bar", ...],
+        "extra_cflags": ["-DCUSTOM=1", ...],
+    },
+}
+```
+
+`package()` merges public values (from the BUCK file) with private values
+(from the registry) at macro time. Public patches/args come first; private
+ones are appended (`_merge_private_registry`, defs/package.bzl:109–126).
+
+For the full patch model see SPEC-005.
+
+### Mirror Configuration
+
+`package()` reads four `[mirror]` config keys at module-load time:
+
+| Key           | Default      | Meaning                                                              |
+| ------------- | ------------ | -------------------------------------------------------------------- |
+| `mode`        | `upstream`   | `upstream` (fetch from `url`) or `vendor` (use local vendor dir).    |
+| `base_url`    | `""`         | Optional secondary URL prefix tried before upstream.                 |
+| `vendor_dir`  | `""`         | Cell-relative path to vendor directory (only when `mode = vendor`).  |
+| `prefix`      | `""`         | URL prefix for content-addressed mirror (sha-suffixed filenames).    |
+| `params`      | `""`         | Query string appended to mirror URLs.                                |
+
+These drive whether `:name-archive` is an `http_file` (upstream / prefix mirror)
+or an `export_file` (vendor mirror).
+
+## Examples
+
+### Canonical autotools package (`packages/linux/core/bash/BUCK`)
+
+```python
+load("//defs/packages:autotools.bzl", "autotools_package")
+
+autotools_package(
+    name = "bash",
+    version = "5.3",
+    url = "https://mirrors.kernel.org/gnu/bash/bash-5.3.tar.gz",
+    sha256 = "0d5cd86965f869a26cf64f4b71be7b96f90a3ba8b3d74e27e8e9d9d5550f31ba",
+    description = "The GNU Bourne Again SHell",
+    homepage = "https://www.gnu.org/software/bash/",
+    license = "GPL-3.0",
+
     use_deps = {
-        "feature1": "//path/to/dep1",
+        "readline": [
+            "//packages/linux/system/terminal/readline:readline",
+            "//packages/linux/system/terminal/ncurses:ncurses",
+        ],
     },
+
     use_configure = {
-        "feature1": ("--enable-feature1", "--disable-feature1"),
+        "nls":       ("--enable-nls",      "--disable-nls"),
+        "readline":  ("--with-installed-readline", "--without-installed-readline"),
+        "examples":  ("--enable-examples", "--disable-examples"),
     },
 
-    # Build configuration
-    configure_args = ["--prefix=/usr"],
-    make_args = [],
-    install_args = ["DESTDIR=$DESTDIR"],
+    configure_args = ["--without-bash-malloc"],
 
-    # Lifecycle hooks
-    post_install = "shell commands",
-
-    # Metadata
-    maintainers = ["team-name"],
+    post_install_cmds = ['ln -sf bash "$DESTDIR/usr/bin/sh"'],
 )
 ```
 
-#### 2. Multi-Version Package
+This single call produces `:bash-archive`, `:bash-src`, `:bash-build`, `:bash`,
+plus four `buckos:iuse:*` labels and full SBOM metadata.
+
+### Multi-version package (`packages/linux/system/libs/crypto/openssl/BUCK`)
+
+Multiple versions are defined as independent packages with an alias to the
+default. There is no slot abstraction.
 
 ```python
-load("//defs:versions.bzl", "multi_version_package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
-multi_version_package(
-    name = "openssl",
-    versions = {
-        "3.2.0": {
-            "slot": "3",
-            "status": "stable",
-            "url": "https://...",
-            "sha256": "...",
-        },
-        "1.1.1w": {
-            "slot": "1.1",
-            "status": "stable",
-            "url": "https://...",
-            "sha256": "...",
-        },
-    },
-    default_version = "3.2.0",
+autotools_package(
+    name = "openssl-3.6",
+    version = "3.6.1",
+    configure_script = "Configure",
+    skip_host_arg = True,
+    url = "https://github.com/openssl/openssl/releases/download/openssl-3.6.1/openssl-3.6.1.tar.gz",
+    sha256 = "b1bfedcd5b289ff22aee87c9d600f515767ebf45f77168cb6d64f231f518a82e",
+    libraries = ["ssl", "crypto"],
+    configure_args = ["--prefix=/usr", "--openssldir=/etc/ssl", "--libdir=lib"],
+    pre_build_cmds = ["make || true"],
+    deps = ["//packages/linux/core/zlib:zlib"],
+    patches = glob(["patches/3.6/*.patch"]),
+    transforms = ["strip", "stamp"],
+    use_transforms = {"ima": "ima"},
+    license = "Apache-2.0",
+    cpe = "cpe:2.3:a:openssl:openssl:3.6.1:*:*:*:*:*:*:*",
 )
-```
 
-#### 3. Ebuild-Style Package
-
-```python
-load("//defs:package.bzl", "package")
-
-package(
-    build_rule = "ebuild",
-    name = "complex-package",
-    version = "2.0.0",
-
-    phases = {
-        "src_prepare": """
-            # Patch application
-            patch -p1 < fix.patch
-        """,
-        "src_configure": """
-            ./configure --prefix=/usr
-        """,
-        "src_compile": """
-            make -j$(nproc)
-        """,
-        "src_install": """
-            make DESTDIR="$DESTDIR" install
-        """,
-    },
+autotools_package(
+    name = "openssl-3.3",
+    version = "3.3.2",
+    # ...
 )
+
+alias(name = "openssl", actual = ":openssl-3.6")
 ```
 
-### Package Path Convention
+`openssl-3.6` carries `transforms = ["strip", "stamp"]` (always on) plus
+`use_transforms = {"ima": "ima"}` (gated on the `ima` USE flag), producing
+the chain `:openssl-3.6-build → :openssl-3.6-stripped →
+:openssl-3.6-stamped → :openssl-3.6-signed → :openssl-3.6` (alias).
 
-```
-//packages/linux/<category>/<subcategory>/<package-name>:<target>
-
-Examples:
-//packages/linux/core/bash:bash
-//packages/linux/system/init/systemd:systemd
-//packages/linux/network/dns/coredns:coredns
-//packages/linux/dev-tools/compilers/gcc:gcc
-```
-
-### Required Package Attributes
-
-Package managers MUST extract these attributes:
-
-| Attribute | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `name` | string | Yes | Package name |
-| `version` | string | Yes | Package version |
-| `url` | string | Yes | Source download URL |
-| `sha256` | string | Yes | Source checksum |
-| `iuse` | list | No | Available USE flags |
-| `use_defaults` | list | No | Default enabled flags |
-| `deps` | list | No | Runtime dependencies |
-| `build_deps` | list | No | Build-time dependencies |
-| `maintainers` | list | No | Package maintainers |
-
----
-
-## Metadata Structures
-
-### PackageInfo Provider
-
-Package managers MUST parse the PackageInfo provider structure:
+### Cargo package with vendored deps
 
 ```python
-PackageInfo = provider(fields = [
-    "name",           # string: Package name
-    "version",        # string: Package version
-    "slot",           # string: Version slot (e.g., "3", "1.1")
-    "description",    # string: Package description
-    "homepage",       # string: Project homepage
-    "license",        # string: License identifier
-    "url",            # string: Source URL
-    "sha256",         # string: SHA256 checksum
-    "deps",           # list: Runtime dependencies
-    "build_deps",     # list: Build dependencies
-    "iuse",           # list: Available USE flags
-    "use_enabled",    # list: Currently enabled flags
-    "maintainers",    # list: Maintainer identifiers
-    "installed_files",# list: Files installed by package
-])
-```
-
-### Registry Entry Format
-
-The central registry (`defs/registry.bzl`) uses this structure:
-
-```python
-PACKAGE_REGISTRY = {
-    "category/package-name": {
-        "default": "version-string",
-        "description": "Package description",
-        "homepage": "https://...",
-        "license": "MIT",
-        "versions": {
-            "version-string": {
-                "slot": "slot-id",
-                "status": "stable|testing|deprecated|masked",
-                "keywords": ["~amd64", "amd64"],
-                "eapi": "8",
-            },
-        },
-        "maintainers": ["team-id"],
-    },
-}
-```
-
-### Version Status Definitions
-
-| Status | Description | Package Manager Behavior |
-|--------|-------------|-------------------------|
-| `stable` | Production ready | Install by default |
-| `testing` | Under evaluation | Require explicit opt-in |
-| `deprecated` | Scheduled for removal | Warn user, suggest alternative |
-| `masked` | Blocked from installation | Require explicit unmask |
-
-### Maintainer Registry Format
-
-```python
-MAINTAINERS = {
-    "team-id": {
-        "name": "Display Name",
-        "email": "team@example.com",
-        "github": "github-username",
-        "description": "Team description",
-        "packages": ["category/pkg1", "category/pkg2"],
-    },
-}
-```
-
----
-
-## Query Interfaces
-
-### Buck2 Query Commands
-
-Package managers MUST use these Buck2 query patterns:
-
-#### List All Packages
-
-```bash
-buck2 query "//packages/linux/..." --output-attribute name --output-attribute version
-```
-
-#### Get Package Dependencies
-
-```bash
-buck2 query "deps(//packages/linux/core/bash:bash)"
-```
-
-#### Get Reverse Dependencies
-
-```bash
-buck2 query "rdeps(//packages/linux/..., //packages/linux/core/openssl:openssl)"
-```
-
-#### Filter by Attribute
-
-```bash
-buck2 query "attrfilter(maintainers, core-team, //packages/linux/...)"
-```
-
-#### Get Package Attributes
-
-```bash
-buck2 query "//packages/linux/core/bash:bash" --output-attribute name --output-attribute version --output-attribute iuse
-```
-
-### Registry Query Functions
-
-Package managers SHOULD use these Starlark functions:
-
-```python
-# Get default version for a package
-get_default_version("core/openssl")  # Returns "3.2.0"
-
-# Get all versions
-get_all_versions("core/openssl")  # Returns ["3.2.0", "1.1.1w", "1.0.2u"]
-
-# Get versions in a specific slot
-get_versions_in_slot("core/openssl", "3")  # Returns ["3.2.0"]
-
-# Get stable versions only
-get_stable_versions("core/openssl")  # Returns ["3.2.0", "1.1.1w"]
-
-# Get version status
-get_version_status("core/openssl", "1.0.2u")  # Returns "masked"
-
-# List all packages
-list_all_packages()  # Returns ["core/openssl", "core/bash", ...]
-
-# List packages by category
-list_packages_by_category("core")  # Returns ["openssl", "bash", ...]
-```
-
-### USE Flag Queries
-
-```python
-# Get all available USE flags
-get_available_use_flags()
-
-# Get flags by category
-get_use_flags_by_category("security")  # Returns ["caps", "hardened", "pie", ...]
-
-# Get package-specific flags
-get_package_use_flags("core/bash")  # Returns ["readline", "nls", "plugins", "net"]
-```
-
----
-
-## Configuration Generation
-
-### System Configuration Structure
-
-Package managers MUST generate configuration using this function:
-
-```python
-generate_system_config(
-    profile = "default",           # System profile
-    detected_hardware = [],        # Hardware detection results
-    detected_features = [],        # Feature detection results
-    user_use_flags = [],          # User-specified USE flags
-    package_overrides = {},       # Per-package overrides
-    env_preset = None,            # Environment preset
-    target_arch = "x86_64",       # Target architecture
-)
-```
-
-### Configuration Output Structure
-
-```python
-{
-    "profile": "server",
-    "arch": "x86_64",
-    "use_flags": {
-        "global": ["ssl", "ipv6", "threads"],
-        "package": {
-            "curl": ["gnutls", "-ssl"],
-            "nginx": ["http2", "ssl", "pcre2"],
-        },
-    },
-    "env": {
-        "CFLAGS": "-O2 -pipe -march=x86-64",
-        "CXXFLAGS": "-O2 -pipe -march=x86-64",
-        "LDFLAGS": "-Wl,-O1 -Wl,--as-needed",
-        "MAKEOPTS": "-j8",
-    },
-    "package_env": {
-        "ffmpeg": {"CFLAGS": "-O3 -march=native"},
-    },
-    "accept_keywords": ["~amd64"],
-    "package_mask": ["//packages/linux/dev-libs/openssl:1.0"],
-    "package_unmask": [],
-}
-```
-
-### Hardware Detection Interface
-
-Package managers SHOULD implement hardware detection for:
-
-```python
-HARDWARE_FLAGS = {
-    # CPU Features
-    "cpu_flags_x86_aes": detect_cpu_flag("aes"),
-    "cpu_flags_x86_avx": detect_cpu_flag("avx"),
-    "cpu_flags_x86_avx2": detect_cpu_flag("avx2"),
-    "cpu_flags_x86_avx512": detect_cpu_flag("avx512f"),
-    "cpu_flags_x86_sse4_2": detect_cpu_flag("sse4_2"),
-
-    # GPU
-    "nvidia": detect_gpu_vendor("nvidia"),
-    "amdgpu": detect_gpu_vendor("amd"),
-    "intel": detect_gpu_vendor("intel"),
-
-    # Audio
-    "audio": detect_audio_device(),
-    "bluetooth-audio": detect_bluetooth_audio(),
-
-    # Network
-    "wifi": detect_wifi_device(),
-    "bluetooth": detect_bluetooth_device(),
-
-    # Storage
-    "nvme": detect_nvme_device(),
-    "ssd": detect_ssd_device(),
-
-    # Virtualization
-    "kvm": detect_kvm_support(),
-    "container": detect_container_environment(),
-}
-```
-
-### Profile Definitions
-
-Package managers MUST understand these profiles:
-
-| Profile | Base | Description | Default USE Flags |
-|---------|------|-------------|-------------------|
-| `minimal` | - | Absolute minimum | `ipv6` |
-| `server` | `minimal` | Server systems | `ssl`, `ipv6`, `threads`, `caps` |
-| `desktop` | `server` | Desktop systems | `X`, `dbus`, `pulseaudio`, `gtk` |
-| `developer` | `desktop` | Development | `debug`, `doc`, `test` |
-| `hardened` | `server` | Security-focused | `hardened`, `pie`, `ssp`, `caps` |
-| `embedded` | `minimal` | Embedded systems | `static`, `-ipv6` |
-| `container` | `minimal` | Containers | `static`, `-pam`, `-systemd` |
-
----
-
-## Build Integration
-
-### Build Command Interface
-
-Package managers MUST invoke builds using:
-
-```bash
-# Build a single package
-buck2 build //packages/linux/core/bash:bash
-
-# Build with specific configuration
-buck2 build //packages/linux/core/bash:bash \
-    --config=build.use_flags="readline,nls" \
-    --config=build.profile="server"
-
-# Build with output path
-buck2 build //packages/linux/core/bash:bash --out /path/to/output
-
-# Build multiple packages
-buck2 build //packages/linux/core/bash:bash //packages/linux/core/zlib:zlib
-```
-
-### Build Configuration Parameters
-
-```python
-[build]
-# USE flags as comma-separated list
-use_flags = "ssl,ipv6,threads"
-
-# Active profile
-profile = "server"
-
-# Environment preset
-env_preset = "optimize-speed"
-
-# Target architecture
-target_arch = "x86_64"
-
-# Parallelism
-jobs = 8
-```
-
-### Build Output Structure
-
-```
-output/
-├── usr/
-│   ├── bin/
-│   ├── lib/
-│   ├── include/
-│   └── share/
-├── etc/
-├── var/
-└── metadata/
-    ├── CONTENTS      # Installed files list
-    ├── DEPEND        # Dependencies
-    ├── USE           # Enabled USE flags
-    └── SLOT          # Package slot
-```
-
-### Build Phases
-
-Package managers SHOULD track these build phases:
-
-1. **fetch**: Download source archives
-2. **unpack**: Extract source archives
-3. **prepare**: Apply patches
-4. **configure**: Run configuration
-5. **compile**: Build from source
-6. **test**: Run test suite (optional)
-7. **install**: Install to staging area
-8. **package**: Create final package
-
-### Build Result Interface
-
-```python
-BuildResult = {
-    "success": True,
-    "package": "//packages/linux/core/bash:bash",
-    "version": "5.2.21",
-    "build_time": 120.5,  # seconds
-    "output_path": "/path/to/output",
-    "installed_files": [...],
-    "size": 1048576,  # bytes
-    "use_flags": ["readline", "nls"],
-    "dependencies_built": [...],
-}
-```
-
----
-
-## Dependency Resolution
-
-### Dependency Types
-
-| Type | Attribute | Phase | Description |
-|------|-----------|-------|-------------|
-| Runtime | `deps` | Install | Required at runtime |
-| Build | `build_deps` | Compile | Required for building |
-| Post | `post_deps` | Post-install | Required after installation |
-| Optional | `use_deps` | Conditional | Controlled by USE flags |
-
-### Dependency Specification Formats
-
-```python
-# Simple dependency
-"//packages/linux/core/zlib:zlib"
-
-# Version-constrained dependency
-"//packages/linux/core/openssl:>=3.0.0"
-
-# Slot dependency
-"//packages/linux/core/openssl:3"
-
-# USE-conditional dependency
-{"ssl": ["//packages/linux/core/openssl:openssl"]}
-
-# Any-of dependency
-["//packages/linux/core/openssl:openssl", "//packages/linux/core/libressl:libressl"]
-```
-
-### Version Constraint Syntax
-
-| Operator | Example | Matches |
-|----------|---------|---------|
-| (none) | `pkg` | Latest stable |
-| `=` | `=pkg-1.0` | Exactly 1.0 |
-| `>=` | `>=pkg-1.0` | 1.0 or higher |
-| `>` | `>pkg-1.0` | Higher than 1.0 |
-| `<=` | `<=pkg-2.0` | 2.0 or lower |
-| `<` | `<pkg-2.0` | Lower than 2.0 |
-| `~>` | `~>pkg-1.5` | 1.5.x (pessimistic) |
-| `*` | `pkg-1.*` | Any 1.x version |
-
-### Resolution Algorithm
-
-Package managers MUST implement this resolution order:
-
-1. **Explicit version**: User-specified version constraint
-2. **Slot constraint**: Match specific slot
-3. **Default version**: From registry default
-4. **Stable version**: Highest stable version
-5. **Testing version**: If user accepts ~arch
-
-### Circular Dependency Handling
-
-```python
-# Detect cycles
-def detect_cycles(package, visited=None, stack=None):
-    if visited is None:
-        visited = set()
-        stack = set()
-
-    visited.add(package)
-    stack.add(package)
-
-    for dep in get_dependencies(package):
-        if dep not in visited:
-            if detect_cycles(dep, visited, stack):
-                return True
-        elif dep in stack:
-            return True
-
-    stack.remove(package)
-    return False
-```
-
-### Dependency Graph Output
-
-Package managers SHOULD provide dependency visualization:
-
-```
-bash-5.2.21
-├── ncurses-6.4
-│   └── (no dependencies)
-├── readline-8.2
-│   └── ncurses-6.4 (already shown)
-└── glibc-2.38
-    ├── linux-headers-6.6
-    └── (no dependencies)
-```
-
----
-
-## Version Management
-
-### Slot System
-
-Slots allow parallel installation of different major versions:
-
-```python
-# Slot naming conventions
-"0"     # No slot (single version only)
-"3"     # Major version slot
-"3.2"   # Major.minor slot
-"stable"# Named slot
-```
-
-### Subslot System
-
-Subslots track ABI compatibility within a slot:
-
-```python
-# Slot/Subslot format: "SLOT/SUBSLOT"
-"3/3.2"   # Slot 3, subslot 3.2 (for openssl 3.2.x)
-"3/3.1"   # Slot 3, subslot 3.1 (for openssl 3.1.x)
-
-# Subslot-aware dependencies
-from defs.versions import subslot_dep
-
-deps = [
-    # Rebuild when ABI changes
-    subslot_dep("//packages/linux/dev-libs/openssl", "3", "="),
-
-    # Don't rebuild on ABI changes (build-time only)
-    subslot_dep("//packages/linux/dev-util/cmake", "3", "*"),
-]
-```
-
-Package managers MUST track subslot changes and trigger rebuilds of dependent packages when:
-- The subslot value changes between versions in the same slot
-- The library soname changes
-- ABI-breaking changes are detected
-
-#### Subslot Query Functions
-
-```python
-# Parse slot/subslot string
-parse_slot_subslot("3/3.2")  # Returns: ("3", "3.2")
-
-# Format slot and subslot
-format_slot_subslot("3", "3.2")  # Returns: "3/3.2"
-
-# Check ABI compatibility
-check_abi_compatibility(old_version_info, new_version_info)
-# Returns: {"compatible": bool, "reason": str, "rebuild_required": [...]}
-```
-
-### Version Lifecycle
-
-```
-testing → stable → deprecated → masked → removed
-   │         │          │          │
-   │         │          │          └── Package removed from tree
-   │         │          └── Warn users, suggest migration
-   │         └── Production ready, default choice
-   └── Under evaluation, requires ~arch
-```
-
-### Version Selection Logic
-
-```python
-def select_version(package, constraint=None, accept_keywords=[]):
-    versions = get_all_versions(package)
-
-    # Apply constraint filter
-    if constraint:
-        versions = filter_by_constraint(versions, constraint)
-
-    # Sort by preference
-    versions.sort(key=lambda v: (
-        get_version_status(package, v) == "stable",  # Prefer stable
-        parse_version(v),  # Higher version
-    ), reverse=True)
-
-    # Apply keyword filtering
-    for version in versions:
-        status = get_version_status(package, version)
-        if status == "stable":
-            return version
-        if status == "testing" and "~amd64" in accept_keywords:
-            return version
-        if status == "masked":
-            continue  # Skip unless explicitly unmasked
-
-    return None
-```
-
-### Upgrade Path Detection
-
-```python
-def get_upgrade_path(package, current_version, target_version):
-    """
-    Returns list of intermediate versions for safe upgrade
-    """
-    all_versions = get_all_versions(package)
-    current_idx = all_versions.index(current_version)
-    target_idx = all_versions.index(target_version)
-
-    # Check for breaking changes between versions
-    path = []
-    for i in range(current_idx, target_idx + 1):
-        version = all_versions[i]
-        if has_breaking_changes(package, version):
-            path.append(version)
-
-    return path if path else [target_version]
-```
-
----
-
-## USE Flag System
-
-### Global USE Flags
-
-Package managers MUST support these global flag categories:
-
-#### Build & Compilation
-- `debug` - Build with debug symbols
-- `doc` - Build and install documentation
-- `examples` - Install examples
-- `static` - Build static binaries
-- `static-libs` - Build static libraries
-- `test` - Build and run tests
-- `lto` - Link Time Optimization
-- `pgo` - Profile Guided Optimization
-- `native` - Optimize for current CPU
-
-#### Security
-- `caps` - Linux capabilities support
-- `hardened` - Hardened build flags
-- `pie` - Position Independent Executable
-- `seccomp` - Seccomp filtering
-- `selinux` - SELinux support
-- `ssp` - Stack Smashing Protection
-
-#### Networking
-- `ipv6` - IPv6 support
-- `ssl` - OpenSSL support
-- `gnutls` - GnuTLS support
-- `libressl` - LibreSSL support
-- `http2` - HTTP/2 support
-- `curl` - libcurl support
-
-#### Compression
-- `brotli` - Brotli compression
-- `bzip2` - Bzip2 compression
-- `lz4` - LZ4 compression
-- `lzma` - LZMA compression
-- `zlib` - Zlib compression
-- `zstd` - Zstandard compression
-
-#### Graphics & Display
-- `X` - X11 support
-- `wayland` - Wayland support
-- `opengl` - OpenGL support
-- `vulkan` - Vulkan support
-- `egl` - EGL support
-- `gtk` - GTK+ support
-- `qt5` - Qt5 support
-- `qt6` - Qt6 support
-
-#### Audio/Video
-- `alsa` - ALSA audio support
-- `pulseaudio` - PulseAudio support
-- `pipewire` - PipeWire support
-- `ffmpeg` - FFmpeg support
-
-#### Language Bindings
-- `python` - Python bindings
-- `perl` - Perl bindings
-- `ruby` - Ruby bindings
-- `lua` - Lua bindings
-
-#### System Integration
-- `dbus` - D-Bus support
-- `systemd` - systemd support
-- `pam` - PAM support
-- `acl` - ACL support
-- `udev` - udev support
-
-### USE Flag Resolution Order
-
-1. **Profile defaults**: Base flags from profile
-2. **Global user flags**: User's global USE settings
-3. **Package defaults**: Package's `use_defaults`
-4. **Package user flags**: User's per-package settings
-
-```python
-def resolve_use_flags(package):
-    flags = set()
-
-    # 1. Profile defaults
-    flags.update(get_profile_use_flags())
-
-    # 2. Global user flags
-    for flag in get_user_global_flags():
-        if flag.startswith("-"):
-            flags.discard(flag[1:])
-        else:
-            flags.add(flag)
-
-    # 3. Package defaults
-    flags.update(get_package_defaults(package))
-
-    # 4. Package user flags
-    for flag in get_user_package_flags(package):
-        if flag.startswith("-"):
-            flags.discard(flag[1:])
-        else:
-            flags.add(flag)
-
-    return flags
-```
-
-### USE Flag Validation
-
-```python
-def validate_use_flags(package, flags):
-    """
-    Validates USE flag configuration for a package
-
-    Returns: {
-        "valid": True/False,
-        "errors": [...],
-        "warnings": [...],
-    }
-    """
-    result = {"valid": True, "errors": [], "warnings": []}
-
-    available = get_package_use_flags(package)
-
-    for flag in flags:
-        clean_flag = flag.lstrip("-")
-
-        # Check if flag exists
-        if clean_flag not in available:
-            result["errors"].append(f"Unknown USE flag: {clean_flag}")
-            result["valid"] = False
-
-        # Check for conflicts
-        if has_conflict(package, flag):
-            result["errors"].append(f"Conflicting USE flag: {flag}")
-            result["valid"] = False
-
-        # Check for required dependencies
-        missing_deps = check_use_deps(package, flag)
-        if missing_deps:
-            result["warnings"].append(
-                f"Flag {flag} requires: {', '.join(missing_deps)}"
-            )
-
-    return result
-```
-
----
-
-## Package Sets
-
-### Set Types
-
-| Type | Function | Purpose |
-|------|----------|---------|
-| System | `system_set()` | Base system profiles |
-| Package | `package_set()` | Simple package collections |
-| Combined | `combined_set()` | Union of multiple sets |
-| Task | `task_set()` | Task-specific collections |
-| Desktop | `desktop_set()` | Desktop environment sets |
-
-### Predefined System Sets
-
-```python
-SYSTEM_SETS = {
-    "minimal": {
-        "description": "Minimal bootable system",
-        "packages": ["core/bash", "core/busybox", "core/musl"],
-    },
-    "server": {
-        "inherits": "minimal",
-        "description": "Server base system",
-        "packages": ["core/openssl", "network/openssh", "system/systemd"],
-    },
-    "desktop": {
-        "inherits": "server",
-        "description": "Desktop base system",
-        "packages": ["graphics/mesa", "audio/pipewire", "desktop/xorg"],
-    },
-}
-```
-
-### Set Operations
-
-```python
-# Union of sets
-union_sets("set1", "set2")
-
-# Intersection of sets
-intersection_sets("set1", "set2")
-
-# Difference of sets
-difference_sets("set1", "set2")
-
-# Get packages in set
-get_set_packages("server")
-
-# Get set metadata
-get_set_info("server")
-
-# List all sets
-list_all_sets()
-
-# List sets by type
-list_sets_by_type("task")
-
-# Compare sets
-compare_sets("set1", "set2")  # Returns added, removed, common
-```
-
-### Set Query Commands
-
-```bash
-# List packages in a set
-buck2 query "//defs:package_sets.bzl#server"
-
-# Get set inheritance chain
-buck2 query "deps(//defs:package_sets.bzl#desktop)"
-
-# Find sets containing a package
-buck2 query "rdeps(//defs:package_sets.bzl#..., //packages/linux/core/bash:bash)"
-```
-
----
-
-## Eclass System
-
-The eclass system provides reusable build patterns, similar to Gentoo's eclasses.
-
-### Available Eclasses
-
-Package managers MUST understand these built-in eclasses:
-
-| Eclass | Purpose | Build Tools |
-|--------|---------|-------------|
-| `cmake` | CMake-based packages | cmake, ninja |
-| `meson` | Meson-based packages | meson, ninja |
-| `autotools` | Traditional configure/make | autoconf, automake, libtool |
-| `python-single-r1` | Single Python implementation | setuptools |
-| `python-r1` | Multiple Python versions | setuptools |
-| `go-module` | Go module packages | go |
-| `cargo` | Rust/Cargo packages | cargo |
-| `xdg` | Desktop applications | update-desktop-database |
-| `linux-mod` | Kernel modules | linux-headers |
-| `systemd` | Systemd services | systemd |
-| `qt5` | Qt5 applications | qt5 |
-
-### Eclass Inheritance
-
-```python
-load("//defs:eclasses.bzl", "inherit", "ECLASSES", "get_eclass")
-
-# Get merged configuration from multiple eclasses
-config = inherit(["cmake", "xdg"])
-
-# Use in package definition
-package(
-    build_rule = "ebuild",
-    name = "my-app",
-    source = ":my-app-src",
-    version = "1.0.0",
-    src_configure = config["src_configure"],
-    src_compile = config["src_compile"],
-    src_install = config["src_install"],
-    bdepend = config["bdepend"],
-    rdepend = config["rdepend"],
-)
-```
-
-### Eclass Query Functions
-
-```python
-# List all available eclasses
-list_eclasses()  # Returns: ["cmake", "meson", "autotools", ...]
-
-# Get eclass definition
-get_eclass("cmake")
-# Returns: {
-#   "name": "cmake",
-#   "description": "Support for cmake-based packages",
-#   "src_configure": "...",
-#   "src_compile": "...",
-#   "bdepend": [...],
-#   "exports": [...],
-# }
-
-# Check if eclass provides a phase
-eclass_has_phase("cmake", "src_configure")  # Returns: True
-```
-
----
-
-## License System
-
-The license system provides license tracking, validation, and compliance checking.
-
-### License Definitions
-
-Package managers MUST understand the license metadata structure:
-
-```python
-LICENSES = {
-    "GPL-2": {
-        "name": "GNU General Public License v2",
-        "url": "https://www.gnu.org/licenses/old-licenses/gpl-2.0.html",
-        "free": True,
-        "osi": True,
-    },
-    "MIT": {
-        "name": "MIT License",
-        "url": "https://opensource.org/licenses/MIT",
-        "free": True,
-        "osi": True,
-    },
-    # ... 60+ licenses defined
-}
-```
-
-### License Groups
-
-Package managers MUST support license group expansion:
-
-| Group | Description | Examples |
-|-------|-------------|----------|
-| `@FREE` | All free software licenses | GPL-2, MIT, BSD, Apache-2.0 |
-| `@OSI-APPROVED` | OSI-approved licenses | GPL-2, MIT, Apache-2.0 |
-| `@GPL-COMPATIBLE` | GPL-compatible licenses | MIT, BSD, LGPL-2.1 |
-| `@COPYLEFT` | Copyleft licenses | GPL-2, GPL-3, AGPL-3 |
-| `@PERMISSIVE` | Permissive licenses | MIT, BSD, Apache-2.0 |
-| `@BINARY-REDISTRIBUTABLE` | Binary redistribution allowed | Most free licenses |
-
-### License Validation
-
-```python
-from defs.licenses import check_license, check_license_expression
-
-# Simple check
-if not check_license("GPL-2", ["@FREE"]):
-    fail("License not accepted")
-
-# Expression check (dual licensing)
-if not check_license_expression("GPL-2 || MIT", ["@PERMISSIVE"]):
-    fail("No acceptable license option")
-```
-
-### ACCEPT_LICENSE Configuration
-
-Package managers MUST support ACCEPT_LICENSE configuration:
-
-```python
-# Default configurations
-DEFAULT_ACCEPT_LICENSE = ["@FREE"]
-SERVER_ACCEPT_LICENSE = ["@FREE", "@FIRMWARE"]
-DESKTOP_ACCEPT_LICENSE = ["@FREE", "@FIRMWARE", "@BINARY-REDISTRIBUTABLE"]
-DEVELOPER_ACCEPT_LICENSE = ["*", "-unknown"]
-```
-
-### License Query Functions
-
-```python
-# Expand license group
-expand_license_group("@FREE")  # Returns: ["GPL-2", "MIT", ...]
-
-# Get license info
-get_license_info("GPL-2")
-# Returns: {"name": "...", "url": "...", "free": True, "osi": True}
-
-# Check if license is free
-is_free_license("GPL-2")  # Returns: True
-
-# Check if OSI approved
-is_osi_approved("GPL-2")  # Returns: True
-
-# Parse license expression
-parse_license_expression("GPL-2 || MIT")
-# Returns: {"type": "or", "licenses": ["GPL-2", "MIT"]}
-
-# Generate license report
-generate_license_report(packages)
-# Returns: {"by_license": {...}, "free_count": N, "non_free_count": N}
-```
-
----
-
-## EAPI System
-
-EAPI (Ebuild API) versioning allows safe evolution of the build macro API.
-
-### Supported EAPI Versions
-
-| EAPI | Status | Key Features |
-|------|--------|--------------|
-| 6 | Supported | Base functionality, eapply, user patches |
-| 7 | Supported | BDEPEND, version functions, sysroot |
-| 8 | Current | Subslots, selective fetch, strict USE |
-
-### EAPI Feature Flags
-
-Package managers MUST check EAPI features before using them:
-
-```python
-from defs.eapi import eapi_has_feature, require_eapi, CURRENT_EAPI
-
-# Require minimum EAPI
-require_eapi(8)
-
-# Check for feature availability
-if eapi_has_feature("subslots"):
-    deps = [subslot_dep("//pkg/openssl", "3", "=")]
-
-if eapi_has_feature("bdepend"):
-    # Use BDEPEND for build-time dependencies
-    pass
-```
-
-### EAPI Validation
-
-```python
-# Validate EAPI is supported
-validate_eapi(8)  # Returns: True
-
-# Get features for an EAPI
-get_eapi_features(8)
-# Returns: {"subslots": True, "bdepend": True, ...}
-
-# Check if function is deprecated
-is_deprecated("dohtml", 8)  # Returns: True
-
-# Check if function is banned
-is_banned("dohtml", 8)  # Returns: True
-```
-
-### EAPI Migration
-
-Package managers SHOULD provide migration guidance:
-
-```python
-# Get migration steps between EAPI versions
-migration_guide(6, 8)
-# Returns: [
-#   "Convert DEPEND to BDEPEND for build-time only dependencies",
-#   "Replace dohtml with dodoc for HTML documentation",
-#   "Add subslots for packages with ABI-sensitive libraries",
-# ]
-
-# Check compatibility
-check_eapi_compatibility(package_eapi=6, system_eapi=8)
-# Returns: {"compatible": True, "warnings": [...], "errors": [...]}
-```
-
-### Default Phase Implementations
-
-Each EAPI defines default phase implementations:
-
-```python
-# Get default phase for EAPI
-get_default_phase("src_prepare", eapi=8)
-# Returns shell script for default prepare phase
-
-get_default_phase("src_compile", eapi=8)
-# Returns shell script for default compile phase
-```
-
----
-
-## Patch System
-
-### Overview
-
-The patch system allows users and distributions to customize package builds through multiple patch sources with clear precedence ordering.
-
-### Patch Source Precedence
-
-Patches are applied in this order (later patches override earlier ones):
-
-1. **Package Patches** - Bundled with package definition
-2. **Distribution Patches** - Applied by overlay/distribution
-3. **Profile Patches** - Applied based on build profile
-4. **USE Flag Patches** - Conditional on USE flag settings
-5. **User Patches** - Applied from user configuration
-
-### Patch Directory Structure
-
-```
-buckos-build/
-├── patches/
-│   ├── global/                    # Global patches
-│   │   └── security/              # Security patches
-│   ├── profiles/
-│   │   ├── hardened/              # Hardened profile patches
-│   │   └── musl/                  # musl compatibility patches
-│   └── packages/
-│       └── <category>/
-│           └── <package>/
-│               ├── *.patch        # Package-specific patches
-│               └── series         # Patch application order
-└── user/
-    └── patches/                   # User-specific patches
-        └── <category>/
-            └── <package>/
-```
-
-### Patch Configuration in Buck Targets
-
-#### Basic Patch Application
-
-```python
-package(
-    build_rule = "autotools",
-    name = "mypackage",
-    source = ":mypackage-src",
-    version = "1.0",
-    pre_configure = """
-        patch -p1 < "$FILESDIR/fix-build.patch"
-        patch -p1 < "$FILESDIR/security-fix.patch"
-    """,
-)
-```
-
-#### USE-Conditional Patches
-
-```python
-use_package(
-    name = "openssl",
-    version = "3.2.0",
-    url = "...",
+load("//defs/packages:cargo.bzl", "cargo_package")
+
+cargo_package(
+    name = "ripgrep",
+    version = "14.1.1",
+    url = "https://github.com/BurntSushi/ripgrep/archive/14.1.1.tar.gz",
     sha256 = "...",
-    iuse = ["bindist", "ktls"],
-    use_patches = {
-        "bindist": ["//patches/packages/dev-libs/openssl:ec-curves-bindist.patch"],
-        "ktls": ["//patches/packages/dev-libs/openssl:ktls-support.patch"],
-    },
+    vendor_deps = "<64-hex sha256 of vendor tarball on mirror>",
+    bins = ["rg"],
+    license = "Unlicense OR MIT",
 )
 ```
 
-#### Package Customization Patches
-
-```python
-load("//defs:package_customize.bzl", "package_config")
-
-CUSTOMIZATIONS = package_config(
-    profile = "hardened",
-    package_patches = {
-        "glibc": [
-            "//patches/packages/sys-libs/glibc:hardened-all.patch",
-        ],
-        "openssh": [
-            "//patches/packages/net-misc/openssh:hpn-performance.patch",
-        ],
-    },
-)
-```
-
-### Patch Management Functions
-
-```python
-# Apply patches in order
-epatch(["fix.patch", "optimize.patch"])
-
-# Apply directory of patches
-eapply(["${FILESDIR}/patches"])
-
-# Apply user patches automatically
-eapply_user()
-```
-
-### Series File Format
-
-Control patch application order with a `series` file:
-
-```
-# patches/packages/dev-libs/openssl/series
-# Applied in order listed
-
-# Core fixes
-fix-build.patch
-fix-tests.patch
-
-# Security (apply last)
-cve-2024-xxxx.patch
-```
-
-### Package Manager Patch Operations
-
-Package managers SHOULD implement these patch-related commands:
-
-```bash
-# List patches for a package
-pkgmgr patch list <package>
-
-# Show patch information
-pkgmgr patch info <package> <patch-name>
-
-# Add user patch
-pkgmgr patch add <package> <patch-file>
-
-# Remove user patch
-pkgmgr patch remove <package> <patch-name>
-
-# Validate patches apply cleanly
-pkgmgr patch check <package>
-
-# Show patch application order
-pkgmgr patch order <package>
-```
-
-### Patch Metadata Structure
-
-```python
-PatchInfo = {
-    "name": "cve-2024-xxxx.patch",
-    "package": "//packages/linux/dev-libs/openssl:openssl",
-    "description": "Fix for CVE-2024-XXXX",
-    "source": "user|package|profile|distribution",
-    "strip_level": 1,
-    "conditional": {
-        "use_flag": "bindist",  # Optional: only if USE flag enabled
-        "profile": "hardened",   # Optional: only for profile
-        "platform": "linux",     # Optional: platform-specific
-    },
-}
-```
-
-### Patch Validation
-
-Package managers MUST validate patches before application:
-
-```python
-def validate_patch(package, patch_file):
-    """
-    Validate that a patch applies cleanly
-
-    Returns: {
-        "valid": True/False,
-        "fuzz_factor": 0,        # Lines of context fuzz needed
-        "offset": 0,             # Offset from original location
-        "warnings": [...],
-        "errors": [...],
-    }
-    """
-    pass
-```
-
-### Patch Query Functions
-
-```python
-# Get all patches for a package
-get_package_patches(package) -> list[PatchInfo]
-
-# Get patches by source
-get_patches_by_source(package, source) -> list[PatchInfo]
-
-# Get conditional patches
-get_conditional_patches(package, use_flags, profile) -> list[PatchInfo]
-
-# Check if patch is applied
-is_patch_applied(package, patch_name) -> bool
-
-# Get patch application order
-get_patch_order(package) -> list[str]
-```
-
-### Integration with Build Phases
-
-Patches are applied during the `prepare` build phase:
-
-1. **fetch**: Download source archives
-2. **unpack**: Extract source archives
-3. **prepare**: Apply patches (in precedence order)
-4. **configure**: Run configuration
-5. **compile**: Build from source
-
-### User Patch Directory
-
-User patches are automatically applied from:
-
-```
-/etc/portage/patches/<category>/<package>/*.patch
-```
-
-Or configured via:
-
-```toml
-# /etc/buckos-pkgmgr.toml
-[patches.user]
-base_dir = "/etc/portage/patches"
-
-[patches.package.openssl]
-files = [
-    "/path/to/custom.patch",
-]
-```
-
-For complete patch system documentation, see [PATCHES.md](PATCHES.md).
-
----
-
-## CLI Requirements
-
-### Required Commands
-
-Package managers MUST implement these commands:
-
-#### Package Operations
-
-```bash
-# Search for packages
-pkgmgr search <pattern>
-
-# Show package information
-pkgmgr info <package>
-
-# Install package
-pkgmgr install <package>
-
-# Uninstall package
-pkgmgr uninstall <package>
-
-# Update package
-pkgmgr update <package>
-
-# List installed packages
-pkgmgr list [--installed|--available]
-```
-
-#### Dependency Operations
-
-```bash
-# Show dependencies
-pkgmgr deps <package>
-
-# Show reverse dependencies
-pkgmgr rdeps <package>
-
-# Check for dependency issues
-pkgmgr depcheck
-
-# Generate dependency graph
-pkgmgr depgraph <package> [--format=dot|json|text]
-```
-
-#### USE Flag Operations
-
-```bash
-# List available USE flags
-pkgmgr use --list [category]
-
-# Show package USE flags
-pkgmgr use <package>
-
-# Set global USE flags
-pkgmgr use --global <+flag|-flag>...
-
-# Set package USE flags
-pkgmgr use --package <package> <+flag|-flag>...
-
-# Show USE flag description
-pkgmgr use --describe <flag>
-```
-
-#### Configuration Operations
-
-```bash
-# Show current configuration
-pkgmgr config show
-
-# Set profile
-pkgmgr config profile <profile-name>
-
-# Detect hardware
-pkgmgr config detect-hardware
-
-# Export configuration
-pkgmgr config export [--format=json|toml|shell|buck]
-
-# Validate configuration
-pkgmgr config validate
-```
-
-#### Set Operations
-
-```bash
-# List available sets
-pkgmgr set list [--type=system|task|desktop]
-
-# Show set contents
-pkgmgr set show <set-name>
-
-# Install set
-pkgmgr set install <set-name>
-
-# Compare sets
-pkgmgr set compare <set1> <set2>
-```
-
-#### System Operations
-
-```bash
-# Full system update
-pkgmgr upgrade
-
-# Verify installed packages
-pkgmgr verify
-
-# Clean build cache
-pkgmgr clean [--all|--cache|--dist]
-
-# Synchronize repository
-pkgmgr sync
-```
-
-### Command Output Formats
-
-Package managers MUST support these output formats:
-
-```bash
-# Human-readable (default)
-pkgmgr info bash
-
-# JSON output
-pkgmgr info bash --format=json
-
-# Quiet/script-friendly
-pkgmgr list --quiet
-
-# Verbose/debug
-pkgmgr install bash --verbose
-```
-
-### Exit Codes
-
-| Code | Meaning |
-|------|---------|
-| 0 | Success |
-| 1 | General error |
-| 2 | Invalid arguments |
-| 3 | Package not found |
-| 4 | Dependency resolution failed |
-| 5 | Build failed |
-| 6 | Permission denied |
-| 7 | Network error |
-| 8 | Checksum mismatch |
-| 9 | Configuration error |
-
----
-
-## Export Formats
-
-### JSON Export
-
-```python
-export_config_json()
-```
-
-Output:
-```json
-{
-  "profile": "server",
-  "arch": "x86_64",
-  "use_flags": {
-    "global": ["ssl", "ipv6", "threads"],
-    "package": {
-      "curl": ["gnutls", "-ssl"]
-    }
-  },
-  "env": {
-    "CFLAGS": "-O2 -pipe",
-    "MAKEOPTS": "-j8"
-  },
-  "packages": {
-    "installed": [
-      {
-        "name": "bash",
-        "version": "5.2.21",
-        "slot": "0",
-        "use": ["readline", "nls"]
-      }
-    ]
-  }
-}
-```
-
-### TOML Export
-
-```python
-export_config_toml()
-```
-
-Output:
-```toml
-[profile]
-name = "server"
-arch = "x86_64"
-
-[use_flags]
-global = ["ssl", "ipv6", "threads"]
-
-[use_flags.package]
-curl = ["gnutls", "-ssl"]
-
-[env]
-CFLAGS = "-O2 -pipe"
-MAKEOPTS = "-j8"
-
-[[packages.installed]]
-name = "bash"
-version = "5.2.21"
-slot = "0"
-use = ["readline", "nls"]
-```
-
-### Shell Export
-
-```python
-export_config_shell()
-```
-
-Output:
-```bash
-#!/bin/bash
-# BuckOS Configuration
-
-export PROFILE="server"
-export ARCH="x86_64"
-
-# USE flags
-export USE="ssl ipv6 threads"
-
-# Per-package USE
-export CURL_USE="gnutls -ssl"
-
-# Environment
-export CFLAGS="-O2 -pipe"
-export MAKEOPTS="-j8"
-```
-
-### Buck2 Export
-
-```python
-export_buck_config()
-```
-
-Output:
-```python
-# Generated BuckOS configuration
-
-PROFILE = "server"
-ARCH = "x86_64"
-
-USE_FLAGS = [
-    "ssl",
-    "ipv6",
-    "threads",
-]
-
-PACKAGE_USE = {
-    "curl": ["gnutls", "-ssl"],
-}
-
-ENV = {
-    "CFLAGS": "-O2 -pipe",
-    "MAKEOPTS": "-j8",
-}
-```
-
----
-
-## Error Handling
-
-### Error Categories
-
-```python
-class PackageManagerError(Exception):
-    """Base exception for package manager errors"""
-    pass
-
-class PackageNotFoundError(PackageManagerError):
-    """Package does not exist in repository"""
-    pass
-
-class DependencyResolutionError(PackageManagerError):
-    """Cannot resolve dependencies"""
-    pass
-
-class BuildError(PackageManagerError):
-    """Build process failed"""
-    pass
-
-class ChecksumError(PackageManagerError):
-    """Source checksum verification failed"""
-    pass
-
-class SlotConflictError(PackageManagerError):
-    """Package slot conflict detected"""
-    pass
-
-class UseFlagError(PackageManagerError):
-    """Invalid USE flag configuration"""
-    pass
-
-class ConfigurationError(PackageManagerError):
-    """Invalid configuration"""
-    pass
-```
-
-### Error Reporting Format
-
-```python
-{
-    "error": "DependencyResolutionError",
-    "message": "Cannot resolve dependencies for bash-5.2.21",
-    "details": {
-        "package": "//packages/linux/core/bash:bash",
-        "version": "5.2.21",
-        "missing_deps": [
-            "//packages/linux/core/readline:readline"
-        ],
-        "conflicts": [],
-    },
-    "suggestions": [
-        "Install readline: pkgmgr install readline",
-        "Check USE flags: pkgmgr use bash",
-    ],
-}
-```
-
-### Recovery Strategies
-
-| Error Type | Recovery Strategy |
-|------------|-------------------|
-| Network failure | Retry with exponential backoff |
-| Checksum mismatch | Re-download from mirror |
-| Build failure | Retry with reduced parallelism |
-| Dependency conflict | Suggest version alternatives |
-| Slot conflict | Suggest slot cleanup |
-
----
-
-## Extension Points
-
-### Plugin System
-
-Package managers SHOULD support plugins for:
-
-```python
-class PackageManagerPlugin:
-    """Base class for package manager plugins"""
-
-    def on_pre_install(self, package, version):
-        """Called before package installation"""
-        pass
-
-    def on_post_install(self, package, version, files):
-        """Called after package installation"""
-        pass
-
-    def on_pre_uninstall(self, package, version):
-        """Called before package removal"""
-        pass
-
-    def on_post_uninstall(self, package, version):
-        """Called after package removal"""
-        pass
-
-    def on_build_start(self, package, version):
-        """Called when build starts"""
-        pass
-
-    def on_build_complete(self, package, version, result):
-        """Called when build completes"""
-        pass
-```
-
-### Custom Build Rules
-
-Package managers SHOULD allow custom rule registration:
-
-```python
-def register_custom_rule(name, rule_func, **kwargs):
-    """
-    Register a custom build rule
-
-    Args:
-        name: Rule name
-        rule_func: Rule implementation function
-        **kwargs: Rule attributes
-    """
-    pass
-```
-
-### Hook Points
-
-| Hook | Timing | Use Case |
-|------|--------|----------|
-| `pre_fetch` | Before download | Mirror selection |
-| `post_fetch` | After download | Signature verification |
-| `pre_build` | Before compile | Environment setup |
-| `post_build` | After compile | Binary stripping |
-| `pre_install` | Before install | Backup creation |
-| `post_install` | After install | Configuration generation |
-| `pre_uninstall` | Before removal | Service shutdown |
-| `post_uninstall` | After removal | Cleanup |
-
-### Custom Configuration Providers
-
-```python
-class ConfigurationProvider:
-    """Base class for configuration providers"""
-
-    def get_use_flags(self):
-        """Return list of USE flags"""
-        pass
-
-    def get_package_mask(self):
-        """Return list of masked packages"""
-        pass
-
-    def get_environment(self):
-        """Return environment variables"""
-        pass
-```
-
----
+`package()` auto-creates `:ripgrep-vendor-archive` and `:ripgrep-vendor-src`
+from the mirror and wires the latter into the cargo rule.
+
+## Implementation
+
+| Component                  | Path                          | Notes                                                                        |
+| -------------------------- | ----------------------------- | ---------------------------------------------------------------------------- |
+| Macro                      | `defs/package.bzl`            | `package()` at line 130. Dispatch table at lines 46–57.                       |
+| Wrappers                   | `defs/packages/*.bzl`         | One file per language. All are 3-line shims.                                  |
+| Build rules                | `defs/rules/*.bzl`            | `autotools.bzl`, `cmake.bzl`, `meson.bzl`, `cargo.bzl`, `go.bzl`, etc.       |
+| Common rule attrs          | `defs/rules/_common.bzl`      | `COMMON_PACKAGE_ATTRS` used by every build rule.                              |
+| Source extraction          | `defs/rules/source.bzl`       | `extract_source` (anon-target backed).                                       |
+| Transforms                 | `defs/rules/transforms.bzl`   | `strip_package`, `stamp_package`, `ima_sign_package`.                        |
+| USE helpers                | `defs/use_helpers.bzl`        | `use_bool`, `use_dep`, `use_configure_arg`, `use_feature`, `use_expand_*`.   |
+| Provider                   | `defs/providers.bzl`          | `PackageInfo`, `BuildToolchainInfo`, kernel/image providers.                 |
+| Patch registry (empty)     | `defs/empty_registry.bzl`     | `PATCH_REGISTRY = {}` default.                                               |
+| Patch registry (private)   | `patches/registry.bzl`        | User-supplied override (gitignored).                                         |
+| Package sets               | `defs/package_sets.bzl`       | `system_set`, `package_set`, `combined_set`, profile USE-flag presets.       |
+| Host-tool seed list        | `tc/bootstrap/host-tools/packages.bzl` | `HOST_TOOL_PACKAGES` — gates explicit `host_deps` in seed mode.    |
+
+`scripts/validate-spec.py` validates this spec's frontmatter (id, version,
+date, status, category).
 
 ## Security Considerations
 
-### Source Verification
-
-Package managers MUST verify:
-
-1. **Checksum verification**: SHA256 hash of downloaded sources
-2. **Signature verification**: GPG signatures when available
-3. **Mirror integrity**: HTTPS for all downloads
-
-```python
-def verify_source(src_uri, sha256, signature=None):
-    """
-    Verify downloaded source integrity
-
-    Args:
-        src_uri: Source URI
-        sha256: Expected SHA256 hash
-        signature: Optional GPG signature
-
-    Returns:
-        True if verification passes
-
-    Raises:
-        ChecksumError: If checksum fails
-        SignatureError: If signature fails
-    """
-    pass
-```
-
-### Sandbox Execution
-
-Build processes SHOULD run in sandboxed environments:
-
-```python
-SANDBOX_CONFIG = {
-    "network": False,        # No network access during build
-    "filesystem": {
-        "read": ["/usr", "/lib", "/etc"],
-        "write": ["$BUILD_DIR", "$DESTDIR"],
-    },
-    "environment": {
-        "clear": True,       # Clear environment
-        "allow": ["PATH", "HOME", "TERM"],
-    },
-}
-```
-
-### Privilege Management
-
-- Build operations MUST NOT require root
-- Installation MAY require elevated privileges
-- Package manager SHOULD use capabilities when possible
-
-### Audit Logging
-
-```python
-AUDIT_EVENTS = [
-    "package_install",
-    "package_uninstall",
-    "package_update",
-    "config_change",
-    "privilege_escalation",
-]
-
-def log_audit_event(event, **kwargs):
-    """
-    Log security-relevant events
-
-    Args:
-        event: Event type
-        **kwargs: Event details
-    """
-    pass
-```
-
----
-
-## Best Practices
-
-### Performance
-
-1. **Parallel builds**: Build independent packages concurrently
-2. **Cache aggressively**: Cache downloads, build artifacts, metadata
-3. **Incremental updates**: Only rebuild changed packages
-4. **Lazy loading**: Load metadata on demand
-
-### User Experience
-
-1. **Progress reporting**: Show clear progress indicators
-2. **Error messages**: Provide actionable error messages
-3. **Confirmation prompts**: Confirm destructive operations
-4. **Dry-run support**: Allow previewing operations
-
-### Compatibility
-
-1. **Version compatibility**: Support multiple Buck2 versions
-2. **Platform support**: Handle platform-specific differences
-3. **Migration paths**: Provide tools for configuration migration
-
-### Maintenance
-
-1. **Logging**: Comprehensive logging for debugging
-2. **Metrics**: Track build times, success rates
-3. **Testing**: Automated testing of package manager
-4. **Documentation**: Keep documentation in sync
-
----
-
-## Appendix A: Complete Example
-
-### Package Manager Configuration File
-
-```toml
-# /etc/buckos-pkgmgr.toml
-
-[general]
-repository = "//packages/linux"
-cache_dir = "/var/cache/buckos"
-log_level = "info"
-
-[profile]
-name = "server"
-arch = "x86_64"
-
-[use_flags]
-global = [
-    "ssl",
-    "ipv6",
-    "threads",
-    "caps",
-    "-X",
-    "-wayland",
-]
-
-[use_flags.package.nginx]
-flags = ["http2", "ssl", "pcre2", "geoip"]
-
-[use_flags.package.curl]
-flags = ["gnutls", "-ssl", "http2"]
-
-[environment]
-CFLAGS = "-O2 -pipe -march=x86-64"
-CXXFLAGS = "${CFLAGS}"
-LDFLAGS = "-Wl,-O1 -Wl,--as-needed"
-MAKEOPTS = "-j8"
-
-[environment.package.ffmpeg]
-CFLAGS = "-O3 -march=native"
-
-[keywords]
-accept = ["~amd64"]
-
-[mask]
-packages = [
-    "//packages/linux/dev-libs/openssl:1.0",
-]
-
-[unmask]
-packages = []
-```
-
-### Sample Package Query Session
-
-```bash
-$ pkgmgr search nginx
-packages/linux/www/servers/nginx:nginx (1.24.0)
-    High performance HTTP server
-    USE: geoip http2 http3 lua pcre2 ssl stream threads
-
-$ pkgmgr info nginx
-Name:        nginx
-Version:     1.24.0
-Slot:        0
-Homepage:    https://nginx.org
-License:     BSD-2-Clause
-Maintainer:  web-team <web@buckos.org>
-
-Description:
-    High performance HTTP and reverse proxy server
-
-USE flags:
-    + http2      HTTP/2 support
-    + ssl        SSL/TLS support
-    + pcre2      PCRE2 regular expressions
-    - geoip      GeoIP support
-    - http3      HTTP/3 (QUIC) support
-    - lua        Lua scripting support
-    - stream     TCP/UDP proxy support
-    - threads    Thread pool support
-
-Dependencies:
-    //packages/linux/core/openssl:openssl
-    //packages/linux/core/pcre2:pcre2
-    //packages/linux/core/zlib:zlib
-
-$ pkgmgr deps nginx --tree
-nginx-1.24.0
-├── openssl-3.2.0
-│   └── zlib-1.3
-├── pcre2-10.42
-└── zlib-1.3 (already shown)
-
-$ pkgmgr use nginx --set "+http2 +ssl +pcre2 +geoip"
-USE flags for nginx updated:
-    + http2  (enabled)
-    + ssl    (enabled)
-    + pcre2  (enabled)
-    + geoip  (enabled)
-
-Additional dependencies will be installed:
-    //packages/linux/dev-libs/geoip:geoip
-
-$ pkgmgr install nginx
-Calculating dependencies... done
-The following packages will be installed:
-    nginx-1.24.0 [http2 ssl pcre2 geoip]
-    geoip-1.6.12
-
-Total download size: 2.1 MB
-Total installed size: 8.5 MB
-
-Continue? [y/N] y
->>> Fetching nginx-1.24.0.tar.gz
->>> Verifying checksum... OK
->>> Extracting... done
->>> Building nginx-1.24.0
-    [########################################] 100%
->>> Installing nginx-1.24.0
->>> Installation complete
-
-$ pkgmgr config export --format=json > config.json
-Configuration exported to config.json
-```
-
----
-
-## Appendix B: Migration Guide
-
-### From Portage
-
-| Portage | BuckOS Package Manager |
-|---------|------------------------|
-| `/etc/portage/make.conf` | `/etc/buckos-pkgmgr.toml` |
-| `/etc/portage/package.use` | `[use_flags.package]` section |
-| `/etc/portage/package.mask` | `[mask]` section |
-| `/etc/portage/package.accept_keywords` | `[keywords]` section |
-| `emerge` | `pkgmgr` |
-| `equery` | `pkgmgr info/deps` |
-| `euse` | `pkgmgr use` |
-
-### Configuration Translation
-
-```bash
-# Portage make.conf
-USE="ssl ipv6 -X"
-CFLAGS="-O2 -pipe"
-MAKEOPTS="-j8"
-
-# Translates to:
-# /etc/buckos-pkgmgr.toml
-[use_flags]
-global = ["ssl", "ipv6", "-X"]
-
-[environment]
-CFLAGS = "-O2 -pipe"
-MAKEOPTS = "-j8"
-```
-
----
-
-## Appendix C: API Reference
-
-### Core Functions
-
-```python
-# Package queries
-get_package_info(target) -> PackageInfo
-get_package_versions(target) -> list[str]
-get_package_dependencies(target) -> list[str]
-get_package_use_flags(target) -> list[str]
-
-# Registry queries
-get_default_version(pkg_id) -> str
-get_all_versions(pkg_id) -> list[str]
-get_versions_in_slot(pkg_id, slot) -> list[str]
-get_stable_versions(pkg_id) -> list[str]
-get_version_status(pkg_id, version) -> str
-list_all_packages() -> list[str]
-list_packages_by_category(category) -> list[str]
-
-# USE flag operations
-get_available_use_flags() -> list[str]
-get_use_flags_by_category(category) -> list[str]
-resolve_use_flags(package) -> set[str]
-validate_use_flags(package, flags) -> dict
-
-# Set operations
-get_set_packages(set_name) -> list[str]
-get_set_info(set_name) -> dict
-list_all_sets() -> list[str]
-union_sets(*sets) -> list[str]
-intersection_sets(*sets) -> list[str]
-difference_sets(set1, set2) -> list[str]
-
-# Configuration
-generate_system_config(**kwargs) -> dict
-export_config_json() -> str
-export_config_toml() -> str
-export_config_shell() -> str
-export_buck_config() -> str
-
-# Build operations
-build_package(target, **kwargs) -> BuildResult
-install_package(target, destdir) -> InstallResult
-```
-
----
-
-## Version History
-
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0.0 | 2024-01-01 | Initial specification |
-
----
+- **Checksum verification.** `sha256` is required for every `http_file`
+  download. `package()` rejects calls that have `url` without `sha256`
+  (defs/package.bzl:189–194).
+- **Network isolation.** Build phases run under `unshare --net`; vendor
+  tarballs for Cargo/Go packages are required for offline builds.
+- **Host PATH escape.** Host-tool auto-injection (see above) ensures
+  configure/make never finds `/usr/bin/python`, `/usr/bin/perl`, etc., which
+  would break ABI assumptions on heterogeneous build hosts.
+- **Provenance.** Every build target carries `buckos:url:`, `buckos:sha256:`,
+  and `buckos:source:<host>` labels for SBOM generation.
+- **Private patches.** The `PATCH_REGISTRY` loading mechanism is opt-in;
+  default builds use the empty registry. Private patches are merged
+  deterministically (public first, then private).
+
+## Alternatives Considered
+
+- **Eclass inheritance (Gentoo-style).** Removed. Eclass logic now lives
+  inline in the language-specific `defs/rules/<lang>.bzl` modules, and
+  cross-cutting logic lives in `package()`. Wrappers are too small to need
+  inheritance.
+- **EAPI versioning.** Removed. The macro is internal API; we version the
+  spec instead.
+- **Central package registry.** Removed. Buck2 already provides target
+  enumeration via `buck2 targets` and BXL queries.
+- **Slot/subslot system.** Removed. Versioned packages are defined as
+  independent targets with an `alias()` for the default (see openssl example).
+  This is simpler, fully explicit, and avoids select() explosions.
+- **`build_rule = "ebuild" | "simple" | "bootstrap"`.** Removed. The dispatch
+  table is restricted to language-specific rules (`autotools`, `cmake`,
+  `meson`, `cargo`, `go`, `make`, `binary`, `perl`, `python`, `mozbuild`).
 
 ## References
 
-- [Buck2 Documentation](https://buck2.build/)
-- [BuckOS USE Flags Documentation](USE_FLAGS.md)
-- [BuckOS Package Sets Documentation](PACKAGE_SETS.md)
-- [BuckOS Versioning Documentation](VERSIONING.md)
-- [BuckOS Patch System Documentation](PATCHES.md)
-- [Gentoo Portage Specification](https://wiki.gentoo.org/wiki/Portage)
+- SPEC-002: USE Flag System — the constraint and helper machinery `package()`
+  consumes via `use_deps`, `use_configure`, `use_features`, `use_transforms`.
+- SPEC-004: Package Sets and System Profiles — `system_set` / `package_set` /
+  `combined_set` and the profile USE-flag presets.
+- SPEC-005: Patch System — `patches` kwarg, `PATCH_REGISTRY` format, patch
+  application semantics.
+- `defs/package.bzl` — the macro source of truth.
+- `defs/providers.bzl` — `PackageInfo` and related providers.
+- `defs/rules/_common.bzl::COMMON_PACKAGE_ATTRS` — the attrs every build rule
+  accepts.

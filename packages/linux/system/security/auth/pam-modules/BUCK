@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # Additional PAM modules
 # Mount, script, SSH, PKCS#11, and blacklist modules
 
 # pam_mount - Mount volumes on login
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "pam-mount",
     url = "https://inai.de/files/pam_mount/pam_mount-2.20.tar.xz",
 
@@ -39,8 +38,7 @@ package(
 )
 
 # pam_script - Run scripts on authentication
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "pam-script",
     url = "https://github.com/jeroennijhof/pam_script/archive/refs/tags/1.1.9.tar.gz",
 
@@ -65,8 +63,7 @@ package(
 # pam_ssh_agent_auth - SSH agent-based authentication for sudo
 # The old configure script fails "checking compiler and flags for sanity... no"
 # in cross-compilation. Use cache variables to bypass broken checks.
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "pam-ssh-agent-auth",
     url = "https://github.com/jbeverly/pam_ssh_agent_auth/archive/refs/tags/pam_ssh_agent_auth-0.10.4.tar.gz",
 
@@ -101,8 +98,7 @@ package(
 )
 
 # pam_pkcs11 - PKCS#11/Smart card PAM module
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "pam-pkcs11",
     url = "https://github.com/OpenSC/pam_pkcs11/archive/refs/tags/pam_pkcs11-0.6.12.tar.gz",
 
@@ -129,8 +125,7 @@ package(
 
 # pam_abl - Auto blacklist for PAM
 # pam-abl uses a plain Makefile, not autotools
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "pam-abl",
     url = "https://github.com/deksai/pam_abl/archive/refs/tags/v0.6.0.tar.gz",
 

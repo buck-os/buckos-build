@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # keyutils - Linux key management utilities
 
-package(
+autotools_package(
     name = "keyutils",
-    build_rule = "autotools",
     skip_configure = True,
     url = "https://git.kernel.org/pub/scm/linux/kernel/git/dhowells/keyutils.git/snapshot/keyutils-1.6.3.tar.gz",
 

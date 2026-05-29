@@ -1,12 +1,11 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:go.bzl", "go_package")
 
 # =============================================================================
 # Container Utilities
 # =============================================================================
 
 # umoci - OCI image tool
-package(
-    build_rule = "go",
+go_package(
     name = "umoci",
     version = "0.4.7",
     url = "https://github.com/opencontainers/umoci/releases/download/v0.4.7/umoci.tar.xz",
@@ -22,8 +21,7 @@ package(
 )
 
 # dive - Explore container image layers
-package(
-    build_rule = "go",
+go_package(
     name = "dive",
     version = "0.12.0",
     url = "https://github.com/wagoodman/dive/archive/refs/tags/v0.12.0.tar.gz",
@@ -38,8 +36,7 @@ package(
 )
 
 # ctop - Container metrics viewer
-package(
-    build_rule = "go",
+go_package(
     name = "ctop",
     version = "0.7.7",
     url = "https://github.com/bcicen/ctop/archive/refs/tags/v0.7.7.tar.gz",
@@ -54,8 +51,7 @@ package(
 )
 
 # lazydocker - Terminal UI for docker and docker-compose (works with podman)
-package(
-    build_rule = "go",
+go_package(
     name = "lazydocker",
     version = "0.23.1",
     url = "https://github.com/jesseduffield/lazydocker/archive/refs/tags/v0.23.1.tar.gz",
@@ -71,8 +67,7 @@ package(
 )
 
 # trivy - Security scanner for containers
-package(
-    build_rule = "go",
+go_package(
     name = "trivy",
     version = "0.50.1",
     url = "https://github.com/aquasecurity/trivy/archive/refs/tags/v0.50.1.tar.gz",
@@ -88,8 +83,7 @@ package(
 )
 
 # docker-credential-helpers - Credential helpers for container registries
-package(
-    build_rule = "go",
+go_package(
     name = "docker-credential-helpers",
     version = "0.8.1",
     url = "https://github.com/docker/docker-credential-helpers/archive/refs/tags/v0.8.1.tar.gz",

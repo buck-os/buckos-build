@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # libaio uses a plain Makefile without configure.  The install target
 # takes prefix/libdir/includedir directly (no DESTDIR support).
-package(
-    build_rule = "binary",
+binary_package(
     name = "libaio",
     version = "0.3.113",
     url = "https://github.com/yugabyte/libaio/archive/refs/tags/libaio-0.3.113.tar.gz",

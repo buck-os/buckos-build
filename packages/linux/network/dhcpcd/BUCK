@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # =============================================================================
 # dhcpcd - DHCP client daemon
 # =============================================================================
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "dhcpcd",
     # Release tarball already includes configure script
     version = "10.0.6",

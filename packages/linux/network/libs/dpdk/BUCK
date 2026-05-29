@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:meson.bzl", "meson_package")
 
 # DPDK 24.11.0 official release checksum from https://fast.dpdk.org/rel/
 # You can verify with: wget https://fast.dpdk.org/rel/dpdk-24.11.tar.xz && sha256sum dpdk-24.11.tar.xz
-package(
-    build_rule = "meson",
+meson_package(
     name = "dpdk",
     version = "24.11.0",
     url = "https://fast.dpdk.org/rel/dpdk-24.11.tar.xz",

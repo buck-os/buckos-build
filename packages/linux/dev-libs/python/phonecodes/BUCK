@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:python.bzl", "python_package")
 
 # phonecodes - IPA / ARPABET / X-SAMPA phonetic code conversion library
 # The source has no setup.py. Python modules are in src/ directory.
 # We create a setup.py that installs the modules from src/.
-package(
-    build_rule = "python",
+python_package(
     name = "phonecodes",
     version = "0.0.1",
     url = "https://github.com/jhasegaw/phonecodes/archive/d5bf7806ad26f4ec9eeb6c61d84c599fd2a148bf.tar.gz",

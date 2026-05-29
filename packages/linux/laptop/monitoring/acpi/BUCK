@@ -1,12 +1,11 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # acpi - ACPI client for battery, thermal, and adapter status
 # Shows battery status and other ACPI information
 
 # USE flags: See use_flags.bzl for available flags
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "acpi",
     # Release tarball includes pre-generated configure script
     url = "https://downloads.sourceforge.net/acpiclient/acpi-1.7.tar.gz",

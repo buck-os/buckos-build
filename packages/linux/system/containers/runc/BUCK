@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # runc - CLI tool for spawning and running containers according to the OCI specification
 # Using prebuilt binary from official releases
 
-package(
-    build_rule = "binary",
+binary_package(
     name = "runc",
     version = "1.1.12",
     url = "https://github.com/opencontainers/runc/archive/refs/tags/v1.1.12.tar.gz",

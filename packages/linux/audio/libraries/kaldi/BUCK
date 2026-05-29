@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # Kaldi is a speech recognition toolkit using a custom configure script.
 # It requires special handling for the build process (cd src && ./configure && make).
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "kaldi",
     version = "01aadd7",
     url = "https://github.com/kaldi-asr/kaldi/archive/01aadd7c19372e3eacadec88caabd86162f33d69.tar.gz",

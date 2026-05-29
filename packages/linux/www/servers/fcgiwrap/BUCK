@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # fcgiwrap - Simple FastCGI wrapper for CGI scripts
 #
@@ -8,8 +8,7 @@ load("//defs:package.bzl", "package")
 # It's especially useful for hosting legacy CGI scripts or git repositories
 # over HTTP.
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "fcgiwrap",
     # Disable -Werror for implicit-fallthrough warning
     env = {

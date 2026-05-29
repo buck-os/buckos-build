@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:meson.bzl", "meson_package")
 
 # =============================================================================
 # libpciaccess - Library providing generic access to the PCI bus
 # =============================================================================
 
-package(
-    build_rule = "meson",
+meson_package(
     name = "libpciaccess",
     version = "0.18.1",
     use_configure = {

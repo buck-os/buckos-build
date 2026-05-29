@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:meson.bzl", "meson_package")
 
 # =============================================================================
 # AccountsService - D-Bus service for accessing user account information
 # =============================================================================
 
-package(
-    build_rule = "meson",
+meson_package(
     name = "accountsservice",
     version = "23.13.9",
     url = "https://www.freedesktop.org/software/accountsservice/accountsservice-23.13.9.tar.xz",
@@ -38,8 +37,7 @@ package(
 # colord - Color management daemon
 # USE flags: systemd, sane, argyllcms, doc, vapi
 
-package(
-    build_rule = "meson",
+meson_package(
     name = "colord",
     version = "1.4.7",
     url = "https://www.freedesktop.org/software/colord/releases/colord-1.4.7.tar.xz",
@@ -72,8 +70,7 @@ package(
 # colord-gtk - GTK integration for colord
 # USE flags: vapi, doc, gtk3, gtk4
 
-package(
-    build_rule = "meson",
+meson_package(
     name = "colord-gtk",
     version = "0.3.1",
     url = "https://www.freedesktop.org/software/colord/releases/colord-gtk-0.3.1.tar.xz",

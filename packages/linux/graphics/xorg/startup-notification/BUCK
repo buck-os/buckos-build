@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # startup-notification - Library for startup notification protocol
 # Used by window managers to show launch feedback
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "startup-notification",
     version = "0.12",
     url = "https://www.freedesktop.org/software/startup-notification/releases/startup-notification-0.12.tar.gz",

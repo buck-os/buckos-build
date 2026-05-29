@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # libmd - Message digest functions from BSD systems
 # Provides MD4, MD5, SHA1, SHA2, RIPEMD-160 implementations
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "libmd",
     # Official release tarball includes pre-generated configure script
     version = "1.1.0",

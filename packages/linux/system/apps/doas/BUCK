@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # doas - Simple sudo alternative from OpenBSD
 # OpenDoas has its own configure script, not autotools
 
-package(
-    build_rule = "binary",
+binary_package(
     name = "doas",
     version = "6.8.2",
     url = "https://github.com/Duncaen/OpenDoas/archive/v6.8.2.tar.gz",

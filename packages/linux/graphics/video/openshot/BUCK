@@ -1,7 +1,6 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "libopenshot",
     url = "https://github.com/OpenShot/libopenshot/archive/refs/tags/v0.3.2.tar.gz",
 
@@ -26,8 +25,7 @@ python3 setup.py install --prefix=/usr --root=$OUT
     ],
 )
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "openshot",
     url = "https://github.com/OpenShot/openshot-qt/archive/refs/tags/v3.1.1.tar.gz",
 

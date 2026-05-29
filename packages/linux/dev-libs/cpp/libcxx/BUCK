@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:cmake.bzl", "cmake_package")
 
 LIBCXX_VERSION = "18.1.8"
 
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "libcxx",
     version = LIBCXX_VERSION,
     url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-{}/llvm-project-{}.src.tar.xz".format(LIBCXX_VERSION, LIBCXX_VERSION),

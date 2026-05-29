@@ -455,5 +455,5 @@ Potential improvements:
 
 - `scripts/download-all-sources.py` - Download source packages
 - `scripts/generate-download-script.py` - Generate mirror scripts
-- `defs/package_defs.bzl` - Package definitions
+- `defs/package.bzl` - Package definitions (`package()` macro and language-specific wrappers under `defs/packages/`)
 - Buck2 documentation: https://buck2.build/

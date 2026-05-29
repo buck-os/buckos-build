@@ -1,4 +1,5 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # ── busybox-static ────────────────────────────────────────────────────
 #
@@ -7,9 +8,8 @@ load("//defs:package.bzl", "package")
 # live-boot environment.  Uses binary build rule because the Kconfig
 # setup and custom install (applet symlinks) are too specialised for the
 # autotools pipeline.
-package(
+binary_package(
     name = "busybox-static",
-    build_rule = "binary",
     version = "1.36.1",
     source = ":busybox-src",
     description = "Static busybox for initramfs with all essential applets",
@@ -200,9 +200,8 @@ fi
 # The package() macro auto-creates :busybox-archive and :busybox-src
 # targets from the url/sha256 below; busybox-static above reuses
 # :busybox-src to avoid downloading the tarball twice.
-package(
+autotools_package(
     name = "busybox",
-    build_rule = "autotools",
     version = "1.36.1",
     url = "https://github.com/mirror/busybox/archive/refs/tags/1_36_1.tar.gz",
     sha256 = "ea5494846c51d946e5e801d1c099b438f683af8147e0be24ca4001073143110f",

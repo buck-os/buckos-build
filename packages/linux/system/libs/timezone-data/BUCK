@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # timezone-data - Timezone database and utilities
 # NOTE: tzdata tarball extracts files directly (no subdirectory)
-package(
+binary_package(
     name = "timezone-data",
-    build_rule = "binary",
     version = "2024a",
     url = "https://data.iana.org/time-zones/releases/tzdata2024a.tar.gz",
     sha256 = "0d0434459acbd2059a7a8da1f3304a84a86591f6ed69c6248fffa502b6edffe3",

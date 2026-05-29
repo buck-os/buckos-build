@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # coreutils - GNU core utilities
 # USE flags: nls, acl, attr, caps, selinux, xattr
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "coreutils",
     version = "9.5",
     url = "https://mirrors.kernel.org/gnu/coreutils/coreutils-9.5.tar.xz",

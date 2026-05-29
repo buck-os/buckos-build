@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package", "make_package")
 
 # Password quality and security packages
 # Password strength checking libraries and tools
 
 # libpwquality - Password quality checking library
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "libpwquality",
     pre_configure_cmds = ["""
 autoreconf -fi
@@ -47,8 +46,7 @@ autoreconf -fi
 )
 
 # passwdqc - Password quality check tool
-package(
-    build_rule = "make",
+make_package(
     name = "passwdqc",
     url = "https://www.openwall.com/passwdqc/passwdqc-2.0.3.tar.gz",
 

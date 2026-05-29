@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # shadow - User and group management utilities
 # USE flags: pam, selinux, audit, acl, attr, nls, tcb, nscd
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "shadow",
     version = "4.14.8",
     url = "https://github.com/shadow-maint/shadow/releases/download/4.14.8/shadow-4.14.8.tar.xz",

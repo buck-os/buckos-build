@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # sdparm - SCSI Device Parameters
 # Get/set SCSI device parameters including power conditions
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "sdparm",
     # Release tarball includes pre-generated configure script
     url = "https://sg.danny.cz/sg/p/sdparm-1.12.tar.xz",

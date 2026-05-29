@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # logrotate - Log file rotation utility
 # USE flags: selinux, acl
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "logrotate",
     version = "3.21.0",
     url = "https://github.com/logrotate/logrotate/releases/download/3.21.0/logrotate-3.21.0.tar.xz",

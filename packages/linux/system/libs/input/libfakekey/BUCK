@@ -1,8 +1,7 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # Use GitHub mirror since yoctoproject.org blocks Buck2's user-agent with bot detection
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "libfakekey",
     pre_configure_cmds = ["""
 autoreconf -fi

@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # =============================================================================
 # autoconf-archive - GNU Autoconf Macro Archive
@@ -6,8 +6,7 @@ load("//defs:package.bzl", "package")
 # Collection of freely reusable Autoconf macros including AX_PTHREAD,
 # AX_CHECK_COMPILE_FLAG, AX_CXX_COMPILE_STDCXX, and many others.
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "autoconf-archive",
     version = "2024.10.16",
     url = "https://ftp.gnu.org/gnu/autoconf-archive/autoconf-archive-2024.10.16.tar.xz",

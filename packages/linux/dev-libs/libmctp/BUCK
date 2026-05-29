@@ -1,8 +1,7 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:cmake.bzl", "cmake_package")
 
 # libmctp uses cmake build system (v0.11 has no meson.build)
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "libmctp",
     version = "0.11",
     url = "https://github.com/openbmc/libmctp/archive/refs/tags/v0.11.tar.gz",

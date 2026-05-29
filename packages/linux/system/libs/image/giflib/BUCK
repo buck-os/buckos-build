@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # giflib - Library to handle, display and manipulate GIF images
 # Based on Gentoo media-libs/giflib-5.2.2.ebuild
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "giflib",
     version = "5.2.2",
     skip_configure = True,

@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:meson.bzl", "meson_package")
 
 # -----------------------------------------------------------------------------
 # systemd - System and service manager
 # -----------------------------------------------------------------------------
 
-package(
-    build_rule = "meson",
+meson_package(
     name = "systemd",
     version = "259.5",
     url = "https://github.com/systemd/systemd/archive/refs/tags/v259.5.tar.gz",

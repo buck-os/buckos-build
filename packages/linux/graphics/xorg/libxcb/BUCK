@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # libxcb - X C Bindings library
 # Low-level X11 protocol library, modern replacement for Xlib protocol handling
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "libxcb",
     version = "1.16",
     use_configure = {

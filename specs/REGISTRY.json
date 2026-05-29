@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "generated": "2025-12-27T13:31:23.272526",
-  "total_specs": 5,
+  "generated": "2026-05-29",
+  "total_specs": 10,
   "specs": [
     {
       "id": "SPEC-001",
@@ -11,7 +11,7 @@
       "category": "core",
       "path": "core/SPEC-001-package-manager-integration.md",
       "created": "2025-11-20",
-      "updated": "2025-12-27",
+      "updated": "2026-05-29",
       "authors": [
         {
           "name": "BuckOS Team",
@@ -35,7 +35,7 @@
       ],
       "implementation": {
         "status": "complete",
-        "completeness": 95
+        "completeness": 100
       },
       "compatibility": {
         "buck2_version": ">=2024.11.01",
@@ -48,11 +48,11 @@
       "id": "SPEC-002",
       "title": "USE Flag System",
       "status": "approved",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "category": "core",
       "path": "core/SPEC-002-use-flags.md",
       "created": "2025-11-20",
-      "updated": "2025-11-27",
+      "updated": "2026-05-29",
       "authors": [
         {
           "name": "BuckOS Team",
@@ -74,7 +74,7 @@
       ],
       "implementation": {
         "status": "complete",
-        "completeness": 90
+        "completeness": 100
       },
       "compatibility": {
         "buck2_version": ">=2024.11.01",
@@ -86,12 +86,12 @@
     {
       "id": "SPEC-003",
       "title": "Package Versioning and Slot System",
-      "status": "approved",
-      "version": "1.0.0",
+      "status": "deprecated",
+      "version": "1.1.0",
       "category": "core",
       "path": "core/SPEC-003-versioning.md",
       "created": "2025-11-19",
-      "updated": "2025-11-19",
+      "updated": "2026-05-29",
       "authors": [
         {
           "name": "BuckOS Team",
@@ -112,8 +112,9 @@
         "SPEC-001"
       ],
       "implementation": {
-        "status": "complete",
-        "completeness": 85
+        "status": "not-started",
+        "completeness": 0,
+        "note": "Feature was never implemented; see body for current alternatives"
       },
       "compatibility": {
         "buck2_version": ">=2024.11.01",
@@ -152,7 +153,7 @@
       ],
       "implementation": {
         "status": "complete",
-        "completeness": 80
+        "completeness": 100
       },
       "compatibility": {
         "buck2_version": ">=2024.11.01",
@@ -165,11 +166,11 @@
       "id": "SPEC-005",
       "title": "Patch System",
       "status": "approved",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "category": "core",
       "path": "core/SPEC-005-patches.md",
       "created": "2025-11-20",
-      "updated": "2025-11-20",
+      "updated": "2026-05-29",
       "authors": [
         {
           "name": "BuckOS Team",
@@ -191,7 +192,7 @@
       ],
       "implementation": {
         "status": "complete",
-        "completeness": 75
+        "completeness": 100
       },
       "compatibility": {
         "buck2_version": ">=2024.11.01",
@@ -199,6 +200,207 @@
         "breaking_changes": false
       },
       "description": "This specification defines the patch system for BuckOS, which allows users and distributions to customize package builds through multiple patch sources with clear precedence ordering. The system su..."
+    },
+    {
+      "id": "PACKAGE-SPEC-001",
+      "title": "Simple and Autotools Packages",
+      "status": "approved",
+      "version": "2.0.0",
+      "category": "packages",
+      "path": "packages/PACKAGE-SPEC-001-simple-autotools.md",
+      "created": "2025-12-27",
+      "updated": "2026-05-29",
+      "authors": [
+        {
+          "name": "BuckOS Team",
+          "email": "team@buckos.org"
+        }
+      ],
+      "maintainers": [
+        "team@buckos.org"
+      ],
+      "tags": [
+        "package-creation",
+        "autotools",
+        "make",
+        "build-system"
+      ],
+      "related": [
+        "SPEC-001",
+        "SPEC-002",
+        "PACKAGE-SPEC-002"
+      ],
+      "implementation": {
+        "status": "complete",
+        "completeness": 100
+      },
+      "compatibility": {
+        "buck2_version": ">=2024.11.01",
+        "buckos_version": ">=1.0.0",
+        "breaking_changes": false
+      },
+      "description": "Specification for creating BuckOS packages using Autotools (./configure, make) or simple Makefiles. Covers simple_package, autotools_package, and bootstrap_package types."
+    },
+    {
+      "id": "PACKAGE-SPEC-002",
+      "title": "Build System Packages (CMake, Meson, Ninja)",
+      "status": "approved",
+      "version": "2.0.0",
+      "category": "packages",
+      "path": "packages/PACKAGE-SPEC-002-build-systems.md",
+      "created": "2025-12-27",
+      "updated": "2026-05-29",
+      "authors": [
+        {
+          "name": "BuckOS Team",
+          "email": "team@buckos.org"
+        }
+      ],
+      "maintainers": [
+        "team@buckos.org"
+      ],
+      "tags": [
+        "package-creation",
+        "cmake",
+        "meson",
+        "ninja",
+        "build-system"
+      ],
+      "related": [
+        "PACKAGE-SPEC-001",
+        "SPEC-002"
+      ],
+      "implementation": {
+        "status": "complete",
+        "completeness": 100
+      },
+      "compatibility": {
+        "buck2_version": ">=2024.11.01",
+        "buckos_version": ">=1.0.0",
+        "breaking_changes": false
+      },
+      "description": "Specification for creating BuckOS packages using modern build systems: CMake and Meson. Includes USE flag integration and build option mapping."
+    },
+    {
+      "id": "PACKAGE-SPEC-003",
+      "title": "Rust/Cargo Packages",
+      "status": "approved",
+      "version": "2.0.0",
+      "category": "packages",
+      "path": "packages/PACKAGE-SPEC-003-rust-cargo.md",
+      "created": "2025-12-27",
+      "updated": "2026-05-29",
+      "authors": [
+        {
+          "name": "BuckOS Team",
+          "email": "team@buckos.org"
+        }
+      ],
+      "maintainers": [
+        "team@buckos.org"
+      ],
+      "tags": [
+        "package-creation",
+        "rust",
+        "cargo",
+        "language-packages"
+      ],
+      "related": [
+        "PACKAGE-SPEC-001",
+        "PACKAGE-SPEC-004",
+        "PACKAGE-SPEC-005"
+      ],
+      "implementation": {
+        "status": "complete",
+        "completeness": 100
+      },
+      "compatibility": {
+        "buck2_version": ">=2024.11.01",
+        "buckos_version": ">=1.0.0",
+        "breaking_changes": false
+      },
+      "description": "Specification for creating BuckOS packages for Rust projects using Cargo. Covers feature flags, cross-compilation, and static linking."
+    },
+    {
+      "id": "PACKAGE-SPEC-004",
+      "title": "Go Packages",
+      "status": "approved",
+      "version": "2.0.0",
+      "category": "packages",
+      "path": "packages/PACKAGE-SPEC-004-go.md",
+      "created": "2025-12-27",
+      "updated": "2026-05-29",
+      "authors": [
+        {
+          "name": "BuckOS Team",
+          "email": "team@buckos.org"
+        }
+      ],
+      "maintainers": [
+        "team@buckos.org"
+      ],
+      "tags": [
+        "package-creation",
+        "go",
+        "golang",
+        "language-packages"
+      ],
+      "related": [
+        "PACKAGE-SPEC-001",
+        "PACKAGE-SPEC-003",
+        "PACKAGE-SPEC-005"
+      ],
+      "implementation": {
+        "status": "complete",
+        "completeness": 100
+      },
+      "compatibility": {
+        "buck2_version": ">=2024.11.01",
+        "buckos_version": ">=1.0.0",
+        "breaking_changes": false
+      },
+      "description": "Specification for creating BuckOS packages for Go projects. Covers Go modules, build tags, CGO support, and cross-compilation."
+    },
+    {
+      "id": "PACKAGE-SPEC-005",
+      "title": "Python Packages",
+      "status": "approved",
+      "version": "2.0.0",
+      "category": "packages",
+      "path": "packages/PACKAGE-SPEC-005-python.md",
+      "created": "2025-12-27",
+      "updated": "2026-05-29",
+      "authors": [
+        {
+          "name": "BuckOS Team",
+          "email": "team@buckos.org"
+        }
+      ],
+      "maintainers": [
+        "team@buckos.org"
+      ],
+      "tags": [
+        "package-creation",
+        "python",
+        "pip",
+        "setuptools",
+        "language-packages"
+      ],
+      "related": [
+        "PACKAGE-SPEC-001",
+        "PACKAGE-SPEC-003",
+        "PACKAGE-SPEC-004"
+      ],
+      "implementation": {
+        "status": "complete",
+        "completeness": 100
+      },
+      "compatibility": {
+        "buck2_version": ">=2024.11.01",
+        "buckos_version": ">=1.0.0",
+        "breaking_changes": false
+      },
+      "description": "Specification for creating BuckOS packages for Python projects. Covers pip/setuptools, pyproject.toml, C extensions, and version compatibility."
     }
   ],
   "by_category": {
@@ -208,15 +410,29 @@
       "SPEC-003",
       "SPEC-004",
       "SPEC-005"
+    ],
+    "packages": [
+      "PACKAGE-SPEC-001",
+      "PACKAGE-SPEC-002",
+      "PACKAGE-SPEC-003",
+      "PACKAGE-SPEC-004",
+      "PACKAGE-SPEC-005"
     ]
   },
   "by_status": {
     "approved": [
       "SPEC-001",
       "SPEC-002",
-      "SPEC-003",
       "SPEC-004",
-      "SPEC-005"
+      "SPEC-005",
+      "PACKAGE-SPEC-001",
+      "PACKAGE-SPEC-002",
+      "PACKAGE-SPEC-003",
+      "PACKAGE-SPEC-004",
+      "PACKAGE-SPEC-005"
+    ],
+    "deprecated": [
+      "SPEC-003"
     ]
   },
   "by_tag": {
@@ -229,7 +445,9 @@
     "build-system": [
       "SPEC-001",
       "SPEC-002",
-      "SPEC-005"
+      "SPEC-005",
+      "PACKAGE-SPEC-001",
+      "PACKAGE-SPEC-002"
     ],
     "integration": [
       "SPEC-001"
@@ -278,6 +496,54 @@
     ],
     "source-modification": [
       "SPEC-005"
+    ],
+    "package-creation": [
+      "PACKAGE-SPEC-001",
+      "PACKAGE-SPEC-002",
+      "PACKAGE-SPEC-003",
+      "PACKAGE-SPEC-004",
+      "PACKAGE-SPEC-005"
+    ],
+    "autotools": [
+      "PACKAGE-SPEC-001"
+    ],
+    "make": [
+      "PACKAGE-SPEC-001"
+    ],
+    "cmake": [
+      "PACKAGE-SPEC-002"
+    ],
+    "meson": [
+      "PACKAGE-SPEC-002"
+    ],
+    "ninja": [
+      "PACKAGE-SPEC-002"
+    ],
+    "rust": [
+      "PACKAGE-SPEC-003"
+    ],
+    "cargo": [
+      "PACKAGE-SPEC-003"
+    ],
+    "language-packages": [
+      "PACKAGE-SPEC-003",
+      "PACKAGE-SPEC-004",
+      "PACKAGE-SPEC-005"
+    ],
+    "go": [
+      "PACKAGE-SPEC-004"
+    ],
+    "golang": [
+      "PACKAGE-SPEC-004"
+    ],
+    "python": [
+      "PACKAGE-SPEC-005"
+    ],
+    "pip": [
+      "PACKAGE-SPEC-005"
+    ],
+    "setuptools": [
+      "PACKAGE-SPEC-005"
     ]
   }
 }

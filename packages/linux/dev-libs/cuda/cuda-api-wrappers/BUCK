@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # =============================================================================
 # cuda-api-wrappers - Thin C++-flavored wrappers for the CUDA APIs
@@ -9,8 +9,7 @@ load("//defs:package.bzl", "package")
 # - NVRTC (dynamic CUDA code compilation)
 # - NVTX (NVIDIA profiler API)
 
-package(
-    build_rule = "binary",
+binary_package(
     name = "cuda-api-wrappers",
     version = "0.5.6",
     url = "https://github.com/eyalroz/cuda-api-wrappers/archive/refs/tags/v0.5.6.tar.gz",

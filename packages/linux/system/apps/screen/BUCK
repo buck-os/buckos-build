@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # screen - Terminal multiplexer with detach capability
 # USE flags: pam, multiuser, selinux
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "screen",
     version = "5.0.1",
     url = "https://mirrors.kernel.org/gnu/screen/screen-5.0.1.tar.gz",

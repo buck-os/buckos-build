@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # Autoconf cannot use autotools_package because it would create a circular dependency
 # (autotools eclass depends on autoconf). Build it manually instead.
-package(
-    build_rule = "binary",
+binary_package(
     name = "autoconf",
     # NOTE: autoconf is a bootstrap package - it cannot depend on autotools
     # because that would create a circular dependency. The tarball ships with

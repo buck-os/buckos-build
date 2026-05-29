@@ -1,5 +1,5 @@
 """
-go_package rule: go build for Go packages.
+go_build rule: go build for Go packages.
 
 Four discrete cacheable actions:
 
@@ -75,7 +75,7 @@ def _go_build(ctx, source):
 
 # ── Rule implementation ───────────────────────────────────────────────
 
-def _go_package_impl(ctx):
+def _go_build_impl(ctx):
     # Phase 1: src_unpack — obtain source from dep
     source = ctx.attrs.source[DefaultInfo].default_outputs[0]
 
@@ -112,8 +112,8 @@ def _go_package_impl(ctx):
 
 # ── Rule definition ───────────────────────────────────────────────────
 
-go_package = rule(
-    impl = _go_package_impl,
+go_build = rule(
+    impl = _go_build_impl,
     attrs = COMMON_PACKAGE_ATTRS | {
         # Go-specific
         "go_args": attrs.list(attrs.string(), default = []),

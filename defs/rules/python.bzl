@@ -1,5 +1,5 @@
 """
-python_package rule: pip install for Python packages.
+python_build rule: pip install for Python packages.
 
 Four discrete cacheable actions:
 
@@ -67,7 +67,7 @@ def _python_install(ctx, source):
 
 # ── Rule implementation ───────────────────────────────────────────────
 
-def _python_package_impl(ctx):
+def _python_build_impl(ctx):
     # Phase 1: src_unpack — obtain source from dep
     source = ctx.attrs.source[DefaultInfo].default_outputs[0]
 
@@ -104,8 +104,8 @@ def _python_package_impl(ctx):
 
 # ── Rule definition ───────────────────────────────────────────────────
 
-python_package = rule(
-    impl = _python_package_impl,
+python_build = rule(
+    impl = _python_build_impl,
     attrs = COMMON_PACKAGE_ATTRS | {
         # Python-specific
         "use_setup_py": attrs.bool(default = False),

@@ -8,6 +8,7 @@ at analysis time based on the active platform/profile.
 Usage in package BUCK files:
 
     load("//defs:use_helpers.bzl", "use_bool", "use_dep", "use_configure_arg")
+    load("//defs/packages:autotools.bzl", "autotools_package")
 
     autotools_package(
         ...

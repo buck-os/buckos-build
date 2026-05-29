@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # monit - Process supervisor and monitoring tool
 # USE flags: ssl, pam
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "monit",
     version = "5.34.3",
     url = "https://mmonit.com/monit/dist/monit-5.34.3.tar.gz",

@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # libmd - Message Digest library (BSD)
 # Provides MD2, MD4, MD5, RIPEMD-160, SHA-1, SHA-2 functions
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "libmd",
     version = "1.1.0",
     source = "//packages/linux/core/libmd:libmd-src",

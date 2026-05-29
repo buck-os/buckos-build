@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # =============================================================================
 # Python - General-purpose programming language
 # =============================================================================
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "python",
     version = "3.12.1",
     url = "https://www.python.org/ftp/python/3.12.1/Python-3.12.1.tar.xz",
@@ -84,8 +83,7 @@ package(
 # It avoids cross-compilation issues by not depending on libraries
 # that would be built for the target platform.
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "python-host",
     version = "3.12.1",
     source = ":python-src",

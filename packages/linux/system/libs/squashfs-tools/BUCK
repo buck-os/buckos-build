@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # =============================================================================
 # squashfs-tools - Create and extract SquashFS filesystems
@@ -6,9 +6,8 @@ load("//defs:package.bzl", "package")
 # Essential for creating compressed root filesystems used in live systems
 # and embedded devices.
 
-package(
+autotools_package(
     name = "squashfs-tools",
-    build_rule = "autotools",
     skip_configure = True,
     url = "https://github.com/plougher/squashfs-tools/archive/refs/tags/4.6.1.tar.gz",
 

@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # Valgrind - Instrumentation framework for building dynamic analysis tools
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "valgrind",
     # Sourceware release tarball includes pre-generated configure script
     version = "3.22.0",

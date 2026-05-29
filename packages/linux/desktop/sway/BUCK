@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:meson.bzl", "meson_package")
 
 # =============================================================================
 # Sway - i3-compatible Wayland compositor
@@ -11,8 +11,7 @@ load("//defs:package.bzl", "package")
 #   zsh-completion  - Install zsh completions
 #   fish-completion - Install fish completions
 
-package(
-    build_rule = "meson",
+meson_package(
     name = "sway",
     version = "1.9",
     url = "https://github.com/swaywm/sway/releases/download/1.9/sway-1.9.tar.gz",
@@ -83,8 +82,7 @@ package(
     ],
 )
 
-package(
-    build_rule = "meson",
+meson_package(
     name = "wlroots",
     url = "https://gitlab.freedesktop.org/wlroots/wlroots/-/releases/0.17.1/downloads/wlroots-0.17.1.tar.gz",
 

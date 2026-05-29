@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # ncurses - Console display library
 # Uses traditional autotools (configure/make), not cmake
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "ncurses",
     version = "6.5",
     url = "https://mirrors.kernel.org/gnu/ncurses/ncurses-6.5.tar.gz",

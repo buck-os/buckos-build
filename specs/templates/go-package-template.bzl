@@ -1,82 +1,76 @@
 """
-Template for package(build_rule = "go") with USE flags
-Based on PACKAGE-SPEC-004: Go Packages
+Template for go_package (Go modules build).
+
+Real-world example: packages/linux/dev-libs/cloud/finnhub-go/BUCK     (minimal)
+                    packages/linux/dev-libs/go/go-fuse/BUCK           (cgo)
+                    packages/linux/dev-libs/go/prometheus-common/BUCK (lib_only)
+Wrapper definition: defs/packages/go.bzl
+Underlying rule:    defs/rules/go.bzl
+Common kwargs:      defs/package.bzl (see the package() docstring)
+
+Vendoring: package() auto-creates :name-vendor-* targets from the mirror.
+Set vendor_deps = True if the source tarball already ships a vendor/ dir
+(GOFLAGS=-mod=vendor is then injected automatically).
 """
 
-load("//defs:package.bzl", "package")
+load("//defs/packages:go.bzl", "go_package")
 
-package(
-    build_rule = "go",
+go_package(
     name = "PACKAGE_NAME",
     version = "VERSION",
-    url = "SOURCE_URL",
-    sha256 = "SHA256_CHECKSUM",
+    url = "https://github.com/EXAMPLE/PACKAGE_NAME/archive/vVERSION.tar.gz",
+    sha256 = "REPLACE_WITH_SHA256",
 
-    # Go packages to build (import paths)
-    packages = [
-        # Example: ".", "./cmd/tool", "./cmd/other"
-    ],
+    # ── SBOM metadata ────────────────────────────────────────────────
+    description = "One-line description",
+    homepage = "https://github.com/EXAMPLE/PACKAGE_NAME",
+    license = "Apache-2.0",
 
-    # Binary names to install (if different from package name)
-    bins = [
-        # Example: "my-binary",
-    ],
+    # ── Library-only package (no binaries to install) ────────────────
+    # Set when packaging a Go module that other packages import via
+    # GOPATH but which has no `package main`:
+    # lib_only = True,
 
-    # USE flags this package supports
-    iuse = [
-        # Example: "netgo", "sqlite", "postgres"
-    ],
+    # ── Binaries to install ──────────────────────────────────────────
+    # Defaults: all `package main` entries.  Restrict with bins / packages:
+    # bins = ["my-tool"],
+    # packages = [".", "./cmd/foo", "./cmd/bar"],
 
-    # Map USE flags to Go build tags
-    use_tags = {
-        # Format: "flag": "tag-name"
-        # Example:
-        # "netgo": "netgo",
-        # "sqlite": "sqlite",
-        # "postgres": "postgres",
+    # ── Build args ───────────────────────────────────────────────────
+    # go_args = ["-trimpath", "-buildmode=pie"],
+    # ldflags = "-s -w -X main.Version=VERSION",  # single string, not a list
+
+    # ── USE flags ────────────────────────────────────────────────────
+    # Go uses build tags via use_configure (the macro forwards them to
+    # the go rule which translates them appropriately).  Pass a single
+    # `-tags` arg via go_args for static tags.
+    use_configure = {
+        # "flag": ("--tags=flag", ""),
     },
-
-    # Conditional dependencies based on USE flags
     use_deps = {
-        # Format: "flag": ["//dependency/target"]
-        # Example:
-        # "sqlite": ["//packages/linux/dev-db:sqlite"],
+        # "sqlite": "//packages/linux/dev-db/sqlite:sqlite",
     },
 
-    # Additional go build arguments (ldflags, etc.)
-    go_build_args = [
-        # Example: "-ldflags", "-w -s -X main.version=VERSION"
-    ],
+    # ── Patches ──────────────────────────────────────────────────────
+    # patches = glob(["patches/*.patch"]),
 
-    # Runtime dependencies (always required)
+    # ── Dependencies ─────────────────────────────────────────────────
     deps = [
-        # Example: "//packages/linux/core:glibc",
+        # Other Go module packages (compile-time and runtime):
+        # "//packages/linux/dev-libs/cloud/golang-oauth2:golang-oauth2",
+        # System libraries for cgo:
+        # "//packages/linux/system/libs/libfuse:libfuse",
     ],
+    # host_deps auto-injects the Go SDK; no manual entry needed unless
+    # you need extra tools.
+    # host_deps = ["//packages/linux/dev-tools/build-systems/protoc:protoc"],
 
-    # Build-time only dependencies
-    build_deps = [
-        # Example: "//packages/linux/dev-lang:go",
-    ],
+    # ── Vendor deps ──────────────────────────────────────────────────
+    # vendor_deps = True,  # tarball ships vendor/ — skip mirror auto-wire
 
-    # Patches
-    patches = [
-        # Example: ":fix-imports.patch",
-    ],
-
-    # Metadata
-    maintainers = [
-        # Example: "go@buckos.org",
-    ],
-
-    # Optional: GPG verification
-    # signature_sha256 = "SIGNATURE_SHA256",
-    # gpg_key = "GPG_KEY_ID",
-    # gpg_keyring = "//path/to:keyring",
-
-    # Optional: Environment variables
+    # ── Environment ──────────────────────────────────────────────────
     # env = {
-    #     "CGO_ENABLED": "0",
-    #     "GOOS": "linux",
-    #     "GOARCH": "amd64",
+    #     "CGO_ENABLED": "1",
+    #     "GOFLAGS": "-trimpath",
     # },
 )

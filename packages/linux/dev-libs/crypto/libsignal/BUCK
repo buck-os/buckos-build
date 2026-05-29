@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:cargo.bzl", "cargo_package")
 
 # Git dependencies that libsignal patches in Cargo.toml
 # boringssl is a submodule in the boring crate
-package(
-    build_rule = "cargo",
+cargo_package(
     name = "libsignal-0.23.1",
     version = "0.23.1",
     url = "https://github.com/signalapp/libsignal/archive/refs/tags/v0.23.1.tar.gz",

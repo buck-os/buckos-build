@@ -1,8 +1,7 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # ldb - LDAP-like embedded database
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "ldb",
     # ldb uses waf (Python-based build system), not autoconf
     # The ./configure script is a waf wrapper

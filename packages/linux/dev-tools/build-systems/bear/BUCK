@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:cmake.bzl", "cmake_package")
 
 # =============================================================================
 # Bear - Build EAR (compilation database generator)
@@ -6,8 +6,7 @@ load("//defs:package.bzl", "package")
 # Bear is a tool that generates a compilation database for clang tooling.
 # It intercepts build commands to create compile_commands.json files.
 
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "bear",
     version = "3.1.2",
     url = "https://github.com/rizsotto/Bear/archive/refs/tags/3.1.2.tar.gz",

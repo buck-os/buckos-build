@@ -1,5 +1,5 @@
 """
-perl_module rule: perl Makefile.PL && make && make install.
+perl_build rule: perl Makefile.PL && make && make install.
 
 Three discrete cacheable actions:
 
@@ -64,7 +64,7 @@ def _perl_build(ctx, source):
 
 # ── Rule implementation ───────────────────────────────────────────────
 
-def _perl_module_impl(ctx):
+def _perl_build_impl(ctx):
     # Phase 1: src_unpack — obtain source from dep
     source = ctx.attrs.source[DefaultInfo].default_outputs[0]
 
@@ -101,8 +101,8 @@ def _perl_module_impl(ctx):
 
 # ── Rule definition ───────────────────────────────────────────────────
 
-perl_module = rule(
-    impl = _perl_module_impl,
+perl_build = rule(
+    impl = _perl_build_impl,
     attrs = COMMON_PACKAGE_ATTRS | {
         # Perl-specific
         "pre_build_cmds": attrs.list(attrs.string(), default = []),

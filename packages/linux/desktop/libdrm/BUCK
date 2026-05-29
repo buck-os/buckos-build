@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:meson.bzl", "meson_package")
 
 # =============================================================================
 # libdrm - Direct Rendering Manager library
 # =============================================================================
 
-package(
-    build_rule = "meson",
+meson_package(
     name = "libdrm",
     version = "2.4.131",
     use_configure = {

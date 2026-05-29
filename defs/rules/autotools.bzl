@@ -1,5 +1,5 @@
 """
-autotools_package rule: ./configure && make && make install.
+autotools_build rule: ./configure && make && make install.
 
 Six discrete cacheable actions — Buck2 can skip any phase whose
 inputs haven't changed.
@@ -336,7 +336,7 @@ def _src_install(ctx, built, cflags_file = None, ldflags_file = None,
 
 # ── Rule implementation ───────────────────────────────────────────────
 
-def _autotools_package_impl(ctx):
+def _autotools_build_impl(ctx):
     # Phase 1: src_unpack — obtain source from dep
     source = ctx.attrs.source[DefaultInfo].default_outputs[0]
 
@@ -396,8 +396,8 @@ def _autotools_package_impl(ctx):
 
 # ── Rule definition ───────────────────────────────────────────────────
 
-autotools_package = rule(
-    impl = _autotools_package_impl,
+autotools_build = rule(
+    impl = _autotools_build_impl,
     attrs = COMMON_PACKAGE_ATTRS | {
         # Autotools-specific
         "configure_prefix_deps": attrs.dict(attrs.string(), attrs.dep(), default = {}),

@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # acpid - ACPI event daemon
 # USE flags: (minimal package)
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "acpid",
     # SourceForge release tarball includes pre-generated configure script
     version = "2.0.34",

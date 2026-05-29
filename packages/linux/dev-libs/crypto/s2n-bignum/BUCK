@@ -1,13 +1,12 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "make_package")
 
 # s2n-bignum - Assembly integer arithmetic routines for cryptographic applications
 #
 # All routines are written in pure machine code with separate versions for x86_64 and aarch64.
 # Each function is accompanied by machine-checked formal proofs.
 
-package(
+make_package(
     name = "s2n-bignum",
-    build_rule = "make",
     skip_configure = True,
     version = "0.0.1",
     url = "https://mirror.buckos.org/s/s2n-bignum-main.tar.gz",

@@ -1,7 +1,6 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "mpg123",
     # Official release tarball includes pre-generated configure script
     use_configure = {
@@ -33,8 +32,7 @@ package(
 )
 
 # libmpg123 - just the library without the player
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "libmpg123",
     # Official release tarball includes pre-generated configure script
     version = "1.32.6",

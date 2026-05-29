@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # LuaJIT - Just-In-Time Compiler for Lua
 # Uses Makefile directly, no configure step.
-package(
-    build_rule = "binary",
+binary_package(
     name = "luajit",
     version = "2.1.0-beta3",
     url = "https://github.com/LuaJIT/LuaJIT/archive/refs/tags/v2.1.0-beta3.tar.gz",

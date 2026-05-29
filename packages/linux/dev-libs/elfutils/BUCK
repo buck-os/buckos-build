@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # =============================================================================
 # elfutils - Libraries/utilities to handle ELF objects
@@ -7,8 +7,7 @@ load("//defs:package.bzl", "package")
 # Provides libelf, libdw, and utilities for working with ELF binaries.
 # Required by mesa's radeonsi driver for shader debugging info.
 
-package(
-    build_rule = "binary",
+binary_package(
     name = "elfutils",
     version = "0.194",
     url = "https://sourceware.org/elfutils/ftp/0.194/elfutils-0.194.tar.bz2",

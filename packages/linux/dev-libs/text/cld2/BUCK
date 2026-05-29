@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # CLD2 - Compact Language Detector 2
 # Probabilistically detects over 80 languages in Unicode UTF-8 text
 # CLD2 uses a simple Makefile in internal/, no cmake or autotools
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "cld2",
     skip_configure = True,
     version = "20131028",

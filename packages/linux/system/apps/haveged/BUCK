@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # haveged - HAVEGE entropy daemon
 # USE flags: nistest, systemd
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "haveged",
     pre_configure_cmds = ["""
 autoreconf -fi

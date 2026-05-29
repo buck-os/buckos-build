@@ -1,8 +1,7 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # libunwind - Portable C API for determining call-chain of a program
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "libunwind",
     # GCC 15 rejects K&R-style empty parameter lists as errors
     env = {"CFLAGS": "-std=gnu11"},

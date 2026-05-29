@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # =============================================================================
 # FAAC - Freeware Advanced Audio Coder
@@ -29,8 +29,7 @@ load("//defs:package.bzl", "package")
 #
 # =============================================================================
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "faac",
     version = "1.30",
     url = "https://github.com/knik0/faac/archive/refs/tags/ver_1_16.tar.gz",

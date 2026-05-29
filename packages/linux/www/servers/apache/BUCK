@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # Apache HTTP Server - The most popular web server
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "apache",
     version = "2.4.59",
     url = "https://archive.apache.org/dist/httpd/httpd-2.4.59.tar.bz2",

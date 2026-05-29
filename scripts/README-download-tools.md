@@ -211,7 +211,7 @@ If you're getting rate limited by upstream:
 If checksums don't match:
 1. Check if BUCK files have correct checksums
 2. Re-download (script will retry automatically)
-3. Run `scripts/update_checksums.py` to update BUCK files
+3. Manually update the `sha256` field in the relevant BUCK file
 
 ### Missing Dependencies (Python script)
 
@@ -286,6 +286,5 @@ mktorrent -a tracker.example.com buckos-sources-*.tar.gz
 
 ## See Also
 
-- `scripts/update_checksums.py` - Update SHA256 checksums in BUCK files
-- `defs/package_defs.bzl` - Package definition macros
+- `defs/package.bzl` - The `package()` macro (build-rule dispatch, source download, transforms)
 - Buck2 documentation: https://buck2.build/

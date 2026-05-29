@@ -1,4 +1,5 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # =============================================================================
 # genkernel - Gentoo's automatic kernel/initramfs builder
@@ -6,8 +7,7 @@ load("//defs:package.bzl", "package")
 # All-in-one tool for building kernels and initramfs images.
 # Supports LVM, LUKS, software RAID, multipath, and more.
 
-package(
-    build_rule = "binary",
+binary_package(
     name = "genkernel",
     url = "https://github.com/gentoo/genkernel/archive/refs/tags/v4.3.5.tar.gz",
     sha256 = "b3f2b8791ff031ec6d7adea21b873bcd57978565f216b5a224c8ef82db109236",
@@ -65,8 +65,7 @@ EOFCONF
 )
 
 # genkernel-next - Modernized fork with additional features
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "genkernel-next",
     skip_configure = True,
     url = "https://github.com/Sabayon/genkernel-next/archive/refs/tags/v70.tar.gz",

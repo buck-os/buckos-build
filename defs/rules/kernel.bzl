@@ -366,14 +366,14 @@ def kernel_build(
 
     Args:
         name: Target name
-        source: Kernel source dependency (download_source target)
+        source: Kernel source dependency (typically a :name-src target from package())
         version: Kernel version string
         config: Optional direct path to .config file
         config_dep: Optional dependency providing generated .config (from kernel_config)
         arch: Target architecture (x86_64 or aarch64)
         cross_toolchain: Optional cross-compilation toolchain dependency
         patches: List of patch files to apply to kernel source before build
-        modules: List of external module source dependencies (download_source targets) to compile
+        modules: List of external module source dependencies (extracted source targets, e.g. :name-src) to compile
         visibility: Target visibility (defaults to PACKAGE file setting)
     """
     # Apply private patch registry overrides

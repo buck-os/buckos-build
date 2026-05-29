@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:cmake.bzl", "cmake_package")
 
 # Darknet - Open Source Neural Networks in C
 #
@@ -16,8 +16,7 @@ load("//defs:package.bzl", "package")
 # which are not included in BuckOS. For CUDA builds, install CUDA
 # toolkit separately and set CUDA_HOME.
 
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "darknet",
     version = "0.2.5.4",
     url = "https://github.com/AlexeyAB/darknet/archive/8a0bf84c19e38214219dbd3345f04ce778426c57.tar.gz",

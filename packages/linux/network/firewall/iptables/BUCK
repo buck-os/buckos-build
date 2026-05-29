@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # =============================================================================
 # iptables - Legacy Linux packet filtering administration
 # =============================================================================
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "iptables",
     version = "1.8.10",
     url = "https://www.netfilter.org/projects/iptables/files/iptables-1.8.10.tar.xz",

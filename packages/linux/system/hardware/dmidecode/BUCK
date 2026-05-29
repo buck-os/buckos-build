@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # dmidecode - DMI Table Decoder
 # Reports BIOS and system information from SMBIOS/DMI tables
 
-package(
+autotools_package(
     name = "dmidecode",
-    build_rule = "autotools",
     skip_configure = True,
     url = "https://github.com/mirror/dmidecode/archive/refs/tags/dmidecode-3-5.tar.gz",
 

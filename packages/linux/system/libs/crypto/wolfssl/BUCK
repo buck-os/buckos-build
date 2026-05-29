@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # wolfSSL - Embedded SSL/TLS library
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "wolfssl",
     pre_configure_cmds = ["""
 autoreconf -fi

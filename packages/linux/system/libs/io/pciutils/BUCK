@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # pciutils - PCI bus configuration space access library and tools
 # Provides: lspci, setpci, update-pciids
-package(
-    build_rule = "autotools",
+autotools_package(
     skip_configure = True,
     name = "pciutils",
     url = "https://mirrors.kernel.org/pub/software/utils/pciutils/pciutils-3.13.0.tar.xz",

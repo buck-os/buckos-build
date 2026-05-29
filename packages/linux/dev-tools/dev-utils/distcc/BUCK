@@ -1,7 +1,6 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "distcc",
     # GitHub release tarball includes pre-generated configure script
     url = "https://github.com/distcc/distcc/releases/download/v3.4/distcc-3.4.tar.gz",

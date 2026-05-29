@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # PostgreSQL - Advanced open source relational database
 #
@@ -15,8 +15,7 @@ load("//defs:package.bzl", "package")
 #   pam       - Enable PAM authentication
 #   systemd   - Enable systemd integration
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "postgresql",
     version = "16.4",
     url = "https://ftp.postgresql.org/pub/source/v16.4/postgresql-16.4.tar.bz2",

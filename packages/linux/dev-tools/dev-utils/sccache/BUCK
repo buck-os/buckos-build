@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:cargo.bzl", "cargo_package")
 
 # sccache — shared compilation cache for C/C++ and Rust.
 # Built with gha (GitHub Actions cache) backend for CI remote
 # caching.  Other remote backends (S3/GCS/Redis) are excluded
 # to minimize deps.
-package(
-    build_rule = "cargo",
+cargo_package(
     name = "sccache",
     version = "0.14.0",
     url = "https://github.com/mozilla/sccache/archive/refs/tags/v0.14.0.tar.gz",

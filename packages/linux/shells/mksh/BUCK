@@ -1,12 +1,11 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # mksh - MirBSD Korn Shell
 # Uses Build.sh instead of autotools; skip_configure + pre_build_cmds
 # to invoke the custom build script, then create a no-op Makefile so
 # the autotools rule's make step succeeds.
-package(
+autotools_package(
     name = "mksh",
-    build_rule = "autotools",
     skip_configure = True,
     url = "https://github.com/MirBSD/mksh/archive/refs/tags/mksh-R59c.tar.gz",
     sha256 = "e5942607eb930ba6ce3303c4a0db0733371f210c9ce6d5d4b9cc202c76360343",

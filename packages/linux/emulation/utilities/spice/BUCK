@@ -1,8 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
+load("//defs/packages:meson.bzl", "meson_package")
 
 # SPICE protocol library (uses meson)
-package(
-    build_rule = "meson",
+meson_package(
     name = "spice-protocol",
     url = "https://www.spice-space.org/download/releases/spice-protocol-0.14.4.tar.xz",
 
@@ -17,8 +17,7 @@ package(
 # SPICE server library
 # USE flags: See use_flags.bzl for available flags
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "spice-server",
     url = "https://www.spice-space.org/download/releases/spice-0.15.2.tar.bz2",
 
@@ -49,8 +48,7 @@ package(
 
 # SPICE GTK client library
 # spice-gtk uses meson
-package(
-    build_rule = "meson",
+meson_package(
     name = "spice-gtk",
     url = "https://www.spice-space.org/download/gtk/spice-gtk-0.42.tar.xz",
 
@@ -83,8 +81,7 @@ package(
 # SPICE VD Agent for guest
 # USE flags: See use_flags.bzl for available flags
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "spice-vdagent",
     url = "https://www.spice-space.org/download/releases/spice-vdagent-0.22.1.tar.bz2",
 

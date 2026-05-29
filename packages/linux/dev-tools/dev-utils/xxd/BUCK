@@ -1,11 +1,10 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # xxd - Hexdump utility from Vim
 # xxd uses a simple Makefile, not autoconf
 
-package(
+autotools_package(
     name = "xxd",
-    build_rule = "autotools",
     skip_configure = True,
     version = "9.1.0",
     source = "//packages/linux/editors/vim:vim-src",

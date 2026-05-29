@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # cronie - Modern cron daemon with PAM support
 # USE flags: pam, selinux, inotify, anacron
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "cronie",
     # GitHub release tarball includes pre-generated configure script
     version = "1.7.2",

@@ -1,11 +1,11 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
+load("//defs/packages:meson.bzl", "meson_package")
 
 # Biometric authentication packages
 # Fingerprint readers and related libraries
 
 # libfprint - Fingerprint reader library
-package(
-    build_rule = "meson",
+meson_package(
     name = "libfprint",
     version = "1.94.7",
     url = "https://gitlab.freedesktop.org/libfprint/libfprint/-/archive/v1.94.7/libfprint-v1.94.7.tar.gz",
@@ -31,8 +31,7 @@ package(
 )
 
 # fprintd - Fingerprint authentication daemon
-package(
-    build_rule = "meson",
+meson_package(
     name = "fprintd",
     version = "1.94.3",
     url = "https://gitlab.freedesktop.org/libfprint/fprintd/-/archive/v1.94.3/fprintd-v1.94.3.tar.gz",
@@ -55,9 +54,8 @@ package(
 )
 
 # NSS - Network Security Services
-package(
+autotools_package(
     name = "nss",
-    build_rule = "autotools",
     skip_configure = True,
     url = "https://ftp.mozilla.org/pub/security/nss/releases/NSS_3_98_RTM/src/nss-3.98.tar.gz",
 
@@ -86,8 +84,7 @@ package(
 )
 
 # pixman - Pixel manipulation library
-package(
-    build_rule = "meson",
+meson_package(
     name = "pixman",
     version = "0.43.4",
     url = "https://www.cairographics.org/releases/pixman-0.43.4.tar.gz",

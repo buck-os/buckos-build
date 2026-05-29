@@ -1,7 +1,7 @@
 """
 Bootstrap toolchain rules for building a self-hosted GCC/glibc toolchain.
 
-Six rules following autotools_package's 5-phase pattern.  All phases
+Six rules following autotools_build's 5-phase pattern.  All phases
 delegate to Python helpers for env sanitisation and determinism.
 
   bootstrap_binutils      — cross-binutils for target triple

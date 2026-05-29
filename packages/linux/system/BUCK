@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 load("//defs/rules:rootfs.bzl", "rootfs")
 load("//defs/rules:initramfs.bzl", "dracut_initramfs", "initramfs")
 load("//defs/rules:boot.bzl", "qemu_boot_script")
@@ -2024,9 +2024,8 @@ filegroup(
 # BuckOS source repository for the live environment
 # Downloads from GitHub to get the full buckos-build repository
 # buck2 prebuilt binary for the live image
-package(
+binary_package(
     name = "buck2-prebuilt",
-    build_rule = "binary",
     version = "2026-01-02",
     url = "https://github.com/facebook/buck2/releases/download/2026-01-02/buck2-x86_64-unknown-linux-gnu.zst",
     sha256 = "42df0619771177915f274cbab930734a2f706a77ec537197c19e70702f35187a",
@@ -2045,9 +2044,8 @@ chmod +x "$DESTDIR/usr/bin/buck2"
 )
 
 # buckos-build repo snapshot for live image (pinned commit)
-package(
+binary_package(
     name = "buckos-build-repo",
-    build_rule = "binary",
     version = "194254784a",
     url = "https://github.com/buck-os/buckos-build/archive/194254784a88cd5ff45bac830ae7ee78b62092f9.tar.gz",
     sha256 = "cb207a57881b97fa17038c953a4bf8a49415c8a2942d3e15d4a473d36b9ff6f2",

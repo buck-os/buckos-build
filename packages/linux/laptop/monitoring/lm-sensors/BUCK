@@ -1,13 +1,12 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # lm-sensors - Linux hardware monitoring
 # Provides tools and drivers for hardware monitoring
 
 # USE flags: See use_flags.bzl for available flags
 
-package(
+autotools_package(
     name = "lm-sensors",
-    build_rule = "autotools",
     skip_configure = True,
     url = "https://github.com/lm-sensors/lm-sensors/archive/refs/tags/V3-6-0.tar.gz",
 

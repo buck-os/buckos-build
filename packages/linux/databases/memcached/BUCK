@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # memcached - High-performance distributed memory object caching system
 #
@@ -8,8 +8,7 @@ load("//defs:package.bzl", "package")
 #   sasl     - Enable SASL authentication
 #   doc      - Build documentation
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "memcached",
     version = "1.6.28",
     url = "https://www.memcached.org/files/memcached-1.6.28.tar.gz",

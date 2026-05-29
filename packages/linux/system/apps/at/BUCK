@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # at - Job scheduling utility
 # USE flags: selinux, pam
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "at",
     version = "3.2.5",
     url = "https://salsa.debian.org/debian/at/-/archive/release/3.2.5/at-release-3.2.5.tar.gz",

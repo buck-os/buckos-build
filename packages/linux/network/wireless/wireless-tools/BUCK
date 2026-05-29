@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # wireless-tools' Makefile doesn't support DESTDIR — install paths must
 # be specified explicitly as absolute paths.
-package(
+binary_package(
     name = "wireless-tools",
-    build_rule = "binary",
     version = "29",
     url = "https://hewlettpackard.github.io/wireless-tools/wireless_tools.29.tar.gz",
     sha256 = "6fb80935fe208538131ce2c4178221bab1078a1656306bce8909c19887e2e5a1",

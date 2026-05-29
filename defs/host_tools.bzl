@@ -23,7 +23,7 @@ def host_tool_path_args(ctx):
     return args
 
 def host_tool_env_paths(ctx):
-    """Return bin dir cmd_args from base host tools + host_deps (for binary_package env vars)."""
+    """Return bin dir cmd_args from base host tools + host_deps (for binary_build env vars)."""
     paths = []
     for hd in _all_host_tools(ctx):
         prefix = hd[PackageInfo].prefix if PackageInfo in hd else hd[DefaultInfo].default_outputs[0]

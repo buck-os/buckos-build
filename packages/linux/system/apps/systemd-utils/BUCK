@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:meson.bzl", "meson_package")
 
 # systemd-utils - Standalone systemd utilities
 # USE flags: (meson build system with many options)
 
-package(
-    build_rule = "meson",
+meson_package(
     name = "systemd-utils",
     version = "255",
     url = "https://github.com/systemd/systemd/archive/refs/tags/v255.tar.gz",

@@ -1,7 +1,6 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:binary.bzl", "binary_package")
 
-package(
-    build_rule = "binary",
+binary_package(
     name = "markupsafe",
     version = "3.0.2",
     source = "//packages/linux/dev-libs/python/markupsafe:markupsafe-src",
@@ -17,8 +16,7 @@ cp -r "$SRCS/src/markupsafe" "$OUT/usr/lib/python3.12/site-packages/"
     ],
 )
 
-package(
-    build_rule = "binary",
+binary_package(
     name = "jinja2",
     version = "3.1.6",
     url = "https://files.pythonhosted.org/packages/df/bf/f7da0350254c0ed7c72f3e33cef02e048281fec7ecec5f032d4aac52226b/jinja2-3.1.6.tar.gz",
@@ -36,8 +34,7 @@ cp -r "$SRCS/src/jinja2" "$OUT/usr/lib/python3.12/site-packages/"
     ],
 )
 
-package(
-    build_rule = "binary",
+binary_package(
     name = "python-mako",
     version = "1.3.8",
     url = "https://files.pythonhosted.org/packages/5f/d9/8518279534ed7dace1795d5a47e49d5299dd0994eed1053996402a8902f9/mako-1.3.8.tar.gz",

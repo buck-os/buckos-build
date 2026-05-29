@@ -1,10 +1,9 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # p7zip - 7-Zip file archiver port for Unix systems
 
 # p7zip uses a Makefile, not autotools
-package(
-    build_rule = "autotools",
+autotools_package(
     skip_configure = True,
     name = "p7zip",
     url = "https://github.com/p7zip-project/p7zip/archive/refs/tags/v17.05.tar.gz",

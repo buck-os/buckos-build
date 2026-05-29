@@ -1,9 +1,8 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # autojump uses a custom install.py, not setup.py/pyproject.toml.
 # Use autotools with skip_configure and shell-based install.
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "autojump",
     version = "22.5.3",
     skip_configure = True,

@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # =============================================================================
 # kmod - Linux kernel module handling
@@ -6,8 +6,7 @@ load("//defs:package.bzl", "package")
 # Provides tools for managing Linux kernel modules:
 # - modprobe, insmod, rmmod, lsmod, depmod, modinfo
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "kmod",
 # Enable tools by default (modprobe, insmod, etc.)
     use_configure = {
@@ -46,8 +45,7 @@ package(
 )
 
 # Static version for use in initramfs
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "kmod-static",
     version = "32",
     source = ":kmod-src",

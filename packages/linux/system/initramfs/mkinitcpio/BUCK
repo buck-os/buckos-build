@@ -1,4 +1,4 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
 # =============================================================================
 # mkinitcpio - Arch Linux initramfs creation utility
@@ -6,8 +6,7 @@ load("//defs:package.bzl", "package")
 # Modular initramfs generator with hook-based system.
 # Known for simplicity, speed, and excellent documentation.
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "mkinitcpio",
     skip_configure = True,
     url = "https://github.com/archlinux/mkinitcpio/archive/refs/tags/v38.tar.gz",

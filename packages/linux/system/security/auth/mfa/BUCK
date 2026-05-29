@@ -1,11 +1,11 @@
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
+load("//defs/packages:cmake.bzl", "cmake_package")
 
 # Two-factor and multi-factor authentication packages
 # TOTP/HOTP, FIDO2/WebAuthn, YubiKey, and related tools
 
 # oath-toolkit - TOTP/HOTP authentication
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "oath-toolkit",
     pre_configure_cmds = [
         "touch gtk-doc.make && mkdir -p /tmp/oath-stubs && printf '#!/bin/sh\\nexit 0\\n' > /tmp/oath-stubs/gtkdocize && chmod +x /tmp/oath-stubs/gtkdocize && export PATH=\"/tmp/oath-stubs:$PATH\" && autoreconf -fi",
@@ -43,8 +43,7 @@ package(
 )
 
 # Google Authenticator PAM module
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "google-authenticator",
     url = "https://github.com/google/google-authenticator-libpam/archive/refs/tags/1.10.tar.gz",
 
@@ -67,8 +66,7 @@ package(
 )
 
 # libfido2 - FIDO2/WebAuthn library
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "libfido2",
     version = "1.14.0",
     url = "https://developers.yubico.com/libfido2/Releases/libfido2-1.14.0.tar.gz",
@@ -94,8 +92,7 @@ package(
 )
 
 # libcbor - CBOR encoding/decoding library
-package(
-    build_rule = "cmake",
+cmake_package(
     name = "libcbor",
     version = "0.11.0",
     url = "https://github.com/PJK/libcbor/archive/refs/tags/v0.11.0.tar.gz",
@@ -113,8 +110,7 @@ package(
 )
 
 # pam-u2f - U2F PAM module
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "pam-u2f",
     url = "https://developers.yubico.com/pam-u2f/Releases/pam_u2f-1.3.0.tar.gz",
 
@@ -134,8 +130,7 @@ package(
 )
 
 # YubiKey Manager
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "yubikey-manager",
     url = "https://github.com/Yubico/yubikey-manager/archive/refs/tags/5.4.0.tar.gz",
 
@@ -153,8 +148,7 @@ package(
 )
 
 # yubico-pam - YubiKey PAM module
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "yubico-pam",
     url = "https://developers.yubico.com/yubico-pam/Releases/pam_yubico-2.27.tar.gz",
 
@@ -175,8 +169,7 @@ package(
 )
 
 # ykclient - Yubico client library
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "ykclient",
     url = "https://developers.yubico.com/yubico-c-client/Releases/ykclient-2.15.tar.gz",
 
@@ -197,8 +190,7 @@ package(
 )
 
 # ykpers - YubiKey personalization library
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "ykpers",
     url = "https://developers.yubico.com/yubikey-personalization/Releases/ykpers-1.20.0.tar.gz",
 
@@ -228,8 +220,7 @@ make -j1 V=1
 )
 
 # libyubikey - YubiKey low-level library
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "libyubikey",
     url = "https://developers.yubico.com/yubico-c/Releases/libyubikey-1.13.tar.gz",
 

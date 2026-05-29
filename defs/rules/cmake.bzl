@@ -1,5 +1,5 @@
 """
-cmake_package rule: cmake -S . -B build && ninja && ninja install.
+cmake_build rule: cmake -S . -B build && ninja && ninja install.
 
 Five discrete cacheable actions — Buck2 can skip any phase whose
 inputs haven't changed.
@@ -214,7 +214,7 @@ def _src_install(ctx, built, source, lib_dirs_file = None):
 
 # ── Rule implementation ───────────────────────────────────────────────
 
-def _cmake_package_impl(ctx):
+def _cmake_build_impl(ctx):
     # Phase 1: src_unpack — obtain source from dep
     source = ctx.attrs.source[DefaultInfo].default_outputs[0]
 
@@ -269,8 +269,8 @@ def _cmake_package_impl(ctx):
 
 # ── Rule definition ───────────────────────────────────────────────────
 
-cmake_package = rule(
-    impl = _cmake_package_impl,
+cmake_build = rule(
+    impl = _cmake_build_impl,
     attrs = COMMON_PACKAGE_ATTRS | {
         # CMake-specific
         "source_subdir": attrs.string(default = ""),
