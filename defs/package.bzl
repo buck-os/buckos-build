@@ -114,9 +114,8 @@ def _merge_private_registry(name, patches, configure_args, extra_cflags):
 
     The PATCH_REGISTRY symbol is loaded from defs/empty_registry.bzl by
     default (empty dict).  Users who maintain private patches create
-    patches/registry.bzl and update the load path in a local override,
-    or the repo can swap the load target via buckconfig once the patches/
-    cell is wired up.
+    patches/registry.bzl and replace the load() at the top of this file
+    with: load("//patches:registry.bzl", "PATCH_REGISTRY").
     """
     private = PATCH_REGISTRY.get(name, {})
 
