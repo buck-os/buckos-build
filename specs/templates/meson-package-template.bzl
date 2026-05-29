@@ -1,66 +1,67 @@
 """
-Template for package(build_rule = "meson") with USE flags
-Based on PACKAGE-SPEC-002: Build System Packages (Meson)
+Template for meson_package (meson setup build && ninja -C build install).
+
+Real-world example: packages/linux/dev-libs/parsers/inih/BUCK  (minimal)
+                    packages/linux/dev-libs/glib/BUCK            (USE flags)
+Wrapper definition: defs/packages/meson.bzl
+Underlying rule:    defs/rules/meson.bzl
+Common kwargs:      defs/package.bzl (see the package() docstring)
 """
 
-load("//defs:package.bzl", "package")
+load("//defs/packages:meson.bzl", "meson_package")
 
-package(
-    build_rule = "meson",
+meson_package(
     name = "PACKAGE_NAME",
     version = "VERSION",
-    url = "SOURCE_URL",
-    sha256 = "SHA256_CHECKSUM",
+    url = "https://example.org/PACKAGE_NAME-VERSION.tar.xz",
+    sha256 = "REPLACE_WITH_SHA256",
 
-    # USE flags this package supports
-    iuse = [
-        # Example: "systemd", "doc", "test", "introspection"
-    ],
+    # ── SBOM metadata ────────────────────────────────────────────────
+    description = "One-line description",
+    homepage = "https://example.org/",
+    license = "LGPL-2.1+",
 
-    # Map USE flags to Meson options
-    use_options = {
-        # Format: "flag": ("-Doption=enabled", "-Doption=disabled")
-        # Example:
-        # "systemd": ("-Dsystemd=enabled", "-Dsystemd=disabled"),
-        # "doc": ("-Ddocs=true", "-Ddocs=false"),
-    },
-
-    # Conditional dependencies based on USE flags
-    use_deps = {
-        # Format: "flag": ["//dependency/target"]
-        # Example:
-        # "systemd": ["//packages/linux/sys-apps:systemd"],
-    },
-
-    # Static Meson arguments (always applied)
+    # ── Meson configuration ──────────────────────────────────────────
+    # --prefix=/usr and --buildtype=release are set automatically.
+    # Pass -Doption=value entries through configure_args:
     configure_args = [
-        # Example: "-Dselinux=disabled",
-        # Note: --prefix=/usr is automatic
-        # Note: --buildtype=release is automatic
+        # "--wrap-mode=nofallback",
+        # "-Dtests=false",
+        # "-Dgtk_doc=false",
     ],
 
-    # Runtime dependencies (always required)
+    # Convenient dict form for -D options (merged into configure_args):
+    # meson_defines = {
+    #     "tests": "false",
+    #     "docs": "disabled",
+    # },
+
+    # Other rule-specific knobs (see defs/packages/meson.bzl):
+    # source_subdir = "subdir",
+    # make_args = ["-v"],
+
+    # ── USE flags ────────────────────────────────────────────────────
+    # NOTE: Meson uses use_configure (not a separate use_options) — the
+    # name "configure" is generic across build systems.
+    use_configure = {
+        # "flag": ("-Dflag=enabled", "-Dflag=disabled"),
+        # "introspection": ("-Dintrospection=enabled", "-Dintrospection=disabled"),
+        # "systemd": ("-Dsystemd=true", "-Dsystemd=false"),
+    },
+    use_deps = {
+        # "systemd": "//packages/linux/system/init/systemd:systemd",
+    },
+
+    # ── Patches ──────────────────────────────────────────────────────
+    # patches = glob(["patches/*.patch"]),
+
+    # ── Dependencies ─────────────────────────────────────────────────
     deps = [
-        # Example: "//packages/linux/core:glibc",
+        # "//packages/linux/system/libs/utility/libffi:libffi",
+        # "//packages/linux/core/zlib:zlib",
     ],
+    # host_deps = [],  # auto-injected: meson, ninja, pkg-config, etc.
 
-    # Build-time only dependencies
-    build_deps = [
-        # Example: "//packages/linux/dev-util:pkg-config",
-    ],
-
-    # Patches
-    patches = [
-        # Example: ":fix-meson-build.patch",
-    ],
-
-    # Metadata
-    maintainers = [
-        # Example: "category@buckos.org",
-    ],
-
-    # Optional: GPG verification
-    # signature_sha256 = "SIGNATURE_SHA256",
-    # gpg_key = "GPG_KEY_ID",
-    # gpg_keyring = "//path/to:keyring",
+    # ── Transforms (optional) ────────────────────────────────────────
+    # transforms = ["strip", "stamp"],
 )

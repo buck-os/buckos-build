@@ -1,67 +1,68 @@
 """
-Template for package(build_rule = "python") with USE flags
-Based on PACKAGE-SPEC-005: Python Packages
+Template for python_package (pip install or setup.py install into the prefix).
+
+Real-world example: packages/linux/ai/audio-ml/audio-diffusion-pytorch/BUCK
+                                                                       (minimal pip)
+                    packages/linux/dev-libs/python/grako/BUCK
+                                                       (setup.py + pre_configure_cmds)
+Wrapper definition: defs/packages/python.bzl
+Underlying rule:    defs/rules/python.bzl
+Common kwargs:      defs/package.bzl (see the package() docstring)
+
+Default behaviour: pip install .  Set use_setup_py = True to fall back to
+`python setup.py install`.
 """
 
-load("//defs:package.bzl", "package")
+load("//defs/packages:python.bzl", "python_package")
 
-package(
-    build_rule = "python",
+python_package(
     name = "PACKAGE_NAME",
     version = "VERSION",
-    url = "SOURCE_URL",
-    sha256 = "SHA256_CHECKSUM",
+    url = "https://files.pythonhosted.org/packages/.../PACKAGE_NAME-VERSION.tar.gz",
+    sha256 = "REPLACE_WITH_SHA256",
 
-    # Python interpreter (default is python3)
-    python = "python3",
+    # ── SBOM metadata ────────────────────────────────────────────────
+    description = "One-line description",
+    homepage = "https://pypi.org/project/PACKAGE_NAME/",
+    license = "MIT",
 
-    # USE flags this package supports
-    iuse = [
-        # Example: "socks", "security", "http2"
-    ],
+    # ── Install backend ──────────────────────────────────────────────
+    # use_setup_py = True,    # legacy setup.py instead of pip
+    # pip_args = ["--no-deps", "--no-build-isolation"],
 
-    # Map USE flags to Python extras
-    use_extras = {
-        # Format: "flag": "extra-name"
-        # Example:
-        # "socks": "socks",
-        # "security": "security",
-        # "http2": "http2",
+    # ── USE flags ────────────────────────────────────────────────────
+    # Python "extras" are conventionally surfaced via pip_args (e.g.
+    # ".[ssl]").  Use use_configure here to splice such args in:
+    use_configure = {
+        # "ssl": ("--config-settings=extras=ssl", ""),
     },
-
-    # Conditional dependencies based on USE flags
     use_deps = {
-        # Format: "flag": ["//dependency/target"]
-        # Example:
-        # "socks": ["//packages/linux/dev-python:pysocks"],
+        # "ssl": "//packages/linux/dev-libs/python/cryptography:cryptography",
     },
 
-    # Runtime dependencies (always required)
+    # ── Patches ──────────────────────────────────────────────────────
+    # patches = glob(["patches/*.patch"]),
+
+    # ── Dependencies ─────────────────────────────────────────────────
     deps = [
-        # Python packages: //packages/linux/dev-python:package-name
-        # System libraries (for C extensions): //packages/linux/dev-libs:library
-        # Example:
-        # "//packages/linux/dev-python:urllib3",
-        # "//packages/linux/dev-python:certifi",
+        # The Python interpreter itself is implicit, but downstream
+        # consumers usually want it listed:
+        # "//packages/linux/lang/python:python",
+        # Other Python packages:
+        # "//packages/linux/dev-libs/python/setuptools:setuptools",
+        # "//packages/linux/dev-libs/python/wheel:wheel",
+        # Native libs for C extensions:
+        # "//packages/linux/system/libs/utility/libffi:libffi",
     ],
 
-    # Build-time only dependencies
-    build_deps = [
-        # Example: "//packages/linux/dev-libs:libffi",  # For C extensions
-    ],
-
-    # Patches
-    patches = [
-        # Example: ":fix-setup-py.patch",
-    ],
-
-    # Metadata
-    maintainers = [
-        # Example: "python@buckos.org",
-    ],
-
-    # Optional: GPG verification
-    # signature_sha256 = "SIGNATURE_SHA256",
-    # gpg_key = "GPG_KEY_ID",
-    # gpg_keyring = "//path/to:keyring",
+    # ── Pre-install fixups (e.g. Python 3.10 collections.abc) ────────
+    # pre_configure_cmds = ["""
+    #     python3 -c '
+    # import pathlib
+    # for p in pathlib.Path(".").rglob("*.py"):
+    #     t = p.read_text()
+    #     t = t.replace("from collections import Mapping",
+    #                   "from collections.abc import Mapping")
+    #     p.write_text(t)'
+    # """],
 )

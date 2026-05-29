@@ -1,204 +1,147 @@
 {
-  "version": "1.0.0",
-  "generated": "2025-12-27T14:00:00.000000",
-  "total_templates": 7,
+  "version": "2.0.0",
+  "generated": "2026-05-29T00:00:00.000000",
+  "total_templates": 6,
+  "notes": "All templates use the wrapper-based API from defs/packages/<lang>.bzl. The wrappers delegate to package() in defs/package.bzl, which handles source download, USE flag expansion, patch merge, vendoring, host-tool injection, transforms, and SBOM labels.",
   "templates": [
     {
       "id": "TEMPLATE-001",
-      "name": "Simple Autotools Package",
-      "package_type": "package",
-      "build_rule": "simple",
+      "name": "Autotools Package",
+      "wrapper": "autotools_package",
+      "wrapper_load": "//defs/packages:autotools.bzl",
       "spec": "PACKAGE-SPEC-001",
       "category": "general",
-      "description": "Basic package with configure script and Makefile",
-      "required_fields": [
-        "name",
-        "version",
-        "url",
-        "sha256"
+      "description": "Standard ./configure && make && make install build",
+      "required_fields": ["name", "version", "url", "sha256"],
+      "common_fields": [
+        "description", "homepage", "license", "libraries",
+        "configure_args", "extra_cflags", "extra_ldflags",
+        "use_configure", "use_deps", "use_transforms",
+        "patches", "deps", "host_deps", "transforms",
+        "post_install_cmds", "pre_configure_cmds", "env"
       ],
-      "optional_fields": [
-        "configure_args",
-        "make_args",
-        "deps",
-        "maintainers",
-        "patches"
+      "rule_specific_fields": [
+        "configure_prefix_deps", "configure_script", "skip_configure",
+        "cc_as_configure_arg", "skip_cc_auto_arg", "skip_host_arg",
+        "build_subdir", "pre_build_cmds", "make_args", "install_args",
+        "install_targets", "install_prefix_var"
       ],
-      "example": "packages/linux/core/hello/BUCK"
+      "example": "packages/linux/core/bash/BUCK",
+      "template": "specs/templates/autotools-package-template.bzl"
     },
     {
       "id": "TEMPLATE-002",
-      "name": "Autotools with USE Flags",
-      "package_type": "package",
-      "build_rule": "autotools",
-      "spec": "PACKAGE-SPEC-001",
-      "category": "general",
-      "description": "Full autotools package with USE flag support",
-      "required_fields": [
-        "name",
-        "version",
-        "url",
-        "sha256"
+      "name": "CMake Package",
+      "wrapper": "cmake_package",
+      "wrapper_load": "//defs/packages:cmake.bzl",
+      "spec": "PACKAGE-SPEC-002",
+      "category": "build-system",
+      "description": "cmake -S . -B build && ninja && ninja install",
+      "required_fields": ["name", "version", "url", "sha256"],
+      "common_fields": [
+        "description", "homepage", "license",
+        "configure_args", "use_configure", "use_deps",
+        "patches", "deps", "host_deps", "transforms"
       ],
-      "optional_fields": [
-        "iuse",
-        "use_configure",
-        "use_deps",
-        "configure_args",
-        "make_args",
-        "deps",
-        "build_deps",
-        "patches",
-        "maintainers"
+      "rule_specific_fields": [
+        "source_subdir", "cmake_args", "cmake_defines",
+        "cmake_dep_defines", "make_args"
       ],
-      "example": "packages/linux/core/bash/BUCK"
+      "example": "packages/linux/desktop/kde/ecm/BUCK",
+      "template": "specs/templates/cmake-package-template.bzl"
     },
     {
       "id": "TEMPLATE-003",
-      "name": "CMake Package",
-      "package_type": "package",
-      "build_rule": "cmake",
+      "name": "Meson Package",
+      "wrapper": "meson_package",
+      "wrapper_load": "//defs/packages:meson.bzl",
       "spec": "PACKAGE-SPEC-002",
       "category": "build-system",
-      "description": "Package using CMake build system",
-      "required_fields": [
-        "name",
-        "version",
-        "url",
-        "sha256"
+      "description": "meson setup && ninja install",
+      "required_fields": ["name", "version", "url", "sha256"],
+      "common_fields": [
+        "description", "homepage", "license",
+        "configure_args", "use_configure", "use_deps",
+        "patches", "deps", "host_deps", "transforms"
       ],
-      "optional_fields": [
-        "configure_args",
-        "use_options",
-        "use_deps",
-        "iuse",
-        "deps",
-        "build_deps",
-        "patches",
-        "maintainers"
+      "rule_specific_fields": [
+        "meson_args", "meson_defines", "source_subdir", "make_args"
       ],
-      "example": "specs/templates/cmake-package-template.bzl"
+      "example": "packages/linux/dev-libs/parsers/inih/BUCK",
+      "template": "specs/templates/meson-package-template.bzl"
     },
     {
       "id": "TEMPLATE-004",
-      "name": "Meson Package",
-      "package_type": "package",
-      "build_rule": "meson",
-      "spec": "PACKAGE-SPEC-002",
-      "category": "build-system",
-      "description": "Package using Meson/Ninja build system",
-      "required_fields": [
-        "name",
-        "version",
-        "url",
-        "sha256"
+      "name": "Cargo (Rust) Package",
+      "wrapper": "cargo_package",
+      "wrapper_load": "//defs/packages:cargo.bzl",
+      "spec": "PACKAGE-SPEC-003",
+      "category": "language",
+      "description": "Rust project built with cargo",
+      "required_fields": ["name", "version", "url", "sha256"],
+      "common_fields": [
+        "description", "homepage", "license",
+        "use_features", "use_deps", "patches",
+        "deps", "host_deps", "env"
       ],
-      "optional_fields": [
-        "configure_args",
-        "use_options",
-        "use_deps",
-        "iuse",
-        "deps",
-        "build_deps",
-        "patches",
-        "maintainers"
+      "rule_specific_fields": [
+        "features", "cargo_args", "bins", "vendor_deps"
       ],
-      "example": "specs/templates/meson-package-template.bzl"
+      "example": "packages/linux/dev-tools/dev-utils/sccache/BUCK",
+      "template": "specs/templates/cargo-package-template.bzl"
     },
     {
       "id": "TEMPLATE-005",
-      "name": "Rust/Cargo Package",
-      "package_type": "package",
-      "build_rule": "cargo",
-      "spec": "PACKAGE-SPEC-003",
+      "name": "Go Package",
+      "wrapper": "go_package",
+      "wrapper_load": "//defs/packages:go.bzl",
+      "spec": "PACKAGE-SPEC-004",
       "category": "language",
-      "description": "Rust project with Cargo",
-      "required_fields": [
-        "name",
-        "version",
-        "url",
-        "sha256"
+      "description": "Go modules build",
+      "required_fields": ["name", "version", "url", "sha256"],
+      "common_fields": [
+        "description", "homepage", "license",
+        "use_configure", "use_deps", "patches",
+        "deps", "host_deps", "env"
       ],
-      "optional_fields": [
-        "bins",
-        "cargo_args",
-        "iuse",
-        "use_features",
-        "use_deps",
-        "deps",
-        "build_deps",
-        "patches",
-        "env",
-        "maintainers"
+      "rule_specific_fields": [
+        "go_args", "ldflags", "bins", "packages",
+        "vendor_deps", "lib_only"
       ],
-      "example": "specs/templates/cargo-package-template.bzl"
+      "example": "packages/linux/dev-libs/cloud/finnhub-go/BUCK",
+      "template": "specs/templates/go-package-template.bzl"
     },
     {
       "id": "TEMPLATE-006",
-      "name": "Go Package",
-      "package_type": "package",
-      "build_rule": "go",
-      "spec": "PACKAGE-SPEC-004",
-      "category": "language",
-      "description": "Go project with modules",
-      "required_fields": [
-        "name",
-        "version",
-        "url",
-        "sha256"
-      ],
-      "optional_fields": [
-        "bins",
-        "packages",
-        "go_build_args",
-        "iuse",
-        "use_tags",
-        "use_deps",
-        "deps",
-        "build_deps",
-        "patches",
-        "env",
-        "maintainers"
-      ],
-      "example": "specs/templates/go-package-template.bzl"
-    },
-    {
-      "id": "TEMPLATE-007",
       "name": "Python Package",
-      "package_type": "package",
-      "build_rule": "python",
+      "wrapper": "python_package",
+      "wrapper_load": "//defs/packages:python.bzl",
       "spec": "PACKAGE-SPEC-005",
       "category": "language",
-      "description": "Python package with pip/setuptools",
-      "required_fields": [
-        "name",
-        "version",
-        "url",
-        "sha256"
+      "description": "pip install or setup.py install into the package prefix",
+      "required_fields": ["name", "version", "url", "sha256"],
+      "common_fields": [
+        "description", "homepage", "license",
+        "use_configure", "use_deps", "patches",
+        "deps", "pre_configure_cmds"
       ],
-      "optional_fields": [
-        "python",
-        "iuse",
-        "use_extras",
-        "use_deps",
-        "deps",
-        "build_deps",
-        "patches",
-        "maintainers"
+      "rule_specific_fields": [
+        "use_setup_py", "pip_args"
       ],
-      "example": "specs/templates/python-package-template.bzl"
+      "example": "packages/linux/ai/audio-ml/audio-diffusion-pytorch/BUCK",
+      "template": "specs/templates/python-package-template.bzl"
     }
   ],
   "by_category": {
-    "general": ["TEMPLATE-001", "TEMPLATE-002"],
-    "build-system": ["TEMPLATE-003", "TEMPLATE-004"],
-    "language": ["TEMPLATE-005", "TEMPLATE-006", "TEMPLATE-007"]
+    "general": ["TEMPLATE-001"],
+    "build-system": ["TEMPLATE-002", "TEMPLATE-003"],
+    "language": ["TEMPLATE-004", "TEMPLATE-005", "TEMPLATE-006"]
   },
   "by_spec": {
-    "PACKAGE-SPEC-001": ["TEMPLATE-001", "TEMPLATE-002"],
-    "PACKAGE-SPEC-002": ["TEMPLATE-003", "TEMPLATE-004"],
-    "PACKAGE-SPEC-003": ["TEMPLATE-005"],
-    "PACKAGE-SPEC-004": ["TEMPLATE-006"],
-    "PACKAGE-SPEC-005": ["TEMPLATE-007"]
+    "PACKAGE-SPEC-001": ["TEMPLATE-001"],
+    "PACKAGE-SPEC-002": ["TEMPLATE-002", "TEMPLATE-003"],
+    "PACKAGE-SPEC-003": ["TEMPLATE-004"],
+    "PACKAGE-SPEC-004": ["TEMPLATE-005"],
+    "PACKAGE-SPEC-005": ["TEMPLATE-006"]
   }
 }

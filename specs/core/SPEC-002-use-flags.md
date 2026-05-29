@@ -1,10 +1,10 @@
 ---
 id: "SPEC-002"
 title: "USE Flag System"
-status: "draft"
-version: "1.0.0"
+status: "approved"
+version: "2.0.0"
 created: "2025-11-20"
-updated: "2025-11-27"
+updated: "2026-05-29"
 
 authors:
   - name: "BuckOS Team"
@@ -23,483 +23,280 @@ tags:
 related:
   - "SPEC-001"
   - "SPEC-004"
+  - "SPEC-005"
 
 implementation:
   status: "complete"
-  completeness: 90
+  completeness: 95
 
 compatibility:
   buck2_version: ">=2024.11.01"
   buckos_version: ">=1.0.0"
-  breaking_changes: false
+  breaking_changes: true
 
 changelog:
+  - version: "2.0.0"
+    date: "2026-05-29"
+    changes: "Full rewrite against the current package() macro. Removes the use_package()/profile_package()/set_use_flags()/package_use() APIs (never landed) and documents the actual kwargs (use_deps, use_configure, use_features, use_transforms) plus the //defs:use_helpers.bzl primitives."
   - version: "1.0.0"
     date: "2025-12-27"
     changes: "Migrated to formal specification system with lifecycle management"
 ---
 
-> **⚠ Status: DRAFT (2026-05-29)** — This spec describes a pre-2026-02 API that
-> has since been replaced. The current implementation is `package()` in
-> `defs/package.bzl` dispatching to per-rule modules in `defs/rules/*.bzl`.
-> Spec is pending rewrite against the current API. Do not use as authoritative
-> until status is restored to "approved".
-
 # USE Flag System
-
-**Status**: approved | **Version**: 1.0.0 | **Last Updated**: 2025-11-27
 
 ## Abstract
 
-The USE flag system provides fine-grained control over package features, dependencies, and build configuration in BuckOS. Similar to Gentoo's USE flags but implemented for Buck2, this system enables conditional compilation, optional feature toggling, and dependency management based on user preferences and system profiles.
+The USE flag system gives packages a way to declare optional features and to
+gate dependencies, configure arguments, language-specific build features, and
+post-build transforms on those features. Resolution is performed by Buck2's
+native constraint/select mechanism — flags map to constraints under
+`//use/constraints`, and the active platform determines which side of every
+`select()` is taken.
 
-> **Implementation note**: USE flags are implemented using Buck2's native
-> constraint/modifier system. Flag definitions live in `use/constraints/`,
-> packages use `select()` for conditional behavior, and configuration flows
-> through `set_cfg_modifiers()` in PACKAGE files. Global flags are stored in
-> `config/local_modifiers.bzl` (gitignored); per-package overrides use
-> generated PACKAGE files in each package directory (also gitignored).
-> See SPEC.md §8 and the "USE Flags" section for the architecture rationale.
-> The `set_use_flags()` and `package_use()` APIs described below are the
-> user-facing Starlark API; the underlying mechanism is Buck2 constraints.
+Two surfaces are exposed:
 
-BuckOs implements a USE flag system similar to Gentoo's, allowing fine-grained control over package features, dependencies, and build configuration.
+1. **High-level kwargs on `package()`** (and therefore on every wrapper like
+   `autotools_package`, `cmake_package`, `cargo_package`). This is what
+   package authors use day-to-day.
+2. **Low-level helpers in `//defs:use_helpers.bzl`** for cases the high-level
+   kwargs don't cover (multi-value `USE_EXPAND`, slot-style selection, custom
+   `select()` shapes).
 
-## Overview
+## Architecture
 
-USE flags are configuration options that control:
-- **Features**: Which optional features to build into packages
-- **Dependencies**: Which optional dependencies to include
-- **Build options**: Compiler flags, optimizations, and build behavior
+### Flag declaration
 
-## Quick Start
+Flags are declared in `//use/constraints:BUCK` using the `use_flag()` macro
+(see `use/constraints/defs.bzl`). For every declared flag `<f>`, the macro
+generates two constraint values:
 
-### 1. Basic USE Flag Package
+* `//use/constraints:<f>-on`
+* `//use/constraints:<f>-off`
 
-```python
-load("//defs:use_flags.bzl", "use_package", "set_use_flags")
+A flag is "on" for a build iff the active target platform includes the
+`<f>-on` constraint. End users select flags via Buck2 modifiers (see
+`use/modifier_aliases.bzl` and `config/local_modifiers.bzl`); the modifier
+plumbing lives outside this spec.
 
-# Set global USE flags
-GLOBAL_USE = set_use_flags(["ssl", "http2", "-debug"])
+### Resolution flow inside `package()`
 
-use_package(
-    name = "curl",
-    version = "8.5.0",
-    url = "https://curl.se/download/curl-8.5.0.tar.xz",
-    sha256 = "...",
+`defs/package.bzl:package()` (lines 130–599) consumes the four USE kwargs and
+expands them into Buck2 selects bound to the constraints above:
 
-    # Supported USE flags
-    iuse = ["ssl", "gnutls", "http2", "ipv6", "debug"],
+| kwarg            | Expands into                                                              |
+|------------------|---------------------------------------------------------------------------|
+| `use_deps`       | `select()` appended to the rule's `deps` (lines 510–529)                  |
+| `use_configure`  | `select()` appended to the rule's `configure_args` via `use_configure_arg` (lines 531–536) |
+| `use_features`   | `select()` appended to the rule's `features` (cargo only) (lines 538–543) |
+| `use_transforms` | One transform target per flag, gated on `use_bool(flag)` (lines 684–698)  |
 
-    # Default flags for this package
-    use_defaults = ["ssl", "ipv6"],
+The macro also:
 
-    # Conditional dependencies
-    use_deps = {
-        "ssl": "//packages/linux/dev-libs/openssl",
-        "http2": "//packages/linux/net-libs/nghttp2",
-    },
+* Auto-injects a `buckos:iuse:<flag>` label for every flag it sees in any of
+  the four kwargs (lines 574–584). Tooling can use these labels to enumerate
+  the IUSE set of a target via `buck2 cquery`.
+* Auto-injects `USE_<FLAG>=1` or `USE_<FLAG>=0` env vars (via a `select()`)
+  for every referenced flag (lines 589–599). Build/install scripts can branch
+  on these directly without touching Starlark.
 
-    # Conditional configure arguments
-    use_configure = {
-        "ssl": ("--with-ssl", "--without-ssl"),
-        "http2": ("--with-nghttp2", "--without-nghttp2"),
-        "ipv6": ("--enable-ipv6", "--disable-ipv6"),
-    },
+## High-Level API: `package()` kwargs
 
-    global_use = GLOBAL_USE,
-)
-```
+All four kwargs are dicts keyed by flag name.
 
-### 2. Profile-Based Package
+### `use_deps`
 
-```python
-load("//defs:use_flags.bzl", "profile_package")
-
-profile_package(
-    name = "nginx",
-    version = "1.25.3",
-    url = "...",
-    sha256 = "...",
-    iuse = ["ssl", "http2", "pcre", "debug"],
-    profile = "server",  # Uses server profile defaults
-    use_deps = {...},
-    use_configure = {...},
-)
-```
-
-## Core Concepts
-
-### USE Flags
-
-USE flags are string identifiers that enable or disable features. Prefix with `-` to disable:
+Add dependencies conditionally on a USE flag.
 
 ```python
-set_use_flags([
-    "ssl",           # Enable SSL
-    "http2",         # Enable HTTP/2
-    "-debug",        # Disable debug
-    "-ldap",         # Disable LDAP
-])
-```
+use_deps = {
+    # Single dep when the flag is on; nothing when off.
+    "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
 
-### Profiles
-
-Profiles are predefined USE flag configurations for common use cases:
-
-| Profile | Description |
-|---------|-------------|
-| `minimal` | Bare essentials only |
-| `server` | Headless server optimizations |
-| `desktop` | Full desktop with multimedia |
-| `developer` | Development tools enabled |
-| `hardened` | Security-focused configuration |
-| `default` | Balanced defaults |
-
-### Flag Resolution Order
-
-USE flags are resolved via Buck2's modifier system (highest priority first):
-
-1. **CLI modifiers** (`buck2 build ... -m flag` or `buckos use` one-shot) — overrides all
-2. **Per-package PACKAGE modifiers** (`set_cfg_modifiers()` in package directory) — like Gentoo `package.use`
-3. **Global PACKAGE modifiers** (`config/local_modifiers.bzl` loaded by root PACKAGE) — like Gentoo `make.conf USE=`
-4. **Profile defaults** (`use/profiles/`) — like Gentoo profiles
-5. **Package IUSE defaults** (`use_defaults` in package definition)
-
-## API Reference
-
-### use_package()
-
-Main macro for creating packages with USE flag support.
-
-```python
-use_package(
-    name,                  # Package name
-    version,               # Package version
-    url,                   # Source download URL
-    sha256,                # Source checksum
-    iuse = [],             # Supported USE flags
-    use_defaults = [],     # Default enabled flags
-    use_deps = {},         # USE -> dependencies mapping
-    use_configure = {},    # USE -> configure args mapping
-    use_env = {},          # USE -> environment vars mapping
-    use_patches = {},      # USE -> patches mapping
-    global_use = None,     # Global USE configuration
-    package_overrides = None,  # Package-specific overrides
-    ...
-)
-```
-
-### use_ebuild_package()
-
-Ebuild-style package with custom phase functions. USE flags available via `use()` shell function:
-
-```python
-use_ebuild_package(
-    name = "libxml2",
-    version = "2.12.3",
-    url = "...",
-    sha256 = "...",
-    iuse = ["debug", "icu", "python"],
-
-    src_configure = """
-        ./configure --prefix=/usr \\
-            $(use debug && echo --enable-debug) \\
-            $(use icu && echo --with-icu) \\
-            $(use python && echo --with-python)
-    """,
-    ...
-)
-```
-
-### set_use_flags()
-
-Set global USE flags:
-
-```python
-global_use = set_use_flags([
-    "ssl", "http2", "ipv6",
-    "-debug", "-test",
-])
-```
-
-### package_use()
-
-Override USE flags for specific packages:
-
-```python
-curl_override = package_use("curl", [
-    "-ssl",      # Disable OpenSSL
-    "gnutls",    # Use GnuTLS instead
-    "brotli",
-])
-```
-
-### profile_package()
-
-Create package using a profile:
-
-```python
-profile_package(
-    name = "nginx",
-    ...,
-    profile = "server",
-)
-```
-
-## Package Customization
-
-The `package_customize.bzl` module provides Gentoo-style `/etc/portage/` configuration.
-
-### package_config()
-
-Create comprehensive configuration:
-
-```python
-load("//defs:package_customize.bzl", "package_config")
-
-MY_CONFIG = package_config(
-    # Global USE flags
-    use_flags = ["ssl", "http2", "-debug"],
-
-    # Base profile
-    profile = "server",
-
-    # Per-package USE (like package.use)
-    package_use = {
-        "curl": ["gnutls", "-ssl"],
-        "nginx": ["http2", "ssl", "pcre2"],
-    },
-
-    # Per-package environment (like package.env)
-    package_env = {
-        "ffmpeg": {"CFLAGS": "-O3 -march=native"},
-    },
-
-    # Package masks
-    package_mask = [
-        "//packages/linux/dev-libs/openssl:1.1",
+    # Multiple deps gated on a single flag.
+    "readline": [
+        "//packages/linux/system/terminal/readline:readline",
+        "//packages/linux/system/terminal/ncurses:ncurses",
     ],
 
-    # Compiler flags
-    cflags = "-O2 -pipe -march=x86-64",
-    cxxflags = "-O2 -pipe -march=x86-64",
-    makeopts = "-j$(nproc)",
-)
+    # Different dep when on vs. off.  Either side may be a string or list.
+    "ssl": ("//.../openssl:openssl", "//.../gnutls:gnutls"),
+}
 ```
 
-### Environment Presets
+Real example: `packages/linux/core/bash/BUCK` gates the `readline` /
+`ncurses` pair on the `readline` flag.
+
+### `use_configure`
+
+Append flag-gated arguments to the package's `configure` invocation
+(autotools/cmake/meson — interpretation depends on the rule).
 
 ```python
-load("//defs:package_customize.bzl", "get_env_preset")
+use_configure = {
+    # Tuple form: on-arg vs. off-arg.
+    "ssl":   ("--with-ssl",      "--without-ssl"),
+    "ipv6":  ("--enable-ipv6",   "--disable-ipv6"),
 
-# Available presets:
-# - optimize-size
-# - optimize-speed
-# - native
-# - debug
-# - debug-sanitize
-# - hardened
-# - lto
-# - cross-aarch64
-# - cross-riscv64
-
-hardened_env = get_env_preset("hardened")
+    # String/list form: argument appears only when the flag is on.
+    "lto":   "-DENABLE_LTO=ON",
+    "extra": ["--enable-foo", "--enable-bar"],
+}
 ```
 
-## Tooling Integration
+Real example: `packages/linux/core/bash/BUCK` declares ten flags this way
+(`afs`, `bashlogger`, `examples`, `nls`, `pgo`, `plugins`, `readline`, …).
 
-The `tooling.bzl` module provides utilities for external tools to generate configurations.
+### `use_features`
 
-### Generate System Configuration
+Cargo-only. Adds a flag-gated entry to the Rust `features` list passed to the
+cargo build rule.
 
 ```python
-load("//defs:tooling.bzl", "generate_system_config")
-
-config = generate_system_config(
-    profile = "desktop",
-    detected_hardware = ["nvidia", "nvme", "audio"],
-    detected_features = ["systemd", "pipewire"],
-    user_use_flags = ["http2", "-ldap"],
-    target_arch = "x86_64",
-)
+use_features = {
+    "io-uring":    "io_uring",
+    "kvm":         "kvm",
+    "guest-debug": "guest_debug",
+}
 ```
 
-### Export Configuration
+Real example: `packages/linux/emulation/utilities/cloud-hypervisor/BUCK`.
+
+### `use_transforms`
+
+Gate a post-build transform on a USE flag. The transform target is always
+created in the graph; when the flag is off, the transform is a zero-cost
+passthrough.
 
 ```python
-load("//defs:tooling.bzl",
-     "export_config_json",
-     "export_config_toml",
-     "export_config_shell",
-     "export_buck_config")
-
-# Export as JSON
-json_config = export_config_json(config)
-
-# Export as TOML
-toml_config = export_config_toml(config)
-
-# Export as shell script
-shell_config = export_config_shell(config)
-
-# Export as Buck2 .bzl file
-buck_config = export_buck_config(config)
+transforms       = ["strip", "stamp"],   # always applied
+use_transforms   = {"ima": "ima"},       # only applied when USE=ima
 ```
 
-### Query Available Options
+Valid transform names: `"strip"`, `"stamp"`, `"ima"` (see
+`_TRANSFORM_MAP` in `defs/package.bzl`).
+
+Real example: `packages/linux/core/zlib/BUCK`,
+`packages/linux/system/libs/crypto/openssl/BUCK`.
+
+### Build/install script env vars
+
+Inside any phase script the user supplies (e.g. `post_install_cmds`,
+`pre_configure_cmds`, `install_script`), USE flags are visible as
+`USE_<FLAG>` environment variables set to `"1"` or `"0"`:
 
 ```python
-load("//defs:tooling.bzl",
-     "get_available_use_flags",
-     "get_available_profiles",
-     "cmd_list_use_flags")
-
-# Get all available USE flags
-all_flags = get_available_use_flags()
-
-# Get profile information
-profiles = get_available_profiles()
-
-# Generate formatted list (for CLI output)
-output = cmd_list_use_flags(category = "network")
+post_install_cmds = ["""
+if [ "$USE_DOC" = "1" ]; then
+    install -d "$DESTDIR/usr/share/doc/foo"
+    cp -r doc/* "$DESTDIR/usr/share/doc/foo/"
+fi
+"""],
 ```
 
-## Global USE Flags Reference
+## Low-Level API: `//defs:use_helpers.bzl`
 
-### Build Options
-- `debug` - Enable debugging symbols and assertions
-- `doc` - Build and install documentation
-- `examples` - Install example files
-- `static` - Build static libraries
-- `test` - Enable test suite during build
-- `lto` - Enable Link Time Optimization
-- `verify-signatures` - Verify GPG signatures on source downloads (see below)
+For cases the high-level kwargs don't cover, `defs/use_helpers.bzl` exposes
+the `select()` constructors directly. These return Starlark `select()`
+expressions intended to be concatenated with `+` into the target's attrs.
 
-### Security
-- `hardened` - Enable security hardening features
-- `pie` - Build position independent executables
-- `ssp` - Enable stack smashing protection
-- `caps` - Use Linux capabilities library
-- `seccomp` - Enable seccomp sandboxing
-- `selinux` - Enable SELinux support
+| Helper                                                  | Returns                                                                 |
+|---------------------------------------------------------|-------------------------------------------------------------------------|
+| `use_bool(flag)`                                        | `True` when on, `False` otherwise.                                      |
+| `use_dep(flag, dep)`                                    | `[dep]` when on, `[]` otherwise.                                        |
+| `use_configure_arg(flag, on_arg, off_arg = None)`       | List of args. `on_arg`/`off_arg` may be a string or list.               |
+| `use_feature(flag, feature)`                            | `[feature]` when on, `[]` otherwise (cargo features).                   |
+| `use_expand_select(expand_name, value_map)`             | Returns the value mapped to the currently selected `USE_EXPAND` value.  |
+| `use_expand_dep(expand_name, value, dep)`               | `[dep]` when `<expand>_<value>` is on.                                  |
+| `use_expand_multi_deps(expand_name, value_dep_map)`     | Concatenation of `use_expand_dep` over every value.                     |
+| `use_versioned_dep(expand_name, version_map)`           | `[dep]` corresponding to the active version-slot value.                 |
 
-### Networking
-- `ipv6` - Enable IPv6 support
-- `ssl` - Enable SSL/TLS support (OpenSSL)
-- `gnutls` - Enable GnuTLS support
-- `http2` - Enable HTTP/2 support
-- `curl` - Use libcurl for HTTP operations
+Default behaviour (every helper): when the platform doesn't pin either side
+of the flag's constraint, the "off" branch is taken (see the `DEFAULT`
+arms in `defs/use_helpers.bzl`).
 
-### Compression
-- `zlib` - Enable zlib compression
-- `bzip2` - Enable bzip2 compression
-- `zstd` - Enable Zstandard compression
-- `lz4` - Enable LZ4 compression
-- `brotli` - Enable Brotli compression
+Use the helpers when:
 
-### Graphics
-- `X` - Enable X11 support
-- `wayland` - Enable Wayland support
-- `opengl` - Enable OpenGL support
-- `vulkan` - Enable Vulkan support
-- `gtk` - Enable GTK+ toolkit
-- `qt5` / `qt6` - Enable Qt toolkit
-
-### Audio/Video
-- `alsa` - Enable ALSA audio support
-- `pulseaudio` - Enable PulseAudio support
-- `pipewire` - Enable PipeWire support
-- `ffmpeg` - Enable FFmpeg support
-
-### Language Bindings
-- `python` - Build Python bindings
-- `perl` - Build Perl bindings
-- `ruby` - Build Ruby bindings
-- `lua` - Build Lua bindings
-
-### System
-- `dbus` - Enable D-Bus support
-- `systemd` - Enable systemd integration
-- `pam` - Enable PAM authentication
-- `acl` - Enable Access Control Lists
-- `udev` - Enable udev device management
-
-## Example Workflow
-
-### For buckos Tool
-
-```bash
-# 1. Detect system capabilities
-buckos detect > system_flags.txt
-
-# 2. Generate configuration
-buckos configure \
-    --profile server \
-    --use "ssl http2 -debug" \
-    --output buckos_config.bzl
-
-# 3. Build with configuration
-buck2 build //packages/linux/... --config //buckos_config.bzl
-```
-
-### For Package Maintainers
+* You need a USE flag to drive a non-standard attribute that `package()`
+  doesn't surface (e.g. `make_args`, `env`, `pre_configure_cmds`).
+* You're using a `USE_EXPAND`-style multi-valued flag (Python ABI slot, GPU
+  vendor, …) where the high-level kwargs don't apply.
 
 ```python
-# Define package with comprehensive USE support
-use_package(
-    name = "mypackage",
-    version = "1.0",
+load("//defs:use_helpers.bzl", "use_bool", "use_dep")
+
+autotools_package(
+    name = "foo",
     ...,
-
-    # Document all supported USE flags
-    iuse = [
-        "ssl",      # SSL/TLS support
-        "http2",    # HTTP/2 support
-        "debug",    # Debug build
-    ],
-
-    # Set sensible defaults
-    use_defaults = ["ssl"],
-
-    # Map USE flags to dependencies
-    use_deps = {...},
-
-    # Map USE flags to configure options
-    use_configure = {...},
+    deps = ["//packages/linux/core/zlib:zlib"]
+         + use_dep("ssl", "//packages/linux/system/libs/crypto/openssl:openssl"),
+    env = select({
+        "//use/constraints:debug-on":  {"CFLAGS": "-O0 -g3"},
+        "DEFAULT":                     {"CFLAGS": "-O2"},
+    }),
 )
 ```
 
-## Environment Variables
+## Resolution Order
 
-Some USE flags can be controlled via environment variables for global override:
+USE flags resolve through Buck2's normal platform/modifier resolution.
+Highest priority wins:
 
-### BUCKOS_VERIFY_SIGNATURES
+1. CLI modifiers (`buck2 build … -m <modifier>`).
+2. PACKAGE-file modifiers (per-directory `set_cfg_modifiers()`).
+3. Target platform default modifiers (`//platforms:linux-target`).
+4. Constraint `DEFAULT` branch in each `select()` — currently "off".
 
-Controls GPG signature verification globally, similar to the `verify-signatures` USE flag:
+There is no Starlark-level concept of an `iuse` list or `use_defaults`
+beyond what each package author writes into the constraint `DEFAULT`
+branches. Per-package defaults are an open extension.
+
+## Labels and Querying
+
+For every flag referenced via any of the four kwargs, `package()` attaches a
+`buckos:iuse:<flag>` label to the build target. To enumerate the USE
+interface of a package:
 
 ```bash
-# Disable signature verification for all packages
-BUCKOS_VERIFY_SIGNATURES=0 buck2 build //packages/linux/...
-
-# Enable signature verification for all packages
-BUCKOS_VERIFY_SIGNATURES=1 buck2 build //packages/linux/...
-
-# Set persistently in your shell profile
-export BUCKOS_VERIFY_SIGNATURES=0
+buck2 cquery 'attrfilter(labels, "buckos:iuse:", //packages/linux/core/bash/...)' \
+    --output-attribute labels
 ```
 
-**Values:**
-- `1` or `true` - Enable signature verification globally
-- `0` or `false` - Disable signature verification globally
-- Not set - Use per-package `auto_detect_signature` setting
+To list every USE flag known to the tree:
 
-See `SIGNATURE_VERIFICATION.md` for more details.
+```bash
+buck2 cquery 'attrregexfilter(labels, "buckos:iuse:.*", //packages/...)' \
+    --output-attribute labels | grep -oE 'buckos:iuse:[a-z0-9_-]+' | sort -u
+```
 
-## See Also
+## Out of Scope (Removed APIs)
 
-- `//defs/use_flags.bzl` - Core USE flag system
-- `//defs/package_customize.bzl` - Package customization
-- `//defs/tooling.bzl` - Tooling integration
-- `//packages/linux/examples/use-flags/BUCK` - Example packages
-- `SIGNATURE_VERIFICATION.md` - GPG signature verification documentation
+The following APIs from the v1 spec **do not exist** and have been removed.
+None of them ever landed in `master`:
+
+* `use_package()`, `profile_package()`, `use_ebuild_package()`
+* `set_use_flags()`, `package_use()`, `iuse=`, `use_defaults=`, `global_use=`
+* `package_customize.bzl`, `package_config()`, `get_env_preset()`,
+  `use_patches=`, `package_env=`, `package_mask=`
+* `tooling.bzl`, `generate_system_config()`, `export_config_*()`,
+  `cmd_list_use_flags()`
+* `buckos detect`, `buckos configure` CLI subcommands
+
+Authors who want any of these behaviours today should compose the high-level
+kwargs with the low-level helpers above. End-user CLI tooling for selecting
+flags is provided by Buck2 modifiers, not by Starlark macros.
+
+## References
+
+* `defs/package.bzl` — `package()` macro (USE handling at lines 142–148,
+  510–599, 684–698)
+* `defs/use_helpers.bzl` — low-level helpers
+* `use/constraints/BUCK` — declared flag set
+* `use/constraints/defs.bzl` — `use_flag()`, `use_expand()`, constraint
+  generation
+* `packages/linux/core/bash/BUCK` — large `use_configure` example
+* `packages/linux/core/zlib/BUCK` — `transforms` + `use_transforms`
+* `packages/linux/emulation/utilities/cloud-hypervisor/BUCK` — `use_features`
+* SPEC-001 — Package Manager Integration (the `package()` macro itself)
+* SPEC-004 — Package Sets and System Profiles (how profiles select flag sets)
+* SPEC-005 — Patch System (USE-conditional patches via `select()`)

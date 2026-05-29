@@ -1,69 +1,84 @@
 """
-Template for package(build_rule = "autotools") with USE flags
-Based on PACKAGE-SPEC-001: Simple and Autotools Packages
+Template for autotools_package (./configure && make && make install).
+
+This is the standard build flow for GNU-style packages.  Copy this file
+into your new package directory as `BUCK`, replace the placeholders, and
+delete the optional sections you don't need.
+
+Real-world example: packages/linux/core/bash/BUCK
+Wrapper definition: defs/packages/autotools.bzl
+Underlying rule:    defs/rules/autotools.bzl
+Common kwargs:      defs/package.bzl (see the package() docstring)
 """
 
-load("//defs:package.bzl", "package")
+load("//defs/packages:autotools.bzl", "autotools_package")
 
-package(
-    build_rule = "autotools",
+autotools_package(
     name = "PACKAGE_NAME",
     version = "VERSION",
-    url = "SOURCE_URL",
-    sha256 = "SHA256_CHECKSUM",
+    url = "https://example.org/PACKAGE_NAME-VERSION.tar.xz",
+    sha256 = "REPLACE_WITH_SHA256",
 
-    # USE flags this package supports
-    iuse = [
-        # Example: "ssl", "ipv6", "doc", "examples"
+    # ── SBOM metadata (recommended) ──────────────────────────────────
+    description = "One-line description of the package",
+    homepage = "https://example.org/",
+    license = "GPL-3.0",  # SPDX identifier
+    # cpe = "cpe:2.3:a:vendor:PACKAGE_NAME:VERSION:*:*:*:*:*:*:*",
+    # libraries = ["foo"],  # shared libs installed (without "lib" prefix)
+
+    # ── Static build configuration ──────────────────────────────────
+    configure_args = [
+        # "--disable-static",
+        # "--without-bash-malloc",
     ],
+    # extra_cflags = ["-O2"],
+    # extra_ldflags = ["-Wl,--as-needed"],
+    # make_args = ["V=1"],
+    # install_targets = ["install", "install-info"],
 
-    # Map USE flags to configure arguments
+    # ── USE flags ────────────────────────────────────────────────────
+    # Flags are declared implicitly by mentioning them in use_*; there is
+    # no separate `iuse` list.  See use/constraints/ for how to register
+    # new flags.
     use_configure = {
-        # Format: "flag": ("--enable-flag", "--disable-flag")
-        # Example:
-        # "ssl": ("--with-ssl", "--without-ssl"),
+        # "flag": ("--enable-flag", "--disable-flag"),
+        # "ssl": ("--with-openssl", "--without-ssl"),
         # "ipv6": ("--enable-ipv6", "--disable-ipv6"),
     },
-
-    # Conditional dependencies based on USE flags
     use_deps = {
-        # Format: "flag": ["//dependency/target"]
-        # Example:
-        # "ssl": ["//packages/linux/network:openssl"],
+        # "flag": "//pkg:target"               # single dep
+        # "flag": ["//pkg:a", "//pkg:b"]       # multiple deps
+        # "flag": ("//pkg:on-dep", "//pkg:off-dep")  # switch deps
+        # "ssl": "//packages/linux/system/libs/crypto/openssl:openssl",
     },
 
-    # Static configure arguments (always applied)
-    configure_args = [
-        # Example: "--disable-static",
-    ],
+    # ── Patches ──────────────────────────────────────────────────────
+    # patches = glob(["patches/*.patch"]),
 
-    # Static make arguments
-    make_args = [
-        # Example: "V=1",  # Verbose build
-    ],
-
-    # Runtime dependencies (always required)
+    # ── Dependencies (always required) ───────────────────────────────
     deps = [
-        # Example: "//packages/linux/core:glibc",
+        # "//packages/linux/core/zlib:zlib",
     ],
+    # host_deps = [
+    #     "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
+    # ],
 
-    # Build-time only dependencies
-    build_deps = [
-        # Example: "//packages/linux/dev-util:pkg-config",
-    ],
+    # ── Post-install hooks ───────────────────────────────────────────
+    # post_install_cmds = ["""
+    #     ln -sf bash "$DESTDIR/usr/bin/sh"
+    # """],
 
-    # Patches
-    patches = [
-        # Example: ":fix-configure.patch",
-    ],
+    # ── Output transforms ────────────────────────────────────────────
+    # transforms = ["strip", "stamp"],
+    # use_transforms = {"ima": "ima"},
 
-    # Metadata
-    maintainers = [
-        # Example: "category@buckos.org",
-    ],
-
-    # Optional: GPG verification
-    # signature_sha256 = "SIGNATURE_SHA256",
-    # gpg_key = "GPG_KEY_ID",
-    # gpg_keyring = "//path/to:keyring",
+    # ── Rule-specific knobs (see defs/packages/autotools.bzl) ────────
+    # skip_configure = True,        # raw Makefile (or use make_package)
+    # skip_host_arg = True,         # configure doesn't accept --host=
+    # configure_script = "./bootstrap.sh",
+    # configure_prefix_deps = ["//some:codegen-tool"],
+    # build_subdir = "build",       # out-of-tree build dir
+    # pre_build_cmds = ["./autogen.sh"],
+    # install_args = ["install-strip"],
+    # install_prefix_var = "prefix",  # for Makefiles using $(prefix) not $(DESTDIR)
 )
