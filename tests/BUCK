@@ -208,7 +208,7 @@ buckos_test(
         "RUN_ENV": "$(location :qemu-env)",
     },
     run_test_separately = True,
-    labels = ["vm", "slow"],
+    labels = ["vm", "slow", "heavy"],
 )
 
 buckos_test(
@@ -232,7 +232,7 @@ buckos_test(
         "RUN_ENV": "$(location :qemu-env)",
     },
     run_test_separately = True,
-    labels = ["vm", "slow"],
+    labels = ["vm", "slow", "heavy"],
 )
 
 buckos_test(
@@ -256,7 +256,7 @@ buckos_test(
         "RUN_ENV": "$(location :qemu-env)",
     },
     run_test_separately = True,
-    labels = ["vm", "slow"],
+    labels = ["vm", "slow", "heavy"],
 )
 
 # ── IMA QEMU FILE_CHECK enforcement ─────────────────────────────────
@@ -283,7 +283,7 @@ buckos_test(
         "RUN_ENV": "$(location :qemu-env)",
     },
     run_test_separately = True,
-    labels = ["vm", "slow"],
+    labels = ["vm", "slow", "heavy"],
 )
 
 # FILE_CHECK: signed binary + unsigned data file — file read denied
@@ -309,7 +309,7 @@ buckos_test(
         "RUN_ENV": "$(location :qemu-env)",
     },
     run_test_separately = True,
-    labels = ["vm", "slow"],
+    labels = ["vm", "slow", "heavy"],
 )
 
 # ── Build smoke tests ────────────────────────────────────────────────
@@ -384,7 +384,7 @@ buckos_test(
         "INITRAMFS": "$(location //packages/linux/system/cloud-hypervisor:ch-initramfs)",
     },
     run_test_separately = True,
-    labels = ["vm", "slow", "integration"],
+    labels = ["vm", "slow", "integration", "heavy"],
 )
 
 # ── Cloud Hypervisor: IMA binary execution ───────────────────────────
@@ -413,7 +413,7 @@ buckos_test(
         "EXPECT_TEST_OUTPUT": "IMA-FILE-CONTENT",
     },
     run_test_separately = True,
-    labels = ["vm", "slow", "integration"],
+    labels = ["vm", "slow", "integration", "heavy"],
 )
 
 # IMA enforce: signed binary runs under IMA enforcement
@@ -438,7 +438,7 @@ buckos_test(
         "EXPECT_TEST_OUTPUT": "IMA-FILE-CONTENT",
     },
     run_test_separately = True,
-    labels = ["vm", "slow", "integration"],
+    labels = ["vm", "slow", "integration", "heavy"],
 )
 
 # ── ISO boot ─────────────────────────────────────────────────────
@@ -492,7 +492,7 @@ buckos_test(
         "RUN_ENV": "$(location :qemu-env)",
     },
     run_test_separately = True,
-    labels = ["vm", "slow", "integration"],
+    labels = ["vm", "slow", "integration", "heavy"],
 )
 
 buckos_test(
@@ -559,7 +559,7 @@ buckos_test(
         "EXPECT_NO_TEST_OUTPUT": "IMA-TEST-PASS",
     },
     run_test_separately = True,
-    labels = ["vm", "slow", "integration"],
+    labels = ["vm", "slow", "integration", "heavy"],
 )
 
 # ── Cloud Hypervisor: IMA FILE_CHECK enforcement ────────────────────
@@ -586,7 +586,7 @@ buckos_test(
         "EXPECT_TEST_OUTPUT": "IMA-FILE-CONTENT",
     },
     run_test_separately = True,
-    labels = ["vm", "slow", "integration"],
+    labels = ["vm", "slow", "integration", "heavy"],
 )
 
 # CH FILE_CHECK: signed binary + unsigned data file — file read denied
@@ -612,5 +612,5 @@ buckos_test(
         "EXPECT_NO_TEST_OUTPUT": "IMA-FILE-CONTENT",
     },
     run_test_separately = True,
-    labels = ["vm", "slow", "integration"],
+    labels = ["vm", "slow", "integration", "heavy"],
 )
