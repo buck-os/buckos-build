@@ -14,9 +14,6 @@ package(
         "--without-icu",
         "--without-lzma",
     ],
-    # libxml2 installs headers under usr/include/libxml2/libxml/;
-    # consumers #include <libxml/foo.h> so expose the subdir.
-    include_subdirs = ["usr/include/libxml2"],
     deps = [
         "//packages/linux/core/zlib:zlib",
     ],
