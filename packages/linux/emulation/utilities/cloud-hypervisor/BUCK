@@ -17,10 +17,19 @@ cargo_package(
         "guest-debug": "guest_debug",
         "dbus": "dbus_api",
     },
+    env = {
+        # Use system OpenSSL instead of building from source inside Cargo.
+        # The vendored openssl-src build invokes perl internally and fails
+        # in hermetic environments.
+        "OPENSSL_NO_VENDOR": "1",
+    },
     host_deps = [
         "//packages/linux/lang/rust:rust",
         "//packages/linux/core/llvm:llvm-native",
         "//packages/linux/lang/linkers:mold",
         "//packages/linux/lang/perl:perl",
+    ],
+    deps = [
+        "//packages/linux/system/libs/crypto/openssl:openssl",
     ],
 )

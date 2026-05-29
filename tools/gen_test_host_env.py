@@ -25,7 +25,7 @@ def main():
         with open(output, "w") as f:
             f.write(
                 '#!/usr/bin/env python3\n'
-                'import os, sys\n'
+                'import os, sys, subprocess\n'
                 f'_rel_bin = "{bin_dir}"\n'
                 '_bin = _rel_bin if os.path.isabs(_rel_bin) else '
                 'os.path.join(os.getcwd(), _rel_bin)\n'
@@ -34,21 +34,20 @@ def main():
                 'if _test:\n'
                 '    _test = os.path.realpath(_test)\n'
                 '    os.chmod(_test, 0o755)\n'
-                '    os.execv(_test, [_test] + sys.argv[1:])\n'
+                '    sys.exit(subprocess.call([sys.executable, _test] + sys.argv[1:]))\n'
                 'elif len(sys.argv) > 1:\n'
                 '    os.execvp(sys.argv[1], sys.argv[1:])\n'
             )
     else:
-        # No host tools — passthrough
         with open(output, "w") as f:
             f.write(
                 '#!/usr/bin/env python3\n'
-                'import os, sys\n'
+                'import os, sys, subprocess\n'
                 '_test = os.environ.get("_BUCKOS_TEST", "")\n'
                 'if _test:\n'
                 '    _test = os.path.realpath(_test)\n'
                 '    os.chmod(_test, 0o755)\n'
-                '    os.execv(_test, [_test] + sys.argv[1:])\n'
+                '    sys.exit(subprocess.call([sys.executable, _test] + sys.argv[1:]))\n'
                 'elif len(sys.argv) > 1:\n'
                 '    os.execvp(sys.argv[1], sys.argv[1:])\n'
             )

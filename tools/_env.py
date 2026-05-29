@@ -17,22 +17,34 @@ import shutil
 import sys
 
 # Vars passed through from the host environment when present.
-_PASSTHROUGH = frozenset({
-    "HOME", "USER", "LOGNAME",
-    "TMPDIR", "TEMP", "TMP",
-    "TERM",
-    "BUCK_SCRATCH_PATH",
-    # Proxy — needed for cargo crate fetches when building behind squid.
-    "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY",
-    "http_proxy", "https_proxy", "no_proxy",
-    # TLS trust — squid TLS interception CA and system bundle.
-    "SSL_CERT_FILE", "REQUESTS_CA_BUNDLE", "NODE_EXTRA_CA_CERTS",
-    # GitHub Actions cache API — present in CI, absent on dev machines.
-    "ACTIONS_RESULTS_URL",
-    "ACTIONS_RUNTIME_TOKEN",
-    "ACTIONS_CACHE_SERVICE_V2",
-    "SCCACHE_GHA_ENABLED",
-})
+_PASSTHROUGH = frozenset(
+    {
+        "HOME",
+        "USER",
+        "LOGNAME",
+        "TMPDIR",
+        "TEMP",
+        "TMP",
+        "TERM",
+        "BUCK_SCRATCH_PATH",
+        # Proxy — needed for cargo crate fetches when building behind squid.
+        "HTTP_PROXY",
+        "HTTPS_PROXY",
+        "NO_PROXY",
+        "http_proxy",
+        "https_proxy",
+        "no_proxy",
+        # TLS trust — squid TLS interception CA and system bundle.
+        "SSL_CERT_FILE",
+        "REQUESTS_CA_BUNDLE",
+        "NODE_EXTRA_CA_CERTS",
+        # GitHub Actions cache API — present in CI, absent on dev machines.
+        "ACTIONS_RESULTS_URL",
+        "ACTIONS_RUNTIME_TOKEN",
+        "ACTIONS_CACHE_SERVICE_V2",
+        "SCCACHE_GHA_ENABLED",
+    }
+)
 
 # Vars pinned to fixed values for determinism.
 _DETERMINISM_PINS = {
@@ -78,6 +90,7 @@ def clean_env():
     # binaries have padded ELF interpreters that cause ENOEXEC/ENOTCONN.
     # Child processes get it via sysroot_lib_paths or explicit calls.
     import subprocess as _subprocess
+
     _subprocess._USE_POSIX_SPAWN = False
     return env
 
@@ -146,7 +159,9 @@ def setup_ccache_symlinks(env, scratch_dir):
         val = env.get(var, "")
         if val:
             basename = os.path.basename(val.split()[0])
-            if basename not in names and shutil.which(basename, path=env.get("PATH", "")):
+            if basename not in names and shutil.which(
+                basename, path=env.get("PATH", "")
+            ):
                 names.append(basename)
     for name in names:
         link = os.path.join(ccache_dir, name)
@@ -158,7 +173,7 @@ def setup_ccache_symlinks(env, scratch_dir):
 
 def _has_unsafe_chars(name):
     """True if *name* contains characters Buck2 cannot relativize."""
-    return any(ord(c) < 32 or ord(c) == 127 or c == '\\' for c in name)
+    return any(ord(c) < 32 or ord(c) == 127 or c == "\\" for c in name)
 
 
 def sanitize_filenames(*roots):
@@ -225,18 +240,31 @@ signal.signal(signal.SIGTERM, _sigterm_cleanup)
 
 def add_path_args(parser):
     """Register the standard three-way PATH arguments on an argparse parser."""
-    parser.add_argument("--hermetic-path", action="append",
-                        dest="hermetic_path", default=[],
-                        help="Set PATH to only these dirs (repeatable)")
-    parser.add_argument("--allow-host-path", action="store_true",
-                        help="Allow host PATH (bootstrap escape hatch)")
-    parser.add_argument("--hermetic-empty", action="store_true",
-                        help="Start with empty PATH")
-    parser.add_argument("--path-prepend", action="append",
-                        dest="path_prepend", default=[],
-                        help="Dir to prepend to PATH (repeatable)")
-    parser.add_argument("--ld-linux", default=None,
-                        help="Buckos ld-linux path (disables posix_spawn)")
+    parser.add_argument(
+        "--hermetic-path",
+        action="append",
+        dest="hermetic_path",
+        default=[],
+        help="Set PATH to only these dirs (repeatable)",
+    )
+    parser.add_argument(
+        "--allow-host-path",
+        action="store_true",
+        help="Allow host PATH (bootstrap escape hatch)",
+    )
+    parser.add_argument(
+        "--hermetic-empty", action="store_true", help="Start with empty PATH"
+    )
+    parser.add_argument(
+        "--path-prepend",
+        action="append",
+        dest="path_prepend",
+        default=[],
+        help="Dir to prepend to PATH (repeatable)",
+    )
+    parser.add_argument(
+        "--ld-linux", default=None, help="Buckos ld-linux path (disables posix_spawn)"
+    )
 
 
 def setup_path(args, env, host_path=""):
@@ -247,18 +275,16 @@ def setup_path(args, env, host_path=""):
     If --ld-linux was provided, portabilizes hermetic-path and
     path-prepend ELF binaries so they use the sysroot ld-linux + glibc.
     """
-    ld_linux = getattr(args, 'ld_linux', None)
-    scratch = os.environ.get("BUCK_SCRATCH_PATH",
-                             os.environ.get("TMPDIR", "/tmp"))
+    ld_linux = getattr(args, "ld_linux", None)
+    scratch = os.environ.get("BUCK_SCRATCH_PATH", os.environ.get("TMPDIR", "/tmp"))
 
     if args.hermetic_path:
         dirs = [os.path.abspath(p) for p in args.hermetic_path]
         if ld_linux:
             from portabilize import portabilize_toolchain
-            patchelf = shutil.which("patchelf",
-                                    path=":".join(dirs))
-            dirs = portabilize_toolchain(
-                dirs, ld_linux, patchelf_path=patchelf)
+
+            patchelf = shutil.which("patchelf", path=":".join(dirs))
+            dirs = portabilize_toolchain(dirs, ld_linux, patchelf_path=patchelf)
         env["PATH"] = ":".join(dirs)
         derive_lib_paths(dirs, env)
     elif args.hermetic_empty:
@@ -266,17 +292,18 @@ def setup_path(args, env, host_path=""):
     elif args.allow_host_path:
         env["PATH"] = host_path
     else:
-        print("error: requires --hermetic-path, --hermetic-empty, or --allow-host-path",
-              file=sys.stderr)
+        print(
+            "error: requires --hermetic-path, --hermetic-empty, or --allow-host-path",
+            file=sys.stderr,
+        )
         sys.exit(1)
-    if hasattr(args, 'path_prepend') and args.path_prepend:
+    if hasattr(args, "path_prepend") and args.path_prepend:
         pp_dirs = [os.path.abspath(p) for p in args.path_prepend]
         if ld_linux:
             from portabilize import portabilize_toolchain
-            patchelf = shutil.which("patchelf",
-                                    path=env.get("PATH", ""))
-            pp_dirs = portabilize_toolchain(
-                pp_dirs, ld_linux, patchelf_path=patchelf)
+
+            patchelf = shutil.which("patchelf", path=env.get("PATH", ""))
+            pp_dirs = portabilize_toolchain(pp_dirs, ld_linux, patchelf_path=patchelf)
         prepend = ":".join(pp_dirs)
         env["PATH"] = prepend + (":" + env["PATH"] if env.get("PATH") else "")
         derive_lib_paths(pp_dirs, env)
@@ -295,14 +322,13 @@ def _ensure_which_shim(env):
     """
     if shutil.which("which", path=env.get("PATH", "")):
         return
-    scratch = os.environ.get("BUCK_SCRATCH_PATH",
-                             os.environ.get("TMPDIR", "/tmp"))
+    scratch = os.environ.get("BUCK_SCRATCH_PATH", os.environ.get("TMPDIR", "/tmp"))
     shim_dir = os.path.join(scratch, "buckos-shims")
     shim = os.path.join(shim_dir, "which")
     if not os.path.exists(shim):
         os.makedirs(shim_dir, exist_ok=True)
         with open(shim, "w") as f:
-            f.write("#!/bin/sh\nfor arg; do command -v \"$arg\" || exit 1; done\n")
+            f.write('#!/bin/sh\nfor arg; do command -v "$arg" || exit 1; done\n')
         os.chmod(shim, 0o755)
     env["PATH"] = shim_dir + ":" + env.get("PATH", "")
 
@@ -341,11 +367,13 @@ def disable_posix_spawn(env, scratch_dir=None):
     """
     # Disable in the current process immediately.
     import subprocess as _subprocess
+
     _subprocess._USE_POSIX_SPAWN = False
     # Disable in child Python processes via sitecustomize.
     if scratch_dir is None:
-        scratch_dir = os.environ.get("BUCK_SCRATCH_PATH",
-                                     os.environ.get("TMPDIR", "/tmp"))
+        scratch_dir = os.environ.get(
+            "BUCK_SCRATCH_PATH", os.environ.get("TMPDIR", "/tmp")
+        )
     pysite = os.path.join(scratch_dir, "buckos-pysite")
     sitecust = os.path.join(pysite, "sitecustomize.py")
     if not os.path.exists(sitecust):
@@ -415,7 +443,9 @@ def derive_lib_paths(bin_dirs, env, skip_ld_library_path=False):
         _share = os.path.join(parent, "share")
         if os.path.isdir(_share) and "GETTEXTDATADIRS" not in env:
             for _entry in os.listdir(_share):
-                if _entry.startswith("gettext-") and os.path.isdir(os.path.join(_share, _entry, "its")):
+                if _entry.startswith("gettext-") and os.path.isdir(
+                    os.path.join(_share, _entry, "its")
+                ):
                     env["GETTEXTDATADIRS"] = os.path.join(_share, _entry)
                     break
         # glibc iconv/msgfmt needs GCONV_PATH to find charset conversion
@@ -428,7 +458,29 @@ def derive_lib_paths(bin_dirs, env, skip_ld_library_path=False):
     if lib_parts and not skip_ld_library_path:
         existing = env.get("LD_LIBRARY_PATH", "")
         merged = ":".join(lib_parts)
-        env["LD_LIBRARY_PATH"] = (merged + ":" + existing).rstrip(":") if existing else merged
+        env["LD_LIBRARY_PATH"] = (
+            (merged + ":" + existing).rstrip(":") if existing else merged
+        )
+
+
+def inject_rpath_for_deps(env, lib_dirs, ld_linux):
+    """Add -Wl,-rpath for dep lib dirs to LDFLAGS when using ld-linux wrappers.
+
+    Freshly-built binaries (e.g. gcc's cc1) run directly, not through
+    wrappers. They need RPATH to find dep shared libs at runtime.
+    Only applied when ld-linux is set (host-tools builds), so target
+    packages don't get polluted with buck-out paths.
+    """
+    if not ld_linux or not lib_dirs:
+        return
+    rpath_flags = []
+    for d in lib_dirs:
+        d = os.path.abspath(d)
+        if os.path.isdir(d) and not _is_sysroot_lib_dir(d):
+            rpath_flags.append(f"-Wl,-rpath,{d}")
+    if rpath_flags:
+        existing = env.get("LDFLAGS", "")
+        env["LDFLAGS"] = (existing + " " + " ".join(rpath_flags)).strip()
 
 
 def filter_path_flags(flags):
@@ -461,7 +513,11 @@ def filter_path_flags(flags):
                 # Parent dir missing — entire dep prefix absent.
                 # Keep the flag to surface the real error.
                 import sys
-                print(f"⚠ filter_path_flags: keeping {flag} (dep prefix not materialized?)", file=sys.stderr)
+
+                print(
+                    f"⚠ filter_path_flags: keeping {flag} (dep prefix not materialized?)",
+                    file=sys.stderr,
+                )
                 result.append(flag)
         elif flag.startswith("-Wl,-rpath-link,"):
             if os.path.isdir(os.path.abspath(flag[16:])):
@@ -506,13 +562,13 @@ def write_pkg_config_wrapper(wrapper_dir, python=None):
         shebang = "#!/usr/bin/env python3"
     with open(wrapper, "w") as f:
         f.write(
-            shebang + '\n'
-            'import os, shutil, sys\n'
-            'sd = os.path.dirname(os.path.abspath(__file__))\n'
+            shebang + "\n"
+            "import os, shutil, sys\n"
+            "sd = os.path.dirname(os.path.abspath(__file__))\n"
             'p = os.environ.get("PATH", "").split(":")\n'
             'os.environ["PATH"] = ":".join(d for d in p if os.path.abspath(d) != sd)\n'
             '_pc = shutil.which("pkg-config")\n'
-            'if not _pc:\n'
+            "if not _pc:\n"
             '    print("pkg-config: not found on PATH", file=sys.stderr); sys.exit(1)\n'
             'os.execv(_pc, [_pc, "--define-prefix"] + sys.argv[1:])\n'
         )
@@ -530,7 +586,11 @@ def find_buckos_shell(env):
     for name in ("bash", "sh"):
         for d in env.get("PATH", "").split(":"):
             candidate = os.path.join(d, name) if d else ""
-            if candidate and os.path.isfile(candidate) and os.access(candidate, os.X_OK):
+            if (
+                candidate
+                and os.path.isfile(candidate)
+                and os.access(candidate, os.X_OK)
+            ):
                 return candidate
     return None
 
@@ -569,46 +629,41 @@ def _build_path_lookup(env):
 
 
 def _parse_shebang(line, path_lookup):
-    """Parse a shebang line and resolve the interpreter via PATH.
+    """Parse a shebang line and rewrite to #!/usr/bin/env <name>.
 
-    Returns (new_interpreter_path, args_suffix) if the interpreter
+    Returns (new_shebang_prefix, args_suffix) if the interpreter
     basename exists on PATH, otherwise (None, None).
 
-    Handles:
-      #!/path/to/interp [args...]
-      #!/usr/bin/env interp [args...]
+    Uses #!/usr/bin/env <name> so the interpreter is resolved via
+    PATH at runtime.  This works with both native binaries and
+    ld-linux wrapper scripts on PATH.
     """
     if not line.startswith(b"#!"):
         return None, None
     rest = line[2:].strip()
     # #!/usr/bin/env interp [args...]
     if rest.startswith(b"/usr/bin/env ") or rest.startswith(b"/usr/bin/env\t"):
-        parts = rest.split(None, 2)  # [b"/usr/bin/env", b"interp", b"args..."]
+        parts = rest.split(None, 2)
         if len(parts) < 2:
             return None, None
         interp_name = parts[1].decode("ascii", errors="replace")
-        buckos_path = path_lookup.get(interp_name)
-        if not buckos_path:
+        if interp_name not in path_lookup:
             return None, None
-        suffix = b" " + parts[2] if len(parts) > 2 else b""
-        return buckos_path.encode(), suffix
+        # Already env-style — don't rewrite
+        return None, None
     # #!/path/to/interp [args...]
     parts = rest.split(None, 1)
     if not parts:
         return None, None
     interp_path = parts[0]
-    # Only rewrite absolute paths (skip relative shebangs)
     if not interp_path.startswith(b"/"):
         return None, None
     interp_name = os.path.basename(interp_path).decode("ascii", errors="replace")
-    buckos_path = path_lookup.get(interp_name)
-    if not buckos_path:
+    if interp_name not in path_lookup:
         return None, None
-    # Don't rewrite if already pointing to a buckos path
-    if interp_path == buckos_path.encode():
-        return None, None
-    suffix = b" " + parts[1] if len(parts) > 1 else b""
-    return buckos_path.encode(), suffix
+    if len(parts) > 1:
+        return b"/usr/bin/env -S " + interp_name.encode(), b" " + parts[1]
+    return b"/usr/bin/env " + interp_name.encode(), b""
 
 
 def rewrite_shebangs(root, env):
@@ -660,7 +715,7 @@ def rewrite_shebangs(root, env):
                 old_end = content.find(b"\n")
                 if old_end < 0:
                     continue
-                new_content = new_shebang + content[old_end + 1:]
+                new_content = new_shebang + content[old_end + 1 :]
                 mode = os.stat(path).st_mode
                 with open(path, "wb") as f:
                     f.write(new_content)
@@ -708,19 +763,23 @@ def portabilize_shebangs(root):
             if not parts:
                 continue
             interp_path = parts[0]
-            interp_name = os.path.basename(interp_path).decode("ascii", errors="replace")
+            interp_name = os.path.basename(interp_path).decode(
+                "ascii", errors="replace"
+            )
             if not interp_name:
                 continue
             # Preserve arguments after interpreter path
             args_suffix = b" " + parts[1] if len(parts) > 1 else b""
-            new_shebang = b"#!/usr/bin/env " + interp_name.encode() + args_suffix + b"\n"
+            new_shebang = (
+                b"#!/usr/bin/env " + interp_name.encode() + args_suffix + b"\n"
+            )
             try:
                 with open(path, "rb") as f:
                     content = f.read()
                 old_end = content.find(b"\n")
                 if old_end < 0:
                     continue
-                new_content = new_shebang + content[old_end + 1:]
+                new_content = new_shebang + content[old_end + 1 :]
                 mode = os.stat(path).st_mode
                 with open(path, "wb") as f:
                     f.write(new_content)
@@ -729,8 +788,10 @@ def portabilize_shebangs(root):
             except (OSError, PermissionError):
                 continue
     if rewritten:
-        print(f"Portabilized {rewritten} shebangs (buck-out -> /usr/bin/env)",
-              file=sys.stderr)
+        print(
+            f"Portabilized {rewritten} shebangs (buck-out -> /usr/bin/env)",
+            file=sys.stderr,
+        )
 
 
 def write_stub_script(path, exit_code=0):
@@ -741,8 +802,7 @@ def write_stub_script(path, exit_code=0):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as f:
         f.write(
-            '#!/usr/bin/env python3\n'
-            'import sys; sys.exit({})\n'.format(exit_code)
+            "#!/usr/bin/env python3\n" "import sys; sys.exit({})\n".format(exit_code)
         )
     os.chmod(path, 0o755)
 
@@ -774,4 +834,5 @@ def sanitize_global_env():
     os.environ.update(keep)
     os.environ.update(_DETERMINISM_PINS)
     import subprocess as _subprocess
+
     _subprocess._USE_POSIX_SPAWN = False

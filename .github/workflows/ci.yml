@@ -162,8 +162,14 @@ jobs:
             | zstd -d -f -o "$HOME/.local/bin/buck2"
           chmod +x "$HOME/.local/bin/buck2"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Reset buck2 state
+        run: |
+          buck2 kill 2>/dev/null || true
+          rm -rf buck-out
       - name: Unit tests
-        run: "buck2 test //tests:"
+        run: |
+          targets=$(buck2 uquery 'kind(sh_test, //tests:) - set(//tests:test-seed-isolation //tests:test-kde-iso-boot) - attrfilter(labels, heavy, kind(sh_test, //tests:))' 2>/dev/null)
+          buck2 test $targets
       - name: Build systemd container rootfs
         run: |
           buck2 build //packages/linux/system:systemd-container-rootfs --out systemd-container-rootfs.tar
@@ -197,7 +203,13 @@ jobs:
         with:
           clean: false
       - name: Apply local config
-        run: cp /opt/gha/.buckconfig.local .buckconfig.local
+        run: |
+          cat > .buckconfig.local << 'EOF'
+          [cell_aliases]
+            ovr_config = prelude
+            fbsource = buckos
+            fbcode = buckos
+          EOF
       - name: Install patchelf
         # Self-hosted ARM64 runner skips ci-setup, so install patchelf
         # directly. portabilize_run prefers system patchelf to avoid the
@@ -225,8 +237,8 @@ jobs:
             echo "::endgroup::"
           done
           [ "$failed" -eq 0 ]
-      - name: Tests
-        run: "buck2 test //tests:"
+      # Unit tests require a seed toolchain (host-tools-exec).
+      # No aarch64 seed is built yet — skip until one is available.
 
   test-seed:
     name: test with seed

@@ -11,7 +11,20 @@ import shutil
 import subprocess
 import sys
 
-from _env import _ensure_which_shim, apply_cache_config, clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, find_dep_python3, preferred_linker_flag, register_cleanup, sanitize_filenames, sysroot_lib_paths, write_pkg_config_wrapper
+from _env import (
+    _ensure_which_shim,
+    apply_cache_config,
+    clean_env,
+    derive_lib_paths,
+    file_prefix_map_flags,
+    filter_path_flags,
+    find_dep_python3,
+    preferred_linker_flag,
+    register_cleanup,
+    sanitize_filenames,
+    sysroot_lib_paths,
+    write_pkg_config_wrapper,
+)
 
 
 def _resolve_env_paths(value):
@@ -31,13 +44,24 @@ def _resolve_env_paths(value):
         resolved = []
         for p in value.split(":"):
             p = p.strip()
-            if p and not os.path.isabs(p) and (p.startswith("buck-out") or os.path.exists(p)):
+            if (
+                p
+                and not os.path.isabs(p)
+                and (p.startswith("buck-out") or os.path.exists(p))
+            ):
                 resolved.append(os.path.abspath(p))
             else:
                 resolved.append(p)
         return ":".join(resolved)
 
-    _FLAG_PREFIXES = ["-I", "-L", "-Wl,-rpath-link,", "-Wl,-rpath,", "-specs=", "--sysroot="]
+    _FLAG_PREFIXES = [
+        "-I",
+        "-L",
+        "-Wl,-rpath-link,",
+        "-Wl,-rpath,",
+        "-specs=",
+        "--sysroot=",
+    ]
 
     parts = []
     for token in value.split():
@@ -45,7 +69,7 @@ def _resolve_env_paths(value):
         # Handle -I/path, -L/path, -Wl,-rpath,/path
         for prefix in _FLAG_PREFIXES:
             if token.startswith(prefix) and len(token) > len(prefix):
-                path = token[len(prefix):]
+                path = token[len(prefix) :]
                 if not os.path.isabs(path) and path.startswith("buck-out"):
                     parts.append(prefix + os.path.abspath(path))
                 elif not os.path.isabs(path) and os.path.exists(path):
@@ -78,43 +102,106 @@ def main():
     parser = argparse.ArgumentParser(description="Run CMake configure")
     parser.add_argument("--source-dir", required=True, help="Source directory")
     parser.add_argument("--build-dir", required=True, help="Build directory")
-    parser.add_argument("--install-prefix", default="/usr", help="Install prefix (default: /usr)")
+    parser.add_argument(
+        "--install-prefix", default="/usr", help="Install prefix (default: /usr)"
+    )
     parser.add_argument("--cc", default=None, help="C compiler")
     parser.add_argument("--cxx", default=None, help="C++ compiler")
-    parser.add_argument("--source-subdir", default=None,
-                        help="Subdirectory within source containing CMakeLists.txt")
-    parser.add_argument("--cmake-arg", action="append", dest="cmake_args", default=[],
-                        help="Extra argument to pass to cmake (repeatable)")
-    parser.add_argument("--cmake-define", action="append", dest="cmake_defines", default=[],
-                        help="CMake define as KEY=VALUE (repeatable)")
-    parser.add_argument("--env", action="append", dest="extra_env", default=[],
-                        help="Extra environment variable KEY=VALUE (repeatable)")
-    parser.add_argument("--prefix-path", action="append", dest="prefix_paths", default=[],
-                        help="Directory to add to CMAKE_PREFIX_PATH (repeatable)")
-    parser.add_argument("--path-prepend", action="append", dest="path_prepend", default=[],
-                        help="Directory to prepend to PATH (repeatable, resolved to absolute)")
-    parser.add_argument("--hermetic-path", action="append", dest="hermetic_path", default=[],
-                        help="Set PATH to only these dirs (replaces host PATH, repeatable)")
-    parser.add_argument("--allow-host-path", action="store_true",
-                        help="Allow host PATH (bootstrap escape hatch)")
-    parser.add_argument("--hermetic-empty", action="store_true",
-                        help="Start with empty PATH (populated by --path-prepend)")
-    parser.add_argument("--ld-linux", default=None,
-                        help="Buckos ld-linux path (disables posix_spawn)")
-    parser.add_argument("--cflags-file", default=None,
-                        help="File with CFLAGS (one per line, from tset projection)")
-    parser.add_argument("--ldflags-file", default=None,
-                        help="File with LDFLAGS (one per line, from tset projection)")
-    parser.add_argument("--pkg-config-file", default=None,
-                        help="File with PKG_CONFIG_PATH entries (one per line, from tset projection)")
-    parser.add_argument("--path-file", default=None,
-                        help="File with PATH dirs to prepend (one per line, from tset projection)")
-    parser.add_argument("--path-append-file", default=None,
-                        help="File with PATH dirs to append (one per line, from tset projection)")
-    parser.add_argument("--prefix-path-file", default=None,
-                        help="File with CMAKE_PREFIX_PATH entries (one per line, from tset projection)")
-    parser.add_argument("--lib-dirs-file", default=None,
-                        help="File with lib dirs for LD_LIBRARY_PATH (one per line, from tset projection)")
+    parser.add_argument(
+        "--source-subdir",
+        default=None,
+        help="Subdirectory within source containing CMakeLists.txt",
+    )
+    parser.add_argument(
+        "--cmake-arg",
+        action="append",
+        dest="cmake_args",
+        default=[],
+        help="Extra argument to pass to cmake (repeatable)",
+    )
+    parser.add_argument(
+        "--cmake-define",
+        action="append",
+        dest="cmake_defines",
+        default=[],
+        help="CMake define as KEY=VALUE (repeatable)",
+    )
+    parser.add_argument(
+        "--env",
+        action="append",
+        dest="extra_env",
+        default=[],
+        help="Extra environment variable KEY=VALUE (repeatable)",
+    )
+    parser.add_argument(
+        "--prefix-path",
+        action="append",
+        dest="prefix_paths",
+        default=[],
+        help="Directory to add to CMAKE_PREFIX_PATH (repeatable)",
+    )
+    parser.add_argument(
+        "--path-prepend",
+        action="append",
+        dest="path_prepend",
+        default=[],
+        help="Directory to prepend to PATH (repeatable, resolved to absolute)",
+    )
+    parser.add_argument(
+        "--hermetic-path",
+        action="append",
+        dest="hermetic_path",
+        default=[],
+        help="Set PATH to only these dirs (replaces host PATH, repeatable)",
+    )
+    parser.add_argument(
+        "--allow-host-path",
+        action="store_true",
+        help="Allow host PATH (bootstrap escape hatch)",
+    )
+    parser.add_argument(
+        "--hermetic-empty",
+        action="store_true",
+        help="Start with empty PATH (populated by --path-prepend)",
+    )
+    parser.add_argument(
+        "--ld-linux", default=None, help="Buckos ld-linux path (disables posix_spawn)"
+    )
+    parser.add_argument(
+        "--cflags-file",
+        default=None,
+        help="File with CFLAGS (one per line, from tset projection)",
+    )
+    parser.add_argument(
+        "--ldflags-file",
+        default=None,
+        help="File with LDFLAGS (one per line, from tset projection)",
+    )
+    parser.add_argument(
+        "--pkg-config-file",
+        default=None,
+        help="File with PKG_CONFIG_PATH entries (one per line, from tset projection)",
+    )
+    parser.add_argument(
+        "--path-file",
+        default=None,
+        help="File with PATH dirs to prepend (one per line, from tset projection)",
+    )
+    parser.add_argument(
+        "--path-append-file",
+        default=None,
+        help="File with PATH dirs to append (one per line, from tset projection)",
+    )
+    parser.add_argument(
+        "--prefix-path-file",
+        default=None,
+        help="File with CMAKE_PREFIX_PATH entries (one per line, from tset projection)",
+    )
+    parser.add_argument(
+        "--lib-dirs-file",
+        default=None,
+        help="File with lib dirs for LD_LIBRARY_PATH (one per line, from tset projection)",
+    )
     args = parser.parse_args()
 
     # Read flag files early — tset-propagated values are base defaults.
@@ -126,7 +213,11 @@ def main():
 
     file_cflags = filter_path_flags(_read_flag_file(args.cflags_file))
     file_ldflags = filter_path_flags(_read_flag_file(args.ldflags_file))
-    file_pkg_config = [p for p in _read_flag_file(args.pkg_config_file) if os.path.isdir(os.path.abspath(p))]
+    file_pkg_config = [
+        p
+        for p in _read_flag_file(args.pkg_config_file)
+        if os.path.isdir(os.path.abspath(p))
+    ]
     file_path_dirs = _read_flag_file(args.path_file)
     file_path_append_dirs = _read_flag_file(args.path_append_file)
     file_prefix_paths = _read_flag_file(args.prefix_path_file)
@@ -140,8 +231,9 @@ def main():
 
     # Work in scratch to avoid mutating the declared output (in buck-out)
     # during cmake configure.  Only the final result is placed at declared_output.
-    _scratch_base = os.path.abspath(os.environ.get("BUCK_SCRATCH_PATH",
-                                                    os.environ.get("TMPDIR", "/tmp")))
+    _scratch_base = os.path.abspath(
+        os.environ.get("BUCK_SCRATCH_PATH", os.environ.get("TMPDIR", "/tmp"))
+    )
     args.build_dir = os.path.join(_scratch_base, "cmake-work")
     os.makedirs(args.build_dir, exist_ok=True)
     register_cleanup(os.path.abspath(args.build_dir))
@@ -164,9 +256,11 @@ def main():
         _hp_dirs = [os.path.abspath(p) for p in args.hermetic_path]
         if args.ld_linux:
             from portabilize import portabilize_toolchain
+
             _patchelf = shutil.which("patchelf", path=":".join(_hp_dirs))
             _hp_dirs = portabilize_toolchain(
-                _hp_dirs, args.ld_linux, patchelf_path=_patchelf)
+                _hp_dirs, args.ld_linux, patchelf_path=_patchelf
+            )
             _cc_dirs = set()
             for _tv in ("CC", "CXX", "AR"):
                 _tval = env.get(_tv, "")
@@ -176,7 +270,8 @@ def main():
                         _cc_dirs.add(os.path.dirname(_tbin))
             if _cc_dirs:
                 _port_cc = portabilize_toolchain(
-                    list(_cc_dirs), args.ld_linux, patchelf_path=_patchelf)
+                    list(_cc_dirs), args.ld_linux, patchelf_path=_patchelf
+                )
                 _port_map = dict(zip(_cc_dirs, _port_cc))
                 for _tv in ("CC", "CXX", "AR"):
                     _tval = env.get(_tv, "")
@@ -186,8 +281,9 @@ def main():
                     _tbin = os.path.abspath(_tparts[0])
                     _tdir = os.path.dirname(_tbin)
                     if _tdir in _port_map:
-                        _tparts[0] = os.path.join(_port_map[_tdir],
-                                                  os.path.basename(_tbin))
+                        _tparts[0] = os.path.join(
+                            _port_map[_tdir], os.path.basename(_tbin)
+                        )
                         env[_tv] = " ".join(_tparts)
         env["PATH"] = ":".join(_hp_dirs)
         # Derive LD_LIBRARY_PATH from hermetic bin dirs so dynamically
@@ -201,42 +297,60 @@ def main():
                 _parent = os.path.dirname(os.path.abspath(_bp))
                 for _ld in ("lib", "lib64"):
                     _d = os.path.join(_parent, _ld)
-                    if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")):
+                    if os.path.isdir(_d) and not os.path.exists(
+                        os.path.join(_d, "libc.so.6")
+                    ):
                         _lib_dirs.append(_d)
                         _glibc_d = os.path.join(_d, "glibc")
                         if os.path.isdir(_glibc_d):
                             _lib_dirs.append(_glibc_d)
             if _lib_dirs:
                 _existing = env.get("LD_LIBRARY_PATH", "")
-                env["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (":" + _existing if _existing else "")
+                env["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (
+                    ":" + _existing if _existing else ""
+                )
         _py_paths = []
         for _bp in args.hermetic_path:
             _parent = os.path.dirname(os.path.abspath(_bp))
-            for _pattern in ("lib/python*/site-packages", "lib/python*/dist-packages",
-                             "lib64/python*/site-packages", "lib64/python*/dist-packages"):
+            for _pattern in (
+                "lib/python*/site-packages",
+                "lib/python*/dist-packages",
+                "lib64/python*/site-packages",
+                "lib64/python*/dist-packages",
+            ):
                 for _sp in __import__("glob").glob(os.path.join(_parent, _pattern)):
                     if os.path.isdir(_sp):
                         _py_paths.append(_sp)
         if _py_paths:
             _existing = env.get("PYTHONPATH", "")
-            env["PYTHONPATH"] = ":".join(_py_paths) + (":" + _existing if _existing else "")
+            env["PYTHONPATH"] = ":".join(_py_paths) + (
+                ":" + _existing if _existing else ""
+            )
     elif args.hermetic_empty:
         env["PATH"] = ""
     elif args.allow_host_path:
         env["PATH"] = _host_path
     else:
-        print("error: build requires --hermetic-path, --hermetic-empty, or --allow-host-path",
-              file=sys.stderr)
+        print(
+            "error: build requires --hermetic-path, --hermetic-empty, or --allow-host-path",
+            file=sys.stderr,
+        )
         sys.exit(1)
     all_path_prepend = file_path_dirs + args.path_prepend
     if all_path_prepend:
-        prepend = ":".join(os.path.abspath(p) for p in all_path_prepend if os.path.isdir(p))
-        if prepend:
-            env["PATH"] = prepend + ":" + env.get("PATH", "")
+        _pp_dirs = [os.path.abspath(p) for p in all_path_prepend if os.path.isdir(p)]
+        if args.ld_linux and _pp_dirs:
+            from portabilize import portabilize_toolchain
+
+            _pp_dirs = portabilize_toolchain(_pp_dirs, args.ld_linux)
+        if _pp_dirs:
+            env["PATH"] = ":".join(_pp_dirs) + ":" + env.get("PATH", "")
 
     # Append dep bin dirs for *-config discovery scripts
     if file_path_append_dirs:
-        append = ":".join(os.path.abspath(p) for p in file_path_append_dirs if os.path.isdir(p))
+        append = ":".join(
+            os.path.abspath(p) for p in file_path_append_dirs if os.path.isdir(p)
+        )
         if append:
             env["PATH"] = env.get("PATH", "") + ":" + append
 
@@ -244,11 +358,15 @@ def main():
     if file_pkg_config:
         existing = env.get("PKG_CONFIG_PATH", "")
         merged = _resolve_env_paths(":".join(file_pkg_config))
-        env["PKG_CONFIG_PATH"] = (merged + ":" + existing).rstrip(":") if existing else merged
+        env["PKG_CONFIG_PATH"] = (
+            (merged + ":" + existing).rstrip(":") if existing else merged
+        )
 
     # Create a pkg-config wrapper that always passes --define-prefix so
     # .pc files in Buck2 dep directories resolve paths correctly.
-    wrapper_dir = write_pkg_config_wrapper(tempfile.mkdtemp(prefix="pkgconf-wrapper-"), python=find_dep_python3(env))
+    wrapper_dir = write_pkg_config_wrapper(
+        tempfile.mkdtemp(prefix="pkgconf-wrapper-"), python=find_dep_python3(env)
+    )
 
     # Prepend pkg-config wrapper to PATH (after hermetic/prepend logic
     # so the wrapper is always available regardless of PATH mode)
@@ -271,7 +389,7 @@ def main():
             clean = []
             for p in parts:
                 if p.startswith("--sysroot="):
-                    _cmake_sysroot = p[len("--sysroot="):]
+                    _cmake_sysroot = p[len("--sysroot=") :]
                 elif p.startswith("-specs="):
                     if p not in _specs_flags:
                         _specs_flags.append(p)
@@ -295,11 +413,14 @@ def main():
 
     cmd = [
         "cmake",
-        "-S", source_path,
-        "-B", os.path.abspath(args.build_dir),
+        "-S",
+        source_path,
+        "-B",
+        os.path.abspath(args.build_dir),
         f"-DCMAKE_INSTALL_PREFIX={args.install_prefix}",
         f"-DPKG_CONFIG_EXECUTABLE={wrapper_pkg_config}",
-        "-G", "Ninja",
+        "-G",
+        "Ninja",
     ]
     if _cmake_sysroot:
         cmd.append(f"-DCMAKE_SYSROOT={_cmake_sysroot}")
@@ -308,6 +429,7 @@ def main():
     # cmake doesn't use PATH-based symlinks — CC is a bare binary in env.
     if env.get("BUCKOS_CCACHE") == "1":
         import shutil as _shutil
+
         _ccache = _shutil.which("ccache", path=env.get("PATH", ""))
         if _ccache:
             cmd.append(f"-DCMAKE_C_COMPILER_LAUNCHER={_ccache}")
@@ -315,8 +437,9 @@ def main():
 
     # Build CMAKE_PREFIX_PATH from dep prefixes so find_package() works.
     # Merge flag-file prefix paths with CLI --prefix-path args.
-    all_prefix_paths = [os.path.abspath(p) for p in file_prefix_paths] + \
-                       [os.path.abspath(p) for p in args.prefix_paths]
+    all_prefix_paths = [os.path.abspath(p) for p in file_prefix_paths] + [
+        os.path.abspath(p) for p in args.prefix_paths
+    ]
     if all_prefix_paths:
         cmd.append("-DCMAKE_PREFIX_PATH=" + ";".join(all_prefix_paths))
 
@@ -328,13 +451,17 @@ def main():
     # against a newer glibc.  Buckos tools use RPATH via specs.
     if file_lib_dirs and not args.allow_host_path:
         resolved_lib_dirs = [
-            os.path.abspath(d) for d in file_lib_dirs
-            if os.path.isdir(d) and not os.path.exists(os.path.join(os.path.abspath(d), "libc.so.6"))
+            os.path.abspath(d)
+            for d in file_lib_dirs
+            if os.path.isdir(d)
+            and not os.path.exists(os.path.join(os.path.abspath(d), "libc.so.6"))
         ]
         if resolved_lib_dirs:
             existing = env.get("LD_LIBRARY_PATH", "")
             merged = ":".join(resolved_lib_dirs)
-            env["LD_LIBRARY_PATH"] = (merged + ":" + existing).rstrip(":") if existing else merged
+            env["LD_LIBRARY_PATH"] = (
+                (merged + ":" + existing).rstrip(":") if existing else merged
+            )
 
     # Derive GCONV_PATH, BISON_PKGDATADIR (and LD_LIBRARY_PATH when no
     # sysroot ld-linux) from path-prepend dirs so host tools find shared
@@ -358,18 +485,25 @@ def main():
     # FindPerlModules.  all_prefix_paths are {dep}/usr directories.
     _perl5_paths = []
     for _pp in all_prefix_paths:
-        for _pattern in ("lib/perl5", "lib/perl5/vendor_perl",
-                         "lib/perl5/site_perl", "share/perl5",
-                         "share/perl5/vendor_perl",
-                         "lib/perl5/5.*", "lib64/perl5",
-                         "lib64/perl5/vendor_perl",
-                         "lib64/perl5/5.*"):
+        for _pattern in (
+            "lib/perl5",
+            "lib/perl5/vendor_perl",
+            "lib/perl5/site_perl",
+            "share/perl5",
+            "share/perl5/vendor_perl",
+            "lib/perl5/5.*",
+            "lib64/perl5",
+            "lib64/perl5/vendor_perl",
+            "lib64/perl5/5.*",
+        ):
             for _sp in _glob.glob(os.path.join(_pp, _pattern)):
                 if os.path.isdir(_sp):
                     _perl5_paths.append(_sp)
     if _perl5_paths:
         _existing = env.get("PERL5LIB", "")
-        env["PERL5LIB"] = ":".join(_perl5_paths) + (":" + _existing if _existing else "")
+        env["PERL5LIB"] = ":".join(_perl5_paths) + (
+            ":" + _existing if _existing else ""
+        )
 
     # Collect cmake defines in a dict so we can merge flag-file values
     # with toolchain/per-package values for CMAKE_*_FLAGS.
@@ -401,25 +535,53 @@ def main():
     # Merge flag-file ldflags into CMAKE_*_LINKER_FLAGS.
     if file_ldflags:
         _ld = _resolve_env_paths(" ".join(file_ldflags))
-        for key in ("CMAKE_EXE_LINKER_FLAGS", "CMAKE_SHARED_LINKER_FLAGS",
-                     "CMAKE_MODULE_LINKER_FLAGS"):
+        for key in (
+            "CMAKE_EXE_LINKER_FLAGS",
+            "CMAKE_SHARED_LINKER_FLAGS",
+            "CMAKE_MODULE_LINKER_FLAGS",
+        ):
             existing = cmake_defines.get(key, "")
             cmake_defines[key] = (_ld + " " + existing).strip() if existing else _ld
+
+    # Add -rpath for dep lib dirs so freshly-built binaries find deps.
+    if args.ld_linux and file_lib_dirs:
+        from _env import _is_sysroot_lib_dir
+
+        rpath_flags = []
+        for d in file_lib_dirs:
+            d = os.path.abspath(d)
+            if os.path.isdir(d) and not _is_sysroot_lib_dir(d):
+                rpath_flags.append(f"-Wl,-rpath,{d}")
+        if rpath_flags:
+            _rp = " ".join(rpath_flags)
+            for key in (
+                "CMAKE_EXE_LINKER_FLAGS",
+                "CMAKE_SHARED_LINKER_FLAGS",
+                "CMAKE_MODULE_LINKER_FLAGS",
+            ):
+                existing = cmake_defines.get(key, "")
+                cmake_defines[key] = (existing + " " + _rp).strip()
 
     # Inject -specs= flags stripped from CC/CXX into all flag variables
     # so they apply to both compile and link commands.
     if _specs_flags:
         _sf = _resolve_env_paths(" ".join(_specs_flags))
-        for key in ("CMAKE_C_FLAGS", "CMAKE_CXX_FLAGS",
-                     "CMAKE_EXE_LINKER_FLAGS", "CMAKE_SHARED_LINKER_FLAGS",
-                     "CMAKE_MODULE_LINKER_FLAGS"):
+        for key in (
+            "CMAKE_C_FLAGS",
+            "CMAKE_CXX_FLAGS",
+            "CMAKE_EXE_LINKER_FLAGS",
+            "CMAKE_SHARED_LINKER_FLAGS",
+            "CMAKE_MODULE_LINKER_FLAGS",
+        ):
             existing = cmake_defines.get(key, "")
             cmake_defines[key] = (_sf + " " + existing).strip() if existing else _sf
 
     # Write long defines (CMAKE_*_FLAGS with hundreds of dep flags) to an
     # initial-cache file instead of the command line.  Packages with 100+
     # transitive deps can exceed the execve argument limit otherwise.
-    _cache_file = os.path.join(os.path.abspath(args.build_dir), "_buck_initial_cache.cmake")
+    _cache_file = os.path.join(
+        os.path.abspath(args.build_dir), "_buck_initial_cache.cmake"
+    )
     with open(_cache_file, "w") as _cf:
         for key, value in cmake_defines.items():
             escaped = value.replace("\\", "\\\\").replace('"', '\\"')
@@ -435,18 +597,37 @@ def main():
 
     result = subprocess.run(cmd, env=env)
     if result.returncode != 0:
-        print(f"error: cmake configure failed with exit code {result.returncode}", file=sys.stderr)
+        print(
+            f"error: cmake configure failed with exit code {result.returncode}",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     sanitize_filenames(os.path.abspath(args.build_dir))
 
     # Move completed build dir to declared output.  Rewrite embedded
     # scratch paths so the build phase sees the final artifact location.
-    _BINARY_EXTS = frozenset((
-        ".o", ".a", ".so", ".gch", ".pcm", ".pch", ".d",
-        ".png", ".jpg", ".gif", ".ico", ".gz", ".xz", ".bz2",
-        ".wasm", ".pyc", ".qm",
-    ))
+    _BINARY_EXTS = frozenset(
+        (
+            ".o",
+            ".a",
+            ".so",
+            ".gch",
+            ".pcm",
+            ".pch",
+            ".d",
+            ".png",
+            ".jpg",
+            ".gif",
+            ".ico",
+            ".gz",
+            ".xz",
+            ".bz2",
+            ".wasm",
+            ".pyc",
+            ".qm",
+        )
+    )
     if os.path.exists(declared_output):
         shutil.rmtree(declared_output)
     _scratch_path = os.path.abspath(args.build_dir)
@@ -477,8 +658,12 @@ def main():
                 with open(fpath, "w") as f:
                     f.write(fc)
                 os.utime(fpath, (stat.st_atime, stat.st_mtime))
-            except (UnicodeDecodeError, PermissionError, IsADirectoryError,
-                    FileNotFoundError):
+            except (
+                UnicodeDecodeError,
+                PermissionError,
+                IsADirectoryError,
+                FileNotFoundError,
+            ):
                 pass
 
 

@@ -11,7 +11,22 @@ import shutil as _shutil
 import subprocess
 import sys
 
-from _env import _ensure_which_shim, apply_cache_config, clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, find_dep_python3, preferred_linker_flag, register_cleanup, sanitize_filenames, setup_ccache_symlinks, sysroot_lib_paths, write_pkg_config_wrapper
+from _env import (
+    _ensure_which_shim,
+    apply_cache_config,
+    inject_rpath_for_deps,
+    clean_env,
+    derive_lib_paths,
+    file_prefix_map_flags,
+    filter_path_flags,
+    find_dep_python3,
+    preferred_linker_flag,
+    register_cleanup,
+    sanitize_filenames,
+    setup_ccache_symlinks,
+    sysroot_lib_paths,
+    write_pkg_config_wrapper,
+)
 
 
 def _resolve_env_paths(value):
@@ -31,13 +46,24 @@ def _resolve_env_paths(value):
         resolved = []
         for p in value.split(":"):
             p = p.strip()
-            if p and not os.path.isabs(p) and (p.startswith("buck-out") or os.path.exists(p)):
+            if (
+                p
+                and not os.path.isabs(p)
+                and (p.startswith("buck-out") or os.path.exists(p))
+            ):
                 resolved.append(os.path.abspath(p))
             else:
                 resolved.append(p)
         return ":".join(resolved)
 
-    _FLAG_PREFIXES = ["-I", "-L", "-Wl,-rpath-link,", "-Wl,-rpath,", "-specs=", "--sysroot="]
+    _FLAG_PREFIXES = [
+        "-I",
+        "-L",
+        "-Wl,-rpath-link,",
+        "-Wl,-rpath,",
+        "-specs=",
+        "--sysroot=",
+    ]
 
     parts = []
     for token in value.split():
@@ -45,7 +71,7 @@ def _resolve_env_paths(value):
         # Handle -I/path, -L/path, -Wl,-rpath,/path
         for prefix in _FLAG_PREFIXES:
             if token.startswith(prefix) and len(token) > len(prefix):
-                path = token[len(prefix):]
+                path = token[len(prefix) :]
                 if not os.path.isabs(path) and path.startswith("buck-out"):
                     parts.append(prefix + os.path.abspath(path))
                 elif not os.path.isabs(path) and os.path.exists(path):
@@ -78,41 +104,101 @@ def main():
     parser = argparse.ArgumentParser(description="Run meson setup")
     parser.add_argument("--source-dir", required=True, help="Source directory")
     parser.add_argument("--build-dir", required=True, help="Build directory")
-    parser.add_argument("--prefix", default="/usr", help="Install prefix (default: /usr)")
+    parser.add_argument(
+        "--prefix", default="/usr", help="Install prefix (default: /usr)"
+    )
     parser.add_argument("--cc", default=None, help="C compiler")
     parser.add_argument("--cxx", default=None, help="C++ compiler")
-    parser.add_argument("--meson-arg", action="append", dest="meson_args", default=[],
-                        help="Extra argument to pass to meson (repeatable)")
-    parser.add_argument("--meson-define", action="append", dest="meson_defines", default=[],
-                        help="Meson option as KEY=VALUE (repeatable)")
-    parser.add_argument("--env", action="append", dest="extra_env", default=[],
-                        help="Extra environment variable KEY=VALUE (repeatable)")
-    parser.add_argument("--path-prepend", action="append", dest="path_prepend", default=[],
-                        help="Directory to prepend to PATH (repeatable, resolved to absolute)")
-    parser.add_argument("--hermetic-path", action="append", dest="hermetic_path", default=[],
-                        help="Set PATH to only these dirs (replaces host PATH, repeatable)")
-    parser.add_argument("--allow-host-path", action="store_true",
-                        help="Allow host PATH (bootstrap escape hatch)")
-    parser.add_argument("--hermetic-empty", action="store_true",
-                        help="Start with empty PATH (populated by --path-prepend)")
-    parser.add_argument("--ld-linux", default=None,
-                        help="Buckos ld-linux path (disables posix_spawn)")
-    parser.add_argument("--cross-triple", default=None,
-                        help="Target triple for cross-compilation (generates cross file)")
-    parser.add_argument("--pre-cmd", action="append", dest="pre_cmds", default=[],
-                        help="Shell command to run in source dir before meson setup (repeatable)")
-    parser.add_argument("--cflags-file", default=None,
-                        help="File with CFLAGS (one per line, from tset projection)")
-    parser.add_argument("--ldflags-file", default=None,
-                        help="File with LDFLAGS (one per line, from tset projection)")
-    parser.add_argument("--pkg-config-file", default=None,
-                        help="File with PKG_CONFIG_PATH entries (one per line, from tset projection)")
-    parser.add_argument("--path-file", default=None,
-                        help="File with PATH dirs to prepend (one per line, from tset projection)")
-    parser.add_argument("--path-append-file", default=None,
-                        help="File with PATH dirs to append (one per line, from tset projection)")
-    parser.add_argument("--lib-dirs-file", default=None,
-                        help="File with lib dirs for LD_LIBRARY_PATH (one per line, from tset projection)")
+    parser.add_argument(
+        "--meson-arg",
+        action="append",
+        dest="meson_args",
+        default=[],
+        help="Extra argument to pass to meson (repeatable)",
+    )
+    parser.add_argument(
+        "--meson-define",
+        action="append",
+        dest="meson_defines",
+        default=[],
+        help="Meson option as KEY=VALUE (repeatable)",
+    )
+    parser.add_argument(
+        "--env",
+        action="append",
+        dest="extra_env",
+        default=[],
+        help="Extra environment variable KEY=VALUE (repeatable)",
+    )
+    parser.add_argument(
+        "--path-prepend",
+        action="append",
+        dest="path_prepend",
+        default=[],
+        help="Directory to prepend to PATH (repeatable, resolved to absolute)",
+    )
+    parser.add_argument(
+        "--hermetic-path",
+        action="append",
+        dest="hermetic_path",
+        default=[],
+        help="Set PATH to only these dirs (replaces host PATH, repeatable)",
+    )
+    parser.add_argument(
+        "--allow-host-path",
+        action="store_true",
+        help="Allow host PATH (bootstrap escape hatch)",
+    )
+    parser.add_argument(
+        "--hermetic-empty",
+        action="store_true",
+        help="Start with empty PATH (populated by --path-prepend)",
+    )
+    parser.add_argument(
+        "--ld-linux", default=None, help="Buckos ld-linux path (disables posix_spawn)"
+    )
+    parser.add_argument(
+        "--cross-triple",
+        default=None,
+        help="Target triple for cross-compilation (generates cross file)",
+    )
+    parser.add_argument(
+        "--pre-cmd",
+        action="append",
+        dest="pre_cmds",
+        default=[],
+        help="Shell command to run in source dir before meson setup (repeatable)",
+    )
+    parser.add_argument(
+        "--cflags-file",
+        default=None,
+        help="File with CFLAGS (one per line, from tset projection)",
+    )
+    parser.add_argument(
+        "--ldflags-file",
+        default=None,
+        help="File with LDFLAGS (one per line, from tset projection)",
+    )
+    parser.add_argument(
+        "--pkg-config-file",
+        default=None,
+        help="File with PKG_CONFIG_PATH entries (one per line, from tset projection)",
+    )
+    parser.add_argument(
+        "--path-file",
+        default=None,
+        help="File with PATH dirs to prepend (one per line, from tset projection)",
+    )
+    parser.add_argument(
+        "--path-append-file",
+        default=None,
+        help="File with PATH dirs to append (one per line, from tset projection)",
+    )
+    parser.add_argument(
+        "--lib-dirs-file",
+        default=None,
+        help="File with lib dirs for LD_LIBRARY_PATH (one per line, from tset projection)",
+    )
     args = parser.parse_args()
 
     # Read flag files early — tset-propagated values are base defaults.
@@ -124,7 +210,11 @@ def main():
 
     file_cflags = filter_path_flags(_read_flag_file(args.cflags_file))
     file_ldflags = filter_path_flags(_read_flag_file(args.ldflags_file))
-    file_pkg_config = [p for p in _read_flag_file(args.pkg_config_file) if os.path.isdir(os.path.abspath(p))]
+    file_pkg_config = [
+        p
+        for p in _read_flag_file(args.pkg_config_file)
+        if os.path.isdir(os.path.abspath(p))
+    ]
     file_path_dirs = _read_flag_file(args.path_file)
     file_path_append_dirs = _read_flag_file(args.path_append_file)
     file_lib_dirs = _read_flag_file(args.lib_dirs_file)
@@ -137,8 +227,9 @@ def main():
 
     # Work in scratch to avoid mutating the declared output (in buck-out)
     # during meson setup.  Only the final result is placed at declared_output.
-    _scratch_base = os.path.abspath(os.environ.get("BUCK_SCRATCH_PATH",
-                                                    os.environ.get("TMPDIR", "/tmp")))
+    _scratch_base = os.path.abspath(
+        os.environ.get("BUCK_SCRATCH_PATH", os.environ.get("TMPDIR", "/tmp"))
+    )
     _build_dir_abs = os.path.join(_scratch_base, "meson-work")
     os.makedirs(_build_dir_abs, exist_ok=True)
     register_cleanup(_build_dir_abs)
@@ -149,11 +240,14 @@ def main():
         _hp_dirs = [os.path.abspath(p) for p in args.hermetic_path]
         if args.ld_linux:
             from portabilize import portabilize_toolchain
-            _scratch = os.environ.get("BUCK_SCRATCH_PATH",
-                                      os.environ.get("TMPDIR", "/tmp"))
+
+            _scratch = os.environ.get(
+                "BUCK_SCRATCH_PATH", os.environ.get("TMPDIR", "/tmp")
+            )
             _patchelf = _shutil.which("patchelf", path=":".join(_hp_dirs))
             _hp_dirs = portabilize_toolchain(
-                _hp_dirs, args.ld_linux, patchelf_path=_patchelf)
+                _hp_dirs, args.ld_linux, patchelf_path=_patchelf
+            )
             # Portabilize CC/CXX/AR
             _cc_dirs = set()
             for _tv in ("CC", "CXX", "AR"):
@@ -164,7 +258,8 @@ def main():
                         _cc_dirs.add(os.path.dirname(_tbin))
             if _cc_dirs:
                 _port_cc = portabilize_toolchain(
-                    list(_cc_dirs), args.ld_linux, patchelf_path=_patchelf)
+                    list(_cc_dirs), args.ld_linux, patchelf_path=_patchelf
+                )
                 _port_map = dict(zip(_cc_dirs, _port_cc))
                 for _tv in ("CC", "CXX", "AR"):
                     _tval = env.get(_tv, "")
@@ -174,8 +269,9 @@ def main():
                     _tbin = os.path.abspath(_tparts[0])
                     _tdir = os.path.dirname(_tbin)
                     if _tdir in _port_map:
-                        _tparts[0] = os.path.join(_port_map[_tdir],
-                                                  os.path.basename(_tbin))
+                        _tparts[0] = os.path.join(
+                            _port_map[_tdir], os.path.basename(_tbin)
+                        )
                         env[_tv] = " ".join(_tparts)
         env["PATH"] = ":".join(_hp_dirs)
         # Derive LD_LIBRARY_PATH from hermetic bin dirs so dynamically
@@ -189,31 +285,43 @@ def main():
                 _parent = os.path.dirname(os.path.abspath(_bp))
                 for _ld in ("lib", "lib64"):
                     _d = os.path.join(_parent, _ld)
-                    if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")):
+                    if os.path.isdir(_d) and not os.path.exists(
+                        os.path.join(_d, "libc.so.6")
+                    ):
                         _lib_dirs.append(_d)
                         _glibc_d = os.path.join(_d, "glibc")
                         if os.path.isdir(_glibc_d):
                             _lib_dirs.append(_glibc_d)
             if _lib_dirs:
                 _existing = env.get("LD_LIBRARY_PATH", "")
-                env["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (":" + _existing if _existing else "")
+                env["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (
+                    ":" + _existing if _existing else ""
+                )
     elif args.hermetic_empty:
         env["PATH"] = ""
     elif args.allow_host_path:
         env["PATH"] = _host_path
     else:
-        print("error: build requires --hermetic-path, --hermetic-empty, or --allow-host-path",
-              file=sys.stderr)
+        print(
+            "error: build requires --hermetic-path, --hermetic-empty, or --allow-host-path",
+            file=sys.stderr,
+        )
         sys.exit(1)
     all_path_prepend = file_path_dirs + args.path_prepend
     if all_path_prepend:
-        prepend = ":".join(os.path.abspath(p) for p in all_path_prepend if os.path.isdir(p))
-        if prepend:
-            env["PATH"] = prepend + ":" + env.get("PATH", "")
+        _pp_dirs = [os.path.abspath(p) for p in all_path_prepend if os.path.isdir(p)]
+        if args.ld_linux and _pp_dirs:
+            from portabilize import portabilize_toolchain
+
+            _pp_dirs = portabilize_toolchain(_pp_dirs, args.ld_linux)
+        if _pp_dirs:
+            env["PATH"] = ":".join(_pp_dirs) + ":" + env.get("PATH", "")
 
     # Append dep bin dirs for *-config discovery scripts
     if file_path_append_dirs:
-        append = ":".join(os.path.abspath(p) for p in file_path_append_dirs if os.path.isdir(p))
+        append = ":".join(
+            os.path.abspath(p) for p in file_path_append_dirs if os.path.isdir(p)
+        )
         if append:
             env["PATH"] = env.get("PATH", "") + ":" + append
 
@@ -224,13 +332,17 @@ def main():
     # libs linked against a newer glibc.  Buckos tools use RPATH.
     if file_lib_dirs and not args.allow_host_path:
         resolved = [
-            os.path.abspath(d) for d in file_lib_dirs
-            if os.path.isdir(d) and not os.path.exists(os.path.join(os.path.abspath(d), "libc.so.6"))
+            os.path.abspath(d)
+            for d in file_lib_dirs
+            if os.path.isdir(d)
+            and not os.path.exists(os.path.join(os.path.abspath(d), "libc.so.6"))
         ]
         if resolved:
             existing = env.get("LD_LIBRARY_PATH", "")
             merged = ":".join(resolved)
-            env["LD_LIBRARY_PATH"] = (merged + ":" + existing).rstrip(":") if existing else merged
+            env["LD_LIBRARY_PATH"] = (
+                (merged + ":" + existing).rstrip(":") if existing else merged
+            )
 
     derive_lib_paths(all_path_prepend, env)
 
@@ -258,10 +370,13 @@ def main():
         existing = env.get("LDFLAGS", "")
         merged = _resolve_env_paths(" ".join(file_ldflags))
         env["LDFLAGS"] = (merged + " " + existing).strip() if existing else merged
+    inject_rpath_for_deps(env, file_lib_dirs, args.ld_linux)
     if file_pkg_config:
         existing = env.get("PKG_CONFIG_PATH", "")
         merged = _resolve_env_paths(":".join(file_pkg_config))
-        env["PKG_CONFIG_PATH"] = (merged + ":" + existing).rstrip(":") if existing else merged
+        env["PKG_CONFIG_PATH"] = (
+            (merged + ":" + existing).rstrip(":") if existing else merged
+        )
 
     # Auto-detect Python site-packages from dep prefixes so build-time
     # Python modules (e.g. mako for mesa) are found without manual
@@ -275,8 +390,12 @@ def main():
         _seen_sp = set()
         for bin_dir in _path_sources:
             usr_dir = os.path.dirname(os.path.abspath(bin_dir))
-            for pattern in ("lib/python*/site-packages", "lib/python*/dist-packages",
-                            "lib64/python*/site-packages", "lib64/python*/dist-packages"):
+            for pattern in (
+                "lib/python*/site-packages",
+                "lib/python*/dist-packages",
+                "lib64/python*/site-packages",
+                "lib64/python*/dist-packages",
+            ):
                 for sp in _glob.glob(os.path.join(usr_dir, pattern)):
                     if os.path.isdir(sp) and sp not in _seen_sp:
                         python_paths.append(sp)
@@ -290,13 +409,17 @@ def main():
                         _seen_sp.add(sp)
         if python_paths:
             existing = env.get("PYTHONPATH", "")
-            env["PYTHONPATH"] = ":".join(python_paths) + (":" + existing if existing else "")
+            env["PYTHONPATH"] = ":".join(python_paths) + (
+                ":" + existing if existing else ""
+            )
 
     # Create a pkg-config wrapper that always passes --define-prefix so
     # .pc files in Buck2 dep directories resolve paths correctly.
     # Write into build_dir so the path is stable across meson reconfigures.
     # Use absolute path so meson native file embeds an executable path, not a name.
-    wrapper_dir = write_pkg_config_wrapper(os.path.join(_build_dir_abs, ".pkgconf-wrapper"), python=find_dep_python3(env))
+    wrapper_dir = write_pkg_config_wrapper(
+        os.path.join(_build_dir_abs, ".pkgconf-wrapper"), python=find_dep_python3(env)
+    )
 
     # Prepend pkg-config wrapper to PATH (after hermetic/prepend logic
     # so the wrapper is always available regardless of PATH mode)
@@ -309,6 +432,7 @@ def main():
     # Portabilize CC/CXX/AR now that they're set
     if args.ld_linux:
         from portabilize import portabilize_env
+
         portabilize_env(env, args.ld_linux)
         sysroot_lib_paths(args.ld_linux, env)
         _ld_flag = preferred_linker_flag(env)
@@ -376,7 +500,9 @@ def main():
         _native_lines.append(f"python = '{_dep_python3}'")
     # Pin a build-machine C compiler so cross builds can compile native
     # code generators (e.g. fribidi gen.tab).  Look for cc/gcc on PATH.
-    _native_cc = _shutil.which("cc", path=env.get("PATH", "")) or _shutil.which("gcc", path=env.get("PATH", ""))
+    _native_cc = _shutil.which("cc", path=env.get("PATH", "")) or _shutil.which(
+        "gcc", path=env.get("PATH", "")
+    )
     if _native_cc:
         _native_lines.append(f"c = '{_native_cc}'")
     _native_file = os.path.join(_build_dir_abs, "buckos-native.ini")
@@ -388,8 +514,10 @@ def main():
     for cmd_str in args.pre_cmds:
         result = subprocess.run(cmd_str, shell=True, cwd=source_abs, env=env)
         if result.returncode != 0:
-            print(f"error: pre-cmd failed with exit code {result.returncode}: {cmd_str}",
-                  file=sys.stderr)
+            print(
+                f"error: pre-cmd failed with exit code {result.returncode}: {cmd_str}",
+                file=sys.stderr,
+            )
             sys.exit(1)
 
     # Resolve meson from the build env PATH.  The buckos-built meson
@@ -400,12 +528,14 @@ def main():
         print(f"error: meson not found on PATH: {env.get('PATH', '')}", file=sys.stderr)
         sys.exit(1)
     cmd = [_meson_bin, "setup"]
-    cmd.extend([
-        _build_dir_abs,
-        source_abs,
-        f"--prefix={args.prefix}",
-        f"--native-file={_native_file}",
-    ])
+    cmd.extend(
+        [
+            _build_dir_abs,
+            source_abs,
+            f"--prefix={args.prefix}",
+            f"--native-file={_native_file}",
+        ]
+    )
 
     # Generate and inject cross file for cross-compilation.
     # This tells meson the target system differs from the build host,
@@ -415,8 +545,12 @@ def main():
     if args.cross_triple:
         parts = args.cross_triple.split("-")
         cpu = parts[0]
-        cpu_family = {"x86_64": "x86_64", "aarch64": "aarch64",
-                      "arm": "arm", "i686": "x86"}.get(cpu, cpu)
+        cpu_family = {
+            "x86_64": "x86_64",
+            "aarch64": "aarch64",
+            "arm": "arm",
+            "i686": "x86",
+        }.get(cpu, cpu)
         # Pin pkg-config in cross file [binaries] so meson finds it for
         # host-machine dependency lookups (e.g. systemd → libcap).
         _cross_pkgconfig = os.path.join(wrapper_dir, "pkg-config")
@@ -457,7 +591,7 @@ def main():
                 token = token.strip()
                 for prefix in ("-I", "-L"):
                     if token.startswith(prefix):
-                        path = token[len(prefix):]
+                        path = token[len(prefix) :]
                         if not os.path.isabs(path) and os.path.exists(path):
                             token = prefix + os.path.abspath(path)
                         elif not os.path.isabs(path) and path.startswith("buck-out"):
@@ -471,18 +605,37 @@ def main():
 
     result = subprocess.run(cmd, env=env)
     if result.returncode != 0:
-        print(f"error: meson setup failed with exit code {result.returncode}", file=sys.stderr)
+        print(
+            f"error: meson setup failed with exit code {result.returncode}",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     sanitize_filenames(_build_dir_abs)
 
     # Move completed build dir to declared output.  Rewrite embedded
     # scratch paths so the build phase sees the final artifact location.
-    _BINARY_EXTS = frozenset((
-        ".o", ".a", ".so", ".gch", ".pcm", ".pch", ".d",
-        ".png", ".jpg", ".gif", ".ico", ".gz", ".xz", ".bz2",
-        ".wasm", ".pyc", ".qm",
-    ))
+    _BINARY_EXTS = frozenset(
+        (
+            ".o",
+            ".a",
+            ".so",
+            ".gch",
+            ".pcm",
+            ".pch",
+            ".d",
+            ".png",
+            ".jpg",
+            ".gif",
+            ".ico",
+            ".gz",
+            ".xz",
+            ".bz2",
+            ".wasm",
+            ".pyc",
+            ".qm",
+        )
+    )
     if os.path.exists(declared_output):
         _shutil.rmtree(declared_output)
     _scratch_path = _build_dir_abs
@@ -513,8 +666,12 @@ def main():
                 with open(fpath, "w") as f:
                     f.write(fc)
                 os.utime(fpath, (st.st_atime, st.st_mtime))
-            except (UnicodeDecodeError, PermissionError, IsADirectoryError,
-                    FileNotFoundError):
+            except (
+                UnicodeDecodeError,
+                PermissionError,
+                IsADirectoryError,
+                FileNotFoundError,
+            ):
                 pass
 
     # Rewrite ALL meson pickle files to replace scratch paths with the
@@ -543,14 +700,20 @@ def main():
     # Search both site-packages and dist-packages, and python3 (not just python3.X).
     for _bp in list(args.hermetic_path) + list(args.path_prepend):
         _parent = os.path.dirname(os.path.abspath(_bp))
-        for _pat in ("lib/python*/site-packages", "lib64/python*/site-packages",
-                      "lib/python*/dist-packages", "lib64/python*/dist-packages"):
+        for _pat in (
+            "lib/python*/site-packages",
+            "lib64/python*/site-packages",
+            "lib/python*/dist-packages",
+            "lib64/python*/dist-packages",
+        ):
             for _sp in _glob.glob(os.path.join(_parent, _pat)):
                 if os.path.isdir(os.path.join(_sp, "mesonbuild")):
                     if _sp not in sys.path:
                         sys.path.insert(0, _sp)
 
-    for _mdat in _glob.glob(os.path.join(declared_output, "**/meson-private/*.dat"), recursive=True):
+    for _mdat in _glob.glob(
+        os.path.join(declared_output, "**/meson-private/*.dat"), recursive=True
+    ):
         try:
             _dat_stat = os.stat(_mdat)
             with open(_mdat, "rb") as f:
@@ -560,8 +723,10 @@ def main():
                 _pickle.dump(_idata, f)
             os.utime(_mdat, (_dat_stat.st_atime, _dat_stat.st_mtime))
         except Exception as _e:
-            print(f"warning: could not rewrite {os.path.basename(_mdat)}: {_e}",
-                  file=sys.stderr)
+            print(
+                f"warning: could not rewrite {os.path.basename(_mdat)}: {_e}",
+                file=sys.stderr,
+            )
 
 
 if __name__ == "__main__":

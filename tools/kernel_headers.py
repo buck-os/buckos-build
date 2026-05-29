@@ -77,9 +77,12 @@ def main():
               file=sys.stderr)
         sys.exit(1)
     if args.path_prepend:
-        prepend = ":".join(os.path.abspath(p) for p in args.path_prepend if os.path.isdir(p))
-        if prepend:
-            os.environ["PATH"] = prepend + ":" + os.environ.get("PATH", "")
+        _pp_dirs = [os.path.abspath(p) for p in args.path_prepend if os.path.isdir(p)]
+        if args.ld_linux and _pp_dirs:
+            from portabilize import portabilize_toolchain
+            _pp_dirs = portabilize_toolchain(_pp_dirs, args.ld_linux)
+        if _pp_dirs:
+            os.environ["PATH"] = ":".join(_pp_dirs) + ":" + os.environ.get("PATH", "")
 
     if args.ld_linux:
         sysroot_lib_paths(args.ld_linux, os.environ)

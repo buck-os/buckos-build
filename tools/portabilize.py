@@ -4,26 +4,23 @@ The seed toolchain contains gcc, perl, python, make, and ~400 other
 host tools linked against sysroot glibc (e.g., 2.38).  On hosts with
 older glibc, these binaries crash with "GLIBC_2.38 not found".
 
-This module patches ELF binaries so they use the sysroot's ld-linux
-and find sysroot libs via $ORIGIN-relative RPATH.  No shell wrappers,
-no LD_LIBRARY_PATH — the binaries run directly after patching.
+This module creates shell wrapper scripts that invoke ELF binaries
+through the sysroot ld-linux dynamic linker with the correct library
+path.  No patchelf, no binary modification — just wrappers.
 
 Usage:
     from portabilize import portabilize_toolchain
-    dirs = portabilize_toolchain(bin_dirs, ld_linux_path, scratch_dir)
+    dirs = portabilize_toolchain(bin_dirs, ld_linux_path)
     env["PATH"] = ":".join(dirs)
 """
 
 import hashlib
 import os
-import shutil
 import struct
-import subprocess
 import sys
 
 
-def portabilize_env(env, ld_linux_path, hermetic_dirs=None,
-                    patchelf_path=None):
+def portabilize_env(env, ld_linux_path, hermetic_dirs=None, patchelf_path=None):
     """Portabilize PATH and CC/CXX/AR in an env dict.
 
     Convenience wrapper that portabilizes hermetic PATH dirs and
@@ -33,9 +30,9 @@ def portabilize_env(env, ld_linux_path, hermetic_dirs=None,
     result_dirs = []
     if hermetic_dirs:
         result_dirs = portabilize_toolchain(
-            hermetic_dirs, ld_linux_path, patchelf_path=patchelf_path)
+            hermetic_dirs, ld_linux_path, patchelf_path=patchelf_path
+        )
 
-    # Portabilize CC/CXX/AR
     cc_dirs = set()
     for var in ("CC", "CXX", "AR"):
         val = env.get(var, "")
@@ -45,7 +42,8 @@ def portabilize_env(env, ld_linux_path, hermetic_dirs=None,
                 cc_dirs.add(os.path.dirname(bin_path))
     if cc_dirs:
         port_cc = portabilize_toolchain(
-            list(cc_dirs), ld_linux_path, patchelf_path=patchelf_path)
+            list(cc_dirs), ld_linux_path, patchelf_path=patchelf_path
+        )
         port_map = dict(zip(cc_dirs, port_cc))
         for var in ("CC", "CXX", "AR"):
             val = env.get(var, "")
@@ -55,8 +53,7 @@ def portabilize_env(env, ld_linux_path, hermetic_dirs=None,
             bin_path = os.path.abspath(parts[0])
             bin_dir = os.path.dirname(bin_path)
             if bin_dir in port_map:
-                parts[0] = os.path.join(port_map[bin_dir],
-                                        os.path.basename(bin_path))
+                parts[0] = os.path.join(port_map[bin_dir], os.path.basename(bin_path))
                 env[var] = " ".join(parts)
         if "CPP" in env:
             env["CPP"] = env.get("CC", "cc") + " -E"
@@ -65,38 +62,30 @@ def portabilize_env(env, ld_linux_path, hermetic_dirs=None,
 
 
 def _stable_scratch():
-    """Return a stable scratch directory that persists across build phases.
-
-    Each build phase (configure/compile/install) gets a different
-    BUCK_SCRATCH_PATH, so portabilized copies wouldn't be reusable.
-    This uses a fixed location under buck-out that survives across
-    phases but is cleaned on `buck2 clean`.
-    """
+    """Return a stable scratch directory that persists across build phases."""
     d = os.path.join(os.getcwd(), "buck-out", "v2", "tmp", "portabilize")
     os.makedirs(d, exist_ok=True)
     return d
 
 
-def portabilize_toolchain(bin_dirs, ld_linux_path, scratch_dir=None,
-                          patchelf_path=None):
-    """Make ELF binaries in bin_dirs runnable on any host.
+def portabilize_toolchain(
+    bin_dirs, ld_linux_path, scratch_dir=None, patchelf_path=None
+):
+    """Create ld-linux wrapper scripts for ELF binaries in bin_dirs.
 
-    Patches PT_INTERP to a deterministic /tmp symlink and sets
-    $ORIGIN-relative RPATH so binaries find sysroot libs without
-    LD_LIBRARY_PATH or shell wrappers.
+    For each ELF executable with PT_INTERP, creates a shell script
+    wrapper that invokes it through the sysroot ld-linux dynamic
+    linker.  Non-ELF files (scripts, symlinks) are symlinked into
+    the wrapper directory.
 
     Args:
-        bin_dirs: List of directories containing ELF binaries (e.g.,
-            host-tools/bin from the seed toolchain).
+        bin_dirs: List of directories containing ELF binaries.
         ld_linux_path: Path to the sysroot ld-linux dynamic linker.
-        scratch_dir: Writable directory for creating copies of
-            read-only artifacts.
-        patchelf_path: Path to patchelf binary.  If None, searched
-            on PATH and in bin_dirs.
+        scratch_dir: Writable directory for wrapper scripts.
+        patchelf_path: Unused (kept for API compatibility).
 
     Returns:
-        List of directory paths to use in PATH.  Read-only input
-        dirs are replaced with writable scratch copies.
+        List of wrapper directory paths to use in PATH.
     """
     if scratch_dir is None:
         scratch_dir = _stable_scratch()
@@ -105,10 +94,9 @@ def portabilize_toolchain(bin_dirs, ld_linux_path, scratch_dir=None,
         print(f"portabilize: ld-linux not found: {ld_linux}", file=sys.stderr)
         return list(bin_dirs)
 
-    interp = _ensure_tmp_symlink(ld_linux)
     sysroot = _derive_sysroot(ld_linux)
     gcc_runtime = _derive_gcc_runtime(ld_linux)
-    patchelf = _find_patchelf(patchelf_path, bin_dirs)
+    base_lib_path = _build_lib_path(sysroot, gcc_runtime)
 
     result = []
     for bin_dir in bin_dirs:
@@ -116,46 +104,25 @@ def portabilize_toolchain(bin_dirs, ld_linux_path, scratch_dir=None,
         if not os.path.isdir(bin_abs):
             result.append(bin_abs)
             continue
-
-        # Portabilize the parent tree so gcc subprograms (cc1 in
-        # libexec/, as in <triple>/bin/) are also patched.
-        parent = os.path.dirname(bin_abs)
-        work = _copy_and_patch(parent, scratch_dir, interp,
-                               sysroot, gcc_runtime, patchelf)
-        result.append(os.path.join(work, os.path.basename(bin_abs)))
+        # Include package-local lib dirs so wrapped binaries find their
+        # own shared libs (e.g. bash→libreadline, perl→libperl).
+        pkg_libs = _package_lib_dirs(bin_abs)
+        lib_path = base_lib_path
+        if pkg_libs:
+            lib_path = ":".join(pkg_libs) + ":" + base_lib_path
+        wrapper_dir = _create_wrappers(bin_abs, ld_linux, lib_path, scratch_dir)
+        result.append(wrapper_dir)
 
     return result
 
 
-# ── /tmp symlink ──────────────────────────────────────────────────────
-
-def _ensure_tmp_symlink(ld_linux):
-    """Create /tmp/.buckos-ld-<hash> → ld_linux symlink.
-
-    The hash is derived from the ld-linux binary content so different
-    toolchain versions don't collide.  Uses atomic rename to handle
-    concurrent actions.
-    """
-    with open(ld_linux, "rb") as f:
-        h = hashlib.sha1(f.read(8192)).hexdigest()[:12]
-    interp = "/tmp/.buckos-ld-" + h
-    try:
-        import tempfile
-        tmp = tempfile.mktemp(dir="/tmp", prefix=".buckos-ld-tmp-")
-        os.symlink(ld_linux, tmp)
-        os.rename(tmp, interp)
-    except OSError:
-        pass
-    return interp
-
-
 # ── Sysroot discovery ────────────────────────────────────────────────
+
 
 def _derive_sysroot(ld_linux):
     """Derive sysroot root from ld-linux path.
 
-    ld-linux is at <sysroot>/lib64/ld-linux-x86-64.so.2 (or lib/ on aarch64).
-    Returns the sysroot directory.
+    ld-linux is at <sysroot>/lib64/ld-linux-x86-64.so.2.
     """
     return os.path.dirname(os.path.dirname(ld_linux))
 
@@ -163,13 +130,9 @@ def _derive_sysroot(ld_linux):
 def _derive_gcc_runtime(ld_linux):
     """Derive GCC runtime lib directory from ld-linux path.
 
-    The seed layout is:
-        patched-compiler/tools/<triple>/sys-root/lib64/ld-linux  (sysroot)
-        patched-compiler/tools/<triple>/lib64/libstdc++.so.6     (gcc runtime)
-
-    Or for toolchain_import:
-        toolchain/tools/<triple>/sys-root/lib64/ld-linux
-        toolchain/tools/<triple>/lib64/libstdc++.so.6
+    Seed layout:
+        patched-compiler/tools/<triple>/sys-root/lib64/ld-linux
+        patched-compiler/tools/<triple>/lib64/libstdc++.so.6
     """
     sysroot = _derive_sysroot(ld_linux)
     triple_dir = os.path.dirname(sysroot)
@@ -190,107 +153,198 @@ def _sysroot_lib_dirs(sysroot):
     return dirs
 
 
-# ── Writable copy ────────────────────────────────────────────────────
+def _find_perl5lib(bin_dir):
+    """Build PERL5LIB from perl5 lib dirs sibling to bin_dir."""
+    import glob as _glob_mod
 
-def _copy_and_patch(tree_dir, scratch_dir, interp, sysroot,
-                    gcc_runtime, patchelf):
-    """Copy tree to scratch, create sysroot symlinks, and patch ELFs.
+    parent = os.path.dirname(bin_dir)
+    dirs = []
+    for ld in ("lib", "lib64"):
+        for d in _glob_mod.glob(os.path.join(parent, ld, "perl5", "*")):
+            if os.path.isdir(d):
+                dirs.append(d)
+                arch_dir = os.path.join(d, "x86_64-linux-thread-multi")
+                if os.path.isdir(arch_dir):
+                    dirs.append(arch_dir)
+    return ":".join(dirs) if dirs else None
 
-    Atomic: uses a lock file so concurrent actions serialize.
+
+def _package_lib_dirs(bin_dir):
+    """Find lib/lib64 directories sibling to a bin directory."""
+    parent = os.path.dirname(bin_dir)
+    dirs = []
+    for sub in ("lib", "lib64"):
+        d = os.path.join(parent, sub)
+        if os.path.isdir(d):
+            dirs.append(d)
+    return dirs
+
+
+def _build_lib_path(sysroot, gcc_runtime):
+    """Build the library path string for ld-linux --library-path."""
+    dirs = _sysroot_lib_dirs(sysroot)
+    if gcc_runtime and os.path.isdir(gcc_runtime):
+        dirs.append(gcc_runtime)
+    return ":".join(dirs)
+
+
+# ── Wrapper creation ─────────────────────────────────────────────────
+
+
+def _create_wrappers(bin_dir, ld_linux, lib_path, scratch_dir):
+    """Create a wrapper directory with ld-linux wrappers for ELF binaries.
+
     Idempotent: skips if .done marker exists.
+    Atomic: uses lock file for concurrent actions.
     """
-    tree_abs = os.path.abspath(tree_dir)
-    path_hash = hashlib.sha1(tree_abs.encode()).hexdigest()[:12]
-    copy_name = os.path.basename(tree_abs) + "-" + path_hash
-    copy = os.path.join(scratch_dir, ".port-" + copy_name)
-    done_marker = copy + ".done"
+    path_hash = hashlib.sha1(bin_dir.encode()).hexdigest()[:12]
+    bin_basename = os.path.basename(bin_dir)
+    container_name = (
+        ".ld-wrap-" + os.path.basename(os.path.dirname(bin_dir)) + "-" + path_hash
+    )
+    container_dir = os.path.join(scratch_dir, container_name)
+    wrapper_dir = os.path.join(container_dir, bin_basename)
+    done_marker = container_dir + ".done"
 
     if os.path.exists(done_marker):
-        return copy
+        return wrapper_dir
 
     import fcntl
-    lock_path = copy + ".lock"
+
+    lock_path = container_dir + ".lock"
     os.makedirs(scratch_dir, exist_ok=True)
     with open(lock_path, "w") as lock_fd:
         fcntl.flock(lock_fd, fcntl.LOCK_EX)
         if os.path.exists(done_marker):
-            return copy
-        if os.path.exists(copy):
-            shutil.rmtree(copy)
-        shutil.copytree(tree_abs, copy, symlinks=True)
-        _create_sysroot_lib_symlinks(copy, sysroot, gcc_runtime)
-        _patch_elfs(copy, interp, sysroot, gcc_runtime, patchelf)
+            return wrapper_dir
+        if os.path.exists(container_dir):
+            import shutil
+
+            shutil.rmtree(container_dir)
+        os.makedirs(wrapper_dir)
+
+        # Detect perl5 lib dirs for PERL5LIB (set only in perl wrappers
+        # to avoid poisoning host perl with buckos XS modules).
+        perl5lib = _find_perl5lib(bin_dir)
+
+        wrapped = 0
+        linked = 0
+        for entry in sorted(os.listdir(bin_dir)):
+            src = os.path.join(bin_dir, entry)
+            dst = os.path.join(wrapper_dir, entry)
+            # Set PERL5LIB only for perl binaries. Also set PERL to the
+            # wrapper path so programs using $^X (like OpenSSL's Configure)
+            # re-invoke perl through the wrapper, not the unwrapped binary.
+            _p5 = perl5lib if entry.startswith("perl") else None
+
+            if os.path.islink(src):
+                target = os.readlink(src)
+                if os.path.isabs(target):
+                    if (
+                        os.path.isfile(target)
+                        and _is_elf(target)
+                        and _has_pt_interp(target)
+                    ):
+                        _write_wrapper(dst, ld_linux, lib_path, target, perl5lib=_p5)
+                        wrapped += 1
+                    else:
+                        os.symlink(target, dst)
+                        linked += 1
+                else:
+                    resolved = os.path.join(bin_dir, target)
+                    if (
+                        os.path.isfile(resolved)
+                        and _is_elf(resolved)
+                        and _has_pt_interp(resolved)
+                    ):
+                        _write_wrapper(
+                            dst,
+                            ld_linux,
+                            lib_path,
+                            os.path.realpath(resolved),
+                            perl5lib=_p5,
+                        )
+                        wrapped += 1
+                    else:
+                        os.symlink(target, dst)
+                        linked += 1
+            elif os.path.isfile(src) and _is_elf(src) and _has_pt_interp(src):
+                _write_wrapper(dst, ld_linux, lib_path, src, perl5lib=_p5)
+                wrapped += 1
+            elif os.path.isfile(src):
+                os.symlink(src, dst)
+                linked += 1
+
+        # Symlink sibling dirs from the original package into the container
+        # so derive_lib_paths() finds libraries and tools find data files
+        # (e.g. autoconf's share/autoconf, perl's lib/perl5).
+        orig_parent = os.path.dirname(bin_dir)
+        for sub in ("lib", "lib64", "share", "libexec"):
+            orig_sub = os.path.join(orig_parent, sub)
+            container_sub = os.path.join(container_dir, sub)
+            if os.path.isdir(orig_sub) and not os.path.exists(container_sub):
+                os.symlink(orig_sub, container_sub)
+
+        print(
+            f"portabilize: {wrapped} wrappers, {linked} symlinks in {wrapper_dir}",
+            file=sys.stderr,
+        )
+
         with open(done_marker, "w") as f:
             f.write("ok\n")
-    return copy
+
+    return wrapper_dir
 
 
-# ── RPATH computation ────────────────────────────────────────────────
-
-_SYSROOT_LIBS = (
-    "libc.so.6", "libm.so.6", "libdl.so.2", "libpthread.so.0",
-    "librt.so.1", "libresolv.so.2", "libutil.so.1",
-    "libcrypt.so.1", "libmvec.so.1",
-)
-
-_GCC_RUNTIME_LIBS = (
-    "libgcc_s.so.1", "libstdc++.so.6",
-)
-
-
-def _create_sysroot_lib_symlinks(container, sysroot, gcc_runtime):
-    """Create sibling lib directories with symlinks to sysroot libs.
-
-    After this, $ORIGIN/../sysroot-lib64 contains symlinks to
-    sysroot's libc.so.6, libm.so.6, etc.  The RPATH we set on
-    binaries includes $ORIGIN/../sysroot-lib64.
-    """
-    sysroot_dirs = _sysroot_lib_dirs(sysroot)
-
-    for target_name in ("sysroot-lib64", "sysroot-lib"):
-        target = os.path.join(container, target_name)
-        os.makedirs(target, exist_ok=True)
-
-        for lib_name in _SYSROOT_LIBS:
-            dst = os.path.join(target, lib_name)
-            if os.path.exists(dst):
-                continue
-            for sdir in sysroot_dirs:
-                src = os.path.join(sdir, lib_name)
-                if os.path.exists(src):
-                    try:
-                        os.symlink(src, dst)
-                    except OSError:
-                        pass
-                    break
-
-        if gcc_runtime:
-            for lib_name in _GCC_RUNTIME_LIBS:
-                dst = os.path.join(target, lib_name)
-                if os.path.exists(dst):
-                    continue
-                src = os.path.join(gcc_runtime, lib_name)
-                if os.path.exists(src):
-                    try:
-                        os.symlink(src, dst)
-                    except OSError:
-                        pass
+def _write_wrapper(path, ld_linux, lib_path, binary, perl5lib=None):
+    """Write a shell wrapper that invokes binary through ld-linux."""
+    name = os.path.basename(path)
+    binary_name = os.path.basename(binary)
+    with open(path, "w") as f:
+        f.write("#!/bin/sh\n")
+        if perl5lib:
+            f.write(f'export PERL5LIB="{perl5lib}${{PERL5LIB:+:$PERL5LIB}}"\n')
+            f.write(f'export PERL="{path}"\n')
+            # Fix $^X: when perl runs through ld-linux, /proc/self/exe
+            # resolves to ld-linux, so $^X = ld-linux.  Scripts that pipe
+            # through $^X (OpenSSL perlasm) then invoke ld-linux directly
+            # on .pl files, causing "invalid ELF header".
+            # Create a tiny module that overrides $^X at BEGIN time,
+            # loaded via PERL5OPT=-M.
+            _fixup_dir = os.path.join(os.path.dirname(path), ".perl-fixup")
+            os.makedirs(_fixup_dir, exist_ok=True)
+            _fixup_mod = os.path.join(_fixup_dir, "BuckOSPerl.pm")
+            if not os.path.exists(_fixup_mod):
+                with open(_fixup_mod, "w") as mf:
+                    mf.write(
+                        f"package BuckOSPerl;$^X=$ENV{{PERL}} if $ENV{{PERL}};1;\n"
+                    )
+            f.write(f'export PERL5OPT="-I{_fixup_dir} -MBuckOSPerl ${{PERL5OPT:-}}"\n')
+            f.write(
+                f'exec "{ld_linux}" --library-path '
+                f'"{lib_path}${{LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}}" '
+                f'"{binary}" "$@"\n'
+            )
+        # Use --argv0 only for multi-call binaries where the wrapper name
+        # differs from the binary name (e.g. mtools symlinks).
+        # For normal binaries, let ld-linux pass the real path as argv[0]
+        # so programs like gcc can find their subprograms (cc1) via $0.
+        elif name != binary_name:
+            f.write(
+                f'exec "{ld_linux}" --argv0 "{name}" --library-path '
+                f'"{lib_path}${{LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}}" '
+                f'"{binary}" "$@"\n'
+            )
+        else:
+            f.write(
+                f'exec "{ld_linux}" --library-path '
+                f'"{lib_path}${{LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}}" '
+                f'"{binary}" "$@"\n'
+            )
+    os.chmod(path, 0o755)
 
 
-# ── ELF patching ─────────────────────────────────────────────────────
-
-def _find_patchelf(patchelf_path, bin_dirs):
-    """Find patchelf binary."""
-    if patchelf_path and os.path.isfile(patchelf_path):
-        return patchelf_path
-    for d in bin_dirs:
-        p = os.path.join(os.path.abspath(d), "patchelf")
-        if os.path.isfile(p):
-            return p
-    p = shutil.which("patchelf")
-    if p:
-        return p
-    return None
+# ── ELF detection ────────────────────────────────────────────────────
 
 
 def _is_elf(path):
@@ -320,102 +374,31 @@ def _has_pt_interp(path):
     return False
 
 
-def _patch_elfs(container, interp, sysroot, gcc_runtime, patchelf):
-    """Patch PT_INTERP and RPATH on all ELF executables in container."""
-    if not patchelf:
-        print("portabilize: patchelf not found, skipping ELF patching",
-              file=sys.stderr)
-        return
-
-    patched = 0
-    # Walk the container to find all ELF executables
-    for dirpath, dirnames, filenames in os.walk(container):
-        # Don't descend into sysroot symlink dirs
-        dirnames[:] = [d for d in dirnames
-                       if not d.startswith("sysroot-")]
-        for fname in filenames:
-            fpath = os.path.join(dirpath, fname)
-            if os.path.islink(fpath):
-                continue
-            if fname.endswith(".so") or ".so." in fname:
-                continue
-            if not _is_elf(fpath) or not _has_pt_interp(fpath):
-                continue
-
-            os.chmod(fpath, 0o755)
-
-            # Compute $ORIGIN-relative RPATH
-            rpath = _compute_rpath(fpath, container, gcc_runtime)
-
-            try:
-                # Set RPATH first, then interpreter — this order
-                # avoids corruption on large binaries like cc1plus.
-                r1 = subprocess.run(
-                    [patchelf, "--set-rpath", rpath, fpath],
-                    capture_output=True, timeout=120,
-                )
-                r2 = subprocess.run(
-                    [patchelf, "--set-interpreter", interp, fpath],
-                    capture_output=True, timeout=120,
-                )
-                if r1.returncode != 0 or r2.returncode != 0:
-                    print(f"portabilize: patchelf error on {fname}: "
-                          f"rpath={r1.returncode} interp={r2.returncode}",
-                          file=sys.stderr)
-                patched += 1
-            except (subprocess.TimeoutExpired, OSError) as e:
-                print(f"portabilize: patchelf failed on {fpath}: {e}",
-                      file=sys.stderr)
-
-    print(f"portabilize: patched {patched} ELF binaries in {container}",
-          file=sys.stderr)
-
-
-def _compute_rpath(elf_path, container, gcc_runtime):
-    """Compute $ORIGIN-relative RPATH for an ELF binary.
-
-    Includes paths to:
-    1. Package-local lib dirs (../lib, ../lib64)
-    2. Sysroot libs (../sysroot-lib64)
-    3. GCC runtime libs (if gcc_runtime is provided)
-    """
-    bin_dir = os.path.dirname(elf_path)
-    entries = []
-
-    # Package-local lib dirs
-    for sub in ("lib", "lib64"):
-        d = os.path.join(os.path.dirname(bin_dir), sub)
-        if os.path.isdir(d):
-            rel = os.path.relpath(d, bin_dir)
-            entries.append("$ORIGIN/" + rel)
-
-    # Sysroot lib symlinks
-    for sub in ("sysroot-lib64", "sysroot-lib"):
-        d = os.path.join(container, sub)
-        if os.path.isdir(d):
-            rel = os.path.relpath(d, bin_dir)
-            entries.append("$ORIGIN/" + rel)
-
-    return ":".join(entries) if entries else "$ORIGIN/../lib"
-
-
 # ── Standalone test ──────────────────────────────────────────────────
 
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser(
-        description="Portabilize seed toolchain binaries")
-    parser.add_argument("--bin-dir", action="append", required=True,
-                        help="Directory of ELF binaries (repeatable)")
-    parser.add_argument("--ld-linux", required=True,
-                        help="Path to sysroot ld-linux")
-    parser.add_argument("--scratch-dir", required=True,
-                        help="Writable scratch directory")
-    parser.add_argument("--patchelf", default=None,
-                        help="Path to patchelf binary")
+        description="Create ld-linux wrappers for seed toolchain binaries"
+    )
+    parser.add_argument(
+        "--bin-dir",
+        action="append",
+        required=True,
+        help="Directory of ELF binaries (repeatable)",
+    )
+    parser.add_argument("--ld-linux", required=True, help="Path to sysroot ld-linux")
+    parser.add_argument(
+        "--scratch-dir", required=True, help="Writable scratch directory"
+    )
+    parser.add_argument(
+        "--patchelf", default=None, help="Unused (kept for compatibility)"
+    )
     args = parser.parse_args()
 
     result = portabilize_toolchain(
-        args.bin_dir, args.ld_linux, args.scratch_dir, args.patchelf)
+        args.bin_dir, args.ld_linux, args.scratch_dir, args.patchelf
+    )
     for d in result:
         print(d)
