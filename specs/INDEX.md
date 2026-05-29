@@ -1,24 +1,21 @@
 # BuckOS Specifications Index
 
-**Generated:** 2025-12-27 13:31:23
+**Generated:** 2026-05-29
 
 ## Summary
 
-**Total Specifications:** 5
+**Total Specifications:** 10
 
 **By Status:**
-- ✅ approved: 5
+- ✅ approved: 1
 - 🔄 rfc: 0
-- 📝 draft: 0
+- 📝 draft: 9
 - ⚠️ deprecated: 0
 - ⛔ rejected: 0
 
 **By Category:**
 - core: 5
-- bootstrap: 0
-- integration: 0
-- features: 0
-- tooling: 0
+- packages: 5
 
 ## Status Legend
 
@@ -36,21 +33,25 @@
 
 | ID | Title | Status | Version | Updated |
 |--- |-------|--------|---------|---------|
-| [SPEC-001](core/SPEC-001-package-manager-integration.md) | Package Manager Integration | ✅ approved | 1.0.0 | 2025-12-27 |
-| [SPEC-002](core/SPEC-002-use-flags.md) | USE Flag System | ✅ approved | 1.0.0 | 2025-11-27 |
-| [SPEC-003](core/SPEC-003-versioning.md) | Package Versioning and Slot System | ✅ approved | 1.0.0 | 2025-11-19 |
+| [SPEC-001](core/SPEC-001-package-manager-integration.md) | Package Manager Integration | 📝 draft | 1.0.0 | 2025-12-27 |
+| [SPEC-002](core/SPEC-002-use-flags.md) | USE Flag System | 📝 draft | 1.0.0 | 2025-11-27 |
+| [SPEC-003](core/SPEC-003-versioning.md) | Package Versioning and Slot System | 📝 draft | 1.0.0 | 2025-11-19 |
 | [SPEC-004](core/SPEC-004-package-sets.md) | Package Sets and System Profiles | ✅ approved | 1.0.0 | 2025-11-20 |
-| [SPEC-005](core/SPEC-005-patches.md) | Patch System | ✅ approved | 1.0.0 | 2025-11-20 |
+| [SPEC-005](core/SPEC-005-patches.md) | Patch System | 📝 draft | 1.0.0 | 2025-11-20 |
 
-## Quick Links
+### Package Specifications
 
-### Core System Specifications (Approved)
+| ID | Title | Status | Version | Updated |
+|--- |-------|--------|---------|---------|
+| [PACKAGE-SPEC-001](packages/PACKAGE-SPEC-001-simple-autotools.md) | Simple and Autotools Packages | 📝 draft | 1.0.0 | 2025-12-27 |
+| [PACKAGE-SPEC-002](packages/PACKAGE-SPEC-002-build-systems.md) | CMake and Meson Packages | 📝 draft | 1.0.0 | 2025-12-27 |
+| [PACKAGE-SPEC-003](packages/PACKAGE-SPEC-003-rust-cargo.md) | Rust/Cargo Packages | 📝 draft | 1.0.0 | 2025-12-27 |
+| [PACKAGE-SPEC-004](packages/PACKAGE-SPEC-004-go.md) | Go Packages | 📝 draft | 1.0.0 | 2025-12-27 |
+| [PACKAGE-SPEC-005](packages/PACKAGE-SPEC-005-python.md) | Python Packages | 📝 draft | 1.0.0 | 2025-12-27 |
 
-- [SPEC-001: Package Manager Integration](core/SPEC-001-package-manager-integration.md): This specification defines how package managers should interact with the BuckOS Buck2 build system. It provides a complete specification for implementing package manager tooling that integrates wit...
-- [SPEC-002: USE Flag System](core/SPEC-002-use-flags.md): The USE flag system provides fine-grained control over package features, dependencies, and build configuration in BuckOS. Similar to Gentoo's USE flags but implemented for Buck2, this system enable...
-- [SPEC-003: Package Versioning and Slot System](core/SPEC-003-versioning.md): This specification defines the versioning, slot, and subslot system for BuckOS packages. It enables parallel installation of multiple versions, ABI compatibility tracking, and automated dependency ...
-- [SPEC-004: Package Sets and System Profiles](core/SPEC-004-package-sets.md): This specification defines the package set system for BuckOS, which organizes packages into logical collections for different use cases. Package sets enable building complete systems (minimal, serv...
-- [SPEC-005: Patch System](core/SPEC-005-patches.md): This specification defines the patch system for BuckOS, which allows users and distributions to customize package builds through multiple patch sources with clear precedence ordering. The system su...
+> **Note:** All draft specs describe a pre-2026-02 API that was replaced by the
+> `package()` macro in `defs/package.bzl`. They are pending rewrite against the
+> current API; do not use as authoritative until restored to "approved".
 
 ## References
 

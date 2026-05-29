@@ -1,7 +1,7 @@
 ---
 id: "SPEC-003"
 title: "Package Versioning and Slot System"
-status: "approved"
+status: "draft"
 version: "1.0.0"
 created: "2025-11-19"
 updated: "2025-11-19"
@@ -38,6 +38,12 @@ changelog:
     date: "2025-12-27"
     changes: "Migrated to formal specification system with lifecycle management"
 ---
+
+> **⚠ Status: DRAFT (2026-05-29)** — This spec describes a pre-2026-02 API that
+> has since been replaced. The current implementation is `package()` in
+> `defs/package.bzl` dispatching to per-rule modules in `defs/rules/*.bzl`.
+> Spec is pending rewrite against the current API. Do not use as authoritative
+> until status is restored to "approved".
 
 # Package Versioning and Slot System
 
