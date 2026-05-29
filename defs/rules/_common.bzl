@@ -286,7 +286,7 @@ def write_lib_dirs_with_hosts(ctx, dep_path, host_path_children):
 def write_host_lib_dirs(ctx, host_path_children):
     """Write host tool dep lib dirs to a separate file.
 
-    For rules that don't use --lib-dirs-file (e.g. binary_package).
+    For rules that don't use --lib-dirs-file (e.g. binary_build).
     """
     if not host_path_children:
         return None

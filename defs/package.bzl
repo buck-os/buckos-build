@@ -23,15 +23,15 @@ All intermediate targets are visible and independently buildable:
 
 load("//defs:empty_registry.bzl", "PATCH_REGISTRY")
 load("//defs:use_helpers.bzl", "use_bool", "use_configure_arg", "use_dep", "use_feature")
-load("//defs/rules:autotools.bzl", "autotools_package")
-load("//defs/rules:binary.bzl", "binary_package")
-load("//defs/rules:cargo.bzl", "cargo_package")
-load("//defs/rules:cmake.bzl", "cmake_package")
-load("//defs/rules:go.bzl", "go_package")
-load("//defs/rules:meson.bzl", "meson_package")
-load("//defs/rules:perl.bzl", "perl_module")
-load("//defs/rules:mozbuild.bzl", "mozbuild_package")
-load("//defs/rules:python.bzl", "python_package")
+load("//defs/rules:autotools.bzl", "autotools_build")
+load("//defs/rules:binary.bzl", "binary_build")
+load("//defs/rules:cargo.bzl", "cargo_build")
+load("//defs/rules:cmake.bzl", "cmake_build")
+load("//defs/rules:go.bzl", "go_build")
+load("//defs/rules:meson.bzl", "meson_build")
+load("//defs/rules:perl.bzl", "perl_build")
+load("//defs/rules:mozbuild.bzl", "mozbuild_build")
+load("//defs/rules:python.bzl", "python_build")
 load("//defs/rules:source.bzl", "extract_source")
 load("//defs/rules:transforms.bzl", "ima_sign_package", "stamp_package", "strip_package")
 load("//tc/bootstrap/host-tools:packages.bzl", "HOST_TOOL_PACKAGES")
@@ -44,16 +44,16 @@ _SEED_HOST_TOOL_LABELS = HOST_TOOL_PACKAGES
 # Build rule dispatch table.
 # Each build system has a top-level load() and an entry here.
 _BUILD_RULES = {
-    "autotools": autotools_package,
-    "binary": binary_package,
-    "cargo": cargo_package,
-    "cmake": cmake_package,
-    "go": go_package,
-    "make": autotools_package,
-    "meson": meson_package,
-    "perl": perl_module,
-    "mozbuild": mozbuild_package,
-    "python": python_package,
+    "autotools": autotools_build,
+    "binary": binary_build,
+    "cargo": cargo_build,
+    "cmake": cmake_build,
+    "go": go_build,
+    "make": autotools_build,
+    "meson": meson_build,
+    "perl": perl_build,
+    "mozbuild": mozbuild_build,
+    "python": python_build,
 }
 
 # Transform name -> (rule function, target suffix).

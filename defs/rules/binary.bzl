@@ -1,5 +1,5 @@
 """
-binary_package rule: custom install script for pre-built packages.
+binary_build rule: custom install script for pre-built packages.
 
 Four discrete cacheable actions:
 
@@ -189,7 +189,7 @@ def _install(ctx, source):
 
 # ── Rule implementation ───────────────────────────────────────────────
 
-def _binary_package_impl(ctx):
+def _binary_build_impl(ctx):
     # Phase 1: src_unpack — obtain source from dep
     source = ctx.attrs.source[DefaultInfo].default_outputs[0]
 
@@ -226,8 +226,8 @@ def _binary_package_impl(ctx):
 
 # ── Rule definition ───────────────────────────────────────────────────
 
-binary_package = rule(
-    impl = _binary_package_impl,
+binary_build = rule(
+    impl = _binary_build_impl,
     attrs = COMMON_PACKAGE_ATTRS | {
         # Binary-specific
         "install_script": attrs.string(default = "cp -a \"$SRCS\"/. \"$OUT/\""),
