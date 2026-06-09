@@ -5,6 +5,7 @@ cargo_package(
     version = "50.0",
     url = "https://github.com/cloud-hypervisor/cloud-hypervisor/releases/download/v50.0/cloud-hypervisor-v50.0.tar.xz",
     sha256 = "372979e4dfdd2d3c3a497252e6c1b208d2be07779efd99b328cd4c0fd2e4b8b5",
+    vendor_deps = True,
     description = "Modern cloud workload-focused virtual machine monitor",
     homepage = "https://www.cloudhypervisor.org/",
     license = "Apache-2.0 AND BSD-3-Clause",
@@ -16,10 +17,19 @@ cargo_package(
         "guest-debug": "guest_debug",
         "dbus": "dbus_api",
     },
+    env = {
+        # Use system OpenSSL instead of building from source inside Cargo.
+        # The vendored openssl-src build invokes perl internally and fails
+        # in hermetic environments.
+        "OPENSSL_NO_VENDOR": "1",
+    },
     host_deps = [
         "//packages/linux/lang/rust:rust",
         "//packages/linux/core/llvm:llvm-native",
         "//packages/linux/lang/linkers:mold",
         "//packages/linux/lang/perl:perl",
+    ],
+    deps = [
+        "//packages/linux/system/libs/crypto/openssl:openssl",
     ],
 )

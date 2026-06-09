@@ -129,6 +129,7 @@ platform(
         ":bootstrap-toolchain",  # Default to bootstrap toolchain for reproducibility
         "prelude//cpu/constraints:x86_64",  # Default to x86_64
         "//use/constraints:systemd-on",  # Use systemd for init and libudev
+        "//use/constraints:pam-on",  # Required for logind sessions (kwin/seat DRM access)
     ],
     visibility = ["PUBLIC"],
 )
@@ -141,6 +142,7 @@ platform(
         ":host-toolchain",
         "prelude//cpu/constraints:x86_64",  # Default to x86_64
         "//use/constraints:systemd-on",  # Use systemd for init and libudev
+        "//use/constraints:pam-on",  # Required for logind sessions (kwin/seat DRM access)
     ],
     visibility = ["PUBLIC"],
 )
@@ -153,6 +155,7 @@ platform(
         ":bootstrap-toolchain",
         "prelude//cpu/constraints:arm64",
         "//use/constraints:systemd-on",  # Use systemd for init and libudev
+        "//use/constraints:pam-on",  # Required for logind sessions (kwin/seat DRM access)
     ],
     visibility = ["PUBLIC"],
 )
@@ -165,6 +168,7 @@ platform(
         ":host-toolchain",
         "prelude//cpu/constraints:arm64",
         "//use/constraints:systemd-on",  # Use systemd for init and libudev
+        "//use/constraints:pam-on",  # Required for logind sessions (kwin/seat DRM access)
     ],
     visibility = ["PUBLIC"],
 )

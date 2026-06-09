@@ -640,8 +640,12 @@ def main():
               file=sys.stderr)
         sys.exit(1)
     if args.path_prepend:
-        prepend = ":".join(os.path.abspath(p) for p in args.path_prepend)
-        os.environ["PATH"] = prepend + (":" + os.environ["PATH"] if os.environ.get("PATH") else "")
+        _pp_dirs = [os.path.abspath(p) for p in args.path_prepend if os.path.isdir(p)]
+        if args.ld_linux and _pp_dirs:
+            from portabilize import portabilize_toolchain
+            _pp_dirs = portabilize_toolchain(_pp_dirs, args.ld_linux)
+        if _pp_dirs:
+            os.environ["PATH"] = ":".join(_pp_dirs) + ":" + os.environ.get("PATH", "")
         _dep_lib_dirs = []
         for _bp in args.path_prepend:
             _parent = os.path.dirname(os.path.abspath(_bp))

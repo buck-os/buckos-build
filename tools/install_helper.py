@@ -16,7 +16,25 @@ import stat
 import subprocess
 import sys
 
-from _env import _is_sysroot_lib_dir, apply_cache_config, clean_env, derive_lib_paths, file_prefix_map_flags, filter_path_flags, find_buckos_shell, find_dep_python3, portabilize_shebangs, preferred_linker_flag, register_cleanup, sanitize_filenames, setup_ccache_symlinks, sysroot_lib_paths, write_pkg_config_wrapper
+from _env import (
+    _ensure_which_shim,
+    _is_sysroot_lib_dir,
+    inject_rpath_for_deps,
+    apply_cache_config,
+    clean_env,
+    derive_lib_paths,
+    file_prefix_map_flags,
+    filter_path_flags,
+    find_buckos_shell,
+    find_dep_python3,
+    portabilize_shebangs,
+    preferred_linker_flag,
+    register_cleanup,
+    sanitize_filenames,
+    setup_ccache_symlinks,
+    sysroot_lib_paths,
+    write_pkg_config_wrapper,
+)
 
 
 def _rewrite_file(fpath, old, new):
@@ -32,11 +50,27 @@ def _rewrite_file(fpath, old, new):
     os.utime(fpath, (stat.st_atime, stat.st_mtime))
 
 
-_BINARY_EXTS = frozenset((
-    ".o", ".a", ".so", ".gch", ".pcm", ".pch", ".d",
-    ".png", ".jpg", ".gif", ".ico", ".gz", ".xz", ".bz2",
-    ".wasm", ".pyc", ".qm",
-))
+_BINARY_EXTS = frozenset(
+    (
+        ".o",
+        ".a",
+        ".so",
+        ".gch",
+        ".pcm",
+        ".pch",
+        ".d",
+        ".png",
+        ".jpg",
+        ".gif",
+        ".ico",
+        ".gz",
+        ".xz",
+        ".bz2",
+        ".wasm",
+        ".pyc",
+        ".qm",
+    )
+)
 
 _BUCK_OUT_RE = re.compile(r'(/[^\s"\']+?)/buck-out/')
 
@@ -50,7 +84,9 @@ def _detect_stale_project_root(build_dir):
     root.  Otherwise return None.
     """
     current_root = os.getcwd()
-    candidates = list(_glob.glob(os.path.join(build_dir, "**/config.status"), recursive=True))
+    candidates = list(
+        _glob.glob(os.path.join(build_dir, "**/config.status"), recursive=True)
+    )
     for name in ("CMakeCache.txt", "build.ninja"):
         path = os.path.join(build_dir, name)
         if os.path.isfile(path):
@@ -97,8 +133,12 @@ def _rewrite_stale_paths(build_dir, old_root, new_root):
                 continue
             try:
                 _rewrite_file(fpath, old_root, new_root)
-            except (UnicodeDecodeError, PermissionError, IsADirectoryError,
-                    FileNotFoundError):
+            except (
+                UnicodeDecodeError,
+                PermissionError,
+                IsADirectoryError,
+                FileNotFoundError,
+            ):
                 pass
 
 
@@ -106,12 +146,14 @@ def _expand_env_refs(value, env):
     """Expand $VAR, ${VAR}, and ${VAR:-default} references against the build env."""
     if "$" not in value:
         return value
+
     def _repl(m):
         var = m.group(1) or m.group(3)
         default = m.group(2) or ""
         val = env.get(var, "")
         return val if val else default
-    return re.sub(r'\$\{(\w+)(?::-([^}]*))?\}|\$(\w+)', _repl, value)
+
+    return re.sub(r"\$\{(\w+)(?::-([^}]*))?\}|\$(\w+)", _repl, value)
 
 
 def _resolve_env_paths(value):
@@ -131,13 +173,24 @@ def _resolve_env_paths(value):
         resolved = []
         for p in value.split(":"):
             p = p.strip()
-            if p and not os.path.isabs(p) and (p.startswith("buck-out") or os.path.exists(p)):
+            if (
+                p
+                and not os.path.isabs(p)
+                and (p.startswith("buck-out") or os.path.exists(p))
+            ):
                 resolved.append(os.path.abspath(p))
             else:
                 resolved.append(p)
         return ":".join(resolved)
 
-    _FLAG_PREFIXES = ["-I", "-L", "-Wl,-rpath-link,", "-Wl,-rpath,", "-specs=", "--sysroot="]
+    _FLAG_PREFIXES = [
+        "-I",
+        "-L",
+        "-Wl,-rpath-link,",
+        "-Wl,-rpath,",
+        "-specs=",
+        "--sysroot=",
+    ]
 
     parts = []
     for token in value.split():
@@ -145,7 +198,7 @@ def _resolve_env_paths(value):
         # Handle -I/path, -L/path, -Wl,-rpath,/path
         for prefix in _FLAG_PREFIXES:
             if token.startswith(prefix) and len(token) > len(prefix):
-                path = token[len(prefix):]
+                path = token[len(prefix) :]
                 if not os.path.isabs(path) and path.startswith("buck-out"):
                     parts.append(prefix + os.path.abspath(path))
                 elif not os.path.isabs(path) and os.path.exists(path):
@@ -182,31 +235,31 @@ def _patch_runshared(build_dir):
     literal $) makes the shell expand the current environment value.
     """
     _runshared_re = re.compile(
-        r'^(RUNSHARED\s*=\s*LD_LIBRARY_PATH=\S+)$',
+        r"^(RUNSHARED\s*=\s*LD_LIBRARY_PATH=\S+)$",
         re.MULTILINE,
     )
 
     def _append_env(m):
         val = m.group(1)
-        if '$$LD_LIBRARY_PATH' in val:
+        if "$$LD_LIBRARY_PATH" in val:
             return val
-        return val + ':$$LD_LIBRARY_PATH'
+        return val + ":$$LD_LIBRARY_PATH"
 
     for dirpath, _dirnames, filenames in os.walk(build_dir):
         for fname in filenames:
             fpath = os.path.join(dirpath, fname)
             try:
-                with open(fpath, 'r') as f:
+                with open(fpath, "r") as f:
                     content = f.read()
             except (UnicodeDecodeError, PermissionError, OSError):
                 continue
-            if 'RUNSHARED' not in content:
+            if "RUNSHARED" not in content:
                 continue
             new_content = _runshared_re.sub(_append_env, content)
             if new_content != content:
                 try:
                     st = os.stat(fpath)
-                    with open(fpath, 'w') as f:
+                    with open(fpath, "w") as f:
                         f.write(new_content)
                     os.utime(fpath, (st.st_atime, st.st_mtime))
                 except (PermissionError, OSError):
@@ -227,7 +280,7 @@ def _suppress_phony_rebuilds(build_dir):
     existing files as up-to-date.  Literal .PHONY targets (install,
     clean, all, etc.) are preserved.
     """
-    _var_re = re.compile(r'\$[({][^)}]*[)}]')
+    _var_re = re.compile(r"\$[({][^)}]*[)}]")
 
     for dirpath, _dirnames, filenames in os.walk(build_dir):
         for fname in filenames:
@@ -268,43 +321,110 @@ def main():
 
     parser = argparse.ArgumentParser(description="Run make install")
     parser.add_argument("--build-dir", required=True, help="Build directory")
-    parser.add_argument("--prefix", required=True, help="DESTDIR prefix for installation")
-    parser.add_argument("--make-arg", action="append", dest="make_args", default=[],
-                        help="Extra argument to pass to make (repeatable)")
-    parser.add_argument("--destdir-var", default="DESTDIR",
-                        help="Make variable for install prefix (default: DESTDIR)")
-    parser.add_argument("--build-subdir", default=None,
-                        help="Subdirectory within build-dir where make runs (for out-of-tree builds)")
-    parser.add_argument("--env", action="append", dest="extra_env", default=[],
-                        help="Extra environment variable KEY=VALUE (repeatable)")
-    parser.add_argument("--path-prepend", action="append", dest="path_prepend", default=[],
-                        help="Directory to prepend to PATH (repeatable, resolved to absolute)")
-    parser.add_argument("--hermetic-path", action="append", dest="hermetic_path", default=[],
-                        help="Set PATH to only these dirs (replaces host PATH, repeatable)")
-    parser.add_argument("--allow-host-path", action="store_true",
-                        help="Allow host PATH (bootstrap escape hatch)")
-    parser.add_argument("--hermetic-empty", action="store_true",
-                        help="Start with empty PATH (populated by --path-prepend)")
-    parser.add_argument("--ld-linux", default=None,
-                        help="Buckos ld-linux path (disables posix_spawn)")
-    parser.add_argument("--build-system", choices=["make", "ninja"], default="make",
-                        help="Build system to use (default: make)")
-    parser.add_argument("--make-target", action="append", dest="make_targets", default=None,
-                        help="Make target to install (repeatable, default: install)")
-    parser.add_argument("--post-cmd", action="append", dest="post_cmds", default=[],
-                        help="Shell command to run in prefix dir after install (repeatable)")
-    parser.add_argument("--cflags-file", default=None,
-                        help="File with CFLAGS (one per line, from tset projection)")
-    parser.add_argument("--ldflags-file", default=None,
-                        help="File with LDFLAGS (one per line, from tset projection)")
-    parser.add_argument("--pkg-config-file", default=None,
-                        help="File with PKG_CONFIG_PATH entries (one per line, from tset projection)")
-    parser.add_argument("--path-file", default=None,
-                        help="File with PATH dirs to prepend (one per line, from tset projection)")
-    parser.add_argument("--lib-dirs-file", default=None,
-                        help="File with lib dirs for LD_LIBRARY_PATH (one per line, from tset projection)")
-    parser.add_argument("--path-append-file", default=None,
-                        help="File with dep bin dirs to append to PATH (one per line, from tset projection)")
+    parser.add_argument(
+        "--prefix", required=True, help="DESTDIR prefix for installation"
+    )
+    parser.add_argument(
+        "--make-arg",
+        action="append",
+        dest="make_args",
+        default=[],
+        help="Extra argument to pass to make (repeatable)",
+    )
+    parser.add_argument(
+        "--destdir-var",
+        default="DESTDIR",
+        help="Make variable for install prefix (default: DESTDIR)",
+    )
+    parser.add_argument(
+        "--build-subdir",
+        default=None,
+        help="Subdirectory within build-dir where make runs (for out-of-tree builds)",
+    )
+    parser.add_argument(
+        "--env",
+        action="append",
+        dest="extra_env",
+        default=[],
+        help="Extra environment variable KEY=VALUE (repeatable)",
+    )
+    parser.add_argument(
+        "--path-prepend",
+        action="append",
+        dest="path_prepend",
+        default=[],
+        help="Directory to prepend to PATH (repeatable, resolved to absolute)",
+    )
+    parser.add_argument(
+        "--hermetic-path",
+        action="append",
+        dest="hermetic_path",
+        default=[],
+        help="Set PATH to only these dirs (replaces host PATH, repeatable)",
+    )
+    parser.add_argument(
+        "--allow-host-path",
+        action="store_true",
+        help="Allow host PATH (bootstrap escape hatch)",
+    )
+    parser.add_argument(
+        "--hermetic-empty",
+        action="store_true",
+        help="Start with empty PATH (populated by --path-prepend)",
+    )
+    parser.add_argument(
+        "--ld-linux", default=None, help="Buckos ld-linux path (disables posix_spawn)"
+    )
+    parser.add_argument(
+        "--build-system",
+        choices=["make", "ninja"],
+        default="make",
+        help="Build system to use (default: make)",
+    )
+    parser.add_argument(
+        "--make-target",
+        action="append",
+        dest="make_targets",
+        default=None,
+        help="Make target to install (repeatable, default: install)",
+    )
+    parser.add_argument(
+        "--post-cmd",
+        action="append",
+        dest="post_cmds",
+        default=[],
+        help="Shell command to run in prefix dir after install (repeatable)",
+    )
+    parser.add_argument(
+        "--cflags-file",
+        default=None,
+        help="File with CFLAGS (one per line, from tset projection)",
+    )
+    parser.add_argument(
+        "--ldflags-file",
+        default=None,
+        help="File with LDFLAGS (one per line, from tset projection)",
+    )
+    parser.add_argument(
+        "--pkg-config-file",
+        default=None,
+        help="File with PKG_CONFIG_PATH entries (one per line, from tset projection)",
+    )
+    parser.add_argument(
+        "--path-file",
+        default=None,
+        help="File with PATH dirs to prepend (one per line, from tset projection)",
+    )
+    parser.add_argument(
+        "--lib-dirs-file",
+        default=None,
+        help="File with lib dirs for LD_LIBRARY_PATH (one per line, from tset projection)",
+    )
+    parser.add_argument(
+        "--path-append-file",
+        default=None,
+        help="File with dep bin dirs to append to PATH (one per line, from tset projection)",
+    )
     args = parser.parse_args()
 
     # Read flag files early — tset-propagated values are base defaults.
@@ -316,7 +436,11 @@ def main():
 
     file_cflags = filter_path_flags(_read_flag_file(args.cflags_file))
     file_ldflags = filter_path_flags(_read_flag_file(args.ldflags_file))
-    file_pkg_config = [p for p in _read_flag_file(args.pkg_config_file) if os.path.isdir(os.path.abspath(p))]
+    file_pkg_config = [
+        p
+        for p in _read_flag_file(args.pkg_config_file)
+        if os.path.isdir(os.path.abspath(p))
+    ]
     file_path_dirs = _read_flag_file(args.path_file)
     file_lib_dirs = _read_flag_file(args.lib_dirs_file)
     file_path_append_dirs = _read_flag_file(args.path_append_file)
@@ -338,13 +462,29 @@ def main():
     # Copy build tree to scratch to avoid mutating the previous action's
     # sealed output.  All build-tree prep (chmod, hardlink breaking, path
     # rewrites, libtool suppression, timestamp resets) operates on scratch.
-    _scratch = os.path.abspath(os.environ.get("BUCK_SCRATCH_PATH",
-                                              os.environ.get("TMPDIR", "/tmp")))
+    _scratch = os.path.abspath(
+        os.environ.get("BUCK_SCRATCH_PATH", os.environ.get("TMPDIR", "/tmp"))
+    )
     _scratch_build = os.path.join(_scratch, "build")
     _orig_build_dir = build_dir
     shutil.copytree(build_dir, _scratch_build, symlinks=True)
     build_dir = _scratch_build
     register_cleanup(_scratch_build)
+    # Restore write+execute permissions on the scratch copy.  Buck2 may
+    # seal build outputs as read-only; make install needs to run binaries
+    # (e.g. xgcc during GCC install) and modify files.
+    for _dp, _dns, _fns in os.walk(_scratch_build):
+        for _d in _dns:
+            _p = os.path.join(_dp, _d)
+            if not os.path.islink(_p):
+                os.chmod(_p, os.stat(_p).st_mode | stat.S_IWUSR | stat.S_IXUSR)
+        for _fn in _fns:
+            _p = os.path.join(_dp, _fn)
+            if not os.path.islink(_p):
+                _m = os.stat(_p).st_mode
+                os.chmod(
+                    _p, _m | stat.S_IWUSR | (stat.S_IXUSR if _m & stat.S_IXGRP else 0)
+                )
     make_dir = _scratch_build
     if args.build_subdir:
         make_dir = os.path.join(_scratch_build, args.build_subdir)
@@ -364,7 +504,9 @@ def main():
                         target = os.readlink(p)
                         if _orig_build_dir in target:
                             os.unlink(p)
-                            os.symlink(target.replace(_orig_build_dir, _scratch_build), p)
+                            os.symlink(
+                                target.replace(_orig_build_dir, _scratch_build), p
+                            )
         for dirpath, _dirnames, filenames in os.walk(_scratch_build):
             # Skip meson-private — install.dat is a binary pickle that
             # would be corrupted by text-mode string replacement.
@@ -378,8 +520,12 @@ def main():
                     continue
                 try:
                     _rewrite_file(fpath, _orig_build_dir, _scratch_build)
-                except (UnicodeDecodeError, PermissionError, IsADirectoryError,
-                        FileNotFoundError):
+                except (
+                    UnicodeDecodeError,
+                    PermissionError,
+                    IsADirectoryError,
+                    FileNotFoundError,
+                ):
                     pass
 
     # Expose the build directory so post-cmds can reference build
@@ -419,12 +565,50 @@ def main():
         existing = env.get("LDFLAGS", "")
         merged = _resolve_env_paths(" ".join(file_ldflags))
         env["LDFLAGS"] = (merged + " " + existing).strip() if existing else merged
+    inject_rpath_for_deps(env, file_lib_dirs, args.ld_linux)
     if file_pkg_config:
         existing = env.get("PKG_CONFIG_PATH", "")
         merged = _resolve_env_paths(":".join(file_pkg_config))
-        env["PKG_CONFIG_PATH"] = (merged + ":" + existing).rstrip(":") if existing else merged
+        env["PKG_CONFIG_PATH"] = (
+            (merged + ":" + existing).rstrip(":") if existing else merged
+        )
     if args.hermetic_path:
-        env["PATH"] = ":".join(os.path.abspath(p) for p in args.hermetic_path)
+        _hp_dirs = [os.path.abspath(p) for p in args.hermetic_path]
+        if args.ld_linux:
+            from portabilize import portabilize_toolchain
+
+            _scratch = os.environ.get(
+                "BUCK_SCRATCH_PATH", os.environ.get("TMPDIR", "/tmp")
+            )
+            _patchelf = shutil.which("patchelf", path=":".join(_hp_dirs))
+            _hp_dirs = portabilize_toolchain(
+                _hp_dirs, args.ld_linux, patchelf_path=_patchelf
+            )
+            _cc_dirs = set()
+            for _tv in ("CC", "CXX", "AR"):
+                _tval = env.get(_tv, "")
+                if _tval:
+                    _tbin = os.path.abspath(_tval.split()[0])
+                    if os.path.isfile(_tbin):
+                        _cc_dirs.add(os.path.dirname(_tbin))
+            if _cc_dirs:
+                _port_cc = portabilize_toolchain(
+                    list(_cc_dirs), args.ld_linux, patchelf_path=_patchelf
+                )
+                _port_map = dict(zip(_cc_dirs, _port_cc))
+                for _tv in ("CC", "CXX", "AR"):
+                    _tval = env.get(_tv, "")
+                    if not _tval:
+                        continue
+                    _tparts = _tval.split()
+                    _tbin = os.path.abspath(_tparts[0])
+                    _tdir = os.path.dirname(_tbin)
+                    if _tdir in _port_map:
+                        _tparts[0] = os.path.join(
+                            _port_map[_tdir], os.path.basename(_tbin)
+                        )
+                        env[_tv] = " ".join(_tparts)
+        env["PATH"] = ":".join(_hp_dirs)
         # Derive LD_LIBRARY_PATH from hermetic bin dirs so dynamically
         # linked tools (e.g. cross-ar needing libzstd) find their libs.
         # With sysroot ld-linux and per-package RPATH, buckos binaries
@@ -443,25 +627,35 @@ def main():
                             _lib_dirs.append(_glibc_d)
             if _lib_dirs:
                 _existing = env.get("LD_LIBRARY_PATH", "")
-                env["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (":" + _existing if _existing else "")
+                env["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (
+                    ":" + _existing if _existing else ""
+                )
     elif args.hermetic_empty:
         env["PATH"] = ""
     elif args.allow_host_path:
         env["PATH"] = _host_path
     else:
-        print("error: build requires --hermetic-path, --hermetic-empty, or --allow-host-path",
-              file=sys.stderr)
+        print(
+            "error: build requires --hermetic-path, --hermetic-empty, or --allow-host-path",
+            file=sys.stderr,
+        )
         sys.exit(1)
     all_path_prepend = file_path_dirs + args.path_prepend
     if all_path_prepend:
-        prepend = ":".join(os.path.abspath(p) for p in all_path_prepend if os.path.isdir(p))
-        if prepend:
-            env["PATH"] = prepend + ":" + env.get("PATH", "")
+        _pp_dirs = [os.path.abspath(p) for p in all_path_prepend if os.path.isdir(p)]
+        if args.ld_linux and _pp_dirs:
+            from portabilize import portabilize_toolchain
+
+            _pp_dirs = portabilize_toolchain(_pp_dirs, args.ld_linux)
+        if _pp_dirs:
+            env["PATH"] = ":".join(_pp_dirs) + ":" + env.get("PATH", "")
 
     # Append dep bin dirs for *-config discovery scripts (gpg-error-config,
     # curl-config, etc.).  Appended so seed/host tools take priority.
     if file_path_append_dirs:
-        append = ":".join(os.path.abspath(p) for p in file_path_append_dirs if os.path.isdir(p))
+        append = ":".join(
+            os.path.abspath(p) for p in file_path_append_dirs if os.path.isdir(p)
+        )
         if append:
             env["PATH"] = env.get("PATH", "") + ":" + append
 
@@ -473,31 +667,41 @@ def main():
     # libs linked against a newer glibc.  Buckos tools use RPATH.
     if file_lib_dirs and not args.allow_host_path:
         resolved = [
-            os.path.abspath(d) for d in file_lib_dirs
+            os.path.abspath(d)
+            for d in file_lib_dirs
             if os.path.isdir(d) and not _is_sysroot_lib_dir(os.path.abspath(d))
         ]
         if resolved:
             existing = env.get("LD_LIBRARY_PATH", "")
             merged = ":".join(resolved)
-            env["LD_LIBRARY_PATH"] = (merged + ":" + existing).rstrip(":") if existing else merged
+            env["LD_LIBRARY_PATH"] = (
+                (merged + ":" + existing).rstrip(":") if existing else merged
+            )
 
     # Derive LD_LIBRARY_PATH, GETTEXTDATADIRS, BISON_PKGDATADIR from
     # hermetic and path-prepend dirs.  Host_dep tools need non-sysroot
     # package libs via LD_LIBRARY_PATH.
+    _skip_ldlp = bool(args.ld_linux)
     if args.hermetic_path:
-        derive_lib_paths(args.hermetic_path, env)
-    derive_lib_paths(all_path_prepend, env)
+        derive_lib_paths(args.hermetic_path, env, skip_ld_library_path=_skip_ldlp)
+    derive_lib_paths(all_path_prepend, env, skip_ld_library_path=_skip_ldlp)
 
     # Auto-detect Python site-packages from dep prefixes so build-time
     # Python modules (e.g. packaging for gdbus-codegen) are found.
-    _path_sources = list(args.hermetic_path) + list(all_path_prepend) + list(file_path_append_dirs)
+    _path_sources = (
+        list(args.hermetic_path) + list(all_path_prepend) + list(file_path_append_dirs)
+    )
     if _path_sources or file_lib_dirs:
         _py_paths = []
         _seen_sp = set()
         for _bp in _path_sources:
             _parent = os.path.dirname(os.path.abspath(_bp))
-            for _pattern in ("lib/python*/site-packages", "lib/python*/dist-packages",
-                             "lib64/python*/site-packages", "lib64/python*/dist-packages"):
+            for _pattern in (
+                "lib/python*/site-packages",
+                "lib/python*/dist-packages",
+                "lib64/python*/site-packages",
+                "lib64/python*/dist-packages",
+            ):
                 for _sp in _glob.glob(os.path.join(_parent, _pattern)):
                     if os.path.isdir(_sp) and _sp not in _seen_sp:
                         _py_paths.append(_sp)
@@ -511,11 +715,15 @@ def main():
                         _seen_sp.add(_sp)
         if _py_paths:
             _existing = env.get("PYTHONPATH", "")
-            env["PYTHONPATH"] = ":".join(_py_paths) + (":" + _existing if _existing else "")
+            env["PYTHONPATH"] = ":".join(_py_paths) + (
+                ":" + _existing if _existing else ""
+            )
 
     # Create a pkg-config wrapper that always passes --define-prefix so
     # .pc files in Buck2 dep directories resolve paths correctly.
-    wrapper_dir = write_pkg_config_wrapper(tempfile.mkdtemp(prefix="pkgconf-wrapper-"), python=find_dep_python3(env))
+    wrapper_dir = write_pkg_config_wrapper(
+        tempfile.mkdtemp(prefix="pkgconf-wrapper-"), python=find_dep_python3(env)
+    )
 
     # Prepend pkg-config wrapper to PATH (after hermetic/prepend logic
     # so the wrapper is always available regardless of PATH mode)
@@ -529,6 +737,8 @@ def main():
         if _ld_flag:
             existing = env.get("LDFLAGS", "")
             env["LDFLAGS"] = (existing + " " + _ld_flag).strip()
+
+    _ensure_which_shim(env)
 
     # Find buckos shell for pre/post-cmds and make SHELL override.
     _buckos_bash = find_buckos_shell(env)
@@ -545,7 +755,9 @@ def main():
             _cc_parts = _cc_parts[1:]
         _cc_bin = os.path.abspath(_cc_parts[0]) if _cc_parts else ""
         if _cc_bin and os.path.isfile(_cc_bin):
-            _scratch = os.environ.get("BUCK_SCRATCH_PATH", os.environ.get("TMPDIR", "/tmp"))
+            _scratch = os.environ.get(
+                "BUCK_SCRATCH_PATH", os.environ.get("TMPDIR", "/tmp")
+            )
             _symlink_dir = os.path.join(os.path.abspath(_scratch), "cc-symlinks")
             os.makedirs(_symlink_dir, exist_ok=True)
             for _name in ("gcc", "cc", "clang"):
@@ -612,20 +824,20 @@ def main():
     # Without these, Makefile DEPLIBS references like ../lib/libext2fs.so
     # fail with "No rule to make target".  Reconstruct by scanning for
     # versioned .so files and creating missing symlinks.
-    _soname_re = re.compile(r'^(.+\.so)\.(\d+(?:\.\d+)*)$')
+    _soname_re = re.compile(r"^(.+\.so)\.(\d+(?:\.\d+)*)$")
     for dirpath, _dirnames, filenames in os.walk(make_dir):
         # Collect versioned .so files: {base: {version_string: filename}}
         _so_versions = {}  # "libfoo.so" -> ["1.2.3", "1.2", "1"]
         for fname in filenames:
             m = _soname_re.match(fname)
             if m:
-                base = m.group(1)       # libfoo.so
-                ver = m.group(2)        # "2.4" or "2"
+                base = m.group(1)  # libfoo.so
+                ver = m.group(2)  # "2.4" or "2"
                 _so_versions.setdefault(base, []).append((ver, fname))
         for base, versions in _so_versions.items():
             # Find the most-versioned real file to anchor the chain
             # (e.g. libfoo.so.2.4 is the real file, .so.2 and .so are symlinks)
-            _anchor = max(versions, key=lambda v: v[0].count('.'))[1]
+            _anchor = max(versions, key=lambda v: v[0].count("."))[1]
             # Create base symlink (libfoo.so -> libfoo.so.2.4) if missing
             base_path = os.path.join(dirpath, base)
             if not os.path.lexists(base_path):
@@ -633,10 +845,10 @@ def main():
             # Create intermediate version symlinks if missing
             # e.g. libfoo.so.2 -> libfoo.so.2.4
             for ver, fname in versions:
-                parts = ver.split('.')
+                parts = ver.split(".")
                 for i in range(1, len(parts)):
-                    short_ver = '.'.join(parts[:i])
-                    short_name = base + '.' + short_ver
+                    short_ver = ".".join(parts[:i])
+                    short_name = base + "." + short_ver
                     short_path = os.path.join(dirpath, short_name)
                     if not os.path.lexists(short_path):
                         os.symlink(fname, short_path)
@@ -661,9 +873,9 @@ def main():
                     os.symlink(_anchor, parent_base)
                 # soname symlink: lib/libfoo.so.2 -> libfoo.so.2.4
                 for ver, fname in versions:
-                    parts = ver.split('.')
+                    parts = ver.split(".")
                     for i in range(1, len(parts)):
-                        short_name = base + '.' + '.'.join(parts[:i])
+                        short_name = base + "." + ".".join(parts[:i])
                         parent_short = os.path.join(parent, short_name)
                         if not os.path.lexists(parent_short):
                             os.symlink(_anchor, parent_short)
@@ -675,7 +887,8 @@ def main():
     # step's cached output (the build directory is a read-only input from
     # the compile phase).
     _is_meson_build = os.path.isfile(
-        os.path.join(make_dir, "meson-private", "install.dat"))
+        os.path.join(make_dir, "meson-private", "install.dat")
+    )
 
     # Detect and rewrite stale absolute paths from cross-machine cache.
     # When build ran on CI and install runs locally, autotools files
@@ -695,7 +908,9 @@ def main():
     # meson in autotools, placing install.dat at build/meson-private/).
     import pickletools as _pt
 
-    for _install_dat in _glob.glob(os.path.join(make_dir, "**/meson-private/install.dat"), recursive=True):
+    for _install_dat in _glob.glob(
+        os.path.join(make_dir, "**/meson-private/install.dat"), recursive=True
+    ):
         # The meson build dir is the parent of meson-private/
         _meson_build_dir = os.path.dirname(os.path.dirname(_install_dat))
         try:
@@ -704,22 +919,26 @@ def main():
             _meson_stale = set()  # stale meson build dirs → _meson_build_dir
             _scratch_stale = set()  # stale scratch dirs → make_dir
             for _op, _arg, _ in _pt.genops(_raw):
-                if _op.name not in ('SHORT_BINUNICODE', 'BINUNICODE', 'BINUNICODE8'):
+                if _op.name not in ("SHORT_BINUNICODE", "BINUNICODE", "BINUNICODE8"):
                     continue
                 if not isinstance(_arg, str):
                     continue
-                for _m in ('/meson-private/', '/meson-info/'):
+                for _m in ("/meson-private/", "/meson-info/"):
                     _idx = _arg.find(_m)
-                    if _idx > 0 and os.path.isabs(_arg[:_idx]) and _arg[:_idx] != _meson_build_dir:
+                    if (
+                        _idx > 0
+                        and os.path.isabs(_arg[:_idx])
+                        and _arg[:_idx] != _meson_build_dir
+                    ):
                         _meson_stale.add(_arg[:_idx])
                 # Stale scratch paths (buck-out/v2/tmp/) from cached outputs
-                if '/buck-out/v2/tmp/' in _arg and os.path.isabs(_arg):
-                    _idx = _arg.find('/buck-out/v2/tmp/')
-                    _tmp_prefix = _arg[:_idx] + '/buck-out/v2/tmp/'
-                    _after = _arg[len(_tmp_prefix):]
-                    _parts = _after.split('/', 5)
+                if "/buck-out/v2/tmp/" in _arg and os.path.isabs(_arg):
+                    _idx = _arg.find("/buck-out/v2/tmp/")
+                    _tmp_prefix = _arg[:_idx] + "/buck-out/v2/tmp/"
+                    _after = _arg[len(_tmp_prefix) :]
+                    _parts = _after.split("/", 5)
                     if len(_parts) >= 5:
-                        _scratch_dir = _tmp_prefix + '/'.join(_parts[:5])
+                        _scratch_dir = _tmp_prefix + "/".join(_parts[:5])
                         if not os.path.exists(_scratch_dir):
                             _scratch_stale.add(_scratch_dir)
             for _sb in _meson_stale:
@@ -741,8 +960,7 @@ def main():
                     os.symlink(build_dir, _sb)
                     register_cleanup(_sb)
         except Exception as _e:
-            print(f"warning: could not fixup install.dat paths: {_e}",
-                  file=sys.stderr)
+            print(f"warning: could not fixup install.dat paths: {_e}", file=sys.stderr)
 
     # --- Meson install fast-path ---
     # For meson-wrapped builds (including autotools wrappers like QEMU),
@@ -759,12 +977,18 @@ def main():
         else:
             for _d in env.get("PATH", "").split(":"):
                 _candidate = os.path.join(_d, "meson") if _d else ""
-                if _candidate and os.path.isfile(_candidate) and os.access(_candidate, os.X_OK):
+                if (
+                    _candidate
+                    and os.path.isfile(_candidate)
+                    and os.access(_candidate, os.X_OK)
+                ):
                     _meson_bin = _candidate
                     break
         if not _meson_bin:
-            print("error: meson install.dat found but no meson binary available",
-                  file=sys.stderr)
+            print(
+                "error: meson install.dat found but no meson binary available",
+                file=sys.stderr,
+            )
             sys.exit(1)
 
         # Meson install reads DESTDIR from the environment.
@@ -773,13 +997,17 @@ def main():
         _pyvenv_lib = os.path.join(make_dir, "pyvenv", "lib")
         if os.path.isdir(_pyvenv_lib):
             _existing = env.get("LD_LIBRARY_PATH", "")
-            env["LD_LIBRARY_PATH"] = _pyvenv_lib + (":" + _existing if _existing else "")
+            env["LD_LIBRARY_PATH"] = _pyvenv_lib + (
+                ":" + _existing if _existing else ""
+            )
 
         cmd = [_meson_bin, "install", "--no-rebuild", "-C", make_dir]
         result = subprocess.run(cmd, env=env)
         if result.returncode != 0:
-            print(f"error: meson install failed with exit code {result.returncode}",
-                  file=sys.stderr)
+            print(
+                f"error: meson install failed with exit code {result.returncode}",
+                file=sys.stderr,
+            )
             sys.exit(1)
 
         # Fall through to post-install (la removal, post-cmds, sanitize)
@@ -788,11 +1016,14 @@ def main():
         env["DESTDIR"] = prefix
         env["OUT"] = prefix
         for cmd_str in args.post_cmds:
-            result = subprocess.run(cmd_str, shell=True, cwd=prefix, env=env,
-                                    executable=_buckos_bash)
+            result = subprocess.run(
+                cmd_str, shell=True, cwd=prefix, env=env, executable=_buckos_bash
+            )
             if result.returncode != 0:
-                print(f"error: post-cmd failed with exit code {result.returncode}: {cmd_str}",
-                      file=sys.stderr)
+                print(
+                    f"error: post-cmd failed with exit code {result.returncode}: {cmd_str}",
+                    file=sys.stderr,
+                )
                 sys.exit(1)
         sanitize_filenames(prefix, make_dir)
         return
@@ -845,7 +1076,7 @@ def main():
     # fail looking for source files or cross-compilation configs from
     # the configure action's output directory.
     _regen_re = re.compile(
-        r'^build build\.ninja[ :].*?(?=\n(?:build |$))',
+        r"^build build\.ninja[ :].*?(?=\n(?:build |$))",
         re.MULTILINE | re.DOTALL,
     )
     for _nf in _glob.glob(os.path.join(make_dir, "**/build.ninja"), recursive=True):
@@ -854,13 +1085,14 @@ def main():
             with open(_nf, "r") as f:
                 _nf_content = f.read()
             _nf_new = _regen_re.sub(
-                'build build.ninja: phony',
-                _nf_content, count=1,
+                "build build.ninja: phony",
+                _nf_content,
+                count=1,
             )
             # Ensure phony rule exists even if the regex didn't match
             # (e.g. cached build output with old comment-based suppression).
-            if 'build build.ninja: phony' not in _nf_new:
-                _nf_new = 'build build.ninja: phony\n' + _nf_new
+            if "build build.ninja: phony" not in _nf_new:
+                _nf_new = "build build.ninja: phony\n" + _nf_new
             if _nf_new != _nf_content:
                 with open(_nf, "w") as f:
                     f.write(_nf_new)
@@ -877,17 +1109,21 @@ def main():
     # correct RPATH via DT_RUNPATH, so cmake's RPATH management is
     # unnecessary.  Comment out file(RPATH_CHANGE ...) blocks.
     _rpath_change_re = re.compile(
-        r'^\s*file\s*\(\s*RPATH_CHANGE\b.*?\)',
+        r"^\s*file\s*\(\s*RPATH_CHANGE\b.*?\)",
         re.MULTILINE | re.DOTALL,
     )
-    for _ci in _glob.glob(os.path.join(make_dir, "**/cmake_install.cmake"), recursive=True):
+    for _ci in _glob.glob(
+        os.path.join(make_dir, "**/cmake_install.cmake"), recursive=True
+    ):
         try:
             _ci_stat = os.stat(_ci)
             with open(_ci, "r") as f:
                 _ci_content = f.read()
-            if 'RPATH_CHANGE' not in _ci_content:
+            if "RPATH_CHANGE" not in _ci_content:
                 continue
-            _ci_new = _rpath_change_re.sub('# RPATH_CHANGE suppressed by install_helper', _ci_content)
+            _ci_new = _rpath_change_re.sub(
+                "# RPATH_CHANGE suppressed by install_helper", _ci_content
+            )
             if _ci_new != _ci_content:
                 with open(_ci, "w") as f:
                     f.write(_ci_new)
@@ -926,11 +1162,16 @@ def main():
     # --check-build-system which fails when the built cmake has stale
     # paths from a different machine.  Append no-op overrides for
     # targets whose recipes invoke these reconfiguration commands.
-    _CLEAN_TARGETS = frozenset(("distclean", "clean", "maintainer-clean",
-                                "mostlyclean", "realclean"))
-    _RECONFIG_TRIGGERS = ('config.status', 'check-build-system')
-    _RECONFIG_RECIPE_PATTERNS = ('./config.status', '$(SHELL) config.status',
-                                 '--reconfigure', '--check-build-system')
+    _CLEAN_TARGETS = frozenset(
+        ("distclean", "clean", "maintainer-clean", "mostlyclean", "realclean")
+    )
+    _RECONFIG_TRIGGERS = ("config.status", "check-build-system")
+    _RECONFIG_RECIPE_PATTERNS = (
+        "./config.status",
+        "$(SHELL) config.status",
+        "--reconfigure",
+        "--check-build-system",
+    )
     for _mf in _glob.glob(os.path.join(make_dir, "**/Makefile"), recursive=True):
         try:
             with open(_mf, "r") as f:
@@ -944,16 +1185,20 @@ def main():
         _current_target = None
         _current_colon = ":"
         for line in _mf_content.splitlines():
-            if line.startswith('\t'):
-                if (_current_target
-                        and _current_target not in _CLEAN_TARGETS
-                        and any(p in line for p in _RECONFIG_RECIPE_PATTERNS)):
+            if line.startswith("\t"):
+                if (
+                    _current_target
+                    and _current_target not in _CLEAN_TARGETS
+                    and any(p in line for p in _RECONFIG_RECIPE_PATTERNS)
+                ):
                     _suppressed[_current_target] = _current_colon
-            elif ':' in line and not line.startswith(('#', '\t', '.PHONY')):
-                colon_idx = line.index(':')
-                _current_colon = "::" if line[colon_idx:colon_idx+2] == "::" else ":"
+            elif ":" in line and not line.startswith(("#", "\t", ".PHONY")):
+                colon_idx = line.index(":")
+                _current_colon = (
+                    "::" if line[colon_idx : colon_idx + 2] == "::" else ":"
+                )
                 target_part = line[:colon_idx].strip()
-                if target_part and not target_part.startswith(('$', '@', '-')):
+                if target_part and not target_part.startswith(("$", "@", "-")):
                     _current_target = target_part
                 else:
                     _current_target = None
@@ -985,7 +1230,7 @@ def main():
     # Double-colon (::) rules: rewrite in-place.  Each :: definition is
     # independent, so appending a new :: no-op does NOT suppress the
     # original recipe.
-    _ALL_NAME_RE = re.compile(r'^all(?:-[\w-]*)?$')
+    _ALL_NAME_RE = re.compile(r"^all(?:-[\w-]*)?$")
     for _mf in _glob.glob(os.path.join(make_dir, "**/Makefile"), recursive=True):
         try:
             with open(_mf, "r") as f:
@@ -1005,7 +1250,7 @@ def main():
         _joined_lines = []
         _accum = ""
         for _raw in _mf_content.splitlines():
-            if _raw.endswith('\\'):
+            if _raw.endswith("\\"):
                 _accum += _raw[:-1] + " "
             else:
                 _accum += _raw
@@ -1014,16 +1259,16 @@ def main():
         if _accum:
             _joined_lines.append(_accum)
         for _line in _joined_lines:
-            if _line.startswith(('\t', '#')) or ':' not in _line:
+            if _line.startswith(("\t", "#")) or ":" not in _line:
                 continue
-            _ci = _line.index(':')
+            _ci = _line.index(":")
             _tpart = _line[:_ci]
             # Skip variable assignments (VAR = ...) that happen to contain ':'
-            if '=' in _tpart:
+            if "=" in _tpart:
                 continue
-            _is_dc = _line[_ci:_ci + 2] == '::'
+            _is_dc = _line[_ci : _ci + 2] == "::"
             for _bt in _tpart.split():
-                if _bt.startswith(('$', '%', '.')) or _bt in _single or _bt in _double:
+                if _bt.startswith(("$", "%", ".")) or _bt in _single or _bt in _double:
                     continue
                 if _ALL_NAME_RE.match(_bt):
                     (_double if _is_dc else _single).append(_bt)
@@ -1032,13 +1277,15 @@ def main():
         # Single-colon: append override (proven reliable)
         if _single:
             with open(_mf, "a") as f:
-                f.write("\n# Build suppressed by install_helper — "
-                        "compile phase already completed\n")
+                f.write(
+                    "\n# Build suppressed by install_helper — "
+                    "compile phase already completed\n"
+                )
                 f.write("\n".join(f"{_bt}: ;" for _bt in _single) + "\n")
         # Double-colon: rewrite in-place
         if _double:
             _dc_re = re.compile(
-                r'^(' + '|'.join(re.escape(t) for t in _double) + r')\s*::',
+                r"^(" + "|".join(re.escape(t) for t in _double) + r")\s*::",
             )
             with open(_mf, "r") as f:
                 _mf_lines = f.readlines()
@@ -1047,24 +1294,24 @@ def main():
             _in_recipe = False
             _in_continuation = False
             for _line in _mf_lines:
-                _stripped = _line.rstrip('\n')
+                _stripped = _line.rstrip("\n")
                 # Skip continuation lines from a matched target
                 if _in_continuation:
                     _changed = True
-                    if not _stripped.endswith('\\'):
+                    if not _stripped.endswith("\\"):
                         _in_continuation = False
                     continue
-                if not _line.startswith('\t') and _dc_re.match(_stripped):
+                if not _line.startswith("\t") and _dc_re.match(_stripped):
                     _m = _dc_re.match(_stripped)
                     _new_lines.append(f"{_m.group(1)}::\n")
                     _new_lines.append("\t@:\n")
                     _in_recipe = True
                     _changed = True
-                    if _stripped.endswith('\\'):
+                    if _stripped.endswith("\\"):
                         _in_continuation = True
                     continue
                 if _in_recipe:
-                    if _line.startswith('\t'):
+                    if _line.startswith("\t"):
                         _changed = True
                         continue
                     _in_recipe = False
@@ -1084,13 +1331,14 @@ def main():
     for _cs in _glob.glob(os.path.join(make_dir, "**/config.status"), recursive=True):
         _cs_mtime = os.stat(_cs).st_mtime
         _cs_dir = os.path.dirname(_cs)
-        for _parent in [os.path.dirname(_cs_dir),
-                        os.path.dirname(os.path.dirname(_cs_dir))]:
+        for _parent in [
+            os.path.dirname(_cs_dir),
+            os.path.dirname(os.path.dirname(_cs_dir)),
+        ]:
             _configure = os.path.join(_parent, "configure")
             if os.path.isfile(_configure):
                 try:
-                    os.chmod(_configure,
-                             os.stat(_configure).st_mode | stat.S_IWUSR)
+                    os.chmod(_configure, os.stat(_configure).st_mode | stat.S_IWUSR)
                     os.utime(_configure, (_cs_mtime, _cs_mtime))
                 except OSError:
                     pass
@@ -1115,8 +1363,10 @@ def main():
         # --install runs the install scripts directly, bypassing ninja.
         _cmake_cache = os.path.join(make_dir, "CMakeCache.txt")
         _cmake_in_path = any(
-            os.path.isfile(os.path.join(d, "cmake")) and os.access(os.path.join(d, "cmake"), os.X_OK)
-            for d in env.get("PATH", "").split(":") if d
+            os.path.isfile(os.path.join(d, "cmake"))
+            and os.access(os.path.join(d, "cmake"), os.X_OK)
+            for d in env.get("PATH", "").split(":")
+            if d
         )
         if os.path.isfile(_cmake_cache) and _cmake_in_path:
             cmd = ["cmake", "--install", make_dir]
@@ -1126,7 +1376,8 @@ def main():
     else:
         cmd = [
             "make",
-            "-C", make_dir,
+            "-C",
+            make_dir,
             f"-j{jobs}",
             f"{args.destdir_var}={prefix}",
         ] + targets
@@ -1144,7 +1395,9 @@ def main():
     # Inject CC/CXX/AR as make command-line overrides for Makefile-only
     # packages (no config.status = no configure ran).  Same logic as
     # build_helper.py.
-    if args.build_system == "make" and not os.path.exists(os.path.join(build_dir, "config.status")):
+    if args.build_system == "make" and not os.path.exists(
+        os.path.join(build_dir, "config.status")
+    ):
         for _var in ("CC", "CXX", "AR"):
             _val = env.get(_var, "")
             if _val and not any(a.startswith(f"{_var}=") for a in args.make_args):
@@ -1159,7 +1412,10 @@ def main():
 
     result = subprocess.run(cmd, env=env)
     if result.returncode != 0:
-        print(f"error: make install failed with exit code {result.returncode}", file=sys.stderr)
+        print(
+            f"error: make install failed with exit code {result.returncode}",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     # Remove libtool .la files — they embed absolute build-time paths that
@@ -1173,11 +1429,14 @@ def main():
     env["DESTDIR"] = prefix
     env["OUT"] = prefix
     for cmd_str in args.post_cmds:
-        result = subprocess.run(cmd_str, shell=True, cwd=prefix, env=env,
-                                executable=_buckos_bash)
+        result = subprocess.run(
+            cmd_str, shell=True, cwd=prefix, env=env, executable=_buckos_bash
+        )
         if result.returncode != 0:
-            print(f"error: post-cmd failed with exit code {result.returncode}: {cmd_str}",
-                  file=sys.stderr)
+            print(
+                f"error: post-cmd failed with exit code {result.returncode}: {cmd_str}",
+                file=sys.stderr,
+            )
             sys.exit(1)
 
     sanitize_filenames(prefix, make_dir)

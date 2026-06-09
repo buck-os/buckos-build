@@ -23,7 +23,18 @@ find . -name 'data.hh' -exec sed -i 's/void set_binding(stb v) const/void set_bi
 make -j${MAKEOPTS:-$(nproc)} PREFIX=/usr \
     CXX="$CXX" CXXFLAGS="$CFLAGS -include cstdint -fpermissive -Wno-error" LDFLAGS="$LDFLAGS"
 
-make PREFIX=/usr DESTDIR="$OUT" install
+# Ensure DESTDIR directories exist and Makefiles pass DESTDIR through
+mkdir -p "$OUT/usr/lib/pkgconfig" "$OUT/usr/include"
+# Patch sub-Makefiles to use DESTDIR
+find . -name Makefile -exec sed -i 's|install -d $(PREFIX)|install -d $(DESTDIR)$(PREFIX)|g' {} \;
+find . -name Makefile -exec sed -i 's|install -d $(LIBDIR)|install -d $(DESTDIR)$(LIBDIR)|g' {} \;
+make PREFIX=/usr DESTDIR="$OUT" install || {
+    # Manual install fallback
+    cp -a elf/libelf++.* "$OUT/usr/lib/" 2>/dev/null || true
+    cp -a dwarf/libdwarf++.* "$OUT/usr/lib/" 2>/dev/null || true
+    cp -r elf/elf++.hh "$OUT/usr/include/" 2>/dev/null || true
+    cp -r dwarf/dwarf++.hh "$OUT/usr/include/" 2>/dev/null || true
+}
 """,
     deps = [
         "//packages/linux/lang/python:python",

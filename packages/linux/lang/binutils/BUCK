@@ -29,6 +29,9 @@ autotools_package(
         "--disable-werror",
         "--with-system-zlib",
     ],
+    # 'make install' has a libtool relink race: install-gprof links against
+    # libsframe.so before install-libsframe creates the symlink. Force -j1.
+    install_args = ["-j1"],
     use_configure = {
         "cet": ("--enable-cet", "--disable-cet"),
         "debuginfod": ("--enable-debuginfod", "--disable-debuginfod"),

@@ -1,10 +1,11 @@
-load("//defs/packages:autotools.bzl", "autotools_package")
+load("//defs:package.bzl", "package")
 
 # Directory services and enterprise authentication packages
 # Kerberos, LDAP, SASL, SSSD, and related libraries
 
 # MIT Kerberos
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "krb5",
     build_subdir = "src",
     url = "https://kerberos.org/dist/krb5/1.21/krb5-1.21.2.tar.gz",
@@ -66,7 +67,8 @@ autotools_package(
 
 # e2fsprogs-libs (for libcom_err, needed by Kerberos)
 # Note: e2fsprogs-libs separate tarball no longer exists; use main e2fsprogs package
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "e2fsprogs-libs",
     source = "//packages/linux/system/filesystem/native/e2fsprogs:e2fsprogs-src",
     version = "1.47.0",
@@ -87,7 +89,8 @@ autotools_package(
 )
 
 # OpenLDAP
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "openldap",
     url = "https://www.openldap.org/software/download/OpenLDAP/openldap-release/openldap-2.6.7.tgz",
 
@@ -119,7 +122,8 @@ autotools_package(
 )
 
 # Cyrus SASL - Simple Authentication and Security Layer
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "cyrus-sasl",
     url = "https://github.com/cyrusimap/cyrus-sasl/releases/download/cyrus-sasl-2.1.28/cyrus-sasl-2.1.28.tar.gz",
 
@@ -128,6 +132,10 @@ autotools_package(
     description = "Simple Authentication and Security Layer library",
     homepage = "https://www.cyrusimap.org/sasl/",
     license = "BSD-4-Clause-UC",
+    pre_configure_cmds = [
+        # Fix missing #include <time.h> in saslutil.c (implicit declaration of clock)
+        "sed -i '1i #include <time.h>' lib/saslutil.c 2>/dev/null || true",
+    ],
     configure_args = [
         "--prefix=/usr",
         "--sbindir=/usr/sbin",
@@ -157,7 +165,8 @@ autotools_package(
 )
 
 # SSSD - System Security Services Daemon
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "sssd",
     url = "https://github.com/SSSD/sssd/releases/download/2.9.4/sssd-2.9.4.tar.gz",
 
@@ -201,62 +210,49 @@ autotools_package(
 # Samba libraries (tdb, tevent) needed by SSSD
 # talloc, ldb, lmdb now in system/libs/
 
-autotools_package(
+package(
+    build_rule = "binary",
     name = "tdb",
     url = "https://www.samba.org/ftp/tdb/tdb-1.4.10.tar.gz",
-
     sha256 = "02338e33c16c21c9e29571cef523e76b2b708636254f6f30c6cf195d48c62daf",
     version = "1.4.10",
     description = "Trivial Database library",
     homepage = "https://tdb.samba.org/",
     license = "LGPL-3.0+",
-    configure_args = [],
-    src_configure = """
-mkdir -p /tmp/bin
-printf '#!/bin/sh\\ncommand -v "$1"\\n' > /tmp/bin/which
-chmod +x /tmp/bin/which
-export PATH="/tmp/bin:$PATH"
-# Find libtirpc include path for rpc/rpc.h
-_TIRPC_INC=""
-_TIRPC_LIB=""
-IFS=':' read -ra _DEPS <<< "${DEP_BASE_DIRS:-}"
-for _dep in "${_DEPS[@]}"; do
-    if [ -f "$_dep/usr/include/tirpc/rpc/rpc.h" ]; then
-        _TIRPC_INC="$_dep/usr/include/tirpc"
-    fi
-    for _lib in "$_dep/usr/lib64" "$_dep/usr/lib"; do
-        if [ -f "$_lib/libtirpc.so" ]; then
-            _TIRPC_LIB="$_lib"
-        fi
-    done
-done
-if [ -n "$_TIRPC_INC" ]; then
-    export CFLAGS="$CFLAGS -I$_TIRPC_INC"
-    export LDFLAGS="$LDFLAGS ${_TIRPC_LIB:+-L$_TIRPC_LIB -Wl,-rpath-link,$_TIRPC_LIB}"
-fi
-./configure --prefix=/usr
-""",
-    src_compile = """
-mkdir -p /tmp/bin
-printf '#!/bin/sh\\ncommand -v "$1"\\n' > /tmp/bin/which
-chmod +x /tmp/bin/which
-export PATH="/tmp/bin:$PATH"
-# Find libtirpc include path for rpc/rpc.h
+    install_script = """
+cd "$SRCS"
+# Create stubs for which, xsltproc, git
+mkdir -p "$BUCK_SCRATCH_PATH/tdb-stubs"
+printf '#!/bin/sh\\ncommand -v "$1" 2>/dev/null\\n' > "$BUCK_SCRATCH_PATH/tdb-stubs/which"
+printf '#!/bin/sh\\nexit 0\\n' > "$BUCK_SCRATCH_PATH/tdb-stubs/xsltproc"
+printf '#!/bin/sh\\nexit 0\\n' > "$BUCK_SCRATCH_PATH/tdb-stubs/git"
+chmod +x "$BUCK_SCRATCH_PATH/tdb-stubs/"*
+export PATH="$BUCK_SCRATCH_PATH/tdb-stubs:$PATH"
+
+# Find libtirpc include path
 IFS=':' read -ra _DEPS <<< "${DEP_BASE_DIRS:-}"
 for _dep in "${_DEPS[@]}"; do
     if [ -f "$_dep/usr/include/tirpc/rpc/rpc.h" ]; then
         export CFLAGS="$CFLAGS -I$_dep/usr/include/tirpc"
-        break
     fi
+    for _lib in "$_dep/usr/lib64" "$_dep/usr/lib"; do
+        if [ -f "$_lib/libtirpc.so" ]; then
+            export LDFLAGS="$LDFLAGS -L$_lib -Wl,-rpath-link,$_lib"
+        fi
+    done
 done
+
+./configure --prefix=/usr --disable-python --without-gettext
 make -j${MAKEOPTS:-$(nproc)}
+make DESTDIR="$OUT" install
 """,
     deps = [
         "//packages/linux/system/libs/ipc/libtirpc:libtirpc",
     ],
 )
 
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "tevent",
     url = "https://www.samba.org/ftp/tevent/tevent-0.16.1.tar.gz",
 
@@ -272,7 +268,8 @@ autotools_package(
 )
 
 # ding-libs - SSSD helper libraries
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "ding-libs",
     url = "https://github.com/SSSD/ding-libs/releases/download/0.6.2/ding-libs-0.6.2.tar.gz",
 
@@ -292,7 +289,8 @@ autotools_package(
 )
 
 # libunistring - Unicode string library
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "libunistring",
     url = "https://mirrors.kernel.org/gnu/libunistring/libunistring-1.2.tar.xz",
 
@@ -312,7 +310,8 @@ autotools_package(
 )
 
 # nss-pam-ldapd - LDAP client for NSS/PAM
-autotools_package(
+package(
+    build_rule = "autotools",
     name = "nss-pam-ldapd",
     url = "https://arthurdejong.org/nss-pam-ldapd/nss-pam-ldapd-0.9.12.tar.gz",
 

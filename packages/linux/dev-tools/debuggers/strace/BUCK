@@ -2,7 +2,9 @@ load("//defs/packages:autotools.bzl", "autotools_package")
 
 autotools_package(
     name = "strace",
-    env = {"CFLAGS": "-Wno-error"},
+    env = {
+        "CFLAGS": "-Wno-error",
+    },
     version = "6.19",
     url = "https://strace.io/files/6.19/strace-6.19.tar.xz",
     sha256 = "e076c851eec0972486ec842164fdc54547f9d17abd3d1449de8b120f5d299143",
@@ -23,6 +25,10 @@ autotools_package(
         "//platforms:is_aarch64": ["--enable-mpers=no"],
         "DEFAULT": [],
     }),
+    # Don't pass --host/--build to configure — strace's configure
+    # searches for a separate native CC_FOR_BUILD which fails in
+    # hermetic environments.
+    skip_host_arg = True,
 
     use_configure = {
         "unwind": ("--with-libunwind", "--without-libunwind"),

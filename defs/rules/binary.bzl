@@ -145,6 +145,11 @@ def _install(ctx, source):
     else:
         env["_HERMETIC_EMPTY"] = "1"
 
+    # Pass sysroot ld-linux for ELF portabilization
+    if tc.sysroot:
+        _ld_subpath = "lib/ld-linux-aarch64.so.1" if tc.target_triple.startswith("aarch64") else "lib64/ld-linux-x86-64.so.2"
+        env["_LD_LINUX"] = cmd_args(tc.sysroot.project(_ld_subpath))
+
     # Signal host-target builds (exec_deps on exec platform) so install
     # scripts can skip buckos-specific post-processing (e.g. interp padding).
     if not tc.sysroot:

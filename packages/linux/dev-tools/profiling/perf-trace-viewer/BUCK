@@ -12,20 +12,20 @@ binary_package(
         "//packages/linux/lang/python:python",
     ],
     install_script = """
-mkdir -p ${PREFIX}/bin ${PREFIX}/lib/perf-trace-viewer
-cp -r *.py ${PREFIX}/lib/perf-trace-viewer/ 2>/dev/null || true
-cp -r perf_trace_viewer ${PREFIX}/lib/perf-trace-viewer/ 2>/dev/null || true
+mkdir -p $OUT/usr/bin $OUT/usr/lib/perf-trace-viewer
+cp -r *.py $OUT/usr/lib/perf-trace-viewer/ 2>/dev/null || true
+cp -r perf_trace_viewer $OUT/usr/lib/perf-trace-viewer/ 2>/dev/null || true
 if [ -f perf_trace_viewer ]; then
-    install -Dm755 perf_trace_viewer ${PREFIX}/bin/perf-trace-viewer
+    install -Dm755 perf_trace_viewer $OUT/usr/bin/perf-trace-viewer
 else
-    cat > ${PREFIX}/bin/perf-trace-viewer << 'WRAPPER'
+    cat > $OUT/usr/bin/perf-trace-viewer << 'WRAPPER'
 #!/usr/bin/env python3
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'lib', 'perf-trace-viewer'))
 from perf_trace_viewer.__main__ import main
 main()
 WRAPPER
-    chmod +x ${PREFIX}/bin/perf-trace-viewer
+    chmod +x $OUT/usr/bin/perf-trace-viewer
 fi
 """,
 )

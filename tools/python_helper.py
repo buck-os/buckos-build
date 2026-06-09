@@ -111,11 +111,14 @@ def main():
     # Python without pip, or minimal bootstrap Python).
     use_setup_py = args.use_setup_py
     if not use_setup_py:
-        pip_check = subprocess.run(
-            [python_exe, "-m", "pip", "--version"],
-            capture_output=True, timeout=10,
-        )
-        if pip_check.returncode != 0:
+        try:
+            pip_check = subprocess.run(
+                [python_exe, "-m", "pip", "--version"],
+                capture_output=True, timeout=10,
+            )
+            if pip_check.returncode != 0:
+                use_setup_py = True
+        except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
             use_setup_py = True
 
     if use_setup_py:
@@ -146,18 +149,21 @@ def main():
         if key:
             env[key] = _resolve_env_paths(value)
 
-    # If using a bootstrap Python, set up LD_LIBRARY_PATH to find its shared libs
+    # If using a bootstrap Python, set up LD_LIBRARY_PATH to find its shared libs.
+    # Filter out directories containing libc.so.6 to avoid poisoning the host
+    # python with buckos glibc (causes GLIBC_2.35 not found errors).
     if args.python:
         python_dir = os.path.dirname(os.path.dirname(os.path.abspath(args.python)))
-        lib_dirs = [
-            os.path.join(python_dir, "lib"),
-            os.path.join(python_dir, "lib64"),
-        ]
-        existing_lib_path = env.get("LD_LIBRARY_PATH", "")
-        new_lib_path = ":".join(d for d in lib_dirs if os.path.isdir(d))
-        if existing_lib_path:
-            new_lib_path = f"{new_lib_path}:{existing_lib_path}"
-        if new_lib_path:
+        lib_dirs = []
+        for ld in ("lib", "lib64"):
+            d = os.path.join(python_dir, ld)
+            if os.path.isdir(d) and not os.path.exists(os.path.join(d, "libc.so.6")):
+                lib_dirs.append(d)
+        if lib_dirs:
+            existing_lib_path = env.get("LD_LIBRARY_PATH", "")
+            new_lib_path = ":".join(lib_dirs)
+            if existing_lib_path:
+                new_lib_path = f"{new_lib_path}:{existing_lib_path}"
             env["LD_LIBRARY_PATH"] = new_lib_path
 
     if args.hermetic_path:
@@ -174,7 +180,10 @@ def main():
                     _glibc_d = os.path.join(_d, "glibc")
                     if os.path.isdir(_glibc_d):
                         _lib_dirs.append(_glibc_d)
-        if _lib_dirs:
+        # Skip when ld-linux active — buckos binaries find libs via patched
+        # ELF interpreter; adding these dirs poisons host python with buckos's
+        # libgcc_s.so.1 which requires newer glibc.
+        if _lib_dirs and not args.ld_linux:
             _existing = env.get("LD_LIBRARY_PATH", "")
             env["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (":" + _existing if _existing else "")
         _py_paths = []
@@ -197,8 +206,12 @@ def main():
               file=sys.stderr)
         sys.exit(1)
     if args.path_prepend:
-        prepend = ":".join(os.path.abspath(p) for p in args.path_prepend)
-        env["PATH"] = prepend + (":" + env["PATH"] if env.get("PATH") else "")
+        _pp_dirs = [os.path.abspath(p) for p in args.path_prepend if os.path.isdir(p)]
+        if args.ld_linux and _pp_dirs:
+            from portabilize import portabilize_toolchain
+            _pp_dirs = portabilize_toolchain(_pp_dirs, args.ld_linux)
+        if _pp_dirs:
+            env["PATH"] = ":".join(_pp_dirs) + ":" + env.get("PATH", "")
         _dep_lib_dirs = []
         for _bp in args.path_prepend:
             _parent = os.path.dirname(os.path.abspath(_bp))
@@ -209,7 +222,8 @@ def main():
                     _glibc_d = os.path.join(_d, "glibc")
                     if os.path.isdir(_glibc_d):
                         _dep_lib_dirs.append(_glibc_d)
-        if _dep_lib_dirs:
+        # Skip when ld-linux active for hermetic isolation
+        if _dep_lib_dirs and not args.ld_linux:
             _existing = env.get("LD_LIBRARY_PATH", "")
             env["LD_LIBRARY_PATH"] = ":".join(_dep_lib_dirs) + (":" + _existing if _existing else "")
 

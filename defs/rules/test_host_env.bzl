@@ -23,7 +23,8 @@ def _test_host_env_impl(ctx):
     wrapper = ctx.actions.declare_output("test-host-env.py")
 
     if host_bin:
-        cmd = cmd_args(ctx.attrs._gen_tool[RunInfo])
+        gen_script = ctx.attrs._gen_tool[DefaultInfo].default_outputs[0]
+        cmd = cmd_args("python3", gen_script)
         cmd.add(wrapper.as_output())
         cmd.add(cmd_args(hidden = host_bin))
 
@@ -60,6 +61,6 @@ def _test_host_env_impl(ctx):
 test_host_env = rule(
     impl = _test_host_env_impl,
     attrs = {
-        "_gen_tool": attrs.exec_dep(default = "//tools:gen_test_host_env"),
+        "_gen_tool": attrs.dep(default = "//tools:gen_test_host_env"),
     } | TOOLCHAIN_ATTRS,
 )

@@ -208,7 +208,7 @@ buckos_test(
         "RUN_ENV": "$(location :qemu-env)",
     },
     run_test_separately = True,
-    labels = ["vm", "slow"],
+    labels = ["vm", "slow", "heavy"],
 )
 
 buckos_test(
@@ -232,7 +232,7 @@ buckos_test(
         "RUN_ENV": "$(location :qemu-env)",
     },
     run_test_separately = True,
-    labels = ["vm", "slow"],
+    labels = ["vm", "slow", "heavy"],
 )
 
 buckos_test(
@@ -256,7 +256,7 @@ buckos_test(
         "RUN_ENV": "$(location :qemu-env)",
     },
     run_test_separately = True,
-    labels = ["vm", "slow"],
+    labels = ["vm", "slow", "heavy"],
 )
 
 # ── IMA QEMU FILE_CHECK enforcement ─────────────────────────────────
@@ -283,7 +283,7 @@ buckos_test(
         "RUN_ENV": "$(location :qemu-env)",
     },
     run_test_separately = True,
-    labels = ["vm", "slow"],
+    labels = ["vm", "slow", "heavy"],
 )
 
 # FILE_CHECK: signed binary + unsigned data file — file read denied
@@ -309,7 +309,7 @@ buckos_test(
         "RUN_ENV": "$(location :qemu-env)",
     },
     run_test_separately = True,
-    labels = ["vm", "slow"],
+    labels = ["vm", "slow", "heavy"],
 )
 
 # ── Build smoke tests ────────────────────────────────────────────────
@@ -354,11 +354,13 @@ buckos_test(
     test = "verify_ch_vm_boot.py",
     deps = [
         "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
+        ":ch-env",
         "//packages/linux/kernel/buckos-kernel:buckos-kernel-ch",
         "//packages/linux/system/cloud-hypervisor:ch-initramfs",
     ],
     env = {
         "CH_BINARY": "$(location //packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor)",
+        "RUN_ENV": "$(location :ch-env)",
         "KERNEL": "$(location //packages/linux/kernel/buckos-kernel:buckos-kernel-ch)",
         "INITRAMFS": "$(location //packages/linux/system/cloud-hypervisor:ch-initramfs)",
     },
@@ -371,16 +373,18 @@ buckos_test(
     test = "verify_ch_vm_boot.py",
     deps = [
         "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
+        ":ch-env",
         "//tests/fixtures:test-kernel",
         "//packages/linux/system/cloud-hypervisor:ch-initramfs",
     ],
     env = {
         "CH_BINARY": "$(location //packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor)",
+        "RUN_ENV": "$(location :ch-env)",
         "KERNEL": "$(location //tests/fixtures:test-kernel)",
         "INITRAMFS": "$(location //packages/linux/system/cloud-hypervisor:ch-initramfs)",
     },
     run_test_separately = True,
-    labels = ["vm", "slow", "integration"],
+    labels = ["vm", "slow", "integration", "heavy"],
 )
 
 # ── Cloud Hypervisor: IMA binary execution ───────────────────────────
@@ -393,12 +397,14 @@ buckos_test(
     test = "verify_ch_ima.py",
     deps = [
         "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
+        ":ch-env",
         "//tests/fixtures/ima-test:ima-kernel",
         "//tests/fixtures/ima-test:ima-initramfs",
         "//tests/fixtures/ima-test:ima-disk-unsigned",
     ],
     env = {
         "CH_BINARY": "$(location //packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor)",
+        "RUN_ENV": "$(location :ch-env)",
         "KERNEL": "$(location //tests/fixtures/ima-test:ima-kernel)",
         "INITRAMFS": "$(location //tests/fixtures/ima-test:ima-initramfs)",
         "DISK": "$(location //tests/fixtures/ima-test:ima-disk-unsigned)",
@@ -407,7 +413,7 @@ buckos_test(
         "EXPECT_TEST_OUTPUT": "IMA-FILE-CONTENT",
     },
     run_test_separately = True,
-    labels = ["vm", "slow", "integration"],
+    labels = ["vm", "slow", "integration", "heavy"],
 )
 
 # IMA enforce: signed binary runs under IMA enforcement
@@ -416,12 +422,14 @@ buckos_test(
     test = "verify_ch_ima.py",
     deps = [
         "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
+        ":ch-env",
         "//tests/fixtures/ima-test:ima-kernel",
         "//tests/fixtures/ima-test:ima-initramfs",
         "//tests/fixtures/ima-test:ima-disk-signed",
     ],
     env = {
         "CH_BINARY": "$(location //packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor)",
+        "RUN_ENV": "$(location :ch-env)",
         "KERNEL": "$(location //tests/fixtures/ima-test:ima-kernel)",
         "INITRAMFS": "$(location //tests/fixtures/ima-test:ima-initramfs)",
         "DISK": "$(location //tests/fixtures/ima-test:ima-disk-signed)",
@@ -430,7 +438,7 @@ buckos_test(
         "EXPECT_TEST_OUTPUT": "IMA-FILE-CONTENT",
     },
     run_test_separately = True,
-    labels = ["vm", "slow", "integration"],
+    labels = ["vm", "slow", "integration", "heavy"],
 )
 
 # ── ISO boot ─────────────────────────────────────────────────────
@@ -438,6 +446,11 @@ buckos_test(
 runtime_env(
     name = "qemu-env",
     package = "//packages/linux/emulation/hypervisors/qemu:qemu",
+)
+
+runtime_env(
+    name = "ch-env",
+    package = "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
 )
 
 buckos_test(
@@ -479,7 +492,7 @@ buckos_test(
         "RUN_ENV": "$(location :qemu-env)",
     },
     run_test_separately = True,
-    labels = ["vm", "slow", "integration"],
+    labels = ["vm", "slow", "integration", "heavy"],
 )
 
 buckos_test(
@@ -530,12 +543,14 @@ buckos_test(
     test = "verify_ch_ima.py",
     deps = [
         "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
+        ":ch-env",
         "//tests/fixtures/ima-test:ima-kernel",
         "//tests/fixtures/ima-test:ima-initramfs",
         "//tests/fixtures/ima-test:ima-disk-unsigned",
     ],
     env = {
         "CH_BINARY": "$(location //packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor)",
+        "RUN_ENV": "$(location :ch-env)",
         "KERNEL": "$(location //tests/fixtures/ima-test:ima-kernel)",
         "INITRAMFS": "$(location //tests/fixtures/ima-test:ima-initramfs)",
         "DISK": "$(location //tests/fixtures/ima-test:ima-disk-unsigned)",
@@ -544,7 +559,7 @@ buckos_test(
         "EXPECT_NO_TEST_OUTPUT": "IMA-TEST-PASS",
     },
     run_test_separately = True,
-    labels = ["vm", "slow", "integration"],
+    labels = ["vm", "slow", "integration", "heavy"],
 )
 
 # ── Cloud Hypervisor: IMA FILE_CHECK enforcement ────────────────────
@@ -555,12 +570,14 @@ buckos_test(
     test = "verify_ch_ima.py",
     deps = [
         "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
+        ":ch-env",
         "//tests/fixtures/ima-test:ima-kernel",
         "//tests/fixtures/ima-test:ima-initramfs",
         "//tests/fixtures/ima-test:ima-disk-signed",
     ],
     env = {
         "CH_BINARY": "$(location //packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor)",
+        "RUN_ENV": "$(location :ch-env)",
         "KERNEL": "$(location //tests/fixtures/ima-test:ima-kernel)",
         "INITRAMFS": "$(location //tests/fixtures/ima-test:ima-initramfs)",
         "DISK": "$(location //tests/fixtures/ima-test:ima-disk-signed)",
@@ -569,7 +586,7 @@ buckos_test(
         "EXPECT_TEST_OUTPUT": "IMA-FILE-CONTENT",
     },
     run_test_separately = True,
-    labels = ["vm", "slow", "integration"],
+    labels = ["vm", "slow", "integration", "heavy"],
 )
 
 # CH FILE_CHECK: signed binary + unsigned data file — file read denied
@@ -578,12 +595,14 @@ buckos_test(
     test = "verify_ch_ima.py",
     deps = [
         "//packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor",
+        ":ch-env",
         "//tests/fixtures/ima-test:ima-kernel",
         "//tests/fixtures/ima-test:ima-initramfs",
         "//tests/fixtures/ima-test:ima-disk-file-unsigned",
     ],
     env = {
         "CH_BINARY": "$(location //packages/linux/emulation/utilities/cloud-hypervisor:cloud-hypervisor)",
+        "RUN_ENV": "$(location :ch-env)",
         "KERNEL": "$(location //tests/fixtures/ima-test:ima-kernel)",
         "INITRAMFS": "$(location //tests/fixtures/ima-test:ima-initramfs)",
         "DISK": "$(location //tests/fixtures/ima-test:ima-disk-file-unsigned)",
@@ -593,5 +612,5 @@ buckos_test(
         "EXPECT_NO_TEST_OUTPUT": "IMA-FILE-CONTENT",
     },
     run_test_separately = True,
-    labels = ["vm", "slow", "integration"],
+    labels = ["vm", "slow", "integration", "heavy"],
 )
