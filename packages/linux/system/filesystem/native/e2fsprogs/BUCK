@@ -24,10 +24,11 @@ autotools_package(
         "--disable-uuidd",
         "--disable-fsck",
     ],
-    # Prevent parallel-make race: touch generated type headers before
-    # parallel compilation starts so make doesn't re-run config.status.
+    # Prevent parallel-make race: generate type headers sequentially,
+    # then touch config.status deps so make doesn't re-run it during
+    # parallel compilation (which would regenerate headers mid-build).
     pre_build_cmds = [
-        "make -j1 -C lib/ext2fs ext2_types.h && make -j1 -C lib/blkid blkid_types.h && make -j1 -C lib/uuid uuid_types.h",
+        "make -j1 -C lib/ext2fs ext2_types.h && make -j1 -C lib/blkid blkid_types.h && make -j1 -C lib/uuid uuid_types.h && touch config.status configure Makefile.in",
     ],
     deps = [],
 )
