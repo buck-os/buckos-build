@@ -1524,6 +1524,15 @@ rootfs(
         # "//packages/linux/network/openssh:openssh",
         "//packages/linux/network/iproute2:iproute2",
         "//packages/linux/network/dhcpcd:dhcpcd",
+        # Runtime shared-lib deps of the tools above.  The rootfs ships an
+        # explicit package list with no auto-resolution, so each tool's
+        # runtime libraries must be listed too.  Enforced by
+        # //tests:test-hermeticity (the ELF dependency-closure gate).
+        "//packages/linux/system/libs/utility/pcre2:pcre2",  # grep (libpcre2-8)
+        "//packages/linux/system/libs/network/libpsl:libpsl",  # curl (libpsl)
+        "//packages/linux/system/security/linux-pam:linux-pam",  # login/su/passwd (libpam)
+        "//packages/linux/system/libs/compat/libbsd:libbsd",  # libbsd consumers
+        "//packages/linux/system/libs/compat/libmd:libmd",  # libbsd -> libmd
     ],
     visibility = ["PUBLIC"],
 )

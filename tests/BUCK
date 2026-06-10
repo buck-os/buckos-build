@@ -133,6 +133,21 @@ buckos_test(
     labels = ["unit", "tools-unit"],
 )
 
+# ── Hermeticity: base rootfs ELF dependency closure ──────────────────
+# Audits the base rootfs for shared-lib deps that aren't provided anywhere
+# in the image (would fail at runtime with "error while loading shared
+# libraries").  Built under //platforms:linux-target-bare (the non-systemd
+# base), so it must run under that platform — labelled "heavy" to keep it
+# out of the generic unit-test query; run in a dedicated CI step:
+#   buck2 test //tests:test-hermeticity --target-platforms //platforms:linux-target-bare
+buckos_test(
+    name = "test-hermeticity",
+    test = "verify_hermeticity.py",
+    deps = ["//packages/linux/system:buckos-rootfs"],
+    env = {"ROOTFS": "$(location //packages/linux/system:buckos-rootfs)"},
+    labels = ["integration", "hermeticity", "heavy"],
+)
+
 # ── Provenance integration: hello executable ─────────────────────────
 
 buckos_test(

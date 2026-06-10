@@ -89,21 +89,25 @@ def _extract_needed(elf_path):
 
 
 def _collect_provided_sonames(dep_prefixes):
-    """Collect all .so files provided by dep prefixes."""
+    """Collect all .so files provided anywhere under the dep prefixes.
+
+    Walks each prefix recursively so libraries in nested directories (e.g.
+    glibc gconv modules under usr/lib/gconv/, or arch/multilib subdirs)
+    count as provided -- important when auditing a full rootfs for ELF
+    dependency closure rather than a single package's flat lib dir.
+    """
     provided = set()
     for prefix in dep_prefixes:
-        for lib_dir in ("usr/lib64", "usr/lib", "lib64", "lib"):
-            d = os.path.join(prefix, lib_dir)
-            if not os.path.isdir(d):
-                continue
-            for fname in os.listdir(d):
-                if ".so" in fname:
-                    provided.add(fname)
-                    # Also add the soname base (libfoo.so.1 matches libfoo.so.1.2.3)
-                    # and the symlink names
-                    if os.path.islink(os.path.join(d, fname)):
-                        target = os.path.basename(os.readlink(os.path.join(d, fname)))
-                        provided.add(target)
+        if not os.path.isdir(prefix):
+            continue
+        for dirpath, _, filenames in os.walk(prefix):
+            for fname in filenames:
+                if ".so" not in fname:
+                    continue
+                provided.add(fname)
+                fpath = os.path.join(dirpath, fname)
+                if os.path.islink(fpath):
+                    provided.add(os.path.basename(os.readlink(fpath)))
     return provided
 
 

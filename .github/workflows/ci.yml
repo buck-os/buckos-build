@@ -176,6 +176,8 @@ jobs:
         run: |
           targets=$(buck2 uquery 'kind(sh_test, //tests:) - set(//tests:test-seed-isolation //tests:test-kde-iso-boot) - attrfilter(labels, heavy, kind(sh_test, //tests:))' 2>/dev/null)
           buck2 test $targets
+      - name: Hermeticity gate (base rootfs ELF dependency closure)
+        run: buck2 test //tests:test-hermeticity --target-platforms //platforms:linux-target-bare
       - name: Build systemd container rootfs
         run: |
           buck2 build //packages/linux/system:systemd-container-rootfs --out systemd-container-rootfs.tar
