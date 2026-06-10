@@ -1,4 +1,4 @@
-load("//defs/rules:kernel.bzl", "kernel_build", "kernel_btf_headers", "kernel_headers", "kernel_modules_install")
+load("//defs/rules:kernel.bzl", "kernel_build", "kernel_btf_headers", "kernel_build_v2", "kernel_compare", "kernel_headers", "kernel_modules_install")
 
 # BuckOS Default Kernel — Decomposed Build
 #
@@ -96,6 +96,23 @@ kernel_build(
     config = "//packages/linux/kernel/configs:buckos-minimal",
     version = "6.18",
     labels = ["buckos:compile", "buckos:build:kbuild"],
+)
+
+# ── Validation: explicit v2 target + byte-identical compare ──
+
+kernel_build_v2(
+    name = "buckos-kernel-defconfig-v2",
+    source = "//packages/linux/kernel/src:linux-src",
+    config = "//packages/linux/kernel/configs:buckos-minimal",
+    version = "6.18",
+    labels = ["buckos:kernel_v2"],
+)
+
+kernel_compare(
+    name = "buckos-kernel-defconfig-compare",
+    legacy = ":buckos-kernel-defconfig",
+    v2 = ":buckos-kernel-defconfig-v2",
+    labels = ["buckos:kernel_v2:validate"],
 )
 
 # Live CD/USB kernel

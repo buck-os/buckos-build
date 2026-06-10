@@ -86,8 +86,11 @@ jobs:
       - name: Install buck2
         run: |
           mkdir -p "$HOME/.local/bin"
-          curl -sL https://github.com/facebook/buck2/releases/download/2026-02-01/buck2-x86_64-unknown-linux-gnu.zst \
-            | zstd -d -f -o "$HOME/.local/bin/buck2"
+          curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors \
+            -o "$HOME/.local/bin/buck2.zst" \
+            https://github.com/facebook/buck2/releases/download/2026-02-01/buck2-x86_64-unknown-linux-gnu.zst
+          zstd -d -f -o "$HOME/.local/bin/buck2" "$HOME/.local/bin/buck2.zst"
+          rm -f "$HOME/.local/bin/buck2.zst"
           chmod +x "$HOME/.local/bin/buck2"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Restart buck2 daemon
@@ -158,8 +161,11 @@ jobs:
       - name: Install buck2
         run: |
           mkdir -p "$HOME/.local/bin"
-          curl -sL https://github.com/facebook/buck2/releases/download/2026-02-01/buck2-x86_64-unknown-linux-gnu.zst \
-            | zstd -d -f -o "$HOME/.local/bin/buck2"
+          curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors \
+            -o "$HOME/.local/bin/buck2.zst" \
+            https://github.com/facebook/buck2/releases/download/2026-02-01/buck2-x86_64-unknown-linux-gnu.zst
+          zstd -d -f -o "$HOME/.local/bin/buck2" "$HOME/.local/bin/buck2.zst"
+          rm -f "$HOME/.local/bin/buck2.zst"
           chmod +x "$HOME/.local/bin/buck2"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Reset buck2 state
@@ -219,8 +225,11 @@ jobs:
       - name: Install buck2
         run: |
           mkdir -p "$HOME/.local/bin"
-          curl -sL https://github.com/facebook/buck2/releases/download/2026-02-01/buck2-aarch64-unknown-linux-gnu.zst \
-            | zstd -d -f -o "$HOME/.local/bin/buck2"
+          curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors \
+            -o "$HOME/.local/bin/buck2.zst" \
+            https://github.com/facebook/buck2/releases/download/2026-02-01/buck2-aarch64-unknown-linux-gnu.zst
+          zstd -d -f -o "$HOME/.local/bin/buck2" "$HOME/.local/bin/buck2.zst"
+          rm -f "$HOME/.local/bin/buck2.zst"
           chmod +x "$HOME/.local/bin/buck2"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Restart buck2 daemon
@@ -290,8 +299,11 @@ jobs:
       - name: Install buck2
         run: |
           mkdir -p "$HOME/.local/bin"
-          curl -sL https://github.com/facebook/buck2/releases/download/2026-02-01/buck2-x86_64-unknown-linux-gnu.zst \
-            | zstd -d -f -o "$HOME/.local/bin/buck2"
+          curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors \
+            -o "$HOME/.local/bin/buck2.zst" \
+            https://github.com/facebook/buck2/releases/download/2026-02-01/buck2-x86_64-unknown-linux-gnu.zst
+          zstd -d -f -o "$HOME/.local/bin/buck2" "$HOME/.local/bin/buck2.zst"
+          rm -f "$HOME/.local/bin/buck2.zst"
           chmod +x "$HOME/.local/bin/buck2"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Configure seed
