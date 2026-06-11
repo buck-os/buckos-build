@@ -15,6 +15,7 @@ import shutil
 import subprocess
 import sys
 
+from _trace import add_trace_args, enable_tracing, finalize_trace
 from _env import (
     _ensure_which_shim,
     _is_sysroot_lib_dir,
@@ -323,6 +324,8 @@ def main():
         default=[],
         help="Extra argument to pass to the test runner (repeatable, --test-mode only)",
     )
+    # Build-debug exec tracing (off unless [buckos] trace = true wires these).
+    add_trace_args(parser)
     args = parser.parse_args()
 
     # Read flag files early — tset-propagated values are base defaults.
@@ -1183,6 +1186,8 @@ def main():
             sys.exit(1)
 
     if args.skip_make:
+        # No build ran, but the declared trace output must still exist.
+        finalize_trace(None, args.trace_out)
         sanitize_filenames(output_dir)
         # Merge scratch into declared output.  Pre-cmds may have written
         # directly to declared_output (e.g. bootstrap_linux_headers writes
@@ -1300,7 +1305,16 @@ def main():
             file=sys.stderr,
         )
 
+    # Build-debug mode: inject the libkbuild_trace.so LD_PRELOAD shim so
+    # every exec in the build subtree is logged.  No-op unless --trace-lib
+    # was wired by the Buck rule ([buckos] trace = true).  Works under
+    # unshare --net (LD_PRELOAD only).
+    _trace_file = enable_tracing(env, args.trace_lib)
+
     result = subprocess.run(cmd, env=env, cwd=_test_cwd)
+    # Always copy the captured trace to the declared output, even on
+    # failure — a failing build is exactly when the trace is most useful.
+    finalize_trace(_trace_file, args.trace_out)
     if result.returncode != 0:
         _what = (
             "{} test".format(args.test_mode)

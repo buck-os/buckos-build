@@ -13,6 +13,13 @@ python_library(
     visibility = ["PUBLIC"],
 )
 
+python_library(
+    name = "_trace",
+    srcs = ["_trace.py"],
+    base_module = "",
+    visibility = ["PUBLIC"],
+)
+
 python_binary(
     name = "extract",
     main = "extract.py",
@@ -51,7 +58,7 @@ python_binary(
 python_binary(
     name = "build_helper",
     main = "build_helper.py",
-    deps = [":_env"],
+    deps = [":_env", ":_trace"],
     visibility = ["PUBLIC"],
 )
 

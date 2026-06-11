@@ -29,6 +29,7 @@ load("//defs/rules:_common.bzl",
 )
 load("//defs:toolchain_helpers.bzl", "toolchain_env_args", "toolchain_extra_cflags", "toolchain_extra_ldflags", "toolchain_ld_linux_args", "toolchain_path_args")
 load("//defs:host_tools.bzl", "host_tool_path_args")
+load("//defs/rules:trace.bzl", "TRACE_ATTRS", "trace_compile_args", "trace_subtargets")
 
 # ── Phase helpers ─────────────────────────────────────────────────────
 
@@ -250,8 +251,13 @@ def _src_compile(ctx, configured, cflags_file = None, ldflags_file = None,
     for arg in ctx.attrs.make_args:
         cmd.add(cmd_args("--make-arg=", arg, delimiter = ""))
 
+    # Build-debug mode: gated by `-c buckos.trace=true`.  When enabled,
+    # the compile phase runs under libkbuild_trace.so and the captured
+    # exec trace is declared as an output (None when disabled).
+    trace_out = trace_compile_args(ctx, cmd)
+
     ctx.actions.run(cmd, category = "autotools_compile", identifier = ctx.attrs.name, allow_cache_upload = True)
-    return output
+    return output, trace_out
 
 def _src_install(ctx, built, cflags_file = None, ldflags_file = None,
                  pkg_config_file = None, lib_dirs_file = None,
@@ -427,8 +433,8 @@ def _autotools_build_impl(ctx):
                                 pkg_config_file, lib_dirs_file, bin_dirs_file)
 
     # Phase 4: src_compile
-    built = _src_compile(ctx, configured, cflags_file, ldflags_file,
-                         pkg_config_file, lib_dirs_file, bin_dirs_file)
+    built, trace_out = _src_compile(ctx, configured, cflags_file, ldflags_file,
+                                    pkg_config_file, lib_dirs_file, bin_dirs_file)
 
     # Phase 5a: src_test — opt-in (tests = True), default off = noop.
     # Runs the package's own suite (default `make check`) on the built
@@ -469,7 +475,15 @@ def _autotools_build_impl(ctx):
         cpe = ctx.attrs.cpe,
     )
 
-    return [DefaultInfo(default_output = installed), pkg_info]
+    # Expose the captured exec trace (build-debug mode) as the `trace`
+    # sub-target.  Empty dict when tracing is disabled.
+    return [
+        DefaultInfo(
+            default_output = installed,
+            sub_targets = trace_subtargets(trace_out),
+        ),
+        pkg_info,
+    ]
 
 # ── Rule definition ───────────────────────────────────────────────────
 
@@ -504,5 +518,5 @@ autotools_build = rule(
         "_install_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:install_helper"),
         ),
-    },
+    } | TRACE_ATTRS,
 )
