@@ -22,7 +22,7 @@ def _resolve_env_paths(value):
         flag_resolved = False
         for prefix in _FLAG_PREFIXES:
             if token.startswith(prefix) and len(token) > len(prefix):
-                path = token[len(prefix):]
+                path = token[len(prefix) :]
                 if not os.path.isabs(path) and os.path.exists(path):
                     parts.append(prefix + os.path.abspath(path))
                 else:
@@ -50,30 +50,84 @@ def main():
     _host_path = os.environ.get("PATH", "")
 
     parser = argparse.ArgumentParser(description="Run pip install")
-    parser.add_argument("--source-dir", required=True,
-                        help="Python source directory (contains setup.py or pyproject.toml)")
-    parser.add_argument("--output-dir", required=True,
-                        help="Output directory for installed package")
-    parser.add_argument("--pip-arg", action="append", dest="pip_args", default=[],
-                        help="Extra argument to pass to pip install (repeatable)")
-    parser.add_argument("--env", action="append", dest="extra_env", default=[],
-                        help="Extra environment variable KEY=VALUE (repeatable)")
-    parser.add_argument("--python", default=None,
-                        help="Path to Python interpreter to use (default: sys.executable)")
-    parser.add_argument("--hermetic-path", action="append", dest="hermetic_path", default=[],
-                        help="Set PATH to only these dirs (replaces host PATH, repeatable)")
-    parser.add_argument("--allow-host-path", action="store_true",
-                        help="Allow host PATH (bootstrap escape hatch)")
-    parser.add_argument("--hermetic-empty", action="store_true",
-                        help="Start with empty PATH (populated by --path-prepend)")
-    parser.add_argument("--ld-linux", default=None,
-                        help="Buckos ld-linux path (disables posix_spawn)")
-    parser.add_argument("--path-prepend", action="append", dest="path_prepend", default=[],
-                        help="Directory to prepend to PATH (repeatable, resolved to absolute)")
-    parser.add_argument("--dep-prefix", action="append", dest="dep_prefixes", default=[],
-                        help="Dependency prefix dir — site-packages added to PYTHONPATH (repeatable)")
-    parser.add_argument("--use-setup-py", action="store_true",
-                        help="Use setup.py install instead of pip (avoids pip dependency)")
+    parser.add_argument(
+        "--source-dir",
+        required=True,
+        help="Python source directory (contains setup.py or pyproject.toml)",
+    )
+    parser.add_argument(
+        "--output-dir", required=True, help="Output directory for installed package"
+    )
+    parser.add_argument(
+        "--pip-arg",
+        action="append",
+        dest="pip_args",
+        default=[],
+        help="Extra argument to pass to pip install (repeatable)",
+    )
+    parser.add_argument(
+        "--env",
+        action="append",
+        dest="extra_env",
+        default=[],
+        help="Extra environment variable KEY=VALUE (repeatable)",
+    )
+    parser.add_argument(
+        "--python",
+        default=None,
+        help="Path to Python interpreter to use (default: sys.executable)",
+    )
+    parser.add_argument(
+        "--hermetic-path",
+        action="append",
+        dest="hermetic_path",
+        default=[],
+        help="Set PATH to only these dirs (replaces host PATH, repeatable)",
+    )
+    parser.add_argument(
+        "--allow-host-path",
+        action="store_true",
+        help="Allow host PATH (bootstrap escape hatch)",
+    )
+    parser.add_argument(
+        "--hermetic-empty",
+        action="store_true",
+        help="Start with empty PATH (populated by --path-prepend)",
+    )
+    parser.add_argument(
+        "--ld-linux", default=None, help="Buckos ld-linux path (disables posix_spawn)"
+    )
+    parser.add_argument(
+        "--path-prepend",
+        action="append",
+        dest="path_prepend",
+        default=[],
+        help="Directory to prepend to PATH (repeatable, resolved to absolute)",
+    )
+    parser.add_argument(
+        "--dep-prefix",
+        action="append",
+        dest="dep_prefixes",
+        default=[],
+        help="Dependency prefix dir — site-packages added to PYTHONPATH (repeatable)",
+    )
+    parser.add_argument(
+        "--use-setup-py",
+        action="store_true",
+        help="Use setup.py install instead of pip (avoids pip dependency)",
+    )
+    parser.add_argument(
+        "--run-tests",
+        action="store_true",
+        help="Run the test suite after install (opt-in src_test); gates install",
+    )
+    parser.add_argument(
+        "--test-arg",
+        action="append",
+        dest="test_args",
+        default=[],
+        help="Extra argument to pass to the test runner (repeatable, --run-tests only)",
+    )
     args = parser.parse_args()
 
     if not os.path.isdir(args.source_dir):
@@ -114,7 +168,8 @@ def main():
         try:
             pip_check = subprocess.run(
                 [python_exe, "-m", "pip", "--version"],
-                capture_output=True, timeout=10,
+                capture_output=True,
+                timeout=10,
             )
             if pip_check.returncode != 0:
                 use_setup_py = True
@@ -123,7 +178,9 @@ def main():
 
     if use_setup_py:
         cmd = [
-            python_exe, "setup.py", "install",
+            python_exe,
+            "setup.py",
+            "install",
             "--prefix=/usr",
             f"--root={output_abs}",
             "--single-version-externally-managed",
@@ -132,7 +189,10 @@ def main():
         cmd.extend(args.pip_args)
     else:
         cmd = [
-            python_exe, "-m", "pip", "install",
+            python_exe,
+            "-m",
+            "pip",
+            "install",
             "--no-deps",
             "--no-build-isolation",
             "--ignore-installed",
@@ -175,7 +235,11 @@ def main():
             _parent = os.path.dirname(os.path.abspath(_bp))
             for _ld in ("lib", "lib64"):
                 _d = os.path.join(_parent, _ld)
-                if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")) and not os.path.exists(os.path.join(_d, "libgcc_s.so.1")):
+                if (
+                    os.path.isdir(_d)
+                    and not os.path.exists(os.path.join(_d, "libc.so.6"))
+                    and not os.path.exists(os.path.join(_d, "libgcc_s.so.1"))
+                ):
                     _lib_dirs.append(_d)
                     _glibc_d = os.path.join(_d, "glibc")
                     if os.path.isdir(_glibc_d):
@@ -185,30 +249,41 @@ def main():
         # libgcc_s.so.1 which requires newer glibc.
         if _lib_dirs and not args.ld_linux:
             _existing = env.get("LD_LIBRARY_PATH", "")
-            env["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (":" + _existing if _existing else "")
+            env["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (
+                ":" + _existing if _existing else ""
+            )
         _py_paths = []
         for _bp in args.hermetic_path:
             _parent = os.path.dirname(os.path.abspath(_bp))
-            for _pattern in ("lib/python*/site-packages", "lib/python*/dist-packages",
-                             "lib64/python*/site-packages", "lib64/python*/dist-packages"):
+            for _pattern in (
+                "lib/python*/site-packages",
+                "lib/python*/dist-packages",
+                "lib64/python*/site-packages",
+                "lib64/python*/dist-packages",
+            ):
                 for _sp in __import__("glob").glob(os.path.join(_parent, _pattern)):
                     if os.path.isdir(_sp):
                         _py_paths.append(_sp)
         if _py_paths:
             _existing = env.get("PYTHONPATH", "")
-            env["PYTHONPATH"] = ":".join(_py_paths) + (":" + _existing if _existing else "")
+            env["PYTHONPATH"] = ":".join(_py_paths) + (
+                ":" + _existing if _existing else ""
+            )
     elif args.hermetic_empty:
         env["PATH"] = ""
     elif args.allow_host_path:
         env["PATH"] = _host_path
     else:
-        print("error: build requires --hermetic-path, --hermetic-empty, or --allow-host-path",
-              file=sys.stderr)
+        print(
+            "error: build requires --hermetic-path, --hermetic-empty, or --allow-host-path",
+            file=sys.stderr,
+        )
         sys.exit(1)
     if args.path_prepend:
         _pp_dirs = [os.path.abspath(p) for p in args.path_prepend if os.path.isdir(p)]
         if args.ld_linux and _pp_dirs:
             from portabilize import portabilize_toolchain
+
             _pp_dirs = portabilize_toolchain(_pp_dirs, args.ld_linux)
         if _pp_dirs:
             env["PATH"] = ":".join(_pp_dirs) + ":" + env.get("PATH", "")
@@ -217,7 +292,11 @@ def main():
             _parent = os.path.dirname(os.path.abspath(_bp))
             for _ld in ("lib", "lib64"):
                 _d = os.path.join(_parent, _ld)
-                if os.path.isdir(_d) and not os.path.exists(os.path.join(_d, "libc.so.6")) and not os.path.exists(os.path.join(_d, "libgcc_s.so.1")):
+                if (
+                    os.path.isdir(_d)
+                    and not os.path.exists(os.path.join(_d, "libc.so.6"))
+                    and not os.path.exists(os.path.join(_d, "libgcc_s.so.1"))
+                ):
                     _dep_lib_dirs.append(_d)
                     _glibc_d = os.path.join(_d, "glibc")
                     if os.path.isdir(_glibc_d):
@@ -225,7 +304,9 @@ def main():
         # Skip when ld-linux active for hermetic isolation
         if _dep_lib_dirs and not args.ld_linux:
             _existing = env.get("LD_LIBRARY_PATH", "")
-            env["LD_LIBRARY_PATH"] = ":".join(_dep_lib_dirs) + (":" + _existing if _existing else "")
+            env["LD_LIBRARY_PATH"] = ":".join(_dep_lib_dirs) + (
+                ":" + _existing if _existing else ""
+            )
 
     if args.ld_linux:
         sysroot_lib_paths(args.ld_linux, env)
@@ -234,12 +315,17 @@ def main():
     # so build deps (setuptools, wheel, argcomplete scripts, etc.) are found.
     if args.dep_prefixes:
         import glob as _glob
+
         dep_py_paths = []
         dep_bin_paths = []
         for prefix in args.dep_prefixes:
             prefix = os.path.abspath(prefix)
-            for pattern in ("usr/lib/python*/site-packages", "usr/lib/python*/dist-packages",
-                            "usr/lib64/python*/site-packages", "usr/lib64/python*/dist-packages"):
+            for pattern in (
+                "usr/lib/python*/site-packages",
+                "usr/lib/python*/dist-packages",
+                "usr/lib64/python*/site-packages",
+                "usr/lib64/python*/dist-packages",
+            ):
                 for sp in _glob.glob(os.path.join(prefix, pattern)):
                     if os.path.isdir(sp):
                         dep_py_paths.append(sp)
@@ -249,13 +335,19 @@ def main():
                     dep_bin_paths.append(bd)
         if dep_py_paths:
             existing = env.get("PYTHONPATH", "")
-            env["PYTHONPATH"] = ":".join(dep_py_paths) + (":" + existing if existing else "")
+            env["PYTHONPATH"] = ":".join(dep_py_paths) + (
+                ":" + existing if existing else ""
+            )
         if dep_bin_paths:
             existing = env.get("PATH", "")
-            env["PATH"] = existing + ":" + ":".join(dep_bin_paths) if existing else ":".join(dep_bin_paths)
+            env["PATH"] = (
+                existing + ":" + ":".join(dep_bin_paths)
+                if existing
+                else ":".join(dep_bin_paths)
+            )
 
     # If python has a broken ELF interpreter, invoke through ld-linux
-    if getattr(args, '_use_ld_linux', None):
+    if getattr(args, "_use_ld_linux", None):
         _ld, _py = args._use_ld_linux
         cmd = [_ld, _py] + cmd[1:]  # replace python_exe with ld-linux + python
 
@@ -263,8 +355,61 @@ def main():
     result = subprocess.run(cmd, env=env, cwd=cwd)
     if result.returncode != 0:
         label = "setup.py install" if args.use_setup_py else "pip install"
-        print(f"error: {label} failed with exit code {result.returncode}", file=sys.stderr)
+        print(
+            f"error: {label} failed with exit code {result.returncode}", file=sys.stderr
+        )
         sys.exit(1)
+
+    # src_test (opt-in): run the test suite from the source tree after a
+    # successful install, with the just-installed package on PYTHONPATH.
+    # Python has no single canonical test runner, so prefer pytest and
+    # fall back to `unittest discover` (CAVEAT: packages whose suite needs
+    # extra test deps or a different runner should pass --test-arg or not
+    # opt in).  A non-zero exit makes the action fail, gating the result.
+    if args.run_tests:
+        import glob as _tglob
+
+        _site_dirs = []
+        for _pat in (
+            "usr/lib/python*/site-packages",
+            "usr/lib/python*/dist-packages",
+            "usr/lib64/python*/site-packages",
+            "usr/lib64/python*/dist-packages",
+        ):
+            for _sp in _tglob.glob(os.path.join(output_abs, _pat)):
+                if os.path.isdir(_sp):
+                    _site_dirs.append(_sp)
+        test_env = dict(env)
+        if _site_dirs:
+            _existing = test_env.get("PYTHONPATH", "")
+            test_env["PYTHONPATH"] = ":".join(_site_dirs) + (
+                ":" + _existing if _existing else ""
+            )
+        # Choose a runner: pytest if importable, else unittest discover.
+        _have_pytest = (
+            subprocess.run(
+                [python_exe, "-c", "import pytest"],
+                env=test_env,
+                cwd=source_abs,
+                capture_output=True,
+            ).returncode
+            == 0
+        )
+        if _have_pytest:
+            test_cmd = [python_exe, "-m", "pytest"]
+        else:
+            test_cmd = [python_exe, "-m", "unittest", "discover"]
+        test_cmd.extend(args.test_args)
+        if getattr(args, "_use_ld_linux", None):
+            _ld, _py = args._use_ld_linux
+            test_cmd = [_ld] + test_cmd
+        test_result = subprocess.run(test_cmd, env=test_env, cwd=source_abs)
+        if test_result.returncode != 0:
+            print(
+                f"error: python tests failed with exit code {test_result.returncode}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
 
 
 if __name__ == "__main__":

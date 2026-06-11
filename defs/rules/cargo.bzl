@@ -65,6 +65,17 @@ def _cargo_build(ctx, source, pkg_config_file = None, lib_dirs_file = None):
     if ctx.attrs.vendor_deps:
         cmd.add("--vendor-dir", ctx.attrs.vendor_deps[DefaultInfo].default_outputs[0])
 
+    # src_test (opt-in): run_tests = True runs `cargo test` after the build
+    # in the SAME hermetic, network-isolated action (cargo's build+install
+    # is a single action, so test runs here rather than as a separate
+    # phase).  A failing suite aborts before install, gating install
+    # (Gentoo order: compile -> test -> install).  Default off = noop: no
+    # flag is added, so the action hash is unchanged.
+    if ctx.attrs.run_tests:
+        cmd.add("--run-tests")
+        for arg in ctx.attrs.test_args:
+            cmd.add("--test-arg", arg)
+
     ctx.actions.run(cmd, category = "cargo_build", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
@@ -120,6 +131,14 @@ cargo_build = rule(
         "cargo_args": attrs.list(attrs.string(), default = []),
         "bins": attrs.list(attrs.string(), default = []),
         "vendor_deps": attrs.option(attrs.dep(), default = None),
+        # src_test (opt-in): run_tests = True runs `cargo test` after the
+        # build (in the build action — cargo build+install is atomic) and
+        # gates install.  Default off = noop.  test_target is unused (cargo
+        # test is the runner); kept for a uniform interface across rules.
+        # ("tests" is a Buck2 built-in attr, hence run_tests.)
+        "run_tests": attrs.bool(default = False),
+        "test_target": attrs.string(default = ""),
+        "test_args": attrs.list(attrs.string(), default = []),
         "_cargo_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:cargo_helper"),
         ),
