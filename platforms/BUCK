@@ -134,6 +134,22 @@ platform(
     visibility = ["PUBLIC"],
 )
 
+# Bare target: linux-target without systemd — for the minimal / non-systemd
+# base rootfs.  Only the systemd USE flag differs (pam etc. stay on, so the
+# base still ships the libraries its tools link against).  Build the base
+# under this platform so procps et al. don't link libsystemd.
+platform(
+    name = "linux-target-bare",
+    constraint_values = [
+        ":linux",
+        ":bootstrap-toolchain",
+        "prelude//cpu/constraints:x86_64",
+        "//use/constraints:systemd-off",
+        "//use/constraints:pam-on",
+    ],
+    visibility = ["PUBLIC"],
+)
+
 # Linux target with host toolchain (for development)
 platform(
     name = "linux-target-host",
