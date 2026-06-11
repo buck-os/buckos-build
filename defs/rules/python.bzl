@@ -62,6 +62,17 @@ def _python_install(ctx, source):
     for arg in ctx.attrs.pip_args:
         cmd.add("--pip-arg", arg)
 
+    # src_test (opt-in): run_tests = True runs the test suite after install
+    # in the SAME action (python build+install is a single action, so test
+    # runs here rather than as a separate phase).  The helper prefers
+    # pytest and falls back to `unittest discover`.  A failing suite makes
+    # the action fail, gating the result.  Default off = noop: no flag is
+    # added, so the action hash is unchanged.
+    if ctx.attrs.run_tests:
+        cmd.add("--run-tests")
+        for arg in ctx.attrs.test_args:
+            cmd.add("--test-arg", arg)
+
     ctx.actions.run(cmd, category = "python_install", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
@@ -110,6 +121,15 @@ python_build = rule(
         # Python-specific
         "use_setup_py": attrs.bool(default = False),
         "pip_args": attrs.list(attrs.string(), default = []),
+        # src_test (opt-in): run_tests = True runs the test suite after
+        # install (in the build action — python build+install is atomic).
+        # Default off = noop.  CAVEAT: python has no canonical test runner;
+        # the helper prefers pytest, falling back to `unittest discover`.
+        # test_target is unused; kept for a uniform interface across rules.
+        # ("tests" is a Buck2 built-in attr, hence run_tests.)
+        "run_tests": attrs.bool(default = False),
+        "test_target": attrs.string(default = ""),
+        "test_args": attrs.list(attrs.string(), default = []),
         "_python_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:python_helper"),
         ),

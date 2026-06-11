@@ -59,6 +59,18 @@ def _perl_build(ctx, source):
     for cmd_str in ctx.attrs.post_install_cmds:
         cmd.add("--post-install-cmd", cmd_str)
 
+    # src_test (opt-in): run_tests = True runs the test target (default
+    # `test`) after build, before install, in the SAME action (perl's
+    # configure+build+install is a single action, so test runs here rather
+    # than as a separate phase).  Mirrors Gentoo perl-module.eclass
+    # (`make test`).  A failing suite aborts before install, gating install.
+    # Default off = noop: no flag is added, so the action hash is unchanged.
+    if ctx.attrs.run_tests:
+        cmd.add("--run-tests")
+        cmd.add("--test-target", ctx.attrs.test_target)
+        for arg in ctx.attrs.test_args:
+            cmd.add("--test-arg", arg)
+
     ctx.actions.run(cmd, category = "perl_build", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
@@ -106,6 +118,13 @@ perl_build = rule(
     attrs = COMMON_PACKAGE_ATTRS | {
         # Perl-specific
         "pre_build_cmds": attrs.list(attrs.string(), default = []),
+        # src_test (opt-in): run_tests = True runs `make <test_target>` (or
+        # `./Build <test_target>`) after build, before install (in the build
+        # action — perl build+install is atomic), and gates install.  Default
+        # off = noop.  ("tests" is a Buck2 built-in attr, hence run_tests.)
+        "run_tests": attrs.bool(default = False),
+        "test_target": attrs.string(default = "test"),
+        "test_args": attrs.list(attrs.string(), default = []),
         "_perl_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:perl_helper"),
         ),

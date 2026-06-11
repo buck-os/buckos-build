@@ -255,7 +255,7 @@ def _src_compile(ctx, configured, cflags_file = None, ldflags_file = None,
 
 def _src_install(ctx, built, cflags_file = None, ldflags_file = None,
                  pkg_config_file = None, lib_dirs_file = None,
-                 bin_dirs_file = None):
+                 bin_dirs_file = None, test_marker = None):
     """Run make install DESTDIR=... into the output prefix.
 
     install_prefix_var overrides the make variable name for the install
@@ -331,7 +331,75 @@ def _src_install(ctx, built, cflags_file = None, ldflags_file = None,
     for post_cmd in ctx.attrs.post_install_cmds:
         cmd.add("--post-cmd", post_cmd)
 
+    # Opt-in src_test gates install (Gentoo order: compile -> test -> install).
+    # When tests = False (default) test_marker is None and install is unchanged.
+    if test_marker:
+        cmd.add(cmd_args(hidden = [test_marker]))
+
     ctx.actions.run(cmd, category = "autotools_install", identifier = ctx.attrs.name, allow_cache_upload = True)
+    return output
+
+# ── Phase: src_test (opt-in) ──────────────────────────────────────────
+
+def _src_test(ctx, built, cflags_file = None, ldflags_file = None,
+              pkg_config_file = None, lib_dirs_file = None,
+              bin_dirs_file = None):
+    """Run the package's own test suite on the built tree (opt-in: tests = True).
+
+    Reuses build_helper (the compile helper) with the test target so the
+    full hermetic env — PATH, LD_LIBRARY_PATH, ld-linux, SHELL, network
+    isolation — matches the compile phase.  That parity matters because
+    tests compile and RUN target binaries.  Mirrors Gentoo's default
+    src_test (`emake check`).  Native-only: target test binaries can't run
+    under a cross build, so don't opt aarch64-only packages in.
+    """
+    output = ctx.actions.declare_output("tested", dir = True)
+    cmd = cmd_args(ctx.attrs._build_tool[RunInfo])
+    cmd.add("--build-dir", built)
+    cmd.add("--output-dir", output.as_output())
+
+    for env_arg in toolchain_env_args(ctx):
+        cmd.add("--env", env_arg)
+    for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
+        cmd.add(arg)
+
+    _tc_cflags = list(toolchain_extra_cflags(ctx)) + list(ctx.attrs.extra_cflags) + package_linker_cflags(ctx)
+    _tc_ldflags = list(toolchain_extra_ldflags(ctx)) + list(ctx.attrs.extra_ldflags) + package_linker_ldflags(ctx)
+    if _tc_cflags:
+        cmd.add("--env", cmd_args("CFLAGS=", cmd_args(_tc_cflags, delimiter = " "), delimiter = ""))
+    if _tc_ldflags:
+        cmd.add("--env", cmd_args("LDFLAGS=", cmd_args(_tc_ldflags, delimiter = " "), delimiter = ""))
+
+    add_flag_file(cmd, "--cflags-file", cflags_file)
+    add_flag_file(cmd, "--ldflags-file", ldflags_file)
+    add_flag_file(cmd, "--pkg-config-file", pkg_config_file)
+    add_flag_file(cmd, "--lib-dirs-file", lib_dirs_file)
+    add_flag_file(cmd, "--path-append-file", bin_dirs_file)
+
+    for arg in host_tool_path_args(ctx):
+        cmd.add(arg)
+
+    for entry in ctx.attrs.use_env:
+        cmd.add("--env", entry)
+    for key, value in ctx.attrs.env.items():
+        cmd.add("--env", "{}={}".format(key, value))
+
+    # Suppress autotools regeneration (same as compile/install phases).
+    for var in ["ACLOCAL=true", "AUTOMAKE=true", "AUTOCONF=true", "AUTOHEADER=true", "MAKEINFO=true"]:
+        cmd.add(cmd_args("--make-arg=", var, delimiter = ""))
+    if ctx.attrs.skip_configure:
+        cmd.add("--make-arg=PREFIX=/usr")
+    if ctx.attrs.build_subdir:
+        cmd.add("--build-subdir", ctx.attrs.build_subdir)
+
+    # The opt-in test target (default `check`) + any extra args.
+    cmd.add(cmd_args("--make-arg=", ctx.attrs.test_target, delimiter = ""))
+    for arg in ctx.attrs.test_args:
+        cmd.add(cmd_args("--make-arg=", arg, delimiter = ""))
+
+    ctx.actions.run(cmd, category = "autotools_test", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
 # ── Rule implementation ───────────────────────────────────────────────
@@ -362,9 +430,18 @@ def _autotools_build_impl(ctx):
     built = _src_compile(ctx, configured, cflags_file, ldflags_file,
                          pkg_config_file, lib_dirs_file, bin_dirs_file)
 
-    # Phase 5: src_install
+    # Phase 5a: src_test — opt-in (tests = True), default off = noop.
+    # Runs the package's own suite (default `make check`) on the built
+    # tree and gates install (Gentoo order: compile -> test -> install).
+    test_marker = None
+    if ctx.attrs.run_tests:
+        test_marker = _src_test(ctx, built, cflags_file, ldflags_file,
+                                pkg_config_file, lib_dirs_file, bin_dirs_file)
+
+    # Phase 5b: src_install
     installed = _src_install(ctx, built, cflags_file, ldflags_file,
-                             pkg_config_file, lib_dirs_file, bin_dirs_file)
+                             pkg_config_file, lib_dirs_file, bin_dirs_file,
+                             test_marker = test_marker)
 
     # Build transitive sets
     compile_tset, link_tset, path_tset, runtime_tset = build_package_tsets(ctx, installed)
@@ -412,6 +489,12 @@ autotools_build = rule(
         "install_args": attrs.list(attrs.string(), default = []),
         "install_targets": attrs.list(attrs.string(), default = []),
         "install_prefix_var": attrs.option(attrs.string(), default = None),
+        # src_test (opt-in): run_tests = True runs `make <test_target>`
+        # after compile and gates install.  Default off = noop (no extra
+        # action).  ("tests" is a Buck2 built-in attr, hence run_tests.)
+        "run_tests": attrs.bool(default = False),
+        "test_target": attrs.string(default = "check"),
+        "test_args": attrs.list(attrs.string(), default = []),
         "_configure_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:configure_helper"),
         ),

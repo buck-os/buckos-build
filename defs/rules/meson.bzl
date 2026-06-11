@@ -157,7 +157,7 @@ def _src_compile(ctx, configured, source, lib_dirs_file = None):
     ctx.actions.run(cmd, category = "meson_compile", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
-def _src_install(ctx, built, source, lib_dirs_file = None):
+def _src_install(ctx, built, source, lib_dirs_file = None, test_marker = None):
     """Run ninja install into the output prefix."""
     output = ctx.actions.declare_output("installed", dir = True)
     cmd = cmd_args(ctx.attrs._install_tool[RunInfo])
@@ -167,6 +167,11 @@ def _src_install(ctx, built, source, lib_dirs_file = None):
 
     # Ensure source dir is available for meson install rules
     cmd.add(cmd_args(hidden = source))
+
+    # Opt-in src_test gates install (Gentoo order: compile -> test -> install).
+    # When run_tests = False (default) test_marker is None and install is unchanged.
+    if test_marker:
+        cmd.add(cmd_args(hidden = [test_marker]))
 
     # Inject toolchain CC/CXX/AR
     for env_arg in toolchain_env_args(ctx):
@@ -201,6 +206,56 @@ def _src_install(ctx, built, source, lib_dirs_file = None):
     ctx.actions.run(cmd, category = "meson_install", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
+# ── Phase: src_test (opt-in) ──────────────────────────────────────────
+
+def _src_test(ctx, built, source, lib_dirs_file = None):
+    """Run `meson test` on the built tree (opt-in: run_tests = True).
+
+    Reuses build_helper (the compile helper) with --test-mode meson so the
+    full hermetic env — PATH, LD_LIBRARY_PATH, ld-linux, SHELL, network
+    isolation — matches the compile phase.  That parity matters because
+    tests run target binaries.  Mirrors Gentoo's meson.eclass src_test
+    (`meson test`).  Native-only: target test binaries can't run under a
+    cross build, so don't opt aarch64-only packages in.
+    """
+    output = ctx.actions.declare_output("tested", dir = True)
+    cmd = cmd_args(ctx.attrs._build_tool[RunInfo])
+    cmd.add("--build-dir", built)
+    cmd.add("--output-dir", output.as_output())
+    cmd.add("--build-system", "ninja")
+    cmd.add("--test-mode", "meson")
+
+    # Ensure source dir is available (meson build trees reference it).
+    cmd.add(cmd_args(hidden = source))
+
+    # Inject toolchain CC/CXX/AR
+    for env_arg in toolchain_env_args(ctx):
+        cmd.add("--env", env_arg)
+
+    # Hermetic PATH and ld-linux from seed toolchain
+    for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
+        cmd.add(arg)
+
+    # Inject USE flag and user-specified environment variables
+    for entry in ctx.attrs.use_env:
+        cmd.add("--env", entry)
+    for key, value in ctx.attrs.env.items():
+        cmd.add("--env", "{}={}".format(key, value))
+
+    add_flag_file(cmd, "--lib-dirs-file", lib_dirs_file)
+
+    # Add host_deps bin dirs to PATH
+    for arg in host_tool_path_args(ctx):
+        cmd.add(arg)
+
+    for arg in ctx.attrs.test_args:
+        cmd.add("--test-arg", arg)
+
+    ctx.actions.run(cmd, category = "meson_test", identifier = ctx.attrs.name, allow_cache_upload = True)
+    return output
+
 # ── Rule implementation ───────────────────────────────────────────────
 
 def _meson_build_impl(ctx):
@@ -226,8 +281,15 @@ def _meson_build_impl(ctx):
     # Phase 4: src_compile (source passed as hidden input for out-of-tree builds)
     built = _src_compile(ctx, configured, prepared, lib_dirs_file)
 
-    # Phase 5: src_install
-    installed = _src_install(ctx, built, prepared, lib_dirs_file)
+    # Phase 5a: src_test — opt-in (run_tests = True), default off = noop.
+    # Runs `meson test` on the built tree and gates install (Gentoo order:
+    # compile -> test -> install).
+    test_marker = None
+    if ctx.attrs.run_tests:
+        test_marker = _src_test(ctx, built, prepared, lib_dirs_file)
+
+    # Phase 5b: src_install
+    installed = _src_install(ctx, built, prepared, lib_dirs_file, test_marker = test_marker)
 
     # Build transitive sets
     compile_tset, link_tset, path_tset, runtime_tset = build_package_tsets(ctx, installed)
@@ -264,6 +326,13 @@ meson_build = rule(
         "meson_defines": attrs.list(attrs.string(), default = []),
         "source_subdir": attrs.string(default = ""),
         "make_args": attrs.list(attrs.string(), default = []),
+        # src_test (opt-in): run_tests = True runs `meson test` after
+        # compile and gates install.  Default off = noop (no extra action).
+        # test_target is unused (meson test is the runner); kept for a
+        # uniform interface.  ("tests" is a Buck2 built-in attr.)
+        "run_tests": attrs.bool(default = False),
+        "test_target": attrs.string(default = ""),
+        "test_args": attrs.list(attrs.string(), default = []),
         "_meson_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:meson_helper"),
         ),

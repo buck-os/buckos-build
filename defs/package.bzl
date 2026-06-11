@@ -640,7 +640,8 @@ def package(
                          "cc_as_configure_arg", "skip_cc_auto_arg",
                          "build_subdir", "pre_build_cmds", "install_args",
                          "install_targets", "install_prefix_var",
-                         "configure_script", "configure_prefix_deps"):
+                         "configure_script", "configure_prefix_deps",
+                         "run_tests", "test_target", "test_args"):
             build_kwargs.pop(_pop_key, None)
         build_rule = "binary"
     elif build_rule == "make":

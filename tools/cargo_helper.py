@@ -158,6 +158,18 @@ def main():
         default=None,
         help="File with lib dirs (one per line, from tset projection)",
     )
+    parser.add_argument(
+        "--run-tests",
+        action="store_true",
+        help="Run `cargo test` after the build (opt-in src_test); gates install",
+    )
+    parser.add_argument(
+        "--test-arg",
+        action="append",
+        dest="test_args",
+        default=[],
+        help="Extra argument to pass to `cargo test` (repeatable, --run-tests only)",
+    )
     args = parser.parse_args()
 
     if not os.path.isdir(args.source_dir):
@@ -569,6 +581,33 @@ def main():
             file=sys.stderr,
         )
         sys.exit(1)
+
+    # src_test (opt-in): run `cargo test` in the same hermetic, network-
+    # isolated env as the build (Gentoo cargo.eclass `cargo_src_test`).
+    # A non-zero exit aborts before the install below, so a failing suite
+    # gates install (Buck2 discards the action output on failure).
+    if args.run_tests:
+        test_cmd = [
+            "cargo",
+            "test",
+            "--release",
+            "--target-dir",
+            target_dir,
+            "--manifest-path",
+            cargo_toml,
+        ]
+        if args.features:
+            test_cmd.extend(["--features", ",".join(args.features)])
+        test_cmd.extend(args.test_args)
+        if _NETWORK_ISOLATED:
+            test_cmd = ["unshare", "--net"] + test_cmd
+        test_result = subprocess.run(test_cmd, env=env)
+        if test_result.returncode != 0:
+            print(
+                f"error: cargo test failed with exit code {test_result.returncode}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
 
     # Install binaries from target/release/ to output-dir/usr/bin/
     release_dir = os.path.join(target_dir, "release")

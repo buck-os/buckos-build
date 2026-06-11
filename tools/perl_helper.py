@@ -27,7 +27,7 @@ def _resolve_env_paths(value):
         flag_resolved = False
         for prefix in _FLAG_PREFIXES:
             if token.startswith(prefix) and len(token) > len(prefix):
-                path = token[len(prefix):]
+                path = token[len(prefix) :]
                 if not os.path.isabs(path) and os.path.exists(path):
                     parts.append(prefix + os.path.abspath(path))
                 else:
@@ -82,20 +82,57 @@ def main():
     _host_path = os.environ.get("PATH", "")
 
     parser = argparse.ArgumentParser(description="Build Perl module")
-    parser.add_argument("--source-dir", required=True,
-                        help="Perl module source directory")
-    parser.add_argument("--output-dir", required=True,
-                        help="Output directory (DESTDIR)")
-    parser.add_argument("--env", action="append", dest="extra_env", default=[],
-                        help="Extra environment variable KEY=VALUE (repeatable)")
-    parser.add_argument("--configure-arg", action="append",
-                        dest="configure_args", default=[],
-                        help="Extra arg for Makefile.PL/Build.PL (repeatable)")
-    parser.add_argument("--pre-cmd", action="append", dest="pre_cmds", default=[],
-                        help="Shell command to run before configure (repeatable)")
-    parser.add_argument("--post-install-cmd", action="append",
-                        dest="post_install_cmds", default=[],
-                        help="Shell command to run after install (repeatable)")
+    parser.add_argument(
+        "--source-dir", required=True, help="Perl module source directory"
+    )
+    parser.add_argument(
+        "--output-dir", required=True, help="Output directory (DESTDIR)"
+    )
+    parser.add_argument(
+        "--env",
+        action="append",
+        dest="extra_env",
+        default=[],
+        help="Extra environment variable KEY=VALUE (repeatable)",
+    )
+    parser.add_argument(
+        "--configure-arg",
+        action="append",
+        dest="configure_args",
+        default=[],
+        help="Extra arg for Makefile.PL/Build.PL (repeatable)",
+    )
+    parser.add_argument(
+        "--pre-cmd",
+        action="append",
+        dest="pre_cmds",
+        default=[],
+        help="Shell command to run before configure (repeatable)",
+    )
+    parser.add_argument(
+        "--post-install-cmd",
+        action="append",
+        dest="post_install_cmds",
+        default=[],
+        help="Shell command to run after install (repeatable)",
+    )
+    parser.add_argument(
+        "--run-tests",
+        action="store_true",
+        help="Run the test target after build, before install (opt-in src_test)",
+    )
+    parser.add_argument(
+        "--test-target",
+        default="test",
+        help="make/Build test target to run (default: test)",
+    )
+    parser.add_argument(
+        "--test-arg",
+        action="append",
+        dest="test_args",
+        default=[],
+        help="Extra argument to pass to the test target (repeatable, --run-tests only)",
+    )
     add_path_args(parser)
     args = parser.parse_args()
 
@@ -108,8 +145,9 @@ def main():
 
     # Copy source to scratch to avoid mutating the previous action's output.
     # Perl builds (Makefile.PL, Build.PL, make) generate artifacts in-place.
-    _scratch = os.path.abspath(os.environ.get("BUCK_SCRATCH_PATH",
-                                              os.environ.get("TMPDIR", "/tmp")))
+    _scratch = os.path.abspath(
+        os.environ.get("BUCK_SCRATCH_PATH", os.environ.get("TMPDIR", "/tmp"))
+    )
     _scratch_src = os.path.join(_scratch, "source")
     shutil.copytree(source_dir, _scratch_src, symlinks=True)
     source_dir = _scratch_src
@@ -144,14 +182,18 @@ def main():
                     _lib_dirs.append(_glibc_d)
     if _lib_dirs:
         _existing = env.get("LD_LIBRARY_PATH", "")
-        env["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (":" + _existing if _existing else "")
+        env["LD_LIBRARY_PATH"] = ":".join(_lib_dirs) + (
+            ":" + _existing if _existing else ""
+        )
 
     # Run pre-commands in source dir
     for cmd_str in args.pre_cmds:
         result = subprocess.run(["sh", "-ec", cmd_str], cwd=source_dir, env=env)
         if result.returncode != 0:
-            print(f"error: pre-command failed with exit code {result.returncode}",
-                  file=sys.stderr)
+            print(
+                f"error: pre-command failed with exit code {result.returncode}",
+                file=sys.stderr,
+            )
             sys.exit(1)
 
     # Detect build system
@@ -161,7 +203,8 @@ def main():
     if has_makefile_pl:
         # ExtUtils::MakeMaker
         configure_cmd = [
-            "perl", "Makefile.PL",
+            "perl",
+            "Makefile.PL",
             "PREFIX=/usr",
             "INSTALLDIRS=vendor",
         ] + args.configure_args
@@ -173,15 +216,29 @@ def main():
 
         result = subprocess.run(
             ["make", f"-j{os.cpu_count() or 1}"],
-            cwd=source_dir, env=env,
+            cwd=source_dir,
+            env=env,
         )
         if result.returncode != 0:
             print("error: make failed", file=sys.stderr)
             sys.exit(1)
 
+        # src_test (opt-in): run the test target before install, mirroring
+        # Gentoo perl-module.eclass (`make test`).  Gates install.
+        if args.run_tests:
+            result = subprocess.run(
+                ["make", args.test_target] + args.test_args,
+                cwd=source_dir,
+                env=env,
+            )
+            if result.returncode != 0:
+                print("error: make test failed", file=sys.stderr)
+                sys.exit(1)
+
         result = subprocess.run(
             ["make", "install", f"DESTDIR={output_dir}"],
-            cwd=source_dir, env=env,
+            cwd=source_dir,
+            env=env,
         )
         if result.returncode != 0:
             print("error: make install failed", file=sys.stderr)
@@ -190,7 +247,8 @@ def main():
     elif has_build_pl:
         # Module::Build
         configure_cmd = [
-            "perl", "Build.PL",
+            "perl",
+            "Build.PL",
             "--prefix=/usr",
             "--installdirs=vendor",
         ] + args.configure_args
@@ -205,17 +263,32 @@ def main():
             print("error: ./Build failed", file=sys.stderr)
             sys.exit(1)
 
+        # src_test (opt-in): run the Build test target before install,
+        # mirroring Gentoo perl-module.eclass.  Gates install.
+        if args.run_tests:
+            result = subprocess.run(
+                ["./Build", args.test_target] + args.test_args,
+                cwd=source_dir,
+                env=env,
+            )
+            if result.returncode != 0:
+                print("error: ./Build test failed", file=sys.stderr)
+                sys.exit(1)
+
         result = subprocess.run(
             ["./Build", "install", f"--destdir={output_dir}"],
-            cwd=source_dir, env=env,
+            cwd=source_dir,
+            env=env,
         )
         if result.returncode != 0:
             print("error: ./Build install failed", file=sys.stderr)
             sys.exit(1)
 
     else:
-        print("error: no Makefile.PL or Build.PL found in source directory",
-              file=sys.stderr)
+        print(
+            "error: no Makefile.PL or Build.PL found in source directory",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     # Run post-install commands
@@ -225,8 +298,10 @@ def main():
         post_env["DESTDIR"] = output_dir
         result = subprocess.run(["sh", "-ec", cmd_str], cwd=output_dir, env=post_env)
         if result.returncode != 0:
-            print(f"error: post-install command failed with exit code {result.returncode}",
-                  file=sys.stderr)
+            print(
+                f"error: post-install command failed with exit code {result.returncode}",
+                file=sys.stderr,
+            )
             sys.exit(1)
 
     sanitize_filenames(output_dir)

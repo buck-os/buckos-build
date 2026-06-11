@@ -70,6 +70,17 @@ def _go_build(ctx, source):
     if ctx.attrs.lib_only:
         cmd.add("--lib-only")
 
+    # src_test (opt-in): run_tests = True runs `go test ./...` after the
+    # build in the SAME hermetic, network-isolated action (go's build+install
+    # is a single action, so test runs here rather than as a separate
+    # phase).  A failing suite aborts before install, gating install
+    # (Gentoo order: compile -> test -> install).  Default off = noop: no
+    # flag is added, so the action hash is unchanged.
+    if ctx.attrs.run_tests:
+        cmd.add("--run-tests")
+        for arg in ctx.attrs.test_args:
+            cmd.add("--test-arg", arg)
+
     ctx.actions.run(cmd, category = "go_build", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
@@ -122,6 +133,14 @@ go_build = rule(
         "packages": attrs.list(attrs.string(), default = []),
         "vendor_deps": attrs.option(attrs.dep(), default = None),
         "lib_only": attrs.bool(default = False),
+        # src_test (opt-in): run_tests = True runs `go test ./...` after the
+        # build (in the build action — go build+install is atomic) and gates
+        # install.  Default off = noop.  test_target is unused (go test is
+        # the runner); kept for a uniform interface across rules.
+        # ("tests" is a Buck2 built-in attr, hence run_tests.)
+        "run_tests": attrs.bool(default = False),
+        "test_target": attrs.string(default = ""),
+        "test_args": attrs.list(attrs.string(), default = []),
         "_go_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:go_helper"),
         ),

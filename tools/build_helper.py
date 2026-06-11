@@ -305,6 +305,24 @@ def main():
         default=None,
         help="File with dep bin dirs to append to PATH (one per line, from tset projection)",
     )
+    parser.add_argument(
+        "--test-mode",
+        choices=["none", "ctest", "meson"],
+        default="none",
+        help=(
+            "Run the package test suite instead of the build step "
+            "(opt-in src_test). 'ctest' runs ctest in the build dir "
+            "(skips if no CTestTestfile.cmake); 'meson' runs `meson test`. "
+            "Default 'none' leaves the build step unchanged."
+        ),
+    )
+    parser.add_argument(
+        "--test-arg",
+        action="append",
+        dest="test_args",
+        default=[],
+        help="Extra argument to pass to the test runner (repeatable, --test-mode only)",
+    )
     args = parser.parse_args()
 
     # Read flag files early — tset-propagated values are base defaults.
@@ -1214,7 +1232,30 @@ def main():
     if args.build_subdir:
         make_dir = os.path.join(output_dir, args.build_subdir)
 
-    if args.build_system == "ninja":
+    # src_test (opt-in): run the package's own test suite in the (copied,
+    # path-rewritten) build tree instead of the build step.  Reuses all of
+    # this helper's hermetic env setup (PATH, LD_LIBRARY_PATH, ld-linux,
+    # SHELL, pkg-config wrapper) plus the unshare --net isolation below, so
+    # the test env matches compile exactly.  ctest treats a missing
+    # CTestTestfile.cmake as a pass (Gentoo cmake.eclass skips when no
+    # tests are declared); meson uses its native `meson test` runner.
+    _test_cwd = None
+    if args.test_mode == "ctest":
+        if not os.path.isfile(os.path.join(make_dir, "CTestTestfile.cmake")):
+            print(
+                "src_test: no CTestTestfile.cmake — no tests declared, skipping",
+                file=sys.stderr,
+            )
+            cmd = ["true"]
+        else:
+            # ctest runs from the build dir (older ctest lacks --test-dir).
+            _test_cwd = make_dir
+            cmd = ["ctest", "--output-on-failure", f"-j{jobs}"]
+            cmd.extend(args.test_args)
+    elif args.test_mode == "meson":
+        cmd = ["meson", "test", "-C", make_dir, "--print-errorlogs"]
+        cmd.extend(args.test_args)
+    elif args.build_system == "ninja":
         cmd = ["ninja", "-C", make_dir, f"-j{jobs}"]
     else:
         cmd = ["make", "-C", make_dir, f"-j{jobs}"]
@@ -1259,10 +1300,15 @@ def main():
             file=sys.stderr,
         )
 
-    result = subprocess.run(cmd, env=env)
+    result = subprocess.run(cmd, env=env, cwd=_test_cwd)
     if result.returncode != 0:
+        _what = (
+            "{} test".format(args.test_mode)
+            if args.test_mode != "none"
+            else args.build_system
+        )
         print(
-            f"error: {args.build_system} failed with exit code {result.returncode}",
+            f"error: {_what} failed with exit code {result.returncode}",
             file=sys.stderr,
         )
         sys.exit(1)
