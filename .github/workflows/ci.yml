@@ -182,6 +182,16 @@ jobs:
         run: |
           buck2 build //packages/linux/system:systemd-container-rootfs --out systemd-container-rootfs.tar
           xz -9f systemd-container-rootfs.tar
+      - name: Reproducibility gate (rootfs build-root leak scan)
+        # Cross-machine reproducibility: the shipped rootfs must not embed the
+        # absolute build root.  rootfs_helper's strip + text/ELF normalization
+        # passes clear all build-path leaks, so this gate is strict: ANY leak
+        # fails it.  (If a new package introduces an unhandled leak form, add a
+        # case to _normalize_build_string rather than allowlisting it.)
+        run: |
+          set -euo pipefail
+          rootfs=$(buck2 build //packages/linux/system:buckos-rootfs --show-full-output 2>/dev/null | awk 'NF>1{print $2; exit}')
+          python3 tools/repro_pathscan.py --root "$PWD" "$rootfs"
       - name: Build minimal ISO
         run: buck2 build //packages/linux/system:buckos-minimal-iso --out buckos-minimal.iso
       - name: Build KDE ISO

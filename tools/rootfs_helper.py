@@ -6,8 +6,10 @@ merged-bin for systemd, acct-user/acct-group merging, and ldconfig.
 """
 
 import argparse
+import glob
 import hashlib
 import os
+import re
 import shutil
 import struct
 import stat
@@ -26,9 +28,14 @@ from _env import add_path_args, clean_env, setup_path
 # Tar-based rootfs merge overwrites files, so later packages clobber
 # earlier ones.  These helpers accumulate entries across packages.
 
-_MERGE_FILES = frozenset({
-    "etc/passwd", "etc/group", "etc/shadow", "etc/gshadow",
-})
+_MERGE_FILES = frozenset(
+    {
+        "etc/passwd",
+        "etc/group",
+        "etc/shadow",
+        "etc/gshadow",
+    }
+)
 
 
 def _parse_colon_file(text):
@@ -217,11 +224,14 @@ def _merge_package(src, rootfs, env):
         # Use tar to merge, preserving directory symlinks
         tar_c = subprocess.Popen(
             ["tar", "-C", src, "-c", "."],
-            stdout=subprocess.PIPE, env=env,
+            stdout=subprocess.PIPE,
+            env=env,
         )
         tar_x = subprocess.Popen(
             ["tar", "-C", rootfs, "-x", "--keep-directory-symlink"],
-            stdin=tar_c.stdout, stderr=subprocess.DEVNULL, env=env,
+            stdin=tar_c.stdout,
+            stderr=subprocess.DEVNULL,
+            env=env,
         )
         tar_c.stdout.close()
         tar_x.communicate()
@@ -329,8 +339,6 @@ def _merge_sbin_into_bin(rootfs):
         os.symlink("usr/bin", sbin)
 
 
-
-
 def _merge_acct_entries(rootfs):
     """Merge acct-group / acct-user entries into /etc/{group,passwd,shadow}.
 
@@ -396,14 +404,16 @@ def _merge_acct_entries(rootfs):
                 if name not in existing_users:
                     new_users.append(entry)
                     existing_users.add(name)
-                    shadow_path = os.path.join(acct_user_dir,
-                                               fname.replace(".passwd", ".shadow"))
+                    shadow_path = os.path.join(
+                        acct_user_dir, fname.replace(".passwd", ".shadow")
+                    )
                     if os.path.isfile(shadow_path):
                         shadow_entry = _read_or(shadow_path).strip()
                         if shadow_entry:
                             new_shadows.append(shadow_entry)
-                groups_path = os.path.join(acct_user_dir,
-                                           fname.replace(".passwd", ".groups"))
+                groups_path = os.path.join(
+                    acct_user_dir, fname.replace(".passwd", ".groups")
+                )
                 if os.path.isfile(groups_path):
                     glist = _read_or(groups_path).strip()
                     if glist:
@@ -433,7 +443,9 @@ def _merge_acct_entries(rootfs):
             parts = line.split(":")
             gname = parts[0]
             if gname in supplementary:
-                existing_members = [m for m in parts[3].split(",") if m] if len(parts) > 3 else []
+                existing_members = (
+                    [m for m in parts[3].split(",") if m] if len(parts) > 3 else []
+                )
                 for user in supplementary[gname]:
                     if user not in existing_members:
                         existing_members.append(user)
@@ -490,14 +502,15 @@ def _fix_elf_interpreters(rootfs):
                         continue
                     p_offset = struct.unpack_from("<Q", data, off + 8)[0]
                     p_filesz = struct.unpack_from("<Q", data, off + 32)[0]
-                    interp = data[p_offset:p_offset + p_filesz]
+                    interp = data[p_offset : p_offset + p_filesz]
                     if b"ld-linux" not in interp:
                         continue
                     if len(TARGET_INTERP) + 1 <= p_filesz:
-                        data[p_offset:p_offset + len(TARGET_INTERP)] = TARGET_INTERP
+                        data[p_offset : p_offset + len(TARGET_INTERP)] = TARGET_INTERP
                         data[p_offset + len(TARGET_INTERP)] = 0
-                        for j in range(p_offset + len(TARGET_INTERP) + 1,
-                                       p_offset + p_filesz):
+                        for j in range(
+                            p_offset + len(TARGET_INTERP) + 1, p_offset + p_filesz
+                        ):
                             data[j] = 0
                         modified = True
                     break
@@ -601,13 +614,16 @@ def _sanitize_rpath(rootfs):
                             continue
                         rpath = data[str_off:str_end].decode("ascii", errors="replace")
                         parts = rpath.split(":")
-                        clean = [p for p in parts
-                                 if p and "/home/" not in p and "buck-out" not in p]
+                        clean = [
+                            p
+                            for p in parts
+                            if p and "/home/" not in p and "buck-out" not in p
+                        ]
                         new_rpath = ":".join(clean)
                         new_bytes = new_rpath.encode("ascii")
                         old_len = str_end - str_off
                         if len(new_bytes) <= old_len:
-                            data[str_off:str_off + len(new_bytes)] = new_bytes
+                            data[str_off : str_off + len(new_bytes)] = new_bytes
                             for j in range(len(new_bytes), old_len):
                                 data[str_off + j] = 0
                             modified = True
@@ -668,18 +684,234 @@ def _sanitize_rpath(rootfs):
         print(f"Sanitized RPATH in {sanitized} ELF files")
 
 
+def _find_strip(env, rootfs):
+    """Locate a strip that understands the buckos toolchain's ELF output.
+
+    The host strip is often too old for modern sections (e.g. .relr.dyn /
+    SHT_RELR): it bails out with "Unable to recognise the format" and silently
+    leaves debug info -- and its absolute build paths -- in place.  Prefer the
+    buckos target strip (*-buckos-linux-gnu-strip) from the hermetic PATH or the
+    rootfs; fall back to a plain strip only as a last resort.
+    """
+    cands = []
+    for d in env.get("PATH", "").split(os.pathsep):
+        if d:
+            cands += sorted(glob.glob(os.path.join(d, "*-buckos-linux-gnu-strip")))
+    cands += sorted(
+        glob.glob(os.path.join(rootfs, "usr", "bin", "*-buckos-linux-gnu-strip"))
+    )
+    cands.append(os.path.join(rootfs, "usr", "bin", "strip"))
+    for c in cands:
+        if os.path.isfile(c) and os.access(c, os.X_OK):
+            return c
+    return shutil.which("strip", path=env.get("PATH", ""))
+
+
+def _strip_elf(rootfs, env):
+    """Strip debug info from rootfs ELF and ar files for reproducibility + size.
+
+    DWARF debug sections carry absolute build paths in DW_AT_comp_dir (e.g.
+    /<root>/buck-out/.../glibc/build/csu) from the bootstrap toolchain, whose
+    builds do not remap them.  Every binary links glibc's crt objects, so the
+    path leaks into the shipped image and makes it non-reproducible across
+    builders.  --strip-debug removes those sections while keeping the dynamic
+    and (regular) symbol tables intact.  Static archives (.a) are stripped too.
+    """
+    strip_bin = _find_strip(env, rootfs)
+    if not strip_bin:
+        print(
+            "warning: strip not found; rootfs debug info not stripped "
+            "(build paths may leak into the image)"
+        )
+        return
+
+    stripped = 0
+    errors = 0
+    for dirpath, _, filenames in os.walk(rootfs):
+        for name in filenames:
+            fpath = os.path.join(dirpath, name)
+            if os.path.islink(fpath) or not os.path.isfile(fpath):
+                continue
+            try:
+                with open(fpath, "rb") as f:
+                    head = f.read(18)
+            except OSError:
+                continue
+            is_ar = head[:8] == b"!<arch>\n"
+            is_elf = (
+                head[:4] == b"\x7fELF"
+                and len(head) >= 18
+                and (head[16] | (head[17] << 8)) in (2, 3)  # ET_EXEC, ET_DYN
+            )
+            if not (is_elf or is_ar):
+                continue
+            try:
+                orig_mode = os.stat(fpath).st_mode
+                os.chmod(fpath, orig_mode | stat.S_IWUSR)
+                result = subprocess.run(
+                    [strip_bin, "--strip-debug", fpath],
+                    env=env,
+                    capture_output=True,
+                    text=True,
+                )
+                os.chmod(fpath, orig_mode)
+                if result.returncode == 0:
+                    stripped += 1
+                else:
+                    errors += 1
+            except OSError:
+                errors += 1
+
+    print(
+        f"Stripped debug info from {stripped} files"
+        + (f" ({errors} strip errors)" if errors else "")
+    )
+
+
+# Absolute build paths embedded in text files (pkg-config .pc, *-config scripts,
+# Makefile fragments, headers, man pages).  Strip can't touch these, so rewrite
+# them: a package's install prefix .../buck-out/.../installed/usr -> /usr, and
+# any other stray buck-out path -> /usr (a sane default for a runtime image).
+_BUCKOUT_INSTALLED = re.compile(rb"/[^\s:\"']+/buck-out/[^\s:\"']+/installed")
+_BUCKOUT_ANY = re.compile(rb"/[^\s:\"']+/buck-out/[^\s:\"']*")
+
+
+def _normalize_text(rootfs, build_root=None):
+    """Rewrite absolute build paths out of text files so they don't leak the
+    build root (reproducibility) and point at valid in-image locations."""
+    if build_root is None:
+        build_root = os.getcwd()
+    root_b = build_root.encode()
+    fixed = 0
+    for dirpath, _, filenames in os.walk(rootfs):
+        for name in filenames:
+            fpath = os.path.join(dirpath, name)
+            if os.path.islink(fpath) or not os.path.isfile(fpath):
+                continue
+            try:
+                with open(fpath, "rb") as f:
+                    data = f.read()
+            except OSError:
+                continue
+            if b"buck-out" not in data and root_b not in data:
+                continue
+            # ELF / ar are handled by _strip_elf; only rewrite text.
+            if data[:4] == b"\x7fELF" or data[:8] == b"!<arch>\n":
+                continue
+            new = _BUCKOUT_INSTALLED.sub(b"", data)  # .../installed/usr -> /usr
+            new = _BUCKOUT_ANY.sub(b"/usr", new)  # any stray buck-out -> /usr
+            # Remaining bare build-root refs, e.g. the recorded
+            # -ffile-prefix-map=<root>/= compiler flag in *-config/build-info.
+            if root_b in new:
+                new = new.replace(root_b, b"")
+            if new == data:
+                continue
+            try:
+                orig_mode = os.stat(fpath).st_mode
+                os.chmod(fpath, orig_mode | stat.S_IWUSR)
+                with open(fpath, "wb") as f:
+                    f.write(new)
+                os.chmod(fpath, orig_mode)
+                fixed += 1
+            except OSError:
+                pass
+    if fixed:
+        print(f"Normalized build paths in {fixed} text files")
+
+
+def _normalize_build_string(s, root_b):
+    """Rewrite a single C string's absolute build paths to in-image paths."""
+    # .../buck-out/.../installed/usr/... -> /usr/...
+    s = re.sub(rb"/[^\s:\"']+/buck-out/[^\s:\"']*?/installed(?=/|$)", b"", s)
+    # .../buck-out/.../{bin,sbin}/<tool> -> /usr/bin/<tool>  (keep the tool)
+    s = re.sub(
+        rb"/[^\s:\"']+/buck-out/[^\s:\"']*/s?bin/([^\s:\"'/]+)", rb"/usr/bin/\1", s
+    )
+    # any other stray .../buck-out/... -> /usr
+    s = re.sub(rb"/[^\s:\"']+/buck-out/[^\s:\"']*", b"/usr", s)
+    # bare build root, e.g. the recorded -ffile-prefix-map=<root>/= flag
+    s = s.replace(root_b, b"")
+    return s
+
+
+def _normalize_elf_strings(rootfs, build_root=None):
+    """Rewrite absolute build paths baked into ELF/ar .rodata, in place.
+
+    Strip removes debug, but some binaries hardcode build-time paths that
+    strip can't touch: configure-detected tool paths (e.g. shadow's su/libsubid
+    -> the build-time bash), openssl's recorded CC + CFLAGS buildinfo, libpsl's
+    build dir.  Replace each with a valid in-image path, null-padded to the
+    original length (C strings stay NUL-terminated, only shrink).  This mirrors
+    the existing _sanitize_rpath / _fix_elf_interpreters binary patching.
+    """
+    if build_root is None:
+        build_root = os.getcwd()
+    root_b = build_root.encode()
+    fixed = 0
+    for dirpath, _, filenames in os.walk(rootfs):
+        for name in filenames:
+            fpath = os.path.join(dirpath, name)
+            if os.path.islink(fpath) or not os.path.isfile(fpath):
+                continue
+            try:
+                with open(fpath, "rb") as f:
+                    data = bytearray(f.read())
+            except OSError:
+                continue
+            if root_b not in data:
+                continue
+            # text handled by _normalize_text; only patch ELF / ar here.
+            if not (data[:4] == b"\x7fELF" or data[:8] == b"!<arch>\n"):
+                continue
+            changed = False
+            i = 0
+            while True:
+                i = data.find(root_b, i)
+                if i < 0:
+                    break
+                start = data.rfind(b"\x00", 0, i) + 1
+                end = data.find(b"\x00", i)
+                if end < 0:
+                    end = len(data)
+                if end - start > 4096:  # not a plausible C string; skip
+                    i = end + 1
+                    continue
+                s = bytes(data[start:end])
+                ns = _normalize_build_string(s, root_b)
+                if ns != s and len(ns) <= len(s):
+                    data[start : start + len(ns)] = ns
+                    for j in range(start + len(ns), end):
+                        data[j] = 0
+                    changed = True
+                i = end + 1
+            if changed:
+                try:
+                    orig_mode = os.stat(fpath).st_mode
+                    os.chmod(fpath, orig_mode | stat.S_IWUSR)
+                    with open(fpath, "wb") as f:
+                        f.write(data)
+                    os.chmod(fpath, orig_mode)
+                    fixed += 1
+                except OSError:
+                    pass
+    if fixed:
+        print(f"Normalized build paths in {fixed} ELF/ar files")
+
+
 # Binaries that require setuid (mode 4755) for correct operation.
 # These lose setuid during unprivileged rootfs assembly.
-_SETUID_BINARIES = frozenset({
-    "usr/bin/chfn",
-    "usr/bin/chsh",
-    "usr/bin/gpasswd",
-    "usr/bin/mount",
-    "usr/bin/newgrp",
-    "usr/bin/passwd",
-    "usr/bin/su",
-    "usr/bin/umount",
-})
+_SETUID_BINARIES = frozenset(
+    {
+        "usr/bin/chfn",
+        "usr/bin/chsh",
+        "usr/bin/gpasswd",
+        "usr/bin/mount",
+        "usr/bin/newgrp",
+        "usr/bin/passwd",
+        "usr/bin/su",
+        "usr/bin/umount",
+    }
+)
 
 # Per-file permission overrides: path -> (mode, uid, gid).
 # dbus-daemon-launch-helper must be setuid root, group messagebus (4750).
@@ -737,15 +969,34 @@ def main():
 
     parser = argparse.ArgumentParser(description="Assemble root filesystem")
     parser.add_argument("--output-dir", default=None)
-    parser.add_argument("--output-tarball", default=None,
-                        help="Pack the rootfs as a tarball with correct ownership")
-    parser.add_argument("--package-dir", action="append", dest="package_dirs",
-                        default=[], help="Package directory to merge (repeatable)")
-    parser.add_argument("--prefix-list", default=None,
-                        help="File with package prefix paths (one per line, from tset projection)")
+    parser.add_argument(
+        "--output-tarball",
+        default=None,
+        help="Pack the rootfs as a tarball with correct ownership",
+    )
+    parser.add_argument(
+        "--package-dir",
+        action="append",
+        dest="package_dirs",
+        default=[],
+        help="Package directory to merge (repeatable)",
+    )
+    parser.add_argument(
+        "--prefix-list",
+        default=None,
+        help="File with package prefix paths (one per line, from tset projection)",
+    )
     parser.add_argument("--version", default="1")
-    parser.add_argument("--manifest-output", default=None,
-                        help="Write content manifest for cache invalidation")
+    parser.add_argument(
+        "--manifest-output",
+        default=None,
+        help="Write content manifest for cache invalidation",
+    )
+    parser.add_argument(
+        "--no-strip",
+        action="store_true",
+        help="Do not strip ELF debug info (keeps build-path leaks; debug images)",
+    )
     add_path_args(parser)
     args = parser.parse_args()
 
@@ -773,8 +1024,20 @@ def main():
                     args.package_dirs.append(line)
 
     # Create base directory structure
-    for d in ("usr/bin", "usr/sbin", "usr/lib", "etc", "var", "tmp",
-              "proc", "sys", "dev", "run", "root", "home"):
+    for d in (
+        "usr/bin",
+        "usr/sbin",
+        "usr/lib",
+        "etc",
+        "var",
+        "tmp",
+        "proc",
+        "sys",
+        "dev",
+        "run",
+        "root",
+        "home",
+    ):
         os.makedirs(os.path.join(rootfs, d), exist_ok=True)
 
     # Merge packages
@@ -830,21 +1093,36 @@ def main():
     # Strip build-host RPATH from ELF binaries
     _sanitize_rpath(rootfs)
 
+    # Strip debug info (carries absolute bootstrap build paths in
+    # DW_AT_comp_dir) for reproducibility + size.
+    if not args.no_strip:
+        _strip_elf(rootfs, env)
+
+    # Rewrite absolute build paths out of text files (.pc, *-config, headers,
+    # Makefile fragments) that strip can't touch.
+    _normalize_text(rootfs)
+
+    # Rewrite absolute build paths baked into ELF/ar .rodata (configure-detected
+    # tool paths, openssl buildinfo, etc.) that strip can't remove.
+    if not args.no_strip:
+        _normalize_elf_strings(rootfs)
+
     # Run ldconfig — use the rootfs's own ldconfig (from glibc) since the
     # host ldconfig may not be on the hermetic PATH.
     ld_so_conf = os.path.join(rootfs, "etc", "ld.so.conf")
     _ldconfig = shutil.which("ldconfig", path=env.get("PATH", ""))
     if not _ldconfig:
         # Fall back to the rootfs's own copy
-        for _candidate in (os.path.join(rootfs, "usr", "sbin", "ldconfig"),
-                           os.path.join(rootfs, "usr", "bin", "ldconfig"),
-                           os.path.join(rootfs, "sbin", "ldconfig")):
+        for _candidate in (
+            os.path.join(rootfs, "usr", "sbin", "ldconfig"),
+            os.path.join(rootfs, "usr", "bin", "ldconfig"),
+            os.path.join(rootfs, "sbin", "ldconfig"),
+        ):
             if os.path.isfile(_candidate):
                 _ldconfig = _candidate
                 break
     if os.path.isfile(ld_so_conf) and _ldconfig:
-        subprocess.run([_ldconfig, "-r", rootfs], env=env,
-                        capture_output=True)
+        subprocess.run([_ldconfig, "-r", rootfs], env=env, capture_output=True)
 
     # Compute manifest if requested (before tarball packing)
     if args.manifest_output:
