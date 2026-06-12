@@ -14,6 +14,17 @@ Because the second build cannot reuse the cache, it rebuilds the whole
 dependency closure (including the toolchain).  This is therefore a heavy,
 dedicated job (nightly / manual), not a per-PR gate.
 
+CAVEAT — this OVER-REPORTS on package *intermediates* (the `:name` install
+prefixes): a separate isolation dir lives at a different buck-out path
+(`buck-out/v2/...` vs `buck-out/<iso>/...`), and intermediates legitimately
+embed that build path (RPATH, debug comp_dir, configure-baked tool paths).  So
+two-isolation builds of an intermediate ALWAYS differ, even when the build is
+deterministic.  Only apply this to *path-independent* final artifacts whose
+assembly scrubs build paths (e.g. the normalized rootfs from rootfs_helper).
+For the actual cross-machine reproducibility gate, use tools/repro_pathscan.py
+(scans the rootfs for embedded build-root paths); see the CI "Reproducibility
+gate" step.
+
 Usage:
     tools/repro_check.py [--isolation-dir NAME] [--buck2 PATH] TARGET [TARGET ...]
 
