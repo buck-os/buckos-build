@@ -27,6 +27,7 @@ def _pdeathsig():
     """Ensure VM process is killed when test runner exits."""
     ctypes.CDLL("libc.so.6", use_errno=True).prctl(1, signal.SIGKILL)
 
+
 _CLEAR_RE = re.compile(r"\x1bc|\x1b\[[0-9]*[JH]|\x1b\[\?[0-9;]*[hl]")
 
 
@@ -51,7 +52,9 @@ def find_kernel(path):
                 return os.path.join(path, f)
     for dirpath, dirnames, filenames in os.walk(path):
         # Skip build trees — millions of files, no kernel images.
-        dirnames[:] = [d for d in dirnames if d not in ("build-tree", "modules", "headers")]
+        dirnames[:] = [
+            d for d in dirnames if d not in ("build-tree", "modules", "headers")
+        ]
         for f in sorted(filenames):
             if f.startswith("vmlinuz") or f in ("bzimage", "bzImage"):
                 return os.path.join(dirpath, f)
@@ -75,8 +78,12 @@ def main():
     iso = os.environ.get("ISO", "")
     qemu_dir = os.environ.get("QEMU_DIR", "")
 
-    for name, val in [("KERNEL", kernel_path), ("INITRAMFS", initramfs_path),
-                      ("ISO", iso), ("QEMU_DIR", qemu_dir)]:
+    for name, val in [
+        ("KERNEL", kernel_path),
+        ("INITRAMFS", initramfs_path),
+        ("ISO", iso),
+        ("QEMU_DIR", qemu_dir),
+    ]:
         if not val:
             print(f"ERROR: {name} not set")
             sys.exit(1)
@@ -115,6 +122,7 @@ def main():
 
     # Resolve QEMU binary (arch-aware)
     import platform
+
     arch = platform.machine()
     if arch == "aarch64":
         qemu_name = "qemu-system-aarch64"
@@ -131,14 +139,37 @@ def main():
         sys.exit(1)
     os.chmod(qemu_bin, 0o755)
 
+    # portabilize_run launches QEMU through an ld-linux wrapper in a temp
+    # dir, which defeats QEMU's "find my datadir relative to the binary"
+    # logic, so it can't locate its BIOS ROMs (bios-256k.bin, vgabios,
+    # kvmvapic, linuxboot...).  Point it at the real datadir with -L.
+    bios = find_file(qemu_dir, "bios-256k.bin")
+    if not bios:
+        print(f"FAIL: bios-256k.bin not found in {qemu_dir}")
+        sys.exit(1)
+    qemu_datadir = os.path.dirname(bios)
+
     cmd = [
         qemu_bin,
-        "-kernel", vmlinuz,
-        "-initrd", initramfs,
-        "-append", f"console={console} loglevel=7 rd.systemd.show_status=true panic=1",
-        "-drive", f"file={iso_file},if=virtio,media=cdrom,readonly=on",
-        "-nographic", "-no-reboot", "-m", "4G",
-        "-enable-kvm", "-cpu", "host", "-smp", "4",
+        "-L",
+        qemu_datadir,
+        "-kernel",
+        vmlinuz,
+        "-initrd",
+        initramfs,
+        "-append",
+        f"console={console} loglevel=7 rd.systemd.show_status=true panic=1",
+        "-drive",
+        f"file={iso_file},if=virtio,media=cdrom,readonly=on",
+        "-nographic",
+        "-no-reboot",
+        "-m",
+        "4G",
+        "-enable-kvm",
+        "-cpu",
+        "host",
+        "-smp",
+        "4",
     ] + machine_args
 
     # Prepend the runtime environment wrapper so QEMU finds its shared libs
@@ -155,8 +186,12 @@ def main():
     lines = []
 
     proc = subprocess.Popen(
-        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
-        preexec_fn=_pdeathsig, start_new_session=True,
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        preexec_fn=_pdeathsig,
+        start_new_session=True,
     )
 
     def _kill_pg():
