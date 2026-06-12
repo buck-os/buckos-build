@@ -1,0 +1,49 @@
+load("//defs/packages:autotools.bzl", "autotools_package")
+
+# libostree - content-addressed, atomic OS update and deployment system.
+#
+# Foundation for SPEC-006 (atomic image-based updates): each system version is
+# a content-addressed, signed ostree commit, deployed atomically with rollback.
+# This P1 package builds libostree + the `ostree` CLI for local repo operations
+# (init/commit/checkout) and HTTP pulls (curl backend); systemd/initramfs/
+# bootloader integration is added in later phases.
+autotools_package(
+    name = "ostree",
+    version = "2024.10",
+    url = "https://github.com/ostreedev/ostree/releases/download/v2024.10/libostree-2024.10.tar.xz",
+    sha256 = "54e3387dee1ff16031a0679aca2b60da90ab7f4a26c211822333c7f23000abee",
+    description = "Content-addressed, atomic OS update and deployment system (libostree)",
+    homepage = "https://ostreedev.github.io/ostree/",
+    license = "LGPL-2.1+",
+    configure_args = [
+        "--with-curl",            # HTTP pull backend (we don't ship libsoup)
+        "--without-soup",
+        "--with-crypto=openssl",  # digest + ed25519 signing backend
+        "--without-gpgme",        # P1: ed25519 (openssl) signing; GPG is P2
+        "--disable-introspection",  # avoid gobject-introspection build dep
+        "--disable-gtk-doc",
+        "--disable-man",          # avoid xsltproc/docbook
+    ],
+    use_configure = {
+        # rofiles-fuse needs libfuse; default off (no libfuse packaged yet).
+        # Flip USE=fuse on once a libfuse package exists + add it as a use_dep.
+        "fuse": ("--enable-rofiles-fuse", "--disable-rofiles-fuse"),
+    },
+    # util-linux's libmount.so has an indirect DT_NEEDED on libblkid.so.1, but
+    # that SONAME symlink lives in util-linux's installed/lib while pkg-config's
+    # -L points only at usr/lib (which has the dev libblkid.so, not .so.1), so
+    # bfd ld (libtool drops -fuse-ld=mold for the test exes) can't follow it and
+    # reports blkid_* undefined.  Defer libmount.so's own undefined symbols to
+    # runtime, where its NEEDED resolves libblkid normally.
+    extra_ldflags = ["-Wl,--allow-shlib-undefined"],
+    deps = [
+        "//packages/linux/dev-libs/glib:glib",
+        "//packages/linux/system/libs/network/curl:curl",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/system/filesystem/native/e2fsprogs:e2fsprogs",
+        "//packages/linux/core/util-linux:util-linux",
+        "//packages/linux/system/libs/compression/xz:xz",
+        "//packages/linux/core/zlib:zlib",
+    ],
+    visibility = ["PUBLIC"],
+)
