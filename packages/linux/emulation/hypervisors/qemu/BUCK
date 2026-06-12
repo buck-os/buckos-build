@@ -141,6 +141,15 @@ autotools_package(
     ],
     host_deps = [
         "//packages/linux/dev-tools/build-systems/ninja:ninja",
+        # QEMU's ./configure drives meson via mkvenv.  On non-seed toolchains
+        # (e.g. //platforms:linux-target) meson isn't otherwise importable, so
+        # mkvenv pip-installs its bundled wheel and the install leaks to
+        # ~/.local instead of pyvenv/bin/meson -> "meson setup failed".
+        # Adding meson here puts its dist-packages (with dist-info) on the
+        # build PYTHONPATH (build_helper auto-detects it), so mkvenv finds
+        # meson already-present and just generates pyvenv/bin/meson.  Pruned
+        # automatically under seed mode, where the seed already ships meson.
+        "//packages/linux/dev-tools/build-systems/meson:meson",
     ],
     visibility = ["PUBLIC"],
 )

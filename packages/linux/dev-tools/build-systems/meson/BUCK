@@ -19,6 +19,25 @@ binary_package(
         # Copy the mesonbuild module
         cp -r "$SRCS/mesonbuild" "$OUT/usr/lib/python3/dist-packages/"
 
+        # Install dist-info metadata so meson is a discoverable installed
+        # distribution (importlib.metadata.distribution("meson")).  QEMU's
+        # mkvenv relies on this to treat the buckos meson as already-present
+        # and generate pyvenv/bin/meson, instead of pip-installing its
+        # bundled wheel -- which fails hermetically on non-seed toolchains
+        # (the install lands in ~/.local, not the venv).  Keep the version
+        # below in sync with the `version` attr above.
+        distinfo="$OUT/usr/lib/python3/dist-packages/meson-1.10.1.dist-info"
+        mkdir -p "$distinfo"
+        cat > "$distinfo/METADATA" << 'EOF'
+Metadata-Version: 2.1
+Name: meson
+Version: 1.10.1
+EOF
+        cat > "$distinfo/entry_points.txt" << 'EOF'
+[console_scripts]
+meson = mesonbuild.mesonmain:main
+EOF
+
         # Create the meson wrapper script
         cat > "$OUT/usr/bin/meson" << 'EOF'
 #!/usr/bin/env python3
