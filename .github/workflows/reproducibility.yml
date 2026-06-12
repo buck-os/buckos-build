@@ -1,0 +1,81 @@
+name: Reproducibility
+
+# Heavy by design: the second build runs from clean under a separate buck2
+# isolation dir (no local- or remote-cache reuse, so it rebuilds the seed
+# toolchain and the dependency closure).  Daily + manual only -- never on PRs.
+on:
+  schedule:
+    - cron: '0 7 * * *'   # daily, 07:00 UTC
+  workflow_dispatch:
+    inputs:
+      targets:
+        description: "Space-separated buck2 targets (blank = curated default set)"
+        required: false
+        default: ""
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  reproducibility:
+    name: reproducibility (double-build byte-identical)
+    runs-on: [self-hosted, large]
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          clean: false
+      - name: Install patchelf
+        # Self-hosted runner skips ci-setup and blocks sudo via no_new_privs,
+        # so install patchelf as a user binary in $HOME/.local/bin.
+        run: |
+          set -euo pipefail
+          PATCHELF="$HOME/.local/bin/patchelf"
+          if [ -x "$PATCHELF" ] && "$PATCHELF" --version >/dev/null 2>&1; then
+            echo "patchelf already installed: $($PATCHELF --version)"
+          else
+            mkdir -p "$HOME/.local/bin"
+            case "$(uname -m)" in
+              x86_64)  ARCH=x86_64 ;;
+              aarch64) ARCH=aarch64 ;;
+              *) echo "::error::Unsupported arch $(uname -m)"; exit 1 ;;
+            esac
+            curl -fsSL "https://github.com/NixOS/patchelf/releases/download/0.18.0/patchelf-0.18.0-${ARCH}.tar.gz" \
+              | tar -xzf - -C "$HOME/.local" ./bin/patchelf
+            chmod +x "$PATCHELF"
+            if ! "$PATCHELF" --version; then
+              echo "::error::patchelf at $PATCHELF failed to run after install"
+              exit 1
+            fi
+            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          fi
+          if [ ! -e /usr/local/bin/patchelf ] && [ -w /usr/local/bin ]; then
+            ln -sf "$PATCHELF" /usr/local/bin/patchelf 2>/dev/null || true
+          fi
+      - name: Install buck2
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors \
+            -o "$HOME/.local/bin/buck2.zst" \
+            https://github.com/facebook/buck2/releases/download/2026-02-01/buck2-x86_64-unknown-linux-gnu.zst
+          zstd -d -f -o "$HOME/.local/bin/buck2" "$HOME/.local/bin/buck2.zst"
+          rm -f "$HOME/.local/bin/buck2.zst"
+          chmod +x "$HOME/.local/bin/buck2"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Reproducibility check (build twice, assert byte-identical)
+        run: |
+          set -euo pipefail
+          TARGETS="${{ github.event.inputs.targets }}"
+          if [ -z "$TARGETS" ]; then
+            # Curated small set spanning the autotools/make build path; extend
+            # with cmake/meson/cargo/go targets as coverage grows.
+            TARGETS="//packages/linux/dev-tools/build-systems/m4:m4 \
+                     //packages/linux/core/zlib:zlib \
+                     //packages/linux/core/bash:bash \
+                     //packages/linux/system/libs/data/expat:expat \
+                     //packages/linux/system/libs/utility/libffi:libffi"
+          fi
+          # Force the second (repro-isolation) build to run from clean so it is
+          # a genuinely independent re-execution, not a cache hit.
+          buck2 --isolation-dir buckos-repro clean 2>/dev/null || true
+          python3 tools/repro_check.py --isolation-dir buckos-repro $TARGETS
