@@ -819,6 +819,85 @@ def _normalize_text(rootfs, build_root=None):
         print(f"Normalized build paths in {fixed} text files")
 
 
+def _normalize_build_string(s, root_b):
+    """Rewrite a single C string's absolute build paths to in-image paths."""
+    # .../buck-out/.../installed/usr/... -> /usr/...
+    s = re.sub(rb"/[^\s:\"']+/buck-out/[^\s:\"']*?/installed(?=/|$)", b"", s)
+    # .../buck-out/.../{bin,sbin}/<tool> -> /usr/bin/<tool>  (keep the tool)
+    s = re.sub(
+        rb"/[^\s:\"']+/buck-out/[^\s:\"']*/s?bin/([^\s:\"'/]+)", rb"/usr/bin/\1", s
+    )
+    # any other stray .../buck-out/... -> /usr
+    s = re.sub(rb"/[^\s:\"']+/buck-out/[^\s:\"']*", b"/usr", s)
+    # bare build root, e.g. the recorded -ffile-prefix-map=<root>/= flag
+    s = s.replace(root_b, b"")
+    return s
+
+
+def _normalize_elf_strings(rootfs, build_root=None):
+    """Rewrite absolute build paths baked into ELF/ar .rodata, in place.
+
+    Strip removes debug, but some binaries hardcode build-time paths that
+    strip can't touch: configure-detected tool paths (e.g. shadow's su/libsubid
+    -> the build-time bash), openssl's recorded CC + CFLAGS buildinfo, libpsl's
+    build dir.  Replace each with a valid in-image path, null-padded to the
+    original length (C strings stay NUL-terminated, only shrink).  This mirrors
+    the existing _sanitize_rpath / _fix_elf_interpreters binary patching.
+    """
+    if build_root is None:
+        build_root = os.getcwd()
+    root_b = build_root.encode()
+    fixed = 0
+    for dirpath, _, filenames in os.walk(rootfs):
+        for name in filenames:
+            fpath = os.path.join(dirpath, name)
+            if os.path.islink(fpath) or not os.path.isfile(fpath):
+                continue
+            try:
+                with open(fpath, "rb") as f:
+                    data = bytearray(f.read())
+            except OSError:
+                continue
+            if root_b not in data:
+                continue
+            # text handled by _normalize_text; only patch ELF / ar here.
+            if not (data[:4] == b"\x7fELF" or data[:8] == b"!<arch>\n"):
+                continue
+            changed = False
+            i = 0
+            while True:
+                i = data.find(root_b, i)
+                if i < 0:
+                    break
+                start = data.rfind(b"\x00", 0, i) + 1
+                end = data.find(b"\x00", i)
+                if end < 0:
+                    end = len(data)
+                if end - start > 4096:  # not a plausible C string; skip
+                    i = end + 1
+                    continue
+                s = bytes(data[start:end])
+                ns = _normalize_build_string(s, root_b)
+                if ns != s and len(ns) <= len(s):
+                    data[start : start + len(ns)] = ns
+                    for j in range(start + len(ns), end):
+                        data[j] = 0
+                    changed = True
+                i = end + 1
+            if changed:
+                try:
+                    orig_mode = os.stat(fpath).st_mode
+                    os.chmod(fpath, orig_mode | stat.S_IWUSR)
+                    with open(fpath, "wb") as f:
+                        f.write(data)
+                    os.chmod(fpath, orig_mode)
+                    fixed += 1
+                except OSError:
+                    pass
+    if fixed:
+        print(f"Normalized build paths in {fixed} ELF/ar files")
+
+
 # Binaries that require setuid (mode 4755) for correct operation.
 # These lose setuid during unprivileged rootfs assembly.
 _SETUID_BINARIES = frozenset(
@@ -1022,6 +1101,11 @@ def main():
     # Rewrite absolute build paths out of text files (.pc, *-config, headers,
     # Makefile fragments) that strip can't touch.
     _normalize_text(rootfs)
+
+    # Rewrite absolute build paths baked into ELF/ar .rodata (configure-detected
+    # tool paths, openssl buildinfo, etc.) that strip can't remove.
+    if not args.no_strip:
+        _normalize_elf_strings(rootfs)
 
     # Run ldconfig — use the rootfs's own ldconfig (from glibc) since the
     # host ldconfig may not be on the hermetic PATH.
