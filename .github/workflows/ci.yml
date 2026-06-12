@@ -186,6 +186,12 @@ jobs:
         run: buck2 build //packages/linux/system:buckos-minimal-iso --out buckos-minimal.iso
       - name: Build KDE ISO
         run: buck2 build //packages/linux/system:buckos-live-installer-kde --out buckos-kde.iso
+      - name: KDE ISO boot test (QEMU)
+        # Direct-boots the live kernel + initramfs under KVM (via the buckos
+        # QEMU, portabilized by run-env.sh) and checks the kernel reaches
+        # init and systemd starts as PID 1 in the initrd.  Self-skips
+        # (exit 0) when /dev/kvm is unavailable on the runner.
+        run: buck2 test //tests:test-kde-iso-boot
       - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: systemd-container-rootfs

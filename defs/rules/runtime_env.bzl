@@ -55,6 +55,11 @@ def _runtime_env_impl(ctx):
 
     env = {"_LIB_DIRS": lib_paths}
 
+    # Everything a downstream consumer must materialise to actually *run*
+    # the wrapper, propagated via other_outputs.  The lib dirs alone are
+    # not enough once the wrapper hands off to portabilize_run.
+    runtime_inputs = [cmd_args(lib_dirs_args)]
+
     # Plumb portabilization inputs if the toolchain exposes a sysroot.
     # Bootstrap toolchains have no sysroot; for them we skip portabilize
     # and the wrapper just sets LD_LIBRARY_PATH.
@@ -65,20 +70,35 @@ def _runtime_env_impl(ctx):
                 ctx.attrs._patchelf.label,
             ))
         patchelf = ctx.attrs._patchelf[PackageInfo].prefix.project("usr/bin/patchelf")
+        # portabilize_run is an *inplace* PEX: run-env.sh raw-exec's it
+        # (os.execvp), so its bootstrap imports the bundled __par__ runtime
+        # tree.  The whole RunInfo (stub + tree) has to be materialised, not
+        # just default_outputs[0] (the bootstrap stub) — otherwise the exec
+        # dies with "No module named '__par__'" (tree missing) or
+        # FileNotFoundError (stub missing) on a clean runner.
         portabilize_run = ctx.attrs._portabilize_run[DefaultInfo].default_outputs[0]
         env["_LD_LINUX"] = cmd_args(ld_linux)
         env["_PATCHELF"] = cmd_args(patchelf)
         env["_PORTABILIZE_RUN"] = cmd_args(portabilize_run)
         env["_PREFIX"] = cmd_args(pkg.prefix)
-        # Force materialisation of patchelf, ld-linux, portabilize_run, and the
-        # package prefix so they exist when the wrapper runs at test time.
+        # Force materialisation at *build* time (gen-action inputs).
         cmd.add(cmd_args(hidden = [
             ld_linux,
             patchelf,
-            portabilize_run,
+            cmd_args(ctx.attrs._portabilize_run[RunInfo]),
             pkg.prefix,
             ctx.attrs._patchelf[PackageInfo].prefix,
         ]))
+        # ...and at *consume* time — this is the fix.  A test that depends on
+        # this target's DefaultInfo otherwise never pulls the portabilize
+        # toolchain, so os.execvp(portabilize_run.pex) finds nothing.
+        # (patchelf is intentionally omitted: portabilize_run no longer uses
+        # it — it portabilizes via ld-linux wrapper scripts.)
+        runtime_inputs.extend([
+            ld_linux,
+            cmd_args(ctx.attrs._portabilize_run[RunInfo]),
+            pkg.prefix,
+        ])
 
     ctx.actions.run(
         cmd,
@@ -88,11 +108,11 @@ def _runtime_env_impl(ctx):
         allow_cache_upload = True,
     )
 
-    # Propagate lib dirs as other_outputs so that test consumers also
-    # materialise them — not just the wrapper script itself.
+    # Propagate every runtime input as other_outputs so test consumers
+    # materialise the full toolchain, not just the wrapper script itself.
     return [DefaultInfo(
         default_output = wrapper,
-        other_outputs = [cmd_args(lib_dirs_args)],
+        other_outputs = runtime_inputs,
     )]
 
 runtime_env = rule(
