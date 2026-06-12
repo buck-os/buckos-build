@@ -23,6 +23,7 @@ non-zero if any artifact leaks the build root.
 """
 
 import argparse
+import fnmatch
 import os
 import subprocess
 import sys
@@ -94,7 +95,18 @@ def main():
     ap.add_argument(
         "--max-report", type=int, default=12, help="max leaking files to print per item"
     )
+    ap.add_argument(
+        "--allow",
+        action="append",
+        default=[],
+        metavar="GLOB",
+        help="relpath glob of a known/accepted leak (repeatable); reported but "
+        "does not fail the run -- use for residual leaks pending a fix",
+    )
     args = ap.parse_args()
+
+    def _allowed(rel):
+        return any(fnmatch.fnmatch(rel, pat) for pat in args.allow)
 
     failed = 0
     for item in args.items:
@@ -102,22 +114,31 @@ def main():
         try:
             path = buck2_output(args.buck2, item) if item.startswith("//") else item
             hits = scan_tree(path, args.root)
-            if hits:
+            new = [(rel, s) for rel, s in hits if not _allowed(rel)]
+            allowed = [rel for rel, _ in hits if _allowed(rel)]
+            if allowed:
+                print(
+                    f"  allowed (known) leaks: {len(allowed)} "
+                    f"[{', '.join(sorted(allowed)[:6])}{'...' if len(allowed) > 6 else ''}]"
+                )
+            if new:
                 failed += 1
-                print(f"  LEAK: {len(hits)} file(s) embed the build root {args.root!r}")
-                for rel, sample in hits[: args.max_report]:
+                print(
+                    f"  LEAK: {len(new)} NEW file(s) embed the build root {args.root!r}"
+                )
+                for rel, sample in new[: args.max_report]:
                     print(f"    {rel}")
                     print(f"      ...{sample}...")
-                if len(hits) > args.max_report:
-                    print(f"    ... and {len(hits) - args.max_report} more")
+                if len(new) > args.max_report:
+                    print(f"    ... and {len(new) - args.max_report} more")
             else:
-                print("  clean (no absolute build-root leak)")
+                print("  clean (no new absolute build-root leak)")
         except (RuntimeError, OSError) as exc:
             failed += 1
             print(f"  ERROR: {exc}")
 
     print(
-        f"\n{'FAIL' if failed else 'PASS'}: {failed}/{len(args.items)} item(s) leak the build root"
+        f"\n{'FAIL' if failed else 'PASS'}: {failed}/{len(args.items)} item(s) have new leaks"
     )
     return 1 if failed else 0
 
