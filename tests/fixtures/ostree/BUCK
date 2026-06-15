@@ -1,4 +1,4 @@
-load("//defs/rules:ostree.bzl", "ostree_commit", "ostree_rootfs")
+load("//defs/rules:ostree.bzl", "ostree_commit", "ostree_rootfs", "ostree_sysroot")
 
 # Self-test for the ostree_commit rule (SPEC-006 P2): commit a tiny, fully
 # deterministic tree so the resulting commit checksum is byte-stable and can
@@ -29,10 +29,15 @@ genrule(
     out = "tree",
     cmd = " && ".join([
         "mkdir -p $OUT/usr/bin $OUT/etc $OUT/home/user $OUT/var/lib/foo $OUT/opt $OUT/root",
+        "mkdir -p $OUT/usr/lib/modules/6.0.0-buckos",
         "printf '#!/bin/sh\\necho hi\\n' > $OUT/usr/bin/hi && chmod 0755 $OUT/usr/bin/hi",
         "printf 'BUCKOS=1\\n' > $OUT/etc/os-config",
+        "printf 'ID=buckos\\nNAME=BuckOS\\nPRETTY_NAME=\"BuckOS mini\"\\nVERSION_ID=0\\n' > $OUT/etc/os-release",
         "printf 'profile\\n' > $OUT/home/user/.profile",
         "printf 'state\\n' > $OUT/var/lib/foo/state",
+        # Dummy kernel so `ostree admin deploy` can populate /boot (it copies +
+        # hashes vmlinuz; it does not validate that it is a real kernel).
+        "printf 'DUMMYKERNEL\\n' > $OUT/usr/lib/modules/6.0.0-buckos/vmlinuz",
     ]),
 )
 
@@ -47,5 +52,15 @@ ostree_commit(
     tree = ":mini-ostree-rootfs",
     branch = "buckos/mini",
     subject = "ostree_rootfs reshape self-test",
+    visibility = ["PUBLIC"],
+)
+
+# Self-test for the ostree_sysroot deploy rule (SPEC-006 P3): deploy the
+# committed image into a bootable sysroot (in a user namespace).  The mini
+# rootfs carries a dummy kernel so `ostree admin deploy` can populate /boot.
+ostree_sysroot(
+    name = "mini-sysroot",
+    commit = ":mini-ostree-commit",
+    os = "buckos",
     visibility = ["PUBLIC"],
 )

@@ -110,3 +110,45 @@ ostree_rootfs = rule(
         "_reshape_tool": attrs.exec_dep(default = "//tools:ostree_rootfs_helper"),
     },
 )
+
+# ── ostree_sysroot ────────────────────────────────────────────────────
+# Composable: an ostree commit -> a deployed, bootable sysroot tree
+# (/ostree repo + stateroot + a checked-out deployment + /boot loader
+# entries).  Runs `ostree admin deploy` in a user namespace (build user ->
+# uid 0) so the bare-repo import + root-owned checkout work without real root.
+# The committed image must contain a kernel (/usr/lib/modules/<kver>/vmlinuz).
+
+def _ostree_sysroot_impl(ctx):
+    ostree = ctx.attrs.ostree[PackageInfo]
+    repo_info = ctx.attrs.commit[OstreeRepoInfo]
+    sysroot = ctx.actions.declare_output("sysroot", dir = True)
+
+    cmd = cmd_args(ctx.attrs._sysroot_tool[RunInfo])
+    cmd.add("--ld-linux", _ld_linux(ctx))
+    cmd.add("--ostree", ostree.prefix.project("usr/bin/ostree"))
+    cmd.add("--commit-repo", repo_info.repo)
+    cmd.add("--branch", repo_info.branch)
+    cmd.add("--sysroot", sysroot.as_output())
+    cmd.add("--os", ctx.attrs.os)
+    for karg in ctx.attrs.kargs:
+        cmd.add("--karg", karg)
+
+    add_flag_file(cmd, "--lib-dirs-file", write_lib_dirs(ctx, ostree.path_info))
+    cmd.add(cmd_args(hidden = ostree.prefix))
+
+    ctx.actions.run(cmd, category = "ostree_sysroot", identifier = ctx.attrs.os)
+    return [DefaultInfo(default_output = sysroot)]
+
+ostree_sysroot = rule(
+    impl = _ostree_sysroot_impl,
+    attrs = {
+        "commit": attrs.dep(providers = [OstreeRepoInfo]),
+        "ostree": attrs.dep(
+            providers = [PackageInfo],
+            default = "//packages/linux/system/ostree:ostree",
+        ),
+        "os": attrs.string(default = "buckos"),
+        "kargs": attrs.list(attrs.string(), default = ["rw"]),
+        "_sysroot_tool": attrs.exec_dep(default = "//tools:ostree_sysroot_helper"),
+    } | TOOLCHAIN_ATTRS,
+)

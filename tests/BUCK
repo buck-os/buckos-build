@@ -711,3 +711,15 @@ buckos_test(
     },
     labels = ["integration", "ostree", "heavy"],
 )
+
+# ── ostree_sysroot deploy (SPEC-006 P3) ──────────────────────────────
+# Deploy a committed image (in a user namespace) and assert the sysroot is
+# bootable-shaped: /ostree repo + a checked-out deployment + a BLS entry with
+# the ostree= kernel arg + a staged kernel.
+buckos_test(
+    name = "test-ostree-sysroot",
+    test = "verify_ostree_sysroot.py",
+    deps = ["//tests/fixtures/ostree:mini-sysroot"],
+    env = {"OSTREE_SYSROOT": "$(location //tests/fixtures/ostree:mini-sysroot)"},
+    labels = ["integration", "ostree"],
+)

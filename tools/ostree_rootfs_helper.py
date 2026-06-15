@@ -90,6 +90,24 @@ def _move_etc_to_usr_etc(root):
     shutil.rmtree(etc)
 
 
+def _ensure_os_release(root):
+    """ostree reads /usr/lib/os-release to name boot entries (and a deployed
+    /etc/os-release should resolve there).  Many rootfses ship only
+    /etc/os-release (now /usr/etc after the move); copy it to the canonical
+    /usr/lib/os-release so `ostree admin deploy` can label the deployment."""
+    canonical = os.path.join(root, "usr", "lib", "os-release")
+    if os.path.exists(canonical):
+        return
+    for cand in (
+        os.path.join(root, "usr", "etc", "os-release"),
+        os.path.join(root, "etc", "os-release"),
+    ):
+        if os.path.isfile(cand):
+            os.makedirs(os.path.dirname(canonical), exist_ok=True)
+            shutil.copy2(cand, canonical)
+            return
+
+
 def main():
     ap = argparse.ArgumentParser(description="Reshape a rootfs into ostree layout")
     ap.add_argument("--input", required=True, help="input rootfs tree")
@@ -100,6 +118,7 @@ def main():
     shutil.copytree(src, dst, symlinks=True, dirs_exist_ok=True)
 
     _move_etc_to_usr_etc(dst)
+    _ensure_os_release(dst)
 
     for name, target in _VAR_SYMLINKS:
         _replace_with_symlink(os.path.join(dst, name), target)
