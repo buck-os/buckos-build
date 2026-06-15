@@ -1,0 +1,21 @@
+load("//defs/rules:ostree.bzl", "ostree_commit")
+
+# Self-test for the ostree_commit rule (SPEC-006 P2): commit a tiny, fully
+# deterministic tree so the resulting commit checksum is byte-stable and can
+# be diffed across builds to prove reproducibility.
+genrule(
+    name = "demo-tree",
+    out = "tree",
+    cmd = "mkdir -p $OUT/usr/bin $OUT/usr/share && " +
+          "printf '#!/bin/sh\\necho hello-buckos-ostree\\n' > $OUT/usr/bin/hello && " +
+          "chmod 0755 $OUT/usr/bin/hello && " +
+          "printf 'buckos ostree_commit demo\\n' > $OUT/usr/share/readme",
+)
+
+ostree_commit(
+    name = "demo-commit",
+    tree = ":demo-tree",
+    branch = "buckos/demo",
+    subject = "ostree_commit self-test",
+    visibility = ["PUBLIC"],
+)

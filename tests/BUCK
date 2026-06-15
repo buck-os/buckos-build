@@ -673,3 +673,15 @@ buckos_test(
     run_test_separately = True,
     labels = ["vm", "slow", "integration", "heavy"],
 )
+
+# ── ostree_commit rule (SPEC-006 P2) ─────────────────────────────────
+# Building demo-commit runs the buckos `ostree` CLI in a buck2 action to
+# commit a tiny tree; this asserts the produced repo is a well-formed,
+# content-addressed archive repo (ref resolves, commit object present).
+buckos_test(
+    name = "test-ostree-commit",
+    test = "verify_ostree_commit.py",
+    deps = ["//tests/fixtures/ostree:demo-commit"],
+    env = {"OSTREE_REPO": "$(location //tests/fixtures/ostree:demo-commit)"},
+    labels = ["integration", "ostree"],
+)
