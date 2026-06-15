@@ -133,18 +133,56 @@ buckos_test(
     labels = ["unit", "tools-unit"],
 )
 
-# ── Hermeticity: base rootfs ELF dependency closure ──────────────────
-# Audits the base rootfs for shared-lib deps that aren't provided anywhere
+# ── Hermeticity: rootfs ELF dependency closure ───────────────────────
+# Audits a built rootfs for shared-lib deps that aren't provided anywhere
 # in the image (would fail at runtime with "error while loading shared
-# libraries").  Built under //platforms:linux-target-bare (the non-systemd
-# base), so it must run under that platform — labelled "heavy" to keep it
-# out of the generic unit-test query; run in a dedicated CI step:
-#   buck2 test //tests:test-hermeticity --target-platforms //platforms:linux-target-bare
+# libraries").  Each target is pinned to the platform its rootfs builds
+# under (bare for the non-systemd base, linux-target for the shipped
+# systemd/desktop images).  All labelled "heavy" to keep them out of the
+# generic unit-test query; run in dedicated CI steps:
+#
+#   buck2 test //tests:test-hermeticity \
+#     --target-platforms //platforms:linux-target-bare
+#   buck2 test //tests:test-hermeticity-systemd-container \
+#     --target-platforms //platforms:linux-target
+#   buck2 test //tests:test-hermeticity-live-kde \
+#     --target-platforms //platforms:linux-target
+#   buck2 test //tests:test-hermeticity-live-sway \
+#     --target-platforms //platforms:linux-target
+#
+# When a test fails, the unresolved sonames + the binaries that reference
+# them are printed.  Fix by adding the providing package to the rootfs's
+# packages = [...] list (the structural fix) or, only for transient
+# closure gaps, by setting ALLOW_UNRESOLVED in the test env.
 buckos_test(
     name = "test-hermeticity",
     test = "verify_hermeticity.py",
     deps = ["//packages/linux/system:buckos-rootfs"],
     env = {"ROOTFS": "$(location //packages/linux/system:buckos-rootfs)"},
+    labels = ["integration", "hermeticity", "heavy"],
+)
+
+buckos_test(
+    name = "test-hermeticity-systemd-container",
+    test = "verify_hermeticity.py",
+    deps = ["//packages/linux/system:systemd-container-rootfs"],
+    env = {"ROOTFS": "$(location //packages/linux/system:systemd-container-rootfs)"},
+    labels = ["integration", "hermeticity", "heavy"],
+)
+
+buckos_test(
+    name = "test-hermeticity-live-kde",
+    test = "verify_hermeticity.py",
+    deps = ["//packages/linux/system:buckos-live-kde-rootfs"],
+    env = {"ROOTFS": "$(location //packages/linux/system:buckos-live-kde-rootfs)"},
+    labels = ["integration", "hermeticity", "heavy"],
+)
+
+buckos_test(
+    name = "test-hermeticity-live-sway",
+    test = "verify_hermeticity.py",
+    deps = ["//packages/linux/system:buckos-live-sway-rootfs"],
+    env = {"ROOTFS": "$(location //packages/linux/system:buckos-live-sway-rootfs)"},
     labels = ["integration", "hermeticity", "heavy"],
 )
 

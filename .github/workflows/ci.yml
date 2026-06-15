@@ -178,6 +178,8 @@ jobs:
           buck2 test $targets
       - name: Hermeticity gate (base rootfs ELF dependency closure)
         run: buck2 test //tests:test-hermeticity --target-platforms //platforms:linux-target-bare
+      - name: Hermeticity gate (systemd-container rootfs)
+        run: buck2 test //tests:test-hermeticity-systemd-container --target-platforms //platforms:linux-target
       - name: Build systemd container rootfs
         run: |
           buck2 build //packages/linux/system:systemd-container-rootfs --out systemd-container-rootfs.tar
