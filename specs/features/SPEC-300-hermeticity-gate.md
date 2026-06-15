@@ -2,7 +2,7 @@
 id: "SPEC-300"
 title: "ELF Dependency-Closure Hermeticity Gate"
 status: "approved"
-version: "1.1.0"
+version: "1.2.0"
 created: "2026-06-15"
 updated: "2026-06-15"
 
@@ -36,6 +36,9 @@ compatibility:
   breaking_changes: false
 
 changelog:
+  - version: "1.2.0"
+    date: "2026-06-15"
+    changes: "Wire the live Sway hermeticity gate into a new nightly workflow (.github/workflows/nightly.yml, 06:00 UTC) rather than the per-PR test job, so Sway gets coverage without forcing a from-scratch rootfs build on every PR."
   - version: "1.1.0"
     date: "2026-06-15"
     changes: "Add three more hermeticity targets covering the shipped images: //tests:test-hermeticity-systemd-container, //tests:test-hermeticity-live-kde, //tests:test-hermeticity-live-sway. The first two are wired into CI; the Sway variant is runnable locally and ships with the BUCK definition, but is not wired into CI yet because the Sway ISO is not built in CI. All three run under //platforms:linux-target (systemd-on/pam-on), not the bare profile."
@@ -46,7 +49,7 @@ changelog:
 
 # ELF Dependency-Closure Hermeticity Gate
 
-**Status**: approved | **Version**: 1.1.0 | **Last Updated**: 2026-06-15
+**Status**: approved | **Version**: 1.2.0 | **Last Updated**: 2026-06-15
 
 ## Abstract
 
@@ -241,18 +244,22 @@ the test) and reused (by the build step):
   run: buck2 build //packages/linux/system:buckos-live-installer-kde ...
 ```
 
-The Sway equivalent (`test-hermeticity-live-sway`) exists as a Buck
-target but is not wired into CI because the Sway ISO is not built in
-CI. Run it locally before publishing Sway-related changes:
+The Sway equivalent (`test-hermeticity-live-sway`) runs on a nightly
+schedule (`.github/workflows/nightly.yml`, 06:00 UTC) rather than every
+PR because the Sway ISO is not otherwise built in CI; adding a per-PR
+gate would mean a full rootfs build from scratch every time its
+transitive deps change. Run it locally before publishing
+Sway-affecting changes if you don't want to wait for the nightly run:
 
 ```bash
 buck2 test //tests:test-hermeticity-live-sway \
     --target-platforms //platforms:linux-target
 ```
 
-The gates run on every PR. New shipped rootfs targets **SHOULD** land
-with a matching `test-hermeticity-<image>` and a CI step adjacent to
-the build step that consumes the rootfs.
+New shipped rootfs targets **SHOULD** land with a matching
+`test-hermeticity-<image>` target. Wire the CI step into the per-PR
+`test` job when the rootfs is already built by an existing step
+(near-zero marginal cost); otherwise wire it into the nightly workflow.
 
 ## Extending the gate
 

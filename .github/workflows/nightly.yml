@@ -1,0 +1,68 @@
+name: Nightly
+
+# Nightly jobs that are too expensive to run on every PR. Currently:
+#   * Sway live rootfs hermeticity gate (full rootfs build, then ELF
+#     closure audit).
+# Add new entries here when the per-PR cost of a check exceeds its
+# regression-detection value.
+
+on:
+  schedule:
+    - cron: '0 6 * * *'  # 06:00 UTC daily
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  hermeticity-live-sway:
+    name: hermeticity (live Sway rootfs)
+    runs-on: [self-hosted, large]
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          clean: false
+      - name: Install patchelf
+        # Self-hosted runner skips ci-setup and blocks sudo via no_new_privs,
+        # so install patchelf as a user binary in $HOME/.local/bin.
+        # portabilize_run prefers system patchelf and falls back to a
+        # SIGBUS-prone bootstrap if missing.
+        run: |
+          set -euo pipefail
+          PATCHELF="$HOME/.local/bin/patchelf"
+          if [ -x "$PATCHELF" ] && "$PATCHELF" --version >/dev/null 2>&1; then
+            echo "patchelf already installed: $($PATCHELF --version)"
+          else
+            mkdir -p "$HOME/.local/bin"
+            case "$(uname -m)" in
+              x86_64)  ARCH=x86_64 ;;
+              aarch64) ARCH=aarch64 ;;
+              *) echo "::error::Unsupported arch $(uname -m)"; exit 1 ;;
+            esac
+            curl -fsSL "https://github.com/NixOS/patchelf/releases/download/0.18.0/patchelf-0.18.0-${ARCH}.tar.gz" \
+              | tar -xzf - -C "$HOME/.local" ./bin/patchelf
+            chmod +x "$PATCHELF"
+            if ! "$PATCHELF" --version; then
+              echo "::error::patchelf at $PATCHELF failed to run after install"
+              exit 1
+            fi
+            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          fi
+          if [ ! -e /usr/local/bin/patchelf ] && [ -w /usr/local/bin ]; then
+            ln -sf "$PATCHELF" /usr/local/bin/patchelf 2>/dev/null || true
+          fi
+      - name: Install buck2
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors \
+            -o "$HOME/.local/bin/buck2.zst" \
+            https://github.com/facebook/buck2/releases/download/2026-02-01/buck2-x86_64-unknown-linux-gnu.zst
+          zstd -d -f -o "$HOME/.local/bin/buck2" "$HOME/.local/bin/buck2.zst"
+          rm -f "$HOME/.local/bin/buck2.zst"
+          chmod +x "$HOME/.local/bin/buck2"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Restart buck2 daemon
+        run: buck2 kill 2>/dev/null || true
+      - name: Hermeticity gate (live Sway rootfs)
+        run: buck2 test //tests:test-hermeticity-live-sway --target-platforms //platforms:linux-target

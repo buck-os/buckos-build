@@ -50,7 +50,7 @@
 
 | ID | Title | Status | Version | Updated |
 |--- |-------|--------|---------|---------|
-| [SPEC-300](features/SPEC-300-hermeticity-gate.md) | ELF Dependency-Closure Hermeticity Gate | ✅ approved | 1.1.0 | 2026-06-15 |
+| [SPEC-300](features/SPEC-300-hermeticity-gate.md) | ELF Dependency-Closure Hermeticity Gate | ✅ approved | 1.2.0 | 2026-06-15 |
 
 ### Package Specifications
 
