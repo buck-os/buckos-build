@@ -716,10 +716,18 @@ buckos_test(
 # Deploy a committed image (in a user namespace) and assert the sysroot is
 # bootable-shaped: /ostree repo + a checked-out deployment + a BLS entry with
 # the ostree= kernel arg + a staged kernel.
+#
+# Heavy: the deploy runs `ostree admin deploy`, which chowns the checkout to
+# uid/gid 0.  The helper does that by mapping the build user to root in an
+# unprivileged user namespace (unshare(CLONE_NEWUSER)).  Some runners disable
+# unprivileged userns (kernel.unprivileged_userns_clone=0 or a seccomp policy),
+# where the deploy can't run at all — so this is kept out of the generic test
+# query and run in a dedicated step on a permissive runner, like
+# test-buckos-ostree-commit.
 buckos_test(
     name = "test-ostree-sysroot",
     test = "verify_ostree_sysroot.py",
     deps = ["//tests/fixtures/ostree:mini-sysroot"],
     env = {"OSTREE_SYSROOT": "$(location //tests/fixtures/ostree:mini-sysroot)"},
-    labels = ["integration", "ostree"],
+    labels = ["integration", "ostree", "heavy"],
 )

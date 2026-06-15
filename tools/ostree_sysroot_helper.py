@@ -19,6 +19,7 @@ ostree reads it to populate /boot.
 
 import argparse
 import ctypes
+import errno
 import os
 import subprocess
 import sys
@@ -32,6 +33,16 @@ def _become_root_in_userns():
     uid, gid = os.getuid(), os.getgid()
     if libc.unshare(CLONE_NEWUSER) != 0:
         err = ctypes.get_errno()
+        if err == errno.EPERM:
+            sys.exit(
+                "ostree_sysroot: unprivileged user namespaces are disabled on "
+                "this host (unshare(CLONE_NEWUSER): Operation not permitted).\n"
+                "The deploy maps the build user to root to chown the checkout, "
+                "so it cannot run here.  Run on a host that allows unprivileged "
+                "userns (sysctl kernel.unprivileged_userns_clone=1), or skip "
+                "this target: it carries the 'heavy' label and is excluded from "
+                "the default CI test set for exactly this reason."
+            )
         raise OSError(err, "unshare(CLONE_NEWUSER): " + os.strerror(err))
     with open("/proc/self/setgroups", "w") as fh:
         fh.write("deny")
