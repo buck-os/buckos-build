@@ -1706,7 +1706,8 @@ rootfs(
         "//packages/linux/system/terminal/readline:readline",
         "//packages/linux/core/bash:bash",
         "//packages/linux/core/less:less",
-        # Compression (systemd runtime deps)
+        # Compression (systemd runtime deps + pcre2grep libbz2)
+        "//packages/linux/system/libs/compression/bzip2:bzip2",
         "//packages/linux/system/libs/compression/lz4:lz4",
         "//packages/linux/system/libs/compression/xz:xz",
         "//packages/linux/system/libs/compression/zstd:zstd",
@@ -1715,6 +1716,8 @@ rootfs(
         "//packages/linux/core/file:file",
         # User management
         "//packages/linux/system/apps/shadow:shadow",
+        # PAM — runtime deps of pam_systemd*.so, su, passwd, libsubid, etc.
+        "//packages/linux/system/security/linux-pam:linux-pam",
         # Init system
         "//packages/linux/system/init/systemd:systemd",
         # IPC / capabilities / seccomp
