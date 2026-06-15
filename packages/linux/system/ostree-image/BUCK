@@ -1,0 +1,24 @@
+load("//defs/rules:ostree.bzl", "ostree_commit", "ostree_rootfs")
+
+# Composable ostree image of the base BuckOS system (SPEC-006 P2).
+#
+# This is a separate, additive path: it reshapes the *existing* buckos-rootfs
+# into ostree's layout and commits it.  buckos-rootfs and the source-based
+# install path are untouched — the three primitives just compose:
+#     buckos-rootfs  ->  ostree_rootfs  ->  ostree_commit
+ostree_rootfs(
+    name = "buckos-ostree-rootfs",
+    tree = "//packages/linux/system:buckos-rootfs",
+    visibility = ["PUBLIC"],
+)
+
+ostree_commit(
+    name = "buckos-ostree-commit",
+    tree = ":buckos-ostree-rootfs",
+    branch = "buckos/x86_64/main",
+    subject = "BuckOS base system",
+    # A real OS commit must keep file capabilities (setuid is mode-preserved;
+    # caps live in security.capability xattrs).
+    preserve_xattrs = True,
+    visibility = ["PUBLIC"],
+)

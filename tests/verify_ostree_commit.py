@@ -18,8 +18,9 @@ _HEX = set("0123456789abcdef")
 
 def main():
     repo = os.environ["OSTREE_REPO"]
+    branch = os.environ.get("OSTREE_BRANCH", "buckos/demo")
 
-    ref = os.path.join(repo, "refs", "heads", "buckos", "demo")
+    ref = os.path.join(repo, "refs", "heads", *branch.split("/"))
     with open(ref) as fh:
         checksum = fh.read().strip()
     if len(checksum) != 64 or any(c not in _HEX for c in checksum):

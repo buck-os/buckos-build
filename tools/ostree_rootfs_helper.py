@@ -36,6 +36,24 @@ _VAR_SYMLINKS = [
 # Kept as empty directories (runtime mountpoints + ostree's physical root).
 _EMPTY_DIRS = ["sysroot", "var", "proc", "sys", "dev", "run", "tmp", "mnt", "media"]
 
+# /var is empty in the commit; systemd-tmpfiles recreates these on a fresh
+# deployment (including the symlink targets above), so the booted system has a
+# working /var.  Shipped in /usr/lib/tmpfiles.d as part of the immutable /usr.
+_VAR_TMPFILES = """\
+# Created by buckos ostree_rootfs — recreate /var on a fresh deployment.
+d /var/home 0755 root root -
+d /var/roothome 0700 root root -
+d /var/opt 0755 root root -
+d /var/srv 0755 root root -
+d /var/usrlocal 0755 root root -
+d /var/mnt 0755 root root -
+d /var/log 0755 root root -
+d /var/cache 0755 root root -
+d /var/lib 0755 root root -
+d /var/spool 0755 root root -
+d /var/tmp 1777 root root -
+"""
+
 
 def _replace_with_symlink(path, target):
     if os.path.islink(path):
@@ -93,6 +111,11 @@ def main():
         shutil.rmtree(var)
     for d in _EMPTY_DIRS:
         os.makedirs(os.path.join(dst, d), exist_ok=True)
+
+    tmpfiles_dir = os.path.join(dst, "usr", "lib", "tmpfiles.d")
+    os.makedirs(tmpfiles_dir, exist_ok=True)
+    with open(os.path.join(tmpfiles_dir, "ostree-buckos-var.conf"), "w") as fh:
+        fh.write(_VAR_TMPFILES)
 
     return 0
 

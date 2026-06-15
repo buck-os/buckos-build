@@ -696,3 +696,18 @@ buckos_test(
     env = {"OSTREE_ROOTFS": "$(location //tests/fixtures/ostree:mini-ostree-rootfs)"},
     labels = ["integration", "ostree"],
 )
+
+# ── real base rootfs -> ostree commit (SPEC-006 P2) ──────────────────
+# Heavy: builds buckos-rootfs, reshapes it, and commits it; asserts the
+# produced repo is a valid content-addressed archive repo.  Run in a
+# dedicated CI step (like test-hermeticity), not the generic unit query.
+buckos_test(
+    name = "test-buckos-ostree-commit",
+    test = "verify_ostree_commit.py",
+    deps = ["//packages/linux/system/ostree-image:buckos-ostree-commit"],
+    env = {
+        "OSTREE_REPO": "$(location //packages/linux/system/ostree-image:buckos-ostree-commit)",
+        "OSTREE_BRANCH": "buckos/x86_64/main",
+    },
+    labels = ["integration", "ostree", "heavy"],
+)
