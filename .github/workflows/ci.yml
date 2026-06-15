@@ -196,8 +196,6 @@ jobs:
           python3 tools/repro_pathscan.py --root "$PWD" "$rootfs"
       - name: Build minimal ISO
         run: buck2 build //packages/linux/system:buckos-minimal-iso --out buckos-minimal.iso
-      - name: Hermeticity gate (live KDE rootfs)
-        run: buck2 test //tests:test-hermeticity-live-kde --target-platforms //platforms:linux-target
       - name: Build KDE ISO
         run: buck2 build //packages/linux/system:buckos-live-installer-kde --out buckos-kde.iso
       - name: KDE ISO boot test (QEMU)

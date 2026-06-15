@@ -25,14 +25,21 @@ _ELF_AUDIT = _REPO / "tools" / "elf_audit.py"
 
 
 def _resolve_rootfs(rootfs):
-    """Return (audit_dir, tmp_to_cleanup). Extracts tarballs to a tmp dir."""
+    """Return (audit_dir, tmp_to_cleanup). Extracts tarballs to a tmp dir.
+
+    Uses filter='fully_trusted' because rootfs tarballs legitimately
+    contain absolute symlinks (e.g. /usr/bin/init -> /usr/lib/systemd/systemd)
+    and absolute paths that Python 3.12+'s default 'data' filter rejects.
+    The tarballs are produced by our own build and extracted to a private
+    tmp dir — not attacker-controlled input.
+    """
     p = Path(rootfs)
     if p.is_dir():
         return p, None
     if p.is_file() and ".tar" in p.name:
         tmp = tempfile.mkdtemp(prefix="hermeticity-")
         with tarfile.open(p) as tf:
-            tf.extractall(tmp)
+            tf.extractall(tmp, filter="fully_trusted")
         return Path(tmp), tmp
     print(f"FAIL: ROOTFS not a directory or tar archive: {rootfs}", file=sys.stderr)
     sys.exit(1)

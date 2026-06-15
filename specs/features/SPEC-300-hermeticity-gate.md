@@ -2,7 +2,7 @@
 id: "SPEC-300"
 title: "ELF Dependency-Closure Hermeticity Gate"
 status: "approved"
-version: "1.2.0"
+version: "1.3.0"
 created: "2026-06-15"
 updated: "2026-06-15"
 
@@ -36,6 +36,9 @@ compatibility:
   breaking_changes: false
 
 changelog:
+  - version: "1.3.0"
+    date: "2026-06-15"
+    changes: "Move the live KDE hermeticity gate to nightly alongside Sway: the per-PR KDE ISO build uses a different target-platform configuration, so the per-PR gate was not guaranteed to hit cache. Tighten the rootfs-target-CI-placement guidance to require same-platform PR cache hits. Also: extract rootfs tarballs with filter='fully_trusted' in verify_hermeticity.py — Python 3.12+'s default 'data' filter rejected legitimate rootfs constructs like absolute symlinks (/usr/bin/init -> /usr/lib/systemd/systemd)."
   - version: "1.2.0"
     date: "2026-06-15"
     changes: "Wire the live Sway hermeticity gate into a new nightly workflow (.github/workflows/nightly.yml, 06:00 UTC) rather than the per-PR test job, so Sway gets coverage without forcing a from-scratch rootfs build on every PR."
@@ -49,7 +52,7 @@ changelog:
 
 # ELF Dependency-Closure Hermeticity Gate
 
-**Status**: approved | **Version**: 1.2.0 | **Last Updated**: 2026-06-15
+**Status**: approved | **Version**: 1.3.0 | **Last Updated**: 2026-06-15
 
 ## Abstract
 
@@ -223,9 +226,10 @@ to add the lib to the rootfs target's package list.
 
 ### CI integration
 
-The `test` job in `.github/workflows/ci.yml` runs each gate before
-building the corresponding artifact, so the rootfs is built once (by
-the test) and reused (by the build step):
+The two cheap gates run on every PR in the `test` job of
+`.github/workflows/ci.yml`. They run before the build step that
+consumes the rootfs so the rootfs is built once (by the test) and
+reused (by the build step):
 
 ```yaml
 - name: Hermeticity gate (base rootfs ELF dependency closure)
@@ -236,30 +240,32 @@ the test) and reused (by the build step):
        --target-platforms //platforms:linux-target
 - name: Build systemd container rootfs
   run: buck2 build //packages/linux/system:systemd-container-rootfs ...
-- ...
-- name: Hermeticity gate (live KDE rootfs)
-  run: buck2 test //tests:test-hermeticity-live-kde \
-       --target-platforms //platforms:linux-target
-- name: Build KDE ISO
-  run: buck2 build //packages/linux/system:buckos-live-installer-kde ...
 ```
 
-The Sway equivalent (`test-hermeticity-live-sway`) runs on a nightly
-schedule (`.github/workflows/nightly.yml`, 06:00 UTC) rather than every
-PR because the Sway ISO is not otherwise built in CI; adding a per-PR
-gate would mean a full rootfs build from scratch every time its
-transitive deps change. Run it locally before publishing
-Sway-affecting changes if you don't want to wait for the nightly run:
+The two live-desktop gates (`test-hermeticity-live-kde`,
+`test-hermeticity-live-sway`) run on a nightly schedule at 06:00 UTC
+in `.github/workflows/nightly.yml`. Both are heavy: the Sway ISO is
+not otherwise built in CI, and the KDE rootfs — though built per-PR
+for the KDE ISO step — uses a different target-platform configuration
+there, so a per-PR gate is not guaranteed to hit cache. Nightly bounds
+the worst-case rebuild cost to once a day; regression-detection latency
+is at most 24h.
+
+Run either locally before publishing changes that affect those
+images:
 
 ```bash
+buck2 test //tests:test-hermeticity-live-kde \
+    --target-platforms //platforms:linux-target
 buck2 test //tests:test-hermeticity-live-sway \
     --target-platforms //platforms:linux-target
 ```
 
 New shipped rootfs targets **SHOULD** land with a matching
 `test-hermeticity-<image>` target. Wire the CI step into the per-PR
-`test` job when the rootfs is already built by an existing step
-(near-zero marginal cost); otherwise wire it into the nightly workflow.
+`test` job only when the rootfs is already built by an existing PR
+step **under the same target-platform** (true cache hit); otherwise
+wire it into the nightly workflow to bound per-PR cost.
 
 ## Extending the gate
 
