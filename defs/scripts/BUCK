@@ -97,6 +97,13 @@ export_file(
     visibility = ["PUBLIC"],
 )
 
+# /init for the ostree initramfs: mount sysroot, ostree-prepare-root, switch_root
+export_file(
+    name = "ostree-initramfs-init",
+    src = "ostree-initramfs-init.sh",
+    visibility = ["PUBLIC"],
+)
+
 # Dracut initramfs creation script - creates initramfs with dmsquash-live module
 export_file(
     name = "create-dracut-initramfs",
