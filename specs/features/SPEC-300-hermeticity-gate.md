@@ -2,7 +2,7 @@
 id: "SPEC-300"
 title: "ELF Dependency-Closure Hermeticity Gate"
 status: "approved"
-version: "1.0.0"
+version: "1.1.0"
 created: "2026-06-15"
 updated: "2026-06-15"
 
@@ -36,6 +36,9 @@ compatibility:
   breaking_changes: false
 
 changelog:
+  - version: "1.1.0"
+    date: "2026-06-15"
+    changes: "Add three more hermeticity targets covering the shipped images: //tests:test-hermeticity-systemd-container, //tests:test-hermeticity-live-kde, //tests:test-hermeticity-live-sway. The first two are wired into CI; the Sway variant is runnable locally and ships with the BUCK definition, but is not wired into CI yet because the Sway ISO is not built in CI. All three run under //platforms:linux-target (systemd-on/pam-on), not the bare profile."
   - version: "1.0.0"
     date: "2026-06-15"
     changes: "Initial specification of //tests:test-hermeticity. Documents the ELF DT_NEEDED closure check, the //platforms:linux-target-bare platform, the SYSROOT_SONAMES allowlist, the ALLOW_UNRESOLVED escape hatch, and the CI wiring."
@@ -43,7 +46,7 @@ changelog:
 
 # ELF Dependency-Closure Hermeticity Gate
 
-**Status**: approved | **Version**: 1.0.0 | **Last Updated**: 2026-06-15
+**Status**: approved | **Version**: 1.1.0 | **Last Updated**: 2026-06-15
 
 ## Abstract
 
@@ -81,52 +84,73 @@ builds `--without-systemd` for the base image.
 
 ## Specification
 
-### Target
+### Targets
 
-```
-//tests:test-hermeticity
-```
+The gate is parameterized per-rootfs: one `buckos_test` per audited image.
+Each target invokes the same `verify_hermeticity.py` runner; the
+differences are the `deps`/`env` pair (which rootfs to audit) and the
+target platform the test is invoked under (controls how the rootfs is
+built).
 
-A `buckos_test` with these properties:
+| Target                                    | Rootfs target                                          | Platform                            |
+|-------------------------------------------|--------------------------------------------------------|-------------------------------------|
+| `//tests:test-hermeticity`                | `//packages/linux/system:buckos-rootfs`                | `//platforms:linux-target-bare`     |
+| `//tests:test-hermeticity-systemd-container` | `//packages/linux/system:systemd-container-rootfs`  | `//platforms:linux-target`          |
+| `//tests:test-hermeticity-live-kde`       | `//packages/linux/system:buckos-live-kde-rootfs`       | `//platforms:linux-target`          |
+| `//tests:test-hermeticity-live-sway`      | `//packages/linux/system:buckos-live-sway-rootfs`      | `//platforms:linux-target`          |
+
+All targets share these properties:
 
 | Attribute | Value |
 |-----------|-------|
 | `test`    | `verify_hermeticity.py` |
-| `deps`    | `["//packages/linux/system:buckos-rootfs"]` |
-| `env`     | `{"ROOTFS": "$(location //packages/linux/system:buckos-rootfs)"}` |
 | `labels`  | `["integration", "hermeticity", "heavy"]` |
 
-The `heavy` label keeps the test out of the fast `buck2 test //tests:`
-sweep used by the `test-seed` CI job; it must be invoked explicitly.
+The `heavy` label keeps each test out of the fast `buck2 test //tests:`
+sweep used by the `test-seed` CI job; they must be invoked explicitly.
 
-### Platform
+### Platforms
 
-The gate **MUST** be invoked under `//platforms:linux-target-bare`:
+Each rootfs target **MUST** be invoked under the platform it was built
+to ship under. The two platforms used:
+
+* `//platforms:linux-target-bare` — `systemd-off` + `pam-on`. Used for
+  `buckos-rootfs` (the non-systemd base) so `procps` builds
+  `--without-systemd` and the image doesn't need to ship `libsystemd`.
+* `//platforms:linux-target` — `systemd-on` + `pam-on`. Used for the
+  three shipped images (systemd container, live KDE, live Sway), all of
+  which run systemd as PID 1.
 
 ```bash
+# Base (non-systemd)
 buck2 test //tests:test-hermeticity \
     --target-platforms //platforms:linux-target-bare
+
+# Shipped images (systemd)
+buck2 test //tests:test-hermeticity-systemd-container \
+    --target-platforms //platforms:linux-target
+buck2 test //tests:test-hermeticity-live-kde \
+    --target-platforms //platforms:linux-target
+buck2 test //tests:test-hermeticity-live-sway \
+    --target-platforms //platforms:linux-target
 ```
 
-`linux-target-bare` is `linux-target` with `systemd-off` and `pam-on`:
+### Adding a new rootfs target
+
+To wire a new rootfs into the gate, add a `buckos_test` modelled on the
+existing ones:
 
 ```python
-platform(
-    name = "linux-target-bare",
-    constraint_values = [
-        ":linux",
-        ":bootstrap-toolchain",
-        "prelude//cpu/constraints:x86_64",
-        "//use/constraints:systemd-off",
-        "//use/constraints:pam-on",
-    ],
+buckos_test(
+    name = "test-hermeticity-<image>",
+    test = "verify_hermeticity.py",
+    deps = ["//packages/linux/system:<image>-rootfs"],
+    env = {"ROOTFS": "$(location //packages/linux/system:<image>-rootfs)"},
+    labels = ["integration", "hermeticity", "heavy"],
 )
 ```
 
-The non-systemd flavour matters because `procps` (and a few other base
-tools) pull in `libsystemd` when built under the systemd-on default,
-which the bare rootfs does not ship. `pam-on` is kept because
-`util-linux` ships `login`/`su`/`passwd` and those need `libpam`.
+Then add a CI step under whichever platform the rootfs is built for.
 
 ### Audit algorithm
 
@@ -196,19 +220,39 @@ to add the lib to the rootfs target's package list.
 
 ### CI integration
 
-The `test` job in `.github/workflows/ci.yml` runs the gate after the
-fast unit-test sweep:
+The `test` job in `.github/workflows/ci.yml` runs each gate before
+building the corresponding artifact, so the rootfs is built once (by
+the test) and reused (by the build step):
 
 ```yaml
 - name: Hermeticity gate (base rootfs ELF dependency closure)
   run: buck2 test //tests:test-hermeticity \
        --target-platforms //platforms:linux-target-bare
+- name: Hermeticity gate (systemd-container rootfs)
+  run: buck2 test //tests:test-hermeticity-systemd-container \
+       --target-platforms //platforms:linux-target
+- name: Build systemd container rootfs
+  run: buck2 build //packages/linux/system:systemd-container-rootfs ...
+- ...
+- name: Hermeticity gate (live KDE rootfs)
+  run: buck2 test //tests:test-hermeticity-live-kde \
+       --target-platforms //platforms:linux-target
+- name: Build KDE ISO
+  run: buck2 build //packages/linux/system:buckos-live-installer-kde ...
 ```
 
-The gate runs on every PR. Future expansion may add per-rootfs
-hermeticity jobs (e.g. one for `systemd-container-rootfs`, one for
-each ISO target) — each such addition should land alongside its
-matching platform definition.
+The Sway equivalent (`test-hermeticity-live-sway`) exists as a Buck
+target but is not wired into CI because the Sway ISO is not built in
+CI. Run it locally before publishing Sway-related changes:
+
+```bash
+buck2 test //tests:test-hermeticity-live-sway \
+    --target-platforms //platforms:linux-target
+```
+
+The gates run on every PR. New shipped rootfs targets **SHOULD** land
+with a matching `test-hermeticity-<image>` and a CI step adjacent to
+the build step that consumes the rootfs.
 
 ## Extending the gate
 
