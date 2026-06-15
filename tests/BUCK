@@ -685,3 +685,14 @@ buckos_test(
     env = {"OSTREE_REPO": "$(location //tests/fixtures/ostree:demo-commit)"},
     labels = ["integration", "ostree"],
 )
+
+# ── ostree_rootfs transform (SPEC-006 P2) ────────────────────────────
+# Reshape a mini rootfs into ostree's layout and assert the moves
+# (/etc -> /usr/etc, mutable dirs -> /var symlinks, /var emptied, /sysroot).
+buckos_test(
+    name = "test-ostree-rootfs",
+    test = "verify_ostree_rootfs.py",
+    deps = ["//tests/fixtures/ostree:mini-ostree-rootfs"],
+    env = {"OSTREE_ROOTFS": "$(location //tests/fixtures/ostree:mini-ostree-rootfs)"},
+    labels = ["integration", "ostree"],
+)

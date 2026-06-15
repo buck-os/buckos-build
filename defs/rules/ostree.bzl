@@ -48,6 +48,10 @@ def _ostree_commit_impl(ctx):
     cmd.add("--mode", ctx.attrs.mode)
     if ctx.attrs.signing_key:
         cmd.add("--key-file", ctx.attrs.signing_key)
+    if ctx.attrs.preserve_xattrs:
+        # Real OS commits must keep file capabilities (setuid/security.capability
+        # on ping, sudo, ...); fixtures without xattrs leave this off.
+        cmd.add("--preserve-xattrs")
 
     # Dep lib closure -> --library-path.  add_flag_file registers the tset
     # projection as a hidden input, so Buck2 materialises every lib dir
@@ -77,7 +81,32 @@ ostree_commit = rule(
         # Fixed commit time (epoch seconds) keeps the checksum reproducible.
         "timestamp": attrs.int(default = 0),
         "mode": attrs.string(default = "archive"),
+        "preserve_xattrs": attrs.bool(default = False),
         "signing_key": attrs.option(attrs.source(), default = None),
         "_ostree_tool": attrs.exec_dep(default = "//tools:ostree_helper"),
     } | TOOLCHAIN_ATTRS,
+)
+
+# ── ostree_rootfs ─────────────────────────────────────────────────────
+# Composable transform: any rootfs tree -> an ostree-shaped tree (immutable
+# /usr, /etc as /usr/etc defaults, /var emptied, mutable dirs symlinked into
+# /var).  Pure file reshaping (no toolchain), so it composes freely:
+#   ostree_commit(tree = ostree_rootfs(<some buckos-rootfs>))
+# The normal rootfs rule and its targets are untouched.
+
+def _ostree_rootfs_impl(ctx):
+    tree = ctx.attrs.tree[DefaultInfo].default_outputs[0]
+    output = ctx.actions.declare_output("ostree-rootfs", dir = True)
+    cmd = cmd_args(ctx.attrs._reshape_tool[RunInfo])
+    cmd.add("--input", tree)
+    cmd.add("--output", output.as_output())
+    ctx.actions.run(cmd, category = "ostree_rootfs", identifier = ctx.attrs.name)
+    return [DefaultInfo(default_output = output)]
+
+ostree_rootfs = rule(
+    impl = _ostree_rootfs_impl,
+    attrs = {
+        "tree": attrs.dep(),
+        "_reshape_tool": attrs.exec_dep(default = "//tools:ostree_rootfs_helper"),
+    },
 )

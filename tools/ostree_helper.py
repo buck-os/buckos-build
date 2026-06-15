@@ -74,6 +74,11 @@ def main():
         default=None,
         help="ed25519 secret key (base64) to sign the commit",
     )
+    ap.add_argument(
+        "--preserve-xattrs",
+        action="store_true",
+        help="keep file xattrs (capabilities) — required for real OS commits",
+    )
     args = ap.parse_args()
 
     ld = os.path.abspath(args.ld_linux)
@@ -114,9 +119,10 @@ def main():
         "--timestamp=" + ts,
         "--owner-uid=0",
         "--owner-gid=0",
-        "--no-xattrs",
         "--no-bindings",
     ]
+    if not args.preserve_xattrs:
+        commit.append("--no-xattrs")
     if args.subject:
         commit.append("--subject=" + args.subject)
     proc = ostree_run(commit, capture=True)

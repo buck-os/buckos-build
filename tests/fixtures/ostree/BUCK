@@ -1,4 +1,4 @@
-load("//defs/rules:ostree.bzl", "ostree_commit")
+load("//defs/rules:ostree.bzl", "ostree_commit", "ostree_rootfs")
 
 # Self-test for the ostree_commit rule (SPEC-006 P2): commit a tiny, fully
 # deterministic tree so the resulting commit checksum is byte-stable and can
@@ -17,5 +17,35 @@ ostree_commit(
     tree = ":demo-tree",
     branch = "buckos/demo",
     subject = "ostree_commit self-test",
+    visibility = ["PUBLIC"],
+)
+
+# Self-test for the ostree_rootfs transform (SPEC-006 P2): a mini rootfs with
+# /etc, /home, /var content + mutable dirs, reshaped into ostree's layout,
+# then committed.  Exercises the full composable pipeline:
+#   rootfs tree -> ostree_rootfs -> ostree_commit
+genrule(
+    name = "mini-rootfs",
+    out = "tree",
+    cmd = " && ".join([
+        "mkdir -p $OUT/usr/bin $OUT/etc $OUT/home/user $OUT/var/lib/foo $OUT/opt $OUT/root",
+        "printf '#!/bin/sh\\necho hi\\n' > $OUT/usr/bin/hi && chmod 0755 $OUT/usr/bin/hi",
+        "printf 'BUCKOS=1\\n' > $OUT/etc/os-config",
+        "printf 'profile\\n' > $OUT/home/user/.profile",
+        "printf 'state\\n' > $OUT/var/lib/foo/state",
+    ]),
+)
+
+ostree_rootfs(
+    name = "mini-ostree-rootfs",
+    tree = ":mini-rootfs",
+    visibility = ["PUBLIC"],
+)
+
+ostree_commit(
+    name = "mini-ostree-commit",
+    tree = ":mini-ostree-rootfs",
+    branch = "buckos/mini",
+    subject = "ostree_rootfs reshape self-test",
     visibility = ["PUBLIC"],
 )

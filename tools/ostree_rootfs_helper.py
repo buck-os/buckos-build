@@ -1,0 +1,101 @@
+#!/usr/bin/env python3
+"""Reshape a rootfs tree into ostree's filesystem layout (SPEC-006 P2).
+
+ostree deploys an immutable /usr and 3-way-merges configuration, so a tree
+destined to become a commit must be "ostree-shaped".  This is a *composable*
+transform: it does not touch the rootfs rule — it takes any rootfs tree and
+emits an ostree-layout tree, which ostree_commit then commits.  Deterministic
+(sorted, mode-preserving copy) so the downstream commit checksum stays stable.
+
+Layout moves (the ostree convention):
+  - /etc -> /usr/etc        config *defaults*; ostree merges them into /etc on
+                            deploy (3-way merge against the running /etc)
+  - /var emptied            persistent + machine-local; recreated at boot from
+                            tmpfiles (populating /var is a later, P3 concern)
+  - mutable top-level dirs become symlinks into /var:
+        /home -> var/home, /opt -> var/opt, /srv -> var/srv,
+        /root -> var/roothome, /usr/local -> ../var/usrlocal
+  - /sysroot added          the physical root ostree mounts the real fs at
+  - runtime mountpoints (/proc /sys /dev /run /tmp /mnt /media) kept as empty
+    dirs (populated at runtime)
+"""
+
+import argparse
+import os
+import shutil
+import sys
+
+# (link path, symlink target) — mutable state redirected into /var.
+_VAR_SYMLINKS = [
+    ("home", "var/home"),
+    ("opt", "var/opt"),
+    ("srv", "var/srv"),
+    ("root", "var/roothome"),
+]
+
+# Kept as empty directories (runtime mountpoints + ostree's physical root).
+_EMPTY_DIRS = ["sysroot", "var", "proc", "sys", "dev", "run", "tmp", "mnt", "media"]
+
+
+def _replace_with_symlink(path, target):
+    if os.path.islink(path):
+        if os.readlink(path) == target:
+            return
+        os.remove(path)
+    elif os.path.isdir(path):
+        shutil.rmtree(path)
+    elif os.path.exists(path):
+        os.remove(path)
+    os.symlink(target, path)
+
+
+def _move_etc_to_usr_etc(root):
+    """/etc -> /usr/etc (merging if /usr/etc already exists; /etc wins)."""
+    etc = os.path.join(root, "etc")
+    usr_etc = os.path.join(root, "usr", "etc")
+    if not os.path.isdir(etc):
+        return
+    if not os.path.exists(usr_etc):
+        os.makedirs(os.path.dirname(usr_etc), exist_ok=True)
+        shutil.move(etc, usr_etc)
+        return
+    for cur, dirs, files in os.walk(etc):
+        rel = os.path.relpath(cur, etc)
+        dst = usr_etc if rel == "." else os.path.join(usr_etc, rel)
+        os.makedirs(dst, exist_ok=True)
+        for name in files:
+            shutil.move(os.path.join(cur, name), os.path.join(dst, name))
+        for name in [d for d in dirs if os.path.islink(os.path.join(cur, d))]:
+            s = os.path.join(cur, name)
+            shutil.move(s, os.path.join(dst, name))
+            dirs.remove(name)
+    shutil.rmtree(etc)
+
+
+def main():
+    ap = argparse.ArgumentParser(description="Reshape a rootfs into ostree layout")
+    ap.add_argument("--input", required=True, help="input rootfs tree")
+    ap.add_argument("--output", required=True, help="output ostree-shaped tree")
+    args = ap.parse_args()
+
+    src, dst = args.input, args.output
+    shutil.copytree(src, dst, symlinks=True, dirs_exist_ok=True)
+
+    _move_etc_to_usr_etc(dst)
+
+    for name, target in _VAR_SYMLINKS:
+        _replace_with_symlink(os.path.join(dst, name), target)
+    _replace_with_symlink(os.path.join(dst, "usr", "local"), "../var/usrlocal")
+
+    # /var is emptied — its content belongs to the deployed, persistent system.
+    var = os.path.join(dst, "var")
+    if os.path.isdir(var) and not os.path.islink(var):
+        shutil.rmtree(var)
+    for d in _EMPTY_DIRS:
+        os.makedirs(os.path.join(dst, d), exist_ok=True)
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
