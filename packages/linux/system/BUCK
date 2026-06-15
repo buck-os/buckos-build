@@ -3310,3 +3310,30 @@ qemu_boot_script(
     visibility = ["PUBLIC"],
 )
 
+# =============================================================================
+# runtime_deps closure pilot
+# =============================================================================
+# Tiny rootfs that exercises top_packages-driven closure end-to-end:
+# `grep` is the only top-level package, but the rootfs should also contain
+# pcre2 + zlib + bzip2 because each is reachable through plain `deps`
+# declarations (grep deps -> pcre2; pcre2 deps -> zlib + bzip2) and
+# build_package_tsets auto-promotes every dep's runtime_deps tset into
+# this package's runtime closure (see defs/rules/_common.bzl).
+#
+# Build + inspect on a host with a working seed toolchain:
+#   buck2 build //packages/linux/system:runtime-deps-pilot-rootfs \
+#       --target-platforms //platforms:linux-target-bare --show-output
+#   tar tf <out>.tar | grep -E "grep$|libpcre2|libbz2|libz\\.so"
+#
+# All four should appear; only `grep` is in top_packages.  No package
+# in this tree needs to declare runtime_deps for this to work — the
+# closure comes from the existing deps graph.
+rootfs(
+    name = "runtime-deps-pilot-rootfs",
+    tarball = True,
+    version = "0.0.1",
+    top_packages = [
+        "//packages/linux/editors/grep:grep",
+    ],
+    visibility = ["PUBLIC"],
+)

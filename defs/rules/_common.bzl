@@ -95,6 +95,19 @@ def build_package_tsets(ctx, installed):
     ctx.attrs.host_deps (build-only, no tset propagation).
 
     Returns (compile_tset, link_tset, path_tset, runtime_tset).
+
+    Auto-promotion: every ctx.attrs.deps entry contributes its dep's
+    runtime_deps tset to this package's runtime closure (see the loop
+    below).  In practice this means a plain `deps = [foo]` declaration
+    is enough to pull `foo` and `foo`'s transitive runtime closure into
+    any rootfs that has this package in `top_packages`; the rare
+    runtime-only case (dlopen plugin, fork-exec'd helper) is what
+    `runtime_deps = [...]` is for.  Over-inclusion (a build-only dep
+    landing in the runtime closure) is preferable to silent omission
+    in this codebase — the hermeticity gate (//tests:test-hermeticity)
+    is the regression test, and a few extra shared libraries in a
+    rootfs is benign vs. a missing one which makes binaries fail at
+    runtime with "error while loading shared libraries".
     """
     # Collect children from deps (build+runtime)
     compile_children = []
