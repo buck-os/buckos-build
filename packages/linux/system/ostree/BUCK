@@ -25,9 +25,13 @@ autotools_package(
         "--disable-man",          # avoid xsltproc/docbook
     ],
     use_configure = {
-        # rofiles-fuse needs libfuse; default off (no libfuse packaged yet).
-        # Flip USE=fuse on once a libfuse package exists + add it as a use_dep.
+        # rofiles-fuse is a hardlink-preserving overlay helper used during
+        # deployments; it needs fuse3.  Default off (most use is host-side).
         "fuse": ("--enable-rofiles-fuse", "--disable-rofiles-fuse"),
+    },
+    use_deps = {
+        # ostree prefers fuse3 >= 3.1.1; rofiles-fuse links libfuse3.so.4.
+        "fuse": ["//packages/linux/system/libs/libfuse:libfuse"],
     },
     # util-linux's libmount.so has an indirect DT_NEEDED on libblkid.so.1, but
     # that SONAME symlink lives in util-linux's installed/lib while pkg-config's
