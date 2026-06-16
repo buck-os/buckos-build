@@ -152,3 +152,43 @@ ostree_sysroot = rule(
         "_sysroot_tool": attrs.exec_dep(default = "//tools:ostree_sysroot_helper"),
     } | TOOLCHAIN_ATTRS,
 )
+
+# ── ostree_verify ─────────────────────────────────────────────────────
+# Cryptographically verify an ed25519-signed commit (SPEC-007 S3): the signer's
+# public key MUST verify and any other key MUST be rejected.  Runs the buckos
+# `ostree` PIE (seed loader + dep lib closure) like ostree_commit; building it
+# fails if either expectation is violated.  Output: a one-line verdict file.
+
+def _ostree_verify_impl(ctx):
+    ostree = ctx.attrs.ostree[PackageInfo]
+    repo_info = ctx.attrs.commit[OstreeRepoInfo]
+    result = ctx.actions.declare_output("verify-result.txt")
+
+    cmd = cmd_args(ctx.attrs._verify_tool[RunInfo])
+    cmd.add("--ld-linux", _ld_linux(ctx))
+    cmd.add("--ostree", ostree.prefix.project("usr/bin/ostree"))
+    cmd.add("--repo", repo_info.repo)
+    cmd.add("--branch", repo_info.branch)
+    cmd.add("--good-key", ctx.attrs.good_key)
+    cmd.add("--bad-key", ctx.attrs.bad_key)
+    cmd.add("--result-out", result.as_output())
+
+    add_flag_file(cmd, "--lib-dirs-file", write_lib_dirs(ctx, ostree.path_info))
+    cmd.add(cmd_args(hidden = ostree.prefix))
+
+    ctx.actions.run(cmd, category = "ostree_verify", identifier = repo_info.branch)
+    return [DefaultInfo(default_output = result)]
+
+ostree_verify = rule(
+    impl = _ostree_verify_impl,
+    attrs = {
+        "commit": attrs.dep(providers = [OstreeRepoInfo]),
+        "good_key": attrs.source(),
+        "bad_key": attrs.source(),
+        "ostree": attrs.dep(
+            providers = [PackageInfo],
+            default = "//packages/linux/system/ostree:ostree",
+        ),
+        "_verify_tool": attrs.exec_dep(default = "//tools:ostree_verify_helper"),
+    } | TOOLCHAIN_ATTRS,
+)

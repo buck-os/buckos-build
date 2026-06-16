@@ -8,3 +8,7 @@ export_file(name = "ima-test-cert", src = "ima-test.x509", visibility = ["PUBLIC
 # the .pub is the base64 public key used as `verification-ed25519-key`.
 export_file(name = "ostree-test-key", src = "ostree-test.ed25519.key", visibility = ["PUBLIC"])
 export_file(name = "ostree-test-pub", src = "ostree-test.ed25519.pub", visibility = ["PUBLIC"])
+
+# A different (valid-format) public key, used by the negative verification test
+# to prove a non-signer key is rejected.
+export_file(name = "ostree-test-wrong-pub", src = "ostree-test-wrong.ed25519.pub", visibility = ["PUBLIC"])

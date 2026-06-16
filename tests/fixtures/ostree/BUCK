@@ -1,4 +1,4 @@
-load("//defs/rules:ostree.bzl", "ostree_commit", "ostree_rootfs", "ostree_sysroot")
+load("//defs/rules:ostree.bzl", "ostree_commit", "ostree_rootfs", "ostree_sysroot", "ostree_verify")
 
 # Self-test for the ostree_commit rule (SPEC-006 P2): commit a tiny, fully
 # deterministic tree so the resulting commit checksum is byte-stable and can
@@ -30,6 +30,16 @@ ostree_commit(
     branch = "buckos/demo-signed",
     subject = "ostree_commit signing self-test",
     signing_key = "//defs/keys:ostree-test-key",
+    visibility = ["PUBLIC"],
+)
+
+# Cryptographic verification self-test (SPEC-007 S3): the signer's key MUST
+# verify the signed commit and a different key MUST be rejected.
+ostree_verify(
+    name = "demo-commit-verify",
+    commit = ":demo-commit-signed",
+    good_key = "//defs/keys:ostree-test-pub",
+    bad_key = "//defs/keys:ostree-test-wrong-pub",
     visibility = ["PUBLIC"],
 )
 

@@ -698,6 +698,17 @@ buckos_test(
     labels = ["integration", "ostree"],
 )
 
+# ── ostree signature verification (SPEC-007 S3) ──────────────────────
+# demo-commit-verify runs `ostree sign --verify` with the signer key (must
+# pass) and a wrong key (must be rejected); this asserts the recorded verdict.
+buckos_test(
+    name = "test-ostree-verify",
+    test = "verify_ostree_verify.py",
+    deps = ["//tests/fixtures/ostree:demo-commit-verify"],
+    env = {"VERIFY_RESULT": "$(location //tests/fixtures/ostree:demo-commit-verify)"},
+    labels = ["integration", "ostree"],
+)
+
 # ── ostree_rootfs transform (SPEC-006 P2) ────────────────────────────
 # Reshape a mini rootfs into ostree's layout and assert the moves
 # (/etc -> /usr/etc, mutable dirs -> /var symlinks, /var emptied, /sysroot).
