@@ -741,6 +741,24 @@ buckos_test(
     labels = ["vm", "slow", "integration", "ostree", "heavy"],
 )
 
+# ── Secure Boot kernel signing (SPEC-007 Tier 2) ─────────────────────
+# Sign the live kernel's EFI stub with the TEST db key via osslsigncode and
+# assert a signature was attached (the build also self-verifies against the db
+# cert). Heavy: builds the kernel.
+buckos_test(
+    name = "test-secureboot-sign",
+    test = "verify_secureboot_sign.py",
+    deps = [
+        "//tests/fixtures/secureboot:signed-kernel",
+        "//packages/linux/kernel/buckos-kernel:buckos-kernel-live",
+    ],
+    env = {
+        "SIGNED": "$(location //tests/fixtures/secureboot:signed-kernel)",
+        "UNSIGNED": "$(location //packages/linux/kernel/buckos-kernel:buckos-kernel-live)",
+    },
+    labels = ["integration", "secureboot", "heavy"],
+)
+
 # ── ostree_rootfs transform (SPEC-006 P2) ────────────────────────────
 # Reshape a mini rootfs into ostree's layout and assert the moves
 # (/etc -> /usr/etc, mutable dirs -> /var symlinks, /var emptied, /sysroot).

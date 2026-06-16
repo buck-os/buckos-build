@@ -1,0 +1,13 @@
+load("//defs/rules:secureboot.bzl", "efi_sign")
+
+# Secure Boot signing self-test (SPEC-007 Tier 2): sign the live kernel's EFI
+# stub with the TEST `db` key. Building this runs osslsigncode sign + a
+# self-verify against the db cert (the same Authenticode check firmware does at
+# boot), so a successful build proves the kernel is Secure-Boot-signable.
+efi_sign(
+    name = "signed-kernel",
+    efi = "//packages/linux/kernel/buckos-kernel:buckos-kernel-live",
+    cert = "//defs/keys:secureboot-db-cert",
+    key = "//defs/keys:secureboot-db-key",
+    visibility = ["PUBLIC"],
+)

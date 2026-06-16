@@ -170,13 +170,39 @@ The installer's ostree image-mode (SPEC-006 §5.5) writes the remote with the
 trusted public key and `sign-verify=true` **before** the first `pull`, so an
 install can never pull an unverified initial commit.
 
-### 5.6 Verified boot — Tier 2 (deferred, S5)
+### 5.6 Verified boot — Tier 2 (UEFI Secure Boot)
 
-For at-rest/offline-tamper resistance: UEFI Secure Boot with a signed `shim`
-(or an enrolled MOK / own CA) → signed bootloader → **signed kernel + signed
-initramfs** (with `sbat` revocation metadata) → `ostree-prepare-root`. The
-kernel and initramfs are signed in a `buckos-build` release step. This is the
-larger, separable follow-on; it does not change the Tier-1 design.
+For at-rest / offline-tamper resistance, the firmware itself verifies the boot
+chain before Linux runs.
+
+**Key hierarchy** (standard UEFI SB): Platform Key (PK) → Key Exchange Key
+(KEK) → signature database (db). Test keys are in `defs/keys/secureboot-*` (NOT
+for production — real keys belong in CI / an HSM). The db key signs boot
+artifacts; PK/KEK authorize updates to the firmware key store.
+
+**Signing — implemented.** `efi_sign` (`defs/rules/secureboot.bzl`) signs an EFI
+PE binary — the kernel's EFI stub, and later the bootloader — with the db key
+using the buckos-built `osslsigncode` (an OpenSSL-based Authenticode/PE signer),
+then self-verifies against the db cert (the same check firmware does against the
+enrolled db). `//tests/fixtures/secureboot:signed-kernel` signs the live kernel;
+`//tests:test-secureboot-sign` asserts the signature was attached. `osslsigncode`
+is the chosen route over the canonical `sbsign`/`shim` because it is already
+packaged — no shim or Microsoft-CA dependency for a self-managed key set.
+
+**Enrollment + boot test — remaining.** PK/KEK/db must be enrolled into the
+firmware variable store (an `OVMF_VARS` image for the QEMU gate; MOK / real
+firmware on hardware). This needs key-enrollment tooling — `efitools`
+(`cert-to-efi-sig-list`, `sign-efi-sig-list`) or `virt-firmware`
+(`virt-fw-vars`) — which is **not yet packaged** (the next build-server step).
+With enrolled keys the gate boots OVMF with Secure Boot on: the signed kernel
+boots; an unsigned/tampered kernel is rejected.
+
+**`sbat`, bootloader, initramfs.** A complete chain also signs the bootloader
+(GRUB/systemd-boot EFI) with `sbat` revocation metadata, and either signs the
+initramfs or uses a Unified Kernel Image so the initramfs is covered by the
+kernel signature. These compose with `efi_sign` and are follow-ons.
+
+This is additive and does not change the Tier-1 design.
 
 ## 6. Phased Implementation Plan
 
@@ -186,10 +212,12 @@ larger, separable follow-on; it does not change the Tier-1 design.
 | S2 | Release/channel step signs each commit + summary | `ostree show` reports an `ostree.sign.ed25519` signature |
 | S3 | `sign-verify=true` remote baked in image; agent + installer fail closed | a system trusts only the release key out of the box |
 | S4 | CI: positive (signed pull/deploy) + negative (tampered → rejected) | green nightly, userns-aware like the sysroot gate |
-| S5 (deferred) | UEFI Secure Boot chain (Tier 2) | signed boot to a verified deployment |
+| S5a | `efi_sign` signs the kernel EFI stub with the db key (osslsigncode) | `test-secureboot-sign` passes; the signed image self-verifies against db |
+| S5b (remaining) | Enroll PK/KEK/db into firmware + an OVMF Secure-Boot boot test | signed kernel boots, unsigned rejected — needs `efitools`/`virt-fw-vars` |
 
-S1–S4 are Tier 1 and land alongside SPEC-006 P4/P5. Each is independently
-testable.
+S1–S4 are Tier 1 and land alongside SPEC-006 P4/P5. S5a (Tier-2 signing) is
+done; S5b (key enrollment + the firmware-enforced boot test) is the remaining
+follow-on. Each is independently testable.
 
 ## 7. Considered Alternatives
 
