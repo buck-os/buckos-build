@@ -39,11 +39,25 @@ def _pdeathsig():
 
 
 def _find(base, names):
+    """Find a file by exact name under base (or base itself if it is a file).
+
+    Exact match only: a fuzzy startswith would match e.g. the `mke2fs.8` man
+    page instead of the `mke2fs` binary.
+    """
     if os.path.isfile(base):
         return base
     for dirpath, _, filenames in os.walk(base):
         for f in sorted(filenames):
-            if f in names or any(f.startswith(n) for n in names):
+            if f in names:
+                return os.path.join(dirpath, f)
+    return None
+
+
+def _find_suffix(base, suffix):
+    """Find the first file ending in suffix under base."""
+    for dirpath, _, filenames in os.walk(base):
+        for f in sorted(filenames):
+            if f.endswith(suffix):
                 return os.path.join(dirpath, f)
     return None
 
@@ -144,16 +158,9 @@ def main():
         return 0
 
     kernel = find_kernel(os.environ["KERNEL"])
-    initramfs = _find(os.environ["INITRAMFS"], ["initramfs"]) or _find(
-        os.environ["INITRAMFS"], [".cpio.gz"]
-    )
-    if not initramfs:
-        # fall back: any *.cpio.gz under the dir
-        for dp, _, fs in os.walk(os.environ["INITRAMFS"]):
-            for f in fs:
-                if f.endswith(".cpio.gz"):
-                    initramfs = os.path.join(dp, f)
-                    break
+    initramfs = os.environ["INITRAMFS"]
+    if not os.path.isfile(initramfs):
+        initramfs = _find_suffix(initramfs, ".cpio.gz")
     mke2fs = _find(os.environ["MKE2FS_DIR"], ["mke2fs"])
     qemu_bin = _find(os.environ["QEMU_DIR"], ["qemu-system-x86_64"])
     bios = _find(os.environ["QEMU_DIR"], ["bios-256k.bin"])
