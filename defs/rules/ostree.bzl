@@ -100,6 +100,15 @@ def _ostree_rootfs_impl(ctx):
     cmd = cmd_args(ctx.attrs._reshape_tool[RunInfo])
     cmd.add("--input", tree)
     cmd.add("--output", output.as_output())
+
+    # Optionally bake in the trusted ed25519 release key (+ a sign-verify remote
+    # when a channel URL is given) so a deployed system trusts releases on disk.
+    if ctx.attrs.trusted_key:
+        cmd.add("--trusted-key", ctx.attrs.trusted_key)
+        cmd.add("--remote-name", ctx.attrs.remote_name)
+        if ctx.attrs.remote_url:
+            cmd.add("--remote-url", ctx.attrs.remote_url)
+
     ctx.actions.run(cmd, category = "ostree_rootfs", identifier = ctx.attrs.name)
     return [DefaultInfo(default_output = output)]
 
@@ -107,6 +116,9 @@ ostree_rootfs = rule(
     impl = _ostree_rootfs_impl,
     attrs = {
         "tree": attrs.dep(),
+        "trusted_key": attrs.option(attrs.source(), default = None),
+        "remote_name": attrs.string(default = "buckos"),
+        "remote_url": attrs.string(default = ""),
         "_reshape_tool": attrs.exec_dep(default = "//tools:ostree_rootfs_helper"),
     },
 )

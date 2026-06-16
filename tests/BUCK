@@ -715,8 +715,14 @@ buckos_test(
 buckos_test(
     name = "test-ostree-rootfs",
     test = "verify_ostree_rootfs.py",
-    deps = ["//tests/fixtures/ostree:mini-ostree-rootfs"],
-    env = {"OSTREE_ROOTFS": "$(location //tests/fixtures/ostree:mini-ostree-rootfs)"},
+    deps = [
+        "//tests/fixtures/ostree:mini-ostree-rootfs",
+        "//defs/keys:ostree-test-pub",
+    ],
+    env = {
+        "OSTREE_ROOTFS": "$(location //tests/fixtures/ostree:mini-ostree-rootfs)",
+        "OSTREE_EXPECT_KEY_FILE": "$(location //defs/keys:ostree-test-pub)",
+    },
     labels = ["integration", "ostree"],
 )
 

@@ -49,6 +49,18 @@ def main():
     )
     chk("/sysroot present", os.path.isdir(os.path.join(root, "sysroot")))
 
+    # When a trusted key was baked in (SPEC-007 §5.3), assert it landed under
+    # /usr/etc/ostree (the deployed /etc default) and matches the release key.
+    keyfile = os.environ.get("OSTREE_EXPECT_KEY_FILE")
+    if keyfile:
+        baked = os.path.join(root, "usr", "etc", "ostree", "buckos.ed25519.pub")
+        chk("trusted key baked at /usr/etc/ostree", os.path.isfile(baked))
+        chk(
+            "trusted key matches the release pubkey",
+            os.path.isfile(baked)
+            and open(baked).read().strip() == open(keyfile).read().strip(),
+        )
+
     ok = all(v for _, v in checks)
     for desc, value in checks:
         print(("ok   " if value else "FAIL ") + desc)

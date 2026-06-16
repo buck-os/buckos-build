@@ -67,6 +67,8 @@ genrule(
 ostree_rootfs(
     name = "mini-ostree-rootfs",
     tree = ":mini-rootfs",
+    # Bake in the trusted key so test-ostree-rootfs can assert it lands.
+    trusted_key = "//defs/keys:ostree-test-pub",
     visibility = ["PUBLIC"],
 )
 

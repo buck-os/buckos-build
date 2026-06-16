@@ -108,10 +108,45 @@ def _ensure_os_release(root):
             return
 
 
+def _install_trusted_key(root, key_path, remote_name, remote_url):
+    """Bake the ed25519 PUBLIC key (and, if a URL is given, a signature-verified
+    remote) into the image so a deployed system trusts the release key on disk
+    (SPEC-007 §5.3). Written under /usr/etc — ostree's config default that is
+    merged into /etc on deploy.
+    """
+    key = open(key_path).read().strip()
+    etc_ostree = os.path.join(root, "usr", "etc", "ostree")
+    os.makedirs(etc_ostree, exist_ok=True)
+    with open(os.path.join(etc_ostree, "buckos.ed25519.pub"), "w") as fh:
+        fh.write(key + "\n")
+    if remote_url:
+        remotes_d = os.path.join(etc_ostree, "remotes.d")
+        os.makedirs(remotes_d, exist_ok=True)
+        conf = (
+            '[remote "%s"]\n'
+            "url=%s\n"
+            "sign-verify=true\n"
+            "verification-ed25519-key=%s\n"
+        ) % (remote_name, remote_url, key)
+        with open(os.path.join(remotes_d, remote_name + ".conf"), "w") as fh:
+            fh.write(conf)
+
+
 def main():
     ap = argparse.ArgumentParser(description="Reshape a rootfs into ostree layout")
     ap.add_argument("--input", required=True, help="input rootfs tree")
     ap.add_argument("--output", required=True, help="output ostree-shaped tree")
+    ap.add_argument(
+        "--trusted-key",
+        default=None,
+        help="ed25519 public key (base64) to bake in as the trusted release key",
+    )
+    ap.add_argument("--remote-name", default="buckos", help="ostree remote name")
+    ap.add_argument(
+        "--remote-url",
+        default="",
+        help="channel URL; when set, bake a sign-verify remote config",
+    )
     args = ap.parse_args()
 
     src, dst = args.input, args.output
@@ -135,6 +170,9 @@ def main():
     os.makedirs(tmpfiles_dir, exist_ok=True)
     with open(os.path.join(tmpfiles_dir, "ostree-buckos-var.conf"), "w") as fh:
         fh.write(_VAR_TMPFILES)
+
+    if args.trusted_key:
+        _install_trusted_key(dst, args.trusted_key, args.remote_name, args.remote_url)
 
     return 0
 
