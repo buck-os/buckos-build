@@ -686,6 +686,18 @@ buckos_test(
     labels = ["integration", "ostree"],
 )
 
+# ── ostree commit signing (SPEC-007) ─────────────────────────────────
+# Building demo-commit-signed runs `ostree sign --sign-type=ed25519` with the
+# committed TEST key; this asserts the ed25519 signature landed in the commit's
+# detached metadata (.commitmeta).
+buckos_test(
+    name = "test-ostree-signed",
+    test = "verify_ostree_signed.py",
+    deps = ["//tests/fixtures/ostree:demo-commit-signed"],
+    env = {"OSTREE_REPO": "$(location //tests/fixtures/ostree:demo-commit-signed)"},
+    labels = ["integration", "ostree"],
+)
+
 # ── ostree_rootfs transform (SPEC-006 P2) ────────────────────────────
 # Reshape a mini rootfs into ostree's layout and assert the moves
 # (/etc -> /usr/etc, mutable dirs -> /var symlinks, /var emptied, /sysroot).

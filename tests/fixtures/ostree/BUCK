@@ -20,6 +20,19 @@ ostree_commit(
     visibility = ["PUBLIC"],
 )
 
+# Signed variant (SPEC-007): sign the demo commit with the committed TEST
+# ed25519 key. Building this runs `ostree sign --sign-type=ed25519`, so a bad
+# key format fails the build; the resulting commit carries a `.commitmeta`
+# with an `ostree.sign.ed25519` signature.
+ostree_commit(
+    name = "demo-commit-signed",
+    tree = ":demo-tree",
+    branch = "buckos/demo-signed",
+    subject = "ostree_commit signing self-test",
+    signing_key = "//defs/keys:ostree-test-key",
+    visibility = ["PUBLIC"],
+)
+
 # Self-test for the ostree_rootfs transform (SPEC-006 P2): a mini rootfs with
 # /etc, /home, /var content + mutable dirs, reshaped into ostree's layout,
 # then committed.  Exercises the full composable pipeline:
