@@ -69,6 +69,17 @@ def main():
     ap.add_argument(
         "--karg", action="append", default=[], help="kernel arg (repeatable)"
     )
+    ap.add_argument(
+        "--update-repo",
+        default=None,
+        help="optional second commit repo (deploy as an update)",
+    )
+    ap.add_argument("--update-branch", default=None, help="ref within --update-repo")
+    ap.add_argument(
+        "--rollback",
+        action="store_true",
+        help="after the update, re-deploy the base so it becomes default again",
+    )
     args = ap.parse_args()
 
     _become_root_in_userns()
@@ -92,24 +103,38 @@ def main():
             [ld, "--library-path", lib_path, ostree] + extra, env=env, check=True
         )
 
+    sysrepo = os.path.join(sysroot, "ostree", "repo")
+
+    def pull(src_repo, branch):
+        run(["pull-local", "--repo=" + sysrepo, os.path.abspath(src_repo), branch])
+
+    def deploy(branch):
+        cmd = ["admin", "deploy", "--sysroot=" + sysroot, "--os=" + args.os]
+        for karg in args.karg:
+            cmd.append("--karg=" + karg)
+        cmd.append(branch)
+        run(cmd)
+
     run(["admin", "init-fs", "--modern", sysroot])
-    run(
-        [
-            "pull-local",
-            "--repo=" + os.path.join(sysroot, "ostree", "repo"),
-            repo,
-            args.branch,
-        ]
-    )
+    pull(repo, args.branch)
     run(["admin", "stateroot-init", "--sysroot=" + sysroot, args.os])
 
-    deploy = ["admin", "deploy", "--sysroot=" + sysroot, "--os=" + args.os]
-    for karg in args.karg:
-        deploy.append("--karg=" + karg)
-    deploy.append(args.branch)
-    run(deploy)
+    # Base deployment.
+    deploy(args.branch)
+    history = [args.branch]
 
-    print("deployed %s (%s) into %s" % (args.branch, args.os, sysroot))
+    # Optional update: deploy a second commit on top (becomes the default).
+    if args.update_repo:
+        pull(args.update_repo, args.update_branch)
+        deploy(args.update_branch)
+        history.append(args.update_branch)
+
+    # Optional rollback: re-deploy the base so it is the default again.
+    if args.rollback:
+        deploy(args.branch)
+        history.append(args.branch + " (rollback)")
+
+    print("deployed %s (%s) into %s" % (" -> ".join(history), args.os, sysroot))
     return 0
 
 

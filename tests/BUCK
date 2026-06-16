@@ -709,6 +709,38 @@ buckos_test(
     labels = ["integration", "ostree"],
 )
 
+# ── ostree update cycle (SPEC-006 P6) ────────────────────────────────
+# Boots three deployed sysroots and asserts the booted version: deploy A
+# boots A; deploy A then B boots B (atomic update); deploy A,B then redeploy
+# A boots A (rollback).  Heavy + QEMU/userns — runs as a dedicated nightly
+# job; self-skips when /dev/kvm is unavailable.
+buckos_test(
+    name = "test-ostree-update-cycle",
+    test = "verify_ostree_update_cycle.py",
+    deps = [
+        "//tests/fixtures/ostree:cycle-sysroot-base",
+        "//tests/fixtures/ostree:cycle-sysroot-updated",
+        "//tests/fixtures/ostree:cycle-sysroot-rolledback",
+        "//packages/linux/kernel/buckos-kernel:buckos-kernel-live",
+        "//packages/linux/system/ostree-image:buckos-ostree-initramfs",
+        "//packages/linux/system/filesystem/native/e2fsprogs:e2fsprogs",
+        "//packages/linux/emulation/hypervisors/qemu:qemu",
+        ":qemu-env",
+    ],
+    env = {
+        "SYSROOT_BASE": "$(location //tests/fixtures/ostree:cycle-sysroot-base)",
+        "SYSROOT_UPDATED": "$(location //tests/fixtures/ostree:cycle-sysroot-updated)",
+        "SYSROOT_ROLLEDBACK": "$(location //tests/fixtures/ostree:cycle-sysroot-rolledback)",
+        "KERNEL": "$(location //packages/linux/kernel/buckos-kernel:buckos-kernel-live)",
+        "INITRAMFS": "$(location //packages/linux/system/ostree-image:buckos-ostree-initramfs)",
+        "MKE2FS_DIR": "$(location //packages/linux/system/filesystem/native/e2fsprogs:e2fsprogs)",
+        "QEMU_DIR": "$(location //packages/linux/emulation/hypervisors/qemu:qemu)",
+        "RUN_ENV": "$(location :qemu-env)",
+    },
+    run_test_separately = True,
+    labels = ["vm", "slow", "integration", "ostree", "heavy"],
+)
+
 # ── ostree_rootfs transform (SPEC-006 P2) ────────────────────────────
 # Reshape a mini rootfs into ostree's layout and assert the moves
 # (/etc -> /usr/etc, mutable dirs -> /var symlinks, /var emptied, /sysroot).

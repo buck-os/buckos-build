@@ -145,6 +145,15 @@ def _ostree_sysroot_impl(ctx):
     for karg in ctx.attrs.kargs:
         cmd.add("--karg", karg)
 
+    # Optional update/rollback sequence (for the P6 update-cycle test): deploy a
+    # second commit on top, and optionally re-deploy the base as a rollback.
+    if ctx.attrs.update_commit:
+        upd = ctx.attrs.update_commit[OstreeRepoInfo]
+        cmd.add("--update-repo", upd.repo)
+        cmd.add("--update-branch", upd.branch)
+    if ctx.attrs.rollback:
+        cmd.add("--rollback")
+
     add_flag_file(cmd, "--lib-dirs-file", write_lib_dirs(ctx, ostree.path_info))
     cmd.add(cmd_args(hidden = ostree.prefix))
 
@@ -161,6 +170,8 @@ ostree_sysroot = rule(
         ),
         "os": attrs.string(default = "buckos"),
         "kargs": attrs.list(attrs.string(), default = ["rw"]),
+        "update_commit": attrs.option(attrs.dep(providers = [OstreeRepoInfo]), default = None),
+        "rollback": attrs.bool(default = False),
         "_sysroot_tool": attrs.exec_dep(default = "//tools:ostree_sysroot_helper"),
     } | TOOLCHAIN_ATTRS,
 )

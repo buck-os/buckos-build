@@ -89,3 +89,82 @@ ostree_sysroot(
     os = "buckos",
     visibility = ["PUBLIC"],
 )
+
+# ── Update-cycle fixtures (SPEC-006 P6) ──────────────────────────────
+# Two tiny bootable commits, "A" and "B", that differ only by the marker
+# their init echoes on the serial console. They feed three deploy states:
+#   - base:        deploy A                 -> boots A
+#   - updated:     deploy A, then B         -> boots B  (atomic update)
+#   - rolledback:  deploy A, B, redeploy A  -> boots A  (rollback)
+# The boot harness boots all three and asserts A / B / A.
+
+_CYCLE_TREE_CMD = " && ".join([
+    "mkdir -p $OUT/usr/bin $OUT/usr/sbin $OUT/usr/lib/modules/6.0.0-buckos $OUT/etc",
+    "ln -s usr/bin $OUT/bin",
+    "ln -s usr/sbin $OUT/sbin",
+    "ln -s usr/lib $OUT/lib",
+    'cp "$(location //packages/linux/core/busybox:busybox-static)/bin/busybox" $OUT/usr/bin/busybox && chmod 0755 $OUT/usr/bin/busybox',
+    # Dummy kernel so `ostree admin deploy` can populate /boot (QEMU boots the
+    # real bzImage via -kernel; the in-commit vmlinuz is never executed).
+    "printf 'DUMMYKERNEL\\n' > $OUT/usr/lib/modules/6.0.0-buckos/vmlinuz",
+])
+
+genrule(
+    name = "cycle-tree-a",
+    out = "tree",
+    cmd = _CYCLE_TREE_CMD + " && " + " && ".join([
+        "printf 'ID=buckos\\nNAME=BuckOS\\nPRETTY_NAME=\"BuckOS cycle A\"\\nVERSION_ID=a\\n' > $OUT/etc/os-release",
+        "printf '#!/usr/bin/busybox sh\\n/usr/bin/busybox mount -t proc proc /proc 2>/dev/null || true\\n/usr/bin/busybox echo CYCLE_BOOT_A\\n/usr/bin/busybox sync\\n/usr/bin/busybox poweroff -f\\n' > $OUT/usr/sbin/init",
+        "chmod 0755 $OUT/usr/sbin/init",
+    ]),
+)
+
+genrule(
+    name = "cycle-tree-b",
+    out = "tree",
+    cmd = _CYCLE_TREE_CMD + " && " + " && ".join([
+        "printf 'ID=buckos\\nNAME=BuckOS\\nPRETTY_NAME=\"BuckOS cycle B\"\\nVERSION_ID=b\\n' > $OUT/etc/os-release",
+        "printf '#!/usr/bin/busybox sh\\n/usr/bin/busybox mount -t proc proc /proc 2>/dev/null || true\\n/usr/bin/busybox echo CYCLE_BOOT_B\\n/usr/bin/busybox sync\\n/usr/bin/busybox poweroff -f\\n' > $OUT/usr/sbin/init",
+        "chmod 0755 $OUT/usr/sbin/init",
+    ]),
+)
+
+ostree_rootfs(name = "cycle-rootfs-a", tree = ":cycle-tree-a", visibility = ["PUBLIC"])
+ostree_rootfs(name = "cycle-rootfs-b", tree = ":cycle-tree-b", visibility = ["PUBLIC"])
+
+ostree_commit(
+    name = "cycle-commit-a",
+    tree = ":cycle-rootfs-a",
+    branch = "buckos/cycle-a",
+    subject = "update-cycle A",
+    visibility = ["PUBLIC"],
+)
+
+ostree_commit(
+    name = "cycle-commit-b",
+    tree = ":cycle-rootfs-b",
+    branch = "buckos/cycle-b",
+    subject = "update-cycle B",
+    visibility = ["PUBLIC"],
+)
+
+ostree_sysroot(
+    name = "cycle-sysroot-base",
+    commit = ":cycle-commit-a",
+    visibility = ["PUBLIC"],
+)
+
+ostree_sysroot(
+    name = "cycle-sysroot-updated",
+    commit = ":cycle-commit-a",
+    update_commit = ":cycle-commit-b",
+    visibility = ["PUBLIC"],
+)
+
+ostree_sysroot(
+    name = "cycle-sysroot-rolledback",
+    commit = ":cycle-commit-a",
+    update_commit = ":cycle-commit-b",
+    rollback = True,
+    visibility = ["PUBLIC"],
+)
