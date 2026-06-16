@@ -673,3 +673,61 @@ buckos_test(
     run_test_separately = True,
     labels = ["vm", "slow", "integration", "heavy"],
 )
+
+# ── ostree_commit rule (SPEC-006 P2) ─────────────────────────────────
+# Building demo-commit runs the buckos `ostree` CLI in a buck2 action to
+# commit a tiny tree; this asserts the produced repo is a well-formed,
+# content-addressed archive repo (ref resolves, commit object present).
+buckos_test(
+    name = "test-ostree-commit",
+    test = "verify_ostree_commit.py",
+    deps = ["//tests/fixtures/ostree:demo-commit"],
+    env = {"OSTREE_REPO": "$(location //tests/fixtures/ostree:demo-commit)"},
+    labels = ["integration", "ostree"],
+)
+
+# ── ostree_rootfs transform (SPEC-006 P2) ────────────────────────────
+# Reshape a mini rootfs into ostree's layout and assert the moves
+# (/etc -> /usr/etc, mutable dirs -> /var symlinks, /var emptied, /sysroot).
+buckos_test(
+    name = "test-ostree-rootfs",
+    test = "verify_ostree_rootfs.py",
+    deps = ["//tests/fixtures/ostree:mini-ostree-rootfs"],
+    env = {"OSTREE_ROOTFS": "$(location //tests/fixtures/ostree:mini-ostree-rootfs)"},
+    labels = ["integration", "ostree"],
+)
+
+# ── real base rootfs -> ostree commit (SPEC-006 P2) ──────────────────
+# Heavy: builds buckos-rootfs, reshapes it, and commits it; asserts the
+# produced repo is a valid content-addressed archive repo.  Run in a
+# dedicated CI step (like test-hermeticity), not the generic unit query.
+buckos_test(
+    name = "test-buckos-ostree-commit",
+    test = "verify_ostree_commit.py",
+    deps = ["//packages/linux/system/ostree-image:buckos-ostree-commit"],
+    env = {
+        "OSTREE_REPO": "$(location //packages/linux/system/ostree-image:buckos-ostree-commit)",
+        "OSTREE_BRANCH": "buckos/x86_64/main",
+    },
+    labels = ["integration", "ostree", "heavy"],
+)
+
+# ── ostree_sysroot deploy (SPEC-006 P3) ──────────────────────────────
+# Deploy a committed image (in a user namespace) and assert the sysroot is
+# bootable-shaped: /ostree repo + a checked-out deployment + a BLS entry with
+# the ostree= kernel arg + a staged kernel.
+#
+# Heavy: the deploy runs `ostree admin deploy`, which chowns the checkout to
+# uid/gid 0.  The helper does that by mapping the build user to root in an
+# unprivileged user namespace (unshare(CLONE_NEWUSER)).  Some runners disable
+# unprivileged userns (kernel.unprivileged_userns_clone=0 or a seccomp policy),
+# where the deploy can't run at all — so this is kept out of the generic test
+# query and run in a dedicated step on a permissive runner, like
+# test-buckos-ostree-commit.
+buckos_test(
+    name = "test-ostree-sysroot",
+    test = "verify_ostree_sysroot.py",
+    deps = ["//tests/fixtures/ostree:mini-sysroot"],
+    env = {"OSTREE_SYSROOT": "$(location //tests/fixtures/ostree:mini-sysroot)"},
+    labels = ["integration", "ostree", "heavy"],
+)

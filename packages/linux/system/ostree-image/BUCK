@@ -1,0 +1,54 @@
+load("//defs/rules:ostree.bzl", "ostree_commit", "ostree_rootfs")
+load("//defs/rules:rootfs.bzl", "rootfs")
+load("//defs/rules:initramfs.bzl", "initramfs")
+
+# Composable ostree image of the base BuckOS system (SPEC-006 P2).
+#
+# This is a separate, additive path: it reshapes the *existing* buckos-rootfs
+# into ostree's layout and commits it.  buckos-rootfs and the source-based
+# install path are untouched — the three primitives just compose:
+#     buckos-rootfs  ->  ostree_rootfs  ->  ostree_commit
+ostree_rootfs(
+    name = "buckos-ostree-rootfs",
+    tree = "//packages/linux/system:buckos-rootfs",
+    visibility = ["PUBLIC"],
+)
+
+ostree_commit(
+    name = "buckos-ostree-commit",
+    tree = ":buckos-ostree-rootfs",
+    branch = "buckos/x86_64/main",
+    subject = "BuckOS base system",
+    # A real OS commit must keep file capabilities (setuid is mode-preserved;
+    # caps live in security.capability xattrs).
+    preserve_xattrs = True,
+    visibility = ["PUBLIC"],
+)
+
+# ── Dynamic-capable ostree initramfs (SPEC-006 P3) ───────────────────
+# The deployment boots via ostree-prepare-root, which is a *dynamic* glibc
+# binary.  Rather than hand-assemble a /lib64 (which crashes pre-main under
+# the buckos kernel), build the initramfs from a real rootfs slice so glibc
+# is installed properly (ldconfig -> ld.so.cache, sanitized loader) and the
+# dynamic binary runs.  busybox provides the init shell + mount/switch_root;
+# top_packages pulls ostree's full runtime closure (glib/openssl/glibc/...).
+rootfs(
+    name = "ostree-initramfs-rootfs",
+    packages = [
+        "//packages/linux/system:baselayout-gen",
+        "//packages/linux/core/glibc:glibc",
+        "//packages/linux/core/busybox:busybox-static",
+        "//packages/linux/system/ostree:ostree",
+    ],
+    top_packages = ["//packages/linux/system/ostree:ostree"],
+    visibility = ["PUBLIC"],
+)
+
+initramfs(
+    name = "buckos-ostree-initramfs",
+    rootfs = ":ostree-initramfs-rootfs",
+    compression = "gz",
+    init = "/init",
+    init_script = "//defs/scripts:ostree-initramfs-init",
+    visibility = ["PUBLIC"],
+)

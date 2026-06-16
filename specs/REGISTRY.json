@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "generated": "2026-06-15",
-  "total_specs": 11,
+  "total_specs": 12,
   "specs": [
     {
       "id": "PACKAGE-SPEC-001",
@@ -363,6 +363,46 @@
       "description": "This specification defines the patch system for BuckOS, which allows users and distributions to customize package builds through multiple patch sources with clear precedence ordering. The system su..."
     },
     {
+      "id": "SPEC-006",
+      "title": "Atomic Image-Based Updates (ostree)",
+      "status": "draft",
+      "version": "0.1.0",
+      "category": "core",
+      "path": "core/SPEC-006-atomic-updates.md",
+      "created": "2026-06-12",
+      "updated": "2026-06-12",
+      "authors": [
+        {
+          "name": "BuckOS Team",
+          "email": "team@buckos.org"
+        }
+      ],
+      "maintainers": [
+        "team@buckos.org"
+      ],
+      "tags": [
+        "updates",
+        "ostree",
+        "atomic",
+        "boot",
+        "reproducible"
+      ],
+      "related": [
+        "SPEC-001",
+        "SPEC-004"
+      ],
+      "implementation": {
+        "status": "not-started",
+        "completeness": 0
+      },
+      "compatibility": {
+        "buck2_version": ">=2024.11.01",
+        "buckos_version": ">=1.0.0",
+        "breaking_changes": false
+      },
+      "description": "Atomic, image-based system updates with rollback for BuckOS, built on libostree: each system version is a content-addressed, signed commit; updates are staged out-of-band and activated by an atomic boot switch, with rollback to the prior deployment."
+    },
+    {
       "id": "SPEC-100",
       "title": "Toolchain Bootstrap and Seed",
       "status": "approved",
@@ -451,7 +491,8 @@
       "SPEC-001",
       "SPEC-002",
       "SPEC-004",
-      "SPEC-005"
+      "SPEC-005",
+      "SPEC-006"
     ],
     "features": [
       "SPEC-300"
@@ -477,11 +518,20 @@
       "SPEC-005",
       "SPEC-100",
       "SPEC-300"
+    ],
+    "draft": [
+      "SPEC-006"
     ]
   },
   "by_tag": {
+    "atomic": [
+      "SPEC-006"
+    ],
     "autotools": [
       "PACKAGE-SPEC-001"
+    ],
+    "boot": [
+      "SPEC-006"
     ],
     "bootstrap": [
       "SPEC-100"
@@ -549,6 +599,9 @@
     "ninja": [
       "PACKAGE-SPEC-002"
     ],
+    "ostree": [
+      "SPEC-006"
+    ],
     "package-creation": [
       "PACKAGE-SPEC-001",
       "PACKAGE-SPEC-002",
@@ -577,6 +630,9 @@
     "python": [
       "PACKAGE-SPEC-005"
     ],
+    "reproducible": [
+      "SPEC-006"
+    ],
     "rootfs": [
       "SPEC-300"
     ],
@@ -600,6 +656,9 @@
     ],
     "toolchain": [
       "SPEC-100"
+    ],
+    "updates": [
+      "SPEC-006"
     ],
     "use-flags": [
       "SPEC-002"

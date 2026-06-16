@@ -4,17 +4,17 @@
 
 ## Summary
 
-**Total Specifications:** 11
+**Total Specifications:** 12
 
 **By Status:**
 - ✅ approved: 11
 - 🔄 rfc: 0
-- 📝 draft: 0
+- 📝 draft: 1
 - ⚠️ deprecated: 0
 - ⛔ rejected: 0
 
 **By Category:**
-- core: 4
+- core: 5
 - bootstrap: 1
 - features: 1
 - packages: 5
@@ -39,6 +39,7 @@
 | [SPEC-002](core/SPEC-002-use-flags.md) | USE Flag System | ✅ approved | 2.0.0 | 2026-05-29 |
 | [SPEC-004](core/SPEC-004-package-sets.md) | Package Sets and System Profiles | ✅ approved | 1.0.0 | 2025-11-20 |
 | [SPEC-005](core/SPEC-005-patches.md) | Patch System | ✅ approved | 2.0.0 | 2026-05-29 |
+| [SPEC-006](core/SPEC-006-atomic-updates.md) | Atomic Image-Based Updates (ostree) | 📝 draft | 0.1.0 | 2026-06-12 |
 
 ### Bootstrap Specifications
 
