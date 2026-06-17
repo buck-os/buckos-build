@@ -46,10 +46,14 @@ The work is layered into two tiers:
 
 - **Tier 1 — update-path signing (this spec's core, implemented now):** sign
   release commits; clients fail closed on an unsigned or untrusted commit.
-- **Tier 2 — UEFI Secure Boot chain (specified, deferred):** shim → signed
-  bootloader → signed kernel + initramfs, so an *offline* attacker with disk
-  access cannot substitute a deployment either. Documented here for continuity;
-  not implemented in the initial pass.
+- **Tier 2 — UEFI Secure Boot chain (kernel signing + enforcement proven;
+  full chain in progress):** the firmware verifies the boot artifact before
+  Linux runs, so an *offline* attacker with disk access cannot substitute a
+  deployment either. Kernel-EFI-stub signing (`efi_sign`/osslsigncode),
+  PK/KEK/db enrollment (`efitools`), and firmware-enforced rejection of an
+  unsigned kernel are **implemented and proven against OVMF**
+  (`tools/secureboot_validate.sh`, §5.6). Signing the bootloader with `sbat`
+  and a Unified Kernel Image (so the initramfs is signature-covered) remain.
 
 This is additive to SPEC-006 and changes no default of the source-based path.
 
@@ -189,18 +193,40 @@ enrolled db). `//tests/fixtures/secureboot:signed-kernel` signs the live kernel;
 is the chosen route over the canonical `sbsign`/`shim` because it is already
 packaged — no shim or Microsoft-CA dependency for a self-managed key set.
 
-**Enrollment + boot test — remaining.** PK/KEK/db must be enrolled into the
-firmware variable store (an `OVMF_VARS` image for the QEMU gate; MOK / real
-firmware on hardware). This needs key-enrollment tooling — `efitools`
-(`cert-to-efi-sig-list`, `sign-efi-sig-list`) or `virt-firmware`
-(`virt-fw-vars`) — which is **not yet packaged** (the next build-server step).
-With enrolled keys the gate boots OVMF with Secure Boot on: the signed kernel
-boots; an unsigned/tampered kernel is rejected.
+**Enrollment — implemented.** `efitools` (host tools `cert-to-efi-sig-list` +
+`flash-var`, plus `gnu-efi` headers) is packaged
+(`//packages/linux/system/security/efitools`). `cert-to-efi-sig-list` turns each
+X.509 cert (PK/KEK/db) into an EFI signature list; `flash-var` writes them into
+an offline `OVMF_VARS` image, taking the firmware from setup mode to user mode
+with Secure Boot enforcing.
 
-**`sbat`, bootloader, initramfs.** A complete chain also signs the bootloader
-(GRUB/systemd-boot EFI) with `sbat` revocation metadata, and either signs the
-initramfs or uses a Unified Kernel Image so the initramfs is covered by the
-kernel signature. These compose with `efi_sign` and are follow-ons.
+**Firmware enforcement — proven.** `tools/secureboot_validate.sh` exercises the
+whole chain against OVMF Secure Boot (`q35,smm=on`, `secure=on`, the enrolled
+vars) and asserts:
+
+- the **signed** kernel placed at `\EFI\BOOT\BOOTX64.EFI` on a GPT ESP is
+  **accepted** — OVMF's `LoadImage` SB-verifies it and `BdsDxe` starts it;
+- the **unsigned** kernel in the same slot is **rejected** —
+  `BdsDxe: failed to load … : Access Denied`;
+- the signed kernel **boots to init** (a busybox marker initramfs prints
+  `SECUREBOOT_INIT_OK`).
+
+Two QEMU specifics drove the test design and are recorded so the gate is not
+over-claimed: (1) QEMU's `-kernel` loads the image via `fw_cfg`, **not**
+`LoadImage`, so it bypasses Secure Boot (an unsigned kernel boots that way too) —
+hence enforcement is tested via the **ESP/`LoadImage`** path, not `-kernel`;
+(2) `flash-var` only writes time-based-authenticated variables (PK/KEK/db), not
+regular `Boot####`, so the ESP-booted kernel gets no cmdline and runs silently
+after a verified start — the *boots-to-init* assertion therefore uses `-kernel`
+(SB-bypassing but proving the signed binary is a working bootable kernel), while
+*enforcement* is proven by the ESP accept/reject pair above.
+
+**`sbat`, bootloader, initramfs — remaining.** A complete chain also signs the
+bootloader (GRUB/systemd-boot EFI) with `sbat` revocation metadata, and either
+signs the initramfs or uses a Unified Kernel Image (systemd-stub, not yet
+packaged) so the initramfs is covered by the kernel signature and a *single*
+SB-verified artifact reaches init via `LoadImage`. These compose with `efi_sign`
+and are follow-ons.
 
 This is additive and does not change the Tier-1 design.
 
@@ -213,11 +239,14 @@ This is additive and does not change the Tier-1 design.
 | S3 | `sign-verify=true` remote baked in image; agent + installer fail closed | a system trusts only the release key out of the box |
 | S4 | CI: positive (signed pull/deploy) + negative (tampered → rejected) | green nightly, userns-aware like the sysroot gate |
 | S5a | `efi_sign` signs the kernel EFI stub with the db key (osslsigncode) | `test-secureboot-sign` passes; the signed image self-verifies against db |
-| S5b (remaining) | Enroll PK/KEK/db into firmware + an OVMF Secure-Boot boot test | signed kernel boots, unsigned rejected — needs `efitools`/`virt-fw-vars` |
+| S5b | Package `efitools`/`gnu-efi`; enroll PK/KEK/db into firmware + an OVMF Secure-Boot boot test | `secureboot_validate.sh`: signed accepted, unsigned rejected (Access Denied), boots to init |
+| S5c (remaining) | Sign the bootloader (GRUB/systemd-boot) with `sbat`; UKI so initramfs is signature-covered | a single SB-verified artifact reaches init via `LoadImage` |
 
-S1–S4 are Tier 1 and land alongside SPEC-006 P4/P5. S5a (Tier-2 signing) is
-done; S5b (key enrollment + the firmware-enforced boot test) is the remaining
-follow-on. Each is independently testable.
+S1–S4 are Tier 1 and land alongside SPEC-006 P4/P5. S5a–S5b (Tier-2 kernel
+signing + key enrollment + the firmware-enforced boot test) are **done** — real
+Secure Boot enforcement is proven against OVMF with buckos-packaged tools. S5c
+(signed bootloader + `sbat` + UKI) is the remaining follow-on. Each is
+independently testable.
 
 ## 7. Considered Alternatives
 
