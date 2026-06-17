@@ -1,10 +1,10 @@
 ---
 id: "SPEC-007"
 title: "Verified Boot and Update Signing"
-status: "draft"
-version: "0.1.0"
+status: "approved"
+version: "1.0.0"
 created: "2026-06-16"
-updated: "2026-06-16"
+updated: "2026-06-17"
 
 authors:
   - name: "BuckOS Team"
@@ -342,5 +342,83 @@ item and cannot run under the QEMU gate. Each is independently testable.
    error.
 4. A freshly installed system trusts only the release key with no manual step.
 5. CI gates both the positive and negative paths.
-6. Tier 1 is implemented; Tier 2 (Secure Boot) is fully specified for a later
-   pass.
+6. Tier 1 and Tier 2 (Secure Boot, S5a–S5e) are implemented and gated; only
+   hardware / MOK enrollment (S5f) remains.
+
+## 10. Key Management and Rotation
+
+Operational runbook for the keys this spec relies on (operationalises the trust
+model in §4). Two independent key sets exist and are rotated independently.
+
+### 10.1 Inventory
+
+| Key | Type | Signs | Trust anchor (public) | Secret |
+|-----|------|-------|-----------------------|--------|
+| Release signing key | ed25519 | ostree channel commits + summary | baked in image (`/usr/etc/ostree/buckos.ed25519.pub`); remote `verification-ed25519-key` | CI secret `BUCKOS_OSTREE_SIGN_KEY` → HSM |
+| Secure Boot `db` | RSA-2048 X.509 | EFI artifacts (kernel / UKI / sd-boot) | firmware `db` | CI secret / HSM |
+| Secure Boot `KEK` | RSA-2048 X.509 | `db`/`dbx` updates | firmware `KEK` | offline / HSM |
+| Secure Boot `PK` | RSA-2048 X.509 | `KEK` updates | firmware `PK` | offline / HSM (most sensitive) |
+
+The keys in `defs/keys/` (`ostree-test.*`, `secureboot-*`) are **TEST keys**
+committed for the CI gates and local validation — never used for released
+artifacts.
+
+### 10.2 Generation
+
+ed25519 release key (openssl; no ostree tool needed):
+
+```sh
+openssl genpkey -algorithm ed25519 -out release.pem
+seed=$(openssl pkey -in release.pem -outform DER | tail -c 32)
+pub=$(openssl pkey -in release.pem -pubout -outform DER | tail -c 32)
+# secret for `ostree sign --keys-file` : base64(seed || pub)  (64 bytes)
+# public for `verification-ed25519-key`: base64(pub)          (32 bytes)
+```
+
+Secure Boot keys (one self-signed RSA-2048 X.509 each for PK / KEK / db):
+
+```sh
+openssl req -new -x509 -newkey rsa:2048 -nodes -days 3650 \
+  -subj "/CN=BuckOS Secure Boot db/" -keyout db.key -out db.crt   # repeat for KEK, PK
+```
+
+### 10.3 Storage
+
+- Release ed25519 secret → GitHub Actions secret `BUCKOS_OSTREE_SIGN_KEY`
+  (least-privilege, never echoed to logs); migrate to an HSM/KMS for production.
+- SB `db` secret → CI secret (signing runs in CI). `KEK`/`PK` secrets stay
+  **offline** (only needed to authorise key-store changes); `PK` is the most
+  sensitive (platform-owner key).
+- Public keys are public by definition: checked into `buckos-build` and shipped
+  in the image.
+
+### 10.4 Rotation
+
+**Release ed25519 key** (overlap — no flag day):
+
+1. Generate the new keypair.
+2. Add the new *public* key to the image's trusted set **alongside** the old one,
+   and publish that image update signed with the **current (old)** key, so
+   existing clients accept it.
+3. Switch CI to sign new commits with the **new** key.
+4. Once all clients have updated past step 2, retire the old key.
+
+Clients trust both keys during the overlap, so none is ever stranded.
+
+**Secure Boot `db`**: generate the new db keypair; enroll a `KEK`-signed `db`
+update adding the new cert (firmware now trusts old + new); re-sign released EFI
+artifacts with the new key; then remove the old cert via another `KEK`-signed
+`db` update (and/or add it to `dbx`).
+
+**Secure Boot `KEK` / `PK`**: rotated the same way, each authorised by the next
+key up (`KEK` by `PK`, `PK` by the current `PK`). These rotate rarely.
+
+### 10.5 Revocation
+
+- **ostree**: stop signing with the compromised key and push an update (signed by
+  a still-trusted key) that removes it from the image's trusted set — ostree has
+  no CRL; trust *is* the on-disk key list.
+- **Secure Boot**: add the compromised cert (or a specific binary hash) to the
+  firmware `dbx` via a `KEK`-signed update. Proven in §5.6: a db cert in `dbx`
+  refuses the whole chain (`Access Denied`). On hardware this ships as a `dbx`
+  update; shim-based SBAT revocation is out of scope (BuckOS is shim-less).
