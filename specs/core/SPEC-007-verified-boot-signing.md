@@ -52,10 +52,11 @@ The work is layered into two tiers:
   substitute a deployment either. Kernel-EFI-stub signing
   (`efi_sign`/osslsigncode), PK/KEK/db enrollment (`efitools`), and a **signed
   Unified Kernel Image that boots to init under real Secure Boot** (systemd-stub
-  + `assemble_uki.py`) — with the unsigned artifact firmware-rejected — are
-  **implemented and proven against OVMF** (`tools/secureboot_validate.sh`, §5.6).
-  Signing the sd-boot bootloader with `sbat` revocation and hardware/MOK
-  enrollment remain.
+  + `assemble_uki.py`), plus the **full multi-stage chain** (firmware → signed
+  sd-boot → signed UKI → init, every stage rejecting an unsigned artifact, and
+  `dbx` revocation refusing the chain) are **implemented and proven against OVMF**
+  (`tools/secureboot_validate.sh`, §5.6). Only enrollment on real hardware / MOK
+  remains.
 
 This is additive to SPEC-006 and changes no default of the source-based path.
 
@@ -97,8 +98,11 @@ object is cached.
 1. **GPG signing** — no gpgme in our libostree.
 2. **composefs / fs-verity** runtime integrity — libostree built without
    composefs (SPEC-006 §8); revisit for stronger at-rest integrity.
-3. **Full UEFI Secure Boot** implementation (Tier 2): shim/CA, signed
-   kernel+initramfs, MOK/sbat — specified, deferred.
+3. **shim / Microsoft CA chain and SBAT *enforcement*.** BuckOS manages its own
+   `db` key, so the implemented Tier-2 chain (§5.6) is shim-less; `.sbat` metadata
+   is carried but actively enforced only by shim, and revocation is via `dbx`.
+   A shim/MS-CA chain is out of scope. (The rest of Tier 2 — signed kernel/UKI,
+   signed bootloader, the multi-stage boot — is implemented, not deferred.)
 4. **TPM measured boot / remote attestation.**
 5. **Multi-key / threshold signing** — single release key initially.
 
@@ -251,11 +255,27 @@ the gap a bare ESP-booted kernel had (no cmdline ⇒ silent start) is closed.
 builds the sd-boot bootloader (exported as `:sd-boot`), which carries an `.sbat`
 revocation section (`-Dsbat-distro=buckos`). `efi_sign` signs it
 (`//tests/fixtures/secureboot:signed-sd-boot`), giving a revocable,
-Secure-Boot-verifiable first stage that can chain-load the signed UKI;
+Secure-Boot-verifiable first stage that chain-loads the signed UKI;
 `//tests:test-secureboot-sd-boot` asserts the signature + `.sbat` are present.
-The remaining follow-ons are the full multi-stage boot test (firmware → signed
-sd-boot → signed UKI, with `sbat` revocation exercised) and enrollment on real
-hardware / MOK.
+
+**Full multi-stage chain + revocation — proven (S5e).**
+`tools/secureboot_validate.sh` boots the complete chain and asserts each stage:
+
+- **firmware → signed sd-boot → signed UKI → init** (the signed sd-boot at
+  `\EFI\BOOT\BOOTX64.EFI` auto-discovers the signed UKI in `\EFI\Linux\` and
+  chain-loads it via `LoadImage` → `SECUREBOOT_INIT_OK`);
+- **sd-boot refuses an unsigned UKI** — sd-boot's own `LoadImage` enforces
+  Secure Boot (`Error loading … \EFI\Linux\buckos.efi: Access denied`), so a
+  compromised UKI cannot ride a trusted bootloader;
+- **dbx revocation** — adding the db cert to the firmware's forbidden database
+  (`dbx`) refuses the otherwise-valid chain (`Access Denied`).
+
+A note on `sbat`: the `.sbat` section is carried for forward compatibility, but
+*active SBAT enforcement is done by shim*, which BuckOS does not use (it manages
+its own `db` key, with no Microsoft CA / shim). For this self-managed chain,
+revocation is therefore via `dbx` (firmware) as demonstrated above; a shim-based
+chain would additionally honour SBAT. **Enrollment on real hardware / MOK** is
+the only remaining item (it cannot run under the QEMU/OVMF gate).
 
 This is additive and does not change the Tier-1 design.
 
@@ -271,15 +291,16 @@ This is additive and does not change the Tier-1 design.
 | S5b | Package `efitools`/`gnu-efi`; enroll PK/KEK/db into firmware + an OVMF Secure-Boot boot test | `secureboot_validate.sh`: signed accepted, unsigned rejected (Access Denied) |
 | S5c | Package the systemd-stub (`systemd-boot` + `pyelftools`); the `uki` rule assembles + signs a UKI | `test-uki` + `secureboot_validate.sh`: signed UKI boots to init under Secure Boot; unsigned rejected |
 | S5d | Sign the sd-boot bootloader with `sbat` revocation | `test-secureboot-sd-boot`: signed sd-boot PE carries `.sbat` |
-| S5e (remaining) | Full multi-stage boot (firmware → sd-boot → UKI) + hardware/MOK enrollment | a revocable multi-stage chain on real firmware |
+| S5e | Full multi-stage boot (firmware → sd-boot → UKI) + revocation | `secureboot_validate.sh`: chain reaches init; sd-boot refuses an unsigned UKI; dbx revocation refuses the chain |
+| S5f (remaining) | Enrollment on real hardware / MOK | the chain boots on physical firmware |
 
-S1–S4 are Tier 1 and land alongside SPEC-006 P4/P5. S5a–S5d (Tier-2 kernel
-signing + key enrollment + UKI + signed bootloader) are **done** — a single
-Secure-Boot-verified artifact (kernel + initramfs + cmdline) boots to init under
-real OVMF Secure Boot, an unsigned one is rejected, and the sd-boot first stage
-is signed with `sbat` revocation, all with buckos-packaged tools. S5e (the full
-multi-stage boot + hardware enrollment) is the remaining follow-on. Each is
-independently testable.
+S1–S4 are Tier 1 and land alongside SPEC-006 P4/P5. S5a–S5e (Tier-2 kernel
+signing + key enrollment + UKI + signed bootloader + the full multi-stage chain
+with revocation) are **done** and proven against OVMF Secure Boot with
+buckos-packaged tools: firmware → signed sd-boot → signed UKI reaches init,
+every stage rejects an unsigned artifact, and revoking the signer via `dbx`
+refuses the chain. S5f (enrollment on real hardware / MOK) is the only remaining
+item and cannot run under the QEMU gate. Each is independently testable.
 
 ## 7. Considered Alternatives
 

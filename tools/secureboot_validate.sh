@@ -1,18 +1,20 @@
 #!/bin/bash
-# Validate UEFI Secure Boot end to end for BuckOS (SPEC-007 Tier 2, S5a-S5c).
+# Validate UEFI Secure Boot end to end for BuckOS (SPEC-007 Tier 2, S5a-S5e).
 #
 # Proves the full chain with buckos-packaged tools:
-#   1. efi_sign signs an EFI PE (the kernel stub, or a UKI) with the Secure Boot
-#      db key (osslsigncode).
+#   1. efi_sign signs an EFI PE (the kernel stub, a UKI, or the bootloader) with
+#      the Secure Boot db key (osslsigncode).
 #   2. efitools (cert-to-efi-sig-list + flash-var) enrolls our PK/KEK/db into an
 #      offline OVMF_VARS image (setup mode -> user mode, SB enforcing).
 #   3. Firmware enforcement, via OVMF's LoadImage from a GPT ESP:
 #        - a SIGNED EFI binary is ACCEPTED  (BdsDxe: starting Boot...)
 #        - an UNSIGNED EFI binary is REJECTED (BdsDxe: failed ... Access Denied)
 #   4. A signed Unified Kernel Image (systemd-stub + kernel + initramfs + cmdline,
-#      all covered by ONE signature) boots all the way to init under real Secure
-#      Boot (SECUREBOOT_INIT_OK); the unsigned UKI is rejected. This is the
-#      complete chain: a single SB-verified artifact that reaches init.
+#      all covered by ONE signature) boots to init under real Secure Boot
+#      (SECUREBOOT_INIT_OK); the unsigned UKI is rejected.
+#   5-7. The full multi-stage chain (S5e): firmware -> signed sd-boot -> signed
+#      UKI -> init; sd-boot itself refuses an unsigned UKI; and revoking the db
+#      cert via dbx refuses the whole (otherwise valid) chain.
 #
 # Note: QEMU's -kernel bypasses Secure Boot (it loads via fw_cfg, not LoadImage),
 # so enforcement and the boot-to-init proof both go through the ESP/LoadImage
@@ -49,7 +51,9 @@ echo "### build: signed kernel + efitools + kernel + osslsigncode + systemd-boot
 out(){ echo "$BB/$(./buck2 build "$@" --show-output 2>/dev/null | awk 'NF>=2{print $NF}' | head -1)"; }
 SIGNED=$(out //tests/fixtures/secureboot:signed-kernel)
 UNSIGNED=$(out //packages/linux/kernel/buckos-kernel:buckos-kernel-live)
-STUB=$(out //packages/linux/boot/systemd-boot:systemd-boot --target-platforms //platforms:linux-target-host)/usr/lib/systemd/boot/efi/linuxx64.efi.stub
+_SDBOOT_DIR=$(out //packages/linux/boot/systemd-boot:systemd-boot --target-platforms //platforms:linux-target-host)/usr/lib/systemd/boot/efi
+STUB=$_SDBOOT_DIR/linuxx64.efi.stub
+SDBOOT_U=$_SDBOOT_DIR/systemd-bootx64.efi
 OSSL=$(out //packages/linux/system/security/osslsigncode:osslsigncode)/usr/bin/osslsigncode
 EFIDIR=$(out //packages/linux/system/security/efitools:efitools)/usr/bin
 LIBS="$(out //packages/linux/system/libs/crypto/openssl:openssl)/usr/lib:$(out //packages/linux/core/zlib:zlib)/usr/lib"
@@ -83,6 +87,21 @@ boot_esp(){ local to=$1 vars=$2 esp=$3 log=$4
     -drive if=pflash,format=raw,unit=1,file="$vars" \
     -drive file="$esp",format=raw,if=virtio > "$log" 2>&1 || true
   tr -d '\000' < "$log"; }
+
+# A multi-stage ESP: sd-boot at the removable path + a UKI in \EFI\Linux (sd-boot
+# auto-discovers UKIs there), timeout 0 so it boots the only entry headless.
+mk_chain_esp(){ local img=$1 sdboot=$2 uki=$3; rm -f "$img"; truncate -s 64M "$img"
+  parted -s "$img" mklabel gpt mkpart ESP fat32 1MiB 100% set 1 esp on >/dev/null 2>&1
+  mformat -i "$img@@1M" -F :: >/dev/null 2>&1
+  mmd -i "$img@@1M" ::/EFI ::/EFI/BOOT ::/EFI/Linux ::/loader >/dev/null 2>&1
+  mcopy -i "$img@@1M" "$sdboot" ::/EFI/BOOT/BOOTX64.EFI >/dev/null 2>&1
+  mcopy -i "$img@@1M" "$uki" ::/EFI/Linux/buckos.efi >/dev/null 2>&1
+  printf 'timeout 0\ndefault buckos.efi\n' > "$W/loader.conf"
+  mcopy -i "$img@@1M" "$W/loader.conf" ::/loader/loader.conf >/dev/null 2>&1; }
+
+# Like enroll_vars, then revoke the db cert via dbx (firmware forbidden database).
+enroll_vars_revoked(){ local out=$1; enroll_vars "$out"
+  ET flash-var -t "2024-01-01 00:00:00" "$out" dbx "$W/db.esl" >/dev/null 2>&1; }
 
 rc=0
 
@@ -123,7 +142,30 @@ if echo "$out" | grep -qiE "Access Denied|failed to load" && ! echo "$out" | gre
   echo "  PASS: unsigned UKI rejected (Access Denied)"
 else echo "  FAIL: unsigned UKI not rejected"; rc=1; fi
 
+echo "### sign the sd-boot bootloader (S5e first stage)"
+sign_efi "$SDBOOT_U" "$W/sdboot-signed.efi"
+
+echo "### 5. CHAIN: firmware -> signed sd-boot -> signed UKI -> init"
+enroll_vars "$W/vars-chain.fd"; mk_chain_esp "$W/esp-chain.img" "$W/sdboot-signed.efi" "$W/uki-signed.efi"
+out=$(boot_esp 70 "$W/vars-chain.fd" "$W/esp-chain.img" "$W/chain.log")
+if echo "$out" | grep -qa SECUREBOOT_INIT_OK; then echo "  PASS: signed sd-boot chain-loaded the signed UKI to init"
+else echo "  FAIL: multi-stage chain did not reach init"; rc=1; fi
+
+echo "### 6. CHAIN NEGATIVE: signed sd-boot + UNSIGNED UKI must be refused by sd-boot"
+enroll_vars "$W/vars-chainn.fd"; mk_chain_esp "$W/esp-chainn.img" "$W/sdboot-signed.efi" "$W/uki.efi"
+out=$(boot_esp 40 "$W/vars-chainn.fd" "$W/esp-chainn.img" "$W/chainn.log")
+if echo "$out" | grep -qiE "Access denied|Error loading" && ! echo "$out" | grep -qa SECUREBOOT_INIT_OK; then
+  echo "  PASS: sd-boot refused the unsigned UKI (Access denied)"
+else echo "  FAIL: unsigned UKI not refused by sd-boot"; rc=1; fi
+
+echo "### 7. REVOCATION: db cert revoked via dbx must refuse the (otherwise valid) chain"
+enroll_vars_revoked "$W/vars-rev.fd"; mk_chain_esp "$W/esp-rev.img" "$W/sdboot-signed.efi" "$W/uki-signed.efi"
+out=$(boot_esp 40 "$W/vars-rev.fd" "$W/esp-rev.img" "$W/rev.log")
+if echo "$out" | grep -qiE "Access Denied|failed to load" && ! echo "$out" | grep -qa SECUREBOOT_INIT_OK; then
+  echo "  PASS: dbx revocation refused the chain"
+else echo "  FAIL: dbx revocation did not refuse the chain"; rc=1; fi
+
 echo "### result"
-[ "$rc" = 0 ] && echo "SECUREBOOT_VALIDATED: sign + enroll + firmware-enforced; signed UKI reaches init under Secure Boot, unsigned rejected" \
+[ "$rc" = 0 ] && echo "SECUREBOOT_VALIDATED: sign + enroll + firmware-enforced; signed UKI and the firmware->sd-boot->UKI chain reach init under Secure Boot; unsigned artifacts and dbx-revoked signers are refused" \
               || echo "SECUREBOOT_VALIDATION FAILED (see $W/*.log)"
 exit $rc
