@@ -40,6 +40,8 @@ BuildToolchainInfo = provider(fields = [
     "cxx",              # RunInfo
     "ar",               # RunInfo
     "strip",            # RunInfo
+    "objcopy",          # RunInfo: binutils objcopy (supports PE; used to assemble UKIs)
+    "objdump",          # RunInfo: binutils objdump
     "make",             # RunInfo
     "pkg_config",       # RunInfo
     "target_triple",    # str
