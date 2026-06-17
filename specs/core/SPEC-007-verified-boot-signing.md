@@ -232,22 +232,30 @@ and converts ELF→PE with its own `tools/elf2efi.py` (no gnu-efi, no objcopy),
 which needs the `elftools` module — hence the new
 `//packages/linux/lang/python/pyelftools` host package.
 
-`tools/assemble_uki.py` adds the `.osrel`/`.cmdline`/`.linux`/`.initrd` sections
-to the stub at computed, non-overlapping VMAs (so a >16 MiB kernel can't collide
-with the initrd — the failure mode of the classic fixed-offset recipe),
-producing one PE/COFF EFI binary. Signed with `efi_sign`/osslsigncode, the whole
-UKI — kernel + initramfs + cmdline — is covered by a single Secure Boot
-signature. `tools/secureboot_validate.sh` proves the result: a **signed UKI
+The `uki` rule (`defs/rules/secureboot.bzl`) makes UKIs first-class build
+artifacts: it runs `tools/assemble_uki.py` (via the toolchain objcopy/objdump,
+newly exposed on `BuildToolchainInfo`) to add the
+`.osrel`/`.cmdline`/`.linux`/`.initrd` sections to the stub at computed,
+non-overlapping VMAs (so a >16 MiB kernel can't collide with the initrd — the
+failure mode of the classic fixed-offset recipe), producing one PE/COFF EFI
+binary. Signed with `efi_sign`/osslsigncode, the whole UKI — kernel + initramfs
++ cmdline — is covered by a single Secure Boot signature. `//tests:test-uki`
+asserts the section + signature structure (hermetic, CI), and
+`tools/secureboot_validate.sh` proves the runtime behaviour: a **signed UKI
 boots to init under real Secure Boot** (`SECUREBOOT_INIT_OK`, loaded via OVMF
 `LoadImage`), while the **unsigned UKI is rejected** (`Access Denied`). Because
 the UKI carries its own cmdline + initrd, it reaches init straight from the ESP —
 the gap a bare ESP-booted kernel had (no cmdline ⇒ silent start) is closed.
 
-**`sbat` + signed bootloader — remaining.** A multi-stage chain (sd-boot →
-UKI) additionally signs the sd-boot bootloader and carries `sbat` revocation
-metadata so a compromised stage can be revoked without rotating PK/KEK. The
-sd-boot binary is already built by the systemd-boot package; signing it +
-populating `sbat` are the remaining follow-ons, plus hardware/MOK enrollment.
+**`sbat` + signed bootloader — implemented.** The systemd-boot package also
+builds the sd-boot bootloader (exported as `:sd-boot`), which carries an `.sbat`
+revocation section (`-Dsbat-distro=buckos`). `efi_sign` signs it
+(`//tests/fixtures/secureboot:signed-sd-boot`), giving a revocable,
+Secure-Boot-verifiable first stage that can chain-load the signed UKI;
+`//tests:test-secureboot-sd-boot` asserts the signature + `.sbat` are present.
+The remaining follow-ons are the full multi-stage boot test (firmware → signed
+sd-boot → signed UKI, with `sbat` revocation exercised) and enrollment on real
+hardware / MOK.
 
 This is additive and does not change the Tier-1 design.
 
@@ -261,15 +269,17 @@ This is additive and does not change the Tier-1 design.
 | S4 | CI: positive (signed pull/deploy) + negative (tampered → rejected) | green nightly, userns-aware like the sysroot gate |
 | S5a | `efi_sign` signs the kernel EFI stub with the db key (osslsigncode) | `test-secureboot-sign` passes; the signed image self-verifies against db |
 | S5b | Package `efitools`/`gnu-efi`; enroll PK/KEK/db into firmware + an OVMF Secure-Boot boot test | `secureboot_validate.sh`: signed accepted, unsigned rejected (Access Denied) |
-| S5c | Package the systemd-stub (`systemd-boot` + `pyelftools`); assemble + sign a UKI (`assemble_uki.py`) | signed UKI boots to init under Secure Boot via `LoadImage`; unsigned UKI rejected |
-| S5d (remaining) | Sign the sd-boot bootloader + `sbat` revocation; hardware/MOK enrollment | a revocable multi-stage chain on real firmware |
+| S5c | Package the systemd-stub (`systemd-boot` + `pyelftools`); the `uki` rule assembles + signs a UKI | `test-uki` + `secureboot_validate.sh`: signed UKI boots to init under Secure Boot; unsigned rejected |
+| S5d | Sign the sd-boot bootloader with `sbat` revocation | `test-secureboot-sd-boot`: signed sd-boot PE carries `.sbat` |
+| S5e (remaining) | Full multi-stage boot (firmware → sd-boot → UKI) + hardware/MOK enrollment | a revocable multi-stage chain on real firmware |
 
-S1–S4 are Tier 1 and land alongside SPEC-006 P4/P5. S5a–S5c (Tier-2 kernel
-signing + key enrollment + UKI) are **done** — a single Secure-Boot-verified
-artifact (kernel + initramfs + cmdline) boots to init under real OVMF Secure
-Boot, and an unsigned one is rejected, all with buckos-packaged tools. S5d
-(signed bootloader + `sbat` + hardware enrollment) is the remaining follow-on.
-Each is independently testable.
+S1–S4 are Tier 1 and land alongside SPEC-006 P4/P5. S5a–S5d (Tier-2 kernel
+signing + key enrollment + UKI + signed bootloader) are **done** — a single
+Secure-Boot-verified artifact (kernel + initramfs + cmdline) boots to init under
+real OVMF Secure Boot, an unsigned one is rejected, and the sd-boot first stage
+is signed with `sbat` revocation, all with buckos-packaged tools. S5e (the full
+multi-stage boot + hardware enrollment) is the remaining follow-on. Each is
+independently testable.
 
 ## 7. Considered Alternatives
 

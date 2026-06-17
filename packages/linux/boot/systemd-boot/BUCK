@@ -151,3 +151,19 @@ meson_package(
         "//packages/linux/lang/python/pyelftools:pyelftools",
     ],
 )
+
+# Single-file views of the two EFI artifacts, for consumers (the `uki` rule
+# takes the stub; efi_sign takes the bootloader for the S5d signed chain).
+genrule(
+    name = "stub",
+    out = "linuxx64.efi.stub",
+    cmd = "cp $(location :systemd-boot)/usr/lib/systemd/boot/efi/linuxx64.efi.stub $OUT",
+    visibility = ["PUBLIC"],
+)
+
+genrule(
+    name = "sd-boot",
+    out = "systemd-bootx64.efi",
+    cmd = "cp $(location :systemd-boot)/usr/lib/systemd/boot/efi/systemd-bootx64.efi $OUT",
+    visibility = ["PUBLIC"],
+)

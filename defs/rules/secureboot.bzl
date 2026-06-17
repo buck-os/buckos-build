@@ -11,7 +11,12 @@ the package's path_info lib closure (the same mechanism as ostree_commit).
 """
 
 load("//defs:providers.bzl", "BuildToolchainInfo", "PackageInfo")
-load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS")
+load(
+    "//defs:toolchain_helpers.bzl",
+    "TOOLCHAIN_ATTRS",
+    "toolchain_ld_linux_args",
+    "toolchain_path_args",
+)
 load("//defs/rules:_common.bzl", "add_flag_file", "write_lib_dirs")
 
 def _ld_linux(ctx):
@@ -52,5 +57,56 @@ efi_sign = rule(
             default = "//packages/linux/system/security/osslsigncode:osslsigncode",
         ),
         "_sign_tool": attrs.exec_dep(default = "//tools:efi_sign_helper"),
+    } | TOOLCHAIN_ATTRS,
+)
+
+# ── uki: assemble a Unified Kernel Image ──────────────────────────────────────
+
+def _uki_impl(ctx):
+    """Assemble a systemd-stub UKI: kernel + initramfs + cmdline + os-release in
+    one PE/COFF EFI binary. Signing the result (efi_sign) covers all of them with
+    a single Secure Boot signature, so the whole boot artifact is verified by
+    firmware LoadImage and still reaches init (the cmdline + initrd ride along).
+    """
+    tc = ctx.attrs._toolchain[BuildToolchainInfo]
+    stub = ctx.attrs.stub[DefaultInfo].default_outputs[0]
+    kernel = ctx.attrs.linux[DefaultInfo].default_outputs[0]
+    out = ctx.actions.declare_output(ctx.attrs.name + ".efi")
+
+    osrel = ctx.actions.write("os-release", ctx.attrs.os_release)
+
+    cmd = cmd_args(ctx.attrs._assemble_tool[RunInfo])
+    cmd.add("--objcopy", tc.objcopy.args)
+    cmd.add("--objdump", tc.objdump.args)
+    cmd.add("--stub", stub)
+    cmd.add("--linux", kernel)
+    cmd.add("--osrel", osrel)
+    cmd.add("--cmdline-str", ctx.attrs.cmdline)
+    if ctx.attrs.initrd != None:
+        cmd.add("--initrd", ctx.attrs.initrd[DefaultInfo].default_outputs[0])
+    if ctx.attrs.uname:
+        cmd.add("--uname", ctx.actions.write("uname", ctx.attrs.uname))
+    cmd.add("--output", out.as_output())
+
+    # The toolchain objcopy/objdump are dynamically linked; give them the
+    # hermetic PATH + ld-linux so they find their shared libs (as strip does).
+    for arg in toolchain_path_args(ctx):
+        cmd.add(arg)
+    for arg in toolchain_ld_linux_args(ctx):
+        cmd.add(arg)
+
+    ctx.actions.run(cmd, category = "uki", identifier = ctx.attrs.name)
+    return [DefaultInfo(default_output = out)]
+
+uki = rule(
+    impl = _uki_impl,
+    attrs = {
+        "linux": attrs.dep(),
+        "initrd": attrs.option(attrs.dep(), default = None),
+        "cmdline": attrs.string(default = "console=ttyS0"),
+        "os_release": attrs.string(default = "ID=buckos\nNAME=BuckOS\n"),
+        "uname": attrs.string(default = ""),
+        "stub": attrs.dep(default = "//packages/linux/boot/systemd-boot:stub"),
+        "_assemble_tool": attrs.exec_dep(default = "//tools:assemble_uki"),
     } | TOOLCHAIN_ATTRS,
 )

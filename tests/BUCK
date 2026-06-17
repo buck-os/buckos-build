@@ -759,6 +759,38 @@ buckos_test(
     labels = ["integration", "secureboot", "heavy"],
 )
 
+# UKI structure + signature (SPEC-007 S5c): the `uki` rule assembles the kernel +
+# initramfs + cmdline into the systemd-stub; assert the sections are present and
+# the signed UKI carries an Authenticode table. Heavy: builds the kernel + stub.
+buckos_test(
+    name = "test-uki",
+    test = "verify_uki.py",
+    deps = [
+        "//tests/fixtures/secureboot:demo-uki",
+        "//tests/fixtures/secureboot:demo-uki-signed",
+    ],
+    env = {
+        "UKI": "$(location //tests/fixtures/secureboot:demo-uki)",
+        "SIGNED_UKI": "$(location //tests/fixtures/secureboot:demo-uki-signed)",
+    },
+    labels = ["integration", "secureboot", "heavy"],
+)
+
+# Signed sd-boot bootloader + SBAT (SPEC-007 S5d). Heavy: builds the stub.
+buckos_test(
+    name = "test-secureboot-sd-boot",
+    test = "verify_sd_boot.py",
+    deps = [
+        "//tests/fixtures/secureboot:signed-sd-boot",
+        "//packages/linux/boot/systemd-boot:sd-boot",
+    ],
+    env = {
+        "SIGNED": "$(location //tests/fixtures/secureboot:signed-sd-boot)",
+        "UNSIGNED": "$(location //packages/linux/boot/systemd-boot:sd-boot)",
+    },
+    labels = ["integration", "secureboot", "heavy"],
+)
+
 # ── ostree_rootfs transform (SPEC-006 P2) ────────────────────────────
 # Reshape a mini rootfs into ostree's layout and assert the moves
 # (/etc -> /usr/etc, mutable dirs -> /var symlinks, /var emptied, /sysroot).
