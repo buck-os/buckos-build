@@ -7,9 +7,9 @@
 **Total Specifications:** 13
 
 **By Status:**
-- ✅ approved: 11
+- ✅ approved: 13
 - 🔄 rfc: 0
-- 📝 draft: 2
+- 📝 draft: 0
 - ⚠️ deprecated: 0
 - ⛔ rejected: 0
 
@@ -39,8 +39,8 @@
 | [SPEC-002](core/SPEC-002-use-flags.md) | USE Flag System | ✅ approved | 2.0.0 | 2026-05-29 |
 | [SPEC-004](core/SPEC-004-package-sets.md) | Package Sets and System Profiles | ✅ approved | 1.0.0 | 2025-11-20 |
 | [SPEC-005](core/SPEC-005-patches.md) | Patch System | ✅ approved | 2.0.0 | 2026-05-29 |
-| [SPEC-006](core/SPEC-006-atomic-updates.md) | Atomic Image-Based Updates (ostree) | 📝 draft | 0.1.0 | 2026-06-12 |
-| [SPEC-007](core/SPEC-007-verified-boot-signing.md) | Verified Boot and Update Signing | 📝 draft | 0.1.0 | 2026-06-16 |
+| [SPEC-006](core/SPEC-006-atomic-updates.md) | Atomic Image-Based Updates (ostree) | ✅ approved | 1.0.0 | 2026-06-17 |
+| [SPEC-007](core/SPEC-007-verified-boot-signing.md) | Verified Boot and Update Signing | ✅ approved | 1.0.0 | 2026-06-17 |
 
 ### Bootstrap Specifications
 

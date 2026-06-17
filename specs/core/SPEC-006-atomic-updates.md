@@ -1,10 +1,10 @@
 ---
 id: "SPEC-006"
 title: "Atomic Image-Based Updates (ostree)"
-status: "draft"
-version: "0.1.0"
+status: "approved"
+version: "1.0.0"
 created: "2026-06-12"
-updated: "2026-06-12"
+updated: "2026-06-17"
 
 authors:
   - name: "BuckOS Team"
@@ -185,17 +185,22 @@ Runs as a heavy/nightly job (like the reproducibility gate).
 
 ## 6. Phased Implementation Plan
 
-| Phase | Deliverable | Gates |
-|-------|-------------|-------|
-| P1 | Package `libostree` + CLI; round-trip test | `ostree` builds + commits locally |
-| P2 | `ostree_commit` rule + ostree-shaped `buckos-ostree-rootfs`; reproducible signed commit | commit checksum byte-stable; repro_check covers it |
-| P3 | Initramfs `ostree-prepare-root` hook; bootloader deployment entries | a deployment boots in QEMU |
-| P4 | `buckos-update` agent + installer image-mode deploy | install→boot→`status` works end-to-end |
-| P5 | Channel repos over HTTP + release/delta step | `pull`+`deploy` from a hosted channel |
-| P6 | Full update-cycle CI test incl. rollback | A→B update + forced-rollback green |
+| Phase | Deliverable | Gates | Status |
+|-------|-------------|-------|--------|
+| P1 | Package `libostree` + CLI; round-trip test | `ostree` builds + commits locally | ✅ done |
+| P2 | `ostree_commit` rule + ostree-shaped `buckos-ostree-rootfs`; reproducible signed commit | commit checksum byte-stable; repro_check covers it | ✅ done |
+| P3 | Initramfs `ostree-prepare-root` hook; bootloader deployment entries | a deployment boots in QEMU | ✅ done |
+| P4 | `buckos-update` agent + installer image-mode deploy | install→boot→`status` works end-to-end | 🔄 functionally complete in the `buckos` repo (pending merge) |
+| P5 | Channel repos over HTTP + release/delta step | `pull`+`deploy` from a hosted channel | ⬜ remaining |
+| P6 | Full update-cycle CI test incl. rollback | A→B update + forced-rollback green | ✅ done |
 
 Each phase is independently landable and testable; P1–P3 are the high-risk core
-(packaging + boot integration), P4–P6 productionize it.
+(packaging + boot integration), P4–P6 productionize it. As of v1.0.0, P1–P3 and
+P6 are landed; P4 is functionally complete in the sibling `buckos` repo (the
+`buckos-update` agent + installer image-mode) and P5 (channel hosting) remains.
+Update-path signing (the "signed commit" in P2) is specified and implemented in
+SPEC-007 (ed25519); wiring the production release key into the published images
+is tracked there.
 
 ## 7. Considered Alternatives
 
