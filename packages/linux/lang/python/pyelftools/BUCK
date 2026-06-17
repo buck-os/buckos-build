@@ -1,0 +1,22 @@
+load("//defs/packages:binary.bzl", "binary_package")
+
+# pyelftools — pure-Python ELF/DWARF parser, providing the `elftools` module.
+# Used as a host Python module by systemd's EFI build: tools/elf2efi.py imports
+# `elftools` to convert the freestanding EFI ELF binaries into PE/COFF (the
+# systemd-boot bootloader and the linuxx64.efi.stub UKI stub).
+binary_package(
+    name = "pyelftools",
+    version = "0.33",
+    url = "https://files.pythonhosted.org/packages/a3/11/767522582afab1b884d277de0e6e011640cb9d7292a38694b4b1a1df1ae8/pyelftools-0.33.tar.gz",
+    sha256 = "660d82dcbeb8e83d1702bd97f223f761625da06111c0cc988eac6b8ab0c1b61f",
+    description = "Pure-Python library for parsing ELF and DWARF (the `elftools` module)",
+    homepage = "https://github.com/eliben/pyelftools",
+    license = "Unlicense",
+    install_script = """
+mkdir -p "$OUT/usr/lib/python3.12/site-packages"
+cp -r "$SRCS/elftools" "$OUT/usr/lib/python3.12/site-packages/"
+""",
+    deps = [
+        "//packages/linux/lang/python:python",
+    ],
+)
