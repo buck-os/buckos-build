@@ -323,7 +323,16 @@ def package(
             build_kwargs.pop("vendor_deps")
             if _MIRROR_PREFIX:
                 _vendor_filename = "{}-{}-vendor.tar.zst".format(name, version)
-                _vendor_labels = ["buckos:download", "buckos:{}-vendor".format(build_rule)]
+                _vendor_labels = [
+                    "buckos:download",
+                    "buckos:{}-vendor".format(build_rule),
+                    # Provenance: a vendor archive is locally-vendored content
+                    # (bundled cargo/go deps), fetched here from the mirror with
+                    # a known content hash.
+                    "buckos:vendor:" + name,
+                    "buckos:sha256:" + _vendor_sha,
+                    "buckos:sig:none",
+                ]
                 _vendor_urls = ["{}/{}/{}{}".format(
                     _MIRROR_PREFIX,
                     _vendor_filename[0].lower(),
@@ -346,7 +355,13 @@ def package(
 
     if build_rule == "cargo" and "vendor_deps" not in build_kwargs and url and sha256:
         _vendor_filename = "{}-{}-vendor.tar.zst".format(name, version)
-        _vendor_labels = ["buckos:download", "buckos:cargo-vendor"]
+        _vendor_labels = [
+            "buckos:download",
+            "buckos:cargo-vendor",
+            # Provenance: locally-vendored content from the vendor dir.
+            "buckos:vendor:" + name,
+            "buckos:sig:none",
+        ]
         _have_vendor = False
 
         if _MIRROR_MODE == "vendor" and _MIRROR_VENDOR_DIR:
@@ -370,7 +385,13 @@ def package(
     # deps, auto-wire them so go packages build offline (unshare --net).
     if build_rule == "go" and "vendor_deps" not in build_kwargs and url and sha256:
         _vendor_filename = "{}-{}-vendor.tar.zst".format(name, version)
-        _vendor_labels = ["buckos:download", "buckos:go-vendor"]
+        _vendor_labels = [
+            "buckos:download",
+            "buckos:go-vendor",
+            # Provenance: locally-vendored content from the vendor dir.
+            "buckos:vendor:" + name,
+            "buckos:sig:none",
+        ]
         _have_vendor = False
 
         if _MIRROR_MODE == "vendor" and _MIRROR_VENDOR_DIR:
