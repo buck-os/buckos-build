@@ -19,8 +19,11 @@ load("//defs/packages:meson.bzl", "meson_package")
 meson_package(
     name = "systemd-boot",
     version = "259.5",
-    url = "https://github.com/systemd/systemd/archive/refs/tags/v259.5.tar.gz",
-    sha256 = "80ed55a8a69c4bd1fb12a36659303372b37baf9ee224ef4f032db4b748be0f76",
+    # Reuse the main systemd package's extracted source instead of re-downloading
+    # the same tarball under a second name (which the graph dedup test forbids —
+    # one sha256, one download name). The build below applies its own configure
+    # args (-Dbootloader=enabled) to that shared tree.
+    source = "//packages/linux/system/init/systemd:systemd-src",
     pre_configure_cmds = [
         # Stub out test/fuzz meson.build (exclude_patterns dropped those files)
         "mkdir -p test/fuzz && printf 'fuzz_regression_tests = {}\\nfuzz_testsdir = '\"'\"'test/fuzz'\"'\"'\\n' > test/fuzz/meson.build",

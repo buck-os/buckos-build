@@ -98,6 +98,8 @@ def _toolchain_import_impl(ctx):
         cxx = RunInfo(args = cxx_args),
         ar = RunInfo(args = cmd_args(ar)),
         strip = RunInfo(args = cmd_args(strip_bin)),
+        objcopy = RunInfo(args = cmd_args(unpacked.project("tools/bin/" + triple + "-objcopy"))),
+        objdump = RunInfo(args = cmd_args(unpacked.project("tools/bin/" + triple + "-objdump"))),
         make = RunInfo(args = make_cmd),
         pkg_config = RunInfo(args = pkg_config_cmd),
         target_triple = triple,
