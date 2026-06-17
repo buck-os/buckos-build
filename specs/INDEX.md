@@ -1,20 +1,20 @@
 # BuckOS Specifications Index
 
-**Generated:** 2026-06-15
+**Generated:** 2026-06-16
 
 ## Summary
 
-**Total Specifications:** 12
+**Total Specifications:** 13
 
 **By Status:**
 - ✅ approved: 11
 - 🔄 rfc: 0
-- 📝 draft: 1
+- 📝 draft: 2
 - ⚠️ deprecated: 0
 - ⛔ rejected: 0
 
 **By Category:**
-- core: 5
+- core: 6
 - bootstrap: 1
 - features: 1
 - packages: 5
@@ -40,6 +40,7 @@
 | [SPEC-004](core/SPEC-004-package-sets.md) | Package Sets and System Profiles | ✅ approved | 1.0.0 | 2025-11-20 |
 | [SPEC-005](core/SPEC-005-patches.md) | Patch System | ✅ approved | 2.0.0 | 2026-05-29 |
 | [SPEC-006](core/SPEC-006-atomic-updates.md) | Atomic Image-Based Updates (ostree) | 📝 draft | 0.1.0 | 2026-06-12 |
+| [SPEC-007](core/SPEC-007-verified-boot-signing.md) | Verified Boot and Update Signing | 📝 draft | 0.1.0 | 2026-06-16 |
 
 ### Bootstrap Specifications
 

@@ -1,2 +1,23 @@
 export_file(name = "ima-test-key", src = "ima-test.priv", visibility = ["PUBLIC"])
 export_file(name = "ima-test-cert", src = "ima-test.x509", visibility = ["PUBLIC"])
+
+# TEST ed25519 ostree signing key (SPEC-007). NOT FOR PRODUCTION: a real
+# release signs with a private key held only in CI ($BUCKOS_OSTREE_SIGN_KEY).
+# This committed keypair exists solely to demonstrate and test the signing
+# pipeline end-to-end. The .key is the base64 ed25519 secret (seed||public);
+# the .pub is the base64 public key used as `verification-ed25519-key`.
+export_file(name = "ostree-test-key", src = "ostree-test.ed25519.key", visibility = ["PUBLIC"])
+export_file(name = "ostree-test-pub", src = "ostree-test.ed25519.pub", visibility = ["PUBLIC"])
+
+# A different (valid-format) public key, used by the negative verification test
+# to prove a non-signer key is rejected.
+export_file(name = "ostree-test-wrong-pub", src = "ostree-test-wrong.ed25519.pub", visibility = ["PUBLIC"])
+
+# TEST UEFI Secure Boot keys (SPEC-007 Tier 2). NOT FOR PRODUCTION — real
+# release keys live in CI / an HSM. PK/KEK/db certs form the standard SB key
+# hierarchy; the db key signs the kernel (Authenticode/PE) so firmware verifies
+# it against the enrolled db at boot.
+export_file(name = "secureboot-db-key", src = "secureboot-db.key", visibility = ["PUBLIC"])
+export_file(name = "secureboot-db-cert", src = "secureboot-db.crt", visibility = ["PUBLIC"])
+export_file(name = "secureboot-kek-cert", src = "secureboot-KEK.crt", visibility = ["PUBLIC"])
+export_file(name = "secureboot-pk-cert", src = "secureboot-PK.crt", visibility = ["PUBLIC"])

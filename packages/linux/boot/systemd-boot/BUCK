@@ -1,0 +1,172 @@
+load("//defs/packages:meson.bzl", "meson_package")
+
+# -----------------------------------------------------------------------------
+# systemd-boot — the systemd EFI boot artifacts, built from the systemd source
+# with -Dbootloader=enabled (the main //packages/linux/system/init/systemd
+# package keeps it disabled so the critical init build is untouched).
+#
+# Produces:
+#   usr/lib/systemd/boot/efi/systemd-bootx64.efi   the sd-boot bootloader
+#   usr/lib/systemd/boot/efi/linuxx64.efi.stub     the sd-stub UKI stub
+#
+# systemd 259 builds these as freestanding EFI ELF objects with the host cc,
+# then converts them to PE/COFF with its own tools/elf2efi.py (no gnu-efi, no
+# objcopy) — which imports the `elftools` module, hence the pyelftools host dep.
+# The stub is the input for assembling signed Unified Kernel Images (SPEC-007
+# S5c), so the kernel + initramfs + cmdline are covered by one signature.
+# -----------------------------------------------------------------------------
+
+meson_package(
+    name = "systemd-boot",
+    version = "259.5",
+    # Reuse the main systemd package's extracted source instead of re-downloading
+    # the same tarball under a second name (which the graph dedup test forbids —
+    # one sha256, one download name). The build below applies its own configure
+    # args (-Dbootloader=enabled) to that shared tree.
+    source = "//packages/linux/system/init/systemd:systemd-src",
+    pre_configure_cmds = [
+        # Stub out test/fuzz meson.build (exclude_patterns dropped those files)
+        "mkdir -p test/fuzz && printf 'fuzz_regression_tests = {}\\nfuzz_testsdir = '\"'\"'test/fuzz'\"'\"'\\n' > test/fuzz/meson.build",
+        # Remove unit file entries with \\x2d in names (Buck2 can't handle escaped paths)
+        "perl -i -0777 -pe 's/\\{[^{}]*x2d[^{}]*\\},?\\s*//gs' units/meson.build",
+        # Skip dbus_exporter which tries to run cross-compiled binary
+        "sed -i 's/if not meson.is_cross_build()/if false/' meson.build",
+        # Disable SystemTap tracing - sysroot has old sys/sdt.h
+        "sed -i 's/#if HAVE_SYS_SDT_H/#if 0/' src/udev/udev-trace.h",
+    ],
+    description = "systemd-boot (sd-boot) bootloader and the sd-stub UKI stub",
+    homepage = "https://systemd.io/",
+    license = "GPL-2.0-or-later LGPL-2.1-or-later",
+    configure_args = [
+        "-Dsysconfdir=/etc",
+        "-Dmode=release",
+        "-Dmount-path=/bin/mount",
+        "-Dumount-path=/bin/umount",
+        "-Dsulogin-path=/sbin/sulogin",
+        "-Dkmod-path=/bin/kmod",
+        "-Dloadkeys-path=/usr/bin/loadkeys",
+        "-Dsetfont-path=/usr/bin/setfont",
+        "-Dselinux=disabled",
+        "-Dgcrypt=disabled",
+        "-Dzlib=enabled",
+        "-Dbzip2=disabled",
+        "-Dlz4=enabled",
+        "-Dzstd=enabled",
+        "-Ddefault-compression=zstd",
+        "-Dstandalone-binaries=true",
+        "-Dstatic-libsystemd=false",
+        "-Dstatic-libudev=false",
+        "-Dman=disabled",
+        "-Dhtml=disabled",
+        "-Dtranslations=false",
+        "-Dtests=false",
+        "-Dinstall-tests=false",
+        "-Dslow-tests=false",
+        "-Dfuzz-tests=false",
+        "-Dtimesyncd=false",
+        "-Dnetworkd=false",
+        "-Dtmpfiles=true",
+        "-Dsysusers=true",
+        "-Drandomseed=true",
+        "-Dvconsole=true",
+        "-Dhibernate=true",
+        "-Dldconfig=true",
+        # EFI boot artifacts — the whole point of this package
+        "-Defi=true",
+        "-Dbootloader=enabled",
+        # Pin SBAT metadata so configure doesn't try to autodetect from a
+        # (nonexistent) /etc/os-release in the build sandbox.
+        "-Dsbat-distro=buckos",
+        "-Dsbat-distro-summary=BuckOS",
+        "-Dsbat-distro-pkgname=systemd",
+        "-Dsbat-distro-version=259.5",
+        "-Dsbat-distro-url=https://github.com/buck-os/buckos-build",
+        "-Dlogind=true",
+        "-Dhostnamed=true",
+        "-Dlocaled=true",
+        "-Dtimedated=true",
+        "-Dfirstboot=true",
+        "-Dcoredump=false",
+        "-Dpstore=false",
+        "-Doomd=false",
+        "-Dportabled=false",
+        "-Dsysext=false",
+        "-Duserdb=false",
+        "-Dacl=auto",
+        "-Dapparmor=disabled",
+        "-Daudit=disabled",
+        "-Dbpf-framework=disabled",
+        "-Dlibcryptsetup=disabled",
+        "-Dlibcurl=disabled",
+        "-Ddns-over-tls=false",
+        "-Delfutils=disabled",
+        "-Dlibfido2=disabled",
+        "-Dgnutls=disabled",
+        "-Dhomed=disabled",
+        "-Dmicrohttpd=disabled",
+        "-Dlibidn2=disabled",
+        "-Dimportd=disabled",
+        "-Dkernel-install=false",
+        "-Dkmod=enabled",
+        "-Dxz=enabled",
+        "-Dopenssl=enabled",
+        "-Dseccomp=enabled",
+        "-Dpam=disabled",
+        "-Dpasswdqc=disabled",
+        "-Dpcre2=disabled",
+        "-Dp11kit=disabled",
+        "-Dpolkit=disabled",
+        "-Dpwquality=disabled",
+        "-Dqrencode=disabled",
+        "-Dresolve=false",
+        "-Dsysvinit-path=",
+        "-Dtpm2=disabled",
+        "-Dukify=disabled",
+        "-Dxkbcommon=disabled",
+    ],
+    post_install_cmds = [
+        # This package exists only to produce the EFI boot artifacts; drop the
+        # rest of the systemd install so the output is just usr/lib/systemd/boot.
+        "find . -mindepth 1 -maxdepth 1 ! -name usr -exec rm -rf {} +",
+        "find usr -mindepth 1 -maxdepth 1 ! -name lib -exec rm -rf {} +",
+        "find usr/lib -mindepth 1 -maxdepth 1 ! -name systemd -exec rm -rf {} +",
+        "find usr/lib/systemd -mindepth 1 -maxdepth 1 ! -name boot -exec rm -rf {} +",
+    ],
+    deps = [
+        "//packages/linux/core/util-linux:util-linux",
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/ipc/libseccomp:libseccomp",
+        "//packages/linux/system/libs/compression/lz4:lz4",
+        "//packages/linux/system/libs/compression/xz:xz",
+        "//packages/linux/system/libs/compression/zstd:zstd",
+        "//packages/linux/system/libs/kmod:kmod",
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/system/libs/crypto/libxcrypt:libxcrypt",
+        "//packages/linux/system/libs/ipc/attr:attr",
+        "//packages/linux/system/libs/data/json-c:json-c",
+        "//packages/linux/system/libs/crypto/argon2:argon2",
+    ],
+    host_deps = [
+        "//packages/linux/dev-tools/dev-utils/gperf:gperf",
+        "//packages/linux/lang/python/jinja2:jinja2",
+        "//packages/linux/lang/python/jinja2:markupsafe",
+        # elf2efi.py (ELF->PE conversion for the EFI binaries) imports elftools
+        "//packages/linux/lang/python/pyelftools:pyelftools",
+    ],
+)
+
+# Single-file views of the two EFI artifacts, for consumers (the `uki` rule
+# takes the stub; efi_sign takes the bootloader for the S5d signed chain).
+genrule(
+    name = "stub",
+    out = "linuxx64.efi.stub",
+    cmd = "cp $(location :systemd-boot)/usr/lib/systemd/boot/efi/linuxx64.efi.stub $OUT",
+    visibility = ["PUBLIC"],
+)
+
+genrule(
+    name = "sd-boot",
+    out = "systemd-bootx64.efi",
+    cmd = "cp $(location :systemd-boot)/usr/lib/systemd/boot/efi/systemd-bootx64.efi $OUT",
+    visibility = ["PUBLIC"],
+)

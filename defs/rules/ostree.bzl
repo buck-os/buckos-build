@@ -100,6 +100,15 @@ def _ostree_rootfs_impl(ctx):
     cmd = cmd_args(ctx.attrs._reshape_tool[RunInfo])
     cmd.add("--input", tree)
     cmd.add("--output", output.as_output())
+
+    # Optionally bake in the trusted ed25519 release key (+ a sign-verify remote
+    # when a channel URL is given) so a deployed system trusts releases on disk.
+    if ctx.attrs.trusted_key:
+        cmd.add("--trusted-key", ctx.attrs.trusted_key)
+        cmd.add("--remote-name", ctx.attrs.remote_name)
+        if ctx.attrs.remote_url:
+            cmd.add("--remote-url", ctx.attrs.remote_url)
+
     ctx.actions.run(cmd, category = "ostree_rootfs", identifier = ctx.attrs.name)
     return [DefaultInfo(default_output = output)]
 
@@ -107,6 +116,9 @@ ostree_rootfs = rule(
     impl = _ostree_rootfs_impl,
     attrs = {
         "tree": attrs.dep(),
+        "trusted_key": attrs.option(attrs.source(), default = None),
+        "remote_name": attrs.string(default = "buckos"),
+        "remote_url": attrs.string(default = ""),
         "_reshape_tool": attrs.exec_dep(default = "//tools:ostree_rootfs_helper"),
     },
 )
@@ -133,6 +145,15 @@ def _ostree_sysroot_impl(ctx):
     for karg in ctx.attrs.kargs:
         cmd.add("--karg", karg)
 
+    # Optional update/rollback sequence (for the P6 update-cycle test): deploy a
+    # second commit on top, and optionally re-deploy the base as a rollback.
+    if ctx.attrs.update_commit:
+        upd = ctx.attrs.update_commit[OstreeRepoInfo]
+        cmd.add("--update-repo", upd.repo)
+        cmd.add("--update-branch", upd.branch)
+    if ctx.attrs.rollback:
+        cmd.add("--rollback")
+
     add_flag_file(cmd, "--lib-dirs-file", write_lib_dirs(ctx, ostree.path_info))
     cmd.add(cmd_args(hidden = ostree.prefix))
 
@@ -149,6 +170,48 @@ ostree_sysroot = rule(
         ),
         "os": attrs.string(default = "buckos"),
         "kargs": attrs.list(attrs.string(), default = ["rw"]),
+        "update_commit": attrs.option(attrs.dep(providers = [OstreeRepoInfo]), default = None),
+        "rollback": attrs.bool(default = False),
         "_sysroot_tool": attrs.exec_dep(default = "//tools:ostree_sysroot_helper"),
+    } | TOOLCHAIN_ATTRS,
+)
+
+# ── ostree_verify ─────────────────────────────────────────────────────
+# Cryptographically verify an ed25519-signed commit (SPEC-007 S3): the signer's
+# public key MUST verify and any other key MUST be rejected.  Runs the buckos
+# `ostree` PIE (seed loader + dep lib closure) like ostree_commit; building it
+# fails if either expectation is violated.  Output: a one-line verdict file.
+
+def _ostree_verify_impl(ctx):
+    ostree = ctx.attrs.ostree[PackageInfo]
+    repo_info = ctx.attrs.commit[OstreeRepoInfo]
+    result = ctx.actions.declare_output("verify-result.txt")
+
+    cmd = cmd_args(ctx.attrs._verify_tool[RunInfo])
+    cmd.add("--ld-linux", _ld_linux(ctx))
+    cmd.add("--ostree", ostree.prefix.project("usr/bin/ostree"))
+    cmd.add("--repo", repo_info.repo)
+    cmd.add("--branch", repo_info.branch)
+    cmd.add("--good-key", ctx.attrs.good_key)
+    cmd.add("--bad-key", ctx.attrs.bad_key)
+    cmd.add("--result-out", result.as_output())
+
+    add_flag_file(cmd, "--lib-dirs-file", write_lib_dirs(ctx, ostree.path_info))
+    cmd.add(cmd_args(hidden = ostree.prefix))
+
+    ctx.actions.run(cmd, category = "ostree_verify", identifier = repo_info.branch)
+    return [DefaultInfo(default_output = result)]
+
+ostree_verify = rule(
+    impl = _ostree_verify_impl,
+    attrs = {
+        "commit": attrs.dep(providers = [OstreeRepoInfo]),
+        "good_key": attrs.source(),
+        "bad_key": attrs.source(),
+        "ostree": attrs.dep(
+            providers = [PackageInfo],
+            default = "//packages/linux/system/ostree:ostree",
+        ),
+        "_verify_tool": attrs.exec_dep(default = "//tools:ostree_verify_helper"),
     } | TOOLCHAIN_ATTRS,
 )

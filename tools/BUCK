@@ -102,6 +102,25 @@ python_binary(
 )
 
 python_binary(
+    name = "ostree_verify_helper",
+    main = "ostree_verify_helper.py",
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "efi_sign_helper",
+    main = "efi_sign_helper.py",
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "assemble_uki",
+    main = "assemble_uki.py",
+    deps = [":_env"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
     name = "ima_helper",
     main = "ima_helper.py",
     deps = [":_env"],

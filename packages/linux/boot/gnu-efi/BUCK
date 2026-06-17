@@ -1,0 +1,24 @@
+load("//defs/packages:binary.bzl", "binary_package")
+
+# gnu-efi — EFI development headers. Installed flat into /usr/include (efi.h +
+# its relative tree) rather than /usr/include/efi, so a consumer that depends on
+# this package picks them up via buckos' standard `-I<dep>/usr/include`. We ship
+# headers only; efitools' host tools include <efi.h> but link only their own lib
+# + libcrypto, so the EFI crt/libs are not needed.
+binary_package(
+    name = "gnu-efi",
+    version = "3.0.18",
+    url = "https://downloads.sourceforge.net/gnu-efi/gnu-efi-3.0.18.tar.bz2",
+    sha256 = "7f212c96ee66547eeefb531267b641e5473d7d8529f0bd8ccdefd33cf7413f5c",
+    description = "GNU EFI development headers for building EFI applications",
+    homepage = "https://sourceforge.net/projects/gnu-efi/",
+    license = "BSD-3-Clause",
+    install_script = """
+set -e
+# Install both under efi/ (so <efi/efi.h> resolves) and flat (so <efi.h>
+# resolves) via buckos' single `-I<dep>/usr/include`; efitools uses both forms.
+mkdir -p "$DESTDIR/usr/include/efi"
+cp -r inc/* "$DESTDIR/usr/include/efi/"
+cp -r inc/* "$DESTDIR/usr/include/"
+""",
+)

@@ -11,6 +11,10 @@ load("//defs/rules:initramfs.bzl", "initramfs")
 ostree_rootfs(
     name = "buckos-ostree-rootfs",
     tree = "//packages/linux/system:buckos-rootfs",
+    # Bake in the trusted ed25519 release key (SPEC-007) so a deployed system
+    # trusts signed updates on disk. This is the committed TEST key; a real
+    # release bakes the production public key (signed with the CI secret).
+    trusted_key = "//defs/keys:ostree-test-pub",
     visibility = ["PUBLIC"],
 )
 

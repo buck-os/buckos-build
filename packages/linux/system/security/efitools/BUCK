@@ -1,0 +1,42 @@
+load("//defs/packages:autotools.bzl", "make_package")
+
+# efitools — UEFI Secure Boot key tools. We build only the host-side tools used
+# to enroll PK/KEK/db into a firmware variable store:
+#   cert-to-efi-sig-list  X.509 cert -> EFI signature list (ESL)
+#   sign-efi-sig-list     ESL -> signed auth update (.auth)
+#   flash-var             write a variable into an offline varstore image
+# The EFI binaries (KeyTool.efi, ...) need gnu-efi's libs and are not built;
+# the host tools only need gnu-efi's headers + libcrypto.
+make_package(
+    name = "efitools",
+    version = "1.9.2",
+    url = "https://git.kernel.org/pub/scm/linux/kernel/git/jejb/efitools.git/snapshot/efitools-1.9.2.tar.gz",
+    sha256 = "0f315b36e7d1ba74bfc97ab9f304f0a3072c47578bbe5e42594acae381f9acfe",
+    description = "UEFI Secure Boot key management tools (host utilities)",
+    homepage = "https://git.kernel.org/pub/scm/linux/kernel/git/jejb/efitools.git",
+    license = "GPL-2.0",
+    deps = [
+        "//packages/linux/system/libs/crypto/openssl:openssl",
+        "//packages/linux/boot/gnu-efi:gnu-efi",
+    ],
+    # strptime() needs _GNU_SOURCE under the buckos toolchain's strict defaults.
+    extra_cflags = ["-D_GNU_SOURCE"],
+    # efitools' Make.rules hardcodes CFLAGS/LDFLAGS (discarding buckos' dep -I/-L)
+    # and its LDFLAGS are EFI-specific (-T efi.lds), wrong for the host tools.
+    # Make CFLAGS append to the environment; capture buckos' env LDFLAGS as
+    # HOSTLDFLAGS (before efitools reassigns LDFLAGS) and link the host tools
+    # with it so -lcrypto finds openssl.
+    pre_build_cmds = [
+        "sed -i 's/^CFLAGS\\([ \\t]*\\)=/CFLAGS\\1+=/' Make.rules",
+        "sed -i '1i HOSTLDFLAGS := $(LDFLAGS)' Make.rules",
+        "sed -i 's/$(ARCH3264) -o $@/$(ARCH3264) $(HOSTLDFLAGS) -o $@/g' Makefile",
+    ],
+    make_args = ["cert-to-efi-sig-list", "sign-efi-sig-list", "flash-var"],
+    # Don't run `make install` (it builds the gnu-efi-linked EFI binaries);
+    # rebuild the host tools as a no-op, then copy them in.
+    install_targets = ["cert-to-efi-sig-list", "sign-efi-sig-list", "flash-var"],
+    post_install_cmds = [
+        "mkdir -p \"$DESTDIR/usr/bin\"",
+        "cp \"$BUILD_DIR\"/cert-to-efi-sig-list \"$BUILD_DIR\"/sign-efi-sig-list \"$BUILD_DIR\"/flash-var \"$DESTDIR/usr/bin/\"",
+    ],
+)

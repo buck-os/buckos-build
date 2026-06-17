@@ -1,0 +1,67 @@
+load("//defs/rules:secureboot.bzl", "efi_sign", "uki")
+
+# Secure Boot signing self-test (SPEC-007 Tier 2): sign the live kernel's EFI
+# stub with the TEST `db` key. Building this runs osslsigncode sign + a
+# self-verify against the db cert (the same Authenticode check firmware does at
+# boot), so a successful build proves the kernel is Secure-Boot-signable.
+efi_sign(
+    name = "signed-kernel",
+    efi = "//packages/linux/kernel/buckos-kernel:buckos-kernel-live",
+    cert = "//defs/keys:secureboot-db-cert",
+    key = "//defs/keys:secureboot-db-key",
+    visibility = ["PUBLIC"],
+)
+
+# A tiny marker initramfs (busybox + an /init that prints a marker and powers
+# off) — the payload for the UKI fixture below. Built with the buckos busybox
+# (find/cpio/gzip applets) so it needs no host archiver.
+genrule(
+    name = "marker-initramfs",
+    out = "initrd.gz",
+    # $(location ...) is relative to the genrule CWD, so a `cd root` would break
+    # it — run find/cpio via the copied busybox (./bin/busybox after cd), and
+    # gzip via the CWD-relative copy.
+    cmd = " && ".join([
+        "mkdir -p root/bin",
+        'cp "$(location //packages/linux/core/busybox:busybox-static)/bin/busybox" root/bin/busybox',
+        "chmod 0755 root/bin/busybox",
+        "ln -sf busybox root/bin/sh",
+        r"""printf '#!/bin/busybox sh\n/bin/busybox mount -t proc proc /proc 2>/dev/null || true\n/bin/busybox echo SECUREBOOT_INIT_OK\n/bin/busybox sync\n/bin/busybox poweroff -f\n' > root/init""",
+        "chmod 0755 root/init",
+        r'( cd root && ./bin/busybox find . | ./bin/busybox cpio -o -H newc 2>/dev/null ) | root/bin/busybox gzip > "$OUT"',
+    ]),
+    visibility = ["PUBLIC"],
+)
+
+# A Unified Kernel Image: the live kernel + the marker initramfs + an embedded
+# cmdline, assembled into the systemd-stub as one PE/COFF EFI binary.
+uki(
+    name = "demo-uki",
+    linux = "//packages/linux/kernel/buckos-kernel:buckos-kernel-live",
+    initrd = ":marker-initramfs",
+    cmdline = "console=ttyS0 panic=3",
+    visibility = ["PUBLIC"],
+)
+
+# The signed UKI: one Secure Boot signature over kernel + initramfs + cmdline.
+# Booted under OVMF Secure Boot by tools/secureboot_validate.sh, it reaches init
+# (SECUREBOOT_INIT_OK) via LoadImage; the unsigned :demo-uki is rejected.
+efi_sign(
+    name = "demo-uki-signed",
+    efi = ":demo-uki",
+    cert = "//defs/keys:secureboot-db-cert",
+    key = "//defs/keys:secureboot-db-key",
+    visibility = ["PUBLIC"],
+)
+
+# SPEC-007 S5d: sign the sd-boot bootloader with the db key. sd-boot already
+# carries an .sbat revocation section (the systemd-boot build sets
+# -Dsbat-distro=buckos), so the signed binary is a revocable, Secure-Boot-
+# verifiable first stage that can chain-load the signed UKI above.
+efi_sign(
+    name = "signed-sd-boot",
+    efi = "//packages/linux/boot/systemd-boot:sd-boot",
+    cert = "//defs/keys:secureboot-db-cert",
+    key = "//defs/keys:secureboot-db-key",
+    visibility = ["PUBLIC"],
+)

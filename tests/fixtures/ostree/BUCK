@@ -1,4 +1,4 @@
-load("//defs/rules:ostree.bzl", "ostree_commit", "ostree_rootfs", "ostree_sysroot")
+load("//defs/rules:ostree.bzl", "ostree_commit", "ostree_rootfs", "ostree_sysroot", "ostree_verify")
 
 # Self-test for the ostree_commit rule (SPEC-006 P2): commit a tiny, fully
 # deterministic tree so the resulting commit checksum is byte-stable and can
@@ -17,6 +17,29 @@ ostree_commit(
     tree = ":demo-tree",
     branch = "buckos/demo",
     subject = "ostree_commit self-test",
+    visibility = ["PUBLIC"],
+)
+
+# Signed variant (SPEC-007): sign the demo commit with the committed TEST
+# ed25519 key. Building this runs `ostree sign --sign-type=ed25519`, so a bad
+# key format fails the build; the resulting commit carries a `.commitmeta`
+# with an `ostree.sign.ed25519` signature.
+ostree_commit(
+    name = "demo-commit-signed",
+    tree = ":demo-tree",
+    branch = "buckos/demo-signed",
+    subject = "ostree_commit signing self-test",
+    signing_key = "//defs/keys:ostree-test-key",
+    visibility = ["PUBLIC"],
+)
+
+# Cryptographic verification self-test (SPEC-007 S3): the signer's key MUST
+# verify the signed commit and a different key MUST be rejected.
+ostree_verify(
+    name = "demo-commit-verify",
+    commit = ":demo-commit-signed",
+    good_key = "//defs/keys:ostree-test-pub",
+    bad_key = "//defs/keys:ostree-test-wrong-pub",
     visibility = ["PUBLIC"],
 )
 
@@ -44,6 +67,8 @@ genrule(
 ostree_rootfs(
     name = "mini-ostree-rootfs",
     tree = ":mini-rootfs",
+    # Bake in the trusted key so test-ostree-rootfs can assert it lands.
+    trusted_key = "//defs/keys:ostree-test-pub",
     visibility = ["PUBLIC"],
 )
 
@@ -62,5 +87,84 @@ ostree_sysroot(
     name = "mini-sysroot",
     commit = ":mini-ostree-commit",
     os = "buckos",
+    visibility = ["PUBLIC"],
+)
+
+# ── Update-cycle fixtures (SPEC-006 P6) ──────────────────────────────
+# Two tiny bootable commits, "A" and "B", that differ only by the marker
+# their init echoes on the serial console. They feed three deploy states:
+#   - base:        deploy A                 -> boots A
+#   - updated:     deploy A, then B         -> boots B  (atomic update)
+#   - rolledback:  deploy A, B, redeploy A  -> boots A  (rollback)
+# The boot harness boots all three and asserts A / B / A.
+
+_CYCLE_TREE_CMD = " && ".join([
+    "mkdir -p $OUT/usr/bin $OUT/usr/sbin $OUT/usr/lib/modules/6.0.0-buckos $OUT/etc",
+    "ln -s usr/bin $OUT/bin",
+    "ln -s usr/sbin $OUT/sbin",
+    "ln -s usr/lib $OUT/lib",
+    'cp "$(location //packages/linux/core/busybox:busybox-static)/bin/busybox" $OUT/usr/bin/busybox && chmod 0755 $OUT/usr/bin/busybox',
+    # Dummy kernel so `ostree admin deploy` can populate /boot (QEMU boots the
+    # real bzImage via -kernel; the in-commit vmlinuz is never executed).
+    "printf 'DUMMYKERNEL\\n' > $OUT/usr/lib/modules/6.0.0-buckos/vmlinuz",
+])
+
+genrule(
+    name = "cycle-tree-a",
+    out = "tree",
+    cmd = _CYCLE_TREE_CMD + " && " + " && ".join([
+        "printf 'ID=buckos\\nNAME=BuckOS\\nPRETTY_NAME=\"BuckOS cycle A\"\\nVERSION_ID=a\\n' > $OUT/etc/os-release",
+        "printf '#!/usr/bin/busybox sh\\n/usr/bin/busybox mount -t proc proc /proc 2>/dev/null || true\\n/usr/bin/busybox echo CYCLE_BOOT_A\\n/usr/bin/busybox sync\\n/usr/bin/busybox poweroff -f\\n' > $OUT/usr/sbin/init",
+        "chmod 0755 $OUT/usr/sbin/init",
+    ]),
+)
+
+genrule(
+    name = "cycle-tree-b",
+    out = "tree",
+    cmd = _CYCLE_TREE_CMD + " && " + " && ".join([
+        "printf 'ID=buckos\\nNAME=BuckOS\\nPRETTY_NAME=\"BuckOS cycle B\"\\nVERSION_ID=b\\n' > $OUT/etc/os-release",
+        "printf '#!/usr/bin/busybox sh\\n/usr/bin/busybox mount -t proc proc /proc 2>/dev/null || true\\n/usr/bin/busybox echo CYCLE_BOOT_B\\n/usr/bin/busybox sync\\n/usr/bin/busybox poweroff -f\\n' > $OUT/usr/sbin/init",
+        "chmod 0755 $OUT/usr/sbin/init",
+    ]),
+)
+
+ostree_rootfs(name = "cycle-rootfs-a", tree = ":cycle-tree-a", visibility = ["PUBLIC"])
+ostree_rootfs(name = "cycle-rootfs-b", tree = ":cycle-tree-b", visibility = ["PUBLIC"])
+
+ostree_commit(
+    name = "cycle-commit-a",
+    tree = ":cycle-rootfs-a",
+    branch = "buckos/cycle-a",
+    subject = "update-cycle A",
+    visibility = ["PUBLIC"],
+)
+
+ostree_commit(
+    name = "cycle-commit-b",
+    tree = ":cycle-rootfs-b",
+    branch = "buckos/cycle-b",
+    subject = "update-cycle B",
+    visibility = ["PUBLIC"],
+)
+
+ostree_sysroot(
+    name = "cycle-sysroot-base",
+    commit = ":cycle-commit-a",
+    visibility = ["PUBLIC"],
+)
+
+ostree_sysroot(
+    name = "cycle-sysroot-updated",
+    commit = ":cycle-commit-a",
+    update_commit = ":cycle-commit-b",
+    visibility = ["PUBLIC"],
+)
+
+ostree_sysroot(
+    name = "cycle-sysroot-rolledback",
+    commit = ":cycle-commit-a",
+    update_commit = ":cycle-commit-b",
+    rollback = True,
     visibility = ["PUBLIC"],
 )

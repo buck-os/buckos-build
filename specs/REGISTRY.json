@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "generated": "2026-06-15",
-  "total_specs": 12,
+  "generated": "2026-06-16",
+  "total_specs": 13,
   "specs": [
     {
       "id": "PACKAGE-SPEC-001",
@@ -403,6 +403,46 @@
       "description": "Atomic, image-based system updates with rollback for BuckOS, built on libostree: each system version is a content-addressed, signed commit; updates are staged out-of-band and activated by an atomic boot switch, with rollback to the prior deployment."
     },
     {
+      "id": "SPEC-007",
+      "title": "Verified Boot and Update Signing",
+      "status": "draft",
+      "version": "0.1.0",
+      "category": "core",
+      "path": "core/SPEC-007-verified-boot-signing.md",
+      "created": "2026-06-16",
+      "updated": "2026-06-16",
+      "authors": [
+        {
+          "name": "BuckOS Team",
+          "email": "team@buckos.org"
+        }
+      ],
+      "maintainers": [
+        "team@buckos.org"
+      ],
+      "tags": [
+        "security",
+        "signing",
+        "verified-boot",
+        "ostree",
+        "ed25519"
+      ],
+      "related": [
+        "SPEC-001",
+        "SPEC-006"
+      ],
+      "implementation": {
+        "status": "not-started",
+        "completeness": 0
+      },
+      "compatibility": {
+        "buck2_version": ">=2024.11.01",
+        "buckos_version": ">=1.0.0",
+        "breaking_changes": false
+      },
+      "description": "ed25519-signed ostree commits with verification enforced across pull, deploy, and install so a BuckOS system only ever runs a release-signed image; builds on SPEC-006. Tier 1 (update-path signing) is implemented now; Tier 2 (UEFI Secure Boot chain) is specified and deferred. Uses ed25519, not GPG, to match the libostree build."
+    },
+    {
       "id": "SPEC-100",
       "title": "Toolchain Bootstrap and Seed",
       "status": "approved",
@@ -492,7 +532,8 @@
       "SPEC-002",
       "SPEC-004",
       "SPEC-005",
-      "SPEC-006"
+      "SPEC-006",
+      "SPEC-007"
     ],
     "features": [
       "SPEC-300"
@@ -520,7 +561,8 @@
       "SPEC-300"
     ],
     "draft": [
-      "SPEC-006"
+      "SPEC-006",
+      "SPEC-007"
     ]
   },
   "by_tag": {
@@ -567,6 +609,9 @@
     "customization": [
       "SPEC-005"
     ],
+    "ed25519": [
+      "SPEC-007"
+    ],
     "elf": [
       "SPEC-300"
     ],
@@ -600,7 +645,8 @@
       "PACKAGE-SPEC-002"
     ],
     "ostree": [
-      "SPEC-006"
+      "SPEC-006",
+      "SPEC-007"
     ],
     "package-creation": [
       "PACKAGE-SPEC-001",
@@ -639,11 +685,17 @@
     "rust": [
       "PACKAGE-SPEC-003"
     ],
+    "security": [
+      "SPEC-007"
+    ],
     "seed": [
       "SPEC-100"
     ],
     "setuptools": [
       "PACKAGE-SPEC-005"
+    ],
+    "signing": [
+      "SPEC-007"
     ],
     "source-modification": [
       "SPEC-005"
@@ -662,6 +714,9 @@
     ],
     "use-flags": [
       "SPEC-002"
+    ],
+    "verified-boot": [
+      "SPEC-007"
     ]
   }
 }
