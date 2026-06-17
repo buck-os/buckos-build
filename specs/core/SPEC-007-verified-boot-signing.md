@@ -46,14 +46,16 @@ The work is layered into two tiers:
 
 - **Tier 1 — update-path signing (this spec's core, implemented now):** sign
   release commits; clients fail closed on an unsigned or untrusted commit.
-- **Tier 2 — UEFI Secure Boot chain (kernel signing + enforcement proven;
-  full chain in progress):** the firmware verifies the boot artifact before
-  Linux runs, so an *offline* attacker with disk access cannot substitute a
-  deployment either. Kernel-EFI-stub signing (`efi_sign`/osslsigncode),
-  PK/KEK/db enrollment (`efitools`), and firmware-enforced rejection of an
-  unsigned kernel are **implemented and proven against OVMF**
-  (`tools/secureboot_validate.sh`, §5.6). Signing the bootloader with `sbat`
-  and a Unified Kernel Image (so the initramfs is signature-covered) remain.
+- **Tier 2 — UEFI Secure Boot chain (kernel + UKI signing and enforcement
+  proven; multi-stage chain in progress):** the firmware verifies the boot
+  artifact before Linux runs, so an *offline* attacker with disk access cannot
+  substitute a deployment either. Kernel-EFI-stub signing
+  (`efi_sign`/osslsigncode), PK/KEK/db enrollment (`efitools`), and a **signed
+  Unified Kernel Image that boots to init under real Secure Boot** (systemd-stub
+  + `assemble_uki.py`) — with the unsigned artifact firmware-rejected — are
+  **implemented and proven against OVMF** (`tools/secureboot_validate.sh`, §5.6).
+  Signing the sd-boot bootloader with `sbat` revocation and hardware/MOK
+  enrollment remain.
 
 This is additive to SPEC-006 and changes no default of the source-based path.
 
@@ -221,12 +223,31 @@ after a verified start — the *boots-to-init* assertion therefore uses `-kernel
 (SB-bypassing but proving the signed binary is a working bootable kernel), while
 *enforcement* is proven by the ESP accept/reject pair above.
 
-**`sbat`, bootloader, initramfs — remaining.** A complete chain also signs the
-bootloader (GRUB/systemd-boot EFI) with `sbat` revocation metadata, and either
-signs the initramfs or uses a Unified Kernel Image (systemd-stub, not yet
-packaged) so the initramfs is covered by the kernel signature and a *single*
-SB-verified artifact reaches init via `LoadImage`. These compose with `efi_sign`
-and are follow-ons.
+**Unified Kernel Image — implemented.** `//packages/linux/boot/systemd-boot`
+builds the systemd 259 EFI artifacts (the sd-boot bootloader and the
+`linuxx64.efi.stub` UKI stub) with `-Dbootloader=enabled` — kept separate from
+the main `//packages/linux/system/init/systemd` so the critical init build is
+untouched. systemd 259 compiles the EFI binaries freestanding with the host `cc`
+and converts ELF→PE with its own `tools/elf2efi.py` (no gnu-efi, no objcopy),
+which needs the `elftools` module — hence the new
+`//packages/linux/lang/python/pyelftools` host package.
+
+`tools/assemble_uki.py` adds the `.osrel`/`.cmdline`/`.linux`/`.initrd` sections
+to the stub at computed, non-overlapping VMAs (so a >16 MiB kernel can't collide
+with the initrd — the failure mode of the classic fixed-offset recipe),
+producing one PE/COFF EFI binary. Signed with `efi_sign`/osslsigncode, the whole
+UKI — kernel + initramfs + cmdline — is covered by a single Secure Boot
+signature. `tools/secureboot_validate.sh` proves the result: a **signed UKI
+boots to init under real Secure Boot** (`SECUREBOOT_INIT_OK`, loaded via OVMF
+`LoadImage`), while the **unsigned UKI is rejected** (`Access Denied`). Because
+the UKI carries its own cmdline + initrd, it reaches init straight from the ESP —
+the gap a bare ESP-booted kernel had (no cmdline ⇒ silent start) is closed.
+
+**`sbat` + signed bootloader — remaining.** A multi-stage chain (sd-boot →
+UKI) additionally signs the sd-boot bootloader and carries `sbat` revocation
+metadata so a compromised stage can be revoked without rotating PK/KEK. The
+sd-boot binary is already built by the systemd-boot package; signing it +
+populating `sbat` are the remaining follow-ons, plus hardware/MOK enrollment.
 
 This is additive and does not change the Tier-1 design.
 
@@ -239,14 +260,16 @@ This is additive and does not change the Tier-1 design.
 | S3 | `sign-verify=true` remote baked in image; agent + installer fail closed | a system trusts only the release key out of the box |
 | S4 | CI: positive (signed pull/deploy) + negative (tampered → rejected) | green nightly, userns-aware like the sysroot gate |
 | S5a | `efi_sign` signs the kernel EFI stub with the db key (osslsigncode) | `test-secureboot-sign` passes; the signed image self-verifies against db |
-| S5b | Package `efitools`/`gnu-efi`; enroll PK/KEK/db into firmware + an OVMF Secure-Boot boot test | `secureboot_validate.sh`: signed accepted, unsigned rejected (Access Denied), boots to init |
-| S5c (remaining) | Sign the bootloader (GRUB/systemd-boot) with `sbat`; UKI so initramfs is signature-covered | a single SB-verified artifact reaches init via `LoadImage` |
+| S5b | Package `efitools`/`gnu-efi`; enroll PK/KEK/db into firmware + an OVMF Secure-Boot boot test | `secureboot_validate.sh`: signed accepted, unsigned rejected (Access Denied) |
+| S5c | Package the systemd-stub (`systemd-boot` + `pyelftools`); assemble + sign a UKI (`assemble_uki.py`) | signed UKI boots to init under Secure Boot via `LoadImage`; unsigned UKI rejected |
+| S5d (remaining) | Sign the sd-boot bootloader + `sbat` revocation; hardware/MOK enrollment | a revocable multi-stage chain on real firmware |
 
-S1–S4 are Tier 1 and land alongside SPEC-006 P4/P5. S5a–S5b (Tier-2 kernel
-signing + key enrollment + the firmware-enforced boot test) are **done** — real
-Secure Boot enforcement is proven against OVMF with buckos-packaged tools. S5c
-(signed bootloader + `sbat` + UKI) is the remaining follow-on. Each is
-independently testable.
+S1–S4 are Tier 1 and land alongside SPEC-006 P4/P5. S5a–S5c (Tier-2 kernel
+signing + key enrollment + UKI) are **done** — a single Secure-Boot-verified
+artifact (kernel + initramfs + cmdline) boots to init under real OVMF Secure
+Boot, and an unsigned one is rejected, all with buckos-packaged tools. S5d
+(signed bootloader + `sbat` + hardware enrollment) is the remaining follow-on.
+Each is independently testable.
 
 ## 7. Considered Alternatives
 
