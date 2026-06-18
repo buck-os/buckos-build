@@ -22,44 +22,55 @@
 # that are exercisable without a live boot: update application + the SPEC-007
 # fail-closed guarantees.
 #
-# Requires: unprivileged user namespaces, and the `buckos-update` binary
-# ($BUCKOS_UPDATE, or built at ../buckos/target/debug/buckos-update). Self-skips
-# (exit 0) when either is unavailable.
+# Requires: unprivileged user namespaces + buck2. Self-contained — it builds the
+# ostree-update rootfs slice (the buckos `ostree` PIE + the packaged
+# `buckos-update` agent + their libgcc_s/glibc closure) and runs both via the
+# seed loader. $BUCKOS_UPDATE optionally overrides with a host-built agent
+# binary. Self-skips (exit 0) when user namespaces are unavailable.
 set -eu
 
 if [ "${1:-}" != "--inner" ]; then
-  # ---- outer: build inputs, locate the agent, then re-exec in a userns -------
+  # ---- outer: build inputs, then re-exec in a userns ------------------------
   cd "$(git rev-parse --show-toplevel 2>/dev/null || echo /home/hodgesd/buckos-build)"
   BB=$PWD
 
-  UPDATE=${BUCKOS_UPDATE:-$BB/../buckos/target/debug/buckos-update}
-  if [ ! -x "$UPDATE" ]; then
-    echo "SKIP: buckos-update not found at $UPDATE (set BUCKOS_UPDATE; build with"
-    echo "      'cargo build -p buckos-update' in the buckos repo)"; exit 0
-  fi
   if ! unshare -r true 2>/dev/null; then
     echo "SKIP: unprivileged user namespaces unavailable (unshare -r failed)"; exit 0
   fi
 
-  echo "### build the ostree rootfs slice (ostree binary + full lib closure)"
-  ./buck2 build //packages/linux/system/ostree-image:ostree-initramfs-rootfs >/dev/null 2>&1
-  ROOT=$BB/$(./buck2 build //packages/linux/system/ostree-image:ostree-initramfs-rootfs \
+  # The slice provides both the buckos `ostree` PIE and the packaged
+  # `buckos-update` agent with their full runtime closures (glibc + libgcc_s),
+  # so the harness is self-contained (no host cargo build needed).
+  echo "### build the ostree+agent rootfs slice"
+  ./buck2 build //packages/linux/system/ostree-image:ostree-update-rootfs >/dev/null 2>&1
+  ROOT=$BB/$(./buck2 build //packages/linux/system/ostree-image:ostree-update-rootfs \
              --show-output 2>/dev/null | awk 'NF>=2{print $NF}')
+  if [ ! -x "$ROOT/usr/bin/buckos-update" ] || [ ! -x "$ROOT/usr/bin/ostree" ]; then
+    echo "SKIP: could not build the ostree-update rootfs slice"; exit 0
+  fi
 
-  export E2E_BB=$BB E2E_ROOT=$ROOT E2E_UPDATE=$(readlink -f "$UPDATE")
+  # $BUCKOS_UPDATE overrides with a host-built (natively-runnable) agent binary.
+  export E2E_BB=$BB E2E_ROOT=$ROOT E2E_UPDATE_HOST=${BUCKOS_UPDATE:-}
   exec unshare -r "$0" --inner
 fi
 
 # ---- inner: runs as root-in-userns -----------------------------------------
-BB=$E2E_BB; ROOT=$E2E_ROOT; UPDATE=$E2E_UPDATE
+BB=$E2E_BB; ROOT=$E2E_ROOT
 W=${W:-/tmp/ostree_update_e2e}; rm -rf "$W"; mkdir -p "$W"
 
-# Wrapper so the agent's `Command::new(ostree)` runs the buckos ostree PIE via
-# the seed loader + the rootfs lib closure.
+# Wrappers so a buckos PIE from the slice runs via the seed loader + the slice's
+# lib closure (covers the agent's own `Command::new(ostree)` too).
 LD="$ROOT/lib64/ld-linux-x86-64.so.2"; LIBS="$ROOT/usr/lib:$ROOT/lib64"
-printf '#!/bin/sh\nexec "%s" --library-path "%s" "%s" "$@"\n' \
-  "$LD" "$LIBS" "$ROOT/usr/bin/ostree" > "$W/ostree"; chmod +x "$W/ostree"
-OSTREE="$W/ostree"; export BUCKOS_OSTREE="$OSTREE"
+wrap(){ printf '#!/bin/sh\nexec "%s" --library-path "%s" "%s" "$@"\n' \
+  "$LD" "$LIBS" "$ROOT/usr/bin/$1" > "$W/$1"; chmod +x "$W/$1"; }
+wrap ostree; OSTREE="$W/ostree"; export BUCKOS_OSTREE="$OSTREE"
+# Agent: a host-built binary override (runs natively), else the packaged binary
+# from the slice via the loader.
+if [ -n "${E2E_UPDATE_HOST:-}" ] && [ -x "$E2E_UPDATE_HOST" ]; then
+  UPDATE="$E2E_UPDATE_HOST"
+else
+  wrap buckos-update; UPDATE="$W/buckos-update"
+fi
 KEY="$BB/defs/keys/ostree-test.ed25519.key"           # ed25519 secret (base64)
 PUB="$(cat "$BB/defs/keys/ostree-test.ed25519.pub")"  # ed25519 public (base64)
 REF=buckos/x86_64/test

@@ -29,6 +29,12 @@ cargo build --release -p buckos-update
 mkdir -p "$OUT/usr/bin"
 install -m 0755 target/release/buckos-update "$OUT/usr/bin/buckos-update"
 """,
+    # Runtime: the agent is dynamically linked against libgcc_s (+ libc); declare
+    # gcc-libs so its closure ships libgcc_s into any rootfs (even a minimal
+    # ostree deployment) that includes the agent.
+    deps = [
+        "//packages/linux/lang/gcc:gcc-libs",
+    ],
     host_deps = [
         "//packages/linux/lang/rust:rust",
     ],
