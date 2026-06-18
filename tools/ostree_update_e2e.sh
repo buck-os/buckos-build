@@ -33,6 +33,10 @@ if [ "${1:-}" != "--inner" ]; then
   # ---- outer: build inputs, then re-exec in a userns ------------------------
   cd "$(git rev-parse --show-toplevel 2>/dev/null || echo /home/hodgesd/buckos-build)"
   BB=$PWD
+  # buck2 binary: ./buck2 (the working repo-root binary) locally; CI puts buck2
+  # on PATH and the repo-root ./buck2 dotslash stub does not resolve there, so CI
+  # sets BUCK2=buck2.
+  BUCK2=${BUCK2:-./buck2}
 
   if ! unshare -r true 2>/dev/null; then
     echo "SKIP: unprivileged user namespaces unavailable (unshare -r failed)"; exit 0
@@ -42,8 +46,8 @@ if [ "${1:-}" != "--inner" ]; then
   # `buckos-update` agent with their full runtime closures (glibc + libgcc_s),
   # so the harness is self-contained (no host cargo build needed).
   echo "### build the ostree+agent rootfs slice"
-  ./buck2 build //packages/linux/system/ostree-image:ostree-update-rootfs >/dev/null 2>&1
-  ROOT=$BB/$(./buck2 build //packages/linux/system/ostree-image:ostree-update-rootfs \
+  "$BUCK2" build //packages/linux/system/ostree-image:ostree-update-rootfs >/dev/null 2>&1
+  ROOT=$BB/$("$BUCK2" build //packages/linux/system/ostree-image:ostree-update-rootfs \
              --show-output 2>/dev/null | awk 'NF>=2{print $NF}')
   if [ ! -x "$ROOT/usr/bin/buckos-update" ] || [ ! -x "$ROOT/usr/bin/ostree" ]; then
     echo "SKIP: could not build the ostree-update rootfs slice"; exit 0

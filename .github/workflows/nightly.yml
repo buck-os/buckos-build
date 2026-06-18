@@ -170,3 +170,61 @@ jobs:
         run: buck2 kill 2>/dev/null || true
       - name: Update cycle (deploy A -> update B -> rollback A)
         run: buck2 test //tests:test-ostree-update-cycle
+
+  ostree-update-agent:
+    name: ostree update agent E2E (SPEC-006 P4 / SPEC-007)
+    # Drives the packaged buckos-update agent against a real ed25519-signed
+    # channel: asserts it applies a signature-verified update and fails closed on
+    # a non-verifying remote and on an unsigned commit. Complements
+    # ostree-update-cycle (raw-ostree boot mechanics) by exercising the AGENT plus
+    # the SPEC-007 fail-closed policy. Needs unprivileged user namespaces (the
+    # harness self-skips without them). Builds the ostree+agent rootfs slice,
+    # which pulls gcc-native on a cold cache (~15 min first run; cached after via
+    # clean: false). buck2 is on PATH here, so BUCK2=buck2 (the repo-root ./buck2
+    # dotslash stub does not resolve in CI).
+    runs-on: [self-hosted, large]
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          clean: false
+      - name: Install patchelf
+        run: |
+          set -euo pipefail
+          PATCHELF="$HOME/.local/bin/patchelf"
+          if [ -x "$PATCHELF" ] && "$PATCHELF" --version >/dev/null 2>&1; then
+            echo "patchelf already installed: $($PATCHELF --version)"
+          else
+            mkdir -p "$HOME/.local/bin"
+            case "$(uname -m)" in
+              x86_64)  ARCH=x86_64 ;;
+              aarch64) ARCH=aarch64 ;;
+              *) echo "::error::Unsupported arch $(uname -m)"; exit 1 ;;
+            esac
+            curl -fsSL "https://github.com/NixOS/patchelf/releases/download/0.18.0/patchelf-0.18.0-${ARCH}.tar.gz" \
+              | tar -xzf - -C "$HOME/.local" ./bin/patchelf
+            chmod +x "$PATCHELF"
+            if ! "$PATCHELF" --version; then
+              echo "::error::patchelf at $PATCHELF failed to run after install"
+              exit 1
+            fi
+            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          fi
+          if [ ! -e /usr/local/bin/patchelf ] && [ -w /usr/local/bin ]; then
+            ln -sf "$PATCHELF" /usr/local/bin/patchelf 2>/dev/null || true
+          fi
+      - name: Install buck2
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors \
+            -o "$HOME/.local/bin/buck2.zst" \
+            https://github.com/facebook/buck2/releases/download/2026-02-01/buck2-x86_64-unknown-linux-gnu.zst
+          zstd -d -f -o "$HOME/.local/bin/buck2" "$HOME/.local/bin/buck2.zst"
+          rm -f "$HOME/.local/bin/buck2.zst"
+          chmod +x "$HOME/.local/bin/buck2"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Restart buck2 daemon
+        run: buck2 kill 2>/dev/null || true
+      - name: Update agent E2E (signed pull + deploy + fail-closed)
+        env:
+          BUCK2: buck2
+        run: ./tools/ostree_update_e2e.sh
