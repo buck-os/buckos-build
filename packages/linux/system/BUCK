@@ -1491,48 +1491,67 @@ sed -i 's|^live:!:|live:$6$xyz$LH0pTsMhKj5X5VQrDvKxQ8Kj7FqNJvGqKxjQh3CqZ8nD6s5R2
 )
 
 # Root filesystem assembly
+# Base BuckOS system package list — a composable building block reused by both
+# buckos-rootfs (the source-install path) and buckos-ostree-base (below).
+_BUCKOS_BASE_PACKAGES = [
+    ":init-scripts-gen",
+    ":baselayout-gen",
+    # C runtime (required for all dynamically-linked binaries)
+    "//packages/linux/core/glibc:glibc",
+    # Core system
+    "//packages/linux/system/apps/coreutils:coreutils",
+    "//packages/linux/editors/grep:grep",
+    "//packages/linux/system/libs/cpio:cpio",
+    "//packages/linux/core/util-linux:util-linux",
+    "//packages/linux/core/zlib:zlib",
+    # Shell and terminal
+    "//packages/linux/system/terminal/ncurses:ncurses",
+    "//packages/linux/system/terminal/readline:readline",
+    "//packages/linux/core/bash:bash",
+    "//packages/linux/core/less:less",
+    # Compression
+    "//packages/linux/system/libs/compression/bzip2:bzip2",
+    "//packages/linux/system/libs/compression/xz:xz",
+    # System utilities
+    "//packages/linux/core/procps-ng:procps-ng",
+    "//packages/linux/core/file:file",
+    # User management (REQUIRED for installer)
+    "//packages/linux/system/apps/shadow:shadow",
+    # Networking
+    "//packages/linux/system/libs/crypto/openssl:openssl",
+    "//packages/linux/system/libs/network/curl:curl",
+    # TODO: OpenSSH 9.9p1 has build issues with cross-compilation (arc4random, strlcpy)
+    # "//packages/linux/network/openssh:openssh",
+    "//packages/linux/network/iproute2:iproute2",
+    "//packages/linux/network/dhcpcd:dhcpcd",
+    # Runtime shared-lib deps of the tools above.  The rootfs ships an
+    # explicit package list with no auto-resolution, so each tool's
+    # runtime libraries must be listed too.  Enforced by
+    # //tests:test-hermeticity (the ELF dependency-closure gate).
+    "//packages/linux/system/libs/utility/pcre2:pcre2",  # grep (libpcre2-8)
+    "//packages/linux/system/libs/network/libpsl:libpsl",  # curl (libpsl)
+    "//packages/linux/system/security/linux-pam:linux-pam",  # login/su/passwd (libpam)
+    "//packages/linux/system/libs/compat/libbsd:libbsd",  # libbsd consumers
+    "//packages/linux/system/libs/compat/libmd:libmd",  # libbsd -> libmd
+]
+
 rootfs(
     name = "buckos-rootfs",
-    packages = [
-        ":init-scripts-gen",
-        ":baselayout-gen",
-        # C runtime (required for all dynamically-linked binaries)
-        "//packages/linux/core/glibc:glibc",
-        # Core system
-        "//packages/linux/system/apps/coreutils:coreutils",
-        "//packages/linux/editors/grep:grep",
-        "//packages/linux/system/libs/cpio:cpio",
-        "//packages/linux/core/util-linux:util-linux",
-        "//packages/linux/core/zlib:zlib",
-        # Shell and terminal
-        "//packages/linux/system/terminal/ncurses:ncurses",
-        "//packages/linux/system/terminal/readline:readline",
-        "//packages/linux/core/bash:bash",
-        "//packages/linux/core/less:less",
-        # Compression
-        "//packages/linux/system/libs/compression/bzip2:bzip2",
-        "//packages/linux/system/libs/compression/xz:xz",
-        # System utilities
-        "//packages/linux/core/procps-ng:procps-ng",
-        "//packages/linux/core/file:file",
-        # User management (REQUIRED for installer)
-        "//packages/linux/system/apps/shadow:shadow",
-        # Networking
-        "//packages/linux/system/libs/crypto/openssl:openssl",
-        "//packages/linux/system/libs/network/curl:curl",
-        # TODO: OpenSSH 9.9p1 has build issues with cross-compilation (arc4random, strlcpy)
-        # "//packages/linux/network/openssh:openssh",
-        "//packages/linux/network/iproute2:iproute2",
-        "//packages/linux/network/dhcpcd:dhcpcd",
-        # Runtime shared-lib deps of the tools above.  The rootfs ships an
-        # explicit package list with no auto-resolution, so each tool's
-        # runtime libraries must be listed too.  Enforced by
-        # //tests:test-hermeticity (the ELF dependency-closure gate).
-        "//packages/linux/system/libs/utility/pcre2:pcre2",  # grep (libpcre2-8)
-        "//packages/linux/system/libs/network/libpsl:libpsl",  # curl (libpsl)
-        "//packages/linux/system/security/linux-pam:linux-pam",  # login/su/passwd (libpam)
-        "//packages/linux/system/libs/compat/libbsd:libbsd",  # libbsd consumers
-        "//packages/linux/system/libs/compat/libmd:libmd",  # libbsd -> libmd
+    packages = _BUCKOS_BASE_PACKAGES,
+    visibility = ["PUBLIC"],
+)
+
+# Additive, composable: the same base plus the ostree stack and the
+# buckos-update agent (their runtime closures pulled via top_packages, which also
+# brings libgcc_s through the agent's gcc-libs dep), so an ostree DEPLOYMENT
+# built from this can self-update. buckos-rootfs and the source-install path are
+# untouched — this is a separate option the ostree image can reshape.
+rootfs(
+    name = "buckos-ostree-base",
+    packages = _BUCKOS_BASE_PACKAGES,
+    top_packages = [
+        "//packages/linux/system/ostree:ostree",
+        "//packages/linux/apps/buckos-tools/update:buckos-update",
     ],
     visibility = ["PUBLIC"],
 )

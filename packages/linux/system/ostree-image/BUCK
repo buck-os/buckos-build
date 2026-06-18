@@ -29,6 +29,27 @@ ostree_commit(
     visibility = ["PUBLIC"],
 )
 
+# Self-updating variant: the same compose, but over buckos-ostree-base (the base
+# system + the ostree stack + the buckos-update agent and their runtime closures).
+# A system DEPLOYED from this commit ships everything it needs to pull, verify,
+# and apply its own signed updates (SPEC-006 P4 / SPEC-007). This is additive —
+# the agent-less buckos-ostree-rootfs/-commit above stay as composable options.
+ostree_rootfs(
+    name = "buckos-ostree-updatable-rootfs",
+    tree = "//packages/linux/system:buckos-ostree-base",
+    trusted_key = "//defs/keys:ostree-test-pub",
+    visibility = ["PUBLIC"],
+)
+
+ostree_commit(
+    name = "buckos-ostree-updatable-commit",
+    tree = ":buckos-ostree-updatable-rootfs",
+    branch = "buckos/x86_64/main",
+    subject = "BuckOS base system (self-updating)",
+    preserve_xattrs = True,
+    visibility = ["PUBLIC"],
+)
+
 # ── Dynamic-capable ostree initramfs (SPEC-006 P3) ───────────────────
 # The deployment boots via ostree-prepare-root, which is a *dynamic* glibc
 # binary.  Rather than hand-assemble a /lib64 (which crashes pre-main under
