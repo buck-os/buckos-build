@@ -2,8 +2,9 @@
 """Validate the ostree_rootfs transform output (SPEC-006 P2).
 
 Asserts a rootfs tree was reshaped into ostree's layout: /etc moved to
-/usr/etc, mutable top-level dirs symlinked into /var, /var emptied, and
-/sysroot added.
+/usr/etc, mutable top-level dirs symlinked into /var, /var emptied,
+/sysroot added, and /ostree -> sysroot/ostree (so a booted deployment
+resolves the repo with the default sysroot /).
 
 Env:
     OSTREE_ROOTFS  the tree from //tests/fixtures/ostree:mini-ostree-rootfs
@@ -48,6 +49,11 @@ def main():
         os.path.isdir(var) and not os.path.islink(var) and not os.listdir(var),
     )
     chk("/sysroot present", os.path.isdir(os.path.join(root, "sysroot")))
+    ostree_link = os.path.join(root, "ostree")
+    chk(
+        "/ostree -> sysroot/ostree",
+        os.path.islink(ostree_link) and os.readlink(ostree_link) == "sysroot/ostree",
+    )
 
     # When a trusted key was baked in (SPEC-007 §5.3), assert it landed under
     # /usr/etc/ostree (the deployed /etc default) and matches the release key.

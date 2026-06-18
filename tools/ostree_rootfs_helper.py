@@ -16,6 +16,9 @@ Layout moves (the ostree convention):
         /home -> var/home, /opt -> var/opt, /srv -> var/srv,
         /root -> var/roothome, /usr/local -> ../var/usrlocal
   - /sysroot added          the physical root ostree mounts the real fs at
+  - /ostree -> sysroot/ostree   so ostree (and the update agent), run with the
+                            default sysroot (/) in a BOOTED deployment, resolve
+                            the repo at /ostree/repo -> /sysroot/ostree/repo
   - runtime mountpoints (/proc /sys /dev /run /tmp /mnt /media) kept as empty
     dirs (populated at runtime)
 """
@@ -165,6 +168,14 @@ def main():
         shutil.rmtree(var)
     for d in _EMPTY_DIRS:
         os.makedirs(os.path.join(dst, d), exist_ok=True)
+
+    # /ostree -> sysroot/ostree: in a booted deployment the physical root is
+    # mounted at /sysroot, so this lets `ostree`/the update agent run with the
+    # default sysroot (/) and still find the repo (/ostree/repo). Without it
+    # ostree must be told --sysroot=/sysroot, which suppresses booted-deployment
+    # detection (no `*` in `ostree admin status`) and breaks the agent's
+    # status/check/rollback.
+    _replace_with_symlink(os.path.join(dst, "ostree"), "sysroot/ostree")
 
     tmpfiles_dir = os.path.join(dst, "usr", "lib", "tmpfiles.d")
     os.makedirs(tmpfiles_dir, exist_ok=True)
