@@ -44,10 +44,26 @@ INITRD=${INITRD:-$PWD/$(find1 '*buckos-ostree-initramfs*cpio.gz')}
 SLICE=${SLICE:-$PWD/$(find1 '*__ostree-update-rootfs__/ostree-update-rootfs')}
 MKE2FS=${MKE2FS:-$PWD/$(find1 '*e2fsprogs*/installed/usr/sbin/mke2fs')}
 DEBUGFS=${DEBUGFS:-$PWD/$(find1 '*e2fsprogs*/installed/usr/sbin/debugfs')}
-# QEMU portability: QEMU=binary; QEMU_PREFIX=optional run-env wrapper (for the
-# portabilized buckos qemu); QEMU_L=optional firmware dir for -L. Default to a
-# host qemu for local runs.
-QEMU=${QEMU:-/opt/fb-qemu/bin/qemu-system-x86_64}
+# QEMU resolution, in priority order:
+#   1. $QEMU (+ optional $QEMU_PREFIX run-env wrapper and $QEMU_L firmware dir)
+#   2. a host qemu at /opt/fb-qemu (local dev)
+#   3. the portable buckos qemu package + //tests:qemu-env run-env wrapper, built
+#      on demand (CI / hosts without a system qemu)
+if [ -n "${QEMU:-}" ] && [ -x "${QEMU:-/nonexistent}" ]; then
+  :
+elif [ -x /opt/fb-qemu/bin/qemu-system-x86_64 ]; then
+  QEMU=/opt/fb-qemu/bin/qemu-system-x86_64
+else
+  echo "### build the portable buckos qemu + run-env"
+  "$BUCK2" build //packages/linux/emulation/hypervisors/qemu:qemu //tests:qemu-env >/dev/null 2>&1 || true
+  QDIR=$PWD/$("$BUCK2" build //packages/linux/emulation/hypervisors/qemu:qemu --show-output 2>/dev/null | awk 'NF>=2{print $NF}')
+  QEMU=$(find "$QDIR" -name qemu-system-x86_64 -type f 2>/dev/null | head -1)
+  bios=$(find "$QDIR" -name bios-256k.bin 2>/dev/null | head -1)
+  [ -n "$bios" ] && QEMU_L=$(dirname "$bios")
+  QEMU_PREFIX=$PWD/$("$BUCK2" build //tests:qemu-env --show-output 2>/dev/null | awk 'NF>=2{print $NF}')
+  chmod +x "$QEMU" "$QEMU_PREFIX" 2>/dev/null || true
+fi
+[ -n "${QEMU:-}" ] && [ -x "${QEMU:-/nonexistent}" ] || { echo "SKIP: no usable qemu"; exit 0; }
 QEMU_CMD=()
 [ -n "${QEMU_PREFIX:-}" ] && QEMU_CMD+=("$QEMU_PREFIX")
 QEMU_CMD+=("$QEMU")
@@ -59,7 +75,6 @@ REF=buckos/x86_64/test
 for v in BZIMAGE:"$BZIMAGE" INITRD:"$INITRD" SLICE:"$SLICE" MKE2FS:"$MKE2FS" DEBUGFS:"$DEBUGFS"; do
   p=${v#*:}; [ -e "$p" ] || { echo "SKIP: missing ${v%%:*} ($p)"; exit 0; }
 done
-[ -x "$QEMU" ] || { echo "SKIP: no qemu at $QEMU (set \$QEMU)"; exit 0; }
 [ -x "$SLICE/usr/bin/buckos-update" ] || { echo "SKIP: no agent in slice"; exit 0; }
 
 # buckos ostree PIE via the slice's own glibc env (for host-side repo setup).
