@@ -56,6 +56,13 @@ def _ostree_commit_impl(ctx):
         # A published channel needs a (signed) summary so clients resolve refs
         # over plain static HTTP (SPEC-006 P5).
         cmd.add("--summary")
+    if ctx.attrs.from_commit:
+        # Generate a static delta previous->new for efficient incremental
+        # updates (SPEC-006 P5). The previous commit's repo + checksum are
+        # materialised as action inputs.
+        prev = ctx.attrs.from_commit[OstreeRepoInfo]
+        cmd.add("--from-repo", prev.repo)
+        cmd.add("--from-commit", prev.commit)
 
     # Dep lib closure -> --library-path.  add_flag_file registers the tset
     # projection as a hidden input, so Buck2 materialises every lib dir
@@ -88,6 +95,7 @@ ostree_commit = rule(
         "preserve_xattrs": attrs.bool(default = False),
         "signing_key": attrs.option(attrs.source(), default = None),
         "summary": attrs.bool(default = False),
+        "from_commit": attrs.option(attrs.dep(providers = [OstreeRepoInfo]), default = None),
         "_ostree_tool": attrs.exec_dep(default = "//tools:ostree_helper"),
     } | TOOLCHAIN_ATTRS,
 )

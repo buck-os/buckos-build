@@ -45,6 +45,28 @@ ostree_channel(
     visibility = ["PUBLIC"],
 )
 
+# Static-delta self-test (SPEC-006 P5): a second channel release whose
+# from_commit is the first, so building it generates a static delta v1->v2 for
+# efficient incremental updates (plus a signed summary listing it).
+genrule(
+    name = "demo-tree-v2",
+    out = "tree",
+    cmd = "mkdir -p $OUT/usr/bin $OUT/usr/share && " +
+          "printf '#!/bin/sh\\necho hello-buckos-ostree-v2\\n' > $OUT/usr/bin/hello && " +
+          "chmod 0755 $OUT/usr/bin/hello && " +
+          "printf 'buckos ostree_channel demo v2\\n' > $OUT/usr/share/readme",
+)
+
+ostree_channel(
+    name = "demo-channel-v2",
+    tree = ":demo-tree-v2",
+    channel = "stable",
+    signing_key = "//defs/keys:ostree-test-key",
+    from_commit = ":demo-channel",
+    subject = "ostree_channel delta self-test",
+    visibility = ["PUBLIC"],
+)
+
 # Cryptographic verification self-test (SPEC-007 S3): the signer's key MUST
 # verify the signed commit and a different key MUST be rejected.
 ostree_verify(

@@ -85,6 +85,17 @@ def main():
         help="generate (and, with --key-file, ed25519-sign) the repo summary so "
         "the repo is a discoverable, HTTP-servable channel (SPEC-006 P5)",
     )
+    ap.add_argument(
+        "--from-repo",
+        default=None,
+        help="previous release's repo; with --from-commit, generate a static "
+        "delta previous->new for efficient incremental updates (SPEC-006 P5)",
+    )
+    ap.add_argument(
+        "--from-commit",
+        default=None,
+        help="file holding the previous release's commit checksum",
+    )
     args = ap.parse_args()
 
     ld = os.path.abspath(args.ld_linux)
@@ -152,10 +163,21 @@ def main():
             ]
         )
 
-    # 4. optional channel summary: clients resolve refs over plain HTTP from the
-    # summary, so a published channel needs one. Sign it with the same release
-    # key (ed25519 summary signing takes the base64 secret inline via --sign;
-    # there is no --keys-file for `summary`).
+    # 4. optional static delta previous->new. Lets a client fetch a compact
+    # binary diff instead of every changed object. The delta carries no separate
+    # signature (static-delta generate has no --sign); its authenticity rides on
+    # the signed commit it produces and the signed summary that lists it.
+    if args.from_repo and args.from_commit:
+        from_checksum = open(args.from_commit).read().strip()
+        ostree_run(["pull-local", os.path.abspath(args.from_repo), from_checksum])
+        ostree_run(
+            ["static-delta", "generate", "--from=" + from_checksum, "--to=" + checksum]
+        )
+
+    # 5. optional channel summary: clients resolve refs (and discover deltas)
+    # over plain HTTP from the summary, so a published channel needs one. Sign it
+    # with the same release key (ed25519 summary signing takes the base64 secret
+    # inline via --sign; there is no --keys-file for `summary`).
     if args.summary:
         summary_cmd = ["summary", "--update"]
         if args.key_file:

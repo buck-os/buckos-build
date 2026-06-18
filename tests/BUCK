@@ -722,6 +722,18 @@ buckos_test(
     labels = ["integration", "ostree"],
 )
 
+# ── ostree static delta (SPEC-006 P5) ────────────────────────────────
+# demo-channel-v2 is a second release whose from_commit is the first, so building
+# it generates a static delta v1->v2. This asserts the delta landed (a superblock
+# under repo/deltas/) alongside the ref and signed summary.
+buckos_test(
+    name = "test-ostree-delta",
+    test = "verify_ostree_delta.py",
+    deps = ["//tests/fixtures/ostree:demo-channel-v2"],
+    env = {"OSTREE_REPO": "$(location //tests/fixtures/ostree:demo-channel-v2)"},
+    labels = ["integration", "ostree"],
+)
+
 # ── ostree update cycle (SPEC-006 P6) ────────────────────────────────
 # Boots three deployed sysroots and asserts the booted version: deploy A
 # boots A; deploy A then B boots B (atomic update); deploy A,B then redeploy
