@@ -52,6 +52,17 @@ def _ostree_commit_impl(ctx):
         # Real OS commits must keep file capabilities (setuid/security.capability
         # on ping, sudo, ...); fixtures without xattrs leave this off.
         cmd.add("--preserve-xattrs")
+    if ctx.attrs.summary:
+        # A published channel needs a (signed) summary so clients resolve refs
+        # over plain static HTTP (SPEC-006 P5).
+        cmd.add("--summary")
+    if ctx.attrs.from_commit:
+        # Generate a static delta previous->new for efficient incremental
+        # updates (SPEC-006 P5). The previous commit's repo + checksum are
+        # materialised as action inputs.
+        prev = ctx.attrs.from_commit[OstreeRepoInfo]
+        cmd.add("--from-repo", prev.repo)
+        cmd.add("--from-commit", prev.commit)
 
     # Dep lib closure -> --library-path.  add_flag_file registers the tset
     # projection as a hidden input, so Buck2 materialises every lib dir
@@ -83,9 +94,27 @@ ostree_commit = rule(
         "mode": attrs.string(default = "archive"),
         "preserve_xattrs": attrs.bool(default = False),
         "signing_key": attrs.option(attrs.source(), default = None),
+        "summary": attrs.bool(default = False),
+        "from_commit": attrs.option(attrs.dep(providers = [OstreeRepoInfo]), default = None),
         "_ostree_tool": attrs.exec_dep(default = "//tools:ostree_helper"),
     } | TOOLCHAIN_ATTRS,
 )
+
+# ── ostree_channel ────────────────────────────────────────────────────
+# A release/publish step (SPEC-006 P5): commit an ostree-shaped rootfs to a
+# per-channel ref `buckos/<arch>/<channel>` (stable/lts/mainline, mirroring the
+# installer's kernel channels), sign it, and emit a signed summary so the repo
+# is a discoverable, HTTP-servable channel. Thin macro over ostree_commit —
+# composes with ostree_rootfs the same way:
+#   ostree_channel(name = ..., tree = ostree_rootfs(<rootfs>), channel = "stable")
+def ostree_channel(name, tree, channel, arch = "x86_64", **kwargs):
+    ostree_commit(
+        name = name,
+        tree = tree,
+        branch = "buckos/{}/{}".format(arch, channel),
+        summary = True,
+        **kwargs
+    )
 
 # ── ostree_rootfs ─────────────────────────────────────────────────────
 # Composable transform: any rootfs tree -> an ostree-shaped tree (immutable

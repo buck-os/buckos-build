@@ -284,3 +284,57 @@ jobs:
         env:
           BUCK2: buck2
         run: ./tools/ostree_agent_boot_e2e.sh
+
+  ostree-channel-http:
+    name: ostree channel HTTP E2E (SPEC-006 P5)
+    # The buckos-update agent pulls + deploys a signed release from a channel
+    # served over plain static HTTP (python3 -m http.server), resolving the ref
+    # from the signed summary, and fails closed on an unsigned channel. Needs
+    # unprivileged user namespaces + python3 (no KVM); the harness self-skips
+    # without them. buck2 is on PATH -> BUCK2=buck2.
+    runs-on: [self-hosted, large]
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          clean: false
+      - name: Install patchelf
+        run: |
+          set -euo pipefail
+          PATCHELF="$HOME/.local/bin/patchelf"
+          if [ -x "$PATCHELF" ] && "$PATCHELF" --version >/dev/null 2>&1; then
+            echo "patchelf already installed: $($PATCHELF --version)"
+          else
+            mkdir -p "$HOME/.local/bin"
+            case "$(uname -m)" in
+              x86_64)  ARCH=x86_64 ;;
+              aarch64) ARCH=aarch64 ;;
+              *) echo "::error::Unsupported arch $(uname -m)"; exit 1 ;;
+            esac
+            curl -fsSL "https://github.com/NixOS/patchelf/releases/download/0.18.0/patchelf-0.18.0-${ARCH}.tar.gz" \
+              | tar -xzf - -C "$HOME/.local" ./bin/patchelf
+            chmod +x "$PATCHELF"
+            if ! "$PATCHELF" --version; then
+              echo "::error::patchelf at $PATCHELF failed to run after install"
+              exit 1
+            fi
+            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          fi
+          if [ ! -e /usr/local/bin/patchelf ] && [ -w /usr/local/bin ]; then
+            ln -sf "$PATCHELF" /usr/local/bin/patchelf 2>/dev/null || true
+          fi
+      - name: Install buck2
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors \
+            -o "$HOME/.local/bin/buck2.zst" \
+            https://github.com/facebook/buck2/releases/download/2026-02-01/buck2-x86_64-unknown-linux-gnu.zst
+          zstd -d -f -o "$HOME/.local/bin/buck2" "$HOME/.local/bin/buck2.zst"
+          rm -f "$HOME/.local/bin/buck2.zst"
+          chmod +x "$HOME/.local/bin/buck2"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Restart buck2 daemon
+        run: buck2 kill 2>/dev/null || true
+      - name: Channel HTTP E2E (signed pull+deploy over static HTTP, fail-closed)
+        env:
+          BUCK2: buck2
+        run: ./tools/ostree_channel_http_e2e.sh
