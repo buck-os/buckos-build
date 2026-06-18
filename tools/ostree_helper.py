@@ -79,6 +79,12 @@ def main():
         action="store_true",
         help="keep file xattrs (capabilities) — required for real OS commits",
     )
+    ap.add_argument(
+        "--summary",
+        action="store_true",
+        help="generate (and, with --key-file, ed25519-sign) the repo summary so "
+        "the repo is a discoverable, HTTP-servable channel (SPEC-006 P5)",
+    )
     args = ap.parse_args()
 
     ld = os.path.abspath(args.ld_linux)
@@ -102,8 +108,12 @@ def main():
             text=True,
         )
 
-    # 1. init the repo
+    # 1. init the repo. Disable ostree's runtime min-free-space guard: this repo
+    # is ephemeral build output, so the guard (meant to protect a running
+    # system's repo) only causes spurious build failures on a full dev/CI disk.
+    # It is repo config, not commit content, so the checksum stays reproducible.
     ostree_run(["init", "--mode=" + args.mode])
+    ostree_run(["config", "set", "core.min-free-space-percent", "0"])
 
     # 2. commit the tree — reproducibly.  ostree parses --timestamp with GNU
     # parse_datetime, which reads a bare "0" as "today at 00:00" (NOT the
@@ -141,6 +151,17 @@ def main():
                 checksum,
             ]
         )
+
+    # 4. optional channel summary: clients resolve refs over plain HTTP from the
+    # summary, so a published channel needs one. Sign it with the same release
+    # key (ed25519 summary signing takes the base64 secret inline via --sign;
+    # there is no --keys-file for `summary`).
+    if args.summary:
+        summary_cmd = ["summary", "--update"]
+        if args.key_file:
+            secret = _read_lines(args.key_file)[0]
+            summary_cmd += ["--sign=" + secret, "--sign-type=ed25519"]
+        ostree_run(summary_cmd)
 
     with open(args.checksum_out, "w") as fh:
         fh.write(checksum + "\n")

@@ -709,6 +709,19 @@ buckos_test(
     labels = ["integration", "ostree"],
 )
 
+# ── ostree channel / release (SPEC-006 P5) ───────────────────────────
+# demo-channel commits a tree to a per-channel ref (buckos/x86_64/stable), signs
+# it, and emits a signed summary. This asserts the published channel has the ref,
+# a signed commit, and a signed summary — what a client needs to pull+verify a
+# release over plain static HTTP.
+buckos_test(
+    name = "test-ostree-channel",
+    test = "verify_ostree_channel.py",
+    deps = ["//tests/fixtures/ostree:demo-channel"],
+    env = {"OSTREE_REPO": "$(location //tests/fixtures/ostree:demo-channel)"},
+    labels = ["integration", "ostree"],
+)
+
 # ── ostree update cycle (SPEC-006 P6) ────────────────────────────────
 # Boots three deployed sysroots and asserts the booted version: deploy A
 # boots A; deploy A then B boots B (atomic update); deploy A,B then redeploy

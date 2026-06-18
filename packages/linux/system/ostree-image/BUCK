@@ -1,4 +1,4 @@
-load("//defs/rules:ostree.bzl", "ostree_commit", "ostree_rootfs")
+load("//defs/rules:ostree.bzl", "ostree_channel", "ostree_commit", "ostree_rootfs")
 load("//defs/rules:rootfs.bzl", "rootfs")
 load("//defs/rules:initramfs.bzl", "initramfs")
 
@@ -46,6 +46,23 @@ ostree_commit(
     tree = ":buckos-ostree-updatable-rootfs",
     branch = "buckos/x86_64/main",
     subject = "BuckOS base system (self-updating)",
+    preserve_xattrs = True,
+    visibility = ["PUBLIC"],
+)
+
+# Published release channel (SPEC-006 P5): the self-updating ostree base,
+# committed to a per-channel ref with a signed commit + a signed summary, so it
+# is a discoverable, HTTP-servable channel a deployed system can pull + verify.
+# `stable` is the default; `lts` and `mainline` are the same macro with a
+# different `channel=` once they carry distinct per-channel content (they mirror
+# the installer's kernel channels). The signing key is the committed TEST key;
+# a real release signs with $BUCKOS_OSTREE_SIGN_KEY (SPEC-007, P5e).
+ostree_channel(
+    name = "buckos-channel-stable",
+    tree = ":buckos-ostree-updatable-rootfs",
+    channel = "stable",
+    signing_key = "//defs/keys:ostree-test-key",
+    subject = "BuckOS stable channel",
     preserve_xattrs = True,
     visibility = ["PUBLIC"],
 )
