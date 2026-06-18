@@ -4,7 +4,7 @@ title: "Atomic Image-Based Updates (ostree)"
 status: "approved"
 version: "1.0.0"
 created: "2026-06-12"
-updated: "2026-06-17"
+updated: "2026-06-18"
 
 authors:
   - name: "BuckOS Team"
@@ -175,6 +175,21 @@ SPEC-001). Channels: `stable`, `lts`, `mainline` (mirror the installer's kernel
 channels). A release step commits the new rootfs to the channel ref + generates
 static deltas + updates the summary.
 
+Implemented as the `ostree_channel` rule (`defs/rules/ostree.bzl`, a thin macro
+over `ostree_commit`): it commits an ostree-shaped rootfs to
+`buckos/<arch>/<channel>`, ed25519-signs the commit, optionally generates a
+static delta from the previous release (`from_commit`), and emits an
+ed25519-signed summary so clients resolve refs + discover deltas over plain HTTP
+(over `file://` ostree scans refs directly; over HTTP the signed summary is what
+makes a pull work). `//packages/linux/system/ostree-image:buckos-channel-stable`
+publishes the self-updating base to `buckos/x86_64/stable`; `lts`/`mainline` are
+the same macro. Release signing uses the production key
+(`$BUCKOS_OSTREE_SIGN_KEY`, SPEC-007) swapped in for the committed TEST key, and
+the deployed rootfs bakes the matching public key. Gates: `test-ostree-channel`,
+`test-ostree-delta` (unit), and `tools/ostree_channel_http_e2e.sh` (the agent
+pulls+deploys a signed release over real static HTTP and fails closed on an
+unsigned one — the P5 success criterion).
+
 ### 5.8 Testing (P6)
 Extend the QEMU boot test (`tests/verify_kde_iso_boot.py` pattern) into a
 **full update-cycle integration test**:
@@ -190,17 +205,20 @@ Runs as a heavy/nightly job (like the reproducibility gate).
 | P1 | Package `libostree` + CLI; round-trip test | `ostree` builds + commits locally | ✅ done |
 | P2 | `ostree_commit` rule + ostree-shaped `buckos-ostree-rootfs`; reproducible signed commit | commit checksum byte-stable; repro_check covers it | ✅ done |
 | P3 | Initramfs `ostree-prepare-root` hook; bootloader deployment entries | a deployment boots in QEMU | ✅ done |
-| P4 | `buckos-update` agent + installer image-mode deploy | install→boot→`status` works end-to-end | 🔄 functionally complete in the `buckos` repo (pending merge) |
-| P5 | Channel repos over HTTP + release/delta step | `pull`+`deploy` from a hosted channel | ⬜ remaining |
+| P4 | `buckos-update` agent + installer image-mode deploy | install→boot→`status` works end-to-end | ✅ done (merged in `buckos` 0.0.4; packaged in buckos-build; booted agent E2E green) |
+| P5 | Channel repos over HTTP + release/delta step | `pull`+`deploy` from a hosted channel | ✅ done (`ostree_channel`: signed commit + delta + signed summary; HTTP pull+deploy E2E green) |
 | P6 | Full update-cycle CI test incl. rollback | A→B update + forced-rollback green | ✅ done |
 
 Each phase is independently landable and testable; P1–P3 are the high-risk core
-(packaging + boot integration), P4–P6 productionize it. As of v1.0.0, P1–P3 and
-P6 are landed; P4 is functionally complete in the sibling `buckos` repo (the
-`buckos-update` agent + installer image-mode) and P5 (channel hosting) remains.
-Update-path signing (the "signed commit" in P2) is specified and implemented in
-SPEC-007 (ed25519); wiring the production release key into the published images
-is tracked there.
+(packaging + boot integration), P4–P6 productionize it. All phases are now
+landed: the `buckos-update` agent + installer image-mode merged in the sibling
+`buckos` repo (tag 0.0.4) and are packaged here; the booted agent E2E
+(`tools/ostree_agent_boot_e2e.sh`) and the channel HTTP E2E
+(`tools/ostree_channel_http_e2e.sh`) are green. Update-path signing (the "signed
+commit"/summary) is implemented per SPEC-007 (ed25519); the published channel
+signs with the committed TEST key today, and the production release key
+(`$BUCKOS_OSTREE_SIGN_KEY`) is swapped in at release time (the remaining
+release-infrastructure step).
 
 ## 7. Considered Alternatives
 
