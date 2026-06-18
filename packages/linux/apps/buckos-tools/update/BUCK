@@ -1,0 +1,41 @@
+load("//defs/packages:binary.bzl", "binary_package")
+
+# buckos-update — atomic update agent for ostree-based BuckOS (SPEC-006 P4 /
+# SPEC-007). Wraps the `ostree` CLI: status/check/pull/deploy/rollback/cleanup,
+# failing closed on a remote that does not verify signatures. Pure Rust
+# (anyhow/clap/tracing), so no openssl wiring is needed (unlike the cli/installer).
+# Built from the shared buckos-tools workspace source.
+binary_package(
+    name = "buckos-update",
+    version = "0.0.3",
+    source = "//packages/linux/apps/buckos-tools:buckos-tools-src",
+    description = "BuckOS atomic update agent (ostree)",
+    homepage = "https://github.com/buck-os/buckos",
+    license = "Apache-2.0 OR MIT",
+    install_script = """
+set -e
+cd "$SRCS"
+
+# Pass dep library paths to the Rust linker via RUSTFLAGS so it finds the
+# buckos-built libs (same as the cli/installer packages).
+for _ldflag in $LDFLAGS; do
+    case "$_ldflag" in
+        -L*) export RUSTFLAGS="${RUSTFLAGS:-} -C link-arg=$_ldflag" ;;
+    esac
+done
+
+cargo build --release -p buckos-update
+
+mkdir -p "$OUT/usr/bin"
+install -m 0755 target/release/buckos-update "$OUT/usr/bin/buckos-update"
+""",
+    # Runtime: the agent is dynamically linked against libgcc_s (+ libc); declare
+    # gcc-libs so its closure ships libgcc_s into any rootfs (even a minimal
+    # ostree deployment) that includes the agent.
+    deps = [
+        "//packages/linux/lang/gcc:gcc-libs",
+    ],
+    host_deps = [
+        "//packages/linux/lang/rust:rust",
+    ],
+)

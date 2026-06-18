@@ -1,4 +1,5 @@
 load("//defs/packages:autotools.bzl", "autotools_package")
+load("//defs/packages:binary.bzl", "binary_package")
 
 # =============================================================================
 # GCC Native - from-source build for hermetic host tools
@@ -63,4 +64,32 @@ autotools_package(
         # Create standard symlinks
         "cd usr/bin && ln -sf gcc cc && ln -sf g++ c++",
     ],
+)
+
+# =============================================================================
+# GCC runtime libraries (libgcc_s, libstdc++)
+# =============================================================================
+# The shared runtime libs every C++/Rust binary built with the buckos toolchain
+# needs at runtime — split out of the full gcc-native compiler so a minimal
+# rootfs (e.g. an ostree deployment running buckos-update) can ship just the
+# runtime, not the ~hundreds-of-MB compiler. Uses gcc-native's install prefix as
+# its source and copies the versioned shared objects out.
+binary_package(
+    name = "gcc-libs",
+    version = "14.3.0",
+    source = ":gcc-native",
+    description = "GCC runtime libraries: libgcc_s and libstdc++",
+    homepage = "https://gcc.gnu.org/",
+    license = "GPL-3.0-with-GCC-exception",
+    install_script = """
+set -e
+mkdir -p "$OUT/usr/lib"
+# $SRCS is the gcc-native install prefix; copy the versioned runtime .so files
+# (not the bare .so dev symlinks/linker-scripts) from wherever gcc placed them.
+for pat in 'libgcc_s.so.[0-9]*' 'libstdc++.so.[0-9]*'; do
+    find "$SRCS" -name "$pat" -exec cp -a {} "$OUT/usr/lib/" \\; 2>/dev/null || true
+done
+test -e "$OUT/usr/lib/libgcc_s.so.1" || { echo "gcc-libs: libgcc_s.so.1 not found under \\$SRCS"; exit 1; }
+""",
+    visibility = ["PUBLIC"],
 )
