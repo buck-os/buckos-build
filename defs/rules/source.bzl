@@ -16,6 +16,13 @@ on the consumer's platform or toolchain.
 
 load("//tc:transitions.bzl", "strip_toolchain_mode")
 
+# Some buck2 configurations enable content-based artifact paths, so a promise
+# artifact resolved from an anon target must be explicitly asserted as such;
+# others do not, where the assertion would conversely fail. Gate on a
+# buckconfig flag so the same source builds with either. See buck2 docs:
+# rule_authors/content_based_paths.md.
+_ASSERT_CONTENT_BASED_PATHS = read_root_config("buckos", "assert_content_based_paths", "") == "true"
+
 def _anon_extract_impl(ctx):
     archive = ctx.attrs.source[DefaultInfo].default_outputs[0]
     output = ctx.actions.declare_output("src", dir = True)
@@ -37,10 +44,10 @@ def _anon_extract_impl(ctx):
 _anon_extract = anon_rule(
     impl = _anon_extract_impl,
     attrs = {
+        "exclude_patterns": attrs.list(attrs.string(), default = []),
+        "format": attrs.option(attrs.string(), default = None),
         "source": attrs.dep(),
         "strip_components": attrs.int(default = 1),
-        "format": attrs.option(attrs.string(), default = None),
-        "exclude_patterns": attrs.list(attrs.string(), default = []),
         "_extract_tool": attrs.exec_dep(default = "//tools:extract"),
     },
     artifact_promise_mappings = {
@@ -52,24 +59,27 @@ def _extract_source_impl(ctx):
     src = ctx.actions.anon_target(
         _anon_extract,
         {
+            "exclude_patterns": ctx.attrs.exclude_patterns,
+            "format": ctx.attrs.format,
             "source": ctx.attrs.source,
             "strip_components": ctx.attrs.strip_components,
-            "format": ctx.attrs.format,
-            "exclude_patterns": ctx.attrs.exclude_patterns,
             "_extract_tool": ctx.attrs._extract_tool,
         },
     ).artifact("src")
+
+    if _ASSERT_CONTENT_BASED_PATHS:
+        src = ctx.actions.assert_has_content_based_path(src)
 
     return [DefaultInfo(default_output = src)]
 
 extract_source = rule(
     impl = _extract_source_impl,
     attrs = {
+        "exclude_patterns": attrs.list(attrs.string(), default = []),
+        "format": attrs.option(attrs.string(), default = None),
+        "labels": attrs.list(attrs.string(), default = []),
         "source": attrs.dep(),
         "strip_components": attrs.int(default = 1),
-        "format": attrs.option(attrs.string(), default = None),
-        "exclude_patterns": attrs.list(attrs.string(), default = []),
-        "labels": attrs.list(attrs.string(), default = []),
         "_extract_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:extract"),
         ),

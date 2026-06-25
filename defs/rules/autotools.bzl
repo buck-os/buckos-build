@@ -18,17 +18,26 @@ inputs haven't changed.
    (post_install_cmds run in the prefix dir after make install)
 """
 
-load("//defs:providers.bzl", "BuildToolchainInfo", "PackageInfo")
-load("//defs/rules:_common.bzl",
-     "COMMON_PACKAGE_ATTRS",
-     "add_flag_file", "build_package_tsets", "collect_dep_tsets",
-     "collect_host_path_children",
-     "package_linker_cflags", "package_linker_ldflags",
-     "write_bin_dirs", "write_compile_flags", "write_lib_dirs_with_hosts",
-     "write_link_flags", "write_pkg_config_paths",
-)
-load("//defs:toolchain_helpers.bzl", "toolchain_env_args", "toolchain_extra_cflags", "toolchain_extra_ldflags", "toolchain_ld_linux_args", "toolchain_path_args")
 load("//defs:host_tools.bzl", "host_tool_path_args")
+load("//defs:providers.bzl", "BuildToolchainInfo", "PackageInfo")
+load(
+    "//defs:toolchain_helpers.bzl", "toolchain_env_args", "toolchain_extra_cflags", "toolchain_extra_ldflags", "toolchain_ld_linux_args", "toolchain_path_args"
+)
+load(
+    "//defs/rules:_common.bzl",
+    "COMMON_PACKAGE_ATTRS",
+    "add_flag_file",
+    "build_package_tsets",
+    "collect_dep_tsets",
+    "collect_host_path_children",
+    "package_linker_cflags",
+    "package_linker_ldflags",
+    "write_bin_dirs",
+    "write_compile_flags",
+    "write_lib_dirs_with_hosts",
+    "write_link_flags",
+    "write_pkg_config_paths",
+)
 load("//defs/rules:trace.bzl", "TRACE_ATTRS", "trace_compile_args", "trace_subtargets")
 
 # ── Phase helpers ─────────────────────────────────────────────────────
@@ -50,9 +59,7 @@ def _src_prepare(ctx, source):
     ctx.actions.run(cmd, category = "autotools_prepare", identifier = ctx.attrs.name, allow_cache_upload = True)
     return output
 
-def _src_configure(ctx, source, cflags_file = None, ldflags_file = None,
-                   pkg_config_file = None, lib_dirs_file = None,
-                   bin_dirs_file = None):
+def _src_configure(ctx, source, cflags_file = None, ldflags_file = None, pkg_config_file = None, lib_dirs_file = None, bin_dirs_file = None):
     """Run ./configure with toolchain env and dep flags.
 
     When skip_configure is True, only copies the source tree without
@@ -63,10 +70,9 @@ def _src_configure(ctx, source, cflags_file = None, ldflags_file = None,
     instead of manual dep iteration — the Python helper reads one flag
     per line and merges them into CFLAGS, LDFLAGS, PKG_CONFIG_PATH, PATH.
     """
-    output = ctx.actions.declare_output("configured", dir = True)
     cmd = cmd_args(ctx.attrs._configure_tool[RunInfo])
     cmd.add("--source-dir", source)
-    cmd.add("--output-dir", output.as_output())
+    cmd.add("--output-dir", "@WORK@/configured")
 
     # Inject toolchain CC/CXX/AR
     tc = ctx.attrs._toolchain[BuildToolchainInfo]
@@ -181,21 +187,17 @@ def _src_configure(ctx, source, cflags_file = None, ldflags_file = None,
         # so seed host-tools always take priority.
         add_flag_file(cmd, "--path-append-file", bin_dirs_file)
 
-    ctx.actions.run(cmd, category = "autotools_configure", identifier = ctx.attrs.name, allow_cache_upload = True)
-    return output
+    return cmd
 
-def _src_compile(ctx, configured, cflags_file = None, ldflags_file = None,
-                 pkg_config_file = None, lib_dirs_file = None,
-                 bin_dirs_file = None):
+def _src_compile(ctx, configured, cflags_file = None, ldflags_file = None, pkg_config_file = None, lib_dirs_file = None, bin_dirs_file = None):
     """Run make (or equivalent) in the configured source tree.
 
     When pre_build_cmds is non-empty, each command runs in the build
     directory before the main make invocation (e.g. Kconfig setup).
     """
-    output = ctx.actions.declare_output("built", dir = True)
     cmd = cmd_args(ctx.attrs._build_tool[RunInfo])
-    cmd.add("--build-dir", configured)
-    cmd.add("--output-dir", output.as_output())
+    cmd.add("--build-dir", "@WORK@/configured")
+    cmd.add("--output-dir", "@WORK@/built")
     # Inject toolchain CC/CXX/AR
     for env_arg in toolchain_env_args(ctx):
         cmd.add("--env", env_arg)
@@ -256,22 +258,18 @@ def _src_compile(ctx, configured, cflags_file = None, ldflags_file = None,
     # exec trace is declared as an output (None when disabled).
     trace_out = trace_compile_args(ctx, cmd)
 
-    ctx.actions.run(cmd, category = "autotools_compile", identifier = ctx.attrs.name, allow_cache_upload = True)
-    return output, trace_out
+    return cmd, trace_out
 
-def _src_install(ctx, built, cflags_file = None, ldflags_file = None,
-                 pkg_config_file = None, lib_dirs_file = None,
-                 bin_dirs_file = None, test_marker = None):
+def _src_install(ctx, built, cflags_file = None, ldflags_file = None, pkg_config_file = None, lib_dirs_file = None, bin_dirs_file = None, test_marker = None):
     """Run make install DESTDIR=... into the output prefix.
 
     install_prefix_var overrides the make variable name for the install
     prefix (default: DESTDIR).  Busybox uses CONFIG_PREFIX instead.
     post_install_cmds run in the prefix directory after make install.
     """
-    output = ctx.actions.declare_output("installed", dir = True)
     cmd = cmd_args(ctx.attrs._install_tool[RunInfo])
-    cmd.add("--build-dir", built)
-    cmd.add("--prefix", output.as_output())
+    cmd.add("--build-dir", "@WORK@/built")
+    cmd.add("--prefix", "@OUT@")
 
     # Inject toolchain CC/CXX/AR
     for env_arg in toolchain_env_args(ctx):
@@ -342,14 +340,11 @@ def _src_install(ctx, built, cflags_file = None, ldflags_file = None,
     if test_marker:
         cmd.add(cmd_args(hidden = [test_marker]))
 
-    ctx.actions.run(cmd, category = "autotools_install", identifier = ctx.attrs.name, allow_cache_upload = True)
-    return output
+    return cmd
 
 # ── Phase: src_test (opt-in) ──────────────────────────────────────────
 
-def _src_test(ctx, built, cflags_file = None, ldflags_file = None,
-              pkg_config_file = None, lib_dirs_file = None,
-              bin_dirs_file = None):
+def _src_test(ctx, built, cflags_file = None, ldflags_file = None, pkg_config_file = None, lib_dirs_file = None, bin_dirs_file = None):
     """Run the package's own test suite on the built tree (opt-in: tests = True).
 
     Reuses build_helper (the compile helper) with the test target so the
@@ -359,10 +354,9 @@ def _src_test(ctx, built, cflags_file = None, ldflags_file = None,
     src_test (`emake check`).  Native-only: target test binaries can't run
     under a cross build, so don't opt aarch64-only packages in.
     """
-    output = ctx.actions.declare_output("tested", dir = True)
     cmd = cmd_args(ctx.attrs._build_tool[RunInfo])
-    cmd.add("--build-dir", built)
-    cmd.add("--output-dir", output.as_output())
+    cmd.add("--build-dir", "@WORK@/built")
+    cmd.add("--output-dir", "@WORK@/tested")
 
     for env_arg in toolchain_env_args(ctx):
         cmd.add("--env", env_arg)
@@ -405,8 +399,47 @@ def _src_test(ctx, built, cflags_file = None, ldflags_file = None,
     for arg in ctx.attrs.test_args:
         cmd.add(cmd_args("--make-arg=", arg, delimiter = ""))
 
-    ctx.actions.run(cmd, category = "autotools_test", identifier = ctx.attrs.name, allow_cache_upload = True)
-    return output
+    return cmd
+
+# ── Single-action phase runner ────────────────────────────────────────
+#
+# Run configure -> compile -> [test] -> install as ONE action with plain
+# scratch intermediates (buck2 with content-based artifact paths re-materializes split-action
+# outputs with normalized mtimes + alias/hash path duality, which breaks
+# autotools codegen/reconfig: "ln: ... File exists", baked configure-dir
+# paths, etc.).  Phase args are passed via argv (preserves spaces/newlines
+# in pre/post-cmds) separated by `::NEXT::`; the orchestrator substitutes
+# @WORK@ (scratch) and @OUT@ (installed) per arg.
+
+def _autotools_run_phases(ctx, phases, extra_hidden = []):
+    installed = ctx.actions.declare_output("installed", dir = True)
+    lines = [
+        "#!/usr/bin/env bash",
+        "set -euo pipefail",
+        'OUT="$1"; shift',
+        'WORK="${BUCK_SCRATCH_PATH:-${TMPDIR:-/tmp}}/autotools_build"',
+        'rm -rf "$WORK"; mkdir -p "$WORK"',
+        "phase=()",
+        "runphase() {",
+        "  [ ${#phase[@]} -eq 0 ] && return 0",
+        "  local a=() x",
+        '  for x in "${phase[@]}"; do x="${x//@WORK@/$WORK}"; x="${x//@OUT@/$OUT}"; a+=("$x"); done',
+        '  "${a[@]}"',
+        "}",
+        'for arg in "$@"; do',
+        '  if [ "$arg" = "::NEXT::" ]; then runphase; phase=(); else phase+=("$arg"); fi',
+        "done",
+        "runphase",
+    ]
+    orch = ctx.actions.write("autotools_build.sh", "\n".join(lines) + "\n", is_executable = True)
+    parts = [orch, installed.as_output()]
+    for i, ph in enumerate(phases):
+        if i > 0:
+            parts.append("::NEXT::")
+        parts.append(ph)
+    run_cmd = cmd_args(parts, hidden = extra_hidden)
+    ctx.actions.run(run_cmd, category = "autotools_build", identifier = ctx.attrs.name, allow_cache_upload = True)
+    return installed
 
 # ── Rule implementation ───────────────────────────────────────────────
 
@@ -428,26 +461,18 @@ def _autotools_build_impl(ctx):
     lib_dirs_file = write_lib_dirs_with_hosts(ctx, dep_path, host_path_children)
     bin_dirs_file = write_bin_dirs(ctx, dep_path)
 
-    # Phase 3: src_configure
-    configured = _src_configure(ctx, prepared, cflags_file, ldflags_file,
-                                pkg_config_file, lib_dirs_file, bin_dirs_file)
-
-    # Phase 4: src_compile
-    built, trace_out = _src_compile(ctx, configured, cflags_file, ldflags_file,
-                                    pkg_config_file, lib_dirs_file, bin_dirs_file)
-
-    # Phase 5a: src_test — opt-in (tests = True), default off = noop.
-    # Runs the package's own suite (default `make check`) on the built
-    # tree and gates install (Gentoo order: compile -> test -> install).
-    test_marker = None
+    # Phases configure -> compile -> [test] -> install run as ONE action
+    # (single-action) with plain scratch intermediates so paths/mtimes stay
+    # consistent across phases (buck2 with content-based artifact paths otherwise re-materializes
+    # split-action outputs and breaks autotools codegen/reconfiguration).
+    conf_cmd = _src_configure(ctx, prepared, cflags_file, ldflags_file, pkg_config_file, lib_dirs_file, bin_dirs_file)
+    build_cmd, trace_out = _src_compile(ctx, prepared, cflags_file, ldflags_file, pkg_config_file, lib_dirs_file, bin_dirs_file)
+    phases = [conf_cmd, build_cmd]
     if ctx.attrs.run_tests:
-        test_marker = _src_test(ctx, built, cflags_file, ldflags_file,
-                                pkg_config_file, lib_dirs_file, bin_dirs_file)
+        phases.append(_src_test(ctx, prepared, cflags_file, ldflags_file, pkg_config_file, lib_dirs_file, bin_dirs_file))
+    phases.append(_src_install(ctx, prepared, cflags_file, ldflags_file, pkg_config_file, lib_dirs_file, bin_dirs_file, test_marker = None))
 
-    # Phase 5b: src_install
-    installed = _src_install(ctx, built, cflags_file, ldflags_file,
-                             pkg_config_file, lib_dirs_file, bin_dirs_file,
-                             test_marker = test_marker)
+    installed = _autotools_run_phases(ctx, phases, extra_hidden = [prepared])
 
     # Build transitive sets
     compile_tset, link_tset, path_tset, runtime_tset = build_package_tsets(ctx, installed)
@@ -489,34 +514,36 @@ def _autotools_build_impl(ctx):
 
 autotools_build = rule(
     impl = _autotools_build_impl,
-    attrs = COMMON_PACKAGE_ATTRS | {
+    attrs = COMMON_PACKAGE_ATTRS
+    | {
+        "build_subdir": attrs.option(attrs.string(), default = None),
+        "cc_as_configure_arg": attrs.bool(default = False),
         # Autotools-specific
         "configure_prefix_deps": attrs.dict(attrs.string(), attrs.dep(), default = {}),
         "configure_script": attrs.option(attrs.string(), default = None),
-        "skip_configure": attrs.bool(default = False),
-        "cc_as_configure_arg": attrs.bool(default = False),
-        "skip_cc_auto_arg": attrs.bool(default = False),
-        "skip_host_arg": attrs.bool(default = False),
-        "build_subdir": attrs.option(attrs.string(), default = None),
-        "pre_build_cmds": attrs.list(attrs.string(), default = []),
-        "make_args": attrs.list(attrs.string(), default = []),
         "install_args": attrs.list(attrs.string(), default = []),
-        "install_targets": attrs.list(attrs.string(), default = []),
         "install_prefix_var": attrs.option(attrs.string(), default = None),
+        "install_targets": attrs.list(attrs.string(), default = []),
+        "make_args": attrs.list(attrs.string(), default = []),
+        "pre_build_cmds": attrs.list(attrs.string(), default = []),
         # src_test (opt-in): run_tests = True runs `make <test_target>`
         # after compile and gates install.  Default off = noop (no extra
         # action).  ("tests" is a Buck2 built-in attr, hence run_tests.)
         "run_tests": attrs.bool(default = False),
-        "test_target": attrs.string(default = "check"),
+        "skip_cc_auto_arg": attrs.bool(default = False),
+        "skip_configure": attrs.bool(default = False),
+        "skip_host_arg": attrs.bool(default = False),
         "test_args": attrs.list(attrs.string(), default = []),
-        "_configure_tool": attrs.default_only(
-            attrs.exec_dep(default = "//tools:configure_helper"),
-        ),
+        "test_target": attrs.string(default = "check"),
         "_build_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:build_helper"),
+        ),
+        "_configure_tool": attrs.default_only(
+            attrs.exec_dep(default = "//tools:configure_helper"),
         ),
         "_install_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:install_helper"),
         ),
-    } | TRACE_ATTRS,
+    }
+    | TRACE_ATTRS,
 )

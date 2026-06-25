@@ -12,35 +12,41 @@ inputs haven't changed.
    (post_install_cmds run in the prefix dir after install)
 """
 
-load("//defs:providers.bzl", "PackageInfo")
-load("//defs/rules:_common.bzl",
-     "COMMON_PACKAGE_ATTRS",
-     "add_flag_file", "build_package_tsets", "collect_dep_tsets",
-     "collect_host_path_children",
-     "package_linker_cflags", "package_linker_ldflags",
-     "src_prepare",
-     "write_bin_dirs", "write_cmake_prefix_paths", "write_compile_flags",
-     "write_lib_dirs_with_hosts", "write_link_flags", "write_pkg_config_paths",
-)
-load("//defs:toolchain_helpers.bzl", "toolchain_env_args", "toolchain_extra_cflags", "toolchain_extra_ldflags", "toolchain_ld_linux_args", "toolchain_path_args")
 load("//defs:host_tools.bzl", "host_tool_path_args")
+load("//defs:providers.bzl", "PackageInfo")
+load(
+    "//defs:toolchain_helpers.bzl", "toolchain_env_args", "toolchain_extra_cflags", "toolchain_extra_ldflags", "toolchain_ld_linux_args", "toolchain_path_args"
+)
+load(
+    "//defs/rules:_common.bzl",
+    "COMMON_PACKAGE_ATTRS",
+    "add_flag_file",
+    "build_package_tsets",
+    "collect_dep_tsets",
+    "collect_host_path_children",
+    "package_linker_cflags",
+    "package_linker_ldflags",
+    "src_prepare",
+    "write_bin_dirs",
+    "write_cmake_prefix_paths",
+    "write_compile_flags",
+    "write_lib_dirs_with_hosts",
+    "write_link_flags",
+    "write_pkg_config_paths",
+)
 
 # ── Phase helpers ─────────────────────────────────────────────────────
 
-def _cmake_configure(ctx, source, cflags_file = None, ldflags_file = None,
-                     pkg_config_file = None,
-                     prefix_path_file = None, lib_dirs_file = None,
-                     bin_dirs_file = None):
+def _cmake_configure(ctx, source, cflags_file = None, ldflags_file = None, pkg_config_file = None, prefix_path_file = None, lib_dirs_file = None, bin_dirs_file = None):
     """Run cmake configure with toolchain env and dep flags.
 
     Dep flags are propagated via tset projection files — the cmake_helper
     reads them and merges into CMAKE_*_FLAGS defines, CMAKE_PREFIX_PATH,
     PKG_CONFIG_PATH, LD_LIBRARY_PATH, and PATH.
     """
-    output = ctx.actions.declare_output("configured", dir = True)
     cmd = cmd_args(ctx.attrs._cmake_tool[RunInfo])
     cmd.add("--source-dir", source)
-    cmd.add("--build-dir", output.as_output())
+    cmd.add("--build-dir", "@WORK@/configured")
 
     # Inject toolchain CC/CXX/AR
     for env_arg in toolchain_env_args(ctx):
@@ -118,15 +124,13 @@ def _cmake_configure(ctx, source, cflags_file = None, ldflags_file = None,
     for arg in ctx.attrs.configure_args:
         cmd.add(cmd_args("--cmake-arg=", arg, delimiter = ""))
 
-    ctx.actions.run(cmd, category = "cmake_configure", identifier = ctx.attrs.name, allow_cache_upload = True)
-    return output
+    return cmd
 
 def _src_compile(ctx, configured, source, lib_dirs_file = None):
     """Run ninja in the cmake build tree."""
-    output = ctx.actions.declare_output("built", dir = True)
     cmd = cmd_args(ctx.attrs._build_tool[RunInfo])
-    cmd.add("--build-dir", configured)
-    cmd.add("--output-dir", output.as_output())
+    cmd.add("--build-dir", "@WORK@/configured")
+    cmd.add("--output-dir", "@WORK@/built")
     cmd.add("--build-system", "ninja")
 
     # Ensure source dir is available — cmake out-of-tree builds
@@ -164,15 +168,13 @@ def _src_compile(ctx, configured, source, lib_dirs_file = None):
     for arg in ctx.attrs.make_args:
         cmd.add("--make-arg", arg)
 
-    ctx.actions.run(cmd, category = "cmake_compile", identifier = ctx.attrs.name, allow_cache_upload = True)
-    return output
+    return cmd
 
 def _src_install(ctx, built, source, lib_dirs_file = None, test_marker = None):
     """Run ninja install into the output prefix."""
-    output = ctx.actions.declare_output("installed", dir = True)
     cmd = cmd_args(ctx.attrs._install_tool[RunInfo])
-    cmd.add("--build-dir", built)
-    cmd.add("--prefix", output.as_output())
+    cmd.add("--build-dir", "@WORK@/built")
+    cmd.add("--prefix", "@OUT@")
     cmd.add("--build-system", "ninja")
 
     # Ensure source dir is available for cmake install rules
@@ -214,8 +216,7 @@ def _src_install(ctx, built, source, lib_dirs_file = None, test_marker = None):
     for post_cmd in ctx.attrs.post_install_cmds:
         cmd.add("--post-cmd", post_cmd)
 
-    ctx.actions.run(cmd, category = "cmake_install", identifier = ctx.attrs.name, allow_cache_upload = True)
-    return output
+    return cmd
 
 # ── Phase: src_test (opt-in) ──────────────────────────────────────────
 
@@ -230,10 +231,9 @@ def _src_test(ctx, built, source, lib_dirs_file = None):
     Native-only: target test binaries can't run under a cross build, so
     don't opt aarch64-only packages in.
     """
-    output = ctx.actions.declare_output("tested", dir = True)
     cmd = cmd_args(ctx.attrs._build_tool[RunInfo])
-    cmd.add("--build-dir", built)
-    cmd.add("--output-dir", output.as_output())
+    cmd.add("--build-dir", "@WORK@/built")
+    cmd.add("--output-dir", "@WORK@/tested")
     cmd.add("--build-system", "ninja")
     cmd.add("--test-mode", "ctest")
 
@@ -265,8 +265,57 @@ def _src_test(ctx, built, source, lib_dirs_file = None):
     for arg in ctx.attrs.test_args:
         cmd.add("--test-arg", arg)
 
-    ctx.actions.run(cmd, category = "cmake_test", identifier = ctx.attrs.name, allow_cache_upload = True)
-    return output
+    return cmd
+
+# ── Single-action phase runner ────────────────────────────────────────
+#
+# buck2 with content-based artifact paths re-materializes declared outputs between split actions
+# (with normalized mtimes and alias/hash path duality), which breaks cmake
+# (cmake_install.cmake bakes the configure-dir path of built artifacts ->
+# "file INSTALL cannot find .../configured/lib*.a") and make-based
+# reconfiguration.  Run configure -> compile -> [test] -> install as ONE
+# action with plain scratch intermediates so paths/mtimes stay consistent,
+# exactly like the bootstrap rules.  Each phase cmd uses @WORK@ (scratch)
+# and @OUT@ (installed) placeholders the orchestrator substitutes; each is
+# written to an argfile (one arg per line) so values with spaces survive.
+
+def _cmake_run_phases(ctx, phases, extra_hidden = []):
+    installed = ctx.actions.declare_output("installed", dir = True)
+
+    # Pass every phase command's args via argv (buck2 preserves arg
+    # boundaries, including args that contain spaces/newlines such as
+    # multi-line post_install_cmds) separated by a `::NEXT::` marker.  The
+    # orchestrator splits on the marker, substitutes @WORK@ (scratch) and
+    # @OUT@ (installed) per arg, and runs each phase.  (Argfiles would
+    # corrupt multi-line args by splitting them across lines.)
+    lines = [
+        "#!/usr/bin/env bash",
+        "set -euo pipefail",
+        'OUT="$1"; shift',
+        'WORK="${BUCK_SCRATCH_PATH:-${TMPDIR:-/tmp}}/cmake_build"',
+        'rm -rf "$WORK"; mkdir -p "$WORK"',
+        "phase=()",
+        "runphase() {",
+        "  [ ${#phase[@]} -eq 0 ] && return 0",
+        "  local a=() x",
+        '  for x in "${phase[@]}"; do x="${x//@WORK@/$WORK}"; x="${x//@OUT@/$OUT}"; a+=("$x"); done',
+        '  "${a[@]}"',
+        "}",
+        'for arg in "$@"; do',
+        '  if [ "$arg" = "::NEXT::" ]; then runphase; phase=(); else phase+=("$arg"); fi',
+        "done",
+        "runphase",
+    ]
+    orch = ctx.actions.write("cmake_build.sh", "\n".join(lines) + "\n", is_executable = True)
+
+    parts = [orch, installed.as_output()]
+    for i, ph in enumerate(phases):
+        if i > 0:
+            parts.append("::NEXT::")
+        parts.append(ph)
+    run_cmd = cmd_args(parts, hidden = extra_hidden)
+    ctx.actions.run(run_cmd, category = "cmake_build", identifier = ctx.attrs.name, allow_cache_upload = True)
+    return installed
 
 # ── Rule implementation ───────────────────────────────────────────────
 
@@ -287,23 +336,18 @@ def _cmake_build_impl(ctx):
     lib_dirs_file = write_lib_dirs_with_hosts(ctx, dep_path, host_path_children)
     bin_dirs_file = write_bin_dirs(ctx, dep_path)
 
-    # Phase 3: cmake_configure
-    configured = _cmake_configure(ctx, prepared, cflags_file, ldflags_file,
-                                  pkg_config_file,
-                                  prefix_path_file, lib_dirs_file, bin_dirs_file)
-
-    # Phase 4: src_compile (source passed as hidden input for cmake out-of-tree builds)
-    built = _src_compile(ctx, configured, prepared, lib_dirs_file)
-
-    # Phase 5a: src_test — opt-in (run_tests = True), default off = noop.
-    # Runs ctest on the built tree and gates install (Gentoo order:
-    # compile -> test -> install).
-    test_marker = None
+    # Phases configure -> compile -> [test] -> install run as ONE action
+    # (single-action) with plain scratch intermediates, so paths/mtimes stay
+    # consistent across phases (buck2 with content-based artifact paths otherwise re-materializes
+    # split-action outputs and breaks cmake_install.cmake's baked paths).
+    conf_cmd = _cmake_configure(ctx, prepared, cflags_file, ldflags_file, pkg_config_file, prefix_path_file, lib_dirs_file, bin_dirs_file)
+    build_cmd = _src_compile(ctx, prepared, prepared, lib_dirs_file)
+    phases = [conf_cmd, build_cmd]
     if ctx.attrs.run_tests:
-        test_marker = _src_test(ctx, built, prepared, lib_dirs_file)
+        phases.append(_src_test(ctx, prepared, prepared, lib_dirs_file))
+    phases.append(_src_install(ctx, prepared, prepared, lib_dirs_file, test_marker = None))
 
-    # Phase 5b: src_install
-    installed = _src_install(ctx, built, prepared, lib_dirs_file, test_marker = test_marker)
+    installed = _cmake_run_phases(ctx, phases, extra_hidden = [prepared])
 
     # Build transitive sets
     compile_tset, link_tset, path_tset, runtime_tset = build_package_tsets(ctx, installed)
@@ -334,9 +378,8 @@ def _cmake_build_impl(ctx):
 
 cmake_build = rule(
     impl = _cmake_build_impl,
-    attrs = COMMON_PACKAGE_ATTRS | {
-        # CMake-specific
-        "source_subdir": attrs.string(default = ""),
+    attrs = COMMON_PACKAGE_ATTRS
+    | {
         "cmake_args": attrs.list(attrs.string(), default = []),
         "cmake_defines": attrs.list(attrs.string(), default = []),
         "cmake_dep_defines": attrs.dict(attrs.string(), attrs.dep(), default = {}),
@@ -346,13 +389,15 @@ cmake_build = rule(
         # is unused (ctest is the runner); kept for a uniform interface.
         # ("tests" is a Buck2 built-in attr, hence run_tests.)
         "run_tests": attrs.bool(default = False),
-        "test_target": attrs.string(default = ""),
+        # CMake-specific
+        "source_subdir": attrs.string(default = ""),
         "test_args": attrs.list(attrs.string(), default = []),
-        "_cmake_tool": attrs.default_only(
-            attrs.exec_dep(default = "//tools:cmake_helper"),
-        ),
+        "test_target": attrs.string(default = ""),
         "_build_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:build_helper"),
+        ),
+        "_cmake_tool": attrs.default_only(
+            attrs.exec_dep(default = "//tools:cmake_helper"),
         ),
         "_install_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:install_helper"),

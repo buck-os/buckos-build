@@ -541,6 +541,112 @@ def find_dep_python3(env):
     return None
 
 
+def suppress_makefile_reconfiguration(root):
+    """Append no-op overrides to Makefile targets whose recipes re-run
+    config.status / meson --reconfigure / cmake --check-build-system.
+
+    GNU make uses the last recipe defined for a target, so this makes those
+    reconfiguration rules harmless.  Needed because on remote execution the
+    build tree is materialized from CAS with normalized mtimes, so make sees
+    Makefiles as stale and tries to reconfigure during ``make install`` --
+    which fails because the configure scripts aren't part of the build
+    output.  Mirrors the neutralization build_helper applies during compile.
+    """
+    import glob as _glob
+
+    _CLEAN_TARGETS = frozenset(
+        ("distclean", "clean", "maintainer-clean", "mostlyclean", "realclean")
+    )
+    _RECONFIG_TRIGGERS = ("config.status", "check-build-system")
+    _RECONFIG_RECIPE_PATTERNS = (
+        "./config.status",
+        "$(SHELL) config.status",
+        "--reconfigure",
+        "--check-build-system",
+    )
+    for _mf in _glob.glob(os.path.join(root, "**/Makefile"), recursive=True):
+        try:
+            with open(_mf, "r") as f:
+                _mf_content = f.read()
+        except (UnicodeDecodeError, PermissionError, OSError):
+            continue
+        if not any(t in _mf_content for t in _RECONFIG_TRIGGERS):
+            continue
+        _mf_stat = os.stat(_mf)
+        _suppressed = {}  # target -> "::" or ":"
+        _current_target = None
+        _current_colon = ":"
+        for line in _mf_content.splitlines():
+            if line.startswith("\t"):
+                if (
+                    _current_target
+                    and _current_target not in _CLEAN_TARGETS
+                    and any(p in line for p in _RECONFIG_RECIPE_PATTERNS)
+                ):
+                    _suppressed[_current_target] = _current_colon
+            elif ":" in line and not line.startswith(("#", "\t", ".PHONY")):
+                colon_idx = line.index(":")
+                _current_colon = (
+                    "::" if line[colon_idx : colon_idx + 2] == "::" else ":"
+                )
+                target_part = line[:colon_idx].strip()
+                if target_part and not target_part.startswith(("$", "@", "-")):
+                    _current_target = target_part
+                    # Doc/codegen stamp targets (e.g. binutils bfd/doc
+                    # *.stamp) re-run during `make install` and their
+                    # `ln -s` fails because the generated file already
+                    # exists in the copied build tree.  These outputs are
+                    # not needed for installation, so no-op them.
+                    for _t in target_part.split():
+                        if _t.endswith(".stamp"):
+                            _suppressed[_t] = _current_colon
+                else:
+                    _current_target = None
+            else:
+                _current_target = None
+        # Unconditionally no-op the canonical autotools remake targets in any
+        # Makefile that references config.status.  The recipe for the
+        # `config.status` target itself execs configure (via `./config.status
+        # --recheck`), and detecting it by recipe text is brittle across the
+        # many sub-Makefiles; force-overriding the well-known target names is
+        # robust.  An empty recipe makes make treat them as up-to-date.
+        _suppressed.setdefault("Makefile", ":")
+        _suppressed.setdefault("config.status", ":")
+        if _suppressed:
+            _overrides = ["\n# Reconfiguration suppressed by install_helper"]
+            _overrides.append("makefile-targets += " + " ".join(sorted(_suppressed)))
+            for _t in sorted(_suppressed):
+                _overrides.append(f"{_t}{_suppressed[_t]} ;")
+            try:
+                with open(_mf, "a") as f:
+                    f.write("\n".join(_overrides) + "\n")
+                os.utime(_mf, (_mf_stat.st_atime, _mf_stat.st_mtime))
+            except OSError:
+                pass
+
+
+def make_tree_writable(root):
+    """Add owner-write to every directory and regular file under ``root``.
+
+    ``shutil.copytree`` preserves the source's permission bits.  On remote
+    execution the source is a read-only materialized input, so a scratch
+    copy of it would be read-only and the configure/compile/install phases
+    could not mutate it (PermissionError).  Call this right after copying a
+    source/build tree into scratch.  Locally this is a no-op in effect
+    (inputs are already writable).
+    """
+    os.chmod(root, os.stat(root).st_mode | 0o200)
+    for dirpath, dirnames, filenames in os.walk(root):
+        for name in dirnames + filenames:
+            p = os.path.join(dirpath, name)
+            if os.path.islink(p):
+                continue
+            try:
+                os.chmod(p, os.stat(p).st_mode | 0o200)
+            except OSError:
+                pass
+
+
 def write_pkg_config_wrapper(wrapper_dir, python=None):
     """Write a pkg-config wrapper that passes --define-prefix.
 

@@ -112,8 +112,102 @@ def portabilize_toolchain(
             lib_path = ":".join(pkg_libs) + ":" + base_lib_path
         wrapper_dir = _create_wrappers(bin_abs, ld_linux, lib_path, scratch_dir)
         result.append(wrapper_dir)
+        # gcc invokes its libexec subprograms (collect2, cc1, cc1plus, lto1,
+        # lto-wrapper) and the cross binutils (as, ld, ...) in <triple>/bin
+        # directly by absolute path, so the bin/ wrappers above don't cover
+        # them.  Both their baked PT_INTERP and their DT_RUNPATH point at the
+        # toolchain's `output_artifacts` alias path, which isn't materialized
+        # in consuming actions -> the loader can't be found ("cannot execute
+        # 'collect2'/'as': posix_spawn: No such file") or, worse, falls back
+        # to the host libc ("as: /lib64/libc.so.6: undefined symbol
+        # __rtld_libc_freeres").  Repoint them at the materialized tree.
+        _fix_subprogram_paths(bin_abs, ld_linux)
 
     return result
+
+
+def _fix_subprogram_paths(bin_dir, ld_linux):
+    """Repoint toolchain subprograms gcc execs by path at the materialized tree.
+
+    Covers gcc's libexec subprograms (cc1, cc1plus, collect2, lto1,
+    lto-wrapper) and the cross binutils in <triple>/bin (as, ld, ar, ...),
+    which gcc invokes by absolute path, bypassing the PATH wrappers from
+    _create_wrappers.  Their PT_INTERP and DT_RUNPATH embed the toolchain's
+    `output_artifacts` alias directory.  Buck materializes the toolchain
+    under a 16-hex-char content hash, and `output_artifacts` is also exactly
+    16 chars, so we can replace every occurrence of the alias path prefix
+    with the materialized prefix in place -- no ELF offsets change.
+    """
+    import glob as _glob_mod
+
+    ld_linux = os.path.abspath(ld_linux)
+    marker = "/patched-compiler/"
+    idx = ld_linux.find(marker)
+    if idx < 0:
+        return
+    materialized_prefix = ld_linux[:idx]  # .../__bootstrap-toolchain__/<hash>
+    dead_prefix = os.path.dirname(materialized_prefix) + "/output_artifacts"
+    old = dead_prefix.encode()
+    new = materialized_prefix.encode()
+    if len(old) != len(new):
+        return  # length changed -> in-place substitution would corrupt offsets
+
+    parent = os.path.dirname(os.path.abspath(bin_dir))
+    exec_dirs = [os.path.join(parent, "libexec"), os.path.join(parent, "bin")]
+    # Cross binutils live in <triple>/bin (e.g. x86_64-buckos-linux-gnu/bin/as).
+    exec_dirs += _glob_mod.glob(os.path.join(parent, "*", "bin"))
+    seen = set()
+    for d in exec_dirs:
+        if not os.path.isdir(d) or d in seen:
+            continue
+        seen.add(d)
+        for root, _dirs, files in os.walk(d):
+            for name in files:
+                p = os.path.join(root, name)
+                if os.path.islink(p) or not _is_elf(p):
+                    continue
+                _subst_bytes_inplace(p, old, new)
+
+
+def _subst_bytes_inplace(path, old, new):
+    """Length-preserving global byte substitution in a file, applied atomically.
+
+    Replaces every occurrence of `old` with `new` (which must be the same
+    length, so no file offsets shift -- safe for ELF interp/dynstr).  Only
+    rewrites if `old` is present (idempotent).  Writes a patched copy and
+    os.replace()s it over the original; we never open `path` itself for
+    writing, so a parallel build action exec'ing this shared toolchain
+    binary can't fail with ETXTBSY ("Text file busy").  rename(2) over a
+    running executable is safe on Linux.
+    """
+    if len(old) != len(new):
+        return
+    try:
+        with open(path, "rb") as f:
+            data = f.read()
+    except OSError:
+        return
+    if old not in data:
+        return  # already materialized (idempotent) or unrelated binary
+    data = data.replace(old, new)
+    dir_ = os.path.dirname(path) or "."
+    tmp = os.path.join(
+        dir_, "." + os.path.basename(path) + ".subst." + str(os.getpid())
+    )
+    try:
+        st = os.stat(path)
+        fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o700)
+        try:
+            os.write(fd, data)
+        finally:
+            os.close(fd)
+        os.chmod(tmp, st.st_mode)
+        os.replace(tmp, path)
+    except OSError:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
 
 
 # ── Sysroot discovery ────────────────────────────────────────────────

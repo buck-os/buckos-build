@@ -1,13 +1,19 @@
 load("//defs/packages:binary.bzl", "binary_package")
 
 # BuckOS CLI - Command-line interface for BuckOS management
+# Use the mirror-hosted offline cargo registry only when it's configured
+# (buckos.cargo_registry_sha256 set, e.g. network-isolated / remote-execution
+# builds); otherwise cargo fetches crates from the network as usual.
+_CARGO_REGISTRY = "//packages/linux/apps/buckos-tools:buckos-cargo-registry-src" if read_config("buckos", "cargo_registry_sha256", "") else None
+
 binary_package(
     name = "buckos-cli",
-    version = "0.0.4",
-    source = "//packages/linux/apps/buckos-tools:buckos-tools-src",
+    cargo_registry = _CARGO_REGISTRY,
     description = "BuckOS command-line interface for system management",
     homepage = "https://github.com/buck-os/buckos",
-    license = "Apache-2.0 OR MIT",
+    host_deps = [
+        "//packages/linux/lang/rust:rust",
+    ],
     install_script = """
 set -e
 cd "$SRCS"
@@ -28,7 +34,23 @@ for _ldflag in $LDFLAGS; do
     esac
 done
 
-cargo build --release -p buckos
+# When an offline cargo registry is provided (mirror-hosted, materialized as
+# a buck input via cargo_registry=), build against it offline — copy it into
+# a writable CARGO_HOME since cargo extracts .crate files into registry/src
+# and writes lock files there.  Otherwise cargo fetches from the network.
+CARGO_OFFLINE=
+if [ -n "${BUCKOS_CARGO_REGISTRY:-}" ]; then
+    REG="$BUCKOS_CARGO_REGISTRY"
+    case "$REG" in /*) ;; *) REG="$PROJECT_ROOT/$REG" ;; esac
+    export CARGO_HOME="$WORKDIR/cargo-home"
+    mkdir -p "$CARGO_HOME"
+    cp -a "$REG/registry" "$CARGO_HOME/registry"
+    chmod -R u+w "$CARGO_HOME"
+    export CARGO_NET_OFFLINE=true
+    CARGO_OFFLINE=--offline
+fi
+
+cargo build --release $CARGO_OFFLINE -p buckos
 
 mkdir -p "$OUT/usr/bin"
 install -m 0755 target/release/buckos-cli "$OUT/usr/bin/buckos-cli"
@@ -36,10 +58,10 @@ install -m 0755 target/release/buckos-cli "$OUT/usr/bin/buckos-cli"
 # Create symlink so users can run 'buckos' instead of 'buckos-cli'
 ln -sf buckos-cli "$OUT/usr/bin/buckos"
 """,
+    license = "Apache-2.0 OR MIT",
+    source = "//packages/linux/apps/buckos-tools:buckos-tools-src",
+    version = "0.0.4",
     deps = [
         "//packages/linux/system/libs/crypto/openssl:openssl",
-    ],
-    host_deps = [
-        "//packages/linux/lang/rust:rust",
     ],
 )

@@ -16,7 +16,22 @@ import stat
 import subprocess
 import sys
 
-from _env import _ensure_which_shim, clean_env, derive_lib_paths, file_prefix_map_flags, find_buckos_shell, find_dep_python3, portabilize_shebangs, preferred_linker_flag, register_cleanup, rewrite_shebangs, sanitize_filenames, setup_ccache_symlinks, write_pkg_config_wrapper, write_stub_script
+from _env import (
+    _ensure_which_shim,
+    clean_env,
+    derive_lib_paths,
+    file_prefix_map_flags,
+    find_buckos_shell,
+    find_dep_python3,
+    portabilize_shebangs,
+    preferred_linker_flag,
+    register_cleanup,
+    rewrite_shebangs,
+    sanitize_filenames,
+    setup_ccache_symlinks,
+    write_pkg_config_wrapper,
+    write_stub_script,
+)
 
 
 def _resolve_flag_paths(value, project_root):
@@ -25,7 +40,7 @@ def _resolve_flag_paths(value, project_root):
     for token in value.split():
         for prefix in ("-I", "-L", "-Wl,-rpath-link,", "-Wl,-rpath,", "-specs="):
             if token.startswith(prefix) and len(token) > len(prefix):
-                path = token[len(prefix):]
+                path = token[len(prefix) :]
                 if not os.path.isabs(path):
                     parts.append(prefix + os.path.join(project_root, path))
                 else:
@@ -34,13 +49,15 @@ def _resolve_flag_paths(value, project_root):
         else:
             if token.startswith("--") and "=" in token:
                 idx = token.index("=")
-                flag = token[:idx + 1]
-                path = token[idx + 1:]
+                flag = token[: idx + 1]
+                path = token[idx + 1 :]
                 if path.startswith("buck-out") and not os.path.isabs(path):
                     parts.append(flag + os.path.join(project_root, path))
                 else:
                     parts.append(token)
-            elif not token.startswith("-") and "/" in token and not os.path.isabs(token):
+            elif (
+                not token.startswith("-") and "/" in token and not os.path.isabs(token)
+            ):
                 parts.append(os.path.join(project_root, token))
             else:
                 parts.append(token)
@@ -61,8 +78,10 @@ def _resolve_colon_paths(value, project_root):
 
 def main():
     if len(sys.argv) < 5:
-        print("usage: binary_install_helper source_dir output_dir version install_script",
-              file=sys.stderr)
+        print(
+            "usage: binary_install_helper source_dir output_dir version install_script",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     _host_path = os.environ.get("PATH", "")
@@ -71,12 +90,25 @@ def main():
     # Read all Starlark env= vars BEFORE sanitizing.  These survive
     # os.environ.clear() only if captured here first.
     starlark_vars = {}
-    for key in ("CC", "CXX", "AR", "_HERMETIC_PATH", "_ALLOW_HOST_PATH",
-                "_HERMETIC_EMPTY", "_PATH_PREPEND",
-                "CFLAGS", "LDFLAGS",
-                "CPPFLAGS", "PKG_CONFIG_PATH", "_DEP_BIN_PATHS", "DEP_BASE_DIRS",
-                "_DEP_LD_LIBRARY_PATH", "_HOST_LIB_DIRS_FILE", "MAKE_JOBS",
-                "TARGET_TRIPLE"):
+    for key in (
+        "CC",
+        "CXX",
+        "AR",
+        "_HERMETIC_PATH",
+        "_ALLOW_HOST_PATH",
+        "_HERMETIC_EMPTY",
+        "_PATH_PREPEND",
+        "CFLAGS",
+        "LDFLAGS",
+        "CPPFLAGS",
+        "PKG_CONFIG_PATH",
+        "_DEP_BIN_PATHS",
+        "DEP_BASE_DIRS",
+        "_DEP_LD_LIBRARY_PATH",
+        "_HOST_LIB_DIRS_FILE",
+        "MAKE_JOBS",
+        "TARGET_TRIPLE",
+    ):
         val = os.environ.get(key)
         if val is not None:
             starlark_vars[key] = val
@@ -84,9 +116,20 @@ def main():
     user_env = {}
     for key, val in os.environ.items():
         if key not in starlark_vars and key not in (
-            "HOME", "USER", "LOGNAME", "TMPDIR", "TEMP", "TMP",
-            "TERM", "PATH", "BUCK_SCRATCH_PATH", "LC_ALL", "LANG",
-            "SOURCE_DATE_EPOCH", "CCACHE_DISABLE", "RUSTC_WRAPPER",
+            "HOME",
+            "USER",
+            "LOGNAME",
+            "TMPDIR",
+            "TEMP",
+            "TMP",
+            "TERM",
+            "PATH",
+            "BUCK_SCRATCH_PATH",
+            "LC_ALL",
+            "LANG",
+            "SOURCE_DATE_EPOCH",
+            "CCACHE_DISABLE",
+            "RUSTC_WRAPPER",
             "CARGO_BUILD_RUSTC_WRAPPER",
         ):
             user_env[key] = val
@@ -119,6 +162,7 @@ def main():
         env["BUCK_SCRATCH_PATH"] = workdir
     else:
         import tempfile
+
         workdir = tempfile.mkdtemp()
         env["WORKDIR"] = workdir
         register_cleanup(workdir)
@@ -135,8 +179,14 @@ def main():
         if key in starlark_vars:
             env[key] = _resolve_flag_paths(starlark_vars[key], project_root)
 
-    for key in ("PKG_CONFIG_PATH", "_DEP_BIN_PATHS", "DEP_BASE_DIRS",
-                "_DEP_LD_LIBRARY_PATH", "_HERMETIC_PATH", "_PATH_PREPEND"):
+    for key in (
+        "PKG_CONFIG_PATH",
+        "_DEP_BIN_PATHS",
+        "DEP_BASE_DIRS",
+        "_DEP_LD_LIBRARY_PATH",
+        "_HERMETIC_PATH",
+        "_PATH_PREPEND",
+    ):
         if key in starlark_vars:
             env[key] = _resolve_colon_paths(starlark_vars[key], project_root)
     # Pass through flags that don't need path resolution
@@ -154,7 +204,11 @@ def main():
         if _include_flags:
             for var in ("CPPFLAGS", "CXXFLAGS"):
                 existing = env.get(var, "")
-                env[var] = (_include_flags + " " + existing).strip() if existing else _include_flags
+                env[var] = (
+                    (_include_flags + " " + existing).strip()
+                    if existing
+                    else _include_flags
+                )
 
     # Scrub absolute build paths from debug info and __FILE__ expansions.
     pfm = " ".join(file_prefix_map_flags())
@@ -200,9 +254,11 @@ def main():
         if not _ld_linux or not path_str:
             return path_str
         from portabilize import portabilize_toolchain
+
         _pe = shutil.which("patchelf", path=env.get("PATH", "") or path_str)
-        return ":".join(portabilize_toolchain(
-            path_str.split(":"), _ld_linux, patchelf_path=_pe))
+        return ":".join(
+            portabilize_toolchain(path_str.split(":"), _ld_linux, patchelf_path=_pe)
+        )
 
     if hermetic_path:
         if _ld_linux:
@@ -215,11 +271,15 @@ def main():
             parent = os.path.dirname(bd)
             for ld in ("lib", "lib64"):
                 d = os.path.join(parent, ld)
-                if os.path.isdir(d) and not os.path.exists(os.path.join(d, "libc.so.6")):
+                if os.path.isdir(d) and not os.path.exists(
+                    os.path.join(d, "libc.so.6")
+                ):
                     ld_lib_parts.append(d)
         if ld_lib_parts:
             existing = env.get("LD_LIBRARY_PATH", "")
-            env["LD_LIBRARY_PATH"] = ":".join(ld_lib_parts) + (":" + existing if existing else "")
+            env["LD_LIBRARY_PATH"] = ":".join(ld_lib_parts) + (
+                ":" + existing if existing else ""
+            )
         # Auto-detect BISON_PKGDATADIR
         if "BISON_PKGDATADIR" not in env:
             for bd in hermetic_path.split(":"):
@@ -231,26 +291,35 @@ def main():
         py_paths = []
         for bd in hermetic_path.split(":"):
             parent = os.path.dirname(bd)
-            for pattern in ("lib/python*/site-packages", "lib/python*/dist-packages",
-                            "lib64/python*/site-packages", "lib64/python*/dist-packages"):
+            for pattern in (
+                "lib/python*/site-packages",
+                "lib/python*/dist-packages",
+                "lib64/python*/site-packages",
+                "lib64/python*/dist-packages",
+            ):
                 for sp in _glob.glob(os.path.join(parent, pattern)):
                     if os.path.isdir(sp):
                         py_paths.append(sp)
         if py_paths:
             existing = env.get("PYTHONPATH", "")
-            env["PYTHONPATH"] = ":".join(py_paths) + (":" + existing if existing else "")
+            env["PYTHONPATH"] = ":".join(py_paths) + (
+                ":" + existing if existing else ""
+            )
     elif hermetic_empty:
         env["PATH"] = ""
     elif allow_host_path:
         env["PATH"] = _host_path
     else:
-        print("error: build requires _HERMETIC_PATH, _HERMETIC_EMPTY, or _ALLOW_HOST_PATH env",
-              file=sys.stderr)
+        print(
+            "error: build requires _HERMETIC_PATH, _HERMETIC_EMPTY, or _ALLOW_HOST_PATH env",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     # Portabilize CC/CXX/AR
     if _ld_linux:
         from portabilize import portabilize_toolchain
+
         _cc_dirs = set()
         for _tv in ("CC", "CXX", "AR"):
             _tval = env.get(_tv, "")
@@ -261,7 +330,8 @@ def main():
         if _cc_dirs:
             _patchelf = shutil.which("patchelf", path=env.get("PATH", ""))
             _port_cc = portabilize_toolchain(
-                list(_cc_dirs), _ld_linux, patchelf_path=_patchelf)
+                list(_cc_dirs), _ld_linux, patchelf_path=_patchelf
+            )
             _port_map = dict(zip(_cc_dirs, _port_cc))
             for _tv in ("CC", "CXX", "AR"):
                 _tval = env.get(_tv, "")
@@ -271,8 +341,7 @@ def main():
                 _tbin = os.path.abspath(_tparts[0])
                 _tdir = os.path.dirname(_tbin)
                 if _tdir in _port_map:
-                    _tparts[0] = os.path.join(_port_map[_tdir],
-                                              os.path.basename(_tbin))
+                    _tparts[0] = os.path.join(_port_map[_tdir], os.path.basename(_tbin))
                     env[_tv] = " ".join(_tparts)
             # Update RUSTFLAGS/CARGO_HOST_LINKER with portabilized CC.
             # Append (rather than overwrite) RUSTFLAGS so any RUSTFLAGS
@@ -284,7 +353,9 @@ def main():
                     _cc_parts = _cc_parts[1:]
                 if _cc_parts:
                     _cc_bin = _cc_parts[0]
-                    _link_args = " ".join(f"-C link-arg={flag}" for flag in _cc_parts[1:])
+                    _link_args = " ".join(
+                        f"-C link-arg={flag}" for flag in _cc_parts[1:]
+                    )
                     _new_rustflags = f"-C linker={_cc_bin} {_link_args}".strip()
                     _existing_rustflags = env.get("RUSTFLAGS", "").strip()
                     if _existing_rustflags:
@@ -303,11 +374,15 @@ def main():
             parent = os.path.dirname(bd)
             for ld in ("lib", "lib64"):
                 d = os.path.join(parent, ld)
-                if os.path.isdir(d) and not os.path.exists(os.path.join(d, "libc.so.6")):
+                if os.path.isdir(d) and not os.path.exists(
+                    os.path.join(d, "libc.so.6")
+                ):
                     _pp_lib_dirs.append(d)
         if _pp_lib_dirs:
             existing = env.get("LD_LIBRARY_PATH", "")
-            env["LD_LIBRARY_PATH"] = ":".join(_pp_lib_dirs) + (":" + existing if existing else "")
+            env["LD_LIBRARY_PATH"] = ":".join(_pp_lib_dirs) + (
+                ":" + existing if existing else ""
+            )
         # Auto-detect BISON_PKGDATADIR from prepend dirs
         if "BISON_PKGDATADIR" not in env:
             for bd in path_prepend.split(":"):
@@ -343,7 +418,9 @@ def main():
             if _host_dirs:
                 existing = env.get("LD_LIBRARY_PATH", "")
                 merged = ":".join(_host_dirs)
-                env["LD_LIBRARY_PATH"] = (merged + ":" + existing).rstrip(":") if existing else merged
+                env["LD_LIBRARY_PATH"] = (
+                    (merged + ":" + existing).rstrip(":") if existing else merged
+                )
 
     # Prepend dep bin paths to PATH and derive tool data dirs
     dep_bin = env.get("_DEP_BIN_PATHS")
@@ -427,7 +504,11 @@ def main():
         os.makedirs(workdir, exist_ok=True)
         writable_src = os.path.join(workdir, "src")
         src_real = os.path.realpath(source_dir)
-        writable_real = os.path.realpath(writable_src) if os.path.exists(writable_src) else writable_src
+        writable_real = (
+            os.path.realpath(writable_src)
+            if os.path.exists(writable_src)
+            else writable_src
+        )
         if src_real != writable_real:
             shutil.copytree(source_dir, writable_src, symlinks=True, dirs_exist_ok=True)
             # Resolve top-level directory symlinks to actual copies so
@@ -451,8 +532,15 @@ def main():
                         os.chmod(fp, os.stat(fp).st_mode | stat.S_IWUSR)
             # Restore execute bits on autotools scripts
             autotools_scripts = (
-                "configure", "config.guess", "config.sub", "install-sh",
-                "depcomp", "missing", "compile", "ltmain.sh", "mkinstalldirs",
+                "configure",
+                "config.guess",
+                "config.sub",
+                "install-sh",
+                "depcomp",
+                "missing",
+                "compile",
+                "ltmain.sh",
+                "mkinstalldirs",
                 "config.status",
             )
             for dirpath, _, filenames in os.walk(writable_src):
@@ -463,7 +551,10 @@ def main():
                             os.chmod(fp, os.stat(fp).st_mode | stat.S_IXUSR)
             # Touch autotools-generated files
             touch_names = (
-                "configure", "configure.sh", "aclocal.m4", "config.h.in",
+                "configure",
+                "configure.sh",
+                "aclocal.m4",
+                "config.h.in",
                 "Makefile.in",
             )
             for dirpath, _, filenames in os.walk(writable_src):
@@ -488,7 +579,9 @@ def main():
         env["SHELL"] = _buckos_bash
         existing_flags = env.get("MAKEFLAGS", "")
         if "SHELL=" not in existing_flags:
-            env["MAKEFLAGS"] = (existing_flags + " " if existing_flags else "") + f"SHELL={_buckos_bash}"
+            env["MAKEFLAGS"] = (
+                existing_flags + " " if existing_flags else ""
+            ) + f"SHELL={_buckos_bash}"
         if os.path.isdir(source_dir):
             rewrite_shebangs(writable_src, env)
 

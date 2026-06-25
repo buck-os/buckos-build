@@ -179,6 +179,13 @@ def _install(ctx, source):
     # Inject USE flag environment variables (USE_FLAG=1/0)
     inject_use_env(ctx, env)
 
+    # Offline cargo registry (cache+index) as a materialized buck input.
+    # The path is project-relative; install scripts resolve it via
+    # $PROJECT_ROOT.  cmd_args() makes buck materialize it for the action.
+    if ctx.attrs.cargo_registry:
+        _reg = ctx.attrs.cargo_registry[DefaultInfo].default_outputs[0]
+        env["BUCKOS_CARGO_REGISTRY"] = cmd_args(_reg)
+
     # Inject user-specified environment variables (last — overrides everything)
     for key, value in ctx.attrs.env.items():
         env[key] = value
@@ -236,6 +243,12 @@ binary_build = rule(
     attrs = COMMON_PACKAGE_ATTRS | {
         # Binary-specific
         "install_script": attrs.string(default = "cp -a \"$SRCS\"/. \"$OUT/\""),
+        # Optional offline cargo registry (cache + index) extracted from a
+        # mirror-hosted archive.  Materialized as a buck input so install
+        # scripts that run raw `cargo build` (buckos-cli/installer) resolve
+        # crates offline on any worker (RE / clean checkout) without a host
+        # ~/.cargo.  Exposed to the script as $BUCKOS_CARGO_REGISTRY.
+        "cargo_registry": attrs.option(attrs.dep(), default = None),
         "_binary_install_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:binary_install_helper"),
         ),
