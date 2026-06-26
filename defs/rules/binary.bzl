@@ -9,15 +9,24 @@ Four discrete cacheable actions:
 """
 
 load("//defs:providers.bzl", "BuildToolchainInfo", "PackageInfo")
-load("//defs/rules:_common.bzl",
-     "COMMON_PACKAGE_ATTRS", "build_package_tsets",
-     "collect_host_path_children", "inject_use_env",
-     "package_linker_cflags", "package_linker_ldflags",
-     "write_host_lib_dirs",
+load(
+    "//defs/rules:_common.bzl",
+    "COMMON_PACKAGE_ATTRS",
+    "build_package_tsets",
+    "collect_host_path_children",
+    "inject_use_env",
+    "package_linker_cflags",
+    "package_linker_ldflags",
+    "write_host_lib_dirs",
 )
-load("//defs:toolchain_helpers.bzl",
-     "toolchain_extra_cflags", "toolchain_extra_ldflags",
-     "toolchain_ld_linux_args", "toolchain_path_args")
+load(
+    "//defs:toolchain_helpers.bzl",
+    "toolchain_extra_cflags",
+    "toolchain_extra_ldflags",
+    "toolchain_ld_linux_args",
+    "toolchain_local_only",
+    "toolchain_path_args",
+)
 load("//defs:host_tools.bzl", "host_tool_env_paths")
 
 # ── Phase helpers ─────────────────────────────────────────────────────
@@ -54,7 +63,7 @@ def _src_prepare(ctx, source):
     if dep_base_dirs:
         env["DEP_BASE_DIRS"] = cmd_args(dep_base_dirs, delimiter = ":")
 
-    ctx.actions.run(cmd, env = env, category = "binary_prepare", identifier = ctx.attrs.name, allow_cache_upload = True)
+    ctx.actions.run(cmd, env = env, category = "binary_prepare", identifier = ctx.attrs.name, allow_cache_upload = True, local_only = toolchain_local_only(ctx))
     return output
 
 def _dep_env_args(ctx):
@@ -196,6 +205,7 @@ def _install(ctx, source):
         category = "binary_install",
         identifier = ctx.attrs.name,
         allow_cache_upload = True,
+        local_only = toolchain_local_only(ctx),
     )
     return output
 

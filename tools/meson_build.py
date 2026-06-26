@@ -309,7 +309,17 @@ def main():
 
     # ── PATH setup ───────────────────────────────────────────────
     if args.hermetic_path:
-        env["PATH"] = ":".join(os.path.abspath(p) for p in args.hermetic_path)
+        # Portabilize the hermetic host tools (ld-linux wrappers + toolchain
+        # relocation) so they run on remote-execution workers, where inputs
+        # are materialized read-only and the host's ld-linux/glibc differ.
+        # The configure/build/install helpers already do this; meson packages
+        # built on RE need it too.
+        _hp_dirs = [os.path.abspath(p) for p in args.hermetic_path]
+        if args.ld_linux:
+            from portabilize import portabilize_toolchain
+
+            _hp_dirs = portabilize_toolchain(_hp_dirs, args.ld_linux)
+        env["PATH"] = ":".join(_hp_dirs)
         _lib_dirs = []
         for _bp in args.hermetic_path:
             _parent = os.path.dirname(os.path.abspath(_bp))
