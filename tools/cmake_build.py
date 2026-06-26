@@ -252,6 +252,10 @@ def main():
     if os.path.exists(work_dir):
         shutil.rmtree(work_dir)
     shutil.copytree(source_dir, work_dir, symlinks=True)
+    # Make the scratch copy writable (copytree preserves the source's
+    # modes; the source is read-only under remote execution).
+    from _env import make_tree_writable
+    make_tree_writable(work_dir)
 
     # Reset timestamps to prevent build system regeneration
     epoch = os.environ.get("SOURCE_DATE_EPOCH", "315576000")

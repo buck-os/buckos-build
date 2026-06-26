@@ -1,0 +1,92 @@
+name: Release channel
+
+# Sign an ostree release channel with the PRODUCTION key and publish it over
+# static HTTP. This is the only place the release secret is used (SPEC-006 P5 /
+# SPEC-007, option "b"): buck builds the channel content with no secret; this
+# job signs + publishes it.
+#
+# SETUP REQUIRED before this can run (see docs/ostree-release.md):
+#   * a protected `release` Environment (required reviewers; restrict to tags),
+#   * the `BUCKOS_OSTREE_SIGN_KEY` secret on that Environment,
+#   * the `CHANNEL_PUBLISH_DEST` variable (the static-HTTP root for the channel),
+#   * a dedicated, trusted runner labelled `release` (NOT the general pool),
+#   * the production public key committed + baked into the channel rootfs
+#     (trusted_key swapped test -> prod).
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: "channel target to build + publish"
+        default: "//packages/linux/system/ostree-image:buckos-channel-stable"
+
+concurrency:
+  group: release-channel-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish-channel:
+    name: sign + publish ostree channel (SPEC-006 P5)
+    # Protected environment: the release secret is only decryptable here, after
+    # the environment's required reviewers approve this tag-pinned run.
+    environment: release
+    # ISOLATED, trusted runner — NOT the [self-hosted, large] pool the nightly /
+    # heavy jobs use, which would expose the release secret to any other job on
+    # that host. Provision a dedicated runner labelled `release`.
+    runs-on: [self-hosted, release]
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          clean: false
+      - name: Install patchelf
+        run: |
+          set -euo pipefail
+          PATCHELF="$HOME/.local/bin/patchelf"
+          if [ -x "$PATCHELF" ] && "$PATCHELF" --version >/dev/null 2>&1; then
+            echo "patchelf already installed: $($PATCHELF --version)"
+          else
+            mkdir -p "$HOME/.local/bin"
+            case "$(uname -m)" in
+              x86_64)  ARCH=x86_64 ;;
+              aarch64) ARCH=aarch64 ;;
+              *) echo "::error::Unsupported arch $(uname -m)"; exit 1 ;;
+            esac
+            curl -fsSL "https://github.com/NixOS/patchelf/releases/download/0.18.0/patchelf-0.18.0-${ARCH}.tar.gz" \
+              | tar -xzf - -C "$HOME/.local" ./bin/patchelf
+            chmod +x "$PATCHELF"
+            if ! "$PATCHELF" --version; then
+              echo "::error::patchelf at $PATCHELF failed to run after install"
+              exit 1
+            fi
+            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          fi
+          if [ ! -e /usr/local/bin/patchelf ] && [ -w /usr/local/bin ]; then
+            ln -sf "$PATCHELF" /usr/local/bin/patchelf 2>/dev/null || true
+          fi
+      - name: Install buck2
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors \
+            -o "$HOME/.local/bin/buck2.zst" \
+            https://github.com/facebook/buck2/releases/download/2026-02-01/buck2-x86_64-unknown-linux-gnu.zst
+          zstd -d -f -o "$HOME/.local/bin/buck2" "$HOME/.local/bin/buck2.zst"
+          rm -f "$HOME/.local/bin/buck2.zst"
+          chmod +x "$HOME/.local/bin/buck2"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Restart buck2 daemon
+        run: buck2 kill 2>/dev/null || true
+      - name: Build the channel (no secret involved)
+        run: |
+          CHANNEL='${{ github.event.inputs.channel || '//packages/linux/system/ostree-image:buckos-channel-stable' }}'
+          buck2 build "$CHANNEL" --target-platforms //platforms:linux-target-host
+      - name: Sign with the production key + publish over static HTTP
+        env:
+          BUCKOS_OSTREE_SIGN_KEY: ${{ secrets.BUCKOS_OSTREE_SIGN_KEY }}
+          CHANNEL_PUBLISH_DEST: ${{ vars.CHANNEL_PUBLISH_DEST }}
+          BUCK2: buck2
+        run: |
+          CHANNEL='${{ github.event.inputs.channel || '//packages/linux/system/ostree-image:buckos-channel-stable' }}'
+          CHANNEL_REPO=$(buck2 build "$CHANNEL" --show-output | awk 'NF>=2{print $NF}')
+          export CHANNEL_REPO
+          ./tools/ostree_publish_channel.sh

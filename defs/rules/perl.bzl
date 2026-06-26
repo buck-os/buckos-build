@@ -8,10 +8,10 @@ Three discrete cacheable actions:
 3. perl_build  — configure + build + install via perl_helper.py
 """
 
-load("//defs:providers.bzl", "PackageInfo")
-load("//defs/rules:_common.bzl", "COMMON_PACKAGE_ATTRS", "build_package_tsets", "src_prepare")
-load("//defs:toolchain_helpers.bzl", "toolchain_env_args", "toolchain_ld_linux_args", "toolchain_path_args")
 load("//defs:host_tools.bzl", "host_tool_path_args")
+load("//defs:providers.bzl", "PackageInfo")
+load("//defs:toolchain_helpers.bzl", "toolchain_env_args", "toolchain_ld_linux_args", "toolchain_local_only", "toolchain_path_args")
+load("//defs/rules:_common.bzl", "COMMON_PACKAGE_ATTRS", "build_package_tsets", "src_prepare")
 
 # ── Phase helpers ─────────────────────────────────────────────────────
 
@@ -71,7 +71,7 @@ def _perl_build(ctx, source):
         for arg in ctx.attrs.test_args:
             cmd.add("--test-arg", arg)
 
-    ctx.actions.run(cmd, category = "perl_build", identifier = ctx.attrs.name, allow_cache_upload = True)
+    ctx.actions.run(cmd, category = "perl_build", identifier = ctx.attrs.name, allow_cache_upload = True, local_only = toolchain_local_only(ctx))
     return output
 
 # ── Rule implementation ───────────────────────────────────────────────
@@ -115,7 +115,8 @@ def _perl_build_impl(ctx):
 
 perl_build = rule(
     impl = _perl_build_impl,
-    attrs = COMMON_PACKAGE_ATTRS | {
+    attrs = COMMON_PACKAGE_ATTRS
+    | {
         # Perl-specific
         "pre_build_cmds": attrs.list(attrs.string(), default = []),
         # src_test (opt-in): run_tests = True runs `make <test_target>` (or
@@ -123,13 +124,13 @@ perl_build = rule(
         # action — perl build+install is atomic), and gates install.  Default
         # off = noop.  ("tests" is a Buck2 built-in attr, hence run_tests.)
         "run_tests": attrs.bool(default = False),
-        "test_target": attrs.string(default = "test"),
         "test_args": attrs.list(attrs.string(), default = []),
-        "_perl_tool": attrs.default_only(
-            attrs.exec_dep(default = "//tools:perl_helper"),
-        ),
+        "test_target": attrs.string(default = "test"),
         "_perl_interp": attrs.default_only(
             attrs.dep(default = "//packages/linux/lang/perl:perl"),
+        ),
+        "_perl_tool": attrs.default_only(
+            attrs.exec_dep(default = "//tools:perl_helper"),
         ),
     },
 )

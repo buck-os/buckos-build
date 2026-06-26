@@ -17,6 +17,7 @@ Usage:
 import hashlib
 import os
 import struct
+import subprocess
 import sys
 
 
@@ -104,8 +105,21 @@ def portabilize_toolchain(
         if not os.path.isdir(bin_abs):
             result.append(bin_abs)
             continue
-        # Include package-local lib dirs so wrapped binaries find their
-        # own shared libs (e.g. bash→libreadline, perl→libperl).
+        # A gcc toolchain execs its subprograms (cc1, cc1plus, collect2, lto1,
+        # as, ld, ...) by absolute path, so the bin/ wrappers can't cover them;
+        # their interp/RUNPATH must be rewritten in place instead, which needs
+        # a writable tree.  Copy the toolchain into writable scratch and
+        # relocate the copy (see _copy_and_relocate_toolchain) so this works
+        # under remote execution, where action inputs are materialized
+        # read-only.
+        if _is_gcc_toolchain(bin_abs):
+            result.append(_copy_and_relocate_toolchain(bin_abs, ld_linux, scratch_dir))
+            continue
+        # Non-toolchain host tools: a PATH of ld-linux wrappers is enough and
+        # works read-only (the wrappers live in writable scratch, the wrapped
+        # binaries are only exec'd).  Include package-local lib dirs so wrapped
+        # binaries find their own shared libs (e.g. bash→libreadline,
+        # perl→libperl).
         pkg_libs = _package_lib_dirs(bin_abs)
         lib_path = base_lib_path
         if pkg_libs:
@@ -114,6 +128,164 @@ def portabilize_toolchain(
         result.append(wrapper_dir)
 
     return result
+
+
+def _is_gcc_toolchain(bin_dir):
+    """True if bin_dir is a gcc toolchain's bin/ (has a sibling libexec/gcc).
+
+    gcc keeps its exec'd subprograms under libexec/gcc/<triple>/<ver>/, so its
+    presence cleanly distinguishes the compiler toolchain (which needs the
+    copy-and-relocate path) from ordinary host-tool bin/ directories.
+    """
+    return os.path.isdir(os.path.join(os.path.dirname(bin_dir), "libexec", "gcc"))
+
+
+def _copy_and_relocate_toolchain(bin_dir, ld_linux, scratch_dir):
+    """Copy a gcc toolchain into writable scratch and relocate the copy there.
+
+    gcc execs its subprograms (cc1, as, ld, ...) by absolute path, and both
+    their PT_INTERP and DT_RUNPATH embed the toolchain's build-time
+    `output_artifacts` alias directory, which isn't materialized in consuming
+    actions.  _fix_subprogram_paths() repoints them at the materialized tree,
+    but to do so it must create a temp file in each binary's directory and
+    rename it over the original -- which needs a writable directory.  Remote
+    execution materializes action inputs read-only, so that rewrite silently
+    fails on the worker and gcc can't run cc1 ("C compiler cannot create
+    executables").
+
+    Copying the toolchain into writable scratch first makes the existing
+    in-place rewrite succeed everywhere.  Interps/RUNPATHs are still repointed
+    at the original materialized tree (read-only is fine -- the loader and the
+    shared libs are only read, never written), which keeps the byte
+    substitution length-preserving.
+
+    Idempotent (skips if the .done marker exists) and lock-guarded for
+    concurrent actions, like _create_wrappers().  Returns the copy's bin/ dir.
+    """
+    import fcntl
+    import shutil
+
+    src_root = os.path.dirname(bin_dir)  # .../patched-compiler/tools
+    path_hash = hashlib.sha1(src_root.encode()).hexdigest()[:12]
+    container_dir = os.path.join(scratch_dir, ".tc-copy-" + path_hash)
+    dst_root = os.path.join(container_dir, os.path.basename(src_root))
+    dst_bin = os.path.join(dst_root, "bin")
+    done_marker = container_dir + ".done"
+
+    if os.path.exists(done_marker):
+        return dst_bin
+
+    os.makedirs(scratch_dir, exist_ok=True)
+    lock_path = container_dir + ".lock"
+    with open(lock_path, "w") as lock_fd:
+        fcntl.flock(lock_fd, fcntl.LOCK_EX)
+        if os.path.exists(done_marker):
+            return dst_bin
+        if os.path.exists(container_dir):
+            shutil.rmtree(container_dir)
+        os.makedirs(container_dir)
+
+        # --reflink=auto makes this a near-free copy-on-write clone on
+        # filesystems that support it (btrfs/xfs), falling back to a full copy
+        # elsewhere.  -a preserves the symlinks and layout gcc resolves its
+        # sysroot/libexec/fixed-includes through relative to the driver.
+        subprocess.run(["cp", "-a", "--reflink=auto", src_root, dst_root], check=True)
+        # cp -a preserves the read-only input permissions; make the copy
+        # writable so the in-place rewrite below can create its temp files and
+        # rename them into place.
+        subprocess.run(["chmod", "-R", "u+w", dst_root], check=True)
+
+        _fix_subprogram_paths(dst_bin, ld_linux)
+
+        print(f"portabilize: copied toolchain to {dst_root}", file=sys.stderr)
+        with open(done_marker, "w") as f:
+            f.write("ok\n")
+
+    return dst_bin
+
+
+def _fix_subprogram_paths(bin_dir, ld_linux):
+    """Repoint toolchain subprograms gcc execs by path at the materialized tree.
+
+    Covers gcc's libexec subprograms (cc1, cc1plus, collect2, lto1,
+    lto-wrapper) and the cross binutils in <triple>/bin (as, ld, ar, ...),
+    which gcc invokes by absolute path, bypassing the PATH wrappers from
+    _create_wrappers.  Their PT_INTERP and DT_RUNPATH embed the toolchain's
+    `output_artifacts` alias directory.  Buck materializes the toolchain
+    under a 16-hex-char content hash, and `output_artifacts` is also exactly
+    16 chars, so we can replace every occurrence of the alias path prefix
+    with the materialized prefix in place -- no ELF offsets change.
+    """
+    import glob as _glob_mod
+
+    ld_linux = os.path.abspath(ld_linux)
+    marker = "/patched-compiler/"
+    idx = ld_linux.find(marker)
+    if idx < 0:
+        return
+    materialized_prefix = ld_linux[:idx]  # .../__bootstrap-toolchain__/<hash>
+    dead_prefix = os.path.dirname(materialized_prefix) + "/output_artifacts"
+    old = dead_prefix.encode()
+    new = materialized_prefix.encode()
+    if len(old) != len(new):
+        return  # length changed -> in-place substitution would corrupt offsets
+
+    parent = os.path.dirname(os.path.abspath(bin_dir))
+    exec_dirs = [os.path.join(parent, "libexec"), os.path.join(parent, "bin")]
+    # Cross binutils live in <triple>/bin (e.g. x86_64-buckos-linux-gnu/bin/as).
+    exec_dirs += _glob_mod.glob(os.path.join(parent, "*", "bin"))
+    seen = set()
+    for d in exec_dirs:
+        if not os.path.isdir(d) or d in seen:
+            continue
+        seen.add(d)
+        for root, _dirs, files in os.walk(d):
+            for name in files:
+                p = os.path.join(root, name)
+                if os.path.islink(p) or not _is_elf(p):
+                    continue
+                _subst_bytes_inplace(p, old, new)
+
+
+def _subst_bytes_inplace(path, old, new):
+    """Length-preserving global byte substitution in a file, applied atomically.
+
+    Replaces every occurrence of `old` with `new` (which must be the same
+    length, so no file offsets shift -- safe for ELF interp/dynstr).  Only
+    rewrites if `old` is present (idempotent).  Writes a patched copy and
+    os.replace()s it over the original; we never open `path` itself for
+    writing, so a parallel build action exec'ing this shared toolchain
+    binary can't fail with ETXTBSY ("Text file busy").  rename(2) over a
+    running executable is safe on Linux.
+    """
+    if len(old) != len(new):
+        return
+    try:
+        with open(path, "rb") as f:
+            data = f.read()
+    except OSError:
+        return
+    if old not in data:
+        return  # already materialized (idempotent) or unrelated binary
+    data = data.replace(old, new)
+    dir_ = os.path.dirname(path) or "."
+    tmp = os.path.join(
+        dir_, "." + os.path.basename(path) + ".subst." + str(os.getpid())
+    )
+    try:
+        st = os.stat(path)
+        fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o700)
+        try:
+            os.write(fd, data)
+        finally:
+            os.close(fd)
+        os.chmod(tmp, st.st_mode)
+        os.replace(tmp, path)
+    except OSError:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
 
 
 # ── Sysroot discovery ────────────────────────────────────────────────

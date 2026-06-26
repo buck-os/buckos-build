@@ -1,14 +1,20 @@
+load("//defs:cargo_registry.bzl", "cargo_registry_targets")
 load("//defs/packages:binary.bzl", "binary_package")
 
 # Shared source for all buckos-tools packages.
 # cli/ and installer/ reference :buckos-tools-src via source =.
 binary_package(
     name = "buckos-tools",
-    version = "0.0.4",
-    url = "https://github.com/buck-os/buckos/archive/refs/tags/0.0.4.tar.gz",
-    sha256 = "dc73801db69aeb4b4387856b4b7210065c05cf34c94ebc19d384af16e83986b0",
     description = "BuckOS tools workspace source",
     homepage = "https://github.com/buck-os/buckos",
-    license = "Apache-2.0 OR MIT",
     install_script = "true",
+    license = "Apache-2.0 OR MIT",
+    sha256 = "dc73801db69aeb4b4387856b4b7210065c05cf34c94ebc19d384af16e83986b0",
+    url = "https://github.com/buck-os/buckos/archive/refs/tags/0.0.4.tar.gz",
+    version = "0.0.4",
 )
+
+# Optional offline cargo registry for the Rust tools (buckos-cli / installer).
+# Only created when buckos.cargo_registry_sha256 is set; otherwise the tools
+# build from the network.  See defs/cargo_registry.bzl.
+cargo_registry_targets(name = "buckos-cargo-registry", version = "0.0.4")

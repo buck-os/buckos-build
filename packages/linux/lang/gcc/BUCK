@@ -18,22 +18,6 @@ load("//defs/packages:binary.bzl", "binary_package")
 
 autotools_package(
     name = "gcc-native",
-    skip_host_arg = True,
-    version = "14.3.0",
-    url = "https://mirror.buckos.org/g/gcc-14.3.0.tar.gz",
-    sha256 = "ace8b8b0dbfe6abfc22f821cb093e195aa5498b7ccf7cd23e4424b9f14afed22",
-    description = "GNU Compiler Collection - C/C++ compilers for bootstrap",
-    homepage = "https://gcc.gnu.org/",
-    license = "GPL-3.0",
-    pre_configure_cmds = [
-        # Fix obstack.h conflict with glibc >= 2.41
-        "cp include/obstack.h libiberty/obstack.h",
-        # libcody's sub-configure doesn't inherit CXXFLAGS from the
-        # top-level build, so it fails C++11 feature detection.  Patch
-        # the generated configure script to skip the fatal error — the
-        # top-level GCC build already verified C++11 works.
-        "sed -i 's/as_fn_error.*C++11 is required.*/: # patched — C++11 verified by top-level configure/' libcody/configure",
-    ],
     configure_args = [
         "--disable-bootstrap",
         "--disable-multilib",
@@ -44,25 +28,47 @@ autotools_package(
         "--disable-libsanitizer",
         "--with-system-zlib",
     ],
+    configure_prefix_deps = {
+        "gmp": "//packages/linux/system/libs/utility/gmp:gmp",
+        "mpc": "//packages/linux/system/libs/utility/mpc:mpc",
+        "mpfr": "//packages/linux/system/libs/utility/mpfr:mpfr",
+        "zstd": "//packages/linux/system/libs/compression/zstd:zstd",
+    },
+    description = "GNU Compiler Collection - C/C++ compilers for bootstrap",
     env = {
         "CFLAGS": "-O2 -Wno-error=implicit-function-declaration",
     },
-    configure_prefix_deps = {
-        "gmp": "//packages/linux/system/libs/utility/gmp:gmp",
-        "mpfr": "//packages/linux/system/libs/utility/mpfr:mpfr",
-        "mpc": "//packages/linux/system/libs/utility/mpc:mpc",
-        "zstd": "//packages/linux/system/libs/compression/zstd:zstd",
-    },
-    deps = [
-        "//packages/linux/system/libs/utility/gmp:gmp",
-        "//packages/linux/system/libs/utility/mpfr:mpfr",
-        "//packages/linux/system/libs/utility/mpc:mpc",
-        "//packages/linux/core/zlib:zlib",
-        "//packages/linux/system/libs/compression/zstd:zstd",
-    ],
+    homepage = "https://gcc.gnu.org/",
+    # Serialize the install make (-j1, last -j wins over install_helper's
+    # -j{cpu}).  gcc's `make install` relinks xgcc / recompiles libstdc++
+    # objects; parallel jobs racing on the rewritten xgcc cause
+    # "xgcc: Permission denied" (EACCES write-while-exec).  Serial install
+    # eliminates the race.
+    install_args = ["-j1"],
+    license = "GPL-3.0",
     post_install_cmds = [
         # Create standard symlinks
         "cd usr/bin && ln -sf gcc cc && ln -sf g++ c++",
+    ],
+    pre_configure_cmds = [
+        # Fix obstack.h conflict with glibc >= 2.41
+        "cp include/obstack.h libiberty/obstack.h",
+        # libcody's sub-configure doesn't inherit CXXFLAGS from the
+        # top-level build, so it fails C++11 feature detection.  Patch
+        # the generated configure script to skip the fatal error — the
+        # top-level GCC build already verified C++11 works.
+        "sed -i 's/as_fn_error.*C++11 is required.*/: # patched — C++11 verified by top-level configure/' libcody/configure",
+    ],
+    sha256 = "ace8b8b0dbfe6abfc22f821cb093e195aa5498b7ccf7cd23e4424b9f14afed22",
+    skip_host_arg = True,
+    url = "https://mirror.buckos.org/g/gcc-14.3.0.tar.gz",
+    version = "14.3.0",
+    deps = [
+        "//packages/linux/core/zlib:zlib",
+        "//packages/linux/system/libs/compression/zstd:zstd",
+        "//packages/linux/system/libs/utility/gmp:gmp",
+        "//packages/linux/system/libs/utility/mpc:mpc",
+        "//packages/linux/system/libs/utility/mpfr:mpfr",
     ],
 )
 
@@ -76,11 +82,8 @@ autotools_package(
 # its source and copies the versioned shared objects out.
 binary_package(
     name = "gcc-libs",
-    version = "14.3.0",
-    source = ":gcc-native",
     description = "GCC runtime libraries: libgcc_s and libstdc++",
     homepage = "https://gcc.gnu.org/",
-    license = "GPL-3.0-with-GCC-exception",
     install_script = """
 set -e
 mkdir -p "$OUT/usr/lib"
@@ -91,5 +94,8 @@ for pat in 'libgcc_s.so.[0-9]*' 'libstdc++.so.[0-9]*'; do
 done
 test -e "$OUT/usr/lib/libgcc_s.so.1" || { echo "gcc-libs: libgcc_s.so.1 not found under \\$SRCS"; exit 1; }
 """,
+    license = "GPL-3.0-with-GCC-exception",
+    source = ":gcc-native",
+    version = "14.3.0",
     visibility = ["PUBLIC"],
 )

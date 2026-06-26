@@ -9,10 +9,10 @@ Four discrete cacheable actions:
 4. install     — binaries placed into prefix/usr/bin/ by go_helper.py
 """
 
-load("//defs:providers.bzl", "PackageInfo")
-load("//defs/rules:_common.bzl", "COMMON_PACKAGE_ATTRS", "build_package_tsets", "src_prepare")
-load("//defs:toolchain_helpers.bzl", "toolchain_env_args", "toolchain_ld_linux_args", "toolchain_path_args")
 load("//defs:host_tools.bzl", "host_tool_path_args")
+load("//defs:providers.bzl", "PackageInfo")
+load("//defs:toolchain_helpers.bzl", "toolchain_env_args", "toolchain_ld_linux_args", "toolchain_local_only", "toolchain_path_args")
+load("//defs/rules:_common.bzl", "COMMON_PACKAGE_ATTRS", "build_package_tsets", "src_prepare")
 
 # ── Phase helpers ─────────────────────────────────────────────────────
 
@@ -81,7 +81,7 @@ def _go_build(ctx, source):
         for arg in ctx.attrs.test_args:
             cmd.add("--test-arg", arg)
 
-    ctx.actions.run(cmd, category = "go_build", identifier = ctx.attrs.name, allow_cache_upload = True)
+    ctx.actions.run(cmd, category = "go_build", identifier = ctx.attrs.name, allow_cache_upload = True, local_only = toolchain_local_only(ctx))
     return output
 
 # ── Rule implementation ───────────────────────────────────────────────
@@ -125,27 +125,28 @@ def _go_build_impl(ctx):
 
 go_build = rule(
     impl = _go_build_impl,
-    attrs = COMMON_PACKAGE_ATTRS | {
+    attrs = COMMON_PACKAGE_ATTRS
+    | {
+        "bins": attrs.list(attrs.string(), default = []),
         # Go-specific
         "go_args": attrs.list(attrs.string(), default = []),
         "ldflags": attrs.string(default = ""),
-        "bins": attrs.list(attrs.string(), default = []),
-        "packages": attrs.list(attrs.string(), default = []),
-        "vendor_deps": attrs.option(attrs.dep(), default = None),
         "lib_only": attrs.bool(default = False),
+        "packages": attrs.list(attrs.string(), default = []),
         # src_test (opt-in): run_tests = True runs `go test ./...` after the
         # build (in the build action — go build+install is atomic) and gates
         # install.  Default off = noop.  test_target is unused (go test is
         # the runner); kept for a uniform interface across rules.
         # ("tests" is a Buck2 built-in attr, hence run_tests.)
         "run_tests": attrs.bool(default = False),
-        "test_target": attrs.string(default = ""),
         "test_args": attrs.list(attrs.string(), default = []),
-        "_go_tool": attrs.default_only(
-            attrs.exec_dep(default = "//tools:go_helper"),
-        ),
+        "test_target": attrs.string(default = ""),
+        "vendor_deps": attrs.option(attrs.dep(), default = None),
         "_go_sdk": attrs.default_only(
             attrs.exec_dep(default = "//tc/bootstrap/go:go-native"),
+        ),
+        "_go_tool": attrs.default_only(
+            attrs.exec_dep(default = "//tools:go_helper"),
         ),
     },
 )

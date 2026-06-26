@@ -190,6 +190,10 @@ def main():
     )
     _scratch_src = os.path.join(_scratch, "source")
     shutil.copytree(source_dir, _scratch_src, symlinks=True)
+    # Make the scratch copy writable (copytree preserves the source's
+    # modes; the source is read-only under remote execution).
+    from _env import make_tree_writable
+    make_tree_writable(_scratch_src)
     source_dir = _scratch_src
     cargo_toml = os.path.join(source_dir, "Cargo.toml")
 
@@ -257,7 +261,7 @@ def main():
     env.setdefault("CARGO_HTTP_TIMEOUT", "120")
     # Use the system git CLI for fetching git deps. cargo's bundled libgit2
     # uses libcurl which doesn't work behind some HTTP-CONNECT proxies
-    # (notably Meta's fwdproxy returns 403 for direct git clones), but
+    # (notably some return 403 for direct git clones), but
     # /usr/bin/git honors http_proxy/https_proxy and tunnels correctly.
     # Inherits the proxy env vars (http_proxy/https_proxy/no_proxy) from
     # the parent process — clean_env passes those through.

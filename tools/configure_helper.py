@@ -140,6 +140,24 @@ def _resolve_env_paths(value):
     return " ".join(parts)
 
 
+def _make_tree_writable(root):
+    """Add owner-write to every dir and regular file under ``root``.
+
+    Used after copying a (possibly read-only, e.g. RE-materialized) source
+    tree into scratch so the copy can be mutated during configure.
+    """
+    os.chmod(root, os.stat(root).st_mode | 0o200)
+    for dirpath, dirnames, filenames in os.walk(root):
+        for name in dirnames + filenames:
+            p = os.path.join(dirpath, name)
+            if os.path.islink(p):
+                continue
+            try:
+                os.chmod(p, os.stat(p).st_mode | 0o200)
+            except OSError:
+                pass
+
+
 def main():
     _host_path = os.environ.get("PATH", "")
 
@@ -327,6 +345,12 @@ def main():
     if os.path.exists(output_dir):
         shutil.rmtree(output_dir)
     shutil.copytree(source_dir, output_dir, symlinks=True)
+
+    # copytree preserves the source's permission bits.  On remote execution
+    # the source is a read-only materialized input, so the copied work tree
+    # would be read-only and configure (and helper files like the pkg-config
+    # wrapper) could not be written into it.  Make the scratch copy writable.
+    _make_tree_writable(output_dir)
 
     env = clean_env()
 

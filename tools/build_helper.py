@@ -371,6 +371,11 @@ def main():
     if os.path.exists(output_dir):
         shutil.rmtree(output_dir)
     shutil.copytree(build_dir, output_dir, symlinks=True)
+    # Make the scratch copy writable (copytree preserves the source's
+    # modes; the source is read-only under remote execution).
+    from _env import make_tree_writable
+
+    make_tree_writable(output_dir)
 
     # Fix symlinks that break after copytree:
     #
@@ -406,14 +411,20 @@ def main():
     # outputs (man pages, info files, Makefile.in, etc.).
     cmake_cache = os.path.join(output_dir, "CMakeCache.txt")
     ninja_file = os.path.join(output_dir, "build.ninja")
+    # Always rewrite cmake_install.cmake: it bakes the configure-dir
+    # (build_dir) path of built artifacts, which must follow the tree to
+    # output_dir.  This can exist even when CMakeCache.txt is not at the
+    # output_dir root (e.g. cmake configured in a subdir) -- if we skipped
+    # it the install phase would look for libs under the stale configure
+    # output ("file INSTALL cannot find .../configured/lib*.a").
+    for pattern in ["cmake_install.cmake", "**/cmake_install.cmake"]:
+        for fpath in _glob.glob(os.path.join(output_dir, pattern), recursive=True):
+            try:
+                _rewrite_file(fpath, build_dir, output_dir)
+            except (UnicodeDecodeError, PermissionError, FileNotFoundError):
+                pass
     if os.path.isfile(cmake_cache):
         _rewrite_file(cmake_cache, build_dir, output_dir)
-        for pattern in ["cmake_install.cmake", "**/cmake_install.cmake"]:
-            for fpath in _glob.glob(os.path.join(output_dir, pattern), recursive=True):
-                try:
-                    _rewrite_file(fpath, build_dir, output_dir)
-                except (UnicodeDecodeError, PermissionError, FileNotFoundError):
-                    pass
         # Rewrite build.ninja and suppress cmake regeneration.
         if os.path.isfile(ninja_file):
             stat = os.stat(ninja_file)

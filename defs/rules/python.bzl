@@ -8,10 +8,10 @@ Four discrete cacheable actions:
 3. python_install — run pip install via python_helper.py
 """
 
-load("//defs:providers.bzl", "BuildToolchainInfo", "PackageInfo")
-load("//defs/rules:_common.bzl", "COMMON_PACKAGE_ATTRS", "build_package_tsets", "src_prepare")
-load("//defs:toolchain_helpers.bzl", "toolchain_env_args", "toolchain_ld_linux_args", "toolchain_path_args")
 load("//defs:host_tools.bzl", "host_tool_path_args")
+load("//defs:providers.bzl", "BuildToolchainInfo", "PackageInfo")
+load("//defs:toolchain_helpers.bzl", "toolchain_env_args", "toolchain_ld_linux_args", "toolchain_local_only", "toolchain_path_args")
+load("//defs/rules:_common.bzl", "COMMON_PACKAGE_ATTRS", "build_package_tsets", "src_prepare")
 
 # ── Phase helpers ─────────────────────────────────────────────────────
 
@@ -73,7 +73,7 @@ def _python_install(ctx, source):
         for arg in ctx.attrs.test_args:
             cmd.add("--test-arg", arg)
 
-    ctx.actions.run(cmd, category = "python_install", identifier = ctx.attrs.name, allow_cache_upload = True)
+    ctx.actions.run(cmd, category = "python_install", identifier = ctx.attrs.name, allow_cache_upload = True, local_only = toolchain_local_only(ctx))
     return output
 
 # ── Rule implementation ───────────────────────────────────────────────
@@ -117,9 +117,8 @@ def _python_build_impl(ctx):
 
 python_build = rule(
     impl = _python_build_impl,
-    attrs = COMMON_PACKAGE_ATTRS | {
-        # Python-specific
-        "use_setup_py": attrs.bool(default = False),
+    attrs = COMMON_PACKAGE_ATTRS
+    | {
         "pip_args": attrs.list(attrs.string(), default = []),
         # src_test (opt-in): run_tests = True runs the test suite after
         # install (in the build action — python build+install is atomic).
@@ -128,8 +127,10 @@ python_build = rule(
         # test_target is unused; kept for a uniform interface across rules.
         # ("tests" is a Buck2 built-in attr, hence run_tests.)
         "run_tests": attrs.bool(default = False),
-        "test_target": attrs.string(default = ""),
         "test_args": attrs.list(attrs.string(), default = []),
+        "test_target": attrs.string(default = ""),
+        # Python-specific
+        "use_setup_py": attrs.bool(default = False),
         "_python_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:python_helper"),
         ),

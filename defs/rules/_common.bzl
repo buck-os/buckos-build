@@ -1,12 +1,17 @@
 """Shared helpers for package rules."""
 
 load("//defs:providers.bzl", "PackageInfo")
-load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_path_args")
-load("//defs:tsets.bzl",
-     "CompileInfoTSet", "CompileInfoValue",
-     "LinkInfoTSet", "LinkInfoValue",
-     "PathInfoTSet", "PathInfoValue",
-     "RuntimeDepTSet", "RuntimeDepValue",
+load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_local_only", "toolchain_path_args")
+load(
+    "//defs:tsets.bzl",
+    "CompileInfoTSet",
+    "CompileInfoValue",
+    "LinkInfoTSet",
+    "LinkInfoValue",
+    "PathInfoTSet",
+    "PathInfoValue",
+    "RuntimeDepTSet",
+    "RuntimeDepValue",
 )
 
 # ── Shared attrs ─────────────────────────────────────────────────────
@@ -16,22 +21,21 @@ load("//defs:tsets.bzl",
 # via COMMON_PACKAGE_ATTRS | { rule_specific } | TOOLCHAIN_ATTRS.
 
 COMMON_PACKAGE_ATTRS = {
-    # Source and identity
-    "source": attrs.dep(),
-    "version": attrs.string(),
-
     # Build configuration (common package() macro interface)
     "configure_args": attrs.list(attrs.string(), default = []),
-    "pre_configure_cmds": attrs.list(attrs.string(), default = []),
-    "post_install_cmds": attrs.list(attrs.string(), default = []),
-    "env": attrs.dict(attrs.string(), attrs.string(), default = {}),
-    "use_env": attrs.list(attrs.string(), default = []),
+    "cpe": attrs.option(attrs.string(), default = None),
     "deps": attrs.list(attrs.dep(), default = []),
-    "host_deps": attrs.list(attrs.exec_dep(), default = []),
-    "runtime_deps": attrs.list(attrs.dep(), default = []),
-    "patches": attrs.list(attrs.source(), default = []),
+    "description": attrs.string(default = ""),
+    "env": attrs.dict(attrs.string(), attrs.string(), default = {}),
     "extra_cflags": attrs.list(attrs.string(), default = []),
     "extra_ldflags": attrs.list(attrs.string(), default = []),
+    "homepage": attrs.option(attrs.string(), default = None),
+    "host_deps": attrs.list(attrs.exec_dep(), default = []),
+    # Labels (metadata-only, for BXL queries)
+    "labels": attrs.list(attrs.string(), default = []),
+    "libraries": attrs.list(attrs.string(), default = []),
+    # SBOM metadata
+    "license": attrs.string(default = "UNKNOWN"),
     # Linker options for this package.  Accepts a list of tokens:
     #   "bfd"    — force ld.bfd via -fuse-ld=bfd (bypasses mold auto-detection)
     #   "mold"   — force mold via -fuse-ld=mold
@@ -39,28 +43,24 @@ COMMON_PACKAGE_ATTRS = {
     # Example: linker = ["bfd", "no-pie"] for freestanding/relocatable builds
     # like GRUB modules or binutils.
     "linker": attrs.list(attrs.string(), default = []),
-    "libraries": attrs.list(attrs.string(), default = []),
-
-    # Labels (metadata-only, for BXL queries)
-    "labels": attrs.list(attrs.string(), default = []),
-
-    # SBOM metadata
-    "license": attrs.string(default = "UNKNOWN"),
-    "src_uri": attrs.string(default = ""),
+    "patches": attrs.list(attrs.source(), default = []),
+    "post_install_cmds": attrs.list(attrs.string(), default = []),
+    "pre_configure_cmds": attrs.list(attrs.string(), default = []),
+    "runtime_deps": attrs.list(attrs.dep(), default = []),
+    # Source and identity
+    "source": attrs.dep(),
     "src_sha256": attrs.string(default = ""),
-    "homepage": attrs.option(attrs.string(), default = None),
-    "description": attrs.string(default = ""),
-    "cpe": attrs.option(attrs.string(), default = None),
-
-    # Tool deps (shared by all rules)
-    "_patch_tool": attrs.default_only(
-        attrs.exec_dep(default = "//tools:patch_helper"),
-    ),
-
+    "src_uri": attrs.string(default = ""),
+    "use_env": attrs.list(attrs.string(), default = []),
+    "version": attrs.string(),
     # Base host tools: build prerequisites available to every package.
     # ccache is injected via _auto_tool_deps in package.bzl where the
     # blocklist check prevents self-cycles.
     "_base_host_tools": attrs.default_only(attrs.list(attrs.exec_dep(), default = [])),
+    # Tool deps (shared by all rules)
+    "_patch_tool": attrs.default_only(
+        attrs.exec_dep(default = "//tools:patch_helper"),
+    ),
 } | TOOLCHAIN_ATTRS
 
 # ── Linker / freestanding helpers ─────────────────────────────────────
@@ -337,7 +337,7 @@ def src_prepare(ctx, source, category):
     for arg in toolchain_path_args(ctx):
         cmd.add(arg)
 
-    ctx.actions.run(cmd, category = category, identifier = ctx.attrs.name, allow_cache_upload = True)
+    ctx.actions.run(cmd, category = category, identifier = ctx.attrs.name, allow_cache_upload = True, local_only = toolchain_local_only(ctx))
     return output
 
 def inject_use_env(ctx, env):

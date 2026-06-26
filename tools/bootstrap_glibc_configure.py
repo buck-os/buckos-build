@@ -69,6 +69,10 @@ def main():
     if os.path.exists(output_dir):
         shutil.rmtree(output_dir)
     shutil.copytree(source_dir, output_dir, symlinks=True)
+    # Make the scratch copy writable (copytree preserves the source's
+    # modes; the source is read-only under remote execution).
+    from _env import make_tree_writable
+    make_tree_writable(output_dir)
 
     # Create build directory and configparms
     build_dir = os.path.join(output_dir, "build")
