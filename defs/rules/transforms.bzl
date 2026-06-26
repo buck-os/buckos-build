@@ -10,7 +10,7 @@ it is a zero-cost passthrough when the controlling USE flag is off.
 """
 
 load("//defs:providers.bzl", "BuildToolchainInfo", "PackageInfo")
-load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_ld_linux_args", "toolchain_path_args")
+load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_local_only", "toolchain_ld_linux_args", "toolchain_path_args")
 
 # ── Helpers ───────────────────────────────────────────────────────────
 
@@ -67,7 +67,7 @@ def _strip_package_impl(ctx):
     for arg in toolchain_ld_linux_args(ctx):
         cmd.add(arg)
 
-    ctx.actions.run(cmd, category = "strip", identifier = pkg.name, allow_cache_upload = True)
+    ctx.actions.run(cmd, category = "strip", identifier = pkg.name, allow_cache_upload = True, local_only = toolchain_local_only(ctx))
     return [DefaultInfo(default_output = output), _rebase_pkg(pkg, output)]
 
 strip_package = rule(
@@ -102,7 +102,7 @@ def _stamp_package_impl(ctx):
     for arg in toolchain_ld_linux_args(ctx):
         cmd.add(arg)
 
-    ctx.actions.run(cmd, category = "stamp", identifier = pkg.name, allow_cache_upload = True)
+    ctx.actions.run(cmd, category = "stamp", identifier = pkg.name, allow_cache_upload = True, local_only = toolchain_local_only(ctx))
     return [DefaultInfo(default_output = output), _rebase_pkg(pkg, output)]
 
 stamp_package = rule(
@@ -144,7 +144,7 @@ def _ima_sign_package_impl(ctx):
         evmctl_prefix = ctx.attrs.evmctl_pkg[PackageInfo].prefix
         cmd.add("--path-prepend", evmctl_prefix.project("usr/bin"))
 
-    ctx.actions.run(cmd, category = "ima_sign", identifier = pkg.name, allow_cache_upload = True)
+    ctx.actions.run(cmd, category = "ima_sign", identifier = pkg.name, allow_cache_upload = True, local_only = toolchain_local_only(ctx))
     return [DefaultInfo(default_output = output), _rebase_pkg(pkg, output)]
 
 ima_sign_package = rule(
