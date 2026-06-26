@@ -15,7 +15,13 @@ inputs haven't changed.
 load("//defs:host_tools.bzl", "host_tool_path_args")
 load("//defs:providers.bzl", "PackageInfo")
 load(
-    "//defs:toolchain_helpers.bzl", "toolchain_env_args", "toolchain_extra_cflags", "toolchain_extra_ldflags", "toolchain_ld_linux_args", "toolchain_path_args"
+    "//defs:toolchain_helpers.bzl",
+    "toolchain_local_only",
+    "toolchain_env_args",
+    "toolchain_extra_cflags",
+    "toolchain_extra_ldflags",
+    "toolchain_ld_linux_args",
+    "toolchain_path_args",
 )
 load(
     "//defs/rules:_common.bzl",
@@ -269,7 +275,7 @@ def _src_test(ctx, built, source, lib_dirs_file = None):
 
 # ── Single-action phase runner ────────────────────────────────────────
 #
-# buck2 with content-based artifact paths re-materializes declared outputs between split actions
+# Internal buck2 re-materializes declared outputs between split actions
 # (with normalized mtimes and alias/hash path duality), which breaks cmake
 # (cmake_install.cmake bakes the configure-dir path of built artifacts ->
 # "file INSTALL cannot find .../configured/lib*.a") and make-based
@@ -314,7 +320,7 @@ def _cmake_run_phases(ctx, phases, extra_hidden = []):
             parts.append("::NEXT::")
         parts.append(ph)
     run_cmd = cmd_args(parts, hidden = extra_hidden)
-    ctx.actions.run(run_cmd, category = "cmake_build", identifier = ctx.attrs.name, allow_cache_upload = True)
+    ctx.actions.run(run_cmd, category = "cmake_build", identifier = ctx.attrs.name, allow_cache_upload = True, local_only = toolchain_local_only(ctx))
     return installed
 
 # ── Rule implementation ───────────────────────────────────────────────
@@ -338,7 +344,7 @@ def _cmake_build_impl(ctx):
 
     # Phases configure -> compile -> [test] -> install run as ONE action
     # (single-action) with plain scratch intermediates, so paths/mtimes stay
-    # consistent across phases (buck2 with content-based artifact paths otherwise re-materializes
+    # consistent across phases (internal buck2 otherwise re-materializes
     # split-action outputs and breaks cmake_install.cmake's baked paths).
     conf_cmd = _cmake_configure(ctx, prepared, cflags_file, ldflags_file, pkg_config_file, prefix_path_file, lib_dirs_file, bin_dirs_file)
     build_cmd = _src_compile(ctx, prepared, prepared, lib_dirs_file)

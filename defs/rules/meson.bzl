@@ -20,6 +20,7 @@ load(
     "toolchain_extra_cflags",
     "toolchain_extra_ldflags",
     "toolchain_ld_linux_args",
+    "toolchain_local_only",
     "toolchain_path_args",
     "toolchain_target_triple",
 )
@@ -263,7 +264,7 @@ def _src_test(ctx, built, source, lib_dirs_file = None):
 
 # ── Single-action phase runner ────────────────────────────────────────
 #
-# buck2 with content-based artifact paths re-materializes declared outputs between split actions
+# Internal buck2 re-materializes declared outputs between split actions
 # (with normalized mtimes and alias/hash path duality), which breaks meson:
 # meson bakes the configure-dir path of generated headers into build.ninja
 # (e.g. -DMAPI_ABI_HEADER=.../output_artifacts/configured/.../g_*.h ->
@@ -304,7 +305,7 @@ def _meson_run_phases(ctx, phases, extra_hidden = []):
             parts.append("::NEXT::")
         parts.append(ph)
     run_cmd = cmd_args(parts, hidden = extra_hidden)
-    ctx.actions.run(run_cmd, category = "meson_build", identifier = ctx.attrs.name, allow_cache_upload = True)
+    ctx.actions.run(run_cmd, category = "meson_build", identifier = ctx.attrs.name, allow_cache_upload = True, local_only = toolchain_local_only(ctx))
     return installed
 
 # ── Rule implementation ───────────────────────────────────────────────
@@ -327,7 +328,7 @@ def _meson_build_impl(ctx):
 
     # Phases configure -> compile -> [test] -> install run as ONE action
     # (single-action) with plain scratch intermediates, so paths/mtimes stay
-    # consistent across phases (buck2 with content-based artifact paths otherwise re-materializes
+    # consistent across phases (internal buck2 otherwise re-materializes
     # split-action outputs and breaks meson's baked generated-header paths).
     conf_cmd = _meson_setup(ctx, prepared, cflags_file, ldflags_file, pkg_config_file, lib_dirs_file, bin_dirs_file)
     build_cmd = _src_compile(ctx, prepared, prepared, lib_dirs_file)

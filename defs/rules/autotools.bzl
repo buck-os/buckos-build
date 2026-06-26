@@ -21,7 +21,13 @@ inputs haven't changed.
 load("//defs:host_tools.bzl", "host_tool_path_args")
 load("//defs:providers.bzl", "BuildToolchainInfo", "PackageInfo")
 load(
-    "//defs:toolchain_helpers.bzl", "toolchain_env_args", "toolchain_extra_cflags", "toolchain_extra_ldflags", "toolchain_ld_linux_args", "toolchain_path_args"
+    "//defs:toolchain_helpers.bzl",
+    "toolchain_local_only",
+    "toolchain_env_args",
+    "toolchain_extra_cflags",
+    "toolchain_extra_ldflags",
+    "toolchain_ld_linux_args",
+    "toolchain_path_args",
 )
 load(
     "//defs/rules:_common.bzl",
@@ -56,7 +62,7 @@ def _src_prepare(ctx, source):
     for arg in toolchain_path_args(ctx):
         cmd.add(arg)
 
-    ctx.actions.run(cmd, category = "autotools_prepare", identifier = ctx.attrs.name, allow_cache_upload = True)
+    ctx.actions.run(cmd, category = "autotools_prepare", identifier = ctx.attrs.name, allow_cache_upload = True, local_only = toolchain_local_only(ctx))
     return output
 
 def _src_configure(ctx, source, cflags_file = None, ldflags_file = None, pkg_config_file = None, lib_dirs_file = None, bin_dirs_file = None):
@@ -404,7 +410,7 @@ def _src_test(ctx, built, cflags_file = None, ldflags_file = None, pkg_config_fi
 # ── Single-action phase runner ────────────────────────────────────────
 #
 # Run configure -> compile -> [test] -> install as ONE action with plain
-# scratch intermediates (buck2 with content-based artifact paths re-materializes split-action
+# scratch intermediates (internal buck2 re-materializes split-action
 # outputs with normalized mtimes + alias/hash path duality, which breaks
 # autotools codegen/reconfig: "ln: ... File exists", baked configure-dir
 # paths, etc.).  Phase args are passed via argv (preserves spaces/newlines
@@ -438,7 +444,7 @@ def _autotools_run_phases(ctx, phases, extra_hidden = []):
             parts.append("::NEXT::")
         parts.append(ph)
     run_cmd = cmd_args(parts, hidden = extra_hidden)
-    ctx.actions.run(run_cmd, category = "autotools_build", identifier = ctx.attrs.name, allow_cache_upload = True)
+    ctx.actions.run(run_cmd, category = "autotools_build", identifier = ctx.attrs.name, allow_cache_upload = True, local_only = toolchain_local_only(ctx))
     return installed
 
 # ── Rule implementation ───────────────────────────────────────────────
@@ -463,7 +469,7 @@ def _autotools_build_impl(ctx):
 
     # Phases configure -> compile -> [test] -> install run as ONE action
     # (single-action) with plain scratch intermediates so paths/mtimes stay
-    # consistent across phases (buck2 with content-based artifact paths otherwise re-materializes
+    # consistent across phases (internal buck2 otherwise re-materializes
     # split-action outputs and breaks autotools codegen/reconfiguration).
     conf_cmd = _src_configure(ctx, prepared, cflags_file, ldflags_file, pkg_config_file, lib_dirs_file, bin_dirs_file)
     build_cmd, trace_out = _src_compile(ctx, prepared, cflags_file, ldflags_file, pkg_config_file, lib_dirs_file, bin_dirs_file)

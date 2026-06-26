@@ -13,15 +13,18 @@ scratch directory, producing different srcdirs/src-HASH entries and
 stale config.status references.
 """
 
-load("//defs:providers.bzl", "PackageInfo")
-load("//defs/rules:_common.bzl",
-     "COMMON_PACKAGE_ATTRS",
-     "add_flag_file", "build_package_tsets", "collect_dep_tsets",
-     "src_prepare",
-     "write_dep_prefixes",
-)
-load("//defs:toolchain_helpers.bzl", "toolchain_ld_linux_args", "toolchain_path_args")
 load("//defs:host_tools.bzl", "host_tool_path_args")
+load("//defs:providers.bzl", "PackageInfo")
+load("//defs:toolchain_helpers.bzl", "toolchain_ld_linux_args", "toolchain_local_only", "toolchain_path_args")
+load(
+    "//defs/rules:_common.bzl",
+    "COMMON_PACKAGE_ATTRS",
+    "add_flag_file",
+    "build_package_tsets",
+    "collect_dep_tsets",
+    "src_prepare",
+    "write_dep_prefixes",
+)
 
 # ── Phase helpers ─────────────────────────────────────────────────────
 
@@ -59,9 +62,8 @@ def _build_and_install(ctx, source, dep_prefixes_file = None):
     for arg in toolchain_ld_linux_args(ctx):
         cmd.add(arg)
 
-    ctx.actions.run(cmd, category = "mozbuild_build", identifier = ctx.attrs.name, allow_cache_upload = True)
+    ctx.actions.run(cmd, category = "mozbuild_build", identifier = ctx.attrs.name, allow_cache_upload = True, local_only = toolchain_local_only(ctx))
     return output
-
 
 # ── Rule implementation ───────────────────────────────────────────────
 
@@ -99,12 +101,12 @@ def _mozbuild_build_impl(ctx):
 
     return [DefaultInfo(default_output = installed), pkg_info]
 
-
 # ── Rule definition ───────────────────────────────────────────────────
 
 mozbuild_build = rule(
     impl = _mozbuild_build_impl,
-    attrs = COMMON_PACKAGE_ATTRS | {
+    attrs = COMMON_PACKAGE_ATTRS
+    | {
         # Mozbuild-specific
         "mozconfig_options": attrs.list(attrs.string(), default = []),
         "_mozbuild_tool": attrs.default_only(

@@ -23,8 +23,8 @@ def _buckos_toolchain_select():
     """
     return select({
         "//tc/exec:is-bootstrap-mode": "//tc/host:host-toolchain",
-        "//tc/exec:is-host-tools-mode": "//tc/bootstrap:bootstrap-toolchain",
         "//tc/exec:is-host-target": "//tc/seed:seed-exec-toolchain",
+        "//tc/exec:is-host-tools-mode": "//tc/bootstrap:bootstrap-toolchain",
         "DEFAULT": read_config("buckos", "default_toolchain", "toolchains//:buckos"),
     })
 
@@ -69,6 +69,18 @@ def toolchain_path_args(ctx):
         return [cmd_args("--allow-host-path")]
     # Hermetic empty: PATH built entirely from per-rule host tool deps
     return [cmd_args("--hermetic-empty")]
+
+def toolchain_local_only(ctx):
+    """True if this build must run locally rather than on remote execution.
+
+    A toolchain with allows_host_path = True builds against the host's PATH
+    (the bootstrap escape hatch used by the cycle-breaking base host-tools
+    layer, which can't yet be built with buckos's own make/sh/meson).  Remote
+    execution workers are sterile and don't have those host tools, so such
+    builds can only run locally.  Hermetic toolchains (allows_host_path =
+    False) return False and build on RE as usual.
+    """
+    return ctx.attrs._toolchain[BuildToolchainInfo].allows_host_path
 
 def _ld_linux_subpath(triple):
     """Return the sysroot-relative path to the dynamic linker for a given triple."""

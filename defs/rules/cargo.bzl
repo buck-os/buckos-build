@@ -9,15 +9,20 @@ Four discrete cacheable actions:
 4. install     — copy binaries from target/release/ to prefix/usr/bin/
 """
 
-load("//defs:providers.bzl", "PackageInfo")
-load("//defs/rules:_common.bzl",
-     "COMMON_PACKAGE_ATTRS",
-     "add_flag_file", "build_package_tsets", "collect_dep_tsets",
-     "collect_host_path_children", "src_prepare",
-     "write_lib_dirs_with_hosts", "write_pkg_config_paths",
-)
-load("//defs:toolchain_helpers.bzl", "toolchain_env_args", "toolchain_ld_linux_args", "toolchain_path_args")
 load("//defs:host_tools.bzl", "host_tool_path_args")
+load("//defs:providers.bzl", "PackageInfo")
+load("//defs:toolchain_helpers.bzl", "toolchain_env_args", "toolchain_ld_linux_args", "toolchain_local_only", "toolchain_path_args")
+load(
+    "//defs/rules:_common.bzl",
+    "COMMON_PACKAGE_ATTRS",
+    "add_flag_file",
+    "build_package_tsets",
+    "collect_dep_tsets",
+    "collect_host_path_children",
+    "src_prepare",
+    "write_lib_dirs_with_hosts",
+    "write_pkg_config_paths",
+)
 
 # ── Phase helpers ─────────────────────────────────────────────────────
 
@@ -76,7 +81,7 @@ def _cargo_build(ctx, source, pkg_config_file = None, lib_dirs_file = None):
         for arg in ctx.attrs.test_args:
             cmd.add("--test-arg", arg)
 
-    ctx.actions.run(cmd, category = "cargo_build", identifier = ctx.attrs.name, allow_cache_upload = True)
+    ctx.actions.run(cmd, category = "cargo_build", identifier = ctx.attrs.name, allow_cache_upload = True, local_only = toolchain_local_only(ctx))
     return output
 
 # ── Rule implementation ───────────────────────────────────────────────
@@ -125,20 +130,21 @@ def _cargo_build_impl(ctx):
 
 cargo_build = rule(
     impl = _cargo_build_impl,
-    attrs = COMMON_PACKAGE_ATTRS | {
+    attrs = COMMON_PACKAGE_ATTRS
+    | {
+        "bins": attrs.list(attrs.string(), default = []),
+        "cargo_args": attrs.list(attrs.string(), default = []),
         # Cargo-specific
         "features": attrs.list(attrs.string(), default = []),
-        "cargo_args": attrs.list(attrs.string(), default = []),
-        "bins": attrs.list(attrs.string(), default = []),
-        "vendor_deps": attrs.option(attrs.dep(), default = None),
         # src_test (opt-in): run_tests = True runs `cargo test` after the
         # build (in the build action — cargo build+install is atomic) and
         # gates install.  Default off = noop.  test_target is unused (cargo
         # test is the runner); kept for a uniform interface across rules.
         # ("tests" is a Buck2 built-in attr, hence run_tests.)
         "run_tests": attrs.bool(default = False),
-        "test_target": attrs.string(default = ""),
         "test_args": attrs.list(attrs.string(), default = []),
+        "test_target": attrs.string(default = ""),
+        "vendor_deps": attrs.option(attrs.dep(), default = None),
         "_cargo_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:cargo_helper"),
         ),
