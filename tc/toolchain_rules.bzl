@@ -69,17 +69,17 @@ buckos_toolchain = rule(
     impl = _buckos_toolchain_impl,
     is_toolchain_rule = True,
     attrs = {
+        "ar": attrs.string(default = "ar"),
         "cc": attrs.string(default = "cc"),
         "cxx": attrs.string(default = "c++"),
-        "ar": attrs.string(default = "ar"),
-        "strip_bin": attrs.string(default = "strip"),
-        "objcopy_bin": attrs.string(default = "objcopy"),
-        "objdump_bin": attrs.string(default = "objdump"),
-        "make": attrs.string(default = "make"),
-        "pkg_config": attrs.string(default = "pkg-config"),
-        "target_triple": attrs.string(default = "x86_64-linux-gnu"),
         "extra_cflags": attrs.list(attrs.string(), default = []),
         "extra_ldflags": attrs.list(attrs.string(), default = []),
+        "make": attrs.string(default = "make"),
+        "objcopy_bin": attrs.string(default = "objcopy"),
+        "objdump_bin": attrs.string(default = "objdump"),
+        "pkg_config": attrs.string(default = "pkg-config"),
+        "strip_bin": attrs.string(default = "strip"),
+        "target_triple": attrs.string(default = "x86_64-linux-gnu"),
     },
 )
 
@@ -128,18 +128,18 @@ buckos_cross_toolchain = rule(
     impl = _buckos_cross_toolchain_impl,
     is_toolchain_rule = True,
     attrs = {
+        "ar": attrs.string(default = "ar"),
         "cc": attrs.string(default = "cc"),
         "cxx": attrs.string(default = "c++"),
-        "ar": attrs.string(default = "ar"),
-        "strip_bin": attrs.string(default = "strip"),
-        "objcopy_bin": attrs.string(default = "objcopy"),
-        "objdump_bin": attrs.string(default = "objdump"),
-        "make": attrs.string(default = "make"),
-        "pkg_config": attrs.string(default = "pkg-config"),
-        "sysroot": attrs.dep(providers = [PackageInfo]),
-        "target_triple": attrs.string(default = "x86_64-buckos-linux-musl"),
         "extra_cflags": attrs.list(attrs.string(), default = []),
         "extra_ldflags": attrs.list(attrs.string(), default = []),
+        "make": attrs.string(default = "make"),
+        "objcopy_bin": attrs.string(default = "objcopy"),
+        "objdump_bin": attrs.string(default = "objdump"),
+        "pkg_config": attrs.string(default = "pkg-config"),
+        "strip_bin": attrs.string(default = "strip"),
+        "sysroot": attrs.dep(providers = [PackageInfo]),
+        "target_triple": attrs.string(default = "x86_64-buckos-linux-musl"),
     },
 )
 
@@ -201,8 +201,17 @@ def _buckos_bootstrap_toolchain_impl(ctx: AnalysisContext) -> list[Provider]:
     patched_sysroot = patched.project("tools/" + triple + "/sys-root")
     patched_ld = patched_sysroot.project(ld_subpath)
 
-    cc_args = cmd_args(patched.project("tools/bin/" + triple + "-gcc"))
-    cxx_args = cmd_args(patched.project("tools/bin/" + triple + "-g++"))
+    # Carry the whole patched-compiler tree as a hidden input on every
+    # toolchain binary.  gcc execs cc1/cc1plus/collect2 (in libexec/gcc) and
+    # the cross binutils (in <triple>/bin) by relative path, and portabilize
+    # relocates them via the copy path which needs libexec/gcc present.  On a
+    # remote-execution worker only an action's declared inputs are
+    # materialized, so projecting just tools/bin/<tool> leaves libexec/gcc
+    # absent -> portabilize falls back to a plain wrapper and cc1's baked
+    # interp stays dead ("C compiler cannot create executables").  Pinning the
+    # full tree as hidden forces it to materialize wherever the toolchain runs.
+    cc_args = cmd_args(patched.project("tools/bin/" + triple + "-gcc"), hidden = patched)
+    cxx_args = cmd_args(patched.project("tools/bin/" + triple + "-g++"), hidden = patched)
 
     # Expose Python from bootstrap stage if available
     python_run_info = None
@@ -246,10 +255,10 @@ def _buckos_bootstrap_toolchain_impl(ctx: AnalysisContext) -> list[Provider]:
     info = BuildToolchainInfo(
         cc = RunInfo(args = cc_args),
         cxx = RunInfo(args = cxx_args),
-        ar = RunInfo(args = cmd_args(patched.project("tools/bin/" + triple + "-ar"))),
-        strip = RunInfo(args = cmd_args(patched.project("tools/bin/" + triple + "-strip"))),
-        objcopy = RunInfo(args = cmd_args(patched.project("tools/bin/" + triple + "-objcopy"))),
-        objdump = RunInfo(args = cmd_args(patched.project("tools/bin/" + triple + "-objdump"))),
+        ar = RunInfo(args = cmd_args(patched.project("tools/bin/" + triple + "-ar"), hidden = patched)),
+        strip = RunInfo(args = cmd_args(patched.project("tools/bin/" + triple + "-strip"), hidden = patched)),
+        objcopy = RunInfo(args = cmd_args(patched.project("tools/bin/" + triple + "-objcopy"), hidden = patched)),
+        objdump = RunInfo(args = cmd_args(patched.project("tools/bin/" + triple + "-objdump"), hidden = patched)),
         make = RunInfo(args = make_cmd),
         pkg_config = RunInfo(args = pkg_config_cmd),
         target_triple = triple,
@@ -270,19 +279,19 @@ buckos_bootstrap_toolchain = rule(
     is_toolchain_rule = True,
     attrs = {
         "bootstrap_stage": attrs.dep(providers = [BootstrapStageInfo]),
-        "host_tools": attrs.option(attrs.dep(), default = None),
-        "strip_bin": attrs.string(default = "strip"),
-        "objcopy_bin": attrs.string(default = "objcopy"),
-        "objdump_bin": attrs.string(default = "objdump"),
-        "make": attrs.string(default = "make"),
-        "pkg_config": attrs.string(default = "pkg-config"),
         "extra_cflags": attrs.list(attrs.string(), default = []),
         "extra_ldflags": attrs.list(attrs.string(), default = []),
-        "_rewrite_tool": attrs.default_only(
-            attrs.exec_dep(default = "//tools:rewrite_interps"),
-        ),
+        "host_tools": attrs.option(attrs.dep(), default = None),
+        "make": attrs.string(default = "make"),
+        "objcopy_bin": attrs.string(default = "objcopy"),
+        "objdump_bin": attrs.string(default = "objdump"),
+        "pkg_config": attrs.string(default = "pkg-config"),
+        "strip_bin": attrs.string(default = "strip"),
         "_patchelf": attrs.default_only(
             attrs.dep(default = "//tc/bootstrap:patchelf-host"),
+        ),
+        "_rewrite_tool": attrs.default_only(
+            attrs.exec_dep(default = "//tools:rewrite_interps"),
         ),
     },
 )
@@ -335,11 +344,11 @@ buckos_prebuilt_toolchain = rule(
     impl = _buckos_prebuilt_toolchain_impl,
     is_toolchain_rule = True,
     attrs = {
-        "toolchain_dir": attrs.dep(),
-        "target_triple": attrs.string(default = "x86_64-buckos-linux-gnu"),
-        "make": attrs.string(default = "make"),
-        "pkg_config": attrs.string(default = "pkg-config"),
         "extra_cflags": attrs.list(attrs.string(), default = []),
         "extra_ldflags": attrs.list(attrs.string(), default = []),
+        "make": attrs.string(default = "make"),
+        "pkg_config": attrs.string(default = "pkg-config"),
+        "target_triple": attrs.string(default = "x86_64-buckos-linux-gnu"),
+        "toolchain_dir": attrs.dep(),
     },
 )
