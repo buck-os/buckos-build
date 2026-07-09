@@ -395,6 +395,17 @@ def _patchelf_relocate(dst_root, ld_linux, scratch_dir):
         os.path.join(ext_sysroot, "usr", "lib"),
         os.path.join(ext_sysroot, "lib"),
     ]
+    # Also include the external gcc-runtime dirs
+    # (patched-compiler/tools/<triple>/{lib64,lib}). These live one level ABOVE
+    # the sysroot and hold libstdc++.so.6 / libgcc_s.so.1 from the seed's
+    # gcc-pass2 (GCC 14). A host-tool bundle whose install ships only bin/
+    # (e.g. the cmake or ninja package's usr/) has no libstdc++ under its own
+    # dst_root; without these dirs in the rpath the loader falls through to the
+    # remote-execution worker's too-old /lib64/libstdc++.so.6 → "GLIBCXX_3.4.32
+    # not found". As with the sysroot entries above, do NOT isdir()-filter —
+    # deferred materialization would drop them and reintroduce the same failure.
+    for _rt in _derive_gcc_runtime(abs_ld):
+        _cand_dirs.append(_rt)
     # NOTE: do NOT os.path.isdir()-filter these.  On RE with deferred
     # materialization the sysroot dir may not be stat-able as a directory when
     # portabilize runs, which would silently drop the external sysroot (libc)
