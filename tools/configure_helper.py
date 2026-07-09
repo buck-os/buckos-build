@@ -833,12 +833,16 @@ def main():
     except OSError:
         pass
     _inject_cc = args.cc or (_cc_has_spaces and _is_autotools and not args.skip_cc_arg)
+    # env["CC"] was portabilized above (copy-relocated gcc that works under
+    # remote execution); prefer it over args.cc (the raw baked path whose
+    # PT_INTERP is dead on RE). Fallback to args.cc where portabilize wasn't
+    # applied.
     if _inject_cc and "CC" not in _arg_keys:
-        _cc_val = args.cc or env.get("CC", "")
+        _cc_val = env.get("CC", "") or args.cc
         if _cc_val:
             _cc_args.append(f"CC={_resolve_env_paths(_cc_val)}")
     if _inject_cc and "CXX" not in _arg_keys:
-        _cxx_val = args.cxx or env.get("CXX", "")
+        _cxx_val = env.get("CXX", "") or args.cxx
         if _cxx_val:
             _cc_args.append(f"CXX={_resolve_env_paths(_cxx_val)}")
 
