@@ -23,7 +23,6 @@ from _env import (
     file_prefix_map_flags,
     find_buckos_shell,
     find_dep_python3,
-    portabilize_shebangs,
     preferred_linker_flag,
     register_cleanup,
     rewrite_shebangs,
@@ -32,6 +31,7 @@ from _env import (
     write_pkg_config_wrapper,
     write_stub_script,
 )
+from portabilize_shebangs import portabilize_shebangs
 
 
 def _resolve_flag_paths(value, project_root):

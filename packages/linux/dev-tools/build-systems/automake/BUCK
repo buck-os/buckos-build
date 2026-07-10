@@ -15,9 +15,6 @@ autotools_package(
         "touch aclocal.m4 configure Makefile.in */Makefile.in */*/Makefile.in 2>/dev/null || true",
     ],
     pre_build_cmds = [
-        # Stub the doc/help2man script — it tries to run the versioned
-        # binaries (aclocal-1.16, automake-1.16) that we are building.
-        "printf '#!/bin/sh\\nfor arg; do case \"$arg\" in --output=*) f=\"${arg#--output=}\"; echo \".TH A 1\" > \"$f\"; exit 0;; esac; done\\nexit 0\\n' > doc/help2man && chmod +x doc/help2man",
         # Touch amhello tarball — its recipe runs aclocal-1.16 which we
         # are currently building.
         "touch doc/amhello-1.0.tar.gz",
@@ -25,6 +22,19 @@ autotools_package(
     make_args = [
         # Stub out makeinfo — the build host may not have texinfo installed.
         "MAKEINFO=true",
+        # Blank the man page lists so install-man1's recipe short-circuits.
+        # The versioned .1 pages (aclocal-1.16.1, automake-1.16.1) are
+        # generated at install time by ./doc/help2man, a perl wrapper
+        # whose #!/usr/bin/perl shebang is dead on remote-execution
+        # workers. automake is fully functional without man pages, and
+        # install-man1's own recipe exits 0 when man1_MANS is empty.
+        "man1_MANS=",
+        "dist_man1_MANS=",
+    ],
+    install_args = [
+        "MAKEINFO=true",
+        "man1_MANS=",
+        "dist_man1_MANS=",
     ],
     post_install_cmds = [
         # Create wrapper scripts so aclocal/automake find their m4 macros

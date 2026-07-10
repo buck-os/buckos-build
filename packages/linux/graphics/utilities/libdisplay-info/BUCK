@@ -9,4 +9,8 @@ meson_package(
     homepage = "https://gitlab.freedesktop.org/emersion/libdisplay-info",
     license = "MIT",
     configure_args = [],
+    # meson.build looks up /usr/share/hwdata/pnp.ids at configure time.
+    deps = [
+        "//packages/linux/system/hardware/hwdata:hwdata",
+    ],
 )

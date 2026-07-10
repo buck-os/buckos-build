@@ -698,6 +698,14 @@ def _create_wrappers(bin_dir, ld_linux, lib_path, scratch_dir):
         wrapped = 0
         linked = 0
         for entry in sorted(os.listdir(bin_dir)):
+            # Skip hidden files (dot-prefix). No legitimate host tool is
+            # invoked via a hidden name; wrapping them just creates dead
+            # wrappers that get exec'd by accident and blow up with weird
+            # errors (e.g. a stray usr/bin/.real from a buggy package
+            # post_install_cmds produces a wrapper whose exec argv exceeds
+            # the kernel ARG_MAX and fails with "Argument list too long").
+            if entry.startswith("."):
+                continue
             src = os.path.join(bin_dir, entry)
             dst = os.path.join(wrapper_dir, entry)
             # Set PERL5LIB only for perl binaries. Also set PERL to the

@@ -27,7 +27,6 @@ from _env import (
     filter_path_flags,
     find_buckos_shell,
     find_dep_python3,
-    portabilize_shebangs,
     preferred_linker_flag,
     register_cleanup,
     sanitize_filenames,
@@ -35,6 +34,7 @@ from _env import (
     sysroot_lib_paths,
     write_pkg_config_wrapper,
 )
+from portabilize_shebangs import portabilize_shebangs
 
 
 def _rewrite_file(fpath, old, new):
