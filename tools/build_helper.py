@@ -1177,6 +1177,37 @@ def main():
     if "CC" in env and "HOSTCC" not in env:
         env["HOSTCC"] = env["CC"]
 
+    # For meson builds, run `meson setup --reconfigure` at output_dir
+    # so meson regenerates build.ninja with paths correct for the
+    # scratch location.  build.ninja embeds source references as paths
+    # relative to the build dir; output_dir has a different depth than
+    # the meson-configured build_dir, so those `../../` chains would
+    # otherwise resolve wrong.  Meson stores the absolute source_dir in
+    # meson-private/coredata.dat and rewrites everything else on
+    # reconfigure.
+    _meson_coredata = os.path.join(output_dir, "meson-private", "coredata.dat")
+    if os.path.isfile(_meson_coredata):
+        _meson_bin = shutil.which("meson", path=env.get("PATH", ""))
+        if _meson_bin:
+            _rc_result = subprocess.run(
+                [_meson_bin, "setup", output_dir, "--reconfigure"],
+                env=env,
+                stdout=sys.stderr,
+                stderr=sys.stderr,
+            )
+            if _rc_result.returncode != 0:
+                print(
+                    f"error: meson --reconfigure failed with exit code {_rc_result.returncode}",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+        else:
+            print(
+                "warning: meson coredata.dat found but meson not on PATH; "
+                "build.ninja relative paths may not resolve from output_dir",
+                file=sys.stderr,
+            )
+
     # Run pre-build commands (e.g. Kconfig setup)
     for cmd_str in args.pre_cmds:
         result = subprocess.run(
