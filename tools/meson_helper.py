@@ -5,12 +5,12 @@ Runs meson setup with specified source dir, build dir, and arguments.
 """
 
 # Build-tag: bumped whenever a semantic change to this helper's runtime
-# behavior needs to be forced through the cache.  The remote action
-# cache is content-addressed by inputs; if the .py bytes are byte-
-# identical to a prior successful run, the cached .par output is
-# returned regardless of surrounding rebuild attempts.  Any change to
-# this string alters the .py bytes and forces the .par (and every
-# downstream meson_package action digest) to change.
+# behavior needs to be forced through the cache.  remote execution's action cache
+# is content-addressed by inputs; if the .py bytes are byte-identical to
+# a prior successful run, the cached .par output is returned regardless
+# of surrounding rebuild attempts.  Any change to this string alters the
+# .py bytes and forces the .par (and every downstream meson_package
+# action digest) to change.
 _HELPER_BUILD_TAG = "iterative-pickle-atomic-write-2026-07-13"
 
 import argparse
@@ -533,19 +533,20 @@ def main():
     with open(_native_file, "w") as _nf:
         _nf.write("\n".join(_native_lines) + "\n")
 
-    # Run pre-configure commands in the source directory.
-    # On remote execution the source is a read-only materialized input, and
-    # in-place chmod may not take effect on some filesystems.  When pre-cmds
-    # are present, copy the source to a writable scratch dir and run there.
-    # (Pattern mirrors patch_helper.py.)
+    # Run pre-configure commands in the source directory.  We used to
+    # copy source to a scratch "meson-pre-src" dir and run there because
+    # remote-execution inputs are read-only, but that broke the build:
+    # meson bakes source paths into build.ninja and generated files, so
+    # after scratch was cleaned up ninja failed with "missing and no
+    # known rule to make it" on any file it needed from the source dir.
+    #
+    # Instead, chmod +w the source in place so pre-cmds can write.  Our
+    # materialized action inputs are owned by us, so chmod works on RE
+    # too.  meson then sees the modified source at its original path,
+    # and the paths it embeds stay valid for the whole build lifetime.
     source_abs = os.path.abspath(args.source_dir)
     if args.pre_cmds:
-        _pre_work = os.path.join(_scratch_base, "meson-pre-src")
-        if os.path.exists(_pre_work):
-            _shutil.rmtree(_pre_work)
-        _shutil.copytree(source_abs, _pre_work, symlinks=True)
-        make_tree_writable(_pre_work)
-        source_abs = _pre_work
+        make_tree_writable(source_abs)
     for cmd_str in args.pre_cmds:
         result = subprocess.run(cmd_str, shell=True, cwd=source_abs, env=env)
         if result.returncode != 0:
