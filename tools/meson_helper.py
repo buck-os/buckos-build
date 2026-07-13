@@ -771,15 +771,28 @@ def main():
         for _mdat in _glob.glob(
             os.path.join(declared_output, "**/meson-private/*.dat"), recursive=True
         ):
+            # Write via temp + atomic rename.  A plain `open(_mdat, "wb")`
+            # truncates the target BEFORE pickle.dump runs, so if dump (or
+            # anything before the close) fails, the .dat is left empty/half-
+            # written and ninja can't load it -> build fails even though
+            # our own warning is caught.
+            _tmp = _mdat + ".tmp." + str(os.getpid())
             try:
                 _dat_stat = os.stat(_mdat)
                 with open(_mdat, "rb") as f:
                     _idata = _pickle.load(f)
                 _patch_pickle_paths(_idata, _scratch_path, declared_output)
-                with open(_mdat, "wb") as f:
+                with open(_tmp, "wb") as f:
                     _pickle.dump(_idata, f)
+                os.replace(_tmp, _mdat)
                 os.utime(_mdat, (_dat_stat.st_atime, _dat_stat.st_mtime))
             except Exception as _e:
+                # Best-effort cleanup of the temp file; leave the original
+                # .dat untouched so ninja can still read it.
+                try:
+                    os.unlink(_tmp)
+                except OSError:
+                    pass
                 print(
                     f"warning: could not rewrite {os.path.basename(_mdat)}: {_e}",
                     file=sys.stderr,
