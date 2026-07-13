@@ -467,6 +467,37 @@ def _pin_timestamps(work, epoch):
         pass
 
 
+def _efi_only_boot_args(work):
+    """Return xorriso args for a UEFI-bootable ISO with no BIOS entry.
+
+    Two problems to solve at once:
+
+    1. The El Torito boot entry needs platform=0xEF (UEFI).  Without
+       `-eltorito-platform efi` xorriso writes it as platform=0 (BIOS)
+       and UEFI firmwares (OVMF, real hardware) skip it -- the CD is
+       treated as non-bootable and you end up in the UEFI shell.
+
+    2. Modern UEFI firmwares generally look for an EFI System Partition
+       in the GPT rather than trusting El Torito on optical media.
+       `-append_partition 2 0xef efi.img` appends efi.img to the ISO
+       as a real GPT partition of type 0xEF (EFI System), so hybrid
+       USB/CD boot works everywhere.  `-e '--interval:...'` points the
+       El Torito entry at that same appended partition, so we never
+       have two copies of efi.img in the ISO.
+
+    This mirrors what grub-mkrescue produces for UEFI-only rescue ISOs.
+    """
+    _efi_img = os.path.join(work, "boot", "efi.img")
+    return [
+        "-c", "boot.catalog",
+        "-eltorito-platform", "efi",
+        "-eltorito-boot", "--interval:appended_partition_2:all::",
+        "-no-emul-boot",
+        "-append_partition", "2", "0xef", _efi_img,
+        "-isohybrid-gpt-basdat",
+    ]
+
+
 def _create_iso_xorriso(work, output, volume_label, boot_mode, search_dirs=None):
     """Create ISO using xorriso."""
     xorriso = _find_tool("xorriso")
@@ -488,7 +519,7 @@ def _create_iso_xorriso(work, output, volume_label, boot_mode, search_dirs=None)
                 "-boot-info-table"]
 
     elif boot_mode == "efi" and has_efi:
-        cmd += ["-e", "boot/efi.img", "-no-emul-boot"]
+        cmd += _efi_only_boot_args(work)
 
     elif boot_mode == "hybrid":
         if has_bios and has_efi:
@@ -502,8 +533,7 @@ def _create_iso_xorriso(work, output, volume_label, boot_mode, search_dirs=None)
                     "-e", "boot/efi.img",
                     "-no-emul-boot", "-isohybrid-gpt-basdat"]
         elif has_efi:
-            cmd += ["-e", "boot/efi.img", "-no-emul-boot",
-                    "-isohybrid-gpt-basdat"]
+            cmd += _efi_only_boot_args(work)
         elif has_bios:
             if isohdpfx:
                 cmd += ["-isohybrid-mbr", isohdpfx]
