@@ -231,7 +231,7 @@ def _needs_copy_relocation(bin_dir):
             continue
         interp = _read_pt_interp(p) or ""
         # A buck-built ld-linux lives under buck-out and is tied to the build
-        # root (e.g. /data/users/<u>/fbsource/buck-out/...).  On a
+        # root (an absolute path under the developer's source tree).  On a
         # remote-execution worker (or any other root) that path doesn't
         # resolve, so the bundle needs copy+patchelf relocation rather than
         # ld-linux wrappers.  Covers host-tools-exec whose interp points at the
@@ -266,21 +266,43 @@ def _copy_and_relocate_toolchain(bin_dir, ld_linux, scratch_dir):
     import shutil
 
     src_root = os.path.dirname(bin_dir)  # .../patched-compiler/tools
-    path_hash = hashlib.sha1(src_root.encode()).hexdigest()[:12]
+    # Include the ld_linux path in the hash so local vs remote-execution
+    # scratch never share a tc-copy.  patchelf bakes the interp path into
+    # every relocated binary; if a prior action's tc-copy embedded a remote
+    # worker's interp path and a later local action reuses that same dir,
+    # every exec fails with `No such file or directory` because the local
+    # loader can't resolve the remote path.
+    _hash_input = src_root + "|" + os.path.abspath(ld_linux)
+    path_hash = hashlib.sha1(_hash_input.encode()).hexdigest()[:12]
     container_dir = os.path.join(scratch_dir, ".tc-copy-" + path_hash)
     dst_root = os.path.join(container_dir, os.path.basename(src_root))
     dst_bin = os.path.join(dst_root, "bin")
     done_marker = container_dir + ".done"
 
-    if os.path.exists(done_marker):
+    # Only trust the .done marker if the actual output dir is still there.
+    # The tc-copy dir lives under buck-out/v2/tmp/ and can be cleaned out
+    # of band while the marker file (a sibling, not inside the dir) remains
+    # -- leading to phantom "ready" state where downstream execs fail with
+    # `No such file or directory` on baked-in tc-copy paths.
+    if os.path.exists(done_marker) and os.path.isdir(dst_bin):
         return dst_bin
+    if os.path.exists(done_marker) and not os.path.isdir(dst_bin):
+        try:
+            os.unlink(done_marker)
+        except OSError:
+            pass
 
     os.makedirs(scratch_dir, exist_ok=True)
     lock_path = container_dir + ".lock"
     with open(lock_path, "w") as lock_fd:
         fcntl.flock(lock_fd, fcntl.LOCK_EX)
-        if os.path.exists(done_marker):
+        if os.path.exists(done_marker) and os.path.isdir(dst_bin):
             return dst_bin
+        if os.path.exists(done_marker) and not os.path.isdir(dst_bin):
+            try:
+                os.unlink(done_marker)
+            except OSError:
+                pass
         if os.path.exists(container_dir):
             shutil.rmtree(container_dir)
         os.makedirs(container_dir)
@@ -301,10 +323,11 @@ def _copy_and_relocate_toolchain(bin_dir, ld_linux, scratch_dir):
         subprocess.run(["chmod", "-R", "u+w", dst_root], check=True)
 
         # The toolchain is built locally (local_only), so rewrite_interps bakes
-        # the *local* build root (e.g. /data/users/<u>/fbsource/...) into every
-        # PT_INTERP/DT_RPATH.  On a remote-execution worker the tree lives under
-        # a different root (/re_cwd/...), and that prefix differs in length from
-        # the local one, so the length-preserving byte substitution in
+        # the *local* build root (an absolute path under the developer's
+        # source tree) into every PT_INTERP/DT_RPATH.  On a remote-execution
+        # worker the tree lives under a different root, and that prefix
+        # differs in length from the local one, so the length-preserving
+        # byte substitution in
         # _fix_subprogram_paths() can't fix it (it only swaps the equal-length
         # `output_artifacts`->content-hash component) -> the interp stays dead
         # and gcc fails with exit 127 "cannot execute: required file not found".
@@ -395,15 +418,14 @@ def _patchelf_relocate(dst_root, ld_linux, scratch_dir):
         os.path.join(ext_sysroot, "usr", "lib"),
         os.path.join(ext_sysroot, "lib"),
     ]
-    # Also include the external gcc-runtime dirs
-    # (patched-compiler/tools/<triple>/{lib64,lib}). These live one level ABOVE
-    # the sysroot and hold libstdc++.so.6 / libgcc_s.so.1 from the seed's
-    # gcc-pass2 (GCC 14). A host-tool bundle whose install ships only bin/
-    # (e.g. the cmake or ninja package's usr/) has no libstdc++ under its own
-    # dst_root; without these dirs in the rpath the loader falls through to the
-    # remote-execution worker's too-old /lib64/libstdc++.so.6 → "GLIBCXX_3.4.32
-    # not found". As with the sysroot entries above, do NOT isdir()-filter —
-    # deferred materialization would drop them and reintroduce the same failure.
+    # Also include the external gcc-runtime dirs (patched-compiler/tools/<triple>/{lib64,lib}).
+    # These live one level ABOVE the sysroot and hold libstdc++.so.6 / libgcc_s.so.1
+    # from the seed's gcc-pass2 (GCC 14). A host-tool bundle whose install ships
+    # only bin/ (e.g. the cmake or ninja package's usr/) has no libstdc++ under
+    # its own dst_root; without these dirs in the rpath the loader falls through
+    # to the RE worker's too-old /lib64/libstdc++.so.6 → "GLIBCXX_3.4.32 not found".
+    # As with the sysroot entries above, do NOT isdir()-filter — deferred
+    # materialization would drop them and reintroduce the same failure.
     for _rt in _derive_gcc_runtime(abs_ld):
         _cand_dirs.append(_rt)
     # NOTE: do NOT os.path.isdir()-filter these.  On RE with deferred
@@ -665,7 +687,13 @@ def _create_wrappers(bin_dir, ld_linux, lib_path, scratch_dir):
     Idempotent: skips if .done marker exists.
     Atomic: uses lock file for concurrent actions.
     """
-    path_hash = hashlib.sha1(bin_dir.encode()).hexdigest()[:12]
+    # Include the ld_linux path in the hash so local vs remote-execution
+    # never share a wrapper dir (each ld-linux wrapper embeds an absolute
+    # ld_linux path in its exec line; a wrapper baked with a remote
+    # worker's path is dead on a local worker where that path doesn't
+    # exist, and vice versa).
+    _hash_input = bin_dir + "|" + os.path.abspath(ld_linux)
+    path_hash = hashlib.sha1(_hash_input.encode()).hexdigest()[:12]
     bin_basename = os.path.basename(bin_dir)
     container_name = (
         ".ld-wrap-" + os.path.basename(os.path.dirname(bin_dir)) + "-" + path_hash
@@ -674,8 +702,13 @@ def _create_wrappers(bin_dir, ld_linux, lib_path, scratch_dir):
     wrapper_dir = os.path.join(container_dir, bin_basename)
     done_marker = container_dir + ".done"
 
-    if os.path.exists(done_marker):
+    if os.path.exists(done_marker) and os.path.isdir(wrapper_dir):
         return wrapper_dir
+    if os.path.exists(done_marker) and not os.path.isdir(wrapper_dir):
+        try:
+            os.unlink(done_marker)
+        except OSError:
+            pass
 
     import fcntl
 
@@ -683,8 +716,13 @@ def _create_wrappers(bin_dir, ld_linux, lib_path, scratch_dir):
     os.makedirs(scratch_dir, exist_ok=True)
     with open(lock_path, "w") as lock_fd:
         fcntl.flock(lock_fd, fcntl.LOCK_EX)
-        if os.path.exists(done_marker):
+        if os.path.exists(done_marker) and os.path.isdir(wrapper_dir):
             return wrapper_dir
+        if os.path.exists(done_marker) and not os.path.isdir(wrapper_dir):
+            try:
+                os.unlink(done_marker)
+            except OSError:
+                pass
         if os.path.exists(container_dir):
             import shutil
 

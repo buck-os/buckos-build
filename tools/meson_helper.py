@@ -20,6 +20,7 @@ from _env import (
     file_prefix_map_flags,
     filter_path_flags,
     find_dep_python3,
+    make_tree_writable,
     preferred_linker_flag,
     register_cleanup,
     sanitize_filenames,
@@ -509,8 +510,19 @@ def main():
     with open(_native_file, "w") as _nf:
         _nf.write("\n".join(_native_lines) + "\n")
 
-    # Run pre-configure commands in the source directory
+    # Run pre-configure commands in the source directory.
+    # On remote execution the source is a read-only materialized input, and
+    # in-place chmod may not take effect on some filesystems.  When pre-cmds
+    # are present, copy the source to a writable scratch dir and run there.
+    # (Pattern mirrors patch_helper.py.)
     source_abs = os.path.abspath(args.source_dir)
+    if args.pre_cmds:
+        _pre_work = os.path.join(_scratch_base, "meson-pre-src")
+        if os.path.exists(_pre_work):
+            _shutil.rmtree(_pre_work)
+        _shutil.copytree(source_abs, _pre_work, symlinks=True)
+        make_tree_writable(_pre_work)
+        source_abs = _pre_work
     for cmd_str in args.pre_cmds:
         result = subprocess.run(cmd_str, shell=True, cwd=source_abs, env=env)
         if result.returncode != 0:
@@ -680,17 +692,33 @@ def main():
     # embed build directory paths as workdir and in command arguments.
     import pickle as _pickle
 
-    def _patch_pickle_paths(obj, old, new):
-        """Recursively replace old prefix with new in string attrs."""
+    def _patch_pickle_paths(obj, old, new, _seen=None):
+        """Recursively replace old prefix with new in string attrs.
+
+        Tracks visited container/instance objects by id() to survive cycles
+        and diamond graphs -- meson's pickled Backend/BuildData graphs can
+        both share subobjects and (in some versions) reference themselves,
+        which without this guard blows Python's recursion limit and leaves
+        the .dat file half-rewritten (ninja then fails to load it).
+        """
+        if _seen is None:
+            _seen = set()
         if isinstance(obj, str):
             return obj.replace(old, new) if old in obj else obj
+        oid = id(obj)
+        if oid in _seen:
+            return obj
+        if isinstance(obj, (list, tuple, dict, set, frozenset)) or hasattr(obj, "__dict__"):
+            _seen.add(oid)
         if isinstance(obj, list):
-            return [_patch_pickle_paths(item, old, new) for item in obj]
+            return [_patch_pickle_paths(item, old, new, _seen) for item in obj]
         if isinstance(obj, tuple):
-            return tuple(_patch_pickle_paths(item, old, new) for item in obj)
+            return tuple(_patch_pickle_paths(item, old, new, _seen) for item in obj)
+        if isinstance(obj, dict):
+            return {k: _patch_pickle_paths(v, old, new, _seen) for k, v in obj.items()}
         if hasattr(obj, "__dict__"):
             for k, v in obj.__dict__.items():
-                patched = _patch_pickle_paths(v, old, new)
+                patched = _patch_pickle_paths(v, old, new, _seen)
                 if patched is not v:
                     setattr(obj, k, patched)
         return obj
@@ -711,22 +739,33 @@ def main():
                     if _sp not in sys.path:
                         sys.path.insert(0, _sp)
 
-    for _mdat in _glob.glob(
-        os.path.join(declared_output, "**/meson-private/*.dat"), recursive=True
-    ):
-        try:
-            _dat_stat = os.stat(_mdat)
-            with open(_mdat, "rb") as f:
-                _idata = _pickle.load(f)
-            _patch_pickle_paths(_idata, _scratch_path, declared_output)
-            with open(_mdat, "wb") as f:
-                _pickle.dump(_idata, f)
-            os.utime(_mdat, (_dat_stat.st_atime, _dat_stat.st_mtime))
-        except Exception as _e:
-            print(
-                f"warning: could not rewrite {os.path.basename(_mdat)}: {_e}",
-                file=sys.stderr,
-            )
+    # Meson's pickled Backend/BuildData graphs are deeply nested (chains
+    # of Target -> BuildSettings -> Environment -> ... 5+k levels deep for
+    # large projects like polkit).  Bump the recursion limit for the
+    # pickle-rewrite pass so _patch_pickle_paths doesn't blow the default
+    # 1000-depth ceiling and leave the .dat file half-rewritten (ninja
+    # then fails to load it).
+    _prev_reclimit = sys.getrecursionlimit()
+    sys.setrecursionlimit(max(_prev_reclimit, 50000))
+    try:
+        for _mdat in _glob.glob(
+            os.path.join(declared_output, "**/meson-private/*.dat"), recursive=True
+        ):
+            try:
+                _dat_stat = os.stat(_mdat)
+                with open(_mdat, "rb") as f:
+                    _idata = _pickle.load(f)
+                _patch_pickle_paths(_idata, _scratch_path, declared_output)
+                with open(_mdat, "wb") as f:
+                    _pickle.dump(_idata, f)
+                os.utime(_mdat, (_dat_stat.st_atime, _dat_stat.st_mtime))
+            except Exception as _e:
+                print(
+                    f"warning: could not rewrite {os.path.basename(_mdat)}: {_e}",
+                    file=sys.stderr,
+                )
+    finally:
+        sys.setrecursionlimit(_prev_reclimit)
 
 
 if __name__ == "__main__":

@@ -2,99 +2,137 @@ load("//defs/packages:autotools.bzl", "autotools_package")
 
 autotools_package(
     name = "automake",
-    version = "1.16.5",
-    url = "https://mirror.buckos.org/a/automake-1.16.5.tar.xz",
-    sha256 = "f01d58cd6d9d77fbdca9eb4bbd5ead1988228fdb73d6f7a201f5f8d6b118b469",
     description = "Tool for generating GNU Standards-compliant Makefiles",
     homepage = "https://www.gnu.org/software/automake/",
-    license = "GPL-2.0+",
-    pre_configure_cmds = [
-        # Prevent make from trying to regenerate aclocal.m4 — the tarball
-        # ships with pre-generated files but the Makefile has a dependency
-        # on aclocal-1.16 which is what we are building.
-        "touch aclocal.m4 configure Makefile.in */Makefile.in */*/Makefile.in 2>/dev/null || true",
-    ],
-    pre_build_cmds = [
-        # Touch amhello tarball — its recipe runs aclocal-1.16 which we
-        # are currently building.
-        "touch doc/amhello-1.0.tar.gz",
-    ],
-    make_args = [
-        # Stub out makeinfo — the build host may not have texinfo installed.
-        "MAKEINFO=true",
-        # Blank the man page lists so install-man1's recipe short-circuits.
-        # The versioned .1 pages (aclocal-1.16.1, automake-1.16.1) are
-        # generated at install time by ./doc/help2man, a perl wrapper
-        # whose #!/usr/bin/perl shebang is dead on remote-execution
-        # workers. automake is fully functional without man pages, and
-        # install-man1's own recipe exits 0 when man1_MANS is empty.
-        "man1_MANS=",
-        "dist_man1_MANS=",
+    host_deps = [
+        "//packages/linux/lang/perl:perl",
     ],
     install_args = [
         "MAKEINFO=true",
         "man1_MANS=",
         "dist_man1_MANS=",
     ],
+    license = "GPL-2.0+",
+    make_args = [
+        # Stub out makeinfo — the build host may not have texinfo installed.
+        "MAKEINFO=true",
+        # Blank the man page lists so install-man1's recipe short-circuits.
+        # The versioned .1 pages (aclocal-1.16.1, automake-1.16.1) are
+        # generated at install time by ./doc/help2man, a perl wrapper
+        # whose #!/usr/bin/perl shebang is dead on RE workers. automake
+        # is fully functional without man pages, and install-man1's own
+        # recipe exits 0 when man1_MANS is empty.
+        "man1_MANS=",
+        "dist_man1_MANS=",
+    ],
     post_install_cmds = [
         # Create wrapper scripts so aclocal/automake find their m4 macros
-        # when run from Buck2 sandboxed paths instead of /usr/share/...
+        # when run from sandboxed build paths instead of /usr/share/...
+        #
+        # Implemented in Python (rather than a shell heredoc) because past
+        # shell versions of this logic hit repeated empty-tool bugs where
+        # subtle expansion issues produced wrappers with `exec .../.impl`
+        # instead of `exec .../<tool>.impl`.  Python's string handling
+        # is immune to shell-quoting mishaps.  The heredoc is quoted
+        # (<< 'PYEOF') so the shell does not expand anything inside.
         """
-        BINDIR="$DESTDIR/usr/bin"
-        VER="1.16"
+        set -eu
+        : nonce-v2-python-wrapper-with-command-v-scriptdir
+        python3 - << 'PYEOF'
+import os, stat
 
-        # Wrap aclocal and aclocal-$VER
-        for tool in aclocal "aclocal-$VER"; do
-            if [ -f "$BINDIR/$tool" ]; then
-                mv "$BINDIR/$tool" "$BINDIR/${tool}.real"
-                cat > "$BINDIR/$tool" << WRAPPER_EOF
-#!/bin/sh
-SCRIPT_DIR="\\$(cd "\\$(dirname "\\$0")" && pwd)"
-SHARE="\\${SCRIPT_DIR}/../share"
-export AUTOMAKE_UNINSTALLED=1
-export PERL5LIB="\\$SHARE/automake-$VER:\\${PERL5LIB:+:\\$PERL5LIB}"
-export ACLOCAL_AUTOMAKE_DIR="\\$SHARE/aclocal-$VER"
-exec "\\$SCRIPT_DIR/${tool}.real" --automake-acdir="\\$SHARE/aclocal-$VER" --system-acdir="\\$SHARE/aclocal" "\\$@"
-WRAPPER_EOF
-                chmod +x "$BINDIR/$tool"
-            fi
-        done
+# Nonce embedded in the wrapper generator itself — makes both the action
+# digest AND the produced wrapper content unique, so a cached run cannot
+# be silently reused when this code changes.
+_GEN_NONCE = "v4-inline-share-from-s-2026-07-13"
 
-        # Rewrite shebangs in .real scripts from absolute buck-out perl
-        # paths to portable #!/usr/bin/env perl — absolute paths become
-        # stale when actions are cached on one machine and restored on another.
-        for real in "\\$BINDIR"/*.real; do
-            [ -f "\\$real" ] || continue
-            head -1 "\\$real" | grep -q '/perl' || continue
-            sed -i '1 s|.*|#!/usr/bin/env perl|' "\\$real"
-        done
+DESTDIR = os.environ.get("DESTDIR", "")
+BINDIR = os.path.join(DESTDIR, "usr/bin")
+VER = "1.16"
 
-        # Wrap automake and automake-$VER
-        for tool in automake "automake-$VER"; do
-            if [ -f "$BINDIR/$tool" ]; then
-                mv "$BINDIR/$tool" "$BINDIR/${tool}.real"
-                cat > "$BINDIR/$tool" << WRAPPER_EOF
-#!/bin/sh
-SCRIPT_DIR="\\$(cd "\\$(dirname "\\$0")" && pwd)"
-SHARE="\\${SCRIPT_DIR}/../share"
-export AUTOMAKE_UNINSTALLED=1
-export PERL5LIB="\\$SHARE/automake-$VER:\\${PERL5LIB:+:\\$PERL5LIB}"
-export AUTOMAKE_LIBDIR="\\$SHARE/automake-$VER"
-# automake traces macros via \$AUTOCONF (defaults to 'true' = no-op)
-AUTOCONF_BIN="\\$(command -v autoconf 2>/dev/null)"
-[ -n "\\$AUTOCONF_BIN" ] && export AUTOCONF="\\$AUTOCONF_BIN"
-exec "\\$SCRIPT_DIR/${tool}.real" "\\$@"
-WRAPPER_EOF
-                chmod +x "$BINDIR/$tool"
-            fi
-        done
+ACLOCAL_EXTRA_LINES = [
+    'export ACLOCAL_AUTOMAKE_DIR="$SHARE/aclocal-{v}"'.format(v=VER),
+]
+ACLOCAL_EXEC_ARGS = ' --automake-acdir="$SHARE/aclocal-{v}" --system-acdir="$SHARE/aclocal"'.format(v=VER)
+AUTOMAKE_EXTRA_LINES = [
+    'export AUTOMAKE_LIBDIR="$SHARE/automake-{v}"'.format(v=VER),
+    'AUTOCONF_BIN="$(command -v autoconf 2>/dev/null)"',
+    '[ -n "$AUTOCONF_BIN" ] && export AUTOCONF="$AUTOCONF_BIN"',
+]
+
+def write_wrapper(tool, extra_lines, exec_args):
+    assert tool, "tool must be non-empty"
+    src = os.path.join(BINDIR, tool)
+    if not os.path.isfile(src):
+        return
+    impl = os.path.join(BINDIR, tool + ".impl")
+    if os.path.exists(impl):
+        os.unlink(src)
+    else:
+        os.rename(src, impl)
+    # Resolve wrapper location robustly (works for PATH-invoked or absolute).
+    # Use short single-letter variable names to avoid collisions with any
+    # env-var expansion that upstream layers might do on longer names.
+    lines = [
+        "#!/bin/sh",
+        "# generated by " + _GEN_NONCE,
+        's=$(command -v "$0" 2>/dev/null || printf %s "$0")',
+        'SHARE=$(cd -- "$(dirname -- "$s")" && pwd)/../share',
+        "export AUTOMAKE_UNINSTALLED=1",
+        'export PERL5LIB="$SHARE/automake-{v}${{PERL5LIB:+:$PERL5LIB}}"'.format(v=VER),
+    ]
+    lines.extend(extra_lines)
+    lines.append('exec "$(dirname -- "$s")/{tool}.impl"{args} "$@"'.format(tool=tool, args=exec_args))
+    with open(src, "w") as f:
+        f.write("\\n".join(lines) + "\\n")
+    os.chmod(src, 0o755)
+
+for t in ("aclocal", "aclocal-" + VER):
+    write_wrapper(t, ACLOCAL_EXTRA_LINES, ACLOCAL_EXEC_ARGS)
+
+# Rewrite shebangs in .impl perl scripts from absolute buck-out perl paths
+# to portable #!/usr/bin/env perl — absolute paths become stale when
+# actions cross machines.
+for name in os.listdir(BINDIR):
+    if not name.endswith(".impl"):
+        continue
+    path = os.path.join(BINDIR, name)
+    if not os.path.isfile(path):
+        continue
+    with open(path, "rb") as f:
+        head = f.read(256)
+    if not head.startswith(b"#!"):
+        continue
+    first_nl = head.find(b"\\n")
+    if first_nl < 0 or b"/perl" not in head[:first_nl]:
+        continue
+    with open(path, "rb") as f:
+        content = f.read()
+    new = b"#!/usr/bin/env perl\\n" + content[first_nl + 1:]
+    with open(path, "wb") as f:
+        f.write(new)
+
+for t in ("automake", "automake-" + VER):
+    write_wrapper(t, AUTOMAKE_EXTRA_LINES, "")
+PYEOF
         """,
     ],
+    pre_build_cmds = [
+        # Touch amhello tarball — its recipe runs aclocal-1.16 which we
+        # are currently building.
+        "touch doc/amhello-1.0.tar.gz",
+    ],
+    pre_configure_cmds = [
+        # Prevent make from trying to regenerate aclocal.m4 — the tarball
+        # ships with pre-generated files but the Makefile has a dependency
+        # on aclocal-1.16 which is what we are building.
+        "touch aclocal.m4 configure Makefile.in */Makefile.in */*/Makefile.in 2>/dev/null || true",
+    ],
+    sha256 = "f01d58cd6d9d77fbdca9eb4bbd5ead1988228fdb73d6f7a201f5f8d6b118b469",
+    url = "https://mirror.buckos.org/a/automake-1.16.5.tar.xz",
+    version = "1.16.5",
+    visibility = ["PUBLIC"],
     deps = [
         "//packages/linux/dev-tools/build-systems/autoconf:autoconf",
     ],
-    host_deps = [
-        "//packages/linux/lang/perl:perl",
-    ],
-    visibility = ["PUBLIC"],
 )

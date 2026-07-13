@@ -15,6 +15,10 @@ autotools_package(
     },
     # GitHub archive needs autoreconf; stale configure detects wrong zlib version
     pre_configure_cmds = [
+        # Nonce to perturb the action digest and force re-execution when a
+        # prior cached result is stale (e.g. a previously-cached failure
+        # from an upstream toolchain regression that has since been fixed).
+        "echo libpng-cachebust-v1 > /dev/null",
         "autoreconf -fi",
     ],
     deps = [
