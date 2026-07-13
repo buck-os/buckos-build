@@ -1190,7 +1190,7 @@ def main():
         _meson_bin = shutil.which("meson", path=env.get("PATH", ""))
         if _meson_bin:
             _rc_result = subprocess.run(
-                [_meson_bin, "setup", output_dir, "--reconfigure"],
+                [_meson_bin, "setup", "--reconfigure", output_dir],
                 env=env,
                 stdout=sys.stderr,
                 stderr=sys.stderr,
