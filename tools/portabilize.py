@@ -31,19 +31,27 @@ _HOST_BIN_DIRS = ("/usr/bin", "/bin", "/usr/sbin", "/sbin")
 def _find_host_binary(name):
     """Return an absolute path to a POSIX host utility (cp, chmod, ...).
 
-    Checks the current PATH first, then a fixed set of standard host bin
-    dirs.  Raises FileNotFoundError with a clear message if nothing is
-    found -- much easier to debug than an opaque exit-127 from
-    subprocess.
+    Prefer the fixed standard host bin dirs (/usr/bin, /bin, ...) over
+    the current PATH.  Rationale: buckos actions run with a hermetic
+    PATH that points at freshly-built buckos toolchain binaries; those
+    binaries are linked against a newer glibc than the host's
+    /lib64/libc.so.6 and crash with "undefined symbol
+    __rtld_libc_freeres" when exec'd directly.  We want the host's own
+    cp/chmod (from /bin), which run against the host's own libc.  Only
+    fall back to PATH when the standard locations don't have the name.
     """
+    for _d in list(_HOST_BIN_DIRS):
+        _cand = os.path.join(_d, name)
+        if os.access(_cand, os.X_OK):
+            return _cand
     _cur = os.environ.get("PATH", "")
-    for _d in [d for d in _cur.split(os.pathsep) if d] + list(_HOST_BIN_DIRS):
+    for _d in [d for d in _cur.split(os.pathsep) if d]:
         _cand = os.path.join(_d, name)
         if os.access(_cand, os.X_OK):
             return _cand
     raise FileNotFoundError(
-        f"could not locate host binary {name!r} on PATH ({_cur!r}) "
-        f"or in {_HOST_BIN_DIRS}"
+        f"could not locate host binary {name!r} in {_HOST_BIN_DIRS} "
+        f"or on PATH ({_cur!r})"
     )
 
 
