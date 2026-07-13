@@ -235,13 +235,27 @@ def main():
 
     declared_output = os.path.abspath(args.build_dir)
 
-    # Work in scratch to avoid mutating the declared output (in buck-out)
-    # during meson setup.  Only the final result is placed at declared_output.
+    # Configure meson DIRECTLY at declared_output.  We used to configure in
+    # $BUCK_SCRATCH_PATH/meson-work and shutil.move at the end, but meson
+    # bakes absolute paths into its build.ninja, generated headers, and
+    # meson-private/*.dat pickle files -- moving the tree afterward
+    # requires rewriting all those paths, and the pickled .dat files in
+    # particular have object graphs too deep for CPython's pickle module
+    # to serialize (RecursionError inside pickle even with the recursion
+    # limit raised to 50k).  Building at declared_output from the start
+    # sidesteps the whole problem: meson embeds the final path everywhere
+    # and nothing needs rewriting.
+    #
+    # rmtree first so a prior partial state from a killed / failed run
+    # doesn't confuse the fresh setup.  (Buck2 doesn't guarantee the
+    # declared output is empty at action start.)
+    if os.path.exists(declared_output):
+        _shutil.rmtree(declared_output)
+    os.makedirs(declared_output, exist_ok=True)
+    _build_dir_abs = declared_output
     _scratch_base = os.path.abspath(
         os.environ.get("BUCK_SCRATCH_PATH", os.environ.get("TMPDIR", "/tmp"))
     )
-    _build_dir_abs = os.path.join(_scratch_base, "meson-work")
-    os.makedirs(_build_dir_abs, exist_ok=True)
     register_cleanup(_build_dir_abs)
 
     env = clean_env()
@@ -634,241 +648,10 @@ def main():
 
     sanitize_filenames(_build_dir_abs)
 
-    # Move completed build dir to declared output.  Rewrite embedded
-    # scratch paths so the build phase sees the final artifact location.
-    _BINARY_EXTS = frozenset(
-        (
-            ".o",
-            ".a",
-            ".so",
-            ".gch",
-            ".pcm",
-            ".pch",
-            ".d",
-            ".png",
-            ".jpg",
-            ".gif",
-            ".ico",
-            ".gz",
-            ".xz",
-            ".bz2",
-            ".wasm",
-            ".pyc",
-            ".qm",
-        )
-    )
-    if os.path.exists(declared_output):
-        _shutil.rmtree(declared_output)
-    _scratch_path = _build_dir_abs
-    _shutil.move(_scratch_path, declared_output)
-    for dirpath, dirnames, filenames in os.walk(declared_output):
-        for entries in (dirnames, filenames):
-            for name in entries:
-                p = os.path.join(dirpath, name)
-                if os.path.islink(p):
-                    target = os.readlink(p)
-                    if _scratch_path in target:
-                        os.unlink(p)
-                        os.symlink(target.replace(_scratch_path, declared_output), p)
-    for dirpath, _dn, filenames in os.walk(declared_output):
-        for fname in filenames:
-            if os.path.splitext(fname)[1] in _BINARY_EXTS:
-                continue
-            fpath = os.path.join(dirpath, fname)
-            if os.path.islink(fpath):
-                continue
-            try:
-                st = os.stat(fpath)
-                with open(fpath, "r") as f:
-                    fc = f.read()
-                if _scratch_path not in fc:
-                    continue
-                fc = fc.replace(_scratch_path, declared_output)
-                with open(fpath, "w") as f:
-                    f.write(fc)
-                os.utime(fpath, (st.st_atime, st.st_mtime))
-            except (
-                UnicodeDecodeError,
-                PermissionError,
-                IsADirectoryError,
-                FileNotFoundError,
-            ):
-                pass
-
-    # Rewrite ALL meson pickle files to replace scratch paths with the
-    # declared output.  The text rewrite above skips them (binary).
-    # Meson pickles (install.dat, build.dat, custom command .dat files)
-    # embed build directory paths as workdir and in command arguments.
-    import pickle as _pickle
-
-    def _patch_pickle_paths(root_obj, old, new):
-        """Iteratively replace old prefix with new in string attrs.
-
-        Uses an explicit work stack (not Python recursion) so it can
-        survive graphs of any depth -- meson's pickled Backend/BuildData
-        graphs are deeply nested (thousands of levels) and can share
-        subobjects, so a recursive implementation blows the interpreter
-        even with an elevated setrecursionlimit.
-
-        Mutates lists / dicts / instance __dict__s in place.  Tuples and
-        frozensets are immutable so we can't rewrite them in place; we
-        rely on their contents being either primitives or containers
-        that we CAN mutate (the tuple itself keeps pointing at the same
-        containers, which have now been rewritten).
-        """
-        seen = set()
-        stack = [root_obj]
-        while stack:
-            obj = stack.pop()
-            oid = id(obj)
-            if oid in seen:
-                continue
-            if isinstance(obj, (list, tuple, dict, set, frozenset)) or hasattr(obj, "__dict__"):
-                seen.add(oid)
-            if isinstance(obj, list):
-                for i, item in enumerate(obj):
-                    if isinstance(item, str):
-                        if old in item:
-                            obj[i] = item.replace(old, new)
-                    else:
-                        stack.append(item)
-            elif isinstance(obj, dict):
-                for k in list(obj.keys()):
-                    v = obj[k]
-                    if isinstance(v, str):
-                        if old in v:
-                            obj[k] = v.replace(old, new)
-                    else:
-                        stack.append(v)
-            elif isinstance(obj, (tuple, set, frozenset)):
-                for item in obj:
-                    if not isinstance(item, str):
-                        stack.append(item)
-            elif hasattr(obj, "__dict__"):
-                for k, v in list(obj.__dict__.items()):
-                    if isinstance(v, str):
-                        if old in v:
-                            setattr(obj, k, v.replace(old, new))
-                    else:
-                        stack.append(v)
-
-    # Locate mesonbuild from hermetic PATH so pickle.load can
-    # deserialise the meson-internal dataclasses.
-    # Search both site-packages and dist-packages, and python3 (not just python3.X).
-    for _bp in list(args.hermetic_path) + list(args.path_prepend):
-        _parent = os.path.dirname(os.path.abspath(_bp))
-        for _pat in (
-            "lib/python*/site-packages",
-            "lib64/python*/site-packages",
-            "lib/python*/dist-packages",
-            "lib64/python*/dist-packages",
-        ):
-            for _sp in _glob.glob(os.path.join(_parent, _pat)):
-                if os.path.isdir(os.path.join(_sp, "mesonbuild")):
-                    if _sp not in sys.path:
-                        sys.path.insert(0, _sp)
-
-    # Rewrite paths in meson's pickled .dat files via byte-level
-    # substitution instead of pickle.load / .dump.  Meson's Backend /
-    # BuildData graphs are too deeply nested for pickle to serialize
-    # even with a raised recursion limit -- large projects (polkit,
-    # qt6) hit RecursionError inside CPython's pickle module itself,
-    # which we can't override.
-    #
-    # Pickle strings are stored as length-prefixed bytes (SHORT_BINUNICODE
-    # = 0x8c + 1-byte len + utf-8; BINUNICODE = 0x8d + 4-byte len + utf-8;
-    # BINUNICODE8 = 0x8d + 8-byte len + utf-8).  We can safely find every
-    # occurrence of `<opcode><len><scratch_bytes>` and rewrite to
-    # `<opcode><new_len><declared_bytes>`, preserving pickle validity
-    # regardless of graph depth.
-    print(
-        f"meson_helper: pickle byte-rewrite pass (build-tag={_HELPER_BUILD_TAG})",
-        file=sys.stderr,
-    )
-
-    _SCRATCH_B = _scratch_path.encode("utf-8")
-    _DECLARED_B = declared_output.encode("utf-8")
-
-    def _rewrite_pickle_bytes(data, needle, replacement):
-        """Byte-level substitution of pickled strings containing `needle`.
-
-        Walks a pickle byte stream looking for BINUNICODE / SHORT_BINUNICODE
-        opcodes whose string payload contains `needle`, and rewrites both
-        the payload and its preceding length prefix.  Returns the new bytes.
-        Any other substring occurrences (e.g. in BINSTRING, BINBYTES) are
-        left alone -- their length prefixes have different encodings that
-        we'd need to handle individually.
-        """
-        out = bytearray()
-        i = 0
-        n = len(data)
-        while i < n:
-            b = data[i]
-            if b == 0x8C and i + 1 < n:  # SHORT_BINUNICODE, 1-byte len
-                ln = data[i + 1]
-                payload_start = i + 2
-                payload_end = payload_start + ln
-                if payload_end <= n:
-                    payload = data[payload_start:payload_end]
-                    if needle in payload:
-                        new_payload = payload.replace(needle, replacement)
-                        new_len = len(new_payload)
-                        if new_len < 256:
-                            out.append(0x8C)
-                            out.append(new_len)
-                        else:
-                            out.append(0x8D)  # promote to BINUNICODE (4-byte len)
-                            out.extend(new_len.to_bytes(4, "little"))
-                        out.extend(new_payload)
-                        i = payload_end
-                        continue
-                    out.extend(data[i:payload_end])
-                    i = payload_end
-                    continue
-            if b == 0x8D and i + 4 < n:  # BINUNICODE, 4-byte len
-                ln = int.from_bytes(data[i + 1 : i + 5], "little")
-                payload_start = i + 5
-                payload_end = payload_start + ln
-                if payload_end <= n:
-                    payload = data[payload_start:payload_end]
-                    if needle in payload:
-                        new_payload = payload.replace(needle, replacement)
-                        new_len = len(new_payload)
-                        out.append(0x8D)
-                        out.extend(new_len.to_bytes(4, "little"))
-                        out.extend(new_payload)
-                        i = payload_end
-                        continue
-                    out.extend(data[i:payload_end])
-                    i = payload_end
-                    continue
-            out.append(b)
-            i += 1
-        return bytes(out)
-
-    for _mdat in _glob.glob(
-        os.path.join(declared_output, "**/meson-private/*.dat"), recursive=True
-    ):
-        _tmp = _mdat + ".tmp." + str(os.getpid())
-        try:
-            _dat_stat = os.stat(_mdat)
-            with open(_mdat, "rb") as f:
-                _raw = f.read()
-            if _SCRATCH_B in _raw:
-                _rewritten = _rewrite_pickle_bytes(_raw, _SCRATCH_B, _DECLARED_B)
-                with open(_tmp, "wb") as f:
-                    f.write(_rewritten)
-                os.replace(_tmp, _mdat)
-                os.utime(_mdat, (_dat_stat.st_atime, _dat_stat.st_mtime))
-        except Exception as _e:
-            try:
-                os.unlink(_tmp)
-            except OSError:
-                pass
-            print(
-                f"warning: could not rewrite {os.path.basename(_mdat)}: {_e}",
-                file=sys.stderr,
-            )
+    # Since meson was configured directly at declared_output (see top of
+    # main() -- _build_dir_abs == declared_output), no move + no
+    # path-rewriting is needed.  All meson-embedded paths already point
+    # at the final artifact location.
 
 
 if __name__ == "__main__":
