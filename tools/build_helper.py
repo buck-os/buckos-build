@@ -1236,15 +1236,17 @@ def main():
         # Merge scratch into declared output.  Pre-cmds may have written
         # directly to declared_output (e.g. bootstrap_linux_headers writes
         # sdt.h there).  copytree with dirs_exist_ok preserves those writes
-        # while bringing in the scratch content.
+        # while bringing in the scratch content.  In-place: output_dir *is*
+        # declared_output, so skip the copy entirely.
         _skip_scratch = output_dir
-        if os.path.isdir(declared_output):
-            shutil.copytree(
-                output_dir, declared_output, symlinks=True, dirs_exist_ok=True
-            )
-        else:
-            shutil.move(output_dir, declared_output)
-        shutil.rmtree(output_dir, ignore_errors=True)
+        if not _in_place:
+            if os.path.isdir(declared_output):
+                shutil.copytree(
+                    output_dir, declared_output, symlinks=True, dirs_exist_ok=True
+                )
+            else:
+                shutil.move(output_dir, declared_output)
+            shutil.rmtree(output_dir, ignore_errors=True)
         for dirpath, dirnames, filenames in os.walk(declared_output):
             for entries in (dirnames, filenames):
                 for name in entries:
@@ -1385,12 +1387,18 @@ def main():
     # Merge scratch into declared output.  Pre-cmds may have written
     # directly to declared_output via absolute artifact paths.  Merge
     # preserves those writes while bringing in the build result.
+    # In-place: output_dir *is* declared_output, so there's nothing to
+    # merge (and shutil.copytree with dst == src would fail on every
+    # entry with "same file").
     _scratch_path = output_dir
-    if os.path.isdir(declared_output):
-        shutil.copytree(output_dir, declared_output, symlinks=True, dirs_exist_ok=True)
-    else:
-        shutil.move(output_dir, declared_output)
-    shutil.rmtree(output_dir, ignore_errors=True)
+    if not _in_place:
+        if os.path.isdir(declared_output):
+            shutil.copytree(
+                output_dir, declared_output, symlinks=True, dirs_exist_ok=True
+            )
+        else:
+            shutil.move(output_dir, declared_output)
+        shutil.rmtree(output_dir, ignore_errors=True)
     for dirpath, dirnames, filenames in os.walk(declared_output):
         for entries in (dirnames, filenames):
             for name in entries:
