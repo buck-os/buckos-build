@@ -4,6 +4,15 @@
 Runs meson setup with specified source dir, build dir, and arguments.
 """
 
+# Build-tag: bumped whenever a semantic change to this helper's runtime
+# behavior needs to be forced through the cache.  The remote action cache
+# is content-addressed by inputs; if the .py bytes are byte-identical to
+# a prior successful run, the cached .par output is returned regardless
+# of surrounding rebuild attempts.  Any change to this string alters the
+# .py bytes and forces the .par (and every downstream meson_package
+# action digest) to change.
+_HELPER_BUILD_TAG = "iterative-pickle-atomic-write-2026-07-13"
+
 import argparse
 import glob as _glob
 import os
