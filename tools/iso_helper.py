@@ -467,6 +467,9 @@ def _pin_timestamps(work, epoch):
         pass
 
 
+_EFI_BOOT_ARGS_VERSION = "appended-part-as-gpt-2026-07-13"
+
+
 def _efi_only_boot_args(work):
     """Return xorriso args for a UEFI-bootable ISO with no BIOS entry.
 
@@ -490,10 +493,19 @@ def _efi_only_boot_args(work):
     _efi_img = os.path.join(work, "boot", "efi.img")
     return [
         "-c", "boot.catalog",
+        # Promote appended partitions into the GPT so partition 2
+        # appears with the EFI System Partition GUID that OVMF and
+        # every physical UEFI firmware actually look for.  Without
+        # this the appended partition only shows up in the MBR and
+        # UEFI treats the ISO as non-bootable.
+        "-appended_part_as_gpt",
+        "-append_partition", "2", "0xef", _efi_img,
+        # El Torito entry (for optical firmwares that still read it),
+        # pointing at the same appended partition -- avoids embedding
+        # two copies of efi.img.
         "-eltorito-platform", "efi",
         "-eltorito-boot", "--interval:appended_partition_2:all::",
         "-no-emul-boot",
-        "-append_partition", "2", "0xef", _efi_img,
         "-isohybrid-gpt-basdat",
     ]
 
