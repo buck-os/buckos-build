@@ -237,10 +237,13 @@ def _setup_efi(work, arch):
               file=sys.stderr)
         return False
 
-    # Create FAT image for EFI boot catalog
+    # Create FAT image for EFI boot catalog.  Avoid shelling out to dd
+    # (which isn't on the hermetic PATH the iso action ships) -- a plain
+    # truncate to 10 MiB gives the same result and mkfs.vfat below is
+    # happy to format a sparse file.
     efi_img = os.path.join(work, "boot", "efi.img")
-    _run(["dd", "if=/dev/zero", f"of={efi_img}", "bs=1M", "count=10"],
-         capture_output=True)
+    with open(efi_img, "wb") as _efi:
+        _efi.truncate(10 * 1024 * 1024)
 
     mkfs_vfat = _find_tool("mkfs.vfat")
     if mkfs_vfat:
