@@ -21,6 +21,32 @@ import subprocess
 import sys
 
 
+# Common host locations for POSIX utilities.  Action envs frequently ship a
+# hermetic PATH that intentionally omits /usr/bin, so falling back to `cp`
+# via subprocess raises "command not found" (child exits 127) even though
+# the binary exists at a well-known absolute path.
+_HOST_BIN_DIRS = ("/usr/bin", "/bin", "/usr/sbin", "/sbin")
+
+
+def _find_host_binary(name):
+    """Return an absolute path to a POSIX host utility (cp, chmod, ...).
+
+    Checks the current PATH first, then a fixed set of standard host bin
+    dirs.  Raises FileNotFoundError with a clear message if nothing is
+    found -- much easier to debug than an opaque exit-127 from
+    subprocess.
+    """
+    _cur = os.environ.get("PATH", "")
+    for _d in [d for d in _cur.split(os.pathsep) if d] + list(_HOST_BIN_DIRS):
+        _cand = os.path.join(_d, name)
+        if os.access(_cand, os.X_OK):
+            return _cand
+    raise FileNotFoundError(
+        f"could not locate host binary {name!r} on PATH ({_cur!r}) "
+        f"or in {_HOST_BIN_DIRS}"
+    )
+
+
 def portabilize_env(env, ld_linux_path, hermetic_dirs=None, patchelf_path=None):
     """Portabilize PATH and CC/CXX/AR in an env dict.
 
@@ -231,7 +257,7 @@ def _needs_copy_relocation(bin_dir):
             continue
         interp = _read_pt_interp(p) or ""
         # A buck-built ld-linux lives under buck-out and is tied to the build
-        # root (an absolute path under the developer's source tree).  On a
+        # root (e.g. /data/users/<u>/fbsource/buck-out/...).  On a
         # remote-execution worker (or any other root) that path doesn't
         # resolve, so the bundle needs copy+patchelf relocation rather than
         # ld-linux wrappers.  Covers host-tools-exec whose interp points at the
@@ -269,7 +295,7 @@ def _copy_and_relocate_toolchain(bin_dir, ld_linux, scratch_dir):
     # Include the ld_linux path in the hash so local vs remote-execution
     # scratch never share a tc-copy.  patchelf bakes the interp path into
     # every relocated binary; if a prior action's tc-copy embedded a remote
-    # worker's interp path and a later local action reuses that same dir,
+    # `/re_cwd/...` interp and a later local action reuses that same dir,
     # every exec fails with `No such file or directory` because the local
     # loader can't resolve the remote path.
     _hash_input = src_root + "|" + os.path.abspath(ld_linux)
@@ -316,18 +342,24 @@ def _copy_and_relocate_toolchain(bin_dir, ld_linux, scratch_dir):
         # reads every byte, forcing full materialization and a complete copy.
         # -a preserves the symlinks and layout gcc resolves its
         # sysroot/libexec/fixed-includes through relative to the driver.
-        subprocess.run(["cp", "-a", src_root, dst_root], check=True)
+        #
+        # Use an absolute path to cp so the exec doesn't depend on PATH.  The
+        # iso rule (and other action rules) pass a hermetic PATH built from
+        # buckos toolchains, which doesn't include /usr/bin -- looking up
+        # "cp" via PATH there fails and the child exits 127.
+        _cp = _find_host_binary("cp")
+        _chmod = _find_host_binary("chmod")
+        subprocess.run([_cp, "-a", src_root, dst_root], check=True)
         # cp -a preserves the read-only input permissions; make the copy
         # writable so the in-place rewrite below can create its temp files and
         # rename them into place.
-        subprocess.run(["chmod", "-R", "u+w", dst_root], check=True)
+        subprocess.run([_chmod, "-R", "u+w", dst_root], check=True)
 
         # The toolchain is built locally (local_only), so rewrite_interps bakes
-        # the *local* build root (an absolute path under the developer's
-        # source tree) into every PT_INTERP/DT_RPATH.  On a remote-execution
-        # worker the tree lives under a different root, and that prefix
-        # differs in length from the local one, so the length-preserving
-        # byte substitution in
+        # the *local* build root (e.g. /data/users/<u>/fbsource/...) into every
+        # PT_INTERP/DT_RPATH.  On a remote-execution worker the tree lives under
+        # a different root (/re_cwd/...), and that prefix differs in length from
+        # the local one, so the length-preserving byte substitution in
         # _fix_subprogram_paths() can't fix it (it only swaps the equal-length
         # `output_artifacts`->content-hash component) -> the interp stays dead
         # and gcc fails with exit 127 "cannot execute: required file not found".
@@ -689,9 +721,8 @@ def _create_wrappers(bin_dir, ld_linux, lib_path, scratch_dir):
     """
     # Include the ld_linux path in the hash so local vs remote-execution
     # never share a wrapper dir (each ld-linux wrapper embeds an absolute
-    # ld_linux path in its exec line; a wrapper baked with a remote
-    # worker's path is dead on a local worker where that path doesn't
-    # exist, and vice versa).
+    # ld_linux path in its exec line; a `/re_cwd/...` wrapper is dead on
+    # a local worker where that path doesn't exist).
     _hash_input = bin_dir + "|" + os.path.abspath(ld_linux)
     path_hash = hashlib.sha1(_hash_input.encode()).hexdigest()[:12]
     bin_basename = os.path.basename(bin_dir)
