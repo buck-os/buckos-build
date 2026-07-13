@@ -56,7 +56,7 @@ def _meson_setup(ctx, source, cflags_file = None, ldflags_file = None, pkg_confi
         cmd.add("--source-dir", cmd_args(source, "/", ctx.attrs.source_subdir, delimiter = ""))
     else:
         cmd.add("--source-dir", source)
-    cmd.add("--build-dir", "@WORK@/configured")
+    cmd.add("--build-dir", "@WORK@/tree")
 
     # Inject toolchain CC/CXX/AR
     for env_arg in toolchain_env_args(ctx):
@@ -127,8 +127,8 @@ def _meson_setup(ctx, source, cflags_file = None, ldflags_file = None, pkg_confi
 def _src_compile(ctx, configured, source, lib_dirs_file = None):
     """Run ninja in the meson build tree."""
     cmd = cmd_args(ctx.attrs._build_tool[RunInfo])
-    cmd.add("--build-dir", "@WORK@/configured")
-    cmd.add("--output-dir", "@WORK@/built")
+    cmd.add("--build-dir", "@WORK@/tree")
+    cmd.add("--output-dir", "@WORK@/tree")
     cmd.add("--build-system", "ninja")
 
     # Ensure source dir is available — meson out-of-tree builds
@@ -170,7 +170,7 @@ def _src_compile(ctx, configured, source, lib_dirs_file = None):
 def _src_install(ctx, built, source, lib_dirs_file = None, test_marker = None):
     """Run ninja install into the output prefix."""
     cmd = cmd_args(ctx.attrs._install_tool[RunInfo])
-    cmd.add("--build-dir", "@WORK@/built")
+    cmd.add("--build-dir", "@WORK@/tree")
     cmd.add("--prefix", "@OUT@")
     cmd.add("--build-system", "ninja")
 
@@ -227,8 +227,8 @@ def _src_test(ctx, built, source, lib_dirs_file = None):
     cross build, so don't opt aarch64-only packages in.
     """
     cmd = cmd_args(ctx.attrs._build_tool[RunInfo])
-    cmd.add("--build-dir", "@WORK@/built")
-    cmd.add("--output-dir", "@WORK@/tested")
+    cmd.add("--build-dir", "@WORK@/tree")
+    cmd.add("--output-dir", "@WORK@/tree")
     cmd.add("--build-system", "ninja")
     cmd.add("--test-mode", "meson")
 

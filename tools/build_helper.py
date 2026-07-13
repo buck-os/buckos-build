@@ -355,27 +355,37 @@ def main():
     build_dir = os.path.abspath(args.build_dir)
     declared_output = os.path.abspath(args.output_dir)
 
-    # Work in scratch to avoid mutating the declared output (in buck-out)
-    # during the build.  Only the final result is placed at declared_output.
-    _scratch_base = os.path.abspath(
-        os.environ.get("BUCK_SCRATCH_PATH", os.environ.get("TMPDIR", "/tmp"))
-    )
-    output_dir = os.path.join(_scratch_base, "build-work")
-    register_cleanup(output_dir)
-
     if not os.path.isdir(build_dir):
         print(f"error: build directory not found: {build_dir}", file=sys.stderr)
         sys.exit(1)
 
-    # Copy build tree to scratch for building
-    if os.path.exists(output_dir):
-        shutil.rmtree(output_dir)
-    shutil.copytree(build_dir, output_dir, symlinks=True)
-    # Make the scratch copy writable (copytree preserves the source's
-    # modes; the source is read-only under remote execution).
+    # In-place build: caller pointed --build-dir and --output-dir at the
+    # same path (this is how meson_package wires phases within a single
+    # Buck2 action -- the whole configure+compile+install pipeline shares
+    # $BUCK_SCRATCH_PATH/tree so meson's baked source-relative paths and
+    # pickled .dat workdirs never need patching).  Skip the copytree and
+    # every rewrite pass; they exist solely to compensate for the copy.
+    _in_place = build_dir == declared_output
     from _env import make_tree_writable
 
-    make_tree_writable(output_dir)
+    if _in_place:
+        output_dir = build_dir
+        make_tree_writable(output_dir)
+    else:
+        # Work in scratch to avoid mutating the declared output (in
+        # buck-out) during the build.  Only the final result is placed
+        # at declared_output.
+        _scratch_base = os.path.abspath(
+            os.environ.get("BUCK_SCRATCH_PATH", os.environ.get("TMPDIR", "/tmp"))
+        )
+        output_dir = os.path.join(_scratch_base, "build-work")
+        register_cleanup(output_dir)
+        if os.path.exists(output_dir):
+            shutil.rmtree(output_dir)
+        shutil.copytree(build_dir, output_dir, symlinks=True)
+        # Make the scratch copy writable (copytree preserves the source's
+        # modes; the source is read-only under remote execution).
+        make_tree_writable(output_dir)
 
     # Fix symlinks that break after copytree:
     #
@@ -1177,36 +1187,35 @@ def main():
     if "CC" in env and "HOSTCC" not in env:
         env["HOSTCC"] = env["CC"]
 
-    # For meson builds, run `meson setup --reconfigure` at output_dir
-    # so meson regenerates build.ninja with paths correct for the
-    # scratch location.  build.ninja embeds source references as paths
-    # relative to the build dir; output_dir has a different depth than
-    # the meson-configured build_dir, so those `../../` chains would
-    # otherwise resolve wrong.  Meson stores the absolute source_dir in
-    # meson-private/coredata.dat and rewrites everything else on
-    # reconfigure.
-    _meson_coredata = os.path.join(output_dir, "meson-private", "coredata.dat")
-    if os.path.isfile(_meson_coredata):
-        _meson_bin = shutil.which("meson", path=env.get("PATH", ""))
-        if _meson_bin:
-            _rc_result = subprocess.run(
-                [_meson_bin, "setup", "--reconfigure", output_dir],
-                env=env,
-                stdout=sys.stderr,
-                stderr=sys.stderr,
-            )
-            if _rc_result.returncode != 0:
+    # If we copied build_dir to a scratch output_dir (not in-place),
+    # meson's baked source-relative paths in build.ninja will resolve
+    # wrong from the new location.  Run `meson setup --reconfigure` so
+    # meson regenerates build.ninja for output_dir.  In-place builds
+    # (build_dir == output_dir) skip this -- meson's paths already point
+    # where ninja is about to run.
+    if not _in_place:
+        _meson_coredata = os.path.join(output_dir, "meson-private", "coredata.dat")
+        if os.path.isfile(_meson_coredata):
+            _meson_bin = shutil.which("meson", path=env.get("PATH", ""))
+            if _meson_bin:
+                _rc_result = subprocess.run(
+                    [_meson_bin, "setup", "--reconfigure", output_dir],
+                    env=env,
+                    stdout=sys.stderr,
+                    stderr=sys.stderr,
+                )
+                if _rc_result.returncode != 0:
+                    print(
+                        f"error: meson --reconfigure failed with exit code {_rc_result.returncode}",
+                        file=sys.stderr,
+                    )
+                    sys.exit(1)
+            else:
                 print(
-                    f"error: meson --reconfigure failed with exit code {_rc_result.returncode}",
+                    "warning: meson coredata.dat found but meson not on PATH; "
+                    "build.ninja relative paths may not resolve from output_dir",
                     file=sys.stderr,
                 )
-                sys.exit(1)
-        else:
-            print(
-                "warning: meson coredata.dat found but meson not on PATH; "
-                "build.ninja relative paths may not resolve from output_dir",
-                file=sys.stderr,
-            )
 
     # Run pre-build commands (e.g. Kconfig setup)
     for cmd_str in args.pre_cmds:
