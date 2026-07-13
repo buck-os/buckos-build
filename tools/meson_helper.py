@@ -5,12 +5,12 @@ Runs meson setup with specified source dir, build dir, and arguments.
 """
 
 # Build-tag: bumped whenever a semantic change to this helper's runtime
-# behavior needs to be forced through the cache.  The remote action cache
-# is content-addressed by inputs; if the .py bytes are byte-identical to
-# a prior successful run, the cached .par output is returned regardless
-# of surrounding rebuild attempts.  Any change to this string alters the
-# .py bytes and forces the .par (and every downstream meson_package
-# action digest) to change.
+# behavior needs to be forced through the cache.  The remote action
+# cache is content-addressed by inputs; if the .py bytes are byte-
+# identical to a prior successful run, the cached .par output is
+# returned regardless of surrounding rebuild attempts.  Any change to
+# this string alters the .py bytes and forces the .par (and every
+# downstream meson_package action digest) to change.
 _HELPER_BUILD_TAG = "iterative-pickle-atomic-write-2026-07-13"
 
 import argparse
@@ -768,46 +768,107 @@ def main():
                     if _sp not in sys.path:
                         sys.path.insert(0, _sp)
 
-    # Meson's pickled Backend/BuildData graphs are deeply nested (chains
-    # of Target -> BuildSettings -> Environment -> ... 5+k levels deep for
-    # large projects like polkit).  Bump the recursion limit for the
-    # pickle-rewrite pass so _patch_pickle_paths doesn't blow the default
-    # 1000-depth ceiling and leave the .dat file half-rewritten (ninja
-    # then fails to load it).
-    _prev_reclimit = sys.getrecursionlimit()
-    sys.setrecursionlimit(max(_prev_reclimit, 50000))
-    try:
-        for _mdat in _glob.glob(
-            os.path.join(declared_output, "**/meson-private/*.dat"), recursive=True
-        ):
-            # Write via temp + atomic rename.  A plain `open(_mdat, "wb")`
-            # truncates the target BEFORE pickle.dump runs, so if dump (or
-            # anything before the close) fails, the .dat is left empty/half-
-            # written and ninja can't load it -> build fails even though
-            # our own warning is caught.
-            _tmp = _mdat + ".tmp." + str(os.getpid())
-            try:
-                _dat_stat = os.stat(_mdat)
-                with open(_mdat, "rb") as f:
-                    _idata = _pickle.load(f)
-                _patch_pickle_paths(_idata, _scratch_path, declared_output)
+    # Rewrite paths in meson's pickled .dat files via byte-level
+    # substitution instead of pickle.load / .dump.  Meson's Backend /
+    # BuildData graphs are too deeply nested for pickle to serialize
+    # even with a raised recursion limit -- large projects (polkit,
+    # qt6) hit RecursionError inside CPython's pickle module itself,
+    # which we can't override.
+    #
+    # Pickle strings are stored as length-prefixed bytes (SHORT_BINUNICODE
+    # = 0x8c + 1-byte len + utf-8; BINUNICODE = 0x8d + 4-byte len + utf-8;
+    # BINUNICODE8 = 0x8d + 8-byte len + utf-8).  We can safely find every
+    # occurrence of `<opcode><len><scratch_bytes>` and rewrite to
+    # `<opcode><new_len><declared_bytes>`, preserving pickle validity
+    # regardless of graph depth.
+    print(
+        f"meson_helper: pickle byte-rewrite pass (build-tag={_HELPER_BUILD_TAG})",
+        file=sys.stderr,
+    )
+
+    _SCRATCH_B = _scratch_path.encode("utf-8")
+    _DECLARED_B = declared_output.encode("utf-8")
+
+    def _rewrite_pickle_bytes(data, needle, replacement):
+        """Byte-level substitution of pickled strings containing `needle`.
+
+        Walks a pickle byte stream looking for BINUNICODE / SHORT_BINUNICODE
+        opcodes whose string payload contains `needle`, and rewrites both
+        the payload and its preceding length prefix.  Returns the new bytes.
+        Any other substring occurrences (e.g. in BINSTRING, BINBYTES) are
+        left alone -- their length prefixes have different encodings that
+        we'd need to handle individually.
+        """
+        out = bytearray()
+        i = 0
+        n = len(data)
+        while i < n:
+            b = data[i]
+            if b == 0x8C and i + 1 < n:  # SHORT_BINUNICODE, 1-byte len
+                ln = data[i + 1]
+                payload_start = i + 2
+                payload_end = payload_start + ln
+                if payload_end <= n:
+                    payload = data[payload_start:payload_end]
+                    if needle in payload:
+                        new_payload = payload.replace(needle, replacement)
+                        new_len = len(new_payload)
+                        if new_len < 256:
+                            out.append(0x8C)
+                            out.append(new_len)
+                        else:
+                            out.append(0x8D)  # promote to BINUNICODE (4-byte len)
+                            out.extend(new_len.to_bytes(4, "little"))
+                        out.extend(new_payload)
+                        i = payload_end
+                        continue
+                    out.extend(data[i:payload_end])
+                    i = payload_end
+                    continue
+            if b == 0x8D and i + 4 < n:  # BINUNICODE, 4-byte len
+                ln = int.from_bytes(data[i + 1 : i + 5], "little")
+                payload_start = i + 5
+                payload_end = payload_start + ln
+                if payload_end <= n:
+                    payload = data[payload_start:payload_end]
+                    if needle in payload:
+                        new_payload = payload.replace(needle, replacement)
+                        new_len = len(new_payload)
+                        out.append(0x8D)
+                        out.extend(new_len.to_bytes(4, "little"))
+                        out.extend(new_payload)
+                        i = payload_end
+                        continue
+                    out.extend(data[i:payload_end])
+                    i = payload_end
+                    continue
+            out.append(b)
+            i += 1
+        return bytes(out)
+
+    for _mdat in _glob.glob(
+        os.path.join(declared_output, "**/meson-private/*.dat"), recursive=True
+    ):
+        _tmp = _mdat + ".tmp." + str(os.getpid())
+        try:
+            _dat_stat = os.stat(_mdat)
+            with open(_mdat, "rb") as f:
+                _raw = f.read()
+            if _SCRATCH_B in _raw:
+                _rewritten = _rewrite_pickle_bytes(_raw, _SCRATCH_B, _DECLARED_B)
                 with open(_tmp, "wb") as f:
-                    _pickle.dump(_idata, f)
+                    f.write(_rewritten)
                 os.replace(_tmp, _mdat)
                 os.utime(_mdat, (_dat_stat.st_atime, _dat_stat.st_mtime))
-            except Exception as _e:
-                # Best-effort cleanup of the temp file; leave the original
-                # .dat untouched so ninja can still read it.
-                try:
-                    os.unlink(_tmp)
-                except OSError:
-                    pass
-                print(
-                    f"warning: could not rewrite {os.path.basename(_mdat)}: {_e}",
-                    file=sys.stderr,
-                )
-    finally:
-        sys.setrecursionlimit(_prev_reclimit)
+        except Exception as _e:
+            try:
+                os.unlink(_tmp)
+            except OSError:
+                pass
+            print(
+                f"warning: could not rewrite {os.path.basename(_mdat)}: {_e}",
+                file=sys.stderr,
+            )
 
 
 if __name__ == "__main__":
