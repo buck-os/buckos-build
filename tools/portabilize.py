@@ -21,40 +21,6 @@ import subprocess
 import sys
 
 
-# Common host locations for POSIX utilities.  Action envs frequently ship a
-# hermetic PATH that intentionally omits /usr/bin, so falling back to `cp`
-# via subprocess raises "command not found" (child exits 127) even though
-# the binary exists at a well-known absolute path.
-_HOST_BIN_DIRS = ("/usr/bin", "/bin", "/usr/sbin", "/sbin")
-
-
-def _find_host_binary(name):
-    """Return an absolute path to a POSIX host utility (cp, chmod, ...).
-
-    Prefer the fixed standard host bin dirs (/usr/bin, /bin, ...) over
-    the current PATH.  Rationale: buckos actions run with a hermetic
-    PATH that points at freshly-built buckos toolchain binaries; those
-    binaries are linked against a newer glibc than the host's
-    /lib64/libc.so.6 and crash with "undefined symbol
-    __rtld_libc_freeres" when exec'd directly.  We want the host's own
-    cp/chmod (from /bin), which run against the host's own libc.  Only
-    fall back to PATH when the standard locations don't have the name.
-    """
-    for _d in list(_HOST_BIN_DIRS):
-        _cand = os.path.join(_d, name)
-        if os.access(_cand, os.X_OK):
-            return _cand
-    _cur = os.environ.get("PATH", "")
-    for _d in [d for d in _cur.split(os.pathsep) if d]:
-        _cand = os.path.join(_d, name)
-        if os.access(_cand, os.X_OK):
-            return _cand
-    raise FileNotFoundError(
-        f"could not locate host binary {name!r} in {_HOST_BIN_DIRS} "
-        f"or on PATH ({_cur!r})"
-    )
-
-
 def portabilize_env(env, ld_linux_path, hermetic_dirs=None, patchelf_path=None):
     """Portabilize PATH and CC/CXX/AR in an env dict.
 
@@ -341,27 +307,42 @@ def _copy_and_relocate_toolchain(bin_dir, ld_linux, scratch_dir):
             shutil.rmtree(container_dir)
         os.makedirs(container_dir)
 
-        # NOTE: do NOT use --reflink=auto here.  On a remote-execution worker
-        # the source tree is a CAS-backed input that may be materialized
-        # on-access; a reflink (copy-on-write) clone can silently skip entries
-        # whose bytes aren't materialized yet, producing an INCOMPLETE copy
-        # (e.g. missing libpython3.12.so.1.0) while cp still exits 0 -- the
-        # action then fails much later at python startup.  A plain `cp -a`
-        # reads every byte, forcing full materialization and a complete copy.
-        # -a preserves the symlinks and layout gcc resolves its
-        # sysroot/libexec/fixed-includes through relative to the driver.
+        # Use pure Python (shutil.copytree + os.walk chmod) instead of
+        # shelling out to `cp -a` / `chmod -R`.  Toolchain trees contain
+        # only regular files, symlinks, and directories with standard
+        # UNIX perms; we don't need cp's edge-case handling for xattrs,
+        # sparse files, or device nodes.  Going through Python removes
+        # the whole class of "which cp is on PATH and can it exec against
+        # this glibc" bugs -- the buckos hermetic PATH points at freshly-
+        # built coreutils linked against a newer glibc than the host,
+        # which crashes with __rtld_libc_freeres, and the host cp isn't
+        # on that PATH.
         #
-        # Use an absolute path to cp so the exec doesn't depend on PATH.  The
-        # iso rule (and other action rules) pass a hermetic PATH built from
-        # buckos toolchains, which doesn't include /usr/bin -- looking up
-        # "cp" via PATH there fails and the child exits 127.
-        _cp = _find_host_binary("cp")
-        _chmod = _find_host_binary("chmod")
-        subprocess.run([_cp, "-a", src_root, dst_root], check=True)
-        # cp -a preserves the read-only input permissions; make the copy
-        # writable so the in-place rewrite below can create its temp files and
-        # rename them into place.
-        subprocess.run([_chmod, "-R", "u+w", dst_root], check=True)
+        # symlinks=True preserves symlinks as symlinks (matching cp -a's
+        # behaviour and preserving the layout gcc walks to resolve
+        # sysroot / libexec / fixed-includes).  copy2 (the default
+        # copy_function) preserves mode + mtimes and uses sendfile /
+        # copy_file_range under the hood, so we still get near-cp
+        # throughput without the reflink risk noted below.
+        #
+        # NOTE: reflinks are NOT used here even though newer shutil can
+        # opt into them.  On a remote-execution worker the source tree
+        # is a CAS-backed input that may be materialized on-access; a
+        # reflink (copy-on-write) clone can silently skip entries whose
+        # bytes aren't materialized yet, producing an INCOMPLETE copy
+        # (e.g. missing libpython3.12.so.1.0) that only fails much later
+        # at exec time.  Byte-copies force full materialization.
+        shutil.copytree(src_root, dst_root, symlinks=True)
+        # Make the copy writable so the in-place ELF rewrite below can
+        # create temp files and rename them over each binary.  Match
+        # `chmod -R u+w` by ORing S_IWUSR into every file and directory.
+        for _dp, _dns, _fns in os.walk(dst_root):
+            for _name in _dns + _fns:
+                _p = os.path.join(_dp, _name)
+                if os.path.islink(_p):
+                    continue
+                _st = os.stat(_p)
+                os.chmod(_p, _st.st_mode | 0o200)
 
         # The toolchain is built locally (local_only), so rewrite_interps bakes
         # the *local* build root (e.g. /data/users/<u>/fbsource/...) into every
