@@ -692,36 +692,56 @@ def main():
     # embed build directory paths as workdir and in command arguments.
     import pickle as _pickle
 
-    def _patch_pickle_paths(obj, old, new, _seen=None):
-        """Recursively replace old prefix with new in string attrs.
+    def _patch_pickle_paths(root_obj, old, new):
+        """Iteratively replace old prefix with new in string attrs.
 
-        Tracks visited container/instance objects by id() to survive cycles
-        and diamond graphs -- meson's pickled Backend/BuildData graphs can
-        both share subobjects and (in some versions) reference themselves,
-        which without this guard blows Python's recursion limit and leaves
-        the .dat file half-rewritten (ninja then fails to load it).
+        Uses an explicit work stack (not Python recursion) so it can
+        survive graphs of any depth -- meson's pickled Backend/BuildData
+        graphs are deeply nested (thousands of levels) and can share
+        subobjects, so a recursive implementation blows the interpreter
+        even with an elevated setrecursionlimit.
+
+        Mutates lists / dicts / instance __dict__s in place.  Tuples and
+        frozensets are immutable so we can't rewrite them in place; we
+        rely on their contents being either primitives or containers
+        that we CAN mutate (the tuple itself keeps pointing at the same
+        containers, which have now been rewritten).
         """
-        if _seen is None:
-            _seen = set()
-        if isinstance(obj, str):
-            return obj.replace(old, new) if old in obj else obj
-        oid = id(obj)
-        if oid in _seen:
-            return obj
-        if isinstance(obj, (list, tuple, dict, set, frozenset)) or hasattr(obj, "__dict__"):
-            _seen.add(oid)
-        if isinstance(obj, list):
-            return [_patch_pickle_paths(item, old, new, _seen) for item in obj]
-        if isinstance(obj, tuple):
-            return tuple(_patch_pickle_paths(item, old, new, _seen) for item in obj)
-        if isinstance(obj, dict):
-            return {k: _patch_pickle_paths(v, old, new, _seen) for k, v in obj.items()}
-        if hasattr(obj, "__dict__"):
-            for k, v in obj.__dict__.items():
-                patched = _patch_pickle_paths(v, old, new, _seen)
-                if patched is not v:
-                    setattr(obj, k, patched)
-        return obj
+        seen = set()
+        stack = [root_obj]
+        while stack:
+            obj = stack.pop()
+            oid = id(obj)
+            if oid in seen:
+                continue
+            if isinstance(obj, (list, tuple, dict, set, frozenset)) or hasattr(obj, "__dict__"):
+                seen.add(oid)
+            if isinstance(obj, list):
+                for i, item in enumerate(obj):
+                    if isinstance(item, str):
+                        if old in item:
+                            obj[i] = item.replace(old, new)
+                    else:
+                        stack.append(item)
+            elif isinstance(obj, dict):
+                for k in list(obj.keys()):
+                    v = obj[k]
+                    if isinstance(v, str):
+                        if old in v:
+                            obj[k] = v.replace(old, new)
+                    else:
+                        stack.append(v)
+            elif isinstance(obj, (tuple, set, frozenset)):
+                for item in obj:
+                    if not isinstance(item, str):
+                        stack.append(item)
+            elif hasattr(obj, "__dict__"):
+                for k, v in list(obj.__dict__.items()):
+                    if isinstance(v, str):
+                        if old in v:
+                            setattr(obj, k, v.replace(old, new))
+                    else:
+                        stack.append(v)
 
     # Locate mesonbuild from hermetic PATH so pickle.load can
     # deserialise the meson-internal dataclasses.
