@@ -11,6 +11,13 @@ autotools_package(
     # Create the .config file in the build dir before make
     pre_build_cmds = [
         "printf 'CONFIG_BACKEND=file\\nCONFIG_CTRL_IFACE=y\\nCONFIG_DEBUG_FILE=y\\nCONFIG_DEBUG_SYSLOG=y\\nCONFIG_DRIVER_NL80211=y\\nCONFIG_DRIVER_WEXT=y\\nCONFIG_DRIVER_WIRED=y\\nCONFIG_EAP_GTC=y\\nCONFIG_EAP_LEAP=y\\nCONFIG_EAP_MD5=y\\nCONFIG_EAP_MSCHAPV2=y\\nCONFIG_EAP_OTP=y\\nCONFIG_EAP_PEAP=y\\nCONFIG_EAP_TLS=y\\nCONFIG_EAP_TTLS=y\\nCONFIG_IEEE8021X_EAPOL=y\\nCONFIG_PKCS12=y\\nCONFIG_READLINE=y\\nCONFIG_SMARTCARD=y\\nCONFIG_WPS=y\\nCONFIG_LIBNL32=y\\nCONFIG_MESH=y\\nCONFIG_SAE=y\\nCONFIG_OWE=y\\nCONFIG_DPP=y\\nCONFIG_FILS=y\\nCONFIG_TLS=openssl\\n' > wpa_supplicant/.config",
+        # wpa_cli links -lncurses (from CONFIG_READLINE), but our ncurses
+        # is built with --enable-widec (produces libncursesw.so).  The
+        # ncurses post_install creates a libncurses.so → libncursesw.so
+        # symlink, but the compat symlink isn't materialized into the
+        # linker's search path under sandboxed remote execution.  Rewrite the Makefile's
+        # -lncurses to -lncursesw so it links the real library.
+        "sed -i 's/-lncurses\\b/-lncursesw/g' wpa_supplicant/Makefile",
     ],
 
     make_args = [

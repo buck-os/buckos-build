@@ -13,6 +13,21 @@ python_library(
     visibility = ["PUBLIC"],
 )
 
+# Extended shebang portabilizer: wraps _env.portabilize_shebangs to also
+# retarget upstream absolute-path shebangs (/usr/bin/perl, /usr/bin/python*)
+# to /usr/bin/env form so scripts work on remote-execution workers whose
+# sysroot lacks those absolute paths. Kept in its own library so editing it
+# doesn't invalidate every _env consumer (in particular
+# bootstrap_*_configure.py, which import make_tree_writable / clean_env
+# from _env — changing _env forces a full bootstrap toolchain rebuild).
+python_library(
+    name = "portabilize_shebangs",
+    srcs = ["portabilize_shebangs.py"],
+    base_module = "",
+    visibility = ["PUBLIC"],
+    deps = [":_env"],
+)
+
 python_library(
     name = "_trace",
     srcs = ["_trace.py"],
@@ -65,7 +80,7 @@ python_binary(
 python_binary(
     name = "install_helper",
     main = "install_helper.py",
-    deps = [":_env"],
+    deps = [":_env", ":portabilize_shebangs"],
     visibility = ["PUBLIC"],
 )
 
@@ -344,7 +359,7 @@ python_binary(
 python_binary(
     name = "binary_install_helper",
     main = "binary_install_helper.py",
-    deps = [":_env"],
+    deps = [":_env", ":portabilize_shebangs"],
     visibility = ["PUBLIC"],
 )
 

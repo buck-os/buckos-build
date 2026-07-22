@@ -206,6 +206,11 @@ fi
         "//packages/linux/system/libs/crypto/openssl:openssl",
         "//packages/linux/core/zlib:zlib",
         "//packages/linux/system/libs/compression/zstd:zstd",
+        # wayland-scanner runs at build time to codegen protocol headers
+        # (qtwayland).  Without wayland in host_deps, its bin dir isn't on
+        # PATH and cmake falls back to a system /bin/wayland-scanner that
+        # doesn't exist on sandboxed workers.
+        "//packages/linux/graphics/rendering/wayland:wayland",
     ],
     deps = [
         "//packages/linux/core/zlib:zlib",

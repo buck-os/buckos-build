@@ -7,10 +7,11 @@ in the output directory.
 
 import argparse
 import os
+import shutil
 import subprocess
 import sys
 
-from _env import clean_env, sysroot_lib_paths
+from _env import clean_env, make_tree_writable, sysroot_lib_paths
 
 
 def _resolve_env_paths(value):
@@ -159,6 +160,28 @@ def main():
 
     source_abs = os.path.abspath(args.source_dir)
     output_abs = os.path.abspath(args.output_dir)
+
+    # setup.py / pip --no-build-isolation write egg-info and build/ back into
+    # the source tree. Under remote execution the input tree is read-only
+    # (and may contain pre-existing egg-info files chmod can't override), so
+    # copy to scratch and use that as the working source, mirroring
+    # autotools_build.
+    _scratch_base = os.path.abspath(
+        os.environ.get("BUCK_SCRATCH_PATH", os.environ.get("TMPDIR", "/tmp"))
+    )
+    _scratch_src = os.path.join(_scratch_base, "python-src")
+    if os.path.exists(_scratch_src):
+        shutil.rmtree(_scratch_src)
+    shutil.copytree(source_abs, _scratch_src, symlinks=True)
+    make_tree_writable(_scratch_src)
+    # Nuke any pre-existing egg-info that ships in the tarball; setuptools
+    # opens these for write and permission-denies before it would rewrite.
+    for _dp, _dns, _ in os.walk(_scratch_src):
+        for _n in list(_dns):
+            if _n.endswith(".egg-info"):
+                shutil.rmtree(os.path.join(_dp, _n), ignore_errors=True)
+                _dns.remove(_n)
+    source_abs = _scratch_src
 
     # Check if pip is available when not explicitly using setup.py.
     # Fall back to setup.py install if pip is missing (e.g. host

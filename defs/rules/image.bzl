@@ -4,11 +4,11 @@ Image rules: iso_image, raw_disk_image, stage3_tarball.
 Assembly rules that take rootfs/kernel/initramfs deps and produce images.
 """
 
-load("//defs:providers.bzl", "IsoImageInfo", "KernelInfo", "PackageInfo", "Stage3Info", "get_kernel_image")
 load("//defs:host_tools.bzl", "host_tool_path_args")
+load("//defs:providers.bzl", "IsoImageInfo", "KernelInfo", "PackageInfo", "Stage3Info", "get_kernel_image")
 load("//defs:toolchain_helpers.bzl", "TOOLCHAIN_ATTRS", "toolchain_ld_linux_args", "toolchain_path_args")
-load("//defs/rules:_common.bzl", "add_flag_file", "write_lib_dirs")
 load("//defs:tsets.bzl", "PathInfoTSet")
+load("//defs/rules:_common.bzl", "add_flag_file", "write_lib_dirs")
 
 # =============================================================================
 # RAW DISK IMAGE
@@ -46,23 +46,21 @@ def _raw_disk_image_impl(ctx: AnalysisContext) -> list[Provider]:
 _raw_disk_image_rule = rule(
     impl = _raw_disk_image_impl,
     attrs = {
-        "rootfs": attrs.dep(),
-        "size": attrs.string(default = "2G"),
         "filesystem": attrs.string(default = "ext4"),  # ext4, xfs, btrfs
         "label": attrs.option(attrs.string(), default = None),
-        "partition_table": attrs.bool(default = False),  # True for GPT with EFI
         "labels": attrs.list(attrs.string(), default = []),
+        "partition_table": attrs.bool(default = False),  # True for GPT with EFI
+        "rootfs": attrs.dep(),
+        "size": attrs.string(default = "2G"),
         "_disk_image_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:disk_image_helper"),
         ),
-    } | TOOLCHAIN_ATTRS,
+    }
+    | TOOLCHAIN_ATTRS,
 )
 
 def raw_disk_image(labels = [], **kwargs):
-    _raw_disk_image_rule(
-        labels = labels,
-        **kwargs
-    )
+    _raw_disk_image_rule(labels = labels, **kwargs)
 
 # =============================================================================
 # DM-VERITY MEASURED IMAGE
@@ -141,49 +139,49 @@ def _verity_image_impl(ctx: AnalysisContext) -> list[Provider]:
         allow_cache_upload = True,
     )
 
-    return [DefaultInfo(
-        default_output = root_img,
-        other_outputs = [hash_img, roothash, cmdline],
-        sub_targets = {
-            "cmdline": [DefaultInfo(default_output = cmdline)],
-            "hash": [DefaultInfo(default_output = hash_img)],
-            "roothash": [DefaultInfo(default_output = roothash)],
-        },
-    )]
+    return [
+        DefaultInfo(
+            default_output = root_img,
+            other_outputs = [hash_img, roothash, cmdline],
+            sub_targets = {
+                "cmdline": [DefaultInfo(default_output = cmdline)],
+                "hash": [DefaultInfo(default_output = hash_img)],
+                "roothash": [DefaultInfo(default_output = roothash)],
+            },
+        )
+    ]
 
 _verity_image_rule = rule(
     impl = _verity_image_impl,
     attrs = {
-        "rootfs": attrs.dep(),
-        "cryptsetup": attrs.dep(
-            providers = [PackageInfo],
-            default = "//packages/linux/system/filesystem/management/cryptsetup:cryptsetup",
-        ),
+        "base_cmdline": attrs.string(default = "noresume"),
         # mkfs providers; only the one matching `filesystem` is actually built.
         "btrfs_progs": attrs.dep(
             providers = [PackageInfo],
             default = "//packages/linux/system/filesystem/native/btrfs-progs:btrfs-progs",
+        ),
+        "cryptsetup": attrs.dep(
+            providers = [PackageInfo],
+            default = "//packages/linux/system/filesystem/management/cryptsetup:cryptsetup",
         ),
         "e2fsprogs": attrs.dep(
             providers = [PackageInfo],
             default = "//packages/linux/system/filesystem/native/e2fsprogs:e2fsprogs",
         ),
         "filesystem": attrs.string(default = "btrfs"),  # btrfs (hatch parity) or ext4
-        "size": attrs.string(default = "4G"),
         "label": attrs.option(attrs.string(), default = None),
-        "base_cmdline": attrs.string(default = "noresume"),
         "labels": attrs.list(attrs.string(), default = []),
+        "rootfs": attrs.dep(),
+        "size": attrs.string(default = "4G"),
         "_verity_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:verity_image_helper"),
         ),
-    } | TOOLCHAIN_ATTRS,
+    }
+    | TOOLCHAIN_ATTRS,
 )
 
 def verity_image(labels = [], **kwargs):
-    _verity_image_rule(
-        labels = labels,
-        **kwargs
-    )
+    _verity_image_rule(labels = labels, **kwargs)
 
 # =============================================================================
 # ISO IMAGE
@@ -251,7 +249,17 @@ def _iso_image_impl(ctx: AnalysisContext) -> list[Provider]:
     if mtools_dep and PackageInfo in mtools_dep:
         cmd.add("--path-prepend", mtools_dep[PackageInfo].prefix.project("usr/bin"))
 
-    ctx.actions.run(cmd, category = "iso", identifier = ctx.attrs.name, allow_cache_upload = True)
+    ctx.actions.run(
+        cmd,
+        category = "iso",
+        identifier = ctx.attrs.name,
+        allow_cache_upload = True,
+        # Bump this whenever iso_helper.py changes semantically -- Buck2
+        # keys action results on inputs + env, so a fresh env var here
+        # forces re-execution even when iso_helper.par's digest change
+        # somehow doesn't propagate through the DICE cache.
+        env = {"_ISO_HELPER_SEMANTIC_TAG": "appended-part-as-gpt-2026-07-13"},
+    )
 
     return [
         DefaultInfo(default_output = iso_file),
@@ -266,19 +274,37 @@ def _iso_image_impl(ctx: AnalysisContext) -> list[Provider]:
 _iso_image_rule = rule(
     impl = _iso_image_impl,
     attrs = {
-        "kernel": attrs.dep(),
+        "arch": attrs.string(default = "x86_64"),  # x86_64 or aarch64
+        "boot_mode": attrs.string(default = "hybrid"),  # bios, efi, or hybrid
+        "host_deps": attrs.list(attrs.dep(), default = []),
         "initramfs": attrs.dep(),
+        "kernel": attrs.dep(),
+        "kernel_args": attrs.string(default = "quiet"),
+        "labels": attrs.list(attrs.string(), default = []),
         "modules": attrs.option(attrs.dep(), default = None),
         "rootfs": attrs.option(attrs.dep(), default = None),
-        "boot_mode": attrs.string(default = "hybrid"),  # bios, efi, or hybrid
-        "volume_label": attrs.string(default = "BUCKOS"),
-        "kernel_args": attrs.string(default = "quiet"),
-        "arch": attrs.string(default = "x86_64"),  # x86_64 or aarch64
         "syslinux": attrs.option(attrs.dep(), default = None),
-        "host_deps": attrs.list(attrs.dep(), default = []),
-        "labels": attrs.list(attrs.string(), default = []),
+        "volume_label": attrs.string(default = "BUCKOS"),
+        # dosfstools for mkfs.vfat (creates FAT EFI system partition image)
+        "_dosfstools": attrs.default_only(
+            attrs.exec_dep(default = "//packages/linux/system/filesystem/native/dosfstools:dosfstools"),
+        ),
+        # GRUB EFI for grub-mkimage (creates UEFI boot image)
+        "_grub": attrs.default_only(
+            attrs.exec_dep(default = "//packages/linux/boot/grub:grub"),
+        ),
         "_iso_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:iso_helper"),
+        ),
+        "_libburn": attrs.default_only(
+            attrs.exec_dep(default = "//packages/linux/dev-libs/iso/libburn:libburn"),
+        ),
+        "_libisofs": attrs.default_only(
+            attrs.exec_dep(default = "//packages/linux/dev-libs/iso/libisofs:libisofs"),
+        ),
+        # mtools for mmd/mcopy (populates FAT image with EFI bootloader)
+        "_mtools": attrs.default_only(
+            attrs.exec_dep(default = "//packages/linux/system/apps/mtools:mtools"),
         ),
         # xorriso (from libisoburn) is required for ISO creation.
         # libisofs and libburn are transitive deps whose shared libs
@@ -287,32 +313,12 @@ _iso_image_rule = rule(
         "_xorriso": attrs.default_only(
             attrs.exec_dep(default = "//packages/linux/dev-libs/iso/libisoburn:libisoburn"),
         ),
-        "_libisofs": attrs.default_only(
-            attrs.exec_dep(default = "//packages/linux/dev-libs/iso/libisofs:libisofs"),
-        ),
-        "_libburn": attrs.default_only(
-            attrs.exec_dep(default = "//packages/linux/dev-libs/iso/libburn:libburn"),
-        ),
-        # GRUB EFI for grub-mkimage (creates UEFI boot image)
-        "_grub": attrs.default_only(
-            attrs.exec_dep(default = "//packages/linux/boot/grub:grub"),
-        ),
-        # dosfstools for mkfs.vfat (creates FAT EFI system partition image)
-        "_dosfstools": attrs.default_only(
-            attrs.exec_dep(default = "//packages/linux/system/filesystem/native/dosfstools:dosfstools"),
-        ),
-        # mtools for mmd/mcopy (populates FAT image with EFI bootloader)
-        "_mtools": attrs.default_only(
-            attrs.exec_dep(default = "//packages/linux/system/apps/mtools:mtools"),
-        ),
-    } | TOOLCHAIN_ATTRS,
+    }
+    | TOOLCHAIN_ATTRS,
 )
 
 def iso_image(labels = [], **kwargs):
-    _iso_image_rule(
-        labels = labels,
-        **kwargs
-    )
+    _iso_image_rule(labels = labels, **kwargs)
 
 # =============================================================================
 # STAGE3 TARBALL
@@ -327,8 +333,8 @@ def _stage3_tarball_impl(ctx: AnalysisContext) -> list[Provider]:
     # Determine compression settings
     compression = ctx.attrs.compression
     compress_opts = {
-        "xz": ".tar.xz",
         "gz": ".tar.gz",
+        "xz": ".tar.xz",
         "zstd": ".tar.zst",
     }
 
@@ -392,21 +398,19 @@ def _stage3_tarball_impl(ctx: AnalysisContext) -> list[Provider]:
 _stage3_tarball_rule = rule(
     impl = _stage3_tarball_impl,
     attrs = {
-        "rootfs": attrs.dep(),
-        "variant": attrs.string(default = "base"),      # minimal, base, developer, complete
-        "arch": attrs.string(default = "amd64"),        # amd64, arm64
-        "libc": attrs.string(default = "glibc"),        # glibc, musl
-        "compression": attrs.string(default = "xz"),    # xz, gz, zstd
-        "version": attrs.string(default = ""),          # Optional version string
+        "arch": attrs.string(default = "amd64"),  # amd64, arm64
+        "compression": attrs.string(default = "xz"),  # xz, gz, zstd
         "labels": attrs.list(attrs.string(), default = []),
+        "libc": attrs.string(default = "glibc"),  # glibc, musl
+        "rootfs": attrs.dep(),
+        "variant": attrs.string(default = "base"),  # minimal, base, developer, complete
+        "version": attrs.string(default = ""),  # Optional version string
         "_stage3_tool": attrs.default_only(
             attrs.exec_dep(default = "//tools:stage3_helper"),
         ),
-    } | TOOLCHAIN_ATTRS,
+    }
+    | TOOLCHAIN_ATTRS,
 )
 
 def stage3_tarball(labels = [], **kwargs):
-    _stage3_tarball_rule(
-        labels = labels,
-        **kwargs
-    )
+    _stage3_tarball_rule(labels = labels, **kwargs)

@@ -37,6 +37,11 @@ meson_package(
     pre_configure_cmds = [
         # Fix meson.build: systemd_dep used outside its scope when systemdsystemunitdir is set
         "sed -i '222s|.*systemd_sysusers_dir.*|  systemd_sysusers_dir = '\"'\"'/usr/lib/sysusers.d'\"'\"'|' meson.build",
+        # Nonce to perturb the action digest when an upstream toolchain
+        # regression has left a stale cached failure at the current
+        # digest (previous meson_helper produced a half-rewritten
+        # build.dat that ninja couldn't load).
+        "echo polkit-cachebust-v1 > /dev/null",
     ],
     configure_args = [
         "-Djs_engine=duktape",

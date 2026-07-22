@@ -27,7 +27,6 @@ from _env import (
     filter_path_flags,
     find_buckos_shell,
     find_dep_python3,
-    portabilize_shebangs,
     preferred_linker_flag,
     register_cleanup,
     sanitize_filenames,
@@ -35,6 +34,7 @@ from _env import (
     sysroot_lib_paths,
     write_pkg_config_wrapper,
 )
+from portabilize_shebangs import portabilize_shebangs
 
 
 def _rewrite_file(fpath, old, new):
@@ -504,14 +504,28 @@ def main():
     # Copy build tree to scratch to avoid mutating the previous action's
     # sealed output.  All build-tree prep (chmod, hardlink breaking, path
     # rewrites, libtool suppression, timestamp resets) operates on scratch.
+    #
+    # In-place install: when build_dir is already inside this action's
+    # BUCK_SCRATCH_PATH (i.e. the caller wired configure/compile/install
+    # to share the same working tree via @WORK@/tree), no copy is needed
+    # -- the tree is already writable and its baked paths are correct.
     _scratch = os.path.abspath(
         os.environ.get("BUCK_SCRATCH_PATH", os.environ.get("TMPDIR", "/tmp"))
     )
+    _in_place_install = (
+        build_dir == _scratch or build_dir.startswith(_scratch + os.sep)
+    )
     _scratch_build = os.path.join(_scratch, "build")
     _orig_build_dir = build_dir
-    shutil.copytree(build_dir, _scratch_build, symlinks=True)
-    build_dir = _scratch_build
-    register_cleanup(_scratch_build)
+    if _in_place_install:
+        # Reuse the tree directly.  Skip copytree and the entire path
+        # rewrite / symlink retarget pass below (those exist only to
+        # compensate for the copy).
+        _scratch_build = build_dir
+    else:
+        shutil.copytree(build_dir, _scratch_build, symlinks=True)
+        build_dir = _scratch_build
+        register_cleanup(_scratch_build)
     # Restore write+execute permissions on the scratch copy.  Buck2 may
     # seal build outputs as read-only; make install needs to run binaries
     # (e.g. xgcc during GCC install) and modify files.

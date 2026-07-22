@@ -484,7 +484,18 @@ def _autotools_build_impl(ctx):
         phases.append(_src_test(ctx, prepared, cflags_file, ldflags_file, pkg_config_file, lib_dirs_file, bin_dirs_file))
     phases.append(_src_install(ctx, prepared, cflags_file, ldflags_file, pkg_config_file, lib_dirs_file, bin_dirs_file, test_marker = None))
 
-    installed = _autotools_run_phases(ctx, phases, extra_hidden = [prepared])
+    # The seed sysroot must be materialized on the remote-execution worker so
+    # gcc's baked PT_INTERP (sysroot/lib64/ld-linux-x86-64.so.2) resolves.
+    # Individual phases pass hidden=tc.sysroot via toolchain_ld_linux_args, but
+    # hidden inputs on child cmd_args don't always reliably propagate through
+    # the outer cmd_args(parts) wrapper — attach the sysroot directly at the
+    # outer level to guarantee materialization. Only relevant when a sysroot
+    # exists.
+    tc = ctx.attrs._toolchain[BuildToolchainInfo]
+    _extra_hidden = [prepared]
+    if tc.sysroot:
+        _extra_hidden.append(tc.sysroot)
+    installed = _autotools_run_phases(ctx, phases, extra_hidden = _extra_hidden)
 
     # Build transitive sets
     compile_tset, link_tset, path_tset, runtime_tset = build_package_tsets(ctx, installed)

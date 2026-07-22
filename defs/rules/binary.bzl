@@ -146,9 +146,17 @@ def _install(ctx, source):
     env["AR"] = cmd_args(tc.ar.args, delimiter = " ")
     env["TARGET_TRIPLE"] = tc.target_triple
 
-    # Hermetic PATH from toolchain (replaces host PATH in wrapper)
+    # Hermetic PATH from toolchain (replaces host PATH in wrapper).
+    # Attach host_tools_tree as a hidden input on cmd (not just env) so the
+    # FULL host-tools-exec bundle (lib/libpython3.12.so.1.0, lib64/, share/,
+    # …) materializes on the remote-execution worker. Without this, only
+    # the bin/ projection is materialized and copy-relocated python3 /
+    # perl / etc. fail with "cannot open shared object file:
+    # libpython3.12.so.1.0".
     if tc.host_bin_dir:
         env["_HERMETIC_PATH"] = cmd_args(tc.host_bin_dir)
+        if tc.host_tools_tree:
+            cmd.add(cmd_args(hidden = [tc.host_tools_tree]))
     elif tc.allows_host_path:
         env["_ALLOW_HOST_PATH"] = "1"
     else:

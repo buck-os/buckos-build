@@ -4,6 +4,15 @@
 Runs meson setup with specified source dir, build dir, and arguments.
 """
 
+# Build-tag: bumped whenever a semantic change to this helper's runtime
+# behavior needs to be forced through the cache.  The remote action
+# cache is content-addressed by inputs; if the .py bytes are byte-
+# identical to a prior successful run, the cached .par output is
+# returned regardless of surrounding rebuild attempts.  Any change to
+# this string alters the .py bytes and forces the .par (and every
+# downstream meson_package action digest) to change.
+_HELPER_BUILD_TAG = "configure-at-declared-output-no-rewrites-2026-07-13"
+
 import argparse
 import glob as _glob
 import os
@@ -20,6 +29,7 @@ from _env import (
     file_prefix_map_flags,
     filter_path_flags,
     find_dep_python3,
+    make_tree_writable,
     preferred_linker_flag,
     register_cleanup,
     sanitize_filenames,
@@ -225,14 +235,17 @@ def main():
 
     declared_output = os.path.abspath(args.build_dir)
 
-    # Work in scratch to avoid mutating the declared output (in buck-out)
-    # during meson setup.  Only the final result is placed at declared_output.
-    _scratch_base = os.path.abspath(
-        os.environ.get("BUCK_SCRATCH_PATH", os.environ.get("TMPDIR", "/tmp"))
-    )
-    _build_dir_abs = os.path.join(_scratch_base, "meson-work")
+    # Configure meson directly at declared_output.  Previously we set up
+    # in a per-action scratch dir and then moved the tree to declared
+    # output while trying to rewrite every embedded scratch path in
+    # symlinks, text files, and pickle .dat -- three different rewriters,
+    # each with its own failure mode.  Meson bakes absolute paths into
+    # generated files aggressively; the only durable answer is to run it
+    # at the location the paths must ultimately point at.
+    _build_dir_abs = declared_output
+    if os.path.exists(_build_dir_abs):
+        _shutil.rmtree(_build_dir_abs)
     os.makedirs(_build_dir_abs, exist_ok=True)
-    register_cleanup(_build_dir_abs)
 
     env = clean_env()
 
@@ -509,8 +522,17 @@ def main():
     with open(_native_file, "w") as _nf:
         _nf.write("\n".join(_native_lines) + "\n")
 
-    # Run pre-configure commands in the source directory
+    # Run pre-configure commands in the source directory.  chmod +w the
+    # source in place so pre-cmds can write.  Copying to a scratch dir
+    # and pointing meson at the scratch dir is tempting but breaks the
+    # build: meson bakes source paths into build.ninja / generated files
+    # relative to the build_dir, and if the scratch dir is later cleaned
+    # up ninja fails with "missing and no known rule to make it" for
+    # anything meson recorded a relative path to.  Our materialized action
+    # inputs are owned by us, so chmod works on remote execution too.
     source_abs = os.path.abspath(args.source_dir)
+    if args.pre_cmds:
+        make_tree_writable(source_abs)
     for cmd_str in args.pre_cmds:
         result = subprocess.run(cmd_str, shell=True, cwd=source_abs, env=env)
         if result.returncode != 0:
@@ -612,121 +634,6 @@ def main():
         sys.exit(1)
 
     sanitize_filenames(_build_dir_abs)
-
-    # Move completed build dir to declared output.  Rewrite embedded
-    # scratch paths so the build phase sees the final artifact location.
-    _BINARY_EXTS = frozenset(
-        (
-            ".o",
-            ".a",
-            ".so",
-            ".gch",
-            ".pcm",
-            ".pch",
-            ".d",
-            ".png",
-            ".jpg",
-            ".gif",
-            ".ico",
-            ".gz",
-            ".xz",
-            ".bz2",
-            ".wasm",
-            ".pyc",
-            ".qm",
-        )
-    )
-    if os.path.exists(declared_output):
-        _shutil.rmtree(declared_output)
-    _scratch_path = _build_dir_abs
-    _shutil.move(_scratch_path, declared_output)
-    for dirpath, dirnames, filenames in os.walk(declared_output):
-        for entries in (dirnames, filenames):
-            for name in entries:
-                p = os.path.join(dirpath, name)
-                if os.path.islink(p):
-                    target = os.readlink(p)
-                    if _scratch_path in target:
-                        os.unlink(p)
-                        os.symlink(target.replace(_scratch_path, declared_output), p)
-    for dirpath, _dn, filenames in os.walk(declared_output):
-        for fname in filenames:
-            if os.path.splitext(fname)[1] in _BINARY_EXTS:
-                continue
-            fpath = os.path.join(dirpath, fname)
-            if os.path.islink(fpath):
-                continue
-            try:
-                st = os.stat(fpath)
-                with open(fpath, "r") as f:
-                    fc = f.read()
-                if _scratch_path not in fc:
-                    continue
-                fc = fc.replace(_scratch_path, declared_output)
-                with open(fpath, "w") as f:
-                    f.write(fc)
-                os.utime(fpath, (st.st_atime, st.st_mtime))
-            except (
-                UnicodeDecodeError,
-                PermissionError,
-                IsADirectoryError,
-                FileNotFoundError,
-            ):
-                pass
-
-    # Rewrite ALL meson pickle files to replace scratch paths with the
-    # declared output.  The text rewrite above skips them (binary).
-    # Meson pickles (install.dat, build.dat, custom command .dat files)
-    # embed build directory paths as workdir and in command arguments.
-    import pickle as _pickle
-
-    def _patch_pickle_paths(obj, old, new):
-        """Recursively replace old prefix with new in string attrs."""
-        if isinstance(obj, str):
-            return obj.replace(old, new) if old in obj else obj
-        if isinstance(obj, list):
-            return [_patch_pickle_paths(item, old, new) for item in obj]
-        if isinstance(obj, tuple):
-            return tuple(_patch_pickle_paths(item, old, new) for item in obj)
-        if hasattr(obj, "__dict__"):
-            for k, v in obj.__dict__.items():
-                patched = _patch_pickle_paths(v, old, new)
-                if patched is not v:
-                    setattr(obj, k, patched)
-        return obj
-
-    # Locate mesonbuild from hermetic PATH so pickle.load can
-    # deserialise the meson-internal dataclasses.
-    # Search both site-packages and dist-packages, and python3 (not just python3.X).
-    for _bp in list(args.hermetic_path) + list(args.path_prepend):
-        _parent = os.path.dirname(os.path.abspath(_bp))
-        for _pat in (
-            "lib/python*/site-packages",
-            "lib64/python*/site-packages",
-            "lib/python*/dist-packages",
-            "lib64/python*/dist-packages",
-        ):
-            for _sp in _glob.glob(os.path.join(_parent, _pat)):
-                if os.path.isdir(os.path.join(_sp, "mesonbuild")):
-                    if _sp not in sys.path:
-                        sys.path.insert(0, _sp)
-
-    for _mdat in _glob.glob(
-        os.path.join(declared_output, "**/meson-private/*.dat"), recursive=True
-    ):
-        try:
-            _dat_stat = os.stat(_mdat)
-            with open(_mdat, "rb") as f:
-                _idata = _pickle.load(f)
-            _patch_pickle_paths(_idata, _scratch_path, declared_output)
-            with open(_mdat, "wb") as f:
-                _pickle.dump(_idata, f)
-            os.utime(_mdat, (_dat_stat.st_atime, _dat_stat.st_mtime))
-        except Exception as _e:
-            print(
-                f"warning: could not rewrite {os.path.basename(_mdat)}: {_e}",
-                file=sys.stderr,
-            )
 
 
 if __name__ == "__main__":

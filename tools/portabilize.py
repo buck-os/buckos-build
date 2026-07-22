@@ -266,39 +266,83 @@ def _copy_and_relocate_toolchain(bin_dir, ld_linux, scratch_dir):
     import shutil
 
     src_root = os.path.dirname(bin_dir)  # .../patched-compiler/tools
-    path_hash = hashlib.sha1(src_root.encode()).hexdigest()[:12]
+    # Include the ld_linux path in the hash so local vs remote-execution
+    # scratch never share a tc-copy.  patchelf bakes the interp path into
+    # every relocated binary; if a prior action's tc-copy embedded a remote
+    # `/re_cwd/...` interp and a later local action reuses that same dir,
+    # every exec fails with `No such file or directory` because the local
+    # loader can't resolve the remote path.
+    _hash_input = src_root + "|" + os.path.abspath(ld_linux)
+    path_hash = hashlib.sha1(_hash_input.encode()).hexdigest()[:12]
     container_dir = os.path.join(scratch_dir, ".tc-copy-" + path_hash)
     dst_root = os.path.join(container_dir, os.path.basename(src_root))
     dst_bin = os.path.join(dst_root, "bin")
     done_marker = container_dir + ".done"
 
-    if os.path.exists(done_marker):
+    # Only trust the .done marker if the actual output dir is still there.
+    # The tc-copy dir lives under buck-out/v2/tmp/ and can be cleaned out
+    # of band while the marker file (a sibling, not inside the dir) remains
+    # -- leading to phantom "ready" state where downstream execs fail with
+    # `No such file or directory` on baked-in tc-copy paths.
+    if os.path.exists(done_marker) and os.path.isdir(dst_bin):
         return dst_bin
+    if os.path.exists(done_marker) and not os.path.isdir(dst_bin):
+        try:
+            os.unlink(done_marker)
+        except OSError:
+            pass
 
     os.makedirs(scratch_dir, exist_ok=True)
     lock_path = container_dir + ".lock"
     with open(lock_path, "w") as lock_fd:
         fcntl.flock(lock_fd, fcntl.LOCK_EX)
-        if os.path.exists(done_marker):
+        if os.path.exists(done_marker) and os.path.isdir(dst_bin):
             return dst_bin
+        if os.path.exists(done_marker) and not os.path.isdir(dst_bin):
+            try:
+                os.unlink(done_marker)
+            except OSError:
+                pass
         if os.path.exists(container_dir):
             shutil.rmtree(container_dir)
         os.makedirs(container_dir)
 
-        # NOTE: do NOT use --reflink=auto here.  On a remote-execution worker
-        # the source tree is a CAS-backed input that may be materialized
-        # on-access; a reflink (copy-on-write) clone can silently skip entries
-        # whose bytes aren't materialized yet, producing an INCOMPLETE copy
-        # (e.g. missing libpython3.12.so.1.0) while cp still exits 0 -- the
-        # action then fails much later at python startup.  A plain `cp -a`
-        # reads every byte, forcing full materialization and a complete copy.
-        # -a preserves the symlinks and layout gcc resolves its
-        # sysroot/libexec/fixed-includes through relative to the driver.
-        subprocess.run(["cp", "-a", src_root, dst_root], check=True)
-        # cp -a preserves the read-only input permissions; make the copy
-        # writable so the in-place rewrite below can create its temp files and
-        # rename them into place.
-        subprocess.run(["chmod", "-R", "u+w", dst_root], check=True)
+        # Use pure Python (shutil.copytree + os.walk chmod) instead of
+        # shelling out to `cp -a` / `chmod -R`.  Toolchain trees contain
+        # only regular files, symlinks, and directories with standard
+        # UNIX perms; we don't need cp's edge-case handling for xattrs,
+        # sparse files, or device nodes.  Going through Python removes
+        # the whole class of "which cp is on PATH and can it exec against
+        # this glibc" bugs -- the buckos hermetic PATH points at freshly-
+        # built coreutils linked against a newer glibc than the host,
+        # which crashes with __rtld_libc_freeres, and the host cp isn't
+        # on that PATH.
+        #
+        # symlinks=True preserves symlinks as symlinks (matching cp -a's
+        # behaviour and preserving the layout gcc walks to resolve
+        # sysroot / libexec / fixed-includes).  copy2 (the default
+        # copy_function) preserves mode + mtimes and uses sendfile /
+        # copy_file_range under the hood, so we still get near-cp
+        # throughput without the reflink risk noted below.
+        #
+        # NOTE: reflinks are NOT used here even though newer shutil can
+        # opt into them.  On a remote-execution worker the source tree
+        # is a CAS-backed input that may be materialized on-access; a
+        # reflink (copy-on-write) clone can silently skip entries whose
+        # bytes aren't materialized yet, producing an INCOMPLETE copy
+        # (e.g. missing libpython3.12.so.1.0) that only fails much later
+        # at exec time.  Byte-copies force full materialization.
+        shutil.copytree(src_root, dst_root, symlinks=True)
+        # Make the copy writable so the in-place ELF rewrite below can
+        # create temp files and rename them over each binary.  Match
+        # `chmod -R u+w` by ORing S_IWUSR into every file and directory.
+        for _dp, _dns, _fns in os.walk(dst_root):
+            for _name in _dns + _fns:
+                _p = os.path.join(_dp, _name)
+                if os.path.islink(_p):
+                    continue
+                _st = os.stat(_p)
+                os.chmod(_p, _st.st_mode | 0o200)
 
         # The toolchain is built locally (local_only), so rewrite_interps bakes
         # the *local* build root (e.g. /data/users/<u>/fbsource/...) into every
@@ -395,6 +439,16 @@ def _patchelf_relocate(dst_root, ld_linux, scratch_dir):
         os.path.join(ext_sysroot, "usr", "lib"),
         os.path.join(ext_sysroot, "lib"),
     ]
+    # Also include the external gcc-runtime dirs (patched-compiler/tools/<triple>/{lib64,lib}).
+    # These live one level ABOVE the sysroot and hold libstdc++.so.6 / libgcc_s.so.1
+    # from the seed's gcc-pass2 (GCC 14). A host-tool bundle whose install ships
+    # only bin/ (e.g. the cmake or ninja package's usr/) has no libstdc++ under
+    # its own dst_root; without these dirs in the rpath the loader falls through
+    # to the RE worker's too-old /lib64/libstdc++.so.6 → "GLIBCXX_3.4.32 not found".
+    # As with the sysroot entries above, do NOT isdir()-filter — deferred
+    # materialization would drop them and reintroduce the same failure.
+    for _rt in _derive_gcc_runtime(abs_ld):
+        _cand_dirs.append(_rt)
     # NOTE: do NOT os.path.isdir()-filter these.  On RE with deferred
     # materialization the sysroot dir may not be stat-able as a directory when
     # portabilize runs, which would silently drop the external sysroot (libc)
@@ -654,7 +708,12 @@ def _create_wrappers(bin_dir, ld_linux, lib_path, scratch_dir):
     Idempotent: skips if .done marker exists.
     Atomic: uses lock file for concurrent actions.
     """
-    path_hash = hashlib.sha1(bin_dir.encode()).hexdigest()[:12]
+    # Include the ld_linux path in the hash so local vs remote-execution
+    # never share a wrapper dir (each ld-linux wrapper embeds an absolute
+    # ld_linux path in its exec line; a `/re_cwd/...` wrapper is dead on
+    # a local worker where that path doesn't exist).
+    _hash_input = bin_dir + "|" + os.path.abspath(ld_linux)
+    path_hash = hashlib.sha1(_hash_input.encode()).hexdigest()[:12]
     bin_basename = os.path.basename(bin_dir)
     container_name = (
         ".ld-wrap-" + os.path.basename(os.path.dirname(bin_dir)) + "-" + path_hash
@@ -663,8 +722,13 @@ def _create_wrappers(bin_dir, ld_linux, lib_path, scratch_dir):
     wrapper_dir = os.path.join(container_dir, bin_basename)
     done_marker = container_dir + ".done"
 
-    if os.path.exists(done_marker):
+    if os.path.exists(done_marker) and os.path.isdir(wrapper_dir):
         return wrapper_dir
+    if os.path.exists(done_marker) and not os.path.isdir(wrapper_dir):
+        try:
+            os.unlink(done_marker)
+        except OSError:
+            pass
 
     import fcntl
 
@@ -672,8 +736,13 @@ def _create_wrappers(bin_dir, ld_linux, lib_path, scratch_dir):
     os.makedirs(scratch_dir, exist_ok=True)
     with open(lock_path, "w") as lock_fd:
         fcntl.flock(lock_fd, fcntl.LOCK_EX)
-        if os.path.exists(done_marker):
+        if os.path.exists(done_marker) and os.path.isdir(wrapper_dir):
             return wrapper_dir
+        if os.path.exists(done_marker) and not os.path.isdir(wrapper_dir):
+            try:
+                os.unlink(done_marker)
+            except OSError:
+                pass
         if os.path.exists(container_dir):
             import shutil
 
@@ -687,6 +756,14 @@ def _create_wrappers(bin_dir, ld_linux, lib_path, scratch_dir):
         wrapped = 0
         linked = 0
         for entry in sorted(os.listdir(bin_dir)):
+            # Skip hidden files (dot-prefix). No legitimate host tool is
+            # invoked via a hidden name; wrapping them just creates dead
+            # wrappers that get exec'd by accident and blow up with weird
+            # errors (e.g. a stray usr/bin/.real from a buggy package
+            # post_install_cmds produces a wrapper whose exec argv exceeds
+            # the kernel ARG_MAX and fails with "Argument list too long").
+            if entry.startswith("."):
+                continue
             src = os.path.join(bin_dir, entry)
             dst = os.path.join(wrapper_dir, entry)
             # Set PERL5LIB only for perl binaries. Also set PERL to the
