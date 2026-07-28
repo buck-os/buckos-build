@@ -63,7 +63,27 @@ def portabilize_env(env, ld_linux_path, hermetic_dirs=None, patchelf_path=None):
 
 
 def _stable_scratch():
-    """Return a stable scratch directory that persists across build phases."""
+    """Return a scratch directory shared across the current daemon's actions.
+
+    Anchored to the current daemon's buck-out/<isolation>/tmp/ prefix so:
+      1. Actions in the same daemon share tc-copy dirs (one copy per
+         toolchain, not per action).
+      2. `--isolation-dir` builds get their own scratch, so RE-cached
+         artifacts referencing the main daemon's portabilize paths don't
+         collide with an isolation build.  BUCK_SCRATCH_PATH is a per-
+         action relative path like `buck-out/<isolation>/tmp/buckos/...`;
+         the shared prefix (everything up to and including `tmp/`)
+         identifies the daemon.
+    """
+    scratch = os.environ.get("BUCK_SCRATCH_PATH", "")
+    parts = scratch.split(os.sep) if scratch else []
+    if "buck-out" in parts:
+        idx = parts.index("buck-out")
+        if idx + 2 < len(parts) and parts[idx + 2] == "tmp":
+            prefix = os.sep.join(parts[: idx + 3])
+            d = os.path.join(os.getcwd(), prefix, "portabilize")
+            os.makedirs(d, exist_ok=True)
+            return d
     d = os.path.join(os.getcwd(), "buck-out", "v2", "tmp", "portabilize")
     os.makedirs(d, exist_ok=True)
     return d
