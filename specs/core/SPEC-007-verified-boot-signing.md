@@ -2,9 +2,9 @@
 id: "SPEC-007"
 title: "Verified Boot and Update Signing"
 status: "approved"
-version: "1.0.0"
+version: "1.0.1"
 created: "2026-06-16"
-updated: "2026-06-17"
+updated: "2026-08-22"
 
 authors:
   - name: "BuckOS Team"
@@ -228,10 +228,10 @@ after a verified start — the *boots-to-init* assertion therefore uses `-kernel
 *enforcement* is proven by the ESP accept/reject pair above.
 
 **Unified Kernel Image — implemented.** `//packages/linux/boot/systemd-boot`
-builds the systemd 259 EFI artifacts (the sd-boot bootloader and the
+builds the systemd 261 EFI artifacts (the sd-boot bootloader and the
 `linuxx64.efi.stub` UKI stub) with `-Dbootloader=enabled` — kept separate from
 the main `//packages/linux/system/init/systemd` so the critical init build is
-untouched. systemd 259 compiles the EFI binaries freestanding with the host `cc`
+untouched. systemd 261 compiles the EFI binaries freestanding with the host `cc`
 and converts ELF→PE with its own `tools/elf2efi.py` (no gnu-efi, no objcopy),
 which needs the `elftools` module — hence the new
 `//packages/linux/lang/python/pyelftools` host package.

@@ -6,9 +6,9 @@ load("//defs/packages:meson.bzl", "meson_package")
 
 meson_package(
     name = "systemd",
-    version = "259.5",
-    url = "https://github.com/systemd/systemd/archive/refs/tags/v259.5.tar.gz",
-    sha256 = "80ed55a8a69c4bd1fb12a36659303372b37baf9ee224ef4f032db4b748be0f76",
+    version = "261",
+    url = "https://github.com/systemd/systemd/archive/refs/tags/v261.tar.gz",
+    sha256 = "f1c2e6a0d19ea5cae946386eb288432de12f3c6b7730cdb0d2a06f8ab8e3f8dc",
     pre_configure_cmds = [
         # Stub out test/fuzz meson.build (exclude_patterns dropped those files)
         "mkdir -p test/fuzz && printf 'fuzz_regression_tests = {}\\nfuzz_testsdir = '\"'\"'test/fuzz'\"'\"'\\n' > test/fuzz/meson.build",
@@ -93,6 +93,7 @@ meson_package(
         "-Dbpf-framework=disabled",
         "-Dlibcryptsetup=disabled",
         "-Dlibcurl=disabled",
+        "-Dlibcrypt=enabled",  # libxcrypt in deps
         "-Ddns-over-tls=false",
         "-Delfutils=disabled",
         "-Dlibfido2=disabled",
@@ -101,6 +102,7 @@ meson_package(
         "-Dmicrohttpd=disabled",
         "-Dlibidn2=disabled",
         "-Dimportd=disabled",
+        "-Dimds=disabled",
         "-Dkernel-install=false",
         "-Dkmod=enabled",  # kmod in deps
         "-Dxz=enabled",  # xz in deps
@@ -113,7 +115,8 @@ meson_package(
         "-Dpwquality=disabled",
         "-Dqrencode=disabled",
         "-Dresolve=false",
-        "-Dsysvinit-path=",
+        "-Dcompat-sysv-interfaces=false",
+        "-Dsysinstall=false",
         "-Dtpm2=disabled",
         "-Dukify=disabled",
         "-Dxkbcommon=disabled",
