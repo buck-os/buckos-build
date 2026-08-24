@@ -9,7 +9,7 @@ load("//defs/packages:meson.bzl", "meson_package")
 #   usr/lib/systemd/boot/efi/systemd-bootx64.efi   the sd-boot bootloader
 #   usr/lib/systemd/boot/efi/linuxx64.efi.stub     the sd-stub UKI stub
 #
-# systemd 259 builds these as freestanding EFI ELF objects with the host cc,
+# systemd 261 builds these as freestanding EFI ELF objects with the host cc,
 # then converts them to PE/COFF with its own tools/elf2efi.py (no gnu-efi, no
 # objcopy) — which imports the `elftools` module, hence the pyelftools host dep.
 # The stub is the input for assembling signed Unified Kernel Images (SPEC-007
@@ -18,7 +18,7 @@ load("//defs/packages:meson.bzl", "meson_package")
 
 meson_package(
     name = "systemd-boot",
-    version = "259.5",
+    version = "261",
     # Reuse the main systemd package's extracted source instead of re-downloading
     # the same tarball under a second name (which the graph dedup test forbids —
     # one sha256, one download name). The build below applies its own configure
@@ -79,7 +79,7 @@ meson_package(
         "-Dsbat-distro=buckos",
         "-Dsbat-distro-summary=BuckOS",
         "-Dsbat-distro-pkgname=systemd",
-        "-Dsbat-distro-version=259.5",
+        "-Dsbat-distro-version=261",
         "-Dsbat-distro-url=https://github.com/buck-os/buckos-build",
         "-Dlogind=true",
         "-Dhostnamed=true",
@@ -98,6 +98,7 @@ meson_package(
         "-Dbpf-framework=disabled",
         "-Dlibcryptsetup=disabled",
         "-Dlibcurl=disabled",
+        "-Dlibcrypt=enabled",
         "-Ddns-over-tls=false",
         "-Delfutils=disabled",
         "-Dlibfido2=disabled",
@@ -106,6 +107,7 @@ meson_package(
         "-Dmicrohttpd=disabled",
         "-Dlibidn2=disabled",
         "-Dimportd=disabled",
+        "-Dimds=disabled",
         "-Dkernel-install=false",
         "-Dkmod=enabled",
         "-Dxz=enabled",
@@ -119,7 +121,8 @@ meson_package(
         "-Dpwquality=disabled",
         "-Dqrencode=disabled",
         "-Dresolve=false",
-        "-Dsysvinit-path=",
+        "-Dcompat-sysv-interfaces=false",
+        "-Dsysinstall=false",
         "-Dtpm2=disabled",
         "-Dukify=disabled",
         "-Dxkbcommon=disabled",

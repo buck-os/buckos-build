@@ -40,7 +40,7 @@
 | [SPEC-004](core/SPEC-004-package-sets.md) | Package Sets and System Profiles | ✅ approved | 1.0.0 | 2025-11-20 |
 | [SPEC-005](core/SPEC-005-patches.md) | Patch System | ✅ approved | 2.0.0 | 2026-05-29 |
 | [SPEC-006](core/SPEC-006-atomic-updates.md) | Atomic Image-Based Updates (ostree) | ✅ approved | 1.0.0 | 2026-06-17 |
-| [SPEC-007](core/SPEC-007-verified-boot-signing.md) | Verified Boot and Update Signing | ✅ approved | 1.0.0 | 2026-06-17 |
+| [SPEC-007](core/SPEC-007-verified-boot-signing.md) | Verified Boot and Update Signing | ✅ approved | 1.0.1 | 2026-08-22 |
 
 ### Bootstrap Specifications
 
