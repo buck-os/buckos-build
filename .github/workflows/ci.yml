@@ -221,8 +221,8 @@ jobs:
           path: buckos-kde.iso
           compression-level: 0
 
-  test-aarch64:
-    name: build & test (aarch64)
+  build-aarch64:
+    name: build seed (aarch64)
     runs-on: [self-hosted, ARM64]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -237,10 +237,6 @@ jobs:
             fbcode = buckos
           EOF
       - name: Install patchelf
-        # Self-hosted ARM64 runner skips ci-setup, so install patchelf
-        # directly. portabilize_run prefers system patchelf to avoid the
-        # buckos-patchelf bootstrap that SIGBUSes when seed sysroot ABI
-        # doesn't match what buckos patchelf was originally linked against.
         run: command -v patchelf >/dev/null || sudo apt-get install -y --no-install-recommends patchelf
       - name: Install buck2
         run: |
@@ -266,8 +262,49 @@ jobs:
             echo "::endgroup::"
           done
           [ "$failed" -eq 0 ]
-      # Unit tests require a seed toolchain (host-tools-exec).
-      # No aarch64 seed is built yet — skip until one is available.
+      - name: Build seed toolchain (aarch64)
+        run: buck2 build //tc/bootstrap:seed-export --out seed-toolchain-aarch64.tar.zst
+      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: seed-toolchain-aarch64
+          path: seed-toolchain-aarch64.tar.zst
+          compression-level: 0
+
+  test-aarch64:
+    name: test (aarch64)
+    needs: [build-aarch64]
+    runs-on: [self-hosted, ARM64]
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          clean: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: seed-toolchain-aarch64
+          path: .
+      - name: Apply local config
+        run: |
+          cat > .buckconfig.local << 'EOF'
+          [cell_aliases]
+            ovr_config = prelude
+            fbsource = buckos
+            fbcode = buckos
+          EOF
+      - name: Install patchelf
+        run: command -v patchelf >/dev/null || sudo apt-get install -y --no-install-recommends patchelf
+      - name: Install buck2
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -sL https://github.com/facebook/buck2/releases/download/2026-02-01/buck2-aarch64-unknown-linux-gnu.zst \
+            | zstd -d -f -o "$HOME/.local/bin/buck2"
+          chmod +x "$HOME/.local/bin/buck2"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Configure seed
+        run: printf '[buckos]\nseed_path = seed-toolchain-aarch64.tar.zst\n' >> .buckconfig.local
+      - name: Tests
+        run: |
+          targets=$(buck2 uquery 'kind(sh_test, //tests:) - set(//tests:test-seed-isolation //tests:test-kde-iso-boot) - attrfilter(labels, heavy, kind(sh_test, //tests:))' 2>/dev/null)
+          buck2 test $targets
 
   test-seed:
     name: test with seed
@@ -340,7 +377,7 @@ jobs:
 
   required-checks:
     name: required checks
-    needs: [test-setup, build, test, test-aarch64, test-seed]
+    needs: [test-setup, build, build-aarch64, test, test-aarch64, test-seed]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -348,6 +385,7 @@ jobs:
           results=(
             "${{ needs.test-setup.result }}"
             "${{ needs.build.result }}"
+            "${{ needs.build-aarch64.result }}"
             "${{ needs.test.result }}"
             "${{ needs.test-aarch64.result }}"
             "${{ needs.test-seed.result }}"
